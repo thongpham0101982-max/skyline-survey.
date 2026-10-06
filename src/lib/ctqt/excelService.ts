@@ -66,7 +66,8 @@ export function generateCtqtTemplate(
   grade: string,
   level: string,
   students: StudentForExcel[],
-  existingData?: ExistingCtqtData
+  existingData?: ExistingCtqtData,
+  filterSubjectCode?: string
 ): Buffer {
   const ctqtLevel = detectCtqtLevel(className, grade, level);
   const config = CTQT_LEVEL_CONFIGS[ctqtLevel];
@@ -86,8 +87,12 @@ export function generateCtqtTemplate(
     }
   }
 
+  const subjectsToGenerate = filterSubjectCode
+    ? config.subjects.filter(s => s.code.toUpperCase() === filterSubjectCode.toUpperCase())
+    : config.subjects;
+
   // 1. Generate Individual Subject Sheets
-  for (const sub of config.subjects) {
+  for (const sub of subjectsToGenerate) {
     const headers: string[] = [
       "STT",
       "Student name\nHọ tên",
@@ -168,11 +173,11 @@ export function generateCtqtTemplate(
     });
 
     const ws = XLSX.utils.aoa_to_sheet(rows);
-    XLSX.utils.book_append_sheet(wb, ws, sub.sheetName);
   }
 
-  // 2. Generate Core Competencies Sheet
-  const compHeaders = [
+  // 2. Generate Core Competencies Sheet (only for full workbook)
+  if (!filterSubjectCode) {
+    const compHeaders = [
     "STT",
     "Student name\nHọ tên",
     ...(ctqtLevel === "PRIMARY" ? ["English name"] : []),
@@ -363,8 +368,9 @@ export function generateCtqtTemplate(
     tongHopRows.push(r);
   });
 
-  const wsTongHop = XLSX.utils.aoa_to_sheet(tongHopRows);
-  XLSX.utils.book_append_sheet(wb, wsTongHop, "TỔNG HỢP");
+    const wsTongHop = XLSX.utils.aoa_to_sheet(tongHopRows);
+    XLSX.utils.book_append_sheet(wb, wsTongHop, "TỔNG HỢP");
+  }
 
   return XLSX.write(wb, { type: "buffer", bookType: "xlsx" });
 }

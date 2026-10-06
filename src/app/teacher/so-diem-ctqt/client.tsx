@@ -478,12 +478,58 @@ export function SoDiemCtqtTeacherClient({
             </div>
 
             {/* Action Buttons */}
-            <div className="flex items-center gap-2">
+            <div className="flex items-center gap-2 flex-wrap">
+              <button
+                type="button"
+                onClick={() => {
+                  if (!selectedClassId || !selectedSubjectCode) return;
+                  window.open(`/api/admin/ctqt/excel?classId=${selectedClassId}&academicYearId=${selectedYearId}&semester=${selectedSemester}&subjectCode=${selectedSubjectCode}`, "_blank");
+                }}
+                className="text-xs font-bold px-3 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-xl flex items-center gap-1.5 transition-all cursor-pointer"
+                title="Tải file Excel mẫu riêng môn này"
+              >
+                <Download className="w-3.5 h-3.5" />
+                Tải Excel môn
+              </button>
+
+              <label className="text-xs font-bold px-3 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-xl flex items-center gap-1.5 transition-all cursor-pointer">
+                <Upload className="w-3.5 h-3.5" />
+                Nạp Excel môn
+                <input
+                  type="file"
+                  accept=".xlsx, .xls"
+                  onChange={async (e) => {
+                    const file = e.target.files?.[0];
+                    if (!file || !selectedClassId) return;
+                    try {
+                      const formData = new FormData();
+                      formData.append("file", file);
+                      formData.append("classId", selectedClassId);
+                      formData.append("academicYearId", selectedYearId);
+                      formData.append("semester", String(selectedSemester));
+                      const res = await fetch("/api/admin/ctqt/excel", { method: "POST", body: formData });
+                      const d = await res.json();
+                      if (d.success) {
+                        toast.success(d.message || "Nạp file thành công!");
+                        fetchSubjectGrades();
+                      } else {
+                        toast.error(d.error || "Lỗi nạp file");
+                      }
+                    } catch {
+                      toast.error("Lỗi kết nối");
+                    } finally {
+                      e.target.value = "";
+                    }
+                  }}
+                  className="hidden"
+                />
+              </label>
+
               <button
                 type="button"
                 onClick={() => handleSaveGrades(false)}
                 disabled={savingGrades || !subjectGradeData}
-                className="text-xs font-bold px-3.5 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-xl flex items-center gap-1.5 transition-all disabled:opacity-50"
+                className="text-xs font-bold px-3.5 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-xl flex items-center gap-1.5 transition-all disabled:opacity-50 cursor-pointer"
               >
                 <Save className="w-3.5 h-3.5" />
                 Lưu Nháp
@@ -493,7 +539,7 @@ export function SoDiemCtqtTeacherClient({
                 type="button"
                 onClick={() => handleSaveGrades(true)}
                 disabled={savingGrades || !subjectGradeData}
-                className="text-xs font-bold px-4 py-2 bg-teal-600 hover:bg-teal-700 text-white rounded-xl flex items-center gap-1.5 shadow-xs transition-all disabled:opacity-50"
+                className="text-xs font-bold px-4 py-2 bg-teal-600 hover:bg-teal-700 text-white rounded-xl flex items-center gap-1.5 shadow-xs transition-all disabled:opacity-50 cursor-pointer"
               >
                 <Send className="w-3.5 h-3.5" />
                 Gửi Rà Soát Cho GVTA

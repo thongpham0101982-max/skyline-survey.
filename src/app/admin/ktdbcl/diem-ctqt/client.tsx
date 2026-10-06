@@ -41,7 +41,15 @@ export function DiemCtqtAdminClient({
   const [selectedYearId, setSelectedYearId] = useState(activeYearId || (academicYears[0]?.id || ""));
   const [selectedSemester, setSelectedSemester] = useState(2); // Default to HK2 as seen in screenshots
   const [selectedCampusId, setSelectedCampusId] = useState("");
-  const [activeTab, setActiveTab] = useState<"consolidated" | "assignments" | "excel" | "report_card">("consolidated");
+  const [activeTab, setActiveTab] = useState<"subject_gradebook" | "consolidated" | "assignments" | "excel" | "report_card">("subject_gradebook");
+
+  // Subject Gradebook Tab state
+  const [selectedSubjectCode, setSelectedSubjectCode] = useState<string>("ENG");
+  const [subjectTeacherId, setSubjectTeacherId] = useState<string>("");
+  const [subjectDelegatedTeacherId, setSubjectDelegatedTeacherId] = useState<string>("");
+  const [subjectAssignmentStatus, setSubjectAssignmentStatus] = useState<string>("DRAFT");
+  const [savingSubjectAssignment, setSavingSubjectAssignment] = useState(false);
+  const [subjectGrades, setSubjectGrades] = useState<Record<string, any>>({});
 
   // Selected class for consolidated view & Excel
   const [selectedClassId, setSelectedClassId] = useState<string>(initialClasses[0]?.id || "");
@@ -129,7 +137,7 @@ export function DiemCtqtAdminClient({
   };
 
   useEffect(() => {
-    if (selectedClassId && (activeTab === "consolidated" || activeTab === "report_card")) {
+    if (selectedClassId && (activeTab === "subject_gradebook" || activeTab === "consolidated" || activeTab === "report_card")) {
       fetchConsolidatedGrades();
     }
   }, [selectedClassId, selectedYearId, selectedSemester, activeTab]);
@@ -287,7 +295,342 @@ export function DiemCtqtAdminClient({
 
   const selectedClass = initialClasses.find(c => c.id === selectedClassId);
   const currentLevel = selectedClass ? detectCtqtLevel(selectedClass.className, selectedClass.grade, selectedClass.level) : "PRIMARY";
-  const currentConfig = CTQT_LEVEL_CONFIGS[currentLevel];
+  const currentSubjectDef = useMemo(() => {
+    return currentConfig?.subjects?.find(s => s.code === selectedSubjectCode) || currentConfig?.subjects?.[0];
+  }, [currentConfig, selectedSubjectCode]);
+
+  useEffect(() => {
+    if (currentConfig?.subjects?.length > 0) {
+      if (!currentConfig.subjects.some(s => s.code === selectedSubjectCode)) {
+        setSelectedSubjectCode(currentConfig.subjects[0].code);
+      }
+    }
+  }, [currentConfig, selectedSubjectCode]);
+
+  const currentSubjectAssignment = useMemo(() => {
+    return consolidatedData?.assignments?.find((a: any) => a.subjectCode === selectedSubjectCode);
+  }, [consolidatedData?.assignments, selectedSubjectCode]);
+
+  useEffect(() => {
+    if (currentSubjectAssignment) {
+      setSubjectTeacherId(currentSubjectAssignment.primaryTeacherId || "");
+      setSubjectDelegatedTeacherId(currentSubjectAssignment.delegatedTeacherId || "");
+      setSubjectAssignmentStatus(currentSubjectAssignment.status || "DRAFT");
+    } else {
+      setSubjectTeacherId("");
+      setSubjectDelegatedTeacherId("");
+      setSubjectAssignmentStatus("DRAFT");
+    }
+  }, [currentSubjectAssignment, selectedSubjectCode]);
+
+  useEffect(() => {
+    if (!consolidatedData?.students) return;
+    const gradeMap: Record<string, any> = {};
+    consolidatedData.students.forEach((st: any) => {
+      const g = consolidatedData.grades?.find((x: any) => x.studentId === st.id && x.subjectCode === selectedSubjectCode);
+      let progArr: any[] = [];
+      try {
+        progArr = g?.progressScores ? JSON.parse(g.progressScores) : [];
+      } catch {
+        progArr = [];
+      }
+      gradeMap[st.id] = {
+        studentId: st.id,
+        progressScores: progArr,
+        midTermScore: g?.midTermScore !== null && g?.midTermScore !== undefined ? g.midTermScore : "",
+        endTermScore: g?.endTermScore !== null && g?.endTermScore !== undefined ? g.endTermScore : "",
+        gpaScore: g?.gpaScore !== null && g?.gpaScore !== undefined ? g.gpaScore : "",
+        assessmentContentEn: g?.assessmentContentEn || "",
+        assessmentContentVi: g?.assessmentContentVi || "",
+        ieltsScore: g?.ieltsScore !== null && g?.ieltsScore !== undefined ? g.ieltsScore : "",
+        commentEn: g?.commentEn || "",
+        commentVi: g?.commentVi || "",
+        status: g?.status || "DRAFT",
+      };
+    });
+    setSubjectGrades(gradeMap);
+  }, [consolidatedData, selectedSubjectCode]);
+
+  // Update a single score field for a student
+  const updateStudentScore = (studentId: string, field: string, value: any, subIndex?: number) => {
+    setSubjectGrades(prev => {
+      const current = prev[studentId] || { studentId, progressScores: [] };
+      const updated = { ...current };
+
+      if (field === "progressScores" && typeof subIndex === "number") {
+        const pArr = [...(updated.progressScores || [])];
+        pArr[subIndex] = value === "" ? "" : Number(value);
+        updated.progressScores = pArr;
+      } else {
+        updated[field] = value === "" ? "" : value;
+      }
+
+      // If MIDDLE level, auto calculate GPA if applicable
+      if (currentLevel === "MIDDLE" && !currentSubjectDef?.isQualitative) {
+        const pVals = (updated.progressScores || [])
+          .filter((v: any) => v !== "" && v !== null && !isNaN(Number(v)))
+          .map(Number);
+        const mVal = updated.midTermScore !== "" && updated.midTermScore !== null && !isNaN(Number(updated.midTermScore))
+          ? Number(updated.midTermScore)
+          : null;
+        const eVal = updated.endTermScore !== "" && updated.endTermScore !== null && !isNaN(Number(updated.endTermScore))
+          ? Number(updated.endTermScore)
+          : null;
+
+        const scores: number[] = [...pVals];
+        if (mVal !== null) scores.push(mVal, mVal);
+        if (eVal !== null) scores.push(eVal, eVal);
+        if (scores.length > 0) {
+          const sum = scores.reduce((a, b) => a + b, 0);
+          updated.gpaScore = Math.round((sum / scores.length) * 10) / 10;
+        } else {
+          updated.gpaScore = "";
+        }
+      }
+
+      return {
+        ...prev,
+        [studentId]: updated,
+      };
+    });
+  };
+
+  // Save Subject Assignment
+  const handleSaveSubjectAssignment = async () => {
+    if (!selectedClassId || !selectedSubjectCode) return;
+    setSavingSubjectAssignment(true);
+    try {
+      const res = await fetch("/api/admin/ctqt/assignments", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          academicYearId: selectedYearId,
+          semester: selectedSemester,
+          assignments: [
+            {
+              classId: selectedClassId,
+              subjectCode: selectedSubjectCode,
+              primaryTeacherId: subjectTeacherId || null,
+              delegatedTeacherId: subjectDelegatedTeacherId || null,
+              status: subjectAssignmentStatus,
+            },
+          ],
+        }),
+      });
+      const data = await res.json();
+      if (data.success) {
+        toast.success(`Đã cập nhật phân quyền GVBM & GVTA môn ${currentSubjectDef?.nameVi || selectedSubjectCode}!`);
+        fetchConsolidatedGrades();
+      } else {
+        toast.error(data.error || "Lỗi cập nhật phân quyền");
+      }
+    } catch {
+      toast.error("Lỗi kết nối máy chủ");
+    } finally {
+      setSavingSubjectAssignment(false);
+    }
+  };
+
+  // Save Subject Grades
+  const handleSaveSubjectGrades = async () => {
+    if (!selectedClassId || !selectedSubjectCode) return;
+    setSavingGrades(true);
+    try {
+      const gradesPayload = Object.values(subjectGrades).map((g: any) => ({
+        studentId: g.studentId,
+        subjectCode: selectedSubjectCode,
+        progressScores: JSON.stringify(g.progressScores || []),
+        midTermScore: g.midTermScore !== "" && g.midTermScore !== null ? Number(g.midTermScore) : null,
+        endTermScore: g.endTermScore !== "" && g.endTermScore !== null ? Number(g.endTermScore) : null,
+        gpaScore: g.gpaScore !== "" && g.gpaScore !== null ? Number(g.gpaScore) : null,
+        assessmentContentEn: g.assessmentContentEn || null,
+        assessmentContentVi: g.assessmentContentVi || null,
+        ieltsScore: g.ieltsScore !== "" && g.ieltsScore !== null ? Number(g.ieltsScore) : null,
+        commentEn: g.commentEn || null,
+        commentVi: g.commentVi || null,
+        status: g.status || "DRAFT",
+      }));
+
+      const res = await fetch("/api/admin/ctqt/grades", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          classId: selectedClassId,
+          academicYearId: selectedYearId,
+          semester: selectedSemester,
+          grades: gradesPayload,
+        }),
+      });
+
+      const data = await res.json();
+      if (data.success) {
+        toast.success(`Đã lưu bảng điểm môn ${currentSubjectDef?.nameVi || selectedSubjectCode} thành công!`);
+        fetchConsolidatedGrades();
+      } else {
+        toast.error(data.error || "Lỗi lưu bảng điểm");
+      }
+    } catch {
+      toast.error("Lỗi kết nối máy chủ");
+    } finally {
+      setSavingGrades(false);
+    }
+  };
+
+  // Approve Subject Grades
+  const handleApproveSubjectGrades = async () => {
+    if (!confirm(`Xác nhận duyệt hoàn tất bảng điểm môn ${currentSubjectDef?.nameVi || selectedSubjectCode}? Sau khi duyệt, điểm sẽ được ghi nhận chính thức.`)) return;
+    setSavingGrades(true);
+    try {
+      const updatedGrades = { ...subjectGrades };
+      Object.keys(updatedGrades).forEach(k => {
+        updatedGrades[k] = { ...updatedGrades[k], status: "APPROVED" };
+      });
+      setSubjectGrades(updatedGrades);
+
+      const gradesPayload = Object.values(updatedGrades).map((g: any) => ({
+        studentId: g.studentId,
+        subjectCode: selectedSubjectCode,
+        progressScores: JSON.stringify(g.progressScores || []),
+        midTermScore: g.midTermScore !== "" && g.midTermScore !== null ? Number(g.midTermScore) : null,
+        endTermScore: g.endTermScore !== "" && g.endTermScore !== null ? Number(g.endTermScore) : null,
+        gpaScore: g.gpaScore !== "" && g.gpaScore !== null ? Number(g.gpaScore) : null,
+        assessmentContentEn: g.assessmentContentEn || null,
+        assessmentContentVi: g.assessmentContentVi || null,
+        ieltsScore: g.ieltsScore !== "" && g.ieltsScore !== null ? Number(g.ieltsScore) : null,
+        commentEn: g.commentEn || null,
+        commentVi: g.commentVi || null,
+        status: "APPROVED",
+      }));
+
+      await fetch("/api/admin/ctqt/grades", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          classId: selectedClassId,
+          academicYearId: selectedYearId,
+          semester: selectedSemester,
+          grades: gradesPayload,
+        }),
+      });
+
+      await fetch("/api/admin/ctqt/assignments", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          academicYearId: selectedYearId,
+          semester: selectedSemester,
+          assignments: [
+            {
+              classId: selectedClassId,
+              subjectCode: selectedSubjectCode,
+              primaryTeacherId: subjectTeacherId || null,
+              delegatedTeacherId: subjectDelegatedTeacherId || null,
+              status: "APPROVED",
+            },
+          ],
+        }),
+      });
+      setSubjectAssignmentStatus("APPROVED");
+      toast.success(`Đã phê duyệt hoàn tất bảng điểm môn ${currentSubjectDef?.nameVi || selectedSubjectCode}!`);
+      fetchConsolidatedGrades();
+    } catch {
+      toast.error("Lỗi khi duyệt bảng điểm");
+    } finally {
+      setSavingGrades(false);
+    }
+  };
+
+  // Download Single Subject Excel Template
+  const handleDownloadSubjectTemplate = (subCode?: string) => {
+    if (!selectedClassId) {
+      toast.error("Vui lòng chọn lớp học");
+      return;
+    }
+    const targetSub = subCode || selectedSubjectCode;
+    const url = `/api/admin/ctqt/excel?classId=${selectedClassId}&academicYearId=${selectedYearId}&semester=${selectedSemester}&subjectCode=${targetSub}`;
+    window.open(url, "_blank");
+  };
+
+  // Upload Single Subject Excel
+  const handleSubjectFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file || !selectedClassId) return;
+
+    setUploadingFile(true);
+    try {
+      const formData = new FormData();
+      formData.append("file", file);
+      formData.append("classId", selectedClassId);
+      formData.append("academicYearId", selectedYearId);
+      formData.append("semester", String(selectedSemester));
+
+      const res = await fetch("/api/admin/ctqt/excel", {
+        method: "POST",
+        body: formData,
+      });
+
+      const data = await res.json();
+      if (data.success) {
+        toast.success(data.message || `Đã nạp file điểm môn ${currentSubjectDef?.nameVi || ""} thành công!`);
+        fetchConsolidatedGrades();
+      } else {
+        toast.error(data.error || "Lỗi nạp file điểm");
+      }
+    } catch {
+      toast.error("Lỗi kết nối máy chủ");
+    } finally {
+      setUploadingFile(false);
+      e.target.value = "";
+    }
+  };
+
+  // Stats for the current subject
+  const subjectStats = useMemo(() => {
+    if (!consolidatedData?.students || consolidatedData.students.length === 0) {
+      return { total: 0, hasScore: 0, avg: 0, max: 0, min: 0 };
+    }
+    const students = consolidatedData.students;
+    let scoreSum = 0;
+    let scoreCount = 0;
+    let max = -Infinity;
+    let min = Infinity;
+    let hasScoreCount = 0;
+
+    students.forEach((st: any) => {
+      const g = subjectGrades[st.id];
+      if (!g) return;
+      let repScore: number | null = null;
+      if (currentLevel === "PRIMARY") {
+        if (g.endTermScore !== "" && g.endTermScore !== null) repScore = Number(g.endTermScore);
+        else if (g.midTermScore !== "" && g.midTermScore !== null) repScore = Number(g.midTermScore);
+      } else if (currentLevel === "MIDDLE") {
+        if (g.gpaScore !== "" && g.gpaScore !== null) repScore = Number(g.gpaScore);
+        else if (g.endTermScore !== "" && g.endTermScore !== null) repScore = Number(g.endTermScore);
+      } else if (currentLevel === "HIGH") {
+        if (currentSubjectDef?.code === "IELTS") {
+          if (g.ieltsScore !== "" && g.ieltsScore !== null) repScore = Number(g.ieltsScore);
+        } else {
+          if (g.midTermScore !== "" && g.midTermScore !== null) repScore = Number(g.midTermScore);
+        }
+      }
+
+      if (repScore !== null && !isNaN(repScore)) {
+        hasScoreCount++;
+        scoreSum += repScore;
+        scoreCount++;
+        if (repScore > max) max = repScore;
+        if (repScore < min) min = repScore;
+      }
+    });
+
+    return {
+      total: students.length,
+      hasScore: hasScoreCount,
+      avg: scoreCount > 0 ? Math.round((scoreSum / scoreCount) * 10) / 10 : 0,
+      max: max === -Infinity ? 0 : max,
+      min: min === Infinity ? 0 : min,
+    };
+  }, [consolidatedData?.students, subjectGrades, currentLevel, currentSubjectDef]);
 
   return (
     <div className="space-y-6 pb-20">
@@ -354,6 +697,19 @@ export function DiemCtqtAdminClient({
         <div className="flex items-center gap-2 mt-6 border-b border-slate-200 overflow-x-auto no-scrollbar">
           <button
             type="button"
+            onClick={() => setActiveTab("subject_gradebook")}
+            className={`pb-3 px-3 text-xs md:text-sm font-bold flex items-center gap-2 border-b-2 transition-all whitespace-nowrap ${
+              activeTab === "subject_gradebook"
+                ? "border-teal-600 text-teal-700"
+                : "border-transparent text-slate-500 hover:text-slate-800"
+            }`}
+          >
+            <BookOpen className="w-4 h-4" />
+            1. Sổ điểm theo Môn (GVBM)
+          </button>
+
+          <button
+            type="button"
             onClick={() => setActiveTab("consolidated")}
             className={`pb-3 px-3 text-xs md:text-sm font-bold flex items-center gap-2 border-b-2 transition-all whitespace-nowrap ${
               activeTab === "consolidated"
@@ -362,7 +718,7 @@ export function DiemCtqtAdminClient({
             }`}
           >
             <Layers className="w-4 h-4" />
-            1. Sổ điểm Tổng hợp
+            2. Sổ điểm Tổng hợp
           </button>
 
           <button
@@ -375,7 +731,7 @@ export function DiemCtqtAdminClient({
             }`}
           >
             <Users className="w-4 h-4" />
-            2. Phân công & Gán GVTA ủy quyền
+            3. Phân công & Gán GVTA ủy quyền
           </button>
 
           <button
@@ -388,7 +744,7 @@ export function DiemCtqtAdminClient({
             }`}
           >
             <FileSpreadsheet className="w-4 h-4" />
-            3. Quản lý File & Import/Export
+            4. Quản lý File & Import/Export
           </button>
 
           <button
@@ -401,13 +757,512 @@ export function DiemCtqtAdminClient({
             }`}
           >
             <Award className="w-4 h-4" />
-            4. Xuất Report Card (PDF)
+            5. Xuất Report Card (PDF)
           </button>
         </div>
       </div>
 
       {/* ========================================================================= */}
-      {/* TAB 1: SỔ ĐIỂM TỔNG HỢP (CONSOLIDATED GRID)                                */}
+      {/* TAB 1: SỔ ĐIỂM THEO MÔN (GVBM)                                            */}
+      {/* ========================================================================= */}
+      {activeTab === "subject_gradebook" && (
+        <div className="space-y-4">
+          {/* Top Filter Bar */}
+          <div className="bg-white border border-slate-200 rounded-2xl p-4 shadow-xs flex flex-wrap items-center justify-between gap-3">
+            <div className="flex flex-wrap items-center gap-3">
+              {/* Campus filter */}
+              <select
+                value={selectedCampusId}
+                onChange={e => setSelectedCampusId(e.target.value)}
+                className="text-xs font-semibold px-3 py-2 bg-slate-50 border border-slate-300 rounded-xl text-slate-700"
+              >
+                <option value="">Tất cả Cơ sở</option>
+                {campuses.map(c => (
+                  <option key={c.id} value={c.id}>
+                    {c.campusName}
+                  </option>
+                ))}
+              </select>
+
+              {/* Class selector */}
+              <select
+                value={selectedClassId}
+                onChange={e => setSelectedClassId(e.target.value)}
+                className="text-xs font-bold px-4 py-2 bg-teal-50 border border-teal-300 rounded-xl text-teal-900"
+              >
+                {filteredClasses.map(c => (
+                  <option key={c.id} value={c.id}>
+                    Lớp: {c.className} ({c.campus?.campusName || ""})
+                  </option>
+                ))}
+              </select>
+
+              {selectedClass && (
+                <span className="text-xs font-bold px-3 py-1 bg-slate-100 border border-slate-200 text-slate-700 rounded-xl">
+                  {currentConfig.levelNameVi} ({currentConfig.subjects.length} môn)
+                </span>
+              )}
+            </div>
+
+            {/* Quick Actions for Subject Gradebook */}
+            <div className="flex items-center gap-2 flex-wrap">
+              <button
+                type="button"
+                onClick={() => handleDownloadSubjectTemplate()}
+                className="text-xs font-bold px-3 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-xl flex items-center gap-1.5 transition-all"
+                title="Tải file Excel mẫu đúng riêng môn này"
+              >
+                <Download className="w-3.5 h-3.5" />
+                Tải Excel môn này
+              </button>
+
+              <label className="text-xs font-bold px-3 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-xl flex items-center gap-1.5 transition-all cursor-pointer">
+                <Upload className="w-3.5 h-3.5" />
+                {uploadingFile ? "Đang nạp..." : "Nạp Excel môn này"}
+                <input
+                  type="file"
+                  accept=".xlsx, .xls"
+                  onChange={handleSubjectFileUpload}
+                  className="hidden"
+                  disabled={uploadingFile}
+                />
+              </label>
+
+              <button
+                type="button"
+                onClick={handleSaveSubjectGrades}
+                disabled={savingGrades}
+                className="text-xs font-bold px-4 py-2 bg-teal-600 hover:bg-teal-700 text-white rounded-xl flex items-center gap-1.5 shadow-xs transition-all disabled:opacity-50"
+              >
+                <Save className="w-3.5 h-3.5" />
+                {savingGrades ? "Đang lưu điểm..." : "Lưu điểm môn này"}
+              </button>
+            </div>
+          </div>
+
+          {/* Subject Pills / Tabs */}
+          <div className="bg-white border border-slate-200 rounded-2xl p-3 shadow-xs">
+            <div className="text-[11px] font-extrabold uppercase tracking-wider text-slate-500 mb-2 px-1">
+              Chọn môn học để nhập điểm & phân quyền GVBM:
+            </div>
+            <div className="flex items-center gap-2.5 overflow-x-auto pb-1 no-scrollbar">
+              {currentConfig.subjects.map(sub => {
+                const isSelected = sub.code === selectedSubjectCode;
+                const assignment = consolidatedData?.assignments?.find((a: any) => a.subjectCode === sub.code);
+                const primaryTeacher = assignment?.primaryTeacher?.teacherName;
+                const status = assignment?.status || "DRAFT";
+
+                return (
+                  <button
+                    key={sub.code}
+                    type="button"
+                    onClick={() => setSelectedSubjectCode(sub.code)}
+                    className={`flex items-center gap-3 px-4 py-2.5 rounded-xl border text-left transition-all shrink-0 ${
+                      isSelected
+                        ? "bg-teal-700 text-white border-teal-800 shadow-md ring-2 ring-teal-400"
+                        : "bg-slate-50 hover:bg-slate-100 text-slate-800 border-slate-200"
+                    }`}
+                  >
+                    <div
+                      className={`w-8 h-8 rounded-lg flex items-center justify-center font-black text-xs ${
+                        isSelected ? "bg-white text-teal-800" : "bg-teal-100 text-teal-800"
+                      }`}
+                    >
+                      {sub.code}
+                    </div>
+                    <div>
+                      <div className="font-extrabold text-xs">
+                        {sub.nameVi} <span className={isSelected ? "text-teal-200 font-normal" : "text-slate-500 font-normal"}>({sub.nameEn})</span>
+                      </div>
+                      <div className="flex items-center gap-1.5 mt-0.5">
+                        <span className={`text-[10px] font-medium ${isSelected ? "text-teal-100" : "text-slate-500"}`}>
+                          {primaryTeacher ? `GVBM: ${primaryTeacher}` : "Chưa phân công GVBM"}
+                        </span>
+                        <span
+                          className={`text-[9px] font-bold px-1.5 py-0.2 rounded-full ${
+                            status === "APPROVED"
+                              ? isSelected ? "bg-emerald-500 text-white" : "bg-emerald-100 text-emerald-800"
+                              : status === "SUBMITTED"
+                              ? isSelected ? "bg-sky-400 text-slate-900" : "bg-sky-100 text-sky-800"
+                              : isSelected ? "bg-teal-800 text-teal-200" : "bg-slate-200 text-slate-700"
+                          }`}
+                        >
+                          {status === "APPROVED" ? "Đã duyệt" : status === "SUBMITTED" ? "Chờ rà soát" : "Bản nháp"}
+                        </span>
+                      </div>
+                    </div>
+                  </button>
+                );
+              })}
+            </div>
+          </div>
+
+          {/* Subject Assignment & Delegation Header Card */}
+          <div className="bg-gradient-to-r from-teal-50 via-sky-50 to-slate-50 border border-teal-200/90 rounded-2xl p-4 shadow-xs">
+            <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4">
+              <div className="flex items-center gap-3">
+                <div className="w-11 h-11 rounded-xl bg-teal-600 text-white flex items-center justify-center font-black text-base shadow-xs">
+                  {currentSubjectDef?.code}
+                </div>
+                <div>
+                  <div className="text-base font-black text-slate-800 flex items-center gap-2">
+                    Bảng điểm môn: {currentSubjectDef?.nameVi} ({currentSubjectDef?.nameEn})
+                    <span className="text-[11px] font-bold px-2.5 py-0.5 rounded-full bg-white border border-teal-200 text-teal-800">
+                      Sheet: {currentSubjectDef?.sheetName}
+                    </span>
+                  </div>
+                  <p className="text-xs text-slate-600 mt-0.5">
+                    Phân quyền Giáo viên Bộ môn (GVBM) nhập điểm và gán Giáo viên tiếng Anh (GVTA) kiểm duyệt câu từ song ngữ.
+                  </p>
+                </div>
+              </div>
+
+              {/* Direct Assignment Controls */}
+              <div className="flex flex-wrap items-center gap-3 bg-white p-3 rounded-xl border border-teal-100 shadow-2xs">
+                <div>
+                  <label className="block text-[10px] font-extrabold uppercase text-slate-500 mb-1">
+                    1. GVBM (Dạy &amp; Nhập điểm):
+                  </label>
+                  <select
+                    value={subjectTeacherId}
+                    onChange={e => setSubjectTeacherId(e.target.value)}
+                    className="text-xs font-semibold px-3 py-1.5 bg-slate-50 border border-slate-300 rounded-lg text-slate-800 focus:outline-teal-500 min-w-[170px]"
+                  >
+                    <option value="">-- Chưa phân công --</option>
+                    {teachers.map(t => (
+                      <option key={t.id} value={t.id}>
+                        {t.teacherName} ({t.teacherCode})
+                      </option>
+                    ))}
+                  </select>
+                </div>
+
+                <div>
+                  <label className="block text-[10px] font-extrabold uppercase text-slate-500 mb-1">
+                    2. GVTA ủy quyền (Rà soát tiếng Anh):
+                  </label>
+                  <select
+                    value={subjectDelegatedTeacherId}
+                    onChange={e => setSubjectDelegatedTeacherId(e.target.value)}
+                    className="text-xs font-semibold px-3 py-1.5 bg-slate-50 border border-slate-300 rounded-lg text-slate-800 focus:outline-teal-500 min-w-[170px]"
+                  >
+                    <option value="">-- Không ủy quyền --</option>
+                    {teachers.map(t => (
+                      <option key={t.id} value={t.id}>
+                        {t.teacherName} ({t.teacherCode})
+                      </option>
+                    ))}
+                  </select>
+                </div>
+
+                <div>
+                  <label className="block text-[10px] font-extrabold uppercase text-slate-500 mb-1">
+                    3. Trạng thái sổ điểm môn:
+                  </label>
+                  <select
+                    value={subjectAssignmentStatus}
+                    onChange={e => setSubjectAssignmentStatus(e.target.value)}
+                    className="text-xs font-bold px-3 py-1.5 bg-slate-50 border border-slate-300 rounded-lg text-slate-800 focus:outline-teal-500"
+                  >
+                    <option value="DRAFT">Bản nháp (GVBM đang nhập)</option>
+                    <option value="SUBMITTED">Chờ GVTA rà soát</option>
+                    <option value="APPROVED">Đã duyệt chính thức</option>
+                    <option value="REVISION_REQUESTED">Yêu cầu chỉnh sửa</option>
+                  </select>
+                </div>
+
+                <div className="flex items-end gap-2 pt-3 sm:pt-0">
+                  <button
+                    type="button"
+                    onClick={handleSaveSubjectAssignment}
+                    disabled={savingSubjectAssignment}
+                    className="text-xs font-bold px-3 py-2 bg-teal-600 hover:bg-teal-700 text-white rounded-lg flex items-center gap-1.5 shadow-xs transition-all disabled:opacity-50"
+                  >
+                    <CheckCircle2 className="w-3.5 h-3.5" />
+                    {savingSubjectAssignment ? "Đang lưu..." : "Lưu phân quyền"}
+                  </button>
+
+                  <button
+                    type="button"
+                    onClick={handleApproveSubjectGrades}
+                    className="text-xs font-bold px-3 py-2 bg-emerald-600 hover:bg-emerald-700 text-white rounded-lg flex items-center gap-1.5 shadow-xs transition-all"
+                  >
+                    <Award className="w-3.5 h-3.5" />
+                    Duyệt điểm môn
+                  </button>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          {/* Subject Grade Table */}
+          <div className="bg-white border border-slate-200 rounded-2xl shadow-xs overflow-hidden">
+            {loadingConsolidated ? (
+              <div className="p-16 text-center text-slate-500 font-semibold flex flex-col items-center justify-center gap-3">
+                <div className="w-8 h-8 border-3 border-teal-600 border-t-transparent rounded-full animate-spin"></div>
+                <span>Đang tải bảng điểm môn {currentSubjectDef?.nameVi}...</span>
+              </div>
+            ) : !consolidatedData?.students || consolidatedData.students.length === 0 ? (
+              <div className="p-12 text-center text-slate-500 font-semibold">
+                Lớp này chưa có danh sách học sinh.
+              </div>
+            ) : (
+              <>
+                <div className="overflow-x-auto max-h-[620px] overflow-y-auto">
+                  <table className="w-full text-xs text-left border-collapse">
+                    <thead className="bg-slate-100 text-slate-700 font-extrabold sticky top-0 z-10 shadow-xs">
+                      <tr>
+                        <th className="p-3 border border-slate-300 text-center w-12">STT</th>
+                        <th className="p-3 border border-slate-300 min-w-[160px]">Họ và tên</th>
+                        <th className="p-3 border border-slate-300 text-teal-800 min-w-[120px]">English Name</th>
+                        <th className="p-3 border border-slate-300 text-center w-24">Mã HS</th>
+
+                        {/* Dynamic Score Columns */}
+                        {currentLevel === "HIGH" ? (
+                          currentSubjectDef?.code === "IELTS" ? (
+                            <>
+                              <th className="p-3 border border-slate-300 text-center w-36">Nội dung</th>
+                              <th className="p-3 border border-slate-300 text-center w-28 bg-indigo-50 text-indigo-900">IELTS Band (0-9)</th>
+                            </>
+                          ) : currentSubjectDef?.isQualitative ? (
+                            <th className="p-3 border border-slate-300 text-center w-48">Nghiên cứu học thuật</th>
+                          ) : (
+                            <>
+                              <th className="p-3 border border-slate-300 text-center min-w-[180px]">Nội dung kiểm tra (Content)</th>
+                              <th className="p-3 border border-slate-300 text-center w-24 bg-teal-50 text-teal-900">Điểm số (Mark)</th>
+                            </>
+                          )
+                        ) : (
+                          currentSubjectDef?.scoreColumns.map((col: any) => (
+                            <th
+                              key={col.key}
+                              className={`p-3 border border-slate-300 text-center ${
+                                col.key === "gpaScore" ? "bg-teal-50 text-teal-900 w-28 font-black" : "w-24"
+                              }`}
+                            >
+                              <div>{col.labelVi}</div>
+                              <div className="text-[10px] font-normal text-slate-500">{col.labelEn}</div>
+                            </th>
+                          ))
+                        )}
+
+                        <th className="p-3 border border-slate-300 min-w-[220px]">Nhận xét tiếng Anh (Comment EN)</th>
+                        <th className="p-3 border border-slate-300 min-w-[220px]">Nhận xét tiếng Việt (Nhận xét VI)</th>
+                        <th className="p-3 border border-slate-300 text-center w-24">Trạng thái</th>
+                      </tr>
+                    </thead>
+
+                    <tbody className="divide-y divide-slate-200">
+                      {consolidatedData.students.map((st: any, idx: number) => {
+                        const g = subjectGrades[st.id] || { studentId: st.id, progressScores: [] };
+
+                        return (
+                          <tr key={st.id} className="hover:bg-teal-50/30 transition-colors">
+                            <td className="p-2.5 border border-slate-200 text-center font-bold text-slate-500">
+                              {idx + 1}
+                            </td>
+                            <td className="p-2.5 border border-slate-200 font-bold text-slate-800 whitespace-nowrap">
+                              {st.studentName}
+                            </td>
+                            <td className="p-2.5 border border-slate-200 font-semibold text-teal-700 whitespace-nowrap">
+                              {st.englishName || "-"}
+                            </td>
+                            <td className="p-2.5 border border-slate-200 text-center font-mono text-slate-600">
+                              {st.studentCode}
+                            </td>
+
+                            {/* Score Inputs */}
+                            {currentLevel === "HIGH" ? (
+                              currentSubjectDef?.code === "IELTS" ? (
+                                <>
+                                  <td className="p-2 border border-slate-200 text-center text-slate-500 italic">
+                                    Điểm thi HK2
+                                  </td>
+                                  <td className="p-2 border border-slate-200 text-center">
+                                    <input
+                                      type="number"
+                                      step="0.5"
+                                      min="0"
+                                      max="9"
+                                      value={g.ieltsScore ?? ""}
+                                      onChange={e => updateStudentScore(st.id, "ieltsScore", e.target.value)}
+                                      placeholder="0 - 9"
+                                      className="w-20 text-center font-black text-indigo-700 px-2 py-1.5 border border-slate-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:outline-none"
+                                    />
+                                  </td>
+                                </>
+                              ) : currentSubjectDef?.isQualitative ? (
+                                <td className="p-2 border border-slate-200 text-center text-slate-500 italic">
+                                  Đánh giá định tính
+                                </td>
+                              ) : (
+                                <>
+                                  <td className="p-2 border border-slate-200">
+                                    <input
+                                      type="text"
+                                      value={g.assessmentContentVi || g.assessmentContentEn || ""}
+                                      onChange={e => updateStudentScore(st.id, "assessmentContentVi", e.target.value)}
+                                      placeholder="Nhập nội dung bài đánh giá..."
+                                      className="w-full text-xs px-2.5 py-1.5 border border-slate-300 rounded-lg focus:ring-1 focus:ring-teal-500 focus:outline-none"
+                                    />
+                                  </td>
+                                  <td className="p-2 border border-slate-200 text-center">
+                                    <input
+                                      type="number"
+                                      min="0"
+                                      max="100"
+                                      value={g.midTermScore ?? ""}
+                                      onChange={e => updateStudentScore(st.id, "midTermScore", e.target.value)}
+                                      placeholder="Điểm"
+                                      className="w-18 text-center font-black text-teal-800 px-2 py-1.5 border border-slate-300 rounded-lg focus:ring-2 focus:ring-teal-500 focus:outline-none"
+                                    />
+                                  </td>
+                                </>
+                              )
+                            ) : (
+                              currentSubjectDef?.scoreColumns.map((col: any) => {
+                                if (col.key.startsWith("progressScores_")) {
+                                  const subIdx = parseInt(col.key.split("_")[1], 10);
+                                  const val = g.progressScores?.[subIdx] ?? "";
+                                  return (
+                                    <td key={col.key} className="p-2 border border-slate-200 text-center">
+                                      <input
+                                        type="number"
+                                        min="0"
+                                        max="100"
+                                        value={val}
+                                        onChange={e => updateStudentScore(st.id, "progressScores", e.target.value, subIdx)}
+                                        className="w-16 text-center font-bold px-2 py-1 border border-slate-300 rounded-lg focus:ring-2 focus:ring-teal-500 focus:outline-none"
+                                      />
+                                    </td>
+                                  );
+                                }
+                                if (col.key === "midTermScore") {
+                                  return (
+                                    <td key={col.key} className="p-2 border border-slate-200 text-center">
+                                      <input
+                                        type="number"
+                                        min="0"
+                                        max="100"
+                                        value={g.midTermScore ?? ""}
+                                        onChange={e => updateStudentScore(st.id, "midTermScore", e.target.value)}
+                                        className="w-16 text-center font-bold px-2 py-1 border border-slate-300 rounded-lg focus:ring-2 focus:ring-teal-500 focus:outline-none"
+                                      />
+                                    </td>
+                                  );
+                                }
+                                if (col.key === "endTermScore") {
+                                  return (
+                                    <td key={col.key} className="p-2 border border-slate-200 text-center">
+                                      <input
+                                        type="number"
+                                        min="0"
+                                        max="100"
+                                        value={g.endTermScore ?? ""}
+                                        onChange={e => updateStudentScore(st.id, "endTermScore", e.target.value)}
+                                        className="w-16 text-center font-bold px-2 py-1 border border-slate-300 rounded-lg focus:ring-2 focus:ring-teal-500 focus:outline-none"
+                                      />
+                                    </td>
+                                  );
+                                }
+                                if (col.key === "gpaScore") {
+                                  return (
+                                    <td key={col.key} className="p-2 border border-slate-200 text-center bg-teal-50/40">
+                                      <span className="font-black text-teal-800 text-xs px-2.5 py-1 rounded bg-teal-100 border border-teal-200 inline-block">
+                                        {g.gpaScore !== "" && g.gpaScore !== null ? g.gpaScore : "-"}
+                                      </span>
+                                    </td>
+                                  );
+                                }
+                                return <td key={col.key} className="p-2 border border-slate-200 text-center">-</td>;
+                              })
+                            )}
+
+                            {/* Comment EN */}
+                            <td className="p-2 border border-slate-200">
+                              <textarea
+                                rows={2}
+                                value={g.commentEn || ""}
+                                onChange={e => updateStudentScore(st.id, "commentEn", e.target.value)}
+                                placeholder="Nhận xét tiếng Anh (English comment)..."
+                                className="w-full text-xs p-2 border border-slate-300 rounded-lg focus:ring-1 focus:ring-teal-500 focus:outline-none resize-y"
+                              />
+                            </td>
+
+                            {/* Comment VI */}
+                            <td className="p-2 border border-slate-200">
+                              <textarea
+                                rows={2}
+                                value={g.commentVi || ""}
+                                onChange={e => updateStudentScore(st.id, "commentVi", e.target.value)}
+                                placeholder="Nhận xét tiếng Việt đối ứng..."
+                                className="w-full text-xs p-2 border border-slate-300 rounded-lg focus:ring-1 focus:ring-teal-500 focus:outline-none resize-y"
+                              />
+                            </td>
+
+                            {/* Student Status */}
+                            <td className="p-2 border border-slate-200 text-center">
+                              <span
+                                className={`text-[10px] font-bold px-2 py-0.5 rounded-full inline-block ${
+                                  g.status === "APPROVED"
+                                    ? "bg-emerald-100 text-emerald-800 border border-emerald-300"
+                                    : g.status === "SUBMITTED"
+                                    ? "bg-sky-100 text-sky-800 border border-sky-300"
+                                    : g.status === "REVISION_REQUESTED"
+                                    ? "bg-rose-100 text-rose-800 border border-rose-300"
+                                    : "bg-slate-100 text-slate-700 border border-slate-300"
+                                }`}
+                              >
+                                {g.status === "APPROVED"
+                                  ? "Đã duyệt"
+                                  : g.status === "SUBMITTED"
+                                  ? "Chờ GVTA"
+                                  : g.status === "REVISION_REQUESTED"
+                                  ? "Yêu cầu sửa"
+                                  : "Bản nháp"}
+                              </span>
+                            </td>
+                          </tr>
+                        );
+                      })}
+                    </tbody>
+                  </table>
+                </div>
+
+                {/* Footer Statistics Bar */}
+                <div className="bg-slate-50 border-t border-slate-200 p-3.5 flex flex-wrap items-center justify-between gap-3 text-xs">
+                  <div className="flex items-center gap-4 text-slate-700 font-semibold">
+                    <span>
+                      Sĩ số: <strong className="text-slate-900">{subjectStats.total}</strong> học sinh
+                    </span>
+                    <span>
+                      Đã có điểm:{" "}
+                      <strong className="text-teal-700">
+                        {subjectStats.hasScore} / {subjectStats.total}
+                      </strong>
+                    </span>
+                  </div>
+
+                  <div className="flex items-center gap-4 font-bold">
+                    <span className="px-3 py-1 bg-white border border-slate-200 rounded-lg text-slate-800">
+                      Điểm TB môn cả lớp: <strong className="text-teal-700">{subjectStats.avg || "-"}</strong>
+                    </span>
+                    <span className="px-3 py-1 bg-white border border-slate-200 rounded-lg text-emerald-700">
+                      Cao nhất: <strong>{subjectStats.max || "-"}</strong>
+                    </span>
+                    <span className="px-3 py-1 bg-white border border-slate-200 rounded-lg text-rose-700">
+                      Thấp nhất: <strong>{subjectStats.min || "-"}</strong>
+                    </span>
+                  </div>
+                </div>
+              </>
+            )}
+          </div>
+        </div>
+      )}
+
+      {/* ========================================================================= */}
+      {/* TAB 2: SỔ ĐIỂM TỔNG HỢP (CONSOLIDATED GRID)                                */}
       {/* ========================================================================= */}
       {activeTab === "consolidated" && (
         <div className="space-y-4">
@@ -507,7 +1362,20 @@ export function DiemCtqtAdminClient({
                           colSpan={sub.scoreColumns.length + 2}
                           className={`p-2 border border-slate-300 text-center font-black ${sub.color.bg} ${sub.color.text}`}
                         >
-                          {sub.nameEn} ({sub.nameVi})
+                          <div className="flex items-center justify-center gap-1.5">
+                            <span>{sub.nameEn} ({sub.nameVi})</span>
+                            <button
+                              type="button"
+                              onClick={() => {
+                                setSelectedSubjectCode(sub.code);
+                                setActiveTab("subject_gradebook");
+                              }}
+                              className="text-[10px] font-bold px-1.5 py-0.5 rounded bg-white/90 hover:bg-white text-slate-800 border border-slate-300/80 shadow-2xs transition-all hover:scale-105 cursor-pointer"
+                              title={`Chuyển đến Sổ điểm môn ${sub.nameVi} để nhập điểm & phân quyền GVBM`}
+                            >
+                              Sổ môn ↗
+                            </button>
+                          </div>
                         </th>
                       ))}
 
@@ -808,9 +1676,26 @@ export function DiemCtqtAdminClient({
                 </div>
 
                 {selectedClass && (
-                  <div className="text-[11px] text-slate-600 space-y-1">
+                  <div className="text-[11px] text-slate-600 space-y-2">
                     <div>• Cấp học nhận diện: <strong className="text-teal-700">{currentConfig.levelNameVi}</strong></div>
                     <div>• Danh mục sheet xuất ra: {currentConfig.subjects.map(s => s.sheetName).join(", ")}, Core Competencies, TỔNG HỢP</div>
+
+                    <div className="pt-2 border-t border-slate-200">
+                      <div className="text-[11px] font-bold text-slate-700 mb-1.5">Hoặc tải file Excel riêng từng môn cho GVBM:</div>
+                      <div className="flex flex-wrap gap-1.5">
+                        {currentConfig.subjects.map(s => (
+                          <button
+                            key={s.code}
+                            type="button"
+                            onClick={() => handleDownloadSubjectTemplate(s.code)}
+                            className="text-[11px] font-semibold px-2.5 py-1 bg-white border border-slate-300 hover:bg-teal-50 hover:border-teal-300 text-slate-700 rounded-lg flex items-center gap-1 transition-all cursor-pointer"
+                          >
+                            <Download className="w-3 h-3 text-teal-600" />
+                            {s.nameVi} ({s.code})
+                          </button>
+                        ))}
+                      </div>
+                    </div>
                   </div>
                 )}
               </div>
@@ -883,7 +1768,7 @@ export function DiemCtqtAdminClient({
       )}
 
       {/* ========================================================================= */}
-      {/* TAB 4: XUẤT REPORT CARD                                                  */}
+      {/* TAB 5: XUẤT REPORT CARD                                                  */}
       {/* ========================================================================= */}
       {activeTab === "report_card" && (
         <div className="space-y-4">

@@ -173,6 +173,7 @@ export async function POST(req: Request) {
           update: {
             primaryTeacherId,
             delegatedTeacherId: delegatedTeacherId || null,
+            ...(item.status ? { status: item.status } : {}),
           },
           create: {
             academicYearId,
@@ -181,6 +182,7 @@ export async function POST(req: Request) {
             subjectCode,
             primaryTeacherId,
             delegatedTeacherId: delegatedTeacherId || null,
+            status: item.status || "DRAFT",
           },
         });
       }

@@ -67,6 +67,8 @@ export async function GET(req: Request) {
       });
     }
 
+    const subjectCode = searchParams.get("subjectCode") || undefined;
+
     const buffer = generateCtqtTemplate(
       targetClass.className,
       targetClass.grade,
@@ -83,11 +85,14 @@ export async function GET(req: Request) {
       {
         grades: existingGrades,
         competencies: existingCompetencies,
-      }
+      },
+      subjectCode
     );
 
     const safeClassName = targetClass.className.replace(/[^a-zA-Z0-9._-]/g, "_");
-    const fileName = `${safeClassName}_CTQT_HK${semester}.xlsx`;
+    const fileName = subjectCode
+      ? `${safeClassName}_${subjectCode}_HK${semester}.xlsx`
+      : `${safeClassName}_CTQT_HK${semester}.xlsx`;
 
     return new Response(buffer as unknown as BodyInit, {
       headers: {
