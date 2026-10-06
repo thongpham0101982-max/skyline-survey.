@@ -436,10 +436,13 @@ export async function POST(req: Request) {
       ? `ReportCard_${students[0].studentCode}_${students[0].studentName.replace(/\s+/g, "_")}.pdf`
       : `ReportCard_${targetClass.className.replace(/\s+/g, "_")}_HK${semester}.pdf`;
 
+    const asciiFileName = fileName.normalize("NFD").replace(/[\u0300-\u036f]/g, "").replace(/đ/g, "d").replace(/Đ/g, "D");
+    const encodedFileName = encodeURIComponent(fileName);
+
     return new Response(pdfBuffer as unknown as BodyInit, {
       headers: {
         "Content-Type": "application/pdf",
-        "Content-Disposition": `attachment; filename="${fileName}"`,
+        "Content-Disposition": `attachment; filename="${asciiFileName}"; filename*=UTF-8''${encodedFileName}`,
       },
     });
   } catch (error: any) {

@@ -18,6 +18,9 @@ export async function GET(request: Request) {
     const levelFilter = searchParams.get("level") || searchParams.get("levelFilter") || "ALL"
     const gradeFilter = searchParams.get("grade") || searchParams.get("gradeFilter") || "ALL"
     const systemFilter = searchParams.get("system") || searchParams.get("systemFilter") || "ALL"
+    const subjectId = searchParams.get("subjectId") || searchParams.get("subject") || "ALL"
+    const currentPeriod = searchParams.get("currentPeriod") || searchParams.get("period") || "GK1"
+    const baselinePeriod = searchParams.get("baselinePeriod") || "KSĐN"
 
     let academicYearId = searchParams.get("academicYearId") || ""
 
@@ -906,7 +909,12 @@ export async function GET(request: Request) {
       const entranceInfo = findEntranceInfo(st.studentCode, st.studentName)
       const learningCommitment = learningCommitmentMap.get(st.id) || null
 
-      const hasEntranceCommitment = Boolean(
+      // KSĐV chỉ áp dụng từ Khối 2 đến Khối 12 (Tuyệt đối không tính Khối 1)
+      const cGradeStr = String(cls.grade || cls.className || "").trim()
+      const gradeNum = parseInt(cGradeStr.replace(/\D/g, ""), 10) || null
+      const isGrade1 = gradeNum === 1 || cls.grade === "Khối 1" || /^1[\/\-_A-Za-z]/.test(cls.className)
+
+      const hasEntranceCommitment = !isGrade1 && Boolean(
         entranceInfo && (
           (entranceInfo.admissionCriteria && entranceInfo.admissionCriteria.toLowerCase().includes("cam kết")) ||
           (entranceInfo.admissionResult && entranceInfo.admissionResult.toLowerCase().includes("cam kết")) ||
@@ -1020,6 +1028,26 @@ export async function GET(request: Request) {
         return
       }
 
+      // KSĐV CHỈ ÁP DỤNG TỪ KHỐI 2 ĐẾN KHỐI 12 (TUYỆT ĐỐI KHÔNG TÍNH KHỐI 1)
+      const cGradeStr = String(cls.grade || cls.className || "").trim()
+      const cNameClean = (cls.className || "").trim()
+      const numMatch = cNameClean.match(/^(\d+)/)
+      const gradeNum = numMatch ? parseInt(numMatch[1], 10) : (parseInt(cGradeStr.replace(/\D/g, ""), 10) || null)
+      const candGradeNum = cand.grade ? parseInt(String(cand.grade).replace(/\D/g, ""), 10) : null
+      const stGradeNum = matchingSt?.grade ? parseInt(String(matchingSt.grade).replace(/\D/g, ""), 10) : null
+
+      const isGrade1 = gradeNum === 1 || 
+        cGradeStr === "Khối 1" || 
+        cls.grade === "Khối 1" || 
+        candGradeNum === 1 || 
+        stGradeNum === 1 || 
+        cand.isGrade1 === true ||
+        /^1[\/\-_\.A-Za-z]/.test(cNameClean)
+
+      if (isGrade1) {
+        return
+      }
+
       // Check campus filter
       if (campusId && campusId !== "ALL") {
         const isMatch = cls.campusId === campusId ||
@@ -1114,33 +1142,12 @@ export async function GET(request: Request) {
       const engEntry = (matchingSt && engSub) ? studentSubjectPeriodMap.get(matchingSt.id)?.get(engSub.id)?.get(currentPeriod) : null
       const engCurrentScore = engEntry?.compositeScore !== null && engEntry?.compositeScore !== undefined ? Number(engEntry.compositeScore) : null
       
-      const isGrade1Student = Boolean(
-        cand.isGrade1 || 
-        (cls && String(cls.grade || cls.className || "").match(/\d+/)?.[0] === "1") ||
-        (matchingSt && String(matchingSt.grade || "").match(/\d+/)?.[0] === "1")
-      )
-
-      let engEntranceTotal100: any = null
-      let engEntranceScale10: any = null
-
-      if (isGrade1Student) {
-        // Khối 1: Điểm Vấn đáp là thang 30, không có Viết
-        const oralNum = (cand.oralEnglishScore !== null && cand.oralEnglishScore !== undefined) ? parseFloat(cand.oralEnglishScore) : NaN
-        if (!isNaN(oralNum)) {
-          engEntranceScale10 = Math.round((oralNum / 30) * 10 * 10) / 10
-          engEntranceTotal100 = Math.round((oralNum / 30) * 100 * 10) / 10
-        } else if (cand.totalEnglishScale10 !== null && cand.totalEnglishScale10 !== undefined) {
-          engEntranceScale10 = Number(cand.totalEnglishScale10)
-          engEntranceTotal100 = Math.round(engEntranceScale10 * 10)
-        }
-      } else {
-        engEntranceTotal100 = cand.totalEnglishScore !== null && cand.totalEnglishScore !== undefined 
-          ? Number(cand.totalEnglishScore) 
-          : (cand.totalEnglishScale10 !== null && cand.totalEnglishScale10 !== undefined ? Math.round(Number(cand.totalEnglishScale10) * 10) : null)
-        engEntranceScale10 = cand.totalEnglishScale10 !== null && cand.totalEnglishScale10 !== undefined 
-          ? Number(cand.totalEnglishScale10) 
-          : (engEntranceTotal100 !== null ? (engEntranceTotal100 > 10 ? Math.round((engEntranceTotal100 / 10) * 10) / 10 : engEntranceTotal100) : null)
-      }
+      const engEntranceTotal100 = cand.totalEnglishScore !== null && cand.totalEnglishScore !== undefined 
+        ? Number(cand.totalEnglishScore) 
+        : (cand.totalEnglishScale10 !== null && cand.totalEnglishScale10 !== undefined ? Math.round(Number(cand.totalEnglishScale10) * 10) : null)
+      const engEntranceScale10 = cand.totalEnglishScale10 !== null && cand.totalEnglishScale10 !== undefined 
+        ? Number(cand.totalEnglishScale10) 
+        : (engEntranceTotal100 !== null ? (engEntranceTotal100 > 10 ? Math.round((engEntranceTotal100 / 10) * 10) / 10 : engEntranceTotal100) : null)
       const engDelta = (engCurrentScore !== null && engEntranceScale10 !== null) ? Math.round((engCurrentScore - engEntranceScale10) * 10) / 10 : null
       const engTa = engSub ? taMap.get(`${cls.id}_${engSub.id}`) : null
       const engTeacher = engTa?.teacher?.teacherName || homeroomTeacherName
@@ -1182,7 +1189,7 @@ export async function GET(request: Request) {
         className: cls.className,
         grade: cls.grade,
         level: cls.level,
-        isGrade1: isGrade1Student,
+        isGrade1: false,
         campusId: cls.campusId,
         campusName: cls.campus?.campusName || cand.admissionCampus || cand.registeredCampus || "",
         campusCode: cls.campus?.campusCode || "",
