@@ -81,6 +81,8 @@ export function LoginClient() {
             const errCode = String(result?.error || result?.url || '')
             if (errCode.includes('TAI_KHOAN_BI_KHOA')) {
               setError('Tài khoản của bạn đã bị khóa hoặc ngừng hoạt động.')
+            } else if (errCode.includes('Configuration')) {
+              setError('Lỗi kết nối cơ sở dữ liệu hệ thống. Đang kết nối lại...')
             } else {
               setError('Sai tên đăng nhập hoặc mật khẩu.')
             }

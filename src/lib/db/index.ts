@@ -3,23 +3,44 @@ import { createClient } from '@libsql/client'
 import { PrismaLibSQL } from '@prisma/adapter-libsql'
 import path from 'path'
 
-// 1. Cloud Configuration
-let rawUrl = (process.env.TURSO_DATABASE_URL || process.env.TURSO_URL || process.env.DATABASE_URL || "").trim()
-if (rawUrl.startsWith("file:")) {
-  rawUrl = "https://skyline-survey-thongpham0101982-max.aws-ap-northeast-1.turso.io"
+const DEFAULT_TURSO_URL = "https://skyline-survey-thongpham0101982-max.aws-ap-northeast-1.turso.io"
+const DEFAULT_TURSO_TOKEN = "eyJhbGciOiJFZERTQSIsInR5cCI6IkpXVCJ9.eyJhIjoicnciLCJleHAiOjE4MDc5NjcwNjEsImlhdCI6MTc3NjQzMTA2MSwiaWQiOiIwMTlkOWEzYS1mMjAxLTczODgtYTY5ZC1jN2MwMTA1NGFmMzQiLCJyaWQiOiIyNDkwM2JhMC02N2Y3LTQ3YzgtYjdiZC1mMWJiZjc3MTA3N2QifQ.fb-srs0AEaF5lVeCM0Xjk06ItbIfuCqEaOWbKxrUv0kzJNcLbZEvwp_Kw4rtScLG8VTZqNUm0buXKjtAE9_ZAw"
+
+function cleanEnv(val?: string | null): string {
+  if (!val) return ""
+  let s = String(val).trim()
+  while ((s.startsWith('"') && s.endsWith('"')) || (s.startsWith("'") && s.endsWith("'"))) {
+    s = s.slice(1, -1).trim()
+  }
+  return s
 }
-const TURSO_URL = rawUrl ? rawUrl.replace(/^libsql:\/\//, 'https://') : "https://skyline-survey-thongpham0101982-max.aws-ap-northeast-1.turso.io"
-const TURSO_TOKEN = (process.env.TURSO_AUTH_TOKEN || "").trim()
+
+// 1. Cloud Configuration
+let rawUrl = cleanEnv(process.env.TURSO_DATABASE_URL || process.env.TURSO_URL || process.env.DATABASE_URL)
+if (!rawUrl || rawUrl.startsWith("file:")) {
+  rawUrl = DEFAULT_TURSO_URL
+}
+const TURSO_URL = rawUrl.replace(/^libsql:\/\//i, 'https://')
+
+let rawToken = cleanEnv(process.env.TURSO_AUTH_TOKEN)
+if (!rawToken && TURSO_URL.includes("authToken=")) {
+  try {
+    const parsed = new URL(TURSO_URL)
+    rawToken = parsed.searchParams.get("authToken") || ""
+  } catch {}
+}
+const TURSO_TOKEN = rawToken || DEFAULT_TURSO_TOKEN
 
 // 2. Local Configuration
 const defaultLocalDbPath = path.resolve(process.cwd(), 'local.db').replace(/\\/g, '/')
-const LOCAL_URL = (process.env.LOCAL_DATABASE_URL || `file:${defaultLocalDbPath}`).trim()
+const LOCAL_URL = cleanEnv(process.env.LOCAL_DATABASE_URL) || `file:${defaultLocalDbPath}`
 
 // Configured engine: 'AUTO' (default), 'LOCAL', or 'CLOUD'
-const configuredEngine = (process.env.DEFAULT_DB_ENGINE || 'AUTO').toUpperCase().trim()
+const isVercel = Boolean(process.env.VERCEL || process.env.NEXT_PUBLIC_VERCEL_ENV)
+const configuredEngine = (cleanEnv(process.env.DEFAULT_DB_ENGINE) || 'AUTO').toUpperCase().trim()
 
-// Global engine state
-let currentEngine: 'CLOUD' | 'LOCAL' = configuredEngine === 'LOCAL' ? 'LOCAL' : 'CLOUD'
+// Global engine state: Force CLOUD on Vercel as local SQLite is unavailable
+let currentEngine: 'CLOUD' | 'LOCAL' = (isVercel || configuredEngine !== 'LOCAL') ? 'CLOUD' : 'LOCAL'
 
 // Helper: detect if an error indicates Turso plan block, quota exceeded, or network unavailable
 export function isBlockedOrUnavailable(err: any): boolean {
@@ -101,7 +122,7 @@ function createSmartPrisma(): PrismaClient {
           try {
             return await (getActivePrisma() as any)[prop](...args)
           } catch (err: any) {
-            if (currentEngine === 'CLOUD' && isBlockedOrUnavailable(err)) {
+            if (!isVercel && currentEngine === 'CLOUD' && isBlockedOrUnavailable(err)) {
               console.warn(
                 `[SmartPrisma] Turso Cloud error on ${String(prop)}. Auto-failing over to Local SQLite (local.db)...`,
                 err.message
@@ -127,7 +148,7 @@ function createSmartPrisma(): PrismaClient {
                 try {
                   return await (getActivePrisma() as any)[prop][modelProp](...args)
                 } catch (err: any) {
-                  if (currentEngine === 'CLOUD' && isBlockedOrUnavailable(err)) {
+                  if (!isVercel && currentEngine === 'CLOUD' && isBlockedOrUnavailable(err)) {
                     console.warn(
                       `[SmartPrisma] Turso Cloud error on ${String(prop)}.${String(modelProp)}. Auto-failing over to Local SQLite (local.db)...`,
                       err.message

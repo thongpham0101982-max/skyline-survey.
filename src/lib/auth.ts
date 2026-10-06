@@ -18,8 +18,19 @@ async function getClientIp() {
   }
 }
 
+function cleanAuthEnv(val?: string | null): string {
+  if (!val) return ""
+  let s = String(val).trim()
+  while ((s.startsWith('"') && s.endsWith('"')) || (s.startsWith("'") && s.endsWith("'"))) {
+    s = s.slice(1, -1).trim()
+  }
+  return s
+}
+
+const safeAuthSecret = cleanAuthEnv(process.env.AUTH_SECRET) || cleanAuthEnv(process.env.NEXTAUTH_SECRET) || "skyline-survey-super-secret-key-change-in-production"
+
 export const { handlers, signIn, signOut, auth } = NextAuth({
-  secret: process.env.AUTH_SECRET || process.env.NEXTAUTH_SECRET || "skyline-survey-super-secret-key-change-in-production",
+  secret: safeAuthSecret,
   trustHost: true,
   providers: [
     CredentialsProvider({
