@@ -6487,9 +6487,6 @@ export async function createAssignedObservation(data: {
             await sendEmail({ to: obsEmail, subject: obsEmailSubject, html: obsEmailHtml }).catch(e => console.error("[createAssignedObservation] Email to observer error:", e));
           }
         }
-            await sendEmail({ to: obsEmail, subject: obsEmailSubject, html: obsEmailHtml }).catch(e => console.error("[createAssignedObservation] Email to observer error:", e));
-          }
-        }
       } catch (bgErr) {
         console.error("[createAssignedObservation] Background notification/email dispatch error:", bgErr);
       }
