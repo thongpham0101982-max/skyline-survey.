@@ -295,6 +295,8 @@ export function DiemCtqtAdminClient({
 
   const selectedClass = initialClasses.find(c => c.id === selectedClassId);
   const currentLevel = selectedClass ? detectCtqtLevel(selectedClass.className, selectedClass.grade, selectedClass.level) : "PRIMARY";
+  const currentConfig = CTQT_LEVEL_CONFIGS[currentLevel];
+
   const currentSubjectDef = useMemo(() => {
     return currentConfig?.subjects?.find(s => s.code === selectedSubjectCode) || currentConfig?.subjects?.[0];
   }, [currentConfig, selectedSubjectCode]);
