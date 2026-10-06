@@ -657,11 +657,16 @@ export function ObservationClient(props: ObservationClientProps) {
   const detectedCampusTheme = useCampusTheme(teacherCampusIdentifier);
   const campusTheme = campusOverride ? CAMPUS_THEMES[campusOverride] : detectedCampusTheme;
 
-  // Header Portal: Render các controls Cơ sở và Chế độ lên trên cùng dòng SQMS
+  // Header Portal: Render các controls Giáo viên, Cơ sở và Chế độ lên trên cùng dòng SQMS
   const [headerPortalEl, setHeaderPortalEl] = useState<HTMLElement | null>(null);
   useEffect(() => {
-    const el = document.getElementById("teacher-top-header-slot");
-    if (el) setHeaderPortalEl(el);
+    const findSlot = () => {
+      const el = document.getElementById("teacher-top-header-slot");
+      if (el) setHeaderPortalEl(el);
+    };
+    findSlot();
+    const timer = setTimeout(findSlot, 100);
+    return () => clearTimeout(timer);
   }, []);
 
   const [viewMode, setViewMode] = useState<"ADMIN" | "TEACHER">(() => {
@@ -3943,26 +3948,41 @@ export function ObservationClient(props: ObservationClientProps) {
               </h1>
             </div>
 
-            <div className="hidden sm:block w-px h-10 bg-white/20" />
-
-            {/* Teacher Chip */}
-            <div className="flex items-center gap-2.5">
-              <div className="flex items-center gap-2.5 bg-white/12 backdrop-blur-md px-3.5 py-2 rounded-xl border border-white/20 shadow-inner">
-                <div className="text-left">
-                  <span className="block text-xs font-extrabold text-white leading-tight">{currentTeacher?.teacherName}</span>
-                  <span className="block text-[11px] text-white/80 font-medium">
-                    {currentTeacher?.departmentRel?.name || "Giáo viên"} {currentTeacher?.campus?.campusName ? `• ${currentTeacher.campus.campusName}` : ""}
-                  </span>
+            {/* Fallback Teacher Chip khi chưa mount lên thanh tiêu đề top bar */}
+            {!headerPortalEl && currentTeacher && (
+              <>
+                <div className="hidden sm:block w-px h-10 bg-white/20" />
+                <div className="flex items-center gap-2.5">
+                  <div className="flex items-center gap-2.5 bg-white/12 backdrop-blur-md px-3.5 py-2 rounded-xl border border-white/20 shadow-inner">
+                    <div className="text-left">
+                      <span className="block text-xs font-extrabold text-white leading-tight">{currentTeacher.teacherName}</span>
+                      <span className="block text-[11px] text-white/80 font-medium">
+                        {currentTeacher.departmentRel?.name || "Giáo viên"} {currentTeacher.campus?.campusName ? `• ${currentTeacher.campus.campusName}` : ""}
+                      </span>
+                    </div>
+                  </div>
                 </div>
-              </div>
-            </div>
+              </>
+            )}
           </div>
 
           {/* Right: Campus Demo Switcher, Mode Switcher & Primary Quick Actions */}
           <div className="flex items-center gap-2 flex-wrap">
-            {/* Top Header Portal: Render cụm Cơ sở và Chế độ Quản lý/Cá nhân lên trên cùng dòng SQMS */}
+            {/* Top Header Portal: Render cụm Giáo viên, Cơ sở và Chế độ Quản lý/Cá nhân lên trên cùng dòng SQMS */}
             {headerPortalEl && createPortal(
               <div className="flex items-center gap-2 flex-wrap animate-in fade-in duration-200">
+                {/* 0. Teacher Chip - Thẻ thông tin Giáo viên • CS */}
+                {currentTeacher && (
+                  <div className="flex items-center gap-1.5 bg-slate-100/90 border border-slate-200/90 px-2.5 py-1 rounded-xl shadow-2xs">
+                    <span className="w-2 h-2 rounded-full bg-[#00A19A] shrink-0" />
+                    <span className="font-extrabold text-slate-800 text-xs whitespace-nowrap">
+                      {currentTeacher.teacherName}
+                    </span>
+                    <span className="text-[11px] text-slate-500 font-semibold whitespace-nowrap">
+                      • {currentTeacher.departmentRel?.name || "Giáo viên"} {currentTeacher.campus?.campusName ? `• ${currentTeacher.campus.campusName}` : ""}
+                    </span>
+                  </div>
+                )}
                 {/* 1. Quick Campus Switcher */}
                 <div className="flex items-center bg-slate-100/90 rounded-xl p-0.5 border border-slate-200/90 text-xs font-bold shadow-2xs">
                   <span className="px-2 text-slate-500 hidden md:inline text-[11px] font-semibold">Cơ sở:</span>

@@ -97,18 +97,21 @@ export default async function AdminLayout({ children }: { children: React.ReactN
                   <span className="text-[#0284C7] font-semibold uppercase tracking-wide">SQMS</span>
                   <span className="hidden md:inline text-xs font-bold text-slate-400">• Quản trị</span>
                 </span>
-                <span className="md:hidden text-[9px] text-[#48BFE3] font-medium leading-none">SQMS</span>
+                <span className="md:hidden text-[9px] text-[#00A19A] font-medium leading-none">SQMS</span>
               </div>
             </div>
             {isTeacherUser && (
               <Link 
                 href="/teacher" 
-                className="hidden sm:flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-teal-50 border border-teal-200 text-[#1E8B87] hover:bg-teal-100/80 font-bold text-xs transition-all shadow-xs"
+                className="hidden sm:flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-teal-50 border border-teal-200 text-[#00A19A] hover:bg-teal-100/80 font-bold text-xs transition-all shadow-xs shrink-0"
               >
-                <GraduationCap className="w-4 h-4 text-[#1E8B87]" />
+                <GraduationCap className="w-4 h-4 text-[#00A19A]" />
                 <span>Giao diện Giáo viên</span>
               </Link>
             )}
+
+            {/* Container cho các thẻ Giáo viên • CS1 và Cơ sở: Hill | Global | Hệ thống */}
+            <div id="teacher-top-header-slot" className="hidden sm:flex items-center gap-2 ml-1 sm:ml-2 flex-wrap" />
           </div>
           <div className="flex items-center gap-2 sm:gap-4">
             <AcademicYearSelector />
