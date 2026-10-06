@@ -640,6 +640,45 @@ export function ObservationRegistrationSection(props: any) {
     return new Set(levelFilteredAssignedDepts.map((d: any) => d.id));
   }, [levelFilteredAssignedDepts]);
 
+  // Danh sách Lớp học map theo Cơ sở (và Khối học), hoàn toàn độc lập không liên quan đến GV
+  const availableClassesForAssigned = React.useMemo(() => {
+    return (classes || []).filter((c: any) => {
+      if (assignedCampusId) {
+        const target = String(assignedCampusId).trim().toLowerCase();
+        const cCampusId = String(c.campusId || "").trim().toLowerCase();
+        let matchCampus = cCampusId === target;
+        if (!matchCampus) {
+          if ((target === "camp_main" || target === "cs1" || target.includes("cơ sở 1")) && (cCampusId === "cs1" || cCampusId === "camp_main")) {
+            matchCampus = true;
+          } else if ((cCampusId === "camp_main" || cCampusId === "cs1") && (target === "cs1" || target === "camp_main")) {
+            matchCampus = true;
+          } else {
+            const selCampus = (campuses || []).find((cp: any) =>
+              String(cp.id || "").toLowerCase() === target ||
+              String(cp.campusCode || "").toLowerCase() === target ||
+              String(cp.campusName || "").toLowerCase() === target
+            );
+            if (selCampus) {
+              const sId = String(selCampus.id || "").toLowerCase();
+              const sCode = String(selCampus.campusCode || "").toLowerCase();
+              if (cCampusId === sId || cCampusId === sCode) matchCampus = true;
+              else if (sCode && c.className && String(c.className).toLowerCase().includes(sCode)) matchCampus = true;
+              else if (sId && c.className && String(c.className).toLowerCase().includes(sId)) matchCampus = true;
+            }
+          }
+        }
+        if (!matchCampus) return false;
+      }
+      const isMN = (() => {
+        const n = (c.name || c.className || "").toLowerCase();
+        const g = (c.grade || "").toLowerCase();
+        return n.includes("mầm") || n.includes("mam") || n.includes("chồi") || n.includes("choi") || n.includes("lá") || n.includes("la") || n.includes("nhà trẻ") || n.includes("nha tre") || n.includes("mgb") || n.includes("mgn") || n.includes("mgl") || g.includes("mầm non") || g.includes("nhà trẻ");
+      })();
+      if (assignedLevel === "Mầm non") return isMN;
+      return !isMN;
+    });
+  }, [classes, assignedCampusId, assignedLevel, campuses]);
+
   // Tự động reset và đồng bộ khi đổi Khối học hoặc Tổ chuyên môn không còn thuộc Khối đã chọn
   React.useEffect(() => {
     if (creationMode === "ASSIGNED") {
@@ -2772,7 +2811,7 @@ export function ObservationRegistrationSection(props: any) {
                 </div>
               </div>
 
-              {/* Nhóm 2: Cơ sở & Tổ chuyên môn */}
+              {/* Nhóm 2: Cơ sở & Lớp học (Lớp học map theo cơ sở, hoàn toàn độc lập với GV) */}
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div className="flex flex-col gap-1.5">
                   <label className="text-[11px] font-black text-slate-700 uppercase tracking-wide">
@@ -2781,8 +2820,8 @@ export function ObservationRegistrationSection(props: any) {
                   <select
                     value={assignedCampusId}
                     onChange={e => {
-                      setAssignedCampusId(e.target.value);
-                      setAssignedTeacherId("");
+                      const nextCampusId = e.target.value;
+                      setAssignedCampusId(nextCampusId);
                       setAssignedClassId("");
                       setAssignedClassName("");
                     }}
@@ -2798,7 +2837,50 @@ export function ObservationRegistrationSection(props: any) {
 
                 <div className="flex flex-col gap-1.5">
                   <label className="text-[11px] font-black text-slate-700 uppercase tracking-wide flex items-center justify-between">
-                    <span>4. Tổ chuyên môn</span>
+                    <span>4. Lớp học *</span>
+                    <span className="text-[10px] text-purple-600 font-bold">
+                      Map theo cơ sở ({availableClassesForAssigned.length} lớp)
+                    </span>
+                  </label>
+                  <div className="flex items-center gap-2">
+                    <select
+                      value={assignedClassId}
+                      onChange={e => {
+                        const val = e.target.value;
+                        setAssignedClassId(val);
+                        const found = (classes || []).find((c: any) => c.id === val);
+                        if (found) setAssignedClassName(found.name || found.className);
+                      }}
+                      className="w-1/2 text-xs font-bold p-3 rounded-xl border border-slate-200 focus:ring-2 focus:ring-purple-500 outline-none bg-white text-slate-800"
+                    >
+                      <option value="">
+                        {!assignedCampusId
+                          ? "-- Chọn cơ sở trước --"
+                          : availableClassesForAssigned.length > 0
+                          ? `-- Chọn lớp (${availableClassesForAssigned.length} lớp) --`
+                          : "-- Không có lớp --"}
+                      </option>
+                      {availableClassesForAssigned.map((c: any) => (
+                        <option key={c.id} value={c.id}>{c.name || c.className}</option>
+                      ))}
+                    </select>
+                    <input
+                      type="text"
+                      placeholder="Hoặc nhập tên lớp..."
+                      value={assignedClassName}
+                      onChange={e => setAssignedClassName(e.target.value)}
+                      required
+                      className="w-1/2 text-xs font-bold p-3 rounded-xl border border-slate-200 focus:ring-2 focus:ring-purple-500 outline-none bg-white text-slate-800"
+                    />
+                  </div>
+                </div>
+              </div>
+
+              {/* Nhóm 3: Tổ chuyên môn & Giáo viên được dự (Chỉ định) */}
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <div className="flex flex-col gap-1.5">
+                  <label className="text-[11px] font-black text-slate-700 uppercase tracking-wide flex items-center justify-between">
+                    <span>5. Tổ chuyên môn</span>
                     <span className="text-[10px] text-purple-600 font-bold">
                       {levelFilteredAssignedDepts.length} {assignedLevel === "Mầm non" ? "TCM/BGH Mầm non" : "TCM Phổ thông"}
                     </span>
@@ -2821,13 +2903,10 @@ export function ObservationRegistrationSection(props: any) {
                     ))}
                   </select>
                 </div>
-              </div>
 
-              {/* Nhóm 3: Giáo viên được dự & Lớp học */}
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div className="flex flex-col gap-1.5">
                   <label className="text-[11px] font-black text-purple-900 uppercase tracking-wide flex items-center justify-between">
-                    <span>5. Giáo viên được dự (Chỉ định) *</span>
+                    <span>6. Giáo viên được dự (Chỉ định) *</span>
                     <span className="text-[10px] text-purple-600 font-semibold lowercase">Không cần GV duyệt</span>
                   </label>
                   <select
@@ -2839,7 +2918,6 @@ export function ObservationRegistrationSection(props: any) {
                     <option value="">-- Chọn giáo viên được dự --</option>
                     {(teachers || [])
                       .filter((t: any) => {
-                        if (assignedCampusId && t.campusId && t.campusId !== assignedCampusId) return false;
                         if (assignedDeptId) {
                           if (t.departmentId === assignedDeptId) return true;
                           const hasDa = t.departmentAssignments?.some((da: any) => da.departmentId === assignedDeptId);
@@ -2859,48 +2937,6 @@ export function ObservationRegistrationSection(props: any) {
                         </option>
                       ))}
                   </select>
-                </div>
-
-                <div className="flex flex-col gap-1.5">
-                  <label className="text-[11px] font-black text-slate-700 uppercase tracking-wide">
-                    6. Lớp học *
-                  </label>
-                  <div className="flex items-center gap-2">
-                    <select
-                      value={assignedClassId}
-                      onChange={e => {
-                        const val = e.target.value;
-                        setAssignedClassId(val);
-                        const found = (classes || []).find((c: any) => c.id === val);
-                        if (found) setAssignedClassName(found.name || found.className);
-                      }}
-                      className="w-1/2 text-xs font-bold p-3 rounded-xl border border-slate-200 focus:ring-2 focus:ring-purple-500 outline-none bg-white text-slate-800"
-                    >
-                      <option value="">-- Chọn lớp --</option>
-                      {(classes || [])
-                        .filter((c: any) => {
-                          if (assignedCampusId && c.campusId && c.campusId !== assignedCampusId) return false;
-                          const isMN = (() => {
-                            const n = (c.name || c.className || "").toLowerCase();
-                            const g = (c.grade || "").toLowerCase();
-                            return n.includes("mầm") || n.includes("mam") || n.includes("chồi") || n.includes("choi") || n.includes("lá") || n.includes("la") || n.includes("nhà trẻ") || n.includes("nha tre") || n.includes("mgb") || n.includes("mgn") || n.includes("mgl") || g.includes("mầm non") || g.includes("nhà trẻ");
-                          })();
-                          if (assignedLevel === "Mầm non") return isMN;
-                          return !isMN;
-                        })
-                        .map((c: any) => (
-                          <option key={c.id} value={c.id}>{c.name || c.className}</option>
-                        ))}
-                    </select>
-                    <input
-                      type="text"
-                      placeholder="Hoặc nhập tên lớp..."
-                      value={assignedClassName}
-                      onChange={e => setAssignedClassName(e.target.value)}
-                      required
-                      className="w-1/2 text-xs font-bold p-3 rounded-xl border border-slate-200 focus:ring-2 focus:ring-purple-500 outline-none bg-white text-slate-800"
-                    />
-                  </div>
                 </div>
               </div>
 
