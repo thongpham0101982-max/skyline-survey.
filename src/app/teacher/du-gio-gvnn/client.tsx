@@ -884,7 +884,12 @@ export function ForeignObservationClient(props: {
       topic: topic || "ESL Classroom Observation",
       targetSkills: selectedSkills,
       indicators: payloadIndicators,
-      teacherVoice,
+      teacherVoice: {
+        reflectionQ1: teacherVoice.workingWell || "",
+        reflectionQ2: teacherVoice.challenges || "",
+        reflectionQ3: teacherVoice.curriculumAdjustments || "",
+        reflectionQ4: teacherVoice.supportNeeded || ""
+      },
       summary,
       overallRating: stats.suggestedRating,
       totalScore: parseFloat(stats.avg),
@@ -894,23 +899,24 @@ export function ForeignObservationClient(props: {
     startTransition(async () => {
       const res = await createForeignObservationWithEvaluation(payload);
       if (res.success) {
-        showToast(res.message || "Submitted successfully!", "success");
+        showToast(res.message || "Đã lưu phiếu dự giờ thành công!", "success");
         router.refresh();
         setTimeout(() => {
           setActiveTab("evaluations");
         }, 1200);
       } else {
-        showToast(res.error || "Failed to submit observation.", "error");
+        showToast(res.error || "Không thể lưu phiếu dự giờ.", "error");
       }
     });
   };
 
   return (
-    <div className="min-h-screen bg-slate-50/50 pb-24 text-slate-800">
+    <div className="min-h-screen bg-gradient-to-b from-slate-100/70 via-slate-50 to-slate-100/50 pb-28 text-slate-800 font-sans antialiased">
+      {/* Toast Notification */}
       {toast && (
         <div
-          className={"fixed top-5 right-5 z-50 flex items-center gap-3 px-5 py-3.5 rounded-xl shadow-2xl text-white font-medium text-sm transition-all duration-300 animate-in fade-in slide-in-from-top-4 " +
-            (toast.type === "success" ? "bg-emerald-600" : "bg-rose-600")
+          className={"fixed top-5 right-5 z-50 flex items-center gap-3 px-5 py-3.5 rounded-2xl shadow-2xl text-white font-bold text-xs sm:text-sm transition-all duration-300 animate-in fade-in slide-in-from-top-4 border border-white/20 backdrop-blur-md " +
+            (toast.type === "success" ? "bg-emerald-600/95" : "bg-rose-600/95")
           }
         >
           {toast.type === "success" ? (
@@ -922,92 +928,112 @@ export function ForeignObservationClient(props: {
         </div>
       )}
 
-      {/* Top Banner */}
-      <div className="bg-gradient-to-r from-slate-900 via-indigo-950 to-slate-900 text-white border-b border-indigo-900/40">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 py-6 sm:py-8">
-          <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
-            <div>
-              <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-indigo-500/20 text-indigo-300 text-xs font-semibold tracking-wide border border-indigo-400/30 uppercase mb-2">
-                <Globe className="w-3.5 h-3.5" />
-                Foreign English Teacher & Department Peer Observation
+      {/* Global Hero Header */}
+      <header className="relative bg-gradient-to-r from-[#002B2A] via-[#003B3A] to-[#0A2540] text-white border-b border-teal-500/20 shadow-xl overflow-hidden">
+        {/* Background ambient lighting effects */}
+        <div className="absolute inset-0 opacity-15 pointer-events-none">
+          <div className="absolute -top-24 -left-24 w-96 h-96 rounded-full bg-teal-400 blur-3xl"></div>
+          <div className="absolute top-1/2 -right-24 w-96 h-96 rounded-full bg-indigo-500 blur-3xl"></div>
+        </div>
+
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-7 sm:py-9 relative z-10">
+          <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-6">
+            <div className="space-y-2">
+              <div className="flex items-center gap-2.5 flex-wrap">
+                <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-white/10 backdrop-blur-md text-cyan-300 text-[11px] font-black tracking-wider uppercase border border-cyan-400/30 shadow-xs">
+                  <Globe className="w-3.5 h-3.5 text-cyan-300" />
+                  CAMBRIDGE & INTERNATIONAL FRAMEWORK • SY2026-2027
+                </span>
+                <span className="inline-flex items-center px-2.5 py-1 rounded-full bg-teal-500/20 text-teal-300 text-[10px] font-extrabold uppercase border border-teal-400/30">
+                  Official Walkthrough
+                </span>
               </div>
-              <h1 className="text-2xl sm:text-3xl font-extrabold tracking-tight text-white flex items-center gap-3">
+
+              <h1 className="text-2xl sm:text-3xl lg:text-4xl font-black tracking-tight text-white flex items-center gap-3">
                 Class Observation & Teaching Support
               </h1>
-              <p className="text-slate-300 text-sm mt-1 max-w-2xl">
-                Evidence-based lesson observation framework for ESL and English Departments (Mầm non, Tiểu học, Trung học, Quốc tế & GVNN).
+              <p className="text-teal-100/80 text-xs sm:text-sm font-medium max-w-3xl leading-relaxed">
+                Khung Quan sát Lớp học & Hỗ trợ Giảng dạy Chuyên môn Tổ Tiếng Anh (Mầm non, Tiểu học, Trung học, Quốc tế & GVNN) theo chuẩn Cambridge và Hệ thống Giáo dục Sky-Line.
               </p>
             </div>
 
-            <div className="flex items-center gap-1.5 bg-slate-800/80 p-1.5 rounded-2xl border border-slate-700/60 self-start md:self-auto shadow-inner">
+            {/* Navigation Tabs Segment */}
+            <nav aria-label="Walkthrough tabs" className="flex items-center gap-1.5 bg-black/30 backdrop-blur-md p-1.5 rounded-2xl border border-white/10 self-start lg:self-auto shadow-inner">
               <button
+                type="button"
                 onClick={() => setActiveTab("walkthrough")}
-                className={"flex items-center gap-2 px-4 py-2 rounded-xl text-xs sm:text-sm font-semibold transition-all " +
+                className={"flex items-center gap-2 px-4 py-2.5 rounded-xl text-xs sm:text-sm font-extrabold transition-all cursor-pointer " +
                   (activeTab === "walkthrough"
-                    ? "bg-indigo-600 text-white shadow-md shadow-indigo-600/30"
-                    : "text-slate-300 hover:text-white hover:bg-slate-700/50")
+                    ? "bg-white text-[#003B3A] shadow-lg shadow-black/20"
+                    : "text-white/80 hover:text-white hover:bg-white/10")
                 }
               >
-                <Sparkles className="w-4 h-4" />
-                ⚡ Walkthrough Form
+                <Sparkles className="w-4 h-4 text-amber-500" />
+                <span>Walkthrough Form</span>
               </button>
               <button
+                type="button"
                 onClick={() => setActiveTab("evaluations")}
-                className={"flex items-center gap-2 px-4 py-2 rounded-xl text-xs sm:text-sm font-semibold transition-all " +
+                className={"flex items-center gap-2 px-4 py-2.5 rounded-xl text-xs sm:text-sm font-extrabold transition-all cursor-pointer " +
                   (activeTab === "evaluations"
-                    ? "bg-indigo-600 text-white shadow-md shadow-indigo-600/30"
-                    : "text-slate-300 hover:text-white hover:bg-slate-700/50")
+                    ? "bg-white text-[#003B3A] shadow-lg shadow-black/20"
+                    : "text-white/80 hover:text-white hover:bg-white/10")
                 }
               >
-                <ClipboardList className="w-4 h-4" />
-                📜 Lược sử đánh giá ({mySlotsCount})
+                <ClipboardList className="w-4 h-4 text-teal-600" />
+                <span>Lược sử phiếu ({mySlotsCount})</span>
               </button>
               <button
+                type="button"
                 onClick={() => setActiveTab("kpi")}
-                className={"flex items-center gap-2 px-4 py-2 rounded-xl text-xs sm:text-sm font-semibold transition-all " +
+                className={"flex items-center gap-2 px-4 py-2.5 rounded-xl text-xs sm:text-sm font-extrabold transition-all cursor-pointer " +
                   (activeTab === "kpi"
-                    ? "bg-indigo-600 text-white shadow-md shadow-indigo-600/30"
-                    : "text-slate-300 hover:text-white hover:bg-slate-700/50")
+                    ? "bg-white text-[#003B3A] shadow-lg shadow-black/20"
+                    : "text-white/80 hover:text-white hover:bg-white/10")
                 }
               >
-                <BarChart3 className="w-4 h-4" />
-                📊 Quota & KPI
+                <BarChart3 className="w-4 h-4 text-indigo-600" />
+                <span>Quota & KPI</span>
               </button>
-            </div>
+            </nav>
           </div>
         </div>
-      </div>
+      </header>
 
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 py-6 sm:py-8 space-y-6">
+      {/* Main Content Area */}
+      <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6 sm:py-8 space-y-6">
         {activeTab === "walkthrough" && (
           <>
-            {/* Section 1: Administrative Information */}
-            <div className="bg-white rounded-2xl border border-slate-200/80 shadow-sm overflow-hidden">
-              <div className="px-6 py-4 bg-slate-900 text-white flex flex-col sm:flex-row sm:items-center justify-between gap-2">
-                <div className="flex items-center gap-2.5">
-                  <div className="w-8 h-8 rounded-lg bg-indigo-500/30 text-indigo-300 flex items-center justify-center font-bold text-sm border border-indigo-400/30">
+            {/* CARD 1: Header Form Information */}
+            <div className="bg-white rounded-3xl border border-slate-200 shadow-sm overflow-hidden transition hover:shadow-md">
+              <div className="px-6 py-4 bg-gradient-to-r from-slate-900 via-slate-800 to-slate-900 text-white flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-slate-700">
+                <div className="flex items-center gap-3">
+                  <div className="w-9 h-9 rounded-xl bg-teal-500/20 text-cyan-300 flex items-center justify-center font-black text-sm border border-cyan-400/30">
                     1
                   </div>
                   <div>
-                    <h2 className="font-bold text-white text-base">CLASS OBSERVATION & TEACHING SUPPORT FORM</h2>
-                    <p className="text-xs text-slate-300">
+                    <h2 className="font-extrabold text-white text-base tracking-wide">
+                      CLASS OBSERVATION & TEACHING SUPPORT FORM
+                    </h2>
+                    <p className="text-[11px] text-slate-300 font-medium">
                       Purpose: To understand teaching effectiveness, student progress, curriculum implementation challenges, and support needed.
                     </p>
                   </div>
                 </div>
-                <span className="px-3 py-1 rounded-full bg-indigo-500/20 text-indigo-200 text-xs font-bold uppercase tracking-wider border border-indigo-400/30 self-start sm:self-auto">
-                  SY2026-2027 • Official Rubric
+                <span className="px-3 py-1 rounded-full bg-cyan-500/15 text-cyan-300 text-[10px] font-black uppercase tracking-wider border border-cyan-400/30 self-start sm:self-auto">
+                  SY2026-2027 • Official Template
                 </span>
               </div>
 
-              <div className="p-6 space-y-5">
-                {/* 2x4 Header Grid Matching PDF Table Structure */}
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 p-4 rounded-xl bg-slate-50 border border-slate-200">
-                  {/* Row 1: Teacher & Observer */}
-                  <div className="space-y-1 md:col-span-2">
-                    <label className="block text-xs font-bold text-slate-700 uppercase tracking-wider flex items-center gap-1.5">
-                      <Users className="w-3.5 h-3.5 text-indigo-600" />
-                      Teacher (Giáo viên được dự) <span className="text-rose-500">*</span>
+              <div className="p-5 sm:p-7 space-y-6">
+                {/* 4-Column Structured Form Matrix */}
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 p-4 sm:p-5 rounded-2xl bg-slate-50/80 border border-slate-200">
+                  {/* Row 1: Observed Teacher Selection */}
+                  <div className="space-y-1.5 md:col-span-2">
+                    <label className="block text-[11px] font-black text-slate-700 uppercase tracking-wider flex items-center gap-1.5">
+                      <Users className="w-3.5 h-3.5 text-[#003B3A]" />
+                      <span>Observed Teacher (Giáo viên được dự)</span>
+                      <span className="text-rose-500">*</span>
                     </label>
                     <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
                       <select
@@ -1016,9 +1042,9 @@ export function ForeignObservationClient(props: {
                           setObservedDeptId(e.target.value);
                           setTeacherId("");
                         }}
-                        className="w-full bg-white border border-slate-300 focus:border-indigo-600 focus:ring-2 focus:ring-indigo-100 rounded-xl px-3 py-2 text-xs font-bold text-slate-700 outline-none transition"
+                        className="w-full bg-white border border-slate-300 focus:border-[#003B3A] focus:ring-2 focus:ring-teal-500/20 rounded-xl px-3 py-2 text-xs font-bold text-slate-700 outline-none transition"
                       >
-                        <option value="ALL">-- Tất cả Tổ CM ({allTeachers.length} GV) --</option>
+                        <option value="ALL">-- Tất cả Tổ Tiếng Anh ({allTeachers.length} GV) --</option>
                         <option value="Tổ Tiếng Anh Tiểu học">Tổ Tiếng Anh Tiểu học</option>
                         <option value="Tổ Tiếng Anh Trung học">Tổ Tiếng Anh Trung học</option>
                         <option value="Tổ Tiếng Anh Quốc tế & GVNN">Tổ Tiếng Anh Quốc tế & GVNN</option>
@@ -1028,7 +1054,7 @@ export function ForeignObservationClient(props: {
                       <select
                         value={teacherId}
                         onChange={handleTeacherChange}
-                        className="w-full bg-white border-2 border-indigo-400 focus:border-indigo-600 focus:ring-2 focus:ring-indigo-100 rounded-xl px-3 py-2 text-xs font-bold text-slate-900 outline-none transition"
+                        className="w-full bg-white border-2 border-teal-500/60 focus:border-[#003B3A] focus:ring-2 focus:ring-teal-500/20 rounded-xl px-3 py-2 text-xs font-black text-slate-900 outline-none transition"
                       >
                         <option value="">-- Chọn Giáo Viên ({filteredObservedTeachers.length}) * --</option>
                         {filteredObservedTeachers.map((t: any) => (
@@ -1041,22 +1067,22 @@ export function ForeignObservationClient(props: {
                   </div>
 
                   {/* Observer */}
-                  <div className="space-y-1 md:col-span-2">
-                    <label className="block text-xs font-bold text-slate-700 uppercase tracking-wider flex items-center gap-1.5">
-                      <User className="w-3.5 h-3.5 text-indigo-600" />
-                      Observer (Người dự giờ)
+                  <div className="space-y-1.5 md:col-span-2">
+                    <label className="block text-[11px] font-black text-slate-700 uppercase tracking-wider flex items-center gap-1.5">
+                      <User className="w-3.5 h-3.5 text-[#003B3A]" />
+                      <span>Observer (Người dự giờ)</span>
                     </label>
-                    <div className="bg-white px-3.5 py-2 rounded-xl border border-slate-300 text-xs flex items-center justify-between">
-                      <span className="font-extrabold text-slate-900">{props.currentTeacher?.teacherName || "Current User"}</span>
-                      <span className="text-[11px] text-indigo-700 font-bold bg-indigo-50 px-2 py-0.5 rounded border border-indigo-100">
+                    <div className="bg-white px-3.5 py-2 rounded-xl border border-slate-300 text-xs flex items-center justify-between h-[38px]">
+                      <span className="font-black text-slate-900">{props.currentTeacher?.teacherName || "Current User"}</span>
+                      <span className="text-[11px] text-[#003B3A] font-bold bg-teal-50 px-2 py-0.5 rounded border border-teal-200">
                         {props.currentTeacher?.teacherCode || "N/A"}
                       </span>
                     </div>
                   </div>
 
                   {/* Row 2: Subject & Class */}
-                  <div className="space-y-1">
-                    <label className="block text-xs font-bold text-slate-700 uppercase tracking-wider">
+                  <div className="space-y-1.5">
+                    <label className="block text-[11px] font-black text-slate-700 uppercase tracking-wider">
                       Subject (Môn học)
                     </label>
                     <input
@@ -1064,19 +1090,19 @@ export function ForeignObservationClient(props: {
                       value={subjectName}
                       onChange={e => setSubjectName(e.target.value)}
                       placeholder="e.g. English (ESL), Phonics, ELA"
-                      className="w-full bg-white border border-slate-300 focus:border-indigo-600 focus:ring-2 focus:ring-indigo-100 rounded-xl px-3 py-2 text-xs font-semibold text-slate-800 outline-none transition"
+                      className="w-full bg-white border border-slate-300 focus:border-[#003B3A] focus:ring-2 focus:ring-teal-500/20 rounded-xl px-3 py-2 text-xs font-bold text-slate-800 outline-none transition"
                     />
                   </div>
 
-                  <div className="space-y-1">
-                    <label className="block text-xs font-bold text-slate-700 uppercase tracking-wider flex items-center gap-1.5">
-                      <BookOpen className="w-3.5 h-3.5 text-indigo-600" />
-                      Class (Lớp / Khối)
+                  <div className="space-y-1.5">
+                    <label className="block text-[11px] font-black text-slate-700 uppercase tracking-wider flex items-center gap-1.5">
+                      <BookOpen className="w-3.5 h-3.5 text-[#003B3A]" />
+                      <span>Class (Lớp / Khối)</span>
                     </label>
                     <select
                       value={classId}
                       onChange={handleClassChange}
-                      className="w-full bg-white border border-slate-300 focus:border-indigo-600 focus:ring-2 focus:ring-indigo-100 rounded-xl px-3 py-2 text-xs font-semibold text-slate-800 outline-none transition"
+                      className="w-full bg-white border border-slate-300 focus:border-[#003B3A] focus:ring-2 focus:ring-teal-500/20 rounded-xl px-3 py-2 text-xs font-bold text-slate-800 outline-none transition"
                     >
                       <option value="">
                         {campusId ? ("-- Chọn Lớp (" + availableClasses.length + " lớp) --") : "-- Chọn Cơ sở trước --"}
@@ -1090,72 +1116,73 @@ export function ForeignObservationClient(props: {
                   </div>
 
                   {/* Row 3: Date & Lesson / Unit */}
-                  <div className="space-y-1">
-                    <label className="block text-xs font-bold text-slate-700 uppercase tracking-wider flex items-center gap-1.5">
-                      <Calendar className="w-3.5 h-3.5 text-indigo-600" />
-                      Date of Observation
+                  <div className="space-y-1.5">
+                    <label className="block text-[11px] font-black text-slate-700 uppercase tracking-wider flex items-center gap-1.5">
+                      <Calendar className="w-3.5 h-3.5 text-[#003B3A]" />
+                      <span>Date of Observation</span>
                     </label>
                     <input
                       type="date"
                       value={date}
                       onChange={e => setDate(e.target.value)}
-                      className="w-full bg-white border border-slate-300 focus:border-indigo-600 focus:ring-2 focus:ring-indigo-100 rounded-xl px-3 py-2 text-xs font-medium text-slate-800 outline-none transition"
+                      className="w-full bg-white border border-slate-300 focus:border-[#003B3A] focus:ring-2 focus:ring-teal-500/20 rounded-xl px-3 py-2 text-xs font-bold text-slate-800 outline-none transition"
                     />
                   </div>
 
-                  <div className="space-y-1">
-                    <label className="block text-xs font-bold text-slate-700 uppercase tracking-wider flex items-center gap-1.5">
-                      <Target className="w-3.5 h-3.5 text-indigo-600" />
-                      Lesson / Unit (Chủ đề / Bài dạy)
+                  <div className="space-y-1.5">
+                    <label className="block text-[11px] font-black text-slate-700 uppercase tracking-wider flex items-center gap-1.5">
+                      <Target className="w-3.5 h-3.5 text-[#003B3A]" />
+                      <span>Lesson / Unit (Chủ đề / Bài dạy)</span>
                     </label>
                     <input
                       type="text"
                       value={topic}
                       onChange={e => setTopic(e.target.value)}
                       placeholder="e.g. Unit 4: Food - Speaking Practice"
-                      className="w-full bg-white border border-slate-300 focus:border-indigo-600 focus:ring-2 focus:ring-indigo-100 rounded-xl px-3 py-2 text-xs font-medium text-slate-800 outline-none transition"
+                      className="w-full bg-white border border-slate-300 focus:border-[#003B3A] focus:ring-2 focus:ring-teal-500/20 rounded-xl px-3 py-2 text-xs font-bold text-slate-800 outline-none transition"
                     />
                   </div>
 
                   {/* Row 4: Number of students & Lesson duration */}
-                  <div className="space-y-1">
-                    <label className="block text-xs font-bold text-slate-700 uppercase tracking-wider flex items-center gap-1.5">
-                      <Users className="w-3.5 h-3.5 text-indigo-600" />
-                      Number of students (Sĩ số)
+                  <div className="space-y-1.5">
+                    <label className="block text-[11px] font-black text-slate-700 uppercase tracking-wider flex items-center gap-1.5">
+                      <Users className="w-3.5 h-3.5 text-[#003B3A]" />
+                      <span>No. of students (Sĩ số)</span>
                     </label>
                     <input
                       type="text"
                       value={numberOfStudents}
                       onChange={e => setNumberOfStudents(e.target.value)}
                       placeholder="e.g. 24 students"
-                      className="w-full bg-white border border-slate-300 focus:border-indigo-600 focus:ring-2 focus:ring-indigo-100 rounded-xl px-3 py-2 text-xs font-medium text-slate-800 outline-none transition"
+                      className="w-full bg-white border border-slate-300 focus:border-[#003B3A] focus:ring-2 focus:ring-teal-500/20 rounded-xl px-3 py-2 text-xs font-bold text-slate-800 outline-none transition"
                     />
                   </div>
 
-                  <div className="space-y-1">
-                    <label className="block text-xs font-bold text-slate-700 uppercase tracking-wider flex items-center gap-1.5">
-                      <Clock className="w-3.5 h-3.5 text-indigo-600" />
-                      Lesson duration (Thời lượng)
+                  <div className="space-y-1.5">
+                    <label className="block text-[11px] font-black text-slate-700 uppercase tracking-wider flex items-center gap-1.5">
+                      <Clock className="w-3.5 h-3.5 text-[#003B3A]" />
+                      <span>Duration (Thời lượng)</span>
                     </label>
                     <input
                       type="text"
                       value={lessonDuration}
                       onChange={e => setLessonDuration(e.target.value)}
                       placeholder="e.g. 40 minutes / 45 mins"
-                      className="w-full bg-white border border-slate-300 focus:border-indigo-600 focus:ring-2 focus:ring-indigo-100 rounded-xl px-3 py-2 text-xs font-medium text-slate-800 outline-none transition"
+                      className="w-full bg-white border border-slate-300 focus:border-[#003B3A] focus:ring-2 focus:ring-teal-500/20 rounded-xl px-3 py-2 text-xs font-bold text-slate-800 outline-none transition"
                     />
                   </div>
 
                   {/* Location & Period metadata */}
-                  <div className="space-y-1">
-                    <label className="block text-xs font-bold text-slate-700 uppercase tracking-wider flex items-center gap-1.5">
-                      <MapPin className="w-3.5 h-3.5 text-indigo-600" />
-                      Campus (Cơ sở) <span className="text-rose-500">*</span>
+                  <div className="space-y-1.5">
+                    <label className="block text-[11px] font-black text-slate-700 uppercase tracking-wider flex items-center gap-1.5">
+                      <MapPin className="w-3.5 h-3.5 text-[#003B3A]" />
+                      <span>Campus (Cơ sở)</span>
+                      <span className="text-rose-500">*</span>
                     </label>
                     <select
                       value={campusId}
                       onChange={handleCampusChange}
-                      className="w-full bg-white border-2 border-indigo-200 focus:border-indigo-600 focus:ring-2 focus:ring-indigo-100 rounded-xl px-3 py-2 text-xs font-semibold text-slate-800 outline-none transition"
+                      className="w-full bg-white border-2 border-teal-500/50 focus:border-[#003B3A] focus:ring-2 focus:ring-teal-500/20 rounded-xl px-3 py-2 text-xs font-bold text-slate-800 outline-none transition"
                     >
                       <option value="">-- Chọn Cơ Sở * --</option>
                       {props.campuses?.map((cmp: any) => (
@@ -1166,16 +1193,16 @@ export function ForeignObservationClient(props: {
                     </select>
                   </div>
 
-                  <div className="space-y-1">
-                    <label className="block text-xs font-bold text-slate-700 uppercase tracking-wider flex items-center gap-1.5">
-                      <Clock className="w-3.5 h-3.5 text-indigo-600" />
-                      Period & Room (Tiết / Phòng)
+                  <div className="space-y-1.5">
+                    <label className="block text-[11px] font-black text-slate-700 uppercase tracking-wider flex items-center gap-1.5">
+                      <Clock className="w-3.5 h-3.5 text-[#003B3A]" />
+                      <span>Period & Room (Tiết / Phòng)</span>
                     </label>
                     <div className="grid grid-cols-2 gap-1.5">
                       <select
                         value={period}
                         onChange={e => setPeriod(e.target.value)}
-                        className="w-full bg-white border border-slate-300 rounded-xl px-2 py-2 text-xs font-medium text-slate-800 outline-none"
+                        className="w-full bg-white border border-slate-300 rounded-xl px-2 py-2 text-xs font-bold text-slate-800 outline-none"
                       >
                         {PERIOD_LIST.map(p => (
                           <option key={p.name} value={p.name}>
@@ -1187,17 +1214,17 @@ export function ForeignObservationClient(props: {
                         type="text"
                         value={room}
                         onChange={e => setRoom(e.target.value)}
-                        placeholder="Phòng"
-                        className="w-full bg-white border border-slate-300 rounded-xl px-2 py-2 text-xs font-medium text-slate-800 outline-none"
+                        placeholder="Phòng học"
+                        className="w-full bg-white border border-slate-300 rounded-xl px-2 py-2 text-xs font-bold text-slate-800 outline-none"
                       />
                     </div>
                   </div>
                 </div>
 
-                {/* Target Skills */}
-                <div className="pt-2 border-t border-slate-100">
-                  <label className="block text-xs font-bold text-slate-600 uppercase tracking-wider mb-2">
-                    Target Skills & Language Focus
+                {/* Target Skills Interactive Tags */}
+                <div className="pt-2">
+                  <label className="block text-[11px] font-black text-slate-700 uppercase tracking-wider mb-2.5">
+                    Target Skills & Language Focus (Kỹ năng trọng tâm)
                   </label>
                   <div className="flex flex-wrap gap-2">
                     {SKILL_OPTIONS.map(skill => {
@@ -1207,14 +1234,14 @@ export function ForeignObservationClient(props: {
                           key={skill}
                           type="button"
                           onClick={() => toggleSkill(skill)}
-                          className={"px-3 py-1.5 rounded-lg text-xs font-semibold transition-all flex items-center gap-1.5 " +
+                          className={"px-3.5 py-1.5 rounded-xl text-xs font-bold transition-all cursor-pointer flex items-center gap-1.5 " +
                             (isSelected
-                              ? "bg-indigo-600 text-white shadow-sm shadow-indigo-600/20"
-                              : "bg-slate-100 text-slate-600 hover:bg-slate-200")
+                              ? "bg-[#003B3A] text-white shadow-md shadow-[#003B3A]/20 ring-2 ring-teal-400"
+                              : "bg-slate-100 text-slate-700 hover:bg-slate-200 border border-slate-200")
                           }
                         >
-                          {isSelected && <Check className="w-3.5 h-3.5" />}
-                          {skill}
+                          {isSelected && <Check className="w-3.5 h-3.5 text-cyan-300" />}
+                          <span>{skill}</span>
                         </button>
                       );
                     })}
@@ -1223,29 +1250,38 @@ export function ForeignObservationClient(props: {
               </div>
             </div>
 
-            {/* Observation Approach & Rating Guide Banner */}
-            <div className="bg-gradient-to-r from-slate-900 via-indigo-950 to-slate-900 rounded-2xl p-5 text-white shadow-md space-y-3">
-              <div className="p-3 bg-indigo-500/20 rounded-xl border border-indigo-400/30 text-xs font-bold text-indigo-200 flex items-center gap-2">
-                <Info className="w-4 h-4 text-cyan-400 shrink-0" />
-                <span>Observation approach: Focus on evidence and impact on students.</span>
+            {/* CARD 2: Observation Approach & Rating Scale Banner */}
+            <div className="bg-gradient-to-r from-slate-900 via-[#003B3A] to-slate-900 rounded-3xl p-5 sm:p-6 text-white shadow-lg space-y-4 border border-teal-500/20">
+              <div className="p-3.5 bg-teal-500/20 rounded-2xl border border-teal-400/30 text-xs font-black text-teal-200 flex items-center gap-3">
+                <div className="p-2 rounded-xl bg-teal-400/20 text-cyan-300 shrink-0">
+                  <Sparkles className="w-4 h-4" />
+                </div>
+                <div>
+                  <span className="text-[10px] uppercase tracking-wider text-cyan-300 font-black block">
+                    Observation approach / Phương pháp tiếp cận dự giờ
+                  </span>
+                  <p className="text-xs font-bold italic text-white mt-0.5">
+                    Focus on evidence and impact on students. (Tập trung vào minh chứng thực tế và tác động đến học sinh).
+                  </p>
+                </div>
               </div>
 
-              <div className="space-y-1.5 pt-1">
-                <div className="text-[11px] font-black uppercase text-indigo-300 tracking-wider">
-                  Rating Scale (Thang đánh giá 5 mức):
+              <div className="space-y-2 pt-1">
+                <div className="text-[11px] font-black uppercase text-cyan-300 tracking-wider">
+                  Rating Scale (Thang đánh giá 5 mức theo chuẩn):
                 </div>
-                <div className="grid grid-cols-2 sm:grid-cols-5 gap-2">
+                <div className="grid grid-cols-2 sm:grid-cols-5 gap-2.5">
                   {RATING_OPTIONS.map(opt => (
-                    <div key={opt.value} className="bg-white/10 rounded-xl p-2.5 border border-white/10 text-left">
-                      <span className="font-extrabold text-xs block text-cyan-300">{opt.label}</span>
-                      <span className="text-[11px] text-slate-300 leading-tight block mt-0.5">{opt.desc}</span>
+                    <div key={opt.value} className="bg-white/10 rounded-2xl p-3 border border-white/10 text-left hover:bg-white/15 transition">
+                      <span className="font-black text-xs block text-cyan-300">{opt.label}</span>
+                      <span className="text-[11px] text-slate-200 font-medium leading-tight block mt-1">{opt.desc}</span>
                     </div>
                   ))}
                 </div>
               </div>
             </div>
 
-            {/* Section 2: 20 Indicators organized across Sections A, B, C, D, E */}
+            {/* CARD 3: 20 Pedagogical Indicators Rubric (Sections A, B, C, D, E) */}
             <div className="space-y-6">
               {["A", "B", "C", "D", "E"].map(sectionKey => {
                 const sectionIndicators = ESL_INDICATORS.filter(i => i.section === sectionKey);
@@ -1254,15 +1290,15 @@ export function ForeignObservationClient(props: {
                 return (
                   <div
                     key={sectionKey}
-                    className="bg-white rounded-2xl border border-slate-200/80 shadow-sm overflow-hidden"
+                    className="bg-white rounded-3xl border border-slate-200 shadow-sm overflow-hidden transition hover:shadow-md"
                   >
-                    <div className="px-6 py-3.5 bg-slate-900 text-white flex items-center justify-between">
-                      <div className="flex items-center gap-2">
-                        <Layers className="w-4 h-4 text-indigo-400" />
-                        <h3 className="font-bold text-sm sm:text-base uppercase tracking-wider">{title}</h3>
+                    <div className="px-6 py-4 bg-gradient-to-r from-slate-900 to-slate-800 text-white flex items-center justify-between border-b border-slate-700">
+                      <div className="flex items-center gap-2.5">
+                        <Layers className="w-4 h-4 text-cyan-400" />
+                        <h3 className="font-extrabold text-sm sm:text-base uppercase tracking-wide">{title}</h3>
                       </div>
-                      <span className="text-xs text-slate-400 font-medium">
-                        {sectionIndicators.length} Pedagogical Indicators
+                      <span className="text-xs text-cyan-300 font-black bg-white/10 px-2.5 py-0.5 rounded-full border border-white/10">
+                        {sectionIndicators.length} Tiêu chí
                       </span>
                     </div>
 
@@ -1271,21 +1307,22 @@ export function ForeignObservationClient(props: {
                         const currentData = indicatorData[ind.id] || { rating: "3", evidence: "", studentImpact: "" };
 
                         return (
-                          <div key={ind.id} className="p-5 sm:p-6 space-y-4 hover:bg-slate-50/40 transition">
+                          <div key={ind.id} className="p-5 sm:p-6 space-y-4 hover:bg-slate-50/50 transition">
                             <div className="flex flex-col lg:flex-row lg:items-start justify-between gap-4">
                               <div className="space-y-1 max-w-3xl">
                                 <div className="flex items-center gap-2">
-                                  <span className="px-2 py-0.5 rounded bg-indigo-100 text-indigo-800 text-[11px] font-bold uppercase">
+                                  <span className="px-2.5 py-0.5 rounded-lg bg-teal-50 text-[#003B3A] text-xs font-black border border-teal-200 uppercase">
                                     {ind.label}
                                   </span>
-                                  <h4 className="font-bold text-slate-800 text-sm sm:text-base leading-snug">
+                                  <h4 className="font-black text-slate-900 text-sm sm:text-base leading-snug">
                                     {ind.text}
                                   </h4>
                                 </div>
-                                <p className="text-xs text-slate-500 italic pl-1">{ind.vnText}</p>
+                                <p className="text-xs text-slate-500 italic pl-1 font-medium">{ind.vnText}</p>
                               </div>
 
-                              <div className="flex items-center gap-1.5 self-start bg-slate-100 p-1 rounded-xl border border-slate-200">
+                              {/* 5 Rating Buttons */}
+                              <div className="flex items-center gap-1.5 self-start bg-slate-100 p-1.5 rounded-2xl border border-slate-200">
                                 {RATING_OPTIONS.map(opt => {
                                   const isSelected = currentData.rating === opt.value;
                                   return (
@@ -1293,9 +1330,9 @@ export function ForeignObservationClient(props: {
                                       key={opt.value}
                                       type="button"
                                       onClick={() => handleRatingChange(ind.id, opt.value)}
-                                      className={"px-3 py-1.5 rounded-lg text-xs font-bold transition-all " +
+                                      className={"px-3 py-1.5 rounded-xl text-xs font-black transition-all cursor-pointer " +
                                         (isSelected
-                                          ? (opt.badge + " shadow-sm scale-105")
+                                          ? (opt.badge + " shadow-sm scale-105 ring-1 ring-black/10")
                                           : "text-slate-600 hover:text-slate-900 hover:bg-white/80")
                                       }
                                     >
@@ -1306,22 +1343,23 @@ export function ForeignObservationClient(props: {
                               </div>
                             </div>
 
+                            {/* Evidence & Impact Inputs */}
                             <div className="grid grid-cols-1 md:grid-cols-2 gap-4 pt-2">
-                              <div className="space-y-2 bg-slate-50 p-3.5 rounded-xl border border-slate-200/60">
-                                <label className="block text-xs font-bold text-slate-700 uppercase tracking-wider">
-                                  Evidence / Examples Observed (Minh chứng)
+                              <div className="space-y-2 bg-slate-50/80 p-4 rounded-2xl border border-slate-200">
+                                <label className="block text-[11px] font-black text-slate-700 uppercase tracking-wider">
+                                  Evidence / Examples Observed (Minh chứng ghi nhận)
                                 </label>
                                 <textarea
                                   rows={2}
                                   value={currentData.evidence}
                                   onChange={e => handleEvidenceChange(ind.id, e.target.value)}
                                   placeholder="Describe specific teacher actions, lesson pacing, or instructional tasks observed..."
-                                  className="w-full bg-white border border-slate-300 focus:border-indigo-600 focus:ring-2 focus:ring-indigo-100 rounded-lg p-2.5 text-xs text-slate-800 outline-none resize-none transition"
+                                  className="w-full bg-white border border-slate-300 focus:border-[#003B3A] focus:ring-2 focus:ring-teal-500/20 rounded-xl p-3 text-xs text-slate-800 outline-none resize-none transition font-medium"
                                 />
                                 {ind.quickEvidence && ind.quickEvidence.length > 0 && (
-                                  <div className="space-y-1">
+                                  <div className="space-y-1.5">
                                     <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider block">
-                                      Quick-Insert Evidence Tags:
+                                      Gợi ý chèn nhanh minh chứng:
                                     </span>
                                     <div className="flex flex-wrap gap-1.5">
                                       {ind.quickEvidence.map(tag => (
@@ -1329,7 +1367,7 @@ export function ForeignObservationClient(props: {
                                           key={tag}
                                           type="button"
                                           onClick={() => appendQuickTag(ind.id, "evidence", tag)}
-                                          className="text-[11px] px-2 py-0.5 rounded-md bg-white border border-slate-200 text-slate-600 hover:border-indigo-400 hover:text-indigo-600 transition"
+                                          className="text-[11px] px-2.5 py-1 rounded-lg bg-white border border-slate-200 text-slate-700 font-medium hover:border-[#003B3A] hover:text-[#003B3A] transition cursor-pointer shadow-2xs"
                                         >
                                           + {tag}
                                         </button>
@@ -1339,21 +1377,21 @@ export function ForeignObservationClient(props: {
                                 )}
                               </div>
 
-                              <div className="space-y-2 bg-slate-50 p-3.5 rounded-xl border border-slate-200/60">
-                                <label className="block text-xs font-bold text-slate-700 uppercase tracking-wider">
-                                  Student Impact / Progress (Tác động HS)
+                              <div className="space-y-2 bg-slate-50/80 p-4 rounded-2xl border border-slate-200">
+                                <label className="block text-[11px] font-black text-slate-700 uppercase tracking-wider">
+                                  Student Impact / Progress (Tác động lên học sinh)
                                 </label>
                                 <textarea
                                   rows={2}
                                   value={currentData.studentImpact}
                                   onChange={e => handleImpactChange(ind.id, e.target.value)}
                                   placeholder="Describe how students responded, produced target language, or overcame difficulties..."
-                                  className="w-full bg-white border border-slate-300 focus:border-indigo-600 focus:ring-2 focus:ring-indigo-100 rounded-lg p-2.5 text-xs text-slate-800 outline-none resize-none transition"
+                                  className="w-full bg-white border border-slate-300 focus:border-[#003B3A] focus:ring-2 focus:ring-teal-500/20 rounded-xl p-3 text-xs text-slate-800 outline-none resize-none transition font-medium"
                                 />
                                 {ind.quickImpact && ind.quickImpact.length > 0 && (
-                                  <div className="space-y-1">
+                                  <div className="space-y-1.5">
                                     <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider block">
-                                      Quick-Insert Impact Tags:
+                                      Gợi ý chèn nhanh tác động:
                                     </span>
                                     <div className="flex flex-wrap gap-1.5">
                                       {ind.quickImpact.map(tag => (
@@ -1361,7 +1399,7 @@ export function ForeignObservationClient(props: {
                                           key={tag}
                                           type="button"
                                           onClick={() => appendQuickTag(ind.id, "studentImpact", tag)}
-                                          className="text-[11px] px-2 py-0.5 rounded-md bg-white border border-slate-200 text-slate-600 hover:border-emerald-400 hover:text-emerald-700 transition"
+                                          className="text-[11px] px-2.5 py-1 rounded-lg bg-white border border-slate-200 text-teal-800 font-medium hover:border-teal-500 hover:text-teal-900 transition cursor-pointer shadow-2xs"
                                         >
                                           + {tag}
                                         </button>
@@ -1380,199 +1418,178 @@ export function ForeignObservationClient(props: {
               })}
             </div>
 
-            {/* Section 3: Teacher Voice & Reflective Feedback (Section F) */}
-            <div className="bg-white rounded-2xl border border-slate-200/80 shadow-sm overflow-hidden">
-              <div className="px-6 py-4 bg-slate-50/80 border-b border-slate-200/80 flex items-center justify-between">
-                <div className="flex items-center gap-2.5">
-                  <div className="w-8 h-8 rounded-lg bg-teal-100 text-teal-700 flex items-center justify-center font-bold text-sm">
+            {/* CARD 4: Section F: Teacher Voice & Curriculum Feedback */}
+            <div className="bg-white rounded-3xl border border-slate-200 shadow-sm overflow-hidden transition hover:shadow-md">
+              <div className="px-6 py-4 bg-gradient-to-r from-teal-950 via-[#003B3A] to-teal-950 text-white flex items-center justify-between border-b border-teal-800">
+                <div className="flex items-center gap-3">
+                  <div className="w-9 h-9 rounded-xl bg-teal-400/20 text-cyan-300 flex items-center justify-center font-black text-sm border border-cyan-400/30">
                     F
                   </div>
                   <div>
-                    <h3 className="font-bold text-slate-800 text-base">
+                    <h3 className="font-extrabold text-white text-base">
                       Teacher Voice & Curriculum Feedback (Post-Lesson Discussion)
                     </h3>
-                    <p className="text-xs text-slate-500">
-                      Reflective questions completed during debrief with the observed teacher
+                    <p className="text-[11px] text-teal-200 font-medium">
+                      Ý kiến giáo viên & phản hồi chương trình trong buổi thảo luận sau tiết dạy
                     </p>
                   </div>
                 </div>
               </div>
 
-              <div className="p-6 grid grid-cols-1 md:grid-cols-2 gap-5">
+              <div className="p-5 sm:p-7 grid grid-cols-1 md:grid-cols-2 gap-5">
                 <div className="space-y-1.5">
-                  <label className="block text-xs font-bold text-slate-700 leading-snug">
-                    1. What is working well in this class at the moment?
+                  <label className="block text-xs font-bold text-slate-800 leading-snug">
+                    1. Did the lesson go as planned? What went well?
                   </label>
                   <span className="text-[11px] text-slate-400 block mb-1">
-                    (Những điểm đang vận hành tốt và hiệu quả ở lớp học này hiện tại?)
+                    (Tiết dạy có diễn ra đúng kế hoạch không? Điểm nào đã thực hiện tốt?)
                   </span>
                   <textarea
                     rows={3}
                     value={teacherVoice.workingWell}
                     onChange={e => setTeacherVoice({ ...teacherVoice, workingWell: e.target.value })}
-                    placeholder="e.g. Students show great enthusiasm for speaking games; routine is well established..."
-                    className="w-full bg-slate-50 border border-slate-300 focus:border-indigo-600 focus:bg-white focus:ring-2 focus:ring-indigo-100 rounded-xl p-3 text-xs text-slate-800 outline-none resize-none transition"
+                    placeholder="e.g. Students showed high engagement during speaking games; lesson followed planned stages..."
+                    className="w-full bg-slate-50 border border-slate-300 focus:border-[#003B3A] focus:bg-white focus:ring-2 focus:ring-teal-500/20 rounded-2xl p-3.5 text-xs text-slate-800 outline-none resize-none transition font-medium"
                   />
                 </div>
 
                 <div className="space-y-1.5">
-                  <label className="block text-xs font-bold text-slate-700 leading-snug">
-                    2. What challenges are you experiencing in teaching this class or implementing the curriculum?
+                  <label className="block text-xs font-bold text-slate-800 leading-snug">
+                    2. What challenges did you or the students face?
                   </label>
                   <span className="text-[11px] text-slate-400 block mb-1">
-                    (Những khó khăn/thách thức đang gặp phải khi giảng dạy lớp này?)
+                    (Giáo viên hoặc học sinh đã gặp phải những khó khăn/thách thức nào?)
                   </span>
                   <textarea
                     rows={3}
                     value={teacherVoice.challenges}
                     onChange={e => setTeacherVoice({ ...teacherVoice, challenges: e.target.value })}
-                    placeholder="e.g. Mixed proficiency levels; a few students require more phonics support..."
-                    className="w-full bg-slate-50 border border-slate-300 focus:border-indigo-600 focus:bg-white focus:ring-2 focus:ring-indigo-100 rounded-xl p-3 text-xs text-slate-800 outline-none resize-none transition"
+                    placeholder="e.g. A small group struggled with the new grammar pattern; time management in production..."
+                    className="w-full bg-slate-50 border border-slate-300 focus:border-[#003B3A] focus:bg-white focus:ring-2 focus:ring-teal-500/20 rounded-2xl p-3.5 text-xs text-slate-800 outline-none resize-none transition font-medium"
                   />
                 </div>
 
                 <div className="space-y-1.5">
-                  <label className="block text-xs font-bold text-slate-700 leading-snug">
-                    3. Is there anything in the curriculum, materials, assessment, timetable or class context that should be adjusted?
+                  <label className="block text-xs font-bold text-slate-800 leading-snug">
+                    3. Is the curriculum pacing realistic for your students?
                   </label>
                   <span className="text-[11px] text-slate-400 block mb-1">
-                    (Có nội dung nào trong giáo trình, học liệu, đánh giá, TKB cần điều chỉnh không?)
+                    (Tiến độ chương trình có phù hợp và thực tế với học sinh lớp này không?)
                   </span>
                   <textarea
                     rows={3}
                     value={teacherVoice.curriculumAdjustments}
                     onChange={e => setTeacherVoice({ ...teacherVoice, curriculumAdjustments: e.target.value })}
-                    placeholder="e.g. Unit 4 reading text is too long for a single period; suggest splitting into 2 sessions..."
-                    className="w-full bg-slate-50 border border-slate-300 focus:border-indigo-600 focus:bg-white focus:ring-2 focus:ring-indigo-100 rounded-xl p-3 text-xs text-slate-800 outline-none resize-none transition"
+                    placeholder="e.g. Pacing is realistic; suggest more review time before the end-of-unit quiz..."
+                    className="w-full bg-slate-50 border border-slate-300 focus:border-[#003B3A] focus:bg-white focus:ring-2 focus:ring-teal-500/20 rounded-2xl p-3.5 text-xs text-slate-800 outline-none resize-none transition font-medium"
                   />
                 </div>
 
                 <div className="space-y-1.5">
-                  <label className="block text-xs font-bold text-slate-700 leading-snug">
-                    4. What support would help you teach this class more effectively?
+                  <label className="block text-xs font-bold text-slate-800 leading-snug">
+                    4. What additional support or resources do you need?
                   </label>
                   <span className="text-[11px] text-slate-400 block mb-1">
-                    (Nhà trường / Tổ bộ môn cần hỗ trợ điều gì để giúp GV giảng dạy hiệu quả hơn?)
+                    (Giáo viên cần hỗ trợ thêm nguồn lực, tài liệu hoặc hỗ trợ chuyên môn nào?)
                   </span>
                   <textarea
                     rows={3}
                     value={teacherVoice.supportNeeded}
                     onChange={e => setTeacherVoice({ ...teacherVoice, supportNeeded: e.target.value })}
-                    placeholder="e.g. Supplementary phonics worksheets; co-teacher assistance during pair work..."
-                    className="w-full bg-slate-50 border border-slate-300 focus:border-indigo-600 focus:bg-white focus:ring-2 focus:ring-indigo-100 rounded-xl p-3 text-xs text-slate-800 outline-none resize-none transition"
+                    placeholder="e.g. Supplementary phonics flashcards; additional co-teacher guidance for lower-band students..."
+                    className="w-full bg-slate-50 border border-slate-300 focus:border-[#003B3A] focus:bg-white focus:ring-2 focus:ring-teal-500/20 rounded-2xl p-3.5 text-xs text-slate-800 outline-none resize-none transition font-medium"
                   />
                 </div>
               </div>
             </div>
 
-            {/* Section 4: Observation Summary & Actions (Section G) */}
-            <div className="bg-white rounded-2xl border border-slate-200/80 shadow-sm overflow-hidden">
-              <div className="px-6 py-4 bg-slate-50/80 border-b border-slate-200/80 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
-                <div className="flex items-center gap-2.5">
-                  <div className="w-8 h-8 rounded-lg bg-amber-100 text-amber-700 flex items-center justify-center font-bold text-sm">
+            {/* CARD 5: Section G: Observation Summary & Actions */}
+            <div className="bg-white rounded-3xl border border-slate-200 shadow-sm overflow-hidden transition hover:shadow-md">
+              <div className="px-6 py-4 bg-gradient-to-r from-slate-900 via-[#003B3A] to-slate-900 text-white flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-slate-700">
+                <div className="flex items-center gap-3">
+                  <div className="w-9 h-9 rounded-xl bg-amber-400/20 text-amber-300 flex items-center justify-center font-black text-sm border border-amber-400/30">
                     G
                   </div>
                   <div>
-                    <h3 className="font-bold text-slate-800 text-base">
-                      Observation Summary & Action Plan (Quick Record)
+                    <h3 className="font-extrabold text-white text-base">
+                      Observation Summary & Action Plan (Tổng kết & Kế hoạch hành động)
                     </h3>
-                    <p className="text-xs text-slate-500">Agreed outcomes and support commitments</p>
+                    <p className="text-[11px] text-slate-300 font-medium">
+                      Agreed outcomes and support commitments between Observer and Host Teacher
+                    </p>
                   </div>
                 </div>
 
                 <button
                   type="button"
                   onClick={handleAutoGenerateSummary}
-                  className="inline-flex items-center gap-2 px-3.5 py-2 rounded-xl bg-gradient-to-r from-indigo-600 to-teal-600 text-white font-bold text-xs shadow-md shadow-indigo-600/20 hover:opacity-95 transition"
+                  className="inline-flex items-center gap-2 px-4 py-2 rounded-xl bg-gradient-to-r from-teal-600 to-indigo-600 hover:from-teal-500 hover:to-indigo-500 text-white font-black text-xs shadow-md transition cursor-pointer self-start sm:self-auto"
                 >
-                  <Sparkles className="w-4 h-4" />
-                  ⚡ Auto-Generate Summary
+                  <Sparkles className="w-4 h-4 text-amber-300" />
+                  <span>Auto-Generate Summary</span>
                 </button>
               </div>
 
-              <div className="p-6 grid grid-cols-1 md:grid-cols-2 gap-5">
+              <div className="p-5 sm:p-7 grid grid-cols-1 md:grid-cols-2 gap-5">
                 <div className="space-y-1.5">
-                  <label className="block text-xs font-bold text-emerald-800 uppercase tracking-wider flex items-center gap-1.5">
+                  <label className="block text-xs font-black text-emerald-800 uppercase tracking-wider flex items-center gap-1.5">
                     <Star className="w-3.5 h-3.5 text-emerald-600" />
-                    Key Strengths Observed (Điểm mạnh nổi bật)
+                    <span>Key Strengths Observed (Điểm mạnh nổi bật)</span>
                   </label>
                   <textarea
                     rows={3}
                     value={summary.keyStrengths}
                     onChange={e => setSummary({ ...summary, keyStrengths: e.target.value })}
-                    placeholder="Bullet points of strongest pedagogical execution..."
-                    className="w-full bg-slate-50 border border-slate-300 focus:border-emerald-600 focus:bg-white focus:ring-2 focus:ring-emerald-100 rounded-xl p-3 text-xs text-slate-800 outline-none resize-none transition"
+                    placeholder="Ghi nhận các điểm mạnh nổi bật trong phương pháp và tương tác..."
+                    className="w-full bg-emerald-50/40 border border-emerald-200 focus:border-emerald-600 focus:bg-white focus:ring-2 focus:ring-emerald-100 rounded-2xl p-3.5 text-xs text-slate-800 outline-none resize-none transition font-medium"
                   />
                 </div>
 
                 <div className="space-y-1.5">
-                  <label className="block text-xs font-bold text-amber-800 uppercase tracking-wider flex items-center gap-1.5">
+                  <label className="block text-xs font-black text-amber-800 uppercase tracking-wider flex items-center gap-1.5">
                     <AlertCircle className="w-3.5 h-3.5 text-amber-600" />
-                    Key Teaching / Learning Challenges (Khó khăn & Thách thức)
+                    <span>Key Teaching / Learning Challenges (Thách thức dạy & học)</span>
                   </label>
                   <textarea
                     rows={3}
                     value={summary.keyChallenges}
                     onChange={e => setSummary({ ...summary, keyChallenges: e.target.value })}
-                    placeholder="Bullet points of areas requiring growth or scaffolding..."
-                    className="w-full bg-slate-50 border border-slate-300 focus:border-amber-600 focus:bg-white focus:ring-2 focus:ring-amber-100 rounded-xl p-3 text-xs text-slate-800 outline-none resize-none transition"
-                  />
-                </div>
-
-                <div className="space-y-1.5">
-                  <label className="block text-xs font-bold text-slate-700 uppercase tracking-wider">
-                    Evidence of Student Progress (Tiến bộ học sinh)
-                  </label>
-                  <textarea
-                    rows={3}
-                    value={summary.studentProgressEvidence}
-                    onChange={e => setSummary({ ...summary, studentProgressEvidence: e.target.value })}
-                    placeholder="Specific student learning gains demonstrated in the lesson..."
-                    className="w-full bg-slate-50 border border-slate-300 focus:border-indigo-600 focus:bg-white focus:ring-2 focus:ring-indigo-100 rounded-xl p-3 text-xs text-slate-800 outline-none resize-none transition"
-                  />
-                </div>
-
-                <div className="space-y-1.5">
-                  <label className="block text-xs font-bold text-slate-700 uppercase tracking-wider">
-                    Students Needing Support (HS cần bổ trợ)
-                  </label>
-                  <textarea
-                    rows={3}
-                    value={summary.studentsNeedingSupport}
-                    onChange={e => setSummary({ ...summary, studentsNeedingSupport: e.target.value })}
-                    placeholder="Names or specific groups of students needing clinic/follow-up..."
-                    className="w-full bg-slate-50 border border-slate-300 focus:border-indigo-600 focus:bg-white focus:ring-2 focus:ring-indigo-100 rounded-xl p-3 text-xs text-slate-800 outline-none resize-none transition"
+                    placeholder="Ghi nhận các tồn tại hoặc nội dung cần cải thiện..."
+                    className="w-full bg-amber-50/40 border border-amber-200 focus:border-amber-600 focus:bg-white focus:ring-2 focus:ring-amber-100 rounded-2xl p-3.5 text-xs text-slate-800 outline-none resize-none transition font-medium"
                   />
                 </div>
 
                 <div className="md:col-span-2 space-y-1.5 pt-2 border-t border-slate-100">
-                  <label className="block text-xs font-bold text-indigo-950 uppercase tracking-wider flex items-center gap-1.5">
+                  <label className="block text-xs font-black text-indigo-950 uppercase tracking-wider flex items-center gap-1.5">
                     <CheckCircle2 className="w-4 h-4 text-indigo-600" />
-                    Agreed Actionable Steps & Commitments (Kế hoạch hành động thống nhất)
+                    <span>Agreed Follow-up Actions (Kế hoạch hành động thống nhất)</span>
                   </label>
                   <textarea
                     rows={3}
                     value={summary.agreedActions}
                     onChange={e => setSummary({ ...summary, agreedActions: e.target.value })}
-                    placeholder="1. Action item 1\n2. Action item 2..."
-                    className="w-full bg-indigo-50/50 border border-indigo-200 focus:border-indigo-600 focus:bg-white focus:ring-2 focus:ring-indigo-100 rounded-xl p-3 text-xs text-slate-800 outline-none resize-none transition font-medium"
+                    placeholder="1. Kế hoạch hành động 1\n2. Kế hoạch hành động 2..."
+                    className="w-full bg-indigo-50/40 border border-indigo-200 focus:border-indigo-600 focus:bg-white focus:ring-2 focus:ring-indigo-100 rounded-2xl p-3.5 text-xs text-slate-800 outline-none resize-none transition font-medium"
                   />
                 </div>
               </div>
             </div>
 
-            {/* Bottom Floating Action Bar */}
-            <div className="sticky bottom-4 z-40 bg-white/95 backdrop-blur-md rounded-2xl border border-slate-200 shadow-2xl p-4 flex flex-col sm:flex-row items-center justify-between gap-4">
-              <div className="flex items-center gap-3">
+            {/* Bottom Sticky Action Bar */}
+            <div className="sticky bottom-4 z-40 bg-white/95 backdrop-blur-md rounded-3xl border border-slate-200 shadow-2xl p-4 sm:p-5 flex flex-col sm:flex-row items-center justify-between gap-4">
+              <div className="flex items-center gap-3 flex-wrap">
                 <div className="flex items-center gap-2">
-                  <span className="text-xs font-bold text-slate-500 uppercase tracking-wider">Suggested Rating:</span>
-                  <span className={"px-3 py-1 rounded-full text-xs font-extrabold " + stats.badgeColor}>
+                  <span className="text-xs font-black text-slate-500 uppercase tracking-wider">Đánh giá chung:</span>
+                  <span className={"px-3.5 py-1 rounded-full text-xs font-black shadow-xs " + stats.badgeColor}>
                     {stats.suggestedRating}
                   </span>
+                  <span className="px-2.5 py-1 rounded-full text-xs font-black bg-slate-100 text-slate-800 border border-slate-200">
+                    Điểm: {stats.avg}/4.00
+                  </span>
                 </div>
-                <span className="text-xs text-slate-400">|</span>
-                <span className="text-xs text-slate-600 font-semibold">
-                  Indicators: {stats.count4} (★4) • {stats.count3} (★3) • {stats.count2} (★2) • {stats.count1} (★1)
+                <span className="text-xs text-slate-300 hidden md:inline">|</span>
+                <span className="text-xs text-slate-600 font-bold hidden md:inline">
+                  Chỉ số: {stats.count4} (★4) • {stats.count3} (★3) • {stats.count2} (★2) • {stats.count1} (★1)
                 </span>
               </div>
 
@@ -1581,19 +1598,19 @@ export function ForeignObservationClient(props: {
                   type="button"
                   disabled={isPending}
                   onClick={() => handleSubmit(true)}
-                  className="flex-1 sm:flex-initial inline-flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl bg-slate-100 text-slate-700 font-bold text-xs hover:bg-slate-200 transition"
+                  className="flex-1 sm:flex-initial inline-flex items-center justify-center gap-2 px-5 py-2.5 rounded-2xl bg-slate-100 text-slate-800 font-black text-xs hover:bg-slate-200 transition cursor-pointer border border-slate-200"
                 >
-                  <Save className="w-4 h-4" />
-                  Save Draft
+                  <Save className="w-4 h-4 text-slate-600" />
+                  <span>Lưu nháp</span>
                 </button>
                 <button
                   type="button"
                   disabled={isPending}
                   onClick={() => handleSubmit(false)}
-                  className="flex-1 sm:flex-initial inline-flex items-center justify-center gap-2 px-6 py-2.5 rounded-xl bg-gradient-to-r from-indigo-600 to-indigo-700 text-white font-bold text-xs shadow-lg shadow-indigo-600/30 hover:opacity-95 transition"
+                  className="flex-1 sm:flex-initial inline-flex items-center justify-center gap-2 px-6 py-2.5 rounded-2xl bg-gradient-to-r from-[#003B3A] to-[#1E8B87] hover:from-[#002B2A] hover:to-[#003B3A] text-white font-black text-xs shadow-lg shadow-[#003B3A]/30 transition cursor-pointer"
                 >
-                  <Send className="w-4 h-4" />
-                  {isPending ? "Submitting..." : "Submit Evaluation"}
+                  <Send className="w-4 h-4 text-cyan-300" />
+                  <span>{isPending ? "Đang gửi..." : "Hoàn thành & Gửi phiếu"}</span>
                 </button>
               </div>
             </div>
@@ -1614,26 +1631,26 @@ export function ForeignObservationClient(props: {
           />
         )}
 
-        {/* Tab 2: Quota & KPI */}
+        {/* Tab: Quota & KPI */}
         {activeTab === "kpi" && (
-          <div className="bg-white rounded-2xl border border-slate-200 p-8 text-center space-y-6">
-            <div className="w-16 h-16 rounded-2xl bg-indigo-100 text-indigo-600 flex items-center justify-center mx-auto">
+          <div className="bg-white rounded-3xl border border-slate-200 p-8 text-center space-y-6 shadow-sm">
+            <div className="w-16 h-16 rounded-2xl bg-teal-50 text-[#003B3A] border border-teal-200 flex items-center justify-center mx-auto">
               <BarChart3 className="w-8 h-8" />
             </div>
-            <div className="max-w-md mx-auto space-y-2">
-              <h3 className="text-xl font-extrabold text-slate-900">ESL Observation Quota & Progress</h3>
-              <p className="text-xs text-slate-500">
-                Live synchronization with Academic Year targets for both Observed Lessons (Host) and Observation Credits (Evaluator).
+            <div className="max-w-md mx-auto space-y-1.5">
+              <h3 className="text-xl font-black text-slate-900">Chỉ tiêu & Tiến độ Dự giờ Chuyên môn Tổ Tiếng Anh</h3>
+              <p className="text-xs text-slate-500 font-medium">
+                Đồng bộ trực tiếp theo quy định năm học cho Tiết Giảng Dạy (Host) và Tiết Đi Dự Giờ (Observer).
               </p>
             </div>
 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6 max-w-2xl mx-auto pt-4">
-              <div className="bg-slate-50 border border-slate-200 rounded-2xl p-6 text-left space-y-3 shadow-sm">
+              <div className="bg-slate-50 border border-slate-200 rounded-3xl p-6 text-left space-y-3 shadow-xs">
                 <div className="flex items-center justify-between">
-                  <span className="text-xs font-bold text-indigo-700 uppercase tracking-wider block">
+                  <span className="text-xs font-black text-[#003B3A] uppercase tracking-wider block">
                     Tiết Giảng Dạy (Host Teacher)
                   </span>
-                  <span className="px-2 py-0.5 rounded-full bg-indigo-100 text-indigo-800 text-[11px] font-black">
+                  <span className="px-2.5 py-0.5 rounded-full bg-teal-100 text-[#003B3A] text-[11px] font-black border border-teal-200">
                     {props.teacherStats?.eslTaughtCount || 0} tiết ESL
                   </span>
                 </div>
@@ -1647,21 +1664,21 @@ export function ForeignObservationClient(props: {
                 </div>
                 <div className="w-full bg-slate-200 h-2.5 rounded-full overflow-hidden">
                   <div 
-                    className="bg-indigo-600 h-full rounded-full transition-all duration-500" 
+                    className="bg-[#003B3A] h-full rounded-full transition-all duration-500" 
                     style={{ width: `${Math.min(100, Math.round(((props.teacherStats?.taughtCount ?? 0) / (props.currentTeacher?.requiredTaught || 2)) * 100))}%` }}
                   />
                 </div>
-                <p className="text-[11px] text-slate-500">
+                <p className="text-[11px] text-slate-500 font-medium">
                   Tổng hợp từ tất cả các danh mục: Mầm non, K-12, và ESL.
                 </p>
               </div>
 
-              <div className="bg-slate-50 border border-slate-200 rounded-2xl p-6 text-left space-y-3 shadow-sm">
+              <div className="bg-slate-50 border border-slate-200 rounded-3xl p-6 text-left space-y-3 shadow-xs">
                 <div className="flex items-center justify-between">
-                  <span className="text-xs font-bold text-teal-700 uppercase tracking-wider block">
-                    Tiết Đi Dự Giờ (Evaluator)
+                  <span className="text-xs font-black text-teal-700 uppercase tracking-wider block">
+                    Tiết Đi Dự Giờ (Observer)
                   </span>
-                  <span className="px-2 py-0.5 rounded-full bg-teal-100 text-teal-800 text-[11px] font-black">
+                  <span className="px-2.5 py-0.5 rounded-full bg-emerald-100 text-emerald-800 text-[11px] font-black border border-emerald-200">
                     {props.teacherStats?.eslObservedCount || 0} tiết ESL
                   </span>
                 </div>
@@ -1675,18 +1692,18 @@ export function ForeignObservationClient(props: {
                 </div>
                 <div className="w-full bg-slate-200 h-2.5 rounded-full overflow-hidden">
                   <div 
-                    className="bg-teal-600 h-full rounded-full transition-all duration-500" 
+                    className="bg-emerald-600 h-full rounded-full transition-all duration-500" 
                     style={{ width: `${Math.min(100, Math.round(((props.teacherStats?.observedCount ?? 0) / (props.currentTeacher?.requiredObserved || 10)) * 100))}%` }}
                   />
                 </div>
-                <p className="text-[11px] text-slate-500">
+                <p className="text-[11px] text-slate-500 font-medium">
                   Đã hoàn thành đánh giá và nộp phiếu nhận xét.
                 </p>
               </div>
             </div>
           </div>
         )}
-      </div>
+      </main>
     </div>
   );
 }

@@ -2571,7 +2571,6 @@ export function ObservationRegistrationSection(props: any) {
                         ))}
                       </div>
                     </div>
-                    </div>
                   );
                 })()}
               </div>
