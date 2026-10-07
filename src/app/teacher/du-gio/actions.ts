@@ -1802,8 +1802,11 @@ export async function getObserverSurpriseQuota(dateOrMonthString?: string) {
 
     }
 
-    // Max surprise quota is 50% of monthly quota (rounded down to strictly respect "không vượt quá 50%")
-    const maxSurpriseAllowed = Math.max(1, Math.floor(monthlyTarget * 0.5))
+    // QL Cấp cao (GĐCS, TBP, Ban ĐHCM, BGH, BOD, Admin, KT_DBCL) KHÔNG bị hạn chế số tiết dự giờ đột xuất
+    const isUnlimited = isGDCS || isTBP || isBanDHCM || ["ADMIN", "SUPER_ADMIN", "ADMINISTRATOR", "BGH", "BOD", "HDQT", "BAN_GD", "KT_DBCL"].includes(userRole)
+
+    // Max surprise quota is 50% of monthly quota for TTCM / TPCM / GV (rounded down to strictly respect "không vượt quá 50%")
+    const maxSurpriseAllowed = isUnlimited ? null : Math.max(1, Math.floor(monthlyTarget * 0.5))
 
     // Count surprise observations made by this observer in the month
     const surpriseSlots = await prisma.observationSlot.findMany({
@@ -1827,13 +1830,14 @@ export async function getObserverSurpriseQuota(dateOrMonthString?: string) {
     })
 
     const currentSurpriseCount = surpriseSlots.length
-    const remainingSurpriseCount = Math.max(0, maxSurpriseAllowed - currentSurpriseCount)
-    const isExceeded = currentSurpriseCount >= maxSurpriseAllowed
+    const remainingSurpriseCount = isUnlimited ? null : Math.max(0, (maxSurpriseAllowed ?? 0) - currentSurpriseCount)
+    const isExceeded = isUnlimited ? false : currentSurpriseCount >= (maxSurpriseAllowed ?? 0)
 
     return {
       success: true,
       roleName,
       monthlyTarget,
+      isUnlimited,
       maxSurpriseAllowed,
       currentSurpriseCount,
       remainingSurpriseCount,
@@ -4551,9 +4555,9 @@ export async function createSurpriseObservation(data: {
       return { success: false, error: "Không thể tạo tiết dự giờ đột xuất thuộc các tháng trước. Vui lòng chọn ngày trong tháng hiện tại hoặc các tháng sau!" }
     }
 
-    // QUOTA CHECK: Căn cứ số tiết quy định TTCM, QLCM, GĐCS, BAN ĐHCM, TBP thì Đăng ký Dự giờ đột xuất không vượt quá 50% chỉ tiêu
+    // QUOTA CHECK: TTCM, TPCM, Giáo viên đăng ký Dự giờ đột xuất không vượt quá 50% chỉ tiêu. Riêng GĐCS, TBP, Ban ĐHCM không bị hạn chế số tiết đột xuất.
     const quotaCheck = await getObserverSurpriseQuota(data.date || new Date().toISOString())
-    if (quotaCheck.success && quotaCheck.isExceeded) {
+    if (quotaCheck.success && !quotaCheck.isUnlimited && quotaCheck.isExceeded) {
       return {
         success: false,
         error: `Số lượt dự giờ đột xuất trong tháng của Thầy/Cô đã đạt giới hạn tối đa 50% chỉ tiêu quy định (${quotaCheck.currentSurpriseCount}/${quotaCheck.maxSurpriseAllowed} tiết). Vui lòng thực hiện các tiết còn lại theo hình thức Dự giờ theo kế hoạch!`

@@ -849,7 +849,7 @@ function CauHinhFileDiemKsdvClientInner({
           </div>
 
           {/* Hệ học */}
-          <div className="flex flex-col gap-1 min-w-[180px]">
+          <div className="flex flex-col gap-1 min-w-[200px]">
             <label className="text-[10px] font-black text-slate-400 uppercase tracking-wider">Hệ học (Chương trình)</label>
             <select
               value={selectedSystemId}
@@ -857,9 +857,15 @@ function CauHinhFileDiemKsdvClientInner({
               className="h-10 px-3 bg-slate-50 border border-slate-200 text-slate-800 text-xs font-bold rounded-xl outline-none focus:border-teal-500"
             >
               <option value="ALL">-- Tất cả hệ học (Mẫu chung) --</option>
-              {eduSystems.map(s => (
-                <option key={s.id} value={s.id}>{s.name} ({s.code})</option>
-              ))}
+              {(() => {
+                const uniqueSystemsMap = new Map()
+                eduSystems.forEach(s => {
+                  if (!uniqueSystemsMap.has(s.code)) uniqueSystemsMap.set(s.code, s)
+                })
+                return Array.from(uniqueSystemsMap.values()).map((s: any) => (
+                  <option key={s.id} value={s.id}>{s.name} ({s.code})</option>
+                ))
+              })()}
             </select>
           </div>
 
@@ -885,23 +891,29 @@ function CauHinhFileDiemKsdvClientInner({
               onChange={(e) => handleSelectSubjectChange(e.target.value)}
               className="h-10 px-3 bg-slate-50 border border-teal-500/40 text-teal-900 text-xs font-bold rounded-xl outline-none focus:border-teal-500 shadow-xs"
             >
-              {subjects.map(s => {
-                let badgeSuffix = ""
-                const isG1 = selectedGrade === "Khối 1" || selectedGrade === "1"
-                if (isG1) {
-                  if (selectedPeriodId === "DAU_NAM" || selectedPeriodId === "ALL") {
-                    if (["TAvd", "TLY", "NLTD"].includes(s.code)) badgeSuffix = " • [Tuyển sinh đầu năm]"
-                    else if (["TOA", "TVI", "TAv"].includes(s.code)) badgeSuffix = " • [⚠️ Chỉ áp dụng từ HK1/HK2]"
-                  } else if (selectedPeriodId === "HK1" || selectedPeriodId === "HK2") {
-                    if (["TOA", "TVI", "TAv"].includes(s.code)) badgeSuffix = " • [⭐ Bổ sung HK1/HK2]"
+              {subjects
+                .filter(s => {
+                  const isPreschool = ["Mầm", "Chồi", "Lá", "Nhà trẻ", "Mầm non"].some(k => selectedGrade.includes(k))
+                  if (isPreschool) return s.code === "TCI" || s.code.startsWith("MN")
+                  return s.code !== "TCI" // Ẩn môn mầm non khi chọn các khối phổ thông K12
+                })
+                .map(s => {
+                  let badgeSuffix = ""
+                  const isG1 = selectedGrade === "Khối 1" || selectedGrade === "1"
+                  if (isG1) {
+                    if (selectedPeriodId === "DAU_NAM" || selectedPeriodId === "ALL") {
+                      if (["TAvd", "TLY", "NLTD"].includes(s.code)) badgeSuffix = " • [Tuyển sinh đầu năm]"
+                      else if (["TOA", "TVI", "TAv"].includes(s.code)) badgeSuffix = " • [⚠️ Chỉ áp dụng từ HK1/HK2]"
+                    } else if (selectedPeriodId === "HK1" || selectedPeriodId === "HK2") {
+                      if (["TOA", "TVI", "TAv"].includes(s.code)) badgeSuffix = " • [⭐ Bổ sung HK1/HK2]"
+                    }
                   }
-                }
-                return (
-                  <option key={s.id} value={s.id}>
-                    {s.name} ({s.code}){badgeSuffix} {s.subjectType && !badgeSuffix ? `• ${s.subjectType}` : ""}
-                  </option>
-                )
-              })}
+                  return (
+                    <option key={s.id} value={s.id}>
+                      {s.name} ({s.code}){badgeSuffix} {s.subjectType && !badgeSuffix ? `• ${s.subjectType}` : ""}
+                    </option>
+                  )
+                })}
             </select>
           </div>
         </div>
@@ -1648,9 +1660,15 @@ function CauHinhFileDiemKsdvClientInner({
                 className="h-8 px-2 bg-slate-50 border border-slate-200 rounded-lg text-[11px] font-bold text-slate-700 outline-none"
               >
                 <option value="ALL">-- Tất cả hệ học --</option>
-                {eduSystems.map(s => (
-                  <option key={s.id} value={s.id}>{s.name}</option>
-                ))}
+                {(() => {
+                  const uniqueSystemsMap = new Map()
+                  eduSystems.forEach(s => {
+                    if (!uniqueSystemsMap.has(s.code)) uniqueSystemsMap.set(s.code, s)
+                  })
+                  return Array.from(uniqueSystemsMap.values()).map((s: any) => (
+                    <option key={s.id} value={s.id}>{s.name} ({s.code})</option>
+                  ))
+                })()}
               </select>
             </div>
           </div>
@@ -1829,9 +1847,15 @@ function CauHinhFileDiemKsdvClientInner({
                     className="w-full h-10 px-3 bg-slate-50 border border-slate-200 rounded-xl text-xs font-bold text-slate-800 outline-none"
                   >
                     <option value="ALL">-- Tất cả hệ (Mẫu chung) --</option>
-                    {eduSystems.map(s => (
-                      <option key={s.id} value={s.id}>{s.name}</option>
-                    ))}
+                    {(() => {
+                      const uniqueSystemsMap = new Map()
+                      eduSystems.forEach(s => {
+                        if (!uniqueSystemsMap.has(s.code)) uniqueSystemsMap.set(s.code, s)
+                      })
+                      return Array.from(uniqueSystemsMap.values()).map((s: any) => (
+                        <option key={s.id} value={s.id}>{s.name} ({s.code})</option>
+                      ))
+                    })()}
                   </select>
                 </div>
               </div>
@@ -1907,31 +1931,37 @@ function CauHinhFileDiemKsdvClientInner({
                 </div>
 
                 <div className="grid grid-cols-2 gap-2 max-h-48 overflow-y-auto p-2 bg-slate-50 border border-slate-200 rounded-xl custom-scrollbar">
-                  {subjects.map(s => {
-                    const isChecked = batchSelectedSubjectIds.includes(s.id)
-                    return (
-                      <label
-                        key={s.id}
-                        className={`flex items-center gap-2 p-2 rounded-lg cursor-pointer text-xs font-bold transition-all ${
-                          isChecked ? "bg-white text-teal-900 shadow-xs border border-teal-200" : "text-slate-600 hover:bg-slate-100"
-                        }`}
-                      >
-                        <input
-                          type="checkbox"
-                          checked={isChecked}
-                          onChange={(e) => {
-                            if (e.target.checked) {
-                              setBatchSelectedSubjectIds(prev => [...prev, s.id])
-                            } else {
-                              setBatchSelectedSubjectIds(prev => prev.filter(x => x !== s.id))
-                            }
-                          }}
-                          className="rounded text-teal-600 focus:ring-teal-500 w-3.5 h-3.5 cursor-pointer"
-                        />
-                        <span className="truncate">{s.name} ({s.code})</span>
-                      </label>
-                    )
-                  })}
+                  {subjects
+                    .filter(s => {
+                      const isPreschool = ["Mầm", "Chồi", "Lá", "Nhà trẻ", "Mầm non"].some(k => batchGrade.includes(k))
+                      if (isPreschool) return s.code === "TCI" || s.code.startsWith("MN")
+                      return s.code !== "TCI" // Ẩn môn mầm non khi chọn các khối phổ thông K12
+                    })
+                    .map(s => {
+                      const isChecked = batchSelectedSubjectIds.includes(s.id)
+                      return (
+                        <label
+                          key={s.id}
+                          className={`flex items-center gap-2 p-2 rounded-lg cursor-pointer text-xs font-bold transition-all ${
+                            isChecked ? "bg-white text-teal-900 shadow-xs border border-teal-200" : "text-slate-600 hover:bg-slate-100"
+                          }`}
+                        >
+                          <input
+                            type="checkbox"
+                            checked={isChecked}
+                            onChange={(e) => {
+                              if (e.target.checked) {
+                                setBatchSelectedSubjectIds(prev => [...prev, s.id])
+                              } else {
+                                setBatchSelectedSubjectIds(prev => prev.filter(x => x !== s.id))
+                              }
+                            }}
+                            className="rounded text-teal-600 focus:ring-teal-500 w-3.5 h-3.5 cursor-pointer"
+                          />
+                          <span className="truncate">{s.name} ({s.code})</span>
+                        </label>
+                      )
+                    })}
                 </div>
               </div>
             </div>
