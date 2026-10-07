@@ -43,6 +43,7 @@ interface SSMAssistantWidgetProps {
 
 export function SSMAssistantWidget({ role = "TEACHER" }: SSMAssistantWidgetProps) {
   const pathname = usePathname() || ""
+  const [mounted, setMounted] = useState(false)
   const [isOpen, setIsOpen] = useState(false)
   const [isExpanded, setIsExpanded] = useState(false)
   const [input, setInput] = useState("")
@@ -52,6 +53,10 @@ export function SSMAssistantWidget({ role = "TEACHER" }: SSMAssistantWidgetProps
 
   const messagesEndRef = useRef<HTMLDivElement>(null)
   const persona = PERSONAS[role] || PERSONAS.TEACHER
+
+  useEffect(() => {
+    setMounted(true)
+  }, [])
 
   // Khởi tạo lời chào theo Persona
   useEffect(() => {
@@ -419,6 +424,10 @@ export function SSMAssistantWidget({ role = "TEACHER" }: SSMAssistantWidgetProps
     PARENT: Heart,
     ADMIN: ShieldCheck
   }[role] || Bot
+
+  if (!mounted) {
+    return null
+  }
 
   return (
     <>

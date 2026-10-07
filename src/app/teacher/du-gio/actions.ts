@@ -4459,7 +4459,9 @@ export async function createSurpriseObservation(data: {
     const isBGHMN = ["BGH_MN", "BGHMN", "BGMMN", "BGH Mầm non"].includes(currentTeacher?.position || "") ||
                     ["BGH_MN", "BGHMN", "BGMMN", "BGH Mầm non"].includes(roleCode);
 
-    if (!isAdminOrLeader && !isTTCM && !isQLCM && !isBGHMN && !isTBP) {
+    const isCthsRequest = (data as any)?.isCthsLog || (data as any)?.requestOrigin === "CAMPUS_SCHEDULE" || (data as any)?.requestOrigin === "CTHS_WORK_LOG" || (data as any)?.level === "Công tác Học sinh";
+
+    if (!isCthsRequest && !isAdminOrLeader && !isTTCM && !isQLCM && !isBGHMN && !isTBP) {
       return { success: false, error: "Bạn không có quyền thực hiện chức năng Dự giờ đột xuất." }
     }
 
@@ -4473,10 +4475,10 @@ export async function createSurpriseObservation(data: {
         user: true
       }
     })
-    if (!hostTeacher) return { success: false, error: "Không tìm thấy giáo viên được dự giờ." }
+    if (!hostTeacher) return { success: false, error: "Không tìm thấy giáo viên được dự giờ / nhân sự CTHS." }
 
     // 1. Kiểm tra phạm vi nếu là TBP (chỉ được dự giờ GV thuộc Bộ phận phụ trách)
-    if (isTBP && !isAdminOrLeader) {
+    if (!isCthsRequest && isTBP && !isAdminOrLeader) {
       const myDivCodes = new Set<string>();
       currentTeacher.divisionAssignments?.forEach((da: any) => {
         if (da.divisionCode) myDivCodes.add(normalizeDivisionCode(da.divisionCode));
@@ -4503,7 +4505,7 @@ export async function createSurpriseObservation(data: {
     }
 
     // 2. Kiểm tra phạm vi nếu là TTCM / QLCM (chỉ được dự giờ GV thuộc Tổ chuyên môn của mình)
-    if (!isAdminOrLeader && (isTTCM || isQLCM) && !isTBP) {
+    if (!isCthsRequest && !isAdminOrLeader && (isTTCM || isQLCM) && !isTBP) {
       const ttcmDeptIds = new Set<string>()
       if (currentTeacher.departmentId) ttcmDeptIds.add(currentTeacher.departmentId)
       if (currentTeacher.departmentAssignments) {

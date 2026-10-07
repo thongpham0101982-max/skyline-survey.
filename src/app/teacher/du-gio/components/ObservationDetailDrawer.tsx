@@ -149,7 +149,13 @@ export function ObservationDetailDrawer({
     (slot?.teacher?.departmentRel?.name || "").normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase().includes("mam non")
   );
 
-  const slotCatKey: "MAM_NON" | "GVNN_ESL" | "K12" = isForeignEsl ? "GVNN_ESL" : isPreschool ? "MAM_NON" : "K12";
+  const isCths = slot?.requestOrigin === "CAMPUS_SCHEDULE" ||
+    slot?.requestOrigin === "CTHS_WORK_LOG" ||
+    slotDesc.includes("tổ cths") ||
+    slotDesc.includes("lịch làm việc cơ sở") ||
+    (slot?.teacher?.departmentRel?.name || "").toLowerCase().includes("cths");
+
+  const slotCatKey: "MAM_NON" | "GVNN_ESL" | "K12" | "CTHS_WORK" = isCths ? "CTHS_WORK" : isForeignEsl ? "GVNN_ESL" : isPreschool ? "MAM_NON" : "K12";
 
   // Check evaluations
   const evaluations = registrations
@@ -594,9 +600,14 @@ export function ObservationDetailDrawer({
                                   {w.status === "COMPLETED" || w.status === "Hoàn thành" ? "Hoàn thành" : "Đang thực hiện"}
                                 </span>
                               </div>
+                              {w.followUpNotes && (
+                                <p className="text-[11px] text-amber-900 bg-amber-50/70 p-1.5 rounded-md border border-amber-200">
+                                  <strong>Cần tiếp tục:</strong> {w.followUpNotes}
+                                </p>
+                              )}
                               {w.notes && (
                                 <p className="text-[11px] text-slate-600 italic pl-2 border-l-2 border-slate-200">
-                                  {w.notes}
+                                  <strong>Ghi chú:</strong> {w.notes}
                                 </p>
                               )}
                             </div>

@@ -1015,9 +1015,9 @@ export function ObservationClient(props: ObservationClientProps) {
     let startDate: Date | null = null;
     let endDate: Date | null = null;
 
-    if (activeYearObj?.startDate && activeYearObj?.endDate) {
-      startDate = new Date(activeYearObj.startDate);
-      endDate = new Date(activeYearObj.endDate);
+    if ((activeYearObj as any)?.startDate && (activeYearObj as any)?.endDate) {
+      startDate = new Date((activeYearObj as any).startDate);
+      endDate = new Date((activeYearObj as any).endDate);
       // Extend end date to the end of that day/month
       endDate.setHours(23, 59, 59, 999);
     } else if (typeof activeYearObj?.name === "string" && activeYearObj.name.includes("-")) {

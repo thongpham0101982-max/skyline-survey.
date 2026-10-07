@@ -1311,48 +1311,496 @@ export function ObservationRegistrationSection(props: any) {
               </div>
             </div>
 
-            {creationMode === "SURPRISE" || creationMode === "CAMPUS_SCHEDULE" ? (
-            /* ===== FORM 3: DỰ GIỜ ĐỘT XUẤT HOẶC ĐĂNG KÝ LỊCH CƠ SỞ CTHS ===== */
+            {creationMode === "CAMPUS_SCHEDULE" ? (
+              /* ===== FORM: ĐĂNG KÝ LỊCH LÀM VIỆC CƠ SỞ – TỔ CTHS ===== */
+              <div className="flex flex-col gap-6 text-xs font-semibold bg-gradient-to-b from-slate-50/40 via-white to-teal-50/20 p-6 sm:p-8 rounded-3xl border border-teal-200/90 shadow-sm animate-in fade-in duration-300">
+                {/* Header Banner */}
+                <div className="p-5 sm:p-6 rounded-2xl bg-gradient-to-r from-[#003B3A] via-[#005B58] to-[#007068] text-white border border-teal-600/40 shadow-sm flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+                  <div className="flex items-start sm:items-center gap-3.5">
+                    <div className="w-11 h-11 rounded-2xl bg-white/15 border border-white/25 flex items-center justify-center shrink-0 text-teal-200 shadow-inner">
+                      <Building2 className="w-6 h-6" />
+                    </div>
+                    <div>
+                      <div className="flex items-center gap-2 flex-wrap">
+                        <h4 className="text-base sm:text-lg font-black tracking-wide">
+                          ĐĂNG KÝ LỊCH LÀM VIỆC CƠ SỞ – TỔ CTHS
+                        </h4>
+                        <span className="px-2.5 py-0.5 text-[10px] font-black rounded-full bg-amber-400 text-amber-950 uppercase">
+                          Tổ CTHS - Công tác học sinh
+                        </span>
+                        <span className="px-2.5 py-0.5 text-[10px] font-bold rounded-full bg-teal-800/80 text-teal-100 border border-teal-500/40">
+                          Tự động cộng Ma trận phân bổ
+                        </span>
+                      </div>
+                      <p className="text-xs text-teal-100/90 font-medium mt-1 leading-relaxed">
+                        Ghi nhận nhân sự, cơ sở làm việc, ngày làm việc, số tiết và các đầu việc thực hiện. Hệ thống tự động phân bổ vào Ma trận cơ sở và hỗ trợ xuất Biên bản làm việc.
+                      </p>
+                    </div>
+                  </div>
+                  <div className="flex items-center gap-2 bg-black/25 px-3.5 py-2 rounded-xl border border-white/15 text-[11px] font-bold text-teal-100 shrink-0">
+                    <ShieldCheck className="w-4 h-4 text-emerald-400 shrink-0" />
+                    <span>Không áp dụng tiêu chí chấm điểm</span>
+                  </div>
+                </div>
+
+                {/* KHỐI 1: THÔNG TIN NHÂN SỰ, CƠ SỞ & THỜI GIAN LÀM VIỆC */}
+                <div className="bg-white p-6 sm:p-7 rounded-2xl border border-slate-200/90 shadow-2xs space-y-6">
+                  <div className="flex items-center justify-between pb-3 border-b border-slate-100">
+                    <h5 className="text-xs font-black text-slate-800 uppercase tracking-wider flex items-center gap-2">
+                      <span className="w-5 h-5 bg-[#007068] text-white rounded-md flex items-center justify-center text-xs font-black">1</span>
+                      Thông tin Nhân sự & Thời gian làm việc tại cơ sở
+                    </h5>
+                    <span className="text-[11px] font-semibold text-slate-400 hidden sm:inline">
+                      Trọng tâm trực quan: <strong className="text-teal-800 font-bold">Cơ sở + Số tiết + Đầu việc</strong>
+                    </span>
+                  </div>
+
+                  <div className="grid grid-cols-12 gap-4 sm:gap-5">
+                    {/* 1. Nhân sự CTHS */}
+                    <div className="col-span-12 sm:col-span-6 lg:col-span-4 flex flex-col gap-1.5">
+                      <label className="text-[11px] font-black text-slate-700 uppercase tracking-wide flex items-center justify-between">
+                        <span className="flex items-center gap-1.5">
+                          <User className="w-3.5 h-3.5 text-[#007068]" />
+                          <span>Nhân sự Tổ CTHS *</span>
+                        </span>
+                        <span className="text-[10px] text-teal-700 font-bold bg-teal-50 px-2 py-0.5 rounded-full border border-teal-100">
+                          {cthsStaffList.length} nhân sự
+                        </span>
+                      </label>
+                      <select
+                        value={cthsStaffId}
+                        onChange={(e) => {
+                          const sId = e.target.value;
+                          setCthsStaffId(sId);
+                          const selectedStaff = teachers?.find((t: any) => t.id === sId);
+                          if (selectedStaff?.campusId && !cthsCampusId) {
+                            setCthsCampusId(selectedStaff.campusId);
+                          }
+                        }}
+                        className="w-full text-xs font-bold p-3.5 rounded-xl border border-slate-200 focus:ring-2 focus:ring-[#007068] focus:border-[#007068] outline-none bg-slate-50/60 hover:bg-white text-slate-800 transition-all shadow-2xs cursor-pointer"
+                      >
+                        <option value="">-- Chọn Nhân sự CTHS --</option>
+                        {cthsStaffList.map((t: any) => {
+                          const campusObj = campuses?.find((c: any) => c.id === t.campusId);
+                          const campusShort = campusObj?.campusCode || campusObj?.campusName?.replace("Sky-Line ", "") || "";
+                          return (
+                            <option key={t.id} value={t.id}>
+                              {t.teacherName} {t.teacherCode ? `(${t.teacherCode})` : ""} {campusShort ? `[CS: ${campusShort}]` : ""}
+                            </option>
+                          );
+                        })}
+                      </select>
+                    </div>
+
+                    {/* 2. Cơ sở làm việc */}
+                    <div className="col-span-12 sm:col-span-6 lg:col-span-4 flex flex-col gap-1.5">
+                      <label className="text-[11px] font-black text-slate-700 uppercase tracking-wide flex items-center justify-between">
+                        <span className="flex items-center gap-1.5">
+                          <MapPin className="w-3.5 h-3.5 text-[#007068]" />
+                          <span>Cơ sở làm việc *</span>
+                        </span>
+                        {(() => {
+                          const selStaff = teachers?.find((t: any) => t.id === cthsStaffId) || currentTeacher;
+                          const isInter = selStaff?.campusId && cthsCampusId && selStaff.campusId !== cthsCampusId;
+                          return (
+                            <span className={`text-[10px] font-black px-2 py-0.5 rounded-full border ${
+                              isInter
+                                ? "bg-indigo-50 text-indigo-800 border-indigo-200"
+                                : "bg-emerald-50 text-emerald-800 border-emerald-200"
+                            }`}>
+                              {isInter ? "🔵 Liên cơ sở" : "🟢 Nội bộ CS"}
+                            </span>
+                          );
+                        })()}
+                      </label>
+                      <select
+                        value={cthsCampusId}
+                        onChange={(e) => setCthsCampusId(e.target.value)}
+                        className="w-full text-xs font-bold p-3.5 rounded-xl border border-slate-200 focus:ring-2 focus:ring-[#007068] focus:border-[#007068] outline-none bg-slate-50/60 hover:bg-white text-slate-800 transition-all shadow-2xs cursor-pointer"
+                      >
+                        <option value="">-- Chọn cơ sở làm việc --</option>
+                        {(campuses || []).map((c: any) => (
+                          <option key={c.id} value={c.id}>
+                            {c.campusName} {c.campusCode ? `(${c.campusCode})` : ""}
+                          </option>
+                        ))}
+                      </select>
+                    </div>
+
+                    {/* 3. Ngày làm việc */}
+                    <div className="col-span-12 sm:col-span-6 lg:col-span-4 flex flex-col gap-1.5">
+                      <label className="text-[11px] font-black text-slate-700 uppercase tracking-wide flex items-center gap-1.5">
+                        <Calendar className="w-3.5 h-3.5 text-[#007068]" />
+                        <span>Ngày làm việc tại cơ sở *</span>
+                      </label>
+                      <input
+                        type="date"
+                        value={cthsDate}
+                        min={minAllowedDate}
+                        onChange={(e) => setCthsDate(e.target.value)}
+                        required
+                        className="w-full text-xs font-bold p-3.5 rounded-xl border border-slate-200 focus:ring-2 focus:ring-[#007068] focus:border-[#007068] outline-none bg-slate-50/60 hover:bg-white text-slate-800 transition-all shadow-2xs cursor-pointer"
+                      />
+                    </div>
+
+                    {/* 4. Tiết bắt đầu - Tiết kết thúc & Tự tính số tiết */}
+                    <div className="col-span-12 lg:col-span-8 p-4 bg-teal-50/50 rounded-2xl border border-teal-100/80 flex flex-col gap-3">
+                      <div className="flex items-center justify-between flex-wrap gap-2">
+                        <span className="text-[11px] font-black text-teal-950 uppercase tracking-wide flex items-center gap-1.5">
+                          <Clock className="w-4 h-4 text-[#007068]" />
+                          <span>Khung tiết & Tự động tính số tiết</span>
+                        </span>
+                        <span className="text-xs font-black text-teal-900 bg-white px-3 py-1 rounded-xl border border-teal-200 shadow-2xs flex items-center gap-1.5">
+                          <span>Số tiết tự tính:</span>
+                          <strong className="text-emerald-700 text-sm font-black">{Math.max(1, cthsEndPeriod - cthsStartPeriod + 1)} tiết</strong>
+                        </span>
+                      </div>
+
+                      <div className="grid grid-cols-12 gap-3 items-center">
+                        {/* Tiết bắt đầu */}
+                        <div className="col-span-6 sm:col-span-3 flex flex-col gap-1">
+                          <label className="text-[10px] font-bold text-slate-600">Tiết bắt đầu</label>
+                          <select
+                            value={cthsStartPeriod}
+                            onChange={(e) => {
+                              const s = parseInt(e.target.value) || 1;
+                              setCthsStartPeriod(s);
+                              if (cthsEndPeriod < s) setCthsEndPeriod(s);
+                            }}
+                            className="w-full text-xs font-bold p-2.5 rounded-xl border border-slate-200 bg-white focus:ring-2 focus:ring-[#007068] outline-none"
+                          >
+                            {[1, 2, 3, 4, 5, 6, 7, 8].map((p) => (
+                              <option key={p} value={p}>Tiết {p} ({p === 1 ? "07:30" : p === 2 ? "08:20" : p === 3 ? "09:20" : p === 4 ? "10:10" : p === 5 ? "13:30" : p === 6 ? "14:20" : p === 7 ? "15:10" : "15:55"})</option>
+                            ))}
+                          </select>
+                        </div>
+
+                        {/* Tiết kết thúc */}
+                        <div className="col-span-6 sm:col-span-3 flex flex-col gap-1">
+                          <label className="text-[10px] font-bold text-slate-600">Tiết kết thúc</label>
+                          <select
+                            value={cthsEndPeriod}
+                            onChange={(e) => {
+                              const end = parseInt(e.target.value) || 1;
+                              setCthsEndPeriod(end);
+                              if (end < cthsStartPeriod) setCthsStartPeriod(end);
+                            }}
+                            className="w-full text-xs font-bold p-2.5 rounded-xl border border-slate-200 bg-white focus:ring-2 focus:ring-[#007068] outline-none"
+                          >
+                            {[1, 2, 3, 4, 5, 6, 7, 8].map((p) => (
+                              <option key={p} value={p}>Tiết {p} ({p === 1 ? "08:15" : p === 2 ? "09:05" : p === 3 ? "10:05" : p === 4 ? "10:55" : p === 5 ? "14:15" : p === 6 ? "15:05" : p === 7 ? "15:55" : "16:40"})</option>
+                            ))}
+                          </select>
+                        </div>
+
+                        {/* Quick buttons */}
+                        <div className="col-span-12 sm:col-span-6 flex flex-col gap-1">
+                          <label className="text-[10px] font-bold text-slate-600">Chọn nhanh thời lượng:</label>
+                          <div className="flex items-center gap-1.5 flex-wrap">
+                            {[1, 2, 3, 4, 5, 6].map((num) => {
+                              const isCurrent = (cthsEndPeriod - cthsStartPeriod + 1) === num;
+                              return (
+                                <button
+                                  key={num}
+                                  type="button"
+                                  onClick={() => {
+                                    const newEnd = Math.min(8, cthsStartPeriod + num - 1);
+                                    setCthsEndPeriod(newEnd);
+                                  }}
+                                  className={`flex-1 min-w-[42px] py-2 text-xs font-black rounded-xl border transition-all cursor-pointer select-none active:scale-95 ${
+                                    isCurrent
+                                      ? "bg-[#007068] text-white border-[#005B58] shadow-xs ring-2 ring-teal-300/70"
+                                      : "bg-white text-slate-700 border-slate-200 hover:bg-slate-100"
+                                  }`}
+                                >
+                                  {num} tiết
+                                </button>
+                              );
+                            })}
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+
+                    {/* 5. Địa điểm / Phòng làm việc */}
+                    <div className="col-span-12 sm:col-span-6 lg:col-span-4 flex flex-col gap-1.5">
+                      <label className="text-[11px] font-black text-slate-700 uppercase tracking-wide flex items-center gap-1.5">
+                        <MapPin className="w-3.5 h-3.5 text-[#007068]" />
+                        <span>Địa điểm / Phòng làm việc</span>
+                      </label>
+                      <input
+                        type="text"
+                        placeholder="VD: Phòng CTHS, Sân trường, Khối lớp..."
+                        value={cthsLocation}
+                        onChange={(e) => setCthsLocation(e.target.value)}
+                        className="w-full text-xs font-bold p-3.5 rounded-xl border border-slate-200 focus:ring-2 focus:ring-[#007068] focus:border-[#007068] outline-none bg-slate-50/60 hover:bg-white text-slate-800 transition-all shadow-2xs placeholder:text-slate-400"
+                      />
+                    </div>
+
+                    {/* 6. Nhóm đầu việc chính */}
+                    <div className="col-span-12 flex flex-col gap-1.5">
+                      <label className="text-[11px] font-black text-slate-700 uppercase tracking-wide flex items-center gap-1.5">
+                        <Sparkles className="w-3.5 h-3.5 text-amber-500" />
+                        <span>Nhóm đầu việc chính *</span>
+                      </label>
+                      <div className="flex items-center gap-2 flex-wrap">
+                        {CTHS_CATEGORIES.map((cat) => (
+                          <button
+                            key={cat}
+                            type="button"
+                            onClick={() => setCthsCategory(cat)}
+                            className={`px-3.5 py-2 text-xs font-bold rounded-xl border transition-all cursor-pointer select-none active:scale-95 ${
+                              cthsCategory === cat
+                                ? "bg-[#007068] text-white border-[#005B58] shadow-xs ring-2 ring-teal-300/70 font-black"
+                                : "bg-slate-50 text-slate-700 border-slate-200 hover:bg-slate-100"
+                            }`}
+                          >
+                            {cthsCategory === cat && <Check className="w-3.5 h-3.5 inline mr-1 stroke-[3]" />}
+                            {cat}
+                          </button>
+                        ))}
+                      </div>
+                    </div>
+                  </div>
+                </div>
+
+                {/* KHỐI 2: DANH SÁCH ĐẦU VIỆC (DỰ KIẾN & ĐÃ THỰC HIỆN) */}
+                <div className="bg-white p-6 sm:p-7 rounded-2xl border border-teal-200/90 shadow-2xs space-y-5">
+                  <div className="flex items-center justify-between flex-wrap gap-2 pb-3 border-b border-slate-100">
+                    <div>
+                      <h5 className="text-xs font-black text-slate-800 uppercase tracking-wider flex items-center gap-2">
+                        <span className="w-5 h-5 bg-[#007068] text-white rounded-md flex items-center justify-center text-xs font-black">2</span>
+                        Danh sách Đầu việc ({cthsWorkItems.length} đầu việc)
+                      </h5>
+                      <p className="text-[11px] text-slate-500 font-medium mt-0.5">
+                        Ghi nhận ngắn gọn: Tên đầu việc – Trạng thái Hoàn thành / Tiếp tục – Nội dung cần tiếp tục – Ghi chú kết quả.
+                      </p>
+                    </div>
+
+                    <button
+                      type="button"
+                      onClick={() => handleAddCthsWorkItem()}
+                      className="px-4 py-2 bg-teal-50 hover:bg-teal-100 text-[#005B58] text-xs font-black rounded-xl border border-teal-200 transition-all flex items-center gap-1.5 cursor-pointer shadow-2xs active:scale-95"
+                    >
+                      <Plus className="w-4 h-4" />
+                      <span>Thêm đầu việc mới</span>
+                    </button>
+                  </div>
+
+                  {/* Gợi ý nhanh */}
+                  <div className="p-3.5 bg-slate-50/80 rounded-xl border border-slate-200/80 space-y-2">
+                    <span className="text-[10px] font-black text-slate-500 uppercase tracking-wider flex items-center gap-1">
+                      <Sparkles className="w-3.5 h-3.5 text-amber-500" />
+                      Gợi ý đầu việc CTHS thường gặp (bấm để thêm nhanh):
+                    </span>
+                    <div className="flex items-center gap-1.5 flex-wrap">
+                      {CTHS_TASK_PRESETS.map((preset, pIdx) => (
+                        <button
+                          key={pIdx}
+                          type="button"
+                          onClick={() => handleAddCthsWorkItem(preset)}
+                          className="px-2.5 py-1 text-[11px] font-semibold bg-white hover:bg-teal-50 text-slate-700 hover:text-teal-900 border border-slate-200 hover:border-teal-300 rounded-lg transition-all cursor-pointer shadow-2xs active:scale-95"
+                        >
+                          + {preset}
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+
+                  {/* Danh sách các đầu việc */}
+                  <div className="space-y-3.5">
+                    {cthsWorkItems.map((item, index) => (
+                      <div
+                        key={item.id}
+                        className={`p-4 sm:p-5 rounded-2xl border transition-all space-y-3 shadow-2xs ${
+                          item.status === "COMPLETED"
+                            ? "bg-white border-slate-200 hover:border-teal-200"
+                            : "bg-amber-50/30 border-amber-200"
+                        }`}
+                      >
+                        {/* Row 1: STT, Tên đầu việc, Toggle trạng thái, Nút xóa */}
+                        <div className="flex items-center gap-2.5 flex-wrap sm:flex-nowrap">
+                          <span className="w-7 h-7 rounded-xl bg-teal-50 border border-teal-200 text-[#005B58] flex items-center justify-center text-xs font-black shrink-0">
+                            #{index + 1}
+                          </span>
+                          <input
+                            type="text"
+                            placeholder="Tên / Nội dung đầu việc (VD: Kiểm tra nền nếp học sinh...)"
+                            value={item.name}
+                            onChange={(e) => handleUpdateCthsWorkItem(item.id, "name", e.target.value)}
+                            className="flex-1 min-w-[200px] text-xs font-bold p-3 rounded-xl border border-slate-200 bg-slate-50/60 focus:bg-white focus:ring-2 focus:ring-[#007068] outline-none text-slate-800"
+                          />
+
+                          {/* Status toggle */}
+                          <button
+                            type="button"
+                            onClick={() => handleUpdateCthsWorkItem(item.id, "status", item.status === "COMPLETED" ? "CONTINUE" : "COMPLETED")}
+                            className={`px-3.5 py-2.5 rounded-xl text-xs font-black border transition-all cursor-pointer shrink-0 flex items-center gap-1.5 shadow-2xs select-none active:scale-95 ${
+                              item.status === "COMPLETED"
+                                ? "bg-emerald-50 text-emerald-800 border-emerald-300 hover:bg-emerald-100"
+                                : "bg-amber-100 text-amber-900 border-amber-300 hover:bg-amber-200"
+                            }`}
+                            title="Bấm để chuyển đổi trạng thái Hoàn thành / Tiếp tục"
+                          >
+                            {item.status === "COMPLETED" ? (
+                              <>
+                                <CheckCircle2 className="w-4 h-4 text-emerald-600" />
+                                <span>Hoàn thành</span>
+                              </>
+                            ) : (
+                              <>
+                                <Clock className="w-4 h-4 text-amber-600" />
+                                <span>Tiếp tục thực hiện</span>
+                              </>
+                            )}
+                          </button>
+
+                          {cthsWorkItems.length > 1 && (
+                            <button
+                              type="button"
+                              onClick={() => handleRemoveCthsWorkItem(item.id)}
+                              className="p-2.5 text-slate-400 hover:text-rose-600 hover:bg-rose-50 rounded-xl transition-all cursor-pointer shrink-0"
+                              title="Xóa đầu việc này"
+                            >
+                              <X className="w-4 h-4" />
+                            </button>
+                          )}
+                        </div>
+
+                        {/* Row 2: Nội dung cần tiếp tục (nếu cần) & Ghi chú kết quả */}
+                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5 pl-0 sm:pl-9">
+                          <div className="flex flex-col gap-1">
+                            <label className="text-[10px] font-bold text-slate-600 flex items-center gap-1">
+                              <span>Nội dung cần tiếp tục / Phối hợp theo dõi:</span>
+                              {item.status === "CONTINUE" && <span className="text-amber-600 font-black">(Cần thiết)</span>}
+                            </label>
+                            <input
+                              type="text"
+                              placeholder="VD: Tiếp tục theo dõi buổi sáng ngày mai, phối hợp GVCN..."
+                              value={item.followUpNotes || ""}
+                              onChange={(e) => handleUpdateCthsWorkItem(item.id, "followUpNotes", e.target.value)}
+                              className={`w-full text-xs font-medium p-2.5 rounded-xl border outline-none ${
+                                item.status === "CONTINUE"
+                                  ? "border-amber-300 bg-amber-50/50 focus:bg-white focus:ring-1 focus:ring-amber-500 text-slate-800"
+                                  : "border-slate-200 bg-slate-50/40 focus:bg-white focus:ring-1 focus:ring-[#007068] text-slate-700"
+                              }`}
+                            />
+                          </div>
+
+                          <div className="flex flex-col gap-1">
+                            <label className="text-[10px] font-bold text-slate-600">Ghi chú kết quả thực hiện thực tế:</label>
+                            <input
+                              type="text"
+                              placeholder="VD: Đã kiểm tra xong 6 lớp, không phát hiện vi phạm..."
+                              value={item.notes || ""}
+                              onChange={(e) => handleUpdateCthsWorkItem(item.id, "notes", e.target.value)}
+                              className="w-full text-xs font-medium p-2.5 rounded-xl border border-slate-200 bg-slate-50/40 focus:bg-white focus:ring-1 focus:ring-[#007068] outline-none text-slate-700"
+                            />
+                          </div>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+
+                {/* KHỐI 3: TỔNG KẾT SAU BUỔI LÀM VIỆC & GHI CHÚ CHUNG */}
+                <div className="bg-white p-6 rounded-2xl border border-slate-200/90 shadow-2xs space-y-4">
+                  <div className="flex items-center justify-between flex-wrap gap-2 pb-2 border-b border-slate-100">
+                    <label className="text-xs font-black text-slate-800 uppercase tracking-wide flex items-center gap-2">
+                      <span className="w-5 h-5 bg-[#007068] text-white rounded-md flex items-center justify-center text-xs font-black">3</span>
+                      Tổng kết buổi làm việc & Ghi chú phối hợp chung
+                    </label>
+                    <span className="text-xs font-black text-teal-950 bg-teal-50 px-3.5 py-1 rounded-xl border border-teal-200">
+                      Tự động cộng Ma trận CS: <strong className="text-emerald-700 font-black">{Math.max(1, cthsEndPeriod - cthsStartPeriod + 1)} tiết</strong>
+                    </span>
+                  </div>
+
+                  <div className="space-y-1.5">
+                    <label className="text-[11px] font-bold text-slate-700">
+                      Ghi chú & Đề xuất phối hợp chung với Ban Giám hiệu / GVCN cơ sở (Tùy chọn)
+                    </label>
+                    <textarea
+                      placeholder="Ghi chú tổng kết hoặc nội dung cần tiếp tục phối hợp với Ban Giám hiệu / GVCN cơ sở..."
+                      rows={3}
+                      value={cthsGeneralNotes}
+                      onChange={(e) => setCthsGeneralNotes(e.target.value)}
+                      className="w-full text-xs font-medium p-3.5 rounded-xl border border-slate-200 bg-slate-50/50 hover:bg-white focus:ring-2 focus:ring-[#007068] outline-none resize-none transition-all shadow-2xs text-slate-800"
+                    />
+                  </div>
+
+                  {/* Email notification toggle */}
+                  <div className="pt-2 flex items-center justify-between flex-wrap gap-2">
+                    <label className="flex items-center gap-2.5 cursor-pointer select-none">
+                      <input
+                        type="checkbox"
+                        checked={cthsSendEmail}
+                        onChange={(e) => setCthsSendEmail(e.target.checked)}
+                        className="w-4 h-4 rounded text-[#007068] focus:ring-[#007068] cursor-pointer"
+                      />
+                      <span className="text-xs font-bold text-slate-700">
+                        Tự động gửi email thông báo lịch làm việc & biên bản tới Nhân sự và Ban Giám hiệu cơ sở
+                      </span>
+                    </label>
+                    <span className="text-[11px] font-bold text-teal-700 bg-teal-50 px-2.5 py-0.5 rounded-full border border-teal-100 flex items-center gap-1">
+                      <Mail className="w-3.5 h-3.5" />
+                      <span>Email thương hiệu Sky-Line</span>
+                    </span>
+                  </div>
+                </div>
+
+                {/* KHỐI 4: NÚT HÀNH ĐỘNG */}
+                <div className="flex flex-col sm:flex-row items-center justify-end gap-3 pt-2">
+                  <button
+                    type="button"
+                    disabled={surpriseSubmitting}
+                    onClick={() => handleCthsSubmit(true)}
+                    className="w-full sm:w-auto px-6 py-3.5 rounded-xl bg-white border border-slate-300 hover:bg-slate-50 text-slate-700 font-black text-xs transition-all shadow-xs flex items-center justify-center gap-2 cursor-pointer disabled:opacity-60"
+                  >
+                    <Save className="w-4 h-4 text-slate-500" />
+                    {surpriseSubmitting ? "Đang lưu..." : "Lưu nháp / Đăng ký trước"}
+                  </button>
+
+                  <button
+                    type="button"
+                    disabled={surpriseSubmitting}
+                    onClick={() => handleCthsSubmit(false)}
+                    className="w-full sm:w-auto px-8 py-3.5 rounded-xl font-black text-xs transition-all shadow-md flex items-center justify-center gap-2 cursor-pointer disabled:opacity-60 bg-gradient-to-r from-[#007068] via-[#005B58] to-emerald-600 hover:from-[#005B58] hover:to-emerald-700 text-white shadow-teal-900/20"
+                  >
+                    <CheckCircle2 className="w-4 h-4 text-emerald-200" />
+                    {surpriseSubmitting ? "Đang xử lý..." : "Ghi nhận & Hoàn thành buổi làm việc (Tổ CTHS)"}
+                  </button>
+                </div>
+              </div>
+            ) : creationMode === "SURPRISE" ? (
+            /* ===== FORM 3: DỰ GIỜ ĐỘT XUẤT (K12 / MẦM NON) ===== */
             <div className="flex flex-col gap-6 text-xs font-semibold bg-gradient-to-b from-slate-50/40 via-white to-teal-50/20 p-6 sm:p-8 rounded-3xl border border-slate-200/90 shadow-sm animate-in fade-in duration-300">
               {/* Header Banner */}
               <div className={`p-5 sm:p-6 rounded-2xl border shadow-sm flex flex-col sm:flex-row sm:items-center justify-between gap-4 text-white ${
-                creationMode === "CAMPUS_SCHEDULE" || isCthsMode
-                  ? "bg-gradient-to-r from-[#003B3A] via-[#005B58] to-[#007068] border-teal-600/40"
-                  : surpriseLevel === "Mầm non"
+                surpriseLevel === "Mầm non"
                   ? "bg-gradient-to-r from-amber-700 via-amber-800 to-[#003B3A] border-amber-500/40"
                   : "bg-gradient-to-r from-[#003B3A] via-[#005B54] to-[#00A19A] border-teal-600/40"
               }`}>
                 <div className="flex items-start sm:items-center gap-3.5">
                   <div className="w-11 h-11 rounded-2xl bg-white/15 border border-white/25 flex items-center justify-center shrink-0 text-amber-300 shadow-inner">
-                    {creationMode === "CAMPUS_SCHEDULE" || isCthsMode ? (
-                      <Building2 className="w-5 h-5 text-teal-200" />
-                    ) : (
-                      <Zap className="w-5 h-5" />
-                    )}
+                    <Zap className="w-5 h-5" />
                   </div>
                   <div>
                     <div className="flex items-center gap-2 flex-wrap">
                       <h4 className="text-sm sm:text-base font-black tracking-wide">
-                        {creationMode === "CAMPUS_SCHEDULE" || isCthsMode
-                          ? "GHI NHẬN LÀM VIỆC TẠI CƠ SỞ – TỔ CTHS"
-                          : surpriseLevel === "Mầm non"
+                        {surpriseLevel === "Mầm non"
                           ? "DỰ GIỜ ĐỘT XUẤT MẦM NON"
                           : "DỰ GIỜ ĐỘT XUẤT"}
                       </h4>
                       <span className="px-2.5 py-0.5 text-[10px] font-black rounded-full bg-amber-400 text-amber-950 uppercase">
-                        {creationMode === "CAMPUS_SCHEDULE" || isCthsMode
-                          ? "Tổ CTHS - Ban HĐNGLL"
-                          : (isAdminUser ? "Ban ĐHCM / GĐCS / TBP / Quản lý" : (surpriseLevel === "Mầm non" ? "TTCM / BGH Mầm non" : "TTCM / Trưởng Bộ Phận"))}
+                        {isAdminUser ? "Ban ĐHCM / GĐCS / TBP / Quản lý" : (surpriseLevel === "Mầm non" ? "TTCM / BGH Mầm non" : "TTCM / Trưởng Bộ Phận")}
                       </span>
 
                       <span className="px-2.5 py-0.5 text-[10px] font-bold rounded-full bg-teal-800/80 text-teal-100 border border-teal-500/40">
-                        {creationMode === "CAMPUS_SCHEDULE" || isCthsMode ? "Không chấm điểm chuyên môn" : "Đồng hành chuyên môn"}
+                        Đồng hành chuyên môn
                       </span>
                     </div>
                     <p className="text-[11px] text-teal-50/90 font-medium mt-1 leading-relaxed">
-                      {creationMode === "CAMPUS_SCHEDULE" || isCthsMode
-                        ? "Ghi nhận số tiết làm việc thực tế và các đầu việc đã thực hiện tại từng cơ sở. Tự động tính vào Ma trận phân bổ cơ sở (Nội bộ / Liên cơ sở)."
-                        : surpriseLevel === "Mầm non"
+                      {surpriseLevel === "Mầm non"
                         ? "Đánh giá hoạt động học / chuyên đề Mầm non (18 tiêu chí - Tổng 10 điểm). Tự động ghi nhận không cần duyệt trước."
                         : "Đánh giá trực tiếp tiết dạy đột xuất (11 tiêu chí - Chuẩn 20 điểm) nhằm đồng hành, hỗ trợ và phát triển chuyên môn giáo viên. Kết quả được lưu tự động mà không cần phê duyệt trước."}
                     </p>
@@ -1360,12 +1808,12 @@ export function ObservationRegistrationSection(props: any) {
                 </div>
                 <div className="flex items-center gap-2 bg-white/10 px-3.5 py-2 rounded-xl border border-white/20 text-[11px] font-bold text-teal-100 shrink-0">
                   <ShieldCheck className="w-4 h-4 text-emerald-400 shrink-0" />
-                  <span>Hình thức: {creationMode === "CAMPUS_SCHEDULE" || isCthsMode ? "Lịch làm việc cơ sở" : "Mặc định đột xuất"}</span>
+                  <span>Hình thức: Mặc định đột xuất</span>
                 </div>
               </div>
 
-              {/* QUOTA TRACKER BANNER (Chỉ áp dụng cho Dự giờ đột xuất, không áp dụng cho Lịch làm việc CTHS) */}
-              {creationMode === "SURPRISE" && !isCthsMode && surpriseQuota && (
+              {/* QUOTA TRACKER BANNER (Chỉ áp dụng cho Dự giờ đột xuất) */}
+              {surpriseQuota && (
                 <div className={`p-4 sm:p-5 rounded-2xl border transition-all ${
                   surpriseQuota.isExceeded && !surpriseQuota.isUnlimited
                     ? "bg-rose-50/90 border-rose-200 text-rose-950 shadow-xs"
@@ -1613,12 +2061,11 @@ export function ObservationRegistrationSection(props: any) {
               )}
 
               {/* SECTION 1: THÔNG TIN TIẾT DẠY & GIÁO VIÊN */}
-
               <div className="bg-white p-6 sm:p-7 rounded-2xl border border-slate-200/90 shadow-2xs space-y-6">
                 <div className="flex items-center justify-between pb-3 border-b border-slate-100">
                   <h5 className="text-xs font-black text-slate-800 uppercase tracking-wider flex items-center gap-2">
                     <span className="w-5 h-5 bg-teal-100 text-[#00A19A] rounded-md flex items-center justify-center text-xs font-black">1</span>
-                    {creationMode === "CAMPUS_SCHEDULE" || isCthsMode ? "Thông tin Nhân sự & Cơ sở làm việc" : "Thông tin Giáo viên & Tiết học"}
+                    Thông tin Giáo viên & Tiết học
                   </h5>
                   <span className="text-[11px] font-semibold text-slate-400 hidden sm:inline">
                     Các mục có dấu <span className="text-rose-500 font-bold">*</span> là bắt buộc
@@ -1648,18 +2095,13 @@ export function ObservationRegistrationSection(props: any) {
                         setSurpriseTeacherId("");
                         if (newDeptId) {
                           const selectedDept = departments.find((d: any) => d.id === newDeptId);
-                          if (selectedDept && isCthsDept(selectedDept)) {
-                            setSurpriseLevel("Khối CTHS");
-                            setSurpriseSubjectName("Công tác học sinh (CTHS)");
-                            setSurpriseTopic("Buổi làm việc tại cơ sở");
-                            setSurprisePeriod("Tiết 1 - 3");
-                          } else if (selectedDept && isPreschoolDepartment(selectedDept.name || selectedDept.code || "")) {
+                          if (selectedDept && isPreschoolDepartment(selectedDept.name || selectedDept.code || "")) {
                             setSurpriseLevel("Mầm non");
                             const khacChuyenDeId = getKhacChuyenDeSubjectId(subjects);
                             setSurpriseSubjectId(khacChuyenDeId);
                             setSurpriseSubjectName("Chủ đề/Chuyên đề");
                           } else {
-                            if (surpriseLevel === "Mầm non" || surpriseLevel === "Khối CTHS") setSurpriseLevel("Phổ thông K-12");
+                            if (surpriseLevel === "Mầm non") setSurpriseLevel("Phổ thông K-12");
                           }
                         }
                       }}
@@ -1677,11 +2119,11 @@ export function ObservationRegistrationSection(props: any) {
                     <label className="text-[11px] font-black text-slate-700 uppercase tracking-wide flex items-center justify-between">
                       <span className="flex items-center gap-1.5">
                         <User className="w-3.5 h-3.5 text-[#00A19A]" />
-                        <span>{creationMode === "CAMPUS_SCHEDULE" || isCthsMode ? "Nhân sự Tổ CTHS thực hiện *" : "Giáo viên dạy được dự *"}</span>
+                        <span>Giáo viên dạy được dự *</span>
                       </span>
                       {filteredTeachersForSurprise.length > 0 && (
                         <span className="text-[10px] text-teal-700 font-bold bg-teal-50 px-2 py-0.5 rounded-full border border-teal-100">
-                          {filteredTeachersForSurprise.length} {creationMode === "CAMPUS_SCHEDULE" || isCthsMode ? "nhân sự" : "GV"}
+                          {filteredTeachersForSurprise.length} GV
                         </span>
                       )}
                     </label>
@@ -1715,7 +2157,7 @@ export function ObservationRegistrationSection(props: any) {
                       required
                       className="w-full text-xs font-bold p-3.5 rounded-xl border border-slate-200 focus:ring-2 focus:ring-[#00A19A] focus:border-[#00A19A] outline-none bg-slate-50/60 hover:bg-white text-slate-800 transition-all shadow-2xs cursor-pointer"
                     >
-                      <option value="">{creationMode === "CAMPUS_SCHEDULE" || isCthsMode ? "-- Chọn Nhân sự CTHS --" : "-- Chọn Giáo viên dạy --"}</option>
+                      <option value="">-- Chọn Giáo viên dạy --</option>
                       {filteredTeachersForSurprise.map((t: any) => {
                         const campusObj = campuses.find((c: any) => c.id === t.campusId);
                         const campusShort = campusObj?.campusCode || campusObj?.campusName?.replace("Sky-Line ", "") || "";
@@ -1734,7 +2176,7 @@ export function ObservationRegistrationSection(props: any) {
                     <label className="text-[11px] font-black text-slate-700 uppercase tracking-wide flex items-center justify-between">
                       <span className="flex items-center gap-1.5">
                         <BookOpen className="w-3.5 h-3.5 text-[#00A19A]" />
-                        <span>{creationMode === "CAMPUS_SCHEDULE" || isCthsMode ? "Lĩnh vực / Môn *" : "Môn học *"}</span>
+                        <span>Môn học *</span>
                       </span>
                       {isMamNonTeacher && (
                         <span className="text-[10px] text-emerald-600 font-bold">✨ Chủ đề/Chuyên đề</span>
@@ -1755,7 +2197,6 @@ export function ObservationRegistrationSection(props: any) {
                       className="w-full text-xs font-bold p-3.5 rounded-xl border border-slate-200 focus:ring-2 focus:ring-[#00A19A] focus:border-[#00A19A] outline-none bg-slate-50/60 hover:bg-white text-slate-800 transition-all shadow-2xs cursor-pointer"
                     >
                       <option value="">-- Chọn môn học --</option>
-                      {/* Đưa môn Chủ đề/Chuyên đề lên đầu danh sách */}
                       {(() => {
                         const chuDeSub = subjects.find((s: any) => {
                           const n = (s.subjectName || "").toLowerCase();
@@ -1778,15 +2219,15 @@ export function ObservationRegistrationSection(props: any) {
                     </select>
                   </div>
 
-                  {/* 30-DAY SPACING WARNING BANNER CHO GIÁO VIÊN ĐƯỢC CHỌN (Chỉ hiện khi Dự giờ đột xuất) */}
-                  {creationMode === "SURPRISE" && !isCthsMode && loadingTeacherHistory && (
+                  {/* 30-DAY SPACING WARNING BANNER */}
+                  {loadingTeacherHistory && (
                     <div className="col-span-12 p-3.5 rounded-2xl bg-teal-50/50 border border-teal-100 text-teal-700 text-xs flex items-center gap-2 animate-pulse">
                       <Loader2 className="w-4 h-4 animate-spin text-[#00A19A]" />
                       <span className="font-semibold">Đang kiểm tra lịch sử dự giờ đột xuất của giáo viên trong 30 ngày qua...</span>
                     </div>
                   )}
 
-                  {creationMode === "SURPRISE" && !isCthsMode && !loadingTeacherHistory && teacherSurpriseHistory?.hasRecentSurprise && (
+                  {!loadingTeacherHistory && teacherSurpriseHistory?.hasRecentSurprise && (
                     <div className="col-span-12 p-4 sm:p-5 rounded-2xl bg-amber-50/95 border-2 border-amber-300 text-amber-950 flex flex-col gap-3 shadow-xs animate-in fade-in slide-in-from-top-2 duration-300">
                       <div className="flex items-start gap-3.5">
                         <div className="w-10 h-10 rounded-2xl bg-amber-200/90 text-amber-800 flex items-center justify-center shrink-0 mt-0.5 shadow-2xs">
@@ -1836,11 +2277,11 @@ export function ObservationRegistrationSection(props: any) {
                     </div>
                   )}
 
-                  {/* 4. Ngày làm việc / Ngày dự giờ */}
+                  {/* 4. Ngày dự giờ */}
                   <div className="col-span-12 sm:col-span-6 lg:col-span-3 flex flex-col gap-1.5">
                     <label className="text-[11px] font-black text-slate-700 uppercase tracking-wide flex items-center gap-1.5">
                       <Calendar className="w-3.5 h-3.5 text-[#00A19A]" />
-                      <span>{creationMode === "CAMPUS_SCHEDULE" || isCthsMode ? "Ngày làm việc tại cơ sở *" : "Ngày dự giờ *"}</span>
+                      <span>Ngày dự giờ *</span>
                     </label>
                     <input
                       type="date"
@@ -1856,7 +2297,7 @@ export function ObservationRegistrationSection(props: any) {
                   <div className="col-span-12 sm:col-span-6 lg:col-span-3 flex flex-col gap-1.5">
                     <label className="text-[11px] font-black text-slate-700 uppercase tracking-wide flex items-center gap-1.5">
                       <Clock className="w-3.5 h-3.5 text-[#00A19A]" />
-                      <span>{creationMode === "CAMPUS_SCHEDULE" || isCthsMode ? "Khung tiết làm việc *" : surpriseLevel === "Mầm non" ? "Khung giờ / Hoạt động dự *" : "Tiết dự *"}</span>
+                      <span>{surpriseLevel === "Mầm non" ? "Khung giờ / Hoạt động dự *" : "Tiết dự *"}</span>
                     </label>
                     <select
                       value={surprisePeriod}
@@ -1879,10 +2320,6 @@ export function ObservationRegistrationSection(props: any) {
                       <option value="Tiết 6">Tiết 6 (14:20 - 15:05)</option>
                       <option value="Tiết 7">Tiết 7 (15:10 - 15:55)</option>
                       <option value="Tiết 8">Tiết 8 (15:55 - 16:40)</option>
-                      <option value="Tiết 1 - 3">Buổi sáng: Tiết 1 - 3 (07:30 - 10:05)</option>
-                      <option value="Tiết 1 - 4">Buổi sáng: Tiết 1 - 4 (07:30 - 10:55)</option>
-                      <option value="Tiết 5 - 7">Buổi chiều: Tiết 5 - 7 (13:30 - 15:55)</option>
-                      <option value="Cả ngày">Cả ngày (07:30 - 16:30)</option>
                     </select>
                   </div>
 
@@ -1890,7 +2327,7 @@ export function ObservationRegistrationSection(props: any) {
                   <div className="col-span-12 sm:col-span-6 lg:col-span-3 flex flex-col gap-1.5">
                     <label className="text-[11px] font-black text-slate-700 uppercase tracking-wide flex items-center gap-1.5">
                       <MapPin className="w-3.5 h-3.5 text-[#00A19A]" />
-                      <span>{creationMode === "CAMPUS_SCHEDULE" || isCthsMode ? "Cơ sở làm việc *" : "Cơ sở trường"}</span>
+                      <span>Cơ sở trường</span>
                     </label>
                     <select
                       value={surpriseCampusId}
@@ -1900,7 +2337,7 @@ export function ObservationRegistrationSection(props: any) {
                       }}
                       className="w-full text-xs font-bold p-3.5 rounded-xl border border-slate-200 focus:ring-2 focus:ring-[#00A19A] focus:border-[#00A19A] outline-none bg-slate-50/60 hover:bg-white text-slate-800 transition-all shadow-2xs cursor-pointer"
                     >
-                      <option value="">-- Chọn cơ sở làm việc --</option>
+                      <option value="">-- Chọn cơ sở --</option>
                       {campuses.map((c: any) => (
                         <option key={c.id} value={c.id}>{c.campusName}</option>
                       ))}
@@ -1932,7 +2369,6 @@ export function ObservationRegistrationSection(props: any) {
                       <option value="THCS">THCS</option>
                       <option value="THPT">THPT</option>
                       <option value="Mầm non">Mầm non</option>
-                      <option value="Toàn trường">Toàn cơ sở</option>
                     </select>
                   </div>
 
@@ -1941,7 +2377,7 @@ export function ObservationRegistrationSection(props: any) {
                     <label className="text-[11px] font-black text-slate-700 uppercase tracking-wide flex items-center justify-between">
                       <span className="flex items-center gap-1.5">
                         <Users className="w-3.5 h-3.5 text-[#00A19A]" />
-                        <span>{creationMode === "CAMPUS_SCHEDULE" || isCthsMode ? "Lớp / Đối tượng (Tùy chọn)" : "Lớp học *"}</span>
+                        <span>Lớp học *</span>
                       </span>
                       {filteredClassesForSurprise.length > 0 && (
                         <span className="text-[10px] text-teal-700 font-bold bg-teal-50 px-2 py-0.5 rounded-full border border-teal-100">
@@ -1961,7 +2397,6 @@ export function ObservationRegistrationSection(props: any) {
                           if (clsObj.level) setSurpriseLevel(clsObj.level);
                           if (clsObj.campusId && !surpriseCampusId) setSurpriseCampusId(clsObj.campusId);
 
-                          // Tự động nhận diện Tổ chuyên môn theo Khối của lớp Mầm non
                           if (clsObj.level === "Mầm non") {
                             const gClean = (clsObj.grade || clsObj.className || "").toLowerCase();
                             let matchedDept = null;
@@ -1978,7 +2413,6 @@ export function ObservationRegistrationSection(props: any) {
                               setSurpriseDeptId(matchedDept.id);
                             }
 
-                            // Gợi ý giáo viên chủ nhiệm của lớp nếu chưa chọn GV
                             if (clsObj.homeroomTeacherId && !surpriseTeacherId) {
                               setSurpriseTeacherId(clsObj.homeroomTeacherId);
                             }
@@ -1987,39 +2421,37 @@ export function ObservationRegistrationSection(props: any) {
                       }}
                       className="w-full text-xs font-bold p-3.5 rounded-xl border border-slate-200 focus:ring-2 focus:ring-[#00A19A] focus:border-[#00A19A] outline-none bg-slate-50/60 hover:bg-white text-slate-800 transition-all shadow-2xs cursor-pointer"
                     >
-                      <option value="">{creationMode === "CAMPUS_SCHEDULE" || isCthsMode ? "-- Toàn cơ sở / Tùy chọn lớp --" : "-- Chọn danh sách lớp --"}</option>
+                      <option value="">-- Chọn danh sách lớp --</option>
                       {filteredClassesForSurprise.map((c: any) => (
                         <option key={c.id} value={c.id}>{c.className}</option>
                       ))}
                     </select>
                   </div>
 
-                  {/* 9. Phòng học / Địa điểm */}
+                  {/* 9. Phòng học */}
                   <div className="col-span-12 sm:col-span-6 lg:col-span-3 flex flex-col gap-1.5">
                     <label className="text-[11px] font-black text-slate-700 uppercase tracking-wide flex items-center gap-1.5">
                       <MapPin className="w-3.5 h-3.5 text-[#00A19A]" />
-                      <span>{creationMode === "CAMPUS_SCHEDULE" || isCthsMode ? "Phòng / Địa điểm" : "Phòng học"}</span>
+                      <span>Phòng học</span>
                     </label>
                     <input
                       type="text"
-                      placeholder={creationMode === "CAMPUS_SCHEDULE" || isCthsMode ? "VD: Phòng CTHS, Sân trường, Khối lớp..." : "VD: Phòng 204, Phòng Lab..."}
+                      placeholder="VD: Phòng 204, Phòng Lab..."
                       value={surpriseRoom}
                       onChange={e => setSurpriseRoom(e.target.value)}
                       className="w-full text-xs font-bold p-3.5 rounded-xl border border-slate-200 focus:ring-2 focus:ring-[#00A19A] focus:border-[#00A19A] outline-none bg-slate-50/60 hover:bg-white text-slate-800 transition-all shadow-2xs placeholder:text-slate-400"
                     />
                   </div>
 
-                  {/* 10. Chủ đề / Nội dung làm việc */}
+                  {/* 10. Chủ đề / Nội dung bài dạy */}
                   <div className="col-span-12 lg:col-span-6 flex flex-col gap-1.5">
                     <label className="text-[11px] font-black text-slate-700 uppercase tracking-wide flex items-center gap-1.5">
                       <FileText className="w-3.5 h-3.5 text-[#00A19A]" />
-                      <span>{creationMode === "CAMPUS_SCHEDULE" || isCthsMode ? "Nội dung / Kế hoạch buổi làm việc *" : "Chủ đề / Nội dung bài dạy *"}</span>
+                      <span>Chủ đề / Nội dung bài dạy *</span>
                     </label>
                     <input
                       type="text"
-                      placeholder={creationMode === "CAMPUS_SCHEDULE" || isCthsMode
-                        ? "VD: Khảo sát nền nếp, hỗ trợ HS & kiểm tra CSVC tại cơ sở..."
-                        : surpriseLevel === "Mầm non" 
+                      placeholder={surpriseLevel === "Mầm non" 
                         ? "VD: Chủ đề: Bản thân và gia đình, Hoạt động góc, STEAM, Khám phá khoa học..." 
                         : "VD: Bài 12: Phân tích số liệu và biểu đồ thống kê..."}
                       value={surpriseTopic}
@@ -2039,12 +2471,12 @@ export function ObservationRegistrationSection(props: any) {
                     <div>
                       <div className="flex items-center gap-2 flex-wrap">
                         <span className="text-[10px] font-black text-teal-800 uppercase tracking-wider">
-                          {creationMode === "CAMPUS_SCHEDULE" || isCthsMode ? "Người lập phiếu (Tự động):" : "Người dự giờ (Tự động):"}
+                          Người dự giờ (Tự động):
                         </span>
                         <span className="font-extrabold text-slate-900 text-xs sm:text-sm">{currentTeacher?.teacherName || "Tài khoản đăng nhập"}</span>
                       </div>
                       <p className="text-[11px] text-slate-500 font-medium">
-                        {currentTeacher?.email || "Email"} • Chức vụ: <span className="font-bold text-slate-700">{isTTCM ? "Tổ trưởng chuyên môn" : (currentTeacher?.position || "Ban ĐHCM / Quản lý / Tổ CTHS")}</span>
+                        {currentTeacher?.email || "Email"} • Chức vụ: <span className="font-bold text-slate-700">{isTTCM ? "Tổ trưởng chuyên môn" : (currentTeacher?.position || "Ban ĐHCM / Quản lý chuyên môn")}</span>
                       </p>
                     </div>
                   </div>
@@ -2055,236 +2487,13 @@ export function ObservationRegistrationSection(props: any) {
                 </div>
               </div>
 
-              {/* SECTION 2: FORM ĐÁNH GIÁ TIẾT DẠY HOẶC GHI NHẬN LÀM VIỆC TỔ CTHS */}
-              {isCthsMode ? (
-                <div className="bg-white p-5 sm:p-6 rounded-2xl border border-teal-200/90 shadow-2xs space-y-6">
-                  {/* Header Banner for CTHS Work Log */}
-                  <div className="p-5 bg-gradient-to-r from-[#003B3A] via-[#005B58] to-[#007068] text-white rounded-2xl shadow-sm space-y-2 border border-teal-700/50">
-                    <div className="flex items-center justify-between flex-wrap gap-3">
-                      <div className="flex items-center gap-3">
-                        <div className="w-10 h-10 rounded-xl bg-white/15 border border-white/20 flex items-center justify-center shrink-0 shadow-xs">
-                          <ClipboardList className="w-5 h-5 text-teal-100" />
-                        </div>
-                        <div>
-                          <div className="flex items-center gap-2 flex-wrap">
-                            <h5 className="font-black text-sm sm:text-base uppercase tracking-wide">
-                              Ghi Nhận Buổi Làm Việc Tại Cơ Sở – Tổ CTHS
-                            </h5>
-                            <span className="px-2.5 py-0.5 rounded-full text-[10px] font-black bg-teal-400/30 text-teal-100 border border-teal-300/40 uppercase">
-                              Không chấm điểm
-                            </span>
-                          </div>
-                          <p className="text-xs text-teal-100/90 font-medium mt-0.5">
-                            Ghi nhận số tiết làm việc thực tế và các đầu việc đã thực hiện tại từng cơ sở. Tự động tính vào Ma trận cơ sở.
-                          </p>
-                        </div>
-                      </div>
-                      <div className="flex items-center gap-2 bg-black/25 px-3.5 py-2 rounded-xl border border-white/15 shrink-0">
-                        <Building2 className="w-4 h-4 text-teal-300" />
-                        <span className="text-xs font-bold text-teal-100">
-                          Cơ sở: <strong className="text-white font-black">{campuses.find((c: any) => c.id === surpriseCampusId)?.campusName || "Chưa chọn CS"}</strong>
-                        </span>
-                      </div>
-                    </div>
-                  </div>
-
-                  {/* 1. Thời lượng & Khối lượng Tiết làm việc */}
-                  <div className="p-4 sm:p-5 bg-slate-50/80 rounded-2xl border border-slate-200 space-y-3">
-                    <div className="flex items-center justify-between flex-wrap gap-2">
-                      <label className="text-xs font-black text-slate-800 uppercase tracking-wider flex items-center gap-1.5">
-                        <Clock className="w-4 h-4 text-[#00A19A]" />
-                        <span>Thời lượng & Số tiết làm việc thực tế</span>
-                      </label>
-                      <span className="text-xs font-black text-teal-900 bg-teal-100/80 px-3 py-1 rounded-xl border border-teal-200 shadow-2xs">
-                        {cthsTotalPeriods} tiết làm việc ({campuses.find((c: any) => c.id === surpriseCampusId)?.id === currentTeacher?.campusId ? "Nội bộ CS" : "Liên cơ sở"})
-                      </span>
-                    </div>
-
-                    <div className="grid grid-cols-12 gap-3.5 pt-1">
-                      <div className="col-span-12 sm:col-span-5 flex flex-col gap-1.5">
-                        <label className="text-[11px] font-black text-slate-700">Tổng số tiết ghi nhận vào Ma trận CS *</label>
-                        <div className="flex items-center gap-1.5 flex-wrap">
-                          {[1, 2, 3, 4, 5, 6].map((num) => (
-                            <button
-                              key={num}
-                              type="button"
-                              onClick={() => {
-                                setCthsTotalPeriods(num);
-                                setSurprisePeriod(`Tiết 1 - ${num}`);
-                              }}
-                              className={`flex-1 min-w-[40px] py-2 text-xs font-black rounded-xl border transition-all cursor-pointer select-none active:scale-95 ${
-                                cthsTotalPeriods === num
-                                  ? "bg-[#007068] text-white border-[#005B58] shadow-xs ring-2 ring-teal-300/70"
-                                  : "bg-white text-slate-700 border-slate-200 hover:bg-slate-100"
-                              }`}
-                            >
-                              {num} tiết
-                            </button>
-                          ))}
-                        </div>
-                      </div>
-
-                      <div className="col-span-12 sm:col-span-4 flex flex-col gap-1.5">
-                        <label className="text-[11px] font-black text-slate-700">Khung giờ làm việc (Từ - Đến)</label>
-                        <div className="flex items-center gap-2">
-                          <input
-                            type="time"
-                            value={cthsStartTime}
-                            onChange={(e) => setCthsStartTime(e.target.value)}
-                            className="w-full text-xs font-bold p-2.5 rounded-xl border border-slate-200 bg-white focus:ring-2 focus:ring-[#00A19A] outline-none"
-                          />
-                          <span className="text-slate-400 font-bold">-</span>
-                          <input
-                            type="time"
-                            value={cthsEndTime}
-                            onChange={(e) => setCthsEndTime(e.target.value)}
-                            className="w-full text-xs font-bold p-2.5 rounded-xl border border-slate-200 bg-white focus:ring-2 focus:ring-[#00A19A] outline-none"
-                          />
-                        </div>
-                      </div>
-
-                      <div className="col-span-12 sm:col-span-3 flex flex-col gap-1.5">
-                        <label className="text-[11px] font-black text-slate-700">Phòng / Địa điểm làm việc</label>
-                        <input
-                          type="text"
-                          placeholder="Phòng CTHS, Sân trường, v.v..."
-                          value={surpriseRoom}
-                          onChange={(e) => setSurpriseRoom(e.target.value)}
-                          className="w-full text-xs font-bold p-2.5 rounded-xl border border-slate-200 bg-white focus:ring-2 focus:ring-[#00A19A] outline-none"
-                        />
-                      </div>
-                    </div>
-                  </div>
-
-                  {/* 2. Bảng Danh Sách Đầu Việc Thực Hiện */}
-                  <div className="space-y-3.5">
-                    <div className="flex items-center justify-between flex-wrap gap-2">
-                      <div>
-                        <label className="text-xs font-black text-slate-800 uppercase tracking-wider flex items-center gap-1.5">
-                          <FileText className="w-4 h-4 text-[#00A19A]" />
-                          <span>Danh sách Đầu việc Đã thực hiện ({cthsWorkItems.length} đầu việc)</span>
-                        </label>
-                        <p className="text-[11px] text-slate-500 font-medium">
-                          Mỗi đầu việc ghi ngắn gọn theo cấu trúc: Tên việc – Trạng thái Hoàn thành / Đang thực hiện – Ghi chú kết quả
-                        </p>
-                      </div>
-
-                      <button
-                        type="button"
-                        onClick={() => handleAddCthsWorkItem()}
-                        className="px-3.5 py-1.5 bg-teal-50 hover:bg-teal-100 text-[#005B58] text-xs font-black rounded-xl border border-teal-200 transition-all flex items-center gap-1.5 cursor-pointer shadow-2xs active:scale-95"
-                      >
-                        <Plus className="w-3.5 h-3.5" />
-                        <span>Thêm đầu việc</span>
-                      </button>
-                    </div>
-
-                    {/* Quick Presets for CTHS */}
-                    <div className="p-3 bg-slate-50/70 rounded-xl border border-slate-200/80 space-y-1.5">
-                      <span className="text-[10px] font-black text-slate-500 uppercase tracking-wider flex items-center gap-1">
-                        <Sparkles className="w-3 h-3 text-amber-500" />
-                        Gợi ý đầu việc CTHS thường gặp:
-                      </span>
-                      <div className="flex items-center gap-1.5 flex-wrap">
-                        {CTHS_TASK_PRESETS.map((preset, pIdx) => (
-                          <button
-                            key={pIdx}
-                            type="button"
-                            onClick={() => handleAddCthsWorkItem(preset)}
-                            className="px-2.5 py-1 text-[11px] font-semibold bg-white hover:bg-teal-50 text-slate-700 hover:text-teal-900 border border-slate-200 hover:border-teal-300 rounded-lg transition-all cursor-pointer shadow-2xs active:scale-95"
-                          >
-                            + {preset}
-                          </button>
-                        ))}
-                      </div>
-                    </div>
-
-                    {/* Dynamic Work Items List */}
-                    <div className="space-y-2.5">
-                      {cthsWorkItems.map((item, index) => (
-                        <div key={item.id} className="p-3.5 bg-white rounded-2xl border border-slate-200 hover:border-teal-200 transition-all shadow-2xs space-y-2.5">
-                          <div className="flex items-center gap-2">
-                            <span className="w-7 h-7 rounded-xl bg-teal-50 border border-teal-200 text-[#005B58] flex items-center justify-center text-xs font-black shrink-0">
-                              {index + 1}
-                            </span>
-                            <input
-                              type="text"
-                              placeholder="Tên / Nội dung đầu việc (VD: Kiểm tra nền nếp học sinh...)"
-                              value={item.name}
-                              onChange={(e) => handleUpdateCthsWorkItem(item.id, "name", e.target.value)}
-                              className="flex-1 text-xs font-bold p-2.5 rounded-xl border border-slate-200 bg-slate-50/60 focus:bg-white focus:ring-2 focus:ring-[#00A19A] outline-none text-slate-800"
-                            />
-                            {/* Status toggle button */}
-                            <button
-                              type="button"
-                              onClick={() => handleUpdateCthsWorkItem(item.id, "status", item.status === "COMPLETED" ? "IN_PROGRESS" : "COMPLETED")}
-                              className={`px-3 py-2 rounded-xl text-xs font-black border transition-all cursor-pointer shrink-0 flex items-center gap-1.5 shadow-2xs select-none active:scale-95 ${
-                                item.status === "COMPLETED"
-                                  ? "bg-emerald-50 text-emerald-800 border-emerald-300 hover:bg-emerald-100"
-                                  : "bg-amber-50 text-amber-800 border-amber-300 hover:bg-amber-100"
-                              }`}
-                              title="Bấm để chuyển đổi trạng thái"
-                            >
-                              {item.status === "COMPLETED" ? (
-                                <>
-                                  <CheckCircle2 className="w-3.5 h-3.5 text-emerald-600" />
-                                  <span>Hoàn thành</span>
-                                </>
-                              ) : (
-                                <>
-                                  <Clock className="w-3.5 h-3.5 text-amber-600" />
-                                  <span>Đang thực hiện</span>
-                                </>
-                              )}
-                            </button>
-                            {/* Remove button */}
-                            {cthsWorkItems.length > 1 && (
-                              <button
-                                type="button"
-                                onClick={() => handleRemoveCthsWorkItem(item.id)}
-                                className="p-2 text-slate-400 hover:text-rose-600 hover:bg-rose-50 rounded-xl transition-all cursor-pointer"
-                                title="Xóa đầu việc này"
-                              >
-                                <X className="w-4 h-4" />
-                              </button>
-                            )}
-                          </div>
-                          {/* Note & result input */}
-                          <div className="pl-9">
-                            <input
-                              type="text"
-                              placeholder="Kết quả thực hiện & Ghi chú ngắn gọn (nếu có)..."
-                              value={item.notes}
-                              onChange={(e) => handleUpdateCthsWorkItem(item.id, "notes", e.target.value)}
-                              className="w-full text-xs font-medium p-2 rounded-lg border border-slate-150 bg-slate-50/40 focus:bg-white focus:ring-1 focus:ring-[#00A19A] outline-none text-slate-700"
-                            />
-                          </div>
-                        </div>
-                      ))}
-                    </div>
-                  </div>
-
-                  {/* 3. Ghi Chú & Đề Xuất Phối Hợp Chung */}
-                  <div className="space-y-1.5 pt-2 border-t border-slate-100">
-                    <label className="text-[11px] font-black text-slate-700 uppercase tracking-wide">
-                      Ghi chú & Đề xuất phối hợp chung của buổi làm việc (Tùy chọn)
-                    </label>
-                    <textarea
-                      placeholder="Ghi chú tổng kết hoặc nội dung cần tiếp tục phối hợp với Ban Giám hiệu / GVCN cơ sở..."
-                      rows={2}
-                      value={surpriseGeneral}
-                      onChange={(e) => setSurpriseGeneral(e.target.value)}
-                      className="w-full text-xs font-medium p-3.5 rounded-xl border border-slate-200 bg-slate-50/50 hover:bg-white focus:ring-2 focus:ring-[#00A19A] outline-none resize-none transition-all shadow-2xs"
-                    />
-                  </div>
-                </div>
-              ) : (
-                <div className="bg-white p-5 rounded-2xl border border-slate-200/90 shadow-2xs space-y-6">
-                  <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-3 border-b border-slate-100">
-                    <h5 className="text-xs font-black text-slate-800 uppercase tracking-wider flex items-center gap-2">
-                      <span className="w-5 h-5 bg-teal-100 text-[#00A19A] rounded-md flex items-center justify-center text-xs font-black">2</span>
-                      {surpriseLevel !== "Mầm non" ? "Phiếu Đánh Giá 11 Tiêu Chí (Tổng 20 điểm)" : "Phiếu Đánh Giá Mầm Non (Tổng 10 điểm)"}
-                    </h5>
+              {/* SECTION 2: FORM ĐÁNH GIÁ TIẾT DẠY */}
+              <div className="bg-white p-5 rounded-2xl border border-slate-200/90 shadow-2xs space-y-6">
+                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-3 border-b border-slate-100">
+                  <h5 className="text-xs font-black text-slate-800 uppercase tracking-wider flex items-center gap-2">
+                    <span className="w-5 h-5 bg-teal-100 text-[#00A19A] rounded-md flex items-center justify-center text-xs font-black">2</span>
+                    {surpriseLevel !== "Mầm non" ? "Phiếu Đánh Giá 11 Tiêu Chí (Tổng 20 điểm)" : "Phiếu Đánh Giá Mầm Non (Tổng 10 điểm)"}
+                  </h5>
 
                   {/* Summary Score Box & Quick Actions */}
                   <div className="flex items-center flex-wrap gap-2.5">
@@ -2372,7 +2581,7 @@ export function ObservationRegistrationSection(props: any) {
                                             ? "bg-emerald-50 text-emerald-700 border-emerald-300"
                                             : "bg-amber-50 text-amber-700 border-amber-300"
                                         }`}>
-                                          <Sparkles className="w-3 h-3 text-amber-500 shrink-0" />
+                                          <Sparkles className="w-3.5 h-3.5 text-amber-500 shrink-0" />
                                           {req.mandatoryText}
                                           {isMaxReached && (
                                             <span className="ml-0.5 font-black text-emerald-600">✓ Đạt Max</span>
@@ -2383,7 +2592,6 @@ export function ObservationRegistrationSection(props: any) {
                                     <p className="text-xs text-slate-600 leading-relaxed font-medium">{req.text}</p>
                                   </div>
 
-                                  {/* Interactive scoring section: Badge + Quick Pills + Dropdown */}
                                   <div className="mt-3.5 pt-3 border-t border-slate-200/60 flex flex-col md:flex-row md:items-center justify-between gap-2.5">
                                     <div className="flex items-center gap-2 flex-wrap">
                                       <span className="text-xs font-black text-slate-500 uppercase tracking-wide">Điểm:</span>
@@ -2415,9 +2623,8 @@ export function ObservationRegistrationSection(props: any) {
                                       )}
                                     </div>
 
-                                    {/* Score Pills & Dropdown */}
-                                    <div className="flex items-center flex-wrap gap-1.5 justify-start md:justify-end">
-                                      <div className="flex items-center flex-wrap gap-1">
+                                    <div className="flex items-center gap-2 flex-wrap">
+                                      <div className="flex items-center gap-1 flex-wrap">
                                         {options.map((o) => {
                                           const isSelected = currentScore === o;
                                           const isMax = o === req.max;
@@ -2474,6 +2681,7 @@ export function ObservationRegistrationSection(props: any) {
                     })}
                   </div>
                 ) : (
+                  /* Tiêu chí Mầm Non */
                   <div className="space-y-6">
                     {MAMNON_SECTIONS.map((sec, sIdx) => {
                       let reqStartIdx = 0;
@@ -2483,7 +2691,7 @@ export function ObservationRegistrationSection(props: any) {
 
                       return (
                         <div key={sIdx} className="space-y-3">
-                          <h6 className="font-black text-xs text-slate-800 uppercase tracking-wider flex items-center gap-2 bg-amber-50 p-2.5 rounded-xl border border-amber-100">
+                          <h6 className="font-black text-xs text-slate-800 uppercase tracking-wider flex items-center gap-2 bg-slate-50 p-2.5 rounded-xl border border-slate-100">
                             <span className="w-5 h-5 bg-amber-600 text-white rounded-md flex items-center justify-center text-xs font-black">{sIdx + 1}</span>
                             {sec.name}
                           </h6>
@@ -2510,20 +2718,14 @@ export function ObservationRegistrationSection(props: any) {
                                         : "bg-slate-50/70 hover:bg-slate-50 border-slate-200/70"
                                   }`}
                                 >
-                                  <div className="space-y-1 min-w-0">
-                                    <div className="flex items-center gap-2">
+                                  <div className="space-y-1.5 min-w-0">
+                                    <div className="flex items-center flex-wrap gap-2">
                                       <span className="px-2.5 py-0.5 text-[10px] font-black bg-slate-200 text-slate-700 rounded-md uppercase tracking-wider">{req.label}</span>
                                       <span className="text-[11px] font-bold text-slate-400">(Tối đa: {req.max}đ)</span>
-                                      {isMaxReached && (
-                                        <span className="px-2 py-0.5 text-[10px] font-bold rounded-md border bg-emerald-50 text-emerald-700 border-emerald-300">
-                                          ✓ Đạt Max
-                                        </span>
-                                      )}
                                     </div>
                                     <p className="text-xs text-slate-600 leading-relaxed font-medium">{req.text}</p>
                                   </div>
 
-                                  {/* Interactive scoring section: Badge + Quick Pills + Dropdown */}
                                   <div className="mt-3.5 pt-3 border-t border-slate-200/60 flex flex-col md:flex-row md:items-center justify-between gap-2.5">
                                     <div className="flex items-center gap-2 flex-wrap">
                                       <span className="text-xs font-black text-slate-500 uppercase tracking-wide">Điểm:</span>
@@ -2555,9 +2757,8 @@ export function ObservationRegistrationSection(props: any) {
                                       )}
                                     </div>
 
-                                    {/* Score Pills & Dropdown */}
-                                    <div className="flex items-center flex-wrap gap-1.5 justify-start md:justify-end">
-                                      <div className="flex items-center flex-wrap gap-1">
+                                    <div className="flex items-center gap-2 flex-wrap">
+                                      <div className="flex items-center gap-1 flex-wrap">
                                         {options.map((o) => {
                                           const isSelected = currentScore === o;
                                           const isMax = o === req.max;
@@ -2742,11 +2943,10 @@ export function ObservationRegistrationSection(props: any) {
                   );
                 })()}
               </div>
-            )}
 
               {/* Action Buttons: Lưu nháp / Hoàn thành */}
               <div className="flex flex-col sm:flex-row items-center justify-end gap-3 pt-2">
-                {!isCthsMode && surpriseQuota?.isExceeded && !surpriseQuota?.isUnlimited && (
+                {surpriseQuota?.isExceeded && !surpriseQuota?.isUnlimited && (
                   <span className="text-xs text-rose-600 font-black mr-auto flex items-center gap-1.5">
                     <AlertCircle className="w-4 h-4 shrink-0" />
                     Đã hết hạn ngạch dự giờ đột xuất tháng ({surpriseQuota.currentSurpriseCount}/{surpriseQuota.maxSurpriseAllowed} tiết).
@@ -2754,17 +2954,9 @@ export function ObservationRegistrationSection(props: any) {
                 )}
 
                 {(() => {
-                  const isBlockedByQuota = !isCthsMode && !surpriseQuota?.isUnlimited && surpriseQuota?.isExceeded;
+                  const isBlockedByQuota = !surpriseQuota?.isUnlimited && surpriseQuota?.isExceeded;
 
                   const doSubmitSurprise = (isDraft: boolean) => {
-                    if (isCthsMode) {
-                      handleSurpriseSubmit(isDraft, {
-                        isCthsLog: true,
-                        workItems: cthsWorkItems,
-                        totalPeriods: cthsTotalPeriods
-                      });
-                      return;
-                    }
                     if (isBlockedByQuota) return;
                     if (teacherSurpriseHistory?.hasRecentSurprise && !confirmedSpacingWarning) {
                       setPendingDraftSubmit(isDraft);
@@ -2805,8 +2997,6 @@ export function ObservationRegistrationSection(props: any) {
                         <CheckCircle2 className="w-4 h-4 text-emerald-200" />
                         {surpriseSubmitting
                           ? "Đang xử lý..."
-                          : isCthsMode
-                          ? "Ghi nhận buổi làm việc (Tổ CTHS)"
                           : (joinExistingSlot ? "Hoàn thành đánh giá (Gộp phiên)" : "Hoàn thành đánh giá")}
                       </button>
                     </>
@@ -2871,7 +3061,8 @@ export function ObservationRegistrationSection(props: any) {
                 </div>
               )}
             </div>
-          ) : creationMode === "OBSERVER_REQUEST" ? (
+
+                    ) : creationMode === "OBSERVER_REQUEST" ? (
 
             /* ===== FORM 2: GVBM XIN ĐĂNG KÝ DỰ GIỜ ===== */
             <form onSubmit={handleRequestSubmit} className="flex flex-col gap-4 text-xs font-semibold bg-indigo-50/30 p-5 rounded-2xl border border-indigo-100/80">

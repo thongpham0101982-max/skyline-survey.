@@ -609,28 +609,41 @@ export function PrintObservationEvaluationModal({ slot, registration, onClose }:
                       <thead>
                         <tr className="bg-slate-100 text-slate-900 font-bold">
                           <th className="border border-slate-300 p-2 text-center w-10">STT</th>
-                          <th className="border border-slate-300 p-2 text-left">Tên / Nội dung đầu việc</th>
-                          <th className="border border-slate-300 p-2 text-center w-32">Trạng thái</th>
-                          <th className="border border-slate-300 p-2 text-left">Kết quả thực hiện & Ghi chú</th>
+                          <th className="border border-slate-300 p-2 text-left w-36">Nhóm đầu việc</th>
+                          <th className="border border-slate-300 p-2 text-left">Đầu việc thực hiện</th>
+                          <th className="border border-slate-300 p-2 text-center w-28">Trạng thái</th>
+                          <th className="border border-slate-300 p-2 text-left">Nội dung cần tiếp tục</th>
+                          <th className="border border-slate-300 p-2 text-left w-36">Ghi chú</th>
                         </tr>
                       </thead>
                       <tbody>
                         {workItems.length > 0 ? (
-                          workItems.map((item: any, idx: number) => (
-                            <tr key={idx} className="hover:bg-slate-50">
-                              <td className="border border-slate-300 p-2 text-center font-bold">{idx + 1}</td>
-                              <td className="border border-slate-300 p-2 font-bold text-slate-900">{item.name || item.taskName}</td>
-                              <td className="border border-slate-300 p-2 text-center font-black text-emerald-800">
-                                {item.status === "COMPLETED" || item.status === "Hoàn thành" ? "Hoàn thành" : "Đang thực hiện"}
-                              </td>
-                              <td className="border border-slate-300 p-2 text-slate-700 italic">{item.notes || "—"}</td>
-                            </tr>
-                          ))
+                          workItems.map((item: any, idx: number) => {
+                            const isContinue = item.status === "CONTINUE" || item.status === "Tiếp tục";
+                            return (
+                              <tr key={idx} className="hover:bg-slate-50">
+                                <td className="border border-slate-300 p-2 text-center font-bold">{idx + 1}</td>
+                                <td className="border border-slate-300 p-2 text-slate-700 font-semibold">{item.category || "HĐ CTHS"}</td>
+                                <td className="border border-slate-300 p-2 font-bold text-slate-900">{item.taskName || item.name}</td>
+                                <td className="border border-slate-300 p-2 text-center font-bold">
+                                  {isContinue ? (
+                                    <span className="text-amber-800 bg-amber-50 px-2 py-0.5 rounded border border-amber-300">Tiếp tục</span>
+                                  ) : (
+                                    <span className="text-emerald-800 bg-emerald-50 px-2 py-0.5 rounded border border-emerald-300">Hoàn thành</span>
+                                  )}
+                                </td>
+                                <td className="border border-slate-300 p-2 text-amber-900 font-medium">{item.followUpNotes || "—"}</td>
+                                <td className="border border-slate-300 p-2 text-slate-700 italic">{item.notes || "—"}</td>
+                              </tr>
+                            );
+                          })
                         ) : (
                           <tr>
                             <td className="border border-slate-300 p-2 text-center font-bold">1</td>
-                            <td className="border border-slate-300 p-2 font-bold">{slot?.topic || "Công tác học sinh tại cơ sở"}</td>
-                            <td className="border border-slate-300 p-2 text-center font-black text-emerald-800">Hoàn thành</td>
+                            <td className="border border-slate-300 p-2 text-slate-700">Công tác Học sinh</td>
+                            <td className="border border-slate-300 p-2 font-bold text-slate-900">{slot?.topic || "Công tác học sinh tại cơ sở"}</td>
+                            <td className="border border-slate-300 p-2 text-center font-bold text-emerald-800">Hoàn thành</td>
+                            <td className="border border-slate-300 p-2 text-slate-400 italic">—</td>
                             <td className="border border-slate-300 p-2 text-slate-700 italic">—</td>
                           </tr>
                         )}
