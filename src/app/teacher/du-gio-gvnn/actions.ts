@@ -307,6 +307,9 @@ export async function createForeignObservationWithEvaluation(data: {
   campusId: string;
   classId?: string;
   className?: string;
+  subjectName?: string;
+  numberOfStudents?: string;
+  lessonDuration?: string;
   date: string;
   period?: string;
   room?: string;
@@ -412,7 +415,7 @@ export async function createForeignObservationWithEvaluation(data: {
         OR: [
           { subjectCode: "INT-ENG" },
           { subjectCode: "ESL" },
-          { subjectName: "English" },
+          { subjectName: data.subjectName || "English" },
           { subjectName: "Tiếng Anh (ESL)" },
           { subjectName: "Tiếng Anh" },
           { subjectCode: "ENG" }
@@ -424,7 +427,7 @@ export async function createForeignObservationWithEvaluation(data: {
       subject = await prisma.subject.create({
         data: {
           subjectCode: "INT-ENG",
-          subjectName: "English",
+          subjectName: data.subjectName || "English",
           category: "BILINGUAL",
           description: "English as a Second Language"
         }
@@ -460,9 +463,9 @@ export async function createForeignObservationWithEvaluation(data: {
         level: classObj?.level || hostTeacher.departmentRel?.blockCM || "Tiểu học",
         grade: classObj?.grade ? `Khối ${classObj.grade}` : (data.className || "Khối 1"),
         subjectId: subject?.id || null,
-        subjectName: subject?.subjectName || "Tiếng Anh (ESL)",
-        topic: data.topic || "Foreign English Lesson Walkthrough",
-        lessonPlanName: data.topic || "Foreign English Lesson Walkthrough",
+        subjectName: data.subjectName || subject?.subjectName || "Tiếng Anh (ESL)",
+        topic: data.topic || "CLASS OBSERVATION & TEACHING SUPPORT",
+        lessonPlanName: data.topic || "CLASS OBSERVATION & TEACHING SUPPORT",
         date: observationDate,
         startTime: data.period || timeRange.start,
         endTime: timeRange.end,
@@ -488,17 +491,35 @@ export async function createForeignObservationWithEvaluation(data: {
     });
 
     const evaluationCriteria = [
-      { id: 14, standardId: 1, name: "Content appropriate for student level", weight: 1 },
-      { id: 15, standardId: 1, name: "Amount of content realistic for time", weight: 1 },
-      { id: 16, standardId: 1, name: "Teaching materials & resources effective", weight: 1 },
-      { id: 17, standardId: 1, name: "Curriculum implemented as intended", weight: 1 },
-      { id: 18, standardId: 2, name: "Formative checks / assessment regular", weight: 1 },
-      { id: 19, standardId: 2, name: "Clear actionable feedback provided", weight: 1 },
-      { id: 20, standardId: 2, name: "Support for developing students identified", weight: 1 },
-      { id: 1, standardId: 3, name: "Clear learning intentions & structured staging", weight: 1 },
-      { id: 2, standardId: 3, name: "Optimized TTT vs STT balance", weight: 1 },
-      { id: 3, standardId: 3, name: "Positive immersion rapport & active engagement", weight: 1 }
+      // Section A: Learning Environment & Student Engagement
+      { id: 1, section: "A", name: "Students feel safe, respected and comfortable participating", weight: 1 },
+      { id: 2, section: "A", name: "Classroom routines and behaviour support learning effectively", weight: 1 },
+      { id: 3, section: "A", name: "Students are actively engaged in the learning activities", weight: 1 },
+      { id: 4, section: "A", name: "Students have opportunities to ask questions, express ideas and interact with others", weight: 1 },
+      { id: 5, section: "A", name: "The teacher builds positive and respectful relationships with students", weight: 1 },
+      // Section B: Teaching & Learning
+      { id: 6, section: "B", name: "Activities are aligned with the learning objectives and curriculum", weight: 1 },
+      { id: 7, section: "B", name: "Instructions and explanations are clear and appropriate for students' level", weight: 1 },
+      { id: 8, section: "B", name: "Teaching strategies help students understand, practise and apply learning", weight: 1 },
+      { id: 9, section: "B", name: "The teacher checks students' understanding during the lesson", weight: 1 },
+      { id: 10, section: "B", name: "Learning resources and technology are used purposefully", weight: 1 },
+      // Section C: Differentiation & Student Support
+      { id: 11, section: "C", name: "Tasks and support are appropriate for the range of student abilities", weight: 1 },
+      { id: 12, section: "C", name: "Students who need additional support receive appropriate scaffolding", weight: 1 },
+      { id: 13, section: "C", name: "Students are encouraged to develop independence in learning", weight: 1 },
+      // Section D: Curriculum Implementation
+      { id: 14, section: "D", name: "The planned content is appropriate for the students' current level", weight: 1 },
+      { id: 15, section: "D", name: "The amount of curriculum content is realistic within the allocated teaching time", weight: 1 },
+      { id: 16, section: "D", name: "Teaching materials/resources support effective curriculum delivery", weight: 1 },
+      { id: 17, section: "D", name: "The teacher is able to implement the curriculum as intended", weight: 1 },
+      // Section E: Assessment & Student Progress
+      { id: 18, section: "E", name: "The teacher uses formative assessment/checks for understanding regularly", weight: 1 },
+      { id: 19, section: "E", name: "Students receive clear feedback that helps them improve", weight: 1 },
+      { id: 20, section: "E", name: "Students who are not making expected progress are identified and supported", weight: 1 }
     ];
+
+    let totalScoreSum = 0;
+    let totalScoreCount = 0;
 
     const criterionScores = evaluationCriteria.map(crit => {
       const ind = data.indicators[crit.id.toString()] || data.indicators[crit.id];
@@ -508,20 +529,42 @@ export async function createForeignObservationWithEvaluation(data: {
       else if (rating === "3") score = 3;
       else if (rating === "2") score = 2;
       else if (rating === "1") score = 1;
+      else if (rating === "NO" || rating === "N/O") score = 0;
+
+      if (score > 0) {
+        totalScoreSum += score;
+        totalScoreCount++;
+      }
 
       return {
         criterionId: crit.id,
         criterionName: crit.name,
-        standardId: crit.standardId,
+        section: crit.section,
+        rating,
         score,
         evidence: ind?.evidence || "",
         notes: ind?.studentImpact || ""
       };
     });
 
+    const tvRaw = data.teacherVoice || {};
+    const normalizedTeacherVoice = {
+      workingWell: tvRaw.workingWell || (tvRaw as any).reflectionQ1 || "",
+      challenges: tvRaw.challenges || (tvRaw as any).reflectionQ2 || "",
+      curriculumAdjustments: tvRaw.curriculumAdjustments || (tvRaw as any).reflectionQ3 || "",
+      supportNeeded: tvRaw.supportNeeded || (tvRaw as any).reflectionQ4 || "",
+      reflectionQ1: (tvRaw as any).reflectionQ1 || tvRaw.workingWell || "",
+      reflectionQ2: (tvRaw as any).reflectionQ2 || tvRaw.challenges || "",
+      reflectionQ3: (tvRaw as any).reflectionQ3 || tvRaw.curriculumAdjustments || "",
+      reflectionQ4: (tvRaw as any).reflectionQ4 || tvRaw.supportNeeded || ""
+    };
+
     const generalComment = JSON.stringify({
       targetSkills: data.targetSkills || [],
-      teacherVoice: data.teacherVoice || {},
+      numberOfStudents: data.numberOfStudents || "",
+      lessonDuration: data.lessonDuration || "",
+      subjectName: data.subjectName || "Tiếng Anh (ESL)",
+      teacherVoice: normalizedTeacherVoice,
       summary: data.summary || {},
       overallRatingText: data.overallRating || "Effective Practice",
       period: data.period || "Tiết 1",
@@ -545,7 +588,7 @@ export async function createForeignObservationWithEvaluation(data: {
         score8: criterionScores[7]?.score ?? null,
         score9: criterionScores[8]?.score ?? null,
         score10: criterionScores[9]?.score ?? null,
-        totalScore: data.totalScore || 3.0,
+        totalScore: calculatedAvgScore,
         strengths: data.summary?.keyStrengths || "",
         improvements: data.summary?.keyChallenges || "",
         generalComment,

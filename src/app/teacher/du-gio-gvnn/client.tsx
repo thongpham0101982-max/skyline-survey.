@@ -58,7 +58,260 @@ const cleanStr = (s: string | null | undefined) =>
    .replace(/Đ/g, "d");
 
 export const ESL_INDICATORS: IndicatorConfig[] = [
-  // SECTION D: CURRICULUM IMPLEMENTATION (From Excel)
+  // SECTION A: LEARNING ENVIRONMENT & STUDENT ENGAGEMENT
+  {
+    id: 1,
+    section: "A",
+    sectionTitle: "A. LEARNING ENVIRONMENT & STUDENT ENGAGEMENT",
+    label: "Indicator 1",
+    text: "Students feel safe, respected and comfortable participating.",
+    vnText: "Học sinh cảm thấy an toàn, được tôn trọng và thoải mái tham gia hoạt động.",
+    quickEvidence: [
+      "Welcoming and supportive classroom atmosphere",
+      "Encouraging verbal & non-verbal praise",
+      "Students unhesitant to take risks or speak up",
+      "Safe and positive learning culture established"
+    ],
+    quickImpact: [
+      "High level of student confidence and openness",
+      "Zero anxiety observed when called upon",
+      "Students actively volunteer to answer questions"
+    ]
+  },
+  {
+    id: 2,
+    section: "A",
+    sectionTitle: "A. LEARNING ENVIRONMENT & STUDENT ENGAGEMENT",
+    label: "Indicator 2",
+    text: "Classroom routines and behaviour support learning effectively.",
+    vnText: "Nề nếp lớp học và kỷ luật hỗ trợ hiệu quả cho việc học.",
+    quickEvidence: [
+      "Clear, consistent classroom routines & signals",
+      "Seamless transitions between activities",
+      "Positive behaviour management strategies used",
+      "Minimal downtime during lesson stages"
+    ],
+    quickImpact: [
+      "Students follow routines promptly and smoothly",
+      "Maximum on-task learning time maintained",
+      "Well-regulated and focused learning space"
+    ]
+  },
+  {
+    id: 3,
+    section: "A",
+    sectionTitle: "A. LEARNING ENVIRONMENT & STUDENT ENGAGEMENT",
+    label: "Indicator 3",
+    text: "Students are actively engaged in the learning activities.",
+    vnText: "Học sinh chủ động, tích cực tham gia vào các hoạt động học tập.",
+    quickEvidence: [
+      "Total physical response & interactive tasks",
+      "High participation in whole-class and pair work",
+      "Energetic, motivating pacing and variety",
+      "Interactive games and meaningful tasks used"
+    ],
+    quickImpact: [
+      "Sustained high attention and enthusiasm throughout",
+      "Over 90% of students continuously engaged",
+      "Active production of target language"
+    ]
+  },
+  {
+    id: 4,
+    section: "A",
+    sectionTitle: "A. LEARNING ENVIRONMENT & STUDENT ENGAGEMENT",
+    label: "Indicator 4",
+    text: "Students have opportunities to ask questions, express ideas and interact with others.",
+    vnText: "Học sinh có cơ hội đặt câu hỏi, bày tỏ ý kiến và tương tác với bạn.",
+    quickEvidence: [
+      "Frequent pair-share and group collaboration",
+      "Open-ended and inquiry prompts provided",
+      "Student-to-student English interactions facilitated",
+      "Teacher acts as facilitator, maximizing STT"
+    ],
+    quickImpact: [
+      "Authentic peer-to-peer communication",
+      "Learners express personal thoughts in English",
+      "Collaborative problem-solving observed"
+    ]
+  },
+  {
+    id: 5,
+    section: "A",
+    sectionTitle: "A. LEARNING ENVIRONMENT & STUDENT ENGAGEMENT",
+    label: "Indicator 5",
+    text: "The teacher builds positive and respectful relationships with students.",
+    vnText: "Giáo viên xây dựng mối quan hệ tôn trọng, tích cực và gần gũi với học sinh.",
+    quickEvidence: [
+      "Warm tone, empathetic listening & name recall",
+      "Positive reinforcement and genuine care shown",
+      "Inclusive rapport with every individual learner",
+      "Respectful cultural & linguistic sensitivity"
+    ],
+    quickImpact: [
+      "Strong teacher-student connection and mutual trust",
+      "Students feel valued, motivated, and supported",
+      "Joyful and productive learning environment"
+    ]
+  },
+
+  // SECTION B: TEACHING & LEARNING
+  {
+    id: 6,
+    section: "B",
+    sectionTitle: "B. TEACHING & LEARNING",
+    label: "Indicator 6",
+    text: "Activities are aligned with the learning objectives and curriculum.",
+    vnText: "Các hoạt động dạy học bám sát mục tiêu bài học và khung chương trình.",
+    quickEvidence: [
+      "Clear communicative aim stated and followed",
+      "Structured staging (Warm-up -> PPP / TBL -> Production)",
+      "All tasks directly reinforce core language targets",
+      "Lesson plan aligns with syllabus progression"
+    ],
+    quickImpact: [
+      "Students clearly understand the purpose of each task",
+      "Systematic mastery of target vocabulary and grammar",
+      "Coherent lesson flow leading to intended outcomes"
+    ]
+  },
+  {
+    id: 7,
+    section: "B",
+    sectionTitle: "B. TEACHING & LEARNING",
+    label: "Indicator 7",
+    text: "Instructions and explanations are clear and appropriate for students' level.",
+    vnText: "Hướng dẫn và giải thích rõ ràng, phù hợp với trình độ của học sinh.",
+    quickEvidence: [
+      "Graded language with visual modeling / demonstrations",
+      "Instruction Checking Questions (ICQs) used effectively",
+      "Step-by-step task breakdown with clear examples",
+      "Concise teacher talk without over-explaining"
+    ],
+    quickImpact: [
+      "Zero confusion when transitioning into tasks",
+      "Students begin pair/group work immediately",
+      "Independent task execution with minimal hesitance"
+    ]
+  },
+  {
+    id: 8,
+    section: "B",
+    sectionTitle: "B. TEACHING & LEARNING",
+    label: "Indicator 8",
+    text: "Teaching strategies help students understand, practise and apply learning.",
+    vnText: "Chiến lược dạy học giúp HS hiểu bài, luyện tập và vận dụng kiến thức.",
+    quickEvidence: [
+      "Communicative Language Teaching (CLT) applied",
+      "Balanced scaffolding: controlled -> guided -> free practice",
+      "Contextualized examples and real-life scenarios",
+      "Varied modalities: visual, auditory, kinesthetic"
+    ],
+    quickImpact: [
+      "Deep understanding rather than rote memorization",
+      "Effective transfer to real communicative situations",
+      "High rate of successful task completion"
+    ]
+  },
+  {
+    id: 9,
+    section: "B",
+    sectionTitle: "B. TEACHING & LEARNING",
+    label: "Indicator 9",
+    text: "The teacher checks students' understanding during the lesson.",
+    vnText: "Giáo viên kiểm tra mức độ hiểu bài của học sinh trong suốt tiết dạy.",
+    quickEvidence: [
+      "Regular Concept Checking Questions (CCQs)",
+      "Active teacher circulation and monitoring",
+      "Quick diagnostic checks (mini-whiteboards/thumbs)",
+      "Elicitation used instead of direct answers"
+    ],
+    quickImpact: [
+      "Misunderstandings caught and addressed immediately",
+      "Every learner held accountable for comprehension",
+      "Timely pacing adjustments based on student responses"
+    ]
+  },
+  {
+    id: 10,
+    section: "B",
+    sectionTitle: "B. TEACHING & LEARNING",
+    label: "Indicator 10",
+    text: "Learning resources and technology are used purposefully.",
+    vnText: "Học liệu, đồ dùng dạy học và công nghệ được sử dụng đúng mục đích, hiệu quả.",
+    quickEvidence: [
+      "Smartboard/projector integrated smoothly",
+      "Engaging multimedia, slides, flashcards & realia",
+      "Well-organized handouts and interactive games",
+      "Technology directly enhances student learning"
+    ],
+    quickImpact: [
+      "Visual & audio aids enhanced comprehension",
+      "Increased learner motivation and focus",
+      "Dynamic and modern classroom experience"
+    ]
+  },
+
+  // SECTION C: DIFFERENTIATION & STUDENT SUPPORT
+  {
+    id: 11,
+    section: "C",
+    sectionTitle: "C. DIFFERENTIATION & STUDENT SUPPORT",
+    label: "Indicator 11",
+    text: "Tasks and support are appropriate for the range of student abilities.",
+    vnText: "Nhiệm vụ và sự hỗ trợ phù hợp với các mức độ năng lực khác nhau của HS.",
+    quickEvidence: [
+      "Tiered tasks / extension activities for fast finishers",
+      "Adapted speaking prompts for varying levels",
+      "Strategic grouping / mixed-ability pairing",
+      "Multi-level scaffolding options available"
+    ],
+    quickImpact: [
+      "Advanced students are adequately challenged",
+      "Lower-proficiency students remain fully included",
+      "All students experience success at their level"
+    ]
+  },
+  {
+    id: 12,
+    section: "C",
+    sectionTitle: "C. DIFFERENTIATION & STUDENT SUPPORT",
+    label: "Indicator 12",
+    text: "Students who need additional support receive appropriate scaffolding.",
+    vnText: "Học sinh cần hỗ trợ thêm nhận được sự trợ giúp, gợi mở phù hợp.",
+    quickEvidence: [
+      "Targeted individual guidance during independent work",
+      "Sentence starters, word banks & visual cues provided",
+      "Co-teacher / assistant effectively deployed",
+      "Patient re-prompting and phonetic modeling"
+    ],
+    quickImpact: [
+      "Struggling learners successfully produce key language",
+      "Confidence restored for hesitant speakers",
+      "Measurable progress within the lesson cycle"
+    ]
+  },
+  {
+    id: 13,
+    section: "C",
+    sectionTitle: "C. DIFFERENTIATION & STUDENT SUPPORT",
+    label: "Indicator 13",
+    text: "Students are encouraged to develop independence in learning.",
+    vnText: "Khuyến khích học sinh phát triển tính tự chủ và chủ động trong học tập.",
+    quickEvidence: [
+      "Self-checking and peer-correction routines",
+      "Students encouraged to use classroom reference charts",
+      "Autonomous pair practice with minimal teacher intrusion",
+      "Reflective self-assessment prompts"
+    ],
+    quickImpact: [
+      "Learners take ownership of their learning process",
+      "Reduced reliance on constant teacher validation",
+      "Proactive problem-solving and critical thinking"
+    ]
+  },
+
+  // SECTION D: CURRICULUM IMPLEMENTATION
   {
     id: 14,
     section: "D",
@@ -136,7 +389,7 @@ export const ESL_INDICATORS: IndicatorConfig[] = [
     ]
   },
 
-  // SECTION E: ASSESSMENT & STUDENT PROGRESS (From Excel)
+  // SECTION E: ASSESSMENT & STUDENT PROGRESS
   {
     id: 18,
     section: "E",
@@ -193,68 +446,15 @@ export const ESL_INDICATORS: IndicatorConfig[] = [
       "Inclusive atmosphere; no learner left behind",
       "Clear documentation of students needing extra clinic"
     ]
-  },
-
-  // SECTIONS A-C: CLASSROOM INSTRUCTION & IMMERSION CLIMATE
-  {
-    id: 1,
-    section: "ABC",
-    sectionTitle: "A-C. CLASSROOM INSTRUCTION & IMMERSION CLIMATE",
-    label: "Indicator 1",
-    text: "Clear learning intentions, staging, and structured transitions.",
-    vnText: "Mục tiêu bài dạy rõ ràng, tiến trình chặt chẽ và chuyển giao mượt mà.",
-    quickEvidence: [
-      "Clear aim shared at the start of class",
-      "Logical staging: Warm-up -> PPP / TBL -> Production",
-      "Smooth, predictable transition routines"
-    ],
-    quickImpact: [
-      "Learners were primed and aware of lesson goals",
-      "Minimal downtime between activity shifts"
-    ]
-  },
-  {
-    id: 2,
-    section: "ABC",
-    sectionTitle: "A-C. CLASSROOM INSTRUCTION & IMMERSION CLIMATE",
-    label: "Indicator 2",
-    text: "Optimal Teacher Talk Time (TTT) vs. Student Talk Time (STT).",
-    vnText: "Cân đối thời gian nói của GV và tối đa hóa thời gian nói của HS.",
-    quickEvidence: [
-      "TTT kept concise; teacher acted as facilitator",
-      "Maximized pair work and communicative games",
-      "Students spoke English throughout the main stages"
-    ],
-    quickImpact: [
-      "High volume of authentic oral English output",
-      "Learners took ownership of classroom conversations"
-    ]
-  },
-  {
-    id: 3,
-    section: "ABC",
-    sectionTitle: "A-C. CLASSROOM INSTRUCTION & IMMERSION CLIMATE",
-    label: "Indicator 3",
-    text: "Positive English immersion environment, strong rapport, and active engagement.",
-    vnText: "Môi trường học tập tích cực, quan hệ sư phạm tốt và tạo hứng thú cao.",
-    quickEvidence: [
-      "High energy, encouraging tone, genuine rapport",
-      "Consistent 100% English immersion atmosphere",
-      "Motivating reward system and respectful culture"
-    ],
-    quickImpact: [
-      "Students enthusiastic, confident, and joyful in speaking",
-      "Zero reluctance to participate in front of peers"
-    ]
   }
 ];
 
 const RATING_OPTIONS = [
-  { value: "4", label: "4 - Strong Practice", short: "4", badge: "bg-emerald-600 text-white", desc: "Particularly effective; worth sharing." },
-  { value: "3", label: "3 - Effective", short: "3", badge: "bg-sky-600 text-white", desc: "Consistently meets expectations." },
-  { value: "2", label: "2 - Developing", short: "2", badge: "bg-amber-500 text-white", desc: "Partially effective; needs refining." },
-  { value: "1", label: "1 - Needs Support", short: "1", badge: "bg-rose-500 text-white", desc: "Clear challenge; requires intervention." },
-  { value: "N/O", label: "N/O - Not Observed", short: "N/O", badge: "bg-slate-400 text-white", desc: "Not enough evidence / not applicable." }
+  { value: "4", label: "4 - Strong Practice", short: "4", badge: "bg-purple-600 text-white", desc: "Particularly effective; exemplary practice worth sharing." },
+  { value: "3", label: "3 - Effective", short: "3", badge: "bg-emerald-600 text-white", desc: "Consistently meets expectations and good standard." },
+  { value: "2", label: "2 - Developing", short: "2", badge: "bg-amber-500 text-white", desc: "Partially effective; needs refining and coaching." },
+  { value: "1", label: "1 - Need support", short: "1", badge: "bg-rose-500 text-white", desc: "Clear challenge; requires immediate support / intervention." },
+  { value: "NO", label: "NO - Not observed", short: "NO", badge: "bg-slate-400 text-white", desc: "Not observed / not applicable in this lesson." }
 ];
 
 const SKILL_OPTIONS = [
@@ -324,6 +524,9 @@ export function ForeignObservationClient(props: {
   const [campusId, setCampusId] = useState("");
   const [classId, setClassId] = useState("");
   const [className, setClassName] = useState("");
+  const [subjectName, setSubjectName] = useState("Tiếng Anh (ESL)");
+  const [numberOfStudents, setNumberOfStudents] = useState("");
+  const [lessonDuration, setLessonDuration] = useState("40 phút");
   const [date, setDate] = useState(() => new Date().toISOString().split("T")[0]);
   const [period, setPeriod] = useState("Tiết 1");
   const [room, setRoom] = useState("Phòng học");
@@ -672,6 +875,9 @@ export function ForeignObservationClient(props: {
       campusId,
       classId,
       className,
+      subjectName: subjectName || "Tiếng Anh (ESL)",
+      numberOfStudents,
+      lessonDuration,
       date,
       period,
       room,
@@ -777,225 +983,219 @@ export function ForeignObservationClient(props: {
           <>
             {/* Section 1: Administrative Information */}
             <div className="bg-white rounded-2xl border border-slate-200/80 shadow-sm overflow-hidden">
-              <div className="px-6 py-4 bg-slate-50/80 border-b border-slate-200/80 flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+              <div className="px-6 py-4 bg-slate-900 text-white flex flex-col sm:flex-row sm:items-center justify-between gap-2">
                 <div className="flex items-center gap-2.5">
-                  <div className="w-8 h-8 rounded-lg bg-indigo-100 text-indigo-700 flex items-center justify-center font-bold text-sm">
+                  <div className="w-8 h-8 rounded-lg bg-indigo-500/30 text-indigo-300 flex items-center justify-center font-bold text-sm border border-indigo-400/30">
                     1
                   </div>
                   <div>
-                    <h2 className="font-bold text-slate-800 text-base">General Information & Context</h2>
-                    <p className="text-xs text-slate-500">Observer is auto-assigned from logged-in account</p>
+                    <h2 className="font-bold text-white text-base">CLASS OBSERVATION & TEACHING SUPPORT FORM</h2>
+                    <p className="text-xs text-slate-300">
+                      Purpose: To understand teaching effectiveness, student progress, curriculum implementation challenges, and support needed.
+                    </p>
                   </div>
                 </div>
-                <span className="px-3 py-1 rounded-full bg-indigo-50 text-indigo-700 text-xs font-bold uppercase tracking-wider border border-indigo-200 self-start sm:self-auto">
-                  Subject: ESL (English as a Second Language)
+                <span className="px-3 py-1 rounded-full bg-indigo-500/20 text-indigo-200 text-xs font-bold uppercase tracking-wider border border-indigo-400/30 self-start sm:self-auto">
+                  SY2026-2027 • Official Rubric
                 </span>
               </div>
 
-              <div className="p-6 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-5">
-                {/* Auto-filled Observer Badge */}
-                <div className="bg-slate-50 p-4 rounded-xl border border-slate-200 flex flex-col justify-between">
-                  <div>
-                    <span className="text-[11px] font-extrabold text-slate-500 uppercase tracking-wider flex items-center gap-1.5 mb-1.5">
-                      <User className="w-3.5 h-3.5 text-indigo-600" />
-                      Observer (Người Dự Giờ)
-                    </span>
-                    <div className="font-bold text-slate-800 text-sm">
-                      {props.currentTeacher?.teacherName || "Current User"}
+              <div className="p-6 space-y-5">
+                {/* 2x4 Header Grid Matching PDF Table Structure */}
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 p-4 rounded-xl bg-slate-50 border border-slate-200">
+                  {/* Row 1: Teacher & Observer */}
+                  <div className="space-y-1 md:col-span-2">
+                    <label className="block text-xs font-bold text-slate-700 uppercase tracking-wider flex items-center gap-1.5">
+                      <Users className="w-3.5 h-3.5 text-indigo-600" />
+                      Teacher (Giáo viên được dự) <span className="text-rose-500">*</span>
+                    </label>
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                      <select
+                        value={observedDeptId}
+                        onChange={e => {
+                          setObservedDeptId(e.target.value);
+                          setTeacherId("");
+                        }}
+                        className="w-full bg-white border border-slate-300 focus:border-indigo-600 focus:ring-2 focus:ring-indigo-100 rounded-xl px-3 py-2 text-xs font-bold text-slate-700 outline-none transition"
+                      >
+                        <option value="ALL">-- Tất cả Tổ CM ({allTeachers.length} GV) --</option>
+                        <option value="Tổ Tiếng Anh Tiểu học">Tổ Tiếng Anh Tiểu học</option>
+                        <option value="Tổ Tiếng Anh Trung học">Tổ Tiếng Anh Trung học</option>
+                        <option value="Tổ Tiếng Anh Quốc tế & GVNN">Tổ Tiếng Anh Quốc tế & GVNN</option>
+                        <option value="Tổ Tiếng Anh Mầm non">Tổ Tiếng Anh Mầm non</option>
+                      </select>
+
+                      <select
+                        value={teacherId}
+                        onChange={handleTeacherChange}
+                        className="w-full bg-white border-2 border-indigo-400 focus:border-indigo-600 focus:ring-2 focus:ring-indigo-100 rounded-xl px-3 py-2 text-xs font-bold text-slate-900 outline-none transition"
+                      >
+                        <option value="">-- Chọn Giáo Viên ({filteredObservedTeachers.length}) * --</option>
+                        {filteredObservedTeachers.map((t: any) => (
+                          <option key={t.id} value={t.id}>
+                            {t.teacherName} ({t.teacherCode})
+                          </option>
+                        ))}
+                      </select>
                     </div>
                   </div>
-                  <div className="text-xs text-slate-500 mt-2 pt-2 border-t border-slate-200/60 flex items-center justify-between">
-                    <span>Mã GV: <strong className="text-slate-700">{props.currentTeacher?.teacherCode || "N/A"}</strong></span>
-                    <span className="text-[11px] px-2 py-0.5 rounded bg-indigo-100/70 text-indigo-800 font-semibold truncate max-w-[150px]">
-                      {props.currentTeacher?.departmentRel?.name || props.currentTeacher?.position || "English Dept"}
-                    </span>
+
+                  {/* Observer */}
+                  <div className="space-y-1 md:col-span-2">
+                    <label className="block text-xs font-bold text-slate-700 uppercase tracking-wider flex items-center gap-1.5">
+                      <User className="w-3.5 h-3.5 text-indigo-600" />
+                      Observer (Người dự giờ)
+                    </label>
+                    <div className="bg-white px-3.5 py-2 rounded-xl border border-slate-300 text-xs flex items-center justify-between">
+                      <span className="font-extrabold text-slate-900">{props.currentTeacher?.teacherName || "Current User"}</span>
+                      <span className="text-[11px] text-indigo-700 font-bold bg-indigo-50 px-2 py-0.5 rounded border border-indigo-100">
+                        {props.currentTeacher?.teacherCode || "N/A"}
+                      </span>
+                    </div>
                   </div>
-                </div>
 
-                {/* Observed Teacher: Department Filter */}
-                <div>
-                  <label className="block text-xs font-bold text-slate-600 uppercase tracking-wider mb-1.5 flex items-center gap-1.5">
-                    <Filter className="w-3.5 h-3.5 text-indigo-600" />
-                    Tổ CM Giáo Viên Dạy
-                  </label>
-                  <select
-                    value={observedDeptId}
-                    onChange={e => {
-                      setObservedDeptId(e.target.value);
-                      setTeacherId("");
-                    }}
-                    className="w-full bg-white border border-slate-300 focus:border-indigo-600 focus:ring-2 focus:ring-indigo-100 rounded-xl px-3.5 py-2.5 text-xs font-bold text-slate-700 outline-none transition"
-                  >
-                    <option value="ALL">-- Tất cả Tổ Tiếng Anh & GVNN ({allTeachers.length} GV) --</option>
-                    <option value="Tổ Tiếng Anh Tiểu học">
-                      Tổ Tiếng Anh Tiểu học ({allTeachers.filter((t: any) => {
-                        const allT = cleanStr((t.department || "") + " " + (t.position || ""));
-                        const hasPri = t.classes && t.classes.some((c: any) => {
-                          const g = parseInt(c.class?.grade || "0");
-                          return (g >= 1 && g <= 5) || cleanStr(c.class?.level || "").includes("tieu hoc");
-                        });
-                        return allT.includes("tieu hoc") || allT.includes("pri") || hasPri;
-                      }).length} GV)
-                    </option>
-                    <option value="Tổ Tiếng Anh Trung học">
-                      Tổ Tiếng Anh Trung học ({allTeachers.filter((t: any) => {
-                        const allT = cleanStr((t.department || "") + " " + (t.position || ""));
-                        const hasSec = t.classes && t.classes.some((c: any) => {
-                          const g = parseInt(c.class?.grade || "0");
-                          return (g >= 6 && g <= 12) || cleanStr(c.class?.level || "").includes("thcs") || cleanStr(c.class?.level || "").includes("thpt");
-                        });
-                        return allT.includes("trung hoc") || allT.includes("thcs") || allT.includes("thpt") || hasSec;
-                      }).length} GV)
-                    </option>
-                    <option value="Tổ Tiếng Anh Quốc tế & GVNN">
-                      Tổ Tiếng Anh Quốc tế & GVNN ({allTeachers.filter((t: any) => {
-                        const allT = cleanStr((t.department || "") + " " + (t.position || ""));
-                        return allT.includes("quoc te") || allT.includes("gvnn") || allT.includes("expat") || allT.includes("international") || allT.includes("esl");
-                      }).length} GV)
-                    </option>
-                    <option value="Tổ Tiếng Anh Mầm non">
-                      Tổ Tiếng Anh Mầm non ({allTeachers.filter((t: any) => {
-                        const allT = cleanStr((t.department || "") + " " + (t.position || ""));
-                        const hasPre = t.classes && t.classes.some((c: any) => cleanStr(c.class?.level || "").includes("mam non"));
-                        return allT.includes("mam non") || allT.includes("mn") || hasPre;
-                      }).length} GV)
-                    </option>
-                  </select>
-                </div>
+                  {/* Row 2: Subject & Class */}
+                  <div className="space-y-1">
+                    <label className="block text-xs font-bold text-slate-700 uppercase tracking-wider">
+                      Subject (Môn học)
+                    </label>
+                    <input
+                      type="text"
+                      value={subjectName}
+                      onChange={e => setSubjectName(e.target.value)}
+                      placeholder="e.g. English (ESL), Phonics, ELA"
+                      className="w-full bg-white border border-slate-300 focus:border-indigo-600 focus:ring-2 focus:ring-indigo-100 rounded-xl px-3 py-2 text-xs font-semibold text-slate-800 outline-none transition"
+                    />
+                  </div>
 
-                {/* Observed Teacher: Teacher Selection */}
-                <div className="md:col-span-2">
-                  <label className="block text-xs font-bold text-indigo-900 uppercase tracking-wider mb-1.5 flex items-center gap-1.5">
-                    <Users className="w-3.5 h-3.5 text-indigo-600" />
-                    Observed Teacher (Giáo Viên Được Dự) <span className="text-rose-500">*</span>
-                  </label>
-                  <select
-                    value={teacherId}
-                    onChange={handleTeacherChange}
-                    className="w-full bg-white border-2 border-indigo-300 focus:border-indigo-600 focus:ring-4 focus:ring-indigo-100 rounded-xl px-3.5 py-2.5 text-sm font-bold text-slate-800 outline-none transition"
-                  >
-                    <option value="">-- Chọn Giáo Viên Được Dự ({filteredObservedTeachers.length} GV) --</option>
-                    {filteredObservedTeachers.map((t: any) => {
-                      const deptLabel = t.departmentRel?.name || t.departmentAssignments?.[0]?.departmentName || t.department || t.position || "Tổ Tiếng Anh";
-                      const campusLabel = t.campus ? (" • " + t.campus) : "";
-                      return (
-                        <option key={t.id} value={t.id}>
-                          {t.teacherName} ({t.teacherCode}) - {deptLabel}{campusLabel}
+                  <div className="space-y-1">
+                    <label className="block text-xs font-bold text-slate-700 uppercase tracking-wider flex items-center gap-1.5">
+                      <BookOpen className="w-3.5 h-3.5 text-indigo-600" />
+                      Class (Lớp / Khối)
+                    </label>
+                    <select
+                      value={classId}
+                      onChange={handleClassChange}
+                      className="w-full bg-white border border-slate-300 focus:border-indigo-600 focus:ring-2 focus:ring-indigo-100 rounded-xl px-3 py-2 text-xs font-semibold text-slate-800 outline-none transition"
+                    >
+                      <option value="">
+                        {campusId ? ("-- Chọn Lớp (" + availableClasses.length + " lớp) --") : "-- Chọn Cơ sở trước --"}
+                      </option>
+                      {availableClasses.map((c: any) => (
+                        <option key={c.id} value={c.id}>
+                          {c.className} {c.grade ? ("(Khối " + c.grade + ")") : ""}
                         </option>
-                      );
-                    })}
-                  </select>
-                </div>
+                      ))}
+                    </select>
+                  </div>
 
-                {/* Campus (Cơ Sở) - Selected FIRST */}
-                <div>
-                  <label className="block text-xs font-bold text-slate-600 uppercase tracking-wider mb-1.5 flex items-center gap-1.5">
-                    <MapPin className="w-3.5 h-3.5 text-indigo-600" />
-                    Campus (Cơ Sở) <span className="text-rose-500">*</span>
-                  </label>
-                  <select
-                    value={campusId}
-                    onChange={handleCampusChange}
-                    className="w-full bg-white border-2 border-indigo-200 focus:border-indigo-600 focus:ring-2 focus:ring-indigo-100 rounded-xl px-3.5 py-2.5 text-sm font-semibold text-slate-800 outline-none transition"
-                  >
-                    <option value="">-- Chọn Cơ Sở (Campus) --</option>
-                    {props.campuses?.map((cmp: any) => (
-                      <option key={cmp.id} value={cmp.id}>
-                        {cmp.campusName}
-                      </option>
-                    ))}
-                  </select>
-                </div>
+                  {/* Row 3: Date & Lesson / Unit */}
+                  <div className="space-y-1">
+                    <label className="block text-xs font-bold text-slate-700 uppercase tracking-wider flex items-center gap-1.5">
+                      <Calendar className="w-3.5 h-3.5 text-indigo-600" />
+                      Date of Observation
+                    </label>
+                    <input
+                      type="date"
+                      value={date}
+                      onChange={e => setDate(e.target.value)}
+                      className="w-full bg-white border border-slate-300 focus:border-indigo-600 focus:ring-2 focus:ring-indigo-100 rounded-xl px-3 py-2 text-xs font-medium text-slate-800 outline-none transition"
+                    />
+                  </div>
 
-                {/* Class & Grade - Filtered Strictly by Campus */}
-                <div>
-                  <label className="block text-xs font-bold text-slate-600 uppercase tracking-wider mb-1.5 flex items-center gap-1.5">
-                    <BookOpen className="w-3.5 h-3.5 text-indigo-600" />
-                    Class / Grade (Lớp / Khối)
-                  </label>
-                  <select
-                    value={classId}
-                    onChange={handleClassChange}
-                    className="w-full bg-white border border-slate-300 focus:border-indigo-600 focus:ring-2 focus:ring-indigo-100 rounded-xl px-3.5 py-2.5 text-sm font-medium text-slate-800 outline-none transition"
-                  >
-                    <option value="">
-                      {campusId
-                        ? ("-- Chọn Lớp (" + availableClasses.length + " lớp) --")
-                        : "-- Vui lòng chọn Cơ sở trước --"}
-                    </option>
-                    {availableClasses.map((c: any) => (
-                      <option key={c.id} value={c.id}>
-                        {c.className} {c.grade ? ("(Khối " + c.grade + ")") : (c.level ? ("(" + c.level + ")") : "")}
-                      </option>
-                    ))}
-                  </select>
-                </div>
+                  <div className="space-y-1">
+                    <label className="block text-xs font-bold text-slate-700 uppercase tracking-wider flex items-center gap-1.5">
+                      <Target className="w-3.5 h-3.5 text-indigo-600" />
+                      Lesson / Unit (Chủ đề / Bài dạy)
+                    </label>
+                    <input
+                      type="text"
+                      value={topic}
+                      onChange={e => setTopic(e.target.value)}
+                      placeholder="e.g. Unit 4: Food - Speaking Practice"
+                      className="w-full bg-white border border-slate-300 focus:border-indigo-600 focus:ring-2 focus:ring-indigo-100 rounded-xl px-3 py-2 text-xs font-medium text-slate-800 outline-none transition"
+                    />
+                  </div>
 
-                {/* Date */}
-                <div>
-                  <label className="block text-xs font-bold text-slate-600 uppercase tracking-wider mb-1.5 flex items-center gap-1.5">
-                    <Calendar className="w-3.5 h-3.5 text-indigo-600" />
-                    Date of Observation
-                  </label>
-                  <input
-                    type="date"
-                    value={date}
-                    onChange={e => setDate(e.target.value)}
-                    className="w-full bg-white border border-slate-300 focus:border-indigo-600 focus:ring-2 focus:ring-indigo-100 rounded-xl px-3.5 py-2.5 text-sm font-medium text-slate-800 outline-none transition"
-                  />
-                </div>
+                  {/* Row 4: Number of students & Lesson duration */}
+                  <div className="space-y-1">
+                    <label className="block text-xs font-bold text-slate-700 uppercase tracking-wider flex items-center gap-1.5">
+                      <Users className="w-3.5 h-3.5 text-indigo-600" />
+                      Number of students (Sĩ số)
+                    </label>
+                    <input
+                      type="text"
+                      value={numberOfStudents}
+                      onChange={e => setNumberOfStudents(e.target.value)}
+                      placeholder="e.g. 24 students"
+                      className="w-full bg-white border border-slate-300 focus:border-indigo-600 focus:ring-2 focus:ring-indigo-100 rounded-xl px-3 py-2 text-xs font-medium text-slate-800 outline-none transition"
+                    />
+                  </div>
 
-                {/* Period */}
-                <div>
-                  <label className="block text-xs font-bold text-slate-600 uppercase tracking-wider mb-1.5 flex items-center gap-1.5">
-                    <Clock className="w-3.5 h-3.5 text-indigo-600" />
-                    Teaching Period
-                  </label>
-                  <select
-                    value={period}
-                    onChange={e => setPeriod(e.target.value)}
-                    className="w-full bg-white border border-slate-300 focus:border-indigo-600 focus:ring-2 focus:ring-indigo-100 rounded-xl px-3.5 py-2.5 text-sm font-medium text-slate-800 outline-none transition"
-                  >
-                    {PERIOD_LIST.map(p => (
-                      <option key={p.name} value={p.name}>
-                        {p.name} ({p.time})
-                      </option>
-                    ))}
-                  </select>
-                </div>
+                  <div className="space-y-1">
+                    <label className="block text-xs font-bold text-slate-700 uppercase tracking-wider flex items-center gap-1.5">
+                      <Clock className="w-3.5 h-3.5 text-indigo-600" />
+                      Lesson duration (Thời lượng)
+                    </label>
+                    <input
+                      type="text"
+                      value={lessonDuration}
+                      onChange={e => setLessonDuration(e.target.value)}
+                      placeholder="e.g. 40 minutes / 45 mins"
+                      className="w-full bg-white border border-slate-300 focus:border-indigo-600 focus:ring-2 focus:ring-indigo-100 rounded-xl px-3 py-2 text-xs font-medium text-slate-800 outline-none transition"
+                    />
+                  </div>
 
-                {/* Room */}
-                <div>
-                  <label className="block text-xs font-bold text-slate-600 uppercase tracking-wider mb-1.5 flex items-center gap-1.5">
-                    <MapPin className="w-3.5 h-3.5 text-indigo-600" />
-                    Room
-                  </label>
-                  <input
-                    type="text"
-                    value={room}
-                    onChange={e => setRoom(e.target.value)}
-                    placeholder="e.g. Room 302 / Smart Lab"
-                    className="w-full bg-white border border-slate-300 focus:border-indigo-600 focus:ring-2 focus:ring-indigo-100 rounded-xl px-3.5 py-2.5 text-sm font-medium text-slate-800 outline-none transition"
-                  />
-                </div>
+                  {/* Location & Period metadata */}
+                  <div className="space-y-1">
+                    <label className="block text-xs font-bold text-slate-700 uppercase tracking-wider flex items-center gap-1.5">
+                      <MapPin className="w-3.5 h-3.5 text-indigo-600" />
+                      Campus (Cơ sở) <span className="text-rose-500">*</span>
+                    </label>
+                    <select
+                      value={campusId}
+                      onChange={handleCampusChange}
+                      className="w-full bg-white border-2 border-indigo-200 focus:border-indigo-600 focus:ring-2 focus:ring-indigo-100 rounded-xl px-3 py-2 text-xs font-semibold text-slate-800 outline-none transition"
+                    >
+                      <option value="">-- Chọn Cơ Sở * --</option>
+                      {props.campuses?.map((cmp: any) => (
+                        <option key={cmp.id} value={cmp.id}>
+                          {cmp.campusName}
+                        </option>
+                      ))}
+                    </select>
+                  </div>
 
-                {/* Topic */}
-                <div className="md:col-span-2 lg:col-span-3">
-                  <label className="block text-xs font-bold text-slate-600 uppercase tracking-wider mb-1.5 flex items-center gap-1.5">
-                    <Target className="w-3.5 h-3.5 text-indigo-600" />
-                    Lesson Topic / Unit
-                  </label>
-                  <input
-                    type="text"
-                    value={topic}
-                    onChange={e => setTopic(e.target.value)}
-                    placeholder="e.g. Unit 4: Food - Speaking Practice"
-                    className="w-full bg-white border border-slate-300 focus:border-indigo-600 focus:ring-2 focus:ring-indigo-100 rounded-xl px-3.5 py-2.5 text-sm font-medium text-slate-800 outline-none transition"
-                  />
+                  <div className="space-y-1">
+                    <label className="block text-xs font-bold text-slate-700 uppercase tracking-wider flex items-center gap-1.5">
+                      <Clock className="w-3.5 h-3.5 text-indigo-600" />
+                      Period & Room (Tiết / Phòng)
+                    </label>
+                    <div className="grid grid-cols-2 gap-1.5">
+                      <select
+                        value={period}
+                        onChange={e => setPeriod(e.target.value)}
+                        className="w-full bg-white border border-slate-300 rounded-xl px-2 py-2 text-xs font-medium text-slate-800 outline-none"
+                      >
+                        {PERIOD_LIST.map(p => (
+                          <option key={p.name} value={p.name}>
+                            {p.name}
+                          </option>
+                        ))}
+                      </select>
+                      <input
+                        type="text"
+                        value={room}
+                        onChange={e => setRoom(e.target.value)}
+                        placeholder="Phòng"
+                        className="w-full bg-white border border-slate-300 rounded-xl px-2 py-2 text-xs font-medium text-slate-800 outline-none"
+                      />
+                    </div>
+                  </div>
                 </div>
 
                 {/* Target Skills */}
-                <div className="md:col-span-2 lg:col-span-4 pt-2 border-t border-slate-100">
+                <div className="pt-2 border-t border-slate-100">
                   <label className="block text-xs font-bold text-slate-600 uppercase tracking-wider mb-2">
                     Target Skills & Language Focus
                   </label>
@@ -1023,38 +1223,33 @@ export function ForeignObservationClient(props: {
               </div>
             </div>
 
-            {/* Rating Guide Info Box */}
-            <div className="bg-gradient-to-r from-indigo-900 to-slate-900 rounded-2xl p-5 text-white shadow-md">
-              <div className="flex items-start gap-3.5">
-                <div className="p-2 rounded-xl bg-white/10 text-indigo-300 flex-shrink-0">
-                  <Info className="w-5 h-5" />
+            {/* Observation Approach & Rating Guide Banner */}
+            <div className="bg-gradient-to-r from-slate-900 via-indigo-950 to-slate-900 rounded-2xl p-5 text-white shadow-md space-y-3">
+              <div className="p-3 bg-indigo-500/20 rounded-xl border border-indigo-400/30 text-xs font-bold text-indigo-200 flex items-center gap-2">
+                <Info className="w-4 h-4 text-cyan-400 shrink-0" />
+                <span>Observation approach: Focus on evidence and impact on students.</span>
+              </div>
+
+              <div className="space-y-1.5 pt-1">
+                <div className="text-[11px] font-black uppercase text-indigo-300 tracking-wider">
+                  Rating Scale (Thang đánh giá 5 mức):
                 </div>
-                <div className="space-y-2">
-                  <div className="flex flex-wrap items-center gap-3">
-                    <span className="font-bold text-sm text-indigo-200 uppercase tracking-wider">
-                      Evaluation Philosophy & Rating Scale:
-                    </span>
-                    <span className="text-xs text-slate-300">
-                      Focus on evidence and student impact. Do not use primarily to rank teachers.
-                    </span>
-                  </div>
-                  <div className="grid grid-cols-2 sm:grid-cols-5 gap-2 pt-1">
-                    {RATING_OPTIONS.map(opt => (
-                      <div key={opt.value} className="bg-white/10 rounded-lg p-2 border border-white/10">
-                        <span className="font-bold text-xs block text-indigo-300">{opt.label}</span>
-                        <span className="text-[11px] text-slate-300 leading-tight block mt-0.5">{opt.desc}</span>
-                      </div>
-                    ))}
-                  </div>
+                <div className="grid grid-cols-2 sm:grid-cols-5 gap-2">
+                  {RATING_OPTIONS.map(opt => (
+                    <div key={opt.value} className="bg-white/10 rounded-xl p-2.5 border border-white/10 text-left">
+                      <span className="font-extrabold text-xs block text-cyan-300">{opt.label}</span>
+                      <span className="text-[11px] text-slate-300 leading-tight block mt-0.5">{opt.desc}</span>
+                    </div>
+                  ))}
                 </div>
               </div>
             </div>
 
-            {/* Section 2: Indicators */}
+            {/* Section 2: 20 Indicators organized across Sections A, B, C, D, E */}
             <div className="space-y-6">
-              {["D", "E", "ABC"].map(sectionKey => {
+              {["A", "B", "C", "D", "E"].map(sectionKey => {
                 const sectionIndicators = ESL_INDICATORS.filter(i => i.section === sectionKey);
-                const title = sectionIndicators[0]?.sectionTitle;
+                const title = sectionIndicators[0]?.sectionTitle || `SECTION ${sectionKey}`;
 
                 return (
                   <div

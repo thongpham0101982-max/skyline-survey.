@@ -152,30 +152,58 @@ const SUBJECT_PRESETS: Record<string, any> = {
     commitmentThreshold: 4.5
   },
 
-  // 3. TÂM LÝ - THANG 80Đ (4 CHIỀU KÍCH)
+  // 3. TÂM LÝ - THANG 80Đ (6 NHÓM TIÊU CHÍ BÁM SÁT 100% FORM GIÁO VIÊN)
   TLY: {
-    columnCount: 4,
-    columnNames: ["Tương tác xã hội & Giao tiếp", "Khả năng thích ứng môi trường", "Kiểm soát cảm xúc & Hành vi", "Mức độ tập trung chú ý"],
-    columnTypes: ["SCORE_CUSTOM_100", "SCORE_CUSTOM_100", "SCORE_CUSTOM_100", "SCORE_CUSTOM_100"],
-    columnMaxScores: [20, 20, 20, 20],
+    columnCount: 6,
+    columnNames: [
+      "I. Cảm xúc & điều hòa cảm xúc (16đ)",
+      "II. Hành vi & tự kiểm soát (12đ)",
+      "III. Giao tiếp & tương tác xã hội (12đ)",
+      "IV. Chú ý & kỹ năng học tập (16đ)",
+      "V. Ngôn ngữ & tư duy / Tự nhận thức (12đ)",
+      "VI. Động lực học tập & thái độ (12đ)"
+    ],
+    columnTypes: ["SCORE_CUSTOM_100", "SCORE_CUSTOM_100", "SCORE_CUSTOM_100", "SCORE_CUSTOM_100", "SCORE_CUSTOM_100", "SCORE_CUSTOM_100"],
+    columnMaxScores: [16, 12, 12, 16, 12, 12],
     hasComposite: true,
     compositeColumnName: "Tổng điểm Tâm lý (Max 80đ)",
     formulaType: "SUM",
     formulaCustom: "",
-    weights: [1, 1, 1, 1],
+    weights: [1, 1, 1, 1, 1, 1],
     roundingRule: "ROUND_INT",
-    passScore: 50.0,
-    commitmentThreshold: 45.0
+    passScore: 48.0,
+    commitmentThreshold: 40.0
   },
 
-  // 4. NĂNG LỰC TƯ DUY - THANG 10Đ
+  // 4. NĂNG LỰC TƯ DUY (BÁM SÁT 100% FORM GIÁO VIÊN KHỐI 1)
   NLTD: {
+    columnCount: 5,
+    columnNames: [
+      "Khả năng suy luận logic",
+      "Khả năng liên tưởng",
+      "Kĩ năng phản biện",
+      "Khả năng giải quyết vấn đề",
+      "Mức độ hoàn thành thử thách (%)"
+    ],
+    columnTypes: ["GRADE_SKL", "GRADE_SKL", "GRADE_SKL", "GRADE_SKL", "SCORE_CUSTOM_100"],
+    columnMaxScores: [4, 4, 4, 4, 100],
+    hasComposite: true,
+    compositeColumnName: "Mức độ hoàn thành (%)",
+    formulaType: "NONE",
+    formulaCustom: "",
+    weights: [1, 1, 1, 1, 1],
+    roundingRule: "ROUND_1",
+    passScore: 50.0,
+    commitmentThreshold: 40.0
+  },
+  // Năng lực tư duy quy đổi thang điểm 10 (3 cấu phần)
+  NLTD_SCORE: {
     columnCount: 3,
     columnNames: ["Tư duy Logic & Hình ảnh", "Tư duy Toán học & Định lượng", "Tư duy Ngôn ngữ & Khái quát"],
     columnTypes: ["SCORE_CUSTOM", "SCORE_CUSTOM", "SCORE_CUSTOM"],
     columnMaxScores: [4, 3, 3],
     hasComposite: true,
-    compositeColumnName: "Điểm NLTD",
+    compositeColumnName: "Điểm NLTD (Max 10đ)",
     formulaType: "SUM",
     formulaCustom: "",
     weights: [1, 1, 1],
@@ -184,7 +212,40 @@ const SUBJECT_PRESETS: Record<string, any> = {
     commitmentThreshold: 4.5
   },
 
-  // 5. EPT - 4 KỸ NĂNG THANG 100Đ
+  // 5. BỘ CHUẨN PHÁT TRIỂN TRẺ EM MẦM NON 5-6 TUỔI (QUYẾT ĐỊNH 4222/QĐ-BGDĐT)
+  CHILD_DEV_16: {
+    columnCount: 16,
+    columnNames: [
+      "CS65. Chào hỏi, cảm ơn, lễ phép",
+      "CS74. Tập trung chú ý nhiệm vụ",
+      "CS16. Nhận biết bản thân",
+      "CS14. Xử lý tình huống nguy hiểm",
+      "CS33. Lịch sự trong giao tiếp",
+      "CS31. Phản hồi thông tin",
+      "CS48. Thứ tự ngày trong tuần",
+      "CS47. Xác định vị trí không gian",
+      "CS51. Phân loại sự vật",
+      "CS45. Nhận biết hình khối",
+      "CS42,43. Số lượng phạm vi 10",
+      "CS38. Nhận biết chữ cái tiếng Việt",
+      "CS41. Bắt chước hành vi viết",
+      "CS9. Tự phục vụ bản thân",
+      "CS60. Thể hiện cảm xúc âm nhạc",
+      "CS61. Tô màu khéo léo chi tiết"
+    ],
+    columnTypes: Array(16).fill("GRADE_SKL"),
+    columnMaxScores: Array(16).fill(3),
+    hasComposite: false,
+    compositeColumnName: "Đánh giá Bộ chuẩn",
+    formulaType: "NONE",
+    formulaCustom: "",
+    weights: Array(16).fill(1),
+    roundingRule: "ROUND_INT",
+    passScore: 12.0,
+    commitmentThreshold: 10.0
+  },
+
+  // 6. EPT - 4 KỸ NĂNG THANG 100Đ
   EPT: {
     columnCount: 4,
     columnNames: ["Listening (Nghe)", "Reading (Đọc)", "Writing (Viết)", "Speaking (Nói)"],
@@ -200,7 +261,7 @@ const SUBJECT_PRESETS: Record<string, any> = {
     commitmentThreshold: 40.0
   },
 
-  // 6. TOÁN HỌC (TOA) - THANG 10Đ (ÁP DỤNG HK1 & HK2 KHỐI 1 HOẶC KHỐI TIỂU HỌC)
+  // 7. TOÁN HỌC (TOA) - THANG 10Đ (ÁP DỤNG HK1 & HK2 KHỐI 1 HOẶC KHỐI TIỂU HỌC)
   TOA: {
     columnCount: 2,
     columnNames: ["Trắc nghiệm tư duy số & Phép tính", "Tự luận giải toán & Thực hành"],
@@ -216,7 +277,7 @@ const SUBJECT_PRESETS: Record<string, any> = {
     commitmentThreshold: 4.5
   },
 
-  // 7. TIẾNG VIỆT (TVI) - THANG 10Đ (ÁP DỤNG HK1 & HK2 KHỐI 1 HOẶC KHỐI TIỂU HỌC)
+  // 8. TIẾNG VIỆT (TVI) - THANG 10Đ (ÁP DỤNG HK1 & HK2 KHỐI 1 HOẶC KHỐI TIỂU HỌC)
   TVI: {
     columnCount: 2,
     columnNames: ["Đọc thành tiếng & Đọc hiểu", "Viết chính tả & Rèn chữ"],
@@ -232,7 +293,7 @@ const SUBJECT_PRESETS: Record<string, any> = {
     commitmentThreshold: 4.5
   },
 
-  // 8. TIẾNG ANH (VIẾT) DÀNH CHO KHỐI 1 HK1/HK2 (THANG 70Đ)
+  // 9. TIẾNG ANH (VIẾT) DÀNH CHO KHỐI 1 HK1/HK2 (THANG 70Đ)
   TAv_70_KHOI_1: {
     columnCount: 3,
     columnNames: ["Reading (Đọc nhận biết từ)", "Writing (Viết từ & Câu đơn)", "Language Focus (Từ vựng cơ bản)"],
@@ -653,6 +714,12 @@ function CauHinhFileDiemKsdvClientInner({
         payload = { ...payload, ...p }
       } else if (batchPreset === "NLTD") {
         const p = SUBJECT_PRESETS.NLTD
+        payload = { ...payload, ...p }
+      } else if (batchPreset === "NLTD_SCORE") {
+        const p = SUBJECT_PRESETS.NLTD_SCORE
+        payload = { ...payload, ...p }
+      } else if (batchPreset === "CHILD_DEV_16") {
+        const p = SUBJECT_PRESETS.CHILD_DEV_16
         payload = { ...payload, ...p }
       } else if (batchPreset === "EPT") {
         const p = SUBJECT_PRESETS.EPT
@@ -1874,8 +1941,10 @@ function CauHinhFileDiemKsdvClientInner({
                   <option value="TAVD_10">Tiếng Anh vấn đáp (Thang 10đ quy đổi)</option>
                   <option value="TOA">Toán học (Thang 10đ: Trắc nghiệm 4đ, Tự luận giải toán 6đ)</option>
                   <option value="TVI">Tiếng Việt (Thang 10đ: Đọc 5đ, Viết chính tả 5đ)</option>
-                  <option value="TLY">Đánh giá Tâm lý (4 cột x 20đ - Tổng 80đ)</option>
-                  <option value="NLTD">Năng lực tư duy (3 cột: Logic 4đ, Toán 3đ, Ngôn ngữ 3đ - Tổng 10đ)</option>
+                  <option value="TLY">Đánh giá Tâm lý (6 nhóm tiêu chí bám sát Form Giáo viên - Tổng 80đ)</option>
+                  <option value="NLTD">Năng lực tư duy (5 tiêu chí bám sát Form Giáo viên Khối 1)</option>
+                  <option value="NLTD_SCORE">Năng lực tư duy thang 10đ (Logic 4đ, Toán 3đ, Ngôn ngữ 3đ)</option>
+                  <option value="CHILD_DEV_16">Bộ chuẩn phát triển trẻ 5-6 tuổi (16 chỉ số QĐ 4222)</option>
                   <option value="EPT">EPT Chuẩn hóa Xếp lớp (4 kỹ năng x 25đ - Tổng 100đ)</option>
                 </select>
               </div>

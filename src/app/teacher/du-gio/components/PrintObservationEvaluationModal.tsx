@@ -114,11 +114,107 @@ const MAMNON_SECTIONS = [
   }
 ];
 
-// 3. CẤU TRÚC 10 INDICATORS RUBRIC DỰ GIỜ GIÁO VIÊN NƯỚC NGOÀI (GVNN / ESL WALKTHROUGH: THANG 4.00 ĐIỂM)
+// 3. CẤU TRÚC 20 INDICATORS RUBRIC DỰ GIỜ GIÁO VIÊN NƯỚC NGOÀI (GVNN / ESL WALKTHROUGH: SY2026-2027)
 const ESL_SECTIONS = [
   {
+    sectionKey: "A",
+    name: "A. LEARNING ENVIRONMENT & STUDENT ENGAGEMENT / Môi trường học tập & Sự tham gia của học sinh",
+    indicators: [
+      {
+        id: 1,
+        label: "Indicator 1",
+        text: "Students feel safe, respected and comfortable participating.",
+        vnText: "Học sinh cảm thấy an toàn, được tôn trọng và thoải mái tham gia hoạt động."
+      },
+      {
+        id: 2,
+        label: "Indicator 2",
+        text: "Classroom routines and behaviour support learning effectively.",
+        vnText: "Nề nếp lớp học và kỷ luật hỗ trợ hiệu quả cho việc học."
+      },
+      {
+        id: 3,
+        label: "Indicator 3",
+        text: "Students are actively engaged in the learning activities.",
+        vnText: "Học sinh chủ động, tích cực tham gia vào các hoạt động học tập."
+      },
+      {
+        id: 4,
+        label: "Indicator 4",
+        text: "Students have opportunities to ask questions, express ideas and interact with others.",
+        vnText: "Học sinh có cơ hội đặt câu hỏi, bày tỏ ý kiến và tương tác với bạn."
+      },
+      {
+        id: 5,
+        label: "Indicator 5",
+        text: "The teacher builds positive and respectful relationships with students.",
+        vnText: "Giáo viên xây dựng mối quan hệ tôn trọng và tích cực với học sinh."
+      }
+    ]
+  },
+  {
+    sectionKey: "B",
+    name: "B. TEACHING & LEARNING / Hoạt động dạy và học",
+    indicators: [
+      {
+        id: 6,
+        label: "Indicator 6",
+        text: "Activities are aligned with the learning objectives and curriculum.",
+        vnText: "Các hoạt động bám sát mục tiêu bài học và khung chương trình."
+      },
+      {
+        id: 7,
+        label: "Indicator 7",
+        text: "Instructions and explanations are clear and appropriate for students' level.",
+        vnText: "Hướng dẫn và giải thích rõ ràng, phù hợp với trình độ học sinh."
+      },
+      {
+        id: 8,
+        label: "Indicator 8",
+        text: "Teaching strategies help students understand, practise and apply learning.",
+        vnText: "Phương pháp giảng dạy giúp học sinh hiểu, thực hành và vận dụng kiến thức."
+      },
+      {
+        id: 9,
+        label: "Indicator 9",
+        text: "The teacher checks students' understanding during the lesson.",
+        vnText: "Giáo viên thường xuyên kiểm tra mức độ hiểu bài của học sinh trong tiết dạy."
+      },
+      {
+        id: 10,
+        label: "Indicator 10",
+        text: "Learning resources and technology are used purposefully.",
+        vnText: "Tài liệu học tập và công nghệ được sử dụng có mục đích và hiệu quả."
+      }
+    ]
+  },
+  {
+    sectionKey: "C",
+    name: "C. DIFFERENTIATION & STUDENT SUPPORT / Phân hóa & Hỗ trợ học sinh",
+    indicators: [
+      {
+        id: 11,
+        label: "Indicator 11",
+        text: "Tasks and support are appropriate for the range of student abilities.",
+        vnText: "Nhiệm vụ và sự hỗ trợ phù hợp với các mức độ năng lực học sinh khác nhau."
+      },
+      {
+        id: 12,
+        label: "Indicator 12",
+        text: "Students who need additional support receive appropriate scaffolding.",
+        vnText: "Học sinh cần hỗ trợ thêm được hướng dẫn và nâng đỡ kịp thời."
+      },
+      {
+        id: 13,
+        label: "Indicator 13",
+        text: "Students are encouraged to develop independence in learning.",
+        vnText: "Học sinh được khuyến khích phát triển tính tự chủ và độc lập trong học tập."
+      }
+    ]
+  },
+  {
     sectionKey: "D",
-    name: "D. Curriculum Implementation / Thực hiện Chương trình",
+    name: "D. CURRICULUM IMPLEMENTATION / Thực hiện chương trình",
     indicators: [
       {
         id: 14,
@@ -148,7 +244,7 @@ const ESL_SECTIONS = [
   },
   {
     sectionKey: "E",
-    name: "E. Assessment & Student Progress / Đánh giá & Sự Tiến bộ của Học sinh",
+    name: "E. ASSESSMENT & STUDENT PROGRESS / Đánh giá & Tiến bộ của học sinh",
     indicators: [
       {
         id: 18,
@@ -169,39 +265,16 @@ const ESL_SECTIONS = [
         vnText: "Học sinh chưa đạt tiến độ được nhận diện và hỗ trợ kịp thời."
       }
     ]
-  },
-  {
-    sectionKey: "ABC",
-    name: "A-C. Classroom Instruction & Immersion Climate / Giảng dạy & Môi trường Nhúng Ngôn ngữ",
-    indicators: [
-      {
-        id: 1,
-        label: "Indicator 1",
-        text: "Clear learning intentions, staging, and structured transitions.",
-        vnText: "Mục tiêu bài dạy rõ ràng, tiến trình chặt chẽ và chuyển giao mượt mà."
-      },
-      {
-        id: 2,
-        label: "Indicator 2",
-        text: "Optimal Teacher Talk Time (TTT) vs. Student Talk Time (STT).",
-        vnText: "Cân đối thời gian nói của GV và tối đa hóa thời gian nói của HS."
-      },
-      {
-        id: 3,
-        label: "Indicator 3",
-        text: "Positive English immersion environment, strong rapport, and active engagement.",
-        vnText: "Môi trường học tập tích cực, quan hệ sư phạm tốt và tạo hứng thú cao."
-      }
-    ]
   }
 ];
 
 const ESL_RATING_LABELS: Record<string, { label: string; short: string; badge: string }> = {
-  "4": { label: "4 - Strong Practice", short: "4", badge: "bg-emerald-100 text-emerald-800 border-emerald-300" },
-  "3": { label: "3 - Effective Practice", short: "3", badge: "bg-sky-100 text-sky-800 border-sky-300" },
-  "2": { label: "2 - Developing", short: "2", badge: "bg-amber-100 text-amber-800 border-amber-300" },
-  "1": { label: "1 - Needs Support", short: "1", badge: "bg-rose-100 text-rose-800 border-rose-300" },
-  "N/O": { label: "N/O - Not Observed", short: "N/O", badge: "bg-slate-100 text-slate-600 border-slate-300" }
+  "4": { label: "4 - Strong Practice", short: "4", badge: "bg-purple-100 text-purple-900 border-purple-300" },
+  "3": { label: "3 - Effective", short: "3", badge: "bg-emerald-100 text-emerald-900 border-emerald-300" },
+  "2": { label: "2 - Developing", short: "2", badge: "bg-amber-100 text-amber-900 border-amber-300" },
+  "1": { label: "1 - Need support", short: "1", badge: "bg-rose-100 text-rose-900 border-rose-300" },
+  "NO": { label: "NO - Not observed", short: "NO", badge: "bg-slate-100 text-slate-700 border-slate-300" },
+  "N/O": { label: "NO - Not observed", short: "NO", badge: "bg-slate-100 text-slate-700 border-slate-300" }
 };
 
 export function PrintObservationEvaluationModal({ slot, registration, onClose }: PrintModalProps) {
@@ -216,16 +289,23 @@ export function PrintObservationEvaluationModal({ slot, registration, onClose }:
   const evalComment = evaluation?.generalComment || "";
   const isWalkthroughEval = evalComment.includes('"criterionScores"') || evalComment.includes('"teacherVoice"') || evalComment.includes('"targetSkills"');
 
-  const isForeignEsl = slot?.requestOrigin === "FOREIGN_WALKTHROUGH" ||
+  const isCthsLog = evalComment.includes('"CTHS_WORK_LOG"') ||
+    slot?.requestOrigin === "CTHS_WORK_LOG" ||
+    desc.includes("làm việc tại cơ sở") ||
+    desc.includes("công tác học sinh") ||
+    desc.includes("tổ cths") ||
+    (slot?.subjectName && (slot.subjectName.toLowerCase().includes("cths") || slot.subjectName.toLowerCase().includes("công tác học sinh")));
+
+  const isForeignEsl = !isCthsLog && (slot?.requestOrigin === "FOREIGN_WALKTHROUGH" ||
     isWalkthroughEval ||
     desc.includes("dự giờ gvnn") ||
     desc.includes("du gio gvnn") ||
     (desc.includes("gvnn") && (desc.includes("tiếng anh") || desc.includes("foreign") || desc.includes("esl"))) ||
     top.includes("walkthrough") ||
     (top.includes("gvnn") && top.includes("esl")) ||
-    (slot?.teacher?.position === "GVNN");
+    (slot?.teacher?.position === "GVNN"));
 
-  const isPreschool = !isForeignEsl && (
+  const isPreschool = !isCthsLog && !isForeignEsl && (
     slot?.level === "Mầm non" ||
     (slot?.grade || "").toLowerCase().includes("mầm non") ||
     (slot?.grade || "").toLowerCase().includes("mẫu giáo") ||
@@ -240,7 +320,7 @@ export function PrintObservationEvaluationModal({ slot, registration, onClose }:
     ))
   );
 
-  const categoryType: "MAM_NON" | "GVNN_ESL" | "K12" = isForeignEsl ? "GVNN_ESL" : isPreschool ? "MAM_NON" : "K12";
+  const categoryType: "CTHS_WORK" | "MAM_NON" | "GVNN_ESL" | "K12" = isCthsLog ? "CTHS_WORK" : isForeignEsl ? "GVNN_ESL" : isPreschool ? "MAM_NON" : "K12";
 
   const handlePrint = () => {
     window.print();
@@ -258,12 +338,15 @@ export function PrintObservationEvaluationModal({ slot, registration, onClose }:
   const eslCriterionScoresMap: Record<number, { score: number; rating: string; evidence?: string; notes?: string }> = {};
   if (parsedGeneral?.criterionScores && Array.isArray(parsedGeneral.criterionScores)) {
     parsedGeneral.criterionScores.forEach((item: any) => {
-      eslCriterionScoresMap[item.id] = {
-        score: item.score,
-        rating: item.score === 4 ? "4" : item.score === 3 ? "3" : item.score === 2 ? "2" : item.score === 1 ? "1" : "N/O",
-        evidence: item.evidence || "",
-        notes: item.notes || ""
-      };
+      const id = item.criterionId || item.id;
+      if (id != null) {
+        eslCriterionScoresMap[id] = {
+          score: item.score,
+          rating: String(item.rating || (item.score === 4 ? "4" : item.score === 3 ? "3" : item.score === 2 ? "2" : item.score === 1 ? "1" : "NO")),
+          evidence: item.evidence || "",
+          notes: item.notes || item.studentImpact || ""
+        };
+      }
     });
   }
 
@@ -365,7 +448,9 @@ export function PrintObservationEvaluationModal({ slot, registration, onClose }:
             </div>
             <div>
               <h3 className="font-extrabold text-sm sm:text-base">
-                {categoryType === "MAM_NON"
+                {categoryType === "CTHS_WORK"
+                  ? "PHIẾU GHI NHẬN BUỔI LÀM VIỆC TẠI CƠ SỞ – TỔ CTHS"
+                  : categoryType === "MAM_NON"
                   ? "PHIẾU ĐÁNH GIÁ DỰ GIỜ HOẠT ĐỘNG MẦM NON (10.00đ)"
                   : categoryType === "GVNN_ESL"
                   ? "PHIẾU DỰ GIỜ GIÁO VIÊN NƯỚC NGOÀI - ESL WALKTHROUGH (4.00đ)"
@@ -408,7 +493,9 @@ export function PrintObservationEvaluationModal({ slot, registration, onClose }:
                 <p className="text-[10px] font-bold uppercase tracking-wider text-slate-600">HỆ THỐNG GIÁO DỤC SKY-LINE</p>
                 <p className="text-xs font-black uppercase text-[#003B3A]">{campusName}</p>
                 <p className="text-[10px] font-bold text-slate-500 mt-0.5">
-                  {categoryType === "GVNN_ESL" 
+                  {categoryType === "CTHS_WORK"
+                    ? "TỔ CTHS - BAN HĐNGLL"
+                    : categoryType === "GVNN_ESL" 
                     ? "TỔ TIẾNG ANH QUỐC TẾ & GVNN"
                     : categoryType === "MAM_NON"
                     ? "BẬC MẦM NON"
@@ -424,6 +511,16 @@ export function PrintObservationEvaluationModal({ slot, registration, onClose }:
 
             {/* Document Title */}
             <div className="text-center my-5 font-sans">
+              {categoryType === "CTHS_WORK" && (
+                <>
+                  <h2 className="text-base sm:text-lg font-black uppercase tracking-wide text-slate-900">
+                    PHIẾU GHI NHẬN BUỔI LÀM VIỆC TẠI CƠ SỞ – TỔ CTHS
+                  </h2>
+                  <p className="text-xs text-slate-600 mt-1">
+                    (Ban hành theo Quy chế Công tác Học sinh & Hoạt động Ngoại khóa Sky-Line)
+                  </p>
+                </>
+              )}
               {categoryType === "MAM_NON" && (
                 <>
                   <h2 className="text-base sm:text-lg font-black uppercase tracking-wide text-slate-900">
@@ -437,13 +534,13 @@ export function PrintObservationEvaluationModal({ slot, registration, onClose }:
               {categoryType === "GVNN_ESL" && (
                 <>
                   <h2 className="text-base sm:text-lg font-black uppercase tracking-wide text-slate-900">
-                    PHIẾU ĐÁNH GIÁ DỰ GIỜ TIẾT DẠY GIÁO VIÊN NƯỚC NGOÀI
+                    CLASS OBSERVATION & TEACHING SUPPORT FORM
                   </h2>
                   <p className="text-xs font-bold text-[#003B3A] mt-0.5 uppercase tracking-wider">
-                    FOREIGN TEACHER LESSON OBSERVATION FORM (ESL WALKTHROUGH)
+                    (SY2026-2027 • OFFICIAL WALKTHROUGH EVALUATION REPORT)
                   </p>
                   <p className="text-[11px] text-slate-600 mt-1 italic">
-                    (Ban hành theo Khung Tiêu chuẩn Quan sát Chuyên môn ESL Sky-Line & Cambridge International Framework)
+                    Observation approach: Focus on evidence and impact on students. (Tập trung vào minh chứng thực tế và tác động đến học sinh).
                   </p>
                 </>
               )}
@@ -460,44 +557,209 @@ export function PrintObservationEvaluationModal({ slot, registration, onClose }:
             </div>
 
             {/* General Info Grid */}
-            <div className="grid grid-cols-2 gap-x-6 gap-y-2 p-4 bg-slate-50 rounded-xl border border-slate-200 mb-6 font-sans text-xs">
-              <div>
-                <span className="font-bold text-slate-600">
-                  {categoryType === "GVNN_ESL" ? "1. Giáo viên được dự (Host Teacher): " : "1. Họ và tên người dạy: "}
-                </span>
-                <span className="font-black text-slate-900">{hostTeacherName} {hostTeacherCode ? `(${hostTeacherCode})` : ""}</span>
+            {categoryType === "CTHS_WORK" ? (() => {
+              const workItems = Array.isArray(parsedGeneral?.workItems) ? parsedGeneral.workItems : [];
+              const totalPeriods = parsedGeneral?.totalPeriods || 1;
+              const cthsNotes = parsedGeneral?.notes || evaluation?.generalComment || "";
+
+              return (
+                <div className="space-y-6 font-sans">
+                  {/* General info table */}
+                  <div className="grid grid-cols-2 sm:grid-cols-4 gap-2.5 p-3.5 bg-slate-50 rounded-xl border border-slate-200 text-[11px]">
+                    <div>
+                      <span className="font-bold text-slate-600 block text-[10px]">Nhân sự thực hiện:</span>
+                      <span className="font-black text-slate-900">{hostTeacherName || observerName}</span>
+                    </div>
+                    <div>
+                      <span className="font-bold text-slate-600 block text-[10px]">Tổ / Bộ phận:</span>
+                      <span className="font-black text-slate-900">Tổ CTHS - Ban HĐNGLL</span>
+                    </div>
+                    <div>
+                      <span className="font-bold text-slate-600 block text-[10px]">Cơ sở công tác:</span>
+                      <span className="font-black text-slate-900">{campusName}</span>
+                    </div>
+                    <div>
+                      <span className="font-bold text-slate-600 block text-[10px]">Ngày làm việc:</span>
+                      <span className="font-black text-slate-900">{slotDateStr}</span>
+                    </div>
+                    <div>
+                      <span className="font-bold text-slate-600 block text-[10px]">Khung giờ / Tiết:</span>
+                      <span className="font-bold text-slate-900">{slot?.startTime || `${totalPeriods} tiết`}</span>
+                    </div>
+                    <div>
+                      <span className="font-bold text-slate-600 block text-[10px]">Địa điểm / Phòng:</span>
+                      <span className="font-bold text-slate-900">{slot?.room || "Phòng CTHS"}</span>
+                    </div>
+                    <div>
+                      <span className="font-bold text-slate-600 block text-[10px]">Tổng số tiết ghi nhận:</span>
+                      <span className="font-black text-teal-900">{totalPeriods} tiết</span>
+                    </div>
+                    <div>
+                      <span className="font-bold text-slate-600 block text-[10px]">Trạng thái buổi làm việc:</span>
+                      <span className="font-black text-emerald-800">Hoàn thành</span>
+                    </div>
+                  </div>
+
+                  {/* Work items table */}
+                  <div className="space-y-2">
+                    <h4 className="font-black text-xs uppercase tracking-wide text-slate-800">
+                      I. DANH SÁCH ĐẦU VIỆC ĐÃ THỰC HIỆN TRONG BUỔI LÀM VIỆC
+                    </h4>
+                    <table className="w-full text-[11px] border-collapse border border-slate-300">
+                      <thead>
+                        <tr className="bg-slate-100 text-slate-900 font-bold">
+                          <th className="border border-slate-300 p-2 text-center w-10">STT</th>
+                          <th className="border border-slate-300 p-2 text-left">Tên / Nội dung đầu việc</th>
+                          <th className="border border-slate-300 p-2 text-center w-32">Trạng thái</th>
+                          <th className="border border-slate-300 p-2 text-left">Kết quả thực hiện & Ghi chú</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {workItems.length > 0 ? (
+                          workItems.map((item: any, idx: number) => (
+                            <tr key={idx} className="hover:bg-slate-50">
+                              <td className="border border-slate-300 p-2 text-center font-bold">{idx + 1}</td>
+                              <td className="border border-slate-300 p-2 font-bold text-slate-900">{item.name || item.taskName}</td>
+                              <td className="border border-slate-300 p-2 text-center font-black text-emerald-800">
+                                {item.status === "COMPLETED" || item.status === "Hoàn thành" ? "Hoàn thành" : "Đang thực hiện"}
+                              </td>
+                              <td className="border border-slate-300 p-2 text-slate-700 italic">{item.notes || "—"}</td>
+                            </tr>
+                          ))
+                        ) : (
+                          <tr>
+                            <td className="border border-slate-300 p-2 text-center font-bold">1</td>
+                            <td className="border border-slate-300 p-2 font-bold">{slot?.topic || "Công tác học sinh tại cơ sở"}</td>
+                            <td className="border border-slate-300 p-2 text-center font-black text-emerald-800">Hoàn thành</td>
+                            <td className="border border-slate-300 p-2 text-slate-700 italic">—</td>
+                          </tr>
+                        )}
+                      </tbody>
+                    </table>
+                  </div>
+
+                  {/* General Notes & Coordination */}
+                  <div className="space-y-2">
+                    <h4 className="font-black text-xs uppercase tracking-wide text-slate-800">
+                      II. GHI CHÚ & ĐỀ XUẤT PHỐI HỢP VỚI CƠ SỞ
+                    </h4>
+                    <div className="p-3 border border-slate-300 rounded-lg min-h-[60px] text-slate-800 text-[11px] leading-relaxed">
+                      {cthsNotes || "Đã hoàn thành các đầu việc theo kế hoạch công tác tại cơ sở."}
+                    </div>
+                  </div>
+
+                  {/* Signature block */}
+                  <div className="grid grid-cols-2 gap-6 pt-6 text-center text-xs font-sans">
+                    <div className="space-y-16">
+                      <div>
+                        <p className="font-black uppercase text-slate-800">ĐẠI DIỆN BGH / QUẢN LÝ CƠ SỞ</p>
+                        <p className="text-[10px] text-slate-500 italic">(Ký và ghi rõ họ tên)</p>
+                      </div>
+                    </div>
+                    <div className="space-y-16">
+                      <div>
+                        <p className="font-black uppercase text-slate-800">NHÂN SỰ TỔ CTHS THỰC HIỆN</p>
+                        <p className="text-[10px] text-slate-500 italic">(Ký và ghi rõ họ tên)</p>
+                      </div>
+                      <p className="font-black text-slate-900">{hostTeacherName || observerName}</p>
+                    </div>
+                  </div>
+                </div>
+              );
+            })() : categoryType === "GVNN_ESL" ? (
+              <div className="grid grid-cols-2 sm:grid-cols-4 gap-2.5 p-3.5 bg-slate-50 rounded-xl border border-slate-200 mb-6 font-sans text-[11px]">
+                <div>
+                  <span className="font-bold text-slate-600 block text-[10px]">Teacher / Giáo viên:</span>
+                  <span className="font-black text-slate-900">{hostTeacherName} {hostTeacherCode ? `(${hostTeacherCode})` : ""}</span>
+                </div>
+                <div>
+                  <span className="font-bold text-slate-600 block text-[10px]">Observer / Người dự:</span>
+                  <span className="font-black text-slate-900">{observerName}</span>
+                </div>
+                <div>
+                  <span className="font-bold text-slate-600 block text-[10px]">Subject / Môn học:</span>
+                  <span className="font-bold text-slate-900">{parsedGeneral?.subjectName || slot?.subjectName || "Tiếng Anh (ESL)"}</span>
+                </div>
+                <div>
+                  <span className="font-bold text-slate-600 block text-[10px]">Class / Lớp:</span>
+                  <span className="font-bold text-slate-900">{slot?.className || slot?.grade || "—"}</span>
+                </div>
+
+                <div>
+                  <span className="font-bold text-slate-600 block text-[10px]">Date / Ngày dự:</span>
+                  <span className="font-bold text-slate-900">{slotDateStr}</span>
+                </div>
+                <div>
+                  <span className="font-bold text-slate-600 block text-[10px]">Lesson / Unit:</span>
+                  <span className="font-black text-[#003B3A]">{slot?.topic || "—"}</span>
+                </div>
+                <div>
+                  <span className="font-bold text-slate-600 block text-[10px]">No. of students / Sĩ số:</span>
+                  <span className="font-bold text-slate-900">{parsedGeneral?.numberOfStudents || "—"}</span>
+                </div>
+                <div>
+                  <span className="font-bold text-slate-600 block text-[10px]">Duration / Thời lượng:</span>
+                  <span className="font-bold text-slate-900">{parsedGeneral?.lessonDuration || "45 mins"}</span>
+                </div>
+
+                <div>
+                  <span className="font-bold text-slate-600 block text-[10px]">Campus / Cơ sở:</span>
+                  <span className="font-bold text-slate-900">{campusName}</span>
+                </div>
+                <div>
+                  <span className="font-bold text-slate-600 block text-[10px]">Period / Tiết dạy:</span>
+                  <span className="font-bold text-slate-900">{slot?.period || slot?.startTime || "Tiết 1"}</span>
+                </div>
+                <div>
+                  <span className="font-bold text-slate-600 block text-[10px]">Room / Phòng học:</span>
+                  <span className="font-bold text-slate-900">{slot?.room || "Phòng học"}</span>
+                </div>
+                <div>
+                  <span className="font-bold text-slate-600 block text-[10px]">Overall / Xếp loại:</span>
+                  <span className="font-black text-[#003B3A]">{overallRating} ({actualTotalScore.toFixed(2)}/4.00)</span>
+                </div>
+
+                {parsedGeneral?.targetSkills && parsedGeneral.targetSkills.length > 0 && (
+                  <div className="col-span-2 sm:col-span-4 pt-1.5 border-t border-slate-200">
+                    <span className="font-bold text-slate-600 mr-2 text-[10px]">Target Skills / Kỹ năng trọng tâm:</span>
+                    <span className="font-bold text-slate-800">{parsedGeneral.targetSkills.join(", ")}</span>
+                  </div>
+                )}
               </div>
-              <div>
-                <span className="font-bold text-slate-600">
-                  {categoryType === "GVNN_ESL" ? "2. Người dự giờ (Observer): " : "2. Họ và tên người dự: "}
-                </span>
-                <span className="font-black text-slate-900">{observerName}</span>
+            ) : (
+              <div className="grid grid-cols-2 gap-x-6 gap-y-2 p-4 bg-slate-50 rounded-xl border border-slate-200 mb-6 font-sans text-xs">
+                <div>
+                  <span className="font-bold text-slate-600">1. Họ và tên người dạy: </span>
+                  <span className="font-black text-slate-900">{hostTeacherName} {hostTeacherCode ? `(${hostTeacherCode})` : ""}</span>
+                </div>
+                <div>
+                  <span className="font-bold text-slate-600">2. Họ và tên người dự: </span>
+                  <span className="font-black text-slate-900">{observerName}</span>
+                </div>
+                <div>
+                  <span className="font-bold text-slate-600">3. Môn học / Lĩnh vực: </span>
+                  <span className="font-bold text-slate-900">{slot?.subjectName || "—"}</span>
+                </div>
+                <div>
+                  <span className="font-bold text-slate-600">
+                    {categoryType === "MAM_NON" ? "4. Lớp / Nhóm trẻ: " : "4. Lớp / Grade: "}
+                  </span>
+                  <span className="font-bold text-slate-900">{slot?.className || slot?.grade || "—"}</span>
+                </div>
+                <div className="col-span-2">
+                  <span className="font-bold text-slate-600">5. Tên bài dạy / Hoạt động: </span>
+                  <span className="font-black text-slate-900">{slot?.topic || "—"}</span>
+                </div>
+                <div>
+                  <span className="font-bold text-slate-600">6. Ngày dự: </span>
+                  <span className="font-bold text-slate-900">{slotDateStr}</span>
+                </div>
+                <div>
+                  <span className="font-bold text-slate-600">7. Tiết / Thời gian: </span>
+                  <span className="font-bold text-slate-900">{slot?.period || "—"} {slot?.startTime ? `(${slot.startTime} - ${slot.endTime || ""})` : ""}</span>
+                </div>
               </div>
-              <div>
-                <span className="font-bold text-slate-600">3. Môn học / Lĩnh vực: </span>
-                <span className="font-bold text-slate-900">{slot?.subjectName || (categoryType === "GVNN_ESL" ? "Tiếng Anh (ESL)" : "—")}</span>
-              </div>
-              <div>
-                <span className="font-bold text-slate-600">
-                  {categoryType === "MAM_NON" ? "4. Lớp / Nhóm trẻ: " : "4. Lớp / Grade: "}
-                </span>
-                <span className="font-bold text-slate-900">{slot?.className || slot?.grade || "—"}</span>
-              </div>
-              <div className="col-span-2">
-                <span className="font-bold text-slate-600">
-                  {categoryType === "GVNN_ESL" ? "5. Topic / Unit / Tên bài dạy: " : "5. Tên bài dạy / Hoạt động: "}
-                </span>
-                <span className="font-black text-slate-900">{slot?.topic || "—"}</span>
-              </div>
-              <div>
-                <span className="font-bold text-slate-600">6. Ngày dự: </span>
-                <span className="font-bold text-slate-900">{slotDateStr}</span>
-              </div>
-              <div>
-                <span className="font-bold text-slate-600">7. Tiết / Thời gian: </span>
-                <span className="font-bold text-slate-900">{slot?.period || "—"} {slot?.startTime ? `(${slot.startTime} - ${slot.endTime || ""})` : ""}</span>
-              </div>
-            </div>
+            )}
 
             {/* BẢNG TIÊU CHÍ 1: MẦM NON (THANG 10.00 ĐIỂM) */}
             {categoryType === "MAM_NON" && (
@@ -679,8 +941,8 @@ export function PrintObservationEvaluationModal({ slot, registration, onClose }:
                   <thead>
                     <tr className="bg-slate-100 text-slate-900 font-black text-center">
                       <th className="border border-slate-800 p-2 w-10">No.</th>
-                      <th className="border border-slate-800 p-2">ESL Walkthrough Rubric Indicators (Song ngữ)</th>
-                      <th className="border border-slate-800 p-2 w-28">Đánh giá (1-4)</th>
+                      <th className="border border-slate-800 p-2">ESL Walkthrough Rubric Indicators (20 Tiêu chí Song ngữ)</th>
+                      <th className="border border-slate-800 p-2 w-28">Đánh giá (1-4, NO)</th>
                       <th className="border border-slate-800 p-2 w-48">Evidence & Notes</th>
                     </tr>
                   </thead>
@@ -742,82 +1004,134 @@ export function PrintObservationEvaluationModal({ slot, registration, onClose }:
 
                 {/* Thang đánh giá Rubric ESL */}
                 <div className="mt-2 text-[10px] text-slate-600 bg-slate-50 p-2.5 rounded border border-slate-200 font-sans">
-                  <p className="font-bold text-slate-800 mb-1">(*) Thang đánh giá Khung ESL Walkthrough (Sky-Line / Cambridge Standards):</p>
-                  <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 text-center">
-                    <span className="bg-emerald-50 text-emerald-800 p-1 rounded border border-emerald-200 font-bold">4: Strong Practice (Xuất sắc)</span>
-                    <span className="bg-sky-50 text-sky-800 p-1 rounded border border-sky-200 font-bold">3: Effective (Đạt chuẩn / Hiệu quả)</span>
-                    <span className="bg-amber-50 text-amber-800 p-1 rounded border border-amber-200 font-bold">2: Developing (Cần hoàn thiện)</span>
-                    <span className="bg-rose-50 text-rose-800 p-1 rounded border border-rose-200 font-bold">1: Needs Support (Cần hỗ trợ)</span>
+                  <p className="font-bold text-slate-800 mb-1">(*) Thang đánh giá Khung ESL Walkthrough (Sky-Line / Official SY2026-2027 Standards):</p>
+                  <div className="grid grid-cols-2 sm:grid-cols-5 gap-1.5 text-center">
+                    <span className="bg-purple-50 text-purple-900 p-1 rounded border border-purple-200 font-bold">4: Strong Practice</span>
+                    <span className="bg-emerald-50 text-emerald-900 p-1 rounded border border-emerald-200 font-bold">3: Effective</span>
+                    <span className="bg-amber-50 text-amber-900 p-1 rounded border border-amber-200 font-bold">2: Developing</span>
+                    <span className="bg-rose-50 text-rose-900 p-1 rounded border border-rose-200 font-bold">1: Need support</span>
+                    <span className="bg-slate-50 text-slate-700 p-1 rounded border border-slate-200 font-bold">NO: Not observed</span>
                   </div>
                 </div>
               </div>
             )}
 
             {/* Qualitative Feedback (Nhận xét định tính) */}
-            <div className="space-y-3.5 mb-8 font-sans text-xs">
-              <div className="p-3.5 rounded-xl border border-slate-300">
-                <h4 className="font-bold text-slate-900 uppercase text-[11px] mb-1">
-                  {categoryType === "GVNN_ESL" ? "1. Key Strengths / Ưu điểm nổi bật của tiết dạy:" : "1. Ưu điểm nổi bật của tiết dạy / hoạt động:"}
-                </h4>
-                <p className="text-slate-700 italic min-h-[36px] whitespace-pre-wrap">
-                  {evaluation?.strengths || parsedGeneral?.summary?.keyStrengths || "— Không có ghi chú —"}
-                </p>
-              </div>
-
-              <div className="p-3.5 rounded-xl border border-slate-300">
-                <h4 className="font-bold text-slate-900 uppercase text-[11px] mb-1">
-                  {categoryType === "GVNN_ESL" ? "2. Key Challenges & Growth Areas / Tồn tại & Điểm cần cải thiện:" : "2. Tồn tại / Góp ý biện pháp khắc phục & phát triển:"}
-                </h4>
-                <p className="text-slate-700 italic min-h-[36px] whitespace-pre-wrap">
-                  {evaluation?.improvements || parsedGeneral?.summary?.keyChallenges || "— Không có ghi chú —"}
-                </p>
-              </div>
-
-              {categoryType === "GVNN_ESL" && parsedGeneral?.summary?.studentProgressEvidence && (
-                <div className="p-3.5 rounded-xl border border-teal-200 bg-teal-50/30">
-                  <h4 className="font-bold text-teal-950 uppercase text-[11px] mb-1">
-                    3. Student Impact & Evidence / Minh chứng tác động học sinh:
+            {categoryType === "GVNN_ESL" ? (
+              <div className="space-y-4 mb-8 font-sans text-xs">
+                {/* Section F: Teacher Voice & Curriculum Feedback */}
+                <div className="p-3.5 rounded-xl border border-indigo-200 bg-indigo-50/20 space-y-2">
+                  <h4 className="font-black text-indigo-950 uppercase text-[11px] border-b border-indigo-100 pb-1">
+                    Section F: Teacher Voice & Curriculum Feedback (Post-Lesson Discussion)
                   </h4>
-                  <p className="text-teal-900 italic min-h-[30px] whitespace-pre-wrap">
-                    {parsedGeneral.summary.studentProgressEvidence}
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5 text-[11px]">
+                    <div className="p-2 bg-white rounded border border-indigo-100">
+                      <strong className="text-slate-800 block mb-0.5">1. Did the lesson go as planned? What went well?</strong>
+                      <p className="text-slate-700 italic whitespace-pre-wrap">{parsedGeneral?.teacherVoice?.reflectionQ1 || parsedGeneral?.teacherVoice?.workingWell || "—"}</p>
+                    </div>
+                    <div className="p-2 bg-white rounded border border-indigo-100">
+                      <strong className="text-slate-800 block mb-0.5">2. What challenges did you or the students face?</strong>
+                      <p className="text-slate-700 italic whitespace-pre-wrap">{parsedGeneral?.teacherVoice?.reflectionQ2 || parsedGeneral?.teacherVoice?.challenges || "—"}</p>
+                    </div>
+                    <div className="p-2 bg-white rounded border border-indigo-100">
+                      <strong className="text-slate-800 block mb-0.5">3. Is the curriculum pacing realistic for your students?</strong>
+                      <p className="text-slate-700 italic whitespace-pre-wrap">{parsedGeneral?.teacherVoice?.reflectionQ3 || parsedGeneral?.teacherVoice?.curriculumAdjustments || "—"}</p>
+                    </div>
+                    <div className="p-2 bg-white rounded border border-indigo-100">
+                      <strong className="text-slate-800 block mb-0.5">4. What additional support or resources do you need?</strong>
+                      <p className="text-slate-700 italic whitespace-pre-wrap">{parsedGeneral?.teacherVoice?.reflectionQ4 || parsedGeneral?.teacherVoice?.supportNeeded || "—"}</p>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Section G: Observation Summary & Actions */}
+                <div className="space-y-2.5">
+                  <h4 className="font-black text-slate-900 uppercase text-[11px]">
+                    Section G: Observation Summary & Actions (Tổng kết & Kế hoạch hành động)
+                  </h4>
+                  <div className="p-3 rounded-xl border border-emerald-300 bg-emerald-50/20">
+                    <h5 className="font-bold text-emerald-950 uppercase text-[10.5px] mb-0.5">
+                      Key strengths observed (Điểm mạnh nổi bật):
+                    </h5>
+                    <p className="text-slate-800 italic whitespace-pre-wrap">
+                      {parsedGeneral?.summary?.keyStrengths || evaluation?.strengths || "— Không có ghi chú —"}
+                    </p>
+                  </div>
+
+                  <div className="p-3 rounded-xl border border-amber-300 bg-amber-50/20">
+                    <h5 className="font-bold text-amber-950 uppercase text-[10.5px] mb-0.5">
+                      Key teaching / learning challenges (Thách thức dạy & học):
+                    </h5>
+                    <p className="text-slate-800 italic whitespace-pre-wrap">
+                      {parsedGeneral?.summary?.keyChallenges || evaluation?.improvements || "— Không có ghi chú —"}
+                    </p>
+                  </div>
+
+                  <div className="p-3 rounded-xl border border-indigo-300 bg-indigo-50/20">
+                    <h5 className="font-bold text-indigo-950 uppercase text-[10.5px] mb-0.5">
+                      Agreed follow-up actions (Kế hoạch hành động thống nhất):
+                    </h5>
+                    <p className="text-slate-800 italic whitespace-pre-wrap">
+                      {parsedGeneral?.summary?.agreedActions || evaluation?.generalComment || "— Không có ghi chú —"}
+                    </p>
+                  </div>
+                </div>
+              </div>
+            ) : (
+              <div className="space-y-3.5 mb-8 font-sans text-xs">
+                <div className="p-3.5 rounded-xl border border-slate-300">
+                  <h4 className="font-bold text-slate-900 uppercase text-[11px] mb-1">
+                    1. Ưu điểm nổi bật của tiết dạy / hoạt động:
+                  </h4>
+                  <p className="text-slate-700 italic min-h-[36px] whitespace-pre-wrap">
+                    {evaluation?.strengths || "— Không có ghi chú —"}
                   </p>
                 </div>
-              )}
 
-              <div className="p-3.5 rounded-xl border border-slate-300">
-                <h4 className="font-bold text-slate-900 uppercase text-[11px] mb-1">
-                  {categoryType === "GVNN_ESL" ? "4. Teacher Voice & Agreed Action Plan / Kế hoạch hành động thống nhất:" : "3. Đánh giá chung & Phản hồi:"}
-                </h4>
-                <p className="text-slate-700 italic min-h-[36px] whitespace-pre-wrap">
-                  {parsedGeneral?.summary?.agreedActions || evaluation?.generalComment || evaluation?.generalFeedback || "— Không có ghi chú —"}
-                </p>
-              </div>
-
-              {evaluation?.teacherFeedback && (
-                <div className="p-3.5 rounded-xl border border-emerald-300 bg-emerald-50/30">
-                  <h4 className="font-bold text-emerald-950 uppercase text-[11px] mb-1 flex items-center justify-between">
-                    <span>Ý kiến tiếp thu & phản hồi của Giáo viên dạy:</span>
-                    {evaluation.teacherAcknowledgedAt && (
-                      <span className="text-[10px] text-emerald-800 font-normal normal-case">
-                        (Xác nhận ngày {new Date(evaluation.teacherAcknowledgedAt).toLocaleDateString("vi-VN")})
-                      </span>
-                    )}
+                <div className="p-3.5 rounded-xl border border-slate-300">
+                  <h4 className="font-bold text-slate-900 uppercase text-[11px] mb-1">
+                    2. Tồn tại / Góp ý biện pháp khắc phục & phát triển:
                   </h4>
-                  <p className="text-emerald-900 italic min-h-[30px] whitespace-pre-wrap">
-                    {evaluation.teacherFeedback}
+                  <p className="text-slate-700 italic min-h-[36px] whitespace-pre-wrap">
+                    {evaluation?.improvements || "— Không có ghi chú —"}
                   </p>
                 </div>
-              )}
-            </div>
+
+                <div className="p-3.5 rounded-xl border border-slate-300">
+                  <h4 className="font-bold text-slate-900 uppercase text-[11px] mb-1">
+                    3. Đánh giá chung & Phản hồi:
+                  </h4>
+                  <p className="text-slate-700 italic min-h-[36px] whitespace-pre-wrap">
+                    {evaluation?.generalComment || evaluation?.generalFeedback || "— Không có ghi chú —"}
+                  </p>
+                </div>
+
+                {evaluation?.teacherFeedback && (
+                  <div className="p-3.5 rounded-xl border border-emerald-300 bg-emerald-50/30">
+                    <h4 className="font-bold text-emerald-950 uppercase text-[11px] mb-1 flex items-center justify-between">
+                      <span>Ý kiến tiếp thu & phản hồi của Giáo viên dạy:</span>
+                      {evaluation.teacherAcknowledgedAt && (
+                        <span className="text-[10px] text-emerald-800 font-normal normal-case">
+                          (Xác nhận ngày {new Date(evaluation.teacherAcknowledgedAt).toLocaleDateString("vi-VN")})
+                        </span>
+                      )}
+                    </h4>
+                    <p className="text-emerald-900 italic min-h-[30px] whitespace-pre-wrap">
+                      {evaluation.teacherFeedback}
+                    </p>
+                  </div>
+                )}
+              </div>
+            )}
 
             {/* Signatures */}
-            <div className="grid grid-cols-3 gap-4 text-center font-sans text-xs mt-8 pt-4 border-t border-slate-300">
+            <div className="grid grid-cols-2 sm:grid-cols-3 gap-4 text-center font-sans text-xs mt-8 pt-4 border-t border-slate-300">
               <div>
                 <p className="font-bold uppercase text-slate-900">
                   {categoryType === "GVNN_ESL" ? "HOST TEACHER / GV DẠY" : "GIÁO VIÊN ĐƯỢC DỰ"}
                 </p>
                 <p className="text-[10px] italic text-slate-500">(Ký và ghi rõ họ tên)</p>
-                <div className="h-20 flex flex-col items-center justify-end font-black text-slate-800">
+                <div className="h-16 flex flex-col items-center justify-end font-black text-slate-800">
                   {evaluation?.teacherAcknowledgedAt && (
                     <span className="text-[9px] font-bold text-emerald-700 bg-emerald-50 px-2 py-0.5 rounded border border-emerald-200 mb-1">
                       ✓ Đã tiếp thu {new Date(evaluation.teacherAcknowledgedAt).toLocaleDateString("vi-VN")}
@@ -827,22 +1141,24 @@ export function PrintObservationEvaluationModal({ slot, registration, onClose }:
                 </div>
               </div>
 
-              <div>
-                <p className="font-bold uppercase text-slate-900">
-                  {categoryType === "GVNN_ESL" ? "HEAD OF ENGLISH DEPT / TTCM" : "TỔ TRƯỞNG CHUYÊN MÔN"}
-                </p>
-                <p className="text-[10px] italic text-slate-500">(Ký và ghi rõ họ tên)</p>
-                <div className="h-20 flex items-end justify-center font-black text-slate-800">
-                  ................................
+              {categoryType !== "GVNN_ESL" && (
+                <div>
+                  <p className="font-bold uppercase text-slate-900">
+                    TỔ TRƯỞNG CHUYÊN MÔN
+                  </p>
+                  <p className="text-[10px] italic text-slate-500">(Ký và ghi rõ họ tên)</p>
+                  <div className="h-16 flex items-end justify-center font-black text-slate-800">
+                    ................................
+                  </div>
                 </div>
-              </div>
+              )}
 
               <div>
                 <p className="font-bold uppercase text-slate-900">
                   {categoryType === "GVNN_ESL" ? "OBSERVER / NGƯỜI DỰ" : "NGƯỜI DỰ GIỜ"}
                 </p>
                 <p className="text-[10px] italic text-slate-500">(Ký và ghi rõ họ tên)</p>
-                <div className="h-20 flex items-end justify-center font-black text-slate-800">
+                <div className="h-16 flex items-end justify-center font-black text-slate-800">
                   {observerName}
                 </div>
               </div>

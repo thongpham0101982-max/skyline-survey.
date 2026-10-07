@@ -4641,19 +4641,19 @@ export async function createSurpriseObservation(data: {
             grade: data.grade || "Khối",
             subjectId: data.subjectId || null,
             subjectName: data.subjectName || "Môn học",
-            topic: data.topic || "Dự giờ đột xuất",
+            topic: data.topic || (data.isCthsLog ? "Ghi nhận công tác CTHS" : "Dự giờ đột xuất"),
             date: slotDate,
             startTime: data.period || timeRange.start,
             endTime: timeRange.end,
-            room: data.room || "Phòng học",
-            description: "Dự giờ đột xuất (" + (isTTCM ? "Tổ trưởng chuyên môn" : "Ban ĐHCM / BGH / GĐCS") + ")",
+            room: data.room || (data.isCthsLog ? "Phòng CTHS" : "Phòng học"),
+            description: data.isCthsLog ? "Ghi nhận làm việc tại cơ sở - Tổ CTHS" : (data.description || ("Dự giờ đột xuất (" + (isTTCM ? "Tổ trưởng chuyên môn" : "Ban ĐHCM / BGH / GĐCS") + ")")),
             visibilityType: "PUBLIC",
             maxSeats: 4,
             status: "ACTIVE",
-            requestOrigin: "SURPRISE",
+            requestOrigin: data.isCthsLog ? "CTHS_WORK_LOG" : (data.requestOrigin || "SURPRISE"),
             academicYearId: activeYear?.id || null,
-            campusId: hostTeacher.campusId || null,
-            campusName: hostTeacher.campus?.campusName || null
+            campusId: data.campusId || hostTeacher.campusId || null,
+            campusName: data.campusName || hostTeacher.campus?.campusName || null
           }
         });
       } catch (createErr: any) {
@@ -4668,18 +4668,18 @@ export async function createSurpriseObservation(data: {
               grade: data.grade || "Khối",
               subjectId: data.subjectId || null,
               subjectName: data.subjectName || "Môn học",
-              topic: data.topic || "Dự giờ đột xuất",
+              topic: data.topic || (data.isCthsLog ? "Ghi nhận công tác CTHS" : "Dự giờ đột xuất"),
               date: slotDate,
               startTime: data.period || timeRange.start,
               endTime: timeRange.end,
-              room: data.room || "Phòng học",
-              description: "Dự giờ đột xuất [SURPRISE]",
+              room: data.room || (data.isCthsLog ? "Phòng CTHS" : "Phòng học"),
+              description: data.isCthsLog ? "Ghi nhận làm việc tại cơ sở [CTHS]" : "Dự giờ đột xuất [SURPRISE]",
               visibilityType: "PUBLIC",
               maxSeats: 4,
               status: "ACTIVE",
               academicYearId: activeYear?.id || null,
-              campusId: hostTeacher.campusId || null,
-              campusName: hostTeacher.campus?.campusName || null
+              campusId: data.campusId || hostTeacher.campusId || null,
+              campusName: data.campusName || hostTeacher.campus?.campusName || null
             }
           });
         } else {

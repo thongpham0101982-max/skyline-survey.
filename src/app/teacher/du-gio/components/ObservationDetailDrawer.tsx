@@ -532,8 +532,9 @@ export function ObservationDetailDrawer({
                 }
               } catch {}
 
-              const isEslItem = slotCatKey === "GVNN_ESL" || (parsedGeneral?.criterionScores && Array.isArray(parsedGeneral.criterionScores));
-              const isMnItem = slotCatKey === "MAM_NON";
+              const isCthsItem = slotCatKey === "CTHS_WORK" || parsedGeneral?.type === "CTHS_WORK_LOG" || String(slot?.requestOrigin || "").includes("CTHS");
+              const isEslItem = !isCthsItem && (slotCatKey === "GVNN_ESL" || (parsedGeneral?.criterionScores && Array.isArray(parsedGeneral.criterionScores)));
+              const isMnItem = !isCthsItem && slotCatKey === "MAM_NON";
 
               const scores: number[] = parsedGeneral?.scores || [
                 ev.criterion1 || 0,
@@ -550,25 +551,64 @@ export function ObservationDetailDrawer({
                 : scores.reduce((a: number, b: number) => a + b, 0);
 
               const maxScoreLabel = isMnItem ? "10.00đ" : isEslItem ? "4.00đ" : "20.00đ";
-              const ratingText = ev.overallRating || parsedGeneral?.overallRatingText || (isMnItem ? (totalScore >= 9 ? "Tốt" : totalScore >= 8 ? "Khá" : totalScore >= 7 ? "Đạt" : "Không đạt") : isEslItem ? "Effective Practice" : (totalScore >= 17 ? "Giỏi" : totalScore >= 14 ? "Khá" : totalScore >= 12 ? "Trung bình" : "Không xếp loại"));
+              const ratingText = ev.overallRating || parsedGeneral?.overallRatingText || (isCthsItem ? "Ghi nhận công tác" : isMnItem ? (totalScore >= 9 ? "Tốt" : totalScore >= 8 ? "Khá" : totalScore >= 7 ? "Đạt" : "Không đạt") : isEslItem ? "Effective Practice" : (totalScore >= 17 ? "Giỏi" : totalScore >= 14 ? "Khá" : totalScore >= 12 ? "Trung bình" : "Không xếp loại"));
 
               return (
                 <div key={item.registration.id || eIdx} className="p-4 bg-slate-50/70 rounded-2xl border border-slate-200 space-y-3">
                   <div className="flex items-center justify-between pb-2 border-b border-slate-200/80">
                     <div>
-                      <span className="text-[10px] text-slate-400 block uppercase font-bold">Người chấm</span>
+                      <span className="text-[10px] text-slate-400 block uppercase font-bold">{isCthsItem ? "Nhân sự ghi nhận" : "Người chấm"}</span>
                       <strong className="text-slate-900 text-xs">{item.observerName}</strong>
                     </div>
                     <div className="text-right">
-                      <span className="text-xs font-mono font-bold text-[#003B3A]">
-                        {Number(totalScore).toFixed(isEslItem ? 2 : 1)} / {maxScoreLabel}
-                      </span>
+                      {isCthsItem ? (
+                        <span className="text-xs font-bold text-teal-800 bg-teal-50 px-2.5 py-1 rounded-lg border border-teal-200">
+                          {parsedGeneral?.totalPeriods || 1} tiết công tác
+                        </span>
+                      ) : (
+                        <span className="text-xs font-mono font-bold text-[#003B3A]">
+                          {Number(totalScore).toFixed(isEslItem ? 2 : 1)} / {maxScoreLabel}
+                        </span>
+                      )}
                       <Badge variant="success" className="ml-2 font-bold">{ratingText}</Badge>
                     </div>
                   </div>
 
-                  {/* Criteria score breakdown */}
-                  {isEslItem && parsedGeneral?.criterionScores && Array.isArray(parsedGeneral.criterionScores) ? (
+                  {/* CTHS Work Items or Criteria score breakdown */}
+                  {isCthsItem ? (
+                    <div className="space-y-2">
+                      <span className="text-[10px] font-bold text-teal-900 uppercase tracking-wider block">
+                        Danh sách các đầu việc đã thực hiện:
+                      </span>
+                      {Array.isArray(parsedGeneral?.workItems) && parsedGeneral.workItems.length > 0 ? (
+                        <div className="space-y-1.5">
+                          {parsedGeneral.workItems.map((w: any, wIdx: number) => (
+                            <div key={wIdx} className="p-2.5 bg-white rounded-xl border border-slate-200 text-xs space-y-1">
+                              <div className="flex items-center justify-between gap-2">
+                                <span className="font-bold text-slate-800">#{wIdx + 1} {w.name || w.taskName}</span>
+                                <span className={`px-2 py-0.5 rounded text-[10px] font-black border ${
+                                  w.status === "COMPLETED" || w.status === "Hoàn thành"
+                                    ? "bg-emerald-50 text-emerald-700 border-emerald-200"
+                                    : "bg-amber-50 text-amber-700 border-amber-200"
+                                }`}>
+                                  {w.status === "COMPLETED" || w.status === "Hoàn thành" ? "Hoàn thành" : "Đang thực hiện"}
+                                </span>
+                              </div>
+                              {w.notes && (
+                                <p className="text-[11px] text-slate-600 italic pl-2 border-l-2 border-slate-200">
+                                  {w.notes}
+                                </p>
+                              )}
+                            </div>
+                          ))}
+                        </div>
+                      ) : (
+                        <div className="p-2.5 bg-white rounded-xl border border-slate-200 text-xs text-slate-700">
+                          {slot?.topic || "Công tác học sinh tại cơ sở"}
+                        </div>
+                      )}
+                    </div>
+                  ) : isEslItem && parsedGeneral?.criterionScores && Array.isArray(parsedGeneral.criterionScores) ? (
                     <div className="space-y-1.5">
                       <span className="text-[10px] font-bold text-indigo-900 uppercase tracking-wider block">
                         ESL Rubric Indicators (Thang 4.00đ)
@@ -606,10 +646,10 @@ export function ObservationDetailDrawer({
                   )}
 
                   {/* Qualitative comments */}
-                  <div className="space-y-1.5 text-xs">
+                  <div className="space-y-2 text-xs">
                     {(ev.strengths || ev.effectivePoints || parsedGeneral?.summary?.keyStrengths) && (
                       <div className="p-2.5 bg-emerald-50/50 rounded-xl border border-emerald-100">
-                        <span className="font-bold text-emerald-900 block text-[11px]">🌟 Ưu điểm nổi bật:</span>
+                        <span className="font-bold text-emerald-900 block text-[11px]">🌟 Ưu điểm nổi bật (Key Strengths):</span>
                         <p className="text-emerald-800 mt-0.5 whitespace-pre-wrap">
                           {ev.strengths || ev.effectivePoints || parsedGeneral?.summary?.keyStrengths}
                         </p>
@@ -617,7 +657,7 @@ export function ObservationDetailDrawer({
                     )}
                     {(ev.improvements || ev.ineffectivePoints || parsedGeneral?.summary?.keyChallenges) && (
                       <div className="p-2.5 bg-amber-50/50 rounded-xl border border-amber-100">
-                        <span className="font-bold text-amber-900 block text-[11px]">⚠️ Góp ý phát triển:</span>
+                        <span className="font-bold text-amber-900 block text-[11px]">⚠️ Góp ý phát triển (Key Challenges):</span>
                         <p className="text-amber-800 mt-0.5 whitespace-pre-wrap">
                           {ev.improvements || ev.ineffectivePoints || parsedGeneral?.summary?.keyChallenges}
                         </p>
@@ -625,8 +665,52 @@ export function ObservationDetailDrawer({
                     )}
                     {parsedGeneral?.summary?.agreedActions && (
                       <div className="p-2.5 bg-sky-50/50 rounded-xl border border-sky-100">
-                        <span className="font-bold text-sky-900 block text-[11px]">🤝 Kế hoạch hành động thống nhất:</span>
+                        <span className="font-bold text-sky-900 block text-[11px]">🤝 Kế hoạch hành động thống nhất (Agreed Actions):</span>
                         <p className="text-sky-800 mt-0.5 whitespace-pre-wrap">{parsedGeneral.summary.agreedActions}</p>
+                      </div>
+                    )}
+
+                    {/* Section F: Teacher Voice in Drawer if available */}
+                    {isEslItem && parsedGeneral?.teacherVoice && (
+                      parsedGeneral.teacherVoice.workingWell ||
+                      parsedGeneral.teacherVoice.reflectionQ1 ||
+                      parsedGeneral.teacherVoice.challenges ||
+                      parsedGeneral.teacherVoice.reflectionQ2 ||
+                      parsedGeneral.teacherVoice.curriculumAdjustments ||
+                      parsedGeneral.teacherVoice.reflectionQ3 ||
+                      parsedGeneral.teacherVoice.supportNeeded ||
+                      parsedGeneral.teacherVoice.reflectionQ4
+                    ) && (
+                      <div className="p-3 bg-indigo-50/40 rounded-xl border border-indigo-200/80 space-y-2">
+                        <span className="font-bold text-indigo-950 block text-[11px] uppercase tracking-wide">
+                          💬 Teacher Voice & Curriculum Feedback (Ý kiến phản hồi của GV dạy):
+                        </span>
+                        <div className="space-y-1.5 text-[11px]">
+                          {(parsedGeneral.teacherVoice.reflectionQ1 || parsedGeneral.teacherVoice.workingWell) && (
+                            <div className="bg-white/80 p-2 rounded-lg border border-indigo-100">
+                              <span className="font-bold text-slate-700 block">1. Điều đã làm tốt (Went well):</span>
+                              <p className="text-slate-800 italic">{parsedGeneral.teacherVoice.reflectionQ1 || parsedGeneral.teacherVoice.workingWell}</p>
+                            </div>
+                          )}
+                          {(parsedGeneral.teacherVoice.reflectionQ2 || parsedGeneral.teacherVoice.challenges) && (
+                            <div className="bg-white/80 p-2 rounded-lg border border-indigo-100">
+                              <span className="font-bold text-slate-700 block">2. Khó khăn gặp phải (Challenges):</span>
+                              <p className="text-slate-800 italic">{parsedGeneral.teacherVoice.reflectionQ2 || parsedGeneral.teacherVoice.challenges}</p>
+                            </div>
+                          )}
+                          {(parsedGeneral.teacherVoice.reflectionQ3 || parsedGeneral.teacherVoice.curriculumAdjustments) && (
+                            <div className="bg-white/80 p-2 rounded-lg border border-indigo-100">
+                              <span className="font-bold text-slate-700 block">3. Tiến độ chương trình (Curriculum pacing):</span>
+                              <p className="text-slate-800 italic">{parsedGeneral.teacherVoice.reflectionQ3 || parsedGeneral.teacherVoice.curriculumAdjustments}</p>
+                            </div>
+                          )}
+                          {(parsedGeneral.teacherVoice.reflectionQ4 || parsedGeneral.teacherVoice.supportNeeded) && (
+                            <div className="bg-white/80 p-2 rounded-lg border border-indigo-100">
+                              <span className="font-bold text-slate-700 block">4. Đề xuất hỗ trợ (Support needed):</span>
+                              <p className="text-slate-800 italic">{parsedGeneral.teacherVoice.reflectionQ4 || parsedGeneral.teacherVoice.supportNeeded}</p>
+                            </div>
+                          )}
+                        </div>
                       </div>
                     )}
                   </div>

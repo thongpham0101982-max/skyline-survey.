@@ -134,7 +134,7 @@ export function TeacherObservationReportTab({
     });
   }, [myObservedSlots, selectedMonth, selectedCategory]);
 
-  // Breakdown statistics across the 3 categories
+  // Breakdown statistics across categories
   const categoryBreakdown = useMemo(() => {
     const res = {
       mamNonTaught: 0,
@@ -143,6 +143,8 @@ export function TeacherObservationReportTab({
       k12Observed: 0,
       eslTaught: 0,
       eslObserved: 0,
+      cthsTaught: 0,
+      cthsObserved: 0,
       surpriseTaught: 0,
       surpriseObserved: 0,
       planTaught: 0,
@@ -155,7 +157,8 @@ export function TeacherObservationReportTab({
       if (!hasEval) return;
       const weight = slot.isDoublePeriod ? 2 : 1;
       const cat = getSlotCategoryInfo(slot);
-      if (cat.key === "MAM_NON") res.mamNonTaught += weight;
+      if (cat.key === "CTHS_WORK") res.cthsTaught += weight;
+      else if (cat.key === "MAM_NON") res.mamNonTaught += weight;
       else if (cat.key === "GVNN_ESL") res.eslTaught += weight;
       else res.k12Taught += weight;
 
@@ -169,7 +172,8 @@ export function TeacherObservationReportTab({
       if (!myReg || !myReg.isApproved || !myReg.evaluation || myReg.evaluation.reEvaluationStatus === "DRAFT") return;
       const weight = slot.isDoublePeriod ? 2 : 1;
       const cat = getSlotCategoryInfo(slot);
-      if (cat.key === "MAM_NON") res.mamNonObserved += weight;
+      if (cat.key === "CTHS_WORK") res.cthsObserved += weight;
+      else if (cat.key === "MAM_NON") res.mamNonObserved += weight;
       else if (cat.key === "GVNN_ESL") res.eslObserved += weight;
       else res.k12Observed += weight;
 
@@ -604,6 +608,7 @@ export function TeacherObservationReportTab({
               <option value="K12">🏫 Khối Phổ thông</option>
               <option value="MAM_NON">🍼 Khối Mầm non</option>
               <option value="GVNN_ESL">🌐 Giáo viên nước ngoài</option>
+              <option value="CTHS_WORK">🏢 Tổ Công tác Học sinh (CTHS)</option>
             </select>
           </div>
 

@@ -5,7 +5,7 @@ import React from "react"
 import {
   X, Plus, Sparkles, Zap, ShieldCheck, Info, BookOpen, Calendar, Clock, ChevronRight, RotateCcw, Send, Target, BarChart3,
   MapPin, User, Users, UserCheck, CheckCircle2, AlertCircle, AlertTriangle, FileText, Award, Check, Save, Mail, Loader2, Star,
-  Search, Filter
+  Search, Filter, Building2, ClipboardList
 } from "lucide-react"
 import { QuickCommentPresets } from "./QuickCommentPresets"
 import { getObserverSurpriseQuota, checkTeacherSurpriseHistory, findExistingSurpriseSlot, checkObservationConflict, createAssignedObservation } from "../actions"
@@ -618,6 +618,66 @@ export function ObservationRegistrationSection(props: any) {
     );
   }, [isPreschoolDepartment]);
 
+  // Hàm kiểm tra Tổ chuyên môn có thuộc Tổ CTHS / Công tác học sinh hay không
+  const isCthsDept = React.useCallback((dept: any): boolean => {
+    if (!dept) return false;
+    const name = typeof dept === "string" ? dept : (dept.name || dept.departmentName || dept.code || "");
+    const norm = name.normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase().trim();
+    const raw = name.toLowerCase().trim();
+    return (
+      raw.includes("cths") ||
+      raw.includes("hdng") ||
+      raw.includes("bp_hdng_cths") ||
+      norm.includes("cong tac hoc sinh") ||
+      norm.includes("hoat dong ngoai gio") ||
+      norm.includes("trai nghiem") ||
+      norm.includes("to cths") ||
+      norm.includes("ban cths") ||
+      norm.includes("co van hoc tap") ||
+      norm.includes("tam ly hoc duong")
+    );
+  }, []);
+
+  const CTHS_TASK_PRESETS = React.useMemo(() => [
+    "Kiểm tra nền nếp học sinh đầu giờ & đồng phục",
+    "Phối hợp GVCN xử lý trường hợp HS vi phạm nội quy",
+    "Tư vấn tâm lý & hỗ trợ cá biệt cho học sinh",
+    "Khảo sát & kiểm tra cơ sở vật chất phòng CTHS / Nền nếp",
+    "Tổ chức sinh hoạt chuyên đề / Giáo dục kỹ năng sống",
+    "Khảo sát & chuẩn bị hoạt động trải nghiệm tại cơ sở",
+    "Họp phối hợp công tác học sinh với BGH & GVCN cơ sở",
+    "Giám sát giờ ăn, giờ bán trú và sinh hoạt tập thể",
+    "Ghi nhận và xử lý phản hồi từ phụ huynh & học sinh"
+  ], []);
+
+  const [cthsWorkItems, setCthsWorkItems] = React.useState<Array<{ id: string; name: string; status: "COMPLETED" | "IN_PROGRESS"; notes: string }>>([
+    { id: "1", name: "Kiểm tra nền nếp học sinh & giám sát đầu giờ", status: "COMPLETED", notes: "" }
+  ]);
+  const [cthsTotalPeriods, setCthsTotalPeriods] = React.useState<number>(3);
+  const [cthsStartTime, setCthsStartTime] = React.useState<string>("07:30");
+  const [cthsEndTime, setCthsEndTime] = React.useState<string>("10:15");
+
+  const handleAddCthsWorkItem = (name?: string) => {
+    setCthsWorkItems(prev => [
+      ...prev,
+      { id: String(Date.now() + Math.random()), name: name || "", status: "COMPLETED", notes: "" }
+    ]);
+  };
+
+  const handleUpdateCthsWorkItem = (id: string, field: "name" | "status" | "notes", value: string) => {
+    setCthsWorkItems(prev => prev.map(it => it.id === id ? { ...it, [field]: value } : it));
+  };
+
+  const handleRemoveCthsWorkItem = (id: string) => {
+    setCthsWorkItems(prev => prev.length > 1 ? prev.filter(it => it.id !== id) : prev);
+  };
+
+  const isCthsMode = React.useMemo(() => {
+    if (!surpriseDeptId) return false;
+    const dObj = (departments || []).find((d: any) => d.id === surpriseDeptId);
+    return isCthsDept(surpriseDeptId) || (dObj && isCthsDept(dObj));
+  }, [surpriseDeptId, departments, isCthsDept]);
+
   // Danh sách Tổ chuyên môn hiển thị đầy đủ của hệ thống theo yêu cầu quản lý
   const myAssignedAllowedDepts = React.useMemo(() => {
     return departments || [];
@@ -1144,17 +1204,23 @@ export function ObservationRegistrationSection(props: any) {
                 </div>
               </div>
 
-              {/* QUOTA TRACKER BANNER (Quy định không vượt quá 50% chỉ tiêu) */}
+              {/* QUOTA TRACKER BANNER (Quy định: GĐCS, TBP không hạn chế; TTCM tối đa 50% chỉ tiêu) */}
               {surpriseQuota && (
                 <div className={`p-4 sm:p-5 rounded-2xl border transition-all ${
-                  surpriseQuota.isExceeded
+                  surpriseQuota.isExceeded && !surpriseQuota.isUnlimited
                     ? "bg-rose-50/90 border-rose-200 text-rose-950 shadow-xs"
+                    : surpriseQuota.isUnlimited
+                    ? "bg-gradient-to-r from-blue-50/90 via-indigo-50/70 to-teal-50/80 border-indigo-200/90 text-slate-800 shadow-xs"
                     : "bg-gradient-to-r from-teal-50/90 via-emerald-50/60 to-cyan-50/80 border-teal-200/90 text-slate-800 shadow-xs"
                 }`}>
                   <div className="flex flex-col md:flex-row md:items-center justify-between gap-3">
                     <div className="flex items-start gap-3">
                       <div className={`w-9 h-9 rounded-xl flex items-center justify-center shrink-0 mt-0.5 shadow-2xs ${
-                        surpriseQuota.isExceeded ? "bg-rose-200 text-rose-800" : "bg-teal-200/70 text-[#00A19A]"
+                        surpriseQuota.isExceeded && !surpriseQuota.isUnlimited
+                          ? "bg-rose-200 text-rose-800"
+                          : surpriseQuota.isUnlimited
+                          ? "bg-indigo-200/80 text-indigo-700"
+                          : "bg-teal-200/70 text-[#00A19A]"
                       }`}>
                         <Target className="w-5 h-5" />
                       </div>
@@ -1167,38 +1233,62 @@ export function ObservationRegistrationSection(props: any) {
                             {surpriseQuota.roleName}
                           </span>
                           <span className={`px-2 py-0.5 text-[10px] font-black rounded-full ${
-                            surpriseQuota.isExceeded ? "bg-rose-600 text-white" : "bg-[#00A19A] text-white"
+                            surpriseQuota.isExceeded && !surpriseQuota.isUnlimited
+                              ? "bg-rose-600 text-white"
+                              : surpriseQuota.isUnlimited
+                              ? "bg-indigo-600 text-white"
+                              : "bg-[#00A19A] text-white"
                           }`}>
-                            Tối đa 50% chỉ tiêu
+                            {surpriseQuota.isUnlimited ? "✨ Không giới hạn đột xuất" : "Tối đa 50% chỉ tiêu"}
                           </span>
                         </div>
                         <p className="text-[11px] font-medium text-slate-600 mt-1">
-                          Chỉ tiêu quy định: <strong className="text-slate-800 font-bold">{surpriseQuota.monthlyTarget} tiết/tháng</strong> • Dự giờ đột xuất tối đa: <strong className="text-[#00A19A] font-black">{surpriseQuota.maxSurpriseAllowed} tiết</strong> (50%)
+                          {surpriseQuota.isUnlimited ? (
+                            <>
+                              Chỉ tiêu quy định: <strong className="text-slate-800 font-bold">{surpriseQuota.monthlyTarget} tiết/tháng</strong> • Dự giờ đột xuất: <strong className="text-indigo-600 font-black">Không hạn chế số tiết</strong> (Dành cho {surpriseQuota.roleName})
+                            </>
+                          ) : (
+                            <>
+                              Chỉ tiêu quy định: <strong className="text-slate-800 font-bold">{surpriseQuota.monthlyTarget} tiết/tháng</strong> • Dự giờ đột xuất tối đa: <strong className="text-[#00A19A] font-black">{surpriseQuota.maxSurpriseAllowed} tiết</strong> (50%)
+                            </>
+                          )}
                         </p>
                       </div>
                     </div>
 
                     <div className="flex flex-col sm:items-end gap-1.5 shrink-0 pl-12 md:pl-0">
                       <div className="flex items-center gap-2 text-xs font-black">
-                        <span className={surpriseQuota.isExceeded ? "text-rose-700" : "text-[#00A19A]"}>
-                          Đã dùng: {surpriseQuota.currentSurpriseCount} / {surpriseQuota.maxSurpriseAllowed} tiết
-                        </span>
-                        <span className="text-[10px] text-slate-500 font-bold">
-                          ({Math.min(100, Math.round((surpriseQuota.currentSurpriseCount / (surpriseQuota.maxSurpriseAllowed || 1)) * 100))}%)
-                        </span>
+                        {surpriseQuota.isUnlimited ? (
+                          <span className="text-indigo-700 font-bold">
+                            Đã thực hiện: {surpriseQuota.currentSurpriseCount} tiết đột xuất
+                          </span>
+                        ) : (
+                          <>
+                            <span className={surpriseQuota.isExceeded ? "text-rose-700" : "text-[#00A19A]"}>
+                              Đã dùng: {surpriseQuota.currentSurpriseCount} / {surpriseQuota.maxSurpriseAllowed} tiết
+                            </span>
+                            <span className="text-[10px] text-slate-500 font-bold">
+                              ({Math.min(100, Math.round((surpriseQuota.currentSurpriseCount / (surpriseQuota.maxSurpriseAllowed || 1)) * 100))}%)
+                            </span>
+                          </>
+                        )}
                       </div>
-                      <div className="w-full sm:w-48 h-2 rounded-full bg-slate-200/80 overflow-hidden">
-                        <div
-                          className={`h-full transition-all duration-500 rounded-full ${
-                            surpriseQuota.isExceeded ? "bg-rose-600" : "bg-gradient-to-r from-teal-500 to-emerald-500"
-                          }`}
-                          style={{
-                            width: `${Math.min(100, Math.round((surpriseQuota.currentSurpriseCount / (surpriseQuota.maxSurpriseAllowed || 1)) * 100))}%`
-                          }}
-                        />
-                      </div>
+                      {!surpriseQuota.isUnlimited && (
+                        <div className="w-full sm:w-48 h-2 rounded-full bg-slate-200/80 overflow-hidden">
+                          <div
+                            className={`h-full transition-all duration-500 rounded-full ${
+                              surpriseQuota.isExceeded ? "bg-rose-600" : "bg-gradient-to-r from-teal-500 to-emerald-500"
+                            }`}
+                            style={{
+                              width: `${Math.min(100, Math.round((surpriseQuota.currentSurpriseCount / (surpriseQuota.maxSurpriseAllowed || 1)) * 100))}%`
+                            }}
+                          />
+                        </div>
+                      )}
                       <div className="text-[11px] font-bold">
-                        {surpriseQuota.isExceeded ? (
+                        {surpriseQuota.isUnlimited ? (
+                          <span className="text-indigo-700 font-bold">⚡ Cấp quản lý linh hoạt thực hiện đột xuất</span>
+                        ) : surpriseQuota.isExceeded ? (
                           <span className="text-rose-600 font-black">⚠️ Đã đạt giới hạn tối đa 50% chỉ tiêu</span>
                         ) : (
                           <span className="text-emerald-700">🟢 Còn lại {surpriseQuota.remainingSurpriseCount} lượt đăng ký</span>
@@ -1207,7 +1297,7 @@ export function ObservationRegistrationSection(props: any) {
                     </div>
                   </div>
 
-                  {surpriseQuota.isExceeded && (
+                  {surpriseQuota.isExceeded && !surpriseQuota.isUnlimited && (
                     <div className="mt-3 pt-3 border-t border-rose-200/80 text-xs text-rose-800 font-semibold flex items-start gap-2">
                       <AlertCircle className="w-4 h-4 text-rose-600 shrink-0 mt-0.5" />
                       <span>
@@ -1398,13 +1488,18 @@ export function ObservationRegistrationSection(props: any) {
                         setSurpriseTeacherId("");
                         if (newDeptId) {
                           const selectedDept = departments.find((d: any) => d.id === newDeptId);
-                          if (selectedDept && isPreschoolDepartment(selectedDept.name || selectedDept.code || "")) {
+                          if (selectedDept && isCthsDept(selectedDept)) {
+                            setSurpriseLevel("Khối CTHS");
+                            setSurpriseSubjectName("Công tác học sinh (CTHS)");
+                            setSurpriseTopic("Buổi làm việc tại cơ sở");
+                            setSurprisePeriod("Tiết 1 - 3");
+                          } else if (selectedDept && isPreschoolDepartment(selectedDept.name || selectedDept.code || "")) {
                             setSurpriseLevel("Mầm non");
                             const khacChuyenDeId = getKhacChuyenDeSubjectId(subjects);
                             setSurpriseSubjectId(khacChuyenDeId);
                             setSurpriseSubjectName("Chủ đề/Chuyên đề");
                           } else {
-                            if (surpriseLevel === "Mầm non") setSurpriseLevel("Phổ thông K-12");
+                            if (surpriseLevel === "Mầm non" || surpriseLevel === "Khối CTHS") setSurpriseLevel("Phổ thông K-12");
                           }
                         }
                       }}
@@ -1792,13 +1887,236 @@ export function ObservationRegistrationSection(props: any) {
                 </div>
               </div>
 
-              {/* SECTION 2: FORM ĐÁNH GIÁ 11 TIÊU CHÍ (CHUẨN 20 ĐIỂM) */}
-              <div className="bg-white p-5 rounded-2xl border border-slate-200/90 shadow-2xs space-y-6">
-                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-3 border-b border-slate-100">
-                  <h5 className="text-xs font-black text-slate-800 uppercase tracking-wider flex items-center gap-2">
-                    <span className="w-5 h-5 bg-teal-100 text-[#00A19A] rounded-md flex items-center justify-center text-xs font-black">2</span>
-                    {surpriseLevel !== "Mầm non" ? "Phiếu Đánh Giá 11 Tiêu Chí (Tổng 20 điểm)" : "Phiếu Đánh Giá Mầm Non (Tổng 10 điểm)"}
-                  </h5>
+              {/* SECTION 2: FORM ĐÁNH GIÁ TIẾT DẠY HOẶC GHI NHẬN LÀM VIỆC TỔ CTHS */}
+              {isCthsMode ? (
+                <div className="bg-white p-5 sm:p-6 rounded-2xl border border-teal-200/90 shadow-2xs space-y-6">
+                  {/* Header Banner for CTHS Work Log */}
+                  <div className="p-5 bg-gradient-to-r from-[#003B3A] via-[#005B58] to-[#007068] text-white rounded-2xl shadow-sm space-y-2 border border-teal-700/50">
+                    <div className="flex items-center justify-between flex-wrap gap-3">
+                      <div className="flex items-center gap-3">
+                        <div className="w-10 h-10 rounded-xl bg-white/15 border border-white/20 flex items-center justify-center shrink-0 shadow-xs">
+                          <ClipboardList className="w-5 h-5 text-teal-100" />
+                        </div>
+                        <div>
+                          <div className="flex items-center gap-2 flex-wrap">
+                            <h5 className="font-black text-sm sm:text-base uppercase tracking-wide">
+                              Ghi Nhận Buổi Làm Việc Tại Cơ Sở – Tổ CTHS
+                            </h5>
+                            <span className="px-2.5 py-0.5 rounded-full text-[10px] font-black bg-teal-400/30 text-teal-100 border border-teal-300/40 uppercase">
+                              Không chấm điểm
+                            </span>
+                          </div>
+                          <p className="text-xs text-teal-100/90 font-medium mt-0.5">
+                            Ghi nhận số tiết làm việc thực tế và các đầu việc đã thực hiện tại từng cơ sở. Tự động tính vào Ma trận cơ sở.
+                          </p>
+                        </div>
+                      </div>
+                      <div className="flex items-center gap-2 bg-black/25 px-3.5 py-2 rounded-xl border border-white/15 shrink-0">
+                        <Building2 className="w-4 h-4 text-teal-300" />
+                        <span className="text-xs font-bold text-teal-100">
+                          Cơ sở: <strong className="text-white font-black">{campuses.find((c: any) => c.id === surpriseCampusId)?.campusName || "Chưa chọn CS"}</strong>
+                        </span>
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* 1. Thời lượng & Khối lượng Tiết làm việc */}
+                  <div className="p-4 sm:p-5 bg-slate-50/80 rounded-2xl border border-slate-200 space-y-3">
+                    <div className="flex items-center justify-between flex-wrap gap-2">
+                      <label className="text-xs font-black text-slate-800 uppercase tracking-wider flex items-center gap-1.5">
+                        <Clock className="w-4 h-4 text-[#00A19A]" />
+                        <span>Thời lượng & Số tiết làm việc thực tế</span>
+                      </label>
+                      <span className="text-xs font-black text-teal-900 bg-teal-100/80 px-3 py-1 rounded-xl border border-teal-200 shadow-2xs">
+                        {cthsTotalPeriods} tiết làm việc ({campuses.find((c: any) => c.id === surpriseCampusId)?.id === currentTeacher?.campusId ? "Nội bộ CS" : "Liên cơ sở"})
+                      </span>
+                    </div>
+
+                    <div className="grid grid-cols-12 gap-3.5 pt-1">
+                      <div className="col-span-12 sm:col-span-5 flex flex-col gap-1.5">
+                        <label className="text-[11px] font-black text-slate-700">Tổng số tiết ghi nhận vào Ma trận CS *</label>
+                        <div className="flex items-center gap-1.5 flex-wrap">
+                          {[1, 2, 3, 4, 5, 6].map((num) => (
+                            <button
+                              key={num}
+                              type="button"
+                              onClick={() => {
+                                setCthsTotalPeriods(num);
+                                setSurprisePeriod(`Tiết 1 - ${num}`);
+                              }}
+                              className={`flex-1 min-w-[40px] py-2 text-xs font-black rounded-xl border transition-all cursor-pointer select-none active:scale-95 ${
+                                cthsTotalPeriods === num
+                                  ? "bg-[#007068] text-white border-[#005B58] shadow-xs ring-2 ring-teal-300/70"
+                                  : "bg-white text-slate-700 border-slate-200 hover:bg-slate-100"
+                              }`}
+                            >
+                              {num} tiết
+                            </button>
+                          ))}
+                        </div>
+                      </div>
+
+                      <div className="col-span-12 sm:col-span-4 flex flex-col gap-1.5">
+                        <label className="text-[11px] font-black text-slate-700">Khung giờ làm việc (Từ - Đến)</label>
+                        <div className="flex items-center gap-2">
+                          <input
+                            type="time"
+                            value={cthsStartTime}
+                            onChange={(e) => setCthsStartTime(e.target.value)}
+                            className="w-full text-xs font-bold p-2.5 rounded-xl border border-slate-200 bg-white focus:ring-2 focus:ring-[#00A19A] outline-none"
+                          />
+                          <span className="text-slate-400 font-bold">-</span>
+                          <input
+                            type="time"
+                            value={cthsEndTime}
+                            onChange={(e) => setCthsEndTime(e.target.value)}
+                            className="w-full text-xs font-bold p-2.5 rounded-xl border border-slate-200 bg-white focus:ring-2 focus:ring-[#00A19A] outline-none"
+                          />
+                        </div>
+                      </div>
+
+                      <div className="col-span-12 sm:col-span-3 flex flex-col gap-1.5">
+                        <label className="text-[11px] font-black text-slate-700">Phòng / Địa điểm làm việc</label>
+                        <input
+                          type="text"
+                          placeholder="Phòng CTHS, Sân trường, v.v..."
+                          value={surpriseRoom}
+                          onChange={(e) => setSurpriseRoom(e.target.value)}
+                          className="w-full text-xs font-bold p-2.5 rounded-xl border border-slate-200 bg-white focus:ring-2 focus:ring-[#00A19A] outline-none"
+                        />
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* 2. Bảng Danh Sách Đầu Việc Thực Hiện */}
+                  <div className="space-y-3.5">
+                    <div className="flex items-center justify-between flex-wrap gap-2">
+                      <div>
+                        <label className="text-xs font-black text-slate-800 uppercase tracking-wider flex items-center gap-1.5">
+                          <FileText className="w-4 h-4 text-[#00A19A]" />
+                          <span>Danh sách Đầu việc Đã thực hiện ({cthsWorkItems.length} đầu việc)</span>
+                        </label>
+                        <p className="text-[11px] text-slate-500 font-medium">
+                          Mỗi đầu việc ghi ngắn gọn theo cấu trúc: Tên việc – Trạng thái Hoàn thành / Đang thực hiện – Ghi chú kết quả
+                        </p>
+                      </div>
+
+                      <button
+                        type="button"
+                        onClick={() => handleAddCthsWorkItem()}
+                        className="px-3.5 py-1.5 bg-teal-50 hover:bg-teal-100 text-[#005B58] text-xs font-black rounded-xl border border-teal-200 transition-all flex items-center gap-1.5 cursor-pointer shadow-2xs active:scale-95"
+                      >
+                        <Plus className="w-3.5 h-3.5" />
+                        <span>Thêm đầu việc</span>
+                      </button>
+                    </div>
+
+                    {/* Quick Presets for CTHS */}
+                    <div className="p-3 bg-slate-50/70 rounded-xl border border-slate-200/80 space-y-1.5">
+                      <span className="text-[10px] font-black text-slate-500 uppercase tracking-wider flex items-center gap-1">
+                        <Sparkles className="w-3 h-3 text-amber-500" />
+                        Gợi ý đầu việc CTHS thường gặp:
+                      </span>
+                      <div className="flex items-center gap-1.5 flex-wrap">
+                        {CTHS_TASK_PRESETS.map((preset, pIdx) => (
+                          <button
+                            key={pIdx}
+                            type="button"
+                            onClick={() => handleAddCthsWorkItem(preset)}
+                            className="px-2.5 py-1 text-[11px] font-semibold bg-white hover:bg-teal-50 text-slate-700 hover:text-teal-900 border border-slate-200 hover:border-teal-300 rounded-lg transition-all cursor-pointer shadow-2xs active:scale-95"
+                          >
+                            + {preset}
+                          </button>
+                        ))}
+                      </div>
+                    </div>
+
+                    {/* Dynamic Work Items List */}
+                    <div className="space-y-2.5">
+                      {cthsWorkItems.map((item, index) => (
+                        <div key={item.id} className="p-3.5 bg-white rounded-2xl border border-slate-200 hover:border-teal-200 transition-all shadow-2xs space-y-2.5">
+                          <div className="flex items-center gap-2">
+                            <span className="w-7 h-7 rounded-xl bg-teal-50 border border-teal-200 text-[#005B58] flex items-center justify-center text-xs font-black shrink-0">
+                              {index + 1}
+                            </span>
+                            <input
+                              type="text"
+                              placeholder="Tên / Nội dung đầu việc (VD: Kiểm tra nền nếp học sinh...)"
+                              value={item.name}
+                              onChange={(e) => handleUpdateCthsWorkItem(item.id, "name", e.target.value)}
+                              className="flex-1 text-xs font-bold p-2.5 rounded-xl border border-slate-200 bg-slate-50/60 focus:bg-white focus:ring-2 focus:ring-[#00A19A] outline-none text-slate-800"
+                            />
+                            {/* Status toggle button */}
+                            <button
+                              type="button"
+                              onClick={() => handleUpdateCthsWorkItem(item.id, "status", item.status === "COMPLETED" ? "IN_PROGRESS" : "COMPLETED")}
+                              className={`px-3 py-2 rounded-xl text-xs font-black border transition-all cursor-pointer shrink-0 flex items-center gap-1.5 shadow-2xs select-none active:scale-95 ${
+                                item.status === "COMPLETED"
+                                  ? "bg-emerald-50 text-emerald-800 border-emerald-300 hover:bg-emerald-100"
+                                  : "bg-amber-50 text-amber-800 border-amber-300 hover:bg-amber-100"
+                              }`}
+                              title="Bấm để chuyển đổi trạng thái"
+                            >
+                              {item.status === "COMPLETED" ? (
+                                <>
+                                  <CheckCircle2 className="w-3.5 h-3.5 text-emerald-600" />
+                                  <span>Hoàn thành</span>
+                                </>
+                              ) : (
+                                <>
+                                  <Clock className="w-3.5 h-3.5 text-amber-600" />
+                                  <span>Đang thực hiện</span>
+                                </>
+                              )}
+                            </button>
+                            {/* Remove button */}
+                            {cthsWorkItems.length > 1 && (
+                              <button
+                                type="button"
+                                onClick={() => handleRemoveCthsWorkItem(item.id)}
+                                className="p-2 text-slate-400 hover:text-rose-600 hover:bg-rose-50 rounded-xl transition-all cursor-pointer"
+                                title="Xóa đầu việc này"
+                              >
+                                <X className="w-4 h-4" />
+                              </button>
+                            )}
+                          </div>
+                          {/* Note & result input */}
+                          <div className="pl-9">
+                            <input
+                              type="text"
+                              placeholder="Kết quả thực hiện & Ghi chú ngắn gọn (nếu có)..."
+                              value={item.notes}
+                              onChange={(e) => handleUpdateCthsWorkItem(item.id, "notes", e.target.value)}
+                              className="w-full text-xs font-medium p-2 rounded-lg border border-slate-150 bg-slate-50/40 focus:bg-white focus:ring-1 focus:ring-[#00A19A] outline-none text-slate-700"
+                            />
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+
+                  {/* 3. Ghi Chú & Đề Xuất Phối Hợp Chung */}
+                  <div className="space-y-1.5 pt-2 border-t border-slate-100">
+                    <label className="text-[11px] font-black text-slate-700 uppercase tracking-wide">
+                      Ghi chú & Đề xuất phối hợp chung của buổi làm việc (Tùy chọn)
+                    </label>
+                    <textarea
+                      placeholder="Ghi chú tổng kết hoặc nội dung cần tiếp tục phối hợp với Ban Giám hiệu / GVCN cơ sở..."
+                      rows={2}
+                      value={surpriseGeneral}
+                      onChange={(e) => setSurpriseGeneral(e.target.value)}
+                      className="w-full text-xs font-medium p-3.5 rounded-xl border border-slate-200 bg-slate-50/50 hover:bg-white focus:ring-2 focus:ring-[#00A19A] outline-none resize-none transition-all shadow-2xs"
+                    />
+                  </div>
+                </div>
+              ) : (
+                <div className="bg-white p-5 rounded-2xl border border-slate-200/90 shadow-2xs space-y-6">
+                  <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-3 border-b border-slate-100">
+                    <h5 className="text-xs font-black text-slate-800 uppercase tracking-wider flex items-center gap-2">
+                      <span className="w-5 h-5 bg-teal-100 text-[#00A19A] rounded-md flex items-center justify-center text-xs font-black">2</span>
+                      {surpriseLevel !== "Mầm non" ? "Phiếu Đánh Giá 11 Tiêu Chí (Tổng 20 điểm)" : "Phiếu Đánh Giá Mầm Non (Tổng 10 điểm)"}
+                    </h5>
 
                   {/* Summary Score Box & Quick Actions */}
                   <div className="flex items-center flex-wrap gap-2.5">
@@ -2253,13 +2571,15 @@ export function ObservationRegistrationSection(props: any) {
                         ))}
                       </div>
                     </div>
+                    </div>
                   );
                 })()}
               </div>
+            )}
 
               {/* Action Buttons: Lưu nháp / Hoàn thành */}
               <div className="flex flex-col sm:flex-row items-center justify-end gap-3 pt-2">
-                {surpriseQuota?.isExceeded && (
+                {!isCthsMode && surpriseQuota?.isExceeded && !surpriseQuota?.isUnlimited && (
                   <span className="text-xs text-rose-600 font-black mr-auto flex items-center gap-1.5">
                     <AlertCircle className="w-4 h-4 shrink-0" />
                     Đã hết hạn ngạch dự giờ đột xuất tháng ({surpriseQuota.currentSurpriseCount}/{surpriseQuota.maxSurpriseAllowed} tiết).
@@ -2267,8 +2587,18 @@ export function ObservationRegistrationSection(props: any) {
                 )}
 
                 {(() => {
+                  const isBlockedByQuota = !isCthsMode && !surpriseQuota?.isUnlimited && surpriseQuota?.isExceeded;
+
                   const doSubmitSurprise = (isDraft: boolean) => {
-                    if (surpriseQuota?.isExceeded) return;
+                    if (isCthsMode) {
+                      handleSurpriseSubmit(isDraft, {
+                        isCthsLog: true,
+                        workItems: cthsWorkItems,
+                        totalPeriods: cthsTotalPeriods
+                      });
+                      return;
+                    }
+                    if (isBlockedByQuota) return;
                     if (teacherSurpriseHistory?.hasRecentSurprise && !confirmedSpacingWarning) {
                       setPendingDraftSubmit(isDraft);
                       setShowSpacingConfirmModal(true);
@@ -2287,7 +2617,7 @@ export function ObservationRegistrationSection(props: any) {
                     <>
                       <button
                         type="button"
-                        disabled={surpriseSubmitting || surpriseQuota?.isExceeded}
+                        disabled={surpriseSubmitting || isBlockedByQuota}
                         onClick={() => doSubmitSurprise(true)}
                         className="w-full sm:w-auto px-6 py-3.5 rounded-xl bg-white border border-slate-300 hover:bg-slate-50 text-slate-700 font-black text-xs transition-all shadow-xs flex items-center justify-center gap-2 cursor-pointer disabled:opacity-60 disabled:cursor-not-allowed"
                       >
@@ -2297,16 +2627,20 @@ export function ObservationRegistrationSection(props: any) {
 
                       <button
                         type="button"
-                        disabled={surpriseSubmitting || surpriseQuota?.isExceeded}
+                        disabled={surpriseSubmitting || isBlockedByQuota}
                         onClick={() => doSubmitSurprise(false)}
                         className={`w-full sm:w-auto px-8 py-3.5 rounded-xl font-black text-xs transition-all shadow-md flex items-center justify-center gap-2 cursor-pointer disabled:opacity-60 disabled:cursor-not-allowed ${
-                          surpriseQuota?.isExceeded
+                          isBlockedByQuota
                             ? "bg-slate-300 text-slate-500 shadow-none"
                             : "bg-gradient-to-r from-[#00A19A] via-[#008B85] to-emerald-600 hover:from-[#008B85] hover:to-emerald-700 text-white shadow-teal-900/20"
                         }`}
                       >
                         <CheckCircle2 className="w-4 h-4 text-emerald-200" />
-                        {surpriseSubmitting ? "Đang xử lý..." : (joinExistingSlot ? "Hoàn thành đánh giá (Gộp phiên)" : "Hoàn thành đánh giá")}
+                        {surpriseSubmitting
+                          ? "Đang xử lý..."
+                          : isCthsMode
+                          ? "Ghi nhận buổi làm việc (Tổ CTHS)"
+                          : (joinExistingSlot ? "Hoàn thành đánh giá (Gộp phiên)" : "Hoàn thành đánh giá")}
                       </button>
                     </>
                   );

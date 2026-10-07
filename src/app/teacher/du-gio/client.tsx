@@ -270,7 +270,30 @@ interface DeptInfo { id: string; code: string; name: string; divisionCode?: stri
 interface CampusInfo { id: string; campusCode: string; campusName: string }
 interface ClassInfo { id: string; classCode: string; className: string; level: string; grade: string; campusId: string; academicYearId?: string }
 
-export function getSlotCategoryInfo(slot: any): { key: "MAM_NON" | "GVNN_ESL" | "K12", label: string, shortCode: string, badgeClass: string } {
+export const isCthsDepartment = (deptNameOrCode: string) => {
+  if (!deptNameOrCode) return false;
+  const norm = deptNameOrCode
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .toLowerCase()
+    .trim();
+  const raw = deptNameOrCode.toLowerCase().trim();
+
+  return (
+    raw.includes("cths") ||
+    raw.includes("hdng") ||
+    raw.includes("bp_hdng_cths") ||
+    norm.includes("cong tac hoc sinh") ||
+    norm.includes("hoat dong ngoai gio") ||
+    norm.includes("trai nghiem") ||
+    norm.includes("to cths") ||
+    norm.includes("ban cths") ||
+    norm.includes("co van hoc tap") ||
+    norm.includes("tam ly hoc duong")
+  );
+};
+
+export function getSlotCategoryInfo(slot: any): { key: "MAM_NON" | "GVNN_ESL" | "CTHS_WORK" | "K12", label: string, shortCode: string, badgeClass: string } {
   if (!slot) {
     return { key: "K12", label: "Khối Phổ thông", shortCode: "Khối Phổ thông", badgeClass: "bg-emerald-100 text-emerald-900 border-emerald-300 ring-1 ring-emerald-400/30" };
   }
@@ -285,7 +308,21 @@ export function getSlotCategoryInfo(slot: any): { key: "MAM_NON" | "GVNN_ESL" | 
   const evalComment = reg?.evaluation?.generalComment || "";
   const isWalkthroughEval = evalComment.includes('"criterionScores"') || evalComment.includes('"teacherVoice"') || evalComment.includes('"targetSkills"');
 
-  // 1. Check Foreign Walkthrough / GVNN first
+  // 1. Check CTHS Work Log first
+  const isCthsLog = evalComment.includes('"CTHS_WORK_LOG"') ||
+    slot?.requestOrigin === "CTHS_WORK_LOG" ||
+    desc.includes("làm việc tại cơ sở") ||
+    desc.includes("công tác học sinh") ||
+    desc.includes("tổ cths") ||
+    isCthsDepartment(slot?.teacher?.departmentRel?.name || slot?.teacher?.departmentRel?.code || "") ||
+    (slot?.targetDeptId && isCthsDepartment(slot?.targetDeptId)) ||
+    (slot?.subjectName && isCthsDepartment(slot?.subjectName));
+
+  if (isCthsLog) {
+    return { key: "CTHS_WORK", label: "Công tác học sinh (CTHS)", shortCode: "Tổ CTHS", badgeClass: "bg-teal-100 text-teal-900 border-teal-300 ring-1 ring-teal-400/30" };
+  }
+
+  // 2. Check Foreign Walkthrough / GVNN
   const isForeignEsl = slot?.requestOrigin === "FOREIGN_WALKTHROUGH" ||
     isWalkthroughEval ||
     desc.includes("dự giờ gvnn") ||
@@ -299,7 +336,7 @@ export function getSlotCategoryInfo(slot: any): { key: "MAM_NON" | "GVNN_ESL" | 
     return { key: "GVNN_ESL", label: "Giáo viên nước ngoài", shortCode: "GV nước ngoài", badgeClass: "bg-sky-100 text-sky-900 border-sky-300 ring-1 ring-sky-400/30" };
   }
 
-  // 2. Next check Preschool
+  // 3. Next check Preschool
   const isMN = slot?.level === "Mầm non" ||
     (slot?.grade || "").toLowerCase().includes("mầm non") ||
     (slot?.grade || "").toLowerCase().includes("mẫu giáo") ||
@@ -317,7 +354,7 @@ export function getSlotCategoryInfo(slot: any): { key: "MAM_NON" | "GVNN_ESL" | 
     return { key: "MAM_NON", label: "Khối Mầm non", shortCode: "Khối Mầm non", badgeClass: "bg-amber-100 text-amber-900 border-amber-300 ring-1 ring-amber-400/30" };
   }
 
-  // 3. Default to K-12 General Education
+  // 4. Default to K-12 General Education
   return { key: "K12", label: "Khối Phổ thông", shortCode: "Khối Phổ thông", badgeClass: "bg-emerald-100 text-emerald-900 border-emerald-300 ring-1 ring-emerald-400/30" };
 }
 
@@ -2610,7 +2647,78 @@ export function ObservationClient(props: ObservationClientProps) {
   }
 
   
-  const handleSurpriseSubmit = async (isDraft: boolean, options?: { existingSlotId?: string; forceNewSlot?: boolean }) => {
+  const handleSurpriseSubmit = async (isDraft: boolean, options?: { existingSlotId?: string; forceNewSlot?: boolean; isCthsLog?: boolean; workItems?: any[]; totalPeriods?: number }) => {
+    const isCths = isCthsDepartment(surpriseDeptId) || options?.isCthsLog;
+
+    if (isCths) {
+      if (!surpriseDate) {
+        showToast("Vui lòng chọn Ngày làm việc!", "error");
+        return;
+      }
+      if (surpriseDate < minAllowedDate) {
+        showToast("Không thể chọn ngày thuộc các tháng trước. Vui lòng chọn ngày trong tháng hiện tại hoặc các tháng sau!", "error");
+        return;
+      }
+      const cthsWorkItems = options?.workItems || [];
+      const totalPeriods = options?.totalPeriods || 1;
+      const cthsTargetTeacherId = surpriseTeacherId || currentTeacher?.id;
+      if (!cthsTargetTeacherId) {
+        showToast("Vui lòng chọn Nhân sự thực hiện / Giáo viên phối hợp!", "error");
+        return;
+      }
+
+      const campusObj = campuses.find((c: any) => c.id === surpriseCampusId) || currentTeacher?.campus;
+      const payload: any = {
+        teacherId: cthsTargetTeacherId,
+        targetDeptId: surpriseDeptId || undefined,
+        campusId: surpriseCampusId || currentTeacher?.campusId || undefined,
+        campusName: campusObj?.campusName || undefined,
+        classId: surpriseClassId || undefined,
+        className: surpriseClassName || "Cơ sở",
+        level: "Khối CTHS",
+        grade: "Tổ CTHS",
+        subjectId: undefined,
+        subjectName: "Công tác học sinh (CTHS)",
+        topic: surpriseTopic.trim() || `Buổi làm việc tại ${campusObj?.campusName || "cơ sở"}`,
+        date: surpriseDate,
+        period: surprisePeriod || `Tiết 1 - ${totalPeriods}`,
+        room: surpriseRoom || "Phòng CTHS / Cơ sở",
+        totalScore: null,
+        overallRating: "Ghi nhận công tác",
+        strengths: "",
+        improvements: "",
+        generalComment: JSON.stringify({
+          type: "CTHS_WORK_LOG",
+          totalPeriods: totalPeriods,
+          campusName: campusObj?.campusName,
+          workItems: cthsWorkItems,
+          notes: surpriseGeneral.trim()
+        }),
+        isDraft: isDraft,
+        isCthsLog: true,
+        requestOrigin: "CTHS_WORK_LOG",
+        existingSlotId: options?.existingSlotId,
+        forceNewSlot: options?.forceNewSlot
+      };
+
+      setSurpriseSubmitting(true);
+      const res = await createSurpriseObservation(payload);
+      setSurpriseSubmitting(false);
+
+      if (res.success) {
+        showToast(res.message || (isDraft ? "Đã lưu nháp buổi làm việc CTHS!" : "Đã ghi nhận buổi làm việc tại cơ sở thành công!"), "success");
+        setShowCreateModal(false);
+        refreshSlots();
+        setSurpriseTopic("");
+        setSurpriseTeacherId("");
+        setSurpriseGeneral("");
+        setActiveMainTab("overview_slots");
+      } else {
+        showToast(res.error || "Không thể ghi nhận buổi làm việc CTHS!", "error");
+      }
+      return;
+    }
+
     if (!surpriseTeacherId) {
       showToast("Vui lòng chọn Giáo viên được dự giờ!", "error");
       return;
@@ -7128,7 +7236,9 @@ export function ObservationClient(props: ObservationClientProps) {
                     <div className="flex items-center gap-2 flex-wrap">
                       <h3 className="font-black text-base sm:text-lg flex items-center gap-2">
                         <ClipboardList className="w-5 h-5" />
-                        {getSlotCategoryInfo(evalModal.slot).key === "MAM_NON"
+                        {getSlotCategoryInfo(evalModal.slot).key === "CTHS_WORK"
+                          ? "Ghi Nhận Làm Việc Tại Cơ Sở – Tổ CTHS"
+                          : getSlotCategoryInfo(evalModal.slot).key === "MAM_NON"
                           ? "Phiếu Đánh Giá Mầm Non (10.00đ)"
                           : getSlotCategoryInfo(evalModal.slot).key === "GVNN_ESL"
                           ? "Phiếu Dự Giờ Tiết Dạy GVNN (4.00đ)"
@@ -7145,7 +7255,11 @@ export function ObservationClient(props: ObservationClientProps) {
                     </div>
                   </div>
                   <p className="text-white/80 text-xs mt-0.5 font-medium">
-                    GV Dạy: <span className="font-bold text-white">{evalModal.slot.teacher?.teacherName}</span> • Bài dạy: <span className="font-bold text-white">{evalModal.slot.topic}</span>
+                    {getSlotCategoryInfo(evalModal.slot).key === "CTHS_WORK" ? (
+                      <>Nhân sự CTHS: <span className="font-bold text-white">{evalModal.slot.teacher?.teacherName}</span> • Nội dung: <span className="font-bold text-white">{evalModal.slot.topic}</span></>
+                    ) : (
+                      <>GV Dạy: <span className="font-bold text-white">{evalModal.slot.teacher?.teacherName}</span> • Bài dạy: <span className="font-bold text-white">{evalModal.slot.topic}</span></>
+                    )}
                   </p>
                 </div>
                 <div className="flex items-center gap-2">
@@ -7293,8 +7407,114 @@ export function ObservationClient(props: ObservationClientProps) {
                   </div>
                 )}
 
-                {/* Score Summary Box */}
-                {evalModal.slot.level !== "Mầm non" ? (
+                {/* CTHS Work Log View or Pedagogical Score Summary Box */}
+                {getSlotCategoryInfo(evalModal.slot).key === "CTHS_WORK" ? (() => {
+                  let cthsData: any = null;
+                  try {
+                    const raw = evalModal.registration?.evaluation?.generalComment || evalGeneral || "";
+                    cthsData = typeof raw === "string" && raw.startsWith("{") ? JSON.parse(raw) : null;
+                  } catch (e) {}
+
+                  const workItems = Array.isArray(cthsData?.workItems) ? cthsData.workItems : [];
+                  const totalPeriods = cthsData?.totalPeriods || 1;
+                  const campusName = cthsData?.campusName || evalModal.slot?.campus?.campusName || evalModal.slot?.campusName || "Cơ sở";
+                  const notes = cthsData?.notes || evalGeneral || "";
+
+                  return (
+                    <div className="space-y-5">
+                      {/* Header Summary */}
+                      <div className="p-5 bg-gradient-to-r from-[#003B3A] via-[#005B58] to-[#007068] text-white rounded-2xl shadow-sm space-y-2 border border-teal-700/50">
+                        <div className="flex items-center justify-between flex-wrap gap-2">
+                          <div className="flex items-center gap-2.5">
+                            <div className="w-9 h-9 rounded-xl bg-white/15 border border-white/20 flex items-center justify-center">
+                              <ClipboardList className="w-5 h-5 text-teal-100" />
+                            </div>
+                            <div>
+                              <h4 className="font-black text-sm uppercase tracking-wide">
+                                Ghi Nhận Buổi Làm Việc Tại Cơ Sở – Tổ CTHS
+                              </h4>
+                              <p className="text-xs text-teal-100 font-medium">
+                                Khối lượng công việc thực tế tại cơ sở (Không chấm điểm chuyên môn)
+                              </p>
+                            </div>
+                          </div>
+                          <span className="px-3 py-1 rounded-xl text-xs font-black bg-teal-400/30 text-teal-100 border border-teal-300/40">
+                            {totalPeriods} tiết làm việc
+                          </span>
+                        </div>
+                      </div>
+
+                      {/* Info grid */}
+                      <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+                        <div className="p-3 bg-slate-50 rounded-xl border border-slate-200">
+                          <span className="text-[10px] font-black text-slate-400 uppercase">Cơ sở làm việc</span>
+                          <p className="text-xs font-bold text-slate-800 mt-0.5">{campusName}</p>
+                        </div>
+                        <div className="p-3 bg-slate-50 rounded-xl border border-slate-200">
+                          <span className="text-[10px] font-black text-slate-400 uppercase">Ngày làm việc</span>
+                          <p className="text-xs font-bold text-slate-800 mt-0.5">{new Date(evalModal.slot.date).toLocaleDateString("vi-VN", { day: "2-digit", month: "2-digit", year: "numeric" })}</p>
+                        </div>
+                        <div className="p-3 bg-slate-50 rounded-xl border border-slate-200">
+                          <span className="text-[10px] font-black text-slate-400 uppercase">Khung giờ / Tiết</span>
+                          <p className="text-xs font-bold text-slate-800 mt-0.5">{evalModal.slot.startTime || evalModal.slot.period || `${totalPeriods} tiết`}</p>
+                        </div>
+                        <div className="p-3 bg-slate-50 rounded-xl border border-slate-200">
+                          <span className="text-[10px] font-black text-slate-400 uppercase">Địa điểm / Phòng</span>
+                          <p className="text-xs font-bold text-slate-800 mt-0.5">{evalModal.slot.room || "Phòng CTHS"}</p>
+                        </div>
+                      </div>
+
+                      {/* Work items list */}
+                      <div className="space-y-3">
+                        <h5 className="font-black text-xs text-slate-800 uppercase tracking-wider flex items-center gap-1.5">
+                          <FileText className="w-4 h-4 text-[#00A19A]" />
+                          <span>Danh sách các đầu việc đã thực hiện ({workItems.length > 0 ? workItems.length : 1} việc)</span>
+                        </h5>
+
+                        <div className="space-y-2">
+                          {workItems.length > 0 ? (
+                            workItems.map((item: any, idx: number) => (
+                              <div key={idx} className="p-3.5 bg-slate-50/80 rounded-xl border border-slate-200 space-y-1.5">
+                                <div className="flex items-center justify-between gap-2 flex-wrap">
+                                  <div className="flex items-center gap-2">
+                                    <span className="w-6 h-6 rounded-lg bg-teal-100 text-teal-900 flex items-center justify-center text-xs font-black">
+                                      {idx + 1}
+                                    </span>
+                                    <span className="text-xs font-bold text-slate-800">{item.name || item.taskName}</span>
+                                  </div>
+                                  <span className={`px-2.5 py-0.5 text-[11px] font-black rounded-lg border ${
+                                    item.status === "COMPLETED" || item.status === "Hoàn thành"
+                                      ? "bg-emerald-50 text-emerald-700 border-emerald-300"
+                                      : "bg-amber-50 text-amber-700 border-amber-300"
+                                  }`}>
+                                    {item.status === "COMPLETED" || item.status === "Hoàn thành" ? "✓ Hoàn thành" : "⏳ Đang thực hiện"}
+                                  </span>
+                                </div>
+                                {item.notes && (
+                                  <p className="text-xs text-slate-600 pl-8 font-medium italic">
+                                    Ghi chú / Kết quả: {item.notes}
+                                  </p>
+                                )}
+                              </div>
+                            ))
+                          ) : (
+                            <div className="p-3.5 bg-slate-50 rounded-xl border border-slate-200 text-xs font-semibold text-slate-700">
+                              {evalModal.slot.topic || "Công tác học sinh tại cơ sở"}
+                            </div>
+                          )}
+                        </div>
+                      </div>
+
+                      {/* Notes & Suggestions */}
+                      {notes && (
+                        <div className="p-4 bg-teal-50/50 rounded-xl border border-teal-200 space-y-1">
+                          <span className="text-[10px] font-black text-teal-900 uppercase tracking-wider">Ghi chú & Kiến nghị chung</span>
+                          <p className="text-xs text-teal-950 font-medium leading-relaxed">{notes}</p>
+                        </div>
+                      )}
+                    </div>
+                  );
+                })() : evalModal.slot.level !== "Mầm non" ? (
                   <div className="space-y-6">
                     <div className="flex flex-col gap-3 p-4 bg-teal-50/50 rounded-2xl border border-teal-100">
                       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 w-full">
