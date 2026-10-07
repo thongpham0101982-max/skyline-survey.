@@ -83,10 +83,7 @@ export default function TeacherDashboard() {
   const { data: session } = useSession()
   const [metrics, setMetrics] = useState<MetricData | null>(null)
   const [loading, setLoading] = useState(true)
-  const [refreshing, setRefreshing] = useState(false)
-  const [searchQuery, setSearchQuery] = useState("")
   const [activeTab, setActiveTab] = useState<"ALL" | "GVCN" | "GVBM" | "UTILITIES">("ALL")
-  const [campusOverride, setCampusOverride] = useState<CampusThemeType | null>(null)
   const [viewMode, setViewMode] = useState<"TEACHER" | "ADMIN">(() => {
     if (typeof window !== "undefined") {
       const saved = localStorage.getItem("teacher_view_mode")
@@ -113,7 +110,7 @@ export default function TeacherDashboard() {
   const rawCampusName = metrics?.campus?.campusName || ""
   const rawCampusCode = metrics?.campus?.campusCode || ""
   const detectedTheme = useCampusTheme(rawCampusCode || rawCampusName)
-  const campusTheme = campusOverride ? CAMPUS_THEMES[campusOverride] : detectedTheme
+  const campusTheme = detectedTheme
 
   // Căn cứ phân quyền tài khoản GV để xác định Chế độ Quản lý
   const sessionRole = ((session?.user as any)?.role || "").toUpperCase().trim()
@@ -470,45 +467,21 @@ export default function TeacherDashboard() {
   // Render cụm Controls: Cơ sở (Hill | Global | Hệ thống) và Chế độ (Quản lý | Cá nhân)
   const renderTopControls = (isHeaderSlot = false) => (
     <div className={`flex items-center gap-1.5 sm:gap-2 flex-wrap ${isHeaderSlot ? "animate-in fade-in duration-200" : ""}`}>
-      {/* 1. Cơ sở: Hill | Global | Hệ thống */}
-      <div className="flex items-center bg-slate-100/90 rounded-xl p-0.5 border border-slate-200/90 text-xs font-bold shadow-2xs">
-        <span className="px-2 text-slate-500 hidden md:inline text-[11px] font-semibold">Cơ sở:</span>
-        <button
-          type="button"
-          onClick={() => setCampusOverride("HILL")}
-          className={`px-2.5 py-1 rounded-lg transition-all cursor-pointer text-xs ${
+      {/* 1. Cơ sở: Hiển thị theo biên chế của tài khoản (Hill | Global | Hệ thống) */}
+      <div className="flex items-center bg-slate-100/90 rounded-xl px-2.5 py-1 border border-slate-200/90 text-xs font-bold shadow-2xs gap-1.5">
+        <span className="text-slate-500 hidden md:inline text-[11px] font-semibold">Cơ sở:</span>
+        <span
+          className={`px-2 py-0.5 rounded-lg text-xs font-black shadow-xs ${
             campusTheme.type === "HILL"
-              ? "bg-[#AE882E] text-white shadow-xs font-black scale-105"
-              : "text-slate-600 hover:text-slate-900 hover:bg-white/70"
+              ? "bg-[#AE882E] text-white"
+              : campusTheme.type === "GLOBAL"
+              ? "bg-[#6E3D89] text-white"
+              : "bg-[#00A19A] text-white"
           }`}
-          title="Sky-Line Hill (CS4 - Hội An/Điện Ngọc)"
+          title={`Biên chế: ${campusTheme.name}`}
         >
-          Hill
-        </button>
-        <button
-          type="button"
-          onClick={() => setCampusOverride("GLOBAL")}
-          className={`px-2.5 py-1 rounded-lg transition-all cursor-pointer text-xs ${
-            campusTheme.type === "GLOBAL"
-              ? "bg-[#6E3D89] text-white shadow-xs font-black scale-105"
-              : "text-slate-600 hover:text-slate-900 hover:bg-white/70"
-          }`}
-          title="Sky-Line Global (CS3 - Quốc Tế)"
-        >
-          Global
-        </button>
-        <button
-          type="button"
-          onClick={() => setCampusOverride("STANDARD")}
-          className={`px-2.5 py-1 rounded-lg transition-all cursor-pointer text-xs ${
-            campusTheme.type === "STANDARD"
-              ? "bg-[#00A19A] text-white shadow-xs font-black scale-105"
-              : "text-slate-600 hover:text-slate-900 hover:bg-white/70"
-          }`}
-          title="Sky-Line Hệ thống (CS1, CS2, CS5)"
-        >
-          Hệ thống
-        </button>
+          {campusTheme.type === "HILL" ? "Hill" : campusTheme.type === "GLOBAL" ? "Global" : "Hệ thống"}
+        </span>
       </div>
 
       {/* 2. Chế độ: Quản lý | Cá nhân - Căn cứ vào vai trò tài khoản giáo viên */}
@@ -553,9 +526,6 @@ export default function TeacherDashboard() {
 
       {/* MOBILE PWA VIEW (< 768px): SSM TODAY */}
       <div className="md:hidden w-full -m-4 sm:-m-6">
-        <div className="p-2.5 bg-white border-b border-slate-200/80 flex justify-center sticky top-16 z-20 shadow-2xs">
-          {renderTopControls(false)}
-        </div>
         <SSMTodayHome />
       </div>
 

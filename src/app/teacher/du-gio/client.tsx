@@ -682,10 +682,9 @@ export function ObservationClient(props: ObservationClientProps) {
   const fileInputRef = useRef<HTMLInputElement>(null)
 
   const isAdminRoute = (typeof pathname === "string" && pathname.startsWith("/admin")) || props.isAdminPage || false;
-  const [campusOverride, setCampusOverride] = useState<CampusThemeType | null>(null);
 
   // Tự động nhận diện theme cơ sở theo biên chế của Giáo viên:
-  // Hill <=> CS4 | Global <=> CS3 | Hệ thống <=> CS1, CS2, CS5
+  // Hill <=> CS4 | Global <=> CS3 | Hệ thống <=> CS1, CS2, CS5 (hoặc mặc định)
   const teacherCampusIdentifier = 
     currentTeacher?.campus?.campusCode || 
     currentTeacher?.campus?.campusName || 
@@ -693,7 +692,7 @@ export function ObservationClient(props: ObservationClientProps) {
     (currentTeacher as any)?.campusName || 
     currentTeacher?.campusId || "";
   const detectedCampusTheme = useCampusTheme(teacherCampusIdentifier);
-  const campusTheme = campusOverride ? CAMPUS_THEMES[campusOverride] : detectedCampusTheme;
+  const campusTheme = detectedCampusTheme;
 
   // Header Portal: Render các controls Giáo viên, Cơ sở và Chế độ lên trên cùng dòng SQMS
   const [headerPortalEl, setHeaderPortalEl] = useState<HTMLElement | null>(null);
@@ -4113,39 +4112,21 @@ export function ObservationClient(props: ObservationClientProps) {
                     </span>
                   </div>
                 )}
-                {/* 1. Quick Campus Switcher */}
-                <div className="flex items-center bg-slate-100/90 rounded-xl p-0.5 border border-slate-200/90 text-xs font-bold shadow-2xs">
-                  <span className="px-2 text-slate-500 hidden md:inline text-[11px] font-semibold">Cơ sở:</span>
-                  <button
-                    type="button"
-                    onClick={() => setCampusOverride("HILL")}
-                    className={`px-2.5 py-1 rounded-lg transition-all cursor-pointer text-xs ${
-                      campusTheme.type === "HILL" ? "bg-[#AE882E] text-white shadow-xs font-black scale-105" : "text-slate-600 hover:text-slate-900 hover:bg-white/70"
+                {/* 1. Campus Badge - Biên chế cơ sở */}
+                <div className="flex items-center bg-slate-100/90 rounded-xl px-2.5 py-1 border border-slate-200/90 text-xs font-bold shadow-2xs gap-1.5">
+                  <span className="text-slate-500 hidden md:inline text-[11px] font-semibold">Cơ sở:</span>
+                  <span
+                    className={`px-2 py-0.5 rounded-lg text-xs font-black shadow-xs ${
+                      campusTheme.type === "HILL"
+                        ? "bg-[#AE882E] text-white"
+                        : campusTheme.type === "GLOBAL"
+                        ? "bg-[#6E3D89] text-white"
+                        : "bg-[#00A19A] text-white"
                     }`}
-                    title="Sky-Line Hill (CS4)"
+                    title={`Biên chế: ${campusTheme.name}`}
                   >
-                    Hill
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => setCampusOverride("GLOBAL")}
-                    className={`px-2.5 py-1 rounded-lg transition-all cursor-pointer text-xs ${
-                      campusTheme.type === "GLOBAL" ? "bg-[#6E3D89] text-white shadow-xs font-black scale-105" : "text-slate-600 hover:text-slate-900 hover:bg-white/70"
-                    }`}
-                    title="Sky-Line Global (CS3)"
-                  >
-                    Global
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => setCampusOverride("STANDARD")}
-                    className={`px-2.5 py-1 rounded-lg transition-all cursor-pointer text-xs ${
-                      campusTheme.type === "STANDARD" ? "bg-[#00A19A] text-white shadow-xs font-black scale-105" : "text-slate-600 hover:text-slate-900 hover:bg-white/70"
-                    }`}
-                    title="Sky-Line Hệ thống (CS1, CS2, CS5)"
-                  >
-                    Hệ thống
-                  </button>
+                    {campusTheme.type === "HILL" ? "Hill" : campusTheme.type === "GLOBAL" ? "Global" : "Hệ thống"}
+                  </span>
                 </div>
 
                 {/* 2. Mode Switcher for Management Roles */}
@@ -4195,35 +4176,20 @@ export function ObservationClient(props: ObservationClientProps) {
             {/* Fallback khi chưa mount portal vào header dòng SQMS */}
             {!headerPortalEl && (
               <>
-                <div className="flex items-center bg-black/25 backdrop-blur-md rounded-xl p-1 border border-white/20 text-xs font-bold shadow-inner">
-                  <span className="px-2 text-white/70 hidden sm:inline text-[11px]">Cơ sở:</span>
-                  <button
-                    type="button"
-                    onClick={() => setCampusOverride("HILL")}
-                    className={`px-2.5 py-1 rounded-lg transition-all cursor-pointer ${
-                      campusTheme.type === "HILL" ? "bg-[#AE882E] text-white shadow-sm font-black scale-105" : "text-white/80 hover:text-white"
+                <div className="flex items-center bg-black/25 backdrop-blur-md rounded-xl px-2.5 py-1 border border-white/20 text-xs font-bold shadow-inner gap-1.5">
+                  <span className="text-white/70 hidden sm:inline text-[11px]">Cơ sở:</span>
+                  <span
+                    className={`px-2 py-0.5 rounded-lg text-xs font-black shadow-xs ${
+                      campusTheme.type === "HILL"
+                        ? "bg-[#AE882E] text-white"
+                        : campusTheme.type === "GLOBAL"
+                        ? "bg-[#6E3D89] text-white"
+                        : "bg-[#00A19A] text-white"
                     }`}
+                    title={`Biên chế: ${campusTheme.name}`}
                   >
-                    Hill
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => setCampusOverride("GLOBAL")}
-                    className={`px-2.5 py-1 rounded-lg transition-all cursor-pointer ${
-                      campusTheme.type === "GLOBAL" ? "bg-[#6E3D89] text-white shadow-sm font-black scale-105" : "text-white/80 hover:text-white"
-                    }`}
-                  >
-                    Global
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => setCampusOverride("STANDARD")}
-                    className={`px-2.5 py-1 rounded-lg transition-all cursor-pointer ${
-                      campusTheme.type === "STANDARD" ? "bg-[#00A19A] text-white shadow-sm font-black scale-105" : "text-white/80 hover:text-white"
-                    }`}
-                  >
-                    Hệ thống
-                  </button>
+                    {campusTheme.type === "HILL" ? "Hill" : campusTheme.type === "GLOBAL" ? "Global" : "Hệ thống"}
+                  </span>
                 </div>
 
                 {isManagerRole && (

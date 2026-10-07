@@ -16,6 +16,7 @@ import ThinkingSkillsForm from "./ThinkingSkillsForm";
 import PreschoolEvaluationForm from "./PreschoolEvaluationForm";
 import DeadlineCountdownBanner from "@/components/shared/DeadlineCountdownBanner";
 import ReportExportDrawer from "@/components/testing/ReportExportDrawer";
+import { calculateCompositeScore, getColumnMaxScore, parseMaxScores, roundScore } from "@/lib/grading/formula-calculator";
 
 const QUICK_REMARKS = [
     "Tiếp thu bài nhanh, tự tin và hoàn thành tốt yêu cầu.",
@@ -184,6 +185,7 @@ export default function TeacherAssessmentsClient({ user }: { user: any }) {
     const [quickCommentTarget, setQuickCommentTarget] = useState<{ studentId: string; colIndex: number } | null>(null);
 
     const [academicYear, setAcademicYear] = useState<string | null>(null);
+    const [gradeConfigs, setGradeConfigs] = useState<any[]>([]);
 
     useEffect(() => {
         const handleYearChange = () => {
@@ -206,6 +208,15 @@ export default function TeacherAssessmentsClient({ user }: { user: any }) {
                 }
             })
             .catch(() => setStats(null));
+
+        fetch(`/api/teacher-assessments?action=getGradeConfigs&academicYearId=${academicYear}`)
+            .then(res => res.json())
+            .then(data => {
+                if (Array.isArray(data)) {
+                    setGradeConfigs(data);
+                }
+            })
+            .catch(err => console.error("Error fetching gradeConfigs in teacher view:", err));
     }, [academicYear]);
 
     useEffect(() => {
@@ -470,7 +481,19 @@ export default function TeacherAssessmentsClient({ user }: { user: any }) {
 
     const handleScoreChange = (studentId: string, colIndex: number, val: string) => {
         const assignment = availableAssignments.find(a => a.id === selectedAssignmentId) || assignments.find(a => a.id === selectedAssignmentId);
-        if (assignment) {
+        if (activeGradeConfig) {
+            const maxAllowed = activeGradeConfig.parsedMaxScores?.[colIndex];
+            const colType = activeGradeConfig.parsedTypes?.[colIndex] || "SCORE_10";
+            const colName = activeGradeConfig.parsedNames?.[colIndex] || `Cột ${colIndex + 1}`;
+            
+            if (colType.startsWith("SCORE_") && maxAllowed !== undefined && !isNaN(Number(maxAllowed))) {
+                const numVal = parseFloat(val);
+                if (!isNaN(numVal) && numVal > Number(maxAllowed)) {
+                    alert(`Điểm [${colName}] tối đa là ${maxAllowed} đ!`);
+                    val = String(maxAllowed);
+                }
+            }
+        } else if (assignment) {
             const subName = (assignment.subject?.name || "").toLowerCase();
             const numVal = parseFloat(val);
             if (!isNaN(numVal)) {
@@ -587,6 +610,86 @@ export default function TeacherAssessmentsClient({ user }: { user: any }) {
     };
 
     const currentAssignment = availableAssignments.find(a => a.id === selectedAssignmentId) || assignments.find(a => a.id === selectedAssignmentId);
+
+    // Dynamic Grade Config resolved from DB
+    const activeGradeConfig = useMemo(() => {
+        if (!currentAssignment || !Array.isArray(gradeConfigs) || gradeConfigs.length === 0) return null;
+        const subId = currentAssignment.subjectId;
+        if (!subId || currentAssignment.isPreschool) return null;
+
+        const rawG = String(selectedGrade !== "all" ? selectedGrade : (currentAssignment.grade || "")).trim();
+        const gClean = rawG.replace("Khối", "").trim();
+        const sysClean = String(selectedSystemCode !== "all" ? selectedSystemCode : (currentAssignment.educationSystem || "")).trim();
+        const pId = currentAssignment.periodId;
+
+        const candidates = gradeConfigs.filter(c => c.subjectId === subId);
+        if (candidates.length === 0) return null;
+
+        let bestMatch: any = null;
+        let bestScore = -1;
+
+        for (const c of candidates) {
+            let score = 0;
+            const cGrade = String(c.grade || "").replace("Khối", "").trim();
+            const cSys = String(c.educationSystemId || "").trim();
+            const cPeriod = String(c.periodId || "").trim();
+
+            if (cPeriod === pId) score += 4;
+            else if (cPeriod === "ALL" || !cPeriod) score += 1;
+            else continue;
+
+            if (cGrade === gClean && gClean !== "") score += 4;
+            else if (cGrade === "ALL" || !cGrade) score += 1;
+            else if (gClean !== "") continue;
+
+            if (cSys.toLowerCase() === sysClean.toLowerCase() && sysClean !== "") score += 2;
+            else if (cSys === "ALL" || !cSys) score += 1;
+            else if (sysClean !== "") continue;
+
+            if (score > bestScore) {
+                bestScore = score;
+                bestMatch = c;
+            }
+        }
+
+        if (!bestMatch) return null;
+
+        let names: string[] = [];
+        let types: string[] = [];
+        let maxScores: number[] = [];
+        let weights: number[] = [];
+
+        try {
+            names = typeof bestMatch.columnNames === "string" ? JSON.parse(bestMatch.columnNames || "[]") : (bestMatch.columnNames || []);
+        } catch(e) {}
+        try {
+            types = typeof bestMatch.columnTypes === "string" ? JSON.parse(bestMatch.columnTypes || "[]") : (bestMatch.columnTypes || []);
+        } catch(e) {}
+        try {
+            maxScores = typeof bestMatch.columnMaxScores === "string" ? JSON.parse(bestMatch.columnMaxScores || "[]") : (bestMatch.columnMaxScores || []);
+        } catch(e) {}
+        try {
+            weights = typeof bestMatch.weights === "string" ? JSON.parse(bestMatch.weights || "[]") : (bestMatch.weights || []);
+        } catch(e) {}
+
+        const colCount = bestMatch.columnCount || names.length || 1;
+        while (names.length < colCount) names.push(`Cột ${names.length + 1}`);
+        while (types.length < colCount) types.push("SCORE_10");
+        while (maxScores.length < colCount) maxScores.push(10);
+        while (weights.length < colCount) weights.push(1);
+
+        return {
+            ...bestMatch,
+            columnCount: colCount,
+            parsedNames: names,
+            parsedTypes: types,
+            parsedMaxScores: maxScores,
+            parsedWeights: weights,
+            hasComposite: Boolean(bestMatch.hasCompositeColumn),
+            compositeColumnName: bestMatch.compositeColumnName || "Tổng điểm",
+            hasRemark: bestMatch.hasRemarkColumn !== false && bestMatch.hasRemarkColumn !== 0
+        };
+    }, [currentAssignment, gradeConfigs, selectedGrade, selectedSystemCode]);
     
     const subName = (currentAssignment?.subject?.name || "").toLowerCase();
     const subCode = (currentAssignment?.subject?.code || "").toLowerCase();
@@ -597,7 +700,7 @@ export default function TeacherAssessmentsClient({ user }: { user: any }) {
     const isPreschoolProbationSubject = currentAssignment?.isPreschoolProbation || currentAssignment?.subjectId === "preschool-probation" || subName.includes("học thử") || subCode.includes("probation");
     const isChildDevSubject = (subNameNormalized.includes("chuẩn phát triển trẻ em") || subNameNormalized.includes("bộ chuẩn phát triển") || subCode.includes("cpt") || subCode.includes("tci")) && (gradeVal === "1" || gradeVal === "Tất cả" || gradeVal === "" || gradeVal === "");
     const isThinkingSkillsSubject = (subNameNormalized.includes("năng lực tư duy") || subCode.includes("nltd")) && (gradeVal === "1" || gradeVal === "Tất cả");
-    const hideComments = ["toa", "tvi", "nva"].some(c => subCode.includes(c)) || ["toán", "tiếng việt", "ngữ văn"].some(s => subNameNormalized.includes(s));
+    const hideComments = activeGradeConfig ? !activeGradeConfig.hasRemark : (["toa", "tvi", "nva"].some(c => subCode.includes(c)) || ["toán", "tiếng việt", "ngữ văn"].some(s => subNameNormalized.includes(s)));
 
     const isEnglishAssignment = subName.includes("tiếng anh") || subCode.includes("eng") || subCode.includes("esl");
     const relatedEnglishAssignments = isEnglishAssignment ? availableAssignments.filter(a => 
@@ -1112,7 +1215,11 @@ export default function TeacherAssessmentsClient({ user }: { user: any }) {
                         
                         <div className="flex items-center gap-2.5 flex-wrap">
                             <span className="text-[11px] font-bold border px-3 py-1.5 rounded-xl shadow-2xs bg-[#F0FDFA] text-[#00736E] border-teal-200">
-                                {isPsychSubject ? (gradeVal ? `Mẫu Chuyên Biệt Tâm Lý Khối ${gradeVal}` : `Mẫu Đánh Giá Tâm Lý`) : isChildDevSubject ? "Cấu hình: 1 cột điểm, 1 nhận xét" : `Cấu hình: ${currentAssignment?.subject?.scoreColumns ?? 1} cột điểm, ${currentAssignment?.subject?.commentColumns ?? 1} cột nhận xét`}
+                                {isPsychSubject ? (gradeVal ? `Mẫu Chuyên Biệt Tâm Lý Khối ${gradeVal}` : `Mẫu Đánh Giá Tâm Lý (6 nhóm - 80đ)`) : 
+                                 isChildDevSubject ? "Mẫu Chuẩn Phát Triển 16 Chỉ Số (QĐ 4222)" : 
+                                 isThinkingSkillsSubject ? "Mẫu Năng Lực Tư Duy 5 Tiêu Chí" : 
+                                 activeGradeConfig ? `Cấu hình Form: ${activeGradeConfig.columnCount} cột điểm ${activeGradeConfig.hasComposite ? `(Tổng hợp: ${activeGradeConfig.compositeColumnName})` : ''}` :
+                                 `Cấu hình: ${currentAssignment?.subject?.scoreColumns ?? 1} cột điểm, ${currentAssignment?.subject?.commentColumns ?? 1} cột nhận xét`}
                             </span>
 
                             {dirtyStudentIds.size > 0 && !isLocked && (
@@ -1506,123 +1613,252 @@ export default function TeacherAssessmentsClient({ user }: { user: any }) {
                                                                 )}
                                                             </div>
                                                         ) : (
-                                                            // General Subjects: Quick Inputs & Comments
+                                                            // General Subjects: Dynamic Inputs based on activeGradeConfig
                                                             <div className="flex flex-wrap gap-3 items-start">
-                                                                {Array.from({length: (currentAssignment?.subject?.scoreColumns ?? 1)}).map((_, colIdx) => {
-                                                                    let cName = "Điểm " + (colIdx+1);
-                                                                    try { if(currentAssignment?.subject?.columnNames) { const p = JSON.parse(currentAssignment.subject.columnNames); if(p.scores && p.scores[colIdx]) cName = p.scores[colIdx]; } } catch(e){}
-                                                                    const isTotal = cName.toLowerCase().includes("tổng");
+                                                                {(() => {
+                                                                    const colCount = activeGradeConfig?.columnCount ?? (currentAssignment?.subject?.scoreColumns ?? 1);
+                                                                    const parsedNames = activeGradeConfig?.parsedNames || [];
+                                                                    const colType = activeGradeConfig?.colType || "SCORE_10";
+                                                                    const isGradeType = colType.startsWith("GRADE_");
                                                                     const subNameLower = (currentAssignment?.subject?.name || "").toLowerCase();
                                                                     const isGrade1 = String(st.grade || "").toLowerCase().replace("khối", "").replace("khoi", "").trim() === "1";
-                                                                    let maxScoreStr = "";
-                                                                    if (subNameLower.includes("vấn đáp")) {
-                                                                        maxScoreStr = " (Max 30)";
-                                                                    } else if (subNameLower.includes("viết")) {
-                                                                        maxScoreStr = isGrade1 ? " (K1: Không thi)" : " (Max 70)";
-                                                                    }
                                                                     const isWrittenDisabled = isGrade1 && subNameLower.includes("viết");
 
+                                                                    // Render Score / Rating Columns
                                                                     return (
-                                                                        <div key={"sc-input-"+colIdx} className="flex flex-col gap-1 w-22 flex-none">
-                                                                            <span className="text-[10px] uppercase font-bold text-slate-500 truncate" title={cName + maxScoreStr}>
-                                                                                {cName}{maxScoreStr && <span className="text-rose-600 font-bold ml-0.5">{maxScoreStr}</span>}
-                                                                            </span>
-                                                                            {isTotal ? (
-                                                                                <div className="w-full bg-[#F0FDFA] border border-teal-200 rounded-lg py-1 text-center font-black text-[#005854] shadow-inner h-[32px] text-xs flex items-center justify-center">
-                                                                                    {(st.scoreVals || []).slice(0, colIdx).reduce((sum: number, val: any) => sum + (parseFloat(val) || 0), 0).toLocaleString("vi-VN", {maximumFractionDigits: 2})}
+                                                                        <>
+                                                                            {Array.from({ length: colCount }).map((_, colIdx) => {
+                                                                                let cName = parsedNames[colIdx] || ("Điểm " + (colIdx + 1));
+                                                                                if (!activeGradeConfig && currentAssignment?.subject?.columnNames) {
+                                                                                    try {
+                                                                                        const p = JSON.parse(currentAssignment.subject.columnNames);
+                                                                                        if (p.scores && p.scores[colIdx]) cName = p.scores[colIdx];
+                                                                                    } catch(e) {}
+                                                                                }
+
+                                                                                const maxScore = activeGradeConfig 
+                                                                                    ? getColumnMaxScore(activeGradeConfig, colIdx)
+                                                                                    : (subNameLower.includes("vấn đáp") ? 30 : subNameLower.includes("viết") ? 70 : 10);
+                                                                                
+                                                                                let maxScoreBadge = "";
+                                                                                if (!isGradeType) {
+                                                                                    if (isWrittenDisabled) {
+                                                                                        maxScoreBadge = " (K1: Miễn)";
+                                                                                    } else {
+                                                                                        maxScoreBadge = ` (Max ${maxScore})`;
+                                                                                    }
+                                                                                }
+
+                                                                                const currentVal = isWrittenDisabled ? "" : (st.scoreVals?.[colIdx] || "");
+
+                                                                                return (
+                                                                                    <div key={"sc-input-" + colIdx} className={`flex flex-col gap-1 ${isGradeType ? "min-w-[120px]" : "w-24"} flex-none`}>
+                                                                                        <span className="text-[10px] uppercase font-bold text-slate-500 truncate" title={cName + maxScoreBadge}>
+                                                                                            {cName}{maxScoreBadge && <span className="text-rose-600 font-bold ml-0.5">{maxScoreBadge}</span>}
+                                                                                        </span>
+
+                                                                                        {/* GRADE_SKL: A / B / C / D */}
+                                                                                        {colType === "GRADE_SKL" ? (
+                                                                                            <div className="flex items-center gap-1 bg-slate-50 p-1 border border-slate-200 rounded-lg">
+                                                                                                {["A", "B", "C", "D"].map(lvl => {
+                                                                                                    const isSelected = String(currentVal).toUpperCase() === lvl;
+                                                                                                    return (
+                                                                                                        <button
+                                                                                                            key={lvl}
+                                                                                                            type="button"
+                                                                                                            disabled={isLocked}
+                                                                                                            onClick={() => handleScoreChange(st.id, colIdx, isSelected ? "" : lvl)}
+                                                                                                            className={`flex-1 py-1 text-xs font-black rounded-md transition-all ${
+                                                                                                                isSelected
+                                                                                                                    ? lvl === "A" ? "bg-emerald-600 text-white shadow-xs"
+                                                                                                                    : lvl === "B" ? "bg-[#00A19A] text-white shadow-xs"
+                                                                                                                    : lvl === "C" ? "bg-amber-500 text-white shadow-xs"
+                                                                                                                    : "bg-rose-500 text-white shadow-xs"
+                                                                                                                    : "text-slate-600 hover:bg-slate-200"
+                                                                                                            } ${isLocked ? "opacity-60 cursor-not-allowed" : "cursor-pointer"}`}
+                                                                                                        >
+                                                                                                            {lvl}
+                                                                                                        </button>
+                                                                                                    );
+                                                                                                })}
+                                                                                            </div>
+                                                                                        ) : colType === "GRADE_CEFR" ? (
+                                                                                            /* GRADE_CEFR: A1, A2, B1, B2, C1 */
+                                                                                            <select
+                                                                                                disabled={isLocked}
+                                                                                                value={currentVal}
+                                                                                                onChange={e => handleScoreChange(st.id, colIdx, e.target.value)}
+                                                                                                className={`w-full border rounded-lg py-1 px-2 font-bold text-xs shadow-2xs outline-none transition-all h-[32px] ${
+                                                                                                    isLocked 
+                                                                                                        ? "bg-slate-100 text-slate-400 cursor-not-allowed border-slate-200"
+                                                                                                        : "bg-white text-slate-800 border-slate-300 focus:border-[#00A19A] focus:ring-2 focus:ring-[#00A19A]/20"
+                                                                                                }`}
+                                                                                            >
+                                                                                                <option value="">-- Chọn --</option>
+                                                                                                {["Pre-A1", "A1", "A2", "B1", "B2", "C1", "C2"].map(lvl => (
+                                                                                                    <option key={lvl} value={lvl}>{lvl}</option>
+                                                                                                ))}
+                                                                                            </select>
+                                                                                        ) : colType === "GRADE_INTL" ? (
+                                                                                            /* GRADE_INTL: E, S, N, U */
+                                                                                            <div className="flex items-center gap-1 bg-slate-50 p-1 border border-slate-200 rounded-lg">
+                                                                                                {[
+                                                                                                    { k: "E", label: "E" },
+                                                                                                    { k: "S", label: "S" },
+                                                                                                    { k: "N", label: "N" },
+                                                                                                    { k: "U", label: "U" }
+                                                                                                ].map(item => {
+                                                                                                    const isSelected = String(currentVal).toUpperCase() === item.k;
+                                                                                                    return (
+                                                                                                        <button
+                                                                                                            key={item.k}
+                                                                                                            type="button"
+                                                                                                            disabled={isLocked}
+                                                                                                            onClick={() => handleScoreChange(st.id, colIdx, isSelected ? "" : item.k)}
+                                                                                                            className={`flex-1 py-1 text-xs font-black rounded-md transition-all ${
+                                                                                                                isSelected
+                                                                                                                    ? "bg-[#00736E] text-white shadow-xs"
+                                                                                                                    : "text-slate-600 hover:bg-slate-200"
+                                                                                                            } ${isLocked ? "opacity-60 cursor-not-allowed" : "cursor-pointer"}`}
+                                                                                                            title={item.k === "E" ? "Excellent" : item.k === "S" ? "Satisfactory" : item.k === "N" ? "Needs Improvement" : "Unsatisfactory"}
+                                                                                                        >
+                                                                                                            {item.label}
+                                                                                                        </button>
+                                                                                                    );
+                                                                                                })}
+                                                                                            </div>
+                                                                                        ) : (
+                                                                                            /* Numeric Score Input */
+                                                                                            <input 
+                                                                                                id={`score-input-${idx}-${colIdx}`}
+                                                                                                type="number"
+                                                                                                step="any"
+                                                                                                min={0}
+                                                                                                max={maxScore}
+                                                                                                disabled={isWrittenDisabled || isLocked}
+                                                                                                placeholder={isWrittenDisabled ? "Miễn" : `0-${maxScore}`}
+                                                                                                value={isWrittenDisabled ? "" : currentVal}
+                                                                                                onChange={e => handleScoreChange(st.id, colIdx, e.target.value)}
+                                                                                                onKeyDown={e => {
+                                                                                                    if (e.key === "Enter" || e.key === "ArrowDown") {
+                                                                                                        e.preventDefault();
+                                                                                                        const nextEl = document.getElementById(`score-input-${idx + 1}-${colIdx}`);
+                                                                                                        if (nextEl) nextEl.focus();
+                                                                                                    } else if (e.key === "ArrowUp") {
+                                                                                                        e.preventDefault();
+                                                                                                        const prevEl = document.getElementById(`score-input-${idx - 1}-${colIdx}`);
+                                                                                                        if (prevEl) prevEl.focus();
+                                                                                                    }
+                                                                                                }}
+                                                                                                className={`w-full border rounded-lg py-1 text-center font-bold text-xs shadow-2xs outline-none transition-all h-[32px] ${
+                                                                                                    isWrittenDisabled 
+                                                                                                        ? "bg-slate-100 text-slate-400 cursor-not-allowed border-slate-200" 
+                                                                                                        : isLocked 
+                                                                                                        ? "bg-slate-100 text-slate-400 cursor-not-allowed border-slate-200" 
+                                                                                                        : "bg-white text-slate-800 border-slate-300 focus:border-[#00A19A] focus:ring-2 focus:ring-[#00A19A]/20"
+                                                                                                }`}
+                                                                                            />
+                                                                                        )}
+                                                                                    </div>
+                                                                                );
+                                                                            })}
+
+                                                                            {/* Cột Điểm Tổng Hợp / Điểm Quy Đổi Tự Động (Nếu cấu hình có hasComposite) */}
+                                                                            {activeGradeConfig?.hasComposite && (
+                                                                                <div className="flex flex-col gap-1 w-24 flex-none">
+                                                                                    <span className="text-[10px] uppercase font-bold text-teal-700 truncate" title="Điểm tổng hợp tự động">
+                                                                                        {activeGradeConfig.compositeName || "Điểm Tổng"}
+                                                                                    </span>
+                                                                                    <div className="w-full bg-[#F0FDFA] border border-teal-300 rounded-lg py-1 text-center font-black text-[#005854] shadow-inner h-[32px] text-xs flex items-center justify-center">
+                                                                                        {(() => {
+                                                                                            const composite = calculateCompositeScore(st.scoreVals || [], activeGradeConfig);
+                                                                                            return composite !== null ? composite.toLocaleString("vi-VN", { maximumFractionDigits: 2 }) : "-";
+                                                                                        })()}
+                                                                                    </div>
                                                                                 </div>
-                                                                            ) : (
-                                                                                <input 
-                                                                                    id={`score-input-${idx}-${colIdx}`}
-                                                                                    type="number"
-                                                                                    disabled={isWrittenDisabled || isLocked}
-                                                                                    placeholder={isWrittenDisabled ? "Không thi" : "-"}
-                                                                                    value={isWrittenDisabled ? "" : (st.scoreVals?.[colIdx] || "")}
-                                                                                    onChange={e => handleScoreChange(st.id, colIdx, e.target.value)}
-                                                                                    onKeyDown={e => {
-                                                                                        if (e.key === "Enter" || e.key === "ArrowDown") {
-                                                                                            e.preventDefault();
-                                                                                            const nextEl = document.getElementById(`score-input-${idx + 1}-${colIdx}`);
-                                                                                            if (nextEl) nextEl.focus();
-                                                                                        } else if (e.key === "ArrowUp") {
-                                                                                            e.preventDefault();
-                                                                                            const prevEl = document.getElementById(`score-input-${idx - 1}-${colIdx}`);
-                                                                                            if (prevEl) prevEl.focus();
-                                                                                        }
-                                                                                    }}
-                                                                                    className={`w-full border rounded-lg py-1 text-center font-bold text-xs shadow-2xs outline-none transition-all h-[32px] ${
-                                                                                        isWrittenDisabled 
-                                                                                            ? "bg-slate-100 text-slate-400 cursor-not-allowed border-slate-200" 
-                                                                                            : isLocked 
-                                                                                            ? "bg-slate-100 text-slate-400 cursor-not-allowed border-slate-200" 
-                                                                                            : "bg-white text-slate-800 border-slate-300 focus:border-[#00A19A] focus:ring-2 focus:ring-[#00A19A]/20"
-                                                                                    }`}
-                                                                                />
                                                                             )}
-                                                                        </div>
+                                                                        </>
                                                                     );
-                                                                })}
+                                                                })()}
 
-                                                                {!hideComments && Array.from({length: (currentAssignment?.subject?.commentColumns ?? 1)}).map((_, colIdx) => {
-                                                                    let cName = "Nhận xét " + (colIdx+1);
-                                                                    try { if(currentAssignment?.subject?.columnNames) { const p = JSON.parse(currentAssignment.subject.columnNames); if(p.comments && p.comments[colIdx]) cName = p.comments[colIdx]; } } catch(e){}
-                                                                    const isQuickOpen = quickCommentTarget?.studentId === st.id && quickCommentTarget?.colIndex === colIdx;
+                                                                {/* Dynamic Comments / Remarks */}
+                                                                {!hideComments && (() => {
+                                                                    const showRemark = activeGradeConfig ? activeGradeConfig.hasRemark : true;
+                                                                    if (!showRemark) return null;
 
-                                                                    return (
-                                                                        <div key={"cm-input-"+colIdx} className="flex flex-col gap-1 w-full min-w-[200px] flex-1 relative">
-                                                                            <div className="flex items-center justify-between">
-                                                                                <span className="text-[10px] uppercase font-bold text-slate-500 truncate" title={cName}>{cName}</span>
-                                                                                {!isLocked && (
-                                                                                    <button
-                                                                                        type="button"
-                                                                                        onClick={() => setQuickCommentTarget(isQuickOpen ? null : { studentId: st.id, colIndex: colIdx })}
-                                                                                        className="text-[10px] font-bold text-[#00736E] hover:text-[#005854] flex items-center gap-0.5 cursor-pointer"
-                                                                                    >
-                                                                                        <Sparkles className="w-3 h-3 text-[#00A19A]" />
-                                                                                        <span>Mẫu gợi ý</span>
-                                                                                    </button>
+                                                                    const remarkCount = activeGradeConfig?.remarkColumns || (currentAssignment?.subject?.commentColumns ?? 1);
+                                                                    const remarkNames = activeGradeConfig?.remarkNames ? (
+                                                                        Array.isArray(activeGradeConfig.remarkNames) 
+                                                                            ? activeGradeConfig.remarkNames 
+                                                                            : (() => { try { return JSON.parse(activeGradeConfig.remarkNames); } catch(e) { return []; } })()
+                                                                    ) : [];
+
+                                                                    return Array.from({ length: remarkCount }).map((_, colIdx) => {
+                                                                        let cName = remarkNames[colIdx] || ("Nhận xét " + (colIdx + 1));
+                                                                        if (!activeGradeConfig && currentAssignment?.subject?.columnNames) {
+                                                                            try {
+                                                                                const p = JSON.parse(currentAssignment.subject.columnNames);
+                                                                                if (p.comments && p.comments[colIdx]) cName = p.comments[colIdx];
+                                                                            } catch(e) {}
+                                                                        }
+                                                                        const isQuickOpen = quickCommentTarget?.studentId === st.id && quickCommentTarget?.colIndex === colIdx;
+
+                                                                        return (
+                                                                            <div key={"cm-input-" + colIdx} className="flex flex-col gap-1 w-full min-w-[200px] flex-1 relative">
+                                                                                <div className="flex items-center justify-between">
+                                                                                    <span className="text-[10px] uppercase font-bold text-slate-500 truncate" title={cName}>{cName}</span>
+                                                                                    {!isLocked && (
+                                                                                        <button
+                                                                                            type="button"
+                                                                                            onClick={() => setQuickCommentTarget(isQuickOpen ? null : { studentId: st.id, colIndex: colIdx })}
+                                                                                            className="text-[10px] font-bold text-[#00736E] hover:text-[#005854] flex items-center gap-0.5 cursor-pointer"
+                                                                                        >
+                                                                                            <Sparkles className="w-3 h-3 text-[#00A19A]" />
+                                                                                            <span>Mẫu gợi ý</span>
+                                                                                        </button>
+                                                                                    )}
+                                                                                </div>
+
+                                                                                <textarea 
+                                                                                    value={st.commentVals?.[colIdx] || ""}
+                                                                                    onChange={e => handleCommentChange(st.id, colIdx, e.target.value)}
+                                                                                    disabled={isLocked}
+                                                                                    rows={2}
+                                                                                    className={`w-full border rounded-lg py-1.5 px-3 text-xs font-medium shadow-2xs outline-none transition-all resize-y min-h-[46px] max-h-[110px] leading-relaxed custom-scrollbar ${
+                                                                                        isLocked ? "bg-slate-100 text-slate-400 cursor-not-allowed border-slate-200" : "bg-white text-slate-700 border-slate-300 focus:border-[#00A19A] focus:ring-2 focus:ring-[#00A19A]/20 placeholder-slate-400"
+                                                                                    }`}
+                                                                                    placeholder="Nhập nhận xét..."
+                                                                                />
+
+                                                                                {/* Quick Remarks Popover */}
+                                                                                {isQuickOpen && (
+                                                                                    <div className="absolute top-full left-0 right-0 z-30 mt-1 bg-white border border-teal-200 rounded-xl shadow-xl p-2.5 flex flex-col gap-1 animate-in fade-in zoom-in-95">
+                                                                                        <div className="flex items-center justify-between pb-1 border-b border-slate-100 text-[10px] font-bold text-[#005854] uppercase">
+                                                                                            <span>Chọn nhận xét nhanh:</span>
+                                                                                            <button onClick={() => setQuickCommentTarget(null)} className="text-slate-400 hover:text-slate-600">
+                                                                                                <X className="w-3.5 h-3.5" />
+                                                                                            </button>
+                                                                                        </div>
+                                                                                        <div className="max-h-40 overflow-y-auto space-y-1 custom-scrollbar pt-1">
+                                                                                            {QUICK_REMARKS.map((remark, rIdx) => (
+                                                                                                <button
+                                                                                                    key={rIdx}
+                                                                                                    onClick={() => {
+                                                                                                        handleCommentChange(st.id, colIdx, remark);
+                                                                                                        setQuickCommentTarget(null);
+                                                                                                    }}
+                                                                                                    className="w-full text-left text-xs font-medium text-slate-700 hover:bg-[#F0FDFA] hover:text-[#00736E] px-2 py-1.5 rounded-lg transition-colors cursor-pointer"
+                                                                                                >
+                                                                                                    • {remark}
+                                                                                                </button>
+                                                                                            ))}
+                                                                                        </div>
+                                                                                    </div>
                                                                                 )}
                                                                             </div>
-
-                                                                            <textarea 
-                                                                                value={st.commentVals?.[colIdx] || ""}
-                                                                                onChange={e => handleCommentChange(st.id, colIdx, e.target.value)}
-                                                                                disabled={isLocked}
-                                                                                rows={2}
-                                                                                className={`w-full border rounded-lg py-1.5 px-3 text-xs font-medium shadow-2xs outline-none transition-all resize-y min-h-[46px] max-h-[110px] leading-relaxed custom-scrollbar ${
-                                                                                    isLocked ? "bg-slate-100 text-slate-400 cursor-not-allowed border-slate-200" : "bg-white text-slate-700 border-slate-300 focus:border-[#00A19A] focus:ring-2 focus:ring-[#00A19A]/20 placeholder-slate-400"
-                                                                                }`}
-                                                                                placeholder="Nhập nhận xét..."
-                                                                            />
-
-                                                                            {/* Quick Remarks Popover */}
-                                                                            {isQuickOpen && (
-                                                                                <div className="absolute top-full left-0 right-0 z-30 mt-1 bg-white border border-teal-200 rounded-xl shadow-xl p-2.5 flex flex-col gap-1 animate-in fade-in zoom-in-95">
-                                                                                    <div className="flex items-center justify-between pb-1 border-b border-slate-100 text-[10px] font-bold text-[#005854] uppercase">
-                                                                                        <span>Chọn nhận xét nhanh:</span>
-                                                                                        <button onClick={() => setQuickCommentTarget(null)} className="text-slate-400 hover:text-slate-600">
-                                                                                            <X className="w-3.5 h-3.5" />
-                                                                                        </button>
-                                                                                    </div>
-                                                                                    <div className="max-h-40 overflow-y-auto space-y-1 custom-scrollbar pt-1">
-                                                                                        {QUICK_REMARKS.map((remark, rIdx) => (
-                                                                                            <button
-                                                                                                key={rIdx}
-                                                                                                onClick={() => {
-                                                                                                    handleCommentChange(st.id, colIdx, remark);
-                                                                                                    setQuickCommentTarget(null);
-                                                                                                }}
-                                                                                                className="w-full text-left text-xs font-medium text-slate-700 hover:bg-[#F0FDFA] hover:text-[#00736E] px-2 py-1.5 rounded-lg transition-colors cursor-pointer"
-                                                                                            >
-                                                                                                • {remark}
-                                                                                            </button>
-                                                                                        ))}
-                                                                                    </div>
-                                                                                </div>
-                                                                            )}
-                                                                        </div>
-                                                                    );
-                                                                })}
+                                                                        );
+                                                                    });
+                                                                })()}
                                                             </div>
                                                         )}
                                                     </td>

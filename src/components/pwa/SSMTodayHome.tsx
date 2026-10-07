@@ -525,6 +525,115 @@ export function SSMTodayHome() {
         </div>
       </div>
 
+      {/* FLOATING SPEED DIAL ACTION BUTTON */}
+      <QuickActionFab />
+
+      {/* MORNING BRIEF MODAL POPUP */}
+      {isMorningBriefOpen && (
+        <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center bg-black/50 backdrop-blur-xs p-0 sm:p-4 animate-in fade-in duration-200">
+          <div
+            className="w-full max-w-lg bg-white rounded-t-3xl sm:rounded-3xl p-5 shadow-2xl border border-[#E6ECEA] max-h-[90vh] overflow-y-auto animate-in slide-in-from-bottom duration-300"
+            onClick={(e) => e.stopPropagation()}
+          >
+            {/* Header */}
+            <div className="flex items-center justify-between pb-3 border-b border-slate-100">
+              <div className="flex items-center gap-2.5">
+                <div className="w-9 h-9 rounded-xl bg-gradient-to-tr from-amber-400 to-orange-500 text-white flex items-center justify-center text-lg shadow-xs">
+                  ☀️
+                </div>
+                <div>
+                  <h3 className="text-sm font-extrabold text-[#003B3A]">SSM Morning Brief</h3>
+                  <p className="text-[11px] text-slate-400">{currentDateStr}</p>
+                </div>
+              </div>
+              <button
+                onClick={() => setIsMorningBriefOpen(false)}
+                className="w-8 h-8 rounded-full bg-slate-100 hover:bg-slate-200 flex items-center justify-center text-slate-500 cursor-pointer"
+              >
+                <X className="w-4 h-4" />
+              </button>
+            </div>
+
+            {briefLoading ? (
+              <div className="py-12 text-center text-slate-400">
+                <RefreshCw className="w-6 h-6 animate-spin mx-auto mb-2 text-[#00A19A]" />
+                <p className="text-xs font-bold text-slate-600">Đang tổng hợp thông tin buổi sáng...</p>
+              </div>
+            ) : morningBriefData ? (
+              <div className="space-y-4 pt-4">
+                {/* 3 Metric Counter Chips */}
+                <div className="grid grid-cols-3 gap-2 text-center">
+                  <div className="bg-red-50 border border-red-200 rounded-xl p-2.5">
+                    <span className="text-base font-black text-red-600 block">
+                      {morningBriefData.urgentCount || 0}
+                    </span>
+                    <span className="text-[10px] font-bold text-red-700">Việc khẩn</span>
+                  </div>
+                  <div className="bg-teal-50 border border-teal-200 rounded-xl p-2.5">
+                    <span className="text-base font-black text-[#00A19A] block">
+                      {morningBriefData.actionToday || 0}
+                    </span>
+                    <span className="text-[10px] font-bold text-teal-800">Nhiệm vụ</span>
+                  </div>
+                  <div className="bg-sky-50 border border-sky-200 rounded-xl p-2.5">
+                    <span className="text-base font-black text-sky-600 block">
+                      {morningBriefData.duGioToday || 0}
+                    </span>
+                    <span className="text-[10px] font-bold text-sky-800">Tiết dự giờ</span>
+                  </div>
+                </div>
+
+                {/* Summary Text Card */}
+                <div className="bg-slate-50 border border-slate-200/80 rounded-2xl p-4 text-xs text-slate-700 leading-relaxed">
+                  <h4 className="font-bold text-[#003B3A] mb-1.5 flex items-center gap-1.5">
+                    <Sparkles className="w-3.5 h-3.5 text-amber-500" />
+                    <span>Tóm tắt đầu ngày của Thầy/Cô:</span>
+                  </h4>
+                  <p className="whitespace-pre-line text-slate-600">
+                    {morningBriefData.summaryText || "Hôm nay mọi kế hoạch giảng dạy và công tác học sinh diễn ra bình thường."}
+                  </p>
+                </div>
+
+                {/* Send Push reminder action */}
+                <div className="flex flex-col gap-2">
+                  <button
+                    onClick={handleSendPushMorningBrief}
+                    disabled={briefPushing || briefPushSuccess}
+                    className="w-full h-11 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-bold flex items-center justify-center gap-2 transition-all cursor-pointer disabled:opacity-60"
+                  >
+                    {briefPushing ? (
+                      <RefreshCw className="w-3.5 h-3.5 animate-spin" />
+                    ) : briefPushSuccess ? (
+                      <CheckCircle2 className="w-3.5 h-3.5 text-emerald-600" />
+                    ) : (
+                      <Send className="w-3.5 h-3.5 text-[#00A19A]" />
+                    )}
+                    <span>
+                      {briefPushSuccess
+                        ? "Đã gửi thông báo đẩy đến điện thoại!"
+                        : "Gửi bản tin Morning Brief qua Web Push"}
+                    </span>
+                  </button>
+
+                  <Link
+                    href={morningBriefData.deepLink || "/teacher?tab=tasks"}
+                    onClick={() => setIsMorningBriefOpen(false)}
+                    className="w-full h-11 rounded-xl bg-[#00A19A] hover:bg-[#008B85] active:bg-[#00736E] text-white text-xs font-bold flex items-center justify-center gap-2 transition-all shadow-xs cursor-pointer"
+                  >
+                    <span>Mở danh sách việc cần làm ngay</span>
+                    <ArrowRight className="w-3.5 h-3.5" />
+                  </Link>
+                </div>
+              </div>
+            ) : (
+              <div className="py-8 text-center text-xs text-slate-500">
+                <p>Không có dữ liệu bản tin sáng hôm nay.</p>
+              </div>
+            )}
+          </div>
+        </div>
+      )}
+
     </div>
   )
 }

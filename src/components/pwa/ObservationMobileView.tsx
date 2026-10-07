@@ -261,13 +261,31 @@ export function ObservationMobileView({ initialSlots, currentTeacher }: Observat
     loadData()
   }, [loadData])
 
-  // Open evaluation sheet and initialize scores
+  // Open evaluation sheet and initialize scores (or restore draft)
   const handleOpenEvaluate = (slot: ObservationSlotItem) => {
     setEvaluatingSlot(slot)
     const detected = detectEvaluationType(slot)
     setEvalType(detected)
 
-    // Set initial scores
+    // Check if there is an existing local draft for this slot
+    const draftKey = `ssm_obs_draft_${slot.id}`
+    const savedDraft = typeof window !== "undefined" ? localStorage.getItem(draftKey) : null
+
+    if (savedDraft) {
+      try {
+        const parsed = JSON.parse(savedDraft)
+        if (parsed.evalType) setEvalType(parsed.evalType)
+        if (Array.isArray(parsed.scores)) setScores(parsed.scores)
+        if (parsed.strengths) setStrengths(parsed.strengths)
+        if (parsed.weaknesses) setWeaknesses(parsed.weaknesses)
+        setEvalSuccess(false)
+        return
+      } catch (e) {
+        console.warn("[Draft Restore] Parse failed:", e)
+      }
+    }
+
+    // Set initial scores if no draft
     if (detected === "MAM_NON") {
       setScores(MAMNON_CRITERIA.map(c => c.max))
     } else if (detected === "GVNN") {
@@ -280,6 +298,23 @@ export function ObservationMobileView({ initialSlots, currentTeacher }: Observat
     setWeaknesses("")
     setEvalSuccess(false)
   }
+
+  // Auto-save draft on changes
+  useEffect(() => {
+    if (evaluatingSlot && scores.length > 0) {
+      const draftKey = `ssm_obs_draft_${evaluatingSlot.id}`
+      localStorage.setItem(
+        draftKey,
+        JSON.stringify({
+          evalType,
+          scores,
+          strengths,
+          weaknesses,
+          updatedAt: new Date().toISOString()
+        })
+      )
+    }
+  }, [evaluatingSlot, evalType, scores, strengths, weaknesses])
 
   // Switch type manually
   const handleSwitchEvalType = (type: "K12" | "MAM_NON" | "GVNN") => {
@@ -390,6 +425,9 @@ export function ObservationMobileView({ initialSlots, currentTeacher }: Observat
 
       if (res.ok) {
         setEvalSuccess(true)
+        if (typeof window !== "undefined" && evaluatingSlot?.id) {
+          localStorage.removeItem(`ssm_obs_draft_${evaluatingSlot.id}`)
+        }
         setTimeout(() => {
           setEvaluatingSlot(null)
           loadData()

@@ -159,11 +159,13 @@ export function resolveCampusTheme(campusCodeOrName?: string | null): CampusThem
   
   const text = campusCodeOrName.toLowerCase().trim()
 
-  // 1. Hill <=> CS4
+  // 1. Hill <=> CS4 (Hội An / Điện Ngọc)
   if (
     text.includes("hill") ||
     text.includes("cs4") ||
     text.includes("cs 4") ||
+    text.includes("cs_4") ||
+    text.includes("cs-4") ||
     text.includes("cơ sở 4") ||
     text.includes("co so 4") ||
     text.includes("hội an") ||
@@ -176,11 +178,13 @@ export function resolveCampusTheme(campusCodeOrName?: string | null): CampusThem
     return CAMPUS_THEMES.HILL
   }
 
-  // 2. Global <=> CS3
+  // 2. Global <=> CS3 (Quốc Tế)
   if (
     text.includes("global") ||
     text.includes("cs3") ||
     text.includes("cs 3") ||
+    text.includes("cs_3") ||
+    text.includes("cs-3") ||
     text.includes("cơ sở 3") ||
     text.includes("co so 3") ||
     text.includes("quốc tế") ||

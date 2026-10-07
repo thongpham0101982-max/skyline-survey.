@@ -638,6 +638,17 @@ export function ObservationRegistrationSection(props: any) {
     );
   }, []);
 
+  // ===== CTHS WORK SCHEDULE & WORK LOG STATES =====
+  const CTHS_CATEGORIES = React.useMemo(() => [
+    "Nền nếp & Kỷ luật học sinh",
+    "Tư vấn tâm lý & Hỗ trợ học sinh",
+    "Hoạt động trải nghiệm & Kỹ năng sống",
+    "Khảo sát CSVC & An toàn trường học",
+    "Phối hợp Ban Giám hiệu & GVCN",
+    "Bán trú & Sinh hoạt tập thể",
+    "Đầu việc chuyên đề khác"
+  ], []);
+
   const CTHS_TASK_PRESETS = React.useMemo(() => [
     "Kiểm tra nền nếp học sinh đầu giờ & đồng phục",
     "Phối hợp GVCN xử lý trường hợp HS vi phạm nội quy",
@@ -650,26 +661,131 @@ export function ObservationRegistrationSection(props: any) {
     "Ghi nhận và xử lý phản hồi từ phụ huynh & học sinh"
   ], []);
 
-  const [cthsWorkItems, setCthsWorkItems] = React.useState<Array<{ id: string; name: string; status: "COMPLETED" | "IN_PROGRESS"; notes: string }>>([
-    { id: "1", name: "Kiểm tra nền nếp học sinh & giám sát đầu giờ", status: "COMPLETED", notes: "" }
+  const [cthsStaffId, setCthsStaffId] = React.useState<string>(() => currentTeacher?.id || "");
+  const [cthsCampusId, setCthsCampusId] = React.useState<string>(() => currentTeacher?.campusId || (campuses?.[0]?.id || ""));
+  const [cthsDate, setCthsDate] = React.useState<string>(() => new Date().toISOString().split("T")[0]);
+  const [cthsStartPeriod, setCthsStartPeriod] = React.useState<number>(1);
+  const [cthsEndPeriod, setCthsEndPeriod] = React.useState<number>(3);
+  const [cthsCategory, setCthsCategory] = React.useState<string>("Nền nếp & Kỷ luật học sinh");
+  const [cthsLocation, setCthsLocation] = React.useState<string>("Phòng CTHS");
+  const [cthsGeneralNotes, setCthsGeneralNotes] = React.useState<string>("");
+  const [cthsSendEmail, setCthsSendEmail] = React.useState<boolean>(true);
+  const [cthsWorkItems, setCthsWorkItems] = React.useState<Array<{
+    id: string;
+    name: string;
+    status: "COMPLETED" | "CONTINUE";
+    followUpNotes: string;
+    notes: string;
+  }>>([
+    {
+      id: "1",
+      name: "Kiểm tra nền nếp học sinh đầu giờ & đồng phục",
+      status: "COMPLETED",
+      followUpNotes: "",
+      notes: "Nền nếp học sinh đầu giờ ổn định, trang phục nghiêm túc"
+    }
   ]);
-  const [cthsTotalPeriods, setCthsTotalPeriods] = React.useState<number>(3);
-  const [cthsStartTime, setCthsStartTime] = React.useState<string>("07:30");
-  const [cthsEndTime, setCthsEndTime] = React.useState<string>("10:15");
 
   const handleAddCthsWorkItem = (name?: string) => {
     setCthsWorkItems(prev => [
       ...prev,
-      { id: String(Date.now() + Math.random()), name: name || "", status: "COMPLETED", notes: "" }
+      {
+        id: String(Date.now() + Math.random()),
+        name: name || "",
+        status: "COMPLETED",
+        followUpNotes: "",
+        notes: ""
+      }
     ]);
   };
 
-  const handleUpdateCthsWorkItem = (id: string, field: "name" | "status" | "notes", value: string) => {
+  const handleUpdateCthsWorkItem = (id: string, field: "name" | "status" | "followUpNotes" | "notes", value: string) => {
     setCthsWorkItems(prev => prev.map(it => it.id === id ? { ...it, [field]: value } : it));
   };
 
   const handleRemoveCthsWorkItem = (id: string) => {
     setCthsWorkItems(prev => prev.length > 1 ? prev.filter(it => it.id !== id) : prev);
+  };
+
+  const cthsStaffList = React.useMemo(() => {
+    if (!Array.isArray(teachers)) return [];
+    const cthsMembers = teachers.filter((t: any) => {
+      const dName = getTeacherAllDeptNames(t, departments);
+      return isCthsDept(dName) || isCthsDept(t.departmentRel) || (t.departmentAssignments && t.departmentAssignments.some((da: any) => isCthsDept(da.department)));
+    });
+    if (cthsMembers.length > 0) return cthsMembers;
+    return teachers;
+  }, [teachers, departments, isCthsDept]);
+
+  const handleCthsSubmit = async (isDraft: boolean) => {
+    const staff = (teachers || []).find((t: any) => t.id === cthsStaffId) || currentTeacher;
+    if (!staff?.id) {
+      alert("Vui lòng chọn Nhân sự CTHS.");
+      return;
+    }
+    if (!cthsCampusId) {
+      alert("Vui lòng chọn Cơ sở làm việc.");
+      return;
+    }
+    if (!cthsDate) {
+      alert("Vui lòng chọn Ngày làm việc.");
+      return;
+    }
+
+    const calcPeriods = Math.max(1, cthsEndPeriod - cthsStartPeriod + 1);
+    const periodLabel = `Tiết ${cthsStartPeriod} - ${cthsEndPeriod} (${calcPeriods} tiết)`;
+    const campusObj = (campuses || []).find((c: any) => c.id === cthsCampusId);
+    const campusName = campusObj?.campusName || "Sky-Line";
+
+    const cthsData = {
+      type: "CTHS_WORK_LOG",
+      taskCategory: cthsCategory,
+      workItems: cthsWorkItems.map(item => ({
+        name: item.name || "Công tác CTHS",
+        status: item.status === "COMPLETED" ? "COMPLETED" : "IN_PROGRESS",
+        followUpNotes: item.followUpNotes || "",
+        notes: item.notes || ""
+      })),
+      totalPeriods: calcPeriods,
+      notes: cthsGeneralNotes,
+      location: cthsLocation || "Phòng CTHS",
+      staffId: staff.id,
+      staffName: staff.teacherName,
+      staffCode: staff.teacherCode,
+      campusId: cthsCampusId,
+      campusName: campusName,
+      date: cthsDate,
+      startPeriod: cthsStartPeriod,
+      endPeriod: cthsEndPeriod,
+      isDraft: isDraft,
+      sendEmail: cthsSendEmail
+    };
+
+    const payload: any = {
+      teacherId: staff.id,
+      targetDeptId: staff.departmentId || undefined,
+      campusId: cthsCampusId,
+      campusName: campusName,
+      className: "Toàn cơ sở (CTHS)",
+      level: "Khối CTHS",
+      grade: "Toàn trường",
+      subjectName: "Công tác học sinh (CTHS)",
+      topic: `${cthsCategory}: ${cthsWorkItems[0]?.name || "Làm việc tại cơ sở"} (${calcPeriods} tiết)`,
+      date: cthsDate,
+      period: periodLabel,
+      room: cthsLocation || "Phòng CTHS",
+      criterion1: calcPeriods,
+      totalScore: 20,
+      overallRating: "Đạt",
+      generalComment: JSON.stringify(cthsData),
+      isDraft: isDraft,
+      isCthsLog: true,
+      requestOrigin: "CTHS_WORK_LOG"
+    };
+
+    handleSurpriseSubmit(isDraft, {
+      customPayload: payload
+    });
   };
 
   const isCthsMode = React.useMemo(() => {

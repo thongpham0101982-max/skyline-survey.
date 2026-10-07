@@ -41,7 +41,21 @@ export async function GET(req: any) {
 
   try {
     const { searchParams } = new URL(req.url);
-    const action = searchParams.get("action");
+    if (action === "getGradeConfigs") {
+        const academicYearId = searchParams.get("academicYearId");
+        const pAny = prisma as any;
+        try {
+            const configs = await pAny.inputAssessmentGradeConfig.findMany({
+                where: {
+                    ...(academicYearId ? { academicYearId } : {})
+                }
+            });
+            return NextResponse.json(configs || []);
+        } catch (e: any) {
+            console.error("Error getGradeConfigs in teacher API:", e);
+            return NextResponse.json([]);
+        }
+    }
 
     if (action === "getAssignments") {
         const academicYearId = searchParams.get("academicYearId");

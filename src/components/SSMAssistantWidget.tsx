@@ -674,12 +674,12 @@ export function SSMAssistantWidget({ role = "TEACHER" }: SSMAssistantWidgetProps
         </button>
       </aside>
 
-      {/* 3. Nút Tab Cạnh Phải Màn Hình (Right Dock Tab để Bấm Hiện Nhanh) */}
+      {/* 3. Nút Tab Cạnh Phải Màn Hình (Right Dock Tab để Bấm Hiện Nhanh trên Desktop) */}
       {!isOpen && (
         <button
           onClick={() => setIsOpen(true)}
           title={`Hiện ${persona.name} ở bên phải`}
-          className="fixed top-1/2 -translate-y-1/2 right-0 z-40 bg-[#003B3A] hover:bg-[#005F5B] text-white py-4 px-2.5 rounded-l-2xl shadow-2xl flex flex-col items-center gap-2.5 cursor-pointer transition-all duration-300 hover:pl-3.5 group border-y border-l border-teal-400/40 print:hidden"
+          className="hidden md:flex fixed top-1/2 -translate-y-1/2 right-0 z-40 bg-[#003B3A] hover:bg-[#005F5B] text-white py-4 px-2.5 rounded-l-2xl shadow-2xl flex-col items-center gap-2.5 cursor-pointer transition-all duration-300 hover:pl-3.5 group border-y border-l border-teal-400/40 print:hidden"
         >
           <span className="relative flex h-2.5 w-2.5">
             <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-[#48BFE3] opacity-75"></span>
