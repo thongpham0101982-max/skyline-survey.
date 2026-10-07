@@ -1423,3 +1423,129 @@ export function renderForeignObservationEvaluationForObserver(params: {
   });
 }
 
+/**
+ * 23. CTHS Campus Work Schedule & Log Email (Tổ CTHS - Ban HĐNGLL)
+ */
+export function renderCthsCampusWorkLogEmail(params: {
+  staffName: string;
+  staffCode?: string;
+  campusName: string;
+  isInterCampus?: boolean;
+  dateStr: string;
+  timeRangeStr: string;
+  totalPeriods: number;
+  location?: string;
+  taskCategory?: string;
+  workItems: Array<{ id?: string; name: string; status?: string; followUpNotes?: string; notes?: string }>;
+  generalNotes?: string;
+  isDraft?: boolean;
+  directLink?: string;
+}): string {
+  const targetLink = params.directLink || SKYLINE_SSM_LOGIN_URL;
+  const isDraft = !!params.isDraft;
+
+  const workItemsTableRows = (params.workItems || [])
+    .map((item, idx) => {
+      const isCompleted = item.status === "COMPLETED";
+      const statusBadge = isCompleted
+        ? `<span style="background-color: #D1FAE5; color: #047857; font-weight: 800; font-size: 11px; padding: 3px 8px; border-radius: 6px; border: 1px solid #A7F3D0;">Hoàn thành</span>`
+        : `<span style="background-color: #FEF3C7; color: #92400E; font-weight: 800; font-size: 11px; padding: 3px 8px; border-radius: 6px; border: 1px solid #FDE68A;">Tiếp tục thực hiện</span>`;
+
+      return `
+        <tr style="border-bottom: 1px solid #E2E8F0;">
+          <td style="padding: 10px 8px; font-weight: 800; color: #005B58; font-size: 12px; vertical-align: top; text-align: center; width: 28px;">
+            ${idx + 1}
+          </td>
+          <td style="padding: 10px 10px; font-size: 12px; color: #1E293B; vertical-align: top;">
+            <div style="font-weight: 700;">${item.name || "Đầu việc"}</div>
+            ${item.followUpNotes ? `<div style="font-size: 11px; color: #B45309; margin-top: 3px; font-weight: 600;">⚡ Kế hoạch tiếp tục: ${item.followUpNotes}</div>` : ""}
+            ${item.notes ? `<div style="font-size: 11px; color: #64748B; margin-top: 2px;">📝 Ghi chú: ${item.notes}</div>` : ""}
+          </td>
+          <td style="padding: 10px 8px; text-align: right; vertical-align: top; width: 120px;">
+            ${statusBadge}
+          </td>
+        </tr>
+      `;
+    })
+    .join("");
+
+  const extraHtml = `
+    <!-- Campus & Periods Summary Badge -->
+    <div style="background-color: #F0FDFA; border: 1px solid #CCFBF1; border-radius: 12px; padding: 14px 18px; margin: 18px 0;">
+      <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0">
+        <tr>
+          <td style="vertical-align: middle;">
+            <div style="font-size: 11px; font-weight: 800; color: #0F766E; text-transform: uppercase; letter-spacing: 0.5px;">Cơ sở làm việc:</div>
+            <div style="font-size: 16px; font-weight: 900; color: #004D47; margin-top: 2px;">
+              ${params.campusName}
+              <span style="font-size: 11px; font-weight: 800; padding: 2px 8px; border-radius: 6px; background-color: ${params.isInterCampus ? '#EDE9FE' : '#E0F2FE'}; color: ${params.isInterCampus ? '#6D28D9' : '#0369A1'}; margin-left: 6px;">
+                ${params.isInterCampus ? 'Liên cơ sở' : 'Nội bộ cơ sở'}
+              </span>
+            </div>
+          </td>
+          <td align="right" style="vertical-align: middle;">
+            <div style="font-size: 11px; font-weight: 800; color: #0F766E; text-transform: uppercase; margin-bottom: 2px; letter-spacing: 0.5px;">Số tiết ghi nhận:</div>
+            <span style="font-size: 16px; font-weight: 900; color: #047857; background-color: #D1FAE5; border: 1px solid #A7F3D0; padding: 4px 12px; border-radius: 8px; display: inline-block;">
+              ${params.totalPeriods} tiết thực tế
+            </span>
+          </td>
+        </tr>
+      </table>
+    </div>
+
+    <!-- Work Items Table -->
+    <div style="margin: 20px 0;">
+      <div style="font-size: 13px; font-weight: 800; color: #003B3A; text-transform: uppercase; margin-bottom: 8px; letter-spacing: 0.5px;">
+        📋 Danh sách đầu việc (${params.workItems?.length || 0} việc)
+      </div>
+      <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="border-collapse: collapse; background-color: #FFFFFF; border: 1px solid #CBD5E1; border-radius: 8px; overflow: hidden;">
+        <thead>
+          <tr style="background-color: #F8FAFC; border-bottom: 2px solid #E2E8F0;">
+            <th style="padding: 8px 6px; font-size: 11px; font-weight: 800; color: #64748B; text-transform: uppercase; text-align: center; width: 28px;">#</th>
+            <th style="padding: 8px 10px; font-size: 11px; font-weight: 800; color: #64748B; text-transform: uppercase; text-align: left;">Nội dung đầu việc</th>
+            <th style="padding: 8px 8px; font-size: 11px; font-weight: 800; color: #64748B; text-transform: uppercase; text-align: right; width: 120px;">Trạng thái</th>
+          </tr>
+        </thead>
+        <tbody>
+          ${workItemsTableRows || `<tr><td colspan="3" style="padding: 16px; text-align: center; color: #94A3B8; font-size: 12px;">Chưa có danh sách đầu việc</td></tr>`}
+        </tbody>
+      </table>
+    </div>
+
+    ${params.generalNotes ? `
+    <!-- General Notes -->
+    <div style="background-color: #F8FAFC; border-left: 4px solid #00A19A; padding: 12px 16px; border-radius: 6px; margin: 16px 0;">
+      <div style="font-size: 12px; font-weight: 800; color: #005B58; text-transform: uppercase; margin-bottom: 4px;">📝 Ghi chú & Đề xuất phối hợp:</div>
+      <div style="font-size: 13px; color: #334155; line-height: 1.6; white-space: pre-line;">${params.generalNotes}</div>
+    </div>
+    ` : ""}
+  `;
+
+  return renderSkylineEmail({
+    headerBadge: isDraft ? "📝 LỊCH LÀM VIỆC DỰ KIẾN" : "🏢 BIÊN BẢN LÀM VIỆC TẠI CƠ SỞ",
+    headerTitle: isDraft ? "ĐĂNG KÝ LỊCH LÀM VIỆC TẠI CƠ SỞ" : "BIÊN BẢN LÀM VIỆC TẠI CƠ SỞ",
+    headerSubtitle: "Tổ Công tác Học sinh (CTHS) – Ban HĐNGLL",
+    headerTheme: "teal",
+    recipientName: params.staffName,
+    introMessage: isDraft
+      ? `Hệ thống vừa ghi nhận kế hoạch làm việc tại cơ sở của nhân sự <strong>${params.staffName}</strong>. Chi tiết kế hoạch:`
+      : `Buổi làm việc tại cơ sở của nhân sự <strong>${params.staffName}</strong> đã được ghi nhận vào hệ thống và cộng số tiết vào Ma trận phân bổ cơ sở. Chi tiết buổi làm việc:`,
+    detailsTitle: "Thông tin buổi làm việc",
+    details: [
+      { icon: "👤", label: "Nhân sự CTHS", value: `${params.staffName} ${params.staffCode ? `(${params.staffCode})` : ""}`, highlight: true },
+      { icon: "🏫", label: "Cơ sở làm việc", value: params.campusName, highlight: true },
+      { icon: "📅", label: "Ngày làm việc", value: params.dateStr },
+      { icon: "⏰", label: "Khung thời gian", value: `${params.timeRangeStr} (${params.totalPeriods} tiết làm việc)` },
+      { icon: "📍", label: "Địa điểm / Phòng", value: params.location || "Phòng CTHS" },
+      { icon: "🎯", label: "Nhóm đầu việc", value: params.taskCategory || "Công tác học sinh" }
+    ],
+    customHtml: extraHtml,
+    button: {
+      text: "👉 Xem chi tiết trên Hệ thống SSM",
+      url: targetLink,
+      color: "#007068"
+    }
+  });
+}
+
+

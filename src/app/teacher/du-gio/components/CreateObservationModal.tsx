@@ -2,7 +2,7 @@
 // @ts-nocheck
 
 import React from "react"
-import { X, Plus } from "lucide-react"
+import { X, Plus, Building2 } from "lucide-react"
 import { ObservationRegistrationSection } from "./ObservationRegistrationSection"
 
 export function CreateObservationModal(props: any) {
@@ -15,12 +15,18 @@ export function CreateObservationModal(props: any) {
         <div className="p-4 sm:p-5 bg-gradient-to-r from-[#003B3A] via-[#004D47] to-[#00A19A] text-white flex items-center justify-between gap-4 border-b border-teal-700/40 shrink-0">
           <div className="flex items-center gap-3">
             <div className="w-10 h-10 rounded-2xl bg-white/15 backdrop-blur-md flex items-center justify-center text-teal-200 border border-white/20">
-              <Plus className="w-5 h-5" />
+              {props.creationMode === "CAMPUS_SCHEDULE" ? (
+                <Building2 className="w-5 h-5 text-teal-200" />
+              ) : (
+                <Plus className="w-5 h-5" />
+              )}
             </div>
             <div>
               <h3 className="text-base sm:text-lg font-black tracking-tight">
                 {props.creationMode === "TEACHER_OPEN"
                   ? "Đăng Ký Tiết Dạy Mới"
+                  : props.creationMode === "CAMPUS_SCHEDULE"
+                  ? "Đăng Ký Lịch Làm Việc Cơ Sở – Tổ CTHS"
                   : props.creationMode === "OBSERVER_REQUEST"
                   ? "Gửi Yêu Cầu Xin Dự Giờ"
                   : props.creationMode === "ASSIGNED"
@@ -28,7 +34,9 @@ export function CreateObservationModal(props: any) {
                   : "Lập Biên Bản Dự Giờ Đột Xuất"}
               </h3>
               <p className="text-xs text-teal-100/80 font-medium">
-                {props.creationMode === "SURPRISE"
+                {props.creationMode === "CAMPUS_SCHEDULE"
+                  ? "Ghi nhận số tiết làm việc thực tế và các đầu việc đã thực hiện tại từng cơ sở của nhân sự Tổ CTHS"
+                  : props.creationMode === "SURPRISE"
                   ? "Đánh giá trực tiếp tiết dạy đột xuất một cách khách quan, thân thiện và đồng hành phát triển chuyên môn"
                   : props.creationMode === "ASSIGNED"
                   ? "Cán bộ quản lý chủ động chỉ định giáo viên được dự và phân công người dự theo kế hoạch (không cần GV duyệt)"

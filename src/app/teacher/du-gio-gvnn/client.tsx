@@ -1579,17 +1579,17 @@ export function ForeignObservationClient(props: {
             <div className="sticky bottom-4 z-40 bg-white/95 backdrop-blur-md rounded-3xl border border-slate-200 shadow-2xl p-4 sm:p-5 flex flex-col sm:flex-row items-center justify-between gap-4">
               <div className="flex items-center gap-3 flex-wrap">
                 <div className="flex items-center gap-2">
-                  <span className="text-xs font-black text-slate-500 uppercase tracking-wider">Đánh giá chung:</span>
+                  <span className="text-xs font-black text-slate-500 uppercase tracking-wider">Overall Rating:</span>
                   <span className={"px-3.5 py-1 rounded-full text-xs font-black shadow-xs " + stats.badgeColor}>
                     {stats.suggestedRating}
                   </span>
                   <span className="px-2.5 py-1 rounded-full text-xs font-black bg-slate-100 text-slate-800 border border-slate-200">
-                    Điểm: {stats.avg}/4.00
+                    Score: {stats.avg}/4.00
                   </span>
                 </div>
                 <span className="text-xs text-slate-300 hidden md:inline">|</span>
                 <span className="text-xs text-slate-600 font-bold hidden md:inline">
-                  Chỉ số: {stats.count4} (★4) • {stats.count3} (★3) • {stats.count2} (★2) • {stats.count1} (★1)
+                  Indicators: {stats.count4} (★4) • {stats.count3} (★3) • {stats.count2} (★2) • {stats.count1} (★1)
                 </span>
               </div>
 
@@ -1598,10 +1598,10 @@ export function ForeignObservationClient(props: {
                   type="button"
                   disabled={isPending}
                   onClick={() => handleSubmit(true)}
-                  className="flex-1 sm:flex-initial inline-flex items-center justify-center gap-2 px-5 py-2.5 rounded-2xl bg-slate-100 text-slate-800 font-black text-xs hover:bg-slate-200 transition cursor-pointer border border-slate-200"
+                  className="flex-1 sm:flex-initial inline-flex items-center justify-center gap-2 px-5 py-2.5 rounded-2xl bg-slate-100 text-slate-800 font-black text-xs hover:bg-slate-200 transition cursor-pointer border border-slate-200 shadow-2xs"
                 >
                   <Save className="w-4 h-4 text-slate-600" />
-                  <span>Lưu nháp</span>
+                  <span>Save Draft</span>
                 </button>
                 <button
                   type="button"
@@ -1610,7 +1610,7 @@ export function ForeignObservationClient(props: {
                   className="flex-1 sm:flex-initial inline-flex items-center justify-center gap-2 px-6 py-2.5 rounded-2xl bg-gradient-to-r from-[#003B3A] to-[#1E8B87] hover:from-[#002B2A] hover:to-[#003B3A] text-white font-black text-xs shadow-lg shadow-[#003B3A]/30 transition cursor-pointer"
                 >
                   <Send className="w-4 h-4 text-cyan-300" />
-                  <span>{isPending ? "Đang gửi..." : "Hoàn thành & Gửi phiếu"}</span>
+                  <span>{isPending ? "Submitting..." : "Complete & Submit Observation"}</span>
                 </button>
               </div>
             </div>

@@ -743,7 +743,7 @@ export function ObservationClient(props: ObservationClientProps) {
   const [isPending, startTransition] = useTransition()
   const [isSearching, setIsSearching] = useState(false)
   const [showCreateModal, setShowCreateModal] = useState(false)
-  const [creationMode, setCreationMode] = useState<"TEACHER_OPEN" | "OBSERVER_REQUEST" | "SURPRISE" | "ASSIGNED">("TEACHER_OPEN")
+  const [creationMode, setCreationMode] = useState<"TEACHER_OPEN" | "CAMPUS_SCHEDULE" | "OBSERVER_REQUEST" | "SURPRISE" | "ASSIGNED">("TEACHER_OPEN")
 
   const minAllowedDate = useMemo(() => {
     const now = new Date();
@@ -2647,7 +2647,26 @@ export function ObservationClient(props: ObservationClientProps) {
   }
 
   
-  const handleSurpriseSubmit = async (isDraft: boolean, options?: { existingSlotId?: string; forceNewSlot?: boolean; isCthsLog?: boolean; workItems?: any[]; totalPeriods?: number }) => {
+  const handleSurpriseSubmit = async (isDraft: boolean, options?: { existingSlotId?: string; forceNewSlot?: boolean; isCthsLog?: boolean; workItems?: any[]; totalPeriods?: number; customPayload?: any }) => {
+    if (options?.customPayload) {
+      setSurpriseSubmitting(true);
+      const res = await createSurpriseObservation(options.customPayload);
+      setSurpriseSubmitting(false);
+
+      if (res.success) {
+        showToast(res.message || (isDraft ? "Đã lưu nháp lịch làm việc CTHS!" : "Đã ghi nhận buổi làm việc tại cơ sở thành công!"), "success");
+        setShowCreateModal(false);
+        refreshSlots();
+        setSurpriseTopic("");
+        setSurpriseTeacherId("");
+        setSurpriseGeneral("");
+        setActiveMainTab("overview_slots");
+      } else {
+        showToast(res.error || "Không thể ghi nhận buổi làm việc CTHS!", "error");
+      }
+      return;
+    }
+
     const isCths = isCthsDepartment(surpriseDeptId) || options?.isCthsLog;
 
     if (isCths) {
@@ -4259,6 +4278,20 @@ export function ObservationClient(props: ObservationClientProps) {
               <span>Đăng ký tiết dạy</span>
             </button>
 
+            {/* Đăng ký lịch Cơ sở (Tổ CTHS / Công tác cơ sở) */}
+            <button
+              type="button"
+              onClick={() => {
+                setCreationMode("CAMPUS_SCHEDULE");
+                setShowCreateModal(true);
+              }}
+              className="px-3.5 py-2 rounded-xl bg-teal-500/25 hover:bg-teal-500/40 text-teal-100 border border-teal-300/40 font-bold text-xs transition-all shadow-xs flex items-center gap-1.5 cursor-pointer hover:scale-105 active:scale-95 backdrop-blur-md"
+              title="Đăng ký hoặc ghi nhận lịch làm việc tại cơ sở (Tổ CTHS)"
+            >
+              <Building2 className="w-3.5 h-3.5 text-teal-200" />
+              <span>Đăng ký lịch Cơ sở</span>
+            </button>
+
             {/* Secondary: Xin dự giờ */}
             {viewMode === "TEACHER" && (
               <button
@@ -4304,31 +4337,6 @@ export function ObservationClient(props: ObservationClientProps) {
                 <span>Chỉ định dự giờ</span>
               </button>
             )}
-
-            {viewMode === "ADMIN" && (
-              <button
-                type="button"
-                onClick={exportSlotsToExcel}
-                className="px-3.5 py-2 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white font-black text-xs transition-all shadow-md border border-emerald-400/40 flex items-center gap-1.5 cursor-pointer hover:scale-105 active:scale-95"
-                title="Xuất file Excel danh sách tiết dạy và kết quả"
-              >
-                <span>Xuất Excel</span>
-              </button>
-            )}
-
-            <button
-              type="button"
-              onClick={() => {
-                startTransition(() => {
-                  router.refresh();
-                  showToast("Đã làm mới dữ liệu mới nhất!", "info");
-                });
-              }}
-              className="px-3 py-2 rounded-xl bg-white/10 hover:bg-white/20 text-white text-xs font-semibold transition-colors cursor-pointer border border-white/15 backdrop-blur-md"
-              title="Làm mới dữ liệu"
-            >
-              Làm mới
-            </button>
           </div>
         </div>
       </div>

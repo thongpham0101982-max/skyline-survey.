@@ -177,8 +177,8 @@ const calculateK12Ranking = (scores: number[]) => {
 interface CreateObservationModalProps {
   isOpen: boolean
   onClose: () => void
-  creationMode: "TEACHER_OPEN" | "OBSERVER_REQUEST" | "SURPRISE" | "ASSIGNED"
-  setCreationMode: (mode: "TEACHER_OPEN" | "OBSERVER_REQUEST" | "SURPRISE" | "ASSIGNED") => void
+  creationMode: "TEACHER_OPEN" | "CAMPUS_SCHEDULE" | "OBSERVER_REQUEST" | "SURPRISE" | "ASSIGNED"
+  setCreationMode: (mode: "TEACHER_OPEN" | "CAMPUS_SCHEDULE" | "OBSERVER_REQUEST" | "SURPRISE" | "ASSIGNED") => void
   isMamNonTeacher: boolean
   isAdminUser: boolean
   isTTCM: boolean
@@ -673,10 +673,11 @@ export function ObservationRegistrationSection(props: any) {
   };
 
   const isCthsMode = React.useMemo(() => {
+    if (creationMode === "CAMPUS_SCHEDULE") return true;
     if (!surpriseDeptId) return false;
     const dObj = (departments || []).find((d: any) => d.id === surpriseDeptId);
     return isCthsDept(surpriseDeptId) || (dObj && isCthsDept(dObj));
-  }, [surpriseDeptId, departments, isCthsDept]);
+  }, [creationMode, surpriseDeptId, departments, isCthsDept]);
 
   // Danh sách Tổ chuyên môn hiển thị đầy đủ của hệ thống theo yêu cầu quản lý
   const myAssignedAllowedDepts = React.useMemo(() => {
@@ -1081,6 +1082,27 @@ export function ObservationRegistrationSection(props: any) {
 
         <button
           type="button"
+          onClick={() => {
+            setCreationMode("CAMPUS_SCHEDULE");
+            // Tự động gán Tổ CTHS nếu có trong danh mục
+            const cthsDept = (departments || []).find((d: any) => isCthsDept(d));
+            if (cthsDept) setSurpriseDeptId(cthsDept.id);
+            if (!surpriseTeacherId && currentTeacher?.id) setSurpriseTeacherId(currentTeacher.id);
+            if (!surpriseTopic) setSurpriseTopic("Làm việc tại cơ sở - Tổ CTHS");
+            if (!surpriseSubjectName) setSurpriseSubjectName("Công tác học sinh (CTHS)");
+          }}
+          className={`flex items-center justify-center gap-2 px-5 py-2.5 rounded-xl text-xs font-black transition-all cursor-pointer ${
+            creationMode === "CAMPUS_SCHEDULE"
+              ? "bg-[#007068] text-white shadow-md shadow-teal-900/20 scale-[1.01]"
+              : "bg-white text-slate-700 hover:bg-slate-50 border border-slate-200"
+          }`}
+        >
+          <Building2 className="w-4 h-4 text-teal-300" />
+          <span>Đăng ký lịch Cơ sở</span>
+        </button>
+
+        <button
+          type="button"
           onClick={() => setCreationMode("OBSERVER_REQUEST")}
           className={`flex items-center justify-center gap-2 px-5 py-2.5 rounded-xl text-xs font-black transition-all cursor-pointer ${
             creationMode === "OBSERVER_REQUEST"
@@ -1128,17 +1150,21 @@ export function ObservationRegistrationSection(props: any) {
         {/* Main Form Column */}
         <div className="w-full">
           <div className={`w-full bg-white rounded-3xl border border-slate-200/80 shadow-sm p-6 sm:p-7 flex flex-col gap-6 border-t-4 ${
-            creationMode === "SURPRISE" ? "border-t-[#00A19A]" : isMamNonTeacher ? "border-t-amber-500" : "border-t-[#00A19A]"
+            creationMode === "SURPRISE" || creationMode === "CAMPUS_SCHEDULE" ? "border-t-[#00A19A]" : isMamNonTeacher ? "border-t-amber-500" : "border-t-[#00A19A]"
           }`}>
             {/* Header Banner */}
             <div className="flex items-center gap-3 border-b border-slate-100 pb-4">
               <div className={`w-10 h-10 rounded-2xl flex items-center justify-center shrink-0 ${
                 creationMode === "ASSIGNED"
                   ? "bg-purple-50 text-purple-700 border border-purple-200"
+                  : creationMode === "CAMPUS_SCHEDULE"
+                  ? "bg-teal-50 text-[#007068] border border-teal-200"
                   : "bg-teal-50 text-[#00A19A] border border-teal-100"
               }`}>
                 {creationMode === "SURPRISE" ? (
                   <Zap className="w-5 h-5 text-amber-500" />
+                ) : creationMode === "CAMPUS_SCHEDULE" ? (
+                  <Building2 className="w-5 h-5 text-[#007068]" />
                 ) : creationMode === "ASSIGNED" ? (
                   <UserCheck className="w-5 h-5 text-purple-700" />
                 ) : (
@@ -1149,6 +1175,8 @@ export function ObservationRegistrationSection(props: any) {
                 <h3 className="text-base font-black text-slate-800 tracking-tight">
                   {creationMode === "TEACHER_OPEN"
                     ? "THÔNG TIN ĐĂNG KÝ TIẾT DẠY"
+                    : creationMode === "CAMPUS_SCHEDULE"
+                    ? "THÔNG TIN ĐĂNG KÝ LỊCH CƠ SỞ – TỔ CTHS"
                     : creationMode === "OBSERVER_REQUEST"
                     ? "THÔNG TIN XIN DỰ GIỜ"
                     : creationMode === "ASSIGNED"
@@ -1156,7 +1184,9 @@ export function ObservationRegistrationSection(props: any) {
                     : "THÔNG TIN DỰ GIỜ ĐỘT XUẤT"}
                 </h3>
                 <p className="text-xs text-slate-500 font-medium">
-                  {creationMode === "SURPRISE"
+                  {creationMode === "CAMPUS_SCHEDULE"
+                    ? "Ghi nhận số tiết làm việc thực tế của nhân sự Tổ CTHS tại từng cơ sở, theo dõi ngắn gọn các đầu việc đã thực hiện và tự động tính vào Ma trận phân bổ cơ sở."
+                    : creationMode === "SURPRISE"
                     ? "Hệ thống ghi nhận và đánh giá trực tiếp tiết dạy đột xuất một cách khách quan, thân thiện và đồng hành phát triển chuyên môn."
                     : creationMode === "ASSIGNED"
                     ? "Cán bộ quản lý chủ động chỉ định giáo viên được dự và phân công người dự theo kế hoạch. Tiết dạy có hiệu lực ngay mà không yêu cầu giáo viên xác nhận."
@@ -1165,34 +1195,48 @@ export function ObservationRegistrationSection(props: any) {
               </div>
             </div>
 
-            {creationMode === "SURPRISE" ? (
-            /* ===== FORM 3: DỰ GIỜ ĐỘT XUẤT (TTCM & BAN ĐHCM / GĐCS) ===== */
+            {creationMode === "SURPRISE" || creationMode === "CAMPUS_SCHEDULE" ? (
+            /* ===== FORM 3: DỰ GIỜ ĐỘT XUẤT HOẶC ĐĂNG KÝ LỊCH CƠ SỞ CTHS ===== */
             <div className="flex flex-col gap-6 text-xs font-semibold bg-gradient-to-b from-slate-50/40 via-white to-teal-50/20 p-6 sm:p-8 rounded-3xl border border-slate-200/90 shadow-sm animate-in fade-in duration-300">
               {/* Header Banner */}
               <div className={`p-5 sm:p-6 rounded-2xl border shadow-sm flex flex-col sm:flex-row sm:items-center justify-between gap-4 text-white ${
-                surpriseLevel === "Mầm non"
+                creationMode === "CAMPUS_SCHEDULE" || isCthsMode
+                  ? "bg-gradient-to-r from-[#003B3A] via-[#005B58] to-[#007068] border-teal-600/40"
+                  : surpriseLevel === "Mầm non"
                   ? "bg-gradient-to-r from-amber-700 via-amber-800 to-[#003B3A] border-amber-500/40"
                   : "bg-gradient-to-r from-[#003B3A] via-[#005B54] to-[#00A19A] border-teal-600/40"
               }`}>
                 <div className="flex items-start sm:items-center gap-3.5">
                   <div className="w-11 h-11 rounded-2xl bg-white/15 border border-white/25 flex items-center justify-center shrink-0 text-amber-300 shadow-inner">
-                    <Zap className="w-5 h-5" />
+                    {creationMode === "CAMPUS_SCHEDULE" || isCthsMode ? (
+                      <Building2 className="w-5 h-5 text-teal-200" />
+                    ) : (
+                      <Zap className="w-5 h-5" />
+                    )}
                   </div>
                   <div>
                     <div className="flex items-center gap-2 flex-wrap">
                       <h4 className="text-sm sm:text-base font-black tracking-wide">
-                        {surpriseLevel === "Mầm non" ? "DỰ GIỜ ĐỘT XUẤT MẦM NON" : "DỰ GIỜ ĐỘT XUẤT"}
+                        {creationMode === "CAMPUS_SCHEDULE" || isCthsMode
+                          ? "GHI NHẬN LÀM VIỆC TẠI CƠ SỞ – TỔ CTHS"
+                          : surpriseLevel === "Mầm non"
+                          ? "DỰ GIỜ ĐỘT XUẤT MẦM NON"
+                          : "DỰ GIỜ ĐỘT XUẤT"}
                       </h4>
                       <span className="px-2.5 py-0.5 text-[10px] font-black rounded-full bg-amber-400 text-amber-950 uppercase">
-                        {isAdminUser ? "Ban ĐHCM / GĐCS / TBP / Quản lý" : (surpriseLevel === "Mầm non" ? "TTCM / BGH Mầm non" : "TTCM / Trưởng Bộ Phận")}
+                        {creationMode === "CAMPUS_SCHEDULE" || isCthsMode
+                          ? "Tổ CTHS - Ban HĐNGLL"
+                          : (isAdminUser ? "Ban ĐHCM / GĐCS / TBP / Quản lý" : (surpriseLevel === "Mầm non" ? "TTCM / BGH Mầm non" : "TTCM / Trưởng Bộ Phận"))}
                       </span>
 
                       <span className="px-2.5 py-0.5 text-[10px] font-bold rounded-full bg-teal-800/80 text-teal-100 border border-teal-500/40">
-                        Đồng hành chuyên môn
+                        {creationMode === "CAMPUS_SCHEDULE" || isCthsMode ? "Không chấm điểm chuyên môn" : "Đồng hành chuyên môn"}
                       </span>
                     </div>
                     <p className="text-[11px] text-teal-50/90 font-medium mt-1 leading-relaxed">
-                      {surpriseLevel === "Mầm non"
+                      {creationMode === "CAMPUS_SCHEDULE" || isCthsMode
+                        ? "Ghi nhận số tiết làm việc thực tế và các đầu việc đã thực hiện tại từng cơ sở. Tự động tính vào Ma trận phân bổ cơ sở (Nội bộ / Liên cơ sở)."
+                        : surpriseLevel === "Mầm non"
                         ? "Đánh giá hoạt động học / chuyên đề Mầm non (18 tiêu chí - Tổng 10 điểm). Tự động ghi nhận không cần duyệt trước."
                         : "Đánh giá trực tiếp tiết dạy đột xuất (11 tiêu chí - Chuẩn 20 điểm) nhằm đồng hành, hỗ trợ và phát triển chuyên môn giáo viên. Kết quả được lưu tự động mà không cần phê duyệt trước."}
                     </p>
@@ -1200,12 +1244,12 @@ export function ObservationRegistrationSection(props: any) {
                 </div>
                 <div className="flex items-center gap-2 bg-white/10 px-3.5 py-2 rounded-xl border border-white/20 text-[11px] font-bold text-teal-100 shrink-0">
                   <ShieldCheck className="w-4 h-4 text-emerald-400 shrink-0" />
-                  <span>Hình thức: Mặc định đột xuất</span>
+                  <span>Hình thức: {creationMode === "CAMPUS_SCHEDULE" || isCthsMode ? "Lịch làm việc cơ sở" : "Mặc định đột xuất"}</span>
                 </div>
               </div>
 
-              {/* QUOTA TRACKER BANNER (Quy định: GĐCS, TBP không hạn chế; TTCM tối đa 50% chỉ tiêu) */}
-              {surpriseQuota && (
+              {/* QUOTA TRACKER BANNER (Chỉ áp dụng cho Dự giờ đột xuất, không áp dụng cho Lịch làm việc CTHS) */}
+              {creationMode === "SURPRISE" && !isCthsMode && surpriseQuota && (
                 <div className={`p-4 sm:p-5 rounded-2xl border transition-all ${
                   surpriseQuota.isExceeded && !surpriseQuota.isUnlimited
                     ? "bg-rose-50/90 border-rose-200 text-rose-950 shadow-xs"
@@ -1458,7 +1502,7 @@ export function ObservationRegistrationSection(props: any) {
                 <div className="flex items-center justify-between pb-3 border-b border-slate-100">
                   <h5 className="text-xs font-black text-slate-800 uppercase tracking-wider flex items-center gap-2">
                     <span className="w-5 h-5 bg-teal-100 text-[#00A19A] rounded-md flex items-center justify-center text-xs font-black">1</span>
-                    Thông tin Giáo viên & Tiết học
+                    {creationMode === "CAMPUS_SCHEDULE" || isCthsMode ? "Thông tin Nhân sự & Cơ sở làm việc" : "Thông tin Giáo viên & Tiết học"}
                   </h5>
                   <span className="text-[11px] font-semibold text-slate-400 hidden sm:inline">
                     Các mục có dấu <span className="text-rose-500 font-bold">*</span> là bắt buộc
@@ -1517,11 +1561,11 @@ export function ObservationRegistrationSection(props: any) {
                     <label className="text-[11px] font-black text-slate-700 uppercase tracking-wide flex items-center justify-between">
                       <span className="flex items-center gap-1.5">
                         <User className="w-3.5 h-3.5 text-[#00A19A]" />
-                        <span>Giáo viên dạy được dự *</span>
+                        <span>{creationMode === "CAMPUS_SCHEDULE" || isCthsMode ? "Nhân sự Tổ CTHS thực hiện *" : "Giáo viên dạy được dự *"}</span>
                       </span>
                       {filteredTeachersForSurprise.length > 0 && (
                         <span className="text-[10px] text-teal-700 font-bold bg-teal-50 px-2 py-0.5 rounded-full border border-teal-100">
-                          {filteredTeachersForSurprise.length} GV
+                          {filteredTeachersForSurprise.length} {creationMode === "CAMPUS_SCHEDULE" || isCthsMode ? "nhân sự" : "GV"}
                         </span>
                       )}
                     </label>
@@ -1555,7 +1599,7 @@ export function ObservationRegistrationSection(props: any) {
                       required
                       className="w-full text-xs font-bold p-3.5 rounded-xl border border-slate-200 focus:ring-2 focus:ring-[#00A19A] focus:border-[#00A19A] outline-none bg-slate-50/60 hover:bg-white text-slate-800 transition-all shadow-2xs cursor-pointer"
                     >
-                      <option value="">-- Chọn Giáo viên dạy --</option>
+                      <option value="">{creationMode === "CAMPUS_SCHEDULE" || isCthsMode ? "-- Chọn Nhân sự CTHS --" : "-- Chọn Giáo viên dạy --"}</option>
                       {filteredTeachersForSurprise.map((t: any) => {
                         const campusObj = campuses.find((c: any) => c.id === t.campusId);
                         const campusShort = campusObj?.campusCode || campusObj?.campusName?.replace("Sky-Line ", "") || "";
@@ -1574,7 +1618,7 @@ export function ObservationRegistrationSection(props: any) {
                     <label className="text-[11px] font-black text-slate-700 uppercase tracking-wide flex items-center justify-between">
                       <span className="flex items-center gap-1.5">
                         <BookOpen className="w-3.5 h-3.5 text-[#00A19A]" />
-                        <span>Môn học *</span>
+                        <span>{creationMode === "CAMPUS_SCHEDULE" || isCthsMode ? "Lĩnh vực / Môn *" : "Môn học *"}</span>
                       </span>
                       {isMamNonTeacher && (
                         <span className="text-[10px] text-emerald-600 font-bold">✨ Chủ đề/Chuyên đề</span>
@@ -1618,15 +1662,15 @@ export function ObservationRegistrationSection(props: any) {
                     </select>
                   </div>
 
-                  {/* 30-DAY SPACING WARNING BANNER CHO GIÁO VIÊN ĐƯỢC CHỌN */}
-                  {loadingTeacherHistory && (
+                  {/* 30-DAY SPACING WARNING BANNER CHO GIÁO VIÊN ĐƯỢC CHỌN (Chỉ hiện khi Dự giờ đột xuất) */}
+                  {creationMode === "SURPRISE" && !isCthsMode && loadingTeacherHistory && (
                     <div className="col-span-12 p-3.5 rounded-2xl bg-teal-50/50 border border-teal-100 text-teal-700 text-xs flex items-center gap-2 animate-pulse">
                       <Loader2 className="w-4 h-4 animate-spin text-[#00A19A]" />
                       <span className="font-semibold">Đang kiểm tra lịch sử dự giờ đột xuất của giáo viên trong 30 ngày qua...</span>
                     </div>
                   )}
 
-                  {!loadingTeacherHistory && teacherSurpriseHistory?.hasRecentSurprise && (
+                  {creationMode === "SURPRISE" && !isCthsMode && !loadingTeacherHistory && teacherSurpriseHistory?.hasRecentSurprise && (
                     <div className="col-span-12 p-4 sm:p-5 rounded-2xl bg-amber-50/95 border-2 border-amber-300 text-amber-950 flex flex-col gap-3 shadow-xs animate-in fade-in slide-in-from-top-2 duration-300">
                       <div className="flex items-start gap-3.5">
                         <div className="w-10 h-10 rounded-2xl bg-amber-200/90 text-amber-800 flex items-center justify-center shrink-0 mt-0.5 shadow-2xs">
@@ -1676,12 +1720,11 @@ export function ObservationRegistrationSection(props: any) {
                     </div>
                   )}
 
-                  {/* 4. Ngày dự giờ */}
-
+                  {/* 4. Ngày làm việc / Ngày dự giờ */}
                   <div className="col-span-12 sm:col-span-6 lg:col-span-3 flex flex-col gap-1.5">
                     <label className="text-[11px] font-black text-slate-700 uppercase tracking-wide flex items-center gap-1.5">
                       <Calendar className="w-3.5 h-3.5 text-[#00A19A]" />
-                      <span>Ngày dự giờ *</span>
+                      <span>{creationMode === "CAMPUS_SCHEDULE" || isCthsMode ? "Ngày làm việc tại cơ sở *" : "Ngày dự giờ *"}</span>
                     </label>
                     <input
                       type="date"
@@ -1697,7 +1740,7 @@ export function ObservationRegistrationSection(props: any) {
                   <div className="col-span-12 sm:col-span-6 lg:col-span-3 flex flex-col gap-1.5">
                     <label className="text-[11px] font-black text-slate-700 uppercase tracking-wide flex items-center gap-1.5">
                       <Clock className="w-3.5 h-3.5 text-[#00A19A]" />
-                      <span>{surpriseLevel === "Mầm non" ? "Khung giờ / Hoạt động dự *" : "Tiết dự *"}</span>
+                      <span>{creationMode === "CAMPUS_SCHEDULE" || isCthsMode ? "Khung tiết làm việc *" : surpriseLevel === "Mầm non" ? "Khung giờ / Hoạt động dự *" : "Tiết dự *"}</span>
                     </label>
                     <select
                       value={surprisePeriod}
@@ -1720,6 +1763,10 @@ export function ObservationRegistrationSection(props: any) {
                       <option value="Tiết 6">Tiết 6 (14:20 - 15:05)</option>
                       <option value="Tiết 7">Tiết 7 (15:10 - 15:55)</option>
                       <option value="Tiết 8">Tiết 8 (15:55 - 16:40)</option>
+                      <option value="Tiết 1 - 3">Buổi sáng: Tiết 1 - 3 (07:30 - 10:05)</option>
+                      <option value="Tiết 1 - 4">Buổi sáng: Tiết 1 - 4 (07:30 - 10:55)</option>
+                      <option value="Tiết 5 - 7">Buổi chiều: Tiết 5 - 7 (13:30 - 15:55)</option>
+                      <option value="Cả ngày">Cả ngày (07:30 - 16:30)</option>
                     </select>
                   </div>
 
@@ -1727,7 +1774,7 @@ export function ObservationRegistrationSection(props: any) {
                   <div className="col-span-12 sm:col-span-6 lg:col-span-3 flex flex-col gap-1.5">
                     <label className="text-[11px] font-black text-slate-700 uppercase tracking-wide flex items-center gap-1.5">
                       <MapPin className="w-3.5 h-3.5 text-[#00A19A]" />
-                      <span>Cơ sở trường</span>
+                      <span>{creationMode === "CAMPUS_SCHEDULE" || isCthsMode ? "Cơ sở làm việc *" : "Cơ sở trường"}</span>
                     </label>
                     <select
                       value={surpriseCampusId}
@@ -1737,7 +1784,7 @@ export function ObservationRegistrationSection(props: any) {
                       }}
                       className="w-full text-xs font-bold p-3.5 rounded-xl border border-slate-200 focus:ring-2 focus:ring-[#00A19A] focus:border-[#00A19A] outline-none bg-slate-50/60 hover:bg-white text-slate-800 transition-all shadow-2xs cursor-pointer"
                     >
-                      <option value="">-- Chọn cơ sở để chọn lớp --</option>
+                      <option value="">-- Chọn cơ sở làm việc --</option>
                       {campuses.map((c: any) => (
                         <option key={c.id} value={c.id}>{c.campusName}</option>
                       ))}
@@ -1769,6 +1816,7 @@ export function ObservationRegistrationSection(props: any) {
                       <option value="THCS">THCS</option>
                       <option value="THPT">THPT</option>
                       <option value="Mầm non">Mầm non</option>
+                      <option value="Toàn trường">Toàn cơ sở</option>
                     </select>
                   </div>
 
@@ -1777,7 +1825,7 @@ export function ObservationRegistrationSection(props: any) {
                     <label className="text-[11px] font-black text-slate-700 uppercase tracking-wide flex items-center justify-between">
                       <span className="flex items-center gap-1.5">
                         <Users className="w-3.5 h-3.5 text-[#00A19A]" />
-                        <span>Lớp học *</span>
+                        <span>{creationMode === "CAMPUS_SCHEDULE" || isCthsMode ? "Lớp / Đối tượng (Tùy chọn)" : "Lớp học *"}</span>
                       </span>
                       {filteredClassesForSurprise.length > 0 && (
                         <span className="text-[10px] text-teal-700 font-bold bg-teal-50 px-2 py-0.5 rounded-full border border-teal-100">
@@ -1823,37 +1871,39 @@ export function ObservationRegistrationSection(props: any) {
                       }}
                       className="w-full text-xs font-bold p-3.5 rounded-xl border border-slate-200 focus:ring-2 focus:ring-[#00A19A] focus:border-[#00A19A] outline-none bg-slate-50/60 hover:bg-white text-slate-800 transition-all shadow-2xs cursor-pointer"
                     >
-                      <option value="">-- Chọn danh sách lớp --</option>
+                      <option value="">{creationMode === "CAMPUS_SCHEDULE" || isCthsMode ? "-- Toàn cơ sở / Tùy chọn lớp --" : "-- Chọn danh sách lớp --"}</option>
                       {filteredClassesForSurprise.map((c: any) => (
                         <option key={c.id} value={c.id}>{c.className}</option>
                       ))}
                     </select>
                   </div>
 
-                  {/* 9. Phòng học */}
+                  {/* 9. Phòng học / Địa điểm */}
                   <div className="col-span-12 sm:col-span-6 lg:col-span-3 flex flex-col gap-1.5">
                     <label className="text-[11px] font-black text-slate-700 uppercase tracking-wide flex items-center gap-1.5">
                       <MapPin className="w-3.5 h-3.5 text-[#00A19A]" />
-                      <span>Phòng học</span>
+                      <span>{creationMode === "CAMPUS_SCHEDULE" || isCthsMode ? "Phòng / Địa điểm" : "Phòng học"}</span>
                     </label>
                     <input
                       type="text"
-                      placeholder="VD: Phòng 204, Phòng Lab..."
+                      placeholder={creationMode === "CAMPUS_SCHEDULE" || isCthsMode ? "VD: Phòng CTHS, Sân trường, Khối lớp..." : "VD: Phòng 204, Phòng Lab..."}
                       value={surpriseRoom}
                       onChange={e => setSurpriseRoom(e.target.value)}
                       className="w-full text-xs font-bold p-3.5 rounded-xl border border-slate-200 focus:ring-2 focus:ring-[#00A19A] focus:border-[#00A19A] outline-none bg-slate-50/60 hover:bg-white text-slate-800 transition-all shadow-2xs placeholder:text-slate-400"
                     />
                   </div>
 
-                  {/* 10. Chủ đề / Nội dung bài dạy */}
+                  {/* 10. Chủ đề / Nội dung làm việc */}
                   <div className="col-span-12 lg:col-span-6 flex flex-col gap-1.5">
                     <label className="text-[11px] font-black text-slate-700 uppercase tracking-wide flex items-center gap-1.5">
                       <FileText className="w-3.5 h-3.5 text-[#00A19A]" />
-                      <span>Chủ đề / Nội dung bài dạy *</span>
+                      <span>{creationMode === "CAMPUS_SCHEDULE" || isCthsMode ? "Nội dung / Kế hoạch buổi làm việc *" : "Chủ đề / Nội dung bài dạy *"}</span>
                     </label>
                     <input
                       type="text"
-                      placeholder={surpriseLevel === "Mầm non" 
+                      placeholder={creationMode === "CAMPUS_SCHEDULE" || isCthsMode
+                        ? "VD: Khảo sát nền nếp, hỗ trợ HS & kiểm tra CSVC tại cơ sở..."
+                        : surpriseLevel === "Mầm non" 
                         ? "VD: Chủ đề: Bản thân và gia đình, Hoạt động góc, STEAM, Khám phá khoa học..." 
                         : "VD: Bài 12: Phân tích số liệu và biểu đồ thống kê..."}
                       value={surpriseTopic}
@@ -1864,7 +1914,7 @@ export function ObservationRegistrationSection(props: any) {
                   </div>
                 </div>
 
-                {/* Thẻ Người dự giờ tự động */}
+                {/* Thẻ Người ghi nhận tự động */}
                 <div className="bg-gradient-to-r from-teal-50/80 via-emerald-50/40 to-slate-50 rounded-2xl p-4 border border-teal-100/90 flex flex-col sm:flex-row sm:items-center justify-between gap-3 shadow-2xs">
                   <div className="flex items-center gap-3.5">
                     <div className="w-10 h-10 rounded-2xl bg-[#00A19A] text-white flex items-center justify-center font-black text-sm shadow-xs shrink-0">
@@ -1872,11 +1922,13 @@ export function ObservationRegistrationSection(props: any) {
                     </div>
                     <div>
                       <div className="flex items-center gap-2 flex-wrap">
-                        <span className="text-[10px] font-black text-teal-800 uppercase tracking-wider">Người dự giờ (Tự động):</span>
+                        <span className="text-[10px] font-black text-teal-800 uppercase tracking-wider">
+                          {creationMode === "CAMPUS_SCHEDULE" || isCthsMode ? "Người lập phiếu (Tự động):" : "Người dự giờ (Tự động):"}
+                        </span>
                         <span className="font-extrabold text-slate-900 text-xs sm:text-sm">{currentTeacher?.teacherName || "Tài khoản đăng nhập"}</span>
                       </div>
                       <p className="text-[11px] text-slate-500 font-medium">
-                        {currentTeacher?.email || "Email"} • Chức vụ: <span className="font-bold text-slate-700">{isTTCM ? "Tổ trưởng chuyên môn" : (currentTeacher?.position || "Ban ĐHCM / Quản lý")}</span>
+                        {currentTeacher?.email || "Email"} • Chức vụ: <span className="font-bold text-slate-700">{isTTCM ? "Tổ trưởng chuyên môn" : (currentTeacher?.position || "Ban ĐHCM / Quản lý / Tổ CTHS")}</span>
                       </p>
                     </div>
                   </div>
@@ -3961,7 +4013,7 @@ export function ObservationRegistrationSection(props: any) {
         </div>
 
         {/* Guidance & Policy Section - Dàn đều 4 cột phía dưới form khi xem trên trang (ẩn trong Modal) để giao diện các thẻ tag luôn mở rộng full-width như thẻ Đột xuất */}
-        {creationMode !== "SURPRISE" && !props.isOpen && !props.showCreateModal && (
+        {creationMode !== "SURPRISE" && creationMode !== "CAMPUS_SCHEDULE" && !props.isOpen && !props.showCreateModal && (
           <div className="w-full grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5 mt-2">
             {/* Card 1: Circular Progress Gauge for TIẾN ĐỘ THÁNG */}
             <div className="bg-white rounded-3xl border border-slate-200/80 p-6 shadow-xs flex flex-col gap-4">

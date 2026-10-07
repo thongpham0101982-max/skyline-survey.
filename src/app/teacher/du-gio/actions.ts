@@ -82,6 +82,7 @@ import {
   renderObservationReEvaluationApproved,
   renderObservationReEvaluationRejected,
   renderObservationExpiredNotification,
+  renderCthsCampusWorkLogEmail,
   SKYLINE_SSM_LOGIN_URL
 } from "@/lib/email-templates"
 import { ACADEMIC_DIVISIONS, normalizeDivisionCode } from "@/config/divisions"
@@ -4750,143 +4751,175 @@ export async function createSurpriseObservation(data: {
         const totalDisplay = data.totalScore != null ? (isMN ? `${Number(data.totalScore).toFixed(2)} / 10.00đ` : `${Number(data.totalScore).toFixed(2)} / 20.00đ`) : "Đã hoàn thành";
         const ratingDisplay = data.overallRating || "Đạt";
 
-        // 1. Email thông báo cho Giáo viên được dự (Host Teacher)
-        if (hostEmail && hostEmail.includes("@")) {
-          const linkUrl = SKYLINE_SSM_LOGIN_URL;
-          const emailSubject = `[Sky-line SMS - Dự Giờ Đột Xuất] Kết quả đánh giá tiết dạy: "${data.topic}" - Người dự: ${currentTeacher.teacherName}`;
-          const observerDeptName = currentTeacher.departmentRel?.name || 
-            currentTeacher.departmentAssignments?.map((da: any) => da.department?.name).filter(Boolean).join(", ") || 
-            undefined;
+        // Check if this is CTHS Work Log
+        let parsedCthsLog: any = null;
+        try {
+          parsedCthsLog = typeof data.generalComment === "string" ? JSON.parse(data.generalComment) : null;
+        } catch (e) {}
+        const isCths = !!data.isCthsLog || parsedCthsLog?.type === "CTHS_WORK_LOG" || data.requestOrigin === "CTHS_WORK_LOG";
 
-          // Parse criteria scores
-          let parsedCriteriaScores: number[] = [];
-          if (isMN) {
-            try {
-              const parsed = typeof data.generalComment === "string" ? JSON.parse(data.generalComment) : null;
-              if (parsed && Array.isArray(parsed.scores)) {
-                parsedCriteriaScores = parsed.scores;
+        if (isCths) {
+          const cthsWorkItems = parsedCthsLog?.workItems || [];
+          const totalPeriods = parsedCthsLog?.totalPeriods || data.criterion1 || 3;
+          const taskCategory = parsedCthsLog?.taskCategory || "Công tác học sinh";
+          const generalNotes = parsedCthsLog?.notes || (typeof data.generalComment === "string" && !data.generalComment.startsWith("{") ? data.generalComment : "");
+          const location = data.room || "Phòng CTHS";
+          const targetCampusName = hostTeacher.campus?.campusName || data.campusName || "Sky-Line";
+          const isInterCampus = (hostTeacher.campusId && slotRecord?.campusId && hostTeacher.campusId !== slotRecord.campusId) || false;
+          const timeRangeStr = `${data.period || "Buổi sáng"} (${timeRange.start} - ${timeRange.end})`;
+
+          const cthsSubject = data.isDraft
+            ? `[Sky-Line CTHS] Kế hoạch làm việc tại cơ sở: ${targetCampusName} - ${formattedDateVi} (${hostTeacher.teacherName})`
+            : `[Sky-Line CTHS] Biên bản ghi nhận làm việc tại cơ sở: ${targetCampusName} - ${formattedDateVi} (${hostTeacher.teacherName})`;
+
+          const cthsEmailHtml = renderCthsCampusWorkLogEmail({
+            staffName: hostTeacher.teacherName,
+            staffCode: hostTeacher.teacherCode,
+            campusName: targetCampusName,
+            isInterCampus,
+            dateStr: formattedDateVi,
+            timeRangeStr,
+            totalPeriods,
+            location,
+            taskCategory,
+            workItems: cthsWorkItems,
+            generalNotes,
+            isDraft: !!data.isDraft,
+            directLink: SKYLINE_SSM_LOGIN_URL
+          });
+
+          // Send to staff
+          if (hostEmail && hostEmail.includes("@")) {
+            await sendEmail({ from: "HỆ THỐNG SKY-LINE CTHS", to: hostEmail, subject: cthsSubject, html: cthsEmailHtml }).catch(e => console.error("CTHS host email error:", e));
+            if (hostTeacher.user?.id) {
+              await prisma.notification.create({
+                data: {
+                  userId: hostTeacher.user.id,
+                  title: data.isDraft ? "Lịch làm việc cơ sở đã lưu 📝" : "Ghi nhận làm việc cơ sở thành công 🏢",
+                  message: `Buổi làm việc tại cơ sở ${targetCampusName} (${totalPeriods} tiết) của Thầy/Cô đã được ghi nhận vào hệ thống.`,
+                  link: `/teacher/du-gio?tab=my-registrations`,
+                  isRead: false
+                }
+              }).catch(e => console.error("CTHS host notif error:", e));
+            }
+          }
+
+          // Send confirmation to recorder if different
+          if (observerEmail && observerEmail.includes("@") && observerEmail !== hostEmail) {
+            await sendEmail({ from: "HỆ THỐNG SKY-LINE CTHS", to: observerEmail, subject: cthsSubject, html: cthsEmailHtml }).catch(e => console.error("CTHS observer email error:", e));
+          }
+
+          // Send notification to Campus Director (GĐCS)
+          try {
+            const leaderRecipients = await resolveObservationLeaderRecipients(
+              slotRecord?.campusId || hostTeacher.campusId,
+              data.targetDeptId || hostTeacher.departmentId
+            );
+            const gdcsList = leaderRecipients.gdcsEmails.filter(e => e !== hostEmail && e !== observerEmail);
+            const tbpList = leaderRecipients.tbpEmails.filter(e => e !== hostEmail && e !== observerEmail && !gdcsList.includes(e));
+
+            if (gdcsList.length > 0) {
+              await sendEmail({
+                from: "HỆ THỐNG SKY-LINE CTHS",
+                to: gdcsList,
+                cc: tbpList.length > 0 ? tbpList : undefined,
+                subject: cthsSubject,
+                html: cthsEmailHtml
+              }).catch(e => console.error("GDCS & TBP CTHS email error:", e));
+            }
+          } catch (leadErr) {
+            console.error("CTHS leader email error:", leadErr);
+          }
+        } else {
+          // 1. Email thông báo cho Giáo viên được dự (Host Teacher - Normal Observation)
+          if (hostEmail && hostEmail.includes("@")) {
+            const linkUrl = SKYLINE_SSM_LOGIN_URL;
+            const emailSubject = `[Sky-line SMS - Dự Giờ Đột Xuất] Kết quả đánh giá tiết dạy: "${data.topic}" - Người dự: ${currentTeacher.teacherName}`;
+            const observerDeptName = currentTeacher.departmentRel?.name || 
+              currentTeacher.departmentAssignments?.map((da: any) => da.department?.name).filter(Boolean).join(", ") || 
+              undefined;
+
+            // Parse criteria scores
+            let parsedCriteriaScores: number[] = [];
+            if (isMN) {
+              try {
+                const parsed = typeof data.generalComment === "string" ? JSON.parse(data.generalComment) : null;
+                if (parsed && Array.isArray(parsed.scores)) {
+                  parsedCriteriaScores = parsed.scores;
+                }
+              } catch (e) {}
+              if (parsedCriteriaScores.length === 0) {
+                parsedCriteriaScores = [
+                  data.criterion1 || 0,
+                  data.criterion2 || 0,
+                  data.criterion3 || 0,
+                  data.criterion4 || 0,
+                  data.criterion5 || 0
+                ];
               }
-            } catch (e) {}
-            if (parsedCriteriaScores.length === 0) {
+            } else {
               parsedCriteriaScores = [
-                data.criterion1 || 0,
-                data.criterion2 || 0,
-                data.criterion3 || 0,
-                data.criterion4 || 0,
-                data.criterion5 || 0
+                data.score1 || 0,
+                data.score2 || 0,
+                data.score3 || 0,
+                data.score4 || 0,
+                data.score5 || 0,
+                data.score6 || 0,
+                data.score7 || 0,
+                data.score8 || 0,
+                data.score9 || 0,
+                data.score10 || 0,
+                data.score11 || 0
               ];
             }
-          } else {
-            parsedCriteriaScores = [
-              data.score1 || 0,
-              data.score2 || 0,
-              data.score3 || 0,
-              data.score4 || 0,
-              data.score5 || 0,
-              data.score6 || 0,
-              data.score7 || 0,
-              data.score8 || 0,
-              data.score9 || 0,
-              data.score10 || 0,
-              data.score11 || 0
-            ];
-          }
 
-          const emailHtml = renderObservationSurpriseCompletedForHost({
-            hostName: hostTeacher.teacherName,
-            observerName: currentTeacher.teacherName,
-            observerCode: currentTeacher.teacherCode,
-            observerPosition: currentTeacher.position || undefined,
-            observerEmail: observerEmail || undefined,
-            observerDepartment: observerDeptName,
-            topic: data.topic,
-            subjectName: data.subjectName || "Môn học",
-            grade: data.grade || "",
-            className: data.className || "",
-            dateStr: formattedDateVi,
-            period: data.period || "Tiết dạy",
-            campusName: hostTeacher.campus?.campusName || "Sky-Line",
-            room: data.room || "học",
-            totalScore: totalDisplay,
-            rating: ratingDisplay,
-            strengths: data.strengths || undefined,
-            improvements: data.improvements || undefined,
-            generalComment: data.generalComment || undefined,
-            directLink: linkUrl,
-            criteriaScores: {
-              type: isMN ? "MAMNON" : "K12",
-              scores: parsedCriteriaScores
+            const emailHtml = renderObservationSurpriseCompletedForHost({
+              hostName: hostTeacher.teacherName,
+              observerName: currentTeacher.teacherName,
+              observerCode: currentTeacher.teacherCode,
+              observerPosition: currentTeacher.position || undefined,
+              observerEmail: observerEmail || undefined,
+              observerDepartment: observerDeptName,
+              topic: data.topic,
+              subjectName: data.subjectName || "Môn học",
+              grade: data.grade || "",
+              className: data.className || "",
+              dateStr: formattedDateVi,
+              period: data.period || "Tiết dạy",
+              campusName: hostTeacher.campus?.campusName || "Sky-Line",
+              room: data.room || "học",
+              totalScore: totalDisplay,
+              rating: ratingDisplay,
+              strengths: data.strengths || undefined,
+              improvements: data.improvements || undefined,
+              generalComment: data.generalComment || undefined,
+              directLink: linkUrl,
+              criteriaScores: {
+                type: isMN ? "MAMNON" : "K12",
+                scores: parsedCriteriaScores
+              }
+            });
+
+            await sendEmail({ from: "HỆ THỐNG DỰ GIỜ SKY-LINE", to: hostEmail, subject: emailSubject, html: emailHtml }).catch(e => console.error("Surprise eval completed email error:", e));
+
+            if (hostTeacher.user?.id) {
+              await prisma.notification.create({
+                data: {
+                  userId: hostTeacher.user.id,
+                  title: "Kết quả dự giờ đột xuất ⚡",
+                  message: `Thầy/Cô ${currentTeacher.teacherName} vừa hoàn thành phiếu đánh giá dự giờ đột xuất tiết "${data.topic}". Xếp loại: ${ratingDisplay}.`,
+                  link: `/teacher/du-gio?tab=evaluations`,
+                  isRead: false
+                }
+              }).catch(e => console.error("Notif error:", e));
             }
-          });
-
-          await sendEmail({ from: "HỆ THỐNG DỰ GIỜ SKY-LINE", to: hostEmail, subject: emailSubject, html: emailHtml }).catch(e => console.error("Surprise eval completed email error:", e));
-
-          if (hostTeacher.user?.id) {
-            await prisma.notification.create({
-              data: {
-                userId: hostTeacher.user.id,
-                title: "Kết quả dự giờ đột xuất ⚡",
-                message: `Thầy/Cô ${currentTeacher.teacherName} vừa hoàn thành phiếu đánh giá dự giờ đột xuất tiết "${data.topic}". Xếp loại: ${ratingDisplay}.`,
-                link: `/teacher/du-gio?tab=evaluations`,
-                isRead: false
-              }
-            }).catch(e => console.error("Notif error:", e));
           }
-        }
 
-        // 2. Email xác nhận & bản lưu cho Người dự giờ (Observer / TTCM / Ban ĐHCM)
-        if (observerEmail && observerEmail.includes("@") && observerEmail !== hostEmail) {
-          const observerLinkUrl = SKYLINE_SSM_LOGIN_URL;
-          const observerSubject = `[Sky-line SMS - Dự Giờ Đột Xuất] Xác nhận biên bản & đánh giá đột xuất: "${data.topic}" - GV dạy: ${hostTeacher.teacherName}`;
-          const observerHtml = renderObservationEvaluationCompletedForObserver({
-            observerName: currentTeacher.teacherName,
-            hostName: hostTeacher.teacherName,
-            hostCode: hostTeacher.teacherCode,
-            topic: data.topic,
-            subjectName: data.subjectName || "Môn học",
-            grade: data.grade || "",
-            className: data.className || "",
-            dateStr: formattedDateVi,
-            period: data.period || "Tiết dạy",
-            campusName: hostTeacher.campus?.campusName || "Sky-Line",
-            room: data.room || "học",
-            totalScore: totalDisplay,
-            rating: ratingDisplay,
-            strengths: data.strengths || undefined,
-            improvements: data.improvements || undefined,
-            generalComment: data.generalComment || undefined,
-            directLink: observerLinkUrl
-          });
-          await sendEmail({ from: "HỆ THỐNG DỰ GIỜ SKY-LINE", to: observerEmail, subject: observerSubject, html: observerHtml }).catch(e => console.error("Observer surprise eval email error:", e));
-
-          if (currentTeacher.user?.id) {
-            await prisma.notification.create({
-              data: {
-                userId: currentTeacher.user.id,
-                title: "Đã hoàn tất dự giờ đột xuất ⚡",
-                message: `Thầy/Cô đã hoàn tất biên bản và phiếu đánh giá dự giờ đột xuất tiết "${data.topic}" của GV ${hostTeacher.teacherName}.`,
-                link: `/teacher/du-gio?tab=my-registrations`,
-                isRead: false
-              }
-            }).catch(e => console.error("Observer notif error:", e));
-          }
-        }
-
-        // 3. Email báo về Giám đốc Cơ sở (GĐCS) phụ trách, đồng thời CC đến TBP liên quan theo Tổ chuyên môn
-        try {
-          const leaderRecipients = await resolveObservationLeaderRecipients(
-            hostTeacher.campusId || slotRecord?.campusId,
-            data.targetDeptId || hostTeacher.departmentId
-          );
-
-          const gdcsList = leaderRecipients.gdcsEmails.filter(e => e !== hostEmail && e !== observerEmail);
-          const tbpList = leaderRecipients.tbpEmails.filter(e => e !== hostEmail && e !== observerEmail && !gdcsList.includes(e));
-
-          if (gdcsList.length > 0) {
-            const campusLabel = hostTeacher.campus?.campusName || "Sky-Line";
-            const leaderSubject = `[Sky-line SMS - Dự Giờ Đột Xuất] Báo cáo tiết dạy đột xuất: "${data.topic}" - GV: ${hostTeacher.teacherName} (${campusLabel})`;
-
-            const leaderHtml = renderObservationEvaluationCompletedForObserver({
+          // 2. Email xác nhận & bản lưu cho Người dự giờ (Observer / TTCM / Ban ĐHCM)
+          if (observerEmail && observerEmail.includes("@") && observerEmail !== hostEmail) {
+            const observerLinkUrl = SKYLINE_SSM_LOGIN_URL;
+            const observerSubject = `[Sky-line SMS - Dự Giờ Đột Xuất] Xác nhận biên bản & đánh giá đột xuất: "${data.topic}" - GV dạy: ${hostTeacher.teacherName}`;
+            const observerHtml = renderObservationEvaluationCompletedForObserver({
               observerName: currentTeacher.teacherName,
               hostName: hostTeacher.teacherName,
               hostCode: hostTeacher.teacherCode,
@@ -4896,26 +4929,75 @@ export async function createSurpriseObservation(data: {
               className: data.className || "",
               dateStr: formattedDateVi,
               period: data.period || "Tiết dạy",
-              campusName: campusLabel,
+              campusName: hostTeacher.campus?.campusName || "Sky-Line",
               room: data.room || "học",
               totalScore: totalDisplay,
               rating: ratingDisplay,
               strengths: data.strengths || undefined,
               improvements: data.improvements || undefined,
               generalComment: data.generalComment || undefined,
-              directLink: SKYLINE_SSM_LOGIN_URL
+              directLink: observerLinkUrl
             });
+            await sendEmail({ from: "HỆ THỐNG DỰ GIỜ SKY-LINE", to: observerEmail, subject: observerSubject, html: observerHtml }).catch(e => console.error("Observer surprise eval email error:", e));
 
-            await sendEmail({
-              from: "HỆ THỐNG DỰ GIỜ SKY-LINE",
-              to: gdcsList,
-              cc: tbpList.length > 0 ? tbpList : undefined,
-              subject: leaderSubject,
-              html: leaderHtml
-            }).catch(e => console.error("GDCS & TBP surprise eval email error:", e));
+            if (currentTeacher.user?.id) {
+              await prisma.notification.create({
+                data: {
+                  userId: currentTeacher.user.id,
+                  title: "Đã hoàn tất dự giờ đột xuất ⚡",
+                  message: `Thầy/Cô đã hoàn tất biên bản và phiếu đánh giá dự giờ đột xuất tiết "${data.topic}" của GV ${hostTeacher.teacherName}.`,
+                  link: `/teacher/du-gio?tab=my-registrations`,
+                  isRead: false
+                }
+              }).catch(e => console.error("Observer notif error:", e));
+            }
           }
-        } catch (leadMailErr) {
-          console.error("Error sending leader email for surprise observation:", leadMailErr);
+
+          // 3. Email báo về Giám đốc Cơ sở (GĐCS) phụ trách, đồng thời CC đến TBP liên quan theo Tổ chuyên môn
+          try {
+            const leaderRecipients = await resolveObservationLeaderRecipients(
+              hostTeacher.campusId || slotRecord?.campusId,
+              data.targetDeptId || hostTeacher.departmentId
+            );
+
+            const gdcsList = leaderRecipients.gdcsEmails.filter(e => e !== hostEmail && e !== observerEmail);
+            const tbpList = leaderRecipients.tbpEmails.filter(e => e !== hostEmail && e !== observerEmail && !gdcsList.includes(e));
+
+            if (gdcsList.length > 0) {
+              const campusLabel = hostTeacher.campus?.campusName || "Sky-Line";
+              const leaderSubject = `[Sky-line SMS - Dự Giờ Đột Xuất] Báo cáo tiết dạy đột xuất: "${data.topic}" - GV: ${hostTeacher.teacherName} (${campusLabel})`;
+
+              const leaderHtml = renderObservationEvaluationCompletedForObserver({
+                observerName: currentTeacher.teacherName,
+                hostName: hostTeacher.teacherName,
+                hostCode: hostTeacher.teacherCode,
+                topic: data.topic,
+                subjectName: data.subjectName || "Môn học",
+                grade: data.grade || "",
+                className: data.className || "",
+                dateStr: formattedDateVi,
+                period: data.period || "Tiết dạy",
+                campusName: campusLabel,
+                room: data.room || "học",
+                totalScore: totalDisplay,
+                rating: ratingDisplay,
+                strengths: data.strengths || undefined,
+                improvements: data.improvements || undefined,
+                generalComment: data.generalComment || undefined,
+                directLink: SKYLINE_SSM_LOGIN_URL
+              });
+
+              await sendEmail({
+                from: "HỆ THỐNG DỰ GIỜ SKY-LINE",
+                to: gdcsList,
+                cc: tbpList.length > 0 ? tbpList : undefined,
+                subject: leaderSubject,
+                html: leaderHtml
+              }).catch(e => console.error("GDCS & TBP surprise eval email error:", e));
+            }
+          } catch (leadMailErr) {
+            console.error("Error sending leader email for surprise observation:", leadMailErr);
+          }
         }
       } catch (mailErr) {
         console.error("Error sending surprise evaluation email:", mailErr);
