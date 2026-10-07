@@ -225,18 +225,13 @@ export const APP_CATEGORIES = [
         code: "CAU_HINH_KHAO_SAT",
         name: "Cấu hình Khảo sát",
         icon: Settings,
-        href: "/admin/cau-hinh-khao-sat",
-        subModules: [
-          { code: "PRESCHOOL_INPUT_ASSESSMENTS", name: "KSNL Đầu vào Mầm non" },
-          { code: "INPUT_ASSESSMENTS", name: "Phổ thông K-12" },
-          { code: "INPUT_ASSESSMENTS_PERIODS", name: "Kỳ KS" },
-          { code: "INPUT_ASSESSMENTS_CATEGORIES", name: "Danh mục" },
-          { code: "INPUT_ASSESSMENTS_SUBJECTS", name: "Môn KS" },
-          { code: "INPUT_ASSESSMENTS_MAPPING", name: "Cấu hình" },
-          { code: "INPUT_ASSESSMENTS_STUDENTS", name: "Học sinh" },
-          { code: "INPUT_ASSESSMENTS_ASSIGNMENTS", name: "Phân công" },
-          { code: "INPUT_ASSESSMENTS_REPORTS", name: "Tổng hợp KQKS" },
-        ]
+        href: "/admin/cau-hinh-khao-sat"
+      },
+      {
+        code: "CAU_HINH_FILE_DIEM_KSDV",
+        name: "Cấu hình File điểm KSĐV",
+        icon: FileSpreadsheet,
+        href: "/admin/cau-hinh-file-diem-ksdv",
       },
       { code: "INPUT_ASSESSMENT_REPORTS", name: "Xuất báo cáo", icon: FileSpreadsheet, href: "/admin/input-assessments/reports" },
       {
@@ -271,8 +266,8 @@ export const APP_CATEGORIES = [
         icon: CheckCircle2,
         href: "/admin/xet-duyet-ket-qua",
         subModules: [
-          { code: "INPUT_ASSESSMENTS_REPORTS", name: "Xét duyệt K-12" },
-          { code: "XET_DUYET_MAM_NON", name: "Xét duyệt Mầm non" }
+          { code: "INPUT_ASSESSMENTS_REPORTS", name: "Xét duyệt K-12", href: "/admin/xet-duyet-ket-qua?tab=k12" },
+          { code: "XET_DUYET_MAM_NON", name: "Xét duyệt Mầm non", href: "/admin/xet-duyet-ket-qua?tab=preschool" }
         ]
       }
     ]

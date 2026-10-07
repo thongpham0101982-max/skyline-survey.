@@ -1,6 +1,7 @@
 "use client";
 
 import React, { useState, useMemo, useEffect } from "react";
+import { getAssignedCreatorTeacherId } from "../utils";
 import {
   Users,
   Target,
@@ -475,9 +476,22 @@ export function TTCMDepartmentSummaryTab({
         }
       }
 
+      // Check creator teacher for ASSIGNED slot (người chỉ định tiết dạy cũng ghi nhận tiết dạy)
+      const creatorTeacherId = getAssignedCreatorTeacherId(slot);
+      if (creatorTeacherId && map[creatorTeacherId] && creatorTeacherId !== slot.teacherId) {
+        const hasEval = slot.registrations?.some(
+          (r: any) => r.evaluation !== null && r.evaluation?.reEvaluationStatus !== "DRAFT"
+        );
+        if (hasEval) {
+          map[creatorTeacherId].taughtCount += inc;
+          map[creatorTeacherId].taughtPlanCount += inc;
+          map[creatorTeacherId].taughtSlots.push(slot);
+        }
+      }
+
       // Check observers (tiết dự: yêu cầu PHẢI HOÀN THÀNH ĐÁNH GIÁ)
       slot.registrations?.forEach((r: any) => {
-        const hasCompletedEval = r.isApproved && r.evaluation !== null && r.evaluation?.reEvaluationStatus !== "DRAFT";
+        const hasCompletedEval = (r.isApproved || slot.requestOrigin === "ASSIGNED") && r.evaluation !== null && r.evaluation?.reEvaluationStatus !== "DRAFT";
         if (map[r.teacherId] && hasCompletedEval) {
           map[r.teacherId].observedCount += inc;
           if (isSurprise) map[r.teacherId].observedSurpriseCount += inc;

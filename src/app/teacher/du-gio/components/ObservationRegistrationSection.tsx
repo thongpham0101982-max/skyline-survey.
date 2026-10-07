@@ -695,6 +695,12 @@ export function ObservationRegistrationSection(props: any) {
   // Danh sách Giáo viên khả dụng cho việc phân công Người dự (đảm bảo đúng Khối học và TCM phụ trách)
   const availableTeachersForObservation = React.useMemo(() => {
     if (!Array.isArray(teachers)) return [];
+
+    // Nếu chưa chọn Tổ chuyên môn và cũng chưa gõ từ khóa tìm kiếm: để trống, không hiển thị tất cả
+    if (!observerFilterDeptId && !observerSearchQuery.trim()) {
+      return [];
+    }
+
     const allowedDeptIds = levelFilteredDeptIds;
 
     return teachers.filter((t: any) => {
@@ -2893,11 +2899,7 @@ export function ObservationRegistrationSection(props: any) {
                     }}
                     className="w-full text-xs font-bold p-3 rounded-xl border border-slate-200 focus:ring-2 focus:ring-purple-500 outline-none bg-white text-slate-800"
                   >
-                    <option value="">
-                      {assignedLevel === "Mầm non"
-                        ? `-- Tất cả TCM & BGH Mầm non (${levelFilteredAssignedDepts.length} tổ) --`
-                        : `-- Tất cả TCM Phổ thông (${levelFilteredAssignedDepts.length} tổ) --`}
-                    </option>
+                    <option value="">-- Chọn Tổ chuyên môn --</option>
                     {(levelFilteredAssignedDepts || []).map((d: any) => (
                       <option key={d.id} value={d.id}>{d.name || d.departmentName}</option>
                     ))}
@@ -3094,11 +3096,7 @@ export function ObservationRegistrationSection(props: any) {
                       onChange={e => setObserverFilterDeptId(e.target.value)}
                       className="w-full text-xs font-bold p-2.5 rounded-xl border border-purple-200 bg-white text-slate-800 focus:ring-2 focus:ring-purple-500 outline-none shadow-2xs"
                     >
-                      <option value="">
-                        {assignedLevel === "Mầm non"
-                          ? `-- Tất cả TCM & BGH Mầm non (${levelFilteredAssignedDepts.length} tổ) --`
-                          : `-- Tất cả TCM Phổ thông (${levelFilteredAssignedDepts.length} tổ) --`}
-                      </option>
+                      <option value="">-- Chọn Tổ chuyên môn --</option>
                       {levelFilteredAssignedDepts.map((d: any) => (
                         <option key={d.id} value={d.id}>
                           {d.name || d.departmentName} {d.code ? `(${d.code})` : ""}
@@ -3150,7 +3148,11 @@ export function ObservationRegistrationSection(props: any) {
                 <div className="flex flex-col gap-1">
                   <div className="flex items-center justify-between text-[10px] text-slate-500 font-bold px-1">
                     <span>Chọn giáo viên để phân công:</span>
-                    <span>{availableTeachersForObservation.length} giáo viên phù hợp</span>
+                    <span>
+                      {!observerFilterDeptId && !observerSearchQuery.trim()
+                        ? "Vui lòng chọn TCM hoặc gõ tìm kiếm"
+                        : `${availableTeachersForObservation.length} giáo viên phù hợp`}
+                    </span>
                   </div>
                   <select
                     value=""
@@ -3164,9 +3166,11 @@ export function ObservationRegistrationSection(props: any) {
                     className="w-full text-xs font-bold p-3 rounded-xl border-2 border-dashed border-purple-300 hover:border-purple-500 focus:ring-2 focus:ring-purple-500 outline-none bg-white text-slate-800 transition-all cursor-pointer shadow-2xs"
                   >
                     <option value="">
-                      {availableTeachersForObservation.length > 0
+                      {!observerFilterDeptId && !observerSearchQuery.trim()
+                        ? "-- Vui lòng chọn Tổ chuyên môn hoặc gõ tên/mã GV để tìm kiếm --"
+                        : availableTeachersForObservation.length > 0
                         ? `+ Bấm để chọn Giáo viên tham gia dự giờ (${availableTeachersForObservation.length} người)...`
-                        : (observerSearchQuery || observerFilterDeptId ? "Không tìm thấy giáo viên nào phù hợp bộ lọc" : "Không có giáo viên khả dụng")}
+                        : "Không tìm thấy giáo viên nào phù hợp bộ lọc"}
                     </option>
                     {availableTeachersForObservation.map((t: any) => {
                       const deptName = t.departmentRel?.name || (departments || []).find((d: any) => d.id === t.departmentId)?.name || "Chuyên môn";

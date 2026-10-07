@@ -6,6 +6,7 @@ import { auth } from "@/lib/auth"
 import { redirect } from "next/navigation"
 import { getObservationData, getObservationSlots } from "./actions"
 import { ObservationClient } from "./client"
+import { isAssignedSlotCreator } from "./utils"
 
 export default async function ObservationPage(props: {
   searchParams: Promise<{ [key: string]: string | undefined }>
@@ -56,7 +57,11 @@ export default async function ObservationPage(props: {
   const currentTeacherId = refDataResult.currentTeacher?.id;
   const loadedSlots = slotsResult.success ? (slotsResult.slots || []) : [];
   const myPersonalSlots = currentTeacherId
-    ? loadedSlots.filter((s: any) => s.teacherId === currentTeacherId || s.registrations?.some((r: any) => r.teacherId === currentTeacherId))
+    ? loadedSlots.filter((s: any) => 
+        s.teacherId === currentTeacherId || 
+        s.registrations?.some((r: any) => r.teacherId === currentTeacherId) ||
+        isAssignedSlotCreator(s, currentTeacherId)
+      )
     : [];
 
   return (

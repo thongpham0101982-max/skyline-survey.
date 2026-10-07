@@ -11,7 +11,7 @@ import {
   Tag, FolderOpen, Hash, MoreVertical, PenLine, CheckCircle2,
   Filter, ClipboardCheck, ArrowRight, UserPlus, Info,
   FileSpreadsheet, Pencil, Mail, FileText,
-  Phone, Printer, Lock
+  Phone, Printer, Lock, Zap, CheckSquare, Square
 } from "lucide-react"
 import * as XLSX from "xlsx"
 import { ResponsiveContainer, ComposedChart, Bar, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend } from "recharts"
@@ -1244,7 +1244,11 @@ export function XetDuyetK12Client({ academicYears = [], campuses = [], examBoard
   const [reportPeriodId, setReportPeriodId] = useState("all");
   const [reportBatchId, setReportBatchId] = useState("all");
   const [reportStudentId, setReportStudentId] = useState("");
-  const [reportsSubTab, setReportsSubTab] = useState("stats"); // stats or results
+  const [reportsSubTab, setReportsSubTab] = useState("results"); // Mặc định mở tab Xét duyệt KQ (Workflow-first)
+  const [selectedStudentIds, setSelectedStudentIds] = useState<string[]>([]);
+  const [batchActionLoading, setBatchActionLoading] = useState(false);
+  const [alertDismissed, setAlertDismissed] = useState(false);
+  const [inlineApprovalLoadingId, setInlineApprovalLoadingId] = useState<string | null>(null);
   const [reportCampusFilter, setReportCampusFilter] = useState("all");
   const [reportApprovalStatusFilter, setReportApprovalStatusFilter] = useState("all");
   const [reportStudentSearchQuery, setReportStudentSearchQuery] = useState("");
@@ -1273,13 +1277,122 @@ export function XetDuyetK12Client({ academicYears = [], campuses = [], examBoard
     committedSubjects: [] as string[]
   });
 
+  // Helper kiểm tra đợt khảo sát có thuộc Cơ sở được chọn hay không (Cascading Filter)
+  const isBatchMatchingCampus = useCallback((batch: any, campusId: string) => {
+    if (!campusId || campusId === "all") return true;
+    if (batch.campusId && batch.campusId === campusId) return true;
+    const targetCampus = campuses.find(c => c.id === campusId);
+    if (!targetCampus) return true;
+    const cName = (targetCampus.campusName || "").toUpperCase();
+    const cCode = (targetCampus.campusCode || "").toUpperCase();
+    const bName = (batch.name || "").toUpperCase();
+    
+    if (cCode && bName.includes(cCode)) return true;
+    if (bName.includes(cName)) return true;
+    
+    if (cCode.includes("CS1") || cName.includes("RIVERSIDE")) {
+      if (bName.includes("CS1") || bName.includes("RIVERSIDE")) return true;
+    }
+    if (cCode.includes("CS2") || cName.includes("CENTRAL")) {
+      if (bName.includes("CS2") || bName.includes("CENTRAL")) return true;
+    }
+    if (cCode.includes("CS3") || cName.includes("GLOBAL")) {
+      if (bName.includes("CS3") || bName.includes("GLOBAL")) return true;
+    }
+    if (cCode.includes("CS4") || cName.includes("HILL")) {
+      if (bName.includes("CS4") || bName.includes("HILL")) return true;
+    }
+    if (cCode.includes("CS5") || cName.includes("BEACH")) {
+      if (bName.includes("CS5") || bName.includes("BEACH")) return true;
+    }
+
+    // Nếu tên đợt chứa mã cơ sở khác mà không phải cơ sở đang chọn -> loại trừ
+    const campusCodes = ["CS1", "CS2", "CS3", "CS4", "CS5"].filter(code => !cCode.includes(code));
+    if (campusCodes.some(code => bName.includes(code))) return false;
+
+    return true;
+  }, [campuses]);
+
+  // Tự động nhận diện và chọn cơ sở phân quyền của GĐCS khi truy cập trang
+  useEffect(() => {
+    const userRole = (currentUser?.role || "").toUpperCase();
+    const isGdcs = ["GDCS", "GĐCS", "GD_CS", "GĐ_CS", "GIAO_VU_CS"].includes(userRole);
+    if (isGdcs && currentUser?.campusIds && currentUser.campusIds.length > 0) {
+      if (reportCampusFilter === "all") {
+        const match = campuses.find(c => currentUser.campusIds.includes(c.id));
+        if (match) {
+          setReportCampusFilter(match.id);
+        }
+      }
+    }
+  }, [currentUser, campuses, reportCampusFilter]);
+
   const reportSelPeriod = useMemo(() => visiblePeriods.find(p => p.id === reportPeriodId), [periods, reportPeriodId]);
-  const reportBatches = useMemo(() => {
+  
+  // Toàn bộ các đợt của kỳ (dùng để tra cứu thông tin học sinh không phụ thuộc filter)
+  const rawReportBatches = useMemo(() => {
     if (reportPeriodId === "all") {
       return periods.flatMap(p => p.batches || []);
     }
     return reportSelPeriod?.batches || [];
   }, [reportSelPeriod, periods, reportPeriodId]);
+
+  // Danh sách Đợt hiển thị trong bộ lọc (Lọc chặt chẽ theo Cơ sở đã chọn)
+  const reportBatches = useMemo(() => {
+    if (reportCampusFilter === "all") return rawReportBatches;
+    return rawReportBatches.filter(b => isBatchMatchingCampus(b, reportCampusFilter));
+  }, [rawReportBatches, reportCampusFilter, isBatchMatchingCampus]);
+
+  // Tự động chuyển Đợt về 'all' nếu đợt hiện tại không thuộc Cơ sở mới chọn (tránh lỗi 0 học sinh)
+  useEffect(() => {
+    if (reportBatchId !== "all") {
+      const isBatchValid = reportBatches.some(b => b.id === reportBatchId);
+      if (!isBatchValid) {
+        setReportBatchId("all");
+      }
+    }
+  }, [reportCampusFilter, reportBatches, reportBatchId]);
+
+  const resolveStudentCampusId = useCallback((s: Student) => {
+    // 1. If Open Day student, check registeredCampus
+    const studentPeriod = periods.find(p => p.id === s.periodId);
+    const isOpenDay = studentPeriod?.name?.toLowerCase().includes("open day");
+    if (isOpenDay && s.registeredCampus) {
+      const matchingCampus = campuses.find(c => c.id === s.registeredCampus);
+      if (matchingCampus) return matchingCampus.id;
+    }
+    
+    // 2. Check admissionCampus matching campusName
+    if (s.admissionCampus) {
+      const tc = campuses.find(c => c.campusName === s.admissionCampus);
+      if (tc) return tc.id;
+    }
+    
+    // 3. Fallback to batch campusId
+    if (s.batchId) {
+      const b = reportBatches.find(bx => bx.id === s.batchId);
+      if (b?.campusId) {
+        const tc = campuses.find(c => c.id === b.campusId);
+        if (tc) return tc.id;
+      }
+    }
+    
+    // 4. Try string match on admissionCampus
+    const campusName = s.admissionCampus || "";
+    let code = null;
+    if (campusName.includes("CS1") || campusName.includes("Cơ sở 1")) code = "CS1";
+    else if (campusName.includes("CS2") || campusName.includes("Cơ sở 2")) code = "CS2";
+    else if (campusName.includes("CS3") || campusName.includes("Cơ sở 3")) code = "CS3";
+    else if (campusName.includes("CS4") || campusName.includes("Cơ sở 4")) code = "CS4";
+    else if (campusName.includes("CS5") || campusName.includes("Cơ sở 5")) code = "CS5";
+    
+    if (code) {
+      const tc = campuses.find(c => c.campusCode === code);
+      if (tc) return tc.id;
+    }
+    
+    return "unassigned";
+  }, [campuses, periods, reportBatches]);
 
   const selectedReportStudent = useMemo(() => {
     if (mockPreviewStudent) return mockPreviewStudent;
@@ -1320,9 +1433,40 @@ export function XetDuyetK12Client({ academicYears = [], campuses = [], examBoard
 
   const autoCampusDirectorName = useMemo(() => resolvedStudentCampusObj?.manager?.fullName || "", [resolvedStudentCampusObj]);
 
-  // Email States
+  // Email States & Approval Notification
   const [isEmailModalOpen, setIsEmailModalOpen] = useState(false);
   const [sendingBatchEmail, setSendingBatchEmail] = useState(false);
+  const [sendingBatchResultEmail, setSendingBatchResultEmail] = useState(false);
+  const [autoSendApprovalEmail, setAutoSendApprovalEmail] = useState(true);
+
+  // Thống kê chi tiết đợt khảo sát phục vụ Executive Card của GĐCS
+  const batchSummaryStats = useMemo(() => {
+    const baseList = (reportStudents || []).filter(s => {
+      if (reportPeriodId && reportPeriodId !== "all") {
+        if (s.periodId !== reportPeriodId && s.period?.id !== reportPeriodId) return false;
+      }
+      if (reportBatchId && reportBatchId !== "all") {
+        if (s.batchId !== reportBatchId) return false;
+      }
+      if (reportCampusFilter && reportCampusFilter !== "all") {
+        const resolvedCampusId = resolveStudentCampusId(s);
+        const matchesCampus = resolvedCampusId === reportCampusFilter || 
+                              s.admissionCampus === reportCampusFilter || 
+                              s.registeredCampus === reportCampusFilter;
+        if (!matchesCampus) return false;
+      }
+      return true;
+    });
+
+    const total = baseList.length;
+    const pending = baseList.filter(s => !s.admissionResult && !s.isAbsent).length;
+    const passed = baseList.filter(s => s.admissionResult && (s.admissionResult.includes("Đạt") || s.admissionResult.includes("đạt")) && !s.admissionResult.includes("không") && !s.admissionResult.includes("Không") && !s.admissionResult.includes("cam kết")).length;
+    const committed = baseList.filter(s => s.admissionResult && s.admissionResult.includes("cam kết")).length;
+    const failed = baseList.filter(s => s.admissionResult && s.admissionResult.includes("Không đạt")).length;
+    const absent = baseList.filter(s => s.isAbsent).length;
+
+    return { total, pending, passed, committed, failed, absent };
+  }, [reportStudents, reportPeriodId, reportBatchId, reportCampusFilter, resolveStudentCampusId]);
   const [recipientEmail, setRecipientEmail] = useState("");
   const [emailSubject, setEmailSubject] = useState("");
   const [emailStudents, setEmailStudents] = useState<any[]>([]);
@@ -2539,6 +2683,177 @@ export function XetDuyetK12Client({ academicYears = [], campuses = [], examBoard
   const [isInvitation, setIsInvitation] = useState(false);
   const [isCommitment, setIsCommitment] = useState(false);
   const [includeChecklistSheet, setIncludeChecklistSheet] = useState(false);
+  // Handler duyệt nhanh 1 học sinh ngay trên dòng
+  const handleQuickApproveStudent = async (student: any, resultType: "Đạt" | "Đạt cam kết" | "Không đạt") => {
+    if (!student) return;
+    if (resultType === "Đạt cam kết") {
+      setReportStudentId(student.id);
+      setReportForm(f => ({ ...f, admissionResult: "Đạt cam kết" }));
+      return;
+    }
+
+    setInlineApprovalLoadingId(student.id);
+    try {
+      const userRole = (currentUser?.role || "").toUpperCase();
+      const approverName = currentUser?.fullName || "Giám đốc Cơ sở";
+      const finalCampus = resolvedStudentCampusObj?.campusName || (campuses.find(c => c.id === reportCampusFilter)?.campusName) || student.admissionCampus || "";
+
+      const res = await fetch("/api/input-assessment-students", {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          id: student.id,
+          data: {
+            admissionResult: resultType,
+            admissionCampus: finalCampus,
+            signatureName: approverName,
+            directorNote: `Xét duyệt nhanh: ${resultType} bởi ${approverName} vào lúc ${new Date().toLocaleString("vi-VN")}`
+          }
+        })
+      });
+      const resData = await res.json();
+      if (res.ok) {
+        notify(`Đã phê duyệt "${resultType}" cho học sinh ${student.fullName}!`, "ok");
+        setReportStudents(prev => prev.map(s => s.id === student.id ? {
+          ...s,
+          admissionResult: resultType,
+          admissionCampus: finalCampus,
+          signatureName: approverName
+        } : s));
+      } else {
+        notify(resData.error || "Không thể phê duyệt học sinh", "err");
+      }
+    } catch (e: any) {
+      notify("Lỗi khi xét duyệt: " + (e?.message || e), "err");
+    } finally {
+      setInlineApprovalLoadingId(null);
+    }
+  };
+
+  // Handler duyệt hàng loạt (Batch Approval)
+  const handleBatchApprove = async (resultType: "Đạt" | "Không đạt") => {
+    if (selectedStudentIds.length === 0) return;
+    if (!window.confirm(`Xác nhận phê duyệt kết quả "${resultType}" cho ${selectedStudentIds.length} học sinh đã chọn?`)) {
+      return;
+    }
+
+    setBatchActionLoading(true);
+    try {
+      const approverName = currentUser?.fullName || "Giám đốc Cơ sở";
+      const finalCampus = resolvedStudentCampusObj?.campusName || (campuses.find(c => c.id === reportCampusFilter)?.campusName) || "";
+
+      const res = await fetch("/api/input-assessment-students", {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          ids: selectedStudentIds,
+          data: {
+            admissionResult: resultType,
+            admissionCampus: finalCampus,
+            signatureName: approverName,
+            directorNote: `Phê duyệt hàng loạt: ${resultType} bởi ${approverName} vào lúc ${new Date().toLocaleString("vi-VN")}`
+          }
+        })
+      });
+      const resData = await res.json();
+      if (res.ok) {
+        notify(`Đã phê duyệt "${resultType}" thành công cho ${selectedStudentIds.length} học sinh!`, "ok");
+        setReportStudents(prev => prev.map(s => selectedStudentIds.includes(s.id) ? {
+          ...s,
+          admissionResult: resultType,
+          admissionCampus: finalCampus,
+          signatureName: approverName
+        } : s));
+        setSelectedStudentIds([]);
+      } else {
+        notify(resData.error || "Lỗi khi phê duyệt hàng loạt", "err");
+      }
+    } catch (e: any) {
+      notify("Lỗi hệ thống: " + (e?.message || e), "err");
+    } finally {
+      setBatchActionLoading(false);
+    }
+  };
+
+  const handleToggleSelectAll = (checked: boolean) => {
+    if (checked) {
+      const allPageIds = paginatedReportStudents.map(s => s.id);
+      setSelectedStudentIds(prev => Array.from(new Set([...prev, ...allPageIds])));
+    } else {
+      const pageIdSet = new Set(paginatedReportStudents.map(s => s.id));
+      setSelectedStudentIds(prev => prev.filter(id => !pageIdSet.has(id)));
+    }
+  };
+
+  const handleToggleSelectStudent = (id: string) => {
+    setSelectedStudentIds(prev =>
+      prev.includes(id) ? prev.filter(x => x !== id) : [...prev, id]
+    );
+  };
+
+  // Helper hiển thị tóm tắt điểm thi Toán, Văn, Anh trên hàng
+  const renderStudentScoresCell = (student: any) => {
+    if (student.isAbsent) {
+      return (
+        <span className="inline-flex items-center px-2 py-0.5 rounded text-[10px] font-bold bg-amber-50 text-amber-700 border border-amber-200">
+          Vắng thi
+        </span>
+      );
+    }
+    const scores = student.scores || [];
+    if (!scores || scores.length === 0) {
+      return <span className="text-slate-400 text-[11px] italic">Chưa có điểm</span>;
+    }
+
+    const findScore = (matchFn: (name: string, code: string) => boolean) => {
+      const sc = scores.find((item: any) => {
+        const name = (item.subject?.name || item.subjectName || "").toLowerCase();
+        const code = (item.subject?.code || "").toLowerCase();
+        return matchFn(name, code);
+      });
+      if (!sc) return null;
+      let val = sc.score;
+      if (val === null || val === undefined) val = sc.evaluation || "—";
+      return { val, num: parseFloat(val) };
+    };
+
+    const math = findScore((n, c) => n.includes("toán") || c.includes("math"));
+    const lit = findScore((n, c) => n.includes("việt") || n.includes("văn") || c.includes("lit"));
+    const eng = findScore((n, c) => n.includes("anh") || c.includes("eng") || c.includes("esl"));
+
+    const badgeCls = (num: number) => {
+      if (!isNaN(num)) {
+        if (num >= 7 || num >= 70) return "bg-emerald-50 text-emerald-700 border-emerald-200";
+        if (num >= 5 || num >= 50) return "bg-amber-50 text-amber-700 border-amber-200";
+        return "bg-rose-50 text-rose-700 border-rose-200";
+      }
+      return "bg-slate-50 text-slate-700 border-slate-200";
+    };
+
+    return (
+      <div className="flex items-center gap-1.5 flex-wrap">
+        {math && (
+          <span className={`inline-flex items-center gap-0.5 px-1.5 py-0.5 rounded text-[10px] font-bold border ${badgeCls(math.num)}`} title="Toán">
+            <span className="text-slate-400 font-normal">T:</span>{math.val}
+          </span>
+        )}
+        {lit && (
+          <span className={`inline-flex items-center gap-0.5 px-1.5 py-0.5 rounded text-[10px] font-bold border ${badgeCls(lit.num)}`} title="Tiếng Việt / Ngữ Văn">
+            <span className="text-slate-400 font-normal">V:</span>{lit.val}
+          </span>
+        )}
+        {eng && (
+          <span className={`inline-flex items-center gap-0.5 px-1.5 py-0.5 rounded text-[10px] font-bold border ${badgeCls(eng.num)}`} title="Tiếng Anh">
+            <span className="text-slate-400 font-normal">A:</span>{eng.val}
+          </span>
+        )}
+        {!math && !lit && !eng && scores.length > 0 && (
+          <span className="text-[11px] text-slate-600 font-semibold">{scores.length} môn</span>
+        )}
+      </div>
+    );
+  };
+
   const handleSaveReportResult = async () => {
     if (!selectedReportStudent) return;
     if (!reportForm.admissionResult) {
@@ -2617,7 +2932,7 @@ export function XetDuyetK12Client({ academicYears = [], campuses = [], examBoard
       });
       const resData = await r.json().catch(() => ({}));
       if (r.ok) {
-        notify("Đã lưu kết quả & lược sử xét duyệt thành công!");
+        notify("Đã lưu kết quả & lược sử xét duyệt thành công!", "ok");
         setReportStudents(prev => prev.map(s => s.id === selectedReportStudent.id ? { 
           ...s, 
           admissionResult: reportForm.admissionResult,
@@ -2625,6 +2940,36 @@ export function XetDuyetK12Client({ academicYears = [], campuses = [], examBoard
           signatureName: finalSignature,
           directorNote: finalNote
         } : s));
+
+        // Tự động gửi email thông báo kết quả xét duyệt tới Ban KT&ĐBCL và GĐCS nếu bật tuỳ chọn
+        if (autoSendApprovalEmail) {
+          try {
+            fetch("/api/admin/send-approval-result-email", {
+              method: "POST",
+              headers: { "Content-Type": "application/json" },
+              body: JSON.stringify({
+                periodId: reportPeriodId,
+                periodName: reportSelPeriod?.name,
+                batchId: selectedReportStudent.batchId || reportBatchId,
+                batchName: rawReportBatches.find(b => b.id === (selectedReportStudent.batchId || reportBatchId))?.name,
+                campusId: reportCampusFilter !== "all" ? reportCampusFilter : (resolvedStudentCampusObj?.id || resolveStudentCampusId(selectedReportStudent)),
+                campusName: finalCampus,
+                approverName,
+                approverRole: isGDCSUser ? "Giám đốc Cơ sở" : "Hội đồng Tuyển sinh",
+                students: [{
+                  ...selectedReportStudent,
+                  admissionResult: reportForm.admissionResult,
+                  admissionCampus: finalCampus,
+                  directorNote: finalNote
+                }]
+              })
+            }).then(res => res.json()).then(mailData => {
+              if (mailData.success) {
+                notify("Đã gửi email thông báo kết quả đến GĐCS, Tư vấn Cơ sở và Ban KT&ĐBCL!", "ok");
+              }
+            }).catch(() => {});
+          } catch(mailErr) {}
+        }
       } else {
         notify(resData.error || "Lỗi khi lưu kết quả tổng hợp", "err");
       }
@@ -2632,6 +2977,51 @@ export function XetDuyetK12Client({ academicYears = [], campuses = [], examBoard
       notify("Lỗi hệ thống: " + (e.message || e), "err");
     }
     setSaveReportLoading(false);
+  };
+
+  const handleSendBatchApprovalResultEmail = async () => {
+    if (filteredReportStudents.length === 0) {
+      return notify("Không có học sinh nào trong đợt khảo sát hiện tại để gửi thông báo!", "err");
+    }
+    const pendingCount = filteredReportStudents.filter(s => !s.admissionResult && !s.isAbsent).length;
+    if (pendingCount > 0) {
+      if (!window.confirm(`Đợt này hiện còn ${pendingCount} học sinh chưa xét duyệt kết quả. Thầy/Cô có muốn tiếp tục gửi thông báo kết quả cho ${filteredReportStudents.length} học sinh hiện tại đến GĐCS, Tư vấn Cơ sở và Ban KT&ĐBCL không?`)) {
+        return;
+      }
+    }
+    setSendingBatchResultEmail(true);
+    try {
+      const activeBatchObj = rawReportBatches.find(b => b.id === reportBatchId);
+      const curCampusObj = campuses.find(c => c.id === reportCampusFilter);
+      const userRole = (currentUser?.role || "").toUpperCase();
+      const isGdcs = ["GDCS", "GĐCS", "GD_CS", "GĐ_CS", "GIAO_VU_CS"].includes(userRole);
+
+      const res = await fetch("/api/admin/send-approval-result-email", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          periodId: reportPeriodId,
+          periodName: reportSelPeriod?.name,
+          batchId: reportBatchId,
+          batchName: activeBatchObj?.name || (reportBatchId === "all" ? "Tất cả các đợt" : "Đợt khảo sát"),
+          campusId: reportCampusFilter !== "all" ? reportCampusFilter : undefined,
+          campusName: curCampusObj?.campusName || (reportCampusFilter !== "all" ? reportCampusFilter : "Toàn hệ thống Sky-Line"),
+          approverName: currentUser?.fullName || "Giám đốc Cơ sở",
+          approverRole: isGdcs ? "Giám đốc Cơ sở" : "Hội đồng Tuyển sinh",
+          students: filteredReportStudents
+        })
+      });
+      const data = await res.json();
+      if (res.ok && data.success) {
+        notify(`Đã gửi email thông báo kết quả xét duyệt (${filteredReportStudents.length} học sinh) đến GĐCS, Tư vấn Cơ sở & Ban KT&ĐBCL thành công!`, "ok");
+      } else {
+        notify(data.error || "Không thể gửi email thông báo", "err");
+      }
+    } catch (err: any) {
+      notify("Lỗi kết nối khi gửi email: " + (err.message || err), "err");
+    } finally {
+      setSendingBatchResultEmail(false);
+    }
   };
 
   const handleSendGdcsApprovalRequestForStudent = async (student: any) => {
@@ -2878,46 +3268,7 @@ export function XetDuyetK12Client({ academicYears = [], campuses = [], examBoard
     }
   }, [reportStudents, tab]);
 
-    const resolveStudentCampusId = useCallback((s: Student) => {
-    // 1. If Open Day student, check registeredCampus
-    const studentPeriod = periods.find(p => p.id === s.periodId);
-    const isOpenDay = studentPeriod?.name?.toLowerCase().includes("open day");
-    if (isOpenDay && s.registeredCampus) {
-      const matchingCampus = campuses.find(c => c.id === s.registeredCampus);
-      if (matchingCampus) return matchingCampus.id;
-    }
-    
-    // 2. Check admissionCampus matching campusName
-    if (s.admissionCampus) {
-      const tc = campuses.find(c => c.campusName === s.admissionCampus);
-      if (tc) return tc.id;
-    }
-    
-    // 3. Fallback to batch campusId
-    if (s.batchId) {
-      const b = reportBatches.find(bx => bx.id === s.batchId);
-      if (b?.campusId) {
-        const tc = campuses.find(c => c.id === b.campusId);
-        if (tc) return tc.id;
-      }
-    }
-    
-    // 4. Try string match on admissionCampus
-    const campusName = s.admissionCampus || "";
-    let code = null;
-    if (campusName.includes("CS1") || campusName.includes("Cơ sở 1")) code = "CS1";
-    else if (campusName.includes("CS2") || campusName.includes("Cơ sở 2")) code = "CS2";
-    else if (campusName.includes("CS3") || campusName.includes("Cơ sở 3")) code = "CS3";
-    else if (campusName.includes("CS4") || campusName.includes("Cơ sở 4")) code = "CS4";
-    else if (campusName.includes("CS5") || campusName.includes("Cơ sở 5")) code = "CS5";
-    
-    if (code) {
-      const tc = campuses.find(c => c.campusCode === code);
-      if (tc) return tc.id;
-    }
-    
-    return "unassigned";
-  }, [campuses, periods, reportBatches]);
+
 
   const filteredReportStudents = useMemo(() => {
     if (!Array.isArray(reportStudents)) return [];
@@ -5186,26 +5537,45 @@ const [customCommitmentSubjects, setCustomCommitmentSubjects] = useState<string[
             <div className="absolute top-0 right-0 w-64 h-64 bg-amber-500/15 rounded-full blur-3xl -mr-20 -mt-20 pointer-events-none transition-transform duration-700 group-hover:scale-110"></div>
             <div className="absolute bottom-0 left-0 w-40 h-40 bg-orange-500/15 rounded-full blur-2xl -ml-10 -mb-10 pointer-events-none"></div>
             
-            <div className="relative flex items-start sm:items-center gap-4">
-            <div className="w-11 h-11 rounded-2xl bg-white shadow-sm border border-amber-200/70 flex items-center justify-center shrink-0 group-hover:rotate-12 transition-transform duration-300">
-            <AlertCircle className="w-6 h-6 text-amber-600 animate-pulse" />
-            </div>
-            <div className="flex-1 min-w-0 flex flex-col justify-center">
-            <div className="text-[13px] font-semibold text-slate-700 leading-relaxed flex flex-wrap items-center gap-y-1.5 gap-x-1">
-            <span className="font-black text-transparent bg-clip-text bg-gradient-to-r from-amber-700 to-orange-600 uppercase tracking-widest text-xs py-0.5 px-2.5 rounded-lg bg-white/80 border border-amber-200/50 shadow-sm mr-2 flex items-center gap-1.5">
-            Thông báo
-            </span>
-            <span className="opacity-90">Đợt khảo sát mới nhất:</span> 
-            <span className="inline-flex items-center px-2.5 py-1 rounded-lg bg-amber-600 text-white font-bold shadow-md shadow-amber-900/10 mx-0.5 text-xs tracking-wide">
-            {latestBatchInfo.name}
-            </span> 
-            <span className="opacity-90 mx-1">thuộc Kỳ khảo sát</span> 
-            <span className="inline-flex items-center px-2.5 py-1 rounded-lg bg-orange-100 text-orange-800 font-black border border-orange-200/60 shadow-sm mx-0.5 text-xs">
-            {latestBatchInfo.periodName}
-            </span>
-            <span className="opacity-90 ml-0.5">. Vui lòng xét duyệt.</span>
-            </div>
-            </div>
+            <div className="relative flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+              <div className="flex items-start sm:items-center gap-3.5">
+                <div className="w-11 h-11 rounded-2xl bg-white shadow-sm border border-amber-200/70 flex items-center justify-center shrink-0 group-hover:rotate-6 transition-transform duration-300">
+                  <AlertCircle className="w-6 h-6 text-amber-600 animate-pulse" />
+                </div>
+                <div className="flex-1 min-w-0">
+                  <div className="text-[13px] font-semibold text-slate-700 leading-relaxed flex flex-wrap items-center gap-y-1.5 gap-x-1.5">
+                    <span className="font-black text-transparent bg-clip-text bg-gradient-to-r from-amber-700 to-orange-600 uppercase tracking-widest text-xs py-0.5 px-2.5 rounded-lg bg-white/90 border border-amber-200/60 shadow-sm flex items-center gap-1.5">
+                      Thông báo
+                    </span>
+                    <span className="opacity-90">Đợt khảo sát mới nhất:</span> 
+                    <span className="inline-flex items-center px-2.5 py-1 rounded-lg bg-gradient-to-r from-amber-600 to-orange-600 text-white font-bold shadow-sm text-xs tracking-wide">
+                      {latestBatchInfo.name}
+                    </span> 
+                    <span className="opacity-90">thuộc Kỳ</span> 
+                    <span className="inline-flex items-center px-2.5 py-1 rounded-lg bg-white text-slate-700 font-bold border border-amber-200/80 shadow-2xs text-xs">
+                      {latestBatchInfo.periodName}
+                    </span>
+                  </div>
+                  <p className="text-xs text-amber-800/80 font-medium mt-1">
+                    Vui lòng rà soát điểm số các môn và hoàn tất phê duyệt kết quả tuyển sinh.
+                  </p>
+                </div>
+              </div>
+
+              <div className="flex items-center gap-2 self-end sm:self-center shrink-0">
+                <button
+                  onClick={() => {
+                    setReportPeriodId(latestBatchInfo.periodId);
+                    setReportBatchId(latestBatchInfo.id);
+                    setReportApprovalStatusFilter("Chưa duyệt");
+                    setReportsSubTab("results");
+                  }}
+                  className="px-4 py-2 bg-gradient-to-r from-amber-600 to-orange-600 hover:from-amber-700 hover:to-orange-700 text-white text-xs font-black rounded-xl shadow-md shadow-amber-600/20 active:scale-95 transition-all flex items-center gap-1.5 cursor-pointer"
+                >
+                  <span>Xem & Xét duyệt đợt này</span>
+                  <ArrowRight className="w-3.5 h-3.5" />
+                </button>
+              </div>
             </div>
             </div>
           )}
@@ -6325,55 +6695,63 @@ const [customCommitmentSubjects, setCustomCommitmentSubjects] = useState<string[
       {/* ===== OTHER TABS PLACEHOLDERS ===== */}
       {tab === "reports" && (
         <div className="space-y-4 animate-in fade-in slide-in-from-bottom-2 duration-500">
-          {latestBatchInfo && (
-            <div className="no-print relative overflow-hidden p-4 rounded-2xl shadow-md animate-in fade-in slide-in-from-top-4 duration-500 mb-6 bg-gradient-to-br from-amber-50/90 via-orange-50/50 to-amber-100/60 border border-amber-200/80 ring-1 ring-amber-900/5 group hover:shadow-lg transition-all">
-            <div className="absolute top-0 right-0 w-64 h-64 bg-amber-500/15 rounded-full blur-3xl -mr-20 -mt-20 pointer-events-none transition-transform duration-700 group-hover:scale-110"></div>
-            <div className="absolute bottom-0 left-0 w-40 h-40 bg-orange-500/15 rounded-full blur-2xl -ml-10 -mb-10 pointer-events-none"></div>
-            
-            <div className="relative flex items-start sm:items-center gap-4">
-            <div className="w-11 h-11 rounded-2xl bg-white shadow-sm border border-amber-200/70 flex items-center justify-center shrink-0 group-hover:rotate-12 transition-transform duration-300">
-            <AlertCircle className="w-6 h-6 text-amber-600 animate-pulse" />
-            </div>
-            <div className="flex-1 min-w-0 flex flex-col justify-center">
-            <div className="text-[13px] font-semibold text-slate-700 leading-relaxed flex flex-wrap items-center gap-y-1.5 gap-x-1">
-            <span className="font-black text-transparent bg-clip-text bg-gradient-to-r from-amber-700 to-orange-600 uppercase tracking-widest text-xs py-0.5 px-2.5 rounded-lg bg-white/80 border border-amber-200/50 shadow-sm mr-2 flex items-center gap-1.5">
-            Thông báo
-            </span>
-            <span className="opacity-90">Đợt khảo sát mới nhất:</span> 
-            <span className="inline-flex items-center px-2.5 py-1 rounded-lg bg-amber-600 text-white font-bold shadow-md shadow-amber-900/10 mx-0.5 text-xs tracking-wide">
-            {latestBatchInfo.name}
-            </span> 
-            <span className="opacity-90 mx-1">thuộc Kỳ khảo sát</span> 
-            <span className="inline-flex items-center px-2.5 py-1 rounded-lg bg-orange-100 text-orange-800 font-black border border-orange-200/60 shadow-sm mx-0.5 text-xs">
-            {latestBatchInfo.periodName}
-            </span>
-            <span className="opacity-90 ml-0.5">. Vui lòng xét duyệt.</span>
-            </div>
-            </div>
-            </div>
+          {latestBatchInfo && !alertDismissed && (
+            <div className="no-print mb-4 flex items-center justify-between gap-3 px-4 py-2.5 rounded-2xl bg-gradient-to-r from-amber-50 to-orange-50 border border-amber-200/90 text-slate-700 shadow-2xs text-xs animate-in fade-in duration-300">
+              <div className="flex items-center gap-2 flex-wrap min-w-0">
+                <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-lg bg-amber-600 text-white font-black text-[10px] uppercase tracking-wider shadow-2xs">
+                  <AlertCircle className="w-3 h-3" /> Đợt KS mới nhất
+                </span>
+                <span className="font-black text-slate-800 truncate">{latestBatchInfo.name}</span>
+                <span className="text-slate-400 font-medium">• Kỳ: <strong className="text-slate-700">{latestBatchInfo.periodName}</strong></span>
+              </div>
+              <div className="flex items-center gap-2 shrink-0">
+                <button
+                  onClick={() => {
+                    setReportPeriodId(latestBatchInfo.periodId);
+                    setReportBatchId(latestBatchInfo.id);
+                    setReportsSubTab("results");
+                  }}
+                  className="px-3 py-1 bg-amber-600 hover:bg-amber-700 text-white font-bold text-xs rounded-xl transition-all shadow-2xs cursor-pointer active:scale-95"
+                >
+                  Xem đợt này
+                </button>
+                <button
+                  onClick={() => setAlertDismissed(true)}
+                  className="p-1 text-slate-400 hover:text-slate-600 rounded-lg hover:bg-amber-100 transition-colors cursor-pointer"
+                  title="Đóng thông báo"
+                >
+                  <X className="w-4 h-4" />
+                </button>
+              </div>
             </div>
           )}
           
-          {/* Sub-tab Navigation & Actions Bar */}
-          <div className="flex flex-col md:flex-row justify-between items-center gap-4 mb-4 p-3.5 shadow-sm text-xs font-semibold">
-            <div className="hidden md:block flex-1"></div>
-            <div className="bg-slate-100 p-1 rounded-2xl border border-slate-200/60 flex gap-1 shadow-inner">
-              <button
-                onClick={() => setReportsSubTab("stats")}
-                className={`flex items-center gap-2 px-5 py-2.5 rounded-xl text-xs font-black tracking-tight transition-all duration-300 ${reportsSubTab === "stats" ? "bg-white text-indigo-600 shadow-sm scale-[1.02]" : "text-slate-500 hover:text-slate-800"}`}
-              >
-                <BarChart3 className="w-3.5 h-3.5 text-indigo-500"/>
-                Thống kê tổng quan
-              </button>
+          {/* Sub-tab Navigation & Actions Bar (Streamlined) */}
+          <div className="flex flex-col sm:flex-row justify-between items-center gap-3 mb-4 bg-white p-2 rounded-2xl border border-slate-200 shadow-2xs">
+            <div className="bg-slate-100 p-1 rounded-xl border border-slate-200/80 flex gap-1 shadow-inner w-full sm:w-auto">
               <button
                 onClick={() => setReportsSubTab("results")}
-                className={`flex items-center gap-2 px-5 py-2.5 rounded-xl text-xs font-black tracking-tight transition-all duration-300 ${reportsSubTab === "results" ? "bg-white text-indigo-600 shadow-sm scale-[1.02]" : "text-slate-500 hover:text-slate-800"}`}
+                className={`flex-1 sm:flex-initial flex items-center justify-center gap-2 px-5 py-2 rounded-lg text-xs font-black tracking-tight transition-all duration-200 cursor-pointer ${reportsSubTab === "results" ? "bg-white text-[#007A87] shadow-sm" : "text-slate-500 hover:text-slate-800"}`}
               >
-                <Users className="w-3.5 h-3.5 text-indigo-500"/>
-                Xét duyệt KQ
+                <Users className="w-3.5 h-3.5 text-[#007A87]"/>
+                Xét duyệt Kết quả ({filteredReportStudents.length})
+              </button>
+              <button
+                onClick={() => setReportsSubTab("stats")}
+                className={`flex-1 sm:flex-initial flex items-center justify-center gap-2 px-5 py-2 rounded-lg text-xs font-black tracking-tight transition-all duration-200 cursor-pointer ${reportsSubTab === "stats" ? "bg-white text-[#007A87] shadow-sm" : "text-slate-500 hover:text-slate-800"}`}
+              >
+                <BarChart3 className="w-3.5 h-3.5 text-[#007A87]"/>
+                Báo cáo & Thống kê
               </button>
             </div>
-            <div className="flex-1 flex justify-end w-full md:w-auto"></div>
+            <div className="flex items-center gap-2 text-xs font-semibold text-slate-500">
+              {batchSummaryStats.pending > 0 && (
+                <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-xl bg-amber-50 text-amber-800 border border-amber-200 font-bold text-xs">
+                  <span className="w-2 h-2 rounded-full bg-amber-500 animate-ping" />
+                  {batchSummaryStats.pending} học sinh chờ duyệt
+                </span>
+              )}
+            </div>
           </div>
 
           {/* TOP SELECTORS BAR */}
@@ -6441,9 +6819,14 @@ const [customCommitmentSubjects, setCustomCommitmentSubjects] = useState<string[
                   className="w-full bg-white border border-slate-200 rounded-2xl pl-4 pr-9 py-3 outline-none focus:border-indigo-500 focus:ring-4 focus:ring-indigo-500/10 appearance-none font-semibold text-xs text-slate-700 shadow-sm transition-all group-hover:shadow-md cursor-pointer"
                 >
                   <option value="all">Tất cả các đợt</option>
-                  {reportBatches.map(b => (
-                    <option key={b.id} value={b.id}>{b.name}</option>
-                  ))}
+                  {reportBatches.map(b => {
+                    const countInBatch = (reportStudents || []).filter(s => s.batchId === b.id).length;
+                    const pendingInBatch = (reportStudents || []).filter(s => s.batchId === b.id && !s.admissionResult && !s.isAbsent).length;
+                    const suffix = countInBatch > 0 ? ` (${countInBatch} HS${pendingInBatch > 0 ? ` - ${pendingInBatch} chờ duyệt` : ''})` : '';
+                    return (
+                      <option key={b.id} value={b.id}>{b.name}{suffix}</option>
+                    );
+                  })}
                 </select>
                 <div className="pointer-events-none absolute inset-y-0 right-0 flex items-center px-3 text-slate-400 group-hover:text-indigo-500 transition-colors">
                   <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M19 9l-7 7-7-7"></path></svg>
@@ -7175,88 +7558,291 @@ const [customCommitmentSubjects, setCustomCommitmentSubjects] = useState<string[
             </div>
           ) : (
             <>
+              {/* STREAMLINED STATUS BAR & BATCH CONTROLS */}
+              <div className="bg-white rounded-2xl border border-slate-200 p-4 shadow-2xs mb-4 text-left">
+                <div className="flex flex-col md:flex-row md:items-center justify-between gap-3 pb-3 border-b border-slate-100">
+                  <div className="flex items-center gap-2 flex-wrap">
+                    <span className="px-2.5 py-1 rounded-lg text-xs font-black uppercase tracking-wider bg-teal-50 text-[#007A87] border border-teal-200/80">
+                      🏢 {reportCampusFilter === "all" ? "Toàn hệ thống" : (campuses.find(c => c.id === reportCampusFilter)?.campusName || "Cơ sở")}
+                    </span>
+                    <h3 className="text-sm font-black text-slate-800">
+                      {reportBatchId === "all" ? "Tất cả các đợt khảo sát" : (rawReportBatches.find(b => b.id === reportBatchId)?.name || "Đợt khảo sát")}
+                    </h3>
+                    <span className="text-xs text-slate-400 font-medium">• Kỳ: <strong className="text-slate-600">{reportSelPeriod?.name || "Tất cả"}</strong></span>
+                  </div>
+
+                  <div className="flex items-center gap-2">
+                    <button
+                      onClick={handleSendBatchApprovalResultEmail}
+                      disabled={sendingBatchResultEmail || filteredReportStudents.length === 0}
+                      className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-bold text-teal-700 bg-teal-50 border border-teal-200 hover:bg-teal-100 transition-all disabled:opacity-50 cursor-pointer shadow-2xs"
+                      title="Gửi email thông báo bảng kết quả xét duyệt của đợt này đến Ban KT&ĐBCL và GĐCS"
+                    >
+                      {sendingBatchResultEmail ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Mail className="w-3.5 h-3.5" />}
+                      <span>Gửi email kết quả</span>
+                    </button>
+                  </div>
+                </div>
+
+                {/* TRẠNG THÁI STATUS CHIPS (1-Chạm lọc nhanh tức thì) */}
+                <div className="flex items-center gap-2 pt-3 flex-wrap">
+                  <span className="text-[11px] font-black text-slate-400 uppercase tracking-wider mr-1">Trạng thái:</span>
+                  <button
+                    onClick={() => setReportApprovalStatusFilter("all")}
+                    className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-bold transition-all cursor-pointer ${reportApprovalStatusFilter === "all" ? "bg-slate-800 text-white shadow-xs" : "bg-slate-100 text-slate-600 hover:bg-slate-200"}`}
+                  >
+                    <span>Tất cả</span>
+                    <span className="px-1.5 py-0.2 rounded-md bg-white/20 text-[10px] font-black">{batchSummaryStats.total}</span>
+                  </button>
+                  <button
+                    onClick={() => setReportApprovalStatusFilter("Chưa duyệt")}
+                    className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-bold transition-all cursor-pointer ${reportApprovalStatusFilter === "Chưa duyệt" ? "bg-amber-600 text-white shadow-xs" : "bg-amber-50 text-amber-800 hover:bg-amber-100 border border-amber-200"}`}
+                  >
+                    {batchSummaryStats.pending > 0 && <span className="w-2 h-2 rounded-full bg-amber-400 animate-pulse" />}
+                    <span>Chờ duyệt</span>
+                    <span className="px-1.5 py-0.2 rounded-md bg-amber-200/60 text-amber-900 text-[10px] font-black">{batchSummaryStats.pending}</span>
+                  </button>
+                  <button
+                    onClick={() => setReportApprovalStatusFilter("Đạt")}
+                    className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-bold transition-all cursor-pointer ${reportApprovalStatusFilter === "Đạt" ? "bg-emerald-600 text-white shadow-xs" : "bg-emerald-50 text-emerald-800 hover:bg-emerald-100 border border-emerald-200"}`}
+                  >
+                    <span>Đạt chuẩn</span>
+                    <span className="px-1.5 py-0.2 rounded-md bg-emerald-200/60 text-emerald-900 text-[10px] font-black">{batchSummaryStats.passed}</span>
+                  </button>
+                  <button
+                    onClick={() => setReportApprovalStatusFilter("Đạt cam kết")}
+                    className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-bold transition-all cursor-pointer ${reportApprovalStatusFilter === "Đạt cam kết" ? "bg-orange-600 text-white shadow-xs" : "bg-orange-50 text-orange-800 hover:bg-orange-100 border border-orange-200"}`}
+                  >
+                    <span>Đạt cam kết</span>
+                    <span className="px-1.5 py-0.2 rounded-md bg-orange-200/60 text-orange-900 text-[10px] font-black">{batchSummaryStats.committed}</span>
+                  </button>
+                  <button
+                    onClick={() => setReportApprovalStatusFilter("Không đạt")}
+                    className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-bold transition-all cursor-pointer ${reportApprovalStatusFilter === "Không đạt" ? "bg-rose-600 text-white shadow-xs" : "bg-rose-50 text-rose-800 hover:bg-rose-100 border border-rose-200"}`}
+                  >
+                    <span>Không đạt</span>
+                    <span className="px-1.5 py-0.2 rounded-md bg-rose-200/60 text-rose-900 text-[10px] font-black">{batchSummaryStats.failed}</span>
+                  </button>
+                </div>
+              </div>
+
+              {/* FLOATING / INLINE BATCH ACTIONS BAR */}
+              {selectedStudentIds.length > 0 && (
+                <div className="bg-gradient-to-r from-slate-900 to-indigo-950 text-white p-3.5 rounded-2xl shadow-lg mb-4 flex flex-col sm:flex-row items-center justify-between gap-3 animate-in fade-in slide-in-from-top-2 duration-200">
+                  <div className="flex items-center gap-2">
+                    <span className="px-2.5 py-1 rounded-lg bg-teal-500 text-white font-black text-xs">
+                      Đã chọn {selectedStudentIds.length} HS
+                    </span>
+                    <span className="text-xs text-slate-300 hidden sm:inline">Thao tác phê duyệt hàng loạt cho các em đã chọn:</span>
+                  </div>
+                  <div className="flex items-center gap-2 flex-wrap">
+                    <button
+                      onClick={() => handleBatchApprove("Đạt")}
+                      disabled={batchActionLoading}
+                      className="px-3.5 py-1.5 bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-bold rounded-xl shadow-xs transition-all flex items-center gap-1.5 cursor-pointer disabled:opacity-50"
+                    >
+                      {batchActionLoading ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Zap className="w-3.5 h-3.5" />}
+                      Duyệt ĐẠT ({selectedStudentIds.length})
+                    </button>
+                    <button
+                      onClick={() => handleBatchApprove("Không đạt")}
+                      disabled={batchActionLoading}
+                      className="px-3.5 py-1.5 bg-rose-600 hover:bg-rose-500 text-white text-xs font-bold rounded-xl shadow-xs transition-all flex items-center gap-1.5 cursor-pointer disabled:opacity-50"
+                    >
+                      Duyệt Không đạt
+                    </button>
+                    <button
+                      onClick={() => setSelectedStudentIds([])}
+                      className="px-3 py-1.5 bg-white/10 hover:bg-white/20 text-white text-xs font-medium rounded-xl transition-colors cursor-pointer"
+                    >
+                      Bỏ chọn
+                    </button>
+                  </div>
+                </div>
+              )}
+
               {/* STUDENT EXCEL LIST TABLE */}
               <div className="bg-white border border-slate-200 rounded-[2rem] p-6 shadow-sm overflow-hidden text-left mb-6">
-                <h3 className="font-black text-slate-800 text-sm mb-4 flex items-center gap-2">
-                  <Users className="w-4 h-4 text-[#48BFE3]" />
-                  Danh sách học sinh khảo sát ({filteredReportStudents.length})
-                </h3>
+                <div className="flex items-center justify-between gap-4 mb-4 flex-wrap">
+                  <h3 className="font-black text-slate-800 text-sm flex items-center gap-2">
+                    <Users className="w-4 h-4 text-[#48BFE3]" />
+                    Danh sách học sinh khảo sát ({filteredReportStudents.length})
+                  </h3>
+                  <button
+                    onClick={handleSendBatchApprovalResultEmail}
+                    disabled={sendingBatchResultEmail || filteredReportStudents.length === 0}
+                    className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-bold text-teal-700 bg-teal-50 border border-teal-200 hover:bg-teal-100 transition-all disabled:opacity-50 cursor-pointer shadow-2xs"
+                  >
+                    <Mail className="w-3.5 h-3.5" />
+                    <span>Gửi mail kết quả (GĐCS, Tư vấn & Ban KT&ĐBCL)</span>
+                  </button>
+                </div>
                 <div className="overflow-x-auto border border-slate-300 rounded-xl">
                   <table className="w-full text-left whitespace-nowrap table-auto border-collapse">
-                    <thead className="bg-[#48BFE3]/5 border-b border-slate-300">
+                    <thead className="bg-slate-50 border-b border-slate-300">
                       <tr>
-                        <th className="p-2.5 text-[10px] font-black text-slate-500 uppercase tracking-widest border border-slate-300">Mã HS</th>
-                        <th className="p-2.5 text-[10px] font-black text-slate-500 uppercase tracking-widest border border-slate-300">Họ và tên</th>
-                        <th className="p-2.5 text-[10px] font-black text-slate-500 uppercase tracking-widest text-center border border-slate-300">Ngày sinh</th>
-                        <th className="p-2.5 text-[10px] font-black text-slate-500 uppercase tracking-widest text-center border border-slate-300">Giới tính</th>
-                        <th className="p-2.5 text-[10px] font-black text-slate-500 uppercase tracking-widest text-center border border-slate-300">Khối học</th>
-                        <th className="p-2.5 text-[10px] font-black text-slate-500 uppercase tracking-widest text-center border border-slate-300">Hệ Khảo sát</th>
-                        <th className="p-2.5 text-[10px] font-black text-slate-500 uppercase tracking-widest text-center border border-slate-300">Diện Khảo sát</th>
-                        <th className="p-2.5 text-[10px] font-black text-slate-500 uppercase tracking-widest text-center border border-slate-300">Trạng thái duyệt</th>
-                        <th className="p-2.5 text-[10px] font-black text-slate-500 uppercase tracking-widest text-center border border-slate-300">YC Xét duyệt</th>
-                        <th className="p-2.5 text-[10px] font-black text-slate-500 uppercase tracking-widest text-center border border-slate-300">Kết quả</th>
+                        <th className="p-2.5 text-center border border-slate-300 w-10">
+                          <input
+                            type="checkbox"
+                            checked={paginatedReportStudents.length > 0 && paginatedReportStudents.every(s => selectedStudentIds.includes(s.id))}
+                            onChange={e => handleToggleSelectAll(e.target.checked)}
+                            className="w-4 h-4 rounded text-teal-600 focus:ring-teal-500 cursor-pointer"
+                            title="Chọn tất cả trên trang này"
+                          />
+                        </th>
+                        <th className="p-2.5 text-[10px] font-black text-slate-600 uppercase tracking-wider border border-slate-300">Mã HS</th>
+                        <th className="p-2.5 text-[10px] font-black text-slate-600 uppercase tracking-wider border border-slate-300">Họ và tên</th>
+                        <th className="p-2.5 text-[10px] font-black text-slate-600 uppercase tracking-wider text-center border border-slate-300">Khối</th>
+                        <th className="p-2.5 text-[10px] font-black text-slate-600 uppercase tracking-wider border border-slate-300">Hệ / Diện khảo sát</th>
+                        <th className="p-2.5 text-[10px] font-black text-teal-800 uppercase tracking-wider border border-slate-300">Điểm KS (Toán, Văn, Anh)</th>
+                        <th className="p-2.5 text-[10px] font-black text-slate-600 uppercase tracking-wider text-center border border-slate-300">Trạng thái</th>
+                        <th className="p-2.5 text-[10px] font-black text-teal-800 uppercase tracking-wider text-center border border-slate-300">Duyệt nhanh</th>
+                        <th className="p-2.5 text-[10px] font-black text-slate-600 uppercase tracking-wider text-center border border-slate-300">Thao tác</th>
                       </tr>
                     </thead>
                     <tbody className="divide-y divide-slate-200">
                       {paginatedReportStudents.map(s => {
                         const isSelected = reportStudentId === s.id;
+                        const isChecked = selectedStudentIds.includes(s.id);
+                        const isInlineLoading = inlineApprovalLoadingId === s.id;
+
                         return (
-                          <tr key={s.id} className={`hover:bg-slate-50/80 transition-colors ${isSelected ? 'bg-indigo-50/40' : ''}`}>
-                            <td className="p-2.5 border border-slate-300 font-mono text-xs font-bold text-slate-700">{s.studentCode}</td>
-                            <td className="p-2.5 border border-slate-300 text-xs font-black text-slate-800">{s.fullName}</td>
-                            <td className="p-2.5 border border-slate-300 text-xs text-center text-slate-650">
-                              {s.dateOfBirth ? new Date(s.dateOfBirth).toLocaleDateString("vi-VN") : "—"}
+                          <tr key={s.id} className={`hover:bg-slate-50/90 transition-colors ${isChecked ? 'bg-teal-50/40' : isSelected ? 'bg-indigo-50/40' : ''}`}>
+                            {/* Checkbox */}
+                            <td className="p-2.5 border border-slate-300 text-center">
+                              <input
+                                type="checkbox"
+                                checked={isChecked}
+                                onChange={() => handleToggleSelectStudent(s.id)}
+                                className="w-4 h-4 rounded text-teal-600 focus:ring-teal-500 cursor-pointer"
+                              />
                             </td>
-                            <td className="p-2.5 border border-slate-300 text-xs text-center text-slate-650">
-                              {s.gender === "M" || s.gender === "Nam" ? "Nam" : s.gender === "F" || s.gender === "Nữ" ? "Nữ" : s.gender || "—"}
+
+                            {/* Mã HS */}
+                            <td className="p-2.5 border border-slate-300 font-mono text-xs font-bold text-slate-700">
+                              {s.studentCode}
                             </td>
-                            <td className="p-2.5 border border-slate-300 text-xs text-center text-slate-650 font-bold">K{s.grade || "—"}</td>
-                            <td className="p-2.5 border border-slate-300 text-xs text-center font-bold text-amber-700">{s.surveyFormType || "—"}</td>
-                            <td className="p-2.5 border border-slate-300 text-xs text-slate-650 max-w-[200px] truncate" title={s.admissionCriteria}>{s.admissionCriteria || "—"}</td>
+
+                            {/* Họ và tên & Ngày sinh */}
+                            <td className="p-2.5 border border-slate-300 text-xs">
+                              <div className="font-black text-slate-800">{s.fullName}</div>
+                              <div className="text-[10px] text-slate-400 font-medium">
+                                {s.dateOfBirth ? new Date(s.dateOfBirth).toLocaleDateString("vi-VN") : "—"} • {s.gender === "M" || s.gender === "Nam" ? "Nam" : s.gender === "F" || s.gender === "Nữ" ? "Nữ" : s.gender || "—"}
+                              </div>
+                            </td>
+
+                            {/* Khối */}
+                            <td className="p-2.5 border border-slate-300 text-xs text-center font-bold text-slate-700">
+                              K{s.grade || "—"}
+                            </td>
+
+                            {/* Hệ / Diện khảo sát */}
+                            <td className="p-2.5 border border-slate-300 text-xs">
+                              <div className="font-bold text-amber-700 text-[11px]">{s.surveyFormType || "—"}</div>
+                              <div className="text-[10px] text-slate-500 max-w-[170px] truncate" title={s.admissionCriteria}>
+                                {s.admissionCriteria || "—"}
+                              </div>
+                            </td>
+
+                            {/* Điểm KS (Toán, Văn, Anh) */}
+                            <td className="p-2.5 border border-slate-300 text-xs">
+                              {renderStudentScoresCell(s)}
+                            </td>
+
+                            {/* Trạng thái duyệt */}
                             <td className="p-2.5 border border-slate-300 text-xs text-center">
                               {s.isAbsent ? (
                                 <span className="font-bold text-amber-700 bg-amber-50 border border-amber-200 px-2 py-0.5 rounded text-[11px]">
-                                  Vắng khảo sát
+                                  Vắng KS
                                 </span>
                               ) : s.admissionResult ? (
-                                <span className="font-bold text-emerald-700 bg-emerald-50 px-2 py-0.5 rounded text-[11px]">
+                                <span className={`font-bold px-2 py-0.5 rounded text-[11px] inline-flex items-center gap-1 ${
+                                  s.admissionResult.includes("Đạt") && !s.admissionResult.includes("Không") && !s.admissionResult.includes("cam kết")
+                                    ? "bg-emerald-50 text-emerald-700 border border-emerald-200"
+                                    : s.admissionResult.includes("cam kết")
+                                    ? "bg-orange-50 text-orange-700 border border-orange-200"
+                                    : "bg-rose-50 text-rose-700 border border-rose-200"
+                                }`}>
                                   {s.admissionResult}
                                 </span>
                               ) : (
-                                <span className="text-slate-500 bg-slate-50 px-2 py-0.5 rounded text-[11px]">
-                                  Chưa duyệt
+                                <span className="text-amber-700 bg-amber-50 border border-amber-200 px-2 py-0.5 rounded text-[11px] font-semibold">
+                                  Chờ duyệt
                                 </span>
                               )}
                             </td>
+
+                            {/* Duyệt nhanh 1-Click */}
                             <td className="p-2.5 border border-slate-300 text-center">
-                              {!s.admissionResult ? (
-                                <button
-                                  onClick={() => handleSendGdcsApprovalRequestForStudent(s)}
-                                  disabled={sendingApprovalId === s.id}
-                                  title="Gửi yêu cầu xét duyệt đến GĐCS"
-                                  className="p-1.5 rounded-xl hover:bg-slate-100 text-indigo-600 disabled:opacity-50 inline-flex items-center justify-center cursor-pointer transition-colors"
-                                >
-                                  {sendingApprovalId === s.id ? (
-                                    <Loader2 className="w-4 h-4 animate-spin" />
-                                  ) : (
-                                    <Mail className="w-4 h-4" />
-                                  )}
-                                </button>
+                              {isInlineLoading ? (
+                                <Loader2 className="w-4 h-4 animate-spin text-teal-600 mx-auto" />
                               ) : (
-                                <span className="text-slate-300">—</span>
+                                <div className="inline-flex items-center gap-1">
+                                  <button
+                                    onClick={() => handleQuickApproveStudent(s, "Đạt")}
+                                    className={`px-2 py-1 rounded-lg text-[10px] font-bold transition-all cursor-pointer ${
+                                      s.admissionResult === "Đạt"
+                                        ? "bg-emerald-600 text-white shadow-xs"
+                                        : "bg-emerald-50 text-emerald-700 hover:bg-emerald-100 border border-emerald-200"
+                                    }`}
+                                    title="Duyệt Đạt chuẩn"
+                                  >
+                                    Đạt
+                                  </button>
+                                  <button
+                                    onClick={() => handleQuickApproveStudent(s, "Đạt cam kết")}
+                                    className={`px-2 py-1 rounded-lg text-[10px] font-bold transition-all cursor-pointer ${
+                                      s.admissionResult === "Đạt cam kết"
+                                        ? "bg-orange-600 text-white shadow-xs"
+                                        : "bg-orange-50 text-orange-700 hover:bg-orange-100 border border-orange-200"
+                                    }`}
+                                    title="Duyệt Đạt cam kết (chọn môn)"
+                                  >
+                                    Cam kết
+                                  </button>
+                                  <button
+                                    onClick={() => handleQuickApproveStudent(s, "Không đạt")}
+                                    className={`px-2 py-1 rounded-lg text-[10px] font-bold transition-all cursor-pointer ${
+                                      s.admissionResult === "Không đạt"
+                                        ? "bg-rose-600 text-white shadow-xs"
+                                        : "bg-rose-50 text-rose-700 hover:bg-rose-100 border border-rose-200"
+                                    }`}
+                                    title="Duyệt Không đạt"
+                                  >
+                                    K.Đạt
+                                  </button>
+                                </div>
                               )}
                             </td>
+
+                            {/* Thao tác Chi tiết / Email */}
                             <td className="p-2.5 border border-slate-300 text-center">
-                              <button
-                                onClick={() => setReportStudentId(s.id)}
-                                className={`px-3 py-1 rounded-xl text-xs font-black transition-all ${
-                                  isSelected
-                                    ? 'bg-[#48BFE3] text-white shadow-sm'
-                                    : 'bg-white text-[#48BFE3] border border-[#48BFE3] hover:bg-[#48BFE3] hover:text-white'
-                                }`}
-                              >
-                                Chi tiết
-                              </button>
+                              <div className="flex items-center justify-center gap-1">
+                                {!s.admissionResult && (
+                                  <button
+                                    onClick={() => handleSendGdcsApprovalRequestForStudent(s)}
+                                    disabled={sendingApprovalId === s.id}
+                                    title="Gửi yêu cầu xét duyệt đến GĐCS"
+                                    className="p-1 rounded-lg hover:bg-slate-100 text-indigo-600 disabled:opacity-50 inline-flex items-center justify-center cursor-pointer transition-colors"
+                                  >
+                                    {sendingApprovalId === s.id ? (
+                                      <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                                    ) : (
+                                      <Mail className="w-3.5 h-3.5" />
+                                    )}
+                                  </button>
+                                )}
+                                <button
+                                  onClick={() => setReportStudentId(s.id)}
+                                  className={`px-2.5 py-1 rounded-lg text-xs font-bold transition-all cursor-pointer ${
+                                    isSelected
+                                      ? 'bg-[#007A87] text-white shadow-xs'
+                                      : 'bg-white text-[#007A87] border border-[#007A87] hover:bg-[#007A87] hover:text-white'
+                                  }`}
+                                >
+                                  Chi tiết
+                                </button>
+                              </div>
                             </td>
                           </tr>
                         );
@@ -7598,6 +8184,19 @@ const [customCommitmentSubjects, setCustomCommitmentSubjects] = useState<string[
                         disabled={!canApprove}
                       />
                     </Field>
+
+                    <div className="p-3 bg-teal-50/70 rounded-xl border border-teal-200/80 flex items-center gap-3">
+                      <input
+                        type="checkbox"
+                        id="autoSendApprovalEmailCheck"
+                        checked={autoSendApprovalEmail}
+                        onChange={e => setAutoSendApprovalEmail(e.target.checked)}
+                        className="w-4 h-4 text-[#007A87] rounded border-slate-300 focus:ring-teal-500 cursor-pointer"
+                      />
+                      <label htmlFor="autoSendApprovalEmailCheck" className="text-xs font-bold text-teal-900 cursor-pointer select-none">
+                        ✉️ Gửi email kết quả đến GĐCS, Tư vấn Cơ sở và Ban KT&ĐBCL sau khi lưu
+                      </label>
+                    </div>
 
                     <button
                       onClick={handleSaveReportResult}

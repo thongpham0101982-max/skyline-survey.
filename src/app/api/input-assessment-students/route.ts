@@ -600,7 +600,22 @@ export async function PUT(req) {
 
   try {
     const body = await req.json();
-    const { id, data } = body;
+    const { id, ids, data } = body;
+
+    // Hỗ trợ cập nhật hàng loạt (Batch Approval)
+    if (ids && Array.isArray(ids) && ids.length > 0) {
+      const updatePayload: any = {};
+      if (data.admissionResult !== undefined) updatePayload.admissionResult = data.admissionResult;
+      if (data.admissionCampus !== undefined) updatePayload.admissionCampus = data.admissionCampus;
+      if (data.signatureName !== undefined) updatePayload.signatureName = data.signatureName;
+      if (data.directorNote !== undefined) updatePayload.directorNote = data.directorNote;
+
+      const batchRes = await (prisma as any).inputAssessmentStudent.updateMany({
+        where: { id: { in: ids } },
+        data: updatePayload
+      });
+      return NextResponse.json({ success: true, count: batchRes.count });
+    }
 
     // Check if the student belongs to a locked batch
     const student = await (prisma as any).inputAssessmentStudent.findUnique({

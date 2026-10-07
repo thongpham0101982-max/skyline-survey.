@@ -15,6 +15,7 @@ import { TeacherExperienceConfirmModal } from './components/TeacherExperienceCon
 import { AdminObservationKpiCards } from './components/AdminObservationKpiCards';
 import { TeacherObservationReportTab } from './components/TeacherObservationReportTab';
 import { AiObservationPopupTrigger } from '@/components/ai-growth/AiObservationPopupTrigger';
+import { getAssignedCreatorTeacherId, isAssignedSlotCreator } from './utils';
 import { useCampusTheme, CAMPUS_THEMES, CampusThemeType } from "@/hooks/useCampusTheme";
 import { useState, useEffect, useTransition, useMemo, useRef, useCallback } from "react"
 import { createPortal } from "react-dom"
@@ -3043,6 +3044,7 @@ export function ObservationClient(props: ObservationClientProps) {
       const key = `${year}-${month.toString().padStart(2, "0")}`;
       
       const isHost = slot.teacherId === currentTeacher?.id;
+      const isAssignedCreator = isAssignedSlotCreator(slot, currentTeacher?.id);
       const isObserverApproved = (slot.registrations || []).some((r: any) => r.teacherId === currentTeacher?.id && r.isApproved);
       const isSurprise = isSurpriseSlot(slot);
       
@@ -3059,8 +3061,8 @@ export function ObservationClient(props: ObservationClientProps) {
       }
       
       const countWeight = slot.isDoublePeriod ? 2 : 1;
-      if (isHost) {
-        const approvedRegs = (slot.registrations || []).filter((r: any) => r.isApproved);
+      if (isHost || isAssignedCreator) {
+        const approvedRegs = (slot.registrations || []).filter((r: any) => r.isApproved || isSurprise || slot.requestOrigin === "ASSIGNED");
         const allEvaluated = approvedRegs.length > 0 && approvedRegs.some((r: any) => !!r.evaluation);
         if (allEvaluated) {
           stats[key].taughtCount += countWeight;
@@ -3183,13 +3185,14 @@ export function ObservationClient(props: ObservationClientProps) {
 
       const countWeight = slot.isDoublePeriod ? 2 : 1;
       const isHost = slot.teacherId === currentTeacher?.id;
+      const isAssignedCreator = isAssignedSlotCreator(slot, currentTeacher?.id);
       const myReg = (slot.registrations || []).find((r: any) => r.teacherId === currentTeacher?.id);
       const isSurprise = isSurpriseSlot(slot);
       const cat = getSlotCategoryInfo(slot);
 
-      if (isHost) {
+      if (isHost || isAssignedCreator) {
         stats[key].totalTaughtSlots += 1;
-        const approvedRegs = (slot.registrations || []).filter((r: any) => r.isApproved || isSurprise);
+        const approvedRegs = (slot.registrations || []).filter((r: any) => r.isApproved || isSurprise || slot.requestOrigin === "ASSIGNED");
         const hasEval = approvedRegs.some((r: any) => isEvaluationOfficiallyApproved(r.evaluation));
         if (hasEval) {
           stats[key].taughtCount += countWeight;
@@ -3209,8 +3212,8 @@ export function ObservationClient(props: ObservationClientProps) {
           className: slot.className,
           subjectName: slot.subjectName,
           campusName: slot.campusName,
-          role: "HOST",
-          partnerName: approvedRegs.map((r: any) => r.teacher?.teacherName || "Đồng nghiệp").join(", ") || "Chưa có người dự",
+          role: isHost ? "HOST" : "ASSIGNED_CREATOR",
+          partnerName: isHost ? (approvedRegs.map((r: any) => r.teacher?.teacherName || "Đồng nghiệp").join(", ") || "Chưa có người dự") : (slot.teacher?.teacherName ? `GV dạy: ${slot.teacher.teacherName}` : "Đồng nghiệp"),
           category: cat,
           isSurprise,
           isDoublePeriod: !!slot.isDoublePeriod,
@@ -3696,7 +3699,7 @@ export function ObservationClient(props: ObservationClientProps) {
   };
 
   const myTaughtSlots = useMemo(() => {
-    return (personalSlots || []).filter(slot => slot.teacherId === currentTeacher?.id)
+    return (personalSlots || []).filter(slot => slot.teacherId === currentTeacher?.id || isAssignedSlotCreator(slot, currentTeacher?.id))
       .sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
   }, [personalSlots, currentTeacher?.id]);
 
@@ -3751,7 +3754,7 @@ export function ObservationClient(props: ObservationClientProps) {
   const myValidObservedSlots = useMemo(() => {
     return myObservedSlots.filter(slot => {
       const reg = (slot.registrations || []).find((r: any) => r.teacherId === currentTeacher?.id);
-      return reg && (reg.isApproved || isSurpriseSlot(slot) || !!reg.evaluation) && isEvaluationOfficiallyApproved(reg.evaluation);
+      return reg && (reg.isApproved || isSurpriseSlot(slot) || slot.requestOrigin === "ASSIGNED" || !!reg.evaluation) && isEvaluationOfficiallyApproved(reg.evaluation);
     });
   }, [myObservedSlots, currentTeacher?.id]);
 
@@ -3789,7 +3792,7 @@ export function ObservationClient(props: ObservationClientProps) {
   // Tiết dạy hợp lệ: Tiết dạy ít nhất có 1 phiếu đánh giá từ người dự được duyệt chính thức
   const myValidTaughtSlots = useMemo(() => {
     return myTaughtSlots.filter(slot => {
-      const approvedRegs = slot.registrations?.filter((r: any) => r.isApproved || isSurpriseSlot(slot)) || [];
+      const approvedRegs = slot.registrations?.filter((r: any) => r.isApproved || isSurpriseSlot(slot) || slot.requestOrigin === "ASSIGNED") || [];
       return approvedRegs.some((r: any) => isEvaluationOfficiallyApproved(r.evaluation));
     });
   }, [myTaughtSlots]);
@@ -6192,7 +6195,7 @@ export function ObservationClient(props: ObservationClientProps) {
                                 )}
                                 {slot.requestOrigin === "ASSIGNED" && (
                                   <span className="px-1.5 py-0.5 text-[9px] font-semibold bg-purple-50 text-purple-700 border border-purple-200 rounded shrink-0">
-                                    Chỉ định
+                                    {isAssignedSlotCreator(slot, currentTeacher?.id) ? "Chỉ định (Người chỉ đạo)" : "Chỉ định"}
                                   </span>
                                 )}
                                 {slot.isDoublePeriod && (
@@ -6207,6 +6210,9 @@ export function ObservationClient(props: ObservationClientProps) {
                                 </span>
                                 <span className="text-slate-400">•</span>
                                 <span className="text-slate-600 font-bold">Lớp {slot.className || "Chưa xếp"}</span>
+                                {slot.requestOrigin === "ASSIGNED" && isAssignedSlotCreator(slot, currentTeacher?.id) && slot.teacherId !== currentTeacher?.id && (
+                                  <span className="text-purple-700 font-black">• GV dạy: {slot.teacher?.teacherName || "Đồng nghiệp"}</span>
+                                )}
                               </div>
                             </div>
                           </td>

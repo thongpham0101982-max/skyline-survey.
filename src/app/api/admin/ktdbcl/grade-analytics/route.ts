@@ -619,62 +619,111 @@ export async function GET(request: Request) {
       return null
     }
 
-    // 3.1 Fetch StudentLearningCommitment (Cam kết học tập hiện hành)
-    const learningCommitmentMap = new Map<string, any>()
-    if (studentIds.length > 0 && p.studentLearningCommitment?.findMany) {
-      try {
-        const commitments = await p.studentLearningCommitment.findMany({
-          where: {
-            studentId: { in: studentIds },
-            ...(academicYearId ? { academicYearId } : {}),
-            status: "ACTIVE"
-          }
-        })
-        commitments.forEach((c: any) => {
-          learningCommitmentMap.set(c.studentId, c)
-        })
-      } catch (e) {
-        console.warn("Lỗi khi đọc studentLearningCommitment:", e)
-      }
+    // 3.1 - 3.4 & 4 - 5 Parallel fetching of dependencies
+    const homeroomIds = Array.from(new Set(filteredClasses.map(c => c.homeroomTeacherId).filter(Boolean)))
+    const entryWhere: any = {
+      academicYearId,
+      classId: { in: classIds }
+    }
+    if (subjectId && subjectId !== "ALL") {
+      entryWhere.subjectId = subjectId
     }
 
-    // 3.2 Fetch Teaching Assignments for teacher lookup
-    const teachingAssignments = p.teachingAssignment?.findMany
-      ? await p.teachingAssignment.findMany({
-          where: {
-            classId: { in: classIds },
-            ...(academicYearId ? { academicYearId } : {})
-          },
-          include: {
-            teacher: true,
-            subject: true
-          }
-        })
-      : []
+    const [
+      commitments,
+      teachingAssignments,
+      homeroomTeachers,
+      benchmarkConfigs,
+      allEntries,
+      surveyConfigs
+    ] = await Promise.all([
+      studentIds.length > 0 && p.studentLearningCommitment?.findMany
+        ? p.studentLearningCommitment.findMany({
+            where: {
+              studentId: { in: studentIds },
+              ...(academicYearId ? { academicYearId } : {}),
+              status: "ACTIVE"
+            }
+          }).catch((err: any) => {
+            console.warn("Lỗi khi đọc studentLearningCommitment:", err)
+            return []
+          })
+        : Promise.resolve([]),
+      p.teachingAssignment?.findMany
+        ? p.teachingAssignment.findMany({
+            where: {
+              classId: { in: classIds },
+              ...(academicYearId ? { academicYearId } : {})
+            },
+            include: {
+              teacher: true,
+              subject: true
+            }
+          }).catch((err: any) => {
+            console.warn("Lỗi khi đọc teachingAssignment:", err)
+            return []
+          })
+        : Promise.resolve([]),
+      homeroomIds.length > 0 && p.teacher?.findMany
+        ? p.teacher.findMany({
+            where: { id: { in: homeroomIds } },
+            select: { id: true, teacherName: true, teacherCode: true }
+          }).catch((err: any) => {
+            console.warn("Lỗi khi đọc teacher:", err)
+            return []
+          })
+        : Promise.resolve([]),
+      p.subjectBenchmarkConfig?.findMany
+        ? p.subjectBenchmarkConfig.findMany({
+            where: { academicYearId }
+          }).catch((err: any) => {
+            console.warn("Lỗi khi đọc subjectBenchmarkConfig:", err)
+            return []
+          })
+        : Promise.resolve([]),
+      p.subjectGradeEntry?.findMany
+        ? p.subjectGradeEntry.findMany({
+            where: entryWhere,
+            include: {
+              subject: {
+                select: {
+                  id: true,
+                  subjectCode: true,
+                  subjectName: true
+                }
+              }
+            }
+          }).catch((err: any) => {
+            console.warn("Lỗi khi đọc subjectGradeEntry:", err)
+            return []
+          })
+        : Promise.resolve([]),
+      p.subjectGradeConfig?.findMany
+        ? p.subjectGradeConfig.findMany({
+            where: {
+              academicYearId,
+              evaluationPeriod: { in: [currentPeriod, baselinePeriod, "ALL"] }
+            },
+            include: { subject: true }
+          }).catch((err: any) => {
+            console.warn("Lỗi khi đọc subjectGradeConfig:", err)
+            return []
+          })
+        : Promise.resolve([])
+    ])
+
+    const learningCommitmentMap = new Map<string, any>()
+    commitments.forEach((c: any) => {
+      learningCommitmentMap.set(c.studentId, c)
+    })
+
     const taMap = new Map<string, any>()
     teachingAssignments.forEach((ta: any) => {
       taMap.set(`${ta.classId}_${ta.subjectId}`, ta)
     })
 
-    // 3.3 Fetch homeroom teachers
-    const homeroomIds = Array.from(new Set(filteredClasses.map(c => c.homeroomTeacherId).filter(Boolean)))
-    const homeroomTeachers = (homeroomIds.length > 0 && p.teacher?.findMany)
-      ? await p.teacher.findMany({
-          where: { id: { in: homeroomIds } },
-          select: { id: true, teacherName: true, teacherCode: true }
-        })
-      : []
     const homeroomMap = new Map<string, any>()
     homeroomTeachers.forEach((t: any) => homeroomMap.set(t.id, t))
-
-    // 3.4 Fetch SubjectBenchmarkConfig for academicYearId
-    const benchmarkConfigs = p.subjectBenchmarkConfig?.findMany
-      ? await p.subjectBenchmarkConfig.findMany({
-          where: {
-            academicYearId
-          }
-        })
-      : []
 
     // Benchmark resolver helper: Priority: (subject + grade + period) -> (subject + grade) -> level -> default (7.0 for Tiểu học, 6.0 for Trung học)
     const resolveBenchmark = (level: string, grade: string, subId: string, period: string): number => {
@@ -707,30 +756,6 @@ export async function GET(request: Request) {
       return defaultScore
     }
 
-    // 4. Fetch grade entries
-    const entryWhere: any = {
-      academicYearId,
-      classId: { in: classIds }
-    }
-    if (subjectId && subjectId !== "ALL") {
-      entryWhere.subjectId = subjectId
-    }
-
-    const allEntries = p.subjectGradeEntry?.findMany
-      ? await p.subjectGradeEntry.findMany({
-          where: entryWhere,
-          include: {
-            subject: {
-              select: {
-                id: true,
-                subjectCode: true,
-                subjectName: true
-              }
-            }
-          }
-        })
-      : []
-
     // Index entries by: studentId -> subjectId -> period -> entry
     const studentSubjectPeriodMap = new Map<string, Map<string, Map<string, any>>>()
     allEntries.forEach((entry: any) => {
@@ -743,17 +768,6 @@ export async function GET(request: Request) {
       }
       subMap.get(entry.subjectId)!.set(entry.evaluationPeriod, entry)
     })
-
-    // 5. Distinct subjects strictly belonging to the Survey Periods (currentPeriod & baselinePeriod)
-    const surveyConfigs = p.subjectGradeConfig?.findMany
-      ? await p.subjectGradeConfig.findMany({
-          where: {
-            academicYearId,
-            evaluationPeriod: { in: [currentPeriod, baselinePeriod, "ALL"] }
-          },
-          include: { subject: true }
-        })
-      : []
 
     const subjectMap = new Map<string, { id: string; name: string; code: string }>()
 
@@ -1216,7 +1230,7 @@ export async function GET(request: Request) {
         },
         english: {
           isCommitted: isEngCommitted,
-          isGrade1: isGrade1Student,
+          isGrade1: false,
           entranceTotal100: engEntranceTotal100,
           entranceScale10: engEntranceScale10,
           oralScore: cand.oralEnglishScore,

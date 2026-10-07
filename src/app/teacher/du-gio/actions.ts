@@ -1,6 +1,8 @@
 // @ts-nocheck
 "use server"
 
+import { buildAssignedCreatorTag, getAssignedCreatorTeacherId, isAssignedSlotCreator } from "./utils"
+
 function getTeacherResolvedEmail(teacher: any, allowSystemEmail = false): string | null {
   if (!teacher) return null;
 
@@ -2765,7 +2767,21 @@ export async function updateObservationSlot(slotId: string, data: {
         endTime: data.endTime,
         isDoublePeriod: data.isDoublePeriod,
         room: data.room || null,
-        description: data.description || null,
+        description: (() => {
+          let desc = data.description || null;
+          if (slot.requestOrigin === "ASSIGNED") {
+            const existingCreatorId = getAssignedCreatorTeacherId(slot);
+            if (existingCreatorId) {
+              const tag = buildAssignedCreatorTag(existingCreatorId);
+              if (!desc) {
+                desc = `${tag} Chỉ định dự giờ từ Cán bộ quản lý`;
+              } else if (!desc.includes("[ASSIGNED:creatorId=")) {
+                desc = `${tag} ${desc.replace(/^\[ASSIGNED\]\s*/, "")}`;
+              }
+            }
+          }
+          return desc;
+        })(),
         visibilityType: data.visibilityType,
         targetDeptId: data.targetDeptId || null,
         campusId: data.campusId || null,
@@ -6554,7 +6570,7 @@ export async function createAssignedObservation(data: {
         startTime: data.period || timeRange.start,
         endTime: timeRange.end,
         room: data.room || "Phòng học",
-        description: data.notes ? `[ASSIGNED] ${data.notes.trim()}` : "Chỉ định dự giờ từ Cán bộ quản lý",
+        description: data.notes ? `${buildAssignedCreatorTag(currentTeacher?.id || "")} ${data.notes.trim()}` : `${buildAssignedCreatorTag(currentTeacher?.id || "")} Chỉ định dự giờ từ Cán bộ quản lý`,
         visibilityType: "PUBLIC",
         maxSeats: Math.max(4, data.observerTeacherIds.length + 2),
         status: "ACTIVE",

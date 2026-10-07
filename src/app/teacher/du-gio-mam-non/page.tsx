@@ -5,6 +5,7 @@ import { auth } from "@/lib/auth"
 import { redirect } from "next/navigation"
 import { getObservationData, getObservationSlots } from "@/app/teacher/du-gio/actions"
 import { ObservationClient } from "@/app/teacher/du-gio/client"
+import { isAssignedSlotCreator } from "@/app/teacher/du-gio/utils"
 import { Suspense } from "react"
 
 export default async function PreschoolObservationPage(props: {
@@ -56,7 +57,11 @@ export default async function PreschoolObservationPage(props: {
   const currentTeacherId = refDataResult.currentTeacher?.id;
   const loadedSlots = slotsResult.success ? (slotsResult.slots || []) : [];
   const myPersonalSlots = currentTeacherId
-    ? loadedSlots.filter((s: any) => s.teacherId === currentTeacherId || s.registrations?.some((r: any) => r.teacherId === currentTeacherId))
+    ? loadedSlots.filter((s: any) => 
+        s.teacherId === currentTeacherId || 
+        s.registrations?.some((r: any) => r.teacherId === currentTeacherId) ||
+        isAssignedSlotCreator(s, currentTeacherId)
+      )
     : [];
 
   return (

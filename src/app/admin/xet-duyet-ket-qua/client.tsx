@@ -1,5 +1,6 @@
 "use client"
-import { useState } from "react"
+import { useState, useEffect } from "react"
+import { useSearchParams, useRouter } from "next/navigation"
 import { GraduationCap, Baby, AlertCircle } from "lucide-react"
 import { XetDuyetK12Client } from "./k12-client"
 import { XetDuyetMamNonClient } from "./mam-non-client"
@@ -17,6 +18,7 @@ interface Props {
   configs: any[]
   teachers: any[]
   departments: any[]
+  destinationSchools?: any[]
   currentUser?: { id: string; role: string; campusIds: string[]; fullName?: string } | null
   rolePermissions?: any[]
   classes?: any[]
@@ -40,6 +42,10 @@ export function XetDuyetKetQuaClient({
   rolePermissions = [],
   classes = []
 }: Props) {
+  const searchParams = useSearchParams()
+  const router = useRouter()
+  const tabParam = searchParams?.get("tab")
+
   const userRole = (currentUser?.role || "").toUpperCase()
   const isAdmin = userRole === "ADMIN" || userRole === "KT_DBCL" || userRole === "KTDBCL"
   const isBghPreschoolRole = ["BGH_MN", "BGH MN", "BGH_MAM_NON", "BGH MẦM NON", "BGH MÂM NON", "BGH", "BGH_CS"].includes(userRole)
@@ -52,8 +58,28 @@ export function XetDuyetKetQuaClient({
                         isGdcsRole ||
                         rolePermissions.some(p => p.canRead && (p.module === "XET_DUYET_MAM_NON" || p.module === "XET_DUYET_KET_QUA" || p.module === "PRESCHOOL_INPUT_ASSESSMENTS"))
 
-  const defaultTab = hasK12 ? "k12" : (hasPreschool ? "preschool" : null)
+  const defaultTab = tabParam === "preschool" && hasPreschool
+    ? "preschool"
+    : tabParam === "k12" && hasK12
+    ? "k12"
+    : hasK12 ? "k12" : (hasPreschool ? "preschool" : null)
+
   const [activeTab, setActiveTab] = useState<"k12" | "preschool" | null>(defaultTab)
+
+  useEffect(() => {
+    if (tabParam === "preschool" && hasPreschool && activeTab !== "preschool") {
+      setActiveTab("preschool")
+    } else if (tabParam === "k12" && hasK12 && activeTab !== "k12") {
+      setActiveTab("k12")
+    }
+  }, [tabParam, hasPreschool, hasK12])
+
+  const handleTabChange = (newTab: "k12" | "preschool") => {
+    setActiveTab(newTab)
+    const newParams = new URLSearchParams(searchParams?.toString() || "")
+    newParams.set("tab", newTab)
+    router.replace(`/admin/xet-duyet-ket-qua?${newParams.toString()}`)
+  }
 
   if (!hasK12 && !hasPreschool) {
     return (
@@ -88,8 +114,8 @@ export function XetDuyetKetQuaClient({
         {hasK12 && hasPreschool && (
           <div className="flex p-1 bg-slate-100 rounded-xl gap-1 shrink-0">
             <button
-              onClick={() => setActiveTab("k12")}
-              className={`flex items-center gap-2 px-5 py-2.5 rounded-lg text-xs font-bold transition-all duration-200 ${
+              onClick={() => handleTabChange("k12")}
+              className={`flex items-center gap-2 px-5 py-2.5 rounded-lg text-xs font-bold transition-all duration-200 cursor-pointer ${
                 activeTab === "k12"
                   ? "bg-[#48BFE3] text-white shadow-md shadow-teal-500/10"
                   : "text-slate-600 hover:text-slate-800 hover:bg-slate-200/40"
@@ -99,8 +125,8 @@ export function XetDuyetKetQuaClient({
               Xét duyệt K-12
             </button>
             <button
-              onClick={() => setActiveTab("preschool")}
-              className={`flex items-center gap-2 px-5 py-2.5 rounded-lg text-xs font-bold transition-all duration-200 ${
+              onClick={() => handleTabChange("preschool")}
+              className={`flex items-center gap-2 px-5 py-2.5 rounded-lg text-xs font-bold transition-all duration-200 cursor-pointer ${
                 activeTab === "preschool"
                   ? "bg-[#48BFE3] text-white shadow-md shadow-teal-500/10"
                   : "text-slate-600 hover:text-slate-800 hover:bg-slate-200/40"

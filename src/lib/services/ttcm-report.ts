@@ -285,8 +285,18 @@ export async function sendReportForDepartment(
         });
       }
 
+      // Check creator teacher for ASSIGNED slot (người chỉ định tiết dạy cũng ghi nhận tiết dạy)
+      if (slot.requestOrigin === "ASSIGNED" && hasEvaluations) {
+        const creatorIdMatch = (slot.description || "").match(/\[ASSIGNED:creatorId=([^\]\s:]+)\]/);
+        const creatorTeacherId = creatorIdMatch ? creatorIdMatch[1] : null;
+        if (creatorTeacherId && teacherStatsMap[creatorTeacherId] && creatorTeacherId !== slot.teacherId) {
+          teacherStatsMap[creatorTeacherId].taughtCount += increment;
+          teacherStatsMap[creatorTeacherId].teachingSlots.push(slot);
+        }
+      }
+
       slot.registrations?.forEach(reg => {
-        if (reg.isApproved && reg.evaluation && reg.evaluation?.reEvaluationStatus !== "DRAFT" && teacherIds.includes(reg.teacherId)) {
+        if ((reg.isApproved || slot.requestOrigin === "ASSIGNED") && reg.evaluation && reg.evaluation?.reEvaluationStatus !== "DRAFT" && teacherIds.includes(reg.teacherId)) {
           if (teacherStatsMap[reg.teacherId]) {
             teacherStatsMap[reg.teacherId].observedCount += increment;
             if (isSurprise) {

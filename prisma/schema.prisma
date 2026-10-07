@@ -160,6 +160,7 @@ model AcademicYear {
   learningSupportOutcomeConfigs   LearningSupportOutcomeConfig[]
   learningCommitments             StudentLearningCommitment[]
   subjectGradeConfigs             SubjectGradeConfig[]
+  inputAssessmentGradeConfigs     InputAssessmentGradeConfig[]
   subjectGradeEntries             SubjectGradeEntry[]
   careerOrientations             StudentCareerOrientation[]
   studentGoals                   StudentGoal[]
@@ -1813,6 +1814,37 @@ model SubjectGradeConfig {
   @@unique([academicYearId, grade, subjectId, evaluationPeriod])
   @@index([academicYearId])
 }
+
+model InputAssessmentGradeConfig {
+  id                  String   @id @default(cuid())
+  academicYearId      String
+  periodId            String?  @default("ALL")
+  educationSystemId   String?  @default("ALL")
+  grade               String   @default("ALL")
+  subjectId           String
+  columnCount         Int      @default(1)
+  columnNames         String   @default("[\"Điểm 1\"]")
+  columnTypes         String?  @default("[]")
+  columnMaxScores     String?  @default("[]")
+  hasCompositeColumn  Boolean  @default(true)
+  compositeColumnName String?  @default("Điểm tổng hợp")
+  hasRemarkColumn     Boolean  @default(true)
+  formula             String?  @default("AVERAGE")
+  formulaCustom       String?
+  weights             String?
+  roundingRule        String?  @default("ROUND_1")
+  passScore           Float?
+  commitmentThreshold Float?
+  status              String   @default("ACTIVE")
+  createdAt           DateTime @default(now())
+  updatedAt           DateTime @updatedAt
+
+  academicYear        AcademicYear @relation(fields: [academicYearId], references: [id], onDelete: Cascade)
+
+  @@unique([academicYearId, periodId, educationSystemId, grade, subjectId])
+  @@index([academicYearId, grade, educationSystemId])
+}
+
 
 
 model GradebookLock {
