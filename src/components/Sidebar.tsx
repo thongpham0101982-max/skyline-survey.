@@ -972,7 +972,7 @@ function SidebarContent({ role, permissionModules, actualRole, taskCount = 0, is
                 }`}
               >
                 <Award className="w-4 h-4 mr-2.5 text-amber-300 shrink-0" />
-                {!isCollapsed && <span className="whitespace-nowrap overflow-hidden text-ellipsis">Kết quả khảo sát</span>}
+                {!isCollapsed && <span className="whitespace-nowrap overflow-hidden text-ellipsis">Điểm kiểm tra</span>}
               </Link>
 
               <Link 

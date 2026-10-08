@@ -3,7 +3,13 @@ export const dynamic = "force-dynamic"
 export const revalidate = 0
 import { auth } from "@/lib/auth"
 import { redirect } from "next/navigation"
-import { getTeacherGrowthProfile, getInspirationBoardData } from "./actions"
+import {
+  getTeacherGrowthProfile,
+  getInspirationBoardData,
+  getTeacherObservationSynthesis,
+  getAllChallengesTracking,
+  getSchoolGamificationStats
+} from "./actions"
 import { TeacherQuestDashboard } from "@/components/ai-growth/TeacherQuestDashboard"
 
 export default async function TeacherAiGrowthPage() {
@@ -12,9 +18,12 @@ export default async function TeacherAiGrowthPage() {
     redirect("/login")
   }
 
-  const [profileResult, boardResult] = await Promise.all([
+  const [profileResult, boardResult, synthesisResult, trackingResult, gamificationResult] = await Promise.all([
     getTeacherGrowthProfile(),
-    getInspirationBoardData()
+    getInspirationBoardData(),
+    getTeacherObservationSynthesis(),
+    getAllChallengesTracking(),
+    getSchoolGamificationStats()
   ])
 
   if (!profileResult.success) {
@@ -31,6 +40,9 @@ export default async function TeacherAiGrowthPage() {
         <TeacherQuestDashboard
           profileData={profileResult}
           boardData={boardResult}
+          synthesisData={synthesisResult}
+          trackingData={trackingResult}
+          gamificationData={gamificationResult}
         />
       </Suspense>
     </div>

@@ -116,15 +116,269 @@ export async function getTeacherGrowthProfile() {
 }
 
 // ==========================================
-// 2. DRAW 3 MYSTIC CHALLENGE CARDS
+// 1.1 K-12 CRITERIA METADATA FOR SYNTHESIS
 // ==========================================
-export async function drawRandomCards(subjectCode?: string, grade?: string) {
+const K12_CRITERIA_META = [
+  { key: "score1", code: "Y1", name: "Mục tiêu bài dạy (YCCĐ GDPT 2018)", max: 1.5, section: "Kế hoạch & Học liệu" },
+  { key: "score2", code: "Y2", name: "Thiết bị dạy học & học liệu số", max: 1.5, section: "Kế hoạch & Học liệu" },
+  { key: "score3", code: "Y3", name: "Mức độ phù hợp của nội dung bài học", max: 2.0, section: "Tổ chức hoạt động học" },
+  { key: "score4", code: "Y4", name: "Phân bổ thời gian hoạt động học tập", max: 1.5, section: "Tổ chức hoạt động học" },
+  { key: "score5", code: "Y5", name: "Phương pháp & kỹ thuật dạy học tích cực", max: 1.5, section: "Tổ chức hoạt động học" },
+  { key: "score6", code: "Y6", name: "Tổ chức, chuyển giao nhiệm vụ cho HS", max: 2.0, section: "Tổ chức hoạt động học" },
+  { key: "score7", code: "Y7", name: "Hoạt động & khả năng làm chủ của học sinh", max: 3.0, section: "Hoạt động của học sinh" },
+  { key: "score8", code: "Y8", name: "Ứng dụng CNTT, AI & chuyển đổi số", max: 2.0, section: "Tổ chức hoạt động học" },
+  { key: "score9", code: "Y9", name: "Tương tác, đánh giá thường xuyên & phản hồi", max: 1.5, section: "Hoạt động của học sinh" },
+  { key: "score10", code: "Y10", name: "Năng lực tự chủ, hợp tác & phản biện của HS", max: 2.0, section: "Hoạt động của học sinh" },
+  { key: "score11", code: "Y11", name: "Không khí giờ dạy & mức độ đạt mục tiêu", max: 1.5, section: "Hoạt động của học sinh" }
+];
+
+// ==========================================
+// 1.2 GET TEACHER OBSERVATION SYNTHESIS (AI PEDAGOGICAL PROFILE)
+// ==========================================
+export async function getTeacherObservationSynthesis(targetTeacherId?: string) {
   try {
     const session = await auth();
-    let excludeIds: string[] = [];
+    let teacher = null;
+
+    if (targetTeacherId) {
+      teacher = await prisma.teacher.findUnique({
+        where: { id: targetTeacherId },
+        include: { campus: true, departmentRel: true }
+      });
+    } else if (session?.user?.id) {
+      teacher = await prisma.teacher.findFirst({
+        where: {
+          OR: [{ userId: session.user.id }, { email: session.user.email || "" }]
+        },
+        include: { campus: true, departmentRel: true }
+      });
+    }
+
+    if (!teacher) {
+      return { success: false, error: "Không tìm thấy hồ sơ giáo viên" };
+    }
+
+    // Fetch observation slots and evaluations for this teacher
+    const slots = await prisma.observationSlot.findMany({
+      where: {
+        teacherId: teacher.id,
+        status: { notIn: ["CANCELLED"] }
+      },
+      include: {
+        registrations: {
+          include: {
+            evaluation: true,
+            teacher: { select: { id: true, teacherName: true } }
+          }
+        }
+      },
+      orderBy: { date: "desc" }
+    });
+
+    const evaluations = [];
+    for (const slot of slots) {
+      for (const reg of slot.registrations) {
+        if (reg.evaluation) {
+          evaluations.push({
+            ...reg.evaluation,
+            slotTopic: slot.topic,
+            slotSubject: slot.subjectName,
+            slotClass: slot.className,
+            slotDate: slot.date,
+            slotLevel: slot.level,
+            observerName: reg.teacher?.teacherName || "Đồng nghiệp dự giờ"
+          });
+        }
+      }
+    }
+
+    const totalEvaluatedSlots = slots.filter(s => s.registrations.some(r => r.evaluation)).length;
+    const totalEvaluations = evaluations.length;
+
+    let scoreSum = 0;
+    let scoredCount = 0;
+    const ratingStats = { Giỏi: 0, Khá: 0, "Trung bình": 0, "Chưa đạt": 0, Khác: 0 };
+    const strengthsList = [];
+    const improvementsList = [];
+
+    // Analyze criteria scores
+    const criteriaSums = Array(11).fill(0);
+    const criteriaCounts = Array(11).fill(0);
+
+    for (const ev of evaluations) {
+      if (ev.totalScore !== null && ev.totalScore !== undefined) {
+        scoreSum += Number(ev.totalScore);
+        scoredCount++;
+      }
+
+      const rating = ev.overallRating || "";
+      if (rating === "Giỏi" || rating === "Tốt") ratingStats.Giỏi++;
+      else if (rating === "Khá") ratingStats.Khá++;
+      else if (rating === "Trung bình" || rating === "Đạt") ratingStats["Trung bình"]++;
+      else if (rating === "Chưa đạt") ratingStats["Chưa đạt"]++;
+      else if (rating) ratingStats.Khác++;
+
+      if (ev.strengths && ev.strengths.trim()) {
+        strengthsList.push({
+          text: ev.strengths.trim(),
+          observer: ev.observerName,
+          topic: ev.slotTopic,
+          date: ev.slotDate ? new Date(ev.slotDate).toLocaleDateString("vi-VN") : ""
+        });
+      }
+      if (ev.improvements && ev.improvements.trim()) {
+        improvementsList.push({
+          text: ev.improvements.trim(),
+          observer: ev.observerName,
+          topic: ev.slotTopic,
+          date: ev.slotDate ? new Date(ev.slotDate).toLocaleDateString("vi-VN") : ""
+        });
+      }
+
+      for (let i = 1; i <= 11; i++) {
+        const val = ev[`score${i}`];
+        if (val !== null && val !== undefined) {
+          criteriaSums[i - 1] += Number(val);
+          criteriaCounts[i - 1]++;
+        }
+      }
+    }
+
+    const avgScore = scoredCount > 0 ? Number((scoreSum / scoredCount).toFixed(2)) : 0;
+
+    const criteriaStats = K12_CRITERIA_META.map((meta, idx) => {
+      const count = criteriaCounts[idx];
+      const avg = count > 0 ? Number((criteriaSums[idx] / count).toFixed(2)) : 0;
+      const percent = meta.max > 0 ? Number(((avg / meta.max) * 100).toFixed(1)) : 0;
+      return {
+        code: meta.code,
+        name: meta.name,
+        max: meta.max,
+        avg,
+        percent,
+        count,
+        section: meta.section
+      };
+    });
+
+    // Top strengths criteria & Growth opportunities
+    const scoredCriteria = criteriaStats.filter(c => c.count > 0);
+    const sortedCriteria = [...scoredCriteria].sort((a, b) => b.percent - a.percent);
+    const topStrengthsCriteria = sortedCriteria.slice(0, 3);
+    const growthCriteria = sortedCriteria.slice(-3).reverse();
+
+    // Analyze text themes
+    const textBlob = improvementsList.map(i => i.text).join(" ").toLowerCase();
+    const detectedThemes = [];
+    const recommendedChallengeCodes = [];
+
+    if (/phân hóa|nâng cao|hoàn thành sớm|nhóm khá|bù đắp|gap|chậm|đối tượng/.test(textBlob) || growthCriteria.some(g => g.code === "Y7" || g.code === "Y10")) {
+      detectedThemes.push({
+        theme: "DẠY HỌC PHÂN HÓA",
+        desc: "Thiết kế các mức độ nhiệm vụ khác nhau theo định hướng GDPT 2018 (hỗ trợ nhóm chậm, mở rộng cho nhóm hoàn thành sớm).",
+        icon: "Target"
+      });
+      recommendedChallengeCodes.push("CHAL_3_TIER_QUESTIONS", "CHAL_ONE_TASK_THREE_LEVELS", "CHAL_EXTEND_CHALLENGE", "CHAL_GAP_SUPPORT");
+    }
+
+    if (/chủ động|thụ động|giảm thời gian gv|tự học|làm chủ|nói nhiều|thảo luận|hoạt động nhóm/.test(textBlob) || growthCriteria.some(g => g.code === "Y6" || g.code === "Y7")) {
+      detectedThemes.push({
+        theme: "PHÁT HUY TÍNH TÍCH CỰC & LÀM CHỦ",
+        desc: "Chuyển trọng tâm từ truyền thụ một chiều sang học sinh tích cực kiến tạo và tự chủ chiếm lĩnh tri thức.",
+        icon: "Users"
+      });
+      recommendedChallengeCodes.push("CHAL_5MIN_NO_TALK", "CHAL_THINK_PAIR_SHARE", "CHAL_STUDENT_AS_TEACHER", "CHAL_LEARNING_STATION");
+    }
+
+    if (/công nghệ|cntt|ai|slide|máy chiếu|font|hình ảnh|app|phần mềm|video|trực quan/.test(textBlob) || growthCriteria.some(g => g.code === "Y8" || g.code === "Y2")) {
+      detectedThemes.push({
+        theme: "ỨNG DỤNG CÔNG NGHỆ & EDTECH",
+        desc: "Tích hợp công cụ số, AI hỗ trợ học liệu và tương tác trực quan nâng cao sự tập trung của học sinh.",
+        icon: "Bot"
+      });
+      recommendedChallengeCodes.push("CHAL_AI_HOOK", "CHAL_AI_VISUAL", "CHAL_EXIT_TICKET", "CHAL_WOW_MOMENT");
+    }
+
+    if (/câu hỏi|hỏi đáp|tương tác|phản biện|tranh luận|tranh biện|suy nghĩ|thắc mắc/.test(textBlob) || growthCriteria.some(g => g.code === "Y9" || g.code === "Y5")) {
+      detectedThemes.push({
+        theme: "KỸ THUẬT ĐẶT CÂU HỎI & PHẢN BIỆN",
+        desc: "Khai thác câu hỏi mở, kích hoạt tư duy phản biện và rèn luyện kỹ năng tranh luận học thuật.",
+        icon: "Sparkles"
+      });
+      recommendedChallengeCodes.push("CHAL_OPEN_QUESTION", "CHAL_REVERSE_QA", "CHAL_MINI_DEBATE", "CHAL_60S_THINKING");
+    }
+
+    if (/thời gian|tiến trình|cháy giáo án|gộp|nhịp độ|phân bổ/.test(textBlob) || growthCriteria.some(g => g.code === "Y4")) {
+      detectedThemes.push({
+        theme: "QUẢN LÝ TIẾN TRÌNH & THỜI GIAN",
+        desc: "Tối ưu hóa thời gian các hoạt động, chuyển giao nhiệm vụ dứt khoát để không bị quá tải cuối giờ.",
+        icon: "Clock"
+      });
+      recommendedChallengeCodes.push("CHAL_60S_THINKING", "CHAL_EXIT_TICKET", "CHAL_5MIN_NO_TALK");
+    }
+
+    // Default themes if teacher has few evaluations
+    if (detectedThemes.length === 0) {
+      detectedThemes.push(
+        { theme: "ĐỔI MỚI PHƯƠNG PHÁP GDPT 2018", desc: "Tăng cường hoạt động trải nghiệm, làm việc nhóm và phát triển năng lực tự chủ.", icon: "Sparkles" },
+        { theme: "ỨNG DỤNG CÔNG NGHỆ TRONG DẠY HỌC", desc: "Sử dụng công cụ trực quan và AI để tạo cảm hứng mở đầu tiết học.", icon: "Bot" }
+      );
+      recommendedChallengeCodes.push("CHAL_5MIN_NO_TALK", "CHAL_AI_HOOK", "CHAL_OPEN_QUESTION", "CHAL_THINK_PAIR_SHARE");
+    }
+
+    // Construct AI Pedagogical Consultation Text
+    const primaryStrength = topStrengthsCriteria[0] ? `${topStrengthsCriteria[0].name} (${topStrengthsCriteria[0].percent}%)` : "tiến trình chuẩn mực";
+    const primaryGrowth = growthCriteria[0] ? `${growthCriteria[0].name}` : "tăng tính chủ động của học sinh";
+    const themeTitles = detectedThemes.map(t => t.theme).join(" • ");
+
+    const aiConsultation = {
+      summary: `Thầy/Cô ${teacher.teacherName} có phong cách sư phạm vững vàng, đặc biệt nổi trội ở ${primaryStrength}. Dựa trên các phiếu dự giờ đã qua, dư địa đổi mới sáng tạo nằm ở ${primaryGrowth}.`,
+      gdptOrientation: "Bám sát Chương trình GDPT 2018: Thầy/Cô được khuyến khích áp dụng dạy học phân hóa và chuyển giao quyền làm chủ cho học sinh, giúp các em tự tin trình bày và giải quyết vấn đề thực tiễn.",
+      edtechOrientation: "Ứng dụng Công nghệ & AI: Tận dụng các công cụ AI và nền tảng số để thiết kế tình huống mở đầu bất ngờ, tạo câu hỏi phân tầng và thu thập phản hồi Exit Ticket nhanh chóng.",
+      highlightThemes: themeTitles
+    };
+
+    return {
+      success: true,
+      teacher: {
+        id: teacher.id,
+        name: teacher.teacherName,
+        code: teacher.teacherCode,
+        campus: teacher.campus?.campusName || "Sky-Line",
+        department: teacher.departmentRel?.name || "Tổ chuyên môn"
+      },
+      stats: {
+        totalEvaluatedSlots,
+        totalEvaluations,
+        avgScore,
+        ratingStats
+      },
+      criteriaStats,
+      topStrengthsCriteria,
+      growthCriteria,
+      strengthsList: strengthsList.slice(0, 10),
+      improvementsList: improvementsList.slice(0, 10),
+      detectedThemes,
+      aiConsultation,
+      recommendedChallengeCodes: Array.from(new Set(recommendedChallengeCodes))
+    };
+  } catch (error) {
+    console.error("Error in getTeacherObservationSynthesis:", error);
+    return { success: false, error: error.message };
+  }
+}
+
+// ==========================================
+// 2. DRAW SMART PERSONALIZED CHALLENGE CARDS
+// ==========================================
+export async function drawSmartPersonalizedCards(subjectCode?: string, grade?: string) {
+  try {
+    const session = await auth();
+    let teacher = null;
+    let excludeIds = [];
 
     if (session?.user?.id) {
-      const teacher = await prisma.teacher.findFirst({
+      teacher = await prisma.teacher.findFirst({
         where: {
           OR: [{ userId: session.user.id }, { email: session.user.email || "" }]
         }
@@ -141,32 +395,91 @@ export async function drawRandomCards(subjectCode?: string, grade?: string) {
       }
     }
 
-    let allChallenges = await prisma.aiGrowthChallenge.findMany({
+    // Get Teacher's Observation Synthesis to extract growth areas
+    let synthesis = null;
+    if (teacher) {
+      synthesis = await getTeacherObservationSynthesis(teacher.id);
+    }
+
+    const recommendedCodes = synthesis?.success && synthesis.recommendedChallengeCodes?.length > 0
+      ? synthesis.recommendedChallengeCodes
+      : [];
+
+    let recommendedChallenges = [];
+    if (recommendedCodes.length > 0) {
+      recommendedChallenges = await prisma.aiGrowthChallenge.findMany({
+        where: {
+          status: "ACTIVE",
+          code: { in: recommendedCodes },
+          ...(excludeIds.length > 0 ? { id: { notIn: excludeIds } } : {})
+        }
+      });
+    }
+
+    let allActiveChallenges = await prisma.aiGrowthChallenge.findMany({
       where: {
         status: "ACTIVE",
         ...(excludeIds.length > 0 ? { id: { notIn: excludeIds } } : {})
       }
     });
 
-    // Fallback if not enough non-recent challenges
-    if (allChallenges.length < 3) {
-      allChallenges = await prisma.aiGrowthChallenge.findMany({
+    if (allActiveChallenges.length < 3) {
+      allActiveChallenges = await prisma.aiGrowthChallenge.findMany({
         where: { status: "ACTIVE" }
       });
     }
 
-    // Shuffle and pick 3
-    const shuffled = [...allChallenges].sort(() => 0.5 - Math.random());
-    const pickedCards = shuffled.slice(0, 3);
+    // Pick 3 diverse cards: prioritize 1-2 recommended + 1 AI/Creative card
+    const pickedMap = new Map();
+
+    // 1. First priority: Recommended from teacher synthesis
+    const shuffledRecommended = [...recommendedChallenges].sort(() => 0.5 - Math.random());
+    for (const c of shuffledRecommended) {
+      if (pickedMap.size >= 2) break;
+      pickedMap.set(c.id, {
+        ...c,
+        isPersonalized: true,
+        recommendationReason: `💡 Dựa trên góp ý dự giờ gần đây của Thầy/Cô và định hướng GDPT 2018, thử thách này giúp Thầy/Cô hoàn thiện kỹ năng "${c.pedagogicalGoal}".`
+      });
+    }
+
+    // 2. Fill remaining cards from pool
+    const shuffledAll = [...allActiveChallenges].sort(() => 0.5 - Math.random());
+    for (const c of shuffledAll) {
+      if (pickedMap.size >= 3) break;
+      if (!pickedMap.has(c.id)) {
+        pickedMap.set(c.id, {
+          ...c,
+          isPersonalized: false,
+          recommendationReason: `✨ Gợi ý đổi mới phương pháp và ứng dụng công nghệ: "${c.pedagogicalGoal}".`
+        });
+      }
+    }
+
+    const cards = Array.from(pickedMap.values()).map(c => ({
+      ...c,
+      isSubCriterion: true,
+      subCriterionNotice: "🌟 Tiêu chí phụ tự nguyện - Tích lũy Điểm Cảm Hứng (Hoàn toàn không tính vào điểm số đánh giá 20/20 của tiết dạy)"
+    }));
 
     return {
       success: true,
-      cards: pickedCards
+      cards,
+      synthesisInfo: synthesis?.success ? {
+        topStrengths: synthesis.topStrengthsCriteria?.map(s => s.name),
+        growthAreas: synthesis.growthCriteria?.map(g => g.name),
+        themes: synthesis.detectedThemes?.map(t => t.theme)
+      } : null
     };
   } catch (error) {
-    console.error("Error in drawRandomCards:", error);
+    console.error("Error in drawSmartPersonalizedCards:", error);
     return { success: false, error: error.message };
   }
+}
+
+// Keep backward-compatible drawRandomCards calling drawSmartPersonalizedCards
+export async function drawRandomCards(subjectCode?: string, grade?: string) {
+  return drawSmartPersonalizedCards(subjectCode, grade);
 }
 
 // ==========================================
@@ -466,6 +779,26 @@ export async function generateAfterClassInsight(teacherChallengeId: string) {
     const challengeTitle = quest.challenge.title;
     const note = obs?.observerNote || "";
 
+    // Fetch observation evaluations for this slot if linked
+    let evalStrengths = "";
+    let evalImprovements = "";
+    let evalRating = "";
+    if (quest.observationSlotId) {
+      try {
+        const evals = await prisma.observationEvaluation.findMany({
+          where: { slotId: quest.observationSlotId },
+          take: 3
+        });
+        if (evals.length > 0) {
+          evalStrengths = evals.map(e => e.strengths).filter(Boolean).join(". ");
+          evalImprovements = evals.map(e => e.improvements).filter(Boolean).join(". ");
+          evalRating = evals[0].overallRating || "";
+        }
+      } catch (err) {
+        console.warn("Could not load slot evaluations for insight:", err);
+      }
+    }
+
     let insightText = "";
     const apiKey = process.env.GEMINI_API_KEY;
 
@@ -475,17 +808,20 @@ export async function generateAfterClassInsight(teacherChallengeId: string) {
         const model = genAI.getGenerativeModel({ model: "gemini-1.5-flash" });
 
         const prompt = "Bạn là AI Đồng hành Chuyên môn (Pedagogical Mentor) của Sky-Line School.\n" +
-          "Hãy viết một đoạn phản hồi ngắn (tối đa 3-4 câu) gửi riêng cho Thầy/Cô " + teacherName + " sau tiết dạy đã thực hiện thử thách: '" + challengeTitle + "'.\n" +
-          "Ngữ cảnh ghi nhận từ người dự:\n" +
-          "- Đã thực hiện: " + (obs?.isImplemented ? "Có" : "Đang nỗ lực") + "\n" +
-          "- Có hiệu quả: " + (obs?.isEffective ? "Có" : "Bình thường") + "\n" +
-          "- Nên lan tỏa: " + (obs?.shouldSpread ? "Có" : "Không") + "\n" +
-          "- Khoảnh khắc WOW: " + (wow?.category || "Chưa chọn") + "\n" +
-          "- Lời nhắn người dự: '" + note + "'\n\n" +
-          "Quy tắc:\n" +
-          "1. Giọng văn: Ấm áp, tôn trọng, ghi nhận nỗ lực sáng tạo sư phạm.\n" +
-          "2. Tuyệt đối KHÔNG chấm điểm, KHÔNG đánh giá năng lực, KHÔNG so sánh.\n" +
-          "3. Cấu trúc 3 ý: Ghi nhận nỗ lực -> Điểm sáng được người dự ấn tượng -> Một gợi ý nhỏ vui vẻ để thử tiếp lần sau.";
+          "Hãy viết một đoạn phản hồi ngắn (tối đa 3-4 câu) gửi riêng cho Thầy/Cô " + teacherName + " sau tiết dạy đã thực hiện thử thách đổi mới: '" + challengeTitle + "'.\n" +
+          "Ngữ cảnh từ người dự giờ:\n" +
+          "- Thử thách đã thực hiện: " + (obs?.isImplemented ? "Có" : "Đang nỗ lực") + "\n" +
+          "- Đánh giá hiệu quả: " + (obs?.isEffective ? "Có hiệu quả cao" : "Bình thường") + "\n" +
+          "- Khuyến nghị lan tỏa: " + (obs?.shouldSpread ? "Nên nhân rộng trong TCM" : "Chưa") + "\n" +
+          "- Điểm sáng WOW: " + (wow?.category || "Chưa chọn") + "\n" +
+          "- Lời nhắn từ người dự: '" + note + "'\n" +
+          (evalStrengths ? "- Điểm mạnh tiết dạy: '" + evalStrengths + "'\n" : "") +
+          (evalImprovements ? "- Góp ý chuyên môn: '" + evalImprovements + "'\n" : "") +
+          (evalRating ? "- Xếp loại tiết dạy: " + evalRating + "\n" : "") +
+          "\nQuy tắc:\n" +
+          "1. Giọng văn: Ấm áp, trân trọng, ghi nhận tinh thần dám đổi mới sáng tạo sư phạm.\n" +
+          "2. Thử thách là tiêu chí phụ khuyến khích giáo viên, tuyệt đối KHÔNG trừ điểm hay chỉ trích.\n" +
+          "3. Cấu trúc 3 ý: Ghi nhận nỗ lực thử nghiệm -> Kết nối với điểm sáng được người dự ấn tượng -> Một gợi ý nhỏ nhẹ nhàng cho tiết dạy tiếp theo theo định hướng GDPT 2018.";
 
         const res = await model.generateContent(prompt);
         insightText = res.response.text();
@@ -496,9 +832,10 @@ export async function generateAfterClassInsight(teacherChallengeId: string) {
 
     // Robust pedagogical template fallback
     if (!insightText) {
-      const wowNote = wow ? " Đặc biệt, khoảnh khắc '" + wow.category + "' đã để lại ấn tượng sâu sắc." : "";
-      const obsNote = note ? " Người dự gửi lời chia sẻ: '" + note + "'." : "";
-      insightText = "Thầy/Cô đã rất nỗ lực thử nghiệm '" + challengeTitle + "' trong tiết học hôm nay, mang lại luồng sinh khí mới mẻ cho học sinh." + wowNote + obsNote + " Lần tới, Thầy/Cô có thể thử mở rộng thêm hoạt động phản biện nhóm nhỏ để học sinh chủ động hơn nữa!";
+      const wowNote = wow ? ` Điểm sáng đặc biệt: '${wow.category}' đã để lại ấn tượng sâu sắc cho người dự.` : "";
+      const obsNote = note ? ` Người dự nhắn nhủ: '${note}'.` : "";
+      const strengthPart = evalStrengths ? ` Tiết dạy ghi nhận nhiều ưu điểm: ${evalStrengths.slice(0, 120)}...` : "";
+      insightText = `Thầy/Cô đã rất nỗ lực thử nghiệm thử thách '${challengeTitle}', mang lại luồng sinh khí mới mẻ cho học sinh.${strengthPart}${wowNote}${obsNote} Ở tiết tới, Thầy/Cô có thể tiếp tục phát huy tinh thần làm chủ của học sinh theo định hướng GDPT 2018!`;
     }
 
     await prisma.teacherChallenge.update({
@@ -911,14 +1248,14 @@ export async function getSlotChallengeInfo(slotId: string, teacherId?: string) {
         challenge: true,
         observations: {
           include: {
-            observerTeacher: {
+            observer: {
               select: { id: true, teacherName: true }
             }
           }
         },
         wowMoments: {
           include: {
-            observerTeacher: {
+            observer: {
               select: { id: true, teacherName: true }
             }
           }
@@ -936,14 +1273,14 @@ export async function getSlotChallengeInfo(slotId: string, teacherId?: string) {
           challenge: true,
           observations: {
             include: {
-              observerTeacher: {
+              observer: {
                 select: { id: true, teacherName: true }
               }
             }
           },
           wowMoments: {
             include: {
-              observerTeacher: {
+              observer: {
                 select: { id: true, teacherName: true }
               }
             }
@@ -973,3 +1310,215 @@ export async function getSlotChallengeInfo(slotId: string, teacherId?: string) {
     return { success: false, error: error.message };
   }
 }
+
+// ==========================================
+// 15. GET ALL CHALLENGES TRACKING (LEADERBOARD & TRACKING BOARD)
+// ==========================================
+export async function getAllChallengesTracking(params?: {
+  campusId?: string;
+  departmentId?: string;
+  status?: string;
+  search?: string;
+}) {
+  try {
+    const where: any = {};
+    if (params?.status && params.status !== "ALL") {
+      where.status = params.status;
+    }
+    if (params?.campusId && params.campusId !== "ALL") {
+      where.campusId = params.campusId;
+    }
+
+    const challenges = await prisma.teacherChallenge.findMany({
+      where,
+      include: {
+        teacher: {
+          include: {
+            campus: true,
+            departmentRel: true
+          }
+        },
+        challenge: true,
+        observationSlot: true,
+        observations: {
+          include: {
+            observer: {
+              select: { id: true, teacherName: true }
+            }
+          }
+        },
+        wowMoments: {
+          include: {
+            observer: {
+              select: { id: true, teacherName: true }
+            }
+          }
+        }
+      },
+      orderBy: { createdAt: "desc" },
+      take: 100
+    });
+
+    let filtered = challenges;
+    if (params?.departmentId && params.departmentId !== "ALL") {
+      filtered = filtered.filter(c => c.teacher?.departmentId === params.departmentId || c.teacher?.departmentRel?.id === params.departmentId);
+    }
+    if (params?.search && params.search.trim()) {
+      const q = params.search.toLowerCase().trim();
+      filtered = filtered.filter(c =>
+        c.teacher?.teacherName?.toLowerCase().includes(q) ||
+        c.teacher?.teacherCode?.toLowerCase().includes(q) ||
+        c.challenge?.title?.toLowerCase().includes(q) ||
+        c.subjectName?.toLowerCase().includes(q) ||
+        c.className?.toLowerCase().includes(q)
+      );
+    }
+
+    const records = filtered.map(c => {
+      const isImplemented = c.observations.some(o => o.isImplemented);
+      const isEffective = c.observations.some(o => o.isEffective);
+      const shouldSpread = c.observations.some(o => o.shouldSpread);
+      const observers = c.observations.map(o => o.observer?.teacherName).filter(Boolean);
+
+      return {
+        id: c.id,
+        teacherId: c.teacherId,
+        teacherName: c.teacher?.teacherName || "Giáo viên",
+        teacherCode: c.teacher?.teacherCode || "",
+        campusName: c.teacher?.campus?.campusName || "Sky-Line",
+        departmentName: c.teacher?.departmentRel?.name || "Tổ chuyên môn",
+        slotId: c.observationSlotId,
+        topic: c.observationSlot?.topic || c.challenge.title,
+        subjectName: c.subjectName || c.observationSlot?.subjectName || "Môn học",
+        className: c.className || c.observationSlot?.className || "Lớp",
+        lessonDate: c.plannedLessonDate ? c.plannedLessonDate.toISOString() : c.observationSlot?.date ? c.observationSlot.date.toISOString() : null,
+        challenge: {
+          id: c.challenge.id,
+          code: c.challenge.code,
+          title: c.challenge.title,
+          category: c.challenge.category,
+          rarityTier: c.challenge.rarityTier,
+          pedagogicalGoal: c.challenge.pedagogicalGoal,
+          basePoints: c.challenge.basePoints,
+          isAiChallenge: c.challenge.isAiChallenge
+        },
+        status: c.status,
+        earnedPoints: c.earnedPoints || (c.status === "COMPLETED" ? c.challenge.basePoints : 0),
+        isImplemented,
+        isEffective,
+        shouldSpread,
+        observerCount: c.observations.length,
+        observers,
+        wowMoments: c.wowMoments.map(w => ({
+          category: w.category,
+          observerName: w.observer?.teacherName
+        })),
+        afterClassInsight: c.afterClassInsight,
+        completedAt: c.completedAt ? c.completedAt.toISOString() : null,
+        createdAt: c.createdAt.toISOString()
+      };
+    });
+
+    return {
+      success: true,
+      records,
+      totalCount: records.length
+    };
+  } catch (error) {
+    console.error("Error in getAllChallengesTracking:", error);
+    return { success: false, error: error.message };
+  }
+}
+
+// ==========================================
+// 16. GET SCHOOL GAMIFICATION STATS & HALL OF FAME
+// ==========================================
+export async function getSchoolGamificationStats(campusId?: string) {
+  try {
+    // 1. Leaderboard: Top Teachers by IP
+    const logs = await prisma.inspirationPointsLog.groupBy({
+      by: ["teacherId"],
+      _sum: { points: true },
+      orderBy: { _sum: { points: "desc" } },
+      take: 10
+    });
+
+    const teacherIds = logs.map(l => l.teacherId);
+    const teachers = await prisma.teacher.findMany({
+      where: { id: { in: teacherIds } },
+      include: { campus: true, departmentRel: true }
+    });
+    const teacherMap = new Map(teachers.map(t => [t.id, t]));
+
+    const topTeachers = logs.map((l, idx) => {
+      const t = teacherMap.get(l.teacherId);
+      const points = l._sum.points || 0;
+      const level = calculateLevelFromPoints(points);
+      return {
+        rank: idx + 1,
+        teacherId: l.teacherId,
+        teacherName: t?.teacherName || "Thầy/Cô Sky-Line",
+        campusName: t?.campus?.campusName || "Sky-Line",
+        departmentName: t?.departmentRel?.name || "Tổ chuyên môn",
+        points,
+        levelName: level.levelName,
+        levelIcon: level.levelIcon
+      };
+    });
+
+    // 2. Top WOW Ambassadors
+    const wowGroup = await prisma.aiGrowthWowMoment.groupBy({
+      by: ["teacherChallengeId"],
+      _count: { id: true }
+    });
+
+    const wowChallengeIds = wowGroup.map(w => w.teacherChallengeId);
+    const wowQuests = await prisma.teacherChallenge.findMany({
+      where: { id: { in: wowChallengeIds } },
+      include: { teacher: { include: { campus: true } } }
+    });
+
+    const teacherWowMap = new Map();
+    for (const q of wowQuests) {
+      const tid = q.teacherId;
+      const count = (teacherWowMap.get(tid)?.count || 0) + 1;
+      teacherWowMap.set(tid, {
+        teacherName: q.teacher?.teacherName || "Giáo viên",
+        campusName: q.teacher?.campus?.campusName || "Sky-Line",
+        count
+      });
+    }
+
+    const topWowTeachers = Array.from(teacherWowMap.entries())
+      .map(([id, val]) => ({ id, ...val }))
+      .sort((a, b) => b.count - a.count)
+      .slice(0, 5);
+
+    // 3. Overall School Metrics
+    const totalChallengesAttempted = await prisma.teacherChallenge.count();
+    const totalCompleted = await prisma.teacherChallenge.count({
+      where: { status: { in: ["COMPLETED", "RECOGNIZED"] } }
+    });
+    const totalWowMoments = await prisma.aiGrowthWowMoment.count();
+    const allLogs = await prisma.inspirationPointsLog.aggregate({
+      _sum: { points: true }
+    });
+    const totalPointsAwarded = allLogs._sum.points || 0;
+
+    return {
+      success: true,
+      topTeachers,
+      topWowTeachers,
+      metrics: {
+        totalChallengesAttempted,
+        totalCompleted,
+        totalWowMoments,
+        totalPointsAwarded
+      }
+    };
+  } catch (error) {
+    console.error("Error in getSchoolGamificationStats:", error);
+    return { success: false, error: error.message };
+  }
+}
+

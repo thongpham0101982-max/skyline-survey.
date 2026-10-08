@@ -1738,7 +1738,7 @@ export function ObservationRegistrationSection(props: any) {
                         className="w-4 h-4 rounded text-[#007068] focus:ring-[#007068] cursor-pointer"
                       />
                       <span className="text-xs font-bold text-slate-700">
-                        Tự động gửi email thông báo lịch làm việc & biên bản tới Nhân sự và Ban Giám hiệu cơ sở
+                        Tự động gửi email thông báo lịch làm việc & biên bản tới Nhân sự, Trưởng Bộ Phận (TBP) và Ban Giám đốc Cơ sở (GĐCS)
                       </span>
                     </label>
                     <span className="text-[11px] font-bold text-teal-700 bg-teal-50 px-2.5 py-0.5 rounded-full border border-teal-100 flex items-center gap-1">

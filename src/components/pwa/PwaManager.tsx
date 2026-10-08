@@ -47,12 +47,18 @@ export function PwaManager() {
           console.warn("[PWA Manager] Service Worker registration failed:", err)
         })
 
-      // When controller changes (after skipWaiting), reload page smoothly
+      // When controller changes (after skipWaiting), reload page smoothly with clean cache
       let refreshing = false
       navigator.serviceWorker.addEventListener("controllerchange", () => {
         if (!refreshing) {
           refreshing = true
-          window.location.reload()
+          if ("caches" in window) {
+            caches.keys().then((keys) => Promise.all(keys.map((k) => caches.delete(k)))).finally(() => {
+              window.location.reload()
+            })
+          } else {
+            window.location.reload()
+          }
         }
       })
     }
@@ -91,7 +97,13 @@ export function PwaManager() {
     if (waitingWorker) {
       waitingWorker.postMessage({ type: "SKIP_WAITING" })
     } else {
-      window.location.reload()
+      if ("caches" in window) {
+        caches.keys().then((keys) => Promise.all(keys.map((k) => caches.delete(k)))).finally(() => {
+          window.location.reload()
+        })
+      } else {
+        window.location.reload()
+      }
     }
   }
 

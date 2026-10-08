@@ -8,7 +8,7 @@ import {
   FileText, Users, Plus, Mail, Send, Search, Check, RefreshCw, X, Calendar, RotateCcw, 
   MessageSquare, TrendingUp, CheckCircle, AlertTriangle, AlertCircle, Clock, Printer, GraduationCap, School, BookOpen, Heart, Award, Info, Bell, CheckCircle2, Layers, List, LayoutGrid, Filter,
   Eye, Sparkles, ChevronRight, ArrowUpRight, BarChart3, HelpCircle, CheckSquare, Target, UserCheck, ChevronDown, CheckCheck, SlidersHorizontal, Quote, Activity, ExternalLink, Compass, ClipboardCheck, History, Edit3, Save,
-  Brain
+  Brain, FileSpreadsheet, Download
 } from "lucide-react"
 
 export const ACADEMIC_MONTHS = ["Tháng 8", "Tháng 9", "Tháng 10", "Tháng 11", "Tháng 12", "Tháng 1", "Tháng 2", "Tháng 3", "Tháng 4", "Tháng 5"];
@@ -136,6 +136,7 @@ import { UrgentEmailModal } from "./components/UrgentEmailModal"
 import { FeedbackGvcnPhhsModal } from "./components/FeedbackGvcnPhhsModal"
 import { PsychologicalEvaluationLogTab } from "./components/PsychologicalEvaluationLogTab"
 import { MONTH_WEEKS_CONFIG } from "./academic-calendar"
+import { ExportTrackingBookModal } from "./components/ExportTrackingBookModal"
 
 
 interface Props {
@@ -553,6 +554,7 @@ export function TeacherSupportClient({
   // New Feature Modals States
   const [isUrgentEmailModalOpen, setIsUrgentEmailModalOpen] = useState(false)
   const [isFeedbackModalOpen, setIsFeedbackModalOpen] = useState(false)
+  const [isExportTrackingModalOpen, setIsExportTrackingModalOpen] = useState(false)
   const [selectedFeedbackTarget, setSelectedFeedbackTarget] = useState<any>(null)
 const [evalSelectedMonth, setEvalSelectedMonth] = useState<string>("Tháng 9")
   const [evalSelectedWeek, setEvalSelectedWeek] = useState<string>("Tuần 1")
@@ -2484,6 +2486,16 @@ const [evalSelectedMonth, setEvalSelectedMonth] = useState<string>("Tháng 9")
                 Hoàn trả {selectedEvalTargetIds.length > 0 ? `(${selectedEvalTargetIds.length})` : ""}
               </button>
             </div>
+
+            <button
+              type="button"
+              onClick={() => setIsExportTrackingModalOpen(true)}
+              className="bg-gradient-to-r from-teal-900 via-[#003B3A] to-[#009085] hover:opacity-95 text-white font-bold py-2 px-4 rounded-xl shadow-xs hover:shadow transition-all cursor-pointer flex items-center gap-2"
+              title="Xuất Sổ Theo Dõi - Theo dõi tiến độ đánh giá theo Học sinh, theo Tuần & Tháng của từng Học sinh GV phụ trách"
+            >
+              <FileSpreadsheet className="h-4 w-4 text-[#48BFE3]" />
+              <span>Xuất Sổ Theo Dõi</span>
+            </button>
           </div>
           <div className="bg-white border rounded-xl overflow-hidden shadow-sm">
             <table className="min-w-full divide-y divide-slate-200">
@@ -2923,6 +2935,16 @@ const [evalSelectedMonth, setEvalSelectedMonth] = useState<string>("Tháng 9")
               >
                 <Mail className="h-3.5 w-3.5 text-rose-200" />
                 <span>🚨 SOS Mail cho GVCN</span>
+              </button>
+
+              <button
+                type="button"
+                onClick={() => setIsExportTrackingModalOpen(true)}
+                className="bg-gradient-to-r from-emerald-600 via-teal-600 to-cyan-600 hover:from-emerald-700 hover:to-teal-700 text-white px-3.5 py-1.5 rounded-xl text-xs font-black shadow-xs hover:shadow transition-all cursor-pointer flex items-center gap-1.5 no-print"
+                title="Xuất Sổ Theo Dõi - Theo dõi tiến độ đánh giá theo Học sinh, theo Tuần & Tháng của từng Học sinh GV phụ trách"
+              >
+                <FileSpreadsheet className="h-3.5 w-3.5 text-cyan-200" />
+                <span>Xuất Sổ Theo Dõi</span>
               </button>
 
               <button
@@ -6651,6 +6673,17 @@ const [evalSelectedMonth, setEvalSelectedMonth] = useState<string>("Tháng 9")
           </div>
         </div>
       )}
+
+      {/* 5. Modal Xuất Sổ Theo Dõi Đánh Giá Học Sinh */}
+      <ExportTrackingBookModal
+        isOpen={isExportTrackingModalOpen}
+        onClose={() => setIsExportTrackingModalOpen(false)}
+        targets={targets}
+        filteredTargets={activeSubTab === "summary" ? matrixTargets : filteredTargets}
+        teacherName={teacher?.teacherName || teacher?.name || "Giáo viên"}
+        academicYearName={academicYears.find((y: any) => y.id === selectedYearId)?.name || "2026-2027"}
+        currentMonth={summaryMonthFilter !== "ALL" ? summaryMonthFilter : "Tháng 9"}
+      />
     </div>
   )
 }

@@ -1,10 +1,10 @@
-﻿/**
+/**
  * SSM Sky-Line Progressive Web App Service Worker
  * Version: 1.0.0
  * Architecture: Offline Fallback Shell + Stale-While-Revalidate for Static Assets + Network-Only for Sensitive APIs
  */
 
-const SW_VERSION = 'ssm-pwa-v1.0.0';
+const SW_VERSION = 'ssm-pwa-v1.0.2';
 const STATIC_CACHE_NAME = `ssm-static-${SW_VERSION}`;
 const RUNTIME_CACHE_NAME = `ssm-runtime-${SW_VERSION}`;
 
@@ -57,6 +57,8 @@ self.addEventListener('message', (event) => {
   if (!event.data) return;
   if (event.data.type === 'SKIP_WAITING') {
     self.skipWaiting();
+  } else if (event.data.type === 'CLEAR_ALL_CACHES') {
+    caches.keys().then((keys) => Promise.all(keys.map((k) => caches.delete(k))));
   } else if (event.data.type === 'SET_APP_BADGE') {
     if ('setAppBadge' in self.navigator) {
       self.navigator.setAppBadge(event.data.count || 1).catch(() => {});
@@ -109,8 +111,18 @@ self.addEventListener('fetch', (event) => {
     return;
   }
 
-  // 2. Sensitive APIs: Network-Only (NEVER CACHE)
-  if (isSensitiveApi(url)) {
+  // 2. Sensitive APIs, Next.js internal RSC requests, Turbopack dev/HMR & Server Actions: Network-Only (NEVER CACHE / NEVER INTERCEPT)
+  if (
+    isSensitiveApi(url) ||
+    url.searchParams.has('_rsc') ||
+    request.headers.has('RSC') ||
+    request.headers.has('next-action') ||
+    request.headers.has('next-router-state-tree') ||
+    url.pathname.includes('/_next/data/') ||
+    url.pathname.includes('turbopack') ||
+    url.pathname.includes('webpack') ||
+    url.pathname.includes('.hot-update.')
+  ) {
     return; // Pass through directly to browser network
   }
 
@@ -134,7 +146,24 @@ self.addEventListener('fetch', (event) => {
     return;
   }
 
-  // 4. Static Assets: Stale-While-Revalidate
+  // 4. JavaScript Chunks & Scripts: NETWORK-FIRST (NEVER Stale-While-Revalidate)
+  // Stale-While-Revalidate on JS chunks causes module factory desynchronization ("module factory is not available") & ChunkLoadError!
+  if (url.pathname.startsWith('/_next/static/chunks/') || url.pathname.endsWith('.js')) {
+    event.respondWith(
+      fetch(request)
+        .then((networkResponse) => {
+          if (networkResponse && networkResponse.status === 200) {
+            const clone = networkResponse.clone();
+            caches.open(RUNTIME_CACHE_NAME).then((cache) => cache.put(request, clone));
+          }
+          return networkResponse;
+        })
+        .catch(() => caches.match(request))
+    );
+    return;
+  }
+
+  // 5. Media, Fonts, Images & CSS: Stale-While-Revalidate
   if (isStaticAsset(url)) {
     event.respondWith(
       caches.open(RUNTIME_CACHE_NAME).then((cache) => {
@@ -155,7 +184,7 @@ self.addEventListener('fetch', (event) => {
     return;
   }
 
-  // 5. Default: Network with Cache Fallback
+  // 6. Default: Network with Cache Fallback
   event.respondWith(
     fetch(request).catch(() => caches.match(request))
   );

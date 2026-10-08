@@ -145,6 +145,16 @@ export async function GET(req: Request) {
           if (/Ngữ văn|Văn/i.test(note)) rawSubs.push("Ngữ Văn")
           if (/Tâm lý|Psychology/i.test(note)) rawSubs.push("Tâm lý")
         }
+        // Bổ sung: Nhận diện cam kết / lưu ý tâm lý kể cả khi nằm ngoài cấu trúc ngoặc vuông
+        const lowerNote = String(note).toLowerCase()
+        if (lowerNote.includes("tâm lý") || lowerNote.includes("tam ly") || lowerNote.includes("tâm lí") || lowerNote.includes("psychology")) {
+          if (lowerNote.includes("cam kết") || lowerNote.includes("theo dõi") || lowerNote.includes("tư vấn") || lowerNote.includes("lưu ý") || lowerNote.includes("hỗ trợ")) {
+            if (!rawSubs.some(s => /tâm lý|tam ly|psychology/i.test(s))) {
+              rawSubs.push("Tâm lý")
+            }
+          }
+        }
+
         const finalSubs: string[] = []
         rawSubs.forEach((s) => {
           const clean = s.trim().replace(/^môn\s+/i, "")
@@ -184,12 +194,19 @@ export async function GET(req: Request) {
 
         const committedSubjects = assessment ? parseCommittedSubjects(assessment.directorNote || "") : [];
 
+        const hasPsychCommitment = committedSubjects.includes("Tâm lý") ||
+          Boolean(t.notes && /cam kết/i.test(t.notes) && /tâm lý/i.test(t.notes)) ||
+          Boolean(t.reason && /cam kết/i.test(t.reason) && /tâm lý/i.test(t.reason)) ||
+          Boolean(assessment?.directorNote && /tâm lý|tam ly|tâm lí|psychology/i.test(assessment.directorNote) && /cam kết|cam ket|theo dõi|lưu ý|yêu cầu/i.test(assessment.directorNote));
+
         return {
           ...t,
           commitmentSubjects: committedSubjects,
           commitmentNote: committedSubjects.length > 0 
             ? committedSubjects.join(", ") 
-            : ""
+            : "",
+          assessmentDirectorNote: assessment?.directorNote || null,
+          hasPsychCommitment
         };
       });
 

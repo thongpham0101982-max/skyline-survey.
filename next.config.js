@@ -9,6 +9,9 @@ const nextConfig = {
       allowedOrigins: [
         'ssm.skylineschool.edu.vn',
         '*.skylineschool.edu.vn',
+        '10.0.10.18',
+        '10.0.10.18:3000',
+        '10.0.10.18:443',
         'localhost:3000',
         'localhost',
         '127.0.0.1:3000',
@@ -21,6 +24,9 @@ const nextConfig = {
   allowedDevOrigins: [
     '192.168.10.239',
     '192.168.10.239:3000',
+    '10.0.10.18',
+    '10.0.10.18:3000',
+    '10.0.10.18:443',
     'localhost',
     'localhost:3000',
     '127.0.0.1',

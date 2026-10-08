@@ -197,7 +197,7 @@ export default function ParentGradesClient({ initialChildren = [], defaultYear }
 
   const schoolTitle = getSchoolTitle()
   const periodLabel = EVAL_PERIODS.find(p => p.code === selectedPeriod)?.label || selectedPeriod
-  const reportMainTitle = `BÁO CÁO KẾT QUẢ KHẢO SÁT - ${periodLabel.toUpperCase()}`
+  const reportMainTitle = `BÁO CÁO KẾT QUẢ ĐIỂM KIỂM TRA - ${periodLabel.toUpperCase()}`
   const reportYearTitle = `NĂM HỌC: ${data?.classInfo?.academicYearName || defaultYear?.name || "2024 - 2025"}`
 
   const handleSaveFeedback = async () => {
@@ -580,7 +580,7 @@ export default function ParentGradesClient({ initialChildren = [], defaultYear }
     </div>
 
     <div class="section-bar">
-      <div class="section-title">CHI TIẾT KẾT QUẢ KHẢO SÁT</div>
+      <div class="section-title">CHI TIẾT ĐIỂM KIỂM TRA ĐỊNH KỲ</div>
       <div class="section-count">${subjects.length} môn học</div>
     </div>
 
@@ -687,13 +687,13 @@ export default function ParentGradesClient({ initialChildren = [], defaultYear }
           <div className="space-y-1.5 max-w-2xl">
             <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-white/15 backdrop-blur-md border border-white/20 text-[11px] font-black text-teal-100 uppercase tracking-widest">
               <Sparkles className="w-3.5 h-3.5 text-amber-300" />
-              <span>BẢNG ĐIỂM & KẾT QUẢ KHẢO SÁT ĐỊNH KỲ</span>
+              <span>BẢNG ĐIỂM & ĐIỂM KIỂM TRA ĐỊNH KỲ</span>
             </div>
             <h1 className="text-xl sm:text-2xl lg:text-3xl font-black tracking-tight text-white">
               Báo Cáo Điểm & Trao Đổi Cùng Thầy Cô GVCN
             </h1>
             <p className="text-xs sm:text-sm text-teal-100 font-medium">
-              Theo dõi kết quả các kỳ khảo sát học tập của con em và gửi ý kiến phản hồi, trao đổi trực tiếp với Giáo viên chủ nhiệm.
+              Theo dõi kết quả các kỳ điểm kiểm tra học tập của con em và gửi ý kiến phản hồi, trao đổi trực tiếp với Giáo viên chủ nhiệm.
             </p>
           </div>
 

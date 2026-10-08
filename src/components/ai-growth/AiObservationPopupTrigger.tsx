@@ -2,8 +2,13 @@
 // @ts-nocheck
 
 import React, { useState, useEffect } from "react"
+import dynamic from "next/dynamic"
 import { Sparkles, Zap, Flame, Award } from "lucide-react"
-import { MysticCardDeckModal } from "./MysticCardDeckModal"
+
+const MysticCardDeckModal = dynamic(
+  () => import("./MysticCardDeckModal").then((mod) => mod.MysticCardDeckModal),
+  { ssr: false }
+)
 import { checkTeacherActiveChallenge } from "@/app/teacher/ai-growth/actions"
 
 interface AiObservationPopupTriggerProps {
@@ -110,15 +115,17 @@ export function AiObservationPopupTrigger({
       </div>
 
       {/* 3D Flip Card Modal */}
-      <MysticCardDeckModal
-        isOpen={modalOpen}
-        onClose={() => setModalOpen(false)}
-        slotId={slotId}
-        lessonDate={lessonDate}
-        onAccepted={(quest) => {
-          setActiveQuest(quest)
-        }}
-      />
+      {modalOpen && (
+        <MysticCardDeckModal
+          isOpen={modalOpen}
+          onClose={() => setModalOpen(false)}
+          slotId={slotId}
+          lessonDate={lessonDate}
+          onAccepted={(quest) => {
+            setActiveQuest(quest)
+          }}
+        />
+      )}
     </>
   )
 }

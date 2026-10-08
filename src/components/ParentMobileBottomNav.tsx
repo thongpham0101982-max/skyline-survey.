@@ -65,7 +65,7 @@ export function ParentMobileBottomNav() {
           <div className={`p-1.5 rounded-xl transition-all ${isGrades ? "bg-teal-50 text-[#003B3A] shadow-xs" : ""}`}>
             <Award className="w-4 h-4" />
           </div>
-          <span>Xem điểm</span>
+          <span>Điểm kiểm tra</span>
         </Link>
         <Link
           href="/parent/children/profile"

@@ -4,11 +4,12 @@ import { useState, useEffect, useMemo } from "react"
 import { useSearchParams, useRouter, usePathname } from "next/navigation"
 import { Building2, ChevronDown, Mail, Send, Sparkles, CheckSquare, Square, FileText, Users, Sliders, BarChart3, Plus, Search, Filter, Trash2, Edit, 
   Check, X, RefreshCw, Download, ChevronRight, AlertCircle, Calendar, GraduationCap, 
-  MapPin, UserCheck, CheckCircle2, AlertTriangle, Info, Clock, UserPlus, LayoutDashboard, Bell
+  MapPin, UserCheck, CheckCircle2, AlertTriangle, Info, Clock, UserPlus, LayoutDashboard, Bell, FileSpreadsheet
 } from "lucide-react"
 import toast from "react-hot-toast"
 import * as XLSX from "xlsx"
 import { OverviewDashboard } from "./overview"
+import { exportTrackingBookExcel } from "@/lib/support/exportTrackingBookExcel"
 
 interface Props {
   academicYears: any[]
@@ -161,32 +162,40 @@ export function SupportClient({
     }
   }, [academicYears])
 
+  const safeFetchJson = async (url: string) => {
+    try {
+      const res = await fetch(url)
+      if (!res.ok) {
+        console.warn(`Request to ${url} returned status ${res.status}`)
+        return null
+      }
+      const contentType = res.headers.get("content-type") || ""
+      if (!contentType.includes("application/json")) {
+        console.warn(`Request to ${url} returned non-JSON content-type: ${contentType}`)
+        return null
+      }
+      return await res.json()
+    } catch (err: any) {
+      console.warn(`safeFetchJson error for ${url}:`, err.message)
+      return null
+    }
+  }
+
   const fetchAllData = async () => {
     if (!selectedYearId) return
     setLoading(true)
     try {
-      // 1. Fetch outcome configs
-      const resConfig = await fetch(
-        `/api/ktdbcl/support?action=getConfigs&academicYearId=${selectedYearId}&_=${Date.now()}`
-      )
-      const dataConfig = await resConfig.json()
-      if (!dataConfig.error) setConfigs(dataConfig)
+      const [configData, targetsData, assignmentsData] = await Promise.all([
+        safeFetchJson(`/api/ktdbcl/support?action=getConfigs&academicYearId=${selectedYearId}&_=${Date.now()}`),
+        safeFetchJson(`/api/ktdbcl/support?action=getTargets&academicYearId=${selectedYearId}&_=${Date.now()}`),
+        safeFetchJson(`/api/ktdbcl/support?action=getAssignments&academicYearId=${selectedYearId}&_=${Date.now()}`)
+      ])
 
-      // 2. Fetch targets
-      const resTargets = await fetch(
-        `/api/ktdbcl/support?action=getTargets&academicYearId=${selectedYearId}&_=${Date.now()}`
-      )
-      const dataTargets = await resTargets.json()
-      if (!dataTargets.error) setTargets(dataTargets)
-
-      // 3. Fetch assignments
-      const resAssignments = await fetch(
-        `/api/ktdbcl/support?action=getAssignments&academicYearId=${selectedYearId}&_=${Date.now()}`
-      )
-      const dataAssignments = await resAssignments.json()
-      if (!dataAssignments.error) setAssignments(dataAssignments)
+      if (configData && !configData.error) setConfigs(configData)
+      if (targetsData && !targetsData.error) setTargets(targetsData)
+      if (assignmentsData && !assignmentsData.error) setAssignments(assignmentsData)
     } catch (e: any) {
-      toast.error("Không thể tải dữ liệu: " + e.message)
+      console.error("fetchAllData unexpected error:", e)
     } finally {
       setLoading(false)
     }
@@ -196,17 +205,14 @@ export function SupportClient({
     if (!selectedYearId) return
     setCommitmentLoading(true)
     try {
-      const res = await fetch(
+      const data = await safeFetchJson(
         `/api/ktdbcl/support?action=getCommitmentCandidates&academicYearId=${selectedYearId}&_=${Date.now()}`
       )
-      const data = await res.json()
       if (data && !data.error) {
         setCommitmentCandidates(data)
-      } else {
-        toast.error("Không thể tải danh sách học sinh cam kết: " + (data.error || "Lỗi không xác định"))
       }
     } catch (e: any) {
-      toast.error("Lỗi mạng: " + e.message)
+      console.error("fetchCommitmentCandidates error:", e)
     } finally {
       setCommitmentLoading(false)
     }
@@ -850,6 +856,30 @@ export function SupportClient({
     const yearName = academicYears.find(y => y.id === selectedYearId)?.name || "NamHoc"
     XLSX.writeFile(wb, `${sheetName}_${yearName.replace(/\s+/g, "_")}_${new Date().toISOString().slice(0, 10)}.xlsx`)
     toast.success(`Đã xuất thành công ${exportRows.length} hồ sơ ra file Excel!`)
+  }
+
+  // Xuất Sổ Theo Dõi - Theo dõi tiến độ đánh giá theo Học sinh, theo Tuần & Tháng của từng Học sinh GV phụ trách
+  const handleExportTrackingBookAdmin = () => {
+    const listToExport = filteredTargets.length > 0 ? filteredTargets : targets
+    if (listToExport.length === 0) {
+      toast.error("Không có dữ liệu học sinh để xuất Sổ theo dõi")
+      return
+    }
+
+    try {
+      const yearName = academicYears.find(y => y.id === selectedYearId)?.name || "2026-2027"
+      const fileName = exportTrackingBookExcel(listToExport, {
+        teacherName: "Admin_KTDBCL",
+        academicYearName: yearName,
+        selectedMonth: "Tháng 9",
+        exportScope: "FULL",
+        fileNamePrefix: "So_Theo_Doi_Tien_Do_Danh_Gia"
+      })
+      toast.success(`Đã xuất thành công Sổ Theo Dõi: ${fileName}`)
+    } catch (e: any) {
+      console.error("Export tracking book error:", e)
+      toast.error(e?.message || "Lỗi khi xuất sổ theo dõi")
+    }
   }
 
   // Export reports to Excel logic based on active subtab
@@ -1919,6 +1949,16 @@ export function SupportClient({
                 <span>Xuất Excel</span>
               </button>
 
+              {/* Export Sổ Theo Dõi Button */}
+              <button
+                onClick={handleExportTrackingBookAdmin}
+                className="px-3.5 py-2 bg-gradient-to-r from-teal-700 to-cyan-700 hover:from-teal-800 hover:to-cyan-800 text-white text-xs font-bold rounded-xl shadow-xs hover:shadow transition-all flex items-center gap-1.5 shrink-0 cursor-pointer"
+                title="Xuất Sổ Theo Dõi - Theo dõi tiến độ đánh giá theo Học sinh, theo Tuần & Tháng của từng Học sinh GV phụ trách"
+              >
+                <FileSpreadsheet className="h-4 w-4 text-cyan-200" />
+                <span>Xuất Sổ Theo Dõi</span>
+              </button>
+
               {/* Send Email to QLCM Button */}
               <button
                 onClick={() => {
@@ -2229,6 +2269,15 @@ export function SupportClient({
               >
                 <Download className="h-3.5 w-3.5" />
                 <span>Xuất Excel</span>
+              </button>
+
+              <button
+                onClick={handleExportTrackingBookAdmin}
+                className="px-3.5 py-1.5 bg-gradient-to-r from-teal-700 to-cyan-700 hover:from-teal-800 hover:to-cyan-800 text-white text-xs font-bold rounded-lg shadow-xs hover:shadow transition-all flex items-center gap-1.5 shrink-0 cursor-pointer"
+                title="Xuất Sổ Theo Dõi - Theo dõi tiến độ đánh giá theo Học sinh, theo Tuần & Tháng của từng Học sinh GV phụ trách"
+              >
+                <FileSpreadsheet className="h-3.5 w-3.5 text-cyan-200" />
+                <span>Xuất Sổ Theo Dõi</span>
               </button>
             </div>
           </div>
@@ -3619,6 +3668,34 @@ export function SupportClient({
                       <Check className="h-3.5 w-3.5" /> Duyệt nhanh tất cả ({pendingModalTargets.length})
                     </button>
                   )}
+
+                  <button
+                    onClick={() => {
+                      const teacherTargets = modalTargets || []
+                      if (teacherTargets.length === 0) {
+                        toast.error("Giáo viên này chưa có học sinh nào.")
+                        return
+                      }
+                      try {
+                        const yearName = academicYears.find(y => y.id === selectedYearId)?.name || "2026-2027"
+                        const fileName = exportTrackingBookExcel(teacherTargets, {
+                          teacherName: selectedTeacherForDetail.teacherName,
+                          academicYearName: yearName,
+                          selectedMonth: "Tháng 9",
+                          exportScope: "FULL",
+                          fileNamePrefix: `So_Theo_Doi_${selectedTeacherForDetail.teacherName}`
+                        })
+                        toast.success(`Đã xuất Sổ Theo Dõi của giáo viên ${selectedTeacherForDetail.teacherName}: ${fileName}`)
+                      } catch (err: any) {
+                        toast.error(err?.message || "Lỗi khi xuất sổ")
+                      }
+                    }}
+                    className="bg-gradient-to-r from-teal-700 to-cyan-700 hover:from-teal-800 hover:to-cyan-800 text-white font-bold py-1.5 px-3 rounded-lg text-xs inline-flex items-center gap-1.5 shadow-sm transition-colors cursor-pointer"
+                    title="Xuất Sổ Theo Dõi của giáo viên này ra file Excel"
+                  >
+                    <FileSpreadsheet className="h-3.5 w-3.5 text-cyan-200" />
+                    <span>Xuất Sổ Theo Dõi GV</span>
+                  </button>
                 </div>
               </div>
 

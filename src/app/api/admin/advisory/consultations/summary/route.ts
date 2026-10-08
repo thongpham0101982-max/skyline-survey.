@@ -22,6 +22,19 @@ export async function GET(req: Request) {
     const classId = searchParams.get("classId") || ""
     const status = searchParams.get("status") || "ALL" // ALL | CONSULTED | NOT_CONSULTED
     const search = (searchParams.get("search") || "").trim()
+    const gradesParam = (searchParams.get("grades") || searchParams.get("grade") || "").trim()
+    const selectedGrades = gradesParam
+      ? gradesParam.split(",").map(g => g.trim().replace(/^[kK]/, "")).filter(Boolean)
+      : []
+
+    function resolveGrade(grade?: string | null, className?: string | null): string {
+      if (grade && !isNaN(Number(grade))) return String(Number(grade))
+      if (className) {
+        const match = className.match(/^(\d+)/)
+        if (match) return String(Number(match[1]))
+      }
+      return ""
+    }
 
     // 1. Lấy Năm học mặc định nếu chưa truyền
     if (!academicYearId) {
@@ -134,7 +147,7 @@ export async function GET(req: Request) {
     })
 
     // Lọc loại trừ thêm ở tầng JS để đảm bảo 100% không sót Mầm non
-    const students = rawStudents.filter(st => {
+    const nonPreschoolStudents = rawStudents.filter(st => {
       const clsName = (st.class?.className || "").toLowerCase()
       const lvl = (st.class?.level || "").toLowerCase()
       const grd = (st.class?.grade || "").toLowerCase()
@@ -143,6 +156,22 @@ export async function GET(req: Request) {
                        ["mam", "choi", "la", "nha_tre", "mam_non"].includes(grd)
       return !isMamNon
     })
+
+    // Thu thập toàn bộ danh sách Khối có trong dữ liệu
+    const availableGradesSet = new Set<string>()
+    nonPreschoolStudents.forEach(st => {
+      const g = resolveGrade(st.class?.grade, st.class?.className)
+      if (g) availableGradesSet.add(g)
+    })
+    const availableGrades = Array.from(availableGradesSet).sort((a, b) => Number(a) - Number(b))
+
+    // Lọc theo Quy mô các Khối áp dụng (nếu người dùng có tùy chọn)
+    const students = selectedGrades.length > 0
+      ? nonPreschoolStudents.filter(st => {
+          const g = resolveGrade(st.class?.grade, st.class?.className)
+          return selectedGrades.includes(g)
+        })
+      : nonPreschoolStudents
 
     const studentCodes = students.map(s => s.studentCode).filter(Boolean)
 
@@ -273,7 +302,7 @@ export async function GET(req: Request) {
         gender: st.gender || "—",
         dateOfBirth: st.dateOfBirth,
         classId: st.classId || st.class?.id || "",
-        gradeLevel: (st.class as any)?.gradeLevel || st.class?.grade || st.class?.className || "Khối",
+        gradeLevel: resolveGrade(st.class?.grade, st.class?.className) ? `Khối ${resolveGrade(st.class?.grade, st.class?.className)}` : (st.class?.grade || "Khối"),
         className: st.class?.className || "Chưa xếp lớp",
         campusId: st.class?.campus?.id || "",
         campusName: st.class?.campus?.campusName || "Chưa xác định",
@@ -414,6 +443,8 @@ export async function GET(req: Request) {
         totalSessions,
         totalClasses: classList.length
       },
+      availableGrades,
+      appliedGrades: selectedGrades,
       classes: filteredClasses,
       students: filteredStudents
     })

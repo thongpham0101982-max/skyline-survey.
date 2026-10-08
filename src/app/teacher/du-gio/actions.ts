@@ -2135,10 +2135,16 @@ export async function resolveObservationLeaderRecipients(campusId?: string | nul
     const gdcsEmails: string[] = []
     const tbpEmails: string[] = []
 
-    // 1. Resolve GĐCS (Giám đốc Cơ sở) of Campus
+    // 1. Resolve GĐCS (Giám đốc Cơ sở / BGH) of Campus
     if (campusId) {
-      const campus = await prisma.campus.findUnique({
-        where: { id: campusId },
+      const campus = await prisma.campus.findFirst({
+        where: {
+          OR: [
+            { id: campusId },
+            { campusCode: campusId },
+            { campusName: campusId }
+          ]
+        },
         include: {
           manager: true,
           userAssignments: {
@@ -2154,19 +2160,20 @@ export async function resolveObservationLeaderRecipients(campusId?: string | nul
 
       campus?.userAssignments?.forEach((ua: any) => {
         const role = String(ua.role || "").toUpperCase()
-        if (["GDCS", "GĐCS", "GD_CS", "GĐ_CS", "GIAM_DOC_CO_SO", "BGH"].some(k => role.includes(k)) && ua.user?.email) {
+        if (["GDCS", "GĐCS", "GD_CS", "GĐ_CS", "GIAM_DOC_CO_SO", "BGH", "QUAN_LY_CO_SO"].some(k => role.includes(k)) && ua.user?.email) {
           const uEmail = ua.user.email.trim().toLowerCase()
           if (uEmail.includes("@") && !gdcsEmails.includes(uEmail)) gdcsEmails.push(uEmail)
         }
       })
 
+      const actualCampusId = campus?.id || campusId;
       const gdcsTeachers = await prisma.teacher.findMany({
         where: {
-          campusId: campusId,
+          campusId: actualCampusId,
           status: "ACTIVE",
           OR: [
-            { position: { in: ["GDCS", "GĐCS", "GD_CS", "GĐ_CS", "Giám đốc cơ sở", "Giam doc co so", "PGDCS", "PGĐCS"] } },
-            { user: { role: { in: ["GDCS", "GĐCS", "GD_CS", "GĐ_CS"] } } }
+            { position: { in: ["GDCS", "GĐCS", "GD_CS", "GĐ_CS", "Giám đốc cơ sở", "Giam doc co so", "PGDCS", "PGĐCS", "BGH", "Hiệu trưởng", "Phó Hiệu trưởng"] } },
+            { user: { role: { in: ["GDCS", "GĐCS", "GD_CS", "GĐ_CS", "BGH"] } } }
           ]
         },
         include: { user: true }
@@ -2180,7 +2187,7 @@ export async function resolveObservationLeaderRecipients(campusId?: string | nul
       })
     }
 
-    // 2. Resolve TBP (Trưởng Bộ Phận) of Department
+    // 2. Resolve TBP (Trưởng Bộ Phận) of Department & Division
     if (departmentId) {
       const dept = await prisma.department.findUnique({
         where: { id: departmentId },
@@ -2214,8 +2221,8 @@ export async function resolveObservationLeaderRecipients(campusId?: string | nul
           where: {
             status: "ACTIVE",
             OR: [
-              { position: { in: ["TBP", "TRUONG_BO_PHAN", "Trưởng bộ phận", "TB_DHCM"] } },
-              { user: { role: { in: ["TBP", "TRUONG_BO_PHAN"] } } }
+              { position: { in: ["TBP", "TRUONG_BO_PHAN", "Trưởng bộ phận", "TB_DHCM", "TB_CTHS", "TB_HDNGLL"] } },
+              { user: { role: { in: ["TBP", "TRUONG_BO_PHAN", "BAN_DHCM"] } } }
             ]
           },
           include: { user: true, divisionAssignments: true }
@@ -2232,6 +2239,25 @@ export async function resolveObservationLeaderRecipients(campusId?: string | nul
         })
       }
     }
+
+    // 3. Fallback: Also include global/division TBP for CTHS / HĐNGLL / GDTC
+    const cthsTbpList = await prisma.teacher.findMany({
+      where: {
+        status: "ACTIVE",
+        OR: [
+          { position: { in: ["TB_CTHS", "TB_HDNGLL", "TBP_CTHS", "TBP_HDNGLL"] } },
+          { divisionAssignments: { some: { divisionCode: { in: ["BAN_HDNGLL", "BAN_CTHS", "HDNGLL", "CTHS"] } } } }
+        ]
+      },
+      include: { user: true }
+    })
+
+    cthsTbpList.forEach(t => {
+      const email = getTeacherResolvedEmail(t)
+      if (email && email.includes("@") && !tbpEmails.includes(email.toLowerCase())) {
+        tbpEmails.push(email.toLowerCase())
+      }
+    })
 
     return {
       gdcsEmails,
@@ -4811,23 +4837,48 @@ export async function createSurpriseObservation(data: {
             await sendEmail({ from: "HỆ THỐNG SKY-LINE CTHS", to: observerEmail, subject: cthsSubject, html: cthsEmailHtml }).catch(e => console.error("CTHS observer email error:", e));
           }
 
-          // Send notification to Campus Director (GĐCS)
+          // Send notification to Campus Director (GĐCS) & Trưởng Bộ Phận (TBP)
           try {
+            const targetCampusId = data.campusId || slotRecord?.campusId || hostTeacher.campusId;
+            const targetDeptId = data.targetDeptId || hostTeacher.departmentId;
+
             const leaderRecipients = await resolveObservationLeaderRecipients(
-              slotRecord?.campusId || hostTeacher.campusId,
-              data.targetDeptId || hostTeacher.departmentId
+              targetCampusId,
+              targetDeptId
             );
             const gdcsList = leaderRecipients.gdcsEmails.filter(e => e !== hostEmail && e !== observerEmail);
-            const tbpList = leaderRecipients.tbpEmails.filter(e => e !== hostEmail && e !== observerEmail && !gdcsList.includes(e));
+            const tbpList = leaderRecipients.tbpEmails.filter(e => e !== hostEmail && e !== observerEmail);
 
-            if (gdcsList.length > 0) {
+            // Combine leader recipients to ensure both GĐCS and TBP of related campus receive email
+            const allLeaderEmails = Array.from(new Set([...gdcsList, ...tbpList]));
+
+            if (allLeaderEmails.length > 0) {
               await sendEmail({
                 from: "HỆ THỐNG SKY-LINE CTHS",
-                to: gdcsList,
-                cc: tbpList.length > 0 ? tbpList : undefined,
+                to: allLeaderEmails,
                 subject: cthsSubject,
                 html: cthsEmailHtml
               }).catch(e => console.error("GDCS & TBP CTHS email error:", e));
+            }
+
+            // In-app notifications to GĐCS and TBP
+            const leaderUsers = await prisma.user.findMany({
+              where: {
+                email: { in: allLeaderEmails }
+              },
+              select: { id: true }
+            });
+
+            for (const lu of leaderUsers) {
+              await prisma.notification.create({
+                data: {
+                  userId: lu.id,
+                  title: data.isDraft ? "Lịch làm việc cơ sở CTHS mới 📝" : "Biên bản làm việc cơ sở CTHS 🏢",
+                  message: `${hostTeacher.teacherName} đã ${data.isDraft ? "đăng ký lịch" : "ghi nhận hoàn thành"} làm việc tại cơ sở ${targetCampusName} (${totalPeriods} tiết).`,
+                  link: `/teacher/du-gio?tab=overview_slots`,
+                  isRead: false
+                }
+              }).catch(e => console.error("Leader CTHS notif error:", e));
             }
           } catch (leadErr) {
             console.error("CTHS leader email error:", leadErr);

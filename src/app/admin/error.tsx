@@ -13,9 +13,39 @@ export default function AdminPortalError({
 }) {
   const [showDetails, setShowDetails] = useState(false)
 
+  const isChunkError =
+    error?.name === 'ChunkLoadError' ||
+    error?.message?.includes('ChunkLoadError') ||
+    error?.message?.includes('Failed to load chunk') ||
+    error?.message?.includes('Loading chunk') ||
+    error?.message?.includes('module factory is not available') ||
+    error?.message?.includes('stale browser cache') ||
+    error?.message?.includes('instantiated because it was required')
+
+  const handleReload = () => {
+    try {
+      if (typeof window !== 'undefined' && 'caches' in window) {
+        caches.keys().then((names) => Promise.all(names.map((n) => caches.delete(n)))).finally(() => {
+          window.location.reload()
+        })
+        return
+      }
+    } catch (_) {}
+    window.location.reload()
+  }
+
   useEffect(() => {
     console.error('Admin Portal Error Boundary caught:', error)
-  }, [error])
+
+    if (isChunkError && typeof window !== 'undefined') {
+      const lastChunkReload = sessionStorage.getItem('last_chunk_reload')
+      const now = Date.now()
+      if (!lastChunkReload || now - parseInt(lastChunkReload, 10) > 10000) {
+        sessionStorage.setItem('last_chunk_reload', now.toString())
+        handleReload()
+      }
+    }
+  }, [error, isChunkError])
 
   return (
     <div className="flex flex-col items-center justify-center p-8 sm:p-12 min-h-[450px] bg-white rounded-3xl border border-red-200/80 shadow-xs max-w-xl mx-auto my-8 text-center">
@@ -55,7 +85,7 @@ export default function AdminPortalError({
       <div className="flex flex-col sm:flex-row items-center gap-3 w-full sm:w-auto">
         <button
           type="button"
-          onClick={() => reset()}
+          onClick={handleReload}
           className="flex items-center justify-center gap-2 px-5 py-2.5 bg-[#0284C7] hover:bg-[#0369A1] text-white text-xs font-bold rounded-xl transition-all shadow-xs hover:shadow w-full sm:w-auto cursor-pointer"
         >
           <RefreshCcw className="w-4 h-4" />

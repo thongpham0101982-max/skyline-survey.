@@ -20,13 +20,18 @@ import {
   TrendingUp,
   Save,
   Printer,
-  Check
+  Check,
+  MessageSquareText,
+  School,
+  CalendarCheck,
+  Lightbulb
 } from "lucide-react"
 import {
   getGradeCategoryWeights,
   calculateAdvisoryEvaluation,
   matchCategoryKey
 } from "@/lib/advisory/advisoryWeights"
+import { useCampusTheme, resolveCampusTheme } from "@/hooks/useCampusTheme"
 
 export default function ParentAdvisoryClient({ 
   initialChildren = [], 
@@ -46,7 +51,8 @@ export default function ParentAdvisoryClient({
   const [consultations, setConsultations] = useState<any[]>([])
   const [termEvals, setTermEvals] = useState<any[]>([])
   
-  const [activeTab, setActiveTab] = useState<"goals" | "tracking" | "evaluations">("goals")
+  const [activeTab, setActiveTab] = useState<"goals" | "tracking" | "evaluations" | "consultations">("goals")
+  const [acknowledgedLogs, setAcknowledgedLogs] = useState<Record<string, boolean>>({})
   const [selectedCheckPoint, setSelectedCheckPoint] = useState<"GIUA_KY_1" | "CUOI_KY_1" | "GIUA_KY_2" | "CUOI_KY_2">("GIUA_KY_1")
   const [selectedTerm, setSelectedTerm] = useState<"HK1" | "HK2">("HK1")
   const [viewMode, setViewMode] = useState<"card" | "table">("card")
@@ -202,6 +208,13 @@ export default function ParentAdvisoryClient({
   const statusColor = profile?.currentStatusColor || "GREEN"
   const homeroomTeacherName = selectedStudent.homeroomTeacherName || student.homeroomTeacherName || (student.class?.homeroomTeacherId ? "Phụ trách chuyên môn" : "Chưa phân công")
   
+  // Theme nhận diện theo cơ sở của con đang chọn
+  const campusIdentifier = selectedStudent.class?.campus?.campusCode || 
+    selectedStudent.class?.campus?.campusName || 
+    selectedStudent.class?.className || 
+    "CS1"
+  const campusTheme = useCampusTheme(campusIdentifier)
+  
   // Merge goals array from DB across all potential response payloads
   const rawGoalsList: any[] = 
     (goalsData?.existingSheet?.goals && goalsData.existingSheet.goals.length > 0)
@@ -319,17 +332,28 @@ export default function ParentAdvisoryClient({
   return (
     <div className="max-w-6xl mx-auto space-y-6 font-sans text-slate-800 pb-16">
       
-      {/* Header Info Banner */}
-      <div className="bg-gradient-to-r from-[#003B3A] via-[#005B58] to-[#48BFE3] rounded-3xl p-6 sm:p-8 text-white shadow-lg space-y-2">
-        <div className="flex items-center gap-2 text-xs font-bold text-teal-100 uppercase tracking-wider">
-          <Compass className="w-4 h-4 text-amber-300" />
-          <span>PARENT PORTAL — SKYLINE ADVISORY</span>
+      {/* Header Info Banner — Bám sát màu sắc Brandname Cơ sở Sky-Line */}
+      <div 
+        className="rounded-3xl p-6 sm:p-8 text-white shadow-lg space-y-3 transition-all duration-500 relative overflow-hidden"
+        style={{ background: campusTheme.headerGradient }}
+      >
+        <div className="flex flex-wrap items-center justify-between gap-3">
+          <div className="flex items-center gap-2 text-xs font-bold text-teal-100 uppercase tracking-wider">
+            <Compass className="w-4 h-4 text-amber-300" />
+            <span>PARENT PORTAL — SKY-LINE ADVISORY</span>
+          </div>
+
+          <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-[11px] font-black bg-white text-slate-900 shadow-xs">
+            <School className="w-3.5 h-3.5" style={{ color: campusTheme.primaryColor }} />
+            <span>{campusTheme.name}</span>
+          </div>
         </div>
+
         <h1 className="text-2xl sm:text-3xl font-black tracking-tight uppercase">
           Theo Dõi Cố Vấn & Mục Tiêu Đồng Hành
         </h1>
         <p className="text-xs sm:text-sm text-teal-100 font-medium max-w-3xl leading-relaxed">
-          Đồng bộ liên thông dữ liệu 3 chiều giữa Học Sinh ➔ Giáo Viên Cố Vấn ➔ Phụ Huynh. Theo dõi phiếu mục tiêu, bảng theo dõi tiến độ & nhật ký check-in từ Thầy Cô.
+          Đồng bộ liên thông dữ liệu 3 chiều giữa <strong className="text-white">Gia Đình ⇄ Thầy Cô GVCN ⇄ Học Sinh</strong>. Theo dõi phiếu mục tiêu, bảng theo dõi tiến độ & sổ nhật ký cố vấn từ Thầy Cô.
         </p>
       </div>
 
@@ -338,22 +362,31 @@ export default function ParentAdvisoryClient({
         <div className="bg-white rounded-2xl p-4 border border-slate-200 shadow-xs flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
           <span className="text-xs font-black text-slate-600 flex items-center gap-2">
             <Users className="w-4 h-4 text-[#48BFE3]" />
-            <span>Chọn con em theo dõi (Năm học hiện tại):</span>
+            <span>Chọn con em theo dõi:</span>
           </span>
           <div className="flex flex-wrap items-center gap-2">
-            {childrenList.map((c: any) => (
-              <button
-                key={c.id}
-                onClick={() => setSelectedStudentId(c.id)}
-                className={"px-3.5 py-1.5 rounded-xl text-xs font-bold transition-all " + (
-                  selectedStudentId === c.id 
-                    ? "bg-[#003B3A] text-white shadow-sm" 
-                    : "bg-slate-100 text-slate-600 hover:bg-slate-200"
-                )}
-              >
-                {c.studentName} ({c.class?.className || 'Chưa xếp lớp'})
-              </button>
-            ))}
+            {childrenList.map((c: any) => {
+              const isSelected = selectedStudentId === c.id
+              const cTheme = resolveCampusTheme(c.class?.campus?.campusName || c.class?.className || "Sky-Line")
+              return (
+                <button
+                  key={c.id}
+                  onClick={() => setSelectedStudentId(c.id)}
+                  className={`flex items-center gap-2 px-3.5 py-1.5 rounded-xl text-xs font-bold transition-all cursor-pointer ${
+                    isSelected 
+                      ? "text-white shadow-sm" 
+                      : "bg-slate-100 text-slate-600 hover:bg-slate-200"
+                  }`}
+                  style={isSelected ? { backgroundColor: campusTheme.darkColor } : {}}
+                >
+                  <span 
+                    className="w-2 h-2 rounded-full" 
+                    style={{ backgroundColor: cTheme.primaryColor }}
+                  />
+                  <span>{c.studentName} ({c.class?.className || 'Chưa xếp lớp'})</span>
+                </button>
+              )
+            })}
           </div>
         </div>
       )}
@@ -398,19 +431,20 @@ export default function ParentAdvisoryClient({
             <div className="bg-slate-50 p-4 rounded-2xl border border-slate-200 text-xs space-y-1 text-right sm:text-right w-full sm:w-auto">
               <p className="font-extrabold text-slate-900">Học sinh: {student.studentName || selectedStudent.studentName}</p>
               <p className="text-slate-500 font-semibold">Lớp: {student.class?.className || selectedStudent.class?.className || '8.3_CS1'} • Mã HS: {student.studentCode || selectedStudent.studentCode}</p>
-              <p className="text-teal-700 font-bold">GVCN: {homeroomTeacherName}</p>
+              <p className="font-bold" style={{ color: campusTheme.primaryColor }}>GVCN: {homeroomTeacherName}</p>
             </div>
           </div>
 
-          {/* 3-WAY SYNCHRONIZED TAB BAR NAVIGATION (PH ↔ TEACHER ↔ HS) */}
+          {/* 4-WAY SYNCHRONIZED TAB BAR NAVIGATION (PH ↔ TEACHER ↔ HS) */}
           <div className="bg-white rounded-2xl p-2 border border-slate-200 shadow-xs flex flex-wrap items-center justify-center sm:justify-start gap-2">
             <button
               onClick={() => setActiveTab("goals")}
-              className={"px-5 py-2.5 rounded-xl text-xs font-black flex items-center gap-2 transition-all " + (
+              className={"px-4 py-2.5 rounded-xl text-xs font-black flex items-center gap-2 transition-all cursor-pointer " + (
                 activeTab === "goals"
-                  ? "bg-[#003B3A] text-white shadow-md"
+                  ? "text-white shadow-md"
                   : "bg-slate-50 text-slate-600 hover:bg-slate-100"
               )}
+              style={activeTab === "goals" ? { backgroundColor: campusTheme.darkColor } : {}}
             >
               <FileText className="w-4 h-4 text-teal-400" />
               <span>1. Phiếu Mục Tiêu Năm Học</span>
@@ -418,26 +452,41 @@ export default function ParentAdvisoryClient({
 
             <button
               onClick={() => setActiveTab("tracking")}
-              className={"px-5 py-2.5 rounded-xl text-xs font-black flex items-center gap-2 transition-all " + (
+              className={"px-4 py-2.5 rounded-xl text-xs font-black flex items-center gap-2 transition-all cursor-pointer " + (
                 activeTab === "tracking"
-                  ? "bg-[#003B3A] text-white shadow-md"
+                  ? "text-white shadow-md"
                   : "bg-slate-50 text-slate-600 hover:bg-slate-100"
               )}
+              style={activeTab === "tracking" ? { backgroundColor: campusTheme.darkColor } : {}}
             >
               <Target className="w-4 h-4 text-amber-400" />
-              <span>2. Tiến Độ & Nhật Ký Check-in GVCN ({trackingLogs.length})</span>
+              <span>2. Tiến Độ & Check-in GVCN ({trackingLogs.length})</span>
             </button>
 
             <button
               onClick={() => setActiveTab("evaluations")}
-              className={"px-5 py-2.5 rounded-xl text-xs font-black flex items-center gap-2 transition-all " + (
+              className={"px-4 py-2.5 rounded-xl text-xs font-black flex items-center gap-2 transition-all cursor-pointer " + (
                 activeTab === "evaluations"
-                  ? "bg-[#003B3A] text-white shadow-md"
+                  ? "text-white shadow-md"
                   : "bg-slate-50 text-slate-600 hover:bg-slate-100"
               )}
+              style={activeTab === "evaluations" ? { backgroundColor: campusTheme.darkColor } : {}}
             >
               <Award className="w-4 h-4 text-rose-400" />
-              <span>3. Đánh Giá Định Kỳ & Nhật Ký Tham Vấn ({consultations.length})</span>
+              <span>3. Đánh Giá Định Kỳ</span>
+            </button>
+
+            <button
+              onClick={() => setActiveTab("consultations")}
+              className={"px-4 py-2.5 rounded-xl text-xs font-black flex items-center gap-2 transition-all cursor-pointer " + (
+                activeTab === "consultations"
+                  ? "text-white shadow-md"
+                  : "bg-slate-50 text-slate-600 hover:bg-slate-100"
+              )}
+              style={activeTab === "consultations" ? { backgroundColor: campusTheme.darkColor } : {}}
+            >
+              <MessageSquareText className="w-4 h-4 text-sky-400" />
+              <span>4. Nhật Ký Cố Vấn Từ GVCN ({consultations.length})</span>
             </button>
           </div>
 
@@ -1037,17 +1086,58 @@ export default function ParentAdvisoryClient({
                     </div>
                   </div>
 
-                  <div className="bg-white rounded-3xl border border-slate-200 overflow-x-auto shadow-xs">
-                    <table className="w-full text-left border-collapse text-xs">
+                  <div className="bg-white rounded-3xl border border-slate-200/90 overflow-x-auto shadow-md">
+                    <table className="w-full text-left border-collapse text-xs table-auto">
                       <thead>
-                        <tr className="bg-slate-100 text-slate-800 font-black border-b border-slate-300">
-                          <th className="p-3 border-r border-slate-200 min-w-[160px]">Nhóm mục tiêu</th>
-                          <th className="p-3 border-r border-slate-200 min-w-[320px]">Mục tiêu cụ thể</th>
-                          <th className="p-3 border-r border-slate-200 min-w-[150px]">Kết quả theo dõi</th>
-                          <th className="p-3 border-r border-slate-200 min-w-[140px]">Mức hoàn thành mục tiêu (1-5)</th>
-                          <th className="p-3 border-r border-slate-200 min-w-[140px]">Mức độ chủ động (1-5)</th>
-                          <th className="p-3 border-r border-slate-200 min-w-[140px]">Thái độ tham gia (1-5)</th>
-                          <th className="p-3 min-w-[220px]">Khuyến nghị cho phụ huynh / giáo viên bộ môn</th>
+                        <tr className="bg-gradient-to-r from-[#003B3A] via-[#005B58] to-[#01A49D] text-white font-black border-b border-teal-800 shadow-xs">
+                          <th className="p-3.5 border-r border-white/15 w-[130px] min-w-[120px] text-center">
+                            <div className="flex items-center justify-center gap-1.5">
+                              <User className="w-3.5 h-3.5 text-teal-200" />
+                              <span>1. Học sinh</span>
+                            </div>
+                          </th>
+                          <th className="p-3.5 border-r border-white/15 w-[95px] min-w-[85px] text-center">
+                            <div className="flex items-center justify-center gap-1.5">
+                              <Calendar className="w-3.5 h-3.5 text-amber-300" />
+                              <span>2. Học kỳ</span>
+                            </div>
+                          </th>
+                          <th className="p-3.5 border-r border-white/15 min-w-[280px] max-w-[420px]">
+                            <div className="flex items-center gap-1.5">
+                              <Target className="w-3.5 h-3.5 text-emerald-300" />
+                              <span>3. Nhóm & Mục tiêu cụ thể</span>
+                            </div>
+                          </th>
+                          <th className="p-3.5 border-r border-white/15 w-[145px] min-w-[135px] text-center whitespace-nowrap">
+                            <div className="flex items-center justify-center gap-1.5">
+                              <CheckCircle2 className="w-3.5 h-3.5 text-teal-200" />
+                              <span>4. Kết quả theo dõi</span>
+                            </div>
+                          </th>
+                          <th className="p-3.5 border-r border-white/15 w-[155px] min-w-[145px] text-center whitespace-nowrap">
+                            <div className="flex items-center justify-center gap-1.5">
+                              <TrendingUp className="w-3.5 h-3.5 text-amber-300" />
+                              <span>5. Mức hoàn thành</span>
+                            </div>
+                          </th>
+                          <th className="p-3.5 border-r border-white/15 w-[155px] min-w-[145px] text-center whitespace-nowrap">
+                            <div className="flex items-center justify-center gap-1.5">
+                              <Sparkles className="w-3.5 h-3.5 text-sky-200" />
+                              <span>6. Mức độ chủ động</span>
+                            </div>
+                          </th>
+                          <th className="p-3.5 border-r border-white/15 w-[155px] min-w-[145px] text-center whitespace-nowrap">
+                            <div className="flex items-center justify-center gap-1.5">
+                              <Heart className="w-3.5 h-3.5 text-rose-300" />
+                              <span>7. Thái độ tham gia</span>
+                            </div>
+                          </th>
+                          <th className="p-3.5 min-w-[240px]">
+                            <div className="flex items-center gap-1.5">
+                              <MessageSquareText className="w-3.5 h-3.5 text-amber-300" />
+                              <span>8. Khuyến nghị & Lời dặn GVCN</span>
+                            </div>
+                          </th>
                         </tr>
                       </thead>
                       <tbody className="divide-y divide-slate-200">
@@ -1061,98 +1151,192 @@ export default function ParentAdvisoryClient({
                           const attitudeLevel = matchedLog?.participationAttitude || activeTermEval?.participationAttitude || null
                           const teacherNotes = matchedLog?.teacherNotes || (catIdx === 0 ? activeTermEval?.recommendations : "") || ""
 
+                          // Bảng màu rực rỡ phân cấp theo từng nhóm mục tiêu
+                          const CATEGORY_STYLE_MAP = [
+                            {
+                              borderLeft: "border-l-4 border-l-blue-600",
+                              cardBg: "bg-blue-50/70 border-blue-200/90",
+                              badgeBg: "bg-blue-600 text-white shadow-xs",
+                              numBadge: "bg-[#003B3A] text-white",
+                              iconColor: "text-blue-600",
+                              textColor: "text-blue-950"
+                            },
+                            {
+                              borderLeft: "border-l-4 border-l-emerald-600",
+                              cardBg: "bg-emerald-50/70 border-emerald-200/90",
+                              badgeBg: "bg-emerald-600 text-white shadow-xs",
+                              numBadge: "bg-[#003B3A] text-white",
+                              iconColor: "text-emerald-600",
+                              textColor: "text-emerald-950"
+                            },
+                            {
+                              borderLeft: "border-l-4 border-l-purple-600",
+                              cardBg: "bg-purple-50/70 border-purple-200/90",
+                              badgeBg: "bg-purple-600 text-white shadow-xs",
+                              numBadge: "bg-[#003B3A] text-white",
+                              iconColor: "text-purple-600",
+                              textColor: "text-purple-950"
+                            },
+                            {
+                              borderLeft: "border-l-4 border-l-amber-600",
+                              cardBg: "bg-amber-50/70 border-amber-200/90",
+                              badgeBg: "bg-amber-600 text-white shadow-xs",
+                              numBadge: "bg-[#003B3A] text-white",
+                              iconColor: "text-amber-600",
+                              textColor: "text-amber-950"
+                            }
+                          ]
+
+                          const catStyle = CATEGORY_STYLE_MAP[catIdx % CATEGORY_STYLE_MAP.length]
+
                           return (
-                            <tr key={catDef.key} className="bg-white hover:bg-slate-50/70 transition-colors">
+                            <tr key={catDef.key} className={`bg-white hover:bg-slate-50/80 transition-colors ${catStyle.borderLeft}`}>
+                              {/* 1. Học sinh */}
                               {catIdx === 0 && (
-                                <td rowSpan={currentCategories.length} className="p-3 border-r border-slate-200 font-black text-slate-900 align-top bg-slate-50/50">
-                                  <div>{student.studentName || selectedStudent.studentName}</div>
-                                  {(student.studentCode || selectedStudent.studentCode) && (
-                                    <div className="text-[11px] font-medium text-slate-500 mt-0.5">
-                                      MS: {student.studentCode || selectedStudent.studentCode}
+                                <td rowSpan={currentCategories.length} className="p-3.5 border-r border-slate-200 align-top bg-gradient-to-b from-slate-50 to-slate-100/60 text-center">
+                                  <div className="space-y-2">
+                                    <div 
+                                      className="w-10 h-10 rounded-2xl mx-auto flex items-center justify-center font-black text-white text-sm shadow-md"
+                                      style={{ backgroundColor: campusTheme.primaryColor }}
+                                    >
+                                      {(student.studentName || selectedStudent.studentName || "S").charAt(0)}
                                     </div>
-                                  )}
+                                    <div className="font-black text-slate-900 text-xs leading-snug">
+                                      {student.studentName || selectedStudent.studentName}
+                                    </div>
+                                    {(student.studentCode || selectedStudent.studentCode) && (
+                                      <div className="text-[11px] font-bold text-amber-900 bg-amber-100/80 border border-amber-300 px-2 py-0.5 rounded-lg inline-block shadow-2xs">
+                                        MS: {student.studentCode || selectedStudent.studentCode}
+                                      </div>
+                                    )}
+                                  </div>
                                 </td>
                               )}
 
+                              {/* 2. Học kỳ */}
                               {catIdx === 0 && (
-                                <td rowSpan={currentCategories.length} className="p-3 border-r border-slate-200 font-bold text-slate-700 align-top bg-slate-50/50">
-                                  {selectedTerm === "HK1" ? "Học kỳ I" : "Học kỳ II"}
+                                <td rowSpan={currentCategories.length} className="p-3.5 border-r border-slate-200 align-top bg-gradient-to-b from-slate-50 to-slate-100/60 text-center whitespace-nowrap">
+                                  <span className="inline-block px-3 py-1.5 rounded-xl bg-slate-900 text-white shadow-xs font-black text-xs">
+                                    {selectedTerm === "HK1" ? "Học kỳ I" : "Học kỳ II"}
+                                  </span>
                                 </td>
                               )}
 
-                              {/* Mục tiêu học tập */}
-                              <td className="p-3 border-r border-slate-200 align-top">
-                                <div className="space-y-1.5">
-                                  <div className="flex flex-wrap items-center gap-1">
-                                    <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md bg-[#003B3A] text-white text-[10px] font-black shadow-2xs">
-                                      # MỤC TIÊU CỤ THỂ #1
+                              {/* 3. Nhóm & Mục tiêu học tập cụ thể — BẮT MẮT & DỄ ĐỌC */}
+                              <td className="p-3.5 border-r border-slate-200 align-top">
+                                <div className={`p-3.5 rounded-2xl border ${catStyle.cardBg} space-y-2 transition-all hover:shadow-xs`}>
+                                  <div className="flex flex-wrap items-center gap-1.5">
+                                    <span className={`inline-flex items-center gap-1 px-2.5 py-0.5 rounded-md ${catStyle.numBadge} text-[10px] font-black shadow-2xs`}>
+                                      # MỤC TIÊU CỤ THỂ #{catIdx + 1}
                                     </span>
-                                    <span className="inline-block px-2 py-0.5 rounded-lg text-[10px] font-black bg-teal-100 text-teal-900 border border-teal-200">
+                                    <span className={`inline-block px-2.5 py-0.5 rounded-lg text-[10px] font-black ${catStyle.badgeBg}`}>
                                       {catDef.label}
                                     </span>
                                   </div>
-                                  <p className="text-xs font-bold text-slate-800 leading-snug">
-                                    {firstGoal.targetText || "Em chưa điền nội dung mục tiêu nhóm này"}
+                                  <p className={`text-xs font-bold ${catStyle.textColor} leading-relaxed break-words`}>
+                                    {firstGoal.targetText || "Em chưa điền nội dung mục tiêu nhóm này."}
                                   </p>
                                 </div>
                               </td>
 
-                              {/* Kết quả theo dõi */}
-                              <td className="p-3 border-r border-slate-200 align-top">
-                                <span className={"px-2.5 py-1 rounded-xl text-[11px] font-black border shadow-xs inline-flex items-center gap-1 " + (
-                                  progressStatus === "DAT" ? "bg-emerald-100 text-emerald-800 border-emerald-300" :
-                                  progressStatus === "CHUA_DAT" ? "bg-rose-100 text-rose-800 border-rose-300" :
-                                  progressStatus === "TIEN_TRIEN" ? "bg-amber-100 text-amber-900 border-amber-300" :
-                                  "bg-slate-100 text-slate-600 border-slate-300"
+                              {/* 4. Kết quả theo dõi — TẠO ĐIỂM NHẤN TRẠNG THÁI */}
+                              <td className="p-3.5 border-r border-slate-200 align-top text-center">
+                                <span className={"px-3 py-1.5 rounded-xl text-xs font-black shadow-xs inline-flex items-center gap-1.5 whitespace-nowrap " + (
+                                  progressStatus === "DAT" ? "bg-gradient-to-r from-emerald-500 to-teal-500 text-white shadow-emerald-500/25 border border-emerald-400" :
+                                  progressStatus === "CHUA_DAT" ? "bg-gradient-to-r from-rose-500 to-pink-500 text-white shadow-rose-500/25 border border-rose-400" :
+                                  progressStatus === "TIEN_TRIEN" ? "bg-gradient-to-r from-amber-500 to-orange-500 text-white shadow-amber-500/25 border border-amber-400" :
+                                  "bg-purple-100 text-purple-900 border border-purple-200 font-bold"
                                 )}>
-                                  {progressStatus === "DAT" ? "🟢 Đạt" : progressStatus === "CHUA_DAT" ? "🔴 Chưa đạt" : progressStatus === "TIEN_TRIEN" ? "🟡 Đang tiến triển" : "🟣 Chưa đánh giá"}
+                                  {progressStatus === "DAT" ? "🟢 Đạt Mục Tiêu" : 
+                                   progressStatus === "CHUA_DAT" ? "🔴 Chưa Đạt" : 
+                                   progressStatus === "TIEN_TRIEN" ? "🟡 Đang Tiến Triển" : 
+                                   "🟣 Chưa Đánh Giá"}
                                 </span>
                               </td>
 
-                              {/* Mức hoàn thành mục tiêu (1-5) */}
-                              <td className="p-3 border-r border-slate-200 align-top">
+                              {/* 5. Mức hoàn thành mục tiêu (1-5) */}
+                              <td className="p-3.5 border-r border-slate-200 align-top text-center">
                                 {goalLevel ? (
-                                  <div className="p-2 rounded-xl bg-amber-50 text-amber-950 border border-amber-200 font-bold text-xs">
-                                    Mức {goalLevel} - {RUBRIC_TEXTS.goalCompletion[goalLevel]?.slice(0, 28)}...
+                                  <div className={`p-2.5 rounded-2xl border font-bold text-xs leading-snug shadow-2xs ${
+                                    goalLevel >= 4 
+                                      ? "bg-emerald-50 text-emerald-950 border-emerald-300 font-black" 
+                                      : goalLevel === 3 
+                                      ? "bg-amber-50 text-amber-950 border-amber-300" 
+                                      : "bg-rose-50 text-rose-950 border-rose-200"
+                                  }`}>
+                                    <div className="font-black text-amber-700 mb-0.5">
+                                      {goalLevel >= 4 ? "⭐ Mức " + goalLevel : "Mức " + goalLevel}
+                                    </div>
+                                    <div className="text-[11px] font-semibold text-slate-700">
+                                      {RUBRIC_TEXTS.goalCompletion[goalLevel]?.slice(0, 32)}...
+                                    </div>
                                   </div>
                                 ) : (
-                                  <div className="p-2 rounded-xl bg-slate-50 text-slate-500 border border-slate-200 font-medium text-xs">
-                                    - (Chưa đánh giá)
+                                  <div className="p-2 rounded-xl bg-slate-100 text-slate-500 border border-slate-200 font-bold text-xs whitespace-nowrap">
+                                    - Chưa ghi nhận -
                                   </div>
                                 )}
                               </td>
 
-                              {/* Mức độ chủ động (1-5) */}
-                              <td className="p-3 border-r border-slate-200 align-top">
+                              {/* 6. Mức độ chủ động (1-5) */}
+                              <td className="p-3.5 border-r border-slate-200 align-top text-center">
                                 {initiativeLevel ? (
-                                  <div className="p-2 rounded-xl bg-blue-50 text-blue-950 border border-blue-200 font-bold text-xs">
-                                    Mức {initiativeLevel} - {RUBRIC_TEXTS.initiative[initiativeLevel]?.slice(0, 28)}...
+                                  <div className={`p-2.5 rounded-2xl border font-bold text-xs leading-snug shadow-2xs ${
+                                    initiativeLevel >= 4 
+                                      ? "bg-blue-50 text-blue-950 border-blue-300 font-black" 
+                                      : initiativeLevel === 3 
+                                      ? "bg-amber-50 text-amber-950 border-amber-300" 
+                                      : "bg-rose-50 text-rose-950 border-rose-200"
+                                  }`}>
+                                    <div className="font-black text-blue-700 mb-0.5">
+                                      {initiativeLevel >= 4 ? "⭐ Mức " + initiativeLevel : "Mức " + initiativeLevel}
+                                    </div>
+                                    <div className="text-[11px] font-semibold text-slate-700">
+                                      {RUBRIC_TEXTS.initiative[initiativeLevel]?.slice(0, 32)}...
+                                    </div>
                                   </div>
                                 ) : (
-                                  <div className="p-2 rounded-xl bg-slate-50 text-slate-500 border border-slate-200 font-medium text-xs">
-                                    - (Chưa đánh giá)
+                                  <div className="p-2 rounded-xl bg-slate-100 text-slate-500 border border-slate-200 font-bold text-xs whitespace-nowrap">
+                                    - Chưa ghi nhận -
                                   </div>
                                 )}
                               </td>
 
-                              {/* Thái độ tham gia (1-5) */}
-                              <td className="p-3 border-r border-slate-200 align-top">
+                              {/* 7. Thái độ tham gia (1-5) */}
+                              <td className="p-3.5 border-r border-slate-200 align-top text-center">
                                 {attitudeLevel ? (
-                                  <div className="p-2 rounded-xl bg-emerald-50 text-emerald-950 border border-emerald-200 font-bold text-xs">
-                                    Mức {attitudeLevel} - {RUBRIC_TEXTS.participation[attitudeLevel]?.slice(0, 28)}...
+                                  <div className={`p-2.5 rounded-2xl border font-bold text-xs leading-snug shadow-2xs ${
+                                    attitudeLevel >= 4 
+                                      ? "bg-emerald-50 text-emerald-950 border-emerald-300 font-black" 
+                                      : attitudeLevel === 3 
+                                      ? "bg-amber-50 text-amber-950 border-amber-300" 
+                                      : "bg-rose-50 text-rose-950 border-rose-200"
+                                  }`}>
+                                    <div className="font-black text-emerald-700 mb-0.5">
+                                      {attitudeLevel >= 4 ? "⭐ Mức " + attitudeLevel : "Mức " + attitudeLevel}
+                                    </div>
+                                    <div className="text-[11px] font-semibold text-slate-700">
+                                      {RUBRIC_TEXTS.participation[attitudeLevel]?.slice(0, 32)}...
+                                    </div>
                                   </div>
                                 ) : (
-                                  <div className="p-2 rounded-xl bg-slate-50 text-slate-500 border border-slate-200 font-medium text-xs">
-                                    - (Chưa đánh giá)
+                                  <div className="p-2 rounded-xl bg-slate-100 text-slate-500 border border-slate-200 font-bold text-xs whitespace-nowrap">
+                                    - Chưa ghi nhận -
                                   </div>
                                 )}
                               </td>
 
-                              {/* Khuyến nghị cho phụ huynh / giáo viên bộ môn */}
-                              <td className="p-3 align-top">
-                                <p className="text-xs text-slate-700 font-semibold italic">
-                                  {teacherNotes ? "💬 " + teacherNotes : "Chưa có ghi chú"}
-                                </p>
+                              {/* 8. Khuyến nghị cho phụ huynh / giáo viên bộ môn — HỘP THẺ LỜI DẶN */}
+                              <td className="p-3.5 align-top">
+                                <div className="bg-gradient-to-r from-amber-50/90 via-orange-50/60 to-yellow-50/70 border border-amber-200/90 rounded-2xl p-3 shadow-xs space-y-1">
+                                  <div className="flex items-center gap-1.5 font-black text-amber-900 text-[11px]">
+                                    <MessageSquareText className="w-3.5 h-3.5 text-amber-600" />
+                                    <span>Lời dặn của GVCN:</span>
+                                  </div>
+                                  <p className="text-xs text-amber-950 font-bold italic leading-relaxed break-words">
+                                    {teacherNotes ? `“${teacherNotes}”` : "“Kính mong Gia đình tiếp tục nhắc nhở và tạo điều kiện cho con thực hiện tốt mục tiêu.”"}
+                                  </p>
+                                </div>
                               </td>
                             </tr>
                           )
@@ -1221,6 +1405,231 @@ export default function ParentAdvisoryClient({
                 )}
               </div>
 
+            </div>
+          )}
+
+          {/* ========================================================================= */}
+          {/* TAB 4: NHẬT KÝ CỐ VẤN TỪ GVCN — THEO DÕI CÁC BUỔI CỐ VẤN & LỜI DẶN DÒ */}
+          {/* ========================================================================= */}
+          {activeTab === "consultations" && (
+            <div className="space-y-6 animate-in fade-in duration-300">
+              <div className="bg-white rounded-3xl p-6 sm:p-8 border border-slate-200/90 shadow-sm flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+                <div className="space-y-1">
+                  <div className="flex items-center gap-2">
+                    <span 
+                      className="text-[10px] font-black uppercase tracking-widest px-2.5 py-0.5 rounded-full border"
+                      style={{
+                        backgroundColor: campusTheme.lightAccentBg,
+                        color: campusTheme.primaryColor,
+                        borderColor: campusTheme.borderSubtle
+                      }}
+                    >
+                      ĐỒNG HÀNH 3 CHIỀU: GIA ĐÌNH ⇄ GVCN ⇄ HỌC SINH
+                    </span>
+                  </div>
+                  <h3 className="text-lg sm:text-xl font-black text-slate-900 tracking-tight flex items-center gap-2 pt-1">
+                    <MessageSquareText className="w-5 h-5 text-sky-600" />
+                    <span>Sổ Nhật Ký Cố Vấn & Trao Đổi Từ GVCN</span>
+                  </h3>
+                  <p className="text-xs text-slate-500 font-medium">
+                    Ghi nhận chi tiết các buổi tư vấn, hướng dẫn phương pháp học tập, rèn luyện nề nếp và kế hoạch hành động giữa Thầy/Cô và Con.
+                  </p>
+                </div>
+
+                <div className="bg-slate-50 p-3.5 rounded-2xl border border-slate-200 text-xs shrink-0 flex items-center gap-3">
+                  <div 
+                    className="w-10 h-10 rounded-xl flex items-center justify-center font-black text-white shadow-xs"
+                    style={{ backgroundColor: campusTheme.primaryColor }}
+                  >
+                    {consultations.length}
+                  </div>
+                  <div>
+                    <div className="text-[10px] font-black text-slate-400 uppercase tracking-wider">Tổng số buổi cố vấn</div>
+                    <div className="font-black text-slate-800">Đã lưu trong năm học</div>
+                  </div>
+                </div>
+              </div>
+
+              {consultations.length === 0 ? (
+                <div className="bg-white rounded-3xl p-12 text-center border border-dashed border-slate-300 shadow-xs space-y-4">
+                  <div 
+                    className="w-16 h-16 rounded-2xl flex items-center justify-center mx-auto shadow-inner border"
+                    style={{
+                      backgroundColor: campusTheme.lightAccentBg,
+                      borderColor: campusTheme.borderSubtle
+                    }}
+                  >
+                    <CalendarCheck className="w-8 h-8" style={{ color: campusTheme.primaryColor }} />
+                  </div>
+                  <div className="max-w-md mx-auto space-y-1.5">
+                    <h4 className="text-base font-black text-slate-900">
+                      Chưa có biên bản cố vấn nào được ghi nhận
+                    </h4>
+                    <p className="text-xs text-slate-500 font-medium leading-relaxed">
+                      Thầy Cô GVCN sẽ tổ chức các phiên cố vấn 1-1 định kỳ (học kỳ, tháng, sau các đợt kiểm tra) để đồng hành cùng con. Nhật ký và lời dặn dò sẽ tự động hiển thị tại đây ngay sau mỗi buổi gặp.
+                    </p>
+                  </div>
+                </div>
+              ) : (
+                <div className="space-y-4">
+                  {consultations.map((c: any, idx: number) => {
+                    const logDate = c.meetingDate ? new Date(c.meetingDate).toLocaleDateString("vi-VN", {
+                      weekday: "long",
+                      year: "numeric",
+                      month: "long",
+                      day: "numeric"
+                    }) : "Chưa xác định"
+                    const teacherName = c.teacher?.teacherName || c.evaluatorName || homeroomTeacherName
+                    const isAcknowledged = Boolean(acknowledgedLogs[c.id || idx])
+
+                    return (
+                      <div 
+                        key={c.id || idx}
+                        className="bg-white rounded-3xl p-6 sm:p-7 border border-slate-200/90 shadow-sm hover:shadow-md transition-all space-y-5 relative overflow-hidden"
+                      >
+                        {/* Top Accent Strip */}
+                        <div 
+                          className="absolute top-0 left-0 right-0 h-1.5"
+                          style={{ backgroundColor: campusTheme.primaryColor }}
+                        />
+
+                        {/* Header card */}
+                        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-slate-100 pb-4">
+                          <div className="flex items-center gap-3">
+                            <div 
+                              className="w-10 h-10 rounded-2xl flex items-center justify-center font-bold text-white shrink-0 shadow-xs"
+                              style={{ backgroundColor: campusTheme.darkColor }}
+                            >
+                              #{idx + 1}
+                            </div>
+                            <div>
+                              <div className="flex items-center gap-2">
+                                <span className="text-xs font-black text-slate-900 capitalize">
+                                  {logDate}
+                                </span>
+                                {c.category && (
+                                  <span 
+                                    className="text-[10px] font-black px-2 py-0.5 rounded-full border uppercase"
+                                    style={{
+                                      backgroundColor: campusTheme.lightAccentBg,
+                                      color: campusTheme.primaryColor,
+                                      borderColor: campusTheme.borderSubtle
+                                    }}
+                                  >
+                                    {c.category}
+                                  </span>
+                                )}
+                              </div>
+                              <div className="text-[11px] text-slate-500 font-medium mt-0.5">
+                                Cố vấn phụ trách: <strong className="text-slate-800">{teacherName}</strong>
+                              </div>
+                            </div>
+                          </div>
+
+                          <div className="flex items-center gap-2 self-start sm:self-auto">
+                            <span className="inline-flex items-center gap-1.5 text-[11px] font-black px-3 py-1 rounded-full bg-emerald-50 text-emerald-700 border border-emerald-200">
+                              <CheckCircle2 className="w-3.5 h-3.5 text-emerald-600" />
+                              <span>Đã hoàn thành</span>
+                            </span>
+                          </div>
+                        </div>
+
+                        {/* Grid Thông tin buổi cố vấn */}
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-5 text-xs">
+                          
+                          {/* 1. Nội dung trao đổi */}
+                          <div className="bg-slate-50/70 p-4 rounded-2xl border border-slate-200/80 space-y-1.5">
+                            <div className="flex items-center gap-1.5 font-black text-slate-900">
+                              <MessageSquareText className="w-4 h-4 text-sky-600" />
+                              <span>1. Nội dung trao đổi & Hướng dẫn:</span>
+                            </div>
+                            <p className="text-slate-700 font-medium leading-relaxed pl-5 whitespace-pre-line">
+                              {c.content || "Chưa có nội dung ghi nhận."}
+                            </p>
+                          </div>
+
+                          {/* 2. Khó khăn vướng mắc của học sinh */}
+                          <div className="bg-amber-50/40 p-4 rounded-2xl border border-amber-200/70 space-y-1.5">
+                            <div className="flex items-center gap-1.5 font-black text-amber-900">
+                              <Lightbulb className="w-4 h-4 text-amber-600" />
+                              <span>2. Khó khăn / Điểm cần rèn luyện:</span>
+                            </div>
+                            <p className="text-slate-700 font-medium leading-relaxed pl-5 whitespace-pre-line">
+                              {c.difficulties || "Không có khó khăn vướng mắc đáng kể."}
+                            </p>
+                          </div>
+
+                          {/* 3. Kế hoạch hành động / Giải pháp tiếp theo */}
+                          <div className="bg-teal-50/40 p-4 rounded-2xl border border-teal-200/70 space-y-1.5">
+                            <div className="flex items-center gap-1.5 font-black text-teal-900">
+                              <Target className="w-4 h-4 text-teal-600" />
+                              <span>3. Kế hoạch hành động & Giải pháp:</span>
+                            </div>
+                            <p className="text-slate-700 font-medium leading-relaxed pl-5 whitespace-pre-line">
+                              {c.nextActions || "Duy trì phong độ học tập và nề nếp hiện tại."}
+                            </p>
+                            {c.deadline && (
+                              <div className="pl-5 pt-1">
+                                <span className="inline-flex items-center gap-1 text-[11px] font-bold text-rose-700 bg-rose-50 px-2.5 py-0.5 rounded-lg border border-rose-200">
+                                  <Clock className="w-3 h-3" />
+                                  <span>Hạn mốc theo dõi: {new Date(c.deadline).toLocaleDateString("vi-VN")}</span>
+                                </span>
+                              </div>
+                            )}
+                          </div>
+
+                          {/* 4. Lời dặn dò của GVCN gửi cho Phụ Huynh */}
+                          <div 
+                            className="p-4 rounded-2xl border space-y-1.5"
+                            style={{
+                              backgroundColor: campusTheme.lightBg,
+                              borderColor: campusTheme.borderSubtle
+                            }}
+                          >
+                            <div 
+                              className="flex items-center gap-1.5 font-black"
+                              style={{ color: campusTheme.darkColor }}
+                            >
+                              <Heart className="w-4 h-4 text-rose-500 fill-rose-500" />
+                              <span>4. Lời dặn của GVCN gửi Quý Phụ Huynh:</span>
+                            </div>
+                            <p className="text-slate-700 font-medium leading-relaxed pl-5 italic">
+                              {c.notes ? `“${c.notes}”` : "“Kính mong Quý Phụ huynh tiếp tục đồng hành và nhắc nhở con theo kế hoạch trên.”"}
+                            </p>
+                          </div>
+
+                        </div>
+
+                        {/* Footer Xác Nhận Của Phụ Huynh */}
+                        <div className="pt-2 border-t border-slate-100 flex flex-wrap items-center justify-between gap-3 text-xs">
+                          <span className="text-slate-500 font-medium">
+                            {isAcknowledged 
+                              ? "✓ Quý Phụ huynh đã xác nhận đã đọc và phối hợp cùng GVCN."
+                              : "Quý Phụ huynh vui lòng bấm xác nhận sau khi xem lời dặn của Thầy/Cô."}
+                          </span>
+
+                          <button
+                            type="button"
+                            onClick={() => {
+                              setAcknowledgedLogs(prev => ({ ...prev, [c.id || idx]: true }))
+                              alert("✓ Đã gửi xác nhận phối hợp đến GVCN thành công!")
+                            }}
+                            className={`inline-flex items-center gap-1.5 px-4 py-2 rounded-xl text-xs font-black transition-all cursor-pointer ${
+                              isAcknowledged
+                                ? "bg-emerald-600 text-white shadow-xs cursor-default"
+                                : "bg-slate-900 hover:bg-slate-800 text-white shadow-xs active:scale-95"
+                            }`}
+                          >
+                            <CheckCircle2 className="w-3.5 h-3.5" />
+                            <span>{isAcknowledged ? "Đã xác nhận phối hợp" : "Xác nhận đã đọc & Phối hợp"}</span>
+                          </button>
+                        </div>
+
+                      </div>
+                    )
+                  })}
+                </div>
+              )}
             </div>
           )}
 

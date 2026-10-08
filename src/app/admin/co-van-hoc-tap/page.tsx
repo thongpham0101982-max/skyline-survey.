@@ -72,7 +72,7 @@ function AdminAdvisoryDashboardContent() {
   // Đồng bộ tab từ URL searchParams (?tab=consultations / ?tab=dashboard / ?tab=presets)
   useEffect(() => {
     const tab = searchParams.get("tab")
-    if (tab === "consultations") {
+    if (tab === "consultations" || tab === "reports" || tab === "bao-cao-tong-hop" || tab === "bao-cao") {
       setActiveTab("consultations")
     } else if (tab === "dashboard") {
       setActiveTab("dashboard")
@@ -121,13 +121,189 @@ function AdminAdvisoryDashboardContent() {
   const [loadingConsultations, setLoadingConsultations] = useState<boolean>(false)
   const [consultationStatusFilter, setConsultationStatusFilter] = useState<"ALL" | "CONSULTED" | "NOT_CONSULTED">("ALL")
   const [consultationSearchQuery, setConsultationSearchQuery] = useState<string>("")
-  const [consultationViewMode, setConsultationViewMode] = useState<"CLASS" | "STUDENT">("CLASS")
+  const [consultationViewMode, setConsultationViewMode] = useState<"OVERVIEW" | "CLASS" | "STUDENT">("OVERVIEW")
+  const [classSortBy, setClassSortBy] = useState<"DEFAULT" | "LOWEST_PERCENT" | "HIGHEST_PERCENT" | "TOTAL_STUDENTS" | "SESSIONS">("DEFAULT")
+  const [classProgressFilter, setClassProgressFilter] = useState<"ALL" | "NOT_STARTED" | "IN_PROGRESS" | "COMPLETED">("ALL")
   const [selectedConsultationClass, setSelectedConsultationClass] = useState<any>(null)
   const [selectedConsultationStudent, setSelectedConsultationStudent] = useState<any>(null)
   const [classConsultationStudentSearch, setClassConsultationStudentSearch] = useState<string>("")
   const [classStudentFilterStatus, setClassStudentFilterStatus] = useState<"ALL" | "CONSULTED" | "NOT_CONSULTED">("ALL")
   const [expandedStudentIdInModal, setExpandedStudentIdInModal] = useState<string | null>(null)
   const [consultationModalTab, setConsultationModalTab] = useState<"STUDENTS" | "LOGS">("STUDENTS")
+
+  // --- TỔNG HỢP TIẾN ĐỘ THEO CƠ SỞ ---
+  const campusSummary = useMemo(() => {
+    if (!consultationSummaryData?.classes) return []
+    const map: Record<string, any> = {}
+    consultationSummaryData.classes.forEach((cls: any) => {
+      const key = cls.campusName || "Khác"
+      if (!map[key]) {
+        map[key] = {
+          campusName: key,
+          campusId: cls.campusId,
+          totalClasses: 0,
+          totalStudents: 0,
+          consultedCount: 0,
+          unconsultedCount: 0,
+          totalSessions: 0,
+          completedClasses: 0,
+          notStartedClasses: 0,
+          inProgressClasses: 0
+        }
+      }
+      map[key].totalClasses += 1
+      map[key].totalStudents += cls.totalStudents
+      map[key].consultedCount += cls.consultedCount
+      map[key].unconsultedCount += cls.unconsultedCount
+      map[key].totalSessions += cls.totalSessions
+      if (cls.consultedPercent === 100) {
+        map[key].completedClasses += 1
+      } else if (cls.consultedPercent === 0) {
+        map[key].notStartedClasses += 1
+      } else {
+        map[key].inProgressClasses += 1
+      }
+    })
+    return Object.values(map).map((c: any) => ({
+      ...c,
+      consultedPercent: c.totalStudents > 0 ? Math.round((c.consultedCount / c.totalStudents) * 1000) / 10 : 0
+    })).sort((a, b) => b.consultedPercent - a.consultedPercent)
+  }, [consultationSummaryData])
+
+  // --- TỔNG HỢP TIẾN ĐỘ THEO KHỐI HỌC ---
+  const gradeSummary = useMemo(() => {
+    if (!consultationSummaryData?.classes) return []
+    const map: Record<string, any> = {}
+    consultationSummaryData.classes.forEach((cls: any) => {
+      const key = cls.gradeLevel || "Khối"
+      if (!map[key]) {
+        map[key] = {
+          gradeLevel: key,
+          totalClasses: 0,
+          totalStudents: 0,
+          consultedCount: 0,
+          unconsultedCount: 0,
+          totalSessions: 0,
+          completedClasses: 0,
+          notStartedClasses: 0,
+          inProgressClasses: 0
+        }
+      }
+      map[key].totalClasses += 1
+      map[key].totalStudents += cls.totalStudents
+      map[key].consultedCount += cls.consultedCount
+      map[key].unconsultedCount += cls.unconsultedCount
+      map[key].totalSessions += cls.totalSessions
+      if (cls.consultedPercent === 100) {
+        map[key].completedClasses += 1
+      } else if (cls.consultedPercent === 0) {
+        map[key].notStartedClasses += 1
+      } else {
+        map[key].inProgressClasses += 1
+      }
+    })
+    return Object.values(map).map((g: any) => ({
+      ...g,
+      consultedPercent: g.totalStudents > 0 ? Math.round((g.consultedCount / g.totalStudents) * 1000) / 10 : 0
+    })).sort((a, b) => {
+      const numA = parseInt(a.gradeLevel.replace(/\D/g, "")) || 0
+      const numB = parseInt(b.gradeLevel.replace(/\D/g, "")) || 0
+      return numA - numB
+    })
+  }, [consultationSummaryData])
+
+  // --- PHÂN BỔ MỨC ĐỘ TIẾN ĐỘ TOÀN HỆ THỐNG ---
+  const classDistribution = useMemo(() => {
+    if (!consultationSummaryData?.classes) return { total: 0, completed: 0, inProgress: 0, notStarted: 0 }
+    let completed = 0, inProgress = 0, notStarted = 0
+    consultationSummaryData.classes.forEach((c: any) => {
+      if (c.consultedPercent === 100) completed++
+      else if (c.consultedPercent === 0) notStarted++
+      else inProgress++
+    })
+    return {
+      total: consultationSummaryData.classes.length,
+      completed,
+      inProgress,
+      notStarted
+    }
+  }, [consultationSummaryData])
+
+  // --- DANH SÁCH LỚP ĐƯỢC LỌC & SẮP XẾP ---
+  const displayedClasses = useMemo(() => {
+    if (!consultationSummaryData?.classes) return []
+    let list = [...consultationSummaryData.classes]
+
+    if (classProgressFilter === "NOT_STARTED") {
+      list = list.filter((c: any) => c.consultedPercent === 0)
+    } else if (classProgressFilter === "IN_PROGRESS") {
+      list = list.filter((c: any) => c.consultedPercent > 0 && c.consultedPercent < 100)
+    } else if (classProgressFilter === "COMPLETED") {
+      list = list.filter((c: any) => c.consultedPercent === 100)
+    }
+
+    if (classSortBy === "LOWEST_PERCENT") {
+      list.sort((a: any, b: any) => a.consultedPercent - b.consultedPercent || b.totalStudents - a.totalStudents)
+    } else if (classSortBy === "HIGHEST_PERCENT") {
+      list.sort((a: any, b: any) => b.consultedPercent - a.consultedPercent || b.totalStudents - a.totalStudents)
+    } else if (classSortBy === "TOTAL_STUDENTS") {
+      list.sort((a: any, b: any) => b.totalStudents - a.totalStudents)
+    } else if (classSortBy === "SESSIONS") {
+      list.sort((a: any, b: any) => b.totalSessions - a.totalSessions)
+    }
+
+    return list
+  }, [consultationSummaryData, classProgressFilter, classSortBy])
+
+  // --- SAO CHÉP DANH SÁCH LỚP CẦN ĐÔN ĐỐC (< 50%) ---
+  function copySlowClassesList() {
+    if (!consultationSummaryData?.classes) return
+    const slowClasses = consultationSummaryData.classes.filter((c: any) => c.consultedPercent < 50)
+    if (slowClasses.length === 0) {
+      showToast("Tuyệt vời! Tất cả các lớp đều đã đạt tiến độ từ 50% trở lên.")
+      return
+    }
+
+    let text = "📢 BẢNG ĐÔN ĐỐC TIẾN ĐỘ TƯ VẤN CỐ VẤN HỌC TẬP (CÁC LỚP TIẾN ĐỘ DƯỚI 50%):\n"
+    slowClasses.forEach((c: any, i: number) => {
+      text += `${i + 1}. Lớp ${c.className} (${c.campusName}) — GVCN: ${c.homeroomTeacherName}${c.homeroomTeacherPhone ? " — ĐT: " + c.homeroomTeacherPhone : ""}: Đã tư vấn ${c.consultedCount}/${c.totalStudents} HS (${c.consultedPercent}%), còn ${c.unconsultedCount} HS chưa gặp.\n`
+    })
+    text += "\nKính đề nghị các Thầy/Cô GVCN khẩn trương sắp xếp lịch tư vấn và cập nhật vào Sổ quan sát cố vấn học tập."
+
+    if (typeof navigator !== "undefined" && navigator.clipboard) {
+      navigator.clipboard.writeText(text).then(() => {
+        showToast(`Đã sao chép danh sách ${slowClasses.length} lớp cần đôn đốc vào bộ nhớ tạm!`)
+      }).catch(() => {
+        alert(text)
+      })
+    } else {
+      alert(text)
+    }
+  }
+
+  // --- QUY MÔ KHỐI ÁP DỤNG CỐ VẤN HỌC TẬP ---
+  const [appliedGrades, setAppliedGrades] = useState<string[]>([])
+  const [availableGrades, setAvailableGrades] = useState<string[]>(["1","2","3","4","5","6","7","8","9","10","11","12"])
+
+  // Tải cấu hình quy mô khối áp dụng từ localStorage nếu có
+  useEffect(() => {
+    try {
+      const saved = localStorage.getItem("co_van_applied_grades")
+      if (saved) {
+        const parsed = JSON.parse(saved)
+        if (Array.isArray(parsed)) {
+          setAppliedGrades(parsed)
+        }
+      }
+    } catch {}
+  }, [])
+
+  function handleSaveAppliedGrades(grades: string[]) {
+    setAppliedGrades(grades)
+    try {
+      localStorage.setItem("co_van_applied_grades", JSON.stringify(grades))
+    } catch {}
+  }
 
   // --- TAB 3: ADJUSTMENT REQUESTS STATE ---
   const [adjustmentRequests, setAdjustmentRequests] = useState<any[]>([])
@@ -414,16 +590,22 @@ function AdminAdvisoryDashboardContent() {
   }
 
   // Load Consultation Summary Data
-  async function loadConsultationSummary(overrideYearId?: string, overrideSearch?: string) {
+  async function loadConsultationSummary(overrideYearId?: string, overrideSearch?: string, overrideGrades?: string[]) {
     const yearId = overrideYearId !== undefined ? overrideYearId : selectedAcademicYearId
     const query = overrideSearch !== undefined ? overrideSearch : consultationSearchQuery
+    const currentGrades = overrideGrades !== undefined ? overrideGrades : appliedGrades
+    const gradesQuery = currentGrades && currentGrades.length > 0 ? "&grades=" + currentGrades.join(",") : ""
+
     setLoadingConsultations(true)
     try {
-      const url = "/api/admin/advisory/consultations/summary?campusId=" + selectedCampusId + "&academicYearId=" + yearId + "&status=" + consultationStatusFilter + "&search=" + encodeURIComponent(query) + "&_t=" + Date.now()
+      const url = "/api/admin/advisory/consultations/summary?campusId=" + selectedCampusId + "&academicYearId=" + yearId + "&status=" + consultationStatusFilter + gradesQuery + "&search=" + encodeURIComponent(query) + "&_t=" + Date.now()
       const res = await fetch(url, { cache: "no-store" })
       if (res.ok) {
         const data = await res.json()
         setConsultationSummaryData(data)
+        if (Array.isArray(data.availableGrades) && data.availableGrades.length > 0) {
+          setAvailableGrades(data.availableGrades)
+        }
       }
     } catch (e) {
       console.error("loadConsultationSummary error:", e)
@@ -436,7 +618,7 @@ function AdminAdvisoryDashboardContent() {
     if (activeTab === "consultations") {
       loadConsultationSummary()
     }
-  }, [activeTab, selectedCampusId, selectedAcademicYearId, consultationStatusFilter])
+  }, [activeTab, selectedCampusId, selectedAcademicYearId, consultationStatusFilter, appliedGrades])
 
   function exportConsultationsExcel() {
     if (!consultationSummaryData?.classes || consultationSummaryData.classes.length === 0) {
@@ -465,6 +647,7 @@ function AdminAdvisoryDashboardContent() {
         "Họ và tên học sinh": st.studentName,
         "Giới tính": st.gender,
         "Lớp": st.className,
+        "Khối": st.gradeLevel,
         "Cơ sở": st.campusName,
         "Trạng thái tư vấn": st.isConsulted ? "Đã tư vấn" : "Chưa tư vấn",
         "Số buổi tư vấn": st.sessionCount,
@@ -476,14 +659,48 @@ function AdminAdvisoryDashboardContent() {
       }))
 
       const wb = XLSX.utils.book_new()
+
+      // Sheet 1: Tổng hợp hệ thống theo Cơ sở
+      const campusMap: Record<string, any> = {}
+      consultationSummaryData.classes.forEach((cls: any) => {
+        if (!campusMap[cls.campusName]) {
+          campusMap[cls.campusName] = {
+            "Cơ sở": cls.campusName,
+            "Số lớp": 0,
+            "Tổng số HS": 0,
+            "Số HS đã tư vấn": 0,
+            "Số HS chưa tư vấn": 0,
+            "Tổng lượt tư vấn": 0
+          }
+        }
+        campusMap[cls.campusName]["Số lớp"] += 1
+        campusMap[cls.campusName]["Tổng số HS"] += cls.totalStudents
+        campusMap[cls.campusName]["Số HS đã tư vấn"] += cls.consultedCount
+        campusMap[cls.campusName]["Số HS chưa tư vấn"] += cls.unconsultedCount
+        campusMap[cls.campusName]["Tổng lượt tư vấn"] += cls.totalSessions
+      })
+
+      const campusSummaryRows = Object.values(campusMap).map((c: any) => ({
+        ...c,
+        "Tỷ lệ hoàn thành (%)": c["Tổng số HS"] > 0 ? `${Math.round((c["Số HS đã tư vấn"] / c["Tổng số HS"]) * 1000) / 10}%` : "0%"
+      }))
+
+      // Sheet Danh sách HS chưa tư vấn để đôn đốc
+      const unconsultedStudentRows = studentRows.filter((s: any) => s["Trạng thái tư vấn"] === "Chưa tư vấn")
+
+      const wsSummary = XLSX.utils.json_to_sheet(campusSummaryRows)
       const wsClass = XLSX.utils.json_to_sheet(classRows)
+      const wsUnconsulted = XLSX.utils.json_to_sheet(unconsultedStudentRows)
       const wsStudent = XLSX.utils.json_to_sheet(studentRows)
 
+      XLSX.utils.book_append_sheet(wb, wsSummary, "Tong_Hop_Co_So")
       XLSX.utils.book_append_sheet(wb, wsClass, "Tien_Do_Theo_Lop")
-      XLSX.utils.book_append_sheet(wb, wsStudent, "Chi_Tiet_Hoc_Sinh")
+      XLSX.utils.book_append_sheet(wb, wsUnconsulted, "HS_Chua_Tu_Van")
+      XLSX.utils.book_append_sheet(wb, wsStudent, "Chi_Tiet_Tat_Ca_HS")
 
+      const scopeText = appliedGrades.length > 0 ? `Khoi_${appliedGrades.join("_")}` : "Toan_Truong"
       const dateStr = new Date().toISOString().slice(0, 10)
-      XLSX.writeFile(wb, `BaoCao_TheoDoi_HoatDongTuVan_${dateStr}.xlsx`)
+      XLSX.writeFile(wb, `BaoCao_TienDo_TuVan_${scopeText}_${dateStr}.xlsx`)
     } catch (e: any) {
       alert("Lỗi xuất Excel: " + e.message)
     }
@@ -645,8 +862,8 @@ function AdminAdvisoryDashboardContent() {
                 : "text-teal-100 hover:bg-white/10"
             }`}
           >
-            <MessageSquare className="w-4 h-4" />
-            <span>Theo Dõi Hoạt Động Tư Vấn</span>
+            <BarChart3 className="w-4 h-4" />
+            <span>Báo Cáo Tổng Hợp</span>
           </button>
         </div>
       </div>
@@ -1159,13 +1376,158 @@ function AdminAdvisoryDashboardContent() {
       {activeTab === "consultations" && (
         <div className="space-y-6">
           
+          {/* QUY MÔ KHỐI ÁP DỤNG CỐ VẤN HỌC TẬP */}
+          <div className="bg-white rounded-3xl p-5 border border-slate-200 shadow-sm space-y-3.5">
+            <div className="flex flex-wrap items-center justify-between gap-3 border-b border-slate-100 pb-3">
+              <div className="flex items-center gap-2">
+                <Layers className="w-5 h-5 text-teal-600 shrink-0" />
+                <span className="text-xs font-black text-slate-800 uppercase tracking-wider">
+                  QUY MÔ KHỐI ÁP DỤNG CỐ VẤN HỌC TẬP:
+                </span>
+                <span className="px-2.5 py-0.5 rounded-full text-[11px] font-black bg-teal-50 text-teal-800 border border-teal-200">
+                  {appliedGrades.length === 0
+                    ? `Toàn trường (${availableGrades.length} khối)`
+                    : `Đang áp dụng ${appliedGrades.length}/${availableGrades.length} khối`}
+                </span>
+              </div>
+
+              {/* Quick Preset Buttons */}
+              <div className="flex flex-wrap items-center gap-1.5 text-xs font-bold">
+                <span className="text-slate-400 text-[11px] mr-1 font-medium">Chọn nhanh:</span>
+                <button
+                  type="button"
+                  onClick={() => handleSaveAppliedGrades([])}
+                  className={`px-2.5 py-1 rounded-lg transition-all text-[11px] font-bold ${
+                    appliedGrades.length === 0
+                      ? "bg-[#003B3A] text-white shadow-xs"
+                      : "bg-slate-100 text-slate-600 hover:bg-slate-200"
+                  }`}
+                >
+                  Tất cả (K1 - K12)
+                </button>
+
+                <button
+                  type="button"
+                  onClick={() => handleSaveAppliedGrades(["2", "3", "4", "5", "6", "7", "8", "9", "10", "11", "12"])}
+                  className={`px-2.5 py-1 rounded-lg transition-all text-[11px] font-bold ${
+                    appliedGrades.length === 11 && !appliedGrades.includes("1")
+                      ? "bg-[#003B3A] text-white shadow-xs"
+                      : "bg-slate-100 text-slate-600 hover:bg-slate-200"
+                  }`}
+                >
+                  K2 - K12 (Chuẩn phiếu mẫu)
+                </button>
+
+                <button
+                  type="button"
+                  onClick={() => handleSaveAppliedGrades(["6", "7", "8", "9", "10", "11", "12"])}
+                  className={`px-2.5 py-1 rounded-lg transition-all text-[11px] font-bold ${
+                    appliedGrades.length === 7 && appliedGrades.every(g => ["6", "7", "8", "9", "10", "11", "12"].includes(g))
+                      ? "bg-[#003B3A] text-white shadow-xs"
+                      : "bg-slate-100 text-slate-600 hover:bg-slate-200"
+                  }`}
+                >
+                  Trung học (K6 - K12)
+                </button>
+
+                <button
+                  type="button"
+                  onClick={() => handleSaveAppliedGrades(["1", "2", "3", "4", "5"])}
+                  className={`px-2.5 py-1 rounded-lg transition-all text-[11px] font-bold ${
+                    appliedGrades.length === 5 && appliedGrades.every(g => ["1", "2", "3", "4", "5"].includes(g))
+                      ? "bg-[#003B3A] text-white shadow-xs"
+                      : "bg-slate-100 text-slate-600 hover:bg-slate-200"
+                  }`}
+                >
+                  Tiểu học (K1 - K5)
+                </button>
+
+                <button
+                  type="button"
+                  onClick={() => handleSaveAppliedGrades(["6", "7", "8", "9"])}
+                  className={`px-2.5 py-1 rounded-lg transition-all text-[11px] font-bold ${
+                    appliedGrades.length === 4 && appliedGrades.every(g => ["6", "7", "8", "9"].includes(g))
+                      ? "bg-[#003B3A] text-white shadow-xs"
+                      : "bg-slate-100 text-slate-600 hover:bg-slate-200"
+                  }`}
+                >
+                  THCS (K6 - K9)
+                </button>
+
+                <button
+                  type="button"
+                  onClick={() => handleSaveAppliedGrades(["10", "11", "12"])}
+                  className={`px-2.5 py-1 rounded-lg transition-all text-[11px] font-bold ${
+                    appliedGrades.length === 3 && appliedGrades.every(g => ["10", "11", "12"].includes(g))
+                      ? "bg-[#003B3A] text-white shadow-xs"
+                      : "bg-slate-100 text-slate-600 hover:bg-slate-200"
+                  }`}
+                >
+                  THPT (K10 - K12)
+                </button>
+              </div>
+            </div>
+
+            {/* Grade Pills Multi-select Grid */}
+            <div className="flex flex-wrap items-center gap-2 pt-0.5">
+              <span className="text-xs font-bold text-slate-500 mr-1">Tùy chọn Khối:</span>
+              {availableGrades.map(g => {
+                const isSelected = appliedGrades.length === 0 || appliedGrades.includes(g)
+                return (
+                  <button
+                    key={g}
+                    type="button"
+                    onClick={() => {
+                      if (appliedGrades.length === 0) {
+                        const next = availableGrades.filter(item => item !== g)
+                        handleSaveAppliedGrades(next)
+                      } else if (appliedGrades.includes(g)) {
+                        const next = appliedGrades.filter(item => item !== g)
+                        handleSaveAppliedGrades(next)
+                      } else {
+                        const next = [...appliedGrades, g].sort((a, b) => Number(a) - Number(b))
+                        if (next.length === availableGrades.length) {
+                          handleSaveAppliedGrades([])
+                        } else {
+                          handleSaveAppliedGrades(next)
+                        }
+                      }
+                    }}
+                    className={`px-3 py-1.5 rounded-xl text-xs font-black transition-all flex items-center gap-1.5 ${
+                      isSelected
+                        ? "bg-teal-700 text-white shadow-xs ring-1 ring-teal-800"
+                        : "bg-slate-100 text-slate-400 hover:bg-slate-200 border border-slate-200"
+                    }`}
+                  >
+                    <span className={`w-3.5 h-3.5 rounded-full flex items-center justify-center text-[10px] ${
+                      isSelected ? "bg-white text-teal-800 font-black" : "border border-slate-300"
+                    }`}>
+                      {isSelected ? "✓" : ""}
+                    </span>
+                    <span>Khối {g}</span>
+                  </button>
+                )
+              })}
+
+              {appliedGrades.length > 0 && (
+                <button
+                  type="button"
+                  onClick={() => handleSaveAppliedGrades([])}
+                  className="text-[11px] font-bold text-teal-700 hover:text-teal-900 underline ml-2"
+                >
+                  Chọn lại tất cả
+                </button>
+              )}
+            </div>
+          </div>
+
           {/* Filter Bar */}
           <div className="bg-white rounded-3xl p-5 border border-slate-200 shadow-sm space-y-4">
             <div className="flex flex-wrap items-center justify-between gap-3">
               <div className="flex items-center gap-2">
-                <MessageSquare className="w-5 h-5 text-teal-600 shrink-0" />
+                <BarChart3 className="w-5 h-5 text-teal-600 shrink-0" />
                 <span className="text-xs font-black text-slate-700 uppercase tracking-wider">
-                  BỘ LỌC PHÂN TÍCH TIẾN ĐỘ TƯ VẤN TOÀN HỆ THỐNG:
+                  BỘ LỌC BÁO CÁO TIẾN ĐỘ TƯ VẤN TOÀN HỆ THỐNG:
                 </span>
               </div>
 
@@ -1305,14 +1667,30 @@ function AdminAdvisoryDashboardContent() {
           <div className="bg-white rounded-3xl border border-slate-200 shadow-sm overflow-hidden space-y-4 p-5">
             <div className="flex flex-wrap items-center justify-between gap-3 border-b border-slate-100 pb-4">
               <h3 className="font-black text-sm text-[#003B3A] uppercase tracking-wider flex items-center gap-2">
-                <span>DANH SÁCH THEO DÕI HOẠT ĐỘNG TƯ VẤN</span>
+                <span>BÁO CÁO TỔNG HỢP TIẾN ĐỘ THỰC HIỆN TƯ VẤN</span>
                 <span className="text-xs font-bold px-2.5 py-0.5 rounded-full bg-teal-50 text-teal-800 border border-teal-200">
-                  {consultationViewMode === "CLASS" ? `${consultationSummaryData?.classes?.length || 0} Lớp` : `${consultationSummaryData?.students?.length || 0} HS`}
+                  {consultationViewMode === "OVERVIEW"
+                    ? `${campusSummary.length} Cơ sở • ${gradeSummary.length} Khối`
+                    : consultationViewMode === "CLASS"
+                    ? `${displayedClasses.length}/${consultationSummaryData?.classes?.length || 0} Lớp`
+                    : `${consultationSummaryData?.students?.length || 0} HS`}
                 </span>
               </h3>
 
-              {/* View Mode Toggle */}
+              {/* View Mode Toggle (3 Modes) */}
               <div className="flex items-center bg-slate-100 p-1 rounded-2xl border border-slate-200">
+                <button
+                  type="button"
+                  onClick={() => setConsultationViewMode("OVERVIEW")}
+                  className={`px-3 py-1.5 rounded-xl text-xs font-black transition-all flex items-center gap-1.5 ${
+                    consultationViewMode === "OVERVIEW"
+                      ? "bg-[#003B3A] text-white shadow-xs"
+                      : "text-slate-600 hover:text-slate-900"
+                  }`}
+                >
+                  <BarChart3 className="w-3.5 h-3.5" />
+                  <span>Tổng Hợp Hệ Thống</span>
+                </button>
                 <button
                   type="button"
                   onClick={() => setConsultationViewMode("CLASS")}
@@ -1323,7 +1701,7 @@ function AdminAdvisoryDashboardContent() {
                   }`}
                 >
                   <Building2 className="w-3.5 h-3.5" />
-                  <span>Xem theo Lớp</span>
+                  <span>Tiến Độ Theo Lớp</span>
                 </button>
                 <button
                   type="button"
@@ -1335,7 +1713,7 @@ function AdminAdvisoryDashboardContent() {
                   }`}
                 >
                   <Users className="w-3.5 h-3.5" />
-                  <span>Xem theo Học sinh</span>
+                  <span>Chi Tiết Học Sinh</span>
                 </button>
               </div>
             </div>
@@ -1345,32 +1723,324 @@ function AdminAdvisoryDashboardContent() {
                 <Loader2 className="w-8 h-8 text-teal-600 animate-spin mx-auto" />
                 <p className="text-xs font-extrabold">Đang tổng hợp tiến độ hoạt động tư vấn toàn trường...</p>
               </div>
+            ) : consultationViewMode === "OVERVIEW" ? (
+              /* EXECUTIVE OVERVIEW DASHBOARD */
+              <div className="space-y-6 pt-1">
+                {/* 1. Class Progress Distribution & Action Bar */}
+                <div className="bg-slate-50 border border-slate-200/80 rounded-2xl p-4 flex flex-wrap items-center justify-between gap-4">
+                  <div className="flex flex-wrap items-center gap-3">
+                    <span className="text-xs font-black text-slate-700 uppercase tracking-wider flex items-center gap-1.5">
+                      <Target className="w-4 h-4 text-teal-600" />
+                      <span>Phân bổ tiến độ các lớp:</span>
+                    </span>
+
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setClassProgressFilter("COMPLETED")
+                        setConsultationViewMode("CLASS")
+                      }}
+                      className="px-3 py-1.5 rounded-xl bg-emerald-100/80 hover:bg-emerald-200 text-emerald-800 text-xs font-black transition-all flex items-center gap-1.5 border border-emerald-300 shadow-2xs"
+                    >
+                      <CheckCircle2 className="w-3.5 h-3.5 text-emerald-600" />
+                      <span>{classDistribution.completed} lớp hoàn thành 100%</span>
+                    </button>
+
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setClassProgressFilter("IN_PROGRESS")
+                        setConsultationViewMode("CLASS")
+                      }}
+                      className="px-3 py-1.5 rounded-xl bg-amber-100/80 hover:bg-amber-200 text-amber-800 text-xs font-black transition-all flex items-center gap-1.5 border border-amber-300 shadow-2xs"
+                    >
+                      <Clock className="w-3.5 h-3.5 text-amber-600" />
+                      <span>{classDistribution.inProgress} lớp đang thực hiện</span>
+                    </button>
+
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setClassProgressFilter("NOT_STARTED")
+                        setConsultationViewMode("CLASS")
+                      }}
+                      className="px-3 py-1.5 rounded-xl bg-rose-100/80 hover:bg-rose-200 text-rose-800 text-xs font-black transition-all flex items-center gap-1.5 border border-rose-300 shadow-2xs"
+                    >
+                      <AlertCircle className="w-3.5 h-3.5 text-rose-600" />
+                      <span>{classDistribution.notStarted} lớp chưa triển khai (0%)</span>
+                    </button>
+                  </div>
+
+                  <button
+                    type="button"
+                    onClick={copySlowClassesList}
+                    className="px-4 py-2 rounded-xl bg-gradient-to-r from-rose-600 to-rose-700 hover:from-rose-700 hover:to-rose-800 text-white text-xs font-black flex items-center gap-1.5 shadow-xs transition-all shrink-0"
+                    title="Sao chép danh sách lớp tiến độ dưới 50% để gửi Zalo/Email đôn đốc"
+                  >
+                    <FileText className="w-3.5 h-3.5 text-rose-200" />
+                    <span>Sao chép DS lớp cần đôn đốc (&lt; 50%)</span>
+                  </button>
+                </div>
+
+                {/* 2. Campus Progress Breakdown Cards */}
+                <div className="space-y-3">
+                  <div className="flex items-center justify-between">
+                    <h4 className="text-xs font-black uppercase text-slate-700 tracking-wider flex items-center gap-2">
+                      <Building2 className="w-4 h-4 text-teal-600" />
+                      <span>BÁO CÁO TIẾN ĐỘ THEO TỪNG CƠ SỞ ({campusSummary.length} CƠ SỞ):</span>
+                    </h4>
+                    <span className="text-[11px] text-slate-400 font-medium">Bấm vào cơ sở để xem chi tiết danh sách lớp</span>
+                  </div>
+
+                  <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+                    {campusSummary.map((campus: any) => (
+                      <div
+                        key={campus.campusName}
+                        onClick={() => {
+                          if (campus.campusId) setSelectedCampusId(campus.campusId)
+                          setConsultationViewMode("CLASS")
+                        }}
+                        className="bg-white rounded-2xl p-4 border border-slate-200 hover:border-teal-500 hover:shadow-md transition-all cursor-pointer space-y-3 group"
+                      >
+                        <div className="flex items-center justify-between">
+                          <h5 className="font-black text-sm text-[#003B3A] group-hover:text-teal-700 transition-colors">
+                            {campus.campusName}
+                          </h5>
+                          <span className={`px-2 py-0.5 rounded-full text-[10px] font-black ${
+                            campus.consultedPercent >= 80 ? "bg-emerald-100 text-emerald-800" :
+                            campus.consultedPercent >= 40 ? "bg-amber-100 text-amber-800" :
+                            "bg-rose-100 text-rose-800"
+                          }`}>
+                            {campus.consultedPercent}%
+                          </span>
+                        </div>
+
+                        {/* Progress Bar */}
+                        <div className="w-full bg-slate-100 rounded-full h-2 overflow-hidden">
+                          <div
+                            className={`h-2 rounded-full transition-all ${
+                              campus.consultedPercent >= 80 ? "bg-emerald-500" :
+                              campus.consultedPercent >= 40 ? "bg-amber-500" :
+                              "bg-rose-500"
+                            }`}
+                            style={{ width: `${Math.min(campus.consultedPercent, 100)}%` }}
+                          />
+                        </div>
+
+                        <div className="grid grid-cols-2 gap-2 text-xs pt-1 border-t border-slate-100">
+                          <div>
+                            <span className="text-slate-400 text-[10px] block">Quy mô</span>
+                            <span className="font-extrabold text-slate-800">{campus.totalClasses} lớp • {campus.totalStudents} HS</span>
+                          </div>
+                          <div>
+                            <span className="text-slate-400 text-[10px] block">Đã tư vấn</span>
+                            <span className="font-extrabold text-emerald-600">{campus.consultedCount} HS</span>
+                          </div>
+                          <div>
+                            <span className="text-slate-400 text-[10px] block">Chưa tư vấn</span>
+                            <span className="font-extrabold text-rose-600">{campus.unconsultedCount} HS</span>
+                          </div>
+                          <div>
+                            <span className="text-slate-400 text-[10px] block">Tổng số buổi</span>
+                            <span className="font-extrabold text-purple-700">{campus.totalSessions} buổi</span>
+                          </div>
+                        </div>
+
+                        <div className="flex items-center justify-between text-[11px] pt-1 text-slate-500 font-bold group-hover:text-teal-700">
+                          <span>{campus.completedClasses}/{campus.totalClasses} lớp đạt 100%</span>
+                          <span className="inline-flex items-center gap-0.5">
+                            <span>Chi tiết</span>
+                            <ChevronRight className="w-3.5 h-3.5 group-hover:translate-x-0.5 transition-transform" />
+                          </span>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+
+                {/* 3. Grade Matrix Progress Table */}
+                <div className="space-y-3 pt-2">
+                  <div className="flex items-center justify-between">
+                    <h4 className="text-xs font-black uppercase text-slate-700 tracking-wider flex items-center gap-2">
+                      <BarChart3 className="w-4 h-4 text-teal-600" />
+                      <span>MA TRẬN TIẾN ĐỘ THEO TỪNG KHỐI HỌC ({gradeSummary.length} KHỐI):</span>
+                    </h4>
+                  </div>
+
+                  <div className="overflow-x-auto rounded-2xl border border-slate-200">
+                    <table className="w-full text-left border-collapse text-xs">
+                      <thead>
+                        <tr className="bg-slate-100 text-slate-700 text-[11px] font-black uppercase border-b border-slate-200">
+                          <th className="p-3 text-center w-12">STT</th>
+                          <th className="p-3">Khối học</th>
+                          <th className="p-3 text-center">Số lớp</th>
+                          <th className="p-3 text-center">Tổng sỹ số</th>
+                          <th className="p-3 text-center min-w-[180px]">Đã tư vấn & Tỷ lệ (%)</th>
+                          <th className="p-3 text-center">Chưa tư vấn</th>
+                          <th className="p-3 text-center">Tổng số buổi</th>
+                          <th className="p-3 text-center">Đánh giá tiến độ</th>
+                        </tr>
+                      </thead>
+                      <tbody className="divide-y divide-slate-100 font-bold">
+                        {gradeSummary.map((grade: any, idx: number) => (
+                          <tr key={grade.gradeLevel || idx} className="hover:bg-slate-50/80 transition-colors">
+                            <td className="p-3 text-center font-extrabold text-slate-400">{idx + 1}</td>
+                            <td className="p-3">
+                              <span className="font-black text-[#003B3A] text-sm">{grade.gradeLevel}</span>
+                            </td>
+                            <td className="p-3 text-center text-slate-800">{grade.totalClasses} lớp</td>
+                            <td className="p-3 text-center text-slate-800 font-extrabold">{grade.totalStudents} HS</td>
+                            <td className="p-3 text-center">
+                              <div className="space-y-1">
+                                <span className="font-black text-emerald-700 text-xs">
+                                  {grade.consultedCount} / {grade.totalStudents} HS ({grade.consultedPercent}%)
+                                </span>
+                                <div className="w-full bg-slate-200 rounded-full h-1.5 overflow-hidden">
+                                  <div
+                                    className="bg-emerald-500 h-1.5 rounded-full"
+                                    style={{ width: `${Math.min(grade.consultedPercent, 100)}%` }}
+                                  />
+                                </div>
+                              </div>
+                            </td>
+                            <td className="p-3 text-center">
+                              {grade.unconsultedCount > 0 ? (
+                                <span className="text-rose-600 font-extrabold">{grade.unconsultedCount} HS</span>
+                              ) : (
+                                <span className="text-emerald-600 font-extrabold">0 HS (100%)</span>
+                              )}
+                            </td>
+                            <td className="p-3 text-center text-purple-700 font-extrabold">{grade.totalSessions} buổi</td>
+                            <td className="p-3 text-center">
+                              {grade.consultedPercent >= 80 ? (
+                                <span className="px-2.5 py-0.5 rounded-full bg-emerald-100 text-emerald-800 text-[10px] font-black inline-flex items-center gap-1">
+                                  <CheckCircle2 className="w-3 h-3 text-emerald-600" />
+                                  <span>Đạt chỉ tiêu</span>
+                                </span>
+                              ) : grade.consultedPercent >= 40 ? (
+                                <span className="px-2.5 py-0.5 rounded-full bg-amber-100 text-amber-800 text-[10px] font-black inline-flex items-center gap-1">
+                                  <Clock className="w-3 h-3 text-amber-600" />
+                                  <span>Đang tích cực</span>
+                                </span>
+                              ) : (
+                                <span className="px-2.5 py-0.5 rounded-full bg-rose-100 text-rose-800 text-[10px] font-black inline-flex items-center gap-1">
+                                  <AlertCircle className="w-3 h-3 text-rose-600" />
+                                  <span>Cần đẩy nhanh</span>
+                                </span>
+                              )}
+                            </td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
+                </div>
+              </div>
             ) : consultationViewMode === "CLASS" ? (
               /* CLASS VIEW TABLE */
-              <div className="overflow-x-auto">
-                <table className="w-full text-left border-collapse">
-                  <thead>
-                    <tr className="bg-slate-100 text-slate-700 text-[11px] font-black uppercase border-b border-slate-200">
-                      <th className="p-3 text-center w-12">STT</th>
-                      <th className="p-3">Cơ sở</th>
-                      <th className="p-3">Lớp</th>
-                      <th className="p-3">GVCN</th>
-                      <th className="p-3 text-center">Sỹ số</th>
-                      <th className="p-3 text-center min-w-[180px]">Số HS đã tư vấn</th>
-                      <th className="p-3 text-center min-w-[140px]">Học sinh chưa tư vấn</th>
-                      <th className="p-3 text-center">Tổng số buổi</th>
-                      <th className="p-3 text-center">Xem chi tiết</th>
-                    </tr>
-                  </thead>
-                  <tbody className="divide-y divide-slate-100 text-xs font-bold">
-                    {(!consultationSummaryData?.classes || consultationSummaryData.classes.length === 0) ? (
-                      <tr>
-                        <td colSpan={9} className="p-8 text-center text-slate-400">
-                          Không tìm thấy lớp học nào phù hợp với bộ lọc.
-                        </td>
+              <div className="space-y-4">
+                {/* Class Filters & Sorting Controls */}
+                <div className="flex flex-wrap items-center justify-between gap-3 bg-slate-50 p-3 rounded-2xl border border-slate-200/80">
+                  <div className="flex flex-wrap items-center gap-1.5 text-xs font-bold">
+                    <span className="text-slate-400 text-[11px] mr-1">Lọc trạng thái:</span>
+                    <button
+                      type="button"
+                      onClick={() => setClassProgressFilter("ALL")}
+                      className={`px-3 py-1.5 rounded-xl transition-all ${
+                        classProgressFilter === "ALL"
+                          ? "bg-[#003B3A] text-white font-black shadow-xs"
+                          : "bg-white text-slate-600 hover:bg-slate-100 border border-slate-200"
+                      }`}
+                    >
+                      Tất cả ({classDistribution.total})
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => setClassProgressFilter("NOT_STARTED")}
+                      className={`px-3 py-1.5 rounded-xl transition-all flex items-center gap-1 ${
+                        classProgressFilter === "NOT_STARTED"
+                          ? "bg-rose-700 text-white font-black shadow-xs"
+                          : "bg-white text-rose-700 hover:bg-rose-50 border border-rose-200"
+                      }`}
+                    >
+                      <span>🔴 Chưa bắt đầu (0%)</span>
+                      <span className="px-1.5 py-0.2 bg-rose-100 text-rose-800 rounded-full text-[10px] font-black">{classDistribution.notStarted}</span>
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => setClassProgressFilter("IN_PROGRESS")}
+                      className={`px-3 py-1.5 rounded-xl transition-all flex items-center gap-1 ${
+                        classProgressFilter === "IN_PROGRESS"
+                          ? "bg-amber-600 text-white font-black shadow-xs"
+                          : "bg-white text-amber-700 hover:bg-amber-50 border border-amber-200"
+                      }`}
+                    >
+                      <span>🟡 Đang thực hiện</span>
+                      <span className="px-1.5 py-0.2 bg-amber-100 text-amber-800 rounded-full text-[10px] font-black">{classDistribution.inProgress}</span>
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => setClassProgressFilter("COMPLETED")}
+                      className={`px-3 py-1.5 rounded-xl transition-all flex items-center gap-1 ${
+                        classProgressFilter === "COMPLETED"
+                          ? "bg-emerald-700 text-white font-black shadow-xs"
+                          : "bg-white text-emerald-700 hover:bg-emerald-50 border border-emerald-200"
+                      }`}
+                    >
+                      <span>🟢 Hoàn thành 100%</span>
+                      <span className="px-1.5 py-0.2 bg-emerald-100 text-emerald-800 rounded-full text-[10px] font-black">{classDistribution.completed}</span>
+                    </button>
+                  </div>
+
+                  <div className="flex items-center gap-2">
+                    <select
+                      value={classSortBy}
+                      onChange={e => setClassSortBy(e.target.value as any)}
+                      className="px-3 py-1.5 rounded-xl bg-white text-slate-800 text-xs font-black border border-slate-300 outline-none"
+                    >
+                      <option value="DEFAULT">Sắp xếp: Mặc định (Tên lớp)</option>
+                      <option value="LOWEST_PERCENT">Sắp xếp: % Thấp nhất (Cần đôn đốc)</option>
+                      <option value="HIGHEST_PERCENT">Sắp xếp: % Cao nhất</option>
+                      <option value="TOTAL_STUDENTS">Sắp xếp: Sỹ số đông nhất</option>
+                      <option value="SESSIONS">Sắp xếp: Nhiều lượt tư vấn nhất</option>
+                    </select>
+
+                    <button
+                      type="button"
+                      onClick={copySlowClassesList}
+                      className="px-3 py-1.5 rounded-xl bg-rose-50 text-rose-700 hover:bg-rose-100 border border-rose-200 text-xs font-black flex items-center gap-1 transition-all"
+                      title="Sao chép danh sách lớp dưới 50% để gửi nhắc nhở GVCN"
+                    >
+                      <FileText className="w-3.5 h-3.5 text-rose-600" />
+                      <span>Sao chép DS đôn đốc</span>
+                    </button>
+                  </div>
+                </div>
+
+                <div className="overflow-x-auto">
+                  <table className="w-full text-left border-collapse">
+                    <thead>
+                      <tr className="bg-slate-100 text-slate-700 text-[11px] font-black uppercase border-b border-slate-200">
+                        <th className="p-3 text-center w-12">STT</th>
+                        <th className="p-3">Cơ sở</th>
+                        <th className="p-3">Lớp</th>
+                        <th className="p-3">GVCN</th>
+                        <th className="p-3 text-center">Sỹ số</th>
+                        <th className="p-3 text-center min-w-[180px]">Số HS đã tư vấn</th>
+                        <th className="p-3 text-center min-w-[140px]">Học sinh chưa tư vấn</th>
+                        <th className="p-3 text-center">Tổng số buổi</th>
+                        <th className="p-3 text-center">Xem chi tiết</th>
                       </tr>
-                    ) : (
-                      consultationSummaryData.classes.map((cls: any, idx: number) => (
+                    </thead>
+                    <tbody className="divide-y divide-slate-100 text-xs font-bold">
+                      {(!displayedClasses || displayedClasses.length === 0) ? (
+                        <tr>
+                          <td colSpan={9} className="p-8 text-center text-slate-400">
+                            Không tìm thấy lớp học nào phù hợp với bộ lọc.
+                          </td>
+                        </tr>
+                      ) : (
+                        displayedClasses.map((cls: any, idx: number) => (
                         <tr key={cls.classId || idx} className="hover:bg-slate-50/80 transition-colors">
                           <td className="p-3 text-center font-extrabold text-slate-400">
                             {idx + 1}
@@ -1451,6 +2121,7 @@ function AdminAdvisoryDashboardContent() {
                   </tbody>
                 </table>
               </div>
+            </div>
             ) : (
               /* STUDENT VIEW TABLE */
               <div className="overflow-x-auto">

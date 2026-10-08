@@ -1,10 +1,11 @@
-﻿import type { Metadata, Viewport } from "next";
+import type { Metadata, Viewport } from "next";
 import "./globals.css";
 import { AuthProvider } from "@/components/AuthProvider";
 import { Toaster } from "react-hot-toast";
 import { Open_Sans, Be_Vietnam_Pro } from "next/font/google";
 import { PwaManager } from "@/components/pwa/PwaManager";
 import { WebPushPrompt } from "@/components/pwa/WebPushPrompt";
+import { GlobalErrorTrap } from "@/components/GlobalErrorTrap";
 
 const openSans = Open_Sans({
   subsets: ["vietnamese", "latin"],
@@ -61,6 +62,7 @@ export default function RootLayout({
     <html lang="vi" className={`${openSans.variable} ${beVietnamPro.variable}`} suppressHydrationWarning>
       <body className={`${openSans.className} font-sans antialiased`} suppressHydrationWarning>
         <AuthProvider>
+          <GlobalErrorTrap />
           {children}
           <Toaster position="top-right" />
           <PwaManager />

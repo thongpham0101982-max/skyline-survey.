@@ -14,7 +14,14 @@ import { TeacherTargetTracker } from './components/TeacherTargetTracker';
 import { TeacherExperienceConfirmModal } from './components/TeacherExperienceConfirmModal';
 import { AdminObservationKpiCards } from './components/AdminObservationKpiCards';
 import { TeacherObservationReportTab } from './components/TeacherObservationReportTab';
-import { AiObservationPopupTrigger } from '@/components/ai-growth/AiObservationPopupTrigger';
+import dynamic from 'next/dynamic';
+
+const AiObservationPopupTrigger = dynamic(
+  () => import('@/components/ai-growth/AiObservationPopupTrigger').then(m => m.AiObservationPopupTrigger),
+  { ssr: false }
+);
+import { CheerObservationBar } from '@/components/ai-growth/CheerObservationBar';
+import { getSlotChallengeInfo } from '@/app/teacher/ai-growth/actions';
 import { getAssignedCreatorTeacherId, isAssignedSlotCreator } from './utils';
 import { useCampusTheme, CAMPUS_THEMES, CampusThemeType } from "@/hooks/useCampusTheme";
 import { useState, useEffect, useTransition, useMemo, useRef, useCallback } from "react"
@@ -1242,6 +1249,23 @@ export function ObservationClient(props: ObservationClientProps) {
   const [evalSubmitting, setEvalSubmitting] = useState(false)
   const [teacherFeedbackText, setTeacherFeedbackText] = useState("")
   const [teacherFeedbackSubmitting, setTeacherFeedbackSubmitting] = useState(false)
+  const [evalSlotChallenge, setEvalSlotChallenge] = useState<any>(null)
+
+  useEffect(() => {
+    if (evalModal?.slot?.id) {
+      getSlotChallengeInfo(evalModal.slot.id, evalModal.slot.teacherId)
+        .then(res => {
+          if (res?.success && res.hasChallenge) {
+            setEvalSlotChallenge(res.quest);
+          } else {
+            setEvalSlotChallenge(null);
+          }
+        })
+        .catch(() => setEvalSlotChallenge(null));
+    } else {
+      setEvalSlotChallenge(null);
+    }
+  }, [evalModal?.slot?.id, evalModal?.slot?.teacherId]);
 
   useEffect(() => { 
     setActiveTab(activeTabParam);
@@ -4030,8 +4054,8 @@ export function ObservationClient(props: ObservationClientProps) {
       {/* DESKTOP VIEW (>= 768px): GIỮ NGUYÊN 100% GIAO DIỆN DESKTOP */}
       <div className="hidden md:block">
         <div className="flex flex-col gap-5 relative pb-16 text-slate-800 bg-[#F8FAFC] min-h-screen p-2 sm:p-4 md:p-6 font-sans">
-      {/* Thử Thách Dự Giờ Cùng AI (AI Growth Gamified Popup & Top Banner) */}
-      <AiObservationPopupTrigger triggerMode="AUTO_POPUP" />
+      {/* Thử Thách Dự Giờ Cùng AI (AI Growth Gamified Popup & Top Banner - chỉ dành cho giáo viên) */}
+      {!props.isAdminPage && <AiObservationPopupTrigger triggerMode="AUTO_POPUP" />}
       {/* Toast Notification */}
       {toast && (
         <div className={`fixed top-5 right-5 z-[99999] pointer-events-auto flex items-center gap-3 px-5 py-3.5 rounded-2xl shadow-xl border border-white/20 text-white animate-in slide-in-from-top duration-300 ${toast.type === "success" ? "bg-emerald-600 shadow-emerald-600/30" : toast.type === "error" ? "bg-rose-600 shadow-rose-600/30" : "bg-[#00A19A] shadow-teal-700/30"}`}>
@@ -7968,6 +7992,22 @@ export function ObservationClient(props: ObservationClientProps) {
                     />
                   </div>
                 </div>
+
+                {/* [AI GROWTH] Thử Thách Đổi Mới Sáng Tạo Cùng AI (Tiêu Chí Phụ) */}
+                {evalSlotChallenge && (
+                  <CheerObservationBar
+                    quest={evalSlotChallenge}
+                    teacherName={evalModal.slot.teacher?.teacherName || evalModal.registration.teacher?.teacherName || "Giáo viên"}
+                    isReadOnly={isReadOnly}
+                    onFeedbackSaved={() => {
+                      if (evalModal?.slot?.id) {
+                        getSlotChallengeInfo(evalModal.slot.id, evalModal.slot.teacherId).then(res => {
+                          if (res?.success && res.hasChallenge) setEvalSlotChallenge(res.quest);
+                        });
+                      }
+                    }}
+                  />
+                )}
 
                 {/* Overall Rating & Automatic Reason in EvalModal */}
                 {(() => {

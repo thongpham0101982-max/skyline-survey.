@@ -40,6 +40,7 @@ export function MysticCardDeckModal({
   const [hasRerolled, setHasRerolled] = useState(false)
   const [accepting, setAccepting] = useState(false)
   const [dontShowAgain, setDontShowAgain] = useState(false)
+  const [synthesisInfo, setSynthesisInfo] = useState<any>(null)
 
   const fetchCards = async () => {
     setLoading(true)
@@ -48,6 +49,9 @@ export function MysticCardDeckModal({
       const res = await drawRandomCards()
       if (res.success && res.cards) {
         setCards(res.cards)
+        if (res.synthesisInfo) {
+          setSynthesisInfo(res.synthesisInfo)
+        }
       }
     } catch (e) {
       console.error(e)
@@ -136,11 +140,34 @@ export function MysticCardDeckModal({
           </button>
         </div>
 
-        {/* Instructions */}
-        <div className="px-6 pt-4 text-center">
-          <p className="text-sm text-teal-100/90 font-medium max-w-xl mx-auto">
-            "Mỗi tiết dạy, một thử nghiệm nhỏ. Hãy chọn 1 trong 3 lá bài kỳ bí dưới đây để nhận gợi ý đổi mới và tích lũy <strong className="text-amber-300">+100 đến +150 Điểm Cảm Hứng</strong>!"
-          </p>
+        {/* Instructions & Sub-Criterion Disclaimer */}
+        <div className="px-6 pt-4 space-y-2">
+          {synthesisInfo && (
+            <div className="p-3 bg-teal-500/10 border border-teal-500/30 rounded-2xl flex flex-wrap items-center justify-between gap-2 text-xs">
+              <div className="flex items-center gap-2">
+                <Sparkles className="w-4 h-4 text-amber-400 shrink-0" />
+                <span className="text-teal-200">
+                  AI đã tổng hợp từ kết quả đánh giá dự giờ của Thầy/Cô để đề xuất các thử thách trúng đích:
+                </span>
+              </div>
+              {synthesisInfo.themes && (
+                <div className="flex items-center gap-1.5 flex-wrap">
+                  {synthesisInfo.themes.map((th: string, i: number) => (
+                    <span key={i} className="px-2.5 py-0.5 rounded-full text-[10px] font-black bg-amber-400/20 text-amber-300 border border-amber-400/40">
+                      {th}
+                    </span>
+                  ))}
+                </div>
+              )}
+            </div>
+          )}
+
+          <div className="p-2.5 bg-amber-400/10 border border-amber-400/30 rounded-2xl text-center">
+            <p className="text-xs text-amber-200 font-semibold">
+              🌟 <strong>LƯU Ý QUAN TRỌNG:</strong> Đây là <strong>TIÊU CHÍ PHỤ TỰ NGUYỆN</strong>, hoàn toàn <strong>KHÔNG</strong> tính vào điểm số đánh giá 20/20 hay xếp loại tiết dạy của Thầy/Cô.
+              Thực hiện thử thách nhằm tích lũy <strong className="text-amber-300">+100 đến +150 Điểm Cảm Hứng</strong> và nhận Dấu ấn Sư phạm từ AI!
+            </p>
+          </div>
         </div>
 
         {/* 3 Cards Area */}
@@ -148,7 +175,7 @@ export function MysticCardDeckModal({
           {loading ? (
             <div className="h-64 flex flex-col items-center justify-center gap-3">
               <RefreshCw className="w-8 h-8 text-amber-400 animate-spin" />
-              <p className="text-sm text-teal-200 font-medium">Đang xáo trộn 3 thẻ bài kỳ bí...</p>
+              <p className="text-sm text-teal-200 font-medium">AI đang tổng hợp hồ sơ dự giờ và xáo trộn 3 thẻ bài kỳ bí...</p>
             </div>
           ) : (
             <div className="grid grid-cols-1 md:grid-cols-3 gap-5">
@@ -181,7 +208,7 @@ export function MysticCardDeckModal({
                         ? "bg-white/5 border-white/10 opacity-70 hover:opacity-100 hover:scale-102"
                         : "bg-gradient-to-br from-teal-900/50 via-teal-950 to-slate-900 border-teal-500/30 hover:border-amber-400/60 hover:shadow-[0_0_25px_rgba(245,158,11,0.2)] hover:-translate-y-1.5"
                     }`}
-                    style={{ minHeight: "310px" }}
+                    style={{ minHeight: "330px" }}
                   >
                     {!isFlipped ? (
                       /* Card Back Face (Mặt úp bí ẩn) */
@@ -192,18 +219,18 @@ export function MysticCardDeckModal({
                         <span className="text-[11px] font-black uppercase tracking-widest text-teal-300/80 mb-1">
                           Lá Bài #{idx + 1}
                         </span>
-                        <h4 className="text-base font-bold text-white mb-2">Thẻ Bài Bí Ẩn</h4>
-                        <p className="text-xs text-teal-200/60">Chạm để lật mở thử thách</p>
+                        <h4 className="text-base font-bold text-white mb-2">Thẻ Bài Đổi Mới</h4>
+                        <p className="text-xs text-teal-200/60">Chạm để lật mở thử thách dành riêng cho Thầy/Cô</p>
                         <div className="mt-4 px-3 py-1 rounded-full bg-white/5 border border-white/10 text-[10px] text-amber-300/90 font-semibold">
-                          ★ Nhận tới 150 IP ★
+                          ★ Tiêu chí phụ • Tới 150 IP ★
                         </div>
                       </div>
                     ) : (
                       /* Card Front Face (Mặt ngửa hé lộ thử thách) */
-                      <div className="flex flex-col h-full justify-between">
+                      <div className="flex flex-col h-full justify-between gap-3">
                         <div>
                           {/* Header of revealed card */}
-                          <div className="flex items-center justify-between gap-2 mb-3">
+                          <div className="flex items-center justify-between gap-2 mb-2">
                             <span className="text-[10px] font-black px-2.5 py-0.5 rounded-full border uppercase tracking-wider bg-white/10 border-white/20">
                               {rarityBadge}
                             </span>
@@ -212,16 +239,23 @@ export function MysticCardDeckModal({
                             </span>
                           </div>
 
-                          <h4 className="text-base font-black text-white mb-2 line-clamp-2 leading-snug">
+                          <h4 className="text-base font-black text-white mb-1.5 line-clamp-2 leading-snug">
                             {card.title}
                           </h4>
 
-                          <p className="text-xs text-teal-100/80 line-clamp-3 mb-3 leading-relaxed">
+                          <p className="text-xs text-teal-100/80 line-clamp-2 mb-2 leading-relaxed">
                             {card.description}
                           </p>
+
+                          {/* AI Recommendation Reason */}
+                          {card.recommendationReason && (
+                            <div className="p-2.5 bg-black/40 border border-amber-400/30 rounded-xl text-[11px] text-amber-200 leading-snug mb-2">
+                              {card.recommendationReason}
+                            </div>
+                          )}
                         </div>
 
-                        <div className="pt-3 border-t border-white/10">
+                        <div className="pt-2 border-t border-white/10">
                           <div className="text-[11px] text-teal-200/90 font-medium flex items-center gap-1.5 mb-2">
                             <Award className="w-3.5 h-3.5 text-amber-400 shrink-0" />
                             <span className="line-clamp-1">{card.pedagogicalGoal}</span>
@@ -251,7 +285,7 @@ export function MysticCardDeckModal({
           <div className="px-6 py-4 bg-teal-950/70 border-t border-teal-500/30 flex flex-col sm:flex-row items-center justify-between gap-4">
             <div className="text-center sm:text-left">
               <span className="text-xs text-amber-300 font-bold uppercase tracking-wider">
-                Thử thách đã chọn:
+                Thử thách đã chọn (Tiêu chí phụ):
               </span>
               <p className="text-sm font-black text-white">{selectedCard.title}</p>
             </div>
