@@ -41,7 +41,8 @@ import {
   AlertCircle,
   Phone,
   Mail,
-  UserCheck
+  UserCheck,
+  Printer
 } from "lucide-react"
 import {
   getGradeCategoryWeights,
@@ -130,6 +131,26 @@ function AdminAdvisoryDashboardContent() {
   const [classStudentFilterStatus, setClassStudentFilterStatus] = useState<"ALL" | "CONSULTED" | "NOT_CONSULTED">("ALL")
   const [expandedStudentIdInModal, setExpandedStudentIdInModal] = useState<string | null>(null)
   const [consultationModalTab, setConsultationModalTab] = useState<"STUDENTS" | "LOGS">("STUDENTS")
+  const [isTeacherPdfModalOpen, setIsTeacherPdfModalOpen] = useState<boolean>(false)
+  const [selectedTeacherPdfClassId, setSelectedTeacherPdfClassId] = useState<string>("ALL")
+  const [teacherPdfSearchTerm, setTeacherPdfSearchTerm] = useState<string>("")
+
+  function openTeacherPdfReport(targetClassId?: string, isAll = false) {
+    const params = new URLSearchParams()
+    if (selectedAcademicYearId) params.set("academicYearId", selectedAcademicYearId)
+    if (selectedCampusId) params.set("campusId", selectedCampusId)
+    if (appliedGrades.length > 0) params.set("grades", appliedGrades.join(","))
+    params.set("autoPrint", "true")
+
+    if (isAll || targetClassId === "ALL") {
+      params.set("mode", "all")
+    } else if (targetClassId) {
+      params.set("classId", targetClassId)
+    }
+
+    const url = `/api/admin/advisory/export-teacher-pdf?${params.toString()}`
+    window.open(url, "_blank")
+  }
 
   // --- TỔNG HỢP TIẾN ĐỘ THEO CƠ SỞ ---
   const campusSummary = useMemo(() => {
@@ -1610,6 +1631,15 @@ function AdminAdvisoryDashboardContent() {
                   <Download className="w-3.5 h-3.5" />
                   <span>Xuất Excel</span>
                 </button>
+
+                <button
+                  onClick={() => setIsTeacherPdfModalOpen(true)}
+                  className="px-4 py-2 rounded-xl bg-purple-600 text-white text-xs font-black hover:bg-purple-700 transition-all shadow-xs flex items-center gap-1.5"
+                  title="Xuất bản đẹp PDF theo từng Giáo viên phụ trách"
+                >
+                  <Printer className="w-3.5 h-3.5" />
+                  <span>Xuất PDF theo Giáo viên</span>
+                </button>
               </div>
             </div>
           </div>
@@ -2102,18 +2132,28 @@ function AdminAdvisoryDashboardContent() {
                             {cls.totalSessions} buổi
                           </td>
                           <td className="p-3 text-center">
-                            <button
-                              onClick={() => {
-                                setSelectedConsultationClass(cls)
-                                setClassConsultationStudentSearch("")
-                                setClassStudentFilterStatus("ALL")
-                                setExpandedStudentIdInModal(null)
-                              }}
-                              className="px-3 py-1.5 rounded-xl bg-teal-50 hover:bg-teal-100 text-teal-800 text-xs font-black transition-all border border-teal-200 inline-flex items-center gap-1.5 shadow-2xs hover:shadow-xs"
-                            >
-                              <Eye className="w-3.5 h-3.5 text-teal-600" />
-                              <span>Xem chi tiết theo Học sinh</span>
-                            </button>
+                            <div className="flex items-center justify-center gap-1.5">
+                              <button
+                                onClick={() => openTeacherPdfReport(cls.classId)}
+                                className="px-2.5 py-1.5 rounded-xl bg-purple-50 hover:bg-purple-100 text-purple-800 text-xs font-black transition-all border border-purple-200 inline-flex items-center gap-1 shadow-2xs hover:shadow-xs"
+                                title="Xuất bản đẹp PDF theo Giáo viên phụ trách lớp này"
+                              >
+                                <Printer className="w-3.5 h-3.5 text-purple-600" />
+                                <span>Xuất PDF GV</span>
+                              </button>
+                              <button
+                                onClick={() => {
+                                  setSelectedConsultationClass(cls)
+                                  setClassConsultationStudentSearch("")
+                                  setClassStudentFilterStatus("ALL")
+                                  setExpandedStudentIdInModal(null)
+                                }}
+                                className="px-3 py-1.5 rounded-xl bg-teal-50 hover:bg-teal-100 text-teal-800 text-xs font-black transition-all border border-teal-200 inline-flex items-center gap-1.5 shadow-2xs hover:shadow-xs"
+                              >
+                                <Eye className="w-3.5 h-3.5 text-teal-600" />
+                                <span>Chi tiết</span>
+                              </button>
+                            </div>
                           </td>
                         </tr>
                       ))
@@ -2276,6 +2316,15 @@ function AdminAdvisoryDashboardContent() {
                 >
                   <Download className="w-3.5 h-3.5" />
                   <span>Xuất Excel Sổ Lớp</span>
+                </button>
+
+                <button
+                  onClick={() => openTeacherPdfReport(selectedConsultationClass.classId)}
+                  className="px-3 py-1.5 rounded-xl bg-purple-600 hover:bg-purple-700 text-white text-xs font-black transition-all flex items-center gap-1.5 shadow-xs"
+                  title="Xuất bản in đẹp PDF theo Giáo viên phụ trách"
+                >
+                  <Printer className="w-3.5 h-3.5" />
+                  <span>Xuất PDF Sổ GV</span>
                 </button>
               </div>
 
@@ -3175,6 +3224,167 @@ function AdminAdvisoryDashboardContent() {
           </div>
         )
       })()}
+
+      {/* ========================================================================= */}
+      {/* MODAL: XUẤT BẢN ĐẸP PDF THEO TỪNG GIÁO VIÊN PHỤ TRÁCH */}
+      {/* ========================================================================= */}
+      {isTeacherPdfModalOpen && (
+        <div className="fixed inset-0 bg-black/60 backdrop-blur-xs z-50 flex items-center justify-center p-4">
+          <div className="bg-white rounded-3xl max-w-4xl w-full max-h-[90vh] flex flex-col shadow-2xl border border-slate-200 overflow-hidden animate-in zoom-in-95 duration-200">
+            {/* Modal Header */}
+            <div className="p-5 bg-gradient-to-r from-purple-800 to-indigo-900 text-white flex items-center justify-between shrink-0">
+              <div className="space-y-1">
+                <div className="flex items-center gap-2">
+                  <div className="w-8 h-8 rounded-xl bg-white/20 flex items-center justify-center">
+                    <Printer className="w-4 h-4 text-purple-200" />
+                  </div>
+                  <h3 className="text-base font-black uppercase tracking-wide">
+                    XUẤT BẢN ĐẸP PDF THEO TỪNG GIÁO VIÊN PHỤ TRÁCH
+                  </h3>
+                </div>
+                <p className="text-xs text-purple-200 font-medium">
+                  Định dạng A4 chuẩn Ban Giám Hiệu • Có ma trận tiến độ, danh sách học sinh, nhật ký tư vấn & khung chữ ký
+                </p>
+              </div>
+
+              <button
+                onClick={() => setIsTeacherPdfModalOpen(false)}
+                className="p-2 rounded-full hover:bg-white/20 text-white transition-all"
+              >
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+
+            {/* Quick Actions & Search */}
+            <div className="p-4 bg-slate-50 border-b border-slate-200 flex flex-wrap items-center justify-between gap-3 shrink-0">
+              <div className="relative flex-1 min-w-[280px]">
+                <Search className="w-4 h-4 text-slate-400 absolute left-3 top-2.5" />
+                <input
+                  type="text"
+                  placeholder="Tìm theo tên Giáo viên, Lớp học hoặc Cơ sở..."
+                  value={teacherPdfSearchTerm}
+                  onChange={e => setTeacherPdfSearchTerm(e.target.value)}
+                  className="w-full pl-9 pr-3 py-2 rounded-xl bg-white text-slate-800 text-xs font-bold border border-slate-300 outline-none focus:border-purple-600 focus:ring-1 focus:ring-purple-600"
+                />
+              </div>
+
+              <div className="flex items-center gap-2">
+                <button
+                  type="button"
+                  onClick={() => openTeacherPdfReport(undefined, true)}
+                  className="px-4 py-2 rounded-xl bg-purple-700 hover:bg-purple-800 text-white text-xs font-black transition-all flex items-center gap-1.5 shadow-xs"
+                  title="Xuất trọn bộ tài liệu cho toàn bộ các Giáo viên phụ trách đang lọc"
+                >
+                  <Printer className="w-3.5 h-3.5" />
+                  <span>Xuất tất cả ({consultationSummaryData?.classes?.length || 0} Giáo viên)</span>
+                </button>
+              </div>
+            </div>
+
+            {/* Teacher List */}
+            <div className="p-5 overflow-y-auto flex-1 space-y-3">
+              {(() => {
+                const searchLow = teacherPdfSearchTerm.trim().toLowerCase()
+                const list = (consultationSummaryData?.classes || []).filter((cls: any) =>
+                  !searchLow ||
+                  cls.homeroomTeacherName.toLowerCase().includes(searchLow) ||
+                  cls.className.toLowerCase().includes(searchLow) ||
+                  cls.campusName.toLowerCase().includes(searchLow)
+                )
+
+                if (list.length === 0) {
+                  return (
+                    <div className="p-10 text-center text-slate-400 text-xs font-medium border-2 border-dashed border-slate-200 rounded-2xl">
+                      Không tìm thấy Giáo viên phụ trách hoặc Lớp nào khớp với từ khóa tìm kiếm.
+                    </div>
+                  )
+                }
+
+                return (
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                    {list.map((cls: any, idx: number) => {
+                      const isComplete = cls.consultedPercent === 100
+                      const isLow = cls.consultedPercent < 50
+
+                      return (
+                        <div
+                          key={cls.classId || idx}
+                          className="bg-white rounded-2xl p-4 border border-slate-200 hover:border-purple-300 hover:shadow-md transition-all flex flex-col justify-between space-y-3"
+                        >
+                          <div>
+                            <div className="flex items-start justify-between gap-2 mb-2">
+                              <div>
+                                <h4 className="font-black text-sm text-[#003B3A] flex items-center gap-1.5">
+                                  <UserCheck className="w-4 h-4 text-purple-600 shrink-0" />
+                                  <span>{cls.homeroomTeacherName}</span>
+                                </h4>
+                                <p className="text-[11px] text-slate-500 font-bold mt-0.5">
+                                  Lớp <strong>{cls.className}</strong> ({cls.gradeLevel}) • {cls.campusName}
+                                </p>
+                              </div>
+                              <span className={`px-2 py-0.5 rounded-full text-[10px] font-black shrink-0 ${
+                                isComplete ? "bg-emerald-100 text-emerald-800" :
+                                isLow ? "bg-rose-100 text-rose-800" :
+                                "bg-amber-100 text-amber-800"
+                              }`}>
+                                {cls.consultedPercent}%
+                              </span>
+                            </div>
+
+                            {/* Stats */}
+                            <div className="grid grid-cols-3 gap-2 bg-slate-50 p-2.5 rounded-xl text-center text-xs">
+                              <div>
+                                <span className="text-[10px] text-slate-400 font-bold block">Sĩ số</span>
+                                <span className="font-black text-slate-800">{cls.totalStudents} HS</span>
+                              </div>
+                              <div>
+                                <span className="text-[10px] text-emerald-600 font-bold block">Đã tư vấn</span>
+                                <span className="font-black text-emerald-700">{cls.consultedCount} HS</span>
+                              </div>
+                              <div>
+                                <span className="text-[10px] text-rose-600 font-bold block">Chưa tư vấn</span>
+                                <span className="font-black text-rose-700">{cls.unconsultedCount} HS</span>
+                              </div>
+                            </div>
+                          </div>
+
+                          <div className="pt-2 border-t border-slate-100 flex items-center justify-between">
+                            <span className="text-[11px] text-purple-700 font-bold">
+                              {cls.totalSessions} buổi tư vấn ghi nhận
+                            </span>
+                            <button
+                              type="button"
+                              onClick={() => openTeacherPdfReport(cls.classId)}
+                              className="px-3 py-1.5 rounded-xl bg-purple-50 hover:bg-purple-100 text-purple-800 text-xs font-black transition-all border border-purple-200 flex items-center gap-1.5 shadow-2xs hover:shadow-xs"
+                            >
+                              <Printer className="w-3.5 h-3.5 text-purple-600" />
+                              <span>Xuất PDF Giáo Viên</span>
+                            </button>
+                          </div>
+                        </div>
+                      )
+                    })}
+                  </div>
+                )
+              })()}
+            </div>
+
+            {/* Modal Footer */}
+            <div className="p-4 bg-slate-50 border-t border-slate-200 flex items-center justify-between">
+              <span className="text-xs text-slate-500 font-medium">
+                Khổ giấy A4 tự động căn chỉnh • Trình duyệt hỗ trợ "Lưu dưới dạng PDF" (Save as PDF)
+              </span>
+              <button
+                type="button"
+                onClick={() => setIsTeacherPdfModalOpen(false)}
+                className="px-5 py-2 rounded-xl bg-slate-200 hover:bg-slate-300 text-slate-800 text-xs font-black transition-all"
+              >
+                Đóng
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
 
     </div>
   )
