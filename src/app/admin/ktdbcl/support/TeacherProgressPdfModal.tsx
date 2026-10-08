@@ -71,10 +71,33 @@ export function TeacherProgressPdfModal({
   ).length
   const totalEvaluations = displayTargets.reduce((acc, t) => acc + (t.evaluations?.length || 0), 0)
 
-  // Danh sách giáo viên liên quan
+  // Danh sách giáo viên liên quan (tự động tính toán nếu teacherStats rỗng)
+  const computedTeacherStats = React.useMemo(() => {
+    if (teacherStats && teacherStats.length > 0) return teacherStats
+    const map: Record<string, any> = {}
+    displayTargets.forEach(t => {
+      const names = getTargetTeacherNames(t)
+      const campus = t.student?.class?.campus?.campusName || "Sky-Line"
+      if (!map[names]) {
+        map[names] = {
+          teacherId: names,
+          teacherName: names,
+          count: 0,
+          active: 0,
+          terminated: 0,
+          campusList: campus
+        }
+      }
+      map[names].count++
+      if (t.terminationStatus === "TERMINATED") map[names].terminated++
+      else map[names].active++
+    })
+    return Object.values(map)
+  }, [teacherStats, displayTargets])
+
   const relevantTeachers = isAll
-    ? teacherStats
-    : teacherStats.filter(t => t.teacherId === selectedTeacherId)
+    ? computedTeacherStats
+    : computedTeacherStats.filter(t => t.teacherId === selectedTeacherId || t.teacherName === teacherNameDisplay)
 
   // Xử lý tải PDF
   const handleDownloadPdf = async () => {

@@ -4,12 +4,13 @@ import { useState, useEffect, useMemo } from "react"
 import { useSearchParams, useRouter, usePathname } from "next/navigation"
 import { Building2, ChevronDown, Mail, Send, Sparkles, CheckSquare, Square, FileText, Users, Sliders, BarChart3, Plus, Search, Filter, Trash2, Edit, 
   Check, X, RefreshCw, Download, ChevronRight, AlertCircle, Calendar, GraduationCap, 
-  MapPin, UserCheck, CheckCircle2, AlertTriangle, Info, Clock, UserPlus, LayoutDashboard, Bell, FileSpreadsheet
+  MapPin, UserCheck, CheckCircle2, AlertTriangle, Info, Clock, UserPlus, LayoutDashboard, Bell, FileSpreadsheet, Printer
 } from "lucide-react"
 import toast from "react-hot-toast"
 import * as XLSX from "xlsx"
 import { OverviewDashboard } from "./overview"
 import { exportTrackingBookExcel } from "@/lib/support/exportTrackingBookExcel"
+import { TeacherProgressPdfModal } from "./TeacherProgressPdfModal"
 
 interface Props {
   academicYears: any[]
@@ -90,6 +91,17 @@ export function SupportClient({
   const [customQLCMMessage, setCustomQLCMMessage] = useState("")
   const [additionalQLCMCc, setAdditionalQLCMCc] = useState("")
   const [sendingQLCMEmail, setSendingQLCMEmail] = useState(false)
+
+  // PDF Export Modal State
+  const [isPdfModalOpen, setIsPdfModalOpen] = useState(false)
+  const [pdfTeacherId, setPdfTeacherId] = useState<string>("ALL")
+  const [pdfSupportType, setPdfSupportType] = useState<"PSYCHOLOGICAL" | "ACADEMIC">("PSYCHOLOGICAL")
+
+  const handleOpenPdfModal = (teacherId: string = "ALL", type: "PSYCHOLOGICAL" | "ACADEMIC" = "PSYCHOLOGICAL") => {
+    setPdfTeacherId(teacherId)
+    setPdfSupportType(type)
+    setIsPdfModalOpen(true)
+  }
 
   useEffect(() => {
     setCommitmentPage(1)
@@ -1959,6 +1971,17 @@ export function SupportClient({
                 <span>Xuất Sổ Theo Dõi</span>
               </button>
 
+              {/* Export Sổ Theo Dõi PDF */}
+              <button
+                type="button"
+                onClick={() => handleOpenPdfModal("ALL", "PSYCHOLOGICAL")}
+                className="px-3.5 py-2 bg-rose-600 hover:bg-rose-700 text-white text-xs font-bold rounded-xl shadow-xs hover:shadow transition-all flex items-center gap-1.5 shrink-0 cursor-pointer"
+                title="Xuất File PDF Sổ Theo Dõi Học Sinh Cam Kết & Theo Dõi"
+              >
+                <Printer className="h-4 w-4 text-rose-100" />
+                <span>Xuất PDF</span>
+              </button>
+
               {/* Send Email to QLCM Button */}
               <button
                 onClick={() => {
@@ -2279,6 +2302,17 @@ export function SupportClient({
                 <FileSpreadsheet className="h-3.5 w-3.5 text-cyan-200" />
                 <span>Xuất Sổ Theo Dõi</span>
               </button>
+
+              {/* NÚT XUẤT PDF TRỰC TIẾP TRÊN TOOLBAR */}
+              <button
+                type="button"
+                onClick={() => handleOpenPdfModal("ALL", activeTab === "psychology" ? "PSYCHOLOGICAL" : "ACADEMIC")}
+                className="px-3.5 py-1.5 bg-rose-600 hover:bg-rose-700 text-white text-xs font-bold rounded-lg shadow-xs hover:shadow transition-all flex items-center gap-1.5 shrink-0 cursor-pointer"
+                title="Xem bản in & Tải File PDF Sổ Theo Dõi Tiến Độ A4"
+              >
+                <Printer className="h-3.5 w-3.5 text-rose-100" />
+                <span>Xuất PDF</span>
+              </button>
             </div>
           </div>
 
@@ -2380,12 +2414,23 @@ export function SupportClient({
                           </div>
                         </td>
                         <td className="px-6 py-4 whitespace-nowrap text-center">
-                          <button
-                            onClick={() => setSelectedTeacherForDetail(group)}
-                            className="bg-indigo-50 hover:bg-indigo-100 text-indigo-700 font-bold py-1.5 px-4 rounded-lg text-xs transition-colors border border-indigo-200/50 shadow-xs"
-                          >
-                            Chi tiết
-                          </button>
+                          <div className="flex items-center justify-center gap-1.5">
+                            <button
+                              onClick={() => setSelectedTeacherForDetail(group)}
+                              className="bg-indigo-50 hover:bg-indigo-100 text-indigo-700 font-bold py-1.5 px-3 rounded-lg text-xs transition-colors border border-indigo-200/50 shadow-xs"
+                            >
+                              Chi tiết
+                            </button>
+                            <button
+                              type="button"
+                              onClick={() => handleOpenPdfModal(group.teacherId, activeTab === "psychology" ? "PSYCHOLOGICAL" : "ACADEMIC")}
+                              className="bg-rose-50 hover:bg-rose-100 text-rose-700 font-bold py-1.5 px-2.5 rounded-lg text-xs transition-colors border border-rose-200/60 shadow-xs flex items-center gap-1"
+                              title={`Xem & Tải File PDF của ${group.teacherName}`}
+                            >
+                              <Printer className="h-3.5 w-3.5" />
+                              <span>PDF</span>
+                            </button>
+                          </div>
                         </td>
                       </tr>
                     )
@@ -3696,6 +3741,21 @@ export function SupportClient({
                     <FileSpreadsheet className="h-3.5 w-3.5 text-cyan-200" />
                     <span>Xuất Sổ Theo Dõi GV</span>
                   </button>
+
+                  <button
+                    type="button"
+                    onClick={() => {
+                      handleOpenPdfModal(
+                        selectedTeacherForDetail.teacherId,
+                        activeTab === "psychology" ? "PSYCHOLOGICAL" : "ACADEMIC"
+                      )
+                    }}
+                    className="bg-rose-600 hover:bg-rose-700 text-white font-bold py-1.5 px-3 rounded-lg text-xs inline-flex items-center gap-1.5 shadow-sm transition-colors cursor-pointer"
+                    title="Xuất file PDF Sổ Theo Dõi của giáo viên này"
+                  >
+                    <Printer className="h-3.5 w-3.5 text-rose-100" />
+                    <span>Xuất PDF GV</span>
+                  </button>
                 </div>
               </div>
 
@@ -4083,6 +4143,22 @@ export function SupportClient({
           </div>
         </div>
       )}
+
+      {/* PDF Export & Print Modal */}
+      <TeacherProgressPdfModal
+        isOpen={isPdfModalOpen}
+        onClose={() => setIsPdfModalOpen(false)}
+        targets={targets.filter((t: any) => {
+          if (pdfSupportType === "PSYCHOLOGICAL") {
+            return t.supportType === "PSYCHOLOGICAL" || t.sourceType === "TAM_LY"
+          }
+          return t.supportType === "ACADEMIC" || t.sourceType !== "TAM_LY"
+        })}
+        teacherStats={[]}
+        selectedTeacherId={pdfTeacherId}
+        academicYearName={academicYears.find(y => y.id === selectedYearId)?.name || "2026-2027"}
+        supportType={pdfSupportType}
+      />
 
 </div>
   )
