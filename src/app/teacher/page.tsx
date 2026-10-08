@@ -84,6 +84,7 @@ export default function TeacherDashboard() {
   const [metrics, setMetrics] = useState<MetricData | null>(null)
   const [loading, setLoading] = useState(true)
   const [activeTab, setActiveTab] = useState<"ALL" | "GVCN" | "GVBM" | "UTILITIES">("ALL")
+  const [searchQuery, setSearchQuery] = useState<string>("")
   const [viewMode, setViewMode] = useState<"TEACHER" | "ADMIN">(() => {
     if (typeof window !== "undefined") {
       const saved = localStorage.getItem("teacher_view_mode")

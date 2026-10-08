@@ -41,6 +41,7 @@ export async function GET(req: any) {
 
   try {
     const { searchParams } = new URL(req.url);
+    const action = searchParams.get("action");
     if (action === "getGradeConfigs") {
         const academicYearId = searchParams.get("academicYearId");
         const pAny = prisma as any;
