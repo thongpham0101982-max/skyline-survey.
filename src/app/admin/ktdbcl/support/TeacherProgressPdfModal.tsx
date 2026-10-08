@@ -299,7 +299,7 @@ export function TeacherProgressPdfModal({
                   HỆ THỐNG GIÁO DỤC SKY-LINE
                 </div>
                 <div className="text-[11px] font-extrabold text-slate-800 uppercase">
-                  PHÒNG KIỂM TRA & ĐẢM BẢO CHẤT LƯỢNG (KT-ĐBCL)
+                  BAN KHẢO THÍ & ĐẢM BẢO CHẤT LƯỢNG
                 </div>
                 <div className="text-[10px] text-slate-500 font-semibold">
                   TỔ TÂM LÝ HỌC ĐƯỜNG & HỖ TRỢ HỌC SINH
@@ -518,7 +518,7 @@ export function TeacherProgressPdfModal({
                   <div className="text-[10px] text-slate-400 italic">(Ký, ghi rõ họ tên)</div>
                 </div>
                 <div className="font-extrabold text-slate-900">
-                  {currentTeacher?.teacherName || "Bộ phận KT-ĐBCL"}
+                  {currentTeacher?.teacherName || "Ban Khảo thí & ĐBCL"}
                 </div>
               </div>
 
