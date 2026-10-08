@@ -30,12 +30,12 @@ export default function Error({
       const now = Date.now();
       if (!lastChunkReload || now - parseInt(lastChunkReload, 10) > 10000) {
         sessionStorage.setItem('last_chunk_reload', now.toString());
-        if ('caches' in window) {
+        if (typeof window !== 'undefined' && 'caches' in window) {
           caches.keys().then((names) => Promise.all(names.map((n) => caches.delete(n)))).finally(() => {
-            window.location.reload();
+            (window as any).location.reload();
           });
-        } else {
-          window.location.reload();
+        } else if (typeof window !== 'undefined') {
+          (window as any).location.reload();
         }
       }
     }

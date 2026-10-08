@@ -101,7 +101,7 @@ export function DiemNhanXetTeacherClient({
   const [selectedSystemFilter, setSelectedSystemFilter] = useState("ALL")
 
   const [selectedPeriod, setSelectedPeriod] = useState(
-    paramPeriod && PERIODS.some(p => p.code === paramPeriod) ? paramPeriod : "KSĐN"
+    paramPeriod && EVAL_PERIODS.some((p: any) => p.code === paramPeriod) ? paramPeriod : "KSĐN"
   )
 
   // Target semester based on selected period

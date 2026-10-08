@@ -8,8 +8,12 @@ import {
   Filter, Search, RefreshCw, CheckCircle2,
   Calendar, Layers, ShieldCheck, HeartHandshake,
   UserCheck, AlertTriangle, ChevronRight, ChevronLeft, UserPlus,
-  Compass, ArrowUpRight, ArrowDownRight, Award
+  Compass, ArrowUpRight, ArrowDownRight, Award,
+  FileSpreadsheet, Download, Printer
 } from "lucide-react"
+import toast from "react-hot-toast"
+import { exportTeacherProgressReportExcel } from "@/lib/support/exportTrackingBookExcel"
+import { TeacherProgressPdfModal } from "./TeacherProgressPdfModal"
 import {
   ResponsiveContainer,
   AreaChart,
@@ -464,6 +468,42 @@ export function OverviewDashboard({
     const start = (psychPage - 1) * psychPageSize
     return filteredPsychStudents.slice(start, start + psychPageSize)
   }, [filteredPsychStudents, psychPage, psychPageSize])
+
+  // =========================================================================
+  // HÀM XUẤT BÁO CÁO THEO DÕI TIẾN ĐỘ THEO TỪNG GIÁO VIÊN
+  // =========================================================================
+  const handleExportTeacherReport = (teacherId: string = "ALL", teacherName?: string) => {
+    try {
+      const yearName = academicYears?.find((y: any) => y.id === selectedYearId)?.name || "2026-2027"
+      const targetList = supportScope === "PSYCHOLOGICAL" ? psychologyTargets : academicTargets
+      
+      const fileName = exportTeacherProgressReportExcel(targetList, {
+        teacherId,
+        teacherName,
+        academicYearName: yearName,
+        selectedMonth: "Tháng 9",
+        supportType: supportScope
+      })
+
+      if (teacherId === "ALL") {
+        toast.success(`Đã xuất Báo cáo tiến độ theo từng Giáo viên: ${fileName}`, { duration: 4500 })
+      } else {
+        toast.success(`Đã xuất Báo cáo tiến độ của ${teacherName || "Giáo viên"}: ${fileName}`, { duration: 4500 })
+      }
+    } catch (err: any) {
+      console.error("Export teacher report error:", err)
+      toast.error(err?.message || "Lỗi khi xuất báo cáo giáo viên")
+    }
+  }
+
+  // Quản lý Modal Xem trước & Xuất PDF Báo Cáo Tiến Độ
+  const [isPdfModalOpen, setIsPdfModalOpen] = useState(false)
+  const [pdfTeacherId, setPdfTeacherId] = useState<string>("ALL")
+
+  const handleOpenPdfModal = (teacherId: string = "ALL") => {
+    setPdfTeacherId(teacherId)
+    setIsPdfModalOpen(true)
+  }
 
   // =========================================================================
   // 9. DỮ LIỆU DÀNH CHO PHỤ ĐẠO VĂN HÓA (ACADEMIC)
@@ -1679,7 +1719,7 @@ export function OverviewDashboard({
             <div className="bg-white border border-slate-200/80 rounded-3xl p-5 shadow-xs flex flex-col justify-between h-[450px]">
               <div>
                 <div className="pb-3 border-b border-slate-100 mb-3">
-                  <div className="flex items-center justify-between">
+                  <div className="flex items-center justify-between gap-2">
                     <div className="flex items-center gap-2.5">
                       <div className="p-2.5 bg-teal-50 text-[#135E5B] rounded-2xl border border-teal-100/60 shadow-xs">
                         <GraduationCap className="w-4 h-4" />
@@ -1689,9 +1729,29 @@ export function OverviewDashboard({
                         <p className="text-[10px] text-slate-400">Phân công {psychAssignedRate}% ca tâm lý</p>
                       </div>
                     </div>
-                    <span className="text-[11px] font-black text-[#135E5B] bg-teal-50 px-2.5 py-1 rounded-xl border border-teal-100">
-                      {psychTeacherStats.length} nhân sự
-                    </span>
+                    <div className="flex items-center gap-1.5">
+                      <button
+                        type="button"
+                        onClick={() => handleOpenPdfModal("ALL")}
+                        className="inline-flex items-center gap-1 px-2.5 py-1 rounded-xl bg-rose-50 hover:bg-rose-100 text-rose-700 border border-rose-200 text-[11px] font-bold shadow-xs transition-all cursor-pointer"
+                        title="Xem & Xuất bản in PDF chuẩn A4 theo từng Giáo viên"
+                      >
+                        <Printer className="w-3.5 h-3.5 text-rose-600" />
+                        <span>In / Xuất PDF</span>
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => handleExportTeacherReport("ALL")}
+                        className="inline-flex items-center gap-1 px-2.5 py-1 rounded-xl bg-gradient-to-r from-[#135E5B] to-teal-700 hover:from-[#0e4846] hover:to-teal-800 text-white text-[11px] font-bold shadow-xs transition-all cursor-pointer"
+                        title="Xuất file Excel Báo cáo theo dõi tiến độ tổng hợp theo từng Giáo viên"
+                      >
+                        <FileSpreadsheet className="w-3.5 h-3.5 text-teal-200" />
+                        <span>Excel</span>
+                      </button>
+                      <span className="text-[11px] font-black text-[#135E5B] bg-teal-50 px-2.5 py-1 rounded-xl border border-teal-100">
+                        {psychTeacherStats.length} GV
+                      </span>
+                    </div>
                   </div>
 
                   {/* Thanh tóm tắt nhanh 2 trạng thái */}
@@ -1738,7 +1798,29 @@ export function OverviewDashboard({
                             </div>
                           </div>
 
-                          <div className="text-right shrink-0">
+                          <div className="flex items-center gap-1 shrink-0">
+                            <button
+                              type="button"
+                              onClick={(e) => {
+                                e.stopPropagation()
+                                handleOpenPdfModal(item.teacherId)
+                              }}
+                              className="p-1 rounded-lg bg-rose-50 hover:bg-rose-100 text-rose-700 border border-rose-200/80 transition-colors"
+                              title={`Xem & In báo cáo PDF riêng của ${item.teacherName}`}
+                            >
+                              <Printer className="w-3.5 h-3.5" />
+                            </button>
+                            <button
+                              type="button"
+                              onClick={(e) => {
+                                e.stopPropagation()
+                                handleExportTeacherReport(item.teacherId, item.teacherName)
+                              }}
+                              className="p-1 rounded-lg bg-teal-50 hover:bg-teal-100 text-[#135E5B] border border-teal-200/80 transition-colors"
+                              title={`Xuất file Excel tiến độ riêng của ${item.teacherName}`}
+                            >
+                              <Download className="w-3.5 h-3.5" />
+                            </button>
                             <span className="px-2 py-0.5 rounded-lg bg-slate-100 text-slate-800 font-black text-xs block">
                               {item.count} ca
                             </span>
@@ -1970,6 +2052,52 @@ export function OverviewDashboard({
                   Xóa lọc
                 </button>
               )}
+
+              {/* Xuất Báo Cáo Tiến Độ theo từng Giáo viên (PDF & EXCEL) */}
+              <div className="flex items-center gap-1.5 ml-auto">
+                <button
+                  type="button"
+                  onClick={() => handleOpenPdfModal(psychTeacherFilter)}
+                  className="py-1.5 px-3 rounded-xl border border-rose-200 bg-rose-50 hover:bg-rose-100 text-rose-700 text-xs font-bold transition-all flex items-center gap-1.5 shadow-xs cursor-pointer"
+                  title={
+                    psychTeacherFilter !== "ALL"
+                      ? `Xem & Xuất file PDF tiến độ của Giáo viên đang chọn`
+                      : `Xem & Xuất file PDF theo dõi tiến độ của tất cả các Giáo viên`
+                  }
+                >
+                  <Printer className="w-3.5 h-3.5 text-rose-600" />
+                  <span>
+                    {psychTeacherFilter !== "ALL"
+                      ? `File PDF (${psychTeacherStats.find(t => t.teacherId === psychTeacherFilter)?.teacherName || "GV đã chọn"})`
+                      : "File PDF Theo Từng GV"}
+                  </span>
+                </button>
+
+                <button
+                  type="button"
+                  onClick={() => {
+                    if (psychTeacherFilter !== "ALL") {
+                      const currentTeacher = psychTeacherStats.find(t => t.teacherId === psychTeacherFilter)
+                      handleExportTeacherReport(psychTeacherFilter, currentTeacher?.teacherName)
+                    } else {
+                      handleExportTeacherReport("ALL")
+                    }
+                  }}
+                  className="py-1.5 px-3 rounded-xl border border-teal-200 bg-teal-50 hover:bg-teal-100 text-[#135E5B] text-xs font-bold transition-all flex items-center gap-1.5 shadow-xs cursor-pointer"
+                  title={
+                    psychTeacherFilter !== "ALL"
+                      ? `Xuất file Excel tiến độ của Giáo viên đang chọn`
+                      : `Xuất file Excel báo cáo theo dõi tiến độ của tất cả các Giáo viên`
+                  }
+                >
+                  <FileSpreadsheet className="w-3.5 h-3.5 text-[#135E5B]" />
+                  <span>
+                    {psychTeacherFilter !== "ALL"
+                      ? `Excel (${psychTeacherStats.find(t => t.teacherId === psychTeacherFilter)?.teacherName || "GV đã chọn"})`
+                      : "Excel Theo Từng GV"}
+                  </span>
+                </button>
+              </div>
             </div>
 
             {/* Table */}
@@ -2464,10 +2592,32 @@ export function OverviewDashboard({
 
             {/* Giáo viên */}
             <div className="bg-white border border-slate-200/80 rounded-3xl p-5 shadow-sm">
-              <h3 className="text-sm font-black text-slate-800 mb-3 flex items-center gap-2">
-                <GraduationCap className="w-4 h-4 text-indigo-600" />
-                Giáo viên phụ đạo
-              </h3>
+              <div className="flex items-center justify-between mb-3">
+                <h3 className="text-sm font-black text-slate-800 flex items-center gap-2">
+                  <GraduationCap className="w-4 h-4 text-indigo-600" />
+                  Giáo viên phụ đạo
+                </h3>
+                <div className="flex items-center gap-1">
+                  <button
+                    type="button"
+                    onClick={() => handleOpenPdfModal("ALL")}
+                    className="inline-flex items-center gap-1 px-2.5 py-1 rounded-xl bg-rose-50 hover:bg-rose-100 text-rose-700 border border-rose-200 text-[11px] font-bold shadow-xs transition-all cursor-pointer"
+                    title="Xem & Xuất bản in PDF chuẩn A4 theo từng Giáo viên phụ đạo"
+                  >
+                    <Printer className="w-3.5 h-3.5 text-rose-600" />
+                    <span>In / PDF</span>
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => handleExportTeacherReport("ALL")}
+                    className="inline-flex items-center gap-1 px-2.5 py-1 rounded-xl bg-indigo-50 hover:bg-indigo-100 text-indigo-800 border border-indigo-200 text-[11px] font-bold shadow-xs transition-all cursor-pointer"
+                    title="Xuất file Excel báo cáo tiến độ học tập theo từng Giáo viên"
+                  >
+                    <FileSpreadsheet className="w-3.5 h-3.5 text-indigo-600" />
+                    <span>Excel</span>
+                  </button>
+                </div>
+              </div>
               <div className="space-y-2.5 overflow-y-auto max-h-[220px] pr-1">
                 {acadTeacherStats.map((t, i) => (
                   <div key={i} className="flex justify-between items-center p-2.5 rounded-xl bg-slate-50 border border-slate-100 text-xs">
@@ -2475,9 +2625,27 @@ export function OverviewDashboard({
                       <span className="font-bold text-slate-800 block">{t.teacherName}</span>
                       <span className="text-[10px] text-slate-400">{t.campusList}</span>
                     </div>
-                    <span className="px-2.5 py-0.5 rounded-full bg-indigo-100 text-indigo-800 font-black">
-                      {t.count} HS
-                    </span>
+                    <div className="flex items-center gap-1">
+                      <button
+                        type="button"
+                        onClick={() => handleOpenPdfModal(t.teacherId)}
+                        className="p-1 rounded-lg bg-rose-50 hover:bg-rose-100 text-rose-700 border border-rose-200 transition-colors"
+                        title={`Xem & In báo cáo PDF học tập của ${t.teacherName}`}
+                      >
+                        <Printer className="w-3.5 h-3.5" />
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => handleExportTeacherReport(t.teacherId, t.teacherName)}
+                        className="p-1 rounded-lg bg-indigo-50 hover:bg-indigo-100 text-indigo-700 border border-indigo-200 transition-colors"
+                        title={`Xuất file Excel tiến độ học tập của ${t.teacherName}`}
+                      >
+                        <Download className="w-3.5 h-3.5" />
+                      </button>
+                      <span className="px-2.5 py-0.5 rounded-full bg-indigo-100 text-indigo-800 font-black">
+                        {t.count} HS
+                      </span>
+                    </div>
                   </div>
                 ))}
               </div>
@@ -2769,6 +2937,17 @@ export function OverviewDashboard({
 
         </div>
       )}
+
+      {/* MODAL XEM TRƯỚC & XUẤT BẢN IN PDF CHUẨN A4 */}
+      <TeacherProgressPdfModal
+        isOpen={isPdfModalOpen}
+        onClose={() => setIsPdfModalOpen(false)}
+        targets={supportScope === "PSYCHOLOGICAL" ? psychologyTargets : academicTargets}
+        teacherStats={supportScope === "PSYCHOLOGICAL" ? psychTeacherStats : acadTeacherStats}
+        selectedTeacherId={pdfTeacherId}
+        academicYearName={academicYears?.find((y: any) => y.id === selectedYearId)?.name || "2026-2027"}
+        supportType={supportScope}
+      />
 
     </div>
   )

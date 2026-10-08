@@ -411,19 +411,27 @@ export function SSMAssistantWidget({ role = "TEACHER" }: SSMAssistantWidgetProps
   }
 
   // Header background theme according to role
-  const headerTheme = {
+  const headerTheme: Record<AssistantRole, string> = {
     STUDENT: "bg-gradient-to-r from-[#003B3A] via-[#005F5B] to-[#48BFE3]",
     TEACHER: "bg-gradient-to-r from-[#003B3A] via-[#008B85] to-[#00A19A]",
     PARENT: "bg-gradient-to-r from-[#1E1B4B] via-[#4338CA] to-[#6366F1]",
-    ADMIN: "bg-gradient-to-r from-[#001D1C] via-[#003B3A] to-[#0F766E]"
-  }[role] || "bg-[#003B3A]"
+    ADMIN: "bg-gradient-to-r from-[#001D1C] via-[#003B3A] to-[#0F766E]",
+    TTCM: "bg-gradient-to-r from-[#003B3A] via-[#008B85] to-[#00A19A]",
+    TBP: "bg-gradient-to-r from-[#001D1C] via-[#003B3A] to-[#0F766E]"
+  }
 
-  const RoleIcon = {
+  const currentTheme = headerTheme[role] || "bg-[#003B3A]"
+
+  const roleIcons: Record<AssistantRole, any> = {
     STUDENT: GraduationCap,
     TEACHER: BookOpen,
     PARENT: Heart,
-    ADMIN: ShieldCheck
-  }[role] || Bot
+    ADMIN: ShieldCheck,
+    TTCM: BookOpen,
+    TBP: ShieldCheck
+  }
+
+  const RoleIcon = roleIcons[role] || Bot
 
   if (!mounted) {
     return null

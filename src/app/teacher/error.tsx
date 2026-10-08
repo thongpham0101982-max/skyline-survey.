@@ -11,6 +11,7 @@ export default function TeacherPortalError({
   error: Error & { digest?: string };
   reset: () => void;
 }) {
+  const [showDetails, setShowDetails] = useState(false);
   const isChunkError =
     error?.name === 'ChunkLoadError' ||
     error?.message?.includes('ChunkLoadError') ||

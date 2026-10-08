@@ -29,17 +29,23 @@ export async function GET(req: Request) {
         where: { id: studentId },
         include: {
           class: true,
-          profile: true,
-          homeroomFeedback: {
+          parents: {
+            include: {
+              parent: {
+                include: { user: true }
+              }
+            }
+          },
+          highlightComments: {
             take: 3,
             orderBy: { createdAt: "desc" }
           },
-          studentGoalUnlocks: {
+          goalUnlocks: {
             take: 1,
             orderBy: { createdAt: "desc" }
           },
-          learningSupportAssignments: {
-            where: { target: { status: "ACTIVE" } },
+          learningSupportTargets: {
+            where: { status: "ACTIVE" },
             take: 1
           }
         }
@@ -50,15 +56,15 @@ export async function GET(req: Request) {
       }
 
       // Extract parents
-      const profile = student.profile || {}
-      const fatherPhone = (profile as any)?.fatherPhone || (profile as any)?.phone || ""
-      const motherPhone = (profile as any)?.motherPhone || ""
-      const primaryPhone = fatherPhone || motherPhone || (student as any)?.parentPhone || ""
-      const parentName = (profile as any)?.fatherName || (profile as any)?.motherName || "Phụ huynh"
+      const firstParent = student.parents?.[0]?.parent?.user
+      const fatherPhone = firstParent?.phone || (student as any)?.parentPhone || ""
+      const motherPhone = ""
+      const primaryPhone = fatherPhone || (student as any)?.parentPhone || ""
+      const parentName = firstParent?.name || "Phụ huynh"
 
       // Check academic alerts
-      const hasSupport = (student.learningSupportAssignments?.length || 0) > 0
-      const hasPendingGoal = student.studentGoalUnlocks?.some(g => g.status === "PENDING")
+      const hasSupport = (student.learningSupportTargets?.length || 0) > 0
+      const hasPendingGoal = student.goalUnlocks?.some(g => g.status === "PENDING")
 
       let alertStatus: "NORMAL" | "ATTENTION" | "URGENT" = "NORMAL"
       let alertReason = ""
@@ -85,7 +91,7 @@ export async function GET(req: Request) {
           primaryPhone,
           alertStatus,
           alertReason,
-          recentNotes: student.homeroomFeedback?.map(f => ({
+          recentNotes: student.highlightComments?.map(f => ({
             id: f.id,
             comment: f.comment,
             createdAt: f.createdAt.toLocaleDateString("vi-VN")
@@ -113,9 +119,15 @@ export async function GET(req: Request) {
       where: whereClause,
       include: {
         class: true,
-        profile: true,
-        learningSupportAssignments: {
-          where: { target: { status: "ACTIVE" } }
+        parents: {
+          include: {
+            parent: {
+              include: { user: true }
+            }
+          }
+        },
+        learningSupportTargets: {
+          where: { status: "ACTIVE" }
         }
       },
       take: 40,
@@ -123,10 +135,10 @@ export async function GET(req: Request) {
     })
 
     const formattedList = students.map(s => {
-      const profile = s.profile || {}
-      const phone = (profile as any)?.fatherPhone || (profile as any)?.motherPhone || (profile as any)?.phone || (s as any)?.parentPhone || ""
-      const parent = (profile as any)?.fatherName || (profile as any)?.motherName || "Phụ huynh"
-      const hasSupport = (s.learningSupportAssignments?.length || 0) > 0
+      const firstParent = s.parents?.[0]?.parent?.user
+      const phone = firstParent?.phone || (s as any)?.parentPhone || ""
+      const parent = firstParent?.name || "Phụ huynh"
+      const hasSupport = (s.learningSupportTargets?.length || 0) > 0
 
       return {
         id: s.id,

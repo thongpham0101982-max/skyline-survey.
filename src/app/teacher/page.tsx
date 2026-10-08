@@ -83,6 +83,7 @@ export default function TeacherDashboard() {
   const { data: session } = useSession()
   const [metrics, setMetrics] = useState<MetricData | null>(null)
   const [loading, setLoading] = useState(true)
+  const [refreshing, setRefreshing] = useState(false)
   const [activeTab, setActiveTab] = useState<"ALL" | "GVCN" | "GVBM" | "UTILITIES">("ALL")
   const [searchQuery, setSearchQuery] = useState<string>("")
   const [viewMode, setViewMode] = useState<"TEACHER" | "ADMIN">(() => {

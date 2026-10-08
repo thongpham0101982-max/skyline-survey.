@@ -470,3 +470,417 @@ export function exportTrackingBookExcel(
   XLSX.writeFile(workbook, fileName)
   return fileName
 }
+
+export interface ExportTeacherProgressReportOptions {
+  teacherId?: string
+  teacherName?: string
+  academicYearName?: string
+  selectedMonth?: string
+  supportType?: "PSYCHOLOGICAL" | "ACADEMIC" | "ALL"
+  fileNamePrefix?: string
+}
+
+/**
+ * Xuất Báo Cáo Theo Dõi Tiến Độ Theo Từng Giáo Viên
+ * Hỗ trợ xuất riêng cho từng giáo viên hoặc xuất tổng hợp toàn bộ giáo viên kèm sheet đối chiếu
+ */
+export function exportTeacherProgressReportExcel(
+  targets: any[],
+  options: ExportTeacherProgressReportOptions = {}
+) {
+  if (!targets || targets.length === 0) {
+    throw new Error("Không có dữ liệu học sinh để xuất báo cáo tiến độ.")
+  }
+
+  const academicYear = options.academicYearName || "2026-2027"
+  const activeMonth = options.selectedMonth && options.selectedMonth !== "ALL" ? options.selectedMonth : "Tháng 9"
+  const targetTeacherId = options.teacherId || "ALL"
+  const exportTimestamp = new Date().toLocaleString("vi-VN")
+
+  // Helper trích xuất danh sách GV phân công của target
+  const getAssignedTeachers = (t: any): { id: string; name: string }[] => {
+    if (t.assignments && Array.isArray(t.assignments) && t.assignments.length > 0) {
+      const list = t.assignments
+        .filter((a: any) => a.teacher)
+        .map((a: any) => ({
+          id: a.teacher.id,
+          name: a.teacher.teacherName || a.teacherName || "Chưa rõ"
+        }))
+      if (list.length > 0) return list
+    }
+    if (t.createdBy?.teacherName) {
+      return [{ id: t.createdBy.id || "CREATOR", name: t.createdBy.teacherName }]
+    }
+    return [{ id: "UNASSIGNED", name: "Chưa phân công GV" }]
+  }
+
+  // TRƯỜNG HỢP 1: Xuất báo cáo riêng cho MỘT giáo viên
+  if (targetTeacherId !== "ALL") {
+    const teacherTargets = targets.filter(t => {
+      const tList = getAssignedTeachers(t)
+      return tList.some(item => item.id === targetTeacherId || item.name === options.teacherName)
+    })
+
+    if (teacherTargets.length === 0) {
+      throw new Error(`Không tìm thấy học sinh nào thuộc giáo viên "${options.teacherName || targetTeacherId}".`)
+    }
+
+    const tName = options.teacherName || getAssignedTeachers(teacherTargets[0])[0]?.name || "Giao_Vien"
+    const prefix = options.fileNamePrefix || (options.supportType === "PSYCHOLOGICAL" ? "BC_Tien_Do_Tam_Ly_GV" : "BC_Tien_Do_Hoc_Tap_GV")
+
+    return exportTrackingBookExcel(teacherTargets, {
+      teacherName: tName,
+      academicYearName: academicYear,
+      selectedMonth: activeMonth,
+      exportScope: "FULL",
+      fileNamePrefix: prefix
+    })
+  }
+
+  // TRƯỜNG HỢP 2: Xuất báo cáo tiến độ TỔNG HỢP TOÀN BỘ THEO TỪNG GIÁO VIÊN
+  const workbook = XLSX.utils.book_new()
+
+  // Gom nhóm học sinh theo từng Giáo viên
+  const teacherMap: Record<string, {
+    teacherId: string
+    teacherName: string
+    targets: any[]
+    campusNames: Set<string>
+    grades: Set<string>
+    activeCount: number
+    pendingCount: number
+    termCount: number
+    commitmentCount: number
+    evalCount: number
+    goodCount: number
+  }> = {}
+
+  targets.forEach(t => {
+    const assignedTeachers = getAssignedTeachers(t)
+    const isTerm = t.terminationStatus === "TERMINATED"
+    const isPending = t.terminationStatus === "PENDING_TERMINATION"
+    const isCommitment = t.sourceType === "ADMISSION" || (t.notes && t.notes.includes("Cam kết Khảo sát đầu vào")) || t.sourceType === "ASSESSMENT"
+    const campus = t.student?.class?.campus?.campusName || t.student?.campus?.campusName || ""
+    const className = t.student?.class?.className || ""
+    const match = className.match(/^(\d+)/)
+    const grade = match ? `Khối ${match[1]}` : className
+    const evals = t.evaluations || []
+
+    assignedTeachers.forEach(tch => {
+      if (!teacherMap[tch.id]) {
+        teacherMap[tch.id] = {
+          teacherId: tch.id,
+          teacherName: tch.name,
+          targets: [],
+          campusNames: new Set(),
+          grades: new Set(),
+          activeCount: 0,
+          pendingCount: 0,
+          termCount: 0,
+          commitmentCount: 0,
+          evalCount: 0,
+          goodCount: 0
+        }
+      }
+      const group = teacherMap[tch.id]
+      group.targets.push(t)
+      if (campus) group.campusNames.add(campus)
+      if (grade) group.grades.add(grade)
+      if (isTerm) group.termCount++
+      else if (isPending) group.pendingCount++
+      else group.activeCount++
+
+      if (isCommitment) group.commitmentCount++
+      group.evalCount += evals.length
+
+      evals.forEach((ev: any) => {
+        const lvl = (ev.trackingLevel || "").toLowerCase()
+        if (lvl.includes("đạt") || lvl.includes("tốt") || lvl.includes("ổn định") || lvl.includes("tiến bộ")) {
+          group.goodCount++
+        }
+      })
+    })
+  })
+
+  const teacherList = Object.values(teacherMap).sort((a, b) => b.targets.length - a.targets.length)
+
+  // -------------------------------------------------------------------------
+  // SHEET 1: TỔNG HỢP TIẾN ĐỘ THEO TỪNG GIÁO VIÊN
+  // -------------------------------------------------------------------------
+  const summaryHeader = [
+    ["HỆ THỐNG GIÁO DỤC SKY-LINE"],
+    [options.supportType === "PSYCHOLOGICAL" 
+      ? "BÁO CÁO TIẾN ĐỘ HỖ TRỢ TÂM LÝ HỌC ĐƯỜNG THEO TỪNG CHUYÊN VIÊN / GIÁO VIÊN"
+      : "BÁO CÁO THEO DÕI TIẾN ĐỘ BỒI DƯỠNG HỌC TẬP THEO TỪNG GIÁO VIÊN"
+    ],
+    [`Năm học: ${academicYear} | Kỳ theo dõi: ${activeMonth} | Xuất ngày: ${exportTimestamp} | Tổng số nhân sự phụ trách: ${teacherList.length}`],
+    [],
+    [
+      "STT",
+      "Họ và tên Giáo viên / Chuyên viên",
+      "Cơ sở phụ trách",
+      "Khối lớp",
+      "Tổng số HS phụ trách",
+      "Diện Cam kết (CKĐV)",
+      "Đang theo dõi (🟡)",
+      "Chờ duyệt kết thúc (⏳)",
+      "Đã chấm dứt theo dõi (🏁)",
+      "Tỷ lệ hoàn thành (%)",
+      "Tổng lượt ghi nhận",
+      "Lượt tiến bộ / Đạt",
+      "Đánh giá tiến độ chung"
+    ]
+  ]
+
+  const summaryRows = teacherList.map((t, idx) => {
+    const total = t.targets.length
+    const termRate = total > 0 ? `${Math.round((t.termCount / total) * 100)}%` : "0%"
+    const campusStr = Array.from(t.campusNames).join(", ") || "Toàn trường"
+    const gradeStr = Array.from(t.grades).join(", ") || "—"
+
+    let statusText = "Đang tích cực can thiệp"
+    if (t.termCount > 0 && t.activeCount === 0) statusText = "Đã hoàn thành 100% ca"
+    else if (t.termCount > 0) statusText = `Đã hoàn thành ${t.termCount} ca, tiếp tục theo dõi`
+    else if (t.evalCount === 0) statusText = "Mới tiếp nhận / Chưa ghi nhận"
+
+    return [
+      idx + 1,
+      t.teacherName,
+      campusStr,
+      gradeStr,
+      total,
+      t.commitmentCount,
+      t.activeCount,
+      t.pendingCount,
+      t.termCount,
+      termRate,
+      t.evalCount,
+      t.goodCount,
+      statusText
+    ]
+  })
+
+  // Dòng tổng cộng
+  const grandTotalStudents = targets.length
+  const grandTerminated = targets.filter(t => t.terminationStatus === "TERMINATED").length
+  const grandActive = targets.filter(t => t.terminationStatus === "ACTIVE").length
+  const grandRate = grandTotalStudents > 0 ? `${Math.round((grandTerminated / grandTotalStudents) * 100)}%` : "0%"
+  const grandEvals = targets.reduce((sum, t) => sum + (t.evaluations?.length || 0), 0)
+
+  const summaryFooter = [
+    [],
+    [
+      "TỔNG CỘNG HỆ THỐNG",
+      "",
+      "",
+      "",
+      grandTotalStudents,
+      targets.filter(t => t.sourceType === "ADMISSION" || (t.notes && t.notes.includes("Cam kết"))).length,
+      grandActive,
+      targets.filter(t => t.terminationStatus === "PENDING_TERMINATION").length,
+      grandTerminated,
+      grandRate,
+      grandEvals,
+      "",
+      "Toàn bộ học sinh tâm lý & hỗ trợ học tập"
+    ]
+  ]
+
+  const wsSummary = XLSX.utils.aoa_to_sheet([...summaryHeader, ...summaryRows, ...summaryFooter])
+  wsSummary["!cols"] = [
+    { wch: 6 },
+    { wch: 30 },
+    { wch: 18 },
+    { wch: 16 },
+    { wch: 16 },
+    { wch: 16 },
+    { wch: 16 },
+    { wch: 18 },
+    { wch: 20 },
+    { wch: 18 },
+    { wch: 16 },
+    { wch: 16 },
+    { wch: 32 }
+  ]
+  XLSX.utils.book_append_sheet(workbook, wsSummary, "Tong_Hop_Tung_Giao_Vien")
+
+  // -------------------------------------------------------------------------
+  // SHEET 2: DANH SÁCH CHI TIẾT HỌC SINH THEO TỪNG GIÁO VIÊN
+  // -------------------------------------------------------------------------
+  const detailHeader = [
+    ["HỆ THỐNG GIÁO DỤC SKY-LINE"],
+    ["DANH SÁCH HỌC SINH CHI TIẾT PHÂN THEO TỪNG GIÁO VIÊN / CHUYÊN VIÊN PHỤ TRÁCH"],
+    [`Năm học: ${academicYear} | Xuất ngày: ${exportTimestamp}`],
+    [],
+    [
+      "STT",
+      "Giáo viên / Chuyên viên",
+      "Mã HS",
+      "Họ và tên học sinh",
+      "Lớp",
+      "Cơ sở",
+      "Diện can thiệp",
+      "Lý do / Môn hỗ trợ",
+      "Ngày bắt đầu",
+      "Ngày chấm dứt",
+      "Tháng kết thúc",
+      "Trạng thái hiện tại",
+      "Số lần đánh giá",
+      "Mức độ tiến độ gần nhất",
+      "Nhận xét / Ghi chú mới nhất"
+    ]
+  ]
+
+  const detailRows: any[][] = []
+  let detailStt = 1
+
+  teacherList.forEach(tch => {
+    tch.targets.forEach((t: any) => {
+      const isCommitment = t.sourceType === "ADMISSION" || (t.notes && t.notes.includes("Cam kết Khảo sát đầu vào")) || t.sourceType === "ASSESSMENT"
+      const student = t.student || {}
+      const stName = student.studentName || student.fullName || "—"
+      const stCode = student.studentCode || student.code || "—"
+      const className = student.class?.className || student.className || "—"
+      const campusName = student.class?.campus?.campusName || student.campus?.campusName || "—"
+      const reasonDisplay = t.reason || t.notes || (t.supportType === "ACADEMIC" ? "Văn hóa" : "Tâm lý định kỳ")
+      const startDate = t.startDate ? new Date(t.startDate).toLocaleDateString("vi-VN") : "—"
+      const isTerminated = t.terminationStatus === "TERMINATED"
+      const endDateObj = isTerminated && t.endDate ? new Date(t.endDate) : (isTerminated && t.updatedAt ? new Date(t.updatedAt) : null)
+      const endDate = endDateObj ? endDateObj.toLocaleDateString("vi-VN") : "—"
+      const endMonth = endDateObj ? `Tháng ${endDateObj.getMonth() + 1}/${endDateObj.getFullYear()}` : "—"
+
+      const evals = t.evaluations || []
+      const sortedEvals = [...evals].sort((a: any, b: any) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime())
+      const latestEval = sortedEvals[0]
+      const latestLevel = latestEval ? latestEval.trackingLevel : (isTerminated ? "Đã đạt mục tiêu" : "Đang theo dõi")
+      const latestComment = latestEval ? latestEval.comment : (t.notes || "—")
+
+      let statusDisplay = "Đang theo dõi"
+      if (isTerminated) statusDisplay = "Đã chấm dứt theo dõi"
+      else if (t.terminationStatus === "PENDING_TERMINATION") statusDisplay = "Chờ duyệt kết thúc"
+
+      detailRows.push([
+        detailStt++,
+        tch.teacherName,
+        stCode,
+        stName,
+        className,
+        campusName,
+        isCommitment ? "⭐️ Cam kết đầu vào" : "Thường kỳ",
+        reasonDisplay,
+        startDate,
+        endDate,
+        endMonth,
+        statusDisplay,
+        evals.length,
+        latestLevel,
+        latestComment
+      ])
+    })
+  })
+
+  const wsDetail = XLSX.utils.aoa_to_sheet([...detailHeader, ...detailRows])
+  wsDetail["!cols"] = [
+    { wch: 6 },
+    { wch: 28 },
+    { wch: 14 },
+    { wch: 24 },
+    { wch: 10 },
+    { wch: 12 },
+    { wch: 18 },
+    { wch: 26 },
+    { wch: 14 },
+    { wch: 14 },
+    { wch: 16 },
+    { wch: 18 },
+    { wch: 14 },
+    { wch: 18 },
+    { wch: 45 }
+  ]
+  XLSX.utils.book_append_sheet(workbook, wsDetail, "Danh_Sach_HS_Theo_GV")
+
+  // -------------------------------------------------------------------------
+  // SHEET 3: TIẾN ĐỘ 10 THÁNG NĂM HỌC
+  // -------------------------------------------------------------------------
+  const monthHeader = [
+    ["HỆ THỐNG GIÁO DỤC SKY-LINE"],
+    ["MA TRẬN TIẾN TRÌNH THEO DÕI 10 THÁNG CỦA HỌC SINH THEO TỪNG GIÁO VIÊN"],
+    [`Năm học: ${academicYear} | Xuất ngày: ${exportTimestamp}`],
+    [],
+    [
+      "STT",
+      "Giáo viên phụ trách",
+      "Mã HS",
+      "Họ và tên",
+      "Lớp",
+      "Cơ sở",
+      "Diện can thiệp",
+      ...ACADEMIC_MONTHS,
+      "Đánh giá chung",
+      "Trạng thái"
+    ]
+  ]
+
+  const monthRows: any[][] = []
+  let monthStt = 1
+
+  teacherList.forEach(tch => {
+    tch.targets.forEach((t: any) => {
+      const isCommitment = t.sourceType === "ADMISSION" || (t.notes && t.notes.includes("Cam kết Khảo sát đầu vào")) || t.sourceType === "ASSESSMENT"
+      const student = t.student || {}
+      const stName = student.studentName || student.fullName || "—"
+      const stCode = student.studentCode || student.code || "—"
+      const className = student.class?.className || student.className || "—"
+      const campusName = student.class?.campus?.campusName || student.campus?.campusName || "—"
+      const evals = t.evaluations || []
+
+      const monthValues = ACADEMIC_MONTHS.map((m) => {
+        const monthEvals = evals.filter((e: any) => e.periodName === m || (e.periodName && e.periodName.includes(m)))
+        if (monthEvals.length === 0) return "—"
+        const ev = monthEvals[monthEvals.length - 1]
+        return ev.trackingLevel || "Đạt"
+      })
+
+      const sortedEvals = [...evals].sort((a: any, b: any) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime())
+      const latestEval = sortedEvals[0]
+      const overallEvaluation = latestEval ? latestEval.trackingLevel : (t.terminationStatus === "TERMINATED" ? "Đã đạt mục tiêu" : "Đang theo dõi")
+
+      monthRows.push([
+        monthStt++,
+        tch.teacherName,
+        stCode,
+        stName,
+        className,
+        campusName,
+        isCommitment ? "⭐️ Cam kết" : "Thường kỳ",
+        ...monthValues,
+        overallEvaluation,
+        t.terminationStatus === "TERMINATED" ? "Đã chấm dứt" : "Đang theo dõi"
+      ])
+    })
+  })
+
+  const wsMonth = XLSX.utils.aoa_to_sheet([...monthHeader, ...monthRows])
+  wsMonth["!cols"] = [
+    { wch: 6 },
+    { wch: 28 },
+    { wch: 14 },
+    { wch: 24 },
+    { wch: 10 },
+    { wch: 12 },
+    { wch: 14 },
+    ...ACADEMIC_MONTHS.map(() => ({ wch: 13 })),
+    { wch: 18 },
+    { wch: 16 }
+  ]
+  XLSX.utils.book_append_sheet(workbook, wsMonth, "Tien_Do_10_Thang")
+
+  // Tên file xuất ra
+  const sanitizedYear = academicYear.replace(/[^a-zA-Z0-9_-]/g, "_")
+  const typeTag = options.supportType === "PSYCHOLOGICAL" ? "Tam_Ly" : "Hoc_Tap"
+  const fileName = `Bao_Cao_Tien_Do_${typeTag}_Theo_Tung_Giao_Vien_${sanitizedYear}.xlsx`
+
+  XLSX.writeFile(workbook, fileName)
+  return fileName
+}
+

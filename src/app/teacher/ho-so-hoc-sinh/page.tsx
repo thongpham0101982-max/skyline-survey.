@@ -110,6 +110,7 @@ export default function TeacherStudentProfilePage() {
   const [isNotGVCN, setIsNotGVCN] = useState(false);
   const [apiError, setApiError] = useState("");
   const [classes, setClasses] = useState<any[]>([]);
+  const [entranceSubTab, setEntranceSubTab] = useState<"results" | "admin" | "academic">("results");
   const fileInputRef = useRef<HTMLInputElement>(null);
   const studentDropdownRef = useRef<HTMLDivElement>(null);
 
@@ -1820,10 +1821,10 @@ export default function TeacherStudentProfilePage() {
                       ).toUpperCase()
 
                       const isPrimary = 
-                        schoolBlock === "preschool" ||
                         levelStr === "PRIMARY" || 
                         levelStr.includes("TIEU HOC") || 
                         levelStr.includes("TIỂU HỌC") ||
+                        levelStr === "PRESCHOOL" ||
                         ["1", "2", "3", "4", "5"].includes(classGradeStr) ||
                         ["1", "2", "3", "4", "5"].some(g => classCodeStr.startsWith(g + ".") || classCodeStr.startsWith(g + "_")) ||
                         /^[1-5][._\s]/i.test(classCodeStr)
@@ -2112,7 +2113,7 @@ return (
                               <p className="text-[10px] text-slate-400 font-bold mt-0.5">Bảng điểm môn học &amp; Đánh giá xếp loại tổng kết định kỳ</p>
                             </div>
                             <span className="bg-teal-50 text-[#00A19A] border border-teal-100 px-3 py-1 rounded-full text-[10px] font-black uppercase tracking-wider">
-                              Năm học: {selectedStudent?.yearName || activeYearName}
+                              Năm học: {selectedStudent?.yearName || "2026-2027"}
                             </span>
                           </div>
 

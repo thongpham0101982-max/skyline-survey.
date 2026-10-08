@@ -52,12 +52,12 @@ export function PwaManager() {
       navigator.serviceWorker.addEventListener("controllerchange", () => {
         if (!refreshing) {
           refreshing = true
-          if ("caches" in window) {
+          if (typeof window !== "undefined" && "caches" in window) {
             caches.keys().then((keys) => Promise.all(keys.map((k) => caches.delete(k)))).finally(() => {
-              window.location.reload()
+              (window as any).location.reload()
             })
-          } else {
-            window.location.reload()
+          } else if (typeof window !== "undefined") {
+            (window as any).location.reload()
           }
         }
       })
@@ -97,12 +97,12 @@ export function PwaManager() {
     if (waitingWorker) {
       waitingWorker.postMessage({ type: "SKIP_WAITING" })
     } else {
-      if ("caches" in window) {
+      if (typeof window !== "undefined" && "caches" in window) {
         caches.keys().then((keys) => Promise.all(keys.map((k) => caches.delete(k)))).finally(() => {
-          window.location.reload()
+          (window as any).location.reload()
         })
-      } else {
-        window.location.reload()
+      } else if (typeof window !== "undefined") {
+        (window as any).location.reload()
       }
     }
   }
