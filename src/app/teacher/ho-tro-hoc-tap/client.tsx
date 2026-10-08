@@ -137,6 +137,7 @@ import { FeedbackGvcnPhhsModal } from "./components/FeedbackGvcnPhhsModal"
 import { PsychologicalEvaluationLogTab } from "./components/PsychologicalEvaluationLogTab"
 import { MONTH_WEEKS_CONFIG } from "./academic-calendar"
 import { ExportTrackingBookModal } from "./components/ExportTrackingBookModal"
+import { TeacherProgressPdfModal } from "@/app/admin/ktdbcl/support/TeacherProgressPdfModal"
 
 
 interface Props {
@@ -555,6 +556,8 @@ export function TeacherSupportClient({
   const [isUrgentEmailModalOpen, setIsUrgentEmailModalOpen] = useState(false)
   const [isFeedbackModalOpen, setIsFeedbackModalOpen] = useState(false)
   const [isExportTrackingModalOpen, setIsExportTrackingModalOpen] = useState(false)
+  const [isTeacherPdfModalOpen, setIsTeacherPdfModalOpen] = useState(false)
+  const [selectedTeacherForPdf, setSelectedTeacherForPdf] = useState<any | null>(null)
   const [selectedFeedbackTarget, setSelectedFeedbackTarget] = useState<any>(null)
 const [evalSelectedMonth, setEvalSelectedMonth] = useState<string>("Tháng 9")
   const [evalSelectedWeek, setEvalSelectedWeek] = useState<string>("Tuần 1")
@@ -2487,15 +2490,34 @@ const [evalSelectedMonth, setEvalSelectedMonth] = useState<string>("Tháng 9")
               </button>
             </div>
 
-            <button
-              type="button"
-              onClick={() => setIsExportTrackingModalOpen(true)}
-              className="bg-gradient-to-r from-teal-900 via-[#003B3A] to-[#009085] hover:opacity-95 text-white font-bold py-2 px-4 rounded-xl shadow-xs hover:shadow transition-all cursor-pointer flex items-center gap-2"
-              title="Xuất Sổ Theo Dõi - Theo dõi tiến độ đánh giá theo Học sinh, theo Tuần & Tháng của từng Học sinh GV phụ trách"
-            >
-              <FileSpreadsheet className="h-4 w-4 text-[#48BFE3]" />
-              <span>Xuất Sổ Theo Dõi</span>
-            </button>
+            <div className="flex items-center gap-2">
+              <button
+                type="button"
+                onClick={() => setIsExportTrackingModalOpen(true)}
+                className="bg-gradient-to-r from-teal-900 via-[#003B3A] to-[#009085] hover:opacity-95 text-white font-bold py-2 px-4 rounded-xl shadow-xs hover:shadow transition-all cursor-pointer flex items-center gap-2"
+                title="Xuất Sổ Theo Dõi - Theo dõi tiến độ đánh giá theo Học sinh, theo Tuần & Tháng của từng Học sinh GV phụ trách"
+              >
+                <FileSpreadsheet className="h-4 w-4 text-[#48BFE3]" />
+                <span>Xuất Sổ Theo Dõi</span>
+              </button>
+
+              <button
+                type="button"
+                onClick={() => {
+                  setSelectedTeacherForPdf({
+                    id: teacher?.id,
+                    teacherName: teacher?.teacherName || teacher?.name || "Giáo viên phụ trách",
+                    campusList: teacher?.campus?.campusName || "Sky-Line"
+                  })
+                  setIsTeacherPdfModalOpen(true)
+                }}
+                className="bg-gradient-to-r from-rose-600 to-rose-700 hover:from-rose-700 hover:to-rose-800 text-white font-bold py-2 px-4 rounded-xl shadow-xs hover:shadow transition-all cursor-pointer flex items-center gap-2"
+                title="Xuất Báo Cáo Tiến Độ PDF (A4 Chuẩn Ban Khảo Thí & ĐBCL)"
+              >
+                <Printer className="h-4 w-4" />
+                <span>Xuất PDF</span>
+              </button>
+            </div>
           </div>
           <div className="bg-white border rounded-xl overflow-hidden shadow-sm">
             <table className="min-w-full divide-y divide-slate-200">
@@ -6684,6 +6706,21 @@ const [evalSelectedMonth, setEvalSelectedMonth] = useState<string>("Tháng 9")
         academicYearName={academicYears.find((y: any) => y.id === selectedYearId)?.name || "2026-2027"}
         currentMonth={summaryMonthFilter !== "ALL" ? summaryMonthFilter : "Tháng 9"}
       />
+
+      {/* 6. Modal Xuất Báo Cáo Tiến Độ PDF (A4 Chuẩn) */}
+      {isTeacherPdfModalOpen && (
+        <TeacherProgressPdfModal
+          isOpen={isTeacherPdfModalOpen}
+          onClose={() => {
+            setIsTeacherPdfModalOpen(false)
+            setSelectedTeacherForPdf(null)
+          }}
+          currentTeacher={selectedTeacherForPdf}
+          targets={activeSubTab === "psychology" ? psychologicalTargetsList : filteredTargets}
+          academicYearName={academicYears.find((y: any) => y.id === selectedYearId)?.name || "2026-2027"}
+          supportType={activeSubTab === "psychology" ? "PSYCHOLOGICAL" : undefined}
+        />
+      )}
     </div>
   )
 }

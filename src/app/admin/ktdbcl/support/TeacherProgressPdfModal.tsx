@@ -54,11 +54,11 @@ export function TeacherProgressPdfModal({
   const displayTargets = isAll
     ? targets
     : targets.filter(t => {
-        if (selectedTeacherId === "UNASSIGNED") {
-          return !t.assignments || t.assignments.length === 0
-        }
-        return (t.assignments || []).some((a: any) => a.teacher?.id === selectedTeacherId || a.teacher?.teacherName === currentTeacher?.teacherName)
-      })
+      if (selectedTeacherId === "UNASSIGNED") {
+        return !t.assignments || t.assignments.length === 0
+      }
+      return (t.assignments || []).some((a: any) => a.teacher?.id === selectedTeacherId || a.teacher?.teacherName === currentTeacher?.teacherName)
+    })
 
   // Thống kê số liệu
   const totalStudents = displayTargets.length
@@ -66,7 +66,7 @@ export function TeacherProgressPdfModal({
   const totalPending = displayTargets.filter(t => t.terminationStatus === "PENDING_TERMINATION").length
   const totalTerminated = displayTargets.filter(t => t.terminationStatus === "TERMINATED").length
   const termRate = totalStudents > 0 ? Math.round((totalTerminated / totalStudents) * 100) : 0
-  const totalCommitment = displayTargets.filter(t => 
+  const totalCommitment = displayTargets.filter(t =>
     t.sourceType === "ADMISSION" || (t.notes && t.notes.includes("Cam kết Khảo sát đầu vào")) || t.sourceType === "ASSESSMENT"
   ).length
   const totalEvaluations = displayTargets.reduce((acc, t) => acc + (t.evaluations?.length || 0), 0)
@@ -183,7 +183,7 @@ export function TeacherProgressPdfModal({
       `}</style>
 
       <div className="bg-white rounded-3xl shadow-2xl max-w-6xl w-full max-h-[92vh] flex flex-col overflow-hidden border border-slate-100">
-        
+
         {/* MODAL CONTROL HEADER (NO-PRINT) */}
         <div className="px-6 py-4 bg-gradient-to-r from-slate-900 via-slate-800 to-[#135E5B] text-white flex flex-wrap items-center justify-between gap-3 shrink-0 no-print">
           <div className="flex items-center gap-3">
@@ -209,9 +209,8 @@ export function TeacherProgressPdfModal({
               <button
                 type="button"
                 onClick={() => setOrientation("landscape")}
-                className={`px-2.5 py-1 rounded-lg transition-all ${
-                  orientation === "landscape" ? "bg-white text-slate-900 shadow-xs font-black" : "hover:text-white"
-                }`}
+                className={`px-2.5 py-1 rounded-lg transition-all ${orientation === "landscape" ? "bg-white text-slate-900 shadow-xs font-black" : "hover:text-white"
+                  }`}
                 title="Khổ giấy ngang (thích hợp cho bảng nhiều cột)"
               >
                 Khổ Ngang (A4)
@@ -219,9 +218,8 @@ export function TeacherProgressPdfModal({
               <button
                 type="button"
                 onClick={() => setOrientation("portrait")}
-                className={`px-2.5 py-1 rounded-lg transition-all ${
-                  orientation === "portrait" ? "bg-white text-slate-900 shadow-xs font-black" : "hover:text-white"
-                }`}
+                className={`px-2.5 py-1 rounded-lg transition-all ${orientation === "portrait" ? "bg-white text-slate-900 shadow-xs font-black" : "hover:text-white"
+                  }`}
                 title="Khổ giấy dọc"
               >
                 Khổ Dọc (A4)
@@ -285,7 +283,7 @@ export function TeacherProgressPdfModal({
 
         {/* MODAL BODY: DOCUMENT PREVIEW */}
         <div className="p-4 sm:p-8 overflow-y-auto flex-1 bg-slate-100/60 flex justify-center">
-          
+
           {/* A4 PRINT CONTAINER */}
           <div
             id="teacher-progress-report-pdf"

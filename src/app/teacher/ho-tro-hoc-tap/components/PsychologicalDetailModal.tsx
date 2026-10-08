@@ -11,6 +11,7 @@ import {
 import toast from "react-hot-toast"
 import { ACADEMIC_MONTHS, MONTH_WEEKS_CONFIG } from "../academic-calendar"
 import { formatDateSafe, getTrackingLevelBadge, parseEvaluationComment } from "../client"
+import { TeacherProgressPdfModal } from "@/app/admin/ktdbcl/support/TeacherProgressPdfModal"
 
 const OFFICIAL_PSYCH_DIMENSIONS = [
   { id: 1, title: "I. Cảm xúc và điều hòa cảm xúc", items: "4 mục", desc: "Phản ứng cảm xúc, mức độ điều hòa và kiểm soát xúc cảm" },
@@ -40,6 +41,7 @@ export function PsychologicalDetailModal({
 }: Props) {
   // Tabs: "timeline" (Default: Tiến trình 10 tháng), "initial" (Khảo sát 6 chiều kích), "new_log" (Ghi nhận / Phối hợp)
   const [activeTab, setActiveTab] = useState<"timeline" | "initial" | "new_log">("timeline")
+  const [isPdfModalOpen, setIsPdfModalOpen] = useState(false)
 
   // Form state for adding/editing psychological evaluation log
   const [editingEvalId, setEditingEvalId] = useState<string | null>(null)
@@ -209,6 +211,15 @@ export function PsychologicalDetailModal({
           </div>
 
           <div className="flex items-center gap-2">
+            <button
+              type="button"
+              onClick={() => setIsPdfModalOpen(true)}
+              className="bg-rose-600 hover:bg-rose-700 text-white font-bold py-1.5 px-3 rounded-xl text-xs transition-all shadow-xs flex items-center gap-1.5 cursor-pointer no-print"
+              title="Xuất Báo Cáo Tiến Độ PDF (A4 Chuẩn Ban Khảo Thí & ĐBCL)"
+            >
+              <Printer className="h-3.5 w-3.5" />
+              <span>Xuất PDF</span>
+            </button>
             <button
               type="button"
               onClick={() => window.print()}
@@ -814,6 +825,22 @@ export function PsychologicalDetailModal({
         </div>
 
       </div>
+
+      {/* Teacher Progress PDF Report Modal for this student */}
+      {isPdfModalOpen && (
+        <TeacherProgressPdfModal
+          isOpen={isPdfModalOpen}
+          onClose={() => setIsPdfModalOpen(false)}
+          currentTeacher={{
+            id: s.counselorName || "GV",
+            teacherName: s.counselorName || "Chuyên viên / GV phụ trách",
+            campusList: s.campusName || "Sky-Line"
+          }}
+          targets={[s]}
+          academicYearName={academicYearName}
+          supportType="PSYCHOLOGICAL"
+        />
+      )}
     </div>
   )
 }

@@ -3,13 +3,14 @@
 
 import { useState, useMemo } from "react"
 import {
-  Brain, Heart, Search, Filter, Download, Printer, Eye, Sparkles, 
+  Brain, Heart, Search, Filter, Download, Printer, Eye, Sparkles,
   User, Clock, CheckCircle2, AlertCircle, TrendingUp, AlertTriangle,
   ChevronRight, ArrowUpDown, Calendar, HelpCircle, FileText, Compass
 } from "lucide-react"
 import * as XLSX from "xlsx"
 import { formatDateSafe } from "../client"
 import { PsychologicalDetailModal } from "./PsychologicalDetailModal"
+import { TeacherProgressPdfModal } from "@/app/admin/ktdbcl/support/TeacherProgressPdfModal"
 
 interface Props {
   students: any[]
@@ -37,19 +38,22 @@ export function PsychologicalEvaluationLogTab({
   const [searchTerm, setSearchTerm] = useState<string>("")
   const [selectedStudentForDetail, setSelectedStudentForDetail] = useState<any | null>(null)
   const [isDetailModalOpen, setIsDetailModalOpen] = useState(false)
+  const [isPdfModalOpen, setIsPdfModalOpen] = useState(false)
+  const [selectedTeacherForPdf, setSelectedTeacherForPdf] = useState<any | null>(null)
+  const [pdfTargets, setPdfTargets] = useState<any[]>([])
 
   // Role-filtered students: in HOMEROOM mode, strictly only keep students of homeroomClasses
   const roleFilteredStudents = useMemo(() => {
     if (roleFilter === "HOMEROOM") {
       const hrIds = new Set(homeroomClasses.map((c: any) => c.id))
-      return students.filter(s => 
+      return students.filter(s =>
         hrIds.has(s.classId) ||
         homeroomClasses.some((c: any) => c.className === s.fullClassName || c.className === s.className)
       )
     }
     if (roleFilter === "ASSIGNED") {
       const hrIds = new Set(homeroomClasses.map((c: any) => c.id))
-      return students.filter(s => 
+      return students.filter(s =>
         !hrIds.has(s.classId) &&
         !homeroomClasses.some((c: any) => c.className === s.fullClassName || c.className === s.className)
       )
@@ -86,7 +90,7 @@ export function PsychologicalEvaluationLogTab({
   // 1. Statistics Summary Cards (strictly on roleFilteredStudents)
   const stats = useMemo(() => {
     const total = roleFilteredStudents.length
-    
+
     // Cần theo dõi & Can thiệp: trạng thái can thiệp / chuyên sâu / cần theo dõi / điểm âm
     const needAttention = roleFilteredStudents.filter(s => {
       const st = (s.status || "").toUpperCase()
@@ -102,11 +106,11 @@ export function PsychologicalEvaluationLogTab({
     // Đang theo dõi / Hỗ trợ: các trạng thái đang hoạt động còn lại
     const supporting = total - needAttention - stable
 
-    return { 
-      total, 
-      needAttention, 
-      stable, 
-      supporting: supporting >= 0 ? supporting : 0 
+    return {
+      total,
+      needAttention,
+      stable,
+      supporting: supporting >= 0 ? supporting : 0
     }
   }, [roleFilteredStudents])
 
@@ -115,7 +119,7 @@ export function PsychologicalEvaluationLogTab({
     return roleFilteredStudents.filter(item => {
       // Class filter
       if (selectedClassFilter !== "ALL") {
-        const matchClass = 
+        const matchClass =
           item.classId === selectedClassFilter ||
           item.fullClassName === selectedClassFilter ||
           item.className === selectedClassFilter
@@ -304,6 +308,24 @@ export function PsychologicalEvaluationLogTab({
 
             <button
               type="button"
+              onClick={() => {
+                setSelectedTeacherForPdf({
+                  id: teacher?.id,
+                  teacherName: teacher?.teacherName || teacher?.name || "Chuyên viên / GV phụ trách",
+                  campusList: teacher?.campus?.campusName || "Sky-Line"
+                })
+                setPdfTargets(filteredStudents)
+                setIsPdfModalOpen(true)
+              }}
+              className="bg-gradient-to-r from-rose-600 to-rose-700 hover:from-rose-700 hover:to-rose-800 text-white px-3.5 py-2 rounded-xl text-xs font-bold transition-all flex items-center gap-1.5 shadow-sm hover:shadow cursor-pointer"
+              title="Xuất Báo Cáo Tiến Độ Hỗ Trợ Tâm Lý Học Đường (File PDF A4 Chuẩn Ban Khảo Thí & ĐBCL)"
+            >
+              <Printer className="h-3.5 w-3.5" />
+              <span>Xuất PDF</span>
+            </button>
+
+            <button
+              type="button"
               onClick={() => window.print()}
               className="bg-slate-100 hover:bg-slate-200 text-slate-700 px-3.5 py-2 rounded-xl text-xs font-bold transition-all flex items-center gap-1.5 cursor-pointer"
             >
@@ -350,7 +372,7 @@ export function PsychologicalEvaluationLogTab({
                   const isStable = st.includes("ỔN ĐỊNH") || st.includes("BÌNH THƯỜNG")
 
                   return (
-                    <tr 
+                    <tr
                       key={item.id || idx}
                       className="hover:bg-purple-50/40 transition-colors group"
                     >
@@ -461,17 +483,35 @@ export function PsychologicalEvaluationLogTab({
                         )}
                       </td>
 
-                      {/* 8. Xem chi tiết kết quả: Mở Modal Tiến trình 10 tháng */}
+                      {/* 8. Xem chi tiết kết quả & Xuất PDF: Mở Modal Tiến trình 10 tháng */}
                       <td className="py-3.5 px-4 text-center">
-                        <button
-                          type="button"
-                          onClick={() => handleOpenDetail(item)}
-                          className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-purple-600 hover:bg-purple-700 text-white text-xs font-bold transition-all shadow-xs hover:shadow-md cursor-pointer group-hover:scale-105"
-                          title="Xem tiến trình đánh giá 10 tháng"
-                        >
-                          <Compass className="h-3.5 w-3.5 text-purple-200" />
-                          <span>Xem chi tiết</span>
-                        </button>
+                        <div className="flex items-center justify-center gap-1.5">
+                          <button
+                            type="button"
+                            onClick={() => handleOpenDetail(item)}
+                            className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-purple-600 hover:bg-purple-700 text-white text-xs font-bold transition-all shadow-xs hover:shadow-md cursor-pointer hover:scale-105"
+                            title="Xem tiến trình đánh giá 10 tháng"
+                          >
+                            <Compass className="h-3.5 w-3.5 text-purple-200" />
+                            <span>Chi tiết</span>
+                          </button>
+                          <button
+                            type="button"
+                            onClick={() => {
+                              setSelectedTeacherForPdf({
+                                id: teacher?.id,
+                                teacherName: item.counselorName || teacher?.teacherName || teacher?.name || "Chuyên viên tham vấn",
+                                campusList: item.campusName || "Sky-Line"
+                              })
+                              setPdfTargets([item])
+                              setIsPdfModalOpen(true)
+                            }}
+                            className="p-1.5 rounded-xl bg-rose-50 hover:bg-rose-100 text-rose-600 hover:text-rose-700 border border-rose-200/80 transition-all cursor-pointer hover:scale-105"
+                            title="Xuất bản in PDF học sinh này (chuẩn A4)"
+                          >
+                            <FileText className="h-3.5 w-3.5" />
+                          </button>
+                        </div>
                       </td>
                     </tr>
                   )
@@ -496,6 +536,22 @@ export function PsychologicalEvaluationLogTab({
           if (onRefresh) onRefresh()
         }}
       />
+
+      {/* Teacher Progress PDF Report Modal */}
+      {isPdfModalOpen && (
+        <TeacherProgressPdfModal
+          isOpen={isPdfModalOpen}
+          onClose={() => {
+            setIsPdfModalOpen(false)
+            setSelectedTeacherForPdf(null)
+            setPdfTargets([])
+          }}
+          currentTeacher={selectedTeacherForPdf}
+          targets={pdfTargets.length > 0 ? pdfTargets : filteredStudents}
+          academicYearName={academicYearName}
+          supportType="PSYCHOLOGICAL"
+        />
+      )}
     </div>
   )
 }
