@@ -6,8 +6,10 @@ import { signIn } from 'next-auth/react'
 import { GraduationCap, CheckCircle2, Loader2 } from 'lucide-react'
 import { LoginForm, PageFooter, SchoolLineArt, SkyLineSwooshBg, FeatureDrawer, ForgotPasswordModal } from './components'
 import { LanguageSwitcher } from '@/components/LanguageSwitcher'
+import { LOGIN_TRANSLATIONS, LoginLang } from './translations'
 
 export function LoginClient() {
+  const [lang, setLang] = useState<LoginLang>('vi')
   const [role, setRole] = useState('STAFF')
   const [identifier, setIdentifier] = useState('')
   const [password, setPassword] = useState('')
@@ -18,7 +20,27 @@ export function LoginClient() {
   const [mounted, setMounted] = useState(false)
   const [showForgotModal, setShowForgotModal] = useState(false)
 
-  useEffect(() => { setMounted(true) }, [])
+  useEffect(() => { 
+    setMounted(true)
+    if (typeof window !== 'undefined') {
+      const saved = (localStorage.getItem('ssm_lang') || localStorage.getItem('ssm_gvnn_lang')) as LoginLang
+      if (saved === 'vi' || saved === 'en') {
+        setLang(saved)
+      }
+    }
+
+    const handleLangEvent = (e: any) => {
+      const newL = e.detail
+      if (newL === 'vi' || newL === 'en') {
+        setLang(newL)
+      }
+    }
+
+    window.addEventListener('ssm_language_change', handleLangEvent)
+    return () => window.removeEventListener('ssm_language_change', handleLangEvent)
+  }, [])
+
+  const t = LOGIN_TRANSLATIONS[lang] || LOGIN_TRANSLATIONS.vi;
 
   const addStep = (text: string) => {
     setLoadingSteps((prev: any[]) => {
@@ -30,8 +52,8 @@ export function LoginClient() {
   }
 
   const validateForm = () => {
-    if (!identifier.trim()) { setError('Vui lòng nhập tài khoản.'); return false }
-    if (role !== 'STUDENT' && !password) { setError('Vui lòng nhập mật khẩu.'); return false }
+    if (!identifier.trim()) { setError(t.errors.emptyIdentifier); return false }
+    if (role !== 'STUDENT' && !password) { setError(t.errors.emptyPassword); return false }
     return true
   }
 
@@ -43,9 +65,9 @@ export function LoginClient() {
     setLoadingSteps([])
     try {
       if (role === 'STUDENT') {
-        setLoadingSteps([{ text: 'Đang xác thực...', done: false }])
+        setLoadingSteps([{ text: t.stepAuthenticatingStudent, done: false }])
         await new Promise(r => setTimeout(r, 600))
-        addStep('Bắt đầu xử lý đăng nhập Học sinh...')
+        addStep(t.stepProcessingStudent)
         await new Promise(r => setTimeout(r, 400))
         const res = await fetch('/api/hocsinh/login', {
           method: 'POST',
@@ -57,11 +79,11 @@ export function LoginClient() {
         })
         const data = await res.json()
         if (!res.ok) {
-          setError(data.error || 'Thông tin mã học sinh không hợp lệ.')
+          setError(data.error || t.errors.invalidStudent)
           setLoading(false); setLoadingSteps([]); return
         }
         setLoadingSteps((prev: any[]) => prev.map(s => ({ ...s, done: true })))
-        addStep('Đăng nhập thành công! Đang chuyển trang...')
+        addStep(t.stepSuccess)
         await new Promise(r => setTimeout(r, 500))
         if (data.student) {
           localStorage.setItem('currentStudent', JSON.stringify(data.student))
@@ -69,7 +91,7 @@ export function LoginClient() {
         document.cookie = 'hs_token=' + data.token + '; path=/; max-age=' + (rememberMe ? 30 * 24 * 60 * 60 : 2 * 24 * 60 * 60) + '; SameSite=Lax'
         window.location.href = '/hocsinh/portal'
       } else {
-        setLoadingSteps([{ text: 'Đang xác thực tài khoản...', done: false }])
+        setLoadingSteps([{ text: t.stepAuthenticating, done: false }])
         await new Promise(r => setTimeout(r, 300))
         try {
           const result: any = await signIn('credentials', { 
@@ -81,11 +103,11 @@ export function LoginClient() {
           if (result?.error || (result?.url && result.url.includes('error='))) {
             const errCode = String(result?.error || result?.url || '')
             if (errCode.includes('TAI_KHOAN_BI_KHOA')) {
-              setError('Tài khoản của bạn đã bị khóa hoặc ngừng hoạt động.')
+              setError(t.errors.lockedAccount)
             } else if (errCode.includes('Configuration')) {
-              setError('Lỗi kết nối cơ sở dữ liệu hệ thống. Đang kết nối lại...')
+              setError(t.errors.dbError)
             } else {
-              setError('Sai tên đăng nhập hoặc mật khẩu.')
+              setError(t.errors.invalidCredentials)
             }
             setLoading(false)
             setLoadingSteps([])
@@ -93,7 +115,7 @@ export function LoginClient() {
           }
 
           setLoadingSteps((prev: any[]) => prev.map(s => ({ ...s, done: true })))
-          addStep('Đăng nhập thành công! Đang chuyển trang...')
+          addStep(t.stepSuccess)
           
           const [sessRes, permRes] = await Promise.all([
             fetch('/api/auth/session').then(r => r.json()).catch(() => null),
@@ -119,7 +141,7 @@ export function LoginClient() {
           console.error("Login authentication error:", err)
           const errStr = String(err?.message || err?.type || err?.code || err || '')
           if (errStr.includes('TAI_KHOAN_BI_KHOA')) {
-            setError('Tài khoản của bạn đã bị khóa hoặc ngừng hoạt động.')
+            setError(t.errors.lockedAccount)
           } else if (
             errStr.includes('CredentialsSignin') ||
             errStr.includes('CallbackRouteError') ||
@@ -128,9 +150,9 @@ export function LoginClient() {
             errStr.includes('invalid') ||
             errStr.includes('401')
           ) {
-            setError('Sai tên đăng nhập hoặc mật khẩu.')
+            setError(t.errors.invalidCredentials)
           } else {
-            setError('Sai tên đăng nhập hoặc mật khẩu, hoặc lỗi kết nối. Vui lòng kiểm tra lại.')
+            setError(t.errors.connectionError)
           }
           setLoading(false)
           setLoadingSteps([])
@@ -138,7 +160,7 @@ export function LoginClient() {
       }
     } catch (outerErr: any) {
       console.error("Outer login error:", outerErr)
-      setError('Sai tên đăng nhập hoặc mật khẩu, hoặc lỗi kết nối. Vui lòng kiểm tra lại.')
+      setError(t.errors.connectionError)
       setLoading(false); setLoadingSteps([])
     }
   }
@@ -147,9 +169,7 @@ export function LoginClient() {
     setShowForgotModal(true)
   }
 
-  // Render SSR safely without blank screen
-
-  const roleLabel = role === 'STUDENT' ? 'Học sinh' : role === 'PARENT' ? 'Phụ huynh' : 'CBGV'
+  const roleLabel = t.roles[role as keyof typeof t.roles] || role
 
   return (
     <>
@@ -166,7 +186,7 @@ export function LoginClient() {
                 </div>
               </div>
             </div>
-            <h3 className="text-center text-lg font-extrabold text-[#003B3A] mb-0.5 text-balance">Đang đăng nhập</h3>
+            <h3 className="text-center text-lg font-extrabold text-[#003B3A] mb-0.5 text-balance">{t.modalTitle}</h3>
             <p className="text-center text-xs text-[#48BFE3] font-black mb-6 uppercase tracking-wider">{roleLabel}</p>
             <div className="space-y-3">
               {(loadingSteps as any[]).map((step: any, i: number) => (
@@ -229,7 +249,7 @@ export function LoginClient() {
 
             {/* Feature Drawer for Mobile/Tablet inside Left Panel */}
             <div className="w-full max-w-md hidden sm:block md:hidden mt-6">
-              <FeatureDrawer />
+              <FeatureDrawer lang={lang} />
             </div>
           </div>
 
@@ -256,7 +276,7 @@ export function LoginClient() {
           {/* Elevated Floating White Card (Image 2 style) */}
           <div className="bg-white rounded-[28px] sm:rounded-[32px] p-8 sm:p-10 md:p-12 shadow-[0_20px_60px_rgba(0,31,30,0.06)] border border-slate-100/90 max-w-[420px] w-full mx-auto transition-all duration-300 relative z-10 hover:shadow-[0_24px_70px_rgba(0,31,30,0.09)]">
             
-            {/* Header: Sky-Line Logo + "Đăng nhập" (Image 2 style) */}
+            {/* Header: Sky-Line Logo + "Đăng nhập" / "Sign In" */}
             <div className="flex flex-col items-center justify-center mb-8 select-none">
               <img
                 src="/logo.png"
@@ -264,7 +284,7 @@ export function LoginClient() {
                 className="h-10 sm:h-11 w-auto object-contain mb-5 pointer-events-none"
               />
               <h2 className="text-2xl sm:text-3xl font-black text-[#003B3A] tracking-tight text-balance">
-                Đăng nhập
+                {t.pageTitle}
               </h2>
             </div>
 
@@ -278,25 +298,26 @@ export function LoginClient() {
               loading={loading}
               onSubmit={handleSubmit}
               onForgotPassword={handleForgotPassword}
+              lang={lang}
             />
 
             {/* Footer with side dividers (Image 2 style) */}
             <div className="mt-8">
-              <PageFooter />
+              <PageFooter lang={lang} />
             </div>
 
           </div>
 
           {/* Feature Drawer for Mobile (screen < 640px) */}
           <div className="w-full max-w-[420px] sm:hidden">
-            <FeatureDrawer />
+            <FeatureDrawer lang={lang} />
           </div>
 
         </div>
 
       </div>
 
-      <ForgotPasswordModal isOpen={showForgotModal} onClose={() => setShowForgotModal(false)} />
+      <ForgotPasswordModal isOpen={showForgotModal} onClose={() => setShowForgotModal(false)} lang={lang} />
     </>
   )
 }

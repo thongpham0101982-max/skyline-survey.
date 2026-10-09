@@ -46,6 +46,7 @@ next-env.d.ts
 
 # scratch files
 scratch_*
+scratch/
 
 *.db
 /data-backups/

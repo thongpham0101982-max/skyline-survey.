@@ -547,6 +547,12 @@ export async function createForeignObservationWithEvaluation(data: {
       };
     });
 
+    const calculatedAvgScore = typeof data.totalScore === "number" && !isNaN(data.totalScore)
+      ? data.totalScore
+      : totalScoreCount > 0
+        ? Number((totalScoreSum / totalScoreCount).toFixed(2))
+        : 0;
+
     const tvRaw = data.teacherVoice || {};
     const normalizedTeacherVoice = {
       workingWell: tvRaw.workingWell || (tvRaw as any).reflectionQ1 || "",

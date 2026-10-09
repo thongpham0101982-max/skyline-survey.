@@ -9,6 +9,7 @@ import {
   BrainCircuit, Target, Lightbulb, BookOpen, Heart, ClipboardList,
   BarChart3, Trophy, Compass, ShieldCheck, TrendingUp, AlertTriangle, FileText
 } from 'lucide-react'
+import { LOGIN_TRANSLATIONS, LoginLang } from './translations'
 
 // ─── SVG Artwork Components ──────────────────────────────────────────────────
 export function SchoolLineArt({ className = "" }: { className?: string }) {
@@ -89,13 +90,15 @@ interface RoleSelectorProps {
   role: string
   setRole: (role: string) => void
   setError: (error: string) => void
+  lang?: LoginLang
 }
 
-export function RoleSelector({ role, setRole, setError }: RoleSelectorProps) {
+export function RoleSelector({ role, setRole, setError, lang = "vi" }: RoleSelectorProps) {
+  const t = LOGIN_TRANSLATIONS[lang] || LOGIN_TRANSLATIONS.vi;
   const roles = [
-    { id: 'STAFF', label: 'CBGV', icon: User },
-    { id: 'PARENT', label: 'Phụ huynh', icon: Users },
-    { id: 'STUDENT', label: 'Học sinh', icon: GraduationCap }
+    { id: 'STAFF', label: t.roles.STAFF, icon: User },
+    { id: 'PARENT', label: t.roles.PARENT, icon: Users },
+    { id: 'STUDENT', label: t.roles.STUDENT, icon: GraduationCap }
   ]
 
   return (
@@ -137,27 +140,26 @@ export function LoginAlert({ message }: LoginAlertProps) {
 }
 
 // ─── PageFooter (Image 2 style with side dividers) ───────────────────────────
-export function PageFooter() {
+export function PageFooter({ lang = "vi" }: { lang?: LoginLang }) {
+  const t = LOGIN_TRANSLATIONS[lang] || LOGIN_TRANSLATIONS.vi;
   return (
     <footer className="w-full flex items-center justify-center gap-3 select-none text-[11px] font-bold text-slate-400">
       <div className="h-[1px] flex-1 bg-slate-200/80" />
-      <span className="tracking-wide text-slate-400 font-bold whitespace-nowrap">SQMS Portal v2.5</span>
+      <span className="tracking-wide text-slate-400 font-bold whitespace-nowrap">{t.footerVersion}</span>
       <div className="h-[1px] flex-1 bg-slate-200/80" />
     </footer>
   )
 }
 
 // ─── FeatureDrawer (Optional expandable modules drawer for Mobile/Tablet) ───
-export function FeatureDrawer() {
+export function FeatureDrawer({ lang = "vi" }: { lang?: LoginLang }) {
   const [expanded, setExpanded] = useState(false)
-  const modules = [
-    { index: '01', title: 'Khảo sát năng lực đầu vào', description: 'Tổ chức khảo sát, nhập kết quả, phân tích năng lực, hỗ trợ tuyển sinh và xếp lớp.', icon: Microscope },
-    { index: '02', title: 'Quản lý dự giờ giáo viên', description: 'Đăng ký tiết dạy, phân công dự giờ, đánh giá, phê duyệt và theo dõi năng lực chuyên môn.', icon: Clock },
-    { index: '03', title: 'Thành tích và kỳ thi học sinh', description: 'Quản lý kỳ thi, cuộc thi, giải thưởng, huy chương, xếp hạng và lịch sử thành tích.', icon: Medal },
-    { index: '04', title: 'Hỗ trợ học tập và tâm lý', description: 'Theo dõi học sinh cần hỗ trợ, kế hoạch phụ đạo, cam kết học tập và tư vấn tâm lý.', icon: BrainCircuit },
-    { index: '05', title: 'Hướng nghiệp & tài chính', description: 'Quản lý hoạt động hướng nghiệp, định hướng nghề nghiệp và thông tin tài chính theo phân quyền.', icon: Target },
-    { index: '06', title: 'Kết quả học tập & dự án', description: 'Tổng hợp kết quả môn học, hoạt động trải nghiệm, câu lạc bộ và mức độ tham gia.', icon: Lightbulb }
-  ]
+  const t = LOGIN_TRANSLATIONS[lang] || LOGIN_TRANSLATIONS.vi;
+  const icons = [Microscope, Clock, Medal, BrainCircuit, Target, Lightbulb];
+  const modules = t.featureDrawer.modules.map((m, idx) => ({
+    ...m,
+    icon: icons[idx] || Microscope
+  }));
 
   return (
     <div className="w-full mt-6 select-none">
@@ -168,7 +170,7 @@ export function FeatureDrawer() {
       >
         <div className="flex items-center gap-2">
           <Sparkles className="w-4 h-4 text-[#00D2C4]" />
-          <span>Khám phá phân hệ SQMS</span>
+          <span>{t.featureDrawer.button}</span>
         </div>
         {expanded ? <ChevronUp className="w-4 h-4 text-[#00D2C4]" /> : <ChevronDown className="w-4 h-4 text-[#00D2C4]" />}
       </button>
@@ -209,22 +211,27 @@ interface LoginFormProps {
   loading: boolean
   onSubmit: (e: React.FormEvent) => void
   onForgotPassword: () => void
+  lang?: LoginLang
 }
 
 export function LoginForm({
   role, setRole, identifier, setIdentifier,
   password, setPassword, rememberMe, setRememberMe,
-  error, setError, loading, onSubmit, onForgotPassword
+  error, setError, loading, onSubmit, onForgotPassword,
+  lang = "vi"
 }: LoginFormProps) {
   const [showPassword, setShowPassword] = useState(false)
+  const t = LOGIN_TRANSLATIONS[lang] || LOGIN_TRANSLATIONS.vi;
 
   const inputBase = "w-full h-[48px] rounded-2xl border bg-white text-sm font-semibold text-[#003B3A] placeholder-[#94A3B8] outline-none transition-all duration-200 hover:border-[#48BFE3]/50 focus:border-[#48BFE3] focus:ring-4 focus:ring-[#48BFE3]/15 shadow-sm"
+
+  const accountPlaceholder = t.accountPlaceholders[role as keyof typeof t.accountPlaceholders] || t.accountPlaceholders.STAFF;
 
   return (
     <form onSubmit={onSubmit} className="flex flex-col gap-4">
 
       {/* Role Switcher */}
-      <RoleSelector role={role} setRole={setRole} setError={setError} />
+      <RoleSelector role={role} setRole={setRole} setError={setError} lang={lang} />
 
       {/* Alert Container */}
       {error && <LoginAlert message={error} />}
@@ -240,7 +247,7 @@ export function LoginForm({
           required
           value={identifier}
           onChange={e => setIdentifier(e.target.value)}
-          placeholder="Tài khoản"
+          placeholder={accountPlaceholder}
           autoComplete="username"
           className={`${inputBase} !pl-11 pr-4 border-slate-200/90`}
         />
@@ -258,7 +265,7 @@ export function LoginForm({
             required={role !== 'STUDENT'}
             value={password}
             onChange={e => setPassword(e.target.value)}
-            placeholder="Mật khẩu"
+            placeholder={t.passwordPlaceholder}
             autoComplete="current-password"
             className={`${inputBase} !pl-11 !pr-11 border-slate-200/90`}
           />
@@ -266,13 +273,13 @@ export function LoginForm({
             type="button"
             onClick={() => setShowPassword(!showPassword)}
             className="absolute right-4 z-10 flex items-center justify-center text-slate-400 hover:text-[#48BFE3] transition-colors focus-visible:outline-none cursor-pointer"
-            aria-label={showPassword ? 'Ẩn mật khẩu' : 'Hiện mật khẩu'}
+            aria-label={showPassword ? t.hidePassword : t.showPassword}
           >
             {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
           </button>
         </div>
         {role === 'STUDENT' && (
-          <p className="text-[11px] text-[#48BFE3] font-bold ml-1 italic mt-0.5">* Mật khẩu mặc định là mã học sinh</p>
+          <p className="text-[11px] text-[#48BFE3] font-bold ml-1 italic mt-0.5">{t.defaultStudentPasswordNote}</p>
         )}
       </div>
 
@@ -285,14 +292,14 @@ export function LoginForm({
             onChange={e => setRememberMe(e.target.checked)}
             className="w-4 h-4 rounded border-slate-300 text-[#48BFE3] focus:ring-[#48BFE3]/20 cursor-pointer accent-[#48BFE3]"
           />
-          <span>Ghi nhớ</span>
+          <span>{t.rememberMe}</span>
         </label>
         <button
           type="button"
           onClick={onForgotPassword}
           className="text-xs font-extrabold text-[#48BFE3] hover:text-[#009085] hover:underline cursor-pointer transition-colors"
         >
-          Quên mật khẩu?
+          {t.forgotPassword}
         </button>
       </div>
 
@@ -305,11 +312,11 @@ export function LoginForm({
         {loading ? (
           <>
             <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin pointer-events-none" />
-            <span>Đang đăng nhập...</span>
+            <span>{t.submittingBtn}</span>
           </>
         ) : (
           <>
-            <span className="text-base font-black tracking-wide">Đăng nhập</span>
+            <span className="text-base font-black tracking-wide">{t.submitBtn}</span>
             <ArrowRight className="w-5 h-5 pointer-events-none stroke-[2.5]" />
           </>
         )}
@@ -320,7 +327,14 @@ export function LoginForm({
 }
 
 // ─── ForgotPasswordModal ──────────────────────────────────────────────────────
-export function ForgotPasswordModal({ isOpen, onClose }: { isOpen: boolean; onClose: () => void }) {
+interface ForgotPasswordModalProps {
+  isOpen: boolean
+  onClose: () => void
+  lang?: LoginLang
+}
+
+export function ForgotPasswordModal({ isOpen, onClose, lang = "vi" }: ForgotPasswordModalProps) {
+  const t = LOGIN_TRANSLATIONS[lang] || LOGIN_TRANSLATIONS.vi;
   const [identifier, setIdentifier] = useState('')
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState('')
@@ -334,7 +348,7 @@ export function ForgotPasswordModal({ isOpen, onClose }: { isOpen: boolean; onCl
     setSuccess('')
 
     if (!identifier.trim()) {
-      setError('Vui lòng nhập Email hoặc Mã tài khoản.')
+      setError(t.forgotModal.emptyIdentifier)
       return
     }
 
@@ -348,7 +362,7 @@ export function ForgotPasswordModal({ isOpen, onClose }: { isOpen: boolean; onCl
 
       const data = await res.json()
       if (!res.ok) {
-        setError(data.error || 'Gửi yêu cầu thất bại. Vui lòng thử lại.')
+        setError(data.error || t.forgotModal.errorFailed)
         setLoading(false)
         return
       }
@@ -356,7 +370,7 @@ export function ForgotPasswordModal({ isOpen, onClose }: { isOpen: boolean; onCl
       setSuccess(data.message)
       setLoading(false)
     } catch {
-      setError('Lỗi kết nối máy chủ. Vui lòng thử lại sau.')
+      setError(t.forgotModal.errorServer)
       setLoading(false)
     }
   }
@@ -376,9 +390,9 @@ export function ForgotPasswordModal({ isOpen, onClose }: { isOpen: boolean; onCl
           <div className="w-12 h-12 rounded-2xl bg-[#003B3A] text-[#00D2C4] flex items-center justify-center mx-auto mb-3 shadow-md">
             <Lock className="w-6 h-6" />
           </div>
-          <h3 className="text-xl font-black text-[#003B3A]">Quên Mật Khẩu</h3>
+          <h3 className="text-xl font-black text-[#003B3A]">{t.forgotModal.title}</h3>
           <p className="text-xs text-slate-500 font-semibold mt-1">
-            Nhập Email hoặc Mã cán bộ / Mã phụ huynh để nhận liên kết đặt lại mật khẩu qua email.
+            {t.forgotModal.subtitle}
           </p>
         </div>
 
@@ -398,7 +412,7 @@ export function ForgotPasswordModal({ isOpen, onClose }: { isOpen: boolean; onCl
               onClick={onClose}
               className="w-full py-2.5 bg-[#48BFE3] text-white font-extrabold rounded-xl hover:bg-[#009085] transition-all cursor-pointer"
             >
-              Đã hiểu & Đóng
+              {t.forgotModal.understood}
             </button>
           </div>
         ) : (
@@ -412,7 +426,7 @@ export function ForgotPasswordModal({ isOpen, onClose }: { isOpen: boolean; onCl
                 required
                 value={identifier}
                 onChange={e => setIdentifier(e.target.value)}
-                placeholder="Nhập Email hoặc Mã cán bộ / Mã phụ huynh"
+                placeholder={t.forgotModal.placeholder}
                 className="w-full h-[48px] rounded-2xl border border-slate-200 bg-white !pl-11 pr-4 text-sm font-semibold text-[#003B3A] placeholder-[#94A3B8] outline-none focus:border-[#48BFE3] focus:ring-4 focus:ring-[#48BFE3]/15 shadow-sm"
               />
             </div>
@@ -423,14 +437,14 @@ export function ForgotPasswordModal({ isOpen, onClose }: { isOpen: boolean; onCl
                 onClick={onClose}
                 className="flex-1 h-[48px] border border-slate-200 text-slate-600 rounded-2xl font-extrabold text-xs hover:bg-slate-100 transition-all cursor-pointer"
               >
-                Hủy
+                {t.forgotModal.cancel}
               </button>
               <button
                 type="submit"
                 disabled={loading}
                 className="flex-1 h-[48px] bg-[#48BFE3] hover:bg-[#009085] text-white rounded-2xl font-extrabold text-xs shadow-md flex items-center justify-center gap-1.5 transition-all disabled:opacity-60 cursor-pointer"
               >
-                {loading ? 'Đang gửi...' : 'Gửi liên kết khôi phục'}
+                {loading ? t.forgotModal.sending : t.forgotModal.submit}
               </button>
             </div>
           </form>
