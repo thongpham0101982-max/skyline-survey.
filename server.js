@@ -21,7 +21,7 @@ process.on('unhandledRejection', (reason, promise) => {
 
 console.log(`[Skyline Server] Starting in ${isDev ? 'DEVELOPMENT' : 'PRODUCTION'} mode on ${hostname}:${port}...`);
 
-const app = next({ dev: isDev, hostname, port, dir: __dirname });
+const app = next({ dev: isDev, hostname, port, dir: path.resolve(__dirname) });
 const handle = app.getRequestHandler();
 
 app.prepare().then(() => {
