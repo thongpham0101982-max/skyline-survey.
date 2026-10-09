@@ -158,6 +158,7 @@ function ActivityCatalogsContent() {
   const [allocatingItem, setAllocatingItem] = useState<any>(null);
   const [isConfigEvalOpen, setIsConfigEvalOpen] = useState(false);
   const [evalConfigItem, setEvalConfigItem] = useState<any>(null);
+  const [isSyncingMaster, setIsSyncingMaster] = useState(false);
   const [isThemeConfigOpen, setIsThemeConfigOpen] = useState(false);
 
   useEffect(() => {
@@ -352,6 +353,24 @@ function ActivityCatalogsContent() {
     }
   };
 
+  const handleSyncMasterPlan = async () => {
+    if (!confirm('Bạn có chắc chắn muốn nạp và đồng bộ 29 hoạt động chuẩn từ 7 Phụ lục Kế hoạch tổng thể 2026-2027 vào hệ thống?')) return;
+    setIsSyncingMaster(true);
+    try {
+      const res = await fetch('/api/admin/experiential-activities/catalogs/sync-master', {
+        method: 'POST'
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || 'Lỗi khi đồng bộ Master Catalog');
+      toast.success(data.message || 'Đồng bộ 7 Phụ lục Kế hoạch 2026-2027 thành công!');
+      loadCatalogs();
+    } catch (err: any) {
+      toast.error(err.message || 'Lỗi hệ thống');
+    } finally {
+      setIsSyncingMaster(false);
+    }
+  };
+
   const handleDownloadTemplate = () => {
     window.location.href = '/api/admin/experiential-activities/catalogs/template';
   };
@@ -387,6 +406,16 @@ function ActivityCatalogsContent() {
 
         {/* Global Action Toolbar */}
         <div className="flex items-center gap-2 flex-wrap">
+          <button
+            onClick={handleSyncMasterPlan}
+            disabled={isSyncingMaster}
+            className="flex items-center gap-1.5 px-3.5 py-2 rounded-xl text-xs font-bold text-amber-900 bg-amber-50 border border-amber-300 hover:bg-amber-100 shadow-2xs transition-all cursor-pointer disabled:opacity-50"
+            title="Nạp chuẩn hóa danh mục 7 Phụ lục từ Kế hoạch tổng thể 2026-2027"
+          >
+            <BookOpen className={`w-3.5 h-3.5 text-amber-700 ${isSyncingMaster ? 'animate-spin' : ''}`} />
+            <span>{isSyncingMaster ? 'Đang đồng bộ...' : 'Đồng bộ 7 Phụ lục 2026-2027'}</span>
+          </button>
+
           <button
             onClick={handleDownloadTemplate}
             className="flex items-center gap-1.5 px-3 py-2 rounded-xl text-xs font-bold text-slate-700 bg-white border border-slate-200 hover:bg-slate-50 shadow-2xs transition-all cursor-pointer"

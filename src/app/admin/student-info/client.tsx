@@ -43,6 +43,8 @@ import { getSurveyFormAgeGroup, getProbationAgeGroup } from "@/lib/preschool";
 import * as XLSX from "xlsx";
 import { InputAssessmentsClient } from "../input-assessments/client";
 import { PreschoolInputAssessmentsClient } from "../preschool-input-assessments/client";
+import { parseEntranceRecord, serializeEntranceRecord } from "@/lib/entranceAcademicRecord";
+import { EntranceAcademicRecordInput } from "@/components/assessments/EntranceAcademicRecordInput";
 
 interface StudentInfoClientProps {
   initialTab?: "general" | "preschool";
@@ -1621,7 +1623,7 @@ export function StudentInfoClient({
           "Giới tính": s.gender || "",
           "Ngày sinh": formatDate(s.dateOfBirth),
           "Hệ KS": s.surveyFormType || "",
-          "Học lực": s.kqHocTap || "",
+          "Học lực": parseEntranceRecord(s.kqHocTap, s.grade).summaryText || s.kqHocTap || "",
           "Hạnh kiểm": s.kqRenLuyen || "",
           "Học bạ": s.kqgdTieuHoc || "",
           "Học kỳ / Năm TS": s.hocKy || "",
@@ -1804,7 +1806,16 @@ export function StudentInfoClient({
           const targetType = String(row["Đối tượng TS"] || row["Đối tượng Tuyển sinh"] || findVal(row, ["đối tượng", "doi tuong"]) || "").trim();
           const admissionCriteria = String(row["Diện Khảo sát"] || row["Diện khảo sát"] || findVal(row, ["diện", "criteria"]) || "").trim();
           const surveySystem = String(row["Hình thức KS"] || findVal(row, ["hình thức", "hinh thuc"]) || "").trim();
-          const kqHocTap = String(row["Học lực"] || row["Kết quả Học tập"] || findVal(row, ["học lực", "học tập"]) || "").trim();
+          const rawKqHocTap = String(row["Học lực"] || row["Kết quả Học tập"] || findVal(row, ["học lực", "học tập"]) || "").trim();
+          let kqHocTap = rawKqHocTap;
+          if (rawKqHocTap) {
+            try {
+              JSON.parse(rawKqHocTap);
+            } catch {
+              const rec = parseEntranceRecord(rawKqHocTap, grade);
+              kqHocTap = serializeEntranceRecord(rec);
+            }
+          }
           const kqRenLuyen = String(row["Hạnh kiểm"] || row["Kết quả Rèn luyện"] || findVal(row, ["hạnh kiểm", "rèn luyện"]) || "").trim();
 
           // Construct kqgdTieuHoc from location if not provided
@@ -2466,7 +2477,9 @@ export function StudentInfoClient({
                       </td>
                       {subTab === "info" && (
                         <>
-                          <td className="px-5 py-4 border-b border-slate-100 text-center text-xs text-slate-600">{s.kqHocTap || "-"}</td>
+                          <td className="px-5 py-4 border-b border-slate-100 text-center text-xs text-slate-600" title={parseEntranceRecord(s.kqHocTap, s.grade).summaryText}>
+                            {parseEntranceRecord(s.kqHocTap, s.grade).summaryText || s.kqHocTap || "-"}
+                          </td>
                           <td className="px-5 py-4 border-b border-slate-100 text-center text-xs text-slate-600">{s.kqRenLuyen || "-"}</td>
                           <td className="px-5 py-4 border-b border-slate-100 text-center text-xs text-slate-600">{s.kqgdTieuHoc || "-"}</td>
                           <td className="px-5 py-4 border-b border-slate-100 text-center text-xs text-slate-600">{s.hocKy || "-"}</td>
@@ -3540,20 +3553,7 @@ export function StudentInfoClient({
                         </div>
 
                         {activeTab === "general" && (
-                          <div className="grid grid-cols-2 gap-4">
-                            <div>
-                              <label className="block text-xs font-bold text-[#64748B] uppercase tracking-wider mb-1.5">Kết quả Học tập</label>
-                              <select
-                                value={formState.kqHocTap}
-                                onChange={(e) => setFormState({ ...formState, kqHocTap: e.target.value })}
-                                className="h-10.5 w-full px-3 bg-[#F8FAFC] border border-[#D9E2EC] text-[#1E293B] text-sm font-semibold rounded-xl outline-none focus:border-[#00B5E2] focus:ring-4 focus:ring-[#00B5E2]/10 cursor-pointer"
-                              >
-                                <option value="">--</option>
-                                {configs.filter(c => c.categoryType === "KQ_HOC_TAP").map(c => (
-                                  <option key={c.id} value={c.name}>{c.name}</option>
-                                ))}
-                              </select>
-                            </div>
+                          <div className="space-y-4">
                             <div>
                               <label className="block text-xs font-bold text-[#64748B] uppercase tracking-wider mb-1.5">Kết quả Rèn luyện</label>
                               <select
@@ -3561,11 +3561,31 @@ export function StudentInfoClient({
                                 onChange={(e) => setFormState({ ...formState, kqRenLuyen: e.target.value })}
                                 className="h-10.5 w-full px-3 bg-[#F8FAFC] border border-[#D9E2EC] text-[#1E293B] text-sm font-semibold rounded-xl outline-none focus:border-[#00B5E2] focus:ring-4 focus:ring-[#00B5E2]/10 cursor-pointer"
                               >
-                                <option value="">--</option>
+                                <option value="">-- Chọn kết quả rèn luyện --</option>
                                 {configs.filter(c => c.categoryType === "KQ_REN_LUYEN").map(c => (
                                   <option key={c.id} value={c.name}>{c.name}</option>
                                 ))}
                               </select>
+                            </div>
+
+                            <div className="pt-2">
+                              <EntranceAcademicRecordInput
+                                value={formState.kqHocTap}
+                                grade={formState.grade || "1"}
+                                onChange={(serializedJson) => {
+                                  try {
+                                    const parsed = JSON.parse(serializedJson);
+                                    let hoSo = formState.hoSoCtQuocTe;
+                                    if (parsed.programType === "BO_GD_DT") hoSo = "CT Việt Nam";
+                                    else if (parsed.programType === "SONG_NGU") hoSo = "Song ngữ / Tích hợp";
+                                    else if (parsed.programType === "NUOC_NGOAI") hoSo = "CT Quốc tế";
+                                    else if (parsed.programType === "HOMESCHOOLING") hoSo = "Home Schooling";
+                                    setFormState({ ...formState, kqHocTap: serializedJson, hoSoCtQuocTe: hoSo });
+                                  } catch (e) {
+                                    setFormState({ ...formState, kqHocTap: serializedJson });
+                                  }
+                                }}
+                              />
                             </div>
                           </div>
                         )}
@@ -4424,7 +4444,9 @@ export function StudentInfoClient({
                             </div>
                             <div className="bg-slate-50 border border-slate-200 p-4 rounded-xl">
                               <label className="block text-[10px] font-bold text-slate-400 uppercase tracking-wider">Kết quả học tập</label>
-                              <span className="text-xs font-semibold text-slate-700 mt-1 block">{selectedStudent.kqHocTap || "-"}</span>
+                              <span className="text-xs font-semibold text-slate-700 mt-1 block" title={parseEntranceRecord(selectedStudent.kqHocTap, selectedStudent.grade).summaryText}>
+                                {parseEntranceRecord(selectedStudent.kqHocTap, selectedStudent.grade).summaryText || selectedStudent.kqHocTap || "-"}
+                              </span>
                             </div>
                             <div className="bg-slate-50 border border-slate-200 p-4 rounded-xl">
                               <label className="block text-[10px] font-bold text-slate-400 uppercase tracking-wider">Kết quả rèn luyện</label>
