@@ -379,10 +379,16 @@ export function EntranceAcademicRecordInput({
                   }))}
                   className="w-full h-10 px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs sm:text-sm font-medium text-slate-800 focus:bg-white outline-none focus:border-teal-500 leading-normal cursor-pointer"
                 >
-                  <option value="Hoàn thành xuất sắc">Hoàn thành xuất sắc (Học sinh Xuất sắc)</option>
-                  <option value="Hoàn thành tốt">Hoàn thành tốt (Học sinh Tiêu biểu)</option>
-                  <option value="Hoàn thành">Hoàn thành</option>
-                  <option value="Chưa hoàn thành">Chưa hoàn thành</option>
+                  <optgroup label="Kết quả giáo dục chung (TT 27/2020 & TT 22/2016)">
+                    <option value="Hoàn thành xuất sắc">Hoàn thành xuất sắc</option>
+                    <option value="Hoàn thành tốt">Hoàn thành tốt</option>
+                    <option value="Hoàn thành">Hoàn thành</option>
+                    <option value="Chưa hoàn thành">Chưa hoàn thành</option>
+                    <option value="Tốt">Tốt</option>
+                    <option value="Khá">Khá</option>
+                    <option value="Đạt">Đạt</option>
+                    <option value="Chưa đạt">Chưa đạt</option>
+                  </optgroup>
                 </select>
               ) : (
                 <select
@@ -426,9 +432,15 @@ export function EntranceAcademicRecordInput({
                   }))}
                   className="w-full h-10 px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs sm:text-sm font-medium text-slate-800 focus:bg-white outline-none focus:border-teal-500 leading-normal cursor-pointer"
                 >
-                  <option value="Tốt">Tốt (Theo TT 27/2020)</option>
-                  <option value="Đạt">Đạt (Theo TT 27/2020)</option>
-                  <option value="Cần cố gắng">Cần cố gắng (Theo TT 27/2020)</option>
+                  <optgroup label="Kết quả rèn luyện / Phẩm chất & Năng lực (TT 27)">
+                    <option value="Tốt">Tốt</option>
+                    <option value="Đạt">Đạt</option>
+                    <option value="Cần cố gắng">Cần cố gắng</option>
+                    <option value="Hoàn thành tốt (Học sinh Tiêu biểu)">Hoàn thành tốt (Học sinh Tiêu biểu)</option>
+                    <option value="Hoàn thành xuất sắc (Học sinh Xuất sắc)">Hoàn thành xuất sắc (Học sinh Xuất sắc)</option>
+                    <option value="Khá">Khá</option>
+                    <option value="Chưa đạt">Chưa đạt</option>
+                  </optgroup>
                 </select>
               ) : (
                 <select
