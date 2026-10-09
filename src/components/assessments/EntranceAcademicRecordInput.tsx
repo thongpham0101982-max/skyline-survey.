@@ -13,7 +13,10 @@ import {
   Eye,
   CheckCircle2,
   FileText,
-  AlertCircle
+  AlertCircle,
+  Trophy,
+  Award,
+  Sparkles
 } from "lucide-react";
 import {
   EntranceAcademicRecord,
@@ -363,7 +366,7 @@ export function EntranceAcademicRecordInput({
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 pb-3 border-b border-slate-100">
             <div>
               <label className="block text-[11px] font-medium text-slate-500 mb-1">
-                {isPrimary ? "Kết quả giáo dục chung (TT 27/22)" : "Học lực chung (TT 22/58)"}
+                {isPrimary ? "Kết quả giáo dục chung (TT 27/2020 & TT 22/2016)" : "Học lực chung (TT 22/2021 & TT 58/2011)"}
               </label>
               {isPrimary ? (
                 <select
@@ -376,8 +379,8 @@ export function EntranceAcademicRecordInput({
                   }))}
                   className="w-full h-10 px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs sm:text-sm font-medium text-slate-800 focus:bg-white outline-none focus:border-teal-500 leading-normal cursor-pointer"
                 >
-                  <option value="Hoàn thành xuất sắc">Hoàn thành xuất sắc</option>
-                  <option value="Hoàn thành tốt">Hoàn thành tốt</option>
+                  <option value="Hoàn thành xuất sắc">Hoàn thành xuất sắc (Học sinh Xuất sắc)</option>
+                  <option value="Hoàn thành tốt">Hoàn thành tốt (Học sinh Tiêu biểu)</option>
                   <option value="Hoàn thành">Hoàn thành</option>
                   <option value="Chưa hoàn thành">Chưa hoàn thành</option>
                 </select>
@@ -392,30 +395,63 @@ export function EntranceAcademicRecordInput({
                   }))}
                   className="w-full h-10 px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs sm:text-sm font-medium text-slate-800 focus:bg-white outline-none focus:border-teal-500 leading-normal cursor-pointer"
                 >
-                  <option value="Tốt">Tốt</option>
-                  <option value="Khá">Khá</option>
-                  <option value="Đạt">Đạt</option>
-                  <option value="Chưa đạt">Chưa đạt</option>
+                  <optgroup label="Quy định mới (TT 22/2021/TT-BGDĐT)">
+                    <option value="Tốt">Tốt</option>
+                    <option value="Khá">Khá</option>
+                    <option value="Đạt">Đạt</option>
+                    <option value="Chưa đạt">Chưa đạt</option>
+                  </optgroup>
+                  <optgroup label="Học bạ cũ (TT 58/2011 & TT 26/2020)">
+                    <option value="Giỏi">Giỏi</option>
+                    <option value="Khá (TT 58)">Khá (TT 58)</option>
+                    <option value="Trung bình">Trung bình</option>
+                    <option value="Yếu">Yếu</option>
+                    <option value="Kém">Kém</option>
+                  </optgroup>
                 </select>
               )}
             </div>
 
             <div>
-              <label className="block text-[11px] font-medium text-slate-500 mb-1">Kết quả rèn luyện / Hạnh kiểm</label>
-              <select
-                disabled={disabled}
-                value={record.moet?.conductRating || "Tốt"}
-                onChange={(e) => updateRecord(prev => ({
-                  ...prev,
-                  moet: { ...prev.moet!, conductRating: e.target.value }
-                }))}
-                className="w-full h-10 px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs sm:text-sm font-medium text-slate-800 focus:bg-white outline-none focus:border-teal-500 leading-normal cursor-pointer"
-              >
-                <option value="Tốt">Tốt</option>
-                <option value="Khá">Khá</option>
-                <option value="Đạt">Đạt</option>
-                <option value="Chưa đạt">Chưa đạt</option>
-              </select>
+              <label className="block text-[11px] font-medium text-slate-500 mb-1">
+                {isPrimary ? "Kết quả rèn luyện / Phẩm chất & Năng lực (TT 27)" : "Kết quả rèn luyện / Hạnh kiểm (TT 22 & TT 58)"}
+              </label>
+              {isPrimary ? (
+                <select
+                  disabled={disabled}
+                  value={record.moet?.conductRating || "Tốt"}
+                  onChange={(e) => updateRecord(prev => ({
+                    ...prev,
+                    moet: { ...prev.moet!, conductRating: e.target.value }
+                  }))}
+                  className="w-full h-10 px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs sm:text-sm font-medium text-slate-800 focus:bg-white outline-none focus:border-teal-500 leading-normal cursor-pointer"
+                >
+                  <option value="Tốt">Tốt (Theo TT 27/2020)</option>
+                  <option value="Đạt">Đạt (Theo TT 27/2020)</option>
+                  <option value="Cần cố gắng">Cần cố gắng (Theo TT 27/2020)</option>
+                </select>
+              ) : (
+                <select
+                  disabled={disabled}
+                  value={record.moet?.conductRating || "Tốt"}
+                  onChange={(e) => updateRecord(prev => ({
+                    ...prev,
+                    moet: { ...prev.moet!, conductRating: e.target.value }
+                  }))}
+                  className="w-full h-10 px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs sm:text-sm font-medium text-slate-800 focus:bg-white outline-none focus:border-teal-500 leading-normal cursor-pointer"
+                >
+                  <optgroup label="Quy định mới (TT 22/2021)">
+                    <option value="Tốt">Tốt</option>
+                    <option value="Khá">Khá</option>
+                    <option value="Đạt">Đạt</option>
+                    <option value="Chưa đạt">Chưa đạt</option>
+                  </optgroup>
+                  <optgroup label="Học bạ cũ (TT 58/2011)">
+                    <option value="Trung bình (Hạnh kiểm)">Trung bình</option>
+                    <option value="Yếu (Hạnh kiểm)">Yếu</option>
+                  </optgroup>
+                </select>
+              )}
             </div>
           </div>
 
@@ -892,7 +928,103 @@ export function EntranceAcademicRecordInput({
         </div>
       )}
 
-      {/* 3. VÙNG ĐÍNH KÈM HỌC BẠ / BẢNG ĐIỂM (TINH GỌN) */}
+      {/* 3. THÀNH TÍCH HỌC SINH (NẾU CÓ) - THIẾT KẾ CHUẨN, ĐẸP, MÀU SẮC */}
+      <div className="bg-gradient-to-br from-amber-50/80 via-amber-50/40 to-orange-50/60 border border-amber-200/90 rounded-2xl p-4 shadow-sm space-y-3 animate-in fade-in-50 duration-200">
+        <div className="flex flex-wrap items-center justify-between gap-2 pb-2 border-b border-amber-200/60">
+          <div className="flex items-center gap-2">
+            <span className="w-7 h-7 rounded-xl bg-gradient-to-tr from-amber-500 to-amber-400 text-white flex items-center justify-center shadow-xs">
+              <Trophy className="w-3.5 h-3.5" />
+            </span>
+            <div>
+              <div className="flex items-center gap-2">
+                <h4 className="text-xs font-bold text-amber-950 uppercase tracking-wider">
+                  Thành tích & Khen thưởng học sinh (nếu có)
+                </h4>
+                <span className="text-[10px] font-semibold text-amber-700 bg-amber-100/80 border border-amber-300/60 px-2 py-0.5 rounded-full">
+                  Tùy chọn
+                </span>
+              </div>
+              <p className="text-[11px] text-amber-850/80 font-normal">
+                Ghi nhận các giải thưởng HSG, Tiếng Anh (IELTS, TOEFL, Cambridge), năng khiếu, thể thao, tin học, KHKT...
+              </p>
+            </div>
+          </div>
+
+          {(record.achievements || record.moet?.achievements) && (
+            <button
+              type="button"
+              disabled={disabled}
+              onClick={() => updateRecord(prev => ({
+                ...prev,
+                achievements: "",
+                moet: prev.moet ? { ...prev.moet, achievements: "" } : prev.moet
+              }))}
+              className="text-[11px] text-amber-700 hover:text-rose-600 font-medium underline cursor-pointer"
+            >
+              Xóa nội dung
+            </button>
+          )}
+        </div>
+
+        {/* GỢI Ý CHỌN NHANH THÀNH TÍCH (QUICK PILLS) */}
+        <div className="space-y-1.5">
+          <span className="text-[10px] font-semibold uppercase tracking-wider text-amber-800 block">
+            Gợi ý thêm nhanh:
+          </span>
+          <div className="flex flex-wrap gap-1.5">
+            {[
+              { label: "🏆 Học sinh Xuất sắc", cls: "bg-amber-100/80 text-amber-900 border-amber-300 hover:bg-amber-200/80" },
+              { label: "🎖️ Học sinh Tiêu biểu", cls: "bg-sky-50 text-sky-900 border-sky-200 hover:bg-sky-100" },
+              { label: "🥇 Giải Nhất / HC Vàng", cls: "bg-yellow-50 text-yellow-900 border-yellow-300 hover:bg-yellow-100" },
+              { label: "🥈 Giải Nhì / HC Bạc", cls: "bg-slate-100 text-slate-800 border-slate-300 hover:bg-slate-200" },
+              { label: "🥉 Giải Ba / HC Đồng", cls: "bg-orange-50 text-orange-900 border-orange-200 hover:bg-orange-100" },
+              { label: "⭐ Giải IOE / VioEdu", cls: "bg-purple-50 text-purple-900 border-purple-200 hover:bg-purple-100" },
+              { label: "📜 Cambridge / IELTS", cls: "bg-teal-50 text-teal-900 border-teal-200 hover:bg-teal-100" },
+              { label: "🎨 Giải Năng khiếu / TDTT", cls: "bg-rose-50 text-rose-900 border-rose-200 hover:bg-rose-100" }
+            ].map(tag => (
+              <button
+                key={tag.label}
+                type="button"
+                disabled={disabled}
+                onClick={() => {
+                  const current = (record.achievements || record.moet?.achievements || "").trim();
+                  const addText = tag.label.replace(/^[^\s]+\s*/, "");
+                  const updated = current ? `${current}, ${addText}` : addText;
+                  updateRecord(prev => ({
+                    ...prev,
+                    achievements: updated,
+                    moet: prev.moet ? { ...prev.moet, achievements: updated } : prev.moet
+                  }));
+                }}
+                className={`text-[11px] font-medium px-2.5 py-1 rounded-lg border transition-all cursor-pointer select-none active:scale-95 ${tag.cls}`}
+              >
+                {tag.label}
+              </button>
+            ))}
+          </div>
+        </div>
+
+        {/* Ô NHẬP NỘI DUNG THÀNH TÍCH */}
+        <div>
+          <textarea
+            disabled={disabled}
+            rows={2}
+            value={record.achievements || record.moet?.achievements || ""}
+            onChange={(e) => {
+              const val = e.target.value;
+              updateRecord(prev => ({
+                ...prev,
+                achievements: val,
+                moet: prev.moet ? { ...prev.moet, achievements: val } : prev.moet
+              }));
+            }}
+            placeholder="Ví dụ: Đạt giải Ba cuộc thi Khoa học Kỹ thuật cấp Quận, Huy chương Vàng Bơi lội Hội khỏe Phù Đổng, Chứng chỉ Cambridge Flyers 14/15 khiên..."
+            className="w-full px-3.5 py-2.5 bg-white border border-amber-200/90 rounded-xl text-xs sm:text-sm font-medium text-slate-800 placeholder-slate-400 outline-none focus:border-amber-500 focus:ring-4 focus:ring-amber-500/15 leading-normal resize-none shadow-2xs transition-all"
+          />
+        </div>
+      </div>
+
+      {/* 4. VÙNG ĐÍNH KÈM HỌC BẠ / BẢNG ĐIỂM (TINH GỌN) */}
       <div className="pt-2 border-t border-slate-200/60">
         <div className="flex items-center justify-between mb-2">
           <label className="text-[11px] font-medium text-slate-500 uppercase tracking-wider flex items-center gap-1.5">

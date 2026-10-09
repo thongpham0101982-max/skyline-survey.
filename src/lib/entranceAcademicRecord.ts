@@ -16,7 +16,8 @@ export interface SubjectScoreItem {
 export interface MoetRecord {
   gradeLevel: string; // "1" .. "12"
   overallRating: string; // "Hoàn thành xuất sắc" | "Hoàn thành tốt" | "Hoàn thành" | "Chưa hoàn thành" | "Tốt" | "Khá" | "Đạt" | "Chưa đạt"
-  conductRating?: string; // "Tốt" | "Khá" | "Đạt" | "Chưa đạt"
+  conductRating?: string; // "Tốt" | "Khá" | "Đạt" | "Chưa đạt" | "Cần cố gắng"
+  achievements?: string; // Thành tích học sinh (nếu có): giải thưởng, chứng chỉ...
   subjects: SubjectScoreItem[];
   combination?: {
     name: string; // "KHTN" | "KHXH" | "Tổ hợp tự chọn"
@@ -58,6 +59,7 @@ export interface FileAttachment {
 export interface EntranceAcademicRecord {
   programType: ProgramType;
   overallRating?: string;
+  achievements?: string; // Thành tích học sinh (nếu có): giải thưởng, chứng chỉ, năng khiếu...
   moet?: MoetRecord;
   bilingual?: BilingualRecord;
   foreign?: ForeignRecord;
@@ -103,6 +105,7 @@ export function getDefaultMoetSubjects(gradeStr?: string): SubjectScoreItem[] {
 export function generateSummaryText(record: Partial<EntranceAcademicRecord>): string {
   if (!record || !record.programType) return record?.overallRating || "";
 
+  let base = "";
   switch (record.programType) {
     case "BO_GD_DT": {
       const moet = record.moet;
@@ -121,7 +124,8 @@ export function generateSummaryText(record: Partial<EntranceAcademicRecord>): st
       if (moet?.combination?.name && moet.combination.score) {
         parts.push(`${moet.combination.name}: ${moet.combination.score}`);
       }
-      return parts.length > 0 ? parts.join(" • ") : (moet?.overallRating || "Bộ GD&ĐT");
+      base = parts.length > 0 ? parts.join(" • ") : (moet?.overallRating || "Bộ GD&ĐT");
+      break;
     }
 
     case "SONG_NGU": {
@@ -133,7 +137,8 @@ export function generateSummaryText(record: Partial<EntranceAcademicRecord>): st
       if (notable.length > 0) {
         parts.push(notable.slice(0, 3).map(s => `${s.name}: ${s.score}`).join(" | "));
       }
-      return parts.join(" • ");
+      base = parts.join(" • ");
+      break;
     }
 
     case "NUOC_NGOAI": {
@@ -146,7 +151,8 @@ export function generateSummaryText(record: Partial<EntranceAcademicRecord>): st
         const sub = f.subjects.filter(s => s.score).map(s => `${s.name}: ${s.score}`).join(" | ");
         if (sub) parts.push(sub);
       }
-      return parts.length > 0 ? `Nước ngoài (${parts.join(" • ")})` : "Học bạ nước ngoài";
+      base = parts.length > 0 ? `Nước ngoài (${parts.join(" • ")})` : "Học bạ nước ngoài";
+      break;
     }
 
     case "HOMESCHOOLING": {
@@ -157,12 +163,19 @@ export function generateSummaryText(record: Partial<EntranceAcademicRecord>): st
         const sub = h.subjects.filter(s => s.name).map(s => s.score ? `${s.name}: ${s.score}` : s.name).join(", ");
         if (sub) parts.push(`Môn: ${sub}`);
       }
-      return parts.join(" • ");
+      base = parts.join(" • ");
+      break;
     }
 
     default:
-      return record.overallRating || "";
+      base = record.overallRating || "";
   }
+
+  const ach = record.achievements || record.moet?.achievements;
+  if (ach && ach.trim()) {
+    base = base ? `${base} • 🏆 ${ach.trim()}` : `🏆 ${ach.trim()}`;
+  }
+  return base;
 }
 
 /**
@@ -299,6 +312,8 @@ export interface ExtractedAcademicDetails {
   programType: ProgramType;
   programBadgeCls: string;
   overallRating: string;
+  conductRating?: string;
+  achievements?: string;
   math: string;
   literature: string;
   english: string;
@@ -317,6 +332,8 @@ export function extractAcademicDetails(record: EntranceAcademicRecord, gradeStr?
   const badge = programBadgeMap[record.programType] || programBadgeMap.BO_GD_DT;
 
   let overallRating = record.moet?.overallRating || record.bilingual?.moetRating || record.foreign?.gpaOrHonors || record.homeschool?.overallEvaluation || record.overallRating || "—";
+  let conductRating = record.moet?.conductRating || "";
+  let achievements = record.achievements || record.moet?.achievements || "";
 
   // Thu thập danh sách môn học
   let allSubjects: SubjectScoreItem[] = [];
@@ -378,6 +395,8 @@ export function extractAcademicDetails(record: EntranceAcademicRecord, gradeStr?
     programType: record.programType,
     programBadgeCls: badge.cls,
     overallRating,
+    conductRating,
+    achievements,
     math,
     literature,
     english,

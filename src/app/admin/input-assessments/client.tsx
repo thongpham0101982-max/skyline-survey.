@@ -4965,11 +4965,23 @@ const [customCommitmentSubjects, setCustomCommitmentSubjects] = useState<string[
                                 </span>
                               </td>
 
-                              {/* 12. KQ Chung */}
-                              <td className="px-3 py-3 text-center whitespace-nowrap border-r border-slate-100 bg-slate-50/20">
-                                <span className="px-2 py-0.5 rounded-full bg-slate-100 text-slate-700 text-[10px] font-medium" title={details.overallRating}>
-                                  {details.overallRating}
-                                </span>
+                              {/* 12. KQ Chung & Thành tích */}
+                              <td className="px-3 py-2.5 text-center whitespace-nowrap border-r border-slate-100 bg-slate-50/20">
+                                <div className="flex flex-col items-center justify-center gap-1">
+                                  <span className="px-2 py-0.5 rounded-full bg-slate-100 text-slate-700 text-[10px] font-medium" title={details.overallRating}>
+                                    {details.overallRating}
+                                  </span>
+                                  {details.conductRating && (
+                                    <span className="text-[9px] text-slate-500 font-normal">
+                                      RL: <strong className="font-semibold text-slate-700">{details.conductRating}</strong>
+                                    </span>
+                                  )}
+                                  {details.achievements && (
+                                    <span className="inline-flex items-center gap-0.5 px-1.5 py-0.5 rounded-md bg-amber-50 text-amber-800 border border-amber-200/90 text-[9px] font-medium max-w-[140px] truncate shadow-3xs" title={`Thành tích: ${details.achievements}`}>
+                                      🏆 {details.achievements}
+                                    </span>
+                                  )}
+                                </div>
                               </td>
 
                               {/* 13. Toán */}
@@ -5136,6 +5148,12 @@ const [customCommitmentSubjects, setCustomCommitmentSubjects] = useState<string[
                                 <div className="text-[11px] font-semibold text-sky-700">{details.english}</div>
                               </div>
                             </div>
+                            {details.achievements && (
+                              <div className="flex items-center gap-1.5 text-[11px] text-amber-900 bg-amber-50/80 px-2.5 py-1.5 rounded-lg border border-amber-200/80">
+                                <span className="font-semibold shrink-0">🏆 Thành tích:</span>
+                                <span className="truncate">{details.achievements}</span>
+                              </div>
+                            )}
                             {details.otherSubjects !== "—" && (
                               <div className="text-[10px] text-slate-500 font-normal">
                                 <span className="font-medium text-slate-600">Tổ hợp/Khác: </span>
