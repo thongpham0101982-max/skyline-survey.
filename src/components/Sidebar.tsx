@@ -43,6 +43,7 @@ import {
   getCategoryName,
   getModuleName
 } from "@/config/sidebarTranslations"
+import { VietnamFlag, UKFlag } from "@/components/LanguageSwitcher"
 
 interface SidebarProps {
   role: "ADMIN" | "TEACHER" | "PARENT"
@@ -1057,26 +1058,32 @@ function SidebarContent({ role, permissionModules, actualRole, taskCount = 0, is
               <button
                 type="button"
                 onClick={() => handleLanguageChange("vi")}
-                className={`px-2 py-0.5 text-[10px] font-bold rounded-md transition-all cursor-pointer ${
+                className={`flex items-center gap-1 px-1.5 py-0.5 text-[10px] font-bold rounded-md transition-all cursor-pointer ${
                   lang === "vi"
                     ? "bg-[#48BFE3] text-slate-900 shadow-xs"
                     : "text-white/60 hover:text-white hover:bg-white/10"
                 }`}
                 title="Tiếng Việt"
               >
-                🇻🇳 VI
+                <span className="inline-flex shrink-0 overflow-hidden rounded-[2px] border border-black/10">
+                  <VietnamFlag className="w-[14px] h-[9px]" />
+                </span>
+                <span>VI</span>
               </button>
               <button
                 type="button"
                 onClick={() => handleLanguageChange("en")}
-                className={`px-2 py-0.5 text-[10px] font-bold rounded-md transition-all cursor-pointer ${
+                className={`flex items-center gap-1 px-1.5 py-0.5 text-[10px] font-bold rounded-md transition-all cursor-pointer ${
                   lang === "en"
                     ? "bg-[#48BFE3] text-slate-900 shadow-xs"
                     : "text-white/60 hover:text-white hover:bg-white/10"
                 }`}
                 title="English"
               >
-                🇬🇧 EN
+                <span className="inline-flex shrink-0 overflow-hidden rounded-[2px] border border-black/10">
+                  <UKFlag className="w-[14px] h-[9px]" />
+                </span>
+                <span>EN</span>
               </button>
             </div>
           </div>

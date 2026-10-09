@@ -38,6 +38,7 @@ import { createForeignObservationWithEvaluation } from "./actions";
 import { isSlotBelongsToForeignEsl, isExactWalkthroughForm } from "./utils";
 import { ForeignObservationHistoryTab } from "./components/ForeignObservationHistoryTab";
 import { TRANSLATIONS, SupportedLang } from "./locales/translations";
+import { VietnamFlag, UKFlag } from "@/components/LanguageSwitcher";
 
 export interface IndicatorConfig {
   id: number;
@@ -1009,7 +1010,9 @@ export function ForeignObservationClient(props: {
                   }
                   title="Switch to English (Native Standard)"
                 >
-                  <span className="text-sm leading-none">🇬🇧</span>
+                  <span className="inline-flex shrink-0 overflow-hidden rounded-[2px] border border-black/10 shadow-2xs">
+                    <UKFlag className="w-[18px] h-[12px]" />
+                  </span>
                   <span>EN</span>
                 </button>
                 <button
@@ -1022,7 +1025,9 @@ export function ForeignObservationClient(props: {
                   }
                   title="Chuyển sang Tiếng Việt"
                 >
-                  <span className="text-sm leading-none">🇻🇳</span>
+                  <span className="inline-flex shrink-0 overflow-hidden rounded-[2px] border border-black/10 shadow-2xs">
+                    <VietnamFlag className="w-[18px] h-[12px]" />
+                  </span>
                   <span>VI</span>
                 </button>
               </div>
