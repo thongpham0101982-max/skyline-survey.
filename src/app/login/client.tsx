@@ -5,6 +5,7 @@ import React, { useState, useEffect } from 'react'
 import { signIn } from 'next-auth/react'
 import { GraduationCap, CheckCircle2, Loader2 } from 'lucide-react'
 import { LoginForm, PageFooter, SchoolLineArt, SkyLineSwooshBg, FeatureDrawer, ForgotPasswordModal } from './components'
+import { LanguageSwitcher } from '@/components/LanguageSwitcher'
 
 export function LoginClient() {
   const [role, setRole] = useState('STAFF')
@@ -240,6 +241,11 @@ export function LoginClient() {
 
         {/* RIGHT PANEL: Clean Elevated Floating Login Card (Image 2 style) */}
         <div className="w-full md:w-[52%] xl:w-[50%] bg-[#F7FAFA] flex flex-col justify-center items-center p-4 sm:p-8 md:p-12 relative z-10 min-h-[calc(100dvh-380px)] md:min-h-dvh">
+
+          {/* Language Switcher in top right corner of screen */}
+          <div className="absolute top-4 right-4 sm:top-6 sm:right-6 z-20">
+            <LanguageSwitcher />
+          </div>
 
           {/* Soft background Swoosh vector lines */}
           <svg className="absolute inset-0 w-full h-full opacity-40 pointer-events-none" viewBox="0 0 1000 1000" fill="none">

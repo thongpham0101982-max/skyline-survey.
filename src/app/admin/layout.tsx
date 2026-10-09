@@ -11,6 +11,7 @@ import { NotificationBell } from "@/components/NotificationBell"
 import { auth } from "@/lib/auth"
 import { UserMenu } from "@/components/UserMenu"
 import { AcademicYearSelector } from "@/components/AcademicYearSelector"
+import { LanguageSwitcher } from "@/components/LanguageSwitcher"
 import { prisma } from "@/lib/db"
 import { APP_CATEGORIES } from "@/config/modules"
 import { getRoleReadableModules } from "@/lib/permissions"
@@ -113,7 +114,8 @@ export default async function AdminLayout({ children }: { children: React.ReactN
             {/* Container cho các thẻ Giáo viên • CS1 và Cơ sở: Hill | Global | Hệ thống */}
             <div id="teacher-top-header-slot" className="hidden sm:flex items-center gap-2 ml-1 sm:ml-2 flex-wrap" />
           </div>
-          <div className="flex items-center gap-2 sm:gap-4">
+          <div className="flex items-center gap-2 sm:gap-3">
+            <LanguageSwitcher />
             <AcademicYearSelector />
             <NotificationBell />
             <UserMenu session={session} permissionModules={readableModules} />

@@ -4,6 +4,7 @@ import { Sidebar } from "@/components/Sidebar";
 import { NotificationBell } from "@/components/NotificationBell";
 import { UserMenu } from "@/components/UserMenu";
 import { AcademicYearSelector } from "@/components/AcademicYearSelector";
+import { LanguageSwitcher } from "@/components/LanguageSwitcher";
 import { MobileMenuTrigger } from "@/components/MobileMenuTrigger";
 import { SSMAssistantWidget } from "@/components/SSMAssistantWidget";
 import { prisma } from "@/lib/db";
@@ -74,6 +75,7 @@ export default async function LearningResourcesLayout({
           </div>
 
           <div className="flex items-center gap-3">
+            <LanguageSwitcher theme="dark" />
             <AcademicYearSelector />
             <NotificationBell />
             <UserMenu user={session.user} />

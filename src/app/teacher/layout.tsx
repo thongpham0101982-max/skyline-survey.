@@ -8,6 +8,7 @@ import { auth } from "@/lib/auth"
 import { NotificationBell } from "@/components/NotificationBell"
 import { UserMenu } from "@/components/UserMenu"
 import { AcademicYearSelector } from "@/components/AcademicYearSelector"
+import { LanguageSwitcher } from "@/components/LanguageSwitcher"
 import { prisma } from "@/lib/db"
 import { APP_CATEGORIES } from "@/config/modules"
 import { redirect } from "next/navigation"
@@ -165,7 +166,8 @@ export default async function TeacherLayout({ children }: { children: React.Reac
             {/* Container cho Cơ sở (Hill / Global / Hệ thống) và Chế độ Quản lý / Cá nhân trên cùng dòng SQMS */}
             <div id="teacher-top-header-slot" className="hidden sm:flex items-center gap-2 ml-2 sm:ml-4" />
           </div>
-          <div className="flex items-center gap-2 sm:gap-4">
+          <div className="flex items-center gap-2 sm:gap-3">
+             <LanguageSwitcher />
              <AcademicYearSelector />
              <NotificationBell />
              <UserMenu session={session} />

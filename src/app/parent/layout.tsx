@@ -5,6 +5,7 @@ import { NotificationBell } from "@/components/NotificationBell"
 import { auth } from "@/lib/auth"
 import { UserMenu } from "@/components/UserMenu"
 import { AcademicYearSelector } from "@/components/AcademicYearSelector"
+import { LanguageSwitcher } from "@/components/LanguageSwitcher"
 import { SSMAssistantWidget } from "@/components/SSMAssistantWidget"
 export default async function ParentLayout({ children }: { children: React.ReactNode }) {
   let session: any = null;
@@ -37,7 +38,8 @@ export default async function ParentLayout({ children }: { children: React.React
               </div>
             </div>
           </div>
-          <div className="flex items-center gap-2 sm:gap-4">
+          <div className="flex items-center gap-2 sm:gap-3">
+             <LanguageSwitcher />
              <AcademicYearSelector />
              <NotificationBell />
              <UserMenu session={session} />

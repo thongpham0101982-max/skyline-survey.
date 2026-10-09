@@ -8,6 +8,7 @@ import {
   User, Home, BookOpen, Menu, X, ChevronRight, Activity, Shield
 } from "lucide-react"
 import { SSMAssistantWidget } from "@/components/SSMAssistantWidget"
+import { LanguageSwitcher } from "@/components/LanguageSwitcher"
 
 export default function HocSinhLayout({ children }: { children: React.ReactNode }) {
   const pathname = usePathname() || ""
@@ -100,7 +101,8 @@ export default function HocSinhLayout({ children }: { children: React.ReactNode 
           </nav>
 
           {/* User Account Info & Actions */}
-          <div className="flex items-center gap-2.5">
+          <div className="flex items-center gap-2 sm:gap-2.5">
+            <LanguageSwitcher theme="dark" />
             {studentInfo && (
               <div className="hidden sm:flex items-center gap-2 bg-white/10 border border-white/15 px-3 py-1.5 rounded-xl text-xs font-bold text-teal-50">
                 <div className="w-6 h-6 rounded-lg bg-teal-600/80 flex items-center justify-center font-bold text-white text-[11px]">
