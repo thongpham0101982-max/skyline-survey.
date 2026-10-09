@@ -293,3 +293,95 @@ export function parseEntranceRecord(rawString?: string | null, gradeStr?: string
 
   return legacyRecord;
 }
+
+export interface ExtractedAcademicDetails {
+  programLabel: string;
+  programType: ProgramType;
+  programBadgeCls: string;
+  overallRating: string;
+  math: string;
+  literature: string;
+  english: string;
+  otherSubjects: string;
+  attachments: FileAttachment[];
+}
+
+export function extractAcademicDetails(record: EntranceAcademicRecord, gradeStr?: string): ExtractedAcademicDetails {
+  const programBadgeMap: Record<ProgramType, { label: string; cls: string }> = {
+    BO_GD_DT: { label: "Bộ GD&ĐT", cls: "bg-blue-50 text-blue-700 border-blue-200/80" },
+    SONG_NGU: { label: "Song ngữ", cls: "bg-purple-50 text-purple-700 border-purple-200/80" },
+    NUOC_NGOAI: { label: "Nước ngoài", cls: "bg-amber-50 text-amber-700 border-amber-200/80" },
+    HOMESCHOOLING: { label: "Homeschooling", cls: "bg-emerald-50 text-emerald-700 border-emerald-200/80" }
+  };
+
+  const badge = programBadgeMap[record.programType] || programBadgeMap.BO_GD_DT;
+
+  let overallRating = record.moet?.overallRating || record.bilingual?.moetRating || record.foreign?.gpaOrHonors || record.homeschool?.overallEvaluation || record.overallRating || "—";
+
+  // Thu thập danh sách môn học
+  let allSubjects: SubjectScoreItem[] = [];
+  if (record.programType === "BO_GD_DT") {
+    allSubjects = record.moet?.subjects || [];
+  } else if (record.programType === "SONG_NGU") {
+    allSubjects = [...(record.bilingual?.moetSubjects || []), ...(record.bilingual?.internationalSubjects || [])];
+  } else if (record.programType === "NUOC_NGOAI") {
+    allSubjects = record.foreign?.subjects || [];
+  } else if (record.programType === "HOMESCHOOLING") {
+    allSubjects = record.homeschool?.subjects || [];
+  }
+
+  const findSub = (keywords: string[]) => {
+    return allSubjects.find(s => {
+      const n = (s.name || "").toLowerCase().trim();
+      const id = (s.id || "").toLowerCase().trim();
+      return keywords.some(k => n.includes(k) || id === k);
+    });
+  };
+
+  const formatSubVal = (item?: SubjectScoreItem) => {
+    if (!item) return "—";
+    if (item.level && item.score) return `${item.level} (${item.score})`;
+    if (item.level) return item.level;
+    if (item.score) return item.score;
+    return "—";
+  };
+
+  const mathItem = findSub(["toán", "toan", "math"]);
+  const litItem = findSub(["tiếng việt", "tieng viet", "tieng_viet", "văn", "van", "ngữ văn", "ngu van", "ngu_van", "literature"]);
+  const engItem = findSub(["tiếng anh", "tieng anh", "tieng_anh", "anh", "english"]);
+
+  const math = formatSubVal(mathItem);
+  const literature = formatSubVal(litItem);
+  const english = formatSubVal(engItem);
+
+  // Thu thập các môn còn lại / tổ hợp
+  const matchedNames = new Set([mathItem?.name, litItem?.name, engItem?.name].filter(Boolean));
+  const otherItems = allSubjects.filter(s => !matchedNames.has(s.name) && (s.score || s.level));
+
+  const otherParts: string[] = [];
+  if (record.moet?.combination?.name && (record.moet.combination.score || record.moet.combination.level)) {
+    const combVal = record.moet.combination.score || record.moet.combination.level;
+    otherParts.push(`${record.moet.combination.name}: ${combVal}`);
+  }
+  otherItems.forEach(s => {
+    const val = s.level && s.score ? `${s.level} (${s.score})` : (s.score || s.level || "");
+    otherParts.push(`${s.name}: ${val}`);
+  });
+  if (record.foreign?.gradeCompleted) {
+    otherParts.push(`Đã hoàn thành Lớp ${record.foreign.gradeCompleted}`);
+  }
+
+  const otherSubjects = otherParts.length > 0 ? otherParts.join(" • ") : "—";
+
+  return {
+    programLabel: badge.label,
+    programType: record.programType,
+    programBadgeCls: badge.cls,
+    overallRating,
+    math,
+    literature,
+    english,
+    otherSubjects,
+    attachments: record.attachments || []
+  };
+}

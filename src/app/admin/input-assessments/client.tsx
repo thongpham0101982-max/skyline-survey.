@@ -16,7 +16,7 @@ import {
 import * as XLSX from "xlsx"
 import { MoveToBatchModal } from "@/app/admin/student-info/MoveToBatchModal";
 import { EntranceAcademicRecordInput } from "@/components/assessments/EntranceAcademicRecordInput";
-import { parseEntranceRecord, serializeEntranceRecord } from "@/lib/entranceAcademicRecord";
+import { parseEntranceRecord, serializeEntranceRecord, extractAcademicDetails } from "@/lib/entranceAcademicRecord";
 
 
 // ========= TYPES =========
@@ -4850,21 +4850,37 @@ const [customCommitmentSubjects, setCustomCommitmentSubjects] = useState<string[
                 <div className="hidden md:block overflow-x-auto custom-scrollbar flex-1">
                   <table className="w-full text-left border-collapse text-xs">
                       <thead>
-                        <tr className="bg-slate-50/80 border-b border-slate-200 text-slate-500 whitespace-nowrap">
-                          <th className="px-3.5 py-3 text-[10px] font-medium uppercase tracking-wider w-10 text-center">#</th>
-                          <th className="px-3.5 py-3 text-[10px] font-medium uppercase tracking-wider min-w-[90px]">Mã HS</th>
-                          <th className="px-3.5 py-3 text-[10px] font-medium uppercase tracking-wider min-w-[170px]">Họ và tên</th>
-                          <th className="px-3.5 py-3 text-[10px] font-medium uppercase tracking-wider min-w-[70px] text-center">Giới tính</th>
-                          <th className="px-3.5 py-3 text-[10px] font-medium uppercase tracking-wider min-w-[95px] text-center">Ngày sinh</th>
-                          <th className="px-3.5 py-3 text-[10px] font-medium uppercase tracking-wider min-w-[65px] text-center">Khối</th>
-                          <th className="px-3.5 py-3 text-[10px] font-medium uppercase tracking-wider min-w-[110px]">Hệ KS</th>
-                          <th className="px-3.5 py-3 text-[10px] font-medium uppercase tracking-wider min-w-[130px]">Cơ sở ĐK</th>
-                          <th className="px-3.5 py-3 text-[10px] font-medium uppercase tracking-wider min-w-[140px]">Kỳ khảo sát</th>
-                          <th className="px-3.5 py-3 text-[10px] font-medium uppercase tracking-wider min-w-[160px]">Đợt khảo sát</th>
-                          <th className="px-3.5 py-3 text-[10px] font-medium uppercase tracking-wider min-w-[125px] text-center">Chương trình</th>
-                          <th className="px-3.5 py-3 text-[10px] font-medium uppercase tracking-wider min-w-[280px]">Kết quả học tập đầu vào</th>
-                          <th className="px-3.5 py-3 text-[10px] font-medium uppercase tracking-wider min-w-[115px] text-center">Khảo sát & Vắng</th>
-                          <th className="px-3.5 py-3 text-[10px] font-medium uppercase tracking-wider text-right pr-4 w-20 sticky right-0 bg-slate-50/95 shadow-[-4px_0_6px_-2px_rgba(0,0,0,0.04)]">Thao tác</th>
+                        {/* HÀNG TIÊU ĐỀ 1: CÁC CỘT CHÍNH VÀ NHÓM KẾT QUẢ HỌC TẬP */}
+                        <tr className="bg-slate-50/90 border-b border-slate-200 text-slate-600 whitespace-nowrap text-[10px] font-medium uppercase tracking-wider">
+                          <th rowSpan={2} className="px-3.5 py-3 w-10 text-center border-r border-slate-200/60">#</th>
+                          <th rowSpan={2} className="px-3.5 py-3 min-w-[90px] border-r border-slate-200/60">Mã HS</th>
+                          <th rowSpan={2} className="px-3.5 py-3 min-w-[170px] border-r border-slate-200/60">Họ và tên</th>
+                          <th rowSpan={2} className="px-3 py-3 min-w-[70px] text-center border-r border-slate-200/60">Giới tính</th>
+                          <th rowSpan={2} className="px-3 py-3 min-w-[95px] text-center border-r border-slate-200/60">Ngày sinh</th>
+                          <th rowSpan={2} className="px-3 py-3 min-w-[65px] text-center border-r border-slate-200/60">Khối</th>
+                          <th rowSpan={2} className="px-3.5 py-3 min-w-[110px] border-r border-slate-200/60">Hệ KS</th>
+                          <th rowSpan={2} className="px-3.5 py-3 min-w-[130px] border-r border-slate-200/60">Cơ sở ĐK</th>
+                          <th rowSpan={2} className="px-3.5 py-3 min-w-[140px] border-r border-slate-200/60">Kỳ khảo sát</th>
+                          <th rowSpan={2} className="px-3.5 py-3 min-w-[150px] border-r border-slate-200/60">Đợt khảo sát</th>
+
+                          {/* NHÓM CỘT TÁCH BIỆT: KẾT QUẢ HỌC TẬP ĐẦU VÀO (7 CỘT CỤ THỂ) */}
+                          <th colSpan={7} className="px-3 py-2 text-center bg-teal-50/80 text-teal-850 font-semibold border-b border-r border-teal-200/70 tracking-wider">
+                            KẾT QUẢ HỌC TẬP ĐẦU VÀO
+                          </th>
+
+                          <th rowSpan={2} className="px-3.5 py-3 min-w-[115px] text-center border-r border-slate-200/60">Khảo sát & Vắng</th>
+                          <th rowSpan={2} className="px-3.5 py-3 text-right pr-4 w-20 sticky right-0 bg-slate-50/95 shadow-[-4px_0_6px_-2px_rgba(0,0,0,0.04)]">Thao tác</th>
+                        </tr>
+
+                        {/* HÀNG TIÊU ĐỀ 2: CÁC CỘT CHI TIẾT CỦA KẾT QUẢ HỌC TẬP */}
+                        <tr className="bg-teal-50/40 border-b border-slate-200 text-teal-800 whitespace-nowrap text-[10px] font-medium uppercase tracking-wider">
+                          <th className="px-3 py-2 text-center min-w-[110px] border-r border-teal-100">Chương trình</th>
+                          <th className="px-3 py-2 text-center min-w-[115px] border-r border-teal-100">KQ Chung</th>
+                          <th className="px-3 py-2 text-center min-w-[70px] border-r border-teal-100">Toán</th>
+                          <th className="px-3 py-2 text-center min-w-[110px] border-r border-teal-100">Tiếng Việt / Văn</th>
+                          <th className="px-3 py-2 text-center min-w-[85px] border-r border-teal-100">Tiếng Anh</th>
+                          <th className="px-3 py-2 min-w-[140px] border-r border-teal-100">Tổ hợp / Môn khác</th>
+                          <th className="px-3 py-2 text-center min-w-[75px] border-r border-teal-200/70">Học bạ</th>
                         </tr>
                       </thead>
                       <tbody className="divide-y divide-slate-100">
@@ -4873,105 +4889,149 @@ const [customCommitmentSubjects, setCustomCommitmentSubjects] = useState<string[
                           const periodObj = visiblePeriods.find(p => p.id === s.periodId);
                           const registeredCampusObj = campuses.find(c => c.id === s.registeredCampus || c.campusCode === s.registeredCampus || c.campusName === s.registeredCampus);
                           const entranceRec = parseEntranceRecord(s.kqHocTap, s.grade);
-                          const programBadge = {
-                            BO_GD_DT: { label: "Bộ GD&ĐT", cls: "bg-blue-50 text-blue-700 border-blue-200/80" },
-                            SONG_NGU: { label: "Song ngữ", cls: "bg-purple-50 text-purple-700 border-purple-200/80" },
-                            NUOC_NGOAI: { label: "Nước ngoài", cls: "bg-amber-50 text-amber-700 border-amber-200/80" },
-                            HOMESCHOOLING: { label: "Homeschooling", cls: "bg-emerald-50 text-emerald-700 border-emerald-200/80" }
-                          }[entranceRec.programType] || { label: "Bộ GD&ĐT", cls: "bg-slate-100 text-slate-700 border-slate-200/80" };
-
-                          const fileCount = entranceRec.attachments?.length || 0;
+                          const details = extractAcademicDetails(entranceRec, s.grade);
 
                           return (
                             <tr key={s.id} className="hover:bg-slate-50/70 transition-colors group">
                               {/* 1. STT */}
-                              <td className="px-3.5 py-3 text-slate-400 font-normal text-center whitespace-nowrap">
+                              <td className="px-3.5 py-3 text-slate-400 font-normal text-center whitespace-nowrap border-r border-slate-100">
                                 {(studentsCurrentPage - 1) * studentsPageSize + idx + 1}
                               </td>
 
                               {/* 2. Mã HS */}
-                              <td className="px-3.5 py-3 whitespace-nowrap">
+                              <td className="px-3.5 py-3 whitespace-nowrap border-r border-slate-100">
                                 <span className="font-mono text-[10px] font-medium text-teal-700 bg-teal-50 border border-teal-200/80 px-2 py-0.5 rounded">
                                   {s.studentCode}
                                 </span>
                               </td>
 
                               {/* 3. Họ và tên */}
-                              <td className="px-3.5 py-3 whitespace-nowrap">
+                              <td className="px-3.5 py-3 whitespace-nowrap border-r border-slate-100">
                                 <span className="font-medium text-slate-800 text-xs">
                                   {s.fullName}
                                 </span>
                               </td>
 
                               {/* 4. Giới tính */}
-                              <td className="px-3.5 py-3 text-center text-slate-600 text-xs font-normal whitespace-nowrap">
+                              <td className="px-3 py-3 text-center text-slate-600 text-xs font-normal whitespace-nowrap border-r border-slate-100">
                                 {s.gender || "—"}
                               </td>
 
                               {/* 5. Ngày sinh */}
-                              <td className="px-3.5 py-3 text-center text-slate-600 text-xs font-normal whitespace-nowrap">
+                              <td className="px-3 py-3 text-center text-slate-600 text-xs font-normal whitespace-nowrap border-r border-slate-100">
                                 {s.dateOfBirth ? new Date(s.dateOfBirth).toLocaleDateString('vi-VN') : "—"}
                               </td>
 
                               {/* 6. Khối */}
-                              <td className="px-3.5 py-3 text-center whitespace-nowrap">
+                              <td className="px-3 py-3 text-center whitespace-nowrap border-r border-slate-100">
                                 <span className="px-2 py-0.5 rounded-full bg-slate-100 text-slate-700 border border-slate-200 text-[10px] font-medium">
                                   K{s.grade || "—"}
                                 </span>
                               </td>
 
                               {/* 7. Hệ KS */}
-                              <td className="px-3.5 py-3 whitespace-nowrap">
+                              <td className="px-3.5 py-3 whitespace-nowrap border-r border-slate-100">
                                 <span className="px-2 py-0.5 rounded-full bg-sky-50 text-sky-700 border border-sky-200/80 text-[10px] font-medium">
                                   {s.surveyFormType || s.surveySystem || "—"}
                                 </span>
                               </td>
 
                               {/* 8. Cơ sở ĐK */}
-                              <td className="px-3.5 py-3 whitespace-nowrap">
+                              <td className="px-3.5 py-3 whitespace-nowrap border-r border-slate-100">
                                 <span className="text-slate-600 text-xs font-normal" title={registeredCampusObj?.campusName || s.admissionCampus || s.registeredCampus || ""}>
                                   {registeredCampusObj?.campusName || s.admissionCampus || s.registeredCampus || "—"}
                                 </span>
                               </td>
 
                               {/* 9. Kỳ khảo sát */}
-                              <td className="px-3.5 py-3 whitespace-nowrap">
+                              <td className="px-3.5 py-3 whitespace-nowrap border-r border-slate-100">
                                 <span className="text-slate-600 text-xs font-normal" title={periodObj?.name || ""}>
                                   {periodObj?.name || "—"}
                                 </span>
                               </td>
 
                               {/* 10. Đợt khảo sát */}
-                              <td className="px-3.5 py-3 whitespace-nowrap">
+                              <td className="px-3.5 py-3 whitespace-nowrap border-r border-slate-200">
                                 <span className="text-slate-700 text-xs font-medium" title={batchObj?.name || ""}>
                                   {batchObj?.name || <span className="text-slate-400 italic font-normal">Chưa phân đợt</span>}
                                 </span>
                               </td>
 
+                              {/* ===== CÁC CỘT CHI TIẾT KẾT QUẢ HỌC TẬP ===== */}
                               {/* 11. Chương trình */}
-                              <td className="px-3.5 py-3 text-center whitespace-nowrap">
-                                <span className={`px-2.5 py-0.5 rounded-full text-[10px] font-medium border ${programBadge.cls}`}>
-                                  {programBadge.label}
+                              <td className="px-3 py-3 text-center whitespace-nowrap border-r border-slate-100 bg-slate-50/20">
+                                <span className={`px-2 py-0.5 rounded-full text-[10px] font-medium border ${details.programBadgeCls}`}>
+                                  {details.programLabel}
                                 </span>
                               </td>
 
-                              {/* 12. Kết quả học tập đầu vào */}
-                              <td className="px-3.5 py-3">
-                                <div className="space-y-1 py-0.5 max-w-[340px]">
-                                  {fileCount > 0 && (
-                                    <span className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded-full bg-teal-50 text-teal-700 border border-teal-200/80 text-[10px] font-normal" title={`${fileCount} tệp học bạ đính kèm`}>
-                                      <Paperclip className="w-2.5 h-2.5" />
-                                      <span>{fileCount} tệp</span>
-                                    </span>
-                                  )}
-                                  <div className="text-[11px] text-slate-600 font-normal line-clamp-2 leading-relaxed" title={entranceRec.summaryText}>
-                                    {entranceRec.summaryText || s.kqHocTap || <span className="text-slate-350 italic">Chưa nhập KQ</span>}
-                                  </div>
-                                </div>
+                              {/* 12. KQ Chung */}
+                              <td className="px-3 py-3 text-center whitespace-nowrap border-r border-slate-100 bg-slate-50/20">
+                                <span className="px-2 py-0.5 rounded-full bg-slate-100 text-slate-700 text-[10px] font-medium" title={details.overallRating}>
+                                  {details.overallRating}
+                                </span>
                               </td>
 
-                              {/* 13. Khảo sát & Vắng */}
-                              <td className="px-3.5 py-3 text-center whitespace-nowrap">
+                              {/* 13. Toán */}
+                              <td className="px-3 py-3 text-center whitespace-nowrap border-r border-slate-100 bg-slate-50/20">
+                                {details.math !== "—" ? (
+                                  <span className={details.math === "T" ? "px-2 py-0.5 rounded-md bg-emerald-50 text-emerald-700 border border-emerald-200/80 font-medium text-xs" : details.math === "H" ? "px-2 py-0.5 rounded-md bg-sky-50 text-sky-700 border border-sky-200/80 font-medium text-xs" : details.math === "C" ? "px-2 py-0.5 rounded-md bg-rose-50 text-rose-700 border border-rose-200/80 font-medium text-xs" : "font-medium text-slate-800 text-xs"}>
+                                    {details.math}
+                                  </span>
+                                ) : (
+                                  <span className="text-slate-300 font-normal">—</span>
+                                )}
+                              </td>
+
+                              {/* 14. Tiếng Việt / Ngữ văn */}
+                              <td className="px-3 py-3 text-center whitespace-nowrap border-r border-slate-100 bg-slate-50/20">
+                                {details.literature !== "—" ? (
+                                  <span className={details.literature === "T" ? "px-2 py-0.5 rounded-md bg-emerald-50 text-emerald-700 border border-emerald-200/80 font-medium text-xs" : details.literature === "H" ? "px-2 py-0.5 rounded-md bg-sky-50 text-sky-700 border border-sky-200/80 font-medium text-xs" : details.literature === "C" ? "px-2 py-0.5 rounded-md bg-rose-50 text-rose-700 border border-rose-200/80 font-medium text-xs" : "font-medium text-slate-800 text-xs"}>
+                                    {details.literature}
+                                  </span>
+                                ) : (
+                                  <span className="text-slate-300 font-normal">—</span>
+                                )}
+                              </td>
+
+                              {/* 15. Tiếng Anh */}
+                              <td className="px-3 py-3 text-center whitespace-nowrap border-r border-slate-100 bg-slate-50/20">
+                                {details.english !== "—" ? (
+                                  <span className={details.english === "T" ? "px-2 py-0.5 rounded-md bg-emerald-50 text-emerald-700 border border-emerald-200/80 font-medium text-xs" : details.english === "H" ? "px-2 py-0.5 rounded-md bg-sky-50 text-sky-700 border border-sky-200/80 font-medium text-xs" : details.english === "C" ? "px-2 py-0.5 rounded-md bg-rose-50 text-rose-700 border border-rose-200/80 font-medium text-xs" : "font-medium text-slate-800 text-xs"}>
+                                    {details.english}
+                                  </span>
+                                ) : (
+                                  <span className="text-slate-300 font-normal">—</span>
+                                )}
+                              </td>
+
+                              {/* 16. Tổ hợp / Môn khác */}
+                              <td className="px-3 py-3 border-r border-slate-100 bg-slate-50/20">
+                                <span className="text-[11px] text-slate-600 font-normal truncate block max-w-[180px]" title={details.otherSubjects}>
+                                  {details.otherSubjects}
+                                </span>
+                              </td>
+
+                              {/* 17. Học bạ đính kèm */}
+                              <td className="px-3 py-3 text-center whitespace-nowrap border-r border-slate-200 bg-slate-50/20">
+                                {details.attachments.length > 0 ? (
+                                  <a
+                                    href={details.attachments[0].url}
+                                    target="_blank"
+                                    rel="noopener noreferrer"
+                                    className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-teal-50 text-teal-700 border border-teal-200/80 text-[10px] font-medium hover:bg-teal-100 transition-colors cursor-pointer"
+                                    title={`Mở xem ${details.attachments.length} tệp học bạ đính kèm`}
+                                  >
+                                    <Paperclip className="w-2.5 h-2.5" />
+                                    <span>{details.attachments.length} tệp</span>
+                                  </a>
+                                ) : (
+                                  <span className="text-slate-300 font-normal">—</span>
+                                )}
+                              </td>
+
+                              {/* 18. Khảo sát & Vắng */}
+                              <td className="px-3.5 py-3 text-center whitespace-nowrap border-r border-slate-100">
                                 <label className="inline-flex items-center gap-1.5 cursor-pointer text-xs font-normal text-slate-600 select-none">
                                   <input
                                     type="checkbox"
@@ -4985,7 +5045,7 @@ const [customCommitmentSubjects, setCustomCommitmentSubjects] = useState<string[
                                 </label>
                               </td>
 
-                              {/* 14. Thao tác (Sticky right) */}
+                              {/* 19. Thao tác (Sticky right) */}
                               <td className="px-3.5 py-3 pr-4 text-right sticky right-0 bg-white group-hover:bg-slate-50/70 shadow-[-4px_0_6px_-2px_rgba(0,0,0,0.04)] whitespace-nowrap">
                                 <div className="flex items-center justify-end gap-1">
                                   <button 
@@ -5019,7 +5079,7 @@ const [customCommitmentSubjects, setCustomCommitmentSubjects] = useState<string[
                 <div className="md:hidden flex flex-col p-3.5 gap-3 text-xs">
                   {paginatedFiltStu.map(s => {
                     const entranceRec = parseEntranceRecord(s.kqHocTap, s.grade);
-                    const fileCount = entranceRec.attachments?.length || 0;
+                    const details = extractAcademicDetails(entranceRec, s.grade);
                     return (
                       <div key={s.id} className="bg-white p-4 rounded-xl border border-slate-200/80 shadow-2xs space-y-3">
                         <div className="flex justify-between items-start gap-2">
@@ -5049,19 +5109,52 @@ const [customCommitmentSubjects, setCustomCommitmentSubjects] = useState<string[
                               {s.isAbsent ? "Vắng mặt" : "Có mặt"}
                             </span>
                           </div>
-                          <div className="col-span-2 pt-1 border-t border-slate-50">
-                            <div className="flex items-center gap-1.5 mb-1">
-                              <span className="text-slate-400 text-[10px] uppercase font-medium">KQ Học tập đầu vào:</span>
-                              {fileCount > 0 && (
-                                <span className="inline-flex items-center gap-0.5 text-teal-700 text-[10px] font-normal">
+
+                          {/* Chi tiết Kết quả học tập trên Mobile */}
+                          <div className="col-span-2 pt-2 border-t border-slate-100 space-y-1.5">
+                            <div className="flex items-center justify-between">
+                              <span className="text-slate-400 text-[10px] uppercase font-medium">Kết quả học tập đầu vào:</span>
+                              <span className={`px-2 py-0.5 rounded-full text-[10px] font-medium border ${details.programBadgeCls}`}>
+                                {details.programLabel}
+                              </span>
+                            </div>
+                            <div className="grid grid-cols-4 gap-1.5 text-center bg-slate-50 p-2 rounded-lg border border-slate-100">
+                              <div className="bg-white p-1 rounded border border-slate-150">
+                                <div className="text-[9px] text-slate-400 font-medium">Chung</div>
+                                <div className="text-[11px] font-semibold text-slate-700 truncate" title={details.overallRating}>{details.overallRating}</div>
+                              </div>
+                              <div className="bg-white p-1 rounded border border-slate-150">
+                                <div className="text-[9px] text-slate-400 font-medium">Toán</div>
+                                <div className="text-[11px] font-semibold text-teal-700">{details.math}</div>
+                              </div>
+                              <div className="bg-white p-1 rounded border border-slate-150">
+                                <div className="text-[9px] text-slate-400 font-medium">Văn/TV</div>
+                                <div className="text-[11px] font-semibold text-indigo-700">{details.literature}</div>
+                              </div>
+                              <div className="bg-white p-1 rounded border border-slate-150">
+                                <div className="text-[9px] text-slate-400 font-medium">T.Anh</div>
+                                <div className="text-[11px] font-semibold text-sky-700">{details.english}</div>
+                              </div>
+                            </div>
+                            {details.otherSubjects !== "—" && (
+                              <div className="text-[10px] text-slate-500 font-normal">
+                                <span className="font-medium text-slate-600">Tổ hợp/Khác: </span>
+                                {details.otherSubjects}
+                              </div>
+                            )}
+                            {details.attachments.length > 0 && (
+                              <div className="pt-0.5">
+                                <a
+                                  href={details.attachments[0].url}
+                                  target="_blank"
+                                  rel="noopener noreferrer"
+                                  className="inline-flex items-center gap-1 text-[10px] text-teal-700 hover:underline cursor-pointer"
+                                >
                                   <Paperclip className="w-2.5 h-2.5" />
-                                  <span>{fileCount} tệp</span>
-                                </span>
-                              )}
-                            </div>
-                            <div className="text-[11px] text-slate-600 font-normal leading-relaxed">
-                              {entranceRec.summaryText || s.kqHocTap || <span className="text-slate-350 italic">Chưa nhập</span>}
-                            </div>
+                                  <span>Xem {details.attachments.length} tệp học bạ đính kèm</span>
+                                </a>
+                              </div>
+                            )}
                           </div>
                         </div>
                       </div>
