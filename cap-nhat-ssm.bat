@@ -10,18 +10,11 @@ echo.
 cd /d "%~dp0"
 
 echo [1/5] Đang kéo mã nguồn mới nhất từ GitHub (git pull origin main)...
-git stash --include-untracked >nul 2>&1
 git pull origin main
 if %ERRORLEVEL% neq 0 (
-    echo [Lỗi] Không thể pull từ GitHub. Đang thử khôi phục trạng thái...
-    git stash pop >nul 2>&1
-    git status
-    echo.
-    echo Vui lòng kiểm tra kết nối mạng hoặc liên hệ quản trị viên.
-    pause
-    exit /b 1
+    echo [Cảnh báo] Thử đồng bộ lại trạng thái...
+    git pull --rebase origin main
 )
-git stash pop >nul 2>&1
 
 echo.
 echo [2/5] Đang tạm dừng dịch vụ chạy trên cổng 3000...
