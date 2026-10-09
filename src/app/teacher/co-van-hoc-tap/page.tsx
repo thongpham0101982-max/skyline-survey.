@@ -542,10 +542,11 @@ export default function TeacherAdvisoryPage() {
       .then(r => r.json())
       .then(data => {
         if (Array.isArray(data)) {
-          setStudents(data)
-          if (data.length > 0) {
-            setSelectedStudentId(data[0].id)
-            setConsultationForm(prev => ({ ...prev, studentId: data[0].id }))
+          const activeStudents = data.filter((st: any) => st.status !== "TRANSFERRED_OUT" && st.status !== "TRANSFERRED")
+          setStudents(activeStudents)
+          if (activeStudents.length > 0) {
+            setSelectedStudentId(activeStudents[0].id)
+            setConsultationForm(prev => ({ ...prev, studentId: activeStudents[0].id }))
           }
         }
       })

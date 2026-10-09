@@ -287,6 +287,7 @@ export async function GET(req: Request) {
       const students = await prisma.student.findMany({
         where: {
           classId,
+          status: { not: "TRANSFERRED_OUT" },
           NOT: {
             studentCode: { startsWith: "2" }
           }
@@ -370,6 +371,7 @@ export async function GET(req: Request) {
       const students = await prisma.student.findMany({
         where: {
           classId,
+          status: { not: "TRANSFERRED_OUT" },
           NOT: {
             studentCode: { startsWith: "2" }
           }
@@ -510,6 +512,7 @@ export async function GET(req: Request) {
       const students = await prisma.student.findMany({
         where: {
           classId: { in: classIds },
+          status: { not: "TRANSFERRED_OUT" },
           NOT: {
             studentCode: { startsWith: "2" }
           }
@@ -769,7 +772,8 @@ export async function GET(req: Request) {
       const students = await prisma.student.findMany({
         where: {
           classId: { in: targetClassIds },
-          academicYearId
+          academicYearId,
+          status: { not: "TRANSFERRED_OUT" }
         },
         include: {
           class: {
@@ -1733,6 +1737,9 @@ export async function GET(req: Request) {
       }
 
       if (academicYearId) where.academicYearId = academicYearId
+      if (!studentId && !where.status) {
+        where.status = { not: "TRANSFERRED_OUT" }
+      }
 
       // Fetch students using same structure as admin student profiles endpoint
       const students = await prisma.student.findMany({

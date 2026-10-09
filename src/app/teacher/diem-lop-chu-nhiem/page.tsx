@@ -76,7 +76,7 @@ export default async function HomeroomGradesPage() {
       include: {
         campus: true,
         academicYear: true,
-        _count: { select: { students: true } }
+        _count: { select: { students: { where: { status: { not: "TRANSFERRED_OUT" } } } } }
       },
       orderBy: { className: "asc" }
     }).catch(() => [])
@@ -93,7 +93,7 @@ export default async function HomeroomGradesPage() {
         include: {
           campus: true,
           academicYear: true,
-          _count: { select: { students: true } }
+          _count: { select: { students: { where: { status: { not: "TRANSFERRED_OUT" } } } } }
         },
         orderBy: { className: "asc" }
       }).catch(() => [])
@@ -108,7 +108,7 @@ export default async function HomeroomGradesPage() {
       include: {
         campus: true,
         academicYear: true,
-        _count: { select: { students: true } }
+        _count: { select: { students: { where: { status: { not: "TRANSFERRED_OUT" } } } } }
       },
       orderBy: { className: "asc" },
       take: 20

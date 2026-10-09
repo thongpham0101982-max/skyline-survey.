@@ -20,7 +20,7 @@ async function checkParentAdminAuth() {
 export async function getClassStudentsWithParentsAction(classId: string) {
   if (!classId) return []
   const students = await prisma.student.findMany({
-    where: { classId },
+    where: { classId, status: "ACTIVE" },
     include: {
       parents: {
         include: {
@@ -55,7 +55,7 @@ export async function generateParentAccountsAction(classId: string) {
   if (!classId) return { success: false, error: "Thiếu thông tin lớp học" }
 
   const students = await prisma.student.findMany({
-    where: { classId },
+    where: { classId, status: "ACTIVE" },
     include: { parents: { include: { parent: true } } }
   })
 

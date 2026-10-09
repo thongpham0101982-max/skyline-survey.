@@ -36,6 +36,7 @@ export async function GET(req: Request) {
           include: { teacher: true }
         },
         students: {
+          where: { status: { not: "TRANSFERRED_OUT" } },
           orderBy: { studentName: "asc" }
         }
       }

@@ -29,7 +29,7 @@ async function getTeacherClasses(teacherId: string, academicYearId?: string) {
           { homeroomTeacherId: { contains: teacherId } }
         ]
       },
-      include: { campus: true, academicYear: true, _count: { select: { students: true } } }
+      include: { campus: true, academicYear: true, _count: { select: { students: { where: { status: { not: "TRANSFERRED_OUT" } } } } } }
     }).catch(() => []);
 
     // Failsafe: If no homeroom classes match current active year filter, check all years for homeroom classes
@@ -41,7 +41,7 @@ async function getTeacherClasses(teacherId: string, academicYearId?: string) {
             { homeroomTeacherId: { contains: teacherId } }
           ]
         },
-        include: { campus: true, academicYear: true, _count: { select: { students: true } } }
+        include: { campus: true, academicYear: true, _count: { select: { students: { where: { status: { not: "TRANSFERRED_OUT" } } } } } }
       }).catch(() => []);
     }
 
@@ -101,7 +101,7 @@ export default async function TeacherClassesPage() {
           homeroomTeacherId: { not: null }
         },
         take: 12,
-        include: { campus: true, academicYear: true, _count: { select: { students: true } } }
+        include: { campus: true, academicYear: true, _count: { select: { students: { where: { status: { not: "TRANSFERRED_OUT" } } } } } }
       }).catch(() => [])
 
       classes = previewClasses.map(c => ({ ...c, isHomeroom: true }))

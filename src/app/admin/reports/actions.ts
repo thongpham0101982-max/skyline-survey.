@@ -239,7 +239,7 @@ export async function getAllClassesAction() {
 export async function addSurveyFormsForClassAction(classId: string, periodId: string) {
   try {
     // Get students in class
-    const students = await prisma.student.findMany({ where: { classId } })
+    const students = await prisma.student.findMany({ where: { classId, status: "ACTIVE" } })
     // For each student, find parent link
     const parentLinks = await prisma.parentStudentLink.findMany({
       where: { studentId: { in: students.map(s => s.id) } },
@@ -292,6 +292,7 @@ export async function getStudentsNotInSurveyAction(classId: string, periodId: st
   const students = await prisma.student.findMany({
     where: {
       classId,
+      status: "ACTIVE",
       id: { notIn: assignedStudentIds }
     },
     include: {

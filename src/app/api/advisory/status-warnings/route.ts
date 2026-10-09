@@ -17,7 +17,7 @@ export async function GET(req: Request) {
     if (!classId) return NextResponse.json({ error: "Missing classId" }, { status: 400 })
 
     const students = await prisma.student.findMany({
-      where: { classId },
+      where: { classId, status: { not: "TRANSFERRED_OUT" } },
       select: {
         id: true,
         studentCode: true,

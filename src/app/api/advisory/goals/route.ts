@@ -136,6 +136,7 @@ export async function GET(req: Request) {
       const classStudents = await prisma.student.findMany({
         where: {
           classId: targetClassId,
+          status: { not: "TRANSFERRED_OUT" },
           ...(queryYearId ? { academicYearId: queryYearId } : {})
         },
         select: { id: true, studentCode: true, studentName: true }

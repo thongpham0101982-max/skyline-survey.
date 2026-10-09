@@ -59,7 +59,7 @@ export default async function TeacherClassDetailPage({ params }: any) {
     }
 
     // 3. Calculate survey metrics
-    const totalStudents = classInfo.students.length
+    const totalStudents = classInfo.students.filter(s => s.status !== "TRANSFERRED_OUT").length
     
     const forms = await prisma.surveyForm.findMany({
       where: { classId },

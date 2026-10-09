@@ -38,7 +38,7 @@ export function ClassDetailClient({
   // Search and Filter states
   const [searchTerm, setSearchTerm] = useState("")
   const [genderFilter, setGenderFilter] = useState("all")
-  const [statusFilter, setStatusFilter] = useState("all")
+  const [statusFilter, setStatusFilter] = useState("active")
 
   // Vietnamese alphabetical sorting & search filtering
   const getVietnameseSortKey = (fullName: string) => {

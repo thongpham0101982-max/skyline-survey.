@@ -237,7 +237,7 @@ export async function GET(req: Request) {
 
       // Fetch all students in the class
       const students = await prisma.student.findMany({
-        where: { classId },
+        where: { classId, status: { not: "TRANSFERRED_OUT" } },
         select: {
           id: true,
           studentName: true,
@@ -350,7 +350,8 @@ export async function GET(req: Request) {
             { studentCode: { in: allStudentCodes } },
             { studentName: { in: allFullNames } }
           ],
-          academicYearId
+          academicYearId,
+          status: { not: "TRANSFERRED_OUT" }
         },
         include: {
           class: {

@@ -349,7 +349,7 @@ export async function getStudentsByClassAction(classId: string) {
   if (!classId) return []
 
   const students = await prisma.student.findMany({
-    where: { classId },
+    where: { classId, status: "ACTIVE" },
     include: {
       class: true,
       campus: true

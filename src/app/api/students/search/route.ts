@@ -10,8 +10,16 @@ export async function GET(req: Request) {
     const q = searchParams.get('q');
     const classId = searchParams.get('classId');
     const grade = searchParams.get('grade');
+    const statusParam = searchParams.get('status');
+    const includeTransferred = searchParams.get('includeTransferred') === 'true';
 
     const where: any = {};
+
+    if (statusParam) {
+      where.status = statusParam;
+    } else if (!includeTransferred) {
+      where.status = { not: "TRANSFERRED_OUT" };
+    }
 
     if (classId) {
       where.classId = classId;

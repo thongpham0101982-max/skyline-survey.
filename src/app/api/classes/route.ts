@@ -73,7 +73,7 @@ export async function GET(req: Request) {
                 where: { roleInClass: "GVCN" },
                 include: { teacher: { select: { id: true, teacherName: true, email: true } } }
               },
-              _count: { select: { students: true } }
+              _count: { select: { students: { where: { status: { not: "TRANSFERRED_OUT" } } } } }
             },
             orderBy: [{ level: 'asc' }, { grade: 'asc' }, { className: 'asc' }]
           });
@@ -101,7 +101,7 @@ export async function GET(req: Request) {
             include: {
               campus: true,
               academicYear: true,
-              _count: { select: { students: true } }
+              _count: { select: { students: { where: { status: { not: "TRANSFERRED_OUT" } } } } }
             }
           }),
           prisma.teachingAssignment.findMany({
@@ -114,7 +114,7 @@ export async function GET(req: Request) {
                 include: {
                   campus: true,
                   academicYear: true,
-                  _count: { select: { students: true } }
+                  _count: { select: { students: { where: { status: { not: "TRANSFERRED_OUT" } } } } }
                 }
               },
               subject: true
@@ -170,7 +170,7 @@ export async function GET(req: Request) {
               where: { roleInClass: "GVCN" },
               include: { teacher: { select: { id: true, teacherName: true, email: true } } }
             },
-            _count: { select: { students: true } }
+            _count: { select: { students: { where: { status: { not: "TRANSFERRED_OUT" } } } } }
           },
           orderBy: [{ level: 'asc' }, { grade: 'asc' }, { className: 'asc' }]
         });

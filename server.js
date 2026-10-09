@@ -6,11 +6,10 @@ const dev = false; // Run in fast production mode if built, or dev mode if neede
 const hostname = '0.0.0.0';
 const port = parseInt(process.env.PORT || '3000', 10);
 
-// Detect if .next/BUILD_ID exists to decide between dev or prod mode
+// Detect mode: default to PRODUCTION for high performance and stability
 const fs = require('fs');
 const path = require('path');
-const isBuilt = fs.existsSync(path.join(__dirname, '.next', 'BUILD_ID'));
-const isDev = !isBuilt;
+const isDev = process.env.NODE_ENV === 'development';
 
 process.on('uncaughtException', (err) => {
   console.error('[Skyline Server] Uncaught Exception:', err);

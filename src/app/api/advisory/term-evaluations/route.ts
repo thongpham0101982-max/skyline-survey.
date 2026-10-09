@@ -20,7 +20,7 @@ export async function GET(req: Request) {
 
     if (classId) {
       const classStudents = await prisma.student.findMany({
-        where: { classId },
+        where: { classId, status: { not: "TRANSFERRED_OUT" } },
         select: { id: true, studentCode: true }
       }).catch(() => [])
       targetStudentIds = classStudents.map(s => s.id)
