@@ -64,7 +64,7 @@ export const LOGIN_TRANSLATIONS = {
   en: {
     pageTitle: "Sign In",
     roles: {
-      STAFF: "Faculty & Staff",
+      STAFF: "Staff",
       PARENT: "Parent",
       STUDENT: "Student"
     },

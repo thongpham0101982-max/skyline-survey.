@@ -10,6 +10,22 @@ export function PwaManager() {
   const [deferredPrompt, setDeferredPrompt] = useState<any>(null)
   const [showInstallBanner, setShowInstallBanner] = useState(false)
   const [isStandalone, setIsStandalone] = useState(false)
+  const [lang, setLang] = useState<"vi" | "en">("vi")
+
+  useEffect(() => {
+    if (typeof window !== "undefined") {
+      const saved = (localStorage.getItem("ssm_lang") || localStorage.getItem("ssm_gvnn_lang")) as "vi" | "en"
+      if (saved === "vi" || saved === "en") setLang(saved)
+    }
+
+    const handleLangEvent = (e: any) => {
+      const newL = e.detail
+      if (newL === "vi" || newL === "en") setLang(newL)
+    }
+
+    window.addEventListener("ssm_language_change", handleLangEvent)
+    return () => window.removeEventListener("ssm_language_change", handleLangEvent)
+  }, [])
 
   useEffect(() => {
     // 1. Detect if running in standalone mode (already installed)
@@ -181,10 +197,10 @@ export function PwaManager() {
               </div>
               <div className="min-w-0">
                 <h4 className="text-xs sm:text-sm font-bold text-slate-900 truncate">
-                  Cài đặt SSM Sky-Line
+                  {lang === "en" ? "Install SSM Sky-Line App" : "Cài đặt SSM Sky-Line"}
                 </h4>
                 <p className="text-[11px] text-slate-500 truncate mt-0.5">
-                  Truy cập nhanh & nhận thông báo
+                  {lang === "en" ? "Quick access & instant notifications" : "Truy cập nhanh & nhận thông báo"}
                 </p>
               </div>
             </div>
@@ -195,12 +211,12 @@ export function PwaManager() {
                 className="px-3 py-1.5 rounded-lg bg-[#00A19A] active:bg-[#00736E] text-white text-xs font-bold shadow-xs active:scale-95 transition-all cursor-pointer flex items-center gap-1"
               >
                 <Download className="w-3.5 h-3.5" />
-                <span>Cài đặt</span>
+                <span>{lang === "en" ? "Install" : "Cài đặt"}</span>
               </button>
               <button
                 onClick={handleDismissInstall}
                 className="p-1.5 text-slate-400 hover:text-slate-600 rounded-lg cursor-pointer"
-                aria-label="Đóng"
+                aria-label={lang === "en" ? "Close" : "Đóng"}
               >
                 <X className="w-4 h-4" />
               </button>
