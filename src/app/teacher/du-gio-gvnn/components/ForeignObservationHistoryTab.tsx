@@ -28,6 +28,7 @@ import {
 import * as XLSX from "xlsx";
 import { IndicatorConfig } from "../client";
 import { isSlotBelongsToForeignEsl, isExactWalkthroughForm } from "../utils";
+import { TRANSLATIONS, SupportedLang } from "../locales/translations";
 
 interface ForeignObservationHistoryTabProps {
   slots: any[];
@@ -39,6 +40,7 @@ interface ForeignObservationHistoryTabProps {
   indicators: IndicatorConfig[];
   onOpenWalkthroughForm?: () => void;
   showAllForAdmin?: boolean;
+  lang?: SupportedLang;
 }
 
 const RATING_CONFIG: Record<string, { label: string; shortLabel: string; badgeClass: string; score: number }> = {
@@ -128,8 +130,10 @@ export function ForeignObservationHistoryTab({
   departments = [],
   indicators = [],
   onOpenWalkthroughForm,
-  showAllForAdmin = false
+  showAllForAdmin = false,
+  lang = "en"
 }: ForeignObservationHistoryTabProps) {
+  const t = TRANSLATIONS[lang];
   const [searchQuery, setSearchQuery] = useState("");
   const [filterCampus, setFilterCampus] = useState("all");
   const [filterRating, setFilterRating] = useState("all");
@@ -265,8 +269,28 @@ export function ForeignObservationHistoryTab({
     const data = filteredSlots.map((slot, idx) => {
       const reg = (slot.registrations || [])[0];
       const evalObj = reg?.evaluation;
-      const slotDate = slot.date ? new Date(slot.date).toLocaleDateString("vi-VN") : "";
+      const slotDate = slot.date ? new Date(slot.date).toLocaleDateString(lang === "en" ? "en-GB" : "vi-VN") : "";
       const campus = slot.campusName || slot.teacher?.campus?.campusName || slot.campusId || "Sky-Line";
+
+      if (lang === "en") {
+        return {
+          "#": idx + 1,
+          "Date": slotDate,
+          "Period": slot.startTime || "Period 1",
+          "Class": slot.className || "",
+          "Campus": campus,
+          "Host Teacher": slot.teacher?.teacherName || "",
+          "Observer": reg?.teacher?.teacherName || "Current User",
+          "Subject": slot.subjectName || "English (ESL)",
+          "Lesson / Topic": slot.topic || "",
+          "Classroom": slot.room || "",
+          "Overall Rating": evalObj?.overallRating || "-",
+          "Score": evalObj?.totalScore ?? "-",
+          "Key Strengths": evalObj?.strengths || "-",
+          "Challenges / Growth Areas": evalObj?.improvements || "-",
+          "Agreed Actions": evalObj?.generalComment || "-"
+        };
+      }
 
       return {
         "STT": idx + 1,
@@ -287,9 +311,13 @@ export function ForeignObservationHistoryTab({
       };
     });
 
+    const sheetName = lang === "en" ? "ESL Walkthrough Records" : "Dự giờ GVNN ESL";
     const ws = XLSX.utils.json_to_sheet(data);
-    XLSX.utils.book_append_sheet(wb, ws, "Dự giờ GVNN ESL");
-    XLSX.writeFile(wb, `LuocSu_DuGio_GVNN_ESL_${new Date().toISOString().split("T")[0]}.xlsx`);
+    XLSX.utils.book_append_sheet(wb, ws, sheetName);
+    const fileName = lang === "en"
+      ? `ESL_Observation_Records_${new Date().toISOString().split("T")[0]}.xlsx`
+      : `LuocSu_DuGio_GVNN_ESL_${new Date().toISOString().split("T")[0]}.xlsx`;
+    XLSX.writeFile(wb, fileName);
   };
 
   const handlePrint = () => {
@@ -304,18 +332,18 @@ export function ForeignObservationHistoryTab({
           <div className="flex items-center gap-2 flex-wrap">
             <span className="px-3 py-1 rounded-full bg-[#003B3A] text-white text-xs font-black uppercase tracking-wider flex items-center gap-1.5 shadow-xs">
               <Sparkles className="w-3.5 h-3.5 text-cyan-300" />
-              <span>Giáo viên nước ngoài Walkthrough</span>
+              <span>{t.historyBannerBadge}</span>
             </span>
             <span className="px-3 py-1 rounded-full bg-sky-100 text-sky-900 border border-sky-300 text-xs font-bold">
-              Lược sử kết quả đánh giá
+              {t.historyBannerSubBadge}
             </span>
           </div>
 
           <h2 className="text-xl sm:text-2xl font-black text-slate-900 tracking-tight">
-            Lược sử Kết quả Đánh giá Tiết dạy GVNN (ESL)
+            {t.historyTitle}
           </h2>
           <p className="text-xs sm:text-sm text-slate-500 max-w-2xl font-medium">
-            Theo dõi, tra cứu toàn bộ biên bản Walkthrough và kết quả đánh giá giáo viên tiếng Anh & giáo viên nước ngoài theo chuẩn khung rubric quốc tế.
+            {t.historySubtitle}
           </p>
         </div>
 
@@ -326,7 +354,7 @@ export function ForeignObservationHistoryTab({
             className="px-4 py-2.5 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white font-black text-xs flex items-center gap-2 shadow-md shadow-emerald-700/20 transition-all cursor-pointer hover:scale-105 active:scale-95"
           >
             <FileSpreadsheet className="w-4 h-4" />
-            <span>Xuất Excel (.xlsx)</span>
+            <span>{t.exportExcelBtn}</span>
           </button>
           {onOpenWalkthroughForm && (
             <button
@@ -335,7 +363,7 @@ export function ForeignObservationHistoryTab({
               className="px-4 py-2.5 rounded-xl bg-indigo-600 hover:bg-indigo-700 text-white font-black text-xs flex items-center gap-2 shadow-md shadow-indigo-700/20 transition-all cursor-pointer hover:scale-105 active:scale-95"
             >
               <Sparkles className="w-4 h-4" />
-              <span>+ Tạo phiếu Walkthrough mới</span>
+              <span>{t.newObservationBtn}</span>
             </button>
           )}
         </div>
@@ -348,7 +376,7 @@ export function ForeignObservationHistoryTab({
           <div className="flex items-center justify-between">
             <span className="text-xs font-black text-slate-500 uppercase tracking-wider flex items-center gap-1.5">
               <ClipboardList className="w-4 h-4 text-indigo-600" />
-              Tổng số lượt dự
+              {t.kpiTotalTitle}
             </span>
             <span className="px-2 py-0.5 rounded-full bg-indigo-50 text-indigo-800 text-[11px] font-black border border-indigo-200">
               ESL Walkthrough
@@ -356,10 +384,10 @@ export function ForeignObservationHistoryTab({
           </div>
           <div className="flex items-baseline gap-2">
             <span className="text-3xl font-black text-slate-900">{stats.total}</span>
-            <span className="text-sm font-bold text-slate-400">lượt đánh giá</span>
+            <span className="text-sm font-bold text-slate-400">{t.kpiTotalUnit}</span>
           </div>
           <p className="text-[11px] text-slate-500 font-medium">
-            Điểm TB toàn bộ: <strong className="text-indigo-700 font-black">{stats.avgScore}</strong>/4.00đ
+            {t.kpiAvgScoreLabel} <strong className="text-indigo-700 font-black">{stats.avgScore}</strong>/4.00
           </p>
         </div>
 
@@ -368,7 +396,7 @@ export function ForeignObservationHistoryTab({
           <div className="flex items-center justify-between">
             <span className="text-xs font-black text-slate-500 uppercase tracking-wider flex items-center gap-1.5">
               <span>🌟</span>
-              Strong Practice
+              {t.kpiStrongTitle}
             </span>
             <span className="px-2 py-0.5 rounded-full bg-purple-50 text-purple-800 text-[11px] font-black border border-purple-200">
               {stats.total > 0 ? Math.round((stats.strongCount / stats.total) * 100) : 0}%
@@ -376,10 +404,10 @@ export function ForeignObservationHistoryTab({
           </div>
           <div className="flex items-baseline gap-2">
             <span className="text-3xl font-black text-purple-900">{stats.strongCount}</span>
-            <span className="text-sm font-bold text-slate-400">tiết xuất sắc</span>
+            <span className="text-sm font-bold text-slate-400">{t.kpiStrongUnit}</span>
           </div>
           <p className="text-[11px] text-slate-500 font-medium">
-            Mức 4: Thực hành xuất sắc, có thể nhân rộng.
+            {t.kpiStrongDesc}
           </p>
         </div>
 
@@ -388,7 +416,7 @@ export function ForeignObservationHistoryTab({
           <div className="flex items-center justify-between">
             <span className="text-xs font-black text-slate-500 uppercase tracking-wider flex items-center gap-1.5">
               <span>✨</span>
-              Effective
+              {t.kpiEffectiveTitle}
             </span>
             <span className="px-2 py-0.5 rounded-full bg-emerald-50 text-emerald-800 text-[11px] font-black border border-emerald-200">
               {stats.total > 0 ? Math.round((stats.effectiveCount / stats.total) * 100) : 0}%
@@ -396,10 +424,10 @@ export function ForeignObservationHistoryTab({
           </div>
           <div className="flex items-baseline gap-2">
             <span className="text-3xl font-black text-emerald-900">{stats.effectiveCount}</span>
-            <span className="text-sm font-bold text-slate-400">tiết đạt chuẩn</span>
+            <span className="text-sm font-bold text-slate-400">{t.kpiEffectiveUnit}</span>
           </div>
           <p className="text-[11px] text-slate-500 font-medium">
-            Mức 3: Đạt chuẩn hiệu quả chương trình.
+            {t.kpiEffectiveDesc}
           </p>
         </div>
 
@@ -408,20 +436,20 @@ export function ForeignObservationHistoryTab({
           <div className="flex items-center justify-between">
             <span className="text-xs font-black text-slate-500 uppercase tracking-wider flex items-center gap-1.5">
               <span>📈</span>
-              Developing / Hỗ trợ
+              {t.kpiSupportTitle}
             </span>
             <span className="px-2 py-0.5 rounded-full bg-amber-50 text-amber-800 text-[11px] font-black border border-amber-200">
-              {stats.developingCount + stats.needsSupportCount} tiết
+              {stats.developingCount + stats.needsSupportCount}
             </span>
           </div>
           <div className="flex items-baseline gap-2">
             <span className="text-3xl font-black text-amber-900">
               {stats.developingCount} <span className="text-lg font-bold text-slate-400">/</span> {stats.needsSupportCount}
             </span>
-            <span className="text-xs font-bold text-slate-400">(Dev / Cần hỗ trợ)</span>
+            <span className="text-xs font-bold text-slate-400">{t.kpiSupportUnit}</span>
           </div>
           <p className="text-[11px] text-slate-500 font-medium">
-            Mức 2 & Mức 1: Cần theo dõi và hỗ trợ chuyên môn.
+            {t.kpiSupportDesc}
           </p>
         </div>
       </div>
@@ -436,7 +464,7 @@ export function ForeignObservationHistoryTab({
               type="text"
               value={searchQuery}
               onChange={e => setSearchQuery(e.target.value)}
-              placeholder="Tìm theo tên GV, chủ đề bài dạy, lớp..."
+              placeholder={t.searchPlaceholder}
               className="w-full pl-10 pr-4 py-2.5 bg-slate-50 hover:bg-slate-100/80 focus:bg-white rounded-xl border border-slate-200 text-xs font-bold text-slate-800 outline-none focus:ring-2 focus:ring-indigo-500 transition"
             />
             {searchQuery && (
@@ -459,7 +487,7 @@ export function ForeignObservationHistoryTab({
                 filterRole === "all" ? "bg-white text-slate-900 shadow-xs" : "text-slate-500 hover:text-slate-800"
               }`}
             >
-              Tất cả ({baseSlots.length})
+              {lang === "en" ? `All (${baseSlots.length})` : `Tất cả (${baseSlots.length})`}
             </button>
             <button
               type="button"
@@ -468,7 +496,7 @@ export function ForeignObservationHistoryTab({
                 filterRole === "observer" ? "bg-white text-teal-800 shadow-xs" : "text-slate-500 hover:text-teal-800"
               }`}
             >
-              <span>👁️ Tôi đi dự</span>
+              <span>{lang === "en" ? "👁️ As Observer" : "👁️ Tôi đi dự"}</span>
               <span className="text-[11px] opacity-75">
                 ({baseSlots.filter(s => (s.registrations || []).some((r: any) => r.teacherId === currentTeacher?.id)).length})
               </span>
@@ -480,7 +508,7 @@ export function ForeignObservationHistoryTab({
                 filterRole === "host" ? "bg-white text-indigo-800 shadow-xs" : "text-slate-500 hover:text-indigo-800"
               }`}
             >
-              <span>🏫 Tôi được dự</span>
+              <span>{lang === "en" ? "🏫 As Host Teacher" : "🏫 Tôi được dự"}</span>
               <span className="text-[11px] opacity-75">
                 ({baseSlots.filter(s => s.teacherId === currentTeacher?.id).length})
               </span>
@@ -493,13 +521,13 @@ export function ForeignObservationHistoryTab({
           {/* Campus Filter */}
           <div className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-slate-50 rounded-xl border border-slate-200 text-xs font-bold text-slate-700">
             <Building2 className="w-3.5 h-3.5 text-indigo-600" />
-            <span className="text-slate-400">Cơ sở:</span>
+            <span className="text-slate-400">{lang === "en" ? "Campus:" : "Cơ sở:"}</span>
             <select
               value={filterCampus}
               onChange={e => setFilterCampus(e.target.value)}
               className="bg-transparent text-slate-800 font-black outline-none cursor-pointer pr-1"
             >
-              <option value="all">Tất cả cơ sở</option>
+              <option value="all">{t.allCampuses}</option>
               {campuses.map(c => (
                 <option key={c.id} value={c.id}>
                   {c.campusName || c.campusCode}
@@ -511,13 +539,13 @@ export function ForeignObservationHistoryTab({
           {/* Rating Filter */}
           <div className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-slate-50 rounded-xl border border-slate-200 text-xs font-bold text-slate-700">
             <Award className="w-3.5 h-3.5 text-purple-600" />
-            <span className="text-slate-400">Xếp loại:</span>
+            <span className="text-slate-400">{lang === "en" ? "Rating:" : "Xếp loại:"}</span>
             <select
               value={filterRating}
               onChange={e => setFilterRating(e.target.value)}
               className="bg-transparent text-slate-800 font-black outline-none cursor-pointer pr-1"
             >
-              <option value="all">Tất cả mức xếp loại</option>
+              <option value="all">{t.allRatings}</option>
               <option value="Strong Practice">🌟 Strong Practice</option>
               <option value="Effective">✨ Effective</option>
               <option value="Developing">📈 Developing</option>
@@ -529,18 +557,18 @@ export function ForeignObservationHistoryTab({
           {availableMonths.length > 0 && (
             <div className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-slate-50 rounded-xl border border-slate-200 text-xs font-bold text-slate-700">
               <Calendar className="w-3.5 h-3.5 text-teal-600" />
-              <span className="text-slate-400">Tháng:</span>
+              <span className="text-slate-400">{lang === "en" ? "Month:" : "Tháng:"}</span>
               <select
                 value={filterMonth}
                 onChange={e => setFilterMonth(e.target.value)}
                 className="bg-transparent text-slate-800 font-black outline-none cursor-pointer pr-1"
               >
-                <option value="all">Cả năm học</option>
+                <option value="all">{lang === "en" ? "Full Academic Year" : "Cả năm học"}</option>
                 {availableMonths.map(m => {
                   const [y, mon] = m.split("-");
                   return (
                     <option key={m} value={m}>
-                      Tháng {mon}/{y}
+                      {lang === "en" ? `Month ${mon}/${y}` : `Tháng ${mon}/${y}`}
                     </option>
                   );
                 })}
@@ -560,12 +588,12 @@ export function ForeignObservationHistoryTab({
               }}
               className="px-3 py-1.5 text-xs font-bold text-rose-600 hover:text-rose-700 bg-rose-50 hover:bg-rose-100 rounded-xl transition cursor-pointer"
             >
-              Xóa bộ lọc
+              {t.clearFiltersBtn}
             </button>
           )}
 
           <span className="ml-auto text-xs font-bold text-slate-400">
-            Hiển thị <strong className="text-slate-800">{filteredSlots.length}</strong> kết quả
+            {t.filterResultsCount.replace("%s", String(filteredSlots.length))}
           </span>
         </div>
       </div>
@@ -576,9 +604,9 @@ export function ForeignObservationHistoryTab({
           <div className="w-14 h-14 rounded-2xl bg-indigo-50 text-indigo-600 flex items-center justify-center mx-auto">
             <ClipboardList className="w-7 h-7" />
           </div>
-          <h4 className="font-extrabold text-slate-800 text-base">Chưa có kết quả đánh giá nào</h4>
+          <h4 className="font-extrabold text-slate-800 text-base">{t.emptyRecordsTitle}</h4>
           <p className="text-xs text-slate-500 max-w-sm mx-auto">
-            Không tìm thấy tiết dự giờ GVNN (ESL) phù hợp với điều kiện tìm kiếm hoặc chưa có phiếu đánh giá nào được gửi.
+            {t.emptyRecordsDesc}
           </p>
           {onOpenWalkthroughForm && (
             <button
@@ -586,7 +614,7 @@ export function ForeignObservationHistoryTab({
               onClick={onOpenWalkthroughForm}
               className="mt-2 px-4 py-2 rounded-xl bg-indigo-600 text-white font-bold text-xs shadow-md shadow-indigo-600/30 hover:bg-indigo-700 transition cursor-pointer"
             >
-              + Tạo phiếu đánh giá mới ngay
+              {t.newObservationBtn}
             </button>
           )}
         </div>
@@ -596,14 +624,14 @@ export function ForeignObservationHistoryTab({
             <table className="w-full text-left text-xs border-collapse">
               <thead>
                 <tr className="bg-slate-50/80 border-b border-slate-200 text-slate-700 font-black uppercase text-[11px] tracking-wider">
-                  <th className="p-4 text-center w-12">TT</th>
-                  <th className="p-4 text-center w-24">Cơ sở</th>
-                  <th className="p-4">Giáo viên được dự (Host)</th>
-                  <th className="p-4">Người dự giờ (Observer)</th>
-                  <th className="p-4">Bài dạy & Kỹ năng</th>
-                  <th className="p-4">Thời gian & Lớp</th>
-                  <th className="p-4 text-center">Xếp loại & Điểm</th>
-                  <th className="p-4 text-right">Thao tác</th>
+                  <th className="p-4 text-center w-12">{t.colNo}</th>
+                  <th className="p-4 text-center w-24">{lang === "en" ? "Campus" : "Cơ sở"}</th>
+                  <th className="p-4">{t.colHostTeacher}</th>
+                  <th className="p-4">{t.colObserver}</th>
+                  <th className="p-4">{lang === "en" ? "Lesson Topic & Skills" : "Bài dạy & Kỹ năng"}</th>
+                  <th className="p-4">{t.colDatePeriod}</th>
+                  <th className="p-4 text-center">{t.colRatingScore}</th>
+                  <th className="p-4 text-right">{t.colActions}</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-slate-150 text-xs font-semibold text-slate-700">
@@ -640,10 +668,10 @@ export function ForeignObservationHistoryTab({
                       <td className="p-4">
                         <div className="space-y-0.5">
                           <p className="font-extrabold text-slate-900 text-xs tracking-tight">
-                            {slot.teacher?.teacherName || "Chưa gán"}
+                            {slot.teacher?.teacherName || t.notAssigned}
                           </p>
                           <p className="text-[11px] text-slate-400 font-medium">
-                            {slot.teacher?.departmentRel?.name || "Tổ Tiếng Anh & Quốc tế"}
+                            {slot.teacher?.departmentRel?.name || (lang === "en" ? "English & International Faculty" : "Tổ Tiếng Anh & Quốc tế")}
                           </p>
                         </div>
                       </td>
@@ -655,7 +683,7 @@ export function ForeignObservationHistoryTab({
                             {reg?.teacher?.teacherName || "Current User"}
                           </p>
                           <p className="text-[11px] text-slate-400 font-medium">
-                            {reg?.teacher?.position || "Chuyên môn"}
+                            {reg?.teacher?.position || (lang === "en" ? "Academic Lead" : "Chuyên môn")}
                           </p>
                         </div>
                       </td>
@@ -664,15 +692,15 @@ export function ForeignObservationHistoryTab({
                       <td className="p-4">
                         <div className="space-y-1.5 max-w-[280px]">
                           <p className="font-black text-[#003B3A] text-xs leading-snug" title={slot.topic}>
-                            {slot.topic || "Foreign English Walkthrough"}
+                            {slot.topic || (lang === "en" ? "International English Walkthrough" : "Dự giờ GVNN ESL")}
                           </p>
                           <div className="flex items-center gap-1 flex-wrap text-[10px]">
                             <span className="px-2 py-0.5 rounded-md bg-indigo-50 text-indigo-800 font-bold border border-indigo-200/60">
-                              {slot.subjectName || "Tiếng Anh (ESL)"}
+                              {slot.subjectName || (lang === "en" ? "English (ESL)" : "Tiếng Anh (ESL)")}
                             </span>
                             <span className="text-slate-400">•</span>
                             <span className="text-slate-600 font-bold">
-                              {slot.className || "Lớp ESL"}
+                              {slot.className || "ESL Class"}
                             </span>
                           </div>
                         </div>
@@ -683,10 +711,10 @@ export function ForeignObservationHistoryTab({
                         <div className="space-y-0.5">
                           <p className="font-extrabold text-slate-800 flex items-center gap-1">
                             <Calendar className="w-3.5 h-3.5 text-slate-400 shrink-0" />
-                            {slotDate ? slotDate.toLocaleDateString("vi-VN", { day: "2-digit", month: "2-digit", year: "numeric" }) : ""}
+                            {slotDate ? slotDate.toLocaleDateString(lang === "en" ? "en-GB" : "vi-VN", { day: "2-digit", month: "2-digit", year: "numeric" }) : ""}
                           </p>
                           <p className="text-xs font-bold text-teal-700">
-                            {slot.startTime || "Tiết 1"} • Phòng {slot.room || "học"}
+                            {slot.startTime || (lang === "en" ? "Period 1" : "Tiết 1")} • {lang === "en" ? "Room" : "Phòng"} {slot.room || (lang === "en" ? "Classroom" : "học")}
                           </p>
                         </div>
                       </td>
@@ -700,7 +728,7 @@ export function ForeignObservationHistoryTab({
                           </span>
                           {evalObj?.totalScore !== null && evalObj?.totalScore !== undefined && (
                             <span className="text-[11px] font-bold text-slate-500 block">
-                              Điểm: <strong className="text-slate-800 font-black">{evalObj.totalScore}</strong>/4.0đ
+                              {lang === "en" ? "Score:" : "Điểm:"} <strong className="text-slate-800 font-black">{evalObj.totalScore}</strong>/4.0
                             </span>
                           )}
                         </div>
@@ -713,10 +741,10 @@ export function ForeignObservationHistoryTab({
                             type="button"
                             onClick={() => setSelectedSlotForModal(slot)}
                             className="px-3 py-1.5 bg-indigo-50 hover:bg-indigo-100 text-indigo-700 rounded-xl text-xs font-black transition-all flex items-center gap-1 cursor-pointer border border-indigo-200"
-                            title="Xem chi tiết phiếu đánh giá Walkthrough"
+                            title={lang === "en" ? "View walkthrough observation details" : "Xem chi tiết phiếu đánh giá Walkthrough"}
                           >
                             <Eye className="w-3.5 h-3.5" />
-                            <span>Chi tiết</span>
+                            <span>{t.viewDetailsBtn}</span>
                           </button>
                         </div>
                       </td>
@@ -736,6 +764,7 @@ export function ForeignObservationHistoryTab({
           indicators={indicators}
           onClose={() => setSelectedSlotForModal(null)}
           campuses={campuses}
+          lang={lang}
         />
       )}
     </div>
@@ -747,13 +776,16 @@ function WalkthroughDetailModal({
   slot,
   indicators,
   onClose,
-  campuses
+  campuses,
+  lang = "en"
 }: {
   slot: any;
   indicators: IndicatorConfig[];
   onClose: () => void;
   campuses: any[];
+  lang?: SupportedLang;
 }) {
+  const isEn = lang === "en";
   const reg = (slot.registrations || [])[0];
   const evalObj = reg?.evaluation;
   
@@ -809,16 +841,43 @@ function WalkthroughDetailModal({
   const subjectName = parsedGeneral?.subjectName || slot.subjectName || "Tiếng Anh (ESL)";
 
   const sectionsList = [
-    { key: "A", title: "A. LEARNING ENVIRONMENT & STUDENT ENGAGEMENT / MÔI TRƯỜNG HỌC TẬP & SỰ THAM GIA CỦA HỌC SINH" },
-    { key: "B", title: "B. TEACHING & LEARNING / HOẠT ĐỘNG DẠY VÀ HỌC" },
-    { key: "C", title: "C. DIFFERENTIATION & STUDENT SUPPORT / PHÂN HÓA & HỖ TRỢ HỌC SINH" },
-    { key: "D", title: "D. CURRICULUM IMPLEMENTATION / THỰC HIỆN CHƯƠNG TRÌNH" },
-    { key: "E", title: "E. ASSESSMENT & STUDENT PROGRESS / ĐÁNH GIÁ & TIẾN BỘ CỦA HỌC SINH" }
+    {
+      key: "A",
+      title: isEn
+        ? "A. LEARNING ENVIRONMENT & STUDENT ENGAGEMENT"
+        : "A. LEARNING ENVIRONMENT & STUDENT ENGAGEMENT / MÔI TRƯỜNG HỌC TẬP & SỰ THAM GIA CỦA HỌC SINH"
+    },
+    {
+      key: "B",
+      title: isEn
+        ? "B. TEACHING & LEARNING"
+        : "B. TEACHING & LEARNING / HOẠT ĐỘNG DẠY VÀ HỌC"
+    },
+    {
+      key: "C",
+      title: isEn
+        ? "C. DIFFERENTIATION & STUDENT SUPPORT"
+        : "C. DIFFERENTIATION & STUDENT SUPPORT / PHÂN HÓA & HỖ TRỢ HỌC SINH"
+    },
+    {
+      key: "D",
+      title: isEn
+        ? "D. CURRICULUM IMPLEMENTATION"
+        : "D. CURRICULUM IMPLEMENTATION / THỰC HIỆN CHƯƠNG TRÌNH"
+    },
+    {
+      key: "E",
+      title: isEn
+        ? "E. ASSESSMENT & STUDENT PROGRESS"
+        : "E. ASSESSMENT & STUDENT PROGRESS / ĐÁNH GIÁ & TIẾN BỘ CỦA HỌC SINH"
+    }
   ];
 
   const handlePrintModal = () => {
     window.print();
   };
+
+  const notRecordedText = isEn ? "— Not recorded —" : "— Chưa ghi nhận —";
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/60 backdrop-blur-xs p-3 sm:p-5 overflow-y-auto animate-in fade-in duration-200">
@@ -844,7 +903,7 @@ function WalkthroughDetailModal({
               type="button"
               onClick={handlePrintModal}
               className="p-2 rounded-xl bg-white/10 hover:bg-white/20 text-white transition cursor-pointer border border-white/15"
-              title="In phiếu này"
+              title={isEn ? "Print this observation form" : "In phiếu này"}
             >
               <Printer className="w-4 h-4 text-cyan-300" />
             </button>
@@ -852,7 +911,7 @@ function WalkthroughDetailModal({
               type="button"
               onClick={onClose}
               className="p-2 rounded-xl bg-white/10 hover:bg-white/20 text-white transition cursor-pointer border border-white/15"
-              title="Đóng"
+              title={isEn ? "Close" : "Đóng"}
             >
               <X className="w-4 h-4" />
             </button>
@@ -868,10 +927,12 @@ function WalkthroughDetailModal({
             </div>
             <div>
               <span className="text-[10px] font-black uppercase tracking-wider text-indigo-700 block">
-                Observation approach / Phương pháp tiếp cận dự giờ
+                {isEn ? "Observation approach" : "Observation approach / Phương pháp tiếp cận dự giờ"}
               </span>
               <p className="text-xs font-bold italic text-indigo-950">
-                Focus on evidence and impact on students. (Tập trung vào minh chứng thực tế và tác động đến học sinh).
+                {isEn
+                  ? "Focus on evidence and impact on students."
+                  : "Focus on evidence and impact on students. (Tập trung vào minh chứng thực tế và tác động đến học sinh)."}
               </p>
             </div>
           </div>
@@ -879,63 +940,95 @@ function WalkthroughDetailModal({
           {/* Section 1: Header Form Matrix */}
           <div className="bg-slate-50 p-4 sm:p-5 rounded-2xl border border-slate-200 space-y-3">
             <h4 className="font-black text-slate-900 text-xs uppercase tracking-wider text-slate-500">
-              Thông tin buổi dự giờ (Observation Header Information)
+              {isEn ? "Observation Header Information" : "Thông tin buổi dự giờ (Observation Header Information)"}
             </h4>
             <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 bg-white p-3.5 rounded-xl border border-slate-200">
               <div>
-                <span className="text-[10px] font-black text-slate-400 uppercase tracking-wider block">Teacher / Giáo viên</span>
-                <p className="text-xs font-black text-slate-900">{slot.teacher?.teacherName || "Chưa gán"}</p>
-                <p className="text-[10px] text-slate-500 font-medium">{slot.teacher?.departmentRel?.name || "Tổ Tiếng Anh & Quốc tế"}</p>
+                <span className="text-[10px] font-black text-slate-400 uppercase tracking-wider block">
+                  {isEn ? "Teacher" : "Teacher / Giáo viên"}
+                </span>
+                <p className="text-xs font-black text-slate-900">
+                  {slot.teacher?.teacherName || (isEn ? "Not assigned" : "Chưa gán")}
+                </p>
+                <p className="text-[10px] text-slate-500 font-medium">
+                  {slot.teacher?.departmentRel?.name || (isEn ? "English Faculty" : "Tổ Tiếng Anh & Quốc tế")}
+                </p>
               </div>
               <div>
-                <span className="text-[10px] font-black text-slate-400 uppercase tracking-wider block">Observer / Người dự</span>
+                <span className="text-[10px] font-black text-slate-400 uppercase tracking-wider block">
+                  {isEn ? "Observer" : "Observer / Người dự"}
+                </span>
                 <p className="text-xs font-black text-slate-900">{reg?.teacher?.teacherName || "Observer"}</p>
-                <p className="text-[10px] text-slate-500 font-medium">{reg?.teacher?.position || "Ban Chuyên môn"}</p>
+                <p className="text-[10px] text-slate-500 font-medium">
+                  {reg?.teacher?.position || (isEn ? "Academic Board" : "Ban Chuyên môn")}
+                </p>
               </div>
               <div>
-                <span className="text-[10px] font-black text-slate-400 uppercase tracking-wider block">Subject / Môn học</span>
+                <span className="text-[10px] font-black text-slate-400 uppercase tracking-wider block">
+                  {isEn ? "Subject" : "Subject / Môn học"}
+                </span>
                 <p className="text-xs font-bold text-slate-800">{subjectName}</p>
               </div>
               <div>
-                <span className="text-[10px] font-black text-slate-400 uppercase tracking-wider block">Class / Lớp</span>
+                <span className="text-[10px] font-black text-slate-400 uppercase tracking-wider block">
+                  {isEn ? "Class" : "Class / Lớp"}
+                </span>
                 <p className="text-xs font-bold text-slate-800">{slot.className || "ESL"}</p>
               </div>
 
               <div>
-                <span className="text-[10px] font-black text-slate-400 uppercase tracking-wider block">Date / Ngày dự</span>
-                <p className="text-xs font-bold text-slate-800">{slotDate ? slotDate.toLocaleDateString("vi-VN") : "—"}</p>
+                <span className="text-[10px] font-black text-slate-400 uppercase tracking-wider block">
+                  {isEn ? "Date" : "Date / Ngày dự"}
+                </span>
+                <p className="text-xs font-bold text-slate-800">
+                  {slotDate ? slotDate.toLocaleDateString(isEn ? "en-US" : "vi-VN") : "—"}
+                </p>
               </div>
               <div>
-                <span className="text-[10px] font-black text-slate-400 uppercase tracking-wider block">Lesson / Unit</span>
+                <span className="text-[10px] font-black text-slate-400 uppercase tracking-wider block">
+                  {isEn ? "Lesson / Topic" : "Lesson / Unit"}
+                </span>
                 <p className="text-xs font-bold text-[#003B3A]">{slot.topic || "Class Observation"}</p>
               </div>
               <div>
-                <span className="text-[10px] font-black text-slate-400 uppercase tracking-wider block">No. of students / Sĩ số</span>
+                <span className="text-[10px] font-black text-slate-400 uppercase tracking-wider block">
+                  {isEn ? "No. of students" : "No. of students / Sĩ số"}
+                </span>
                 <p className="text-xs font-bold text-slate-800">{numberOfStudents || "—"}</p>
               </div>
               <div>
-                <span className="text-[10px] font-black text-slate-400 uppercase tracking-wider block">Duration / Thời lượng</span>
+                <span className="text-[10px] font-black text-slate-400 uppercase tracking-wider block">
+                  {isEn ? "Duration" : "Duration / Thời lượng"}
+                </span>
                 <p className="text-xs font-bold text-slate-800">{lessonDuration || "45 mins"}</p>
               </div>
 
               <div>
-                <span className="text-[10px] font-black text-slate-400 uppercase tracking-wider block">Campus / Cơ sở</span>
+                <span className="text-[10px] font-black text-slate-400 uppercase tracking-wider block">
+                  {isEn ? "Campus" : "Campus / Cơ sở"}
+                </span>
                 <p className="text-xs font-bold text-slate-800">{campusDisplay}</p>
               </div>
               <div>
-                <span className="text-[10px] font-black text-slate-400 uppercase tracking-wider block">Period / Tiết dạy</span>
-                <p className="text-xs font-bold text-slate-800">{slot.startTime || "Tiết 1"}</p>
+                <span className="text-[10px] font-black text-slate-400 uppercase tracking-wider block">
+                  {isEn ? "Period" : "Period / Tiết dạy"}
+                </span>
+                <p className="text-xs font-bold text-slate-800">{slot.startTime || "Period 1"}</p>
               </div>
               <div>
-                <span className="text-[10px] font-black text-slate-400 uppercase tracking-wider block">Room / Phòng học</span>
-                <p className="text-xs font-bold text-slate-800">{slot.room || "Phòng học"}</p>
+                <span className="text-[10px] font-black text-slate-400 uppercase tracking-wider block">
+                  {isEn ? "Room" : "Room / Phòng học"}
+                </span>
+                <p className="text-xs font-bold text-slate-800">{slot.room || (isEn ? "Classroom" : "Phòng học")}</p>
               </div>
               <div>
-                <span className="text-[10px] font-black text-slate-400 uppercase tracking-wider block">Overall / Xếp loại</span>
+                <span className="text-[10px] font-black text-slate-400 uppercase tracking-wider block">
+                  {isEn ? "Overall Rating" : "Overall / Xếp loại"}
+                </span>
                 <div className="flex items-center gap-1.5 mt-0.5">
                   <span className={`px-2.5 py-0.5 rounded-lg text-[11px] font-black border inline-flex items-center gap-1 shadow-xs ${ratingInfo.badgeClass}`}>
                     <span>{ratingInfo.icon}</span>
-                    <span>{overallRating}</span>
+                    <span>{isEn ? overallRating : ratingInfo.label}</span>
                   </span>
                   {evalObj?.totalScore !== null && evalObj?.totalScore !== undefined && (
                     <span className="text-[11px] font-black text-slate-800 bg-slate-50 px-2 py-0.5 rounded-md border border-slate-200">
@@ -950,7 +1043,7 @@ function WalkthroughDetailModal({
             {targetSkills.length > 0 && (
               <div className="pt-2">
                 <span className="text-[10px] font-black text-slate-500 uppercase tracking-wider block mb-1">
-                  Target Skills / Kỹ năng trọng tâm:
+                  {isEn ? "Target Skills:" : "Target Skills / Kỹ năng trọng tâm:"}
                 </span>
                 <div className="flex flex-wrap gap-1.5">
                   {targetSkills.map((sk: string) => (
@@ -967,7 +1060,11 @@ function WalkthroughDetailModal({
           <div className="space-y-4">
             <h4 className="font-black text-slate-900 text-sm flex items-center gap-2">
               <Award className="w-4 h-4 text-indigo-600" />
-              <span>Bảng điểm 20 Tiêu chí Đánh giá & Hỗ trợ Chuyên môn (Rubric Indicators)</span>
+              <span>
+                {isEn
+                  ? "Classroom Walkthrough Rubric (20 Indicators)"
+                  : "Bảng điểm 20 Tiêu chí Đánh giá & Hỗ trợ Chuyên môn (Rubric Indicators)"}
+              </span>
             </h4>
 
             {sectionsList.map((sec) => {
@@ -978,7 +1075,9 @@ function WalkthroughDetailModal({
                 <div key={sec.key} className="space-y-2">
                   <div className="px-3 py-1.5 rounded-xl bg-slate-100 text-[#003B3A] font-black text-xs uppercase tracking-wide border border-slate-200 flex items-center justify-between">
                     <span>{sec.title}</span>
-                    <span className="text-[10px] text-slate-500 font-bold lowercase">({secIndicators.length} tiêu chí)</span>
+                    <span className="text-[10px] text-slate-500 font-bold lowercase">
+                      ({secIndicators.length} {isEn ? "indicators" : "tiêu chí"})
+                    </span>
                   </div>
 
                   <div className="space-y-2">
@@ -996,7 +1095,9 @@ function WalkthroughDetailModal({
                                 </span>
                                 <span className="font-extrabold text-slate-900 text-xs">{ind.text}</span>
                               </div>
-                              <p className="text-[11px] text-slate-500 font-medium italic pl-7">{ind.vnText}</p>
+                              {!isEn && ind.vnText && (
+                                <p className="text-[11px] text-slate-500 font-medium italic pl-7">{ind.vnText}</p>
+                              )}
                             </div>
 
                             <span className={`px-2.5 py-1 rounded-xl text-xs font-black border inline-flex items-center gap-1 shrink-0 self-start sm:self-auto ${ratingCfg.badgeClass}`}>
@@ -1008,13 +1109,17 @@ function WalkthroughDetailModal({
                             <div className="grid grid-cols-1 md:grid-cols-2 gap-2 pt-2 border-t border-slate-100 text-[11px]">
                               {scoreData.evidence && (
                                 <div className="bg-slate-50 p-2.5 rounded-xl border border-slate-150">
-                                  <span className="font-bold text-slate-500 block mb-0.5">Minh chứng ghi nhận (Evidence):</span>
+                                  <span className="font-bold text-slate-500 block mb-0.5">
+                                    {isEn ? "Recorded Evidence:" : "Minh chứng ghi nhận (Evidence):"}
+                                  </span>
                                   <p className="text-slate-800 font-medium">{scoreData.evidence}</p>
                                 </div>
                               )}
                               {scoreData.studentImpact && (
                                 <div className="bg-teal-50/60 p-2.5 rounded-xl border border-teal-150">
-                                  <span className="font-bold text-teal-700 block mb-0.5">Tác động lên học sinh (Student Impact):</span>
+                                  <span className="font-bold text-teal-700 block mb-0.5">
+                                    {isEn ? "Student Impact:" : "Tác động lên học sinh (Student Impact):"}
+                                  </span>
                                   <p className="text-teal-950 font-medium">{scoreData.studentImpact}</p>
                                 </div>
                               )}
@@ -1033,7 +1138,11 @@ function WalkthroughDetailModal({
           <div className="space-y-3 pt-2">
             <h4 className="font-black text-slate-900 text-sm flex items-center gap-2">
               <MessageSquare className="w-4 h-4 text-indigo-600" />
-              <span>Section F: Teacher Voice & Curriculum Feedback / Ý kiến GV & Phản hồi Chương trình</span>
+              <span>
+                {isEn
+                  ? "Section F: Teacher Voice & Curriculum Feedback"
+                  : "Section F: Teacher Voice & Curriculum Feedback / Ý kiến GV & Phản hồi Chương trình"}
+              </span>
             </h4>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
               <div className="p-3.5 rounded-2xl bg-slate-50 border border-slate-200 space-y-1">
@@ -1041,7 +1150,7 @@ function WalkthroughDetailModal({
                   1. Did the lesson go as planned? What went well?
                 </span>
                 <p className="text-xs text-slate-800 font-medium italic whitespace-pre-line">
-                  {teacherVoice.reflectionQ1 || teacherVoice.workingWell || "— Chưa ghi nhận —"}
+                  {teacherVoice.reflectionQ1 || teacherVoice.workingWell || notRecordedText}
                 </p>
               </div>
 
@@ -1050,7 +1159,7 @@ function WalkthroughDetailModal({
                   2. What challenges did you or the students face?
                 </span>
                 <p className="text-xs text-slate-800 font-medium italic whitespace-pre-line">
-                  {teacherVoice.reflectionQ2 || teacherVoice.challenges || "— Chưa ghi nhận —"}
+                  {teacherVoice.reflectionQ2 || teacherVoice.challenges || notRecordedText}
                 </p>
               </div>
 
@@ -1059,7 +1168,7 @@ function WalkthroughDetailModal({
                   3. Is the curriculum pacing realistic for your students?
                 </span>
                 <p className="text-xs text-slate-800 font-medium italic whitespace-pre-line">
-                  {teacherVoice.reflectionQ3 || teacherVoice.curriculumAdjustments || "— Chưa ghi nhận —"}
+                  {teacherVoice.reflectionQ3 || teacherVoice.curriculumAdjustments || notRecordedText}
                 </p>
               </div>
 
@@ -1068,7 +1177,7 @@ function WalkthroughDetailModal({
                   4. What additional support or resources do you need?
                 </span>
                 <p className="text-xs text-slate-800 font-medium italic whitespace-pre-line">
-                  {teacherVoice.reflectionQ4 || teacherVoice.supportNeeded || "— Chưa ghi nhận —"}
+                  {teacherVoice.reflectionQ4 || teacherVoice.supportNeeded || notRecordedText}
                 </p>
               </div>
             </div>
@@ -1078,36 +1187,50 @@ function WalkthroughDetailModal({
           <div className="space-y-3 pt-2">
             <h4 className="font-black text-slate-900 text-sm flex items-center gap-2">
               <ClipboardList className="w-4 h-4 text-indigo-600" />
-              <span>Section G: Observation Summary & Actions / Tổng kết & Hành động tiếp theo</span>
+              <span>
+                {isEn
+                  ? "Section G: Observation Summary & Action Plan"
+                  : "Section G: Observation Summary & Actions / Tổng kết & Hành động tiếp theo"}
+              </span>
             </h4>
             <div className="space-y-3">
               <div className="p-4 rounded-2xl bg-emerald-50/70 border border-emerald-200 space-y-1">
                 <span className="font-black text-emerald-900 text-xs flex items-center gap-1.5">
                   <CheckCircle2 className="w-4 h-4 text-emerald-600" />
-                  <span>Key strengths observed / Điểm mạnh nổi bật</span>
+                  <span>
+                    {isEn ? "Key strengths observed" : "Key strengths observed / Điểm mạnh nổi bật"}
+                  </span>
                 </span>
                 <p className="text-xs text-emerald-950 font-medium whitespace-pre-line leading-relaxed">
-                  {summary.keyStrengths || evalObj?.strengths || "— Chưa ghi nhận —"}
+                  {summary.keyStrengths || evalObj?.strengths || notRecordedText}
                 </p>
               </div>
 
               <div className="p-4 rounded-2xl bg-amber-50/70 border border-amber-200 space-y-1">
                 <span className="font-black text-amber-900 text-xs flex items-center gap-1.5">
                   <AlertTriangle className="w-4 h-4 text-amber-600" />
-                  <span>Key teaching / learning challenges / Thách thức dạy & học</span>
+                  <span>
+                    {isEn
+                      ? "Key teaching / learning challenges"
+                      : "Key teaching / learning challenges / Thách thức dạy & học"}
+                  </span>
                 </span>
                 <p className="text-xs text-amber-950 font-medium whitespace-pre-line leading-relaxed">
-                  {summary.keyChallenges || evalObj?.improvements || "— Chưa ghi nhận —"}
+                  {summary.keyChallenges || evalObj?.improvements || notRecordedText}
                 </p>
               </div>
 
               <div className="p-4 rounded-2xl bg-indigo-50/70 border border-indigo-200 space-y-1">
                 <span className="font-black text-indigo-900 text-xs flex items-center gap-1.5">
                   <Sparkles className="w-4 h-4 text-indigo-600" />
-                  <span>Agreed follow-up actions / Kế hoạch hành động thống nhất</span>
+                  <span>
+                    {isEn
+                      ? "Agreed follow-up actions & support"
+                      : "Agreed follow-up actions / Kế hoạch hành động thống nhất"}
+                  </span>
                 </span>
                 <p className="text-xs text-indigo-950 font-medium whitespace-pre-line leading-relaxed">
-                  {summary.agreedActions || evalObj?.generalComment || "— Chưa ghi nhận —"}
+                  {summary.agreedActions || evalObj?.generalComment || notRecordedText}
                 </p>
               </div>
             </div>
@@ -1116,15 +1239,23 @@ function WalkthroughDetailModal({
           {/* Section 4: Signatures */}
           <div className="grid grid-cols-2 gap-4 text-center text-xs mt-6 pt-4 border-t border-slate-200">
             <div className="p-3 bg-slate-50 rounded-xl border border-slate-200">
-              <p className="font-bold uppercase text-slate-900">OBSERVER / NGƯỜI DỰ GIỜ</p>
-              <p className="text-[10px] italic text-slate-500">(Ký và ghi rõ họ tên)</p>
+              <p className="font-bold uppercase text-slate-900">
+                {isEn ? "OBSERVER" : "OBSERVER / NGƯỜI DỰ GIỜ"}
+              </p>
+              <p className="text-[10px] italic text-slate-500">
+                {isEn ? "(Signature & Full Name)" : "(Ký và ghi rõ họ tên)"}
+              </p>
               <div className="h-14 flex items-end justify-center font-black text-slate-800">
                 {reg?.teacher?.teacherName || "Observer"}
               </div>
             </div>
             <div className="p-3 bg-slate-50 rounded-xl border border-slate-200">
-              <p className="font-bold uppercase text-slate-900">HOST TEACHER / GIÁO VIÊN ĐƯỢC DỰ</p>
-              <p className="text-[10px] italic text-slate-500">(Ký và ghi rõ họ tên)</p>
+              <p className="font-bold uppercase text-slate-900">
+                {isEn ? "HOST TEACHER" : "HOST TEACHER / GIÁO VIÊN ĐƯỢC DỰ"}
+              </p>
+              <p className="text-[10px] italic text-slate-500">
+                {isEn ? "(Signature & Full Name)" : "(Ký và ghi rõ họ tên)"}
+              </p>
               <div className="h-14 flex items-end justify-center font-black text-slate-800">
                 {slot.teacher?.teacherName || "Teacher"}
               </div>
@@ -1135,7 +1266,9 @@ function WalkthroughDetailModal({
         {/* Modal Footer */}
         <div className="p-4 sm:p-5 bg-slate-50 border-t border-slate-200 flex items-center justify-between gap-3 shrink-0">
           <span className="text-[11px] text-slate-400 font-medium">
-            CLASS OBSERVATION & TEACHING SUPPORT FORM (SY2026-2027) • Hệ thống Đánh giá Skyline
+            {isEn
+              ? "CLASS OBSERVATION & TEACHING SUPPORT FORM (SY2026-2027) • Skyline Observation System"
+              : "CLASS OBSERVATION & TEACHING SUPPORT FORM (SY2026-2027) • Hệ thống Đánh giá Skyline"}
           </span>
           <div className="flex items-center gap-2">
             <button
@@ -1144,14 +1277,14 @@ function WalkthroughDetailModal({
               className="px-4 py-2 rounded-xl bg-slate-200 hover:bg-slate-300 text-slate-800 font-bold text-xs transition cursor-pointer flex items-center gap-1.5"
             >
               <Printer className="w-3.5 h-3.5" />
-              <span>In phiếu</span>
+              <span>{isEn ? "Print Form" : "In phiếu"}</span>
             </button>
             <button
               type="button"
               onClick={onClose}
               className="px-5 py-2 rounded-xl bg-indigo-600 hover:bg-indigo-700 text-white font-bold text-xs transition cursor-pointer shadow-xs"
             >
-              Đóng
+              {isEn ? "Close" : "Đóng"}
             </button>
           </div>
         </div>

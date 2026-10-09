@@ -37,6 +37,12 @@ import {
   Grid3X3
 } from "lucide-react"
 import { APP_CATEGORIES } from "@/config/modules"
+import {
+  SIDEBAR_TRANSLATIONS,
+  SupportedLanguage,
+  getCategoryName,
+  getModuleName
+} from "@/config/sidebarTranslations"
 
 interface SidebarProps {
   role: "ADMIN" | "TEACHER" | "PARENT"
@@ -57,12 +63,43 @@ function SidebarContent({ role, permissionModules, actualRole, taskCount = 0, is
   const normalizedRole = (actualRole || "").toUpperCase()
   const isGDCS = ["GDCS", "GĐCS", "GD_CS", "GĐ_CS", "GIAO_VU_CS", "BGH", "BGH_CS", "BGH_MN", "BGH MN", "BGH_MAM_NON"].some(r => normalizedRole.includes(r)) || normalizedRole.includes("GDCS") || normalizedRole.includes("GĐCS")
   
+  const [lang, setLang] = useState<SupportedLanguage>("vi")
   const [isOpen, setIsOpen] = useState(false)
   const [isCollapsed, setIsCollapsed] = useState(false)
   const [hasPreschool, setHasPreschool] = useState(false)
   const [hasGeneral, setHasGeneral] = useState(false)
   const [loadingAssignments, setLoadingAssignments] = useState(true)
   const [expandedCategories, setExpandedCategories] = useState<Record<string, boolean>>({ STUDENT_LOOKUP: true, KTDBCL: true, ASSESSMENT: true, TRAINING: true, SYSTEM: true })
+
+  useEffect(() => {
+    if (typeof window !== "undefined") {
+      const saved = (localStorage.getItem("ssm_lang") || localStorage.getItem("ssm_gvnn_lang")) as SupportedLanguage;
+      if (saved === "en" || saved === "vi") {
+        setLang(saved);
+      } else if (pathname.includes("du-gio-gvnn") || normalizedRole.includes("GVNN") || normalizedRole.includes("FOREIGN")) {
+        setLang("en");
+      }
+    }
+
+    const handleLangEvent = (e: any) => {
+      const newL = e.detail;
+      if (newL === "en" || newL === "vi") {
+        setLang(newL);
+      }
+    };
+
+    window.addEventListener("ssm_language_change", handleLangEvent);
+    return () => window.removeEventListener("ssm_language_change", handleLangEvent);
+  }, [pathname, normalizedRole]);
+
+  const handleLanguageChange = (newLang: SupportedLanguage) => {
+    setLang(newLang);
+    if (typeof window !== "undefined") {
+      localStorage.setItem("ssm_lang", newLang);
+      localStorage.setItem("ssm_gvnn_lang", newLang);
+      window.dispatchEvent(new CustomEvent("ssm_language_change", { detail: newLang }));
+    }
+  };
   const [observesExpanded, setObservesExpanded] = useState(pathname.startsWith("/admin/du-gio"))
   const [expandedSubModules, setExpandedSubModules] = useState<Record<string, boolean>>({ QL_DGNL: true, KTDBCL_EXAMS: false, COMPETENCY_ASSESSMENT: true })
 
@@ -212,12 +249,14 @@ function SidebarContent({ role, permissionModules, actualRole, taskCount = 0, is
                   {!isCollapsed ? (
                     <div className="flex items-center gap-3">
                       <span className="text-[10px] font-medium text-[#48BFE3] uppercase tracking-[0.12em] group-hover:text-teal-400 transition-colors whitespace-nowrap overflow-hidden text-ellipsis">
-                        {cat.name}
+                        {getCategoryName(cat.id, cat.name, lang)}
                       </span>
                     </div>
                   ) : (
                     <div className="w-full flex justify-center">
-                      <span className="w-full text-center text-[#48BFE3] block text-[10px] font-medium">{cat.name.charAt(0)}</span>
+                      <span className="w-full text-center text-[#48BFE3] block text-[10px] font-medium">
+                        {getCategoryName(cat.id, cat.name, lang).charAt(0)}
+                      </span>
                     </div>
                   )}
                   {!isCollapsed && (
@@ -277,7 +316,11 @@ function SidebarContent({ role, permissionModules, actualRole, taskCount = 0, is
                                   isActive ? v.activeText : `text-slate-400 ${v.hoverText} group-hover:scale-110`
                                 }`} />
                               </div>
-                              {!isCollapsed && <span className="whitespace-nowrap overflow-hidden text-ellipsis">{index + 1}. {m.name}</span>}
+                              {!isCollapsed && (
+                                <span className="whitespace-nowrap overflow-hidden text-ellipsis">
+                                  {index + 1}. {getModuleName(m.code, m.name, lang)}
+                                </span>
+                              )}
                             </div>
                             {m.code === "TASKS" && taskCount > 0 && !isCollapsed && (
                               <span className="text-[9px] font-medium text-white min-w-[18px] text-center shadow-lg shadow-red-500/40 bg-red-500 rounded-full px-1.5 py-0.5">
@@ -317,7 +360,7 @@ function SidebarContent({ role, permissionModules, actualRole, taskCount = 0, is
                                       : "text-white/65 hover:text-white hover:bg-white/10"
                                   }`}
                                 >
-                                  • {sub.name}
+                                  • {getModuleName(sub.code, sub.name, lang)}
                                 </Link>
                               );
                             })}
@@ -352,7 +395,7 @@ function SidebarContent({ role, permissionModules, actualRole, taskCount = 0, is
                     pathname === '/teacher' ? "text-teal-300" : "text-slate-300 group-hover:text-teal-300 group-hover:scale-110"
                   }`} />
                 </div>
-                {!isCollapsed && <span>Tổng quan</span>}
+                {!isCollapsed && <span>{SIDEBAR_TRANSLATIONS.teacherNav.overview[lang]}</span>}
               </Link>
               {/* Category A. Công tác GVCN - Only show if isGVCN is true */}
               {isGVCN && (
@@ -360,7 +403,7 @@ function SidebarContent({ role, permissionModules, actualRole, taskCount = 0, is
                   <div className="px-3 py-2">
                     {!isCollapsed ? (
                       <span className="text-[10px] font-medium text-[#48BFE3] uppercase tracking-[0.12em]">
-                        A. Công tác GVCN
+                        {SIDEBAR_TRANSLATIONS.teacherNav.homeroom_section[lang]}
                       </span>
                     ) : (
                       <span className="w-full text-center text-[#48BFE3] block text-[10px] font-medium">A</span>
@@ -386,7 +429,7 @@ function SidebarContent({ role, permissionModules, actualRole, taskCount = 0, is
                         pathname.includes('/teacher/classes') ? "text-teal-400" : "text-slate-400 group-hover:text-teal-400 group-hover:scale-110"
                       }`} />
                     </div>
-                    {!isCollapsed && <span>1. Lớp chủ nhiệm</span>}
+                    {!isCollapsed && <span>{SIDEBAR_TRANSLATIONS.teacherNav.homeroom_class[lang]}</span>}
                   </Link>
 
                   {/* 2. NSP Khảo sát */}
@@ -408,7 +451,7 @@ function SidebarContent({ role, permissionModules, actualRole, taskCount = 0, is
                         (pathname.includes('/teacher/surveys') || pathname.includes('/teacher/nps') || pathname.includes('/teacher/feedback')) ? "text-sky-400" : "text-slate-400 group-hover:text-sky-400 group-hover:scale-110"
                       }`} />
                     </div>
-                    {!isCollapsed && <span>2. NSP Khảo sát</span>}
+                    {!isCollapsed && <span>{SIDEBAR_TRANSLATIONS.teacherNav.homeroom_surveys[lang]}</span>}
                   </Link>
 
                   {/* 3. Cố vấn Học tập & Check-in */}
@@ -430,7 +473,7 @@ function SidebarContent({ role, permissionModules, actualRole, taskCount = 0, is
                         pathname.includes('/teacher/co-van-hoc-tap') ? "text-teal-400" : "text-slate-400 group-hover:text-teal-400 group-hover:scale-110"
                       }`} />
                     </div>
-                    {!isCollapsed && <span>3. Cố vấn Học tập & Check-in</span>}
+                    {!isCollapsed && <span>{SIDEBAR_TRANSLATIONS.teacherNav.homeroom_advisor[lang]}</span>}
                   </Link>
 
                   {/* 4. Hồ sơ học tập HS */}
@@ -452,7 +495,7 @@ function SidebarContent({ role, permissionModules, actualRole, taskCount = 0, is
                         pathname.includes('/teacher/ho-so-hoc-sinh') ? "text-fuchsia-400" : "text-slate-400 group-hover:text-fuchsia-400 group-hover:scale-110"
                       }`} />
                     </div>
-                    {!isCollapsed && <span>4. Hồ sơ học tập HS</span>}
+                    {!isCollapsed && <span>{SIDEBAR_TRANSLATIONS.teacherNav.homeroom_profiles[lang]}</span>}
                   </Link>
 
                   {/* 5. Phụ đạo, bồi dưỡng Học sinh */}
@@ -474,7 +517,7 @@ function SidebarContent({ role, permissionModules, actualRole, taskCount = 0, is
                         pathname.includes('/teacher/ho-tro-hoc-tap') ? "text-emerald-400" : "text-slate-400 group-hover:text-emerald-400 group-hover:scale-110"
                       }`} />
                     </div>
-                    {!isCollapsed && <span>5. Phụ đạo, bồi dưỡng Học sinh</span>}
+                    {!isCollapsed && <span>{SIDEBAR_TRANSLATIONS.teacherNav.homeroom_support[lang]}</span>}
                   </Link>
 
                   {/* 6. Sổ theo dõi Hướng nghiệp */}
@@ -496,7 +539,7 @@ function SidebarContent({ role, permissionModules, actualRole, taskCount = 0, is
                         pathname.includes('/teacher/orientation') ? "text-cyan-400" : "text-slate-400 group-hover:text-cyan-400 group-hover:scale-110"
                       }`} />
                     </div>
-                    {!isCollapsed && <span>6. Sổ theo dõi Hướng nghiệp</span>}
+                    {!isCollapsed && <span>{SIDEBAR_TRANSLATIONS.teacherNav.homeroom_orientation[lang]}</span>}
                   </Link>
 
                   {/* 7. Điểm lớp chủ nhiệm */}
@@ -518,7 +561,7 @@ function SidebarContent({ role, permissionModules, actualRole, taskCount = 0, is
                         pathname.includes('/teacher/diem-lop-chu-nhiem') ? "text-teal-400" : "text-slate-400 group-hover:text-teal-400 group-hover:scale-110"
                       }`} />
                     </div>
-                    {!isCollapsed && <span>7. Điểm lớp chủ nhiệm</span>}
+                    {!isCollapsed && <span>{SIDEBAR_TRANSLATIONS.teacherNav.homeroom_grades[lang]}</span>}
                   </Link>
                 </div>
               )}
@@ -528,7 +571,7 @@ function SidebarContent({ role, permissionModules, actualRole, taskCount = 0, is
                 <div className="px-3 py-2">
                   {!isCollapsed ? (
                     <span className="text-[10px] font-medium text-[#48BFE3] uppercase tracking-[0.12em]">
-                      B. Công tác GVBM
+                      {SIDEBAR_TRANSLATIONS.teacherNav.subject_section[lang]}
                     </span>
                   ) : (
                     <span className="w-full text-center text-[#48BFE3] block text-[10px] font-medium">B</span>
@@ -557,7 +600,7 @@ function SidebarContent({ role, permissionModules, actualRole, taskCount = 0, is
                             pathname.includes('/teacher/input-assessments') && typeParam !== 'preschool' ? "text-amber-400" : "text-slate-400 group-hover:text-amber-400 group-hover:scale-110"
                           }`} />
                         </div>
-                        {!isCollapsed && <span>1. Đang tải...</span>}
+                        {!isCollapsed && <span>1. {SIDEBAR_TRANSLATIONS.common.loading[lang]}</span>}
                       </Link>
                     ) : (
                       <>
@@ -580,7 +623,7 @@ function SidebarContent({ role, permissionModules, actualRole, taskCount = 0, is
                                 pathname.includes('/teacher/input-assessments') && typeParam === 'preschool' ? "text-amber-400" : "text-slate-400 group-hover:text-amber-400 group-hover:scale-110"
                               }`} />
                             </div>
-                            {!isCollapsed && <span>1. Khảo sát đầu vào</span>}
+                            {!isCollapsed && <span>{SIDEBAR_TRANSLATIONS.teacherNav.input_assessments[lang]}</span>}
                           </Link>
                         )}
                         {hasGeneral && (
@@ -602,7 +645,7 @@ function SidebarContent({ role, permissionModules, actualRole, taskCount = 0, is
                                 pathname.includes('/teacher/input-assessments') && typeParam !== 'preschool' ? "text-amber-400" : "text-slate-400 group-hover:text-amber-400 group-hover:scale-110"
                               }`} />
                             </div>
-                            {!isCollapsed && <span>1. Khảo sát đầu vào</span>}
+                            {!isCollapsed && <span>{SIDEBAR_TRANSLATIONS.teacherNav.input_assessments[lang]}</span>}
                           </Link>
                         )}
                         {!hasPreschool && !hasGeneral && (
@@ -624,7 +667,7 @@ function SidebarContent({ role, permissionModules, actualRole, taskCount = 0, is
                                 pathname.includes('/teacher/input-assessments') && typeParam !== 'preschool' ? "text-amber-400" : "text-slate-400 group-hover:text-amber-400 group-hover:scale-110"
                               }`} />
                             </div>
-                            {!isCollapsed && <span>1. Khảo sát đầu vào</span>}
+                            {!isCollapsed && <span>{SIDEBAR_TRANSLATIONS.teacherNav.input_assessments[lang]}</span>}
                           </Link>
                         )}
                       </>
@@ -636,7 +679,7 @@ function SidebarContent({ role, permissionModules, actualRole, taskCount = 0, is
                 {!isCollapsed ? (
                   <div className="px-3 pt-3 pb-1">
                     <span className="text-[10px] font-medium text-teal-300 uppercase tracking-[0.1em]">
-                      DỰ GIỜ & PHÁT TRIỂN CHUYÊN MÔN
+                      {SIDEBAR_TRANSLATIONS.teacherNav.observation_section[lang]}
                     </span>
                   </div>
                 ) : (
@@ -663,7 +706,7 @@ function SidebarContent({ role, permissionModules, actualRole, taskCount = 0, is
                         (pathname === '/teacher/du-gio' && !pathname.startsWith('/teacher/du-gio-mam-non') && !pathname.startsWith('/teacher/du-gio-gvnn')) ? "text-indigo-400" : "text-slate-400 group-hover:text-indigo-400 group-hover:scale-110"
                       }`} />
                     </div>
-                    {!isCollapsed && <span>1. Khối Phổ thông</span>}
+                    {!isCollapsed && <span>{SIDEBAR_TRANSLATIONS.teacherNav.obs_k12[lang]}</span>}
                   </Link>
                 )}
                 {/* 2. AI Growth – Hành trình Đổi mới Tiết dạy */}
@@ -687,8 +730,10 @@ function SidebarContent({ role, permissionModules, actualRole, taskCount = 0, is
                   </div>
                   {!isCollapsed && (
                     <div className="flex items-center justify-between flex-1">
-                      <span>2. AI Growth – Đổi mới</span>
-                      <span className="text-[9px] bg-amber-500/20 text-amber-300 px-1.5 py-0.5 rounded-full font-bold">Mới</span>
+                      <span>{SIDEBAR_TRANSLATIONS.teacherNav.obs_ai_growth[lang]}</span>
+                      <span className="text-[9px] bg-amber-500/20 text-amber-300 px-1.5 py-0.5 rounded-full font-bold">
+                        {SIDEBAR_TRANSLATIONS.teacherNav.obs_ai_growth_tag[lang]}
+                      </span>
                     </div>
                   )}
                 </Link>
@@ -713,7 +758,7 @@ function SidebarContent({ role, permissionModules, actualRole, taskCount = 0, is
                         pathname.startsWith('/teacher/du-gio-mam-non') ? "text-amber-400" : "text-slate-400 group-hover:text-amber-400 group-hover:scale-110"
                       }`} />
                     </div>
-                    {!isCollapsed && <span>2. Khối Mầm non</span>}
+                    {!isCollapsed && <span>{SIDEBAR_TRANSLATIONS.teacherNav.obs_preschool[lang]}</span>}
                   </Link>
                 )}
 
@@ -736,7 +781,7 @@ function SidebarContent({ role, permissionModules, actualRole, taskCount = 0, is
                       pathname.startsWith('/teacher/du-gio-gvnn') ? "text-sky-400" : "text-slate-400 group-hover:text-sky-400 group-hover:scale-110"
                     }`} />
                   </div>
-                  {!isCollapsed && <span>3. Giáo viên nước ngoài</span>}
+                  {!isCollapsed && <span>{SIDEBAR_TRANSLATIONS.teacherNav.obs_foreign[lang]}</span>}
                 </Link>
 
                 {/* 3. Đánh giá nhận xét: Hướng nghiệp */}
@@ -758,7 +803,7 @@ function SidebarContent({ role, permissionModules, actualRole, taskCount = 0, is
                       pathname.includes('/teacher/orientation') ? "text-cyan-400" : "text-slate-400 group-hover:text-cyan-400 group-hover:scale-110"
                     }`} />
                   </div>
-                  {!isCollapsed && <span>3. Sổ theo dõi Hướng nghiệp</span>}
+                  {!isCollapsed && <span>{SIDEBAR_TRANSLATIONS.teacherNav.subject_orientation[lang]}</span>}
                 </Link>
 
                 {/* 4. Hoạt động trải nghiệm */}
@@ -780,7 +825,7 @@ function SidebarContent({ role, permissionModules, actualRole, taskCount = 0, is
                       pathname.startsWith('/teacher/experiential-activities') ? "text-emerald-400" : "text-slate-400 group-hover:text-emerald-400 group-hover:scale-110"
                     }`} />
                   </div>
-                  {!isCollapsed && <span>4. Hoạt động trải nghiệm</span>}
+                  {!isCollapsed && <span>{SIDEBAR_TRANSLATIONS.teacherNav.subject_experiential[lang]}</span>}
                 </Link>
 
                 {/* Học liệu - Sách giáo khoa */}
@@ -802,7 +847,7 @@ function SidebarContent({ role, permissionModules, actualRole, taskCount = 0, is
                       pathname.startsWith('/learning-resources/textbooks') ? "text-teal-400" : "text-slate-400 group-hover:text-teal-400 group-hover:scale-110"
                     }`} />
                   </div>
-                  {!isCollapsed && <span>Học liệu - Sách giáo khoa</span>}
+                  {!isCollapsed && <span>{SIDEBAR_TRANSLATIONS.teacherNav.subject_textbooks[lang]}</span>}
                 </Link>
 
                 {/* 5. Sổ điểm/nhận xét */}
@@ -813,7 +858,7 @@ function SidebarContent({ role, permissionModules, actualRole, taskCount = 0, is
                     pathname.includes('/teacher/so-diem-nhan-xet')
                       ? "bg-gradient-to-r from-white/15 to-white/5 border border-white/10 text-white shadow-md shadow-black/10"
                       : "text-white/70 hover:text-white hover:bg-white/5 hover:translate-x-1"
-                  }`}
+                    }`}
                 >
                   <div className={`w-7 h-7 rounded-lg flex items-center justify-center transition-all ${isCollapsed ? 'mx-auto' : 'mr-2.5'} ${
                     pathname.includes('/teacher/so-diem-nhan-xet')
@@ -824,7 +869,7 @@ function SidebarContent({ role, permissionModules, actualRole, taskCount = 0, is
                       pathname.includes('/teacher/so-diem-nhan-xet') ? "text-teal-400" : "text-slate-400 group-hover:text-teal-400 group-hover:scale-110"
                     }`} />
                   </div>
-                  {!isCollapsed && <span>5. Sổ điểm/nhận xét</span>}
+                  {!isCollapsed && <span>{SIDEBAR_TRANSLATIONS.teacherNav.subject_gradebook[lang]}</span>}
                 </Link>
 
                 {/* Sổ điểm CTQT (Song ngữ) */}
@@ -846,7 +891,7 @@ function SidebarContent({ role, permissionModules, actualRole, taskCount = 0, is
                       pathname.includes('/teacher/so-diem-ctqt') ? "text-teal-400" : "text-slate-400 group-hover:text-teal-400 group-hover:scale-110"
                     }`} />
                   </div>
-                  {!isCollapsed && <span>6. Sổ điểm CTQT (Song ngữ)</span>}
+                  {!isCollapsed && <span>{SIDEBAR_TRANSLATIONS.teacherNav.subject_intl_gradebook[lang]}</span>}
                 </Link>
 
                 {/* 7. Phân tích chất lượng môn học */}
@@ -868,7 +913,7 @@ function SidebarContent({ role, permissionModules, actualRole, taskCount = 0, is
                       pathname.includes('/teacher/phan-tich-chat-luong') ? "text-sky-400" : "text-slate-400 group-hover:text-sky-400 group-hover:scale-110"
                     }`} />
                   </div>
-                  {!isCollapsed && <span>6. Phân tích chất lượng môn học</span>}
+                  {!isCollapsed && <span>{SIDEBAR_TRANSLATIONS.teacherNav.subject_quality[lang]}</span>}
                 </Link>
 
                 {/* 7. Phân công giảng dạy */}
@@ -890,7 +935,7 @@ function SidebarContent({ role, permissionModules, actualRole, taskCount = 0, is
                       pathname.includes('/teacher/phan-cong-giang-day') ? "text-violet-400" : "text-slate-400 group-hover:text-violet-400 group-hover:scale-110"
                     }`} />
                   </div>
-                  {!isCollapsed && <span>7. Phân công giảng dạy</span>}
+                  {!isCollapsed && <span>{SIDEBAR_TRANSLATIONS.teacherNav.subject_assignments[lang]}</span>}
                 </Link>
 
                 {/* 7. Phụ đạo, bồi dưỡng Học sinh */}
@@ -912,7 +957,7 @@ function SidebarContent({ role, permissionModules, actualRole, taskCount = 0, is
                       pathname.includes('/teacher/ho-tro-hoc-tap') ? "text-emerald-400" : "text-slate-400 group-hover:text-emerald-400 group-hover:scale-110"
                     }`} />
                   </div>
-                  {!isCollapsed && <span>8. Phụ đạo, bồi dưỡng Học sinh</span>}
+                  {!isCollapsed && <span>{SIDEBAR_TRANSLATIONS.teacherNav.subject_tutoring[lang]}</span>}
                 </Link>
 
                 {/* 7. Thời khóa biểu */}
@@ -934,7 +979,7 @@ function SidebarContent({ role, permissionModules, actualRole, taskCount = 0, is
                       pathname.includes('/teacher/thoi-khoa-bieu') ? "text-amber-400" : "text-slate-400 group-hover:text-amber-400 group-hover:scale-110"
                     }`} />
                   </div>
-                  {!isCollapsed && <span>9. Thời khóa biểu</span>}
+                  {!isCollapsed && <span>{SIDEBAR_TRANSLATIONS.teacherNav.subject_timetable[lang]}</span>}
                 </Link>
               </div>
             </>
@@ -949,9 +994,8 @@ function SidebarContent({ role, permissionModules, actualRole, taskCount = 0, is
                 }`}
               >
                 <LayoutDashboard className="w-4 h-4 mr-2.5 text-teal-300 shrink-0" />
-                {!isCollapsed && <span className="whitespace-nowrap overflow-hidden text-ellipsis">Tổng quan</span>}
+                {!isCollapsed && <span className="whitespace-nowrap overflow-hidden text-ellipsis">{SIDEBAR_TRANSLATIONS.parentNav.overview[lang]}</span>}
               </Link>
-
 
               <Link 
                 href="/parent/surveys" 
@@ -961,10 +1005,10 @@ function SidebarContent({ role, permissionModules, actualRole, taskCount = 0, is
                 }`}
               >
                 <ClipboardList className="w-4 h-4 mr-2.5 text-amber-400 shrink-0" />
-                {!isCollapsed && <span className="whitespace-nowrap overflow-hidden text-ellipsis">Khảo sát định kỳ</span>}
+                {!isCollapsed && <span className="whitespace-nowrap overflow-hidden text-ellipsis">{SIDEBAR_TRANSLATIONS.parentNav.surveys[lang]}</span>}
               </Link>
 
-                            <Link 
+              <Link 
                 href="/parent/grades" 
                 onClick={() => setIsOpen(false)} 
                 className={`group relative flex items-center ${isCollapsed ? 'justify-center px-2' : 'px-3'} py-2.5 rounded-xl transition-all text-xs font-medium ${
@@ -972,7 +1016,7 @@ function SidebarContent({ role, permissionModules, actualRole, taskCount = 0, is
                 }`}
               >
                 <Award className="w-4 h-4 mr-2.5 text-amber-300 shrink-0" />
-                {!isCollapsed && <span className="whitespace-nowrap overflow-hidden text-ellipsis">Điểm kiểm tra</span>}
+                {!isCollapsed && <span className="whitespace-nowrap overflow-hidden text-ellipsis">{SIDEBAR_TRANSLATIONS.parentNav.grades[lang]}</span>}
               </Link>
 
               <Link 
@@ -983,7 +1027,7 @@ function SidebarContent({ role, permissionModules, actualRole, taskCount = 0, is
                 }`}
               >
                 <GraduationCap className="w-4 h-4 mr-2.5 text-sky-300 shrink-0" />
-                {!isCollapsed && <span className="whitespace-nowrap overflow-hidden text-ellipsis">Hồ sơ học sinh</span>}
+                {!isCollapsed && <span className="whitespace-nowrap overflow-hidden text-ellipsis">{SIDEBAR_TRANSLATIONS.parentNav.profile[lang]}</span>}
               </Link>
 
               <Link 
@@ -994,25 +1038,61 @@ function SidebarContent({ role, permissionModules, actualRole, taskCount = 0, is
                 }`}
               >
                 <Compass className="w-4 h-4 mr-2.5 text-emerald-300 shrink-0" />
-                {!isCollapsed && <span className="whitespace-nowrap overflow-hidden text-ellipsis">Cố vấn học tập</span>}
+                {!isCollapsed && <span className="whitespace-nowrap overflow-hidden text-ellipsis">{SIDEBAR_TRANSLATIONS.parentNav.advisory[lang]}</span>}
               </Link>
             </div>
           )}
         </nav>
         
-        <div className="mt-auto pt-4 flex flex-col gap-2">
+        <div className="mt-auto pt-3 flex flex-col gap-2">
+          {/* Language Switcher */}
+          <div className={`flex items-center ${isCollapsed ? 'justify-center p-1.5' : 'justify-between px-3 py-1.5'} bg-white/5 border border-white/10 rounded-xl transition-all`}>
+            {!isCollapsed && (
+              <span className="text-[11px] text-white/70 font-medium flex items-center gap-1.5">
+                <Globe className="w-3.5 h-3.5 text-teal-400" />
+                <span>{SIDEBAR_TRANSLATIONS.common.language[lang]}</span>
+              </span>
+            )}
+            <div className={`flex items-center gap-1 ${isCollapsed ? 'flex-col' : ''}`}>
+              <button
+                type="button"
+                onClick={() => handleLanguageChange("vi")}
+                className={`px-2 py-0.5 text-[10px] font-bold rounded-md transition-all cursor-pointer ${
+                  lang === "vi"
+                    ? "bg-[#48BFE3] text-slate-900 shadow-xs"
+                    : "text-white/60 hover:text-white hover:bg-white/10"
+                }`}
+                title="Tiếng Việt"
+              >
+                🇻🇳 VI
+              </button>
+              <button
+                type="button"
+                onClick={() => handleLanguageChange("en")}
+                className={`px-2 py-0.5 text-[10px] font-bold rounded-md transition-all cursor-pointer ${
+                  lang === "en"
+                    ? "bg-[#48BFE3] text-slate-900 shadow-xs"
+                    : "text-white/60 hover:text-white hover:bg-white/10"
+                }`}
+                title="English"
+              >
+                🇬🇧 EN
+              </button>
+            </div>
+          </div>
+
           <button 
             onClick={() => setIsCollapsed(!isCollapsed)}
-            className={`hidden md:flex items-center ${isCollapsed ? 'justify-center' : 'px-4'} py-3 text-white/70 hover:text-white hover:bg-white/10 rounded-xl transition-all duration-200 text-sm font-medium group w-full`}
+            className={`hidden md:flex items-center ${isCollapsed ? 'justify-center' : 'px-4'} py-2.5 text-white/70 hover:text-white hover:bg-white/10 rounded-xl transition-all duration-200 text-sm font-medium group w-full`}
           >
             {isCollapsed ? <ChevronRight className="w-4 h-4 text-white/60 group-hover:text-white transition-colors" /> : (
               <>
                 <ChevronLeft className="w-4 h-4 mr-3 text-white/60 group-hover:text-white transition-colors" />
-                <span className="whitespace-nowrap">Thu gọn</span>
+                <span className="whitespace-nowrap">{SIDEBAR_TRANSLATIONS.common.collapse[lang]}</span>
               </>
             )}
           </button>
-          <div className="border-t border-white/20 pt-4" />
+          <div className="border-t border-white/20 pt-2" />
           <button 
             onClick={async () => {
               try {
@@ -1023,10 +1103,10 @@ function SidebarContent({ role, permissionModules, actualRole, taskCount = 0, is
                 window.location.href = "/login"
               }
             }}
-            className={`flex items-center w-full ${isCollapsed ? 'justify-center' : 'px-4'} py-3 text-white/70 hover:text-white hover:bg-red-500/10 rounded-xl transition-all duration-200 text-sm font-medium group`}
+            className={`flex items-center w-full ${isCollapsed ? 'justify-center' : 'px-4'} py-2.5 text-white/70 hover:text-white hover:bg-red-500/10 rounded-xl transition-all duration-200 text-sm font-medium group`}
           >
             <LogOut className={`w-4 h-4 ${isCollapsed ? '' : 'mr-3'} text-white/50 group-hover:text-red-400 transition-colors`} />
-            {!isCollapsed && <span>Đăng xuất</span>}
+            {!isCollapsed && <span>{SIDEBAR_TRANSLATIONS.common.signout[lang]}</span>}
           </button>
         </div>
       </aside>

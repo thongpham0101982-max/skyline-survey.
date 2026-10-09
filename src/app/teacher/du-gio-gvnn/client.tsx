@@ -37,6 +37,7 @@ import {
 import { createForeignObservationWithEvaluation } from "./actions";
 import { isSlotBelongsToForeignEsl, isExactWalkthroughForm } from "./utils";
 import { ForeignObservationHistoryTab } from "./components/ForeignObservationHistoryTab";
+import { TRANSLATIONS, SupportedLang } from "./locales/translations";
 
 export interface IndicatorConfig {
   id: number;
@@ -500,6 +501,39 @@ export function ForeignObservationClient(props: {
   const [activeTab, setActiveTab] = useState<"walkthrough" | "schedule" | "evaluations" | "kpi">("walkthrough");
   const [slots, setSlots] = useState<any[]>(props.initialSlots || []);
 
+  // Internationalization (Language Toggle: EN default for native English)
+  const [lang, setLang] = useState<SupportedLang>("en");
+
+  React.useEffect(() => {
+    try {
+      const saved = (localStorage.getItem("ssm_lang") || localStorage.getItem("ssm_gvnn_lang")) as SupportedLang;
+      if (saved === "vi" || saved === "en") {
+        setLang(saved);
+      }
+    } catch {}
+
+    const handleLangEvent = (e: any) => {
+      const newL = e.detail;
+      if (newL === "en" || newL === "vi") {
+        setLang(newL);
+      }
+    };
+
+    window.addEventListener("ssm_language_change", handleLangEvent);
+    return () => window.removeEventListener("ssm_language_change", handleLangEvent);
+  }, []);
+
+  const toggleLang = (newLang: SupportedLang) => {
+    setLang(newLang);
+    try {
+      localStorage.setItem("ssm_lang", newLang);
+      localStorage.setItem("ssm_gvnn_lang", newLang);
+      window.dispatchEvent(new CustomEvent("ssm_language_change", { detail: newLang }));
+    } catch {}
+  };
+
+  const t = TRANSLATIONS[lang];
+
   const mySlotsCount = useMemo(() => {
     return slots.filter(s => {
       if (!isExactWalkthroughForm(s)) return false;
@@ -859,7 +893,11 @@ export function ForeignObservationClient(props: {
 
   const handleSubmit = (isDraft: boolean = false) => {
     if (!teacherId) {
-      showToast("Please select the Observed Teacher first.", "error");
+      showToast(t.validationSelectTeacher, "error");
+      return;
+    }
+    if (!campusId) {
+      showToast(t.validationSelectCampus, "error");
       return;
     }
 
@@ -899,13 +937,13 @@ export function ForeignObservationClient(props: {
     startTransition(async () => {
       const res = await createForeignObservationWithEvaluation(payload);
       if (res.success) {
-        showToast(res.message || "Đã lưu phiếu dự giờ thành công!", "success");
+        showToast(isDraft ? t.toastSaveDraftSuccess : t.toastSubmitSuccess, "success");
         router.refresh();
         setTimeout(() => {
           setActiveTab("evaluations");
         }, 1200);
       } else {
-        showToast(res.error || "Không thể lưu phiếu dự giờ.", "error");
+        showToast(res.error || t.toastSaveError, "error");
       }
     });
   };
@@ -942,60 +980,93 @@ export function ForeignObservationClient(props: {
               <div className="flex items-center gap-2.5 flex-wrap">
                 <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-white/10 backdrop-blur-md text-cyan-300 text-[11px] font-black tracking-wider uppercase border border-cyan-400/30 shadow-xs">
                   <Globe className="w-3.5 h-3.5 text-cyan-300" />
-                  CAMBRIDGE & INTERNATIONAL FRAMEWORK • SY2026-2027
+                  {t.moduleBadge}
                 </span>
                 <span className="inline-flex items-center px-2.5 py-1 rounded-full bg-teal-500/20 text-teal-300 text-[10px] font-extrabold uppercase border border-teal-400/30">
-                  Official Walkthrough
+                  {t.officialWalkthroughBadge}
                 </span>
               </div>
 
               <h1 className="text-2xl sm:text-3xl lg:text-4xl font-black tracking-tight text-white flex items-center gap-3">
-                Class Observation & Teaching Support
+                {t.moduleTitle}
               </h1>
               <p className="text-teal-100/80 text-xs sm:text-sm font-medium max-w-3xl leading-relaxed">
-                Khung Quan sát Lớp học & Hỗ trợ Giảng dạy Chuyên môn Tổ Tiếng Anh (Mầm non, Tiểu học, Trung học, Quốc tế & GVNN) theo chuẩn Cambridge và Hệ thống Giáo dục Sky-Line.
+                {t.moduleSubtitle}
               </p>
             </div>
 
-            {/* Navigation Tabs Segment */}
-            <nav aria-label="Walkthrough tabs" className="flex items-center gap-1.5 bg-black/30 backdrop-blur-md p-1.5 rounded-2xl border border-white/10 self-start lg:self-auto shadow-inner">
-              <button
-                type="button"
-                onClick={() => setActiveTab("walkthrough")}
-                className={"flex items-center gap-2 px-4 py-2.5 rounded-xl text-xs sm:text-sm font-extrabold transition-all cursor-pointer " +
-                  (activeTab === "walkthrough"
-                    ? "bg-white text-[#003B3A] shadow-lg shadow-black/20"
-                    : "text-white/80 hover:text-white hover:bg-white/10")
-                }
-              >
-                <Sparkles className="w-4 h-4 text-amber-500" />
-                <span>Walkthrough Form</span>
-              </button>
-              <button
-                type="button"
-                onClick={() => setActiveTab("evaluations")}
-                className={"flex items-center gap-2 px-4 py-2.5 rounded-xl text-xs sm:text-sm font-extrabold transition-all cursor-pointer " +
-                  (activeTab === "evaluations"
-                    ? "bg-white text-[#003B3A] shadow-lg shadow-black/20"
-                    : "text-white/80 hover:text-white hover:bg-white/10")
-                }
-              >
-                <ClipboardList className="w-4 h-4 text-teal-600" />
-                <span>Lược sử phiếu ({mySlotsCount})</span>
-              </button>
-              <button
-                type="button"
-                onClick={() => setActiveTab("kpi")}
-                className={"flex items-center gap-2 px-4 py-2.5 rounded-xl text-xs sm:text-sm font-extrabold transition-all cursor-pointer " +
-                  (activeTab === "kpi"
-                    ? "bg-white text-[#003B3A] shadow-lg shadow-black/20"
-                    : "text-white/80 hover:text-white hover:bg-white/10")
-                }
-              >
-                <BarChart3 className="w-4 h-4 text-indigo-600" />
-                <span>Quota & KPI</span>
-              </button>
-            </nav>
+            {/* Action Group: Language Switcher & Navigation Tabs */}
+            <div className="flex flex-col sm:flex-row items-start sm:items-center gap-3 self-start lg:self-auto">
+              {/* Language Switcher Toggle */}
+              <div className="flex items-center gap-1 bg-black/40 backdrop-blur-md p-1 rounded-2xl border border-white/10 shadow-inner">
+                <button
+                  type="button"
+                  onClick={() => toggleLang("en")}
+                  className={"flex items-center gap-1.5 px-3 py-2 rounded-xl text-xs font-black transition-all cursor-pointer " +
+                    (lang === "en"
+                      ? "bg-white text-[#003B3A] shadow-md shadow-black/20"
+                      : "text-white/70 hover:text-white hover:bg-white/10")
+                  }
+                  title="Switch to English (Native Standard)"
+                >
+                  <span className="text-sm leading-none">🇬🇧</span>
+                  <span>EN</span>
+                </button>
+                <button
+                  type="button"
+                  onClick={() => toggleLang("vi")}
+                  className={"flex items-center gap-1.5 px-3 py-2 rounded-xl text-xs font-black transition-all cursor-pointer " +
+                    (lang === "vi"
+                      ? "bg-white text-[#003B3A] shadow-md shadow-black/20"
+                      : "text-white/70 hover:text-white hover:bg-white/10")
+                  }
+                  title="Chuyển sang Tiếng Việt"
+                >
+                  <span className="text-sm leading-none">🇻🇳</span>
+                  <span>VI</span>
+                </button>
+              </div>
+
+              {/* Navigation Tabs Segment */}
+              <nav aria-label="Walkthrough tabs" className="flex items-center gap-1.5 bg-black/30 backdrop-blur-md p-1.5 rounded-2xl border border-white/10 shadow-inner">
+                <button
+                  type="button"
+                  onClick={() => setActiveTab("walkthrough")}
+                  className={"flex items-center gap-2 px-4 py-2.5 rounded-xl text-xs sm:text-sm font-extrabold transition-all cursor-pointer " +
+                    (activeTab === "walkthrough"
+                      ? "bg-white text-[#003B3A] shadow-lg shadow-black/20"
+                      : "text-white/80 hover:text-white hover:bg-white/10")
+                  }
+                >
+                  <Sparkles className="w-4 h-4 text-amber-500" />
+                  <span>{t.tabWalkthrough}</span>
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setActiveTab("evaluations")}
+                  className={"flex items-center gap-2 px-4 py-2.5 rounded-xl text-xs sm:text-sm font-extrabold transition-all cursor-pointer " +
+                    (activeTab === "evaluations"
+                      ? "bg-white text-[#003B3A] shadow-lg shadow-black/20"
+                      : "text-white/80 hover:text-white hover:bg-white/10")
+                  }
+                >
+                  <ClipboardList className="w-4 h-4 text-teal-600" />
+                  <span>{t.tabHistory} ({mySlotsCount})</span>
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setActiveTab("kpi")}
+                  className={"flex items-center gap-2 px-4 py-2.5 rounded-xl text-xs sm:text-sm font-extrabold transition-all cursor-pointer " +
+                    (activeTab === "kpi"
+                      ? "bg-white text-[#003B3A] shadow-lg shadow-black/20"
+                      : "text-white/80 hover:text-white hover:bg-white/10")
+                  }
+                >
+                  <BarChart3 className="w-4 h-4 text-indigo-600" />
+                  <span>{t.tabQuota}</span>
+                </button>
+              </nav>
+            </div>
           </div>
         </div>
       </header>
@@ -1013,15 +1084,15 @@ export function ForeignObservationClient(props: {
                   </div>
                   <div>
                     <h2 className="font-extrabold text-white text-base tracking-wide">
-                      CLASS OBSERVATION & TEACHING SUPPORT FORM
+                      {t.formCardTitle}
                     </h2>
                     <p className="text-[11px] text-slate-300 font-medium">
-                      Purpose: To understand teaching effectiveness, student progress, curriculum implementation challenges, and support needed.
+                      {t.formCardSubtitle}
                     </p>
                   </div>
                 </div>
                 <span className="px-3 py-1 rounded-full bg-cyan-500/15 text-cyan-300 text-[10px] font-black uppercase tracking-wider border border-cyan-400/30 self-start sm:self-auto">
-                  SY2026-2027 • Official Template
+                  {t.formCardBadge}
                 </span>
               </div>
 
@@ -1032,7 +1103,7 @@ export function ForeignObservationClient(props: {
                   <div className="space-y-1.5 md:col-span-2">
                     <label className="block text-[11px] font-black text-slate-700 uppercase tracking-wider flex items-center gap-1.5">
                       <Users className="w-3.5 h-3.5 text-[#003B3A]" />
-                      <span>Observed Teacher (Giáo viên được dự)</span>
+                      <span>{t.observedTeacherLabel}</span>
                       <span className="text-rose-500">*</span>
                     </label>
                     <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
@@ -1044,11 +1115,11 @@ export function ForeignObservationClient(props: {
                         }}
                         className="w-full bg-white border border-slate-300 focus:border-[#003B3A] focus:ring-2 focus:ring-teal-500/20 rounded-xl px-3 py-2 text-xs font-bold text-slate-700 outline-none transition"
                       >
-                        <option value="ALL">-- Tất cả Tổ Tiếng Anh ({allTeachers.length} GV) --</option>
-                        <option value="Tổ Tiếng Anh Tiểu học">Tổ Tiếng Anh Tiểu học</option>
-                        <option value="Tổ Tiếng Anh Trung học">Tổ Tiếng Anh Trung học</option>
-                        <option value="Tổ Tiếng Anh Quốc tế & GVNN">Tổ Tiếng Anh Quốc tế & GVNN</option>
-                        <option value="Tổ Tiếng Anh Mầm non">Tổ Tiếng Anh Mầm non</option>
+                        <option value="ALL">{t.allFacultiesOption.replace("%s", String(allTeachers.length))}</option>
+                        <option value="Tổ Tiếng Anh Tiểu học">{t.primaryFacultyOption}</option>
+                        <option value="Tổ Tiếng Anh Trung học">{t.secondaryFacultyOption}</option>
+                        <option value="Tổ Tiếng Anh Quốc tế & GVNN">{t.expatFacultyOption}</option>
+                        <option value="Tổ Tiếng Anh Mầm non">{t.earlyYearsFacultyOption}</option>
                       </select>
 
                       <select
@@ -1056,7 +1127,7 @@ export function ForeignObservationClient(props: {
                         onChange={handleTeacherChange}
                         className="w-full bg-white border-2 border-teal-500/60 focus:border-[#003B3A] focus:ring-2 focus:ring-teal-500/20 rounded-xl px-3 py-2 text-xs font-black text-slate-900 outline-none transition"
                       >
-                        <option value="">-- Chọn Giáo Viên ({filteredObservedTeachers.length}) * --</option>
+                        <option value="">{t.selectTeacherPlaceholder.replace("%s", String(filteredObservedTeachers.length))}</option>
                         {filteredObservedTeachers.map((t: any) => (
                           <option key={t.id} value={t.id}>
                             {t.teacherName} ({t.teacherCode})
@@ -1070,7 +1141,7 @@ export function ForeignObservationClient(props: {
                   <div className="space-y-1.5 md:col-span-2">
                     <label className="block text-[11px] font-black text-slate-700 uppercase tracking-wider flex items-center gap-1.5">
                       <User className="w-3.5 h-3.5 text-[#003B3A]" />
-                      <span>Observer (Người dự giờ)</span>
+                      <span>{t.observerLabel}</span>
                     </label>
                     <div className="bg-white px-3.5 py-2 rounded-xl border border-slate-300 text-xs flex items-center justify-between h-[38px]">
                       <span className="font-black text-slate-900">{props.currentTeacher?.teacherName || "Current User"}</span>
@@ -1083,13 +1154,13 @@ export function ForeignObservationClient(props: {
                   {/* Row 2: Subject & Class */}
                   <div className="space-y-1.5">
                     <label className="block text-[11px] font-black text-slate-700 uppercase tracking-wider">
-                      Subject (Môn học)
+                      {t.subjectLabel}
                     </label>
                     <input
                       type="text"
                       value={subjectName}
                       onChange={e => setSubjectName(e.target.value)}
-                      placeholder="e.g. English (ESL), Phonics, ELA"
+                      placeholder={t.subjectPlaceholder}
                       className="w-full bg-white border border-slate-300 focus:border-[#003B3A] focus:ring-2 focus:ring-teal-500/20 rounded-xl px-3 py-2 text-xs font-bold text-slate-800 outline-none transition"
                     />
                   </div>
@@ -1097,7 +1168,7 @@ export function ForeignObservationClient(props: {
                   <div className="space-y-1.5">
                     <label className="block text-[11px] font-black text-slate-700 uppercase tracking-wider flex items-center gap-1.5">
                       <BookOpen className="w-3.5 h-3.5 text-[#003B3A]" />
-                      <span>Class (Lớp / Khối)</span>
+                      <span>{t.classLabel}</span>
                     </label>
                     <select
                       value={classId}
@@ -1105,11 +1176,11 @@ export function ForeignObservationClient(props: {
                       className="w-full bg-white border border-slate-300 focus:border-[#003B3A] focus:ring-2 focus:ring-teal-500/20 rounded-xl px-3 py-2 text-xs font-bold text-slate-800 outline-none transition"
                     >
                       <option value="">
-                        {campusId ? ("-- Chọn Lớp (" + availableClasses.length + " lớp) --") : "-- Chọn Cơ sở trước --"}
+                        {campusId ? t.selectClassPlaceholder.replace("%s", String(availableClasses.length)) : t.selectCampusFirst}
                       </option>
                       {availableClasses.map((c: any) => (
                         <option key={c.id} value={c.id}>
-                          {c.className} {c.grade ? ("(Khối " + c.grade + ")") : ""}
+                          {c.className} {c.grade ? ("(Grade " + c.grade + ")") : ""}
                         </option>
                       ))}
                     </select>
@@ -1119,7 +1190,7 @@ export function ForeignObservationClient(props: {
                   <div className="space-y-1.5">
                     <label className="block text-[11px] font-black text-slate-700 uppercase tracking-wider flex items-center gap-1.5">
                       <Calendar className="w-3.5 h-3.5 text-[#003B3A]" />
-                      <span>Date of Observation</span>
+                      <span>{t.dateLabel}</span>
                     </label>
                     <input
                       type="date"
@@ -1132,13 +1203,13 @@ export function ForeignObservationClient(props: {
                   <div className="space-y-1.5">
                     <label className="block text-[11px] font-black text-slate-700 uppercase tracking-wider flex items-center gap-1.5">
                       <Target className="w-3.5 h-3.5 text-[#003B3A]" />
-                      <span>Lesson / Unit (Chủ đề / Bài dạy)</span>
+                      <span>{t.topicLabel}</span>
                     </label>
                     <input
                       type="text"
                       value={topic}
                       onChange={e => setTopic(e.target.value)}
-                      placeholder="e.g. Unit 4: Food - Speaking Practice"
+                      placeholder={t.topicPlaceholder}
                       className="w-full bg-white border border-slate-300 focus:border-[#003B3A] focus:ring-2 focus:ring-teal-500/20 rounded-xl px-3 py-2 text-xs font-bold text-slate-800 outline-none transition"
                     />
                   </div>
@@ -1147,13 +1218,13 @@ export function ForeignObservationClient(props: {
                   <div className="space-y-1.5">
                     <label className="block text-[11px] font-black text-slate-700 uppercase tracking-wider flex items-center gap-1.5">
                       <Users className="w-3.5 h-3.5 text-[#003B3A]" />
-                      <span>No. of students (Sĩ số)</span>
+                      <span>{t.studentsCountLabel}</span>
                     </label>
                     <input
                       type="text"
                       value={numberOfStudents}
                       onChange={e => setNumberOfStudents(e.target.value)}
-                      placeholder="e.g. 24 students"
+                      placeholder={t.studentsCountPlaceholder}
                       className="w-full bg-white border border-slate-300 focus:border-[#003B3A] focus:ring-2 focus:ring-teal-500/20 rounded-xl px-3 py-2 text-xs font-bold text-slate-800 outline-none transition"
                     />
                   </div>
@@ -1161,13 +1232,13 @@ export function ForeignObservationClient(props: {
                   <div className="space-y-1.5">
                     <label className="block text-[11px] font-black text-slate-700 uppercase tracking-wider flex items-center gap-1.5">
                       <Clock className="w-3.5 h-3.5 text-[#003B3A]" />
-                      <span>Duration (Thời lượng)</span>
+                      <span>{t.durationLabel}</span>
                     </label>
                     <input
                       type="text"
                       value={lessonDuration}
                       onChange={e => setLessonDuration(e.target.value)}
-                      placeholder="e.g. 40 minutes / 45 mins"
+                      placeholder={t.durationPlaceholder}
                       className="w-full bg-white border border-slate-300 focus:border-[#003B3A] focus:ring-2 focus:ring-teal-500/20 rounded-xl px-3 py-2 text-xs font-bold text-slate-800 outline-none transition"
                     />
                   </div>
@@ -1176,7 +1247,7 @@ export function ForeignObservationClient(props: {
                   <div className="space-y-1.5">
                     <label className="block text-[11px] font-black text-slate-700 uppercase tracking-wider flex items-center gap-1.5">
                       <MapPin className="w-3.5 h-3.5 text-[#003B3A]" />
-                      <span>Campus (Cơ sở)</span>
+                      <span>{t.campusLabel}</span>
                       <span className="text-rose-500">*</span>
                     </label>
                     <select
@@ -1184,7 +1255,7 @@ export function ForeignObservationClient(props: {
                       onChange={handleCampusChange}
                       className="w-full bg-white border-2 border-teal-500/50 focus:border-[#003B3A] focus:ring-2 focus:ring-teal-500/20 rounded-xl px-3 py-2 text-xs font-bold text-slate-800 outline-none transition"
                     >
-                      <option value="">-- Chọn Cơ Sở * --</option>
+                      <option value="">{t.selectCampusPlaceholder}</option>
                       {props.campuses?.map((cmp: any) => (
                         <option key={cmp.id} value={cmp.id}>
                           {cmp.campusName}
@@ -1196,7 +1267,7 @@ export function ForeignObservationClient(props: {
                   <div className="space-y-1.5">
                     <label className="block text-[11px] font-black text-slate-700 uppercase tracking-wider flex items-center gap-1.5">
                       <Clock className="w-3.5 h-3.5 text-[#003B3A]" />
-                      <span>Period & Room (Tiết / Phòng)</span>
+                      <span>{t.periodRoomLabel}</span>
                     </label>
                     <div className="grid grid-cols-2 gap-1.5">
                       <select
@@ -1214,7 +1285,7 @@ export function ForeignObservationClient(props: {
                         type="text"
                         value={room}
                         onChange={e => setRoom(e.target.value)}
-                        placeholder="Phòng học"
+                        placeholder={t.roomPlaceholder}
                         className="w-full bg-white border border-slate-300 rounded-xl px-2 py-2 text-xs font-bold text-slate-800 outline-none"
                       />
                     </div>
@@ -1224,7 +1295,7 @@ export function ForeignObservationClient(props: {
                 {/* Target Skills Interactive Tags */}
                 <div className="pt-2">
                   <label className="block text-[11px] font-black text-slate-700 uppercase tracking-wider mb-2.5">
-                    Target Skills & Language Focus (Kỹ năng trọng tâm)
+                    {t.targetSkillsTitle}
                   </label>
                   <div className="flex flex-wrap gap-2">
                     {SKILL_OPTIONS.map(skill => {
@@ -1258,17 +1329,17 @@ export function ForeignObservationClient(props: {
                 </div>
                 <div>
                   <span className="text-[10px] uppercase tracking-wider text-cyan-300 font-black block">
-                    Observation approach / Phương pháp tiếp cận dự giờ
+                    {t.approachTitle}
                   </span>
                   <p className="text-xs font-bold italic text-white mt-0.5">
-                    Focus on evidence and impact on students. (Tập trung vào minh chứng thực tế và tác động đến học sinh).
+                    {t.approachQuote}
                   </p>
                 </div>
               </div>
 
               <div className="space-y-2 pt-1">
                 <div className="text-[11px] font-black uppercase text-cyan-300 tracking-wider">
-                  Rating Scale (Thang đánh giá 5 mức theo chuẩn):
+                  {t.ratingScaleTitle}
                 </div>
                 <div className="grid grid-cols-2 sm:grid-cols-5 gap-2.5">
                   {RATING_OPTIONS.map(opt => (
@@ -1298,7 +1369,7 @@ export function ForeignObservationClient(props: {
                         <h3 className="font-extrabold text-sm sm:text-base uppercase tracking-wide">{title}</h3>
                       </div>
                       <span className="text-xs text-cyan-300 font-black bg-white/10 px-2.5 py-0.5 rounded-full border border-white/10">
-                        {sectionIndicators.length} Tiêu chí
+                        {sectionIndicators.length} {t.indicatorsCountSuffix}
                       </span>
                     </div>
 
@@ -1318,7 +1389,9 @@ export function ForeignObservationClient(props: {
                                     {ind.text}
                                   </h4>
                                 </div>
-                                <p className="text-xs text-slate-500 italic pl-1 font-medium">{ind.vnText}</p>
+                                {lang === "vi" && (
+                                  <p className="text-xs text-slate-500 italic pl-1 font-medium">{ind.vnText}</p>
+                                )}
                               </div>
 
                               {/* 5 Rating Buttons */}
@@ -1347,19 +1420,19 @@ export function ForeignObservationClient(props: {
                             <div className="grid grid-cols-1 md:grid-cols-2 gap-4 pt-2">
                               <div className="space-y-2 bg-slate-50/80 p-4 rounded-2xl border border-slate-200">
                                 <label className="block text-[11px] font-black text-slate-700 uppercase tracking-wider">
-                                  Evidence / Examples Observed (Minh chứng ghi nhận)
+                                  {t.evidenceLabel}
                                 </label>
                                 <textarea
                                   rows={2}
                                   value={currentData.evidence}
                                   onChange={e => handleEvidenceChange(ind.id, e.target.value)}
-                                  placeholder="Describe specific teacher actions, lesson pacing, or instructional tasks observed..."
+                                  placeholder={t.evidencePlaceholder}
                                   className="w-full bg-white border border-slate-300 focus:border-[#003B3A] focus:ring-2 focus:ring-teal-500/20 rounded-xl p-3 text-xs text-slate-800 outline-none resize-none transition font-medium"
                                 />
                                 {ind.quickEvidence && ind.quickEvidence.length > 0 && (
                                   <div className="space-y-1.5">
                                     <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider block">
-                                      Gợi ý chèn nhanh minh chứng:
+                                      {t.evidenceQuickHint}
                                     </span>
                                     <div className="flex flex-wrap gap-1.5">
                                       {ind.quickEvidence.map(tag => (
@@ -1379,19 +1452,19 @@ export function ForeignObservationClient(props: {
 
                               <div className="space-y-2 bg-slate-50/80 p-4 rounded-2xl border border-slate-200">
                                 <label className="block text-[11px] font-black text-slate-700 uppercase tracking-wider">
-                                  Student Impact / Progress (Tác động lên học sinh)
+                                  {t.impactLabel}
                                 </label>
                                 <textarea
                                   rows={2}
                                   value={currentData.studentImpact}
                                   onChange={e => handleImpactChange(ind.id, e.target.value)}
-                                  placeholder="Describe how students responded, produced target language, or overcame difficulties..."
+                                  placeholder={t.impactPlaceholder}
                                   className="w-full bg-white border border-slate-300 focus:border-[#003B3A] focus:ring-2 focus:ring-teal-500/20 rounded-xl p-3 text-xs text-slate-800 outline-none resize-none transition font-medium"
                                 />
                                 {ind.quickImpact && ind.quickImpact.length > 0 && (
                                   <div className="space-y-1.5">
                                     <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider block">
-                                      Gợi ý chèn nhanh tác động:
+                                      {t.impactQuickHint}
                                     </span>
                                     <div className="flex flex-wrap gap-1.5">
                                       {ind.quickImpact.map(tag => (
@@ -1427,10 +1500,10 @@ export function ForeignObservationClient(props: {
                   </div>
                   <div>
                     <h3 className="font-extrabold text-white text-base">
-                      Teacher Voice & Curriculum Feedback (Post-Lesson Discussion)
+                      {t.teacherVoiceTitle}
                     </h3>
                     <p className="text-[11px] text-teal-200 font-medium">
-                      Ý kiến giáo viên & phản hồi chương trình trong buổi thảo luận sau tiết dạy
+                      {t.teacherVoiceSubtitle}
                     </p>
                   </div>
                 </div>
@@ -1439,64 +1512,52 @@ export function ForeignObservationClient(props: {
               <div className="p-5 sm:p-7 grid grid-cols-1 md:grid-cols-2 gap-5">
                 <div className="space-y-1.5">
                   <label className="block text-xs font-bold text-slate-800 leading-snug">
-                    1. Did the lesson go as planned? What went well?
+                    {t.tvQ1}
                   </label>
-                  <span className="text-[11px] text-slate-400 block mb-1">
-                    (Tiết dạy có diễn ra đúng kế hoạch không? Điểm nào đã thực hiện tốt?)
-                  </span>
                   <textarea
                     rows={3}
                     value={teacherVoice.workingWell}
                     onChange={e => setTeacherVoice({ ...teacherVoice, workingWell: e.target.value })}
-                    placeholder="e.g. Students showed high engagement during speaking games; lesson followed planned stages..."
+                    placeholder={t.tvQ1Placeholder}
                     className="w-full bg-slate-50 border border-slate-300 focus:border-[#003B3A] focus:bg-white focus:ring-2 focus:ring-teal-500/20 rounded-2xl p-3.5 text-xs text-slate-800 outline-none resize-none transition font-medium"
                   />
                 </div>
 
                 <div className="space-y-1.5">
                   <label className="block text-xs font-bold text-slate-800 leading-snug">
-                    2. What challenges did you or the students face?
+                    {t.tvQ2}
                   </label>
-                  <span className="text-[11px] text-slate-400 block mb-1">
-                    (Giáo viên hoặc học sinh đã gặp phải những khó khăn/thách thức nào?)
-                  </span>
                   <textarea
                     rows={3}
                     value={teacherVoice.challenges}
                     onChange={e => setTeacherVoice({ ...teacherVoice, challenges: e.target.value })}
-                    placeholder="e.g. A small group struggled with the new grammar pattern; time management in production..."
+                    placeholder={t.tvQ2Placeholder}
                     className="w-full bg-slate-50 border border-slate-300 focus:border-[#003B3A] focus:bg-white focus:ring-2 focus:ring-teal-500/20 rounded-2xl p-3.5 text-xs text-slate-800 outline-none resize-none transition font-medium"
                   />
                 </div>
 
                 <div className="space-y-1.5">
                   <label className="block text-xs font-bold text-slate-800 leading-snug">
-                    3. Is the curriculum pacing realistic for your students?
+                    {t.tvQ3}
                   </label>
-                  <span className="text-[11px] text-slate-400 block mb-1">
-                    (Tiến độ chương trình có phù hợp và thực tế với học sinh lớp này không?)
-                  </span>
                   <textarea
                     rows={3}
                     value={teacherVoice.curriculumAdjustments}
                     onChange={e => setTeacherVoice({ ...teacherVoice, curriculumAdjustments: e.target.value })}
-                    placeholder="e.g. Pacing is realistic; suggest more review time before the end-of-unit quiz..."
+                    placeholder={t.tvQ3Placeholder}
                     className="w-full bg-slate-50 border border-slate-300 focus:border-[#003B3A] focus:bg-white focus:ring-2 focus:ring-teal-500/20 rounded-2xl p-3.5 text-xs text-slate-800 outline-none resize-none transition font-medium"
                   />
                 </div>
 
                 <div className="space-y-1.5">
                   <label className="block text-xs font-bold text-slate-800 leading-snug">
-                    4. What additional support or resources do you need?
+                    {t.tvQ4}
                   </label>
-                  <span className="text-[11px] text-slate-400 block mb-1">
-                    (Giáo viên cần hỗ trợ thêm nguồn lực, tài liệu hoặc hỗ trợ chuyên môn nào?)
-                  </span>
                   <textarea
                     rows={3}
                     value={teacherVoice.supportNeeded}
                     onChange={e => setTeacherVoice({ ...teacherVoice, supportNeeded: e.target.value })}
-                    placeholder="e.g. Supplementary phonics flashcards; additional co-teacher guidance for lower-band students..."
+                    placeholder={t.tvQ4Placeholder}
                     className="w-full bg-slate-50 border border-slate-300 focus:border-[#003B3A] focus:bg-white focus:ring-2 focus:ring-teal-500/20 rounded-2xl p-3.5 text-xs text-slate-800 outline-none resize-none transition font-medium"
                   />
                 </div>
@@ -1512,10 +1573,10 @@ export function ForeignObservationClient(props: {
                   </div>
                   <div>
                     <h3 className="font-extrabold text-white text-base">
-                      Observation Summary & Action Plan (Tổng kết & Kế hoạch hành động)
+                      {t.summaryTitle}
                     </h3>
                     <p className="text-[11px] text-slate-300 font-medium">
-                      Agreed outcomes and support commitments between Observer and Host Teacher
+                      {t.summarySubtitle}
                     </p>
                   </div>
                 </div>
@@ -1526,7 +1587,7 @@ export function ForeignObservationClient(props: {
                   className="inline-flex items-center gap-2 px-4 py-2 rounded-xl bg-gradient-to-r from-teal-600 to-indigo-600 hover:from-teal-500 hover:to-indigo-500 text-white font-black text-xs shadow-md transition cursor-pointer self-start sm:self-auto"
                 >
                   <Sparkles className="w-4 h-4 text-amber-300" />
-                  <span>Auto-Generate Summary</span>
+                  <span>{t.autoSummaryBtn}</span>
                 </button>
               </div>
 
@@ -1534,13 +1595,13 @@ export function ForeignObservationClient(props: {
                 <div className="space-y-1.5">
                   <label className="block text-xs font-black text-emerald-800 uppercase tracking-wider flex items-center gap-1.5">
                     <Star className="w-3.5 h-3.5 text-emerald-600" />
-                    <span>Key Strengths Observed (Điểm mạnh nổi bật)</span>
+                    <span>{t.keyStrengthsLabel}</span>
                   </label>
                   <textarea
                     rows={3}
                     value={summary.keyStrengths}
                     onChange={e => setSummary({ ...summary, keyStrengths: e.target.value })}
-                    placeholder="Ghi nhận các điểm mạnh nổi bật trong phương pháp và tương tác..."
+                    placeholder={t.keyStrengthsPlaceholder}
                     className="w-full bg-emerald-50/40 border border-emerald-200 focus:border-emerald-600 focus:bg-white focus:ring-2 focus:ring-emerald-100 rounded-2xl p-3.5 text-xs text-slate-800 outline-none resize-none transition font-medium"
                   />
                 </div>
@@ -1548,13 +1609,13 @@ export function ForeignObservationClient(props: {
                 <div className="space-y-1.5">
                   <label className="block text-xs font-black text-amber-800 uppercase tracking-wider flex items-center gap-1.5">
                     <AlertCircle className="w-3.5 h-3.5 text-amber-600" />
-                    <span>Key Teaching / Learning Challenges (Thách thức dạy & học)</span>
+                    <span>{t.keyChallengesLabel}</span>
                   </label>
                   <textarea
                     rows={3}
                     value={summary.keyChallenges}
                     onChange={e => setSummary({ ...summary, keyChallenges: e.target.value })}
-                    placeholder="Ghi nhận các tồn tại hoặc nội dung cần cải thiện..."
+                    placeholder={t.keyChallengesPlaceholder}
                     className="w-full bg-amber-50/40 border border-amber-200 focus:border-amber-600 focus:bg-white focus:ring-2 focus:ring-amber-100 rounded-2xl p-3.5 text-xs text-slate-800 outline-none resize-none transition font-medium"
                   />
                 </div>
@@ -1562,13 +1623,13 @@ export function ForeignObservationClient(props: {
                 <div className="md:col-span-2 space-y-1.5 pt-2 border-t border-slate-100">
                   <label className="block text-xs font-black text-indigo-950 uppercase tracking-wider flex items-center gap-1.5">
                     <CheckCircle2 className="w-4 h-4 text-indigo-600" />
-                    <span>Agreed Follow-up Actions (Kế hoạch hành động thống nhất)</span>
+                    <span>{t.agreedActionsLabel}</span>
                   </label>
                   <textarea
                     rows={3}
                     value={summary.agreedActions}
                     onChange={e => setSummary({ ...summary, agreedActions: e.target.value })}
-                    placeholder="1. Kế hoạch hành động 1\n2. Kế hoạch hành động 2..."
+                    placeholder={t.agreedActionsPlaceholder}
                     className="w-full bg-indigo-50/40 border border-indigo-200 focus:border-indigo-600 focus:bg-white focus:ring-2 focus:ring-indigo-100 rounded-2xl p-3.5 text-xs text-slate-800 outline-none resize-none transition font-medium"
                   />
                 </div>
@@ -1579,12 +1640,12 @@ export function ForeignObservationClient(props: {
             <div className="sticky bottom-4 z-40 bg-white/95 backdrop-blur-md rounded-3xl border border-slate-200 shadow-2xl p-4 sm:p-5 flex flex-col sm:flex-row items-center justify-between gap-4">
               <div className="flex items-center gap-3 flex-wrap">
                 <div className="flex items-center gap-2">
-                  <span className="text-xs font-black text-slate-500 uppercase tracking-wider">Overall Rating:</span>
+                  <span className="text-xs font-black text-slate-500 uppercase tracking-wider">{t.overallRatingLabel}</span>
                   <span className={"px-3.5 py-1 rounded-full text-xs font-black shadow-xs " + stats.badgeColor}>
                     {stats.suggestedRating}
                   </span>
                   <span className="px-2.5 py-1 rounded-full text-xs font-black bg-slate-100 text-slate-800 border border-slate-200">
-                    Score: {stats.avg}/4.00
+                    {t.scoreLabel} {stats.avg}/4.00
                   </span>
                 </div>
                 <span className="text-xs text-slate-300 hidden md:inline">|</span>
@@ -1601,7 +1662,7 @@ export function ForeignObservationClient(props: {
                   className="flex-1 sm:flex-initial inline-flex items-center justify-center gap-2 px-5 py-2.5 rounded-2xl bg-slate-100 text-slate-800 font-black text-xs hover:bg-slate-200 transition cursor-pointer border border-slate-200 shadow-2xs"
                 >
                   <Save className="w-4 h-4 text-slate-600" />
-                  <span>Save Draft</span>
+                  <span>{t.saveDraftBtn}</span>
                 </button>
                 <button
                   type="button"
@@ -1610,7 +1671,7 @@ export function ForeignObservationClient(props: {
                   className="flex-1 sm:flex-initial inline-flex items-center justify-center gap-2 px-6 py-2.5 rounded-2xl bg-gradient-to-r from-[#003B3A] to-[#1E8B87] hover:from-[#002B2A] hover:to-[#003B3A] text-white font-black text-xs shadow-lg shadow-[#003B3A]/30 transition cursor-pointer"
                 >
                   <Send className="w-4 h-4 text-cyan-300" />
-                  <span>{isPending ? "Submitting..." : "Complete & Submit Observation"}</span>
+                  <span>{isPending ? t.submittingText : t.submitBtn}</span>
                 </button>
               </div>
             </div>
@@ -1628,6 +1689,7 @@ export function ForeignObservationClient(props: {
             departments={props.departments}
             indicators={ESL_INDICATORS}
             onOpenWalkthroughForm={() => setActiveTab("walkthrough")}
+            lang={lang}
           />
         )}
 
@@ -1638,9 +1700,9 @@ export function ForeignObservationClient(props: {
               <BarChart3 className="w-8 h-8" />
             </div>
             <div className="max-w-md mx-auto space-y-1.5">
-              <h3 className="text-xl font-black text-slate-900">Chỉ tiêu & Tiến độ Dự giờ Chuyên môn Tổ Tiếng Anh</h3>
+              <h3 className="text-xl font-black text-slate-900">{t.quotaTitle}</h3>
               <p className="text-xs text-slate-500 font-medium">
-                Đồng bộ trực tiếp theo quy định năm học cho Tiết Giảng Dạy (Host) và Tiết Đi Dự Giờ (Observer).
+                {t.quotaSubtitle}
               </p>
             </div>
 
@@ -1648,10 +1710,10 @@ export function ForeignObservationClient(props: {
               <div className="bg-slate-50 border border-slate-200 rounded-3xl p-6 text-left space-y-3 shadow-xs">
                 <div className="flex items-center justify-between">
                   <span className="text-xs font-black text-[#003B3A] uppercase tracking-wider block">
-                    Tiết Giảng Dạy (Host Teacher)
+                    {t.hostTeacherQuotaTitle}
                   </span>
                   <span className="px-2.5 py-0.5 rounded-full bg-teal-100 text-[#003B3A] text-[11px] font-black border border-teal-200">
-                    {props.teacherStats?.eslTaughtCount || 0} tiết ESL
+                    {props.teacherStats?.eslTaughtCount || 0} {t.hostTeacherQuotaUnit}
                   </span>
                 </div>
                 <div className="flex items-baseline gap-2">
@@ -1659,7 +1721,7 @@ export function ForeignObservationClient(props: {
                     {props.teacherStats?.taughtCount ?? 0}
                   </span>
                   <span className="text-sm font-bold text-slate-500">
-                    / {props.currentTeacher?.requiredTaught || 2} tiết chỉ tiêu
+                    / {props.currentTeacher?.requiredTaught || 2} {t.targetUnit}
                   </span>
                 </div>
                 <div className="w-full bg-slate-200 h-2.5 rounded-full overflow-hidden">
@@ -1669,17 +1731,17 @@ export function ForeignObservationClient(props: {
                   />
                 </div>
                 <p className="text-[11px] text-slate-500 font-medium">
-                  Tổng hợp từ tất cả các danh mục: Mầm non, K-12, và ESL.
+                  {t.hostTeacherQuotaDesc}
                 </p>
               </div>
 
               <div className="bg-slate-50 border border-slate-200 rounded-3xl p-6 text-left space-y-3 shadow-xs">
                 <div className="flex items-center justify-between">
                   <span className="text-xs font-black text-teal-700 uppercase tracking-wider block">
-                    Tiết Đi Dự Giờ (Observer)
+                    {t.observerQuotaTitle}
                   </span>
                   <span className="px-2.5 py-0.5 rounded-full bg-emerald-100 text-emerald-800 text-[11px] font-black border border-emerald-200">
-                    {props.teacherStats?.eslObservedCount || 0} tiết ESL
+                    {props.teacherStats?.eslObservedCount || 0} {t.hostTeacherQuotaUnit}
                   </span>
                 </div>
                 <div className="flex items-baseline gap-2">
@@ -1687,7 +1749,7 @@ export function ForeignObservationClient(props: {
                     {props.teacherStats?.observedCount ?? 0}
                   </span>
                   <span className="text-sm font-bold text-slate-500">
-                    / {props.currentTeacher?.requiredObserved || 10} tiết chỉ tiêu
+                    / {props.currentTeacher?.requiredObserved || 10} {t.targetUnit}
                   </span>
                 </div>
                 <div className="w-full bg-slate-200 h-2.5 rounded-full overflow-hidden">
@@ -1697,7 +1759,7 @@ export function ForeignObservationClient(props: {
                   />
                 </div>
                 <p className="text-[11px] text-slate-500 font-medium">
-                  Đã hoàn thành đánh giá và nộp phiếu nhận xét.
+                  {t.observerQuotaDesc}
                 </p>
               </div>
             </div>
