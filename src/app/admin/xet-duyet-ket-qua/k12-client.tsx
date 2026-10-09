@@ -9708,7 +9708,7 @@ const [customCommitmentSubjects, setCustomCommitmentSubjects] = useState<string[
                     </button>
                   </div>
                   <div className="flex flex-wrap gap-2 pt-1">
-                    {configs.filter(c => c.categoryType === "DOI_TUONG_TS").map(c => {
+                    {configs.filter(c => c.categoryType === "DOI_TUONG_TS" && !c.name.toLowerCase().includes("home")).map(c => {
                       const selectedTargets = sForm.targetType ? sForm.targetType.split(",").map(t => t.trim()).filter(Boolean) : [];
                       const isChecked = selectedTargets.includes(c.name);
                       return (
@@ -9730,7 +9730,7 @@ const [customCommitmentSubjects, setCustomCommitmentSubjects] = useState<string[
                         </button>
                       );
                     })}
-                    {configs.filter(c => c.categoryType === "DOI_TUONG_TS").length === 0 && (
+                    {configs.filter(c => c.categoryType === "DOI_TUONG_TS" && !c.name.toLowerCase().includes("home")).length === 0 && (
                        <span className="text-xs text-slate-400 italic">Chưa có đối tượng tuyển sinh nào trong danh mục</span>
                      )}
                    </div>
@@ -9753,7 +9753,7 @@ const [customCommitmentSubjects, setCustomCommitmentSubjects] = useState<string[
                                   readOnly
                                   type="text"
                                   value="Thành phố Đà Nẵng"
-                                  className="h-10 w-full px-3.5 bg-slate-100 border border-[#D9E2EC] text-[#1E293B] text-xs font-bold rounded-xl outline-none cursor-not-allowed"
+                                  className="h-10 w-full px-3.5 py-2 bg-slate-100 border border-[#D9E2EC] text-[#1E293B] text-xs sm:text-sm font-bold rounded-xl outline-none cursor-not-allowed leading-normal"
                                 />
                               </div>
                             )}
@@ -9763,7 +9763,7 @@ const [customCommitmentSubjects, setCustomCommitmentSubjects] = useState<string[
                                 <label className="block text-[10px] font-bold text-[#64748B] uppercase tracking-wider mb-1.5">Tỉnh / Thành phố *</label>
                                 <select value={selectedProvince}
                                   onChange={(e) => setSelectedProvince(e.target.value)}
-                                  className="h-10 w-full px-3 bg-white border border-[#D9E2EC] text-[#1E293B] text-xs font-semibold rounded-xl outline-none focus:border-[#00B5E2] focus:ring-4 focus:ring-[#00B5E2]/10 cursor-pointer"
+                                  className="h-10 w-full px-3 py-2 bg-white border border-[#D9E2EC] text-[#1E293B] text-xs sm:text-sm font-semibold rounded-xl outline-none focus:border-[#00B5E2] focus:ring-4 focus:ring-[#00B5E2]/10 cursor-pointer leading-normal"
                                 >
                                   <option value="">-- Chọn Tỉnh/Thành --</option>
                                   {vietnamProvinces.map((p) => (
@@ -9778,7 +9778,7 @@ const [customCommitmentSubjects, setCustomCommitmentSubjects] = useState<string[
                                 <label className="block text-[10px] font-bold text-[#64748B] uppercase tracking-wider mb-1.5">Quốc gia *</label>
                                 <select value={selectedCountry}
                                   onChange={(e) => setSelectedCountry(e.target.value)}
-                                  className="h-10 w-full px-3 bg-white border border-[#D9E2EC] text-[#1E293B] text-xs font-semibold rounded-xl outline-none focus:border-[#00B5E2] focus:ring-4 focus:ring-[#00B5E2]/10 cursor-pointer"
+                                  className="h-10 w-full px-3 py-2 bg-white border border-[#D9E2EC] text-[#1E293B] text-xs sm:text-sm font-semibold rounded-xl outline-none focus:border-[#00B5E2] focus:ring-4 focus:ring-[#00B5E2]/10 cursor-pointer leading-normal"
                                 >
                                   <option value="">-- Chọn Quốc gia --</option>
                                   {worldCountries.map((c) => (
@@ -9814,7 +9814,7 @@ const [customCommitmentSubjects, setCustomCommitmentSubjects] = useState<string[
                                         }
                                       }
                                     }}
-                                    className="h-10 w-full px-3 bg-white border border-[#D9E2EC] text-[#1E293B] text-xs font-semibold rounded-xl outline-none focus:border-[#00B5E2] focus:ring-4 focus:ring-[#00B5E2]/10 cursor-pointer"
+                                    className="h-10 w-full px-3 py-2 bg-white border border-[#D9E2EC] text-[#1E293B] text-xs sm:text-sm font-semibold rounded-xl outline-none focus:border-[#00B5E2] focus:ring-4 focus:ring-[#00B5E2]/10 cursor-pointer leading-normal"
                                   >
                                     <option value="">-- Chọn Đơn vị Trường học cũ --</option>
                                     {((typeof destinationSchools !== "undefined" && destinationSchools && destinationSchools.length > 0) ? destinationSchools : defaultDanangSchools).map((s) => (
@@ -9829,7 +9829,7 @@ const [customCommitmentSubjects, setCustomCommitmentSubjects] = useState<string[
                                     <input type="text" value={schoolNameInput}
                                       onChange={(e) => setSchoolNameInput(e.target.value)}
                                       placeholder="Nhập tên trường cũ (VD: TH Phù Đổng)"
-                                      className="h-10 w-full px-3.5 bg-white border border-[#D9E2EC] text-[#1E293B] placeholder-[#94A3B8] text-xs font-semibold rounded-xl outline-none focus:border-[#00B5E2] focus:ring-4 focus:ring-[#00B5E2]/10"
+                                      className="h-10 w-full px-3.5 py-2 bg-white border border-[#D9E2EC] text-[#1E293B] placeholder-[#94A3B8] text-xs sm:text-sm font-semibold rounded-xl outline-none focus:border-[#00B5E2] focus:ring-4 focus:ring-[#00B5E2]/10 leading-normal"
                                     />
                                   )}
                                 </div>
@@ -9837,7 +9837,7 @@ const [customCommitmentSubjects, setCustomCommitmentSubjects] = useState<string[
                                 <input type="text" value={schoolNameInput}
                                   onChange={(e) => setSchoolNameInput(e.target.value)}
                                   placeholder="Nhập tên trường cũ (VD: TH Phù Đổng)"
-                                  className="h-10 w-full px-3.5 bg-white border border-[#D9E2EC] text-[#1E293B] placeholder-[#94A3B8] text-xs font-semibold rounded-xl outline-none focus:border-[#00B5E2] focus:ring-4 focus:ring-[#00B5E2]/10"
+                                  className="h-10 w-full px-3.5 py-2 bg-white border border-[#D9E2EC] text-[#1E293B] placeholder-[#94A3B8] text-xs sm:text-sm font-semibold rounded-xl outline-none focus:border-[#00B5E2] focus:ring-4 focus:ring-[#00B5E2]/10 leading-normal"
                                 />
                               )}
                             </div>
@@ -9846,7 +9846,7 @@ const [customCommitmentSubjects, setCustomCommitmentSubjects] = useState<string[
                               <label className="block text-[10px] font-bold text-[#64748B] uppercase tracking-wider mb-1.5">Loại hình trường *</label>
                               <select value={schoolTypeInput}
                                 onChange={(e) => setSchoolTypeInput(e.target.value)}
-                                className="h-10 w-full px-3 bg-white border border-[#D9E2EC] text-[#1E293B] text-xs font-semibold rounded-xl outline-none focus:border-[#00B5E2] focus:ring-4 focus:ring-[#00B5E2]/10 cursor-pointer"
+                                className="h-10 w-full px-3 py-2 bg-white border border-[#D9E2EC] text-[#1E293B] text-xs sm:text-sm font-semibold rounded-xl outline-none focus:border-[#00B5E2] focus:ring-4 focus:ring-[#00B5E2]/10 cursor-pointer leading-normal"
                               >
                                 <option value="">-- Chọn loại hình --</option>
                                 <option value="Công lập">Công lập</option>

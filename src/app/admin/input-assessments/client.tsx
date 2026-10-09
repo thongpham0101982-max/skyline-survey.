@@ -8069,7 +8069,7 @@ const [customCommitmentSubjects, setCustomCommitmentSubjects] = useState<string[
               <div>
                 <label className="block text-[11px] font-medium text-slate-500 uppercase tracking-wider mb-1.5">Đối tượng tuyển sinh</label>
                 <div className="flex flex-wrap gap-2">
-                  {Array.from(new Map(configs.filter(c => c.categoryType === "DOI_TUONG_TS").map(c => [c.name.trim(), c])).values()).map(c => {
+                  {Array.from(new Map(configs.filter(c => c.categoryType === "DOI_TUONG_TS" && !c.name.toLowerCase().includes("home")).map(c => [c.name.trim(), c])).values()).map(c => {
                     const selectedTargets = sForm.targetType ? sForm.targetType.split(",").map(t => t.trim()).filter(Boolean) : [];
                     const isChecked = selectedTargets.includes(c.name);
                     return (
@@ -8080,9 +8080,9 @@ const [customCommitmentSubjects, setCustomCommitmentSubjects] = useState<string[
                           const updated = isChecked ? "" : c.name;
                           setSForm(f => ({ ...f, targetType: updated }));
                         }}
-                        className={`px-3 py-1.5 border rounded-xl flex items-center gap-1.5 transition-all text-xs font-medium select-none cursor-pointer ${
+                        className={`px-3.5 py-1.5 border rounded-xl flex items-center gap-1.5 transition-all text-xs font-medium select-none cursor-pointer ${
                           isChecked
-                            ? 'bg-sky-50 border-sky-300 text-sky-800 shadow-2xs'
+                            ? 'bg-sky-50 border-sky-300 text-sky-800 shadow-2xs font-semibold'
                             : 'bg-slate-50 border-slate-200 text-slate-600 hover:bg-slate-100'
                         }`}
                       >
@@ -8110,7 +8110,7 @@ const [customCommitmentSubjects, setCustomCommitmentSubjects] = useState<string[
                           readOnly
                           type="text"
                           value="Thành phố Đà Nẵng"
-                          className="h-9 w-full px-3 bg-slate-100 border border-slate-200 text-slate-700 text-xs font-medium rounded-lg outline-none cursor-not-allowed"
+                          className="h-10 w-full px-3 py-2 bg-slate-100 border border-slate-200 text-slate-700 text-xs sm:text-sm font-medium rounded-xl outline-none cursor-not-allowed leading-normal"
                         />
                       </div>
                     )}
@@ -8121,7 +8121,7 @@ const [customCommitmentSubjects, setCustomCommitmentSubjects] = useState<string[
                         <select
                           value={selectedProvince}
                           onChange={(e) => setSelectedProvince(e.target.value)}
-                          className="h-9 w-full px-3 bg-white border border-slate-200 text-slate-800 text-xs font-normal rounded-lg outline-none focus:border-teal-500"
+                          className="h-10 w-full px-3 py-2 bg-white border border-slate-200 text-slate-800 text-xs sm:text-sm font-medium rounded-xl outline-none focus:border-teal-500 cursor-pointer leading-normal"
                         >
                           <option value="">-- Chọn Tỉnh/Thành --</option>
                           {vietnamProvinces.map((p) => (
@@ -8137,7 +8137,7 @@ const [customCommitmentSubjects, setCustomCommitmentSubjects] = useState<string[
                         <select
                           value={selectedCountry}
                           onChange={(e) => setSelectedCountry(e.target.value)}
-                          className="h-9 w-full px-3 bg-white border border-slate-200 text-slate-800 text-xs font-normal rounded-lg outline-none focus:border-teal-500"
+                          className="h-10 w-full px-3 py-2 bg-white border border-slate-200 text-slate-800 text-xs sm:text-sm font-medium rounded-xl outline-none focus:border-teal-500 cursor-pointer leading-normal"
                         >
                           <option value="">-- Chọn Quốc gia --</option>
                           {worldCountries.map((c) => (
@@ -8152,7 +8152,7 @@ const [customCommitmentSubjects, setCustomCommitmentSubjects] = useState<string[
                       <select
                         value={schoolTypeInput}
                         onChange={(e) => setSchoolTypeInput(e.target.value)}
-                        className="h-9 w-full px-3 bg-white border border-slate-200 text-slate-800 text-xs font-normal rounded-lg outline-none focus:border-teal-500"
+                        className="h-10 w-full px-3 py-2 bg-white border border-slate-200 text-slate-800 text-xs sm:text-sm font-medium rounded-xl outline-none focus:border-teal-500 cursor-pointer leading-normal"
                       >
                         <option value="">-- Chọn loại hình --</option>
                         <option value="Công lập">Công lập</option>
@@ -8169,7 +8169,7 @@ const [customCommitmentSubjects, setCustomCommitmentSubjects] = useState<string[
                         value={schoolNameInput}
                         onChange={(e) => setSchoolNameInput(e.target.value)}
                         placeholder="Nhập tên trường cũ (VD: TH Phù Đổng)"
-                        className="h-9 w-full px-3 bg-white border border-slate-200 text-slate-800 placeholder-slate-400 text-xs font-normal rounded-lg outline-none focus:border-teal-500"
+                        className="h-10 w-full px-3.5 py-2 bg-white border border-slate-200 text-slate-800 placeholder-slate-400 text-xs sm:text-sm font-normal rounded-xl outline-none focus:border-teal-500 leading-normal"
                       />
                     </div>
                   </div>

@@ -374,7 +374,7 @@ export function EntranceAcademicRecordInput({
                     overallRating: e.target.value,
                     moet: { ...prev.moet!, overallRating: e.target.value }
                   }))}
-                  className="w-full h-9 px-3 bg-slate-50 border border-slate-200 rounded-lg text-xs font-normal text-slate-800 focus:bg-white outline-none focus:border-teal-500"
+                  className="w-full h-10 px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs sm:text-sm font-medium text-slate-800 focus:bg-white outline-none focus:border-teal-500 leading-normal cursor-pointer"
                 >
                   <option value="Hoàn thành xuất sắc">Hoàn thành xuất sắc</option>
                   <option value="Hoàn thành tốt">Hoàn thành tốt</option>
@@ -390,7 +390,7 @@ export function EntranceAcademicRecordInput({
                     overallRating: e.target.value,
                     moet: { ...prev.moet!, overallRating: e.target.value }
                   }))}
-                  className="w-full h-9 px-3 bg-slate-50 border border-slate-200 rounded-lg text-xs font-normal text-slate-800 focus:bg-white outline-none focus:border-teal-500"
+                  className="w-full h-10 px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs sm:text-sm font-medium text-slate-800 focus:bg-white outline-none focus:border-teal-500 leading-normal cursor-pointer"
                 >
                   <option value="Tốt">Tốt</option>
                   <option value="Khá">Khá</option>
@@ -409,7 +409,7 @@ export function EntranceAcademicRecordInput({
                   ...prev,
                   moet: { ...prev.moet!, conductRating: e.target.value }
                 }))}
-                className="w-full h-9 px-3 bg-slate-50 border border-slate-200 rounded-lg text-xs font-normal text-slate-800 focus:bg-white outline-none focus:border-teal-500"
+                className="w-full h-10 px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs sm:text-sm font-medium text-slate-800 focus:bg-white outline-none focus:border-teal-500 leading-normal cursor-pointer"
               >
                 <option value="Tốt">Tốt</option>
                 <option value="Khá">Khá</option>
@@ -429,7 +429,7 @@ export function EntranceAcademicRecordInput({
                 type="button"
                 disabled={disabled}
                 onClick={addMoetSubject}
-                className="inline-flex items-center gap-1 text-[11px] font-medium text-teal-700 hover:text-teal-800 bg-teal-50 hover:bg-teal-100/70 px-2 py-1 rounded-md transition-colors cursor-pointer"
+                className="inline-flex items-center gap-1 text-[11px] font-medium text-teal-700 hover:text-teal-800 bg-teal-50 hover:bg-teal-100/70 px-2.5 py-1 rounded-md transition-colors cursor-pointer"
               >
                 <Plus className="w-3 h-3" /> Thêm môn học
               </button>
@@ -437,7 +437,7 @@ export function EntranceAcademicRecordInput({
 
             <div className="space-y-2">
               {(record.moet?.subjects || []).map((sub, idx) => (
-                <div key={sub.id || idx} className="flex flex-wrap sm:flex-nowrap items-center gap-2 bg-slate-50/80 p-2 rounded-lg border border-slate-200/50">
+                <div key={sub.id || idx} className="flex flex-wrap sm:flex-nowrap items-center gap-2 bg-slate-50/80 p-2 rounded-xl border border-slate-200/50">
                   <div className="w-full sm:w-1/3">
                     <input
                       type="text"
@@ -445,7 +445,7 @@ export function EntranceAcademicRecordInput({
                       placeholder="Tên môn học"
                       value={sub.name}
                       onChange={(e) => handleMoetSubjectChange(idx, "name", e.target.value)}
-                      className="w-full h-8 px-2.5 bg-white border border-slate-200 rounded text-xs font-normal text-slate-800 outline-none focus:border-teal-500 disabled:bg-slate-100/70"
+                      className="w-full h-9.5 px-3 bg-white border border-slate-200 rounded-lg text-xs sm:text-sm font-medium text-slate-800 outline-none focus:border-teal-500 disabled:bg-slate-100/70 leading-normal"
                     />
                   </div>
 
@@ -459,7 +459,7 @@ export function EntranceAcademicRecordInput({
                             key={lvl}
                             disabled={disabled}
                             onClick={() => handleMoetSubjectChange(idx, "level", lvl)}
-                            className={`px-2.5 py-1 text-[11px] rounded font-medium transition-all cursor-pointer ${
+                            className={`px-3 py-1.5 text-xs rounded-lg font-medium transition-all cursor-pointer ${
                               sub.level === lvl
                                 ? lvl === "T" ? "bg-emerald-600 text-white shadow-2xs" : lvl === "H" ? "bg-sky-600 text-white shadow-2xs" : "bg-rose-500 text-white shadow-2xs"
                                 : "bg-white text-slate-600 border border-slate-200 hover:bg-slate-100"
@@ -478,7 +478,7 @@ export function EntranceAcademicRecordInput({
                           placeholder="Điểm (1-10)"
                           value={sub.score || ""}
                           onChange={(e) => handleMoetSubjectChange(idx, "score", e.target.value)}
-                          className="w-full h-8 px-2.5 bg-white border border-slate-200 rounded text-xs font-normal text-slate-800 text-center outline-none focus:border-teal-500"
+                          className="w-full h-9.5 px-3 bg-white border border-slate-200 rounded-lg text-xs sm:text-sm font-medium text-slate-800 text-center outline-none focus:border-teal-500 leading-normal"
                         />
                       </div>
                     </>
@@ -490,7 +490,7 @@ export function EntranceAcademicRecordInput({
                         placeholder="Điểm trung bình (vd: 8.5)"
                         value={sub.score || ""}
                         onChange={(e) => handleMoetSubjectChange(idx, "score", e.target.value)}
-                        className="w-full h-8 px-2.5 bg-white border border-slate-200 rounded text-xs font-normal text-slate-800 outline-none focus:border-teal-500"
+                        className="w-full h-9.5 px-3 bg-white border border-slate-200 rounded-lg text-xs sm:text-sm font-normal text-slate-800 outline-none focus:border-teal-500 leading-normal"
                       />
                     </div>
                   )}
@@ -500,7 +500,7 @@ export function EntranceAcademicRecordInput({
                       type="button"
                       disabled={disabled}
                       onClick={() => removeMoetSubject(idx)}
-                      className="p-1 text-slate-400 hover:text-rose-600 transition-colors"
+                      className="p-1.5 text-slate-400 hover:text-rose-600 transition-colors"
                       title="Xóa môn"
                     >
                       <Trash2 className="w-3.5 h-3.5" />
@@ -518,7 +518,7 @@ export function EntranceAcademicRecordInput({
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                 <select
                   disabled={disabled}
-                  value={record.moet?.combination?.name || "KHTN"}
+                  value={record.moet?.combination?.name || "KHTN (Lý, Hóa, Sinh)"}
                   onChange={(e) => updateRecord(prev => ({
                     ...prev,
                     moet: {
@@ -529,7 +529,7 @@ export function EntranceAcademicRecordInput({
                       }
                     }
                   }))}
-                  className="w-full h-9 px-3 bg-slate-50 border border-slate-200 rounded-lg text-xs font-normal text-slate-800 outline-none focus:border-teal-500"
+                  className="w-full h-10 px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs sm:text-sm font-medium text-slate-800 outline-none focus:border-teal-500 leading-normal cursor-pointer"
                 >
                   <option value="KHTN (Lý, Hóa, Sinh)">Tổ hợp Khoa học Tự nhiên (Lý, Hóa, Sinh)</option>
                   <option value="KHXH (Sử, Địa, GDKT&PL)">Tổ hợp Khoa học Xã hội (Sử, Địa, GDKT&PL)</option>
@@ -552,7 +552,7 @@ export function EntranceAcademicRecordInput({
                       }
                     }
                   }))}
-                  className="w-full h-9 px-3 bg-slate-50 border border-slate-200 rounded-lg text-xs font-normal text-slate-800 outline-none focus:border-teal-500"
+                  className="w-full h-10 px-3.5 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs sm:text-sm font-normal text-slate-800 outline-none focus:border-teal-500 leading-normal"
                 />
               </div>
             </div>
@@ -586,7 +586,7 @@ export function EntranceAcademicRecordInput({
                   ...prev,
                   bilingual: { ...prev.bilingual!, moetRating: e.target.value }
                 }))}
-                className="w-full h-8 px-2.5 bg-slate-50 border border-slate-200 rounded text-xs font-normal text-slate-800"
+                className="w-full h-10 px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs sm:text-sm font-medium text-slate-800 leading-normal cursor-pointer"
               >
                 <option value="Tốt">Tốt</option>
                 <option value="Khá">Khá</option>
@@ -603,7 +603,7 @@ export function EntranceAcademicRecordInput({
                     placeholder="Tên môn"
                     value={sub.name}
                     onChange={(e) => handleBilingualSubjectChange("moet", idx, "name", e.target.value)}
-                    className="flex-1 h-8 px-2.5 bg-slate-50 border border-slate-200 rounded text-xs font-normal text-slate-800"
+                    className="flex-1 h-9 px-2.5 bg-slate-50 border border-slate-200 rounded-lg text-xs sm:text-sm font-medium text-slate-800 leading-normal"
                   />
                   <input
                     type="text"
@@ -611,7 +611,7 @@ export function EntranceAcademicRecordInput({
                     placeholder="Điểm"
                     value={sub.score || ""}
                     onChange={(e) => handleBilingualSubjectChange("moet", idx, "score", e.target.value)}
-                    className="w-20 h-8 px-2 bg-slate-50 border border-slate-200 rounded text-xs font-normal text-slate-800 text-center"
+                    className="w-20 h-9 px-2 bg-slate-50 border border-slate-200 rounded-lg text-xs sm:text-sm font-medium text-slate-800 text-center leading-normal"
                   />
                   {idx >= 3 && (
                     <button type="button" onClick={() => removeBilingualSubject("moet", idx)} className="text-slate-400 hover:text-rose-600">
@@ -648,7 +648,7 @@ export function EntranceAcademicRecordInput({
                   ...prev,
                   bilingual: { ...prev.bilingual!, internationalRating: e.target.value }
                 }))}
-                className="w-full h-8 px-2.5 bg-slate-50 border border-slate-200 rounded text-xs font-normal text-slate-800"
+                className="w-full h-10 px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs sm:text-sm font-medium text-slate-800 leading-normal"
               />
             </div>
 
@@ -661,7 +661,7 @@ export function EntranceAcademicRecordInput({
                     placeholder="Môn quốc tế"
                     value={sub.name}
                     onChange={(e) => handleBilingualSubjectChange("intl", idx, "name", e.target.value)}
-                    className="flex-1 h-8 px-2.5 bg-slate-50 border border-slate-200 rounded text-xs font-normal text-slate-800"
+                    className="flex-1 h-9 px-2.5 bg-slate-50 border border-slate-200 rounded-lg text-xs sm:text-sm font-medium text-slate-800 leading-normal"
                   />
                   <input
                     type="text"
@@ -669,7 +669,7 @@ export function EntranceAcademicRecordInput({
                     placeholder="Điểm / Grade"
                     value={sub.score || ""}
                     onChange={(e) => handleBilingualSubjectChange("intl", idx, "score", e.target.value)}
-                    className="w-24 h-8 px-2 bg-slate-50 border border-slate-200 rounded text-xs font-normal text-slate-800 text-center"
+                    className="w-24 h-9 px-2 bg-slate-50 border border-slate-200 rounded-lg text-xs sm:text-sm font-medium text-slate-800 text-center leading-normal"
                   />
                   {idx >= 3 && (
                     <button type="button" onClick={() => removeBilingualSubject("intl", idx)} className="text-slate-400 hover:text-rose-600">
@@ -698,7 +698,7 @@ export function EntranceAcademicRecordInput({
                   ...prev,
                   foreign: { ...prev.foreign!, country: e.target.value }
                 }))}
-                className="w-full h-8 px-2.5 bg-slate-50 border border-slate-200 rounded text-xs font-normal text-slate-800"
+                className="w-full h-10 px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs sm:text-sm font-medium text-slate-800 leading-normal"
               />
             </div>
 
@@ -713,7 +713,7 @@ export function EntranceAcademicRecordInput({
                   ...prev,
                   foreign: { ...prev.foreign!, gradeCompleted: e.target.value }
                 }))}
-                className="w-full h-8 px-2.5 bg-slate-50 border border-slate-200 rounded text-xs font-normal text-slate-800"
+                className="w-full h-10 px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs sm:text-sm font-medium text-slate-800 leading-normal"
               />
             </div>
 
@@ -729,7 +729,7 @@ export function EntranceAcademicRecordInput({
                   overallRating: e.target.value,
                   foreign: { ...prev.foreign!, gpaOrHonors: e.target.value }
                 }))}
-                className="w-full h-8 px-2.5 bg-slate-50 border border-slate-200 rounded text-xs font-normal text-slate-800"
+                className="w-full h-10 px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs sm:text-sm font-medium text-slate-800 leading-normal"
               />
             </div>
           </div>
@@ -775,14 +775,14 @@ export function EntranceAcademicRecordInput({
 
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
               {(record.foreign?.subjects || []).map((sub, idx) => (
-                <div key={sub.id || idx} className="flex items-center gap-2 bg-slate-50 p-1.5 rounded-lg border border-slate-200/60">
+                <div key={sub.id || idx} className="flex items-center gap-2 bg-slate-50 p-2 rounded-xl border border-slate-200/60">
                   <input
                     type="text"
                     disabled={disabled}
                     placeholder="Tên môn (vd: Math)"
                     value={sub.name}
                     onChange={(e) => handleForeignSubjectChange(idx, "name", e.target.value)}
-                    className="flex-1 h-7.5 px-2 bg-white border border-slate-200 rounded text-xs font-normal text-slate-800"
+                    className="flex-1 h-9 px-2.5 bg-white border border-slate-200 rounded-lg text-xs sm:text-sm font-medium text-slate-800 leading-normal"
                   />
                   <input
                     type="text"
@@ -790,7 +790,7 @@ export function EntranceAcademicRecordInput({
                     placeholder="Grade (A/B/C)"
                     value={sub.score || ""}
                     onChange={(e) => handleForeignSubjectChange(idx, "score", e.target.value)}
-                    className="w-24 h-7.5 px-2 bg-white border border-slate-200 rounded text-xs font-normal text-slate-800 text-center"
+                    className="w-24 h-9 px-2 bg-white border border-slate-200 rounded-lg text-xs sm:text-sm font-medium text-slate-800 text-center leading-normal"
                   />
                   <button type="button" onClick={() => removeForeignSubject(idx)} className="text-slate-400 hover:text-rose-600">
                     <Trash2 className="w-3.5 h-3.5" />
@@ -848,14 +848,14 @@ export function EntranceAcademicRecordInput({
 
             <div className="space-y-1.5">
               {(record.homeschool?.subjects || []).map((sub, idx) => (
-                <div key={sub.id || idx} className="flex items-center gap-2 bg-slate-50 p-1.5 rounded-lg border border-slate-200/60">
+                <div key={sub.id || idx} className="flex items-center gap-2 bg-slate-50 p-2 rounded-xl border border-slate-200/60">
                   <input
                     type="text"
                     disabled={disabled}
                     placeholder="Môn học / Lĩnh vực (vd: Toán học, Ngôn ngữ...)"
                     value={sub.name}
                     onChange={(e) => handleHomeschoolSubjectChange(idx, "name", e.target.value)}
-                    className="flex-1 h-8 px-2.5 bg-white border border-slate-200 rounded text-xs font-normal text-slate-800"
+                    className="flex-1 h-9 px-2.5 bg-white border border-slate-200 rounded-lg text-xs sm:text-sm font-medium text-slate-800 leading-normal"
                   />
                   <input
                     type="text"
@@ -863,7 +863,7 @@ export function EntranceAcademicRecordInput({
                     placeholder="Kết quả / Mức đánh giá"
                     value={sub.score || ""}
                     onChange={(e) => handleHomeschoolSubjectChange(idx, "score", e.target.value)}
-                    className="w-48 h-8 px-2.5 bg-white border border-slate-200 rounded text-xs font-normal text-slate-800 text-center"
+                    className="w-48 h-9 px-2.5 bg-white border border-slate-200 rounded-lg text-xs sm:text-sm font-medium text-slate-800 text-center leading-normal"
                   />
                   <button type="button" onClick={() => removeHomeschoolSubject(idx)} className="text-slate-400 hover:text-rose-600">
                     <Trash2 className="w-3.5 h-3.5" />
@@ -886,7 +886,7 @@ export function EntranceAcademicRecordInput({
                 overallRating: e.target.value,
                 homeschool: { ...prev.homeschool!, overallEvaluation: e.target.value }
               }))}
-              className="w-full h-8 px-2.5 bg-slate-50 border border-slate-200 rounded text-xs font-normal text-slate-800"
+              className="w-full h-10 px-3.5 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs sm:text-sm font-medium text-slate-800 leading-normal"
             />
           </div>
         </div>
