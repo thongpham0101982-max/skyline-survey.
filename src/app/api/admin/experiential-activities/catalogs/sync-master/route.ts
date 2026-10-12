@@ -17,7 +17,7 @@ async function checkAdminOrBdhcmPermission(session: any) {
     'CTHS', 'CONG_TAC_HOC_SINH', 'BAN_CTHS'
   ];
   if (ALLOWED.some(r => upper.includes(r))) return true;
-  return await hasModulePermission(userRole, ['EXPERIENTIAL_ACTIVITIES', 'EXP_ACT_CATALOGS'], 'canWrite');
+  return await hasModulePermission(userRole, ['EXPERIENTIAL_ACTIVITIES', 'EXP_ACT_CATALOGS'], 'canCreate');
 }
 
 export async function POST(req: NextRequest) {

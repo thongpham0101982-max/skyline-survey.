@@ -118,7 +118,135 @@ export async function PUT(req: NextRequest, { params }: { params: Promise<{ id: 
     if (action === 'ALLOCATE_CAMPUSES' && Array.isArray(body.allocatedCampuses)) {
       updatedMeta.allocatedCampuses = body.allocatedCampuses;
 
-      // Gửi email thông báo cho GV Tổ TLHN tại các cơ sở được phân bổ
+      // Tự động khởi tạo hoặc đồng bộ ActivityRecord cho từng cơ sở nếu có phân bổ lớp
+      for (const alloc of body.allocatedCampuses) {
+        if (Array.isArray(alloc.assignedClasses) && alloc.assignedClasses.length > 0) {
+          try {
+            let academicYearId = updatedMeta.academicYearId;
+            if (!academicYearId) {
+              const activeYear = await prisma.academicYear.findFirst({ where: { status: 'ACTIVE' } }) || await prisma.academicYear.findFirst();
+              academicYearId = activeYear?.id || '';
+            }
+
+            let actRecord = null;
+            if (alloc.recordId) {
+              actRecord = await prisma.activityRecord.findUnique({ where: { id: alloc.recordId } });
+            }
+            if (!actRecord) {
+              actRecord = await prisma.activityRecord.findFirst({
+                where: {
+                  catalogId: existing.id,
+                  organizerId: alloc.campusId
+                }
+              });
+            }
+
+            const recordMeta = {
+              campusId: alloc.campusId,
+              campusCode: alloc.campusCode,
+              campusName: alloc.campusName,
+              educationLevel: updatedMeta.educationLevel || existing.level,
+              grades: alloc.selectedGrades || updatedMeta.grades || [],
+              themeName: updatedMeta.themeName,
+              themeAxis: updatedMeta.themeAxis,
+              integratedSubjects: updatedMeta.integratedSubjects,
+              primarySubjectName: updatedMeta.primarySubjectName,
+              coopSubjectNames: updatedMeta.coopSubjectNames,
+              deliverables: updatedMeta.deliverables,
+              expectedLocation: updatedMeta.expectedLocation,
+              timeFrame: updatedMeta.timeFrame,
+              evalMode: updatedMeta.evaluationConfig?.mode || 'RUBRIC',
+              assignedClasses: alloc.assignedClasses,
+              status: 'ASSIGNED',
+              tlhnTeacherId: alloc.tlhnTeacherId,
+              tlhnTeacherName: alloc.tlhnTeacherName
+            };
+
+            if (!actRecord) {
+              let repTeacher = null;
+              if (alloc.tlhnTeacherId) {
+                repTeacher = await prisma.teacher.findUnique({ where: { id: alloc.tlhnTeacherId } });
+              }
+              if (!repTeacher) {
+                repTeacher = await prisma.teacher.findFirst({ where: { campusId: alloc.campusId } }) || await prisma.teacher.findFirst();
+              }
+
+              if (repTeacher) {
+                actRecord = await prisma.activityRecord.create({
+                  data: {
+                    code: `HDTN-${alloc.campusCode || 'CS'}-${Date.now().toString().slice(-6)}`,
+                    name: existing.name,
+                    catalogId: existing.id,
+                    date: new Date(),
+                    semester: updatedMeta.semester || 1,
+                    academicYearId,
+                    levelId: updatedMeta.educationLevel || null,
+                    formatId: 'LOP',
+                    organizerId: alloc.campusId,
+                    teacherId: repTeacher.id,
+                    locationId: JSON.stringify(recordMeta),
+                    status: 'SUBMITTED'
+                  }
+                });
+                alloc.recordId = actRecord.id;
+                alloc.status = 'DA_TRIEN_KHAI';
+              }
+            } else {
+              await prisma.activityRecord.update({
+                where: { id: actRecord.id },
+                data: {
+                  locationId: JSON.stringify(recordMeta),
+                  status: 'SUBMITTED'
+                }
+              });
+              alloc.recordId = actRecord.id;
+              alloc.status = 'DA_TRIEN_KHAI';
+            }
+
+            // Khởi tạo ActivityParticipant cho học sinh của các lớp được chọn
+            if (actRecord) {
+              const classIds = alloc.assignedClasses.map((c: any) => c.classId).filter(Boolean);
+              if (classIds.length > 0) {
+                const students = await prisma.student.findMany({
+                  where: {
+                    classId: { in: classIds },
+                    NOT: { status: { in: ['INACTIVE', 'DELETED', 'CHUYEN_TRUONG', 'THOI_HOC'] } }
+                  },
+                  select: { id: true, classId: true }
+                });
+
+                if (students.length > 0) {
+                  const existingParts = await prisma.activityParticipant.findMany({
+                    where: { recordId: actRecord.id },
+                    select: { studentId: true }
+                  });
+                  const existingStudentIds = new Set(existingParts.map(p => p.studentId));
+
+                  const newParticipants = students
+                    .filter(s => !existingStudentIds.has(s.id))
+                    .map(s => ({
+                      recordId: actRecord.id,
+                      studentId: s.id,
+                      roleId: 'TV',
+                      evalLevelId: null,
+                      note: JSON.stringify({ attendance: 'PRESENT', role: 'Thành viên' })
+                    }));
+
+                  if (newParticipants.length > 0) {
+                    await prisma.activityParticipant.createMany({
+                      data: newParticipants
+                    });
+                  }
+                }
+              }
+            }
+          } catch (deployErr) {
+            console.error('[ALLOCATE_CAMPUSES] Lỗi khi tự động khởi tạo ActivityRecord:', deployErr);
+          }
+        }
+      }
+
+      // Gửi email thông báo cho GVCN các lớp & GV Tổ TLHN tại các cơ sở được phân bổ
       if (body.sendEmail !== false && body.allocatedCampuses.length > 0) {
         try {
           emailResult = await sendTLHNAllocationNotification({
@@ -142,11 +270,11 @@ export async function PUT(req: NextRequest, { params }: { params: Promise<{ id: 
             partners: updatedMeta.partners,
             cthsTeacherName: updatedMeta.cthsTeacherName,
             senderName: session.user?.name || 'BP HĐNGLL - Tổ CTHS',
-            senderEmail: session.user?.email,
+            senderEmail: session.user?.email || undefined,
             allocatedCampuses: body.allocatedCampuses
           });
         } catch (emailErr) {
-          console.error('[ALLOCATE_CAMPUSES] Lỗi khi gửi email cho GV Tổ TLHN:', emailErr);
+          console.error('[ALLOCATE_CAMPUSES] Lỗi khi gửi email cho GV Tổ TLHN / GVCN:', emailErr);
         }
       }
     }

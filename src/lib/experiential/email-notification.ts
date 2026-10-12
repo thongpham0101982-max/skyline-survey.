@@ -697,6 +697,17 @@ export interface TLHNAllocationEmailPayload {
     tlhnTeacherId?: string;
     tlhnTeacherName?: string;
     tlhnTeacherEmail?: string;
+    selectedGrades?: string[];
+    selectedClassIds?: string[];
+    assignedClasses?: Array<{
+      classId: string;
+      className: string;
+      grade?: string;
+      level?: string;
+      homeroomTeacherId?: string;
+      homeroomTeacherName?: string;
+      homeroomTeacherEmail?: string;
+    }>;
   }>;
 }
 
@@ -843,8 +854,57 @@ export async function sendTLHNAllocationNotification(payload: TLHNAllocationEmai
     }
 
     const recipients = Array.from(recipientMap.values());
-    if (recipients.length === 0) {
-      console.log('[TLHN Email] Không tìm thấy email của GV Tổ TLHN tại các cơ sở.');
+
+    // 2b. Thu thập danh sách GVCN từ các lớp được chọn phân bổ
+    const gvcnRecipientMap = new Map<string, {
+      email: string;
+      gvcnName: string;
+      className: string;
+      campusName: string;
+      campusCode: string;
+      tlhnTeacherName: string;
+      tlhnTeacherEmail: string;
+    }>();
+
+    for (const alloc of allocatedCampuses) {
+      if (Array.isArray(alloc.assignedClasses) && alloc.assignedClasses.length > 0) {
+        for (const cls of alloc.assignedClasses) {
+          let gvcnEmail = cls.homeroomTeacherEmail;
+          let gvcnName = cls.homeroomTeacherName;
+
+          if ((!gvcnEmail || !gvcnEmail.includes('@')) && cls.homeroomTeacherId) {
+            try {
+              const tIds = cls.homeroomTeacherId.split(',').map((id: string) => id.trim()).filter(Boolean);
+              const foundTeacher = await prisma.teacher.findFirst({
+                where: { id: { in: tIds } },
+                include: { user: true }
+              });
+              if (foundTeacher) {
+                gvcnEmail = foundTeacher.email || foundTeacher.user?.email || '';
+                gvcnName = gvcnName || foundTeacher.teacherName || foundTeacher.user?.fullName || '';
+              }
+            } catch {}
+          }
+
+          if (gvcnEmail && gvcnEmail.includes('@')) {
+            const cleanEmail = gvcnEmail.trim().toLowerCase();
+            const key = `${cleanEmail}_${cls.className}`;
+            gvcnRecipientMap.set(key, {
+              email: cleanEmail,
+              gvcnName: gvcnName || 'Thầy/Cô Giáo viên Chủ nhiệm',
+              className: cls.className,
+              campusName: alloc.campusName || `Sky-Line ${alloc.campusCode || ''}`,
+              campusCode: alloc.campusCode || '',
+              tlhnTeacherName: alloc.tlhnTeacherName || 'Tổ TLHN Cơ sở',
+              tlhnTeacherEmail: alloc.tlhnTeacherEmail || ''
+            });
+          }
+        }
+      }
+    }
+
+    if (recipients.length === 0 && gvcnRecipientMap.size === 0) {
+      console.log('[TLHN/GVCN Email] Không tìm thấy email của GV Tổ TLHN hoặc GVCN tại các cơ sở.');
       return { success: true, count: 0 };
     }
 
@@ -860,7 +920,7 @@ export async function sendTLHNAllocationNotification(payload: TLHNAllocationEmai
     const emailSubject = `[Sky-line SMS - HĐTN] Kế hoạch hoạt động ngoại khóa từ BP HĐNGLL - Tổ CTHS: ${activityName}`;
 
     // 3. Gửi email tới từng thầy cô Tổ TLHN
-    const sendPromises = recipients.map(async recipient => {
+    const tlhnPromises = recipients.map(async recipient => {
       const emailHtml = `
 <!DOCTYPE html>
 <html lang="vi">
@@ -1042,8 +1102,172 @@ export async function sendTLHNAllocationNotification(payload: TLHNAllocationEmai
       }
     });
 
-    await Promise.allSettled(sendPromises);
-    return { success: true, count: recipients.length };
+    // Gửi email riêng biệt tới từng GVCN với lời nhắn nhập vai trò học sinh
+    const gvcnPromises = Array.from(gvcnRecipientMap.values()).map(async gvcn => {
+      const gvcnSubject = `[Sky-Line HĐTN] Kế hoạch hoạt động ngoại khóa & Nhập vai trò học sinh lớp ${gvcn.className}: ${activityName}`;
+      const gvcnEmailHtml = `
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+  <meta charset="UTF-8">
+  <title>${gvcnSubject}</title>
+</head>
+<body style="margin: 0; padding: 0; background-color: #F1F5F9; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif; color: #1E293B;">
+  <table role="presentation" border="0" cellpadding="0" cellspacing="0" width="100%" bgcolor="#F1F5F9" style="table-layout: fixed;">
+    <tr>
+      <td align="center" style="padding: 24px 12px;">
+        <table role="presentation" border="0" cellpadding="0" cellspacing="0" width="100%" style="max-width: 660px; background-color: #FFFFFF; border-radius: 16px; overflow: hidden; box-shadow: 0 10px 25px rgba(0, 59, 58, 0.08); border: 1px solid #E2E8F0;">
+          
+          <!-- HEADER BANNER -->
+          <tr>
+            <td bgcolor="#003B3A" style="background-color: #003B3A; background: linear-gradient(135deg, #003B3A 0%, #005B58 60%, #00A19A 100%); padding: 30px 24px; text-align: center;">
+              <table role="presentation" border="0" cellpadding="0" cellspacing="0" align="center" style="margin: 0 auto;">
+                <tr>
+                  <td align="center" style="padding-bottom: 8px;">
+                    <span style="display: inline-block; padding: 4px 14px; background-color: rgba(255, 255, 255, 0.12); border: 1px solid rgba(255, 255, 255, 0.25); border-radius: 9999px; font-size: 11px; font-weight: 700; color: #FFFFFF; letter-spacing: 0.5px; text-transform: uppercase;">
+                      🏫 HỆ THỐNG GIÁO DỤC SKY-LINE
+                    </span>
+                  </td>
+                </tr>
+                <tr>
+                  <td align="center">
+                    <h1 style="margin: 0; font-size: 20px; font-weight: 800; color: #FFFFFF; letter-spacing: -0.3px; line-height: 1.3; text-transform: uppercase;">
+                      KẾ HOẠCH HOẠT ĐỘNG NGOẠI KHÓA & TRẢI NGHIỆM
+                    </h1>
+                  </td>
+                </tr>
+                <tr>
+                  <td align="center" style="padding-top: 6px;">
+                    <div style="font-size: 13px; font-weight: 600; color: #CCFBF1; letter-spacing: 0.3px;">
+                      THÔNG BÁO DÀNH CHO GIÁO VIÊN CHỦ NHIỆM LỚP ${gvcn.className}
+                    </div>
+                  </td>
+                </tr>
+              </table>
+            </td>
+          </tr>
+
+          <!-- MAIN CONTENT BODY -->
+          <tr>
+            <td style="padding: 28px 24px; color: #1E293B;">
+              <p style="margin: 0 0 14px 0; font-size: 15px; font-weight: 700; color: #003B3A;">
+                Kính gửi Quý Thầy/Cô <strong>${gvcn.gvcnName}</strong> — Giáo viên Chủ nhiệm Lớp <strong>${gvcn.className}</strong> (${gvcn.campusName}),
+              </p>
+
+              <!-- PROMINENT CALLOUT BANNER -->
+              <table role="presentation" border="0" cellpadding="0" cellspacing="0" width="100%" bgcolor="#FEF3C7" style="background-color: #FEF3C7; border: 2px solid #F59E0B; border-radius: 12px; margin: 0 0 24px 0;">
+                <tr>
+                  <td style="padding: 16px 18px;">
+                    <div style="font-size: 14px; font-weight: 800; color: #92400E; line-height: 1.6;">
+                      📢 Kính nhờ Quý thầy/cô GVCN vui lòng hoàn tất nhập vai trò của Học sinh trong Hoạt động trải nghiệm để bổ sung Hồ sơ Học sinh cuối năm.
+                    </div>
+                  </td>
+                </tr>
+              </table>
+
+              <!-- ACTIVITY DETAILS TABLE -->
+              <div style="font-size: 13px; font-weight: 800; text-transform: uppercase; color: #003B3A; letter-spacing: 0.5px; margin: 20px 0 10px 0; border-bottom: 2px solid #E2E8F0; padding-bottom: 6px;">
+                📌 THÔNG TIN HOẠT ĐỘNG TRẢI NGHIỆM
+              </div>
+
+              <table role="presentation" border="0" cellpadding="0" cellspacing="0" width="100%" style="border-collapse: collapse; margin-bottom: 24px; font-size: 13.5px; border: 1px solid #E2E8F0; border-radius: 8px; overflow: hidden;">
+                <tr style="background-color: #F8FAFC;">
+                  <td width="36%" style="padding: 10px 14px; border-bottom: 1px solid #E2E8F0; font-weight: 700; color: #475569;">Tên hoạt động:</td>
+                  <td width="64%" style="padding: 10px 14px; border-bottom: 1px solid #E2E8F0; font-weight: 800; color: #003B3A;">${activityName}</td>
+                </tr>
+                <tr>
+                  <td style="padding: 10px 14px; border-bottom: 1px solid #E2E8F0; font-weight: 700; color: #475569;">Bậc học:</td>
+                  <td style="padding: 10px 14px; border-bottom: 1px solid #E2E8F0; font-weight: 600; color: #1E293B;">${educationLevel}</td>
+                </tr>
+                <tr style="background-color: #F8FAFC;">
+                  <td style="padding: 10px 14px; border-bottom: 1px solid #E2E8F0; font-weight: 700; color: #475569;">Hệ học:</td>
+                  <td style="padding: 10px 14px; border-bottom: 1px solid #E2E8F0; font-weight: 600; color: #1E293B;">${programType || 'Chất lượng cao / Song ngữ'}</td>
+                </tr>
+                <tr>
+                  <td style="padding: 10px 14px; border-bottom: 1px solid #E2E8F0; font-weight: 700; color: #475569;">Chủ đề giáo dục:</td>
+                  <td style="padding: 10px 14px; border-bottom: 1px solid #E2E8F0; font-weight: 600; color: #1E293B;">${themeName || 'Theo kế hoạch năm học'}</td>
+                </tr>
+                <tr style="background-color: #F8FAFC;">
+                  <td style="padding: 10px 14px; border-bottom: 1px solid #E2E8F0; font-weight: 700; color: #475569;">Môn phối hợp:</td>
+                  <td style="padding: 10px 14px; border-bottom: 1px solid #E2E8F0; font-weight: 600; color: #1E293B;">
+                    ${primarySubjectName ? '<strong>Chủ trì:</strong> ' + primarySubjectName : ''}
+                    ${coopSubjectNames || integratedSubjects ? '; <strong>Phối hợp:</strong> ' + (coopSubjectNames || integratedSubjects) : ''}
+                  </td>
+                </tr>
+                <tr>
+                  <td style="padding: 10px 14px; border-bottom: 1px solid #E2E8F0; font-weight: 700; color: #475569;">Thời gian & HK:</td>
+                  <td style="padding: 10px 14px; border-bottom: 1px solid #E2E8F0; color: #1E293B;">
+                    <strong>${timeFrame || 'Trong năm học'}</strong> (Học kỳ ${semester})
+                  </td>
+                </tr>
+                <tr style="background-color: #F8FAFC;">
+                  <td style="padding: 10px 14px; border-bottom: 1px solid #E2E8F0; font-weight: 700; color: #475569;">Địa điểm:</td>
+                  <td style="padding: 10px 14px; border-bottom: 1px solid #E2E8F0; color: #1E293B;">${expectedLocation || 'Theo kế hoạch'}</td>
+                </tr>
+                <tr>
+                  <td style="padding: 10px 14px; border-bottom: 1px solid #E2E8F0; font-weight: 700; color: #475569;">GV Tổ TLHN tiếp nhận:</td>
+                  <td style="padding: 10px 14px; border-bottom: 1px solid #E2E8F0; font-weight: 700; color: #00A19A;">
+                    ${gvcn.tlhnTeacherName} ${gvcn.tlhnTeacherEmail ? `<span style="font-weight: 400; color: #64748B;">(${gvcn.tlhnTeacherEmail})</span>` : ''}
+                  </td>
+                </tr>
+              </table>
+
+              <!-- CTA BUTTON -->
+              <table role="presentation" border="0" cellpadding="0" cellspacing="0" align="center" style="margin: 24px auto;">
+                <tr>
+                  <td align="center" bgcolor="#00A19A" style="border-radius: 10px; background-color: #00A19A;">
+                    <a href="${dispatchUrl}" target="_blank" style="display: inline-block; padding: 14px 32px; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Arial, sans-serif; font-size: 13.5px; color: #FFFFFF; font-weight: 800; text-decoration: none; border-radius: 10px; text-transform: uppercase; letter-spacing: 0.5px; border: 1px solid #00A19A;">
+                      VÀO SSM NHẬP VAI TRÒ HỌC SINH LỚP ${gvcn.className} &rarr;
+                    </a>
+                  </td>
+                </tr>
+              </table>
+
+            </td>
+          </tr>
+
+          <!-- OFFICIAL BRAND FOOTER -->
+          <tr>
+            <td bgcolor="#003B3A" style="background-color: #003B3A; padding: 24px 24px; text-align: center; border-top: 3px solid #00A19A;">
+              <p style="margin: 0 0 4px 0; font-size: 12px; font-weight: 800; color: #FFFFFF; letter-spacing: 0.5px; text-transform: uppercase;">
+                HỆ THỐNG GIÁO DỤC SKY-LINE (SKY-LINE EDUCATION SYSTEM)
+              </p>
+              <p style="margin: 0 0 6px 0; font-size: 11px; font-weight: 600; color: #CCFBF1;">
+                BAN ĐÀO TẠO & KHẢO THÍ ĐẢM BẢO CHẤT LƯỢNG GIÁO DỤC
+              </p>
+              <p style="margin: 0 0 10px 0; font-size: 11px; color: rgba(255, 255, 255, 0.75);">
+                Đơn vị gửi thông báo: <strong style="color: #FFFFFF;">${senderName}</strong>
+              </p>
+              <p style="margin: 0; font-size: 10px; color: rgba(255, 255, 255, 0.65); line-height: 1.5;">
+                Email hỗ trợ: <a href="mailto:bankhaothi@skylineschool.edu.vn" style="color: #FDE047; text-decoration: none; font-weight: 600;">bankhaothi@skylineschool.edu.vn</a> • Website: <a href="https://skylineschool.edu.vn" target="_blank" style="color: #FDE047; text-decoration: none; font-weight: 600;">skylineschool.edu.vn</a>
+              </p>
+            </td>
+          </tr>
+
+        </table>
+      </td>
+    </tr>
+  </table>
+</body>
+</html>
+      `;
+
+      try {
+        await sendEmail({
+          from: fromAddress,
+          to: gvcn.email,
+          subject: gvcnSubject,
+          html: gvcnEmailHtml
+        });
+        console.log(`[GVCN Email] Đã gửi email kế hoạch HĐTN thành công tới GVCN ${gvcn.gvcnName} (${gvcn.email}) lớp ${gvcn.className}`);
+      } catch (err: any) {
+        console.error(`[GVCN Email] Lỗi khi gửi email tới ${gvcn.email}:`, err?.message);
+      }
+    });
+
+    await Promise.allSettled([...tlhnPromises, ...gvcnPromises]);
+    const totalSent = recipients.length + gvcnRecipientMap.size;
+    return { success: true, count: totalSent, gvcnCount: gvcnRecipientMap.size, tlhnCount: recipients.length };
   } catch (error: any) {
     console.error('[TLHN Email] Lỗi xử lý gửi email phân bổ hoạt động:', error);
     return { success: false, error: error?.message };

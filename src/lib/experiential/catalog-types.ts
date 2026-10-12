@@ -197,6 +197,9 @@ export interface ActivityCatalogMeta {
   cthsTeacherCode?: string; // Mã GV Tổ CTHS
   cthsTeacherName?: string; // Họ tên các GV Tổ CTHS phụ trách (dạng ghép ngăn cách dấu phẩy)
   cthsTeacherEmail?: string; // Email GV Tổ CTHS
+  cthsTeacherPhone?: string; // SĐT GV Tổ CTHS
+  cthsTeacherCampus?: string; // Cơ sở GV Tổ CTHS
+  themeAxis?: string; // Trục chủ đề cốt lõi (DI_SAN | MOI_TRUONG | STEM | NGON_NGU)
   evaluationConfig?: ActivityEvaluationConfig; // Thiết lập Cấu hình & Tiêu chí đánh giá
   allocatedCampuses?: CampusAllocationItem[];
 }
