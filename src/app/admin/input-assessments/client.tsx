@@ -51,6 +51,64 @@ interface Assignment {
   user?: { fullName: string }; subject?: { name: string }; batch?: { name: string };
 }
 
+interface SessionExaminer {
+  id: string;
+  sessionId: string;
+  userId: string;
+  role: string;
+  subjectCode?: string;
+  user?: { id: string; fullName: string; email?: string; role?: string };
+}
+
+interface StudentSession {
+  id: string;
+  sessionId: string;
+  studentId: string;
+  status: string;
+  seatNumber?: string;
+  note?: string;
+  student?: {
+    id: string;
+    studentCode: string;
+    fullName: string;
+    gender?: string;
+    dateOfBirth?: string;
+    grade?: string;
+    className?: string;
+    admissionCriteria?: string;
+    surveySystem?: string;
+    admissionCampus?: string;
+    registeredCampus?: string;
+    admissionResult?: string;
+    isAbsent?: boolean;
+    scores?: any[];
+  };
+}
+
+interface AssessmentSession {
+  id: string;
+  sessionCode: string;
+  name: string;
+  sessionDate: string;
+  startTime?: string;
+  endTime?: string;
+  room?: string;
+  campusId: string;
+  academicYearId: string;
+  periodId?: string;
+  batchId?: string;
+  maxCapacity: number;
+  sessionType: string;
+  status: string;
+  notes?: string;
+  campus?: { id: string; campusCode: string; campusName: string };
+  academicYear?: { id: string; name: string };
+  period?: { id: string; code: string; name: string };
+  batch?: { id: string; batchNumber: number; name: string };
+  examiners?: SessionExaminer[];
+  studentSessions?: StudentSession[];
+}
+
 interface Props {
   academicYears: AcademicYear[]; campuses: Campus[]; examBoardUsers: User[];
   subjects: AssessmentSubject[]; eduSystems: EduSystem[]; grades: string[];
@@ -1219,6 +1277,89 @@ export function InputAssessmentsClient({
   const [batchStatusFilter, setBatchStatusFilter] = useState("all")
   const [confirm, setConfirm] = useState<{msg:string; fn:()=>void}|null>(null)
   const [sendingEmailBatchId, setSendingEmailBatchId] = useState<string | null>(null);
+
+  // ───────── SESSIONS STATE ─────────
+  const [sessions, setSessions] = useState<AssessmentSession[]>([])
+  const [sessionsLoading, setSessionsLoading] = useState(false)
+  const [periodSubView, setPeriodSubView] = useState<"sessions" | "batches">("sessions")
+  const [sessionCampusFilter, setSessionCampusFilter] = useState("all")
+  const [sessionStatusFilter, setSessionStatusFilter] = useState("all")
+  const [sessionTypeFilter, setSessionTypeFilter] = useState("all")
+  const [sessionDateFilter, setSessionDateFilter] = useState("")
+  const [sessionSearch, setSessionSearch] = useState("")
+  
+  // Quick Schedule Modal state
+  const [isQuickScheduleOpen, setIsQuickScheduleOpen] = useState(false)
+  const [quickScheduleLoading, setQuickScheduleLoading] = useState(false)
+  const [quickStudentMode, setQuickStudentMode] = useState<"existing" | "new">("existing")
+  const [quickSelectedStudentId, setQuickSelectedStudentId] = useState("")
+  const [quickNewStudent, setQuickNewStudent] = useState({
+    fullName: "",
+    dateOfBirth: "",
+    gender: "NAM",
+    grade: "1",
+    surveySystem: "CLC",
+    admissionCriteria: "KhaoSat",
+    admissionCampus: "",
+  })
+  const [quickSessionData, setQuickSessionData] = useState({
+    sessionDate: new Date().toISOString().slice(0, 10),
+    startTime: "08:30",
+    endTime: "10:30",
+    room: "Phòng Khảo sát",
+    campusId: "",
+    examinerUserIds: [] as string[],
+    periodId: "",
+    notes: ""
+  })
+
+  // Create / Edit Session Modal state
+  const [isSessionModalOpen, setIsSessionModalOpen] = useState(false)
+  const [editingSession, setEditingSession] = useState<AssessmentSession | null>(null)
+  const [sessionForm, setSessionForm] = useState({
+    name: "",
+    sessionCode: "",
+    sessionDate: new Date().toISOString().slice(0, 10),
+    startTime: "08:00",
+    endTime: "10:30",
+    room: "",
+    campusId: "",
+    periodId: "",
+    batchId: "",
+    maxCapacity: 30,
+    sessionType: "LE",
+    status: "SCHEDULED",
+    notes: "",
+    examinerUserIds: [] as string[],
+  })
+
+  // Selected session for viewing students detail
+  const [selectedSessionForDetail, setSelectedSessionForDetail] = useState<AssessmentSession | null>(null)
+
+  const filteredSessions = useMemo(() => {
+    return sessions.filter(s => {
+      if (sessionCampusFilter !== "all" && s.campusId !== sessionCampusFilter) return false;
+      if (sessionStatusFilter !== "all" && s.status !== sessionStatusFilter) return false;
+      if (sessionTypeFilter !== "all" && s.sessionType !== sessionTypeFilter) return false;
+      if (sessionDateFilter) {
+        const sDate = s.sessionDate ? new Date(s.sessionDate).toISOString().slice(0, 10) : "";
+        if (sDate !== sessionDateFilter) return false;
+      }
+      if (sessionSearch.trim()) {
+        const q = sessionSearch.toLowerCase().trim();
+        const matchName = (s.name || "").toLowerCase().includes(q);
+        const matchCode = (s.sessionCode || "").toLowerCase().includes(q);
+        const matchRoom = (s.room || "").toLowerCase().includes(q);
+        const matchCampus = (s.campus?.campusName || "").toLowerCase().includes(q);
+        const matchStudent = (s.studentSessions || []).some(ss => 
+          (ss.student?.fullName || "").toLowerCase().includes(q) ||
+          (ss.student?.studentCode || "").toLowerCase().includes(q)
+        );
+        if (!matchName && !matchCode && !matchRoom && !matchCampus && !matchStudent) return false;
+      }
+      return true;
+    });
+  }, [sessions, sessionCampusFilter, sessionStatusFilter, sessionTypeFilter, sessionDateFilter, sessionSearch]);
 
   // ───────── PERIODS CRUD ─────────
   const [pModal, setPModal] = useState(false)
@@ -3246,6 +3387,191 @@ ${reportForm.directorNote}`;
     } finally { setPLoading(false) }
   }, [yearId, sPeriodId, asPeriodId])
 
+  // ───────── SESSION HANDLERS ─────────
+  const fetchSessions = useCallback(async () => {
+    if (!yearId) return;
+    setSessionsLoading(true);
+    try {
+      let url = `/api/input-assessment-sessions?academicYearId=${yearId}&t=${Date.now()}`;
+      if (sessionCampusFilter && sessionCampusFilter !== "all") {
+        url += `&campusId=${sessionCampusFilter}`;
+      }
+      if (sessionStatusFilter && sessionStatusFilter !== "all") {
+        url += `&status=${sessionStatusFilter}`;
+      }
+      if (sessionTypeFilter && sessionTypeFilter !== "all") {
+        url += `&sessionType=${sessionTypeFilter}`;
+      }
+      if (sessionDateFilter) {
+        url += `&date=${sessionDateFilter}`;
+      }
+      const res = await fetch(url);
+      if (res.ok) {
+        const data = await res.json();
+        setSessions(Array.isArray(data) ? data : []);
+      }
+    } catch (e) {
+      console.error("fetchSessions error:", e);
+    } finally {
+      setSessionsLoading(false);
+    }
+  }, [yearId, sessionCampusFilter, sessionStatusFilter, sessionTypeFilter, sessionDateFilter]);
+
+  useEffect(() => {
+    if (tab === "periods" || forcedTab === "periods") {
+      fetchSessions();
+    }
+  }, [tab, forcedTab, fetchSessions]);
+
+  const handleQuickScheduleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (cannotCreate) return;
+    setQuickScheduleLoading(true);
+    try {
+      const payload: any = {
+        sessionDate: quickSessionData.sessionDate,
+        startTime: quickSessionData.startTime,
+        endTime: quickSessionData.endTime,
+        room: quickSessionData.room,
+        campusId: quickSessionData.campusId || campuses[0]?.id,
+        academicYearId: yearId,
+        periodId: quickSessionData.periodId || periods[0]?.id || null,
+        examinerUserIds: quickSessionData.examinerUserIds,
+        notes: quickSessionData.notes,
+      };
+
+      if (quickStudentMode === "existing") {
+        if (!quickSelectedStudentId) {
+          notify("Vui lòng chọn một học sinh trong danh sách", "err");
+          setQuickScheduleLoading(false);
+          return;
+        }
+        payload.studentId = quickSelectedStudentId;
+      } else {
+        if (!quickNewStudent.fullName) {
+          notify("Vui lòng nhập Họ tên học sinh", "err");
+          setQuickScheduleLoading(false);
+          return;
+        }
+        payload.studentData = {
+          ...quickNewStudent,
+          admissionCampus: quickSessionData.campusId || campuses[0]?.id,
+          registeredCampus: quickSessionData.campusId || campuses[0]?.id,
+          periodId: quickSessionData.periodId || periods[0]?.id,
+        };
+      }
+
+      const res = await fetch("/api/input-assessment-sessions/quick-schedule", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(payload)
+      });
+
+      if (res.ok) {
+        notify("Đã xếp lịch khảo sát thành công!");
+        setIsQuickScheduleOpen(false);
+        fetchSessions();
+        if (sPeriodId) fetchStudents();
+        setQuickSelectedStudentId("");
+        setQuickNewStudent({
+          fullName: "",
+          dateOfBirth: "",
+          gender: "NAM",
+          grade: "1",
+          surveySystem: "CLC",
+          admissionCriteria: "KhaoSat",
+          admissionCampus: "",
+        });
+      } else {
+        const d = await res.json();
+        notify(d.error || "Lỗi xếp lịch khảo sát", "err");
+      }
+    } catch (e: any) {
+      notify(e.message || "Lỗi mạng", "err");
+    } finally {
+      setQuickScheduleLoading(false);
+    }
+  };
+
+  const handleSaveSession = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (editingSession ? cannotUpdate : cannotCreate) return;
+    try {
+      const url = "/api/input-assessment-sessions";
+      const method = editingSession ? "PUT" : "POST";
+      const payload: any = editingSession ? {
+        id: editingSession.id,
+        data: {
+          name: sessionForm.name,
+          sessionDate: sessionForm.sessionDate,
+          startTime: sessionForm.startTime,
+          endTime: sessionForm.endTime,
+          room: sessionForm.room,
+          campusId: sessionForm.campusId,
+          academicYearId: yearId,
+          periodId: sessionForm.periodId || null,
+          batchId: sessionForm.batchId || null,
+          maxCapacity: parseInt(sessionForm.maxCapacity as any, 10) || 30,
+          sessionType: sessionForm.sessionType,
+          status: sessionForm.status,
+          notes: sessionForm.notes,
+        },
+        examiners: sessionForm.examinerUserIds.map(uid => ({ userId: uid, role: "EXAMINER" }))
+      } : {
+        name: sessionForm.name,
+        sessionCode: sessionForm.sessionCode || undefined,
+        sessionDate: sessionForm.sessionDate,
+        startTime: sessionForm.startTime,
+        endTime: sessionForm.endTime,
+        room: sessionForm.room,
+        campusId: sessionForm.campusId,
+        academicYearId: yearId,
+        periodId: sessionForm.periodId || null,
+        batchId: sessionForm.batchId || null,
+        maxCapacity: parseInt(sessionForm.maxCapacity as any, 10) || 30,
+        sessionType: sessionForm.sessionType,
+        status: sessionForm.status,
+        notes: sessionForm.notes,
+        examinerUserIds: sessionForm.examinerUserIds,
+      };
+
+      const res = await fetch(url, {
+        method,
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(payload)
+      });
+
+      if (res.ok) {
+        notify(editingSession ? "Đã cập nhật phiên khảo sát!" : "Đã tạo phiên khảo sát mới!");
+        setIsSessionModalOpen(false);
+        fetchSessions();
+      } else {
+        const d = await res.json();
+        notify(d.error || "Lỗi lưu phiên khảo sát", "err");
+      }
+    } catch (e: any) {
+      notify(e.message || "Lỗi mạng", "err");
+    }
+  };
+
+  const doDeleteSession = async (id: string) => {
+    if (cannotDelete) return;
+    try {
+      const res = await fetch(`/api/input-assessment-sessions?id=${id}`, {
+        method: "DELETE"
+      });
+      if (res.ok) {
+        notify("Đã xóa phiên khảo sát thành công!");
+        fetchSessions();
+      } else {
+        const d = await res.json();
+        notify(d.error || "Không thể xóa phiên khảo sát", "err");
+      }
+    } catch (e: any) {
+      notify(e.message || "Lỗi mạng", "err");
+    }
+  };
+
 
   const fetchSubjects=async()=>{const r=await fetch("/api/input-assessment-categories?type=subject");if(r.ok)setSubjectsList(await r.json())};
   useEffect(() => {
@@ -4364,7 +4690,7 @@ const [customCommitmentSubjects, setCustomCommitmentSubjects] = useState<string[
         </div>
       )}
 
-      {/* ===== TAB: PERIODS (RESTORED) ===== */}
+      {/* ===== TAB: PERIODS (SESSIONS & BATCHES DUAL VIEW) ===== */}
       {tab==="periods" && (
         <div className={"space-y-4 animate-in fade-in slide-in-from-bottom-2 duration-500 " + (isReadOnly ? "select-none" : "")}>
           {isReadOnly && (
@@ -4373,18 +4699,410 @@ const [customCommitmentSubjects, setCustomCommitmentSubjects] = useState<string[
               Chế độ xem (Đọc dữ liệu). Các chức năng Thêm mới, Chỉnh sửa và Xóa bị khóa đối với tài khoản này.
             </div>
           )}
-          <div className="flex items-center justify-between">
-            <h2 className="text-sm font-black text-slate-600 uppercase tracking-widest flex items-center gap-2"><Clock className="w-4 h-4"/> Kỳ & Đợt Khảo sát</h2>
-            <div className="flex gap-2">
-              <button onClick={fetchPeriods} className="p-2 text-slate-400 hover:text-slate-700 hover:bg-slate-100 rounded-xl transition-all"><RefreshCw className="w-4 h-4"/></button>
 
+          {/* TOP CONTROLS & SUB-VIEW SWITCHER */}
+          <div className="bg-white p-4 rounded-2xl border border-slate-200 shadow-sm flex flex-col lg:flex-row items-stretch lg:items-center justify-between gap-4">
+            <div className="flex flex-wrap items-center gap-3">
+              {/* Dual View Pill Switcher */}
+              <div className="flex items-center gap-1.5 p-1 bg-slate-100 rounded-xl border border-slate-200">
+                <button
+                  type="button"
+                  onClick={() => setPeriodSubView("sessions")}
+                  className={`flex items-center gap-2 px-3.5 py-1.5 rounded-lg text-xs font-black transition-all cursor-pointer ${
+                    periodSubView === "sessions"
+                      ? "bg-white text-indigo-600 shadow-xs border border-slate-200"
+                      : "text-slate-600 hover:text-slate-900"
+                  }`}
+                >
+                  <Clock className="w-3.5 h-3.5 text-indigo-500" />
+                  <span>Phiên / Lịch khảo sát</span>
+                  <span className="px-2 py-0.5 text-[10px] font-black rounded-full bg-indigo-50 text-indigo-700">
+                    {filteredSessions.length}
+                  </span>
+                </button>
 
+                <button
+                  type="button"
+                  onClick={() => setPeriodSubView("batches")}
+                  className={`flex items-center gap-2 px-3.5 py-1.5 rounded-lg text-xs font-black transition-all cursor-pointer ${
+                    periodSubView === "batches"
+                      ? "bg-white text-indigo-600 shadow-xs border border-slate-200"
+                      : "text-slate-600 hover:text-slate-900"
+                  }`}
+                >
+                  <Layers className="w-3.5 h-3.5 text-slate-500" />
+                  <span>Chiến dịch / Đợt tập trung</span>
+                  <span className="px-2 py-0.5 text-[10px] font-black rounded-full bg-slate-200 text-slate-700">
+                    {periods.reduce((acc, p) => acc + (p.batches?.length || 0), 0)}
+                  </span>
+                </button>
+              </div>
+            </div>
 
+            {/* Quick Actions */}
+            <div className="flex flex-wrap items-center gap-2">
+              <button
+                type="button"
+                onClick={() => {
+                  setQuickSelectedStudentId("");
+                  setQuickSessionData(prev => ({
+                    ...prev,
+                    sessionDate: new Date().toISOString().slice(0, 10),
+                    campusId: campuses[0]?.id || "",
+                    periodId: periods[0]?.id || "",
+                  }));
+                  setIsQuickScheduleOpen(true);
+                }}
+                className={"flex items-center gap-2 px-4 py-2 bg-gradient-to-r from-amber-500 to-orange-500 hover:from-amber-600 hover:to-orange-600 text-white rounded-xl text-xs font-black shadow-sm active:scale-95 transition-all cursor-pointer " + (cannotCreate ? "pointer-events-none opacity-40" : "")}
+                disabled={cannotCreate}
+                title="Xếp lịch cho 1 học sinh ngay trong 30 giây không cần tạo đợt trước"
+              >
+                <UserPlus className="w-4 h-4" />
+                <span>Xếp lịch nhanh (30s)</span>
+              </button>
+
+              {periodSubView === "sessions" ? (
+                <button
+                  type="button"
+                  onClick={() => {
+                    setEditingSession(null);
+                    setSessionForm({
+                      name: "",
+                      sessionCode: "",
+                      sessionDate: new Date().toISOString().slice(0, 10),
+                      startTime: "08:00",
+                      endTime: "10:30",
+                      room: "Phòng Khảo sát",
+                      campusId: campuses[0]?.id || "",
+                      periodId: periods[0]?.id || "",
+                      batchId: "",
+                      maxCapacity: 30,
+                      sessionType: "LE",
+                      status: "SCHEDULED",
+                      notes: "",
+                      examinerUserIds: [],
+                    });
+                    setIsSessionModalOpen(true);
+                  }}
+                  className={"flex items-center gap-2 px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl text-xs font-black shadow-sm active:scale-95 transition-all cursor-pointer " + (cannotCreate ? "pointer-events-none opacity-40" : "")}
+                  disabled={cannotCreate}
+                >
+                  <Plus className="w-4 h-4" />
+                  <span>Tạo phiên mới</span>
+                </button>
+              ) : (
+                <button
+                  type="button"
+                  onClick={() => {
+                    if (cannotCreate) return;
+                    openAddPeriod();
+                  }}
+                  className={"flex items-center gap-2 px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl text-xs font-black shadow-sm active:scale-95 transition-all cursor-pointer " + (cannotCreate ? "pointer-events-none opacity-40" : "")}
+                  disabled={cannotCreate}
+                >
+                  <Plus className="w-4 h-4" />
+                  <span>Thêm Kỳ mới</span>
+                </button>
+              )}
+
+              <button
+                type="button"
+                onClick={() => {
+                  fetchPeriods();
+                  fetchSessions();
+                }}
+                className="p-2 text-slate-500 hover:text-indigo-600 hover:bg-slate-100 rounded-xl transition-all cursor-pointer"
+                title="Làm mới dữ liệu"
+              >
+                <RefreshCw className="w-4 h-4" />
+              </button>
             </div>
           </div>
 
-                    {/* TOP BATCH FILTER BAR FOR CƠ SỞ & TRẠNG THÁI */}
-          <div className="bg-white p-4 rounded-2xl border border-slate-200 shadow-sm flex flex-col md:flex-row items-stretch md:items-center justify-between gap-4 mb-4">
+          {/* VIEW MODE 1: SESSIONS */}
+          {periodSubView === "sessions" && (
+            <div className="space-y-4">
+              {/* SESSIONS FILTER BAR */}
+              <div className="bg-white p-4 rounded-2xl border border-slate-200 shadow-sm flex flex-col md:flex-row items-stretch md:items-center justify-between gap-3">
+                <div className="flex-1 flex flex-wrap items-center gap-3">
+                  {/* Search box */}
+                  <div className="relative min-w-[220px] flex-1 sm:flex-initial">
+                    <Search className="w-4 h-4 text-slate-400 absolute left-3 top-1/2 -translate-y-1/2" />
+                    <input
+                      type="text"
+                      placeholder="Tìm theo tên phiên, mã, phòng, HS..."
+                      value={sessionSearch}
+                      onChange={e => setSessionSearch(e.target.value)}
+                      className="w-full pl-9 pr-3 py-1.5 bg-slate-50 border border-slate-200 rounded-xl text-xs font-semibold text-slate-700 placeholder-slate-400 outline-none focus:border-indigo-500 focus:bg-white transition-all shadow-xs"
+                    />
+                    {sessionSearch && (
+                      <button onClick={() => setSessionSearch("")} className="absolute right-2.5 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600">
+                        <X className="w-3.5 h-3.5" />
+                      </button>
+                    )}
+                  </div>
+
+                  {/* Campus Filter */}
+                  <div className="flex items-center gap-1.5">
+                    <label className="text-xs font-bold text-slate-500 flex items-center gap-1">
+                      <Building className="w-3.5 h-3.5 text-indigo-500" /> CS:
+                    </label>
+                    <select
+                      value={sessionCampusFilter}
+                      onChange={e => setSessionCampusFilter(e.target.value)}
+                      className="bg-slate-50 border border-slate-200 rounded-xl px-2.5 py-1.5 text-xs font-bold text-slate-700 outline-none focus:border-indigo-500 cursor-pointer shadow-xs"
+                    >
+                      <option value="all">Tất cả Cơ sở</option>
+                      {campuses.map(c => (
+                        <option key={c.id} value={c.id}>{c.campusName}</option>
+                      ))}
+                    </select>
+                  </div>
+
+                  {/* Type Filter */}
+                  <div className="flex items-center gap-1.5">
+                    <label className="text-xs font-bold text-slate-500">Loại:</label>
+                    <select
+                      value={sessionTypeFilter}
+                      onChange={e => setSessionTypeFilter(e.target.value)}
+                      className="bg-slate-50 border border-slate-200 rounded-xl px-2.5 py-1.5 text-xs font-bold text-slate-700 outline-none focus:border-indigo-500 cursor-pointer shadow-xs"
+                    >
+                      <option value="all">Tất cả Loại</option>
+                      <option value="LE">Khảo sát lẻ / Đột xuất</option>
+                      <option value="TAP_TRUNG">Tập trung (Open Day)</option>
+                    </select>
+                  </div>
+
+                  {/* Status Filter */}
+                  <div className="flex items-center gap-1.5">
+                    <label className="text-xs font-bold text-slate-500">Trạng thái:</label>
+                    <select
+                      value={sessionStatusFilter}
+                      onChange={e => setSessionStatusFilter(e.target.value)}
+                      className="bg-slate-50 border border-slate-200 rounded-xl px-2.5 py-1.5 text-xs font-bold text-slate-700 outline-none focus:border-indigo-500 cursor-pointer shadow-xs"
+                    >
+                      <option value="all">Tất cả</option>
+                      <option value="SCHEDULED">Đã xếp lịch</option>
+                      <option value="IN_PROGRESS">Đang diễn ra</option>
+                      <option value="COMPLETED">Hoàn thành</option>
+                      <option value="CANCELLED">Đã hủy</option>
+                    </select>
+                  </div>
+
+                  {/* Date Filter */}
+                  <div className="flex items-center gap-1.5">
+                    <label className="text-xs font-bold text-slate-500 flex items-center gap-1">
+                      <Calendar className="w-3.5 h-3.5 text-indigo-500" /> Ngày:
+                    </label>
+                    <input
+                      type="date"
+                      value={sessionDateFilter}
+                      onChange={e => setSessionDateFilter(e.target.value)}
+                      className="bg-slate-50 border border-slate-200 rounded-xl px-2.5 py-1 text-xs font-semibold text-slate-700 outline-none focus:border-indigo-500 cursor-pointer shadow-xs"
+                    />
+                  </div>
+
+                  {/* Reset Button */}
+                  {(sessionCampusFilter !== "all" || sessionStatusFilter !== "all" || sessionTypeFilter !== "all" || sessionDateFilter || sessionSearch) && (
+                    <button
+                      onClick={() => {
+                        setSessionCampusFilter("all");
+                        setSessionStatusFilter("all");
+                        setSessionTypeFilter("all");
+                        setSessionDateFilter("");
+                        setSessionSearch("");
+                      }}
+                      className="text-xs font-bold text-rose-600 hover:text-rose-700 hover:bg-rose-50 px-2.5 py-1 rounded-lg transition-colors flex items-center gap-1 cursor-pointer"
+                    >
+                      <X className="w-3.5 h-3.5" /> Xóa lọc
+                    </button>
+                  )}
+                </div>
+              </div>
+
+              {/* SESSIONS CARDS GRID */}
+              {sessionsLoading ? (
+                <Spin />
+              ) : filteredSessions.length === 0 ? (
+                <Empty
+                  icon={Clock}
+                  text="Không có phiên khảo sát nào phù hợp"
+                  sub="Nhấn 'Xếp lịch nhanh (30s)' để xếp ca ngay cho học sinh hoặc 'Tạo phiên mới'"
+                />
+              ) : (
+                <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
+                  {filteredSessions.map(sessionItem => {
+                    const stCount = sessionItem.studentSessions?.length || 0;
+                    const maxCap = sessionItem.maxCapacity || 30;
+                    const percent = Math.min(100, Math.round((stCount / maxCap) * 100));
+                    const isFull = stCount >= maxCap;
+
+                    const statusBadgeMap: Record<string, { label: string; cls: string }> = {
+                      SCHEDULED: { label: "Đã lên lịch", cls: "bg-blue-50 text-blue-700 border-blue-200" },
+                      IN_PROGRESS: { label: "Đang diễn ra", cls: "bg-amber-50 text-amber-700 border-amber-200" },
+                      COMPLETED: { label: "Hoàn thành", cls: "bg-emerald-50 text-emerald-700 border-emerald-200" },
+                      CANCELLED: { label: "Đã hủy", cls: "bg-slate-100 text-slate-500 border-slate-200" },
+                    };
+                    const sBadge = statusBadgeMap[sessionItem.status] || statusBadgeMap.SCHEDULED;
+
+                    const dateStr = sessionItem.sessionDate
+                      ? new Date(sessionItem.sessionDate).toLocaleDateString("vi-VN", { day: "2-digit", month: "2-digit", year: "numeric" })
+                      : "--/--/----";
+
+                    return (
+                      <div
+                        key={sessionItem.id}
+                        className="bg-white rounded-2xl border border-slate-200 hover:border-indigo-300 hover:shadow-md transition-all p-5 flex flex-col justify-between group"
+                      >
+                        <div>
+                          {/* Card Header */}
+                          <div className="flex items-start justify-between gap-2 mb-2.5">
+                            <div className="flex flex-wrap items-center gap-1.5">
+                              <span className={`inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-black uppercase tracking-wider border ${sBadge.cls}`}>
+                                {sBadge.label}
+                              </span>
+                              <span className="inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-bold bg-slate-100 text-slate-600 border border-slate-200">
+                                {sessionItem.sessionType === "TAP_TRUNG" ? "Tập trung" : "Khảo sát lẻ"}
+                              </span>
+                            </div>
+
+                            <div className="flex items-center gap-1 opacity-80 group-hover:opacity-100 transition-opacity">
+                              <button
+                                onClick={() => {
+                                  if (cannotUpdate) return;
+                                  setEditingSession(sessionItem);
+                                  setSessionForm({
+                                    name: sessionItem.name,
+                                    sessionCode: sessionItem.sessionCode,
+                                    sessionDate: sessionItem.sessionDate ? new Date(sessionItem.sessionDate).toISOString().slice(0, 10) : "",
+                                    startTime: sessionItem.startTime || "08:00",
+                                    endTime: sessionItem.endTime || "10:30",
+                                    room: sessionItem.room || "",
+                                    campusId: sessionItem.campusId,
+                                    periodId: sessionItem.periodId || "",
+                                    batchId: sessionItem.batchId || "",
+                                    maxCapacity: sessionItem.maxCapacity || 30,
+                                    sessionType: sessionItem.sessionType || "LE",
+                                    status: sessionItem.status || "SCHEDULED",
+                                    notes: sessionItem.notes || "",
+                                    examinerUserIds: sessionItem.examiners?.map(e => e.userId) || [],
+                                  });
+                                  setIsSessionModalOpen(true);
+                                }}
+                                className={"p-1.5 text-slate-400 hover:text-indigo-600 hover:bg-indigo-50 rounded-lg transition-all " + (cannotUpdate ? "pointer-events-none opacity-40" : "")}
+                                title="Chỉnh sửa phiên"
+                              >
+                                <Edit2 className="w-3.5 h-3.5" />
+                              </button>
+
+                              <button
+                                onClick={() => {
+                                  if (cannotDelete) return;
+                                  setConfirm({
+                                    msg: `Xóa phiên "${sessionItem.name}"? Dữ liệu chỉ có thể xóa khi chưa có điểm nhập.`,
+                                    fn: () => doDeleteSession(sessionItem.id)
+                                  });
+                                }}
+                                className={"p-1.5 text-slate-400 hover:text-rose-600 hover:bg-rose-50 rounded-lg transition-all " + (cannotDelete ? "pointer-events-none opacity-40" : "")}
+                                title="Xóa phiên"
+                              >
+                                <Trash2 className="w-3.5 h-3.5" />
+                              </button>
+                            </div>
+                          </div>
+
+                          {/* Session Name & Code */}
+                          <h4 className="text-sm font-black text-slate-800 line-clamp-1 group-hover:text-indigo-600 transition-colors">
+                            {sessionItem.name}
+                          </h4>
+                          <p className="font-mono text-[11px] font-bold text-slate-400 mt-0.5">
+                            {sessionItem.sessionCode}
+                          </p>
+
+                          {/* Info Rows */}
+                          <div className="grid grid-cols-2 gap-2 mt-3.5 text-xs text-slate-600 font-semibold bg-slate-50/70 p-3 rounded-xl border border-slate-100">
+                            <div className="flex items-center gap-1.5">
+                              <Calendar className="w-3.5 h-3.5 text-indigo-500 shrink-0" />
+                              <span className="truncate">{dateStr}</span>
+                            </div>
+                            <div className="flex items-center gap-1.5">
+                              <Clock className="w-3.5 h-3.5 text-indigo-500 shrink-0" />
+                              <span className="truncate">{sessionItem.startTime || "--"} → {sessionItem.endTime || "--"}</span>
+                            </div>
+                            <div className="flex items-center gap-1.5">
+                              <Building className="w-3.5 h-3.5 text-indigo-500 shrink-0" />
+                              <span className="truncate">{sessionItem.campus?.campusName || "--"}</span>
+                            </div>
+                            <div className="flex items-center gap-1.5">
+                              <span className="w-3.5 h-3.5 rounded bg-indigo-100 text-indigo-700 font-black text-[9px] flex items-center justify-center shrink-0">P</span>
+                              <span className="truncate font-bold text-slate-700">{sessionItem.room || "Chưa xếp phòng"}</span>
+                            </div>
+                          </div>
+
+                          {/* Capacity Bar */}
+                          <div className="mt-3.5">
+                            <div className="flex items-center justify-between text-[11px] font-bold text-slate-500 mb-1">
+                              <span className="flex items-center gap-1">
+                                <Users className="w-3 h-3 text-slate-400" />
+                                <span>Sĩ số ca:</span>
+                              </span>
+                              <span className={isFull ? "text-amber-600 font-black" : "text-indigo-600 font-black"}>
+                                {stCount} / {maxCap} HS {isFull ? "(Đầy)" : ""}
+                              </span>
+                            </div>
+                            <div className="w-full h-1.5 bg-slate-100 rounded-full overflow-hidden">
+                              <div
+                                className={`h-full rounded-full transition-all duration-500 ${
+                                  isFull ? "bg-amber-500" : percent > 70 ? "bg-indigo-500" : "bg-emerald-500"
+                                }`}
+                                style={{ width: `${percent}%` }}
+                              />
+                            </div>
+                          </div>
+
+                          {/* Examiners list */}
+                          <div className="mt-3 text-[11px] text-slate-500">
+                            <span className="font-bold text-slate-400 uppercase tracking-wider text-[10px] block mb-1">
+                              Cán bộ khảo sát:
+                            </span>
+                            {sessionItem.examiners && sessionItem.examiners.length > 0 ? (
+                              <div className="flex flex-wrap gap-1">
+                                {sessionItem.examiners.map(ex => (
+                                  <span key={ex.id} className="inline-flex items-center px-2 py-0.5 rounded-md bg-white border border-slate-200 text-slate-700 text-[10px] font-bold">
+                                    {ex.user?.fullName}
+                                  </span>
+                                ))}
+                              </div>
+                            ) : (
+                              <span className="italic text-slate-400 text-[11px]">-- Chưa phân công --</span>
+                            )}
+                          </div>
+                        </div>
+
+                        {/* Card Footer Button */}
+                        <div className="mt-4 pt-3 border-t border-slate-100 flex items-center justify-between gap-2">
+                          <button
+                            type="button"
+                            onClick={() => setSelectedSessionForDetail(sessionItem)}
+                            className="flex-1 flex items-center justify-center gap-1.5 py-2 px-3 bg-indigo-50 hover:bg-indigo-600 text-indigo-700 hover:text-white rounded-xl text-xs font-bold transition-all cursor-pointer shadow-xs"
+                          >
+                            <Users className="w-3.5 h-3.5" />
+                            <span>Danh sách HS ({stCount}) & Điểm</span>
+                          </button>
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+              )}
+            </div>
+          )}
+
+          {/* VIEW MODE 2: BATCHES (HISTORICAL PARITY) */}
+          {periodSubView === "batches" && (
+            <div className="space-y-4">
+              {/* TOP BATCH FILTER BAR FOR CƠ SỞ & TRẠNG THÁI */}
+              <div className="bg-white p-4 rounded-2xl border border-slate-200 shadow-sm flex flex-col md:flex-row items-stretch md:items-center justify-between gap-4 mb-4">
             <div className="flex items-center gap-2">
               <Filter className="w-4 h-4 text-indigo-500" />
               <span className="text-xs font-black text-slate-700 uppercase tracking-wider">Bộ lọc Đợt khảo sát</span>
@@ -4640,6 +5358,8 @@ const [customCommitmentSubjects, setCustomCommitmentSubjects] = useState<string[
                 </div>
               ))}
             </div>
+          )}
+          </div>
           )}
         </div>
       )}
@@ -9727,6 +10447,640 @@ const [customCommitmentSubjects, setCustomCommitmentSubjects] = useState<string[
           }}
           periods={periods}
         />
+      )}
+
+      {/* QUICK SCHEDULE MODAL (30 SECONDS) */}
+      <Modal
+        open={isQuickScheduleOpen}
+        onClose={() => !quickScheduleLoading && setIsQuickScheduleOpen(false)}
+        title="Xếp lịch khảo sát nhanh (30 giây)"
+        size="lg"
+        footer={
+          <div className="flex items-center justify-between w-full">
+            <span className="text-[11px] font-semibold text-slate-400">
+              * Tự động tạo ca khảo sát & gán học sinh trong 1 bước duy nhất
+            </span>
+            <div className="flex gap-2">
+              <button
+                type="button"
+                onClick={() => setIsQuickScheduleOpen(false)}
+                disabled={quickScheduleLoading}
+                className="px-4 py-2 text-xs font-bold text-slate-500 hover:bg-slate-100 rounded-xl transition-all cursor-pointer"
+              >
+                Hủy
+              </button>
+              <button
+                type="button"
+                onClick={handleQuickScheduleSubmit}
+                disabled={quickScheduleLoading}
+                className="flex items-center gap-2 px-5 py-2.5 bg-gradient-to-r from-amber-500 to-orange-500 hover:from-amber-600 hover:to-orange-600 text-white rounded-xl text-xs font-black shadow-md shadow-orange-500/20 active:scale-95 transition-all cursor-pointer disabled:opacity-50"
+              >
+                {quickScheduleLoading ? <Loader2 className="w-4 h-4 animate-spin" /> : <UserPlus className="w-4 h-4" />}
+                <span>Lưu & Xếp lịch ngay</span>
+              </button>
+            </div>
+          </div>
+        }
+      >
+        <form onSubmit={handleQuickScheduleSubmit} className="space-y-6">
+          {/* Section 1: Choose or Create Student */}
+          <div className="bg-white p-4.5 rounded-2xl border border-slate-200 shadow-xs space-y-4">
+            <div className="flex items-center justify-between pb-2 border-b border-slate-100">
+              <h4 className="text-xs font-black text-slate-700 uppercase tracking-wider flex items-center gap-2">
+                <Users className="w-4 h-4 text-indigo-500" />
+                1. Thông tin Học sinh
+              </h4>
+              <div className="flex items-center gap-1 p-0.5 bg-slate-100 rounded-lg text-[11px] font-bold">
+                <button
+                  type="button"
+                  onClick={() => setQuickStudentMode("existing")}
+                  className={`px-3 py-1 rounded-md transition-all cursor-pointer ${
+                    quickStudentMode === "existing" ? "bg-white text-indigo-600 shadow-xs" : "text-slate-500 hover:text-slate-800"
+                  }`}
+                >
+                  Chọn HS có sẵn
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setQuickStudentMode("new")}
+                  className={`px-3 py-1 rounded-md transition-all cursor-pointer ${
+                    quickStudentMode === "new" ? "bg-white text-indigo-600 shadow-xs" : "text-slate-500 hover:text-slate-800"
+                  }`}
+                >
+                  + Nhập nhanh HS mới
+                </button>
+              </div>
+            </div>
+
+            {quickStudentMode === "existing" ? (
+              <div className="space-y-2">
+                <Field label="Chọn học sinh cần xếp lịch khảo sát" required>
+                  <select
+                    value={quickSelectedStudentId}
+                    onChange={e => setQuickSelectedStudentId(e.target.value)}
+                    className={inp}
+                  >
+                    <option value="">-- Chọn học sinh từ danh sách --</option>
+                    {students.slice(0, 100).map(st => (
+                      <option key={st.id} value={st.id}>
+                        {st.studentCode} - {st.fullName} (Lớp {st.grade || "--"} | {st.surveySystem || "CLC"} | {st.registeredCampus || st.admissionCampus || "Toàn trường"})
+                      </option>
+                    ))}
+                  </select>
+                </Field>
+                <p className="text-[11px] font-semibold text-slate-400">
+                  Hiển thị tối đa 100 học sinh đang có trong hệ thống.
+                </p>
+              </div>
+            ) : (
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                <Field label="Họ và tên học sinh" required>
+                  <input
+                    type="text"
+                    placeholder="Nguyễn Văn A"
+                    value={quickNewStudent.fullName}
+                    onChange={e => setQuickNewStudent(prev => ({ ...prev, fullName: e.target.value }))}
+                    className={inp}
+                    required
+                  />
+                </Field>
+
+                <Field label="Ngày sinh">
+                  <input
+                    type="date"
+                    value={quickNewStudent.dateOfBirth}
+                    onChange={e => setQuickNewStudent(prev => ({ ...prev, dateOfBirth: e.target.value }))}
+                    className={inp}
+                  />
+                </Field>
+
+                <Field label="Giới tính">
+                  <select
+                    value={quickNewStudent.gender}
+                    onChange={e => setQuickNewStudent(prev => ({ ...prev, gender: e.target.value }))}
+                    className={inp}
+                  >
+                    <option value="NAM">Nam</option>
+                    <option value="NU">Nữ</option>
+                  </select>
+                </Field>
+
+                <Field label="Khối khảo sát">
+                  <select
+                    value={quickNewStudent.grade}
+                    onChange={e => setQuickNewStudent(prev => ({ ...prev, grade: e.target.value }))}
+                    className={inp}
+                  >
+                    {["1","2","3","4","5","6","7","8","9","10","11","12"].map(g => (
+                      <option key={g} value={g}>Khối {g}</option>
+                    ))}
+                  </select>
+                </Field>
+
+                <Field label="Hệ khảo sát">
+                  <select
+                    value={quickNewStudent.surveySystem}
+                    onChange={e => setQuickNewStudent(prev => ({ ...prev, surveySystem: e.target.value }))}
+                    className={inp}
+                  >
+                    <option value="CLC">Chất lượng cao (CLC)</option>
+                    <option value="HN">Hội nhập</option>
+                    <option value="QT">Quốc tế (Song bằng)</option>
+                  </select>
+                </Field>
+
+                <Field label="Tiêu chuẩn tuyển sinh">
+                  <input
+                    type="text"
+                    placeholder="Khảo sát đầu vào"
+                    value={quickNewStudent.admissionCriteria}
+                    onChange={e => setQuickNewStudent(prev => ({ ...prev, admissionCriteria: e.target.value }))}
+                    className={inp}
+                  />
+                </Field>
+              </div>
+            )}
+          </div>
+
+          {/* Section 2: Session Schedule Info */}
+          <div className="bg-white p-4.5 rounded-2xl border border-slate-200 shadow-xs space-y-4">
+            <h4 className="text-xs font-black text-slate-700 uppercase tracking-wider pb-2 border-b border-slate-100 flex items-center gap-2">
+              <Clock className="w-4 h-4 text-amber-500" />
+              2. Thời gian & Địa điểm Khảo sát
+            </h4>
+
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+              <Field label="Ngày khảo sát" required>
+                <input
+                  type="date"
+                  value={quickSessionData.sessionDate}
+                  onChange={e => setQuickSessionData(prev => ({ ...prev, sessionDate: e.target.value }))}
+                  className={inp}
+                  required
+                />
+              </Field>
+
+              <Field label="Cơ sở khảo sát" required>
+                <select
+                  value={quickSessionData.campusId || campuses[0]?.id || ""}
+                  onChange={e => setQuickSessionData(prev => ({ ...prev, campusId: e.target.value }))}
+                  className={inp}
+                  required
+                >
+                  {campuses.map(c => (
+                    <option key={c.id} value={c.id}>{c.campusName}</option>
+                  ))}
+                </select>
+              </Field>
+
+              <Field label="Giờ bắt đầu" required>
+                <input
+                  type="time"
+                  value={quickSessionData.startTime}
+                  onChange={e => setQuickSessionData(prev => ({ ...prev, startTime: e.target.value }))}
+                  className={inp}
+                  required
+                />
+              </Field>
+
+              <Field label="Giờ kết thúc">
+                <input
+                  type="time"
+                  value={quickSessionData.endTime}
+                  onChange={e => setQuickSessionData(prev => ({ ...prev, endTime: e.target.value }))}
+                  className={inp}
+                />
+              </Field>
+
+              <Field label="Phòng khảo sát" required>
+                <input
+                  type="text"
+                  placeholder="Phòng Khảo sát 1 / Phòng 201"
+                  value={quickSessionData.room}
+                  onChange={e => setQuickSessionData(prev => ({ ...prev, room: e.target.value }))}
+                  className={inp}
+                  required
+                />
+              </Field>
+
+              <Field label="Kỳ khảo sát liên kết">
+                <select
+                  value={quickSessionData.periodId || periods[0]?.id || ""}
+                  onChange={e => setQuickSessionData(prev => ({ ...prev, periodId: e.target.value }))}
+                  className={inp}
+                >
+                  {periods.map(p => (
+                    <option key={p.id} value={p.id}>{p.name}</option>
+                  ))}
+                </select>
+              </Field>
+            </div>
+
+            {/* Examiners selection */}
+            <div>
+              <label className="text-[11px] font-black text-slate-400 uppercase tracking-widest block mb-1.5 ml-1">
+                Cán bộ coi thi / Chấm điểm (Chọn nhanh)
+              </label>
+              <div className="max-h-32 overflow-y-auto bg-slate-50 border border-slate-200 rounded-xl p-2.5 custom-scrollbar grid grid-cols-1 sm:grid-cols-2 gap-1.5">
+                {teachers.slice(0, 30).map(t => {
+                  const isChecked = quickSessionData.examinerUserIds.includes(t.userId);
+                  return (
+                    <label key={t.userId} className="flex items-center gap-2 p-1 rounded-lg hover:bg-white text-xs font-semibold text-slate-700 cursor-pointer select-none">
+                      <input
+                        type="checkbox"
+                        checked={isChecked}
+                        onChange={() => {
+                          setQuickSessionData(prev => {
+                            const cur = prev.examinerUserIds;
+                            const next = isChecked ? cur.filter(id => id !== t.userId) : [...cur, t.userId];
+                            return { ...prev, examinerUserIds: next };
+                          });
+                        }}
+                        className="rounded border-slate-300 text-indigo-600 focus:ring-indigo-500 w-4 h-4 cursor-pointer"
+                      />
+                      <span className="truncate">{t.teacherName}</span>
+                    </label>
+                  );
+                })}
+              </div>
+            </div>
+
+            <Field label="Ghi chú ca">
+              <input
+                type="text"
+                placeholder="Ghi chú thêm về điều kiện khảo sát hoặc lưu ý riêng..."
+                value={quickSessionData.notes}
+                onChange={e => setQuickSessionData(prev => ({ ...prev, notes: e.target.value }))}
+                className={inp}
+              />
+            </Field>
+          </div>
+        </form>
+      </Modal>
+
+      {/* FULL SESSION MODAL (CREATE / EDIT) */}
+      <Modal
+        open={isSessionModalOpen}
+        onClose={() => setIsSessionModalOpen(false)}
+        title={editingSession ? `Chỉnh sửa Ca: ${editingSession.sessionCode}` : "Tạo Ca / Phiên khảo sát mới"}
+        size="lg"
+        footer={
+          <div className="flex justify-end gap-2 w-full">
+            <button
+              type="button"
+              onClick={() => setIsSessionModalOpen(false)}
+              className="px-4 py-2 text-xs font-bold text-slate-500 hover:bg-slate-100 rounded-xl transition-all cursor-pointer"
+            >
+              Hủy
+            </button>
+            <button
+              type="button"
+              onClick={handleSaveSession}
+              className="flex items-center gap-2 px-5 py-2.5 bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl text-xs font-black shadow-sm active:scale-95 transition-all cursor-pointer"
+            >
+              <Check className="w-4 h-4" />
+              <span>{editingSession ? "Lưu thay đổi" : "Tạo phiên"}</span>
+            </button>
+          </div>
+        }
+      >
+        <form onSubmit={handleSaveSession} className="space-y-4">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-3.5">
+            <Field label="Tên phiên khảo sát" required>
+              <input
+                type="text"
+                placeholder="Ca sáng 15/10 - Phòng 201"
+                value={sessionForm.name}
+                onChange={e => setSessionForm(prev => ({ ...prev, name: e.target.value }))}
+                className={inp}
+                required
+              />
+            </Field>
+
+            <Field label="Mã phiên (để trống sẽ tự sinh)">
+              <input
+                type="text"
+                placeholder="SES-20251015-001"
+                value={sessionForm.sessionCode}
+                onChange={e => setSessionForm(prev => ({ ...prev, sessionCode: e.target.value }))}
+                className={inp}
+              />
+            </Field>
+
+            <Field label="Ngày khảo sát" required>
+              <input
+                type="date"
+                value={sessionForm.sessionDate}
+                onChange={e => setSessionForm(prev => ({ ...prev, sessionDate: e.target.value }))}
+                className={inp}
+                required
+              />
+            </Field>
+
+            <Field label="Cơ sở khảo sát" required>
+              <select
+                value={sessionForm.campusId}
+                onChange={e => setSessionForm(prev => ({ ...prev, campusId: e.target.value }))}
+                className={inp}
+                required
+              >
+                {campuses.map(c => (
+                  <option key={c.id} value={c.id}>{c.campusName}</option>
+                ))}
+              </select>
+            </Field>
+
+            <Field label="Giờ bắt đầu" required>
+              <input
+                type="time"
+                value={sessionForm.startTime}
+                onChange={e => setSessionForm(prev => ({ ...prev, startTime: e.target.value }))}
+                className={inp}
+                required
+              />
+            </Field>
+
+            <Field label="Giờ kết thúc">
+              <input
+                type="time"
+                value={sessionForm.endTime}
+                onChange={e => setSessionForm(prev => ({ ...prev, endTime: e.target.value }))}
+                className={inp}
+              />
+            </Field>
+
+            <Field label="Phòng khảo sát">
+              <input
+                type="text"
+                placeholder="Phòng 201"
+                value={sessionForm.room}
+                onChange={e => setSessionForm(prev => ({ ...prev, room: e.target.value }))}
+                className={inp}
+              />
+            </Field>
+
+            <Field label="Sức chứa tối đa (HS)">
+              <input
+                type="number"
+                min="1"
+                max="200"
+                value={sessionForm.maxCapacity}
+                onChange={e => setSessionForm(prev => ({ ...prev, maxCapacity: parseInt(e.target.value, 10) || 30 }))}
+                className={inp}
+              />
+            </Field>
+
+            <Field label="Loại hình khảo sát">
+              <select
+                value={sessionForm.sessionType}
+                onChange={e => setSessionForm(prev => ({ ...prev, sessionType: e.target.value }))}
+                className={inp}
+              >
+                <option value="LE">Khảo sát lẻ / Đột xuất (Cá nhân)</option>
+                <option value="TAP_TRUNG">Khảo sát tập trung (Chiến dịch / Open Day)</option>
+              </select>
+            </Field>
+
+            <Field label="Trạng thái">
+              <select
+                value={sessionForm.status}
+                onChange={e => setSessionForm(prev => ({ ...prev, status: e.target.value }))}
+                className={inp}
+              >
+                <option value="SCHEDULED">Đã lên lịch (SCHEDULED)</option>
+                <option value="IN_PROGRESS">Đang diễn ra (IN_PROGRESS)</option>
+                <option value="COMPLETED">Hoàn thành (COMPLETED)</option>
+                <option value="CANCELLED">Đã hủy (CANCELLED)</option>
+              </select>
+            </Field>
+
+            <Field label="Kỳ khảo sát liên kết">
+              <select
+                value={sessionForm.periodId}
+                onChange={e => setSessionForm(prev => ({ ...prev, periodId: e.target.value }))}
+                className={inp}
+              >
+                <option value="">-- Không liên kết Kỳ --</option>
+                {periods.map(p => (
+                  <option key={p.id} value={p.id}>{p.name}</option>
+                ))}
+              </select>
+            </Field>
+
+            <Field label="Đợt khảo sát liên kết (tùy chọn)">
+              <select
+                value={sessionForm.batchId}
+                onChange={e => setSessionForm(prev => ({ ...prev, batchId: e.target.value }))}
+                className={inp}
+              >
+                <option value="">-- Không liên kết Đợt --</option>
+                {periods.find(p => p.id === sessionForm.periodId)?.batches?.map(b => (
+                  <option key={b.id} value={b.id}>{b.name}</option>
+                ))}
+              </select>
+            </Field>
+          </div>
+
+          <div>
+            <label className="text-[11px] font-black text-slate-400 uppercase tracking-widest block mb-1.5 ml-1">
+              Phân công cán bộ coi thi / Chấm điểm
+            </label>
+            <div className="max-h-36 overflow-y-auto bg-slate-50 border border-slate-200 rounded-xl p-2.5 custom-scrollbar grid grid-cols-1 sm:grid-cols-2 gap-1.5">
+              {teachers.map(t => {
+                const isChecked = sessionForm.examinerUserIds.includes(t.userId);
+                return (
+                  <label key={t.userId} className="flex items-center gap-2 p-1 rounded-lg hover:bg-white text-xs font-semibold text-slate-700 cursor-pointer select-none">
+                    <input
+                      type="checkbox"
+                      checked={isChecked}
+                      onChange={() => {
+                        setSessionForm(prev => {
+                          const cur = prev.examinerUserIds;
+                          const next = isChecked ? cur.filter(id => id !== t.userId) : [...cur, t.userId];
+                          return { ...prev, examinerUserIds: next };
+                        });
+                      }}
+                      className="rounded border-slate-300 text-indigo-600 focus:ring-indigo-500 w-4 h-4 cursor-pointer"
+                    />
+                    <span className="truncate">{t.teacherName}</span>
+                  </label>
+                );
+              })}
+            </div>
+          </div>
+
+          <Field label="Ghi chú">
+            <textarea
+              rows={2}
+              placeholder="Ghi chú chi tiết ca thi..."
+              value={sessionForm.notes}
+              onChange={e => setSessionForm(prev => ({ ...prev, notes: e.target.value }))}
+              className="w-full p-3 bg-slate-50/50 border border-slate-200 text-[#1E293B] placeholder-[#94A3B8] text-sm font-semibold rounded-xl outline-none focus:border-[#00A19A] focus:bg-white transition-all shadow-xs"
+            />
+          </Field>
+        </form>
+      </Modal>
+
+      {/* SESSION DETAIL MODAL: STUDENT ROSTER & RESULTS */}
+      {selectedSessionForDetail && (
+        <Modal
+          open={!!selectedSessionForDetail}
+          onClose={() => setSelectedSessionForDetail(null)}
+          title={`Danh sách Học sinh Ca: ${selectedSessionForDetail.name} (${selectedSessionForDetail.sessionCode})`}
+          size="lg"
+          footer={
+            <div className="flex items-center justify-between w-full">
+              <span className="text-xs font-semibold text-slate-500">
+                Sĩ số: <strong className="text-indigo-600">{selectedSessionForDetail.studentSessions?.length || 0}</strong> / {selectedSessionForDetail.maxCapacity} học sinh
+              </span>
+              <button
+                type="button"
+                onClick={() => setSelectedSessionForDetail(null)}
+                className="px-4 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-bold rounded-xl transition-all cursor-pointer"
+              >
+                Đóng
+              </button>
+            </div>
+          }
+        >
+          <div className="space-y-4">
+            {/* Session Summary Card */}
+            <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 bg-white p-3.5 rounded-xl border border-slate-200 text-xs">
+              <div>
+                <span className="text-[10px] text-slate-400 font-bold uppercase block">Ngày:</span>
+                <span className="font-black text-slate-700">
+                  {selectedSessionForDetail.sessionDate ? new Date(selectedSessionForDetail.sessionDate).toLocaleDateString("vi-VN") : "--"}
+                </span>
+              </div>
+              <div>
+                <span className="text-[10px] text-slate-400 font-bold uppercase block">Thời gian:</span>
+                <span className="font-black text-slate-700">
+                  {selectedSessionForDetail.startTime || "--"} → {selectedSessionForDetail.endTime || "--"}
+                </span>
+              </div>
+              <div>
+                <span className="text-[10px] text-slate-400 font-bold uppercase block">Phòng:</span>
+                <span className="font-black text-indigo-600">
+                  {selectedSessionForDetail.room || "Chưa xếp"}
+                </span>
+              </div>
+              <div>
+                <span className="text-[10px] text-slate-400 font-bold uppercase block">Cơ sở:</span>
+                <span className="font-black text-slate-700">
+                  {selectedSessionForDetail.campus?.campusName || "--"}
+                </span>
+              </div>
+            </div>
+
+            {/* Student list table */}
+            {(!selectedSessionForDetail.studentSessions || selectedSessionForDetail.studentSessions.length === 0) ? (
+              <div className="text-center py-10 bg-white rounded-2xl border-2 border-dashed border-slate-200">
+                <Users className="w-8 h-8 text-slate-300 mx-auto mb-2" />
+                <p className="text-xs font-bold text-slate-500 uppercase tracking-wider">
+                  Chưa có học sinh nào trong phiên khảo sát này
+                </p>
+                <p className="text-[11px] text-slate-400 mt-1">
+                  Sử dụng chức năng "Xếp lịch nhanh" để gán học sinh vào ca.
+                </p>
+              </div>
+            ) : (
+              <div className="overflow-x-auto bg-white border border-slate-200 rounded-2xl shadow-xs">
+                <table className="w-full text-left border-collapse text-xs">
+                  <thead>
+                    <tr className="bg-slate-50 border-b border-slate-200">
+                      <th className="px-3 py-2.5 text-[10px] font-black text-slate-500 uppercase tracking-wider pl-4">#</th>
+                      <th className="px-3 py-2.5 text-[10px] font-black text-slate-500 uppercase tracking-wider">Mã HS</th>
+                      <th className="px-3 py-2.5 text-[10px] font-black text-slate-500 uppercase tracking-wider">Họ và tên</th>
+                      <th className="px-3 py-2.5 text-[10px] font-black text-slate-500 uppercase tracking-wider">Khối & Hệ</th>
+                      <th className="px-3 py-2.5 text-[10px] font-black text-slate-500 uppercase tracking-wider">Điểm đã nhập</th>
+                      <th className="px-3 py-2.5 text-[10px] font-black text-slate-500 uppercase tracking-wider">Kết quả</th>
+                      <th className="px-3 py-2.5 text-[10px] font-black text-slate-500 uppercase tracking-wider text-right pr-4">Thao tác</th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-slate-100">
+                    {selectedSessionForDetail.studentSessions.map((ss, idx) => {
+                      const st = ss.student;
+                      const hasScores = (st?.scores && st.scores.length > 0);
+                      return (
+                        <tr key={ss.id} className="hover:bg-slate-50/60 transition-colors">
+                          <td className="px-3 py-2.5 pl-4 text-slate-400 font-bold">{idx + 1}</td>
+                          <td className="px-3 py-2.5 font-mono font-bold text-slate-600">{st?.studentCode}</td>
+                          <td className="px-3 py-2.5">
+                            <span className="font-black text-slate-800">{st?.fullName}</span>
+                          </td>
+                          <td className="px-3 py-2.5">
+                            <span className="text-slate-600 font-bold">Lớp {st?.grade || "--"}</span>
+                            <span className="ml-1 text-[10px] px-1.5 py-0.5 rounded bg-slate-100 text-slate-600 font-semibold">{st?.surveySystem || "CLC"}</span>
+                          </td>
+                          <td className="px-3 py-2.5">
+                            {hasScores ? (
+                              <span className="inline-flex items-center gap-1 text-[10px] font-black px-2 py-0.5 rounded-md bg-emerald-50 text-emerald-700 border border-emerald-100">
+                                <CheckCircle2 className="w-3 h-3" />
+                                {st?.scores?.length} môn có điểm
+                              </span>
+                            ) : (
+                              <span className="inline-flex items-center gap-1 text-[10px] font-semibold text-slate-400">
+                                <Clock className="w-3 h-3" />
+                                Chưa nhập
+                              </span>
+                            )}
+                          </td>
+                          <td className="px-3 py-2.5">
+                            <span className={`inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-bold ${
+                              st?.admissionResult === "TRUNG_TUYEN"
+                                ? "bg-emerald-50 text-emerald-700"
+                                : st?.admissionResult === "KHONG_TRUNG_TUYEN"
+                                ? "bg-rose-50 text-rose-700"
+                                : "bg-slate-100 text-slate-600"
+                            }`}>
+                              {st?.admissionResult === "TRUNG_TUYEN" ? "Trúng tuyển" : st?.admissionResult === "KHONG_TRUNG_TUYEN" ? "Chưa đạt" : "Chờ duyệt"}
+                            </span>
+                          </td>
+                          <td className="px-3 py-2.5 text-right pr-4">
+                            <button
+                              type="button"
+                              onClick={async () => {
+                                if (hasScores) {
+                                  notify("Học sinh đã có điểm, không thể xóa khỏi phiên.", "err");
+                                  return;
+                                }
+                                if (!window.confirm(`Xóa học sinh ${st?.fullName} khỏi phiên này?`)) return;
+                                try {
+                                  const res = await fetch("/api/input-assessment-sessions", {
+                                    method: "PUT",
+                                    headers: { "Content-Type": "application/json" },
+                                    body: JSON.stringify({
+                                      id: selectedSessionForDetail.id,
+                                      removeStudentIds: [st?.id]
+                                    })
+                                  });
+                                  if (res.ok) {
+                                    notify("Đã xóa học sinh khỏi phiên!");
+                                    fetchSessions();
+                                    setSelectedSessionForDetail(null);
+                                  } else {
+                                    const d = await res.json();
+                                    notify(d.error || "Lỗi xóa học sinh", "err");
+                                  }
+                                } catch(e) {
+                                  notify("Lỗi mạng", "err");
+                                }
+                              }}
+                              className="p-1 text-slate-400 hover:text-rose-600 rounded transition-all cursor-pointer"
+                              title="Xóa khỏi ca"
+                            >
+                              <Trash2 className="w-3.5 h-3.5" />
+                            </button>
+                          </td>
+                        </tr>
+                      );
+                    })}
+                  </tbody>
+                </table>
+              </div>
+            )}
+          </div>
+        </Modal>
       )}
       </div>
   )

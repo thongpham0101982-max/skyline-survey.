@@ -41,6 +41,8 @@ model User {
   pushSubscriptions                PushSubscription[]
   userPreference                   UserPreference?
   deviceSessions                   DeviceSession[]
+  inputAssessmentSessionExaminers  InputAssessmentSessionExaminer[]
+  preschoolInputAssessmentSessionExaminers PreschoolInputAssessmentSessionExaminer[]
 }
 
 model Parent {
@@ -123,6 +125,8 @@ model Campus {
   teachers                        Teacher[]
   userAssignments                 UserCampusAssignment[]
   inputAssessmentBatches          InputAssessmentBatch[]
+  inputAssessmentSessions         InputAssessmentSession[]
+  preschoolInputAssessmentSessions PreschoolInputAssessmentSession[]
 }
 
 model AcademicYear {
@@ -137,7 +141,9 @@ model AcademicYear {
   classes                         Class[]
   educationSystems                EducationSystem[]
   inputAssessmentPeriods          InputAssessmentPeriod[]
+  inputAssessmentSessions         InputAssessmentSession[]
   preschoolInputAssessmentPeriods PreschoolInputAssessmentPeriod[]
+  preschoolInputAssessmentSessions PreschoolInputAssessmentSession[]
   students                        Student[]
   subjectQuotas                   SubjectQuota[]
   surveyForms                     SurveyForm[]
@@ -648,6 +654,7 @@ model InputAssessmentPeriod {
   campus                           Campus?                            @relation(fields: [campusId], references: [id])
   assignedUser                     User?                              @relation("PeriodAssignee", fields: [assignedUserId], references: [id])
   students                         InputAssessmentStudent[]
+  sessions                         InputAssessmentSession[]
   InputAssessmentTeacherAssignment InputAssessmentTeacherAssignment[]
 }
 
@@ -667,6 +674,7 @@ model InputAssessmentBatch {
   assignedUser                     User?                              @relation("BatchAssignee", fields: [assignedUserId], references: [id])
   period                           InputAssessmentPeriod              @relation(fields: [periodId], references: [id], onDelete: Cascade)
   students                         InputAssessmentStudent[]
+  sessions                         InputAssessmentSession[]
   InputAssessmentTeacherAssignment InputAssessmentTeacherAssignment[]
 
   @@unique([periodId, batchNumber])
@@ -755,6 +763,7 @@ model InputAssessmentStudent {
   batch               InputAssessmentBatch?    @relation(fields: [batchId], references: [id], onDelete: SetNull)
   period              InputAssessmentPeriod    @relation(fields: [periodId], references: [id], onDelete: Cascade)
   scores              StudentAssessmentScore[]
+  studentSessions     InputAssessmentStudentSession[]
 
   enrollmentStatus  String?
   enrollmentClassId String?
@@ -863,6 +872,72 @@ model InputAssessmentTeacherAssignment {
   @@index([subjectId])
 }
 
+model InputAssessmentSession {
+  id               String                          @id @default(cuid())
+  sessionCode      String                          @unique
+  name             String
+  sessionDate      DateTime
+  startTime        String?
+  endTime          String?
+  room             String?
+  campusId         String
+  academicYearId   String
+  periodId         String?
+  batchId          String?
+  maxCapacity      Int                             @default(30)
+  sessionType      String                          @default("LE")
+  status           String                          @default("SCHEDULED")
+  notes            String?
+  createdById      String?
+  createdAt        DateTime                        @default(now())
+  updatedAt        DateTime                        @updatedAt
+
+  campus           Campus                          @relation(fields: [campusId], references: [id])
+  academicYear     AcademicYear                    @relation(fields: [academicYearId], references: [id])
+  period           InputAssessmentPeriod?          @relation(fields: [periodId], references: [id], onDelete: SetNull)
+  batch            InputAssessmentBatch?           @relation(fields: [batchId], references: [id], onDelete: SetNull)
+  studentSessions  InputAssessmentStudentSession[]
+  examiners        InputAssessmentSessionExaminer[]
+
+  @@index([campusId])
+  @@index([academicYearId])
+  @@index([sessionDate])
+  @@index([batchId])
+}
+
+model InputAssessmentStudentSession {
+  id         String                 @id @default(cuid())
+  sessionId  String
+  studentId  String
+  status     String                 @default("ASSIGNED")
+  seatNumber String?
+  assignedAt DateTime               @default(now())
+  note       String?
+
+  session    InputAssessmentSession @relation(fields: [sessionId], references: [id], onDelete: Cascade)
+  student    InputAssessmentStudent @relation(fields: [studentId], references: [id], onDelete: Cascade)
+
+  @@unique([sessionId, studentId])
+  @@index([sessionId])
+  @@index([studentId])
+}
+
+model InputAssessmentSessionExaminer {
+  id          String                 @id @default(cuid())
+  sessionId   String
+  userId      String
+  role        String                 @default("EXAMINER")
+  subjectCode String?
+  createdAt   DateTime               @default(now())
+
+  session     InputAssessmentSession @relation(fields: [sessionId], references: [id], onDelete: Cascade)
+  user        User                   @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([sessionId, userId, role, subjectCode])
+  @@index([sessionId])
+  @@index([userId])
+}
+
 model Department {
   id          String    @id @default(cuid())
   code        String    @unique
@@ -955,6 +1030,7 @@ model PreschoolInputAssessmentPeriod {
   campus             Campus?                                     @relation(fields: [campusId], references: [id])
   assignedUser       User?                                       @relation("PreschoolPeriodAssignee", fields: [assignedUserId], references: [id])
   students           PreschoolInputAssessmentStudent[]
+  sessions           PreschoolInputAssessmentSession[]
   teacherAssignments PreschoolInputAssessmentTeacherAssignment[]
 }
 
@@ -974,6 +1050,7 @@ model PreschoolInputAssessmentBatch {
   assignedUser       User?                                       @relation("PreschoolBatchAssignee", fields: [assignedUserId], references: [id])
   period             PreschoolInputAssessmentPeriod              @relation(fields: [periodId], references: [id], onDelete: Cascade)
   students           PreschoolInputAssessmentStudent[]
+  sessions           PreschoolInputAssessmentSession[]
   teacherAssignments PreschoolInputAssessmentTeacherAssignment[]
 
   @@unique([periodId, batchNumber])
@@ -1030,6 +1107,7 @@ model PreschoolInputAssessmentStudent {
   probationaryTeacherLog String?
   batch                  PreschoolInputAssessmentBatch? @relation(fields: [batchId], references: [id], onDelete: SetNull)
   period                 PreschoolInputAssessmentPeriod @relation(fields: [periodId], references: [id], onDelete: Cascade)
+  studentSessions        PreschoolInputAssessmentStudentSession[]
 
   enrollmentStatus  String?
   enrollmentClassId String?
@@ -1120,6 +1198,71 @@ model PreschoolInputAssessmentTeacherAssignment {
   @@index([userId])
   @@index([delegatedUserId])
   @@index([batchId])
+}
+
+model PreschoolInputAssessmentSession {
+  id               String                                  @id @default(cuid())
+  sessionCode      String                                  @unique
+  name             String
+  sessionDate      DateTime
+  startTime        String?
+  endTime          String?
+  room             String?
+  campusId         String
+  academicYearId   String
+  periodId         String?
+  batchId          String?
+  maxCapacity      Int                                     @default(20)
+  sessionType      String                                  @default("LE")
+  status           String                                  @default("SCHEDULED")
+  notes            String?
+  createdAt        DateTime                                @default(now())
+  updatedAt        DateTime                                @updatedAt
+
+  campus           Campus                                  @relation(fields: [campusId], references: [id])
+  academicYear     AcademicYear                            @relation(fields: [academicYearId], references: [id])
+  period           PreschoolInputAssessmentPeriod?         @relation(fields: [periodId], references: [id], onDelete: SetNull)
+  batch            PreschoolInputAssessmentBatch?          @relation(fields: [batchId], references: [id], onDelete: SetNull)
+  studentSessions  PreschoolInputAssessmentStudentSession[]
+  examiners        PreschoolInputAssessmentSessionExaminer[]
+
+  @@index([campusId])
+  @@index([academicYearId])
+  @@index([sessionDate])
+  @@index([batchId])
+}
+
+model PreschoolInputAssessmentStudentSession {
+  id         String                          @id @default(cuid())
+  sessionId  String
+  studentId  String
+  status     String                          @default("ASSIGNED")
+  seatNumber String?
+  assignedAt DateTime                        @default(now())
+  note       String?
+
+  session    PreschoolInputAssessmentSession @relation(fields: [sessionId], references: [id], onDelete: Cascade)
+  student    PreschoolInputAssessmentStudent @relation(fields: [studentId], references: [id], onDelete: Cascade)
+
+  @@unique([sessionId, studentId])
+  @@index([sessionId])
+  @@index([studentId])
+}
+
+model PreschoolInputAssessmentSessionExaminer {
+  id          String                          @id @default(cuid())
+  sessionId   String
+  userId      String
+  role        String                          @default("EXAMINER")
+  subjectCode String?
+  createdAt   DateTime                        @default(now())
+
+  session     PreschoolInputAssessmentSession @relation(fields: [sessionId], references: [id], onDelete: Cascade)
+  user        User                            @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([sessionId, userId, role, subjectCode])
+  @@index([sessionId])
+  @@index([userId])
 }
 
 model TaskCategory {
