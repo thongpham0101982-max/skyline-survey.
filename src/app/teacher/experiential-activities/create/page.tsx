@@ -2165,7 +2165,7 @@ export default function CreateActivityWizard() {
                       </span>
                       <div className="flex flex-wrap gap-2">
                         {Array.from(new Set(assignedClasses.map(c => c.campusCode || (c.className.includes('_') ? c.className.split('_').pop() : 'CS')))).map(code => {
-                          const matchedCampus = campuses.find(cp => cp.campusCode === code);
+                          const matchedCampus = campuses.find(cp => cp.campusCode === code) as any;
                           const managerEmail = matchedCampus?.manager?.email;
                           const managerName = matchedCampus?.manager?.fullName;
                           return (

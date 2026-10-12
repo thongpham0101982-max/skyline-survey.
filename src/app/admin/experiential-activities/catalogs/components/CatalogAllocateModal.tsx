@@ -359,6 +359,28 @@ export function CatalogAllocateModal({
                               (Hệ thống sẽ gửi email tới {campusTeachers.map(t => t.teacherName).join(', ')})
                             </span>
                           )}
+
+                          {campusTeacherAssign[campus.id] && (() => {
+                            const assignedT = tlhnTeachers.find(t => t.id === campusTeacherAssign[campus.id]);
+                            if (!assignedT) return null;
+                            return (
+                              <div className="w-full mt-2 p-2 rounded-xl bg-teal-50 border border-teal-200/90 text-xs text-teal-950 flex flex-wrap items-center justify-between gap-2 shadow-2xs">
+                                <div className="flex items-center gap-2">
+                                  <div className="w-6 h-6 rounded-full bg-[#00A19A] text-white flex items-center justify-center text-[10px] font-bold shrink-0">
+                                    {assignedT.teacherName?.split(' ').slice(-1)[0]?.charAt(0) || 'G'}
+                                  </div>
+                                  <div>
+                                    <span className="font-extrabold">{assignedT.teacherName}</span>
+                                    <span className="font-mono text-[10px] text-teal-700 ml-1.5 font-bold">({assignedT.teacherCode})</span>
+                                    {assignedT.email && <span className="text-slate-500 font-mono text-[10px] ml-2">• {assignedT.email}</span>}
+                                  </div>
+                                </div>
+                                <span className="text-[10px] font-bold text-teal-800 bg-white px-2 py-0.5 rounded-md border border-teal-200">
+                                  GV Tiếp nhận
+                                </span>
+                              </div>
+                            );
+                          })()}
                         </div>
                       )}
                     </div>

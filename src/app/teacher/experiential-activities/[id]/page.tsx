@@ -14,7 +14,8 @@ import toast from 'react-hot-toast';
 import * as XLSX from 'xlsx';
 import { 
   ATTENDANCE_OPTIONS, STUDENT_ROLES, EVAL_LEVELS, QUICK_REMARKS,
-  STRAND_QUICK_REMARKS, ACTIVITY_STRANDS
+  STRAND_QUICK_REMARKS, ACTIVITY_STRANDS,
+  PRESCHOOL_EVAL_LEVELS, PRESCHOOL_QUICK_REMARKS, CORE_THEME_AXES, SLA_EVALUATION_DAYS
 } from '@/lib/experiential/constants';
 import { 
   calculateStudentResult, getRatingBadgeProps, getRatingLabel 
@@ -80,7 +81,18 @@ export default function ActivityResultInput() {
       const currentCId = selectedClassId || (assignedList[0]?.classId || '');
       setSelectedClassId(currentCId);
 
+      const isPreschoolAct = data.educationLevel === 'MAM_NON' || data.levelId === 'MAM_NON' || (data.name && data.name.toLowerCase().includes('mầm non')) || (data.code && data.code.includes('-MN-'));
+
       const studentList = (data.students || []).map((st) => {
+        if (isPreschoolAct && st.finalResult && ['TOT', 'DAT', 'CAN_HO_TRO'].includes(st.finalResult)) {
+          return {
+            ...st,
+            calculatedPercent: st.calculatedPercent !== null && st.calculatedPercent !== undefined ? st.calculatedPercent : (st.finalResult === 'TOT' ? 100 : st.finalResult === 'DAT' ? 80 : 50),
+            finalResult: st.finalResult,
+            isCompleted: true
+          };
+        }
+
         const formulaRes = calculateStudentResult({
           attendance: st.attendance || 'PRESENT',
           evalMode: data.evalMode || 'CRITERIA',
@@ -116,13 +128,26 @@ export default function ActivityResultInput() {
   const updateStudent = (studentId, changes) => {
     if (!activity || activity.status === 'LOCKED') return;
 
+    const isPreschoolAct = activity?.educationLevel === 'MAM_NON' || activity?.levelId === 'MAM_NON' || (activity?.name && activity.name.toLowerCase().includes('mầm non')) || (activity?.code && activity.code.includes('-MN-'));
+
     setStudents(prev => prev.map(st => {
       if (st.id !== studentId) return st;
       const updated = { ...st, ...changes };
 
-      // If attendance changed to absent, clear scores or keep based on mode
       const isAbsent = updated.attendance === 'ABSENT_PERMITTED' || updated.attendance === 'ABSENT_UNPERMITTED' || updated.attendance === 'NOT_PARTICIPATED' || updated.attendance === 'EXEMPTED';
 
+      if (isPreschoolAct) {
+        const isCompleted = !isAbsent && !!updated.finalResult && updated.finalResult !== 'CHUA_DANH_GIA';
+        const pct = updated.finalResult === 'TOT' ? 100 : updated.finalResult === 'DAT' ? 80 : updated.finalResult === 'CAN_HO_TRO' ? 50 : null;
+        return {
+          ...updated,
+          calculatedPercent: isAbsent ? null : pct,
+          finalResult: isAbsent ? 'NOT_PARTICIPATED' : updated.finalResult,
+          isCompleted: isAbsent ? true : isCompleted
+        };
+      }
+
+      // If attendance changed to absent, clear scores or keep based on mode
       const formulaRes = calculateStudentResult({
         attendance: updated.attendance,
         evalMode: activity.evalMode || 'CRITERIA',
@@ -192,6 +217,19 @@ export default function ActivityResultInput() {
     }
   };
 
+  const isPreschool = activity?.educationLevel === 'MAM_NON' || 
+    activity?.levelId === 'MAM_NON' || 
+    activity?.catalog?.level === 'MAM_NON' ||
+    activity?.meta?.educationLevels?.includes('MAM_NON') ||
+    (activity?.name && activity.name.toLowerCase().includes('mầm non')) ||
+    (activity?.code && activity.code.includes('-MN-'));
+
+  const activityDate = activity?.date ? new Date(activity.date) : null;
+  const slaLimit = activityDate ? new Date(activityDate.getTime() + SLA_EVALUATION_DAYS * 24 * 60 * 60 * 1000) : null;
+  const now = new Date();
+  const daysRemaining = slaLimit ? Math.ceil((slaLimit.getTime() - now.getTime()) / (1000 * 60 * 60 * 24)) : SLA_EVALUATION_DAYS;
+  const isSlaExpired = daysRemaining < 0;
+
   const isEventActivity = activity?.activityCategory === 'HOAT_DONG_SU_KIEN' || 
     activity?.evalMode === 'ROLE_BASED' || 
     (activity?.meta?.activityCategory === 'HOAT_DONG_SU_KIEN') ||
@@ -219,6 +257,19 @@ export default function ActivityResultInput() {
   const handleRequestSubmit = () => {
     const currentClassStudents = students.filter(s => !selectedClassId || s.classId === selectedClassId);
     
+    // Đối với Mầm non: Kiểm tra học sinh có mặt đã được đánh giá quan sát (TOT, DAT, CAN_HO_TRO)
+    if (isPreschool) {
+      const uncompleted = currentClassStudents.filter(s => {
+        if (s.attendance === 'PRESENT') {
+          return !s.finalResult || s.finalResult === 'CHUA_DANH_GIA';
+        }
+        return false;
+      });
+      setUncompletedStudents(uncompleted);
+      setShowConfirmSubmitModal(true);
+      return;
+    }
+
     // Đối với Hoạt động sự kiện: Chỉ tính vai trò tham gia của học sinh & điểm danh (không yêu cầu điểm rubric)
     if (isEventActivity) {
       setUncompletedStudents([]);
@@ -456,13 +507,17 @@ export default function ActivityResultInput() {
                 <span className="text-[11px] font-black text-[#003B3A] bg-[#00A19A]/10 px-2.5 py-0.5 rounded-lg border border-[#00A19A]/20">
                   {activity?.code || 'HDTN'}
                 </span>
-                {isEventActivity ? (
+                {isPreschool ? (
+                  <span className="text-[11px] font-black text-amber-800 bg-amber-50 px-2.5 py-0.5 rounded-lg border border-amber-200">
+                    👶 Mầm non (Quan sát tiến bộ)
+                  </span>
+                ) : isEventActivity ? (
                   <span className="text-[11px] font-black text-purple-800 bg-purple-100 px-2.5 py-0.5 rounded-lg border border-purple-200">
-                    Hoạt động sự kiện (Chỉ tính vai trò HS & Điểm danh)
+                    🎪 Sự kiện (Vai trò & Điểm danh)
                   </span>
                 ) : (
                   <span className="text-[11px] font-black text-teal-800 bg-teal-50 px-2.5 py-0.5 rounded-lg border border-teal-200">
-                    Trải nghiệm / Dự án (Đánh giá Rubric)
+                    🌟 Dự án / Trải nghiệm (Rubric)
                   </span>
                 )}
                 <span className="text-xs font-bold text-slate-500 hidden sm:inline">{activity?.activityTypeName}</span>
@@ -475,6 +530,28 @@ export default function ActivityResultInput() {
 
           {/* Autosave Indicator & Actions */}
           <div className="flex items-center gap-2.5 shrink-0">
+            {/* SLA 7 DAYS BADGE */}
+            {activity?.date && (
+              <div className={`hidden lg:flex items-center gap-1.5 px-3 py-1.5 rounded-xl border text-xs font-black shrink-0 ${
+                isLocked
+                  ? 'bg-slate-100 text-slate-600 border-slate-200'
+                  : isSlaExpired
+                    ? 'bg-rose-50 text-rose-700 border-rose-200 animate-pulse'
+                    : daysRemaining <= 2
+                      ? 'bg-amber-50 text-amber-700 border-amber-200'
+                      : 'bg-emerald-50 text-emerald-700 border-emerald-200'
+              }`}>
+                <Clock className="w-3.5 h-3.5" />
+                <span>
+                  {isLocked 
+                    ? '🔒 Sổ đã khóa' 
+                    : isSlaExpired 
+                      ? '⚠️ Quá hạn 7 ngày' 
+                      : `⏱️ Khóa sổ sau ${daysRemaining} ngày (SLA 7 ngày)`}
+                </span>
+              </div>
+            )}
+
             {lastSavedTime && (
               <span className="hidden md:inline-flex items-center gap-1 text-[11px] font-bold text-emerald-600 bg-emerald-50 px-2.5 py-1 rounded-lg border border-emerald-200">
                 <Check className="w-3 h-3" /> Đã lưu lúc {lastSavedTime}
@@ -731,8 +808,8 @@ export default function ActivityResultInput() {
                   <th className="py-3.5 px-3 min-w-[130px]">Điểm danh</th>
                   <th className="py-3.5 px-3 min-w-[130px]">Vai trò</th>
 
-                  {/* CRITERIA HEADERS - Chỉ hiển thị cho Trải nghiệm / Dự án */}
-                  {!isEventActivity && (activity?.criteria || []).map((crit, idx) => (
+                  {/* CRITERIA HEADERS - Chỉ hiển thị cho Trải nghiệm / Dự án Phổ thông K-12 */}
+                  {!isEventActivity && !isPreschool && (activity?.criteria || []).map((crit, idx) => (
                     <th key={crit.id} className="py-3.5 px-3 min-w-[180px] text-center border-l border-slate-100 bg-slate-50/90" title={crit.description || crit.name}>
                       <div className="font-black text-slate-800 line-clamp-1">{crit.name}</div>
                       <div className="text-[10px] text-slate-400 font-bold">
@@ -741,12 +818,25 @@ export default function ActivityResultInput() {
                     </th>
                   ))}
 
+                  {/* PRESCHOOL HEADER - Mầm non */}
+                  {isPreschool && (
+                    <th className="py-3.5 px-4 min-w-[280px] text-center border-l border-slate-100 bg-amber-50/50">
+                      <div className="font-black text-amber-900">Quan sát Tiến bộ của Trẻ (Mầm non)</div>
+                      <div className="text-[10px] text-amber-600 font-bold">
+                        🌟 Tốt (Hào hứng) • ✅ Đạt (Hoàn thành) • 🤝 Cần hỗ trợ (Động viên)
+                      </div>
+                    </th>
+                  )}
+
                   {/* SUMMARY & REMARK */}
-                  {!isEventActivity && (
+                  {!isEventActivity && !isPreschool && (
                     <>
                       <th className="py-3.5 px-3 min-w-[100px] text-center border-l border-slate-200">Điểm %</th>
                       <th className="py-3.5 px-3 min-w-[130px] text-center">Xếp loại</th>
                     </>
+                  )}
+                  {isPreschool && (
+                    <th className="py-3.5 px-3 min-w-[130px] text-center border-l border-slate-200">Kết quả</th>
                   )}
                   <th className="py-3.5 px-4 min-w-[220px]">Nhận xét & Phiếu cá nhân</th>
                 </tr>
@@ -755,7 +845,7 @@ export default function ActivityResultInput() {
               <tbody className="divide-y divide-slate-100 font-semibold text-slate-700">
                 {filteredStudents.length === 0 ? (
                   <tr>
-                    <td colSpan={(isEventActivity ? 5 : 7) + (!isEventActivity ? (activity?.criteria?.length || 0) : 0)} className="py-12 text-center text-slate-400 font-bold">
+                    <td colSpan={(isEventActivity ? 5 : isPreschool ? 6 : 7) + (!isEventActivity && !isPreschool ? (activity?.criteria?.length || 0) : 0)} className="py-12 text-center text-slate-400 font-bold">
                       Không tìm thấy học sinh nào phù hợp
                     </td>
                   </tr>
@@ -826,8 +916,42 @@ export default function ActivityResultInput() {
                           </select>
                         </td>
 
-                        {/* DYNAMIC CRITERIA 4-LEVEL BUTTONS - Chỉ hiển thị cho Trải nghiệm / Dự án */}
-                        {!isEventActivity && (activity?.criteria || []).map(crit => {
+                        {/* PRESCHOOL 3 BUTTONS */}
+                        {isPreschool && (
+                          <td className="py-3 px-3 text-center border-l border-slate-100">
+                            {isAbsent ? (
+                              <span className="text-[11px] text-slate-400 italic">Vắng / Miễn</span>
+                            ) : (
+                              <div className="inline-flex items-center gap-1.5 bg-slate-100 p-1 rounded-xl border border-slate-200">
+                                {PRESCHOOL_EVAL_LEVELS.map(pe => {
+                                  const isActive = st.finalResult === pe.id || st.finalResult === pe.name;
+                                  return (
+                                    <button
+                                      key={pe.id}
+                                      type="button"
+                                      disabled={isLocked}
+                                      onClick={() => updateStudent(st.id, { 
+                                        finalResult: pe.id, 
+                                        calculatedPercent: pe.id === 'TOT' ? 100 : pe.id === 'DAT' ? 80 : 50,
+                                        isCompleted: true 
+                                      })}
+                                      className={`px-2.5 py-1.5 rounded-lg text-xs font-black transition-all flex items-center gap-1.5 ${
+                                        isActive ? pe.btnCls + ' shadow-sm' : 'text-slate-600 hover:bg-white hover:text-slate-900'
+                                      }`}
+                                      title={pe.subTitle}
+                                    >
+                                      <span>{pe.icon}</span>
+                                      <span>{pe.name}</span>
+                                    </button>
+                                  );
+                                })}
+                              </div>
+                            )}
+                          </td>
+                        )}
+
+                        {/* DYNAMIC CRITERIA 4-LEVEL BUTTONS - Chỉ hiển thị cho K-12 */}
+                        {!isEventActivity && !isPreschool && (activity?.criteria || []).map(crit => {
                           const currentScore = st.criteriaScores?.[crit.id];
 
                           if (isAbsent) {
@@ -870,8 +994,8 @@ export default function ActivityResultInput() {
                           );
                         })}
 
-                        {/* CALCULATED PERCENT & FINAL RATING - Chỉ hiển thị cho Trải nghiệm / Dự án */}
-                        {!isEventActivity && (
+                        {/* CALCULATED PERCENT & FINAL RATING - Chỉ hiển thị cho Trải nghiệm / Dự án K-12 */}
+                        {!isEventActivity && !isPreschool && (
                           <>
                             <td className="py-3 px-3 text-center border-l border-slate-200 whitespace-nowrap">
                               {st.calculatedPercent !== null ? (
@@ -886,6 +1010,23 @@ export default function ActivityResultInput() {
                               </span>
                             </td>
                           </>
+                        )}
+
+                        {/* PRESCHOOL RESULT BADGE */}
+                        {isPreschool && (
+                          <td className="py-3 px-3 text-center border-l border-slate-200 whitespace-nowrap">
+                            {st.finalResult && st.finalResult !== 'CHUA_DANH_GIA' ? (
+                              <span className={`inline-flex items-center gap-1 px-3 py-1 rounded-full text-xs font-black border ${
+                                st.finalResult === 'TOT' ? 'bg-purple-50 text-purple-700 border-purple-200' :
+                                st.finalResult === 'DAT' ? 'bg-emerald-50 text-emerald-700 border-emerald-200' :
+                                'bg-amber-50 text-amber-700 border-amber-200'
+                              }`}>
+                                <span>{st.finalResult === 'TOT' ? '🌟 Tốt' : st.finalResult === 'DAT' ? '✅ Đạt' : '🤝 Cần hỗ trợ'}</span>
+                              </span>
+                            ) : (
+                              <span className="text-slate-300 font-bold text-xs">Chưa đánh giá</span>
+                            )}
+                          </td>
                         )}
 
                         {/* REMARK INPUT */}
@@ -950,17 +1091,32 @@ export default function ActivityResultInput() {
 
                 {/* Tabs */}
                 <div className="flex items-center gap-1.5 p-1 bg-slate-100 rounded-xl text-xs font-bold">
-                  <button
-                    type="button"
-                    onClick={() => setRemarkTab('STRAND')}
-                    className={`flex-1 py-1.5 px-2 rounded-lg text-center transition-all ${
-                      remarkTab === 'STRAND'
-                        ? 'bg-white text-[#00A19A] shadow-xs font-black'
-                        : 'text-slate-600 hover:text-slate-900'
-                    }`}
-                  >
-                    Theo Mạch ({strandObj?.name || actStrand})
-                  </button>
+                  {isPreschool && (
+                    <button
+                      type="button"
+                      onClick={() => setRemarkTab('PRESCHOOL')}
+                      className={`flex-1 py-1.5 px-2 rounded-lg text-center transition-all ${
+                        remarkTab === 'PRESCHOOL' || remarkTab === 'STRAND'
+                          ? 'bg-white text-amber-700 shadow-xs font-black'
+                          : 'text-slate-600 hover:text-slate-900'
+                      }`}
+                    >
+                      👶 Mầm non ({PRESCHOOL_QUICK_REMARKS.length})
+                    </button>
+                  )}
+                  {!isPreschool && (
+                    <button
+                      type="button"
+                      onClick={() => setRemarkTab('STRAND')}
+                      className={`flex-1 py-1.5 px-2 rounded-lg text-center transition-all ${
+                        remarkTab === 'STRAND'
+                          ? 'bg-white text-[#00A19A] shadow-xs font-black'
+                          : 'text-slate-600 hover:text-slate-900'
+                      }`}
+                    >
+                      Theo Mạch ({strandObj?.name || actStrand})
+                    </button>
+                  )}
                   <button
                     type="button"
                     onClick={() => setRemarkTab('GENERAL')}
@@ -972,22 +1128,48 @@ export default function ActivityResultInput() {
                   >
                     Dùng chung ({QUICK_REMARKS.length})
                   </button>
-                  <button
-                    type="button"
-                    onClick={() => setRemarkTab('ALL')}
-                    className={`flex-1 py-1.5 px-2 rounded-lg text-center transition-all ${
-                      remarkTab === 'ALL'
-                        ? 'bg-white text-[#00A19A] shadow-xs font-black'
-                        : 'text-slate-600 hover:text-slate-900'
-                    }`}
-                  >
-                    Tất cả mạch
-                  </button>
+                  {!isPreschool && (
+                    <button
+                      type="button"
+                      onClick={() => setRemarkTab('ALL')}
+                      className={`flex-1 py-1.5 px-2 rounded-lg text-center transition-all ${
+                        remarkTab === 'ALL'
+                          ? 'bg-white text-[#00A19A] shadow-xs font-black'
+                          : 'text-slate-600 hover:text-slate-900'
+                      }`}
+                    >
+                      Tất cả mạch
+                    </button>
+                  )}
                 </div>
 
                 {/* Content */}
                 <div className="space-y-1.5 max-h-72 overflow-y-auto pr-1">
-                  {remarkTab === 'STRAND' && (
+                  {(remarkTab === 'PRESCHOOL' || (isPreschool && remarkTab === 'STRAND')) && (
+                    <div className="space-y-1.5">
+                      <div className="text-[11px] font-bold text-amber-900 bg-amber-50 px-2.5 py-1 rounded-lg border border-amber-200 flex items-center gap-1.5">
+                        <Sparkles className="w-3.5 h-3.5 text-amber-600 shrink-0" />
+                        Gợi ý quan sát định tính sự tiến bộ của trẻ Mầm non:
+                      </div>
+                      {PRESCHOOL_QUICK_REMARKS.map((preset, idx) => (
+                        <button
+                          key={idx}
+                          type="button"
+                          onClick={() => {
+                            const current = st?.remarksCustom ? `${st.remarksCustom}; ${preset}` : preset;
+                            updateStudent(remarkStudentId, { remarksCustom: current });
+                            setRemarkStudentId(null);
+                            toast.success('Đã thêm nhận xét');
+                          }}
+                          className="w-full text-left p-2.5 rounded-xl bg-slate-50 hover:bg-amber-50 hover:text-amber-900 text-xs font-bold text-slate-700 transition-colors border border-transparent hover:border-amber-300"
+                        >
+                          + {preset}
+                        </button>
+                      ))}
+                    </div>
+                  )}
+
+                  {!isPreschool && remarkTab === 'STRAND' && (
                     <div className="space-y-1.5">
                       <div className="text-[11px] font-bold text-teal-800 bg-teal-50 px-2.5 py-1 rounded-lg border border-teal-100 flex items-center gap-1.5">
                         <Sparkles className="w-3.5 h-3.5 text-teal-600 shrink-0" />
@@ -1179,77 +1361,99 @@ export default function ActivityResultInput() {
                     </div>
                   </div>
 
-                  {/* Criteria Results Table */}
-                  <div className="space-y-2">
-                    <div className="text-xs font-black uppercase text-teal-900 tracking-wider">
-                      Kết quả Đánh giá theo Tiêu chí Chuẩn:
+                  {/* Preschool Qualitative Card or Criteria Results Table */}
+                  {isPreschool ? (
+                    <div className="p-4 rounded-2xl bg-amber-50/70 border border-amber-200 space-y-3">
+                      <div className="text-xs font-black uppercase text-amber-900 tracking-wider flex items-center gap-1.5">
+                        <span>👶</span>
+                        <span>Đánh giá Quan sát Định tính Sự Tiến Bộ Của Trẻ:</span>
+                      </div>
+                      <div className="flex items-center gap-3 bg-white p-3.5 rounded-xl border border-amber-200">
+                        <span className="text-2xl">
+                          {st.finalResult === 'TOT' ? '🌟' : st.finalResult === 'DAT' ? '✅' : '🤝'}
+                        </span>
+                        <div>
+                          <div className="text-sm font-black text-amber-900">
+                            Mức đạt: {st.finalResult === 'TOT' ? 'Tốt (Tích cực hào hứng)' : st.finalResult === 'DAT' ? 'Đạt (Tham gia hoàn thành)' : 'Cần hỗ trợ (Cần cô hỗ trợ động viên)'}
+                          </div>
+                          <div className="text-xs text-slate-500 font-medium mt-0.5">
+                            Theo chuẩn Kế hoạch Hoạt động Ngoại khóa Mầm non Sky-Line 2026-2027
+                          </div>
+                        </div>
+                      </div>
                     </div>
-                    <table className="w-full border-collapse text-xs border border-slate-200">
-                      <thead>
-                        <tr className="bg-teal-50/80 text-teal-900 font-black border-b border-slate-200 text-[11px]">
-                          <th className="py-2 px-2 text-center w-8 border-r border-slate-200">#</th>
-                          <th className="py-2 px-3 text-left border-r border-slate-200">Tiêu chí đánh giá</th>
-                          <th className="py-2 px-2 text-center w-20 border-r border-slate-200">Trọng số</th>
-                          <th className="py-2 px-2 text-center w-24 border-r border-slate-200">Mức đạt</th>
-                          <th className="py-2 px-3 text-left">Đánh giá / Năng lực thể hiện</th>
-                        </tr>
-                      </thead>
-                      <tbody className="divide-y divide-slate-100 font-medium text-slate-700">
-                        {(activity?.criteria || []).map((crit, idx) => {
-                          const level = st.criteriaScores?.[crit.id];
-                          const lvlInfo = EVAL_LEVELS.find(l => l.level === level);
-                          return (
-                            <tr key={crit.id} className="hover:bg-slate-50/50">
-                              <td className="py-2 px-2 text-center font-bold text-slate-400 border-r border-slate-200">{idx + 1}</td>
-                              <td className="py-2 px-3 border-r border-slate-200">
-                                <div className="font-bold text-slate-900">{crit.name}</div>
-                                <div className="text-[10px] text-slate-500 line-clamp-1">{crit.description}</div>
-                              </td>
-                              <td className="py-2 px-2 text-center font-bold text-slate-600 border-r border-slate-200">
-                                {activity?.formulaType === 'WEIGHTED' ? `${crit.weight}%` : 'Đồng đều'}
-                              </td>
-                              <td className="py-2 px-2 text-center border-r border-slate-200">
-                                {level ? (
-                                  <span className={`inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-black ${
-                                    level === 4 ? 'bg-purple-100 text-purple-800' :
-                                    level === 3 ? 'bg-emerald-100 text-emerald-800' :
-                                    level === 2 ? 'bg-sky-100 text-sky-800' :
-                                    'bg-amber-100 text-amber-800'
-                                  }`}>
-                                    Mức {level}
-                                  </span>
-                                ) : (
-                                  <span className="text-slate-300">-</span>
-                                )}
-                              </td>
-                              <td className="py-2 px-3 text-[11px] text-slate-600">
-                                {lvlInfo ? (
-                                  <span className="font-semibold">{lvlInfo.name}</span>
-                                ) : (
-                                  <span className="italic text-slate-400">Chưa ghi nhận</span>
-                                )}
-                              </td>
-                            </tr>
-                          );
-                        })}
-                      </tbody>
-                      <tfoot>
-                        <tr className="bg-teal-50/50 font-black border-t-2 border-teal-700/50">
-                          <td colSpan={3} className="py-2.5 px-3 text-right text-teal-900 uppercase text-[11px]">
-                            Tổng kết kết quả trải nghiệm:
-                          </td>
-                          <td className="py-2.5 px-2 text-center text-sm font-black text-teal-900">
-                            {st.calculatedPercent !== null ? `${st.calculatedPercent}%` : '-'}
-                          </td>
-                          <td className="py-2.5 px-3">
-                            <span className={`inline-flex items-center gap-1 px-3 py-1 rounded-full text-xs font-black border ${ratingBadge.containerCls}`}>
-                              <span>Xếp loại: {ratingBadge.label}</span>
-                            </span>
-                          </td>
-                        </tr>
-                      </tfoot>
-                    </table>
-                  </div>
+                  ) : (
+                    <div className="space-y-2">
+                      <div className="text-xs font-black uppercase text-teal-900 tracking-wider">
+                        Kết quả Đánh giá theo Tiêu chí Chuẩn:
+                      </div>
+                      <table className="w-full border-collapse text-xs border border-slate-200">
+                        <thead>
+                          <tr className="bg-teal-50/80 text-teal-900 font-black border-b border-slate-200 text-[11px]">
+                            <th className="py-2 px-2 text-center w-8 border-r border-slate-200">#</th>
+                            <th className="py-2 px-3 text-left border-r border-slate-200">Tiêu chí đánh giá</th>
+                            <th className="py-2 px-2 text-center w-20 border-r border-slate-200">Trọng số</th>
+                            <th className="py-2 px-2 text-center w-24 border-r border-slate-200">Mức đạt</th>
+                            <th className="py-2 px-3 text-left">Đánh giá / Năng lực thể hiện</th>
+                          </tr>
+                        </thead>
+                        <tbody className="divide-y divide-slate-100 font-medium text-slate-700">
+                          {(activity?.criteria || []).map((crit, idx) => {
+                            const level = st.criteriaScores?.[crit.id];
+                            const lvlInfo = EVAL_LEVELS.find(l => l.level === level);
+                            return (
+                              <tr key={crit.id} className="hover:bg-slate-50/50">
+                                <td className="py-2 px-2 text-center font-bold text-slate-400 border-r border-slate-200">{idx + 1}</td>
+                                <td className="py-2 px-3 border-r border-slate-200">
+                                  <div className="font-bold text-slate-900">{crit.name}</div>
+                                  <div className="text-[10px] text-slate-500 line-clamp-1">{crit.description}</div>
+                                </td>
+                                <td className="py-2 px-2 text-center font-bold text-slate-600 border-r border-slate-200">
+                                  {activity?.formulaType === 'WEIGHTED' ? `${crit.weight}%` : 'Đồng đều'}
+                                </td>
+                                <td className="py-2 px-2 text-center border-r border-slate-200">
+                                  {level ? (
+                                    <span className={`inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-black ${
+                                      level === 4 ? 'bg-purple-100 text-purple-800' :
+                                      level === 3 ? 'bg-emerald-100 text-emerald-800' :
+                                      level === 2 ? 'bg-sky-100 text-sky-800' :
+                                      'bg-amber-100 text-amber-800'
+                                    }`}>
+                                      Mức {level}
+                                    </span>
+                                  ) : (
+                                    <span className="text-slate-300">-</span>
+                                  )}
+                                </td>
+                                <td className="py-2 px-3 text-[11px] text-slate-600">
+                                  {lvlInfo ? (
+                                    <span className="font-semibold">{lvlInfo.name}</span>
+                                  ) : (
+                                    <span className="italic text-slate-400">Chưa ghi nhận</span>
+                                  )}
+                                </td>
+                              </tr>
+                            );
+                          })}
+                        </tbody>
+                        <tfoot>
+                          <tr className="bg-teal-50/50 font-black border-t-2 border-teal-700/50">
+                            <td colSpan={3} className="py-2.5 px-3 text-right text-teal-900 uppercase text-[11px]">
+                              Tổng điểm % &amp; Xếp loại:
+                            </td>
+                            <td className="py-2.5 px-2 text-center text-teal-900 font-black text-xs border-r border-slate-200">
+                              {st.calculatedPercent !== null ? `${st.calculatedPercent}%` : '-'}
+                            </td>
+                            <td className="py-2.5 px-3">
+                              <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-black border ${ratingBadge.containerCls}`}>
+                                {ratingBadge.label}
+                              </span>
+                            </td>
+                          </tr>
+                        </tfoot>
+                      </table>
+                    </div>
+                  )}
 
                   {/* Teacher's Remarks Box */}
                   <div className="space-y-1.5 bg-amber-50/40 p-3.5 rounded-xl border border-amber-200/80">

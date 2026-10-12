@@ -115,12 +115,49 @@ export async function GET(req: NextRequest) {
     const criteriaStats: Record<string, { name: string; totalLevel: number; count: number }> = {};
     const classProgressList: any[] = [];
 
+    const themeAxisMap: Record<string, { id: string; name: string; count: number; color: string }> = {
+      DI_SAN: { id: "DI_SAN", name: "Di sản & Lịch sử", count: 0, color: "#d97706" },
+      MOI_TRUONG: { id: "MOI_TRUONG", name: "Môi trường xanh", count: 0, color: "#059669" },
+      STEM: { id: "STEM", name: "Khoa học & STEM", count: 0, color: "#0284c7" },
+      NGON_NGU: { id: "NGON_NGU", name: "Ngôn ngữ & Hội nhập", count: 0, color: "#7c3aed" }
+    };
+
+    // Class Target Compliance Map (Preschool >= 5, K-12 >= 2)
+    const classActivityCountMap: Record<string, { 
+      classId: string; 
+      className: string; 
+      campusName: string; 
+      campusCode: string;
+      grade: string;
+      level: string;
+      homeroomTeacherName: string;
+      totalTarget: number;
+      completedCount: number;
+      inProgressCount: number;
+      totalDeployed: number;
+    }> = {};
+
     filtered.forEach((act) => {
       const meta = parseDbJson<any>(act.locationId, {});
+      const catMeta = parseDbJson<any>(act.catalog?.description, {});
       const actStrand = meta.strand || "BAN_THAN";
 
       if (strandMap[actStrand]) {
         strandMap[actStrand].count += 1;
+      }
+
+      // Resolve 4 Core Educational Theme Axes
+      const actThemeAxis = meta.themeAxis || catMeta.themeAxis || (() => {
+        const text = `${act.name} ${meta.themeName || ''} ${meta.primarySubjectName || ''}`.toLowerCase();
+        if (text.includes('di sản') || text.includes('lịch sử') || text.includes('bảo tàng') || text.includes('làng nghề') || text.includes('quân đội') || text.includes('trung thu')) return 'DI_SAN';
+        if (text.includes('môi trường') || text.includes('nông nghiệp') || text.includes('sinh thái') || text.includes('thiên nhiên') || text.includes('xanh') || text.includes('vườn')) return 'MOI_TRUONG';
+        if (text.includes('stem') || text.includes('khoa học') || text.includes('toán') || text.includes('công nghệ') || text.includes('robot')) return 'STEM';
+        if (text.includes('tiếng anh') || text.includes('english') || text.includes('toàn cầu') || text.includes('văn hóa') || text.includes('ngôn ngữ')) return 'NGON_NGU';
+        return 'DI_SAN';
+      })();
+
+      if (themeAxisMap[actThemeAxis]) {
+        themeAxisMap[actThemeAxis].count += 1;
       }
 
       const assigned = meta.assignedClasses || [];
@@ -143,10 +180,36 @@ export async function GET(req: NextRequest) {
           }
         }
 
+        const isPreschoolClass = ['12 đến 18 tháng', '18 đến 24 tháng', '24 đến 36 tháng', '3 đến 4 tuổi', '4 đến 5 tuổi', '5 đến 6 tuổi'].includes(cls.grade) || (cls.className && cls.className.toLowerCase().includes('mầm non'));
+        const target = isPreschoolClass ? 5 : 2;
+        const classKey = cls.classId || cls.className;
+        if (!classActivityCountMap[classKey]) {
+          classActivityCountMap[classKey] = {
+            classId: cls.classId,
+            className: cls.className,
+            campusName: cls.campusName,
+            campusCode: cls.campusCode,
+            grade: cls.grade,
+            level: isPreschoolClass ? 'MAM_NON' : 'K12',
+            homeroomTeacherName: cls.homeroomTeacherName || '',
+            totalTarget: target,
+            completedCount: 0,
+            inProgressCount: 0,
+            totalDeployed: 0
+          };
+        }
+        classActivityCountMap[classKey].totalDeployed += 1;
+        if (evalStatus === 'DA_DANH_GIA' || cls.status === 'COMPLETED') {
+          classActivityCountMap[classKey].completedCount += 1;
+        } else {
+          classActivityCountMap[classKey].inProgressCount += 1;
+        }
+
         classProgressList.push({
           activityId: act.id,
           activityName: act.name,
           strand: actStrand,
+          themeAxis: actThemeAxis,
           classId: cls.classId,
           className: cls.className,
           campusId: cls.campusId,
@@ -214,16 +277,34 @@ export async function GET(req: NextRequest) {
       count: stat.count
     }));
 
+    const classTargetList = Object.values(classActivityCountMap);
+    const classesMeetingTarget = classTargetList.filter(c => c.completedCount >= c.totalTarget).length;
+    const targetComplianceRate = classTargetList.length > 0 ? Math.round((classesMeetingTarget / classTargetList.length) * 100) : 0;
+    const atRiskClasses = classTargetList.filter(c => c.totalDeployed < c.totalTarget);
+
     return NextResponse.json({
       kpis: {
         totalActivities,
         totalClassesAssigned,
         totalStudentsEvaluated,
-        overallCompletionRate
+        overallCompletionRate,
+        classesMeetingTarget,
+        totalClassesTracked: classTargetList.length,
+        targetComplianceRate
       },
       campusTLHNProgress, // 2-tier monitoring: GV Tổ TLHN theo cơ sở
       ratingDistribution,
       strandDistribution,
+      themeAxisDistribution: Object.values(themeAxisMap),
+      targetCompliance: {
+        totalClasses: classTargetList.length,
+        classesMeetingTarget,
+        targetComplianceRate,
+        preschoolTarget: 5,
+        k12Target: 2,
+        atRiskClassesCount: atRiskClasses.length,
+        atRiskClasses: atRiskClasses.slice(0, 15)
+      },
       criteriaAverages,
       classProgress: classProgressList // 2-tier monitoring: GVCN & GVBM theo lớp
     });

@@ -584,7 +584,13 @@ export async function POST(req: Request) {
       deadline,
       status = 'ASSIGNED',
       assignedClasses = [],
-      emailSettings = {}
+      emailSettings = {},
+      themeAxis = null,
+      themeName = null,
+      integratedSubjects = null,
+      deliverables = null,
+      leadTeacherId = null,
+      leadTeacherName = null
     } = body;
 
     if (!name || !name.trim()) {
@@ -663,6 +669,12 @@ export async function POST(req: Request) {
       departmentName,
       subjectId,
       subjectName,
+      themeAxis,
+      themeName,
+      integratedSubjects,
+      deliverables,
+      leadTeacherId,
+      leadTeacherName,
       timeRange,
       locationText: location || '',
       description,

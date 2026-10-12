@@ -1034,11 +1034,16 @@ function ActivityCatalogsContent() {
                                   : [{
                                       id: meta.cthsTeacherId || '',
                                       teacherCode: meta.cthsTeacherCode || '',
-                                      teacherName: meta.cthsTeacherName || ''
+                                      teacherName: meta.cthsTeacherName || '',
+                                      campusCode: meta.cthsTeacherCampus || '',
+                                      phone: meta.cthsTeacherPhone || '',
+                                      email: meta.cthsTeacherEmail || ''
                                     }];
                                 const firstTeacher = teacherList[0];
                                 const extraCount = teacherList.length - 1;
-                                const fullTooltip = teacherList.map((t: any) => `${t.teacherName} (${t.teacherCode || 'GV'})`).join('\n');
+                                const fullTooltip = teacherList.map((t: any) => 
+                                  `• ${t.teacherName} (Mã: ${t.teacherCode || '—'})${t.campusCode ? ` - CS: ${t.campusCode}` : ''}${t.phone ? ` - SĐT: ${t.phone}` : ''}${t.email ? ` - Email: ${t.email}` : ''}`
+                                ).join('\n');
 
                                 return (
                                   <button 
@@ -1047,14 +1052,14 @@ function ActivityCatalogsContent() {
                                       setSelectedIds([act.id]);
                                       setIsAssignCTHSOpen(true);
                                     }}
-                                    className="group cursor-pointer inline-flex items-center gap-1.5 px-2 py-1 rounded-xl bg-teal-50 border border-teal-200 hover:bg-teal-100 hover:border-teal-300 transition-all text-left"
-                                    title={`Quản lý GV Tổ CTHS:\n${fullTooltip}`}
+                                    className="group cursor-pointer inline-flex items-center gap-2 px-2.5 py-1.5 rounded-xl bg-teal-50 border border-teal-200 hover:bg-teal-100 hover:border-teal-300 transition-all text-left shadow-2xs"
+                                    title={`GV Phụ trách Tổ CTHS:\n${fullTooltip}\n(Bấm để xem chi tiết / thay đổi)`}
                                   >
-                                    <div className="w-5 h-5 rounded-full bg-[#00A19A] text-white flex items-center justify-center text-[10px] font-bold shrink-0">
+                                    <div className="w-6 h-6 rounded-full bg-[#00A19A] text-white flex items-center justify-center text-[10px] font-black shrink-0 shadow-2xs">
                                       {firstTeacher?.teacherName?.split(' ').slice(-1)[0]?.charAt(0) || 'C'}
                                     </div>
                                     <div className="min-w-0">
-                                      <div className="text-[11px] font-bold text-teal-950 truncate max-w-[110px] flex items-center gap-1">
+                                      <div className="text-[11px] font-extrabold text-teal-950 truncate max-w-[130px] flex items-center gap-1 leading-tight">
                                         <span>{firstTeacher?.teacherName}</span>
                                         {extraCount > 0 && (
                                           <span className="text-[9px] font-bold px-1 rounded-full bg-teal-200 text-[#003B3A]">
@@ -1062,8 +1067,16 @@ function ActivityCatalogsContent() {
                                           </span>
                                         )}
                                       </div>
+                                      <div className="text-[10px] text-teal-700 font-medium flex items-center gap-1">
+                                        {firstTeacher?.teacherCode && (
+                                          <span className="font-mono">{firstTeacher.teacherCode}</span>
+                                        )}
+                                        {firstTeacher?.campusCode && (
+                                          <span>• {firstTeacher.campusCode}</span>
+                                        )}
+                                      </div>
                                     </div>
-                                    <Edit3 className="w-3 h-3 text-teal-600 opacity-60 group-hover:opacity-100 shrink-0" />
+                                    <Edit3 className="w-3 h-3 text-teal-600 opacity-60 group-hover:opacity-100 shrink-0 ml-0.5" />
                                   </button>
                                 );
                               })()
@@ -1074,8 +1087,8 @@ function ActivityCatalogsContent() {
                                   setSelectedIds([act.id]);
                                   setIsAssignCTHSOpen(true);
                                 }}
-                                className="inline-flex items-center gap-1 px-2 py-1 rounded-xl text-[11px] font-semibold text-slate-500 hover:text-[#00A19A] hover:bg-teal-50 border border-dashed border-slate-300 hover:border-teal-400 transition-all cursor-pointer"
-                                title="Gán GV thuộc Tổ CTHS phụ trách"
+                                className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-xl text-[11px] font-semibold text-slate-500 hover:text-[#00A19A] hover:bg-teal-50 border border-dashed border-slate-300 hover:border-teal-400 transition-all cursor-pointer shadow-2xs"
+                                title="Bấm để phân công GV thuộc Tổ CTHS phụ trách"
                               >
                                 <UserCheck className="w-3.5 h-3.5 text-slate-400" />
                                 <span>+ Gán GV</span>

@@ -359,7 +359,7 @@ export function parseActivityCatalogWorkbook(fileBuffer: Buffer | Uint8Array): P
         primarySubjectName: integratedSubjects.split(/[,;\/]/)[0]?.trim() || 'HĐTN',
         coopSubjectNames: integratedSubjects,
         deliverables,
-        ctthsTeacherName: cthsTeacherName || 'Tổ CTHS',
+        cthsTeacherName: cthsTeacherName || 'Tổ CTHS',
         evaluationConfig: evalConfig,
         notes,
         errors

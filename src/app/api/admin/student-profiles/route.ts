@@ -626,6 +626,29 @@ export async function GET(req: NextRequest) {
               }
             } catch {}
 
+            let catMeta: any = {};
+            try {
+              if (p?.record?.catalog?.description && typeof p.record.catalog.description === "string" && p.record.catalog.description.startsWith("{")) {
+                catMeta = JSON.parse(p.record.catalog.description);
+              }
+            } catch {}
+
+            const themeAxis = recMeta.themeAxis || catMeta.themeAxis || (() => {
+              const text = `${p.record?.name || ''} ${recMeta.themeName || ''} ${catMeta.themeName || ''} ${recMeta.primarySubjectName || ''}`.toLowerCase();
+              if (text.includes('di sản') || text.includes('lịch sử') || text.includes('bảo tàng') || text.includes('làng nghề') || text.includes('quân đội') || text.includes('trung thu')) return 'DI_SAN';
+              if (text.includes('môi trường') || text.includes('nông nghiệp') || text.includes('sinh thái') || text.includes('thiên nhiên') || text.includes('xanh') || text.includes('vườn')) return 'MOI_TRUONG';
+              if (text.includes('stem') || text.includes('khoa học') || text.includes('toán') || text.includes('công nghệ') || text.includes('robot')) return 'STEM';
+              if (text.includes('tiếng anh') || text.includes('english') || text.includes('toàn cầu') || text.includes('văn hóa') || text.includes('ngôn ngữ')) return 'NGON_NGU';
+              return 'DI_SAN';
+            })();
+
+            const themeAxisDict: Record<string, string> = {
+              DI_SAN: "Di sản & Lịch sử",
+              MOI_TRUONG: "Môi trường & Sinh thái",
+              STEM: "Khoa học & STEM",
+              NGON_NGU: "Ngôn ngữ & Hội nhập"
+            };
+
             const roleCat = categories.find((c: any) => c.id === p.roleId || c.code === p.roleId);
             const evalCat = categories.find((c: any) => c.id === p.evalLevelId || c.code === p.evalLevelId);
             const groupCat = categories.find((c: any) => c.id === p.record?.catalog?.groupId || c.code === p.record?.catalog?.groupId);
@@ -651,6 +674,9 @@ export async function GET(req: NextRequest) {
               || "Hoạt động trải nghiệm";
 
             const resolvedName = p.record?.name || recMeta.activityName || p.record?.catalog?.name || "Hoạt động trải nghiệm";
+            const deliverables = recMeta.deliverables || catMeta.deliverables || "";
+            const primarySubject = recMeta.subjectName || catMeta.primarySubjectName || "";
+            const integratedSubjects = recMeta.integratedSubjects || catMeta.integratedSubjects || "";
 
             return {
               id: p.id,
@@ -659,6 +685,11 @@ export async function GET(req: NextRequest) {
               activityName: (resolvedName || "").trim(),
               groupName: (resolvedGroup || "").trim(),
               strand: recMeta.strand || undefined,
+              themeAxis,
+              themeAxisName: themeAxisDict[themeAxis] || "Trải nghiệm",
+              deliverables: deliverables || undefined,
+              primarySubject: primarySubject || undefined,
+              integratedSubjects: integratedSubjects || undefined,
               role: (resolvedRole || "").trim(),
               evalLevel: (resolvedEval || "").trim(),
               score: pNote.calculatedPercent !== null && pNote.calculatedPercent !== undefined ? pNote.calculatedPercent : undefined,

@@ -116,6 +116,12 @@ export function ExperientialReportsClient(props?: { academicYears?: any[]; activ
     fullMark: 4
   }));
 
+  const themeAxisData = (stats?.themeAxisDistribution || []).map((t: any) => ({
+    name: t.name,
+    count: t.count,
+    color: t.color
+  }));
+
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-50 via-teal-50/15 to-sky-50/20 py-8 px-4 sm:px-6 lg:px-8 font-sans">
       <div className="max-w-7xl mx-auto space-y-6">
@@ -135,16 +141,16 @@ export function ExperientialReportsClient(props?: { academicYears?: any[]; activ
               <div>
                 <div className="flex items-center gap-2 mb-1 flex-wrap">
                   <span className="px-3 py-0.5 rounded-full text-[11px] font-black uppercase tracking-wider bg-[#00A19A]/10 text-[#003B3A] border border-[#00A19A]/20">
-                    Báo Cáo & Thống Kê
+                    Báo Cáo &amp; Thống Kê
                   </span>
                   <span className="text-slate-300 text-xs"></span>
                   <span className="text-xs font-bold text-slate-500">Quản trị Chất lượng Sky-Line</span>
                 </div>
                 <h1 className="text-2xl sm:text-3xl font-black bg-gradient-to-r from-[#003B3A] via-[#005F5E] to-[#00A19A] bg-clip-text text-transparent tracking-tight">
-                  Dashboard Đánh Giá Hoạt động Trải Nghiệm
+                  Dashboard Đánh Giá Hoạt động Trải Nghiệm &amp; Ngoại Khóa
                 </h1>
                 <p className="text-slate-500 font-medium text-xs sm:text-sm mt-1">
-                  Báo cáo đa chiều theo Năm học, Cơ sở, Khối, 4 Mạch hoạt động và giám sát tiến độ GVCN
+                  Báo cáo đa chiều theo 4 Trục chủ đề giáo dục cốt lõi, giám sát định mức (MN ≥ 5, K-12 ≥ 2) và kiểm soát SLA 7 ngày
                 </p>
               </div>
             </div>
@@ -158,45 +164,61 @@ export function ExperientialReportsClient(props?: { academicYears?: any[]; activ
             </button>
           </div>
 
-          {/* KPI CARDS */}
-          <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 mt-6 pt-6 border-t border-slate-100">
-            <div className="bg-slate-50/70 p-4 rounded-2xl border border-slate-200/60 flex items-center justify-between">
+          {/* 5 KPI CARDS (INCLUDING TARGET COMPLIANCE) */}
+          <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-3.5 mt-6 pt-6 border-t border-slate-100">
+            <div className="bg-slate-50/70 p-3.5 rounded-2xl border border-slate-200/60 flex items-center justify-between">
               <div>
-                <p className="text-[11px] font-bold text-slate-400 uppercase tracking-wider">Tổng Hoạt động</p>
+                <p className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Tổng Hoạt động</p>
                 <p className="text-2xl font-black text-slate-800 mt-1">{kpis.totalActivities}</p>
               </div>
-              <div className="w-11 h-11 rounded-xl bg-indigo-50 text-indigo-600 flex items-center justify-center border border-indigo-200">
-                <Layers className="w-5 h-5" />
+              <div className="w-10 h-10 rounded-xl bg-indigo-50 text-indigo-600 flex items-center justify-center border border-indigo-200">
+                <Layers className="w-4 h-4" />
               </div>
             </div>
 
-            <div className="bg-slate-50/70 p-4 rounded-2xl border border-slate-200/60 flex items-center justify-between">
+            <div className="bg-slate-50/70 p-3.5 rounded-2xl border border-slate-200/60 flex items-center justify-between">
               <div>
-                <p className="text-[11px] font-bold text-sky-600 uppercase tracking-wider">Lớp Tham gia</p>
+                <p className="text-[10px] font-bold text-sky-600 uppercase tracking-wider">Lớp Tham gia</p>
                 <p className="text-2xl font-black text-sky-700 mt-1">{kpis.totalClassesAssigned}</p>
               </div>
-              <div className="w-11 h-11 rounded-xl bg-sky-50 text-sky-600 flex items-center justify-center border border-sky-200">
-                <Building2 className="w-5 h-5" />
+              <div className="w-10 h-10 rounded-xl bg-sky-50 text-sky-600 flex items-center justify-center border border-sky-200">
+                <Building2 className="w-4 h-4" />
               </div>
             </div>
 
-            <div className="bg-slate-50/70 p-4 rounded-2xl border border-slate-200/60 flex items-center justify-between">
+            <div className="bg-slate-50/70 p-3.5 rounded-2xl border border-slate-200/60 flex items-center justify-between">
               <div>
-                <p className="text-[11px] font-bold text-[#00A19A] uppercase tracking-wider">Lượt HS đánh giá</p>
+                <p className="text-[10px] font-bold text-[#00A19A] uppercase tracking-wider">Lượt HS đánh giá</p>
                 <p className="text-2xl font-black text-[#003B3A] mt-1">{kpis.totalStudentsEvaluated}</p>
               </div>
-              <div className="w-11 h-11 rounded-xl bg-[#00A19A]/10 text-[#00A19A] flex items-center justify-center border border-[#00A19A]/30">
-                <Users className="w-5 h-5" />
+              <div className="w-10 h-10 rounded-xl bg-[#00A19A]/10 text-[#00A19A] flex items-center justify-center border border-[#00A19A]/30">
+                <Users className="w-4 h-4" />
               </div>
             </div>
 
-            <div className="bg-slate-50/70 p-4 rounded-2xl border border-slate-200/60 flex items-center justify-between">
+            <div className="bg-slate-50/70 p-3.5 rounded-2xl border border-slate-200/60 flex items-center justify-between">
               <div>
-                <p className="text-[11px] font-bold text-emerald-600 uppercase tracking-wider">Tỷ lệ Hoàn thành</p>
+                <p className="text-[10px] font-bold text-emerald-600 uppercase tracking-wider">Tỷ lệ Hoàn thành</p>
                 <p className="text-2xl font-black text-emerald-700 mt-1">{kpis.overallCompletionRate}%</p>
               </div>
-              <div className="w-11 h-11 rounded-xl bg-emerald-50 text-emerald-600 flex items-center justify-center border border-emerald-200">
-                <FileCheck className="w-5 h-5" />
+              <div className="w-10 h-10 rounded-xl bg-emerald-50 text-emerald-600 flex items-center justify-center border border-emerald-200">
+                <FileCheck className="w-4 h-4" />
+              </div>
+            </div>
+
+            <div className="bg-amber-50/50 p-3.5 rounded-2xl border border-amber-200/70 flex items-center justify-between col-span-2 sm:col-span-1">
+              <div>
+                <div className="flex items-center gap-1">
+                  <p className="text-[10px] font-black text-amber-800 uppercase tracking-wider">Đạt Chuẩn Định Mức</p>
+                  <span className="text-[9px] text-amber-600 font-bold">(MN≥5, K12≥2)</span>
+                </div>
+                <div className="flex items-baseline gap-1 mt-1">
+                  <p className="text-2xl font-black text-amber-900">{stats?.targetCompliance?.targetComplianceRate || 0}%</p>
+                  <span className="text-[11px] font-bold text-amber-700">({stats?.targetCompliance?.classesMeetingTarget || 0}/{stats?.targetCompliance?.totalClasses || 0} lớp)</span>
+                </div>
+              </div>
+              <div className="w-10 h-10 rounded-xl bg-amber-100 text-amber-800 flex items-center justify-center border border-amber-300">
+                <GraduationCap className="w-4 h-4" />
               </div>
             </div>
           </div>
@@ -345,7 +367,84 @@ export function ExperientialReportsClient(props?: { academicYears?: any[]; activ
               </ResponsiveContainer>
             </div>
           </div>
+
+          {/* CHART 4: 4 CORE EDUCATIONAL THEME AXES */}
+          <div className="bg-white rounded-3xl p-6 border border-slate-200 shadow-md shadow-slate-200/40 space-y-4 lg:col-span-2">
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 border-b border-slate-100 pb-3">
+              <div>
+                <h3 className="text-sm font-black text-slate-800 flex items-center gap-2">
+                  <span className="w-2.5 h-2.5 rounded-full bg-amber-500" />
+                  Phân Bổ Hoạt Động Theo 4 Trục Chủ Đề Giáo Dục Cốt Lõi (Kế Hoạch Tổng Thể 2026-2027)
+                </h3>
+                <p className="text-xs text-slate-500 font-medium mt-0.5">
+                  Kiểm soát sự cân bằng liên môn giữa Di sản &amp; Lịch sử, Môi trường xanh, Khoa học STEM và Ngôn ngữ hội nhập
+                </p>
+              </div>
+              <span className="text-xs font-bold text-amber-800 bg-amber-50 px-3 py-1 rounded-full border border-amber-200">
+                4 Trục Cốt Lõi
+              </span>
+            </div>
+
+            <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+              {themeAxisData.map((axis: any, idx: number) => (
+                <div key={idx} className="p-3.5 rounded-2xl border bg-slate-50/50 hover:bg-white transition-all space-y-1">
+                  <div className="flex items-center justify-between">
+                    <span className="text-xs font-black" style={{ color: axis.color }}>{axis.name}</span>
+                    <span className="w-2 h-2 rounded-full" style={{ backgroundColor: axis.color }} />
+                  </div>
+                  <div className="text-2xl font-black text-slate-800">{axis.count} <span className="text-xs font-medium text-slate-400">HĐ</span></div>
+                  <div className="text-[10px] text-slate-500 font-medium">Chiếm {kpis.totalActivities > 0 ? Math.round((axis.count / kpis.totalActivities) * 100) : 0}% tổng HĐ</div>
+                </div>
+              ))}
+            </div>
+          </div>
         </div>
+
+        {/* AT-RISK CLASSES WARNING (UNDER-TARGET) */}
+        {stats?.targetCompliance?.atRiskClasses && stats.targetCompliance.atRiskClasses.length > 0 && (
+          <div className="bg-amber-50/70 rounded-3xl border border-amber-200 shadow-md shadow-amber-900/5 p-5 sm:p-6 space-y-3">
+            <div className="flex items-center justify-between flex-wrap gap-2">
+              <div className="flex items-center gap-2.5">
+                <div className="p-2 bg-amber-500 text-white rounded-xl shadow-xs">
+                  <AlertCircle className="w-4 h-4" />
+                </div>
+                <div>
+                  <h3 className="text-sm font-black text-amber-950">
+                    Cảnh Báo Định Mức: {stats.targetCompliance.atRiskClassesCount} Lớp Chưa Đạt Đủ Định Mức Hoạt Động (MN &lt; 5, K12 &lt; 2)
+                  </h3>
+                  <p className="text-xs text-amber-800 font-medium">
+                    KT&amp;ĐBCL và BGH cơ sở cần nhắc nhở GV phụ trách gán bổ sung hoạt động ngoại khóa theo quy chuẩn
+                  </p>
+                </div>
+              </div>
+              <span className="text-xs font-bold text-amber-900 bg-white px-3 py-1 rounded-full border border-amber-300">
+                Cần bổ sung hoạt động
+              </span>
+            </div>
+
+            <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-3 pt-2">
+              {stats.targetCompliance.atRiskClasses.map((cls: any, idx: number) => (
+                <div key={idx} className="bg-white p-3 rounded-2xl border border-amber-200/80 shadow-2xs space-y-1.5">
+                  <div className="flex items-center justify-between">
+                    <span className="font-black text-xs text-slate-900">{cls.className}</span>
+                    <span className="text-[10px] font-bold text-slate-400">{cls.campusCode}</span>
+                  </div>
+                  <div className="text-[11px] text-slate-600 font-medium">GVCN: {cls.homeroomTeacherName || '—'}</div>
+                  <div className="flex items-center justify-between text-[11px] font-bold">
+                    <span className="text-amber-700">Đã gán: {cls.totalDeployed}/{cls.totalTarget} HĐ</span>
+                    <span className="text-rose-600 font-black">Thiếu {cls.totalTarget - cls.totalDeployed}</span>
+                  </div>
+                  <div className="w-full bg-slate-100 rounded-full h-1.5 overflow-hidden">
+                    <div
+                      className="h-full bg-amber-500 rounded-full"
+                      style={{ width: `${Math.round((cls.totalDeployed / cls.totalTarget) * 100)}%` }}
+                    />
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
 
         {/* 1. CAMPUS TLHN DISPATCH & DEPLOYMENT PROGRESS */}
         <div className="bg-white rounded-3xl border border-slate-200 shadow-md shadow-slate-200/40 overflow-hidden">

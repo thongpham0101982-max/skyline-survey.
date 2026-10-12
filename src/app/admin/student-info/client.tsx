@@ -43,7 +43,7 @@ import { getSurveyFormAgeGroup, getProbationAgeGroup } from "@/lib/preschool";
 import * as XLSX from "xlsx";
 import { InputAssessmentsClient } from "../input-assessments/client";
 import { PreschoolInputAssessmentsClient } from "../preschool-input-assessments/client";
-import { parseEntranceRecord, serializeEntranceRecord } from "@/lib/entranceAcademicRecord";
+import { parseEntranceRecord, serializeEntranceRecord, extractAcademicDetails } from "@/lib/entranceAcademicRecord";
 import { EntranceAcademicRecordInput } from "@/components/assessments/EntranceAcademicRecordInput";
 
 interface StudentInfoClientProps {
@@ -193,6 +193,13 @@ const defaultDanangSchools = [
   { name: "Trường THCS Lý Thường Kiệt", schoolType: "PUBLIC" },
   { name: "Trường THCS Nguyễn Bỉnh Khiêm", schoolType: "PUBLIC" }
 ];
+
+const cleanBatchName = (name?: string | null) => {
+  if (!name) return "-";
+  const parts = name.split("|").map(p => p.trim());
+  const uniqueParts = Array.from(new Set(parts));
+  return uniqueParts.join(" | ");
+};
 
 export function StudentInfoClient({ 
   initialTab = "general",
@@ -902,6 +909,11 @@ export function StudentInfoClient({
   const [retestPeriodId, setRetestPeriodId] = useState("");
   const [retestBatchId, setRetestBatchId] = useState("");
   const [retestRegisterLoading, setRetestRegisterLoading] = useState(false);
+  const [selectedRetestFilter, setSelectedRetestFilter] = useState<"all" | "pending" | "registered">("all");
+  const [isBatchRetestOpen, setIsBatchRetestOpen] = useState(false);
+  const [batchRetestPeriodId, setBatchRetestPeriodId] = useState("");
+  const [batchRetestBatchId, setBatchRetestBatchId] = useState("");
+  const [batchRetestLoading, setBatchRetestLoading] = useState(false);
 
   const showNotification = (text: string, type: "success" | "err" = "success") => {
     setNotification({ text, type });
@@ -1039,16 +1051,43 @@ export function StudentInfoClient({
       // Filter strictly by "Không đạt - Kiểm tra lại" for the "TT Khảo sát lại" sub-tab (subTab === "info")
       if (subTab === "info") {
         if (student.admissionResult !== "Không đạt - Kiểm tra lại") return false;
+
+        // Filter by retest registration status
+        if (selectedRetestFilter === "pending") {
+          const isReg = currentDataset.some(o => o.studentCode === student.studentCode && o.id !== student.id);
+          if (isReg) return false;
+        } else if (selectedRetestFilter === "registered") {
+          const isReg = currentDataset.some(o => o.studentCode === student.studentCode && o.id !== student.id);
+          if (!isReg) return false;
+        }
       }
 
       return true;
     });
-  }, [currentDataset, searchQuery, selectedPeriod, selectedBatch, selectedResult, selectedGrade, selectedCampusFilter, selectedEnrollmentFilter, subTab]);
+  }, [currentDataset, searchQuery, selectedPeriod, selectedBatch, selectedResult, selectedGrade, selectedCampusFilter, selectedEnrollmentFilter, selectedRetestFilter, subTab]);
 
   // Reset selected checkboxes if filtered dataset changes
   useEffect(() => {
     setSelectedIds([]);
   }, [filteredStudents]);
+
+  // Statistics for Retest tab (subTab === "info")
+  const retestStats = useMemo(() => {
+    const allRetest = currentDataset.filter(s => s.admissionResult === "Không đạt - Kiểm tra lại");
+    let registered = 0;
+    let pending = 0;
+    allRetest.forEach(s => {
+      const isReg = currentDataset.some(o => o.studentCode === s.studentCode && o.id !== s.id);
+      if (isReg) registered++;
+      else pending++;
+    });
+    return {
+      total: allRetest.length,
+      registered,
+      pending,
+      rate: allRetest.length > 0 ? Math.round((registered / allRetest.length) * 100) : 0
+    };
+  }, [currentDataset]);
 
   // Statistics
   const statistics = useMemo(() => {
@@ -1562,11 +1601,113 @@ export function StudentInfoClient({
       } else {
         alert(data.error || "Đăng ký khảo sát lại thất bại!");
       }
-    } catch (err) {
-      alert("Lỗi kết nối: " + err.message);
+    } catch (err: any) {
+      alert("Lỗi kết nối: " + (err?.message || String(err)));
     } finally {
       setRetestRegisterLoading(false);
     }
+  };
+
+  const handleBatchRetestRegister = async () => {
+    if (selectedIds.length === 0 || !batchRetestPeriodId) {
+      alert("Vui lòng chọn Kỳ khảo sát mới!");
+      return;
+    }
+
+    setBatchRetestLoading(true);
+    let successCount = 0;
+    let failCount = 0;
+
+    for (const sid of selectedIds) {
+      try {
+        const res = await fetch("/api/input-assessment-students", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            action: "RETEST_REGISTER",
+            data: {
+              studentId: sid,
+              targetPeriodId: batchRetestPeriodId,
+              targetBatchId: batchRetestBatchId || null
+            }
+          })
+        });
+        const data = await res.json();
+        if (res.ok && data.success) successCount++;
+        else failCount++;
+      } catch {
+        failCount++;
+      }
+    }
+
+    setBatchRetestLoading(false);
+    setIsBatchRetestOpen(false);
+    setSelectedIds([]);
+    showNotification(`Đã chuyển thành công ${successCount} học sinh sang đợt khảo sát mới!${failCount > 0 ? ` (${failCount} lỗi/trùng)` : ""}`);
+    setTimeout(() => window.location.reload(), 1200);
+  };
+
+  const handleExportRetestList = () => {
+    if (filteredStudents.length === 0) {
+      showNotification("Không có dữ liệu học sinh khảo sát lại để xuất!", "err");
+      return;
+    }
+
+    const dataToExport = filteredStudents.map((s, idx) => {
+      const record = parseEntranceRecord(s.kqHocTap, s.grade);
+      const details = extractAcademicDetails(record, s.grade);
+      const retestRecord = currentDataset.find(o => o.studentCode === s.studentCode && o.id !== s.id);
+      const isRetestRegistered = !!retestRecord;
+      const retestTargetText = isRetestRegistered
+        ? `${retestRecord.period?.name || "Kỳ mới"}${retestRecord.batch?.name ? ` - ${retestRecord.batch.name}` : ""}`
+        : "Chưa xếp đợt mới";
+
+      const campusObj = campuses.find(c => c.id === resolveStudentCampusId(s));
+      const campusTitle = campusObj?.campusName || s.admissionCampus || s.registeredCampus || "";
+
+      return {
+        "STT": idx + 1,
+        "Mã học sinh": s.studentCode || "",
+        "Họ và tên": s.fullName || "",
+        "Khối": s.grade ? (activeTab === "general" ? `Khối ${s.grade}` : s.grade) : "",
+        "Giới tính": s.gender || "",
+        "Ngày sinh": formatDate(s.dateOfBirth),
+        "Cơ sở": campusTitle,
+        "Hệ KS": s.surveySystem || s.surveyFormType || "",
+        "Kỳ KS gốc": s.period?.name || "",
+        "Đợt KS gốc": s.batch?.name || "",
+        "Kết quả": s.admissionResult || "Không đạt - Kiểm tra lại",
+        "Xếp loại học lực": details.overallRating || s.kqHocTap || "",
+        "Môn Toán": details.math || "",
+        "Môn Tiếng Việt/Văn": details.literature || "",
+        "Môn Tiếng Anh": details.english || "",
+        "Môn khác / Tổ hợp": details.otherSubjects || "",
+        "Hạnh kiểm": s.kqRenLuyen || "",
+        "Trạng thái KS lại": isRetestRegistered ? "Đã đăng ký đợt mới" : "Chờ đăng ký đợt mới",
+        "Kỳ/Đợt thi lại mới": retestTargetText,
+        "Ghi chú tuyển sinh": s.directorNote || ""
+      };
+    });
+
+    const worksheet = XLSX.utils.json_to_sheet(dataToExport);
+    const workbook = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(workbook, worksheet, "DS_Khao_Sat_Lai");
+    XLSX.writeFile(workbook, `Danh_Sach_Khao_Sat_Lai_${activeTab === "general" ? "Pho_Thong" : "Mam_Non"}_${new Date().toISOString().split("T")[0]}.xlsx`);
+    showNotification("Đã xuất danh sách Khảo sát lại thành công!");
+  };
+
+  const getRatingBadgeCls = (rating?: string) => {
+    const r = (rating || "").toLowerCase();
+    if (r.includes("xuất sắc") || r.includes("tốt") || r.includes("giỏi")) {
+      return "bg-emerald-50 text-emerald-700 border-emerald-200/80";
+    }
+    if (r.includes("khá") || r.includes("đạt") || r.includes("hoàn thành")) {
+      return "bg-sky-50 text-sky-700 border-sky-200/80";
+    }
+    if (r.includes("chưa") || r.includes("yếu") || r.includes("kém") || r.includes("cố gắng")) {
+      return "bg-rose-50 text-rose-700 border-rose-200/80";
+    }
+    return "bg-slate-100 text-slate-700 border-slate-200/80";
   };
 
   // Bulk Delete
@@ -2054,6 +2195,13 @@ export function StudentInfoClient({
           >
             <RefreshCw className="w-4 h-4" />
             <span>3. TT Khảo sát lại</span>
+            {retestStats.total > 0 && (
+              <span className={`px-1.5 py-0.5 rounded-full text-[10px] font-black ${
+                subTab === "info" ? "bg-white/20 text-white" : "bg-rose-100 text-rose-600"
+              }`}>
+                {retestStats.total}
+              </span>
+            )}
           </button>
           <button
             onClick={() => handleSubTabChange("result")}
@@ -2070,40 +2218,39 @@ export function StudentInfoClient({
 
         {/* Action Buttons for info and result tabs */}
         <div className="flex flex-wrap items-center gap-2">
-          {subTab === "info" && selectedIds.length > 0 && (
-            <button
-              onClick={handleDeleteSelected}
-              className="flex items-center gap-1.5 px-3 py-2 hover:bg-rose-100 text-rose-600 bg-rose-50 border border-rose-200 rounded-xl text-xs font-bold shadow-xs transition-all active:scale-95 cursor-pointer"
-            >
-              <Trash2 className="w-4 h-4" />
-              Xóa đã chọn ({selectedIds.length})
-            </button>
-          )}
           {subTab === "info" && (
-            <>
+            <div className="flex flex-wrap items-center gap-2">
+              {selectedIds.length > 0 && (
+                <>
+                  <button
+                    onClick={() => {
+                      setBatchRetestPeriodId("");
+                      setBatchRetestBatchId("");
+                      setIsBatchRetestOpen(true);
+                    }}
+                    className="flex items-center gap-1.5 px-3.5 py-2 bg-gradient-to-r from-indigo-600 to-[#00A19A] hover:from-indigo-700 hover:to-[#008B85] text-white rounded-xl text-xs font-bold shadow-sm shadow-indigo-500/20 transition-all active:scale-95 cursor-pointer"
+                  >
+                    <RefreshCw className="w-4 h-4" />
+                    Đăng ký KS lại ({selectedIds.length})
+                  </button>
+                  <button
+                    onClick={handleDeleteSelected}
+                    className="flex items-center gap-1.5 px-3 py-2 hover:bg-rose-100 text-rose-600 bg-rose-50 border border-rose-200 rounded-xl text-xs font-bold shadow-xs transition-all active:scale-95 cursor-pointer"
+                  >
+                    <Trash2 className="w-4 h-4" />
+                    Xóa đã chọn ({selectedIds.length})
+                  </button>
+                </>
+              )}
               <button
-                onClick={openCreateModal}
-                className="flex items-center gap-1.5 px-4 py-2 bg-[#00A19A] hover:bg-[#008B85] text-white rounded-xl text-xs font-bold shadow-sm shadow-[#00A19A]/20 transition-all active:scale-95 cursor-pointer"
-              >
-                <Plus className="w-4 h-4" />
-                {activeTab === "general" ? "Thêm mới" : "Thêm trẻ"}
-              </button>
-              <button
-                onClick={() => {
-                  if (activePeriodsList.length === 0) {
-                    return showNotification("Năm học này chưa có kỳ khảo sát để import học sinh", "err");
-                  }
-                  setImportPeriodId(activePeriodsList[0].id);
-                  setImportError(null);
-                  setImportSuccessCount(null);
-                  setIsImportOpen(true);
-                }}
+                onClick={handleExportRetestList}
                 className="flex items-center gap-1.5 px-3.5 py-2 hover:bg-teal-100 text-[#00736E] bg-teal-50 border border-teal-200/70 rounded-xl text-xs font-bold shadow-xs transition-all active:scale-95 cursor-pointer"
+                title="Xuất danh sách học sinh cần khảo sát lại ra Excel"
               >
-                <Upload className="w-4 h-4" />
-                Nhập Excel
+                <Download className="w-4 h-4" />
+                Xuất DS Khảo sát lại
               </button>
-            </>
+            </div>
           )}
 
           {subTab === "result" && (
@@ -2126,6 +2273,55 @@ export function StudentInfoClient({
           )}
         </div>
       </div>
+
+      {/* Statistics Cards for Retest Tab */}
+      {subTab === "info" && (
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 animate-in fade-in duration-300">
+          {/* Card 1: Tổng số cần khảo sát lại */}
+          <div className="bg-gradient-to-br from-indigo-50/90 via-slate-50 to-indigo-100/50 p-5 rounded-2xl border border-indigo-200/80 shadow-xs hover:shadow-md hover:-translate-y-0.5 flex items-center gap-4 transition-all duration-300">
+            <div className="p-3.5 bg-indigo-600 text-white rounded-2xl shadow-md shadow-indigo-500/20">
+              <RefreshCw className="w-5 h-5" />
+            </div>
+            <div>
+              <p className="text-[10px] text-indigo-700 font-extrabold uppercase tracking-wider">Tổng cần khảo sát lại</p>
+              <p className="text-2xl font-black text-indigo-950 mt-0.5">{retestStats.total}</p>
+            </div>
+          </div>
+
+          {/* Card 2: Chờ xếp đợt mới */}
+          <div className="bg-gradient-to-br from-amber-50/90 via-yellow-50/30 to-amber-100/60 p-5 rounded-2xl border border-amber-200/80 shadow-xs hover:shadow-md hover:-translate-y-0.5 flex items-center gap-4 transition-all duration-300">
+            <div className="p-3.5 bg-amber-500 text-white rounded-2xl shadow-md shadow-amber-500/20">
+              <Clock className="w-5 h-5" />
+            </div>
+            <div>
+              <p className="text-[10px] text-amber-800 font-extrabold uppercase tracking-wider">Chờ đăng ký đợt mới</p>
+              <p className="text-2xl font-black text-amber-950 mt-0.5">{retestStats.pending}</p>
+            </div>
+          </div>
+
+          {/* Card 3: Đã đăng ký đợt mới */}
+          <div className="bg-gradient-to-br from-emerald-50/90 via-teal-50/30 to-emerald-100/60 p-5 rounded-2xl border border-emerald-200/80 shadow-xs hover:shadow-md hover:-translate-y-0.5 flex items-center gap-4 transition-all duration-300">
+            <div className="p-3.5 bg-emerald-600 text-white rounded-2xl shadow-md shadow-emerald-500/20">
+              <CheckCircle2 className="w-5 h-5" />
+            </div>
+            <div>
+              <p className="text-[10px] text-emerald-800 font-extrabold uppercase tracking-wider">Đã đăng ký đợt mới</p>
+              <p className="text-2xl font-black text-emerald-950 mt-0.5">{retestStats.registered}</p>
+            </div>
+          </div>
+
+          {/* Card 4: Tỷ lệ xử lý */}
+          <div className="bg-gradient-to-br from-teal-50/90 via-cyan-50/30 to-teal-100/60 p-5 rounded-2xl border border-teal-200/80 shadow-xs hover:shadow-md hover:-translate-y-0.5 flex items-center gap-4 transition-all duration-300">
+            <div className="p-3.5 bg-[#00A19A] text-white rounded-2xl shadow-md shadow-teal-500/20">
+              <Sparkles className="w-5 h-5" />
+            </div>
+            <div>
+              <p className="text-[10px] text-teal-800 font-extrabold uppercase tracking-wider">Tỷ lệ đã xử lý</p>
+              <p className="text-2xl font-black text-teal-950 mt-0.5">{retestStats.rate}%</p>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* Statistics Cards */}
       {subTab === "result" && (
@@ -2255,19 +2451,34 @@ export function StudentInfoClient({
             )}
           </div>
 
-          {/* Enrollment Filter */}
-          <select
-            value={selectedEnrollmentFilter}
-            onChange={(e) => {
-              setSelectedEnrollmentFilter(e.target.value);
-              setCurrentPage(1);
-            }}
-            className="px-3 py-2.5 rounded-xl text-sm border border-slate-200/80 focus:ring-2 focus:ring-[#00A19A]/20 focus:border-[#00A19A] outline-none bg-white cursor-pointer text-slate-700 font-medium shadow-xs"
-          >
-            <option value="all">Tất cả Trạng thái Nhập học</option>
-            <option value="enrolled">Đã nhập học (X)</option>
-            <option value="not_enrolled">Chưa nhập học</option>
-          </select>
+          {/* Enrollment Filter / Retest Filter */}
+          {subTab === "info" ? (
+            <select
+              value={selectedRetestFilter}
+              onChange={(e) => {
+                setSelectedRetestFilter(e.target.value as any);
+                setCurrentPage(1);
+              }}
+              className="px-3 py-2.5 rounded-xl text-sm border border-slate-200/80 focus:ring-2 focus:ring-[#00A19A]/20 focus:border-[#00A19A] outline-none bg-white cursor-pointer text-slate-700 font-medium shadow-xs"
+            >
+              <option value="all">Tất cả Trạng thái KS lại</option>
+              <option value="pending">Chờ đăng ký đợt mới</option>
+              <option value="registered">Đã đăng ký đợt mới</option>
+            </select>
+          ) : (
+            <select
+              value={selectedEnrollmentFilter}
+              onChange={(e) => {
+                setSelectedEnrollmentFilter(e.target.value);
+                setCurrentPage(1);
+              }}
+              className="px-3 py-2.5 rounded-xl text-sm border border-slate-200/80 focus:ring-2 focus:ring-[#00A19A]/20 focus:border-[#00A19A] outline-none bg-white cursor-pointer text-slate-700 font-medium shadow-xs"
+            >
+              <option value="all">Tất cả Trạng thái Nhập học</option>
+              <option value="enrolled">Đã nhập học (X)</option>
+              <option value="not_enrolled">Chưa nhập học</option>
+            </select>
+          )}
 
           {/* Campus Filter */}
           <select
@@ -2357,8 +2568,9 @@ export function StudentInfoClient({
             /* Phổ thông K-12 Table (Matched style of original general assessments) */
             <table className="w-full text-sm text-left whitespace-nowrap border-collapse">
               <thead className="text-xs font-bold bg-slate-50/50 text-slate-500 uppercase tracking-wider border-b border-slate-200/80">
-                <tr>
-                  <th className="px-5 py-4 border-b border-slate-200/60 w-12 text-center">
+                {subTab === "info" ? (
+                  <tr>
+                    <th className="px-4 py-3.5 border-b border-slate-200/60 w-10 text-center">
                       <input
                         type="checkbox"
                         className="w-4 h-4 rounded text-[#00A19A] accent-[#00A19A]"
@@ -2366,251 +2578,403 @@ export function StudentInfoClient({
                         onChange={(e) => setSelectedIds(e.target.checked ? filteredStudents.map(s => s.id) : [])}
                       />
                     </th>
-                  <th className="px-5 py-4 border-b border-slate-200/60 text-xs font-bold text-slate-600 w-28">Mã học sinh</th>
-                  <th className="px-5 py-4 border-b border-slate-200/60 text-xs font-bold text-slate-600">Họ và tên</th>
-                  <th className="px-5 py-4 border-b border-slate-200/60 text-xs font-bold text-slate-600 w-16 text-center">Khối</th>
-                  <th className="px-5 py-4 border-b border-slate-200/60 text-xs font-bold text-slate-600 w-16 text-center">Giới tính</th>
-                  <th className="px-5 py-4 border-b border-slate-200/60 text-xs font-bold text-slate-600 w-24 text-center">Ngày sinh</th>
-                  <th className="px-5 py-4 border-b border-slate-200/60 text-xs font-bold text-slate-600 w-28 text-center">Cơ sở</th>
-                  <th className="px-5 py-4 border-b border-slate-200/60 text-xs font-bold text-slate-600 w-20 text-center">Hệ KS</th>
-                  <th className="px-5 py-4 border-b border-slate-200/60 text-xs font-bold text-slate-600 w-16 text-center">Vắng</th>
-                  <th className="px-5 py-4 border-b border-slate-200/60 text-xs font-bold text-slate-600 w-24 text-center">Nhập học</th>
-                  {subTab === "info" && (
-                    <>
-                      <th className="px-5 py-4 border-b border-slate-200/60 text-xs font-bold text-slate-600 w-24 text-center">Học lực</th>
-                      <th className="px-5 py-4 border-b border-slate-200/60 text-xs font-bold text-slate-600 w-24 text-center">Hạnh kiểm</th>
-                      <th className="px-5 py-4 border-b border-slate-200/60 text-xs font-bold text-slate-600 w-28 text-center">Học bạ</th>
-                      <th className="px-5 py-4 border-b border-slate-200/60 text-xs font-bold text-slate-600 text-center">Học kỳ / Năm TS</th>
-                      <th className="px-5 py-4 border-b border-slate-200/60 text-xs font-bold text-slate-600 text-center">Đối tượng TS</th>
-                      <th className="px-5 py-4 border-b border-slate-200/60 text-xs font-bold text-slate-600 w-48 text-center">Đăng ký Khảo sát lại</th>
-                    </>
-                  )}
-                  {selectedPeriod?.toLowerCase().includes("open day") && (
-                    <>
-                      <th className="px-5 py-4 border-b border-slate-200/60 text-xs font-bold text-slate-600 w-24 text-center">Đăng ký CS</th>
-                      <th className="px-5 py-4 border-b border-slate-200/60 text-xs font-bold text-slate-600 w-32 text-center">Ủy quyền xét duyệt</th>
-                    </>
-                  )}
-                  {subTab === "result" && (
-                    <>
-                      <th className="px-5 py-4 border-b border-slate-200/60 text-xs font-bold text-slate-600 text-center">Kết quả duyệt</th>
-                      <th className="px-5 py-4 border-b border-slate-200/60 text-xs font-bold text-slate-600 text-center">Lớp nhập học</th>
-                    </>
-                  )}
-                  <th className="px-5 py-4 border-b border-slate-200/60 text-xs font-bold text-slate-600 w-32 text-center">Thao tác</th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-slate-300 text-slate-700">
-                {paginatedStudents.length === 0 ? (
-                  <tr>
-                    <td colSpan={selectedPeriod?.toLowerCase().includes("open day") ? (subTab === "info" ? 19 : (subTab === "result" ? 15 : 13)) : (subTab === "info" ? 17 : (subTab === "result" ? 13 : 11))} className="px-4 py-6 text-center text-slate-400 font-medium border-b border-slate-100">
-                      Không tìm thấy dữ liệu học sinh phù hợp.
-                    </td>
+                    <th className="px-4 py-3.5 border-b border-slate-200/60 text-xs font-bold text-slate-700 w-28">Mã học sinh</th>
+                    <th className="px-4 py-3.5 border-b border-slate-200/60 text-xs font-bold text-slate-700">Họ và tên</th>
+                    <th className="px-4 py-3.5 border-b border-slate-200/60 text-xs font-bold text-slate-700 w-16 text-center">Khối</th>
+                    <th className="px-4 py-3.5 border-b border-slate-200/60 text-xs font-bold text-slate-700 w-24 text-center">Ngày sinh</th>
+                    <th className="px-4 py-3.5 border-b border-slate-200/60 text-xs font-bold text-slate-700 w-24 text-center">Cơ sở</th>
+                    <th className="px-4 py-3.5 border-b border-slate-200/60 text-xs font-bold text-slate-700 w-24 text-center">Hệ KS</th>
+                    <th className="px-4 py-3.5 border-b border-slate-200/60 text-xs font-bold text-slate-700 w-36 text-center">Kỳ & Đợt cũ</th>
+                    <th className="px-4 py-3.5 border-b border-slate-200/60 text-xs font-bold text-slate-700 w-44 text-center">Học lực & Đánh giá</th>
+                    <th className="px-4 py-3.5 border-b border-slate-200/60 text-xs font-bold text-slate-700 w-20 text-center">Hạnh kiểm</th>
+                    <th className="px-4 py-3.5 border-b border-slate-200/60 text-xs font-bold text-slate-700 w-44 text-center">Trạng thái KS lại</th>
+                    <th className="px-4 py-3.5 border-b border-slate-200/60 text-xs font-bold text-slate-700 w-36 text-center">Đăng ký đợt mới</th>
+                    <th className="px-4 py-3.5 border-b border-slate-200/60 text-xs font-bold text-slate-700 w-24 text-center">Thao tác</th>
                   </tr>
                 ) : (
-                  paginatedStudents.map((s, idx) => {
-                    const isEnrolled = s.enrollmentStatus === "COMPLETED" || s.enrollmentStatus === "ENROLLED" || s.enrollmentStatus === "PENDING" || !!s.enrollmentClass || !!s.enrollmentClassId;
-                    return (
-                    <tr 
-                      key={s.id} 
-                      className={`group transition-colors cursor-pointer ${
-                        isEnrolled 
-                          ? 'bg-emerald-50/60 hover:bg-emerald-100/80' 
-                          : selectedIds.includes(s.id)
-                          ? 'bg-teal-50/40 hover:bg-teal-100/50'
-                          : idx % 2 === 0 ? 'bg-white hover:bg-slate-50' : 'bg-slate-50/30 hover:bg-slate-50'
-                      }`}
-                      onClick={() => {
-                        setSelectedStudent(s);
-                        setIsDetailsOpen(true);
-                      }}
-                    >
-                      <td className="px-5 py-4 border-b border-slate-100 text-center" onClick={(e) => e.stopPropagation()}>
-                            <input
-                            type="checkbox"
-                            className="w-4 h-4 rounded text-[#00A19A] accent-[#00A19A]"
-                            checked={selectedIds.includes(s.id)}
-                            onChange={(e) => setSelectedIds(prev => e.target.checked ? [...prev, s.id] : prev.filter(id => id !== s.id))}
-                          />
-                        </td>
-                      <td className="px-5 py-4 border-b border-slate-100 font-mono text-xs text-slate-650">{s.studentCode}</td>
-                      <td className="px-5 py-4 border-b border-slate-100">
-                        <div className="flex flex-col">
-                          <span className="text-xs font-bold text-slate-800">{s.fullName}</span>
-                          <span className="text-[10px] font-medium text-slate-450 mt-0.5">{s.surveySystem || "Chưa xếp hệ"}</span>
+                  <tr>
+                    <th className="px-5 py-4 border-b border-slate-200/60 w-12 text-center">
+                      <input
+                        type="checkbox"
+                        className="w-4 h-4 rounded text-[#00A19A] accent-[#00A19A]"
+                        checked={filteredStudents.length > 0 && selectedIds.length === filteredStudents.length}
+                        onChange={(e) => setSelectedIds(e.target.checked ? filteredStudents.map(s => s.id) : [])}
+                      />
+                    </th>
+                    <th className="px-5 py-4 border-b border-slate-200/60 text-xs font-bold text-slate-600 w-28">Mã học sinh</th>
+                    <th className="px-5 py-4 border-b border-slate-200/60 text-xs font-bold text-slate-600">Họ và tên</th>
+                    <th className="px-5 py-4 border-b border-slate-200/60 text-xs font-bold text-slate-600 w-16 text-center">Khối</th>
+                    <th className="px-5 py-4 border-b border-slate-200/60 text-xs font-bold text-slate-600 w-16 text-center">Giới tính</th>
+                    <th className="px-5 py-4 border-b border-slate-200/60 text-xs font-bold text-slate-600 w-24 text-center">Ngày sinh</th>
+                    <th className="px-5 py-4 border-b border-slate-200/60 text-xs font-bold text-slate-600 w-28 text-center">Cơ sở</th>
+                    <th className="px-5 py-4 border-b border-slate-200/60 text-xs font-bold text-slate-600 w-20 text-center">Hệ KS</th>
+                    <th className="px-5 py-4 border-b border-slate-200/60 text-xs font-bold text-slate-600 w-16 text-center">Vắng</th>
+                    <th className="px-5 py-4 border-b border-slate-200/60 text-xs font-bold text-slate-600 w-24 text-center">Nhập học</th>
+                    {selectedPeriod?.toLowerCase().includes("open day") && (
+                      <>
+                        <th className="px-5 py-4 border-b border-slate-200/60 text-xs font-bold text-slate-600 w-24 text-center">Đăng ký CS</th>
+                        <th className="px-5 py-4 border-b border-slate-200/60 text-xs font-bold text-slate-600 w-32 text-center">Ủy quyền xét duyệt</th>
+                      </>
+                    )}
+                    {subTab === "result" && (
+                      <>
+                        <th className="px-5 py-4 border-b border-slate-200/60 text-xs font-bold text-slate-600 text-center">Kết quả duyệt</th>
+                        <th className="px-5 py-4 border-b border-slate-200/60 text-xs font-bold text-slate-600 text-center">Lớp nhập học</th>
+                      </>
+                    )}
+                    <th className="px-5 py-4 border-b border-slate-200/60 text-xs font-bold text-slate-600 w-32 text-center">Thao tác</th>
+                  </tr>
+                )}
+              </thead>
+              <tbody className="divide-y divide-slate-300 text-slate-700">
+                {subTab === "info" ? (
+                  paginatedStudents.length === 0 ? (
+                    <tr>
+                      <td colSpan={13} className="px-4 py-12 text-center border-b border-slate-100">
+                        <div className="flex flex-col items-center justify-center gap-3 max-w-sm mx-auto">
+                          <div className="w-12 h-12 rounded-2xl bg-teal-50 border border-teal-200/60 flex items-center justify-center text-[#00A19A]">
+                            <CheckCircle2 className="w-6 h-6" />
+                          </div>
+                          <div>
+                            <p className="text-sm font-bold text-slate-800">Không có học sinh cần khảo sát lại</p>
+                            <p className="text-xs text-slate-500 mt-1">
+                              Tất cả học sinh đều đã đạt yêu cầu hoặc không có kết quả phù hợp với bộ lọc hiện tại.
+                            </p>
+                          </div>
                         </div>
                       </td>
-                      <td className="px-5 py-4 border-b border-slate-100 text-center text-xs font-semibold text-slate-650">
-                        {s.grade}
-                      </td>
-                      <td className="px-5 py-4 border-b border-slate-100 text-center text-xs font-semibold text-slate-650">
-                        {s.gender || "-"}
-                      </td>
-                      <td className="px-5 py-4 border-b border-slate-100 text-center text-xs text-slate-500">
-                        {formatDate(s.dateOfBirth)}
-                      </td>
-                      <td className="px-5 py-4 border-b border-slate-100 text-center text-xs font-semibold text-slate-650">
-                        {campuses.find(c => c.id === resolveStudentCampusId(s))?.campusName || s.admissionCampus || s.registeredCampus || "—"}
-                      </td>
-                      <td className="px-5 py-4 border-b border-slate-100 text-center text-xs text-slate-650">
-                        {s.surveyFormType || "-"}
-                      </td>
-                      <td className="px-5 py-4 border-b border-slate-100 text-center" onClick={(e) => e.stopPropagation()}>
-                        <input
-                          type="checkbox"
-                          className="w-4 h-4 rounded text-rose-600 accent-rose-600 cursor-pointer"
-                          checked={s.isAbsent || false}
-                          onChange={async (e) => {
-                            const val = e.target.checked;
-                            await handleUpdateAbsent(s, val);
+                    </tr>
+                  ) : (
+                    paginatedStudents.map((s, idx) => {
+                      const record = parseEntranceRecord(s.kqHocTap, s.grade);
+                      const details = extractAcademicDetails(record, s.grade);
+                      const retestRecord = currentDataset.find(o => o.studentCode === s.studentCode && o.id !== s.id);
+                      const isRetestRegistered = !!retestRecord;
+                      const retestTargetText = isRetestRegistered
+                        ? `${retestRecord.period?.name || "Kỳ mới"}${retestRecord.batch?.name ? ` - ${retestRecord.batch.name}` : ""}`
+                        : "";
+                      
+                      const ratingBadgeCls = getRatingBadgeCls(details.overallRating);
+                      const subjectScoresParts = [
+                        details.math !== "—" ? `Toán: ${details.math}` : "",
+                        details.literature !== "—" ? `Văn: ${details.literature}` : "",
+                        details.english !== "—" ? `Anh: ${details.english}` : ""
+                      ].filter(Boolean);
+                      const subjectScoresText = subjectScoresParts.join(" • ");
+
+                      const campusName = campuses.find(c => c.id === resolveStudentCampusId(s))?.campusName || s.admissionCampus || s.registeredCampus || "—";
+
+                      return (
+                        <tr
+                          key={s.id}
+                          className={`group transition-colors cursor-pointer ${
+                            selectedIds.includes(s.id)
+                              ? 'bg-teal-50/40 hover:bg-teal-100/50'
+                              : isRetestRegistered
+                              ? 'bg-emerald-50/20 hover:bg-emerald-50/50'
+                              : idx % 2 === 0 ? 'bg-white hover:bg-slate-50/80' : 'bg-slate-50/40 hover:bg-slate-50/90'
+                          }`}
+                          onClick={() => {
+                            setSelectedStudent(s);
+                            setIsDetailsOpen(true);
                           }}
-                        />
-                      </td>
-                      <td className="px-5 py-4 border-b border-slate-100 text-center text-xs font-bold">
-                        {isEnrolled ? (
-                          <span className="inline-flex items-center justify-center w-6 h-6 rounded-full bg-emerald-100 text-emerald-700 font-extrabold text-xs">
-                            X
-                          </span>
-                        ) : (
-                          <span className="text-slate-300">-</span>
-                        )}
-                      </td>
-                      {subTab === "info" && (
-                        <>
-                          <td className="px-5 py-4 border-b border-slate-100 text-center text-xs text-slate-600" title={parseEntranceRecord(s.kqHocTap, s.grade).summaryText}>
-                            {parseEntranceRecord(s.kqHocTap, s.grade).summaryText || s.kqHocTap || "-"}
+                        >
+                          <td className="px-4 py-3.5 border-b border-slate-100 text-center" onClick={(e) => e.stopPropagation()}>
+                            <input
+                              type="checkbox"
+                              className="w-4 h-4 rounded text-[#00A19A] accent-[#00A19A]"
+                              checked={selectedIds.includes(s.id)}
+                              onChange={(e) => setSelectedIds(prev => e.target.checked ? [...prev, s.id] : prev.filter(id => id !== s.id))}
+                            />
                           </td>
-                          <td className="px-5 py-4 border-b border-slate-100 text-center text-xs text-slate-600">{s.kqRenLuyen || "-"}</td>
-                          <td className="px-5 py-4 border-b border-slate-100 text-center text-xs text-slate-600">{s.kqgdTieuHoc || "-"}</td>
-                          <td className="px-5 py-4 border-b border-slate-100 text-center text-xs text-slate-600">{s.hocKy || "-"}</td>
-                          <td className="px-5 py-4 border-b border-slate-100 text-center text-xs text-slate-600">{s.targetType || "-"}</td>
-                          <td className="px-5 py-4 border-b border-slate-100 text-center" onClick={(e) => e.stopPropagation()}>
+                          <td className="px-4 py-3.5 border-b border-slate-100 font-mono text-xs font-bold text-slate-700">
+                            {s.studentCode}
+                          </td>
+                          <td className="px-4 py-3.5 border-b border-slate-100">
+                            <div className="flex flex-col">
+                              <span className="text-xs font-bold text-slate-800 group-hover:text-[#00A19A] transition-colors">{s.fullName}</span>
+                              <span className="text-[10px] text-slate-400 font-medium mt-0.5">
+                                {s.gender || "-"} • {s.surveyFormType || "Offline"}
+                              </span>
+                            </div>
+                          </td>
+                          <td className="px-4 py-3.5 border-b border-slate-100 text-center text-xs font-bold text-slate-700">
+                            <span className="px-2 py-0.5 rounded-md bg-slate-100 text-slate-700">
+                              {s.grade ? (activeTab === "general" ? `K.${s.grade}` : s.grade) : "—"}
+                            </span>
+                          </td>
+                          <td className="px-4 py-3.5 border-b border-slate-100 text-center text-xs text-slate-500 whitespace-nowrap">
+                            {formatDate(s.dateOfBirth)}
+                          </td>
+                          <td className="px-4 py-3.5 border-b border-slate-100 text-center text-xs font-semibold">
+                            <span className="px-2 py-0.5 rounded-lg bg-teal-50 text-[#00736E] border border-teal-200/60 text-[11px] font-bold">
+                              {campusName}
+                            </span>
+                          </td>
+                          <td className="px-4 py-3.5 border-b border-slate-100 text-center text-xs font-semibold">
+                            <span className="px-2 py-0.5 rounded-lg bg-indigo-50 text-indigo-700 border border-indigo-200/60 text-[11px]">
+                              {s.surveySystem || "—"}
+                            </span>
+                          </td>
+                          <td className="px-4 py-3.5 border-b border-slate-100 text-center">
+                            <div className="flex flex-col items-center">
+                              <span className="text-xs font-semibold text-slate-800">{s.period?.name || "Kỳ khảo sát"}</span>
+                              <span className="text-[10px] text-slate-500 font-medium">{s.batch?.name || "Chưa phân đợt"}</span>
+                            </div>
+                          </td>
+                          <td className="px-4 py-3.5 border-b border-slate-100 text-center" title={record.summaryText || s.kqHocTap || ""}>
+                            <div className="flex flex-col items-center gap-0.5">
+                              <span className={`inline-flex items-center px-2 py-0.5 rounded-md text-[11px] font-bold border ${ratingBadgeCls}`}>
+                                {details.overallRating !== "—" ? details.overallRating : (s.kqHocTap || "Chưa rõ")}
+                              </span>
+                              {subjectScoresText && (
+                                <span className="text-[10px] text-slate-400 font-medium max-w-[130px] truncate">
+                                  {subjectScoresText}
+                                </span>
+                              )}
+                            </div>
+                          </td>
+                          <td className="px-4 py-3.5 border-b border-slate-100 text-center text-xs font-semibold">
+                            <span className="px-2 py-0.5 rounded text-xs bg-slate-100 text-slate-700">
+                              {s.kqRenLuyen || "—"}
+                            </span>
+                          </td>
+                          <td className="px-4 py-3.5 border-b border-slate-100 text-center">
+                            {isRetestRegistered ? (
+                              <div className="inline-flex flex-col items-center px-2.5 py-1 rounded-xl bg-emerald-50 text-emerald-700 border border-emerald-200/80 shadow-2xs">
+                                <span className="flex items-center gap-1 text-[11px] font-extrabold text-emerald-700">
+                                  <CheckCircle2 className="w-3.5 h-3.5 text-emerald-600" />
+                                  Đã đăng ký đợt mới
+                                </span>
+                                <span className="text-[10px] text-emerald-800 font-medium mt-0.5 max-w-[130px] truncate" title={retestTargetText}>
+                                  {retestTargetText}
+                                </span>
+                              </div>
+                            ) : (
+                              <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-xl bg-amber-50 text-amber-700 border border-amber-200/80 text-[11px] font-bold shadow-2xs">
+                                <Clock className="w-3.5 h-3.5 text-amber-600" />
+                                Chờ đăng ký lại
+                              </span>
+                            )}
+                          </td>
+                          <td className="px-4 py-3.5 border-b border-slate-100 text-center" onClick={(e) => e.stopPropagation()}>
                             <button
                               onClick={() => {
                                 setRetestStudent(s);
                                 setRetestPeriodId("");
                                 setRetestBatchId("");
                               }}
-                              className="hover:bg-indigo-100 text-indigo-600 text-[11px] font-black tracking-wide shadow-sm hover:shadow transition-all duration-200 flex items-center gap-1.5 mx-auto cursor-pointer text-xs font-semibold"
+                              className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-bold transition-all shadow-xs active:scale-95 cursor-pointer ${
+                                isRetestRegistered
+                                  ? "bg-slate-100 hover:bg-slate-200 text-slate-700 border border-slate-200"
+                                  : "bg-[#00A19A] hover:bg-[#008B85] text-white shadow-teal-500/20"
+                              }`}
                             >
                               <RefreshCw className="w-3.5 h-3.5" />
-                              Đăng ký thi lại
+                              <span>{isRetestRegistered ? "Đổi đợt" : "Đăng ký KS lại"}</span>
                             </button>
                           </td>
-                        </>
-                      )}
-                      {selectedPeriod?.toLowerCase().includes("open day") && (
-                        <>
-                          <td className="p-2 p-2 text-center text-xs text-slate-650 border border-slate-300">
-                            {campuses.find(c => c.id === s.registeredCampus)?.campusName || s.registeredCampus || "-"}
-                          </td>
-                          <td className="p-2 p-2 text-center text-xs text-slate-650 font-bold border border-slate-300">
-                            {campuses.find(c => c.id === s.registeredCampus)?.manager?.fullName || "-"}
-                          </td>
-                        </>
-                      )}
-                      {subTab === "result" && (
-                        <>
-                          <td className="px-5 py-4 border-b border-slate-100 text-center">
-                            <div className="flex flex-col items-center justify-center gap-0.5">
-                              <span className="text-xs font-semibold text-slate-700">
-                                {s.admissionResult || "Chưa duyệt"}
-                              </span>
-                              {s.enrollmentStatus === "ENROLLED" && (
-                                <span className="text-[10px] font-bold text-emerald-600" title={`Nhập học vào ${s.enrollmentClass?.className || s.enrollmentClassId || ""}`}>
-                                  Đã nhập học
-                                </span>
-                              )}
-                              {s.enrollmentStatus === "PENDING" && (
-                                <span className="text-[10px] font-bold text-amber-600" title="Chờ xếp lớp">
-                                  Chờ nhập học
-                                </span>
-                              )}
-                            </div>
-                          </td>
-                          <td className="px-5 py-4 border-b border-slate-100 text-center text-xs font-semibold text-slate-700">
-                            {s.enrollmentClass?.className || s.enrollmentClassId ? (
-                              <span className="inline-flex items-center px-2 py-0.5 rounded text-xs font-semibold bg-emerald-50 text-emerald-700 border border-emerald-200/60">
-                                {s.enrollmentClass?.className || s.enrollmentClassId}
-                              </span>
-                            ) : (
-                              <span className="text-slate-400 font-normal">-</span>
-                            )}
-                          </td>
-                        </>
-                      )}
-                      <td className="px-5 py-4 border-b border-slate-100 text-center" onClick={(e) => e.stopPropagation()}>
-                        <div className="flex justify-center items-center gap-1.5">
-                          <button
-                            onClick={() => handleConfirmEnrollment(s, false)}
-                            disabled={s.enrollmentStatus === "COMPLETED" || s.enrollmentStatus === "ENROLLED" || s.enrollmentStatus === "PENDING" || !!s.enrollmentClass || !!s.enrollmentClassId || !s.admissionResult || !s.admissionResult.toUpperCase().includes("ĐẠT")}
-                            className={`p-1.5 rounded-xl transition-all ${
-                                s.admissionResult && s.admissionResult.toUpperCase().includes("ĐẠT") && s.enrollmentStatus !== "COMPLETED" && s.enrollmentStatus !== "ENROLLED" && s.enrollmentStatus !== "PENDING" && !s.enrollmentClass && !s.enrollmentClassId
-                                  ? "text-emerald-600 hover:text-emerald-800 hover:bg-emerald-50 border border-emerald-200 cursor-pointer shadow-xs active:scale-95"
-                                  : "text-slate-300 border border-slate-100 cursor-not-allowed opacity-40"
-                            }`}
-                             title={
-                                s.enrollmentStatus === "COMPLETED" || s.enrollmentStatus === "ENROLLED" || s.enrollmentClass || s.enrollmentClassId
-                                  ? "Đã sắp lớp" + (s.enrollmentClass?.className || s.enrollmentClassId ? " (" + (s.enrollmentClass?.className || s.enrollmentClassId) + ")" : "")
-                                : s.enrollmentStatus === "PENDING"
-                                  ? "Đã gửi yêu cầu nhập học (Chờ xếp lớp)"
-                                : "Xác nhận nhập học"
-                             }
-                          >
-                            <UserCheck className="w-4 h-4" />
-                          </button>
-                          <button
-                            onClick={() => handleRevertEnrollment(s, false)}
-                            disabled={!s.enrollmentStatus || s.enrollmentStatus === "COMPLETED" || s.enrollmentStatus === "ENROLLED" || !!s.enrollmentClass || !!s.enrollmentClassId}
-                            className={`p-1.5 rounded-xl transition-all ${
-                                s.enrollmentStatus && s.enrollmentStatus !== "COMPLETED" && s.enrollmentStatus !== "ENROLLED" && !s.enrollmentClass && !s.enrollmentClassId
-                                ? "text-rose-600 hover:text-rose-800 hover:bg-rose-50 border border-rose-200 shadow-xs cursor-pointer active:scale-95"
-                                : "text-slate-300 border border-slate-100 cursor-not-allowed opacity-40"
-                            }`}
-                            title={
-                                s.enrollmentStatus === "COMPLETED" || s.enrollmentStatus === "ENROLLED" || s.enrollmentClass || s.enrollmentClassId
-                                  ? "Đã sắp lớp" + (s.enrollmentClass?.className || s.enrollmentClassId ? " (" + (s.enrollmentClass?.className || s.enrollmentClassId) + ")" : "") + " - Không thể hoàn lại"
-                                  : s.enrollmentStatus
-                                  ? "Hoàn trả (Hủy yêu cầu / Rút nhập học)"
-                                  : "Chưa có thông tin nhập học để hoàn trả"
-                            }
-                          >
-                            <RotateCcw className="w-4 h-4" />
-                          </button>
-                          <button
-                            onClick={() => {
-                              setSelectedStudent(s);
-                              setIsDetailsOpen(true);
-                            }}
-                            className="p-1.5 text-slate-400 hover:text-[#00A19A] hover:bg-slate-100 border border-slate-200/80 rounded-xl transition-all cursor-pointer shadow-xs active:scale-95"
-                            title="Xem chi tiết"
-                          >
-                            <Eye className="w-4 h-4" />
-                          </button>
-                          {subTab === "info" && (
-                            <>
-
+                          <td className="px-4 py-3.5 border-b border-slate-100 text-center" onClick={(e) => e.stopPropagation()}>
+                            <div className="flex justify-center items-center gap-1">
+                              <button
+                                onClick={() => {
+                                  setSelectedStudent(s);
+                                  setIsDetailsOpen(true);
+                                }}
+                                className="p-1.5 text-slate-400 hover:text-[#00A19A] hover:bg-teal-50 border border-slate-200/80 rounded-xl transition-all cursor-pointer shadow-xs active:scale-95"
+                                title="Xem chi tiết"
+                              >
+                                <Eye className="w-4 h-4" />
+                              </button>
                               <button
                                 onClick={() => openEditModal(s)}
-                                className="p-1.5 text-slate-400 hover:text-[#00A19A] hover:bg-slate-100 rounded-xl transition-all"
+                                className="p-1.5 text-slate-400 hover:text-indigo-600 hover:bg-indigo-50 border border-slate-200/80 rounded-xl transition-all cursor-pointer shadow-xs active:scale-95"
                                 title="Chỉnh sửa"
                               >
                                 <Edit2 className="w-4 h-4" />
                               </button>
                               <button
                                 onClick={(e) => handleDeleteStudent(s, e)}
-                                className="p-1.5 text-slate-400 hover:text-rose-600 hover:bg-rose-50 transition-all text-xs font-semibold"
-                                title="Xóa học sinh"
+                                className="p-1.5 text-slate-400 hover:text-rose-600 hover:bg-rose-50 border border-slate-200/80 rounded-xl transition-all cursor-pointer shadow-xs active:scale-95"
+                                title="Xóa"
                               >
                                 <Trash2 className="w-4 h-4" />
                               </button>
-                            </>
-                          )}
-                        </div>
+                            </div>
+                          </td>
+                        </tr>
+                      );
+                    })
+                  )
+                ) : (
+                  paginatedStudents.length === 0 ? (
+                    <tr>
+                      <td colSpan={selectedPeriod?.toLowerCase().includes("open day") ? (subTab === "result" ? 15 : 13) : (subTab === "result" ? 13 : 11)} className="px-4 py-6 text-center text-slate-400 font-medium border-b border-slate-100">
+                        Không tìm thấy dữ liệu học sinh phù hợp.
                       </td>
                     </tr>
-                    );
-                  })
+                  ) : (
+                    paginatedStudents.map((s, idx) => {
+                      const isEnrolled = s.enrollmentStatus === "COMPLETED" || s.enrollmentStatus === "ENROLLED" || s.enrollmentStatus === "PENDING" || !!s.enrollmentClass || !!s.enrollmentClassId;
+                      return (
+                      <tr 
+                        key={s.id} 
+                        className={`group transition-colors cursor-pointer ${
+                          isEnrolled 
+                            ? 'bg-emerald-50/60 hover:bg-emerald-100/80' 
+                            : selectedIds.includes(s.id)
+                            ? 'bg-teal-50/40 hover:bg-teal-100/50'
+                            : idx % 2 === 0 ? 'bg-white hover:bg-slate-50' : 'bg-slate-50/30 hover:bg-slate-50'
+                        }`}
+                        onClick={() => {
+                          setSelectedStudent(s);
+                          setIsDetailsOpen(true);
+                        }}
+                      >
+                        <td className="px-5 py-4 border-b border-slate-100 text-center" onClick={(e) => e.stopPropagation()}>
+                              <input
+                              type="checkbox"
+                              className="w-4 h-4 rounded text-[#00A19A] accent-[#00A19A]"
+                              checked={selectedIds.includes(s.id)}
+                              onChange={(e) => setSelectedIds(prev => e.target.checked ? [...prev, s.id] : prev.filter(id => id !== s.id))}
+                            />
+                          </td>
+                        <td className="px-5 py-4 border-b border-slate-100 font-mono text-xs text-slate-650">{s.studentCode}</td>
+                        <td className="px-5 py-4 border-b border-slate-100">
+                          <div className="flex flex-col">
+                            <span className="text-xs font-bold text-slate-800">{s.fullName}</span>
+                            <span className="text-[10px] font-medium text-slate-450 mt-0.5">{s.surveySystem || "Chưa xếp hệ"}</span>
+                          </div>
+                        </td>
+                        <td className="px-5 py-4 border-b border-slate-100 text-center text-xs font-semibold text-slate-650">
+                          {s.grade}
+                        </td>
+                        <td className="px-5 py-4 border-b border-slate-100 text-center text-xs font-semibold text-slate-650">
+                          {s.gender || "-"}
+                        </td>
+                        <td className="px-5 py-4 border-b border-slate-100 text-center text-xs text-slate-500">
+                          {formatDate(s.dateOfBirth)}
+                        </td>
+                        <td className="px-5 py-4 border-b border-slate-100 text-center text-xs font-semibold text-slate-650">
+                          {campuses.find(c => c.id === resolveStudentCampusId(s))?.campusName || s.admissionCampus || s.registeredCampus || "—"}
+                        </td>
+                        <td className="px-5 py-4 border-b border-slate-100 text-center text-xs text-slate-650">
+                          {s.surveyFormType || "-"}
+                        </td>
+                        <td className="px-5 py-4 border-b border-slate-100 text-center" onClick={(e) => e.stopPropagation()}>
+                          <input
+                            type="checkbox"
+                            className="w-4 h-4 rounded text-rose-600 accent-rose-600 cursor-pointer"
+                            checked={s.isAbsent || false}
+                            onChange={async (e) => {
+                              const val = e.target.checked;
+                              await handleUpdateAbsent(s, val);
+                            }}
+                          />
+                        </td>
+                        <td className="px-5 py-4 border-b border-slate-100 text-center text-xs font-bold">
+                          {isEnrolled ? (
+                            <span className="inline-flex items-center justify-center w-6 h-6 rounded-full bg-emerald-100 text-emerald-700 font-extrabold text-xs">
+                              X
+                            </span>
+                          ) : (
+                            <span className="text-slate-300">-</span>
+                          )}
+                        </td>
+                        {selectedPeriod?.toLowerCase().includes("open day") && (
+                          <>
+                            <td className="p-2 p-2 text-center text-xs text-slate-650 border border-slate-300">
+                              {campuses.find(c => c.id === s.registeredCampus)?.campusName || s.registeredCampus || "-"}
+                            </td>
+                            <td className="p-2 p-2 text-center text-xs text-slate-650 font-bold border border-slate-300">
+                              {campuses.find(c => c.id === s.registeredCampus)?.manager?.fullName || "-"}
+                            </td>
+                          </>
+                        )}
+                        {subTab === "result" && (
+                          <>
+                            <td className="px-5 py-4 border-b border-slate-100 text-center">
+                              <div className="flex flex-col items-center justify-center gap-0.5">
+                                <span className="text-xs font-semibold text-slate-700">
+                                  {s.admissionResult || "Chưa duyệt"}
+                                </span>
+                                {s.enrollmentStatus === "ENROLLED" && (
+                                  <span className="text-[10px] font-bold text-emerald-600" title={`Nhập học vào ${s.enrollmentClass?.className || s.enrollmentClassId || ""}`}>
+                                    Đã nhập học
+                                  </span>
+                                )}
+                                {s.enrollmentStatus === "PENDING" && (
+                                  <span className="text-[10px] font-bold text-amber-600" title="Chờ xếp lớp">
+                                    Chờ nhập học
+                                  </span>
+                                )}
+                              </div>
+                            </td>
+                            <td className="px-5 py-4 border-b border-slate-100 text-center text-xs font-semibold text-slate-700">
+                              {s.enrollmentClass?.className || s.enrollmentClassId ? (
+                                <span className="inline-flex items-center px-2 py-0.5 rounded text-xs font-semibold bg-emerald-50 text-emerald-700 border border-emerald-200/60">
+                                  {s.enrollmentClass?.className || s.enrollmentClassId}
+                                </span>
+                              ) : (
+                                <span className="text-slate-400 font-normal">-</span>
+                              )}
+                            </td>
+                          </>
+                        )}
+                        <td className="px-5 py-4 border-b border-slate-100 text-center" onClick={(e) => e.stopPropagation()}>
+                          <div className="flex justify-center items-center gap-1.5">
+                            <button
+                              onClick={() => handleConfirmEnrollment(s, false)}
+                              disabled={s.enrollmentStatus === "COMPLETED" || s.enrollmentStatus === "ENROLLED" || s.enrollmentStatus === "PENDING" || !!s.enrollmentClass || !!s.enrollmentClassId || !s.admissionResult || !s.admissionResult.toUpperCase().includes("ĐẠT")}
+                              className={`p-1.5 rounded-xl transition-all ${
+                                  s.admissionResult && s.admissionResult.toUpperCase().includes("ĐẠT") && s.enrollmentStatus !== "COMPLETED" && s.enrollmentStatus !== "ENROLLED" && s.enrollmentStatus !== "PENDING" && !s.enrollmentClass && !s.enrollmentClassId
+                                    ? "text-emerald-600 hover:text-emerald-800 hover:bg-emerald-50 border border-emerald-200 cursor-pointer shadow-xs active:scale-95"
+                                    : "text-slate-300 border border-slate-100 cursor-not-allowed opacity-40"
+                              }`}
+                               title={
+                                  s.enrollmentStatus === "COMPLETED" || s.enrollmentStatus === "ENROLLED" || s.enrollmentClass || s.enrollmentClassId
+                                    ? "Đã sắp lớp" + (s.enrollmentClass?.className || s.enrollmentClassId ? " (" + (s.enrollmentClass?.className || s.enrollmentClassId) + ")" : "")
+                                  : s.enrollmentStatus === "PENDING"
+                                    ? "Đã gửi yêu cầu nhập học (Chờ xếp lớp)"
+                                  : "Xác nhận nhập học"
+                               }
+                            >
+                              <UserCheck className="w-4 h-4" />
+                            </button>
+                            <button
+                              onClick={() => handleRevertEnrollment(s, false)}
+                              disabled={!s.enrollmentStatus || s.enrollmentStatus === "COMPLETED" || s.enrollmentStatus === "ENROLLED" || !!s.enrollmentClass || !!s.enrollmentClassId}
+                              className={`p-1.5 rounded-xl transition-all ${
+                                  s.enrollmentStatus && s.enrollmentStatus !== "COMPLETED" && s.enrollmentStatus !== "ENROLLED" && !s.enrollmentClass && !s.enrollmentClassId
+                                  ? "text-rose-600 hover:text-rose-800 hover:bg-rose-50 border border-rose-200 shadow-xs cursor-pointer active:scale-95"
+                                  : "text-slate-300 border border-slate-100 cursor-not-allowed opacity-40"
+                              }`}
+                              title={
+                                  s.enrollmentStatus === "COMPLETED" || s.enrollmentStatus === "ENROLLED" || s.enrollmentClass || s.enrollmentClassId
+                                    ? "Đã sắp lớp" + (s.enrollmentClass?.className || s.enrollmentClassId ? " (" + (s.enrollmentClass?.className || s.enrollmentClassId) + ")" : "") + " - Không thể hoàn lại"
+                                    : s.enrollmentStatus
+                                    ? "Hoàn trả (Hủy yêu cầu / Rút nhập học)"
+                                    : "Chưa có thông tin nhập học để hoàn trả"
+                              }
+                            >
+                              <RotateCcw className="w-4 h-4" />
+                            </button>
+                            <button
+                              onClick={() => {
+                                setSelectedStudent(s);
+                                setIsDetailsOpen(true);
+                              }}
+                              className="p-1.5 text-slate-400 hover:text-[#00A19A] hover:bg-slate-100 border border-slate-200/80 rounded-xl transition-all cursor-pointer shadow-xs active:scale-95"
+                              title="Xem chi tiết"
+                            >
+                              <Eye className="w-4 h-4" />
+                            </button>
+                          </div>
+                        </td>
+                      </tr>
+                      );
+                    })
+                  )
                 )}
               </tbody>
             </table>
@@ -2618,8 +2982,32 @@ export function StudentInfoClient({
             /* Mầm non Preschool Table (Matched style of original preschool Ds Trẻ) */
             <table className="w-full text-left text-sm whitespace-nowrap border-collapse">
               <thead className="text-xs font-bold bg-slate-50/50 text-slate-500 uppercase tracking-wider border-b border-slate-200/80">
-                <tr>
-                  <th className="px-5 py-4 border-b border-slate-200/60 w-12 text-center">
+                {subTab === "info" ? (
+                  <tr>
+                    <th className="px-4 py-3.5 border-b border-slate-200/60 w-10 text-center">
+                      <input
+                        type="checkbox"
+                        className="w-4 h-4 rounded text-[#00A19A] accent-[#00A19A]"
+                        checked={filteredStudents.length > 0 && selectedIds.length === filteredStudents.length}
+                        onChange={(e) => setSelectedIds(e.target.checked ? filteredStudents.map(c => c.id) : [])}
+                      />
+                    </th>
+                    <th className="px-4 py-3.5 border-b border-slate-200/60 text-xs font-bold text-slate-700 w-12 text-center">STT</th>
+                    <th className="px-4 py-3.5 border-b border-slate-200/60 text-xs font-bold text-slate-700 w-28">Mã bé</th>
+                    <th className="px-4 py-3.5 border-b border-slate-200/60 text-xs font-bold text-slate-700">Họ và tên</th>
+                    <th className="px-4 py-3.5 border-b border-slate-200/60 text-xs font-bold text-slate-700 w-24 text-center">Ngày sinh</th>
+                    <th className="px-4 py-3.5 border-b border-slate-200/60 text-xs font-bold text-slate-700 w-20 text-center">Giới tính</th>
+                    <th className="px-4 py-3.5 border-b border-slate-200/60 text-xs font-bold text-slate-700 w-24 text-center">Nhóm tuổi</th>
+                    <th className="px-4 py-3.5 border-b border-slate-200/60 text-xs font-bold text-slate-700 w-28 text-center">Cơ sở</th>
+                    <th className="px-4 py-3.5 border-b border-slate-200/60 text-xs font-bold text-slate-700 w-36 text-center">Kỳ & Đợt cũ</th>
+                    <th className="px-4 py-3.5 border-b border-slate-200/60 text-xs font-bold text-slate-700 w-40 text-center">Đánh giá KS</th>
+                    <th className="px-4 py-3.5 border-b border-slate-200/60 text-xs font-bold text-slate-700 w-44 text-center">Trạng thái KS lại</th>
+                    <th className="px-4 py-3.5 border-b border-slate-200/60 text-xs font-bold text-slate-700 w-36 text-center">Đăng ký đợt mới</th>
+                    <th className="px-4 py-3.5 border-b border-slate-200/60 text-xs font-bold text-slate-700 w-24 text-center">Thao tác</th>
+                  </tr>
+                ) : (
+                  <tr>
+                    <th className="px-5 py-4 border-b border-slate-200/60 w-12 text-center">
                       <input
                         type="checkbox"
                         className="w-4 h-4 rounded accent-[#00A19A]"
@@ -2627,193 +3015,322 @@ export function StudentInfoClient({
                         onChange={(e) => setSelectedIds(e.target.checked ? filteredStudents.map(c => c.id) : [])}
                       />
                     </th>
-                  <th className="px-5 py-4 border-b border-slate-200/60 text-xs font-bold text-slate-600 w-14">STT</th>
-                  <th className="px-5 py-4 border-b border-slate-200/60 text-xs font-bold text-slate-600 w-28">Mã bé</th>
-                  <th className="px-5 py-4 border-b border-slate-200/60 text-xs font-bold text-slate-600">Họ và tên</th>
-                  <th className="px-5 py-4 border-b border-slate-200/60 text-xs font-bold text-slate-600 w-24">Ngày sinh</th>
-                  <th className="px-5 py-4 border-b border-slate-200/60 text-xs font-bold text-slate-600 w-24">Giới tính</th>
-                  <th className="px-5 py-4 border-b border-slate-200/60 text-xs font-bold text-slate-600 w-28">Nhóm tuổi</th>
-                  <th className="px-5 py-4 border-b border-slate-200/60 text-xs font-bold text-slate-600 w-36">Cơ sở</th>
-                  <th className="px-5 py-4 border-b border-slate-200/60 text-xs font-bold text-slate-600 w-16 text-center">Vắng</th>
-                  <th className="px-5 py-4 border-b border-slate-200/60 text-xs font-bold text-slate-600 w-24 text-center">Nhập học</th>
-                  {subTab === "result" && (
-                    <>
-                      <th className="px-5 py-4 border-b border-slate-200/60 text-xs font-bold text-slate-600 w-36">Kết quả</th>
-                      <th className="px-5 py-4 border-b border-slate-200/60 text-xs font-bold text-slate-600 w-36 text-center">Lớp nhập học</th>
-                    </>
-                  )}
-                  <th className="px-5 py-4 border-b border-slate-200/60 text-xs font-bold text-slate-600 w-32 text-center">Thao tác</th>
-                </tr>
+                    <th className="px-5 py-4 border-b border-slate-200/60 text-xs font-bold text-slate-600 w-14">STT</th>
+                    <th className="px-5 py-4 border-b border-slate-200/60 text-xs font-bold text-slate-600 w-28">Mã bé</th>
+                    <th className="px-5 py-4 border-b border-slate-200/60 text-xs font-bold text-slate-600">Họ và tên</th>
+                    <th className="px-5 py-4 border-b border-slate-200/60 text-xs font-bold text-slate-600 w-24">Ngày sinh</th>
+                    <th className="px-5 py-4 border-b border-slate-200/60 text-xs font-bold text-slate-600 w-24">Giới tính</th>
+                    <th className="px-5 py-4 border-b border-slate-200/60 text-xs font-bold text-slate-600 w-28">Nhóm tuổi</th>
+                    <th className="px-5 py-4 border-b border-slate-200/60 text-xs font-bold text-slate-600 w-36">Cơ sở</th>
+                    <th className="px-5 py-4 border-b border-slate-200/60 text-xs font-bold text-slate-600 w-16 text-center">Vắng</th>
+                    <th className="px-5 py-4 border-b border-slate-200/60 text-xs font-bold text-slate-600 w-24 text-center">Nhập học</th>
+                    {subTab === "result" && (
+                      <>
+                        <th className="px-5 py-4 border-b border-slate-200/60 text-xs font-bold text-slate-600 w-36">Kết quả</th>
+                        <th className="px-5 py-4 border-b border-slate-200/60 text-xs font-bold text-slate-600 w-36 text-center">Lớp nhập học</th>
+                      </>
+                    )}
+                    <th className="px-5 py-4 border-b border-slate-200/60 text-xs font-bold text-slate-600 w-32 text-center">Thao tác</th>
+                  </tr>
+                )}
               </thead>
               <tbody className="divide-y divide-slate-300">
-                {paginatedStudents.length === 0 ? (
-                  <tr>
-                    <td colSpan={subTab === "result" ? 13 : 11} className="px-4 py-6 text-center text-slate-400 font-medium border-b border-slate-100">
-                      Không tìm thấy dữ liệu học sinh phù hợp.
-                    </td>
-                  </tr>
-                ) : (
-                  paginatedStudents.map((child, i) => {
-                    const isEnrolled = child.enrollmentStatus === "COMPLETED" || child.enrollmentStatus === "ENROLLED" || child.enrollmentStatus === "PENDING" || !!child.enrollmentClass || !!child.enrollmentClassId;
-                    return (
-                    <tr 
-                      key={child.id} 
-                      className={`transition-colors cursor-pointer ${
-                        isEnrolled
-                          ? 'bg-emerald-50/60 hover:bg-emerald-100/80'
-                          : selectedIds.includes(child.id)
-                          ? 'bg-[#00A19A]/5/50 hover:bg-[#00A19A]/10'
-                          : i % 2 === 0 ? 'bg-white hover:bg-[#00A19A]/5/30' : 'bg-slate-50/30 hover:bg-[#00A19A]/5/30'
-                      }`}
-                      onClick={() => {
-                        setSelectedStudent(child);
-                        setIsDetailsOpen(true);
-                      }}
-                    >
-                      <td className="px-5 py-4 border-b border-slate-100 text-center" onClick={(e) => e.stopPropagation()}>
-                            <input
-                            type="checkbox"
-                            className="w-4 h-4 rounded accent-[#00A19A]"
-                            checked={selectedIds.includes(child.id)}
-                            onChange={(e) => setSelectedIds(prev => e.target.checked ? [...prev, child.id] : prev.filter(id => id !== child.id))}
-                          />
-                        </td>
-                      <td className="px-5 py-4 border-b border-slate-100 text-slate-400 text-xs">{(currentPage - 1) * pageSize + i + 1}</td>
-                      <td className="px-5 py-4 border-b border-slate-100 font-mono text-xs text-slate-650">{child.studentCode}</td>
-                      <td className="px-5 py-4 border-b border-slate-100">
-                        <span className="font-bold text-slate-800 text-xs">{child.fullName}</span>
+                {subTab === "info" ? (
+                  paginatedStudents.length === 0 ? (
+                    <tr>
+                      <td colSpan={13} className="px-4 py-12 text-center border-b border-slate-100">
+                        <div className="flex flex-col items-center justify-center gap-3 max-w-sm mx-auto">
+                          <div className="w-12 h-12 rounded-2xl bg-teal-50 border border-teal-200/60 flex items-center justify-center text-[#00A19A]">
+                            <CheckCircle2 className="w-6 h-6" />
+                          </div>
+                          <div>
+                            <p className="text-sm font-bold text-slate-800">Không có trẻ cần khảo sát lại</p>
+                            <p className="text-xs text-slate-500 mt-1">
+                              Tất cả các bé đều đã đạt yêu cầu hoặc không có kết quả phù hợp với bộ lọc hiện tại.
+                            </p>
+                          </div>
+                        </div>
                       </td>
-                      <td className="px-5 py-4 border-b border-slate-100 text-xs text-slate-500">
-                        {formatDate(child.dateOfBirth)}
-                      </td>
-                      <td className="px-5 py-4 border-b border-slate-100">
-                        <span className="text-sm font-semibold text-slate-700">
-                          {child.gender ? (child.gender === "MALE" || child.gender === "Nam" || child.gender === "M" ? "Nam" : "Nữ") : "—"}
-                        </span>
-                      </td>
-                      <td className="px-5 py-4 border-b border-slate-100 text-xs font-semibold text-slate-650">{child.grade || "—"}</td>
-                      <td className="px-5 py-4 border-b border-slate-100 text-xs font-semibold text-slate-650">
-                        {child.admissionCampus || "—"}
-                      </td>
-                      <td className="px-5 py-4 border-b border-slate-100 text-center" onClick={(e) => e.stopPropagation()}>
-                        <input
-                          type="checkbox"
-                          className="w-4 h-4 rounded text-rose-600 accent-rose-600 cursor-pointer"
-                          checked={child.isAbsent || false}
-                          onChange={async (e) => {
-                            const val = e.target.checked;
-                            await handleUpdateAbsent(child, val);
+                    </tr>
+                  ) : (
+                    paginatedStudents.map((child, i) => {
+                      const isRetestRegistered = currentDataset.some(other => other.studentCode === child.studentCode && other.id !== child.id);
+                      return (
+                        <tr
+                          key={child.id}
+                          className={`group transition-colors cursor-pointer ${
+                            selectedIds.includes(child.id)
+                              ? "bg-teal-50/50 hover:bg-teal-100/50"
+                              : i % 2 === 0
+                              ? "bg-white hover:bg-slate-50/80"
+                              : "bg-slate-50/30 hover:bg-slate-50/80"
+                          }`}
+                          onClick={() => {
+                            setSelectedStudent(child);
+                            setIsDetailsOpen(true);
                           }}
-                        />
-                      </td>
-                      <td className="px-5 py-4 border-b border-slate-100 text-center text-xs font-bold">
-                        {isEnrolled ? (
-                          <span className="inline-flex items-center justify-center w-6 h-6 rounded-full bg-emerald-100 text-emerald-700 font-extrabold text-xs">
-                            X
-                          </span>
-                        ) : (
-                          <span className="text-slate-300">-</span>
-                        )}
-                      </td>
-                      {subTab === "result" && (
-                        <>
-                          <td className="px-5 py-4 border-b border-slate-100 text-center">
-                            <div className="flex flex-col items-center justify-center gap-0.5">
-                              <span className="text-xs font-semibold text-slate-700">
-                                {child.admissionResult || "Chưa duyệt"}
-                              </span>
-                              {child.enrollmentStatus === "ENROLLED" && (
-                                <span className="text-[10px] font-bold text-emerald-600" title={`Nhập học vào ${child.enrollmentClass?.className || child.enrollmentClassId || ""}`}>
-                                  Đã nhập học
-                                </span>
-                              )}
-                              {child.enrollmentStatus === "PENDING" && (
-                                <span className="text-[10px] font-bold text-amber-600" title="Chờ xếp lớp">
-                                  Chờ nhập học
-                                </span>
-                              )}
+                        >
+                          <td className="px-4 py-3.5 border-b border-slate-100 text-center" onClick={(e) => e.stopPropagation()}>
+                            <input
+                              type="checkbox"
+                              className="w-4 h-4 rounded text-[#00A19A] accent-[#00A19A]"
+                              checked={selectedIds.includes(child.id)}
+                              onChange={(e) => setSelectedIds(prev => e.target.checked ? [...prev, child.id] : prev.filter(id => id !== child.id))}
+                            />
+                          </td>
+                          <td className="px-4 py-3.5 border-b border-slate-100 text-slate-400 text-xs text-center font-medium">
+                            {(currentPage - 1) * pageSize + i + 1}
+                          </td>
+                          <td className="px-4 py-3.5 border-b border-slate-100 font-mono text-xs font-bold text-[#00A19A]">
+                            {child.studentCode}
+                          </td>
+                          <td className="px-4 py-3.5 border-b border-slate-100">
+                            <div className="flex flex-col">
+                              <span className="text-xs font-bold text-slate-800 group-hover:text-[#00A19A] transition-colors">{child.fullName}</span>
+                              <span className="text-[10px] text-slate-400 font-medium">{child.surveySystem || "Mầm non"}</span>
                             </div>
                           </td>
-                          <td className="px-5 py-4 border-b border-slate-100 text-center text-xs font-semibold text-slate-700">
-                            {child.enrollmentClass?.className || child.enrollmentClassId ? (
-                              <span className="inline-flex items-center px-2 py-0.5 rounded text-xs font-semibold bg-emerald-50 text-emerald-700 border border-emerald-200/60">
-                                {child.enrollmentClass?.className || child.enrollmentClassId}
+                          <td className="px-4 py-3.5 border-b border-slate-100 text-center text-xs text-slate-600">
+                            {formatDate(child.dateOfBirth)}
+                          </td>
+                          <td className="px-4 py-3.5 border-b border-slate-100 text-center text-xs text-slate-600 font-semibold">
+                            {child.gender ? (child.gender === "MALE" || child.gender === "Nam" || child.gender === "M" ? "Nam" : "Nữ") : "—"}
+                          </td>
+                          <td className="px-4 py-3.5 border-b border-slate-100 text-center">
+                            <span className="inline-flex items-center px-2 py-0.5 rounded-lg text-xs font-bold bg-amber-50 text-amber-800 border border-amber-200/60">
+                              {child.grade || "Mầm non"}
+                            </span>
+                          </td>
+                          <td className="px-4 py-3.5 border-b border-slate-100 text-center text-xs text-slate-700 font-medium">
+                            {campuses.find(c => c.id === child.admissionCampus)?.campusName || child.admissionCampus || "—"}
+                          </td>
+                          <td className="px-4 py-3.5 border-b border-slate-100 text-center">
+                            <div className="flex flex-col items-center">
+                              <span className="text-xs font-semibold text-slate-700">{child.period?.name || "Chưa gán kỳ"}</span>
+                              <span className="text-[10px] text-slate-400 font-medium">{cleanBatchName(child.batch?.name) || "Chưa phân đợt"}</span>
+                            </div>
+                          </td>
+                          <td className="px-4 py-3.5 border-b border-slate-100 text-center">
+                            <span className="inline-flex items-center px-2.5 py-1 rounded-xl text-xs font-bold bg-rose-50 text-rose-700 border border-rose-200">
+                              {child.devAssessmentResult || child.admissionResult || "Cần khảo sát lại"}
+                            </span>
+                          </td>
+                          <td className="px-4 py-3.5 border-b border-slate-100 text-center">
+                            {isRetestRegistered ? (
+                              <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[11px] font-bold bg-emerald-50 text-emerald-700 border border-emerald-200">
+                                <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse"></span>
+                                Đã đăng ký đợt mới
                               </span>
                             ) : (
-                              <span className="text-slate-400 font-normal">-</span>
+                              <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[11px] font-bold bg-amber-50 text-amber-700 border border-amber-200">
+                                <span className="w-1.5 h-1.5 rounded-full bg-amber-500"></span>
+                                Chờ đăng ký lại
+                              </span>
                             )}
                           </td>
-                        </>
-                      )}
-                      <td className="px-5 py-4 border-b border-slate-100 text-center" onClick={(e) => e.stopPropagation()}>
-                        <div className="flex justify-center items-center gap-1.5">
-                          <button
-                            onClick={() => handleConfirmEnrollment(child, true)}
-                            disabled={child.enrollmentStatus === "COMPLETED" || child.enrollmentStatus === "ENROLLED" || child.enrollmentStatus === "PENDING" || !!child.enrollmentClass || !!child.enrollmentClassId || !child.admissionResult || !child.admissionResult.toUpperCase().includes("ĐẠT")}
-                            className={`p-1.5 rounded-xl transition-all ${
-                                child.admissionResult && child.admissionResult.toUpperCase().includes("ĐẠT") && child.enrollmentStatus !== "COMPLETED" && child.enrollmentStatus !== "ENROLLED" && child.enrollmentStatus !== "PENDING" && !child.enrollmentClass && !child.enrollmentClassId
-                                  ? "text-emerald-600 hover:text-emerald-800 hover:bg-emerald-50 border border-emerald-200 cursor-pointer shadow-xs active:scale-95"
-                                  : "text-slate-300 border border-slate-100 cursor-not-allowed opacity-40"
-                            }`}
-                             title={
-                                child.enrollmentStatus === "COMPLETED" || child.enrollmentStatus === "ENROLLED" || child.enrollmentClass || child.enrollmentClassId
-                                  ? "Đã sắp lớp" + (child.enrollmentClass?.className || child.enrollmentClassId ? " (" + (child.enrollmentClass?.className || child.enrollmentClassId) + ")" : "")
-                                : child.enrollmentStatus === "PENDING"
-                                ? "Đã gửi yêu cầu nhập học (Chờ xếp lớp)"
-                                : "Xác nhận nhập học"
-                            }
-                          >
-                            <UserCheck className="w-4 h-4" />
-                          </button>
-                          <button
-                            onClick={() => handleRevertEnrollment(child, true)}
-                            disabled={!child.enrollmentStatus || child.enrollmentStatus === "COMPLETED" || child.enrollmentStatus === "ENROLLED" || !!child.enrollmentClass || !!child.enrollmentClassId}
-                            className={`p-1.5 rounded-xl transition-all ${
-                                child.enrollmentStatus && child.enrollmentStatus !== "COMPLETED" && child.enrollmentStatus !== "ENROLLED" && !child.enrollmentClass && !child.enrollmentClassId
-                                ? "text-rose-600 hover:text-rose-800 hover:bg-rose-50 border border-rose-200 shadow-xs cursor-pointer active:scale-95"
-                                : "text-slate-300 border border-slate-100 cursor-not-allowed opacity-40"
-                            }`}
-                            title={
-                                child.enrollmentStatus === "COMPLETED" || child.enrollmentStatus === "ENROLLED" || child.enrollmentClass || child.enrollmentClassId
-                                  ? "Đã sắp lớp" + (child.enrollmentClass?.className || child.enrollmentClassId ? " (" + (child.enrollmentClass?.className || child.enrollmentClassId) + ")" : "") + " - Không thể hoàn lại"
-                                  : child.enrollmentStatus
-                                  ? "Hoàn trả (Hủy yêu cầu / Rút nhập học)"
-                                  : "Chưa có thông tin nhập học để hoàn trả"
-                            }
-                          >
-                            <RotateCcw className="w-4 h-4" />
-                          </button>
-                          <button
-                            onClick={() => {
-                              setSelectedStudent(child);
-                              setIsDetailsOpen(true);
-                            }}
-                            className="p-1.5 text-slate-400 hover:text-[#00A19A] hover:bg-slate-100 border border-slate-200/80 rounded-xl transition-all cursor-pointer shadow-xs active:scale-95"
-                            title="Xem chi tiết"
-                          >
-                            <Eye className="w-4 h-4" />
-                          </button>
-                          {subTab === "info" && (
-                            <>
+                          <td className="px-4 py-3.5 border-b border-slate-100 text-center" onClick={(e) => e.stopPropagation()}>
+                            <button
+                              onClick={() => {
+                                setRetestStudent(child);
+                                setRetestPeriodId("");
+                                setRetestBatchId("");
+                              }}
+                              className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-bold transition-all shadow-xs active:scale-95 cursor-pointer ${
+                                isRetestRegistered
+                                  ? "bg-slate-100 hover:bg-slate-200 text-slate-700 border border-slate-200"
+                                  : "bg-[#00A19A] hover:bg-[#008B85] text-white shadow-teal-500/20"
+                              }`}
+                            >
+                              <RefreshCw className="w-3.5 h-3.5" />
+                              <span>{isRetestRegistered ? "Đổi đợt" : "Đăng ký KS lại"}</span>
+                            </button>
+                          </td>
+                          <td className="px-4 py-3.5 border-b border-slate-100 text-center" onClick={(e) => e.stopPropagation()}>
+                            <div className="flex justify-center items-center gap-1">
+                              <button
+                                onClick={() => {
+                                  setSelectedStudent(child);
+                                  setIsDetailsOpen(true);
+                                }}
+                                className="p-1.5 text-slate-400 hover:text-[#00A19A] hover:bg-teal-50 border border-slate-200/80 rounded-xl transition-all cursor-pointer shadow-xs active:scale-95"
+                                title="Xem chi tiết"
+                              >
+                                <Eye className="w-4 h-4" />
+                              </button>
                               <button
                                 onClick={() => openEditModal(child)}
-                                className="p-2 text-slate-300 hover:text-[#00A19A] hover:bg-[#00A19A]/5 rounded-xl transition-all"
+                                className="p-1.5 text-slate-400 hover:text-indigo-600 hover:bg-indigo-50 border border-slate-200/80 rounded-xl transition-all cursor-pointer shadow-xs active:scale-95"
+                                title="Chỉnh sửa"
                               >
                                 <Edit2 className="w-4 h-4" />
                               </button>
                               <button
                                 onClick={(e) => handleDeleteStudent(child, e)}
-                                className="p-2 text-slate-300 hover:text-rose-500 hover:bg-rose-50 transition-all text-xs font-semibold"
+                                className="p-1.5 text-slate-400 hover:text-rose-600 hover:bg-rose-50 border border-slate-200/80 rounded-xl transition-all cursor-pointer shadow-xs active:scale-95"
+                                title="Xóa"
                               >
                                 <Trash2 className="w-4 h-4" />
                               </button>
-                            </>
-                          )}
-                        </div>
+                            </div>
+                          </td>
+                        </tr>
+                      );
+                    })
+                  )
+                ) : (
+                  paginatedStudents.length === 0 ? (
+                    <tr>
+                      <td colSpan={subTab === "result" ? 13 : 11} className="px-4 py-6 text-center text-slate-400 font-medium border-b border-slate-100">
+                        Không tìm thấy dữ liệu học sinh phù hợp.
                       </td>
                     </tr>
-                    );
-                  })
+                  ) : (
+                    paginatedStudents.map((child, i) => {
+                      const isEnrolled = child.enrollmentStatus === "COMPLETED" || child.enrollmentStatus === "ENROLLED" || child.enrollmentStatus === "PENDING" || !!child.enrollmentClass || !!child.enrollmentClassId;
+                      return (
+                      <tr 
+                        key={child.id} 
+                        className={`transition-colors cursor-pointer ${
+                          isEnrolled
+                            ? 'bg-emerald-50/60 hover:bg-emerald-100/80'
+                            : selectedIds.includes(child.id)
+                            ? 'bg-[#00A19A]/5/50 hover:bg-[#00A19A]/10'
+                            : i % 2 === 0 ? 'bg-white hover:bg-[#00A19A]/5/30' : 'bg-slate-50/30 hover:bg-[#00A19A]/5/30'
+                        }`}
+                        onClick={() => {
+                          setSelectedStudent(child);
+                          setIsDetailsOpen(true);
+                        }}
+                      >
+                        <td className="px-5 py-4 border-b border-slate-100 text-center" onClick={(e) => e.stopPropagation()}>
+                              <input
+                              type="checkbox"
+                              className="w-4 h-4 rounded accent-[#00A19A]"
+                              checked={selectedIds.includes(child.id)}
+                              onChange={(e) => setSelectedIds(prev => e.target.checked ? [...prev, child.id] : prev.filter(id => id !== child.id))}
+                            />
+                          </td>
+                        <td className="px-5 py-4 border-b border-slate-100 text-slate-400 text-xs">{(currentPage - 1) * pageSize + i + 1}</td>
+                        <td className="px-5 py-4 border-b border-slate-100 font-mono text-xs text-slate-650">{child.studentCode}</td>
+                        <td className="px-5 py-4 border-b border-slate-100">
+                          <span className="font-bold text-slate-800 text-xs">{child.fullName}</span>
+                        </td>
+                        <td className="px-5 py-4 border-b border-slate-100 text-xs text-slate-500">
+                          {formatDate(child.dateOfBirth)}
+                        </td>
+                        <td className="px-5 py-4 border-b border-slate-100">
+                          <span className="text-sm font-semibold text-slate-700">
+                            {child.gender ? (child.gender === "MALE" || child.gender === "Nam" || child.gender === "M" ? "Nam" : "Nữ") : "—"}
+                          </span>
+                        </td>
+                        <td className="px-5 py-4 border-b border-slate-100 text-xs font-semibold text-slate-650">{child.grade || "—"}</td>
+                        <td className="px-5 py-4 border-b border-slate-100 text-xs font-semibold text-slate-650">
+                          {child.admissionCampus || "—"}
+                        </td>
+                        <td className="px-5 py-4 border-b border-slate-100 text-center" onClick={(e) => e.stopPropagation()}>
+                          <input
+                            type="checkbox"
+                            className="w-4 h-4 rounded text-rose-600 accent-rose-600 cursor-pointer"
+                            checked={child.isAbsent || false}
+                            onChange={async (e) => {
+                              const val = e.target.checked;
+                              await handleUpdateAbsent(child, val);
+                            }}
+                          />
+                        </td>
+                        <td className="px-5 py-4 border-b border-slate-100 text-center text-xs font-bold">
+                          {isEnrolled ? (
+                            <span className="inline-flex items-center justify-center w-6 h-6 rounded-full bg-emerald-100 text-emerald-700 font-extrabold text-xs">
+                              X
+                            </span>
+                          ) : (
+                            <span className="text-slate-300">-</span>
+                          )}
+                        </td>
+                        {subTab === "result" && (
+                          <>
+                            <td className="px-5 py-4 border-b border-slate-100 text-center">
+                              <div className="flex flex-col items-center justify-center gap-0.5">
+                                <span className="text-xs font-semibold text-slate-700">
+                                  {child.admissionResult || "Chưa duyệt"}
+                                </span>
+                                {child.enrollmentStatus === "ENROLLED" && (
+                                  <span className="text-[10px] font-bold text-emerald-600" title={`Nhập học vào ${child.enrollmentClass?.className || child.enrollmentClassId || ""}`}>
+                                    Đã nhập học
+                                  </span>
+                                )}
+                                {child.enrollmentStatus === "PENDING" && (
+                                  <span className="text-[10px] font-bold text-amber-600" title="Chờ xếp lớp">
+                                    Chờ nhập học
+                                  </span>
+                                )}
+                              </div>
+                            </td>
+                            <td className="px-5 py-4 border-b border-slate-100 text-center text-xs font-semibold text-slate-700">
+                              {child.enrollmentClass?.className || child.enrollmentClassId ? (
+                                <span className="inline-flex items-center px-2 py-0.5 rounded text-xs font-semibold bg-emerald-50 text-emerald-700 border border-emerald-200/60">
+                                  {child.enrollmentClass?.className || child.enrollmentClassId}
+                                </span>
+                              ) : (
+                                <span className="text-slate-400 font-normal">-</span>
+                              )}
+                            </td>
+                          </>
+                        )}
+                        <td className="px-5 py-4 border-b border-slate-100 text-center" onClick={(e) => e.stopPropagation()}>
+                          <div className="flex justify-center items-center gap-1.5">
+                            <button
+                              onClick={() => handleConfirmEnrollment(child, true)}
+                              disabled={child.enrollmentStatus === "COMPLETED" || child.enrollmentStatus === "ENROLLED" || child.enrollmentStatus === "PENDING" || !!child.enrollmentClass || !!child.enrollmentClassId || !child.admissionResult || !child.admissionResult.toUpperCase().includes("ĐẠT")}
+                              className={`p-1.5 rounded-xl transition-all ${
+                                  child.admissionResult && child.admissionResult.toUpperCase().includes("ĐẠT") && child.enrollmentStatus !== "COMPLETED" && child.enrollmentStatus !== "ENROLLED" && child.enrollmentStatus !== "PENDING" && !child.enrollmentClass && !child.enrollmentClassId
+                                    ? "text-emerald-600 hover:text-emerald-800 hover:bg-emerald-50 border border-emerald-200 cursor-pointer shadow-xs active:scale-95"
+                                    : "text-slate-300 border border-slate-100 cursor-not-allowed opacity-40"
+                              }`}
+                               title={
+                                  child.enrollmentStatus === "COMPLETED" || child.enrollmentStatus === "ENROLLED" || child.enrollmentClass || child.enrollmentClassId
+                                    ? "Đã sắp lớp" + (child.enrollmentClass?.className || child.enrollmentClassId ? " (" + (child.enrollmentClass?.className || child.enrollmentClassId) + ")" : "")
+                                  : child.enrollmentStatus === "PENDING"
+                                  ? "Đã gửi yêu cầu nhập học (Chờ xếp lớp)"
+                                  : "Xác nhận nhập học"
+                              }
+                            >
+                              <UserCheck className="w-4 h-4" />
+                            </button>
+                            <button
+                              onClick={() => handleRevertEnrollment(child, true)}
+                              disabled={!child.enrollmentStatus || child.enrollmentStatus === "COMPLETED" || child.enrollmentStatus === "ENROLLED" || !!child.enrollmentClass || !!child.enrollmentClassId}
+                              className={`p-1.5 rounded-xl transition-all ${
+                                  child.enrollmentStatus && child.enrollmentStatus !== "COMPLETED" && child.enrollmentStatus !== "ENROLLED" && !child.enrollmentClass && !child.enrollmentClassId
+                                  ? "text-rose-600 hover:text-rose-800 hover:bg-rose-50 border border-rose-200 shadow-xs cursor-pointer active:scale-95"
+                                  : "text-slate-300 border border-slate-100 cursor-not-allowed opacity-40"
+                              }`}
+                              title={
+                                  child.enrollmentStatus === "COMPLETED" || child.enrollmentStatus === "ENROLLED" || child.enrollmentClass || child.enrollmentClassId
+                                    ? "Đã sắp lớp" + (child.enrollmentClass?.className || child.enrollmentClassId ? " (" + (child.enrollmentClass?.className || child.enrollmentClassId) + ")" : "") + " - Không thể hoàn lại"
+                                    : child.enrollmentStatus
+                                    ? "Hoàn trả (Hủy yêu cầu / Rút nhập học)"
+                                    : "Chưa có thông tin nhập học để hoàn trả"
+                              }
+                            >
+                              <RotateCcw className="w-4 h-4" />
+                            </button>
+                            <button
+                              onClick={() => {
+                                setSelectedStudent(child);
+                                setIsDetailsOpen(true);
+                              }}
+                              className="p-1.5 text-slate-400 hover:text-[#00A19A] hover:bg-slate-100 border border-slate-200/80 rounded-xl transition-all cursor-pointer shadow-xs active:scale-95"
+                              title="Xem chi tiết"
+                            >
+                              <Eye className="w-4 h-4" />
+                            </button>
+                          </div>
+                        </td>
+                      </tr>
+                      );
+                    })
+                  )
                 )}
               </tbody>
             </table>
@@ -4769,41 +5286,48 @@ export function StudentInfoClient({
       {retestStudent && (
         <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-sm flex justify-center items-center z-50 p-4 animate-in fade-in duration-200">
           <div className="bg-white rounded-3xl w-full max-w-md overflow-hidden shadow-2xl flex flex-col animate-in zoom-in-95 duration-200">
-            <div className="p-6 flex justify-between items-center text-xs font-semibold">
-              <div>
-                <h3 className="text-lg font-black text-slate-800">Đăng ký Khảo sát lại</h3>
-                <p className="text-xs text-slate-400 font-bold uppercase mt-0.5 tracking-wider">
-                  Học sinh: {retestStudent.fullName}
-                </p>
+            <div className="p-6 flex justify-between items-center text-xs font-semibold border-b border-slate-100">
+              <div className="flex items-center gap-2.5">
+                <div className="w-9 h-9 rounded-xl bg-teal-50 border border-teal-200 flex items-center justify-center text-[#00A19A]">
+                  <RefreshCw className="w-4 h-4" />
+                </div>
+                <div>
+                  <h3 className="text-base font-black text-slate-800">Đăng ký Khảo sát lại</h3>
+                  <p className="text-[11px] text-slate-400 font-bold uppercase mt-0.5 tracking-wider">
+                    Học sinh: <span className="text-[#00A19A]">{retestStudent.fullName}</span>
+                  </p>
+                </div>
               </div>
               <button
                 onClick={() => setRetestStudent(null)}
-                className="p-2 text-slate-400 hover:text-red-500 hover:bg-red-50 transition-all text-xs font-semibold"
+                className="p-2 text-slate-400 hover:text-red-500 hover:bg-red-50 rounded-xl transition-all cursor-pointer"
               >
                 <X className="w-5 h-5" />
               </button>
             </div>
 
             <div className="p-6 space-y-4">
-              <p className="text-xs text-slate-500 leading-relaxed font-semibold">
-                Học sinh đã duyệt kết quả <span className="text-rose-600 font-bold">Không đạt - Kiểm tra lại</span>. 
+              <p className="text-xs text-slate-600 leading-relaxed">
+                Học sinh đã có kết quả <span className="text-rose-600 font-bold">Không đạt - Khảo sát lại</span>. 
                 Thực hiện đăng ký học sinh vào một Kỳ/Đợt khảo sát mới để thi lại. 
-                Mã học sinh <span className="font-bold text-indigo-600">({retestStudent.studentCode})</span> sẽ được giữ nguyên để đối chiếu lịch sử.
+                Mã học sinh <span className="font-bold text-[#00A19A]">({retestStudent.studentCode})</span> sẽ được giữ nguyên để đối chiếu toàn bộ lịch sử thi.
               </p>
 
               {/* Target Period selection */}
               <div>
-                <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-1">Kỳ khảo sát mới *</label>
+                <label className="block text-xs font-bold text-slate-600 uppercase tracking-wider mb-1.5">
+                  Kỳ khảo sát mới <span className="text-rose-500">*</span>
+                </label>
                 <select
                   value={retestPeriodId}
                   onChange={(e) => {
                     setRetestPeriodId(e.target.value);
                     setRetestBatchId("");
                   }}
-                  className="w-full px-3 py-2 border border-slate-300 rounded-xl text-sm focus:ring-2 focus:ring-[#00A19A]/20 focus:border-[#00A19A] outline-none bg-white cursor-pointer font-semibold"
+                  className="w-full px-3 py-2.5 border border-slate-300 rounded-xl text-sm focus:ring-2 focus:ring-[#00A19A]/20 focus:border-[#00A19A] outline-none bg-white cursor-pointer font-medium text-slate-700"
                 >
                   <option value="">-- Chọn Kỳ khảo sát mới --</option>
-                  {generalPeriods.map((p) => (
+                  {(activeTab === "general" ? generalPeriods : preschoolPeriods).map((p) => (
                     <option key={p.id} value={p.id}>{p.name}</option>
                   ))}
                 </select>
@@ -4812,14 +5336,14 @@ export function StudentInfoClient({
               {/* Target Batch selection */}
               {retestPeriodId && (
                 <div>
-                  <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-1">Đợt khảo sát mới</label>
+                  <label className="block text-xs font-bold text-slate-600 uppercase tracking-wider mb-1.5">Đợt khảo sát mới</label>
                   <select
                     value={retestBatchId}
                     onChange={(e) => setRetestBatchId(e.target.value)}
-                    className="w-full px-3 py-2 border border-slate-300 rounded-xl text-sm focus:ring-2 focus:ring-[#00A19A]/20 focus:border-[#00A19A] outline-none bg-white cursor-pointer font-semibold"
+                    className="w-full px-3 py-2.5 border border-slate-300 rounded-xl text-sm focus:ring-2 focus:ring-[#00A19A]/20 focus:border-[#00A19A] outline-none bg-white cursor-pointer font-medium text-slate-700"
                   >
                     <option value="">-- Chọn Đợt khảo sát mới (Tất cả / Lẻ) --</option>
-                    {(generalPeriods.find(p => p.id === retestPeriodId)?.batches || [])
+                    {((activeTab === "general" ? generalPeriods : preschoolPeriods).find(p => p.id === retestPeriodId)?.batches || [])
                       .filter((b: any) => b.id !== retestStudent.batchId && b.status === "ACTIVE")
                       .map((b: any) => (
                         <option key={b.id} value={b.id}>{b.name}</option>
@@ -4829,12 +5353,12 @@ export function StudentInfoClient({
               )}
             </div>
 
-            <div className="p-4 flex justify-end gap-2 text-xs font-semibold">
+            <div className="p-4 bg-slate-50/50 border-t border-slate-100 flex justify-end gap-2.5 text-xs font-semibold">
               <button
                 type="button"
                 disabled={retestRegisterLoading}
                 onClick={() => setRetestStudent(null)}
-                className="px-5 py-2.5 text-slate-600 font-bold hover:bg-slate-100 rounded-xl transition-all disabled:opacity-50 cursor-pointer"
+                className="px-4 py-2 text-slate-600 font-bold hover:bg-slate-200/60 rounded-xl transition-all disabled:opacity-50 cursor-pointer"
               >
                 Hủy
               </button>
@@ -4842,10 +5366,104 @@ export function StudentInfoClient({
                 type="button"
                 disabled={retestRegisterLoading || !retestPeriodId}
                 onClick={handleRegisterRetest}
-                className="flex items-center gap-1.5 hover:bg-indigo-700 text-white text-xs font-bold shadow-none transition-all active:scale-95 cursor-pointer disabled:opacity-50 text-xs font-semibold"
+                className="flex items-center gap-1.5 px-4 py-2 bg-[#00A19A] hover:bg-[#008B85] text-white text-xs font-bold rounded-xl shadow-xs transition-all active:scale-95 cursor-pointer disabled:opacity-50"
               >
                 {retestRegisterLoading ? <Loader2 className="w-4 h-4 animate-spin"/> : <RefreshCw className="w-4 h-4"/>}
-                Xác nhận
+                <span>Xác nhận đăng ký</span>
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Dialog Form: Đăng ký Khảo sát lại hàng loạt */}
+      {isBatchRetestOpen && (
+        <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-sm flex justify-center items-center z-50 p-4 animate-in fade-in duration-200">
+          <div className="bg-white rounded-3xl w-full max-w-md overflow-hidden shadow-2xl flex flex-col animate-in zoom-in-95 duration-200">
+            <div className="p-6 flex justify-between items-center text-xs font-semibold border-b border-slate-100">
+              <div className="flex items-center gap-2.5">
+                <div className="w-9 h-9 rounded-xl bg-teal-50 border border-teal-200 flex items-center justify-center text-[#00A19A]">
+                  <RefreshCw className="w-4 h-4" />
+                </div>
+                <div>
+                  <h3 className="text-base font-black text-slate-800">Đăng ký Khảo sát lại hàng loạt</h3>
+                  <p className="text-[11px] text-slate-400 font-bold uppercase mt-0.5 tracking-wider">
+                    Đang chọn: <span className="text-[#00A19A]">{selectedIds.length} học sinh</span>
+                  </p>
+                </div>
+              </div>
+              <button
+                onClick={() => setIsBatchRetestOpen(false)}
+                className="p-2 text-slate-400 hover:text-red-500 hover:bg-red-50 rounded-xl transition-all cursor-pointer"
+              >
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+
+            <div className="p-6 space-y-4">
+              <p className="text-xs text-slate-600 leading-relaxed">
+                Hệ thống sẽ tạo đợt dự tuyển khảo sát lại cho toàn bộ <strong>{selectedIds.length}</strong> học sinh được chọn. Mã học sinh và hồ sơ cũ sẽ được liên kết lưu trữ.
+              </p>
+
+              {/* Target Period selection */}
+              <div>
+                <label className="block text-xs font-bold text-slate-600 uppercase tracking-wider mb-1.5">
+                  Kỳ khảo sát mới <span className="text-rose-500">*</span>
+                </label>
+                <select
+                  value={batchRetestPeriodId}
+                  onChange={(e) => {
+                    setBatchRetestPeriodId(e.target.value);
+                    setBatchRetestBatchId("");
+                  }}
+                  className="w-full px-3 py-2.5 border border-slate-300 rounded-xl text-sm focus:ring-2 focus:ring-[#00A19A]/20 focus:border-[#00A19A] outline-none bg-white cursor-pointer font-medium text-slate-700"
+                >
+                  <option value="">-- Chọn Kỳ khảo sát mới --</option>
+                  {(activeTab === "general" ? generalPeriods : preschoolPeriods).map((p) => (
+                    <option key={p.id} value={p.id}>{p.name}</option>
+                  ))}
+                </select>
+              </div>
+
+              {/* Target Batch selection */}
+              {batchRetestPeriodId && (
+                <div>
+                  <label className="block text-xs font-bold text-slate-600 uppercase tracking-wider mb-1.5">
+                    Đợt khảo sát mới (Tùy chọn)
+                  </label>
+                  <select
+                    value={batchRetestBatchId}
+                    onChange={(e) => setBatchRetestBatchId(e.target.value)}
+                    className="w-full px-3 py-2.5 border border-slate-300 rounded-xl text-sm focus:ring-2 focus:ring-[#00A19A]/20 focus:border-[#00A19A] outline-none bg-white cursor-pointer font-medium text-slate-700"
+                  >
+                    <option value="">-- Chọn Đợt khảo sát mới --</option>
+                    {((activeTab === "general" ? generalPeriods : preschoolPeriods).find(p => p.id === batchRetestPeriodId)?.batches || [])
+                      .filter((b: any) => b.status === "ACTIVE")
+                      .map((b: any) => (
+                        <option key={b.id} value={b.id}>{b.name}</option>
+                      ))}
+                  </select>
+                </div>
+              )}
+            </div>
+
+            <div className="p-4 bg-slate-50/50 border-t border-slate-100 flex justify-end gap-2.5 text-xs font-semibold">
+              <button
+                type="button"
+                disabled={batchRetestLoading}
+                onClick={() => setIsBatchRetestOpen(false)}
+                className="px-4 py-2 text-slate-600 font-bold hover:bg-slate-200/60 rounded-xl transition-all disabled:opacity-50 cursor-pointer"
+              >
+                Hủy
+              </button>
+              <button
+                type="button"
+                disabled={batchRetestLoading || !batchRetestPeriodId}
+                onClick={handleBatchRetestRegister}
+                className="flex items-center gap-1.5 px-4 py-2 bg-[#00A19A] hover:bg-[#008B85] text-white text-xs font-bold rounded-xl shadow-xs transition-all active:scale-95 cursor-pointer disabled:opacity-50"
+              >
+                {batchRetestLoading ? <Loader2 className="w-4 h-4 animate-spin"/> : <RefreshCw className="w-4 h-4"/>}
+                <span>Xác nhận chuyển ({selectedIds.length})</span>
               </button>
             </div>
           </div>

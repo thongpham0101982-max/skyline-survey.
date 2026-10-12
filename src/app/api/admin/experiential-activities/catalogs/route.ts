@@ -397,7 +397,9 @@ export async function PUT(req: NextRequest) {
           cthsTeacherId: primaryTeacher ? primaryTeacher.id : '',
           cthsTeacherCode: primaryTeacher ? primaryTeacher.teacherCode : '',
           cthsTeacherName: combinedNames,
-          cthsTeacherEmail: primaryTeacher ? primaryTeacher.email : ''
+          cthsTeacherEmail: primaryTeacher ? primaryTeacher.email : '',
+          cthsTeacherPhone: primaryTeacher ? (primaryTeacher.phone || '') : '',
+          cthsTeacherCampus: primaryTeacher ? (primaryTeacher.campusCode || primaryTeacher.campusName || '') : ''
         };
 
         await prisma.activityCatalog.update({

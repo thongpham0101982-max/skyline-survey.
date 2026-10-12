@@ -489,3 +489,88 @@ export const ACTIVITY_PRESETS: ActivityPreset[] = [
     thresholds: { outstanding: 85, good: 70, pass: 50 }
   }
 ];
+
+// 4 Trục chủ đề giáo dục cốt lõi (Theo Kế hoạch Tổng thể 2026-2027)
+export const CORE_THEME_AXES = [
+  {
+    id: 'DI_SAN',
+    name: 'Di sản, lịch sử và bản sắc địa phương',
+    shortName: 'Di sản & Lịch sử',
+    code: 'DI_SAN',
+    color: '#d97706',
+    badgeCls: 'bg-amber-50 text-amber-800 border-amber-300',
+    icon: 'Landmark'
+  },
+  {
+    id: 'MOI_TRUONG',
+    name: 'Thiên nhiên, môi trường và nông nghiệp xanh',
+    shortName: 'Môi trường & Sinh thái',
+    code: 'MOI_TRUONG',
+    color: '#059669',
+    badgeCls: 'bg-emerald-50 text-emerald-800 border-emerald-300',
+    icon: 'Leaf'
+  },
+  {
+    id: 'STEM',
+    name: 'Khoa học, Toán học, STEM gắn với thực tiễn',
+    shortName: 'Khoa học & STEM',
+    code: 'STEM',
+    color: '#0284c7',
+    badgeCls: 'bg-sky-50 text-sky-800 border-sky-300',
+    icon: 'Cpu'
+  },
+  {
+    id: 'NGON_NGU',
+    name: 'Ngôn ngữ và văn hóa toàn cầu',
+    shortName: 'Ngôn ngữ & Toàn cầu',
+    code: 'NGON_NGU',
+    color: '#7c3aed',
+    badgeCls: 'bg-purple-50 text-purple-800 border-purple-300',
+    icon: 'Globe'
+  }
+];
+
+// Thang đánh giá quan sát định tính Mầm non (Phụ lục 1)
+export const PRESCHOOL_EVAL_LEVELS = [
+  {
+    id: 'TOT',
+    code: 'TOT',
+    name: 'Tốt',
+    subTitle: 'Tích cực hào hứng',
+    badgeCls: 'bg-purple-50 text-purple-700 border-purple-300',
+    btnCls: 'bg-purple-600 text-white',
+    icon: '🌟'
+  },
+  {
+    id: 'DAT',
+    code: 'DAT',
+    name: 'Đạt',
+    subTitle: 'Tham gia hoàn thành',
+    badgeCls: 'bg-emerald-50 text-emerald-700 border-emerald-300',
+    btnCls: 'bg-emerald-600 text-white',
+    icon: '✅'
+  },
+  {
+    id: 'CAN_HO_TRO',
+    code: 'CAN_HO_TRO',
+    name: 'Cần hỗ trợ',
+    subTitle: 'Cần cô hỗ trợ động viên',
+    badgeCls: 'bg-amber-50 text-amber-700 border-amber-300',
+    btnCls: 'bg-amber-500 text-white',
+    icon: '🤝'
+  }
+];
+
+// Ngân hàng nhận xét nhanh Mầm non
+export const PRESCHOOL_QUICK_REMARKS = [
+  'Bé rất hào hứng tham gia mọi hoạt động, tích cực tương tác cùng cô và các bạn.',
+  'Bé biết lắng nghe hướng dẫn của cô, tuân thủ kỷ luật xếp hàng ngay ngắn.',
+  'Bé biết chia sẻ đồ chơi, dụng cụ học tập và giúp đỡ bạn khi tham gia trò chơi.',
+  'Bé quan sát tỉ mỉ, mạnh dạn đặt câu hỏi và bày tỏ cảm xúc với sự vật xung quanh.',
+  'Bé hoàn thành tốt nhiệm vụ trải nghiệm và tự giác dọn dẹp đồ dùng sau hoạt động.',
+  'Bé còn hơi rụt rè lúc đầu, sau khi được cô và các bạn động viên đã tự tin tham gia vui vẻ.',
+  'Bé khéo léo trong các thao tác vận động tinh, tạo ra sản phẩm đẹp mắt.'
+];
+
+export const SLA_EVALUATION_DAYS = 7;
+

@@ -184,7 +184,7 @@ export function getRatingBadgeProps(rating: string | ResultRating) {
     case 'CAN_HO_TRO':
     case 'KDA':
       return {
-        label: 'Còn h? tr?',
+        label: 'Cần hỗ trợ',
         containerCls: 'bg-amber-50 text-amber-700 border-amber-200 shadow-2xs font-black',
         color: '#D97706'
       };

@@ -272,6 +272,7 @@ export async function POST(req: NextRequest) {
         educationLevel: meta.educationLevel,
         grades: meta.grades || [],
         themeName: meta.themeName,
+        themeAxis: meta.themeAxis,
         integratedSubjects: meta.integratedSubjects,
         educationalContent: meta.educationalContent,
         learningOutcomes: meta.learningOutcomes,

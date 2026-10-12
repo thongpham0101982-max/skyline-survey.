@@ -3051,72 +3051,224 @@ return (
                       </div>
                     )}
 
-                    {activeTab === "projects" && (
-                      <div className="space-y-4 animate-in fade-in duration-300">
-                        <h4 className="text-sm font-black text-slate-805 uppercase tracking-wide border-b border-slate-100 pb-3">HOẠT ĐỘNG TRẢI NGHIỆM</h4>
-                        {(!selectedStudent.experientialActivities || selectedStudent.experientialActivities.length === 0) && (!selectedStudent.projects || selectedStudent.projects.length === 0) ? (
-                          <div className="text-xs text-slate-400 italic text-center py-12">Học sinh chưa tham gia hoạt động trải nghiệm nào.</div>
-                        ) : (
-                          <div className="overflow-x-auto rounded-2xl border border-slate-200 shadow-sm bg-white">
-                            <table className="w-full text-xs text-left border-collapse">
-                              <thead>
-                                <tr className="bg-slate-50 text-slate-700 font-bold border-b border-slate-200">
-                                  <th className="py-3.5 px-4 text-center w-14">STT</th>
-                                  <th className="py-3.5 px-4">Tên hoạt động</th>
-                                  <th className="py-3.5 px-4">Nhóm lĩnh vực</th>
-                                  <th className="py-3.5 px-4 text-center">Vai trò</th>
-                                  <th className="py-3.5 px-4 text-center">Mức đánh giá</th>
-                                </tr>
-                              </thead>
-                              <tbody className="divide-y divide-slate-100 font-semibold text-slate-700">
-                                {(selectedStudent.experientialActivities || []).map((act: any, idx: number) => (
-                                  <tr key={act.id || idx} className="hover:bg-slate-50/80 transition-all">
-                                    <td className="py-3.5 px-4 text-center font-bold text-slate-400">{idx + 1}</td>
-                                    <td className="py-3.5 px-4 font-extrabold text-slate-800">{act.activityName}</td>
-                                    <td className="py-3.5 px-4">
-                                      <span className="bg-slate-100 text-slate-700 px-2.5 py-1 rounded-lg text-[10px] font-bold border border-slate-200">
-                                        {act.groupName}
-                                      </span>
-                                    </td>
-                                    <td className="py-3.5 px-4 text-center">
-                                      <span className="bg-[#00A19A]/10 text-[#00A19A] border border-[#00A19A]/20 px-2.5 py-1 rounded-lg text-[10px] font-black uppercase">
-                                        {act.role}
-                                      </span>
-                                    </td>
-                                    <td className="py-3.5 px-4 text-center">
-                                      <span className="bg-emerald-50 text-emerald-700 border border-emerald-200 px-2.5 py-1 rounded-lg text-[10px] font-black uppercase">
-                                        {act.evalLevel}
-                                      </span>
-                                    </td>
-                                  </tr>
-                                ))}
-                                {(selectedStudent.projects || []).map((p: any, idx: number) => (
-                                  <tr key={p.id || idx} className="hover:bg-slate-50/80 transition-all">
-                                    <td className="py-3.5 px-4 text-center font-bold text-slate-400">{(selectedStudent.experientialActivities?.length || 0) + idx + 1}</td>
-                                    <td className="py-3.5 px-4 font-extrabold text-slate-800">{p.projectName}</td>
-                                    <td className="py-3.5 px-4">
-                                      <span className="bg-slate-100 text-slate-700 px-2.5 py-1 rounded-lg text-[10px] font-bold border border-slate-200">
-                                        Dự án học tập
-                                      </span>
-                                    </td>
-                                    <td className="py-3.5 px-4 text-center">
-                                      <span className="bg-[#00A19A]/10 text-[#00A19A] border border-[#00A19A]/20 px-2.5 py-1 rounded-lg text-[10px] font-black uppercase">
-                                        {p.role || "Thành viên"}
-                                      </span>
-                                    </td>
-                                    <td className="py-3.5 px-4 text-center">
-                                      <span className="bg-emerald-50 text-emerald-700 border border-emerald-200 px-2.5 py-1 rounded-lg text-[10px] font-black uppercase">
-                                        {p.result || "Đạt"}
-                                      </span>
-                                    </td>
-                                  </tr>
-                                ))}
-                              </tbody>
-                            </table>
+                    {activeTab === "projects" && (() => {
+  const acts = selectedStudent.experientialActivities || [];
+  const projs = selectedStudent.projects || [];
+  const diSanCount = acts.filter((a: any) => a.themeAxis === "DI_SAN").length;
+  const moiTruongCount = acts.filter((a: any) => a.themeAxis === "MOI_TRUONG").length;
+  const stemCount = acts.filter((a: any) => a.themeAxis === "STEM").length;
+  const ngonNguCount = acts.filter((a: any) => a.themeAxis === "NGON_NGU").length;
+
+  return (
+    <div className="space-y-6 animate-in fade-in duration-300">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between pb-3 border-b border-slate-100 gap-2">
+        <div>
+          <h4 className="text-sm font-black text-[#003B3A] uppercase tracking-wide flex items-center gap-2">
+            <BookOpen className="w-4 h-4 text-[#00A19A]" />
+            Hoạt động giáo dục ngoại khóa &amp; Tích hợp liên môn
+          </h4>
+          <p className="text-[11px] text-slate-500 font-medium mt-0.5">
+            Theo Kế hoạch Tổng thể &amp; 7 Phụ lục Năm học 2026–2027 • Hồ sơ trải nghiệm học sinh
+          </p>
+        </div>
+        <div className="flex items-center gap-2">
+          <span className="bg-[#003B3A]/10 text-[#003B3A] border border-[#003B3A]/20 px-3 py-1 rounded-full text-[11px] font-black">
+            {acts.length} hoạt động ghi nhận
+          </span>
+        </div>
+      </div>
+
+      {/* 4 Core Theme Axes Summary */}
+      <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+        <div className="bg-amber-50/70 border border-amber-200/80 rounded-2xl p-3.5 flex items-center gap-3">
+          <div className="w-10 h-10 rounded-xl bg-amber-500/15 text-amber-700 flex items-center justify-center font-black text-lg">
+            🏛️
+          </div>
+          <div>
+            <div className="text-[10px] font-black text-amber-800 uppercase tracking-wider">Di sản &amp; Lịch sử</div>
+            <div className="text-lg font-black text-slate-900">{diSanCount} <span className="text-[10px] font-semibold text-slate-500">hoạt động</span></div>
+          </div>
+        </div>
+
+        <div className="bg-emerald-50/70 border border-emerald-200/80 rounded-2xl p-3.5 flex items-center gap-3">
+          <div className="w-10 h-10 rounded-xl bg-emerald-500/15 text-emerald-700 flex items-center justify-center font-black text-lg">
+            🌿
+          </div>
+          <div>
+            <div className="text-[10px] font-black text-emerald-800 uppercase tracking-wider">Môi trường &amp; Sinh thái</div>
+            <div className="text-lg font-black text-slate-900">{moiTruongCount} <span className="text-[10px] font-semibold text-slate-500">hoạt động</span></div>
+          </div>
+        </div>
+
+        <div className="bg-blue-50/70 border border-blue-200/80 rounded-2xl p-3.5 flex items-center gap-3">
+          <div className="w-10 h-10 rounded-xl bg-blue-500/15 text-blue-700 flex items-center justify-center font-black text-lg">
+            🔬
+          </div>
+          <div>
+            <div className="text-[10px] font-black text-blue-800 uppercase tracking-wider">Khoa học &amp; STEM</div>
+            <div className="text-lg font-black text-slate-900">{stemCount} <span className="text-[10px] font-semibold text-slate-500">hoạt động</span></div>
+          </div>
+        </div>
+
+        <div className="bg-violet-50/70 border border-violet-200/80 rounded-2xl p-3.5 flex items-center gap-3">
+          <div className="w-10 h-10 rounded-xl bg-violet-500/15 text-violet-700 flex items-center justify-center font-black text-lg">
+            🌐
+          </div>
+          <div>
+            <div className="text-[10px] font-black text-violet-800 uppercase tracking-wider">Ngôn ngữ &amp; Hội nhập</div>
+            <div className="text-lg font-black text-slate-900">{ngonNguCount} <span className="text-[10px] font-semibold text-slate-500">hoạt động</span></div>
+          </div>
+        </div>
+      </div>
+
+      {/* Main Table */}
+      {acts.length === 0 && projs.length === 0 ? (
+        <div className="text-xs text-slate-400 italic text-center py-12 border border-dashed border-slate-200 rounded-2xl bg-slate-50/50">
+          Học sinh chưa tham gia hoạt động ngoại khóa hoặc dự án trải nghiệm nào trong năm học.
+        </div>
+      ) : (
+        <div className="overflow-x-auto rounded-2xl border border-slate-200 shadow-xs bg-white">
+          <table className="w-full text-xs text-left border-collapse">
+            <thead>
+              <tr className="bg-slate-50 text-slate-700 font-bold border-b border-slate-200 text-[11px] uppercase tracking-wider">
+                <th className="py-3 px-3 text-center w-12">STT</th>
+                <th className="py-3 px-4 min-w-[200px]">Hoạt động &amp; Thời gian</th>
+                <th className="py-3 px-3 min-w-[150px]">Trục chủ đề cốt lõi</th>
+                <th className="py-3 px-3 min-w-[180px]">Môn chủ trì &amp; Tích hợp / Sản phẩm</th>
+                <th className="py-3 px-3 text-center min-w-[100px]">Vai trò</th>
+                <th className="py-3 px-3 text-center min-w-[120px]">Kết quả đánh giá</th>
+                <th className="py-3 px-4 min-w-[220px]">Nhận xét của giáo viên</th>
+              </tr>
+            </thead>
+            <tbody className="divide-y divide-slate-100 font-medium text-slate-700">
+              {acts.map((act: any, idx: number) => {
+                const axisBadge = (() => {
+                  switch (act.themeAxis) {
+                    case "DI_SAN":
+                      return <span className="inline-flex items-center gap-1 bg-amber-50 text-amber-800 border border-amber-200 px-2 py-0.5 rounded-lg text-[10px] font-extrabold">🏛️ Di sản &amp; Lịch sử</span>;
+                    case "MOI_TRUONG":
+                      return <span className="inline-flex items-center gap-1 bg-emerald-50 text-emerald-800 border border-emerald-200 px-2 py-0.5 rounded-lg text-[10px] font-extrabold">🌿 Môi trường &amp; Sinh thái</span>;
+                    case "STEM":
+                      return <span className="inline-flex items-center gap-1 bg-blue-50 text-blue-800 border border-blue-200 px-2 py-0.5 rounded-lg text-[10px] font-extrabold">🔬 Khoa học &amp; STEM</span>;
+                    case "NGON_NGU":
+                      return <span className="inline-flex items-center gap-1 bg-violet-50 text-violet-800 border border-violet-200 px-2 py-0.5 rounded-lg text-[10px] font-extrabold">🌐 Ngôn ngữ &amp; Hội nhập</span>;
+                    default:
+                      return <span className="inline-flex items-center gap-1 bg-slate-100 text-slate-700 border border-slate-200 px-2 py-0.5 rounded-lg text-[10px] font-bold">{act.themeAxisName || act.groupName || "Trải nghiệm"}</span>;
+                  }
+                })();
+
+                const evalBadge = (() => {
+                  const ev = (act.evalLevel || "").toLowerCase();
+                  if (ev.includes("tốt") || ev.includes("xuất sắc") || ev.includes("nổi bật") || ev.includes("tot")) {
+                    return <span className="inline-block bg-emerald-50 text-emerald-700 border border-emerald-200 px-2.5 py-0.5 rounded-full text-[10px] font-black uppercase">{act.evalLevel}</span>;
+                  }
+                  if (ev.includes("đạt") || ev.includes("dat")) {
+                    return <span className="inline-block bg-blue-50 text-blue-700 border border-blue-200 px-2.5 py-0.5 rounded-full text-[10px] font-black uppercase">{act.evalLevel}</span>;
+                  }
+                  if (ev.includes("hỗ trợ") || ev.includes("chưa đạt")) {
+                    return <span className="inline-block bg-amber-50 text-amber-700 border border-amber-200 px-2.5 py-0.5 rounded-full text-[10px] font-black uppercase">{act.evalLevel}</span>;
+                  }
+                  return <span className="inline-block bg-slate-100 text-slate-700 border border-slate-200 px-2.5 py-0.5 rounded-full text-[10px] font-black uppercase">{act.evalLevel || "Tham gia"}</span>;
+                })();
+
+                return (
+                  <tr key={act.id || idx} className="hover:bg-slate-50/80 transition-colors">
+                    <td className="py-3.5 px-3 text-center text-slate-400 font-bold">{idx + 1}</td>
+                    <td className="py-3.5 px-4">
+                      <div className="font-extrabold text-[#003B3A] text-xs leading-snug">{act.activityName}</div>
+                      {act.date && (
+                        <div className="flex items-center gap-1 text-[10px] text-slate-500 font-semibold mt-1">
+                          <Calendar className="w-3 h-3 text-slate-400" />
+                          <span>{act.date}</span>
+                        </div>
+                      )}
+                    </td>
+                    <td className="py-3.5 px-3">{axisBadge}</td>
+                    <td className="py-3.5 px-3">
+                      <div className="space-y-1">
+                        {act.primarySubject && (
+                          <div className="text-[11px] font-bold text-slate-800">
+                            Môn: <span className="text-[#00A19A]">{act.primarySubject}</span>
+                            {act.integratedSubjects && <span className="text-slate-500 font-medium"> + {act.integratedSubjects}</span>}
                           </div>
                         )}
+                        {act.deliverables ? (
+                          <div className="text-[10px] text-slate-500 font-medium line-clamp-2">
+                            📦 {act.deliverables}
+                          </div>
+                        ) : (
+                          <div className="text-[10px] text-slate-400 italic">Theo kế hoạch</div>
+                        )}
                       </div>
-                    )}
+                    </td>
+                    <td className="py-3.5 px-3 text-center">
+                      <span className="inline-block bg-[#00A19A]/10 text-[#003B3A] border border-[#00A19A]/20 px-2.5 py-1 rounded-lg text-[10px] font-black uppercase">
+                        {act.role || "Thành viên"}
+                      </span>
+                    </td>
+                    <td className="py-3.5 px-3 text-center">
+                      <div className="flex flex-col items-center gap-1">
+                        {evalBadge}
+                        {act.score !== undefined && act.score !== null && (
+                          <span className="text-[10px] font-bold text-slate-500">({act.score}%)</span>
+                        )}
+                      </div>
+                    </td>
+                    <td className="py-3.5 px-4">
+                      {act.remarks ? (
+                        <div className="text-[11px] text-slate-600 font-normal italic bg-slate-50 border border-slate-150 p-2 rounded-xl">
+                          &ldquo;{act.remarks}&rdquo;
+                        </div>
+                      ) : (
+                        <span className="text-slate-400 italic text-[11px]">Chưa có nhận xét riêng</span>
+                      )}
+                    </td>
+                  </tr>
+                );
+              })}
+
+              {/* Projects (Dự án học tập) */}
+              {projs.map((p: any, idx: number) => (
+                <tr key={p.id || `proj-${idx}`} className="hover:bg-slate-50/80 transition-colors bg-sky-50/20">
+                  <td className="py-3.5 px-3 text-center text-slate-400 font-bold">{acts.length + idx + 1}</td>
+                  <td className="py-3.5 px-4">
+                    <div className="font-extrabold text-sky-950 text-xs">{p.projectName || p.name}</div>
+                    <div className="text-[10px] text-sky-700 font-semibold mt-0.5">Dự án học tập liên môn</div>
+                  </td>
+                  <td className="py-3.5 px-3">
+                    <span className="inline-block bg-sky-50 text-sky-800 border border-sky-200 px-2 py-0.5 rounded-lg text-[10px] font-extrabold">
+                      📚 Dự án môn học
+                    </span>
+                  </td>
+                  <td className="py-3.5 px-3">
+                    <div className="text-[11px] text-slate-700 font-medium">
+                      {p.subjectName || p.field || "Học phần trải nghiệm"}
+                    </div>
+                  </td>
+                  <td className="py-3.5 px-3 text-center">
+                    <span className="inline-block bg-[#00A19A]/10 text-[#00A19A] border border-[#00A19A]/20 px-2.5 py-1 rounded-lg text-[10px] font-black uppercase">
+                      {p.role || "Thành viên"}
+                    </span>
+                  </td>
+                  <td className="py-3.5 px-3 text-center">
+                    <span className="inline-block bg-emerald-50 text-emerald-700 border border-emerald-200 px-2.5 py-0.5 rounded-full text-[10px] font-black uppercase">
+                      {p.result || "Đạt"}
+                    </span>
+                  </td>
+                  <td className="py-3.5 px-4">
+                    <div className="text-[11px] text-slate-600 italic">
+                      {p.notes || p.description || "—"}
+                    </div>
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      )}
+    </div>
+  );
+})()}
 
                     {activeTab === "comments" && (
                       <div className="space-y-6 animate-in fade-in duration-300">
