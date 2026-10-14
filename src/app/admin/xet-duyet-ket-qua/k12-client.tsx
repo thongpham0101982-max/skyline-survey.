@@ -11,7 +11,7 @@ import {
   Tag, FolderOpen, Hash, MoreVertical, PenLine, CheckCircle2,
   Filter, ClipboardCheck, ArrowRight, UserPlus, Info,
   FileSpreadsheet, Pencil, Mail, FileText,
-  Phone, Printer, Lock, Zap, CheckSquare, Square
+  Phone, Printer, Lock, Zap, CheckSquare, Square, Eye
 } from "lucide-react"
 import * as XLSX from "xlsx"
 import { ResponsiveContainer, ComposedChart, Bar, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend } from "recharts"
@@ -1230,6 +1230,10 @@ export function XetDuyetK12Client({ academicYears = [], campuses = [], examBoard
           setSPeriodId(activeBatch.periodId);
           setSBatchId(activeBatch.id);
           setLatestBatchInfo(activeBatch);
+          if (!hasInitializedReportPeriodRef.current) {
+            hasInitializedReportPeriodRef.current = true;
+            setReportPeriodId(activeBatch.periodId);
+          }
         }
       }
     }
@@ -1241,7 +1245,7 @@ export function XetDuyetK12Client({ academicYears = [], campuses = [], examBoard
   const [sSelected, setSSelected] = useState<string[]>([])
 
   // ───────── REPORTS STATE ─────────
-  const [reportPeriodId, setReportPeriodId] = useState("all");
+  const [reportPeriodId, setReportPeriodId] = useState("");
   const [reportBatchId, setReportBatchId] = useState("all");
   const [reportStudentId, setReportStudentId] = useState("");
   const [reportsSubTab, setReportsSubTab] = useState("results"); // Mặc định mở tab Xét duyệt KQ (Workflow-first)
@@ -1345,7 +1349,7 @@ export function XetDuyetK12Client({ academicYears = [], campuses = [], examBoard
 
   // Tự động chuyển Đợt về 'all' nếu đợt hiện tại không thuộc Cơ sở mới chọn (tránh lỗi 0 học sinh)
   useEffect(() => {
-    if (reportBatchId !== "all") {
+    if (reportBatchId !== "all" && reportBatchId !== "none") {
       const isBatchValid = reportBatches.some(b => b.id === reportBatchId);
       if (!isBatchValid) {
         setReportBatchId("all");
@@ -2358,7 +2362,7 @@ export function XetDuyetK12Client({ academicYears = [], campuses = [], examBoard
     const targetStudents = reportStudents.filter(s => 
       (reportBatchId === "all" || s.batchId === reportBatchId)
     );
-    const activeBatchName = reportBatchId === "all" ? "Tất cả các đợt" : reportBatches.find(b => b.id === reportBatchId)?.name || "Đợt khảo sát";
+    const activeBatchName = reportBatchId === "all" ? "Tất cả các đợt" : reportBatchId === "none" ? "Khảo sát lẻ (không thuộc đợt)" : reportBatches.find(b => b.id === reportBatchId)?.name || "Đợt khảo sát";
     const activePeriodName = reportSelPeriod?.name || "Kỳ khảo sát";
     
     // Default checked recipient configurations (Giáo vụ, Tư vấn, GĐCS CS1, CS2, CS3, CS4 and CC)
@@ -2527,7 +2531,7 @@ export function XetDuyetK12Client({ academicYears = [], campuses = [], examBoard
     setEmailSendingStatus("Đang khởi tạo...");
     setEmailResult(null);
     try {
-      const activeBatchName = reportBatchId === "all" ? "Tất cả các đợt" : reportBatches.find(b => b.id === reportBatchId)?.name || "Đợt khảo sát";
+      const activeBatchName = reportBatchId === "all" ? "Tất cả các đợt" : reportBatchId === "none" ? "Khảo sát lẻ (không thuộc đợt)" : reportBatches.find(b => b.id === reportBatchId)?.name || "Đợt khảo sát";
       const activePeriodName = reportSelPeriod?.name || "Kỳ khảo sát";
 
       const pdfAttachmentsList: any[] = [];
@@ -2791,11 +2795,11 @@ export function XetDuyetK12Client({ academicYears = [], campuses = [], examBoard
     );
   };
 
-  // Helper hiển thị tóm tắt điểm thi Toán, Văn, Anh trên hàng
+  // Helper hiển thị tóm tắt điểm thi các môn trên hàng danh sách
   const renderStudentScoresCell = (student: any) => {
     if (student.isAbsent) {
       return (
-        <span className="inline-flex items-center px-2 py-0.5 rounded text-[10px] font-bold bg-amber-50 text-amber-700 border border-amber-200">
+        <span className="inline-flex items-center px-2 py-0.5 rounded text-[10px] font-bold bg-rose-50 text-rose-700 border border-rose-200">
           Vắng thi
         </span>
       );
@@ -2805,56 +2809,134 @@ export function XetDuyetK12Client({ academicYears = [], campuses = [], examBoard
       return <span className="text-slate-400 text-[11px] italic">Chưa có điểm</span>;
     }
 
-    const findScore = (matchFn: (name: string, code: string) => boolean) => {
-      const sc = scores.find((item: any) => {
-        const name = (item.subject?.name || item.subjectName || "").toLowerCase();
-        const code = (item.subject?.code || "").toLowerCase();
-        return matchFn(name, code);
-      });
-      if (!sc) return null;
-      let val = sc.score;
-      if (val === null || val === undefined) val = sc.evaluation || "—";
-      return { val, num: parseFloat(val) };
-    };
+    const items: { label: string; shortLabel: string; val: string; num: number; badgeClass: string }[] = [];
 
-    const math = findScore((n, c) => n.includes("toán") || c.includes("math"));
-    const lit = findScore((n, c) => n.includes("việt") || n.includes("văn") || c.includes("lit"));
-    const eng = findScore((n, c) => n.includes("anh") || c.includes("eng") || c.includes("esl"));
+    for (const sc of scores) {
+      const sub = sc.subject || {};
+      const code = (sub.code || sc.subjectCode || "").toLowerCase();
+      const name = (sub.name || sc.subjectName || "").toLowerCase();
 
-    const badgeCls = (num: number) => {
-      if (!isNaN(num)) {
-        if (num >= 7 || num >= 70) return "bg-emerald-50 text-emerald-700 border-emerald-200";
-        if (num >= 5 || num >= 50) return "bg-amber-50 text-amber-700 border-amber-200";
-        return "bg-rose-50 text-rose-700 border-rose-200";
+      let val: string | null = null;
+      let shortLabel = "";
+      let num = NaN;
+
+      try {
+        let rawArr: any[] = [];
+        if (sc.scores) {
+          const parsed = typeof sc.scores === "string" ? JSON.parse(sc.scores) : sc.scores;
+          rawArr = Array.isArray(parsed) ? parsed : [parsed];
+        }
+
+        if (code.includes("tly") || name.includes("tâm lý")) {
+          shortLabel = "TL";
+          const total = rawArr[6] !== undefined && rawArr[6] !== "" && rawArr[6] !== null ? rawArr[6] : rawArr[20];
+          if (total !== undefined && total !== "" && total !== null) {
+            val = `${total}đ`;
+            num = parseFloat(total);
+          } else {
+            const nonZero = rawArr.find((x: any) => x !== "0" && x !== 0 && x !== "" && x !== null);
+            if (nonZero !== undefined) {
+              val = `${nonZero}đ`;
+              num = parseFloat(nonZero);
+            }
+          }
+        } else if (code.includes("tci") || code.includes("cpt") || name.includes("chuẩn") || name.includes("phát triển")) {
+          shortLabel = "CPT";
+          const passedCount = rawArr.filter((x: any) => String(x) === "3" || String(x).toLowerCase().includes("đạt")).length;
+          if (rawArr.length > 0) {
+            val = `${passedCount}/${rawArr.length} Đạt`;
+            num = (passedCount / rawArr.length) * 10;
+          }
+        } else if (code.includes("nltd") || name.includes("năng lực tư duy")) {
+          shortLabel = "NLTD";
+          const pctVal = rawArr.length >= 5 ? rawArr[4] : rawArr[0];
+          if (pctVal !== undefined && pctVal !== "" && pctVal !== null) {
+            val = `${pctVal}%`;
+            num = parseFloat(pctVal) / 10;
+          }
+        } else if (code.includes("tavd") || (name.includes("tiếng anh") && name.includes("vấn đáp"))) {
+          shortLabel = "A(vđ)";
+          const v = rawArr.find((x: any) => x !== undefined && x !== "" && x !== null);
+          if (v !== undefined) {
+            val = `${v}đ`;
+            num = parseFloat(v);
+          }
+        } else if (code.includes("math") || name.includes("toán")) {
+          shortLabel = "T";
+          const v = rawArr.find((x: any) => x !== undefined && x !== "" && x !== null);
+          if (v !== undefined) {
+            val = String(v);
+            num = parseFloat(v);
+          }
+        } else if (code.includes("lit") || name.includes("văn") || name.includes("tiếng việt")) {
+          shortLabel = "V";
+          const v = rawArr.find((x: any) => x !== undefined && x !== "" && x !== null);
+          if (v !== undefined) {
+            val = String(v);
+            num = parseFloat(v);
+          }
+        } else if (code.includes("eng") || code.includes("esl") || name.includes("tiếng anh") || name.includes("anh")) {
+          shortLabel = "A";
+          const v = rawArr.find((x: any) => x !== undefined && x !== "" && x !== null);
+          if (v !== undefined) {
+            val = String(v);
+            num = parseFloat(v);
+          }
+        } else {
+          shortLabel = (sub.code || name.slice(0, 3)).toUpperCase();
+          const v = rawArr.find((x: any) => x !== undefined && x !== "" && x !== null);
+          if (v !== undefined) {
+            val = String(v);
+            num = parseFloat(v);
+          }
+        }
+      } catch (e) {
+        if (sc.score !== undefined && sc.score !== null) {
+          val = String(sc.score);
+          num = parseFloat(sc.score);
+        }
       }
-      return "bg-slate-50 text-slate-700 border-slate-200";
-    };
+
+      if (val && val !== "—") {
+        let badgeClass = "bg-slate-50 text-slate-700 border-slate-200";
+        if (!isNaN(num)) {
+          if (num >= 7 || num >= 70) badgeClass = "bg-emerald-50 text-emerald-700 border-emerald-200";
+          else if (num >= 5 || num >= 50) badgeClass = "bg-amber-50 text-amber-700 border-amber-200";
+          else badgeClass = "bg-rose-50 text-rose-700 border-rose-200";
+        } else if (val.includes("Đạt")) {
+          badgeClass = "bg-teal-50 text-teal-700 border-teal-200";
+        }
+        items.push({
+          label: sub.name || sc.subjectName || "Môn",
+          shortLabel: shortLabel || (sub.code || name.slice(0, 2)).toUpperCase(),
+          val,
+          num,
+          badgeClass
+        });
+      }
+    }
+
+    if (items.length === 0) {
+      return <span className="text-slate-400 text-[11px] italic">Chưa có điểm</span>;
+    }
 
     return (
-      <div className="flex items-center gap-1.5 flex-wrap">
-        {math && (
-          <span className={`inline-flex items-center gap-0.5 px-1.5 py-0.5 rounded text-[10px] font-bold border ${badgeCls(math.num)}`} title="Toán">
-            <span className="text-slate-400 font-normal">T:</span>{math.val}
+      <div className="flex items-center gap-1.5 flex-wrap max-w-[280px]">
+        {items.map((it, idx) => (
+          <span
+            key={idx}
+            className={`inline-flex items-center gap-0.5 px-2 py-0.5 rounded-md text-[10px] font-bold border ${it.badgeClass}`}
+            title={`${it.label}: ${it.val}`}
+          >
+            <span className="text-slate-400 font-normal">${it.shortLabel}:</span>
+            <span>${it.val}</span>
           </span>
-        )}
-        {lit && (
-          <span className={`inline-flex items-center gap-0.5 px-1.5 py-0.5 rounded text-[10px] font-bold border ${badgeCls(lit.num)}`} title="Tiếng Việt / Ngữ Văn">
-            <span className="text-slate-400 font-normal">V:</span>{lit.val}
-          </span>
-        )}
-        {eng && (
-          <span className={`inline-flex items-center gap-0.5 px-1.5 py-0.5 rounded text-[10px] font-bold border ${badgeCls(eng.num)}`} title="Tiếng Anh">
-            <span className="text-slate-400 font-normal">A:</span>{eng.val}
-          </span>
-        )}
-        {!math && !lit && !eng && scores.length > 0 && (
-          <span className="text-[11px] text-slate-600 font-semibold">{scores.length} môn</span>
-        )}
+        ))}
       </div>
     );
   };
 
-  const handleSaveReportResult = async () => {
+    const handleSaveReportResult = async () => {
     if (!selectedReportStudent) return;
     if (!reportForm.admissionResult) {
       return notify("Vui lòng chọn Kết quả Xét tuyển", "err");
@@ -3235,12 +3317,21 @@ export function XetDuyetK12Client({ academicYears = [], campuses = [], examBoard
     }
   }, [selectedReportStudent?.studentCode]);
 
-  // Set default reportPeriodId when periods are loaded
+  // Set default reportPeriodId when periods are loaded: Tự động chọn Kỳ "Khảo sát lẻ" hoặc kỳ đợt mới nhất
+  const hasInitializedReportPeriodRef = useRef(false);
   useEffect(() => {
-    if (visiblePeriods.length > 0 && !reportPeriodId) {
-      setReportPeriodId("all");
+    if (visiblePeriods.length > 0 && !hasInitializedReportPeriodRef.current) {
+      hasInitializedReportPeriodRef.current = true;
+      const kslPeriod = visiblePeriods.find(p => p.name?.toLowerCase().includes("khảo sát lẻ"))
+        || (latestBatchInfo?.periodId ? visiblePeriods.find(p => p.id === latestBatchInfo.periodId) : null)
+        || visiblePeriods[0];
+      if (kslPeriod) {
+        setReportPeriodId(kslPeriod.id);
+      } else {
+        setReportPeriodId("all");
+      }
     }
-  }, [visiblePeriods, reportPeriodId]);
+  }, [visiblePeriods, latestBatchInfo]);
 
   // Handle URL query parameters for printing Congratulatory or Commitment letters directly
   useEffect(() => {
@@ -3290,7 +3381,9 @@ export function XetDuyetK12Client({ academicYears = [], campuses = [], examBoard
 
       // 2. Matches Batch (Đợt khảo sát độc lập)
       if (reportBatchId && reportBatchId !== "all") {
-        if (s.batchId !== reportBatchId) {
+        if (reportBatchId === "none") {
+          if (s.batchId) return false;
+        } else if (s.batchId !== reportBatchId) {
           return false;
         }
       }
@@ -6819,6 +6912,14 @@ const [customCommitmentSubjects, setCustomCommitmentSubjects] = useState<string[
                   className="w-full bg-white border border-slate-200 rounded-2xl pl-4 pr-9 py-3 outline-none focus:border-indigo-500 focus:ring-4 focus:ring-indigo-500/10 appearance-none font-semibold text-xs text-slate-700 shadow-sm transition-all group-hover:shadow-md cursor-pointer"
                 >
                   <option value="all">Tất cả các đợt</option>
+                  {(() => {
+                    const noBatchCount = (reportStudents || []).filter(s => !s.batchId).length;
+                    const pendingNoBatch = (reportStudents || []).filter(s => !s.batchId && !s.admissionResult && !s.isAbsent).length;
+                    const suffixNoBatch = noBatchCount > 0 ? ` (${noBatchCount} HS${pendingNoBatch > 0 ? ` - ${pendingNoBatch} chờ duyệt` : ''})` : '';
+                    return (
+                      <option value="none">Khảo sát lẻ (không thuộc đợt)${suffixNoBatch}</option>
+                    );
+                  })()}
                   {reportBatches.map(b => {
                     const countInBatch = (reportStudents || []).filter(s => s.batchId === b.id).length;
                     const pendingInBatch = (reportStudents || []).filter(s => s.batchId === b.id && !s.admissionResult && !s.isAbsent).length;
@@ -7694,7 +7795,7 @@ const [customCommitmentSubjects, setCustomCommitmentSubjects] = useState<string[
                         <th className="p-2.5 text-[10px] font-black text-slate-600 uppercase tracking-wider border border-slate-300">Họ và tên</th>
                         <th className="p-2.5 text-[10px] font-black text-slate-600 uppercase tracking-wider text-center border border-slate-300">Khối</th>
                         <th className="p-2.5 text-[10px] font-black text-slate-600 uppercase tracking-wider border border-slate-300">Hệ / Diện khảo sát</th>
-                        <th className="p-2.5 text-[10px] font-black text-teal-800 uppercase tracking-wider border border-slate-300">Điểm KS (Toán, Văn, Anh)</th>
+                        <th className="p-2.5 text-[10px] font-black text-teal-800 uppercase tracking-wider border border-slate-300">Điểm KS các môn</th>
                         <th className="p-2.5 text-[10px] font-black text-slate-600 uppercase tracking-wider text-center border border-slate-300">Trạng thái</th>
                         <th className="p-2.5 text-[10px] font-black text-teal-800 uppercase tracking-wider text-center border border-slate-300">Duyệt nhanh</th>
                         <th className="p-2.5 text-[10px] font-black text-slate-600 uppercase tracking-wider text-center border border-slate-300">Thao tác</th>
@@ -7725,7 +7826,15 @@ const [customCommitmentSubjects, setCustomCommitmentSubjects] = useState<string[
 
                             {/* Họ và tên & Ngày sinh */}
                             <td className="p-2.5 border border-slate-300 text-xs">
-                              <div className="font-black text-slate-800">{s.fullName}</div>
+                              <button
+                                type="button"
+                                onClick={() => setReportStudentId(s.id)}
+                                className="font-black text-slate-800 hover:text-teal-700 transition-colors cursor-pointer text-left flex items-center gap-1.5 group"
+                                title="Xem chi tiết kết quả & xét duyệt"
+                              >
+                                <span>{s.fullName}</span>
+                                <Eye className="w-3.5 h-3.5 text-slate-300 group-hover:text-teal-600 transition-colors" />
+                              </button>
                               <div className="text-[10px] text-slate-400 font-medium">
                                 {s.dateOfBirth ? new Date(s.dateOfBirth).toLocaleDateString("vi-VN") : "—"} • {s.gender === "M" || s.gender === "Nam" ? "Nam" : s.gender === "F" || s.gender === "Nữ" ? "Nữ" : s.gender || "—"}
                               </div>
@@ -7742,6 +7851,13 @@ const [customCommitmentSubjects, setCustomCommitmentSubjects] = useState<string[
                               <div className="text-[10px] text-slate-500 max-w-[170px] truncate" title={s.admissionCriteria}>
                                 {s.admissionCriteria || "—"}
                               </div>
+                              {!s.batchId && (
+                                <div className="mt-0.5">
+                                  <span className="inline-flex items-center px-1.5 py-0.5 rounded text-[9px] font-bold bg-amber-50 text-amber-800 border border-amber-200">
+                                    Khảo sát lẻ (Không thuộc đợt)
+                                  </span>
+                                </div>
+                              )}
                             </td>
 
                             {/* Điểm KS (Toán, Văn, Anh) */}

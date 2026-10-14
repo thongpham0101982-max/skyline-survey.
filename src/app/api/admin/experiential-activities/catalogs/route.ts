@@ -4,6 +4,7 @@ import { auth } from '@/lib/auth';
 import { hasModulePermission } from '@/lib/permissions';
 import { ActivityCatalogMeta } from '@/lib/experiential/catalog-types';
 import { normalizeActivityName } from '@/lib/experiential/name-normalizer';
+import { formatTimeFrameAndSemester } from '@/lib/experiential/timeframe-helper';
 
 export const dynamic = 'force-dynamic';
 
@@ -90,6 +91,13 @@ export async function GET(req: NextRequest) {
       // Ensure level is set
       if (c.level) {
         meta.educationLevel = c.level as any;
+      }
+
+      // Chuẩn hóa định dạng thời gian Tháng MM/YYYY và mốc Học kỳ tự động
+      if (meta.timeFrame) {
+        const tf = formatTimeFrameAndSemester(meta.timeFrame, meta.semester);
+        meta.timeFrame = tf.timeFrame;
+        meta.semester = tf.semester;
       }
 
       // Tự động phân loại: Hoạt động sự kiện vs Trải nghiệm ngoại khóa / Dự án
@@ -191,12 +199,35 @@ export async function GET(req: NextRequest) {
         item.name.toLowerCase().includes(q) ||
         item.code.toLowerCase().includes(q) ||
         (item.meta.themeName && item.meta.themeName.toLowerCase().includes(q)) ||
+        (item.meta.educationalContent && item.meta.educationalContent.toLowerCase().includes(q)) ||
+        (item.meta.learningOutcomes && item.meta.learningOutcomes.toLowerCase().includes(q)) ||
+        (item.meta.deliverables && item.meta.deliverables.toLowerCase().includes(q)) ||
         (item.meta.primarySubjectName && item.meta.primarySubjectName.toLowerCase().includes(q)) ||
         (item.meta.integratedSubjects && item.meta.integratedSubjects.toLowerCase().includes(q)) ||
         (item.meta.expectedLocation && item.meta.expectedLocation.toLowerCase().includes(q)) ||
+        (item.meta.subjectTeacherName && item.meta.subjectTeacherName.toLowerCase().includes(q)) ||
         (item.meta.cthsTeacherName && item.meta.cthsTeacherName.toLowerCase().includes(q))
       );
     }
+
+    // Sắp xếp mặc định theo Thời gian & HK giảm dần (năm mới nhất & tháng sau cùng trước)
+    const getTimeSortScore = (item: any) => {
+      const meta = item?.meta || {};
+      const timeInfo = formatTimeFrameAndSemester(meta.timeFrame, meta.academicYearId || '2026-2027', meta.semester);
+      const yr = timeInfo.year || 2026;
+      const mo = timeInfo.month !== null ? timeInfo.month : (timeInfo.semester === 2 ? 6 : 9);
+      const sem = timeInfo.semester || 1;
+      return yr * 1000 + mo * 10 + sem;
+    };
+
+    filtered.sort((a, b) => {
+      const scoreA = getTimeSortScore(a);
+      const scoreB = getTimeSortScore(b);
+      if (scoreA !== scoreB) {
+        return scoreB - scoreA; // Giảm dần
+      }
+      return (a.code || '').localeCompare(b.code || '');
+    });
 
     return NextResponse.json(filtered);
   } catch (error: any) {
@@ -252,6 +283,13 @@ export async function POST(req: NextRequest) {
 
     // Chuẩn hóa tên hoạt động theo Sentence Case
     const normalizedName = normalizeActivityName(name);
+
+    // Chuẩn hóa thời gian Tháng MM/YYYY và mốc Học kỳ tự động
+    if (meta.timeFrame) {
+      const tf = formatTimeFrameAndSemester(meta.timeFrame, meta.semester);
+      meta.timeFrame = tf.timeFrame;
+      meta.semester = tf.semester;
+    }
 
     const catalog = await prisma.activityCatalog.create({
       data: {
@@ -350,13 +388,13 @@ export async function PUT(req: NextRequest) {
       });
     }
 
-    // Action: Gán 1 hoặc nhiều GV Tổ CTHS hàng loạt
-    if (action === 'BULK_ASSIGN_CTHS') {
+    // Action: Gán 1 hoặc nhiều GVBM Phụ trách theo Tổ chuyên môn
+    if (action === 'BULK_ASSIGN_CTHS' || action === 'BULK_ASSIGN_GVBM') {
       const catalogs = await prisma.activityCatalog.findMany({
         where: { id: { in: ids } }
       });
 
-      // Xác định danh sách giáo viên CTHS được gán (hỗ trợ cả mảng teachers hoặc đơn lẻ)
+      // Xác định danh sách giáo viên GVBM được gán
       let assignedTeachers: any[] = [];
       if (Array.isArray(teachers) && teachers.length > 0) {
         assignedTeachers = teachers.map((t: any) => ({
@@ -367,6 +405,7 @@ export async function PUT(req: NextRequest) {
           phone: t.phone || '',
           campusCode: t.campusCode || '',
           campusName: t.campusName || '',
+          departmentId: t.departmentId || '',
           departmentName: t.departmentName || '',
           position: t.position || ''
         }));
@@ -375,12 +414,15 @@ export async function PUT(req: NextRequest) {
           id: cthsTeacherId,
           teacherCode: cthsTeacherCode || '',
           teacherName: cthsTeacherName || '',
-          email: cthsTeacherEmail || ''
+          email: cthsTeacherEmail || '',
+          departmentName: body.departmentName || ''
         }];
       }
 
       const combinedNames = assignedTeachers.map(t => t.teacherName).filter(Boolean).join(', ');
       const primaryTeacher = assignedTeachers[0] || null;
+      const deptName = primaryTeacher?.departmentName || body.departmentName || '';
+      const deptId = primaryTeacher?.departmentId || body.departmentId || '';
 
       let updatedCount = 0;
       for (const cat of catalogs) {
@@ -393,13 +435,20 @@ export async function PUT(req: NextRequest) {
 
         const updatedMeta = {
           ...currentMeta,
-          cthsTeachers: assignedTeachers,
+          assignedTeachers: assignedTeachers,
+          cthsTeachers: assignedTeachers, // backwards compatibility
+          subjectTeacherId: primaryTeacher ? primaryTeacher.id : '',
+          subjectTeacherCode: primaryTeacher ? primaryTeacher.teacherCode : '',
+          subjectTeacherName: combinedNames,
+          subjectTeacherEmail: primaryTeacher ? primaryTeacher.email : '',
           cthsTeacherId: primaryTeacher ? primaryTeacher.id : '',
           cthsTeacherCode: primaryTeacher ? primaryTeacher.teacherCode : '',
           cthsTeacherName: combinedNames,
           cthsTeacherEmail: primaryTeacher ? primaryTeacher.email : '',
           cthsTeacherPhone: primaryTeacher ? (primaryTeacher.phone || '') : '',
-          cthsTeacherCampus: primaryTeacher ? (primaryTeacher.campusCode || primaryTeacher.campusName || '') : ''
+          cthsTeacherCampus: primaryTeacher ? (primaryTeacher.campusCode || primaryTeacher.campusName || '') : '',
+          departmentId: deptId || currentMeta.departmentId || '',
+          departmentName: deptName || currentMeta.departmentName || ''
         };
 
         await prisma.activityCatalog.update({
@@ -412,12 +461,12 @@ export async function PUT(req: NextRequest) {
       }
 
       const teacherInfoStr = assignedTeachers.length > 0
-        ? `Tổ CTHS: ${combinedNames} (${assignedTeachers.length} GV)`
+        ? `TCM (${deptName || 'Chuyên môn'}): ${combinedNames} (${assignedTeachers.length} GV)`
         : 'Gỡ bỏ phân công';
 
       return NextResponse.json({
         success: true,
-        message: `Đã cập nhật phụ trách (${teacherInfoStr}) cho ${updatedCount} hoạt động thành công`,
+        message: `Đã cập nhật GVBM phụ trách (${teacherInfoStr}) cho ${updatedCount} hoạt động thành công`,
         count: updatedCount,
         assignedCount: assignedTeachers.length
       });

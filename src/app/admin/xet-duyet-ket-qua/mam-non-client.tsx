@@ -2277,7 +2277,7 @@ Trân trọng kính mời Quý phụ huynh và các em học sinh!`;
     setCLoading(true);
     try {
       let url = `/api/preschool-input-assessment-students?periodId=${cPeriodId}`;
-      if (cBatchId) url += `&batchId=${cBatchId}`;
+      if (cBatchId === "none") url += `&batchId=null`; else if (cBatchId === "none") url += `&batchId=null`; else if (cBatchId) url += `&batchId=${cBatchId}`;
       const r = await fetch(url);
       if (r.ok) setChildren(await r.json());
     } catch (e) {
@@ -3683,7 +3683,7 @@ Trân trọng kính mời Quý phụ huynh và các em học sinh!`;
   };
 
   const filtChildren = useMemo(() => children.filter(c => !cSearch || c.studentCode.toLowerCase().includes(cSearch.toLowerCase()) || c.fullName.toLowerCase().includes(cSearch.toLowerCase())), [children, cSearch]);
-  const reportChildren = useMemo(() => { let all = children; if (rptBatchId !== "all") all = all.filter(c => c.batchId === rptBatchId || c.batchId === null || c.batchId === ""); return all; }, [children, rptBatchId]);
+  const reportChildren = useMemo(() => { let all = children; if (rptBatchId === "none") all = all.filter(c => !c.batchId); else if (rptBatchId !== "all" && rptBatchId) all = all.filter(c => c.batchId === rptBatchId); return all; }, [children, rptBatchId]);
   const rptStats = useMemo(() => {
     const total = reportChildren.length;
     const passed = reportChildren.filter(c => c.admissionResult && (c.admissionResult.toUpperCase().includes("ĐẠT") || c.admissionResult === "Học thử")).length;
@@ -4354,6 +4354,8 @@ Trân trọng kính mời Quý phụ huynh và các em học sinh!`;
               <label className="text-xs font-black text-slate-500 uppercase tracking-wider">Đợt:</label>
               <select value={cBatchId} onChange={e => setCBatchId(e.target.value)} className="border border-slate-300 rounded-none p-2 text-sm font-medium text-slate-700 outline-none focus:ring-2 focus:ring-violet-300 min-w-[140px]" disabled={!cPeriodId}>
                 <option value="">Tất cả đợt</option>
+                      <option value="none">Khảo sát lẻ (Không thuộc đợt)</option>
+                      <option value="none">Khảo sát lẻ (Không thuộc đợt)</option>
                 {availableBatches?.map(b => <option key={b.id} value={b.id}>{b.name}</option>)}
               </select>
             </div>

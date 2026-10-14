@@ -59,6 +59,18 @@ export const APP_CATEGORIES = [
     icon: Shield,
     modules: [
       {
+        code: "KTDBCL_CONNECT",
+        name: "KT&ĐBCL Connect",
+        icon: MessageSquare,
+        href: "/admin/ktdbcl/connect",
+        subModules: [
+          { code: "KTDBCL_CONNECT_DASHBOARD", name: "1. Kênh tiếp nhận & Xử lý", href: "/admin/ktdbcl/connect?tab=tickets" },
+          { code: "KTDBCL_CONNECT_ANNOUNCEMENTS", name: "2. Thông báo nghiệp vụ", href: "/admin/ktdbcl/connect?tab=announcements" },
+          { code: "KTDBCL_CONNECT_KNOWLEDGE", name: "3. Kho tri thức & Hướng dẫn", href: "/admin/ktdbcl/connect?tab=knowledge" },
+          { code: "KTDBCL_CONNECT_METRICS", name: "4. Dashboard & Thống kê", href: "/admin/ktdbcl/connect?tab=dashboard" }
+        ]
+      },
+      {
         code: "KTDBCL_EXAMS",
         name: "QL Thành tích",
         icon: Award,
@@ -130,6 +142,27 @@ export const APP_CATEGORIES = [
         name: "Import KQHT",
         icon: FileSpreadsheet,
         href: "/admin/ktdbcl/import-kqht?v=2.1"
+      }
+    ]
+  },
+  {
+    id: "SPECIAL_SUBJECTS",
+    name: "Môn học đặc thù Sky-Line",
+    color: "teal",
+    icon: Sparkles,
+    modules: [
+      {
+        code: "SPECIAL_SUBJECTS_ROOT",
+        name: "Môn học đặc thù",
+        icon: Sparkles,
+        href: "/admin/special-subjects",
+        subModules: [
+          { code: "SPEC_SUB_DASHBOARD", name: "1. Dashboard & Báo cáo", href: "/admin/special-subjects" },
+          { code: "SPEC_SUB_CATALOGS", name: "2. Danh mục Môn đặc thù", href: "/admin/special-subjects/catalogs" },
+          { code: "SPEC_SUB_CURRICULUMS", name: "3. Khung chương trình", href: "/admin/special-subjects/curriculums" },
+          { code: "SPEC_SUB_ASSIGNMENTS", name: "4. Phân công giảng dạy", href: "/admin/special-subjects/assignments" },
+          { code: "SPEC_SUB_GRADEBOOK", name: "5. Sổ đánh giá (Admin)", href: "/admin/special-subjects/gradebook" },
+        ]
       }
     ]
   },

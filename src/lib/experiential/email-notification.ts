@@ -895,7 +895,10 @@ export async function sendTLHNAllocationNotification(payload: TLHNAllocationEmai
               className: cls.className,
               campusName: alloc.campusName || `Sky-Line ${alloc.campusCode || ''}`,
               campusCode: alloc.campusCode || '',
-              tlhnTeacherName: alloc.tlhnTeacherName || 'Tổ TLHN Cơ sở',
+              departmentName: cls.departmentName || alloc.departmentName || '',
+              subjectTeacherName: cls.subjectTeacherName || alloc.subjectTeacherName || alloc.tlhnTeacherName || '',
+              subjectTeacherEmail: cls.subjectTeacherEmail || alloc.subjectTeacherEmail || alloc.tlhnTeacherEmail || '',
+              tlhnTeacherName: alloc.tlhnTeacherName || 'GVBM Phụ trách',
               tlhnTeacherEmail: alloc.tlhnTeacherEmail || ''
             });
           }
@@ -1205,9 +1208,9 @@ export async function sendTLHNAllocationNotification(payload: TLHNAllocationEmai
                   <td style="padding: 10px 14px; border-bottom: 1px solid #E2E8F0; color: #1E293B;">${expectedLocation || 'Theo kế hoạch'}</td>
                 </tr>
                 <tr>
-                  <td style="padding: 10px 14px; border-bottom: 1px solid #E2E8F0; font-weight: 700; color: #475569;">GV Tổ TLHN tiếp nhận:</td>
+                  <td style="padding: 10px 14px; border-bottom: 1px solid #E2E8F0; font-weight: 700; color: #475569;">GVBM Phụ trách (TCM):</td>
                   <td style="padding: 10px 14px; border-bottom: 1px solid #E2E8F0; font-weight: 700; color: #00A19A;">
-                    ${gvcn.tlhnTeacherName} ${gvcn.tlhnTeacherEmail ? `<span style="font-weight: 400; color: #64748B;">(${gvcn.tlhnTeacherEmail})</span>` : ''}
+                    ${gvcn.subjectTeacherName ? `<strong>${gvcn.subjectTeacherName}</strong> ${gvcn.departmentName ? `<span style="color: #003B3A; font-weight: 600;">(TCM: ${gvcn.departmentName})</span>` : ''} ${gvcn.subjectTeacherEmail ? `<span style="font-weight: 400; color: #64748B;">— ${gvcn.subjectTeacherEmail}</span>` : ''}` : (gvcn.departmentName ? `Tổ Chuyên Môn: ${gvcn.departmentName}` : 'Tổ Chuyên Môn cơ sở')}
                   </td>
                 </tr>
               </table>

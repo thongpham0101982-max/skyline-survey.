@@ -70,7 +70,7 @@ function SidebarContent({ role, permissionModules, actualRole, taskCount = 0, is
   const [hasPreschool, setHasPreschool] = useState(false)
   const [hasGeneral, setHasGeneral] = useState(false)
   const [loadingAssignments, setLoadingAssignments] = useState(true)
-  const [expandedCategories, setExpandedCategories] = useState<Record<string, boolean>>({ STUDENT_LOOKUP: true, KTDBCL: true, ASSESSMENT: true, TRAINING: true, SYSTEM: true })
+  const [expandedCategories, setExpandedCategories] = useState<Record<string, boolean>>({ SPECIAL_SUBJECTS: true, STUDENT_LOOKUP: true, KTDBCL: true, ASSESSMENT: true, TRAINING: true, SYSTEM: true })
 
   useEffect(() => {
     if (typeof window !== "undefined") {
@@ -381,7 +381,7 @@ function SidebarContent({ role, permissionModules, actualRole, taskCount = 0, is
               <Link 
                 href="/teacher" 
                 onClick={() => setIsOpen(false)} 
-                className={`group relative flex items-center ${isCollapsed ? 'justify-center px-2' : 'px-3'} py-2 rounded-xl transition-all duration-300 text-xs font-medium mb-3 ${
+                className={`group relative flex items-center ${isCollapsed ? 'justify-center px-2' : 'px-3'} py-2 rounded-xl transition-all duration-300 text-xs font-medium mb-1.5 ${
                   pathname === '/teacher' 
                     ? "bg-gradient-to-r from-teal-500/30 to-emerald-500/20 border border-teal-500/40 text-white shadow-md shadow-black/10" 
                     : "text-white/80 hover:text-white hover:bg-white/10 hover:translate-x-1"
@@ -397,6 +397,35 @@ function SidebarContent({ role, permissionModules, actualRole, taskCount = 0, is
                   }`} />
                 </div>
                 {!isCollapsed && <span>{SIDEBAR_TRANSLATIONS.teacherNav.overview[lang]}</span>}
+              </Link>
+
+              {/* KT&ĐBCL Connect Link - Kênh Trao đổi & Hỗ trợ Giáo viên */}
+              <Link 
+                href="/teacher/ktdbcl-connect" 
+                onClick={() => setIsOpen(false)} 
+                className={`group relative flex items-center ${isCollapsed ? 'justify-center px-2' : 'px-3'} py-2 rounded-xl transition-all duration-300 text-xs font-medium mb-3 ${
+                  pathname.startsWith('/teacher/ktdbcl-connect') 
+                    ? "bg-gradient-to-r from-teal-500/30 to-emerald-500/20 border border-teal-500/40 text-white shadow-md shadow-black/10" 
+                    : "text-white/80 hover:text-white hover:bg-white/10 hover:translate-x-1"
+                }`}
+              >
+                <div className={`w-7 h-7 rounded-lg flex items-center justify-center transition-all ${isCollapsed ? 'mx-auto' : 'mr-2.5'} ${
+                  pathname.startsWith('/teacher/ktdbcl-connect')
+                    ? "bg-teal-500/30 border border-teal-400/50 shadow-[0_0_8px_rgba(20,184,166,0.35)]"
+                    : "bg-white/10 border border-white/15 group-hover:border-teal-500/40"
+                }`}>
+                  <MessageSquare className={`w-4 h-4 transition-all ${
+                    pathname.startsWith('/teacher/ktdbcl-connect') ? "text-teal-300" : "text-slate-300 group-hover:text-teal-300 group-hover:scale-110"
+                  }`} />
+                </div>
+                {!isCollapsed && (
+                  <div className="flex items-center justify-between flex-1">
+                    <span>{SIDEBAR_TRANSLATIONS.teacherNav.ktdbcl_connect?.[lang] || "KT&ĐBCL Connect"}</span>
+                    <span className="text-[9px] bg-teal-500/30 text-teal-200 px-1.5 py-0.5 rounded-full font-bold">
+                      2-Chiều
+                    </span>
+                  </div>
+                )}
               </Link>
               {/* Category A. Công tác GVCN - Only show if isGVCN is true */}
               {isGVCN && (
@@ -675,6 +704,28 @@ function SidebarContent({ role, permissionModules, actualRole, taskCount = 0, is
                     )}
                   </div>
                 )}
+
+                {/* 2. Môn học đặc thù Sky-Line */}
+                <Link 
+                  href="/teacher/special-subjects/gradebook" 
+                  onClick={() => setIsOpen(false)} 
+                  className={`group relative flex items-center ${isCollapsed ? 'justify-center px-2' : 'px-3'} py-2 rounded-xl transition-all duration-300 text-xs font-medium mb-1.5 ${
+                    pathname.includes('/teacher/special-subjects') 
+                      ? "bg-gradient-to-r from-white/15 to-white/5 border border-white/10 text-white shadow-md shadow-black/10" 
+                      : "text-white/70 hover:text-white hover:bg-white/5 hover:translate-x-1"
+                  }`}
+                >
+                  <div className={`w-7 h-7 rounded-lg flex items-center justify-center transition-all ${isCollapsed ? 'mx-auto' : 'mr-2.5'} ${
+                    pathname.includes('/teacher/special-subjects')
+                      ? "bg-teal-500/20 border border-teal-500/40 shadow-[0_0_8px_rgba(20,184,166,0.25)]"
+                      : "bg-white/5 border border-white/10 group-hover:border-teal-500/30"
+                  }`}>
+                    <Sparkles className={`w-4 h-4 transition-all ${
+                      pathname.includes('/teacher/special-subjects') ? "text-teal-300" : "text-slate-400 group-hover:text-teal-300 group-hover:scale-110"
+                    }`} />
+                  </div>
+                  {!isCollapsed && <span>Môn học đặc thù Sky-Line</span>}
+                </Link>
 
                 {/* Danh mục: Dự giờ & Phát triển chuyên môn */}
                 {!isCollapsed ? (

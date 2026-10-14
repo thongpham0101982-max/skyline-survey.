@@ -28,29 +28,34 @@ export async function PUT(
       return NextResponse.json({ error: "Hoat dong da bi khoa, khong the cap nhat diem" }, { status: 403 });
     }
 
-    // Update each participant note JSON
-    await prisma.$transaction(
-      students.map((st: any) => {
-        const notePayload = {
-          attendance: st.attendance || "PRESENT",
-          roles: st.roles || ["THANH_VIEN"],
-          criteriaScores: st.criteriaScores || {},
-          calculatedPercent: st.calculatedPercent !== undefined ? st.calculatedPercent : null,
-          finalResult: st.finalResult || "CHUA_DANH_GIA",
-          remarksQuick: st.remarksQuick || [],
-          remarksCustom: st.remarksCustom || ""
-        };
+    // Update each participant note JSON safely
+    for (const st of students) {
+      const participantId = st.participantId || st.id;
+      if (!participantId) continue;
 
-        return prisma.activityParticipant.update({
-          where: { id: st.participantId || st.id },
+      const notePayload = {
+        attendance: st.attendance || "PRESENT",
+        roles: st.roles || ["THANH_VIEN"],
+        criteriaScores: st.criteriaScores || {},
+        calculatedPercent: st.calculatedPercent !== undefined ? st.calculatedPercent : null,
+        finalResult: st.finalResult || "CHUA_DANH_GIA",
+        remarksQuick: st.remarksQuick || [],
+        remarksCustom: st.remarksCustom || ""
+      };
+
+      try {
+        await prisma.activityParticipant.update({
+          where: { id: participantId },
           data: {
             note: JSON.stringify(notePayload),
             roleId: Array.isArray(st.roles) && st.roles.length > 0 ? st.roles[0] : "THANH_VIEN",
             evalLevelId: st.finalResult || "DA"
           }
         });
-      })
-    );
+      } catch (updErr: any) {
+        console.error(`Error updating participant ${participantId}:`, updErr?.message || updErr);
+      }
+    }
 
     // Update class status in meta assignedClasses
     const assignedClasses = meta.assignedClasses || [];

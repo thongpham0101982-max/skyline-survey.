@@ -12,7 +12,7 @@ import {
   Filter, Building, ClipboardCheck, ArrowRight, UserPlus, Info,
   FileSpreadsheet, Pencil, Mail, FileText,
   Phone, Printer, Lock, Paperclip, ClipboardList,
-  RefreshCcw } from "lucide-react"
+  RefreshCcw, Eye, Sparkles } from "lucide-react"
 import * as XLSX from "xlsx"
 import { MoveToBatchModal } from "@/app/admin/student-info/MoveToBatchModal";
 import { EntranceAcademicRecordInput } from "@/components/assessments/EntranceAcademicRecordInput";
@@ -44,6 +44,12 @@ interface Student {
   cityName?: string; districtName?: string; wardName?: string; countryName?: string;
   oldSchoolName?: string; oldSchoolType?: string;
   isAbsent?: boolean; gender?: string;
+  scores?: any[];
+  studentSessions?: any[];
+  batch?: { name: string; status: string };
+  devProfessionalComment?: string;
+  devPsychologyComment?: string;
+  directorNote?: string;
 }
 interface Assignment {
   id: string; periodId: string; batchId?: string; userId: string; 
@@ -1294,14 +1300,27 @@ export function InputAssessmentsClient({
   const [quickStudentMode, setQuickStudentMode] = useState<"existing" | "new">("existing")
   const [quickSelectedStudentId, setQuickSelectedStudentId] = useState("")
   const [quickNewStudent, setQuickNewStudent] = useState({
+    studentCode: "",
     fullName: "",
     dateOfBirth: "",
-    gender: "NAM",
+    gender: "Nam",
     grade: "1",
-    surveySystem: "CLC",
-    admissionCriteria: "KhaoSat",
+    surveyFormType: "",
+    admissionCriteria: "",
+    surveySystem: "",
+    registeredCampus: "",
     admissionCampus: "",
+    targetType: "",
+    oldSchoolName: "",
+    oldSchoolType: "",
+    cityName: "",
+    kqgdTieuHoc: "",
+    kqHocTap: "",
+    hoSoCtQuocTe: "",
   })
+  const [quickLocationType, setQuickLocationType] = useState<"Nội tỉnh" | "Ngoại tỉnh" | "Nước ngoài" | "">("")
+  const [quickProvince, setQuickProvince] = useState<string>("")
+  const [quickCountry, setQuickCountry] = useState<string>("")
   const [quickSessionData, setQuickSessionData] = useState({
     sessionDate: new Date().toISOString().slice(0, 10),
     startTime: "08:30",
@@ -1310,6 +1329,7 @@ export function InputAssessmentsClient({
     campusId: "",
     examinerUserIds: [] as string[],
     periodId: "",
+    batchId: "",
     notes: ""
   })
 
@@ -1381,6 +1401,8 @@ export function InputAssessmentsClient({
   const [sBatchId, setSBatchId] = useState("")
   const [sGradeFilter, setSGradeFilter] = useState("")
   const [sEduFilter, setSEduFilter] = useState("")
+  const [sResultFilter, setSResultFilter] = useState("all")
+  const [quickViewStudent, setQuickViewStudent] = useState<Student | null>(null)
   const [latestBatchInfo, setLatestBatchInfo] = useState(null);
   const [sSearch, setSSearch] = useState("")
   const [studentsCurrentPage, setStudentsCurrentPage] = useState(1);
@@ -1388,7 +1410,7 @@ export function InputAssessmentsClient({
 
   useEffect(() => {
     setStudentsCurrentPage(1);
-  }, [sPeriodId, sBatchId, sSearch, sGradeFilter, sEduFilter]);
+  }, [sPeriodId, sBatchId, sSearch, sGradeFilter, sEduFilter, sResultFilter]);
   const [importing, setImporting] = useState(false)
   const [sModal, setSModal] = useState(false)
   const [editS, setEditS] = useState<Student|null>(null)
@@ -2567,7 +2589,9 @@ ${reportForm.directorNote}`;
 
   const filteredReportStudents = useMemo(() => {
     if (!Array.isArray(reportStudents)) return [];
-    return reportStudents.filter(s => reportBatchId === "all" || s.batchId === reportBatchId || s.batchId === null || s.batchId === "");
+    if (reportBatchId === "all") return reportStudents;
+    if (reportBatchId === "none") return reportStudents.filter(s => !s.batchId);
+    return reportStudents.filter(s => s.batchId === reportBatchId);
   }, [reportStudents, reportBatchId]);
 
   const modalDocList = useMemo(() => {
@@ -3132,6 +3156,22 @@ ${reportForm.directorNote}`;
     }
   }, [sForm.targetType, sModal]);
 
+  // Sync quickLocationType when quickNewStudent.targetType changes
+  useEffect(() => {
+    if (!isQuickScheduleOpen) return;
+    const selectedTargets = quickNewStudent.targetType ? quickNewStudent.targetType.split(",").map((t) => t.trim()).filter(Boolean) : [];
+    if (selectedTargets.includes("Nội tỉnh")) {
+      setQuickLocationType("Nội tỉnh"); setQuickProvince("Thành phố Đà Nẵng");
+      setQuickNewStudent(prev => ({ ...prev, cityName: "Thành phố Đà Nẵng" }));
+    } else if (selectedTargets.includes("Ngoại tỉnh")) {
+      setQuickLocationType("Ngoại tỉnh");
+    } else if (selectedTargets.includes("Nước ngoài")) {
+      setQuickLocationType("Nước ngoài");
+    } else {
+      setQuickLocationType("");
+    }
+  }, [quickNewStudent.targetType, isQuickScheduleOpen]);
+
   // Parse kqgdTieuHoc when form opens
   useEffect(() => {
     if (sModal) {
@@ -3430,13 +3470,14 @@ ${reportForm.directorNote}`;
     try {
       const payload: any = {
         sessionDate: quickSessionData.sessionDate,
-        startTime: quickSessionData.startTime,
-        endTime: quickSessionData.endTime,
-        room: quickSessionData.room,
+        startTime: quickSessionData.startTime || "08:00",
+        endTime: quickSessionData.endTime || "10:30",
+        room: quickSessionData.room || "Phòng Khảo sát",
         campusId: quickSessionData.campusId || campuses[0]?.id,
         academicYearId: yearId,
         periodId: quickSessionData.periodId || periods[0]?.id || null,
-        examinerUserIds: quickSessionData.examinerUserIds,
+        batchId: quickSessionData.batchId || null,
+        examinerUserIds: [],
         notes: quickSessionData.notes,
       };
 
@@ -3453,11 +3494,31 @@ ${reportForm.directorNote}`;
           setQuickScheduleLoading(false);
           return;
         }
+        let finalKqgd = quickNewStudent.kqgdTieuHoc;
+        if (!finalKqgd && quickNewStudent.oldSchoolName) {
+          finalKqgd = `Trường cũ: ${quickNewStudent.oldSchoolName} (${quickNewStudent.oldSchoolType || "Chưa rõ"}) | Đối tượng: ${quickLocationType || "Nội tỉnh"} - ${quickProvince || quickCountry || "Đà Nẵng"}`;
+        }
+
         payload.studentData = {
-          ...quickNewStudent,
-          admissionCampus: quickSessionData.campusId || campuses[0]?.id,
-          registeredCampus: quickSessionData.campusId || campuses[0]?.id,
+          studentCode: quickNewStudent.studentCode,
+          fullName: quickNewStudent.fullName,
+          dateOfBirth: quickNewStudent.dateOfBirth,
+          gender: quickNewStudent.gender,
+          grade: quickNewStudent.grade,
+          surveyFormType: quickNewStudent.surveyFormType,
+          admissionCriteria: quickNewStudent.admissionCriteria,
+          surveySystem: quickNewStudent.surveySystem,
+          targetType: quickNewStudent.targetType,
+          oldSchoolName: quickNewStudent.oldSchoolName,
+          oldSchoolType: quickNewStudent.oldSchoolType,
+          cityName: quickProvince || quickNewStudent.cityName,
+          kqgdTieuHoc: finalKqgd,
+          kqHocTap: quickNewStudent.kqHocTap,
+          hoSoCtQuocTe: quickNewStudent.hoSoCtQuocTe,
+          admissionCampus: quickNewStudent.registeredCampus || quickSessionData.campusId || campuses[0]?.id,
+          registeredCampus: quickNewStudent.registeredCampus || quickSessionData.campusId || campuses[0]?.id,
           periodId: quickSessionData.periodId || periods[0]?.id,
+          batchId: quickSessionData.batchId || null,
         };
       }
 
@@ -3474,14 +3535,27 @@ ${reportForm.directorNote}`;
         if (sPeriodId) fetchStudents();
         setQuickSelectedStudentId("");
         setQuickNewStudent({
+          studentCode: "",
           fullName: "",
           dateOfBirth: "",
-          gender: "NAM",
+          gender: "Nam",
           grade: "1",
-          surveySystem: "CLC",
-          admissionCriteria: "KhaoSat",
+          surveyFormType: "",
+          admissionCriteria: "",
+          surveySystem: "",
+          registeredCampus: "",
           admissionCampus: "",
+          targetType: "",
+          oldSchoolName: "",
+          oldSchoolType: "",
+          cityName: "",
+          kqgdTieuHoc: "",
+          kqHocTap: "",
+          hoSoCtQuocTe: "",
         });
+        setQuickLocationType("");
+        setQuickProvince("");
+        setQuickCountry("");
       } else {
         const d = await res.json();
         notify(d.error || "Lỗi xếp lịch khảo sát", "err");
@@ -3504,9 +3578,9 @@ ${reportForm.directorNote}`;
         data: {
           name: sessionForm.name,
           sessionDate: sessionForm.sessionDate,
-          startTime: sessionForm.startTime,
-          endTime: sessionForm.endTime,
-          room: sessionForm.room,
+          startTime: sessionForm.startTime || null,
+          endTime: sessionForm.endTime || null,
+          room: sessionForm.room || null,
           campusId: sessionForm.campusId,
           academicYearId: yearId,
           periodId: sessionForm.periodId || null,
@@ -3516,14 +3590,14 @@ ${reportForm.directorNote}`;
           status: sessionForm.status,
           notes: sessionForm.notes,
         },
-        examiners: sessionForm.examinerUserIds.map(uid => ({ userId: uid, role: "EXAMINER" }))
+        examiners: (sessionForm.examinerUserIds || []).map(uid => ({ userId: uid, role: "EXAMINER" }))
       } : {
         name: sessionForm.name,
         sessionCode: sessionForm.sessionCode || undefined,
         sessionDate: sessionForm.sessionDate,
-        startTime: sessionForm.startTime,
-        endTime: sessionForm.endTime,
-        room: sessionForm.room,
+        startTime: sessionForm.startTime || null,
+        endTime: sessionForm.endTime || null,
+        room: sessionForm.room || null,
         campusId: sessionForm.campusId,
         academicYearId: yearId,
         periodId: sessionForm.periodId || null,
@@ -3532,7 +3606,7 @@ ${reportForm.directorNote}`;
         sessionType: sessionForm.sessionType,
         status: sessionForm.status,
         notes: sessionForm.notes,
-        examinerUserIds: sessionForm.examinerUserIds,
+        examinerUserIds: sessionForm.examinerUserIds || [],
       };
 
       const res = await fetch(url, {
@@ -3624,7 +3698,8 @@ ${reportForm.directorNote}`;
       let url = `/api/input-assessment-students?t=${Date.now()}`
       if (sPeriodId === "all") url += `&fetch_all=true`
       else url += `&periodId=${sPeriodId}`
-      if (sBatchId) url += `&batchId=${sBatchId}`
+      if (sBatchId === "none") url += `&batchId=null`;
+      else if (sBatchId && sBatchId !== "all") url += `&batchId=${sBatchId}`;
       const r = await fetch(url)
       if (r.ok) setStudents(await r.json())
     } finally { setSLoading(false) }
@@ -4051,8 +4126,8 @@ ${reportForm.directorNote}`;
 
   const submitAssignment = async () => {
     if (cannotCreate || cannotUpdate) return;
-    if (!asPeriodId || !asBatchId || !asTeacherId || !asSelSubjects.length || !asSelGrades.length || !asSelSystems.length) {
-      return notify("Vui lòng chọn đầy đủ Kỳ, Đợt, GV, Môn, Khối và Hệ học", "err")
+    if (!asPeriodId || !asTeacherId || !asSelSubjects.length || !asSelGrades.length || !asSelSystems.length) {
+      return notify("Vui lòng chọn đầy đủ Kỳ, GV, Môn, Khối và Hệ học", "err")
     }
     setAsSubmitting(true)
     try {
@@ -4163,9 +4238,13 @@ ${reportForm.directorNote}`;
 
   const groupedAssignments = useMemo(() => {
     const groups: Record<string, any> = {};
-    const targetAssignments = asFilterBatchId ? assignments.filter(a => a.batchId === asFilterBatchId) : [];
+    const targetAssignments = (!asFilterBatchId || asFilterBatchId === "all")
+      ? assignments
+      : asFilterBatchId === "none"
+      ? assignments.filter(a => !a.batchId)
+      : assignments.filter(a => a.batchId === asFilterBatchId);
     targetAssignments.forEach(a => {
-        const key = `${a.userId}_${a.batchId}`;
+        const key = `${a.userId}_${a.batchId || "none"}`;
         if (!groups[key]) {
             groups[key] = {
                 ...a,
@@ -4230,14 +4309,90 @@ ${reportForm.directorNote}`;
         const sys = s.surveyFormType || s.surveySystem || "";
         if (sys !== sEduFilter) return false;
       }
+      if (sResultFilter && sResultFilter !== "all") {
+        if (sResultFilter === "absent") {
+          if (!s.isAbsent) return false;
+        } else if (sResultFilter === "pending") {
+          if (s.admissionResult || s.isAbsent) return false;
+        } else if (sResultFilter === "dat") {
+          if (s.admissionResult !== "Đạt" && s.admissionResult !== "Đạt - Giao lưu") return false;
+        } else if (sResultFilter === "cam_ket") {
+          if (s.admissionResult !== "Đạt cam kết") return false;
+        } else if (sResultFilter === "khong_dat") {
+          if (s.admissionResult !== "Không đạt") return false;
+        } else if (sResultFilter === "hoc_thu") {
+          if (s.admissionResult !== "Học thử") return false;
+        }
+      }
       return true;
     });
-  }, [students, sSearch, sGradeFilter, sEduFilter]);
+  }, [students, sSearch, sGradeFilter, sEduFilter, sResultFilter]);
 
   const paginatedFiltStu = useMemo(() => {
     const startIndex = (studentsCurrentPage - 1) * studentsPageSize;
     return filtStu.slice(startIndex, startIndex + studentsPageSize);
   }, [filtStu, studentsCurrentPage, studentsPageSize]);
+
+  const studentResultKPIs = useMemo(() => {
+    let datCount = 0;
+    let camKetCount = 0;
+    let khongDatCount = 0;
+    let absentCount = 0;
+    let pendingCount = 0;
+
+    students.forEach((s) => {
+      if (s.isAbsent) {
+        absentCount++;
+      } else if (s.admissionResult === "Đạt" || s.admissionResult === "Đạt - Giao lưu") {
+        datCount++;
+      } else if (s.admissionResult === "Đạt cam kết") {
+        camKetCount++;
+      } else if (s.admissionResult === "Không đạt") {
+        khongDatCount++;
+      } else {
+        pendingCount++;
+      }
+    });
+
+    return {
+      total: students.length,
+      dat: datCount,
+      camKet: camKetCount,
+      khongDat: khongDatCount,
+      absent: absentCount,
+      pending: pendingCount,
+    };
+  }, [students]);
+
+  const extractSkylineScores = (scores: any[]) => {
+    if (!Array.isArray(scores) || scores.length === 0) return [];
+    return scores.map(sc => {
+      const subjectName = sc.subject?.name || "Môn KS";
+      const subjectCode = (sc.subject?.code || "").toLowerCase();
+      let displayScore = "—";
+      try {
+        if (sc.scores) {
+          const parsed = JSON.parse(sc.scores);
+          const vArr = Array.isArray(parsed) ? parsed : [parsed];
+          if (subjectCode.includes("tly")) {
+            const scNum = parseFloat(vArr[6] || vArr[20] || "0");
+            displayScore = `${scNum}đ`;
+          } else {
+            const found = vArr.find((x: any) => x !== undefined && x !== "" && x !== null);
+            displayScore = found !== undefined ? String(found) : "—";
+          }
+        }
+      } catch {
+        displayScore = String(sc.scores || "—");
+      }
+      return {
+        subjectName,
+        subjectCode,
+        displayScore,
+        comment: sc.comment || sc.remark || "",
+      };
+    });
+  };
 
     // Merged Student object to ensure printed outputs reflect LIVE unsaved form updates
   const mergedStudent = useMemo(() => {
@@ -4447,9 +4602,9 @@ const [customCommitmentSubjects, setCustomCommitmentSubjects] = useState<string[
                       </select>
                     </Field>
 
-                    <Field label="Đợt khảo sát" required>
+                    <Field label="Đợt khảo sát (Không bắt buộc nếu là khảo sát lẻ)">
                       <select value={asBatchId} onChange={e=>setAsBatchId(e.target.value)} className={inp} disabled={!asPeriodId || isReadOnly}>
-                         <option value="">-- Chọn Đợt --</option>
+                         <option value="">-- Áp dụng Toàn kỳ & Khảo sát lẻ (Mặc định) --</option>
                          {visiblePeriods.find(p=>p.id===asPeriodId)?.batches?.map(b=><option key={b.id} value={b.id}>{b.name}</option>)}
                       </select>
                     </Field>
@@ -4580,11 +4735,12 @@ const [customCommitmentSubjects, setCustomCommitmentSubjects] = useState<string[
                             onChange={e=>setAsFilterBatchId(e.target.value)} 
                             className="bg-white border border-slate-200 rounded-xl px-3 py-1.5 text-xs font-bold text-slate-700 outline-none focus:ring-2 focus:ring-indigo-100 focus:border-indigo-400 transition-all shadow-sm cursor-pointer min-w-[150px]"
                          >
-                            <option value="">-- Chọn Đợt --</option>
+                            <option value="">-- Tất cả đợt & Khảo sát lẻ --</option>
+                            <option value="none">-- Chỉ Khảo sát lẻ / Toàn kỳ --</option>
                             {asSelPeriod?.batches?.map(b=><option key={b.id} value={b.id}>{b.name}</option>)}
                          </select>
                       </div>
-                      {asFilterBatchId && (
+                      {asPeriodId && (
                          <button
                             onClick={sendAllNotifications}
                             disabled={asNotifyingAll || groupedAssignments.length === 0 || cannotUpdate}
@@ -4600,16 +4756,10 @@ const [customCommitmentSubjects, setCustomCommitmentSubjects] = useState<string[
              </div>
 
              <div className="bg-white border border-slate-200 rounded-[2rem] shadow-sm overflow-hidden">
-                {!asFilterBatchId ? (
-                  <div className="flex flex-col items-center justify-center py-16 text-center">
-                    <div className="w-16 h-16 flex items-center justify-center mb-4">
-                      <Filter className="w-8 h-8 text-[#00A19A]" />
-                    </div>
-                    <p className="font-black text-slate-500 text-sm">Vui lòng chọn Đợt lọc</p>
-                    <p className="text-xs text-slate-400 mt-1 font-medium">Chọn một Đợt ở bộ lọc phía trên để hiển thị danh sách giáo viên đã được phân công</p>
-                  </div>
-                ) : asLoading ? <Spin/> : assignments.length === 0 ? (
+                {asLoading ? <Spin/> : assignments.length === 0 ? (
                   <Empty icon={UserPlus} text="Chưa có phân công nào" sub="Sử dụng form bên trên để tiến hành phân công GV"/>
+                ) : groupedAssignments.length === 0 ? (
+                  <Empty icon={UserPlus} text="Không tìm thấy phân công phù hợp" sub="Không có phân công nào trong đợt hoặc nhóm đã lọc"/>
                 ) : (
                   <div className="overflow-x-auto">
                     <table className="w-full text-left border-collapse text-xs">
@@ -4630,7 +4780,7 @@ const [customCommitmentSubjects, setCustomCommitmentSubjects] = useState<string[
                             <td className="px-3 py-2 text-slate-400 font-bold">{idx + 1}</td>
                             <td className="px-3 py-2">
                               <p className="font-black text-slate-700">{a.user?.fullName}</p>
-                              <p className="text-[10px] font-semibold text-slate-400 uppercase tracking-wider mt-0.5">{a.batch?.name || "Tất cả đợt"}</p>
+                              <p className="text-[10px] font-semibold text-slate-400 uppercase tracking-wider mt-0.5">{a.batch?.name || "Áp dụng toàn kỳ / Khảo sát lẻ"}</p>
                             </td>
                             <td className="px-3 py-2">
                               <div className="flex flex-wrap gap-1">
@@ -4750,6 +4900,7 @@ const [customCommitmentSubjects, setCustomCommitmentSubjects] = useState<string[
                     sessionDate: new Date().toISOString().slice(0, 10),
                     campusId: campuses[0]?.id || "",
                     periodId: periods[0]?.id || "",
+                    batchId: "",
                   }));
                   setIsQuickScheduleOpen(true);
                 }}
@@ -5466,7 +5617,7 @@ const [customCommitmentSubjects, setCustomCommitmentSubjects] = useState<string[
           {/* Filter Card */}
           <div className="bg-white border border-slate-200/80 rounded-2xl p-4 sm:p-5 shadow-2xs">
             <div className="grid grid-cols-12 gap-3.5">
-              <div className="col-span-12 sm:col-span-6 lg:col-span-3">
+              <div className="col-span-12 sm:col-span-6 lg:col-span-2">
                 <label className="block text-[11px] font-medium text-slate-500 uppercase tracking-wider mb-1 ml-0.5">Kỳ khảo sát *</label>
                 <select value={sPeriodId} onChange={e=>{setSPeriodId(e.target.value); setSBatchId("")}} className={inp + " text-xs font-normal"}>
                    <option value="">-- Chọn Kỳ --</option>
@@ -5475,10 +5626,11 @@ const [customCommitmentSubjects, setCustomCommitmentSubjects] = useState<string[
                 </select>
               </div>
 
-              <div className="col-span-12 sm:col-span-6 lg:col-span-3">
+              <div className="col-span-12 sm:col-span-6 lg:col-span-2">
                 <label className="block text-[11px] font-medium text-slate-500 uppercase tracking-wider mb-1 ml-0.5">Đợt khảo sát</label>
                 <select value={sBatchId} onChange={e=>setSBatchId(e.target.value)} className={inp + " text-xs font-normal"} disabled={!sPeriodId}>
-                   <option value="">-- Tất cả đợt --</option>
+                   <option value="">-- Tất cả đợt & Khảo sát lẻ --</option>
+                   <option value="none">-- Khảo sát lẻ (Chưa phân đợt) --</option>
                    {((sPeriodId && sPeriodId !== "all" ? selPeriod?.batches : visiblePeriods.flatMap(p => p.batches || [])) || []).map((b: any)=><option key={b.id} value={b.id}>{b.name} ({visiblePeriods.find(p => p.id === b.periodId)?.name || ""})</option>)}
                 </select>
               </div>
@@ -5499,6 +5651,18 @@ const [customCommitmentSubjects, setCustomCommitmentSubjects] = useState<string[
                 </select>
               </div>
 
+              <div className="col-span-6 sm:col-span-3 lg:col-span-2">
+                <label className="block text-[11px] font-medium text-slate-500 uppercase tracking-wider mb-1 ml-0.5">Kết quả KS</label>
+                <select value={sResultFilter} onChange={e=>setSResultFilter(e.target.value)} className={inp + " text-xs font-normal"}>
+                   <option value="all">-- Tất cả kết quả --</option>
+                   <option value="dat">✓ Đạt</option>
+                   <option value="cam_ket">⚡ Đạt cam kết</option>
+                   <option value="khong_dat">✕ Không đạt</option>
+                   <option value="pending">⏳ Chờ duyệt / chấm</option>
+                   <option value="absent">Vắng thi</option>
+                </select>
+              </div>
+
               <div className="col-span-12 sm:col-span-6 lg:col-span-2">
                 <label className="block text-[11px] font-medium text-slate-500 uppercase tracking-wider mb-1 ml-0.5">Tìm kiếm</label>
                 <div className="relative">
@@ -5516,6 +5680,55 @@ const [customCommitmentSubjects, setCustomCommitmentSubjects] = useState<string[
                    )}
                 </div>
               </div>
+            </div>
+
+            {/* KPI Summary Banner */}
+            <div className="flex flex-wrap items-center gap-2 pt-3.5 mt-3.5 border-t border-slate-100 text-xs">
+              <span className="text-[10px] font-black text-slate-400 uppercase tracking-wider mr-1">Tiến độ khảo sát:</span>
+              <button
+                type="button"
+                onClick={() => setSResultFilter("all")}
+                className={`px-2.5 py-1 rounded-lg text-xs font-bold transition-all cursor-pointer ${sResultFilter === "all" ? "bg-slate-800 text-white shadow-xs" : "bg-slate-100 text-slate-700 hover:bg-slate-200"}`}
+              >
+                Tất cả: {studentResultKPIs.total}
+              </button>
+              <button
+                type="button"
+                onClick={() => setSResultFilter("dat")}
+                className={`px-2.5 py-1 rounded-lg text-xs font-bold transition-all cursor-pointer ${sResultFilter === "dat" ? "bg-emerald-600 text-white shadow-xs" : "bg-emerald-50 text-emerald-700 border border-emerald-200/80 hover:bg-emerald-100"}`}
+              >
+                ✓ Đạt: {studentResultKPIs.dat}
+              </button>
+              <button
+                type="button"
+                onClick={() => setSResultFilter("cam_ket")}
+                className={`px-2.5 py-1 rounded-lg text-xs font-bold transition-all cursor-pointer ${sResultFilter === "cam_ket" ? "bg-amber-600 text-white shadow-xs" : "bg-amber-50 text-amber-700 border border-amber-200/80 hover:bg-amber-100"}`}
+              >
+                ⚡ Đạt cam kết: {studentResultKPIs.camKet}
+              </button>
+              <button
+                type="button"
+                onClick={() => setSResultFilter("khong_dat")}
+                className={`px-2.5 py-1 rounded-lg text-xs font-bold transition-all cursor-pointer ${sResultFilter === "khong_dat" ? "bg-rose-600 text-white shadow-xs" : "bg-rose-50 text-rose-700 border border-rose-200/80 hover:bg-rose-100"}`}
+              >
+                ✕ Không đạt: {studentResultKPIs.khongDat}
+              </button>
+              <button
+                type="button"
+                onClick={() => setSResultFilter("pending")}
+                className={`px-2.5 py-1 rounded-lg text-xs font-bold transition-all cursor-pointer ${sResultFilter === "pending" ? "bg-indigo-600 text-white shadow-xs" : "bg-indigo-50 text-indigo-700 border border-indigo-200/80 hover:bg-indigo-100"}`}
+              >
+                ⏳ Chờ chấm/duyệt: {studentResultKPIs.pending}
+              </button>
+              {studentResultKPIs.absent > 0 && (
+                <button
+                  type="button"
+                  onClick={() => setSResultFilter("absent")}
+                  className={`px-2.5 py-1 rounded-lg text-xs font-bold transition-all cursor-pointer ${sResultFilter === "absent" ? "bg-slate-600 text-white shadow-xs" : "bg-slate-100 text-slate-500 border border-slate-200 hover:bg-slate-200"}`}
+                >
+                  Vắng: {studentResultKPIs.absent}
+                </button>
+              )}
             </div>
 
             {(sGradeFilter || sEduFilter || sSearch) && (
@@ -5570,37 +5783,17 @@ const [customCommitmentSubjects, setCustomCommitmentSubjects] = useState<string[
                 <div className="hidden md:block overflow-x-auto custom-scrollbar flex-1">
                   <table className="w-full text-left border-collapse text-xs">
                       <thead>
-                        {/* HÀNG TIÊU ĐỀ 1: CÁC CỘT CHÍNH VÀ NHÓM KẾT QUẢ HỌC TẬP */}
-                        <tr className="bg-slate-50/90 border-b border-slate-200 text-slate-600 whitespace-nowrap text-[10px] font-medium uppercase tracking-wider">
-                          <th rowSpan={2} className="px-3.5 py-3 w-10 text-center border-r border-slate-200/60">#</th>
-                          <th rowSpan={2} className="px-3.5 py-3 min-w-[90px] border-r border-slate-200/60">Mã HS</th>
-                          <th rowSpan={2} className="px-3.5 py-3 min-w-[170px] border-r border-slate-200/60">Họ và tên</th>
-                          <th rowSpan={2} className="px-3 py-3 min-w-[70px] text-center border-r border-slate-200/60">Giới tính</th>
-                          <th rowSpan={2} className="px-3 py-3 min-w-[95px] text-center border-r border-slate-200/60">Ngày sinh</th>
-                          <th rowSpan={2} className="px-3 py-3 min-w-[65px] text-center border-r border-slate-200/60">Khối</th>
-                          <th rowSpan={2} className="px-3.5 py-3 min-w-[110px] border-r border-slate-200/60">Hệ KS</th>
-                          <th rowSpan={2} className="px-3.5 py-3 min-w-[130px] border-r border-slate-200/60">Cơ sở ĐK</th>
-                          <th rowSpan={2} className="px-3.5 py-3 min-w-[140px] border-r border-slate-200/60">Kỳ khảo sát</th>
-                          <th rowSpan={2} className="px-3.5 py-3 min-w-[150px] border-r border-slate-200/60">Đợt khảo sát</th>
-
-                          {/* NHÓM CỘT TÁCH BIỆT: KẾT QUẢ HỌC TẬP ĐẦU VÀO (7 CỘT CỤ THỂ) */}
-                          <th colSpan={7} className="px-3 py-2 text-center bg-teal-50/80 text-teal-850 font-semibold border-b border-r border-teal-200/70 tracking-wider">
-                            KẾT QUẢ HỌC TẬP ĐẦU VÀO
-                          </th>
-
-                          <th rowSpan={2} className="px-3.5 py-3 min-w-[115px] text-center border-r border-slate-200/60">Khảo sát & Vắng</th>
-                          <th rowSpan={2} className="px-3.5 py-3 text-right pr-4 w-20 sticky right-0 bg-slate-50/95 shadow-[-4px_0_6px_-2px_rgba(0,0,0,0.04)]">Thao tác</th>
-                        </tr>
-
-                        {/* HÀNG TIÊU ĐỀ 2: CÁC CỘT CHI TIẾT CỦA KẾT QUẢ HỌC TẬP */}
-                        <tr className="bg-teal-50/40 border-b border-slate-200 text-teal-800 whitespace-nowrap text-[10px] font-medium uppercase tracking-wider">
-                          <th className="px-3 py-2 text-center min-w-[110px] border-r border-teal-100">Chương trình</th>
-                          <th className="px-3 py-2 text-center min-w-[115px] border-r border-teal-100">KQ Chung</th>
-                          <th className="px-3 py-2 text-center min-w-[70px] border-r border-teal-100">Toán</th>
-                          <th className="px-3 py-2 text-center min-w-[110px] border-r border-teal-100">Tiếng Việt / Văn</th>
-                          <th className="px-3 py-2 text-center min-w-[85px] border-r border-teal-100">Tiếng Anh</th>
-                          <th className="px-3 py-2 min-w-[140px] border-r border-teal-100">Tổ hợp / Môn khác</th>
-                          <th className="px-3 py-2 text-center min-w-[75px] border-r border-teal-200/70">Học bạ</th>
+                        <tr className="bg-slate-50/90 border-b border-slate-200 text-slate-600 whitespace-nowrap text-[10px] font-bold uppercase tracking-wider">
+                          <th className="px-3 py-3 w-10 text-center border-r border-slate-200/60">#</th>
+                          <th className="px-3.5 py-3 min-w-[105px] border-r border-slate-200/60">Mã HS / SBD</th>
+                          <th className="px-3.5 py-3 min-w-[170px] border-r border-slate-200/60">Họ và tên</th>
+                          <th className="px-3 py-3 min-w-[85px] text-center border-r border-slate-200/60">Khối & Hệ</th>
+                          <th className="px-3.5 py-3 min-w-[130px] border-r border-slate-200/60">Cơ sở & Đợt</th>
+                          <th className="px-3.5 py-3 min-w-[180px] border-r border-slate-200/60 bg-teal-50/30 text-teal-900">Học bạ trường cũ</th>
+                          <th className="px-3.5 py-3 min-w-[210px] border-r border-slate-200/60 bg-indigo-50/40 text-indigo-900">Điểm KS Skyline</th>
+                          <th className="px-3.5 py-3 min-w-[130px] text-center border-r border-slate-200/60">Kết quả khảo sát</th>
+                          <th className="px-3 py-3 min-w-[65px] text-center border-r border-slate-200/60">Vắng</th>
+                          <th className="px-3.5 py-3 text-right pr-4 w-28 sticky right-0 bg-slate-50/95 shadow-[-4px_0_6px_-2px_rgba(0,0,0,0.04)]">Thao tác</th>
                         </tr>
                       </thead>
                       <tbody className="divide-y divide-slate-100">
@@ -5610,200 +5803,220 @@ const [customCommitmentSubjects, setCustomCommitmentSubjects] = useState<string[
                           const registeredCampusObj = campuses.find(c => c.id === s.registeredCampus || c.campusCode === s.registeredCampus || c.campusName === s.registeredCampus);
                           const entranceRec = parseEntranceRecord(s.kqHocTap, s.grade);
                           const details = extractAcademicDetails(entranceRec, s.grade);
+                          const skylineScores = extractSkylineScores(s.scores || []);
+                          const firstSession = s.studentSessions?.[0];
 
                           return (
                             <tr key={s.id} className="hover:bg-slate-50/70 transition-colors group">
                               {/* 1. STT */}
-                              <td className="px-3.5 py-3 text-slate-400 font-normal text-center whitespace-nowrap border-r border-slate-100">
+                              <td className="px-3 py-3 text-slate-400 font-normal text-center whitespace-nowrap border-r border-slate-100">
                                 {(studentsCurrentPage - 1) * studentsPageSize + idx + 1}
                               </td>
 
-                              {/* 2. Mã HS */}
+                              {/* 2. Mã HS & SBD */}
                               <td className="px-3.5 py-3 whitespace-nowrap border-r border-slate-100">
-                                <span className="font-mono text-[10px] font-medium text-teal-700 bg-teal-50 border border-teal-200/80 px-2 py-0.5 rounded">
-                                  {s.studentCode}
-                                </span>
-                              </td>
-
-                              {/* 3. Họ và tên */}
-                              <td className="px-3.5 py-3 whitespace-nowrap border-r border-slate-100">
-                                <span className="font-medium text-slate-800 text-xs">
-                                  {s.fullName}
-                                </span>
-                              </td>
-
-                              {/* 4. Giới tính */}
-                              <td className="px-3 py-3 text-center text-slate-600 text-xs font-normal whitespace-nowrap border-r border-slate-100">
-                                {s.gender || "—"}
-                              </td>
-
-                              {/* 5. Ngày sinh */}
-                              <td className="px-3 py-3 text-center text-slate-600 text-xs font-normal whitespace-nowrap border-r border-slate-100">
-                                {s.dateOfBirth ? new Date(s.dateOfBirth).toLocaleDateString('vi-VN') : "—"}
-                              </td>
-
-                              {/* 6. Khối */}
-                              <td className="px-3 py-3 text-center whitespace-nowrap border-r border-slate-100">
-                                <span className="px-2 py-0.5 rounded-full bg-slate-100 text-slate-700 border border-slate-200 text-[10px] font-medium">
-                                  K{s.grade || "—"}
-                                </span>
-                              </td>
-
-                              {/* 7. Hệ KS */}
-                              <td className="px-3.5 py-3 whitespace-nowrap border-r border-slate-100">
-                                <span className="px-2 py-0.5 rounded-full bg-sky-50 text-sky-700 border border-sky-200/80 text-[10px] font-medium">
-                                  {s.surveyFormType || s.surveySystem || "—"}
-                                </span>
-                              </td>
-
-                              {/* 8. Cơ sở ĐK */}
-                              <td className="px-3.5 py-3 whitespace-nowrap border-r border-slate-100">
-                                <span className="text-slate-600 text-xs font-normal" title={registeredCampusObj?.campusName || s.admissionCampus || s.registeredCampus || ""}>
-                                  {registeredCampusObj?.campusName || s.admissionCampus || s.registeredCampus || "—"}
-                                </span>
-                              </td>
-
-                              {/* 9. Kỳ khảo sát */}
-                              <td className="px-3.5 py-3 whitespace-nowrap border-r border-slate-100">
-                                <span className="text-slate-600 text-xs font-normal" title={periodObj?.name || ""}>
-                                  {periodObj?.name || "—"}
-                                </span>
-                              </td>
-
-                              {/* 10. Đợt khảo sát */}
-                              <td className="px-3.5 py-3 whitespace-nowrap border-r border-slate-200">
-                                <span className="text-slate-700 text-xs font-medium" title={batchObj?.name || ""}>
-                                  {batchObj?.name || <span className="text-slate-400 italic font-normal">Chưa phân đợt</span>}
-                                </span>
-                              </td>
-
-                              {/* ===== CÁC CỘT CHI TIẾT KẾT QUẢ HỌC TẬP ===== */}
-                              {/* 11. Chương trình */}
-                              <td className="px-3 py-3 text-center whitespace-nowrap border-r border-slate-100 bg-slate-50/20">
-                                <span className={`px-2 py-0.5 rounded-full text-[10px] font-medium border ${details.programBadgeCls}`}>
-                                  {details.programLabel}
-                                </span>
-                              </td>
-
-                              {/* 12. KQ Chung & Thành tích */}
-                              <td className="px-3 py-2.5 text-center whitespace-nowrap border-r border-slate-100 bg-slate-50/20">
-                                <div className="flex flex-col items-center justify-center gap-1">
-                                  <span className="px-2 py-0.5 rounded-full bg-slate-100 text-slate-700 text-[10px] font-medium" title={details.overallRating}>
-                                    {details.overallRating}
+                                <div className="flex flex-col gap-0.5">
+                                  <span className="font-mono text-[10px] font-bold text-teal-700 bg-teal-50 border border-teal-200/80 px-2 py-0.5 rounded w-fit">
+                                    {s.studentCode}
                                   </span>
-                                  {details.conductRating && (
-                                    <span className="text-[9px] text-slate-500 font-normal">
-                                      RL: <strong className="font-semibold text-slate-700">{details.conductRating}</strong>
+                                  {firstSession?.seatNumber && (
+                                    <span className="text-[10px] font-semibold text-slate-500">
+                                      SBD: <strong className="text-slate-700">{firstSession.seatNumber}</strong>
                                     </span>
                                   )}
-                                  {details.achievements && (
-                                    <span className="inline-flex items-center gap-0.5 px-1.5 py-0.5 rounded-md bg-amber-50 text-amber-800 border border-amber-200/90 text-[9px] font-medium max-w-[140px] truncate shadow-3xs" title={`Thành tích: ${details.achievements}`}>
-                                      🏆 {details.achievements}
+                                  {firstSession?.session?.sessionCode && !firstSession?.seatNumber && (
+                                    <span className="text-[9px] font-mono text-slate-400 truncate max-w-[100px]" title={firstSession.session.sessionCode}>
+                                      {firstSession.session.sessionCode}
                                     </span>
                                   )}
                                 </div>
                               </td>
 
-                              {/* 13. Toán */}
-                              <td className="px-3 py-3 text-center whitespace-nowrap border-r border-slate-100 bg-slate-50/20">
-                                {details.math !== "—" ? (
-                                  <span className={details.math === "T" ? "px-2 py-0.5 rounded-md bg-emerald-50 text-emerald-700 border border-emerald-200/80 font-medium text-xs" : details.math === "H" ? "px-2 py-0.5 rounded-md bg-sky-50 text-sky-700 border border-sky-200/80 font-medium text-xs" : details.math === "C" ? "px-2 py-0.5 rounded-md bg-rose-50 text-rose-700 border border-rose-200/80 font-medium text-xs" : "font-medium text-slate-800 text-xs"}>
-                                    {details.math}
-                                  </span>
-                                ) : (
-                                  <span className="text-slate-300 font-normal">—</span>
-                                )}
-                              </td>
-
-                              {/* 14. Tiếng Việt / Ngữ văn */}
-                              <td className="px-3 py-3 text-center whitespace-nowrap border-r border-slate-100 bg-slate-50/20">
-                                {details.literature !== "—" ? (
-                                  <span className={details.literature === "T" ? "px-2 py-0.5 rounded-md bg-emerald-50 text-emerald-700 border border-emerald-200/80 font-medium text-xs" : details.literature === "H" ? "px-2 py-0.5 rounded-md bg-sky-50 text-sky-700 border border-sky-200/80 font-medium text-xs" : details.literature === "C" ? "px-2 py-0.5 rounded-md bg-rose-50 text-rose-700 border border-rose-200/80 font-medium text-xs" : "font-medium text-slate-800 text-xs"}>
-                                    {details.literature}
-                                  </span>
-                                ) : (
-                                  <span className="text-slate-300 font-normal">—</span>
-                                )}
-                              </td>
-
-                              {/* 15. Tiếng Anh */}
-                              <td className="px-3 py-3 text-center whitespace-nowrap border-r border-slate-100 bg-slate-50/20">
-                                {details.english !== "—" ? (
-                                  <span className={details.english === "T" ? "px-2 py-0.5 rounded-md bg-emerald-50 text-emerald-700 border border-emerald-200/80 font-medium text-xs" : details.english === "H" ? "px-2 py-0.5 rounded-md bg-sky-50 text-sky-700 border border-sky-200/80 font-medium text-xs" : details.english === "C" ? "px-2 py-0.5 rounded-md bg-rose-50 text-rose-700 border border-rose-200/80 font-medium text-xs" : "font-medium text-slate-800 text-xs"}>
-                                    {details.english}
-                                  </span>
-                                ) : (
-                                  <span className="text-slate-300 font-normal">—</span>
-                                )}
-                              </td>
-
-                              {/* 16. Tổ hợp / Môn khác */}
-                              <td className="px-3 py-3 border-r border-slate-100 bg-slate-50/20">
-                                <span className="text-[11px] text-slate-600 font-normal truncate block max-w-[180px]" title={details.otherSubjects}>
-                                  {details.otherSubjects}
-                                </span>
-                              </td>
-
-                              {/* 17. Học bạ đính kèm */}
-                              <td className="px-3 py-3 text-center whitespace-nowrap border-r border-slate-200 bg-slate-50/20">
-                                {details.attachments.length > 0 ? (
-                                  <a
-                                    href={details.attachments[0].url}
-                                    target="_blank"
-                                    rel="noopener noreferrer"
-                                    className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-teal-50 text-teal-700 border border-teal-200/80 text-[10px] font-medium hover:bg-teal-100 transition-colors cursor-pointer"
-                                    title={`Mở xem ${details.attachments.length} tệp học bạ đính kèm`}
+                              {/* 3. Họ và tên */}
+                              <td className="px-3.5 py-3 whitespace-nowrap border-r border-slate-100">
+                                <div>
+                                  <button
+                                    type="button"
+                                    onClick={() => setQuickViewStudent(s)}
+                                    className="font-bold text-slate-800 text-xs hover:text-indigo-600 transition-colors cursor-pointer text-left flex items-center gap-1.5"
+                                    title="Bấm để xem chi tiết kết quả khảo sát và học bạ"
                                   >
-                                    <Paperclip className="w-2.5 h-2.5" />
-                                    <span>{details.attachments.length} tệp</span>
-                                  </a>
+                                    <span>{s.fullName}</span>
+                                    <Eye className="w-3 h-3 text-slate-300 group-hover:text-indigo-500 transition-colors" />
+                                  </button>
+                                  <div className="text-[10px] text-slate-400 font-normal mt-0.5">
+                                    {s.gender || "—"} • {s.dateOfBirth ? new Date(s.dateOfBirth).toLocaleDateString('vi-VN') : "—"}
+                                  </div>
+                                </div>
+                              </td>
+
+                              {/* 4. Khối & Hệ KS */}
+                              <td className="px-3 py-3 text-center whitespace-nowrap border-r border-slate-100">
+                                <div className="flex flex-col items-center gap-1">
+                                  <span className="px-2 py-0.5 rounded-full bg-slate-100 text-slate-700 border border-slate-200 text-[10px] font-bold">
+                                    K{s.grade || "—"}
+                                  </span>
+                                  <span className="text-[10px] font-medium text-sky-700 bg-sky-50 px-1.5 py-0.2 rounded border border-sky-150">
+                                    {s.surveyFormType || s.surveySystem || "—"}
+                                  </span>
+                                </div>
+                              </td>
+
+                              {/* 5. Cơ sở & Đợt */}
+                              <td className="px-3.5 py-3 whitespace-nowrap border-r border-slate-100">
+                                <div className="flex flex-col gap-0.5 text-xs">
+                                  <span className="text-slate-700 font-medium truncate max-w-[130px]" title={registeredCampusObj?.campusName || s.admissionCampus || s.registeredCampus || ""}>
+                                    {registeredCampusObj?.campusName || s.admissionCampus || s.registeredCampus || "—"}
+                                  </span>
+                                  <span className="text-[10px] text-slate-400 font-normal truncate max-w-[130px]" title={batchObj?.name || "Khảo sát lẻ"}>
+                                    {batchObj?.name || <span className="italic">Khảo sát lẻ</span>}
+                                  </span>
+                                </div>
+                              </td>
+
+                              {/* 6. Học bạ trường cũ */}
+                              <td className="px-3.5 py-2.5 border-r border-slate-100 bg-teal-50/15">
+                                <div className="space-y-1 text-xs">
+                                  {s.oldSchoolName && (
+                                    <div className="text-[10px] text-slate-500 font-medium truncate max-w-[180px]" title={s.oldSchoolName}>
+                                      🏫 {s.oldSchoolName}
+                                    </div>
+                                  )}
+                                  <div className="flex items-center gap-1.5 flex-wrap">
+                                    {details.math !== "—" && (
+                                      <span className="text-[10px] px-1.5 py-0.2 bg-white border border-slate-200 rounded text-slate-600">
+                                        T: <strong className="text-slate-800">{details.math}</strong>
+                                      </span>
+                                    )}
+                                    {details.literature !== "—" && (
+                                      <span className="text-[10px] px-1.5 py-0.2 bg-white border border-slate-200 rounded text-slate-600">
+                                        V: <strong className="text-slate-800">{details.literature}</strong>
+                                      </span>
+                                    )}
+                                    {details.english !== "—" && (
+                                      <span className="text-[10px] px-1.5 py-0.2 bg-white border border-slate-200 rounded text-slate-600">
+                                        A: <strong className="text-slate-800">{details.english}</strong>
+                                      </span>
+                                    )}
+                                    {details.attachments.length > 0 && (
+                                      <a
+                                        href={details.attachments[0].url}
+                                        target="_blank"
+                                        rel="noopener noreferrer"
+                                        className="inline-flex items-center gap-0.5 px-1.5 py-0.2 rounded bg-teal-50 text-teal-700 border border-teal-200 text-[10px] font-medium hover:bg-teal-100"
+                                        title={`Xem ${details.attachments.length} tệp học bạ`}
+                                      >
+                                        <Paperclip className="w-2.5 h-2.5" />
+                                        <span>{details.attachments.length}</span>
+                                      </a>
+                                    )}
+                                  </div>
+                                </div>
+                              </td>
+
+                              {/* 7. Điểm bài thi Skyline */}
+                              <td className="px-3.5 py-2.5 border-r border-slate-100 bg-indigo-50/15">
+                                {skylineScores.length > 0 ? (
+                                  <div className="flex flex-wrap gap-1 max-w-[210px]">
+                                    {skylineScores.map((sc, scIdx) => (
+                                      <span key={scIdx} className="inline-flex items-center gap-1 px-1.5 py-0.5 bg-white border border-indigo-100 rounded-md text-[10px] font-semibold text-slate-700 shadow-2xs" title={`${sc.subjectName}: ${sc.displayScore}${sc.comment ? ` - ${sc.comment}` : ''}`}>
+                                        <span className="text-slate-400">{sc.subjectName.replace("Tiếng ", "T.").replace("Ngữ văn", "Văn")}:</span>
+                                        <span className="text-indigo-600 font-bold">{sc.displayScore}</span>
+                                      </span>
+                                    ))}
+                                  </div>
                                 ) : (
-                                  <span className="text-slate-300 font-normal">—</span>
+                                  <span className="text-[11px] text-slate-400 italic">Chưa có điểm</span>
                                 )}
                               </td>
 
-                              {/* 18. Khảo sát & Vắng */}
+                              {/* 8. Kết quả khảo sát */}
                               <td className="px-3.5 py-3 text-center whitespace-nowrap border-r border-slate-100">
-                                <label className="inline-flex items-center gap-1.5 cursor-pointer text-xs font-normal text-slate-600 select-none">
+                                {s.isAbsent ? (
+                                  <span className="px-2.5 py-1 rounded-full bg-slate-100 text-slate-500 border border-slate-200 text-[10px] font-bold">
+                                    Vắng thi
+                                  </span>
+                                ) : s.admissionResult === "Đạt" || s.admissionResult === "Đạt - Giao lưu" ? (
+                                  <span className="px-2.5 py-1 rounded-full bg-emerald-50 text-emerald-700 border border-emerald-200/80 text-[10px] font-black tracking-wide">
+                                    ✓ ĐẠT
+                                  </span>
+                                ) : s.admissionResult === "Đạt cam kết" ? (
+                                  <div className="flex flex-col items-center gap-0.5">
+                                    <span className="px-2.5 py-0.5 rounded-full bg-amber-50 text-amber-700 border border-amber-200/80 text-[10px] font-black tracking-wide">
+                                      ⚡ ĐẠT CAM KẾT
+                                    </span>
+                                    {s.directorNote && (
+                                      <span className="text-[9px] text-amber-800 line-clamp-1 max-w-[130px]" title={s.directorNote}>
+                                        {s.directorNote}
+                                      </span>
+                                    )}
+                                  </div>
+                                ) : s.admissionResult === "Không đạt" ? (
+                                  <span className="px-2.5 py-1 rounded-full bg-rose-50 text-rose-700 border border-rose-200/80 text-[10px] font-black tracking-wide">
+                                    ✕ KHÔNG ĐẠT
+                                  </span>
+                                ) : s.admissionResult === "Học thử" ? (
+                                  <span className="px-2.5 py-1 rounded-full bg-purple-50 text-purple-700 border border-purple-200 text-[10px] font-black">
+                                    HỌC THỬ
+                                  </span>
+                                ) : skylineScores.length > 0 ? (
+                                  <span className="px-2 py-0.5 rounded-full bg-indigo-50 text-indigo-700 border border-indigo-200/80 text-[10px] font-medium">
+                                    ⏳ Đang duyệt
+                                  </span>
+                                ) : (
+                                  <span className="px-2 py-0.5 rounded-full bg-slate-50 text-slate-400 border border-slate-200 text-[10px] font-normal">
+                                    Chờ thi
+                                  </span>
+                                )}
+                              </td>
+
+                              {/* 9. Vắng */}
+                              <td className="px-3 py-3 text-center whitespace-nowrap border-r border-slate-100">
+                                <label className="inline-flex items-center cursor-pointer select-none">
                                   <input
                                     type="checkbox"
                                     checked={!!s.isAbsent}
                                     onChange={(e) => handleUpdateAbsent(s, e.target.checked)}
                                     className="w-3.5 h-3.5 rounded text-rose-600 focus:ring-rose-500 border-slate-300 cursor-pointer"
+                                    title={s.isAbsent ? "Đang đánh dấu vắng mặt" : "Đánh dấu vắng mặt"}
                                   />
-                                  <span className={s.isAbsent ? "text-rose-600 font-medium" : "text-slate-500 font-normal"}>
-                                    {s.isAbsent ? "Vắng" : "Có mặt"}
-                                  </span>
                                 </label>
                               </td>
 
-                              {/* 19. Thao tác (Sticky right) */}
-                              <td className="px-3.5 py-3 pr-4 text-right sticky right-0 bg-white group-hover:bg-slate-50/70 shadow-[-4px_0_6px_-2px_rgba(0,0,0,0.04)] whitespace-nowrap">
+                              {/* 10. Thao tác */}
+                              <td className="px-3.5 py-3 whitespace-nowrap text-right pr-4 sticky right-0 bg-white/95 group-hover:bg-slate-50/95 shadow-[-4px_0_6px_-2px_rgba(0,0,0,0.04)] transition-colors">
                                 <div className="flex items-center justify-end gap-1">
-                                  <button 
+                                  <button
                                     type="button"
-                                    onClick={()=>openEditStudent(s)} 
-                                    className={"p-1.5 text-slate-400 hover:text-teal-700 hover:bg-teal-50 rounded-lg transition-all cursor-pointer " + (cannotUpdate ? "pointer-events-none opacity-40" : "")} 
-                                    disabled={cannotUpdate}
-                                    title="Chỉnh sửa hồ sơ và kết quả học tập"
+                                    onClick={() => setQuickViewStudent(s)}
+                                    className="p-1.5 text-indigo-500 hover:text-indigo-700 hover:bg-indigo-50 rounded-lg transition-all cursor-pointer"
+                                    title="Xem chi tiết bảng điểm và hồ sơ"
                                   >
-                                    <Edit2 className="w-3.5 h-3.5"/>
+                                    <Eye className="w-3.5 h-3.5" />
                                   </button>
-                                  <button 
+                                  <button
                                     type="button"
-                                    onClick={()=>setConfirm({msg:`Xóa hồ sơ học sinh ${s.fullName}?`,fn:()=>doDeleteStudent(s.id)})} 
-                                    className={"p-1.5 text-slate-400 hover:text-rose-600 hover:bg-rose-50 rounded-lg transition-all cursor-pointer " + (cannotDelete ? "pointer-events-none opacity-40" : "")} 
+                                    onClick={() => openEditStudent(s)}
+                                    className={"p-1.5 text-slate-400 hover:text-teal-700 hover:bg-teal-50 rounded-lg transition-all cursor-pointer " + (cannotUpdate ? "pointer-events-none opacity-40" : "")}
+                                    disabled={cannotUpdate}
+                                    title="Chỉnh sửa hồ sơ"
+                                  >
+                                    <Edit2 className="w-3.5 h-3.5" />
+                                  </button>
+                                  <button
+                                    type="button"
+                                    onClick={() => setConfirm({ msg: `Xóa hồ sơ học sinh ${s.fullName}?`, fn: () => doDeleteStudent(s.id) })}
+                                    className={"p-1.5 text-slate-400 hover:text-rose-600 hover:bg-rose-50 rounded-lg transition-all cursor-pointer " + (cannotDelete ? "pointer-events-none opacity-40" : "")}
                                     disabled={cannotDelete}
                                     title="Xóa hồ sơ"
                                   >
-                                    <Trash2 className="w-3.5 h-3.5"/>
+                                    <Trash2 className="w-3.5 h-3.5" />
                                   </button>
                                 </div>
                               </td>
                             </tr>
                           );
-                        })}
-                      </tbody>
+                        })}                      </tbody>
                     </table>
                 </div>
 
@@ -5825,6 +6038,7 @@ const [customCommitmentSubjects, setCustomCommitmentSubjects] = useState<string[
                             </div>
                           </div>
                           <div className="flex items-center gap-1">
+                             <button type="button" onClick={()=>setQuickViewStudent(s)} className="p-1.5 text-indigo-500 hover:text-indigo-700 hover:bg-indigo-50 rounded-lg cursor-pointer" title="Xem bảng điểm"><Eye className="w-3.5 h-3.5"/></button>
                              <button type="button" onClick={()=>openEditStudent(s)} className={"p-1.5 text-slate-400 hover:text-teal-700 hover:bg-teal-50 rounded-lg cursor-pointer " + (cannotUpdate ? "pointer-events-none opacity-40" : "")} disabled={cannotUpdate}><Edit2 className="w-3.5 h-3.5"/></button>
                              <button type="button" onClick={()=>setConfirm({msg:`Xóa hồ sơ học sinh ${s.fullName}?`,fn:()=>doDeleteStudent(s.id)})} className={"p-1.5 text-slate-400 hover:text-rose-600 hover:bg-rose-50 rounded-lg cursor-pointer " + (cannotDelete ? "pointer-events-none opacity-40" : "")} disabled={cannotDelete}><Trash2 className="w-3.5 h-3.5"/></button>
                           </div>
@@ -6926,7 +7140,8 @@ const [customCommitmentSubjects, setCustomCommitmentSubjects] = useState<string[
                   }}
                   className="w-full bg-white border border-slate-200 rounded-2xl pl-5 pr-10 py-3.5 outline-none focus:border-indigo-500 focus:ring-4 focus:ring-indigo-500/10 appearance-none font-semibold text-slate-700 shadow-sm transition-all group-hover:shadow-md cursor-pointer"
                 >
-                  <option value="all">Tất cả các đợt</option>
+                  <option value="all">Tất cả các đợt & Khảo sát lẻ</option>
+                  <option value="none">Khảo sát lẻ (Không thuộc đợt)</option>
                   {reportBatches.map(b => (
                     <option key={b.id} value={b.id}>{b.name}</option>
                   ))}
@@ -10465,15 +10680,15 @@ const [customCommitmentSubjects, setCustomCommitmentSubjects] = useState<string[
                 type="button"
                 onClick={() => setIsQuickScheduleOpen(false)}
                 disabled={quickScheduleLoading}
-                className="px-4 py-2 text-xs font-bold text-slate-500 hover:bg-slate-100 rounded-xl transition-all cursor-pointer"
+                className="px-6 py-2.5 border border-[#D9E2EC] text-[#64748B] hover:text-[#1E293B] hover:bg-slate-100 rounded-xl transition-all cursor-pointer text-xs font-bold uppercase tracking-wider"
               >
-                Hủy
+                Đóng
               </button>
               <button
                 type="button"
                 onClick={handleQuickScheduleSubmit}
                 disabled={quickScheduleLoading}
-                className="flex items-center gap-2 px-5 py-2.5 bg-gradient-to-r from-amber-500 to-orange-500 hover:from-amber-600 hover:to-orange-600 text-white rounded-xl text-xs font-black shadow-md shadow-orange-500/20 active:scale-95 transition-all cursor-pointer disabled:opacity-50"
+                className="flex items-center gap-2 px-6 py-2.5 bg-[#00B5E2] hover:bg-[#0098C2] text-white rounded-xl text-xs font-bold shadow-md shadow-[#00B5E2]/15 active:scale-95 transition-all cursor-pointer disabled:opacity-50 uppercase tracking-wider"
               >
                 {quickScheduleLoading ? <Loader2 className="w-4 h-4 animate-spin" /> : <UserPlus className="w-4 h-4" />}
                 <span>Lưu & Xếp lịch ngay</span>
@@ -10482,20 +10697,22 @@ const [customCommitmentSubjects, setCustomCommitmentSubjects] = useState<string[
           </div>
         }
       >
-        <form onSubmit={handleQuickScheduleSubmit} className="space-y-6">
+        <form onSubmit={handleQuickScheduleSubmit} className="space-y-5 pt-1 text-left max-h-[75vh] overflow-y-auto px-1 custom-scrollbar">
           {/* Section 1: Choose or Create Student */}
-          <div className="bg-white p-4.5 rounded-2xl border border-slate-200 shadow-xs space-y-4">
+          <div className="bg-white border border-slate-200/80 p-4 sm:p-5 rounded-2xl space-y-4 shadow-2xs">
             <div className="flex items-center justify-between pb-2 border-b border-slate-100">
-              <h4 className="text-xs font-black text-slate-700 uppercase tracking-wider flex items-center gap-2">
-                <Users className="w-4 h-4 text-indigo-500" />
-                1. Thông tin Học sinh
-              </h4>
+              <div className="flex items-center gap-2">
+                <span className="w-1.5 h-4 bg-teal-600 inline-block rounded-full"></span>
+                <h4 className="text-xs font-medium text-slate-800 uppercase tracking-wider">
+                  1. Thông tin Học sinh
+                </h4>
+              </div>
               <div className="flex items-center gap-1 p-0.5 bg-slate-100 rounded-lg text-[11px] font-bold">
                 <button
                   type="button"
                   onClick={() => setQuickStudentMode("existing")}
                   className={`px-3 py-1 rounded-md transition-all cursor-pointer ${
-                    quickStudentMode === "existing" ? "bg-white text-indigo-600 shadow-xs" : "text-slate-500 hover:text-slate-800"
+                    quickStudentMode === "existing" ? "bg-white text-teal-700 shadow-xs" : "text-slate-500 hover:text-slate-800"
                   }`}
                 >
                   Chọn HS có sẵn
@@ -10504,7 +10721,7 @@ const [customCommitmentSubjects, setCustomCommitmentSubjects] = useState<string[
                   type="button"
                   onClick={() => setQuickStudentMode("new")}
                   className={`px-3 py-1 rounded-md transition-all cursor-pointer ${
-                    quickStudentMode === "new" ? "bg-white text-indigo-600 shadow-xs" : "text-slate-500 hover:text-slate-800"
+                    quickStudentMode === "new" ? "bg-white text-teal-700 shadow-xs" : "text-slate-500 hover:text-slate-800"
                   }`}
                 >
                   + Nhập nhanh HS mới
@@ -10533,83 +10750,313 @@ const [customCommitmentSubjects, setCustomCommitmentSubjects] = useState<string[
                 </p>
               </div>
             ) : (
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-                <Field label="Họ và tên học sinh" required>
-                  <input
-                    type="text"
-                    placeholder="Nguyễn Văn A"
-                    value={quickNewStudent.fullName}
-                    onChange={e => setQuickNewStudent(prev => ({ ...prev, fullName: e.target.value }))}
-                    className={inp}
-                    required
+              <div className="space-y-5">
+                {/* 1.1 THÔNG TIN ĐỊNH DANH HỌC SINH */}
+                <div className="bg-slate-50/50 border border-slate-200/80 p-4 rounded-xl space-y-4">
+                  <div className="flex items-center gap-2 pb-1 border-b border-slate-100">
+                    <span className="w-1.5 h-3.5 bg-teal-600 inline-block rounded-full"></span>
+                    <h5 className="text-[11px] font-medium text-slate-800 uppercase tracking-wider">Thông tin định danh học sinh</h5>
+                  </div>
+
+                  <div className="grid grid-cols-1 sm:grid-cols-3 gap-3.5">
+                    <div className="sm:col-span-1">
+                      <div className="flex items-center justify-between mb-1">
+                        <label className="text-[11px] font-medium text-slate-500 uppercase tracking-wider">Mã HS KS *</label>
+                        <button
+                          type="button"
+                          onClick={async () => {
+                            try {
+                              const r = await fetch("/api/input-assessment-students?get_max_code=true");
+                              if (r.ok) {
+                                const res = await r.json();
+                                if (res.nextCode) setQuickNewStudent(f => ({ ...f, studentCode: res.nextCode }));
+                              }
+                            } catch(e) {}
+                          }}
+                          className="text-[10px] text-teal-600 hover:text-teal-700 font-medium underline cursor-pointer"
+                        >
+                          Tự sinh mã
+                        </button>
+                      </div>
+                      <input
+                        value={quickNewStudent.studentCode}
+                        onChange={e => setQuickNewStudent(f => ({ ...f, studentCode: e.target.value }))}
+                        className={inp}
+                        placeholder="Để trống sẽ tự sinh"
+                      />
+                    </div>
+
+                    <div className="sm:col-span-2">
+                      <label className="block text-[11px] font-medium text-slate-500 uppercase tracking-wider mb-1">Họ và Tên *</label>
+                      <input
+                        value={quickNewStudent.fullName}
+                        onChange={e => setQuickNewStudent(f => ({ ...f, fullName: e.target.value }))}
+                        className={inp}
+                        placeholder="Nhập họ và tên đầy đủ"
+                        required
+                      />
+                    </div>
+                  </div>
+
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3.5">
+                    <div>
+                      <label className="block text-[11px] font-medium text-slate-500 uppercase tracking-wider mb-1">Ngày sinh</label>
+                      <input
+                        type="date"
+                        value={quickNewStudent.dateOfBirth}
+                        onChange={e => setQuickNewStudent(f => ({ ...f, dateOfBirth: e.target.value }))}
+                        className={inp}
+                      />
+                    </div>
+
+                    <div>
+                      <label className="block text-[11px] font-medium text-slate-500 uppercase tracking-wider mb-1">Giới tính</label>
+                      <select
+                        value={quickNewStudent.gender}
+                        onChange={e => setQuickNewStudent(f => ({ ...f, gender: e.target.value }))}
+                        className={inp}
+                      >
+                        <option value="">-- Chọn giới tính --</option>
+                        <option value="Nam">Nam</option>
+                        <option value="Nữ">Nữ</option>
+                      </select>
+                    </div>
+                  </div>
+                </div>
+
+                {/* 1.2 NGUYỆN VỌNG & ĐĂNG KÝ KHẢO SÁT */}
+                <div className="bg-slate-50/50 border border-slate-200/80 p-4 rounded-xl space-y-4">
+                  <div className="flex items-center gap-2 pb-1 border-b border-slate-100">
+                    <span className="w-1.5 h-3.5 bg-sky-600 inline-block rounded-full"></span>
+                    <h5 className="text-[11px] font-medium text-slate-800 uppercase tracking-wider">Nguyện vọng & Đăng ký khảo sát</h5>
+                  </div>
+
+                  <div className="grid grid-cols-1 sm:grid-cols-3 gap-3.5">
+                    <div>
+                      <label className="block text-[11px] font-medium text-slate-500 uppercase tracking-wider mb-1">Khối đăng ký *</label>
+                      <select
+                        value={quickNewStudent.grade}
+                        onChange={e => setQuickNewStudent(f => ({ ...f, grade: e.target.value }))}
+                        className={inp}
+                      >
+                        <option value="">-- Chọn Khối --</option>
+                        {(activeGrades?.length ? activeGrades : ["1","2","3","4","5","6","7","8","9","10","11","12"]).map(g => (
+                          <option key={g} value={g}>{g}</option>
+                        ))}
+                      </select>
+                    </div>
+
+                    <div>
+                      <label className="block text-[11px] font-medium text-slate-500 uppercase tracking-wider mb-1">Hệ Khảo sát</label>
+                      <select
+                        value={quickNewStudent.surveyFormType}
+                        onChange={e => setQuickNewStudent(f => ({ ...f, surveyFormType: e.target.value }))}
+                        className={inp}
+                      >
+                        <option value="">-- Chọn Hệ --</option>
+                        {currentEduSystems.map(es => (
+                          <option key={es.code} value={es.code}>{es.code} - {es.name}</option>
+                        ))}
+                      </select>
+                    </div>
+
+                    <div>
+                      <label className="block text-[11px] font-medium text-slate-500 uppercase tracking-wider mb-1">Diện Khảo sát</label>
+                      <select
+                        value={quickNewStudent.admissionCriteria}
+                        onChange={e => setQuickNewStudent(f => ({ ...f, admissionCriteria: e.target.value }))}
+                        className={inp}
+                      >
+                        <option value="">--</option>
+                        {configs.filter(c => c.categoryType === "DIEN_KS").map(c => (
+                          <option key={c.id} value={c.name}>{c.name}</option>
+                        ))}
+                      </select>
+                    </div>
+                  </div>
+
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3.5">
+                    <div>
+                      <label className="block text-[11px] font-medium text-slate-500 uppercase tracking-wider mb-1">Hình thức KS</label>
+                      <select
+                        value={quickNewStudent.surveySystem}
+                        onChange={e => setQuickNewStudent(f => ({ ...f, surveySystem: e.target.value }))}
+                        className={inp}
+                      >
+                        <option value="">--</option>
+                        {configs.filter(c => c.categoryType === "HINH_THUC_KS").map(c => (
+                          <option key={c.id} value={c.name}>{c.name}</option>
+                        ))}
+                      </select>
+                    </div>
+
+                    <div>
+                      <label className="block text-[11px] font-medium text-slate-500 uppercase tracking-wider mb-1">Đăng ký Cơ sở</label>
+                      <select
+                        value={quickNewStudent.registeredCampus}
+                        onChange={e => setQuickNewStudent(f => ({ ...f, registeredCampus: e.target.value }))}
+                        className={inp}
+                      >
+                        <option value="">-- Mặc định theo cơ sở ca thi --</option>
+                        {campuses.map(c => (
+                          <option key={c.id} value={c.id}>{c.campusName}</option>
+                        ))}
+                      </select>
+                    </div>
+                  </div>
+
+                  {/* Đối tượng tuyển sinh - Khử trùng lặp 100% bằng Map */}
+                  <div>
+                    <label className="block text-[11px] font-medium text-slate-500 uppercase tracking-wider mb-1.5">Đối tượng tuyển sinh</label>
+                    <div className="flex flex-wrap gap-2">
+                      {Array.from(new Map(configs.filter(c => c.categoryType === "DOI_TUONG_TS" && !c.name.toLowerCase().includes("home")).map(c => [c.name.trim(), c])).values()).map(c => {
+                        const selectedTargets = quickNewStudent.targetType ? quickNewStudent.targetType.split(",").map(t => t.trim()).filter(Boolean) : [];
+                        const isChecked = selectedTargets.includes(c.name);
+                        return (
+                          <button
+                            type="button"
+                            key={c.id}
+                            onClick={() => {
+                              const updated = isChecked ? "" : c.name;
+                              setQuickNewStudent(f => ({ ...f, targetType: updated }));
+                            }}
+                            className={`px-3.5 py-1.5 border rounded-xl flex items-center gap-1.5 transition-all text-xs font-medium select-none cursor-pointer ${
+                              isChecked
+                                ? 'bg-sky-50 border-sky-300 text-sky-800 shadow-2xs font-semibold'
+                                : 'bg-slate-50 border-slate-200 text-slate-600 hover:bg-slate-100'
+                            }`}
+                          >
+                            {isChecked ? (
+                              <span className="text-sky-600 font-bold text-xs">✓</span>
+                            ) : (
+                              <span className="w-1.5 h-1.5 rounded-full bg-slate-300"></span>
+                            )}
+                            <span>{c.name}</span>
+                          </button>
+                        );
+                      })}
+                    </div>
+                  </div>
+
+                  {/* CONDITIONAL LOCATION INPUTS */}
+                  {quickLocationType && (
+                    <div className="p-4 bg-white border border-slate-200/80 rounded-xl space-y-3">
+                      <h5 className="text-[11px] font-medium text-slate-700 uppercase tracking-wider">Thông tin trường học cũ ({quickLocationType})</h5>
+                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                        {quickLocationType === "Nội tỉnh" && (
+                          <div>
+                            <label className="block text-[10px] font-medium text-slate-500 mb-1">Tỉnh / Thành phố *</label>
+                            <input
+                              readOnly
+                              type="text"
+                              value="Thành phố Đà Nẵng"
+                              className="h-10 w-full px-3 py-2 bg-slate-100 border border-slate-200 text-slate-700 text-xs sm:text-sm font-medium rounded-xl outline-none cursor-not-allowed leading-normal"
+                            />
+                          </div>
+                        )}
+
+                        {quickLocationType === "Ngoại tỉnh" && (
+                          <div>
+                            <label className="block text-[10px] font-medium text-slate-500 mb-1">Tỉnh / Thành phố *</label>
+                            <select
+                              value={quickProvince}
+                              onChange={(e) => {
+                                setQuickProvince(e.target.value);
+                                setQuickNewStudent(f => ({ ...f, cityName: e.target.value }));
+                              }}
+                              className="h-10 w-full px-3 py-2 bg-white border border-slate-200 text-slate-800 text-xs sm:text-sm font-medium rounded-xl outline-none focus:border-teal-500 cursor-pointer leading-normal"
+                            >
+                              <option value="">-- Chọn Tỉnh/Thành --</option>
+                              {vietnamProvinces.map((p) => (
+                                <option key={p} value={p}>{p}</option>
+                              ))}
+                            </select>
+                          </div>
+                        )}
+
+                        {quickLocationType === "Nước ngoài" && (
+                          <div>
+                            <label className="block text-[10px] font-medium text-slate-500 mb-1">Quốc gia *</label>
+                            <select
+                              value={quickCountry}
+                              onChange={(e) => {
+                                setQuickCountry(e.target.value);
+                                setQuickNewStudent(f => ({ ...f, cityName: e.target.value }));
+                              }}
+                              className="h-10 w-full px-3 py-2 bg-white border border-slate-200 text-slate-800 text-xs sm:text-sm font-medium rounded-xl outline-none focus:border-teal-500 cursor-pointer leading-normal"
+                            >
+                              <option value="">-- Chọn Quốc gia --</option>
+                              {worldCountries.map((c) => (
+                                <option key={c} value={c}>{c}</option>
+                              ))}
+                            </select>
+                          </div>
+                        )}
+
+                        <div>
+                          <label className="block text-[10px] font-medium text-slate-500 mb-1">Loại hình trường *</label>
+                          <select
+                            value={quickNewStudent.oldSchoolType}
+                            onChange={(e) => setQuickNewStudent(f => ({ ...f, oldSchoolType: e.target.value }))}
+                            className="h-10 w-full px-3 py-2 bg-white border border-slate-200 text-slate-800 text-xs sm:text-sm font-medium rounded-xl outline-none focus:border-teal-500 cursor-pointer leading-normal"
+                          >
+                            <option value="">-- Chọn loại hình --</option>
+                            <option value="Công lập">Công lập</option>
+                            <option value="Tư thục">Tư thục</option>
+                            <option value="Song ngữ">Song ngữ</option>
+                            <option value="Quốc tế">Quốc tế</option>
+                          </select>
+                        </div>
+
+                        <div className="sm:col-span-2">
+                          <label className="block text-[10px] font-medium text-slate-500 mb-1">Tên trường học cũ *</label>
+                          <input
+                            type="text"
+                            value={quickNewStudent.oldSchoolName}
+                            onChange={(e) => setQuickNewStudent(f => ({ ...f, oldSchoolName: e.target.value }))}
+                            placeholder="Nhập tên trường cũ (VD: TH Phù Đổng)"
+                            className="h-10 w-full px-3.5 py-2 bg-white border border-slate-200 text-slate-800 placeholder-slate-400 text-xs sm:text-sm font-normal rounded-xl outline-none focus:border-teal-500 leading-normal"
+                          />
+                        </div>
+                      </div>
+                    </div>
+                  )}
+                </div>
+
+                {/* 1.3 KẾT QUẢ HỌC TẬP ĐẦU VÀO */}
+                <div className="space-y-2">
+                  <EntranceAcademicRecordInput
+                    value={quickNewStudent.kqHocTap}
+                    grade={quickNewStudent.grade || "1"}
+                    onChange={(serializedJson) => {
+                      try {
+                        const parsed = JSON.parse(serializedJson);
+                        let hoSo = quickNewStudent.hoSoCtQuocTe;
+                        if (parsed.programType === "BO_GD_DT") hoSo = "CT Việt Nam";
+                        else if (parsed.programType === "SONG_NGU") hoSo = "Song ngữ / Tích hợp";
+                        else if (parsed.programType === "NUOC_NGOAI") hoSo = "CT Quốc tế";
+                        else if (parsed.programType === "HOMESCHOOLING") hoSo = "Home Schooling";
+                        setQuickNewStudent(f => ({ ...f, kqHocTap: serializedJson, hoSoCtQuocTe: hoSo }));
+                      } catch (e) {
+                        setQuickNewStudent(f => ({ ...f, kqHocTap: serializedJson }));
+                      }
+                    }}
                   />
-                </Field>
-
-                <Field label="Ngày sinh">
-                  <input
-                    type="date"
-                    value={quickNewStudent.dateOfBirth}
-                    onChange={e => setQuickNewStudent(prev => ({ ...prev, dateOfBirth: e.target.value }))}
-                    className={inp}
-                  />
-                </Field>
-
-                <Field label="Giới tính">
-                  <select
-                    value={quickNewStudent.gender}
-                    onChange={e => setQuickNewStudent(prev => ({ ...prev, gender: e.target.value }))}
-                    className={inp}
-                  >
-                    <option value="NAM">Nam</option>
-                    <option value="NU">Nữ</option>
-                  </select>
-                </Field>
-
-                <Field label="Khối khảo sát">
-                  <select
-                    value={quickNewStudent.grade}
-                    onChange={e => setQuickNewStudent(prev => ({ ...prev, grade: e.target.value }))}
-                    className={inp}
-                  >
-                    {["1","2","3","4","5","6","7","8","9","10","11","12"].map(g => (
-                      <option key={g} value={g}>Khối {g}</option>
-                    ))}
-                  </select>
-                </Field>
-
-                <Field label="Hệ khảo sát">
-                  <select
-                    value={quickNewStudent.surveySystem}
-                    onChange={e => setQuickNewStudent(prev => ({ ...prev, surveySystem: e.target.value }))}
-                    className={inp}
-                  >
-                    <option value="CLC">Chất lượng cao (CLC)</option>
-                    <option value="HN">Hội nhập</option>
-                    <option value="QT">Quốc tế (Song bằng)</option>
-                  </select>
-                </Field>
-
-                <Field label="Tiêu chuẩn tuyển sinh">
-                  <input
-                    type="text"
-                    placeholder="Khảo sát đầu vào"
-                    value={quickNewStudent.admissionCriteria}
-                    onChange={e => setQuickNewStudent(prev => ({ ...prev, admissionCriteria: e.target.value }))}
-                    className={inp}
-                  />
-                </Field>
+                </div>
               </div>
             )}
           </div>
 
           {/* Section 2: Session Schedule Info */}
-          <div className="bg-white p-4.5 rounded-2xl border border-slate-200 shadow-xs space-y-4">
-            <h4 className="text-xs font-black text-slate-700 uppercase tracking-wider pb-2 border-b border-slate-100 flex items-center gap-2">
-              <Clock className="w-4 h-4 text-amber-500" />
-              2. Thời gian & Địa điểm Khảo sát
-            </h4>
+          <div className="bg-white border border-slate-200/80 p-4 sm:p-5 rounded-2xl space-y-4 shadow-2xs">
+            <div className="flex items-center gap-2 pb-2 border-b border-slate-100">
+              <span className="w-1.5 h-4 bg-amber-500 inline-block rounded-full"></span>
+              <h4 className="text-xs font-medium text-slate-800 uppercase tracking-wider">
+                2. Thời gian & Thông tin Khảo sát
+              </h4>
+            </div>
 
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-3.5">
               <Field label="Ngày khảo sát" required>
                 <input
                   type="date"
@@ -10633,40 +11080,10 @@ const [customCommitmentSubjects, setCustomCommitmentSubjects] = useState<string[
                 </select>
               </Field>
 
-              <Field label="Giờ bắt đầu" required>
-                <input
-                  type="time"
-                  value={quickSessionData.startTime}
-                  onChange={e => setQuickSessionData(prev => ({ ...prev, startTime: e.target.value }))}
-                  className={inp}
-                  required
-                />
-              </Field>
-
-              <Field label="Giờ kết thúc">
-                <input
-                  type="time"
-                  value={quickSessionData.endTime}
-                  onChange={e => setQuickSessionData(prev => ({ ...prev, endTime: e.target.value }))}
-                  className={inp}
-                />
-              </Field>
-
-              <Field label="Phòng khảo sát" required>
-                <input
-                  type="text"
-                  placeholder="Phòng Khảo sát 1 / Phòng 201"
-                  value={quickSessionData.room}
-                  onChange={e => setQuickSessionData(prev => ({ ...prev, room: e.target.value }))}
-                  className={inp}
-                  required
-                />
-              </Field>
-
               <Field label="Kỳ khảo sát liên kết">
                 <select
                   value={quickSessionData.periodId || periods[0]?.id || ""}
-                  onChange={e => setQuickSessionData(prev => ({ ...prev, periodId: e.target.value }))}
+                  onChange={e => setQuickSessionData(prev => ({ ...prev, periodId: e.target.value, batchId: "" }))}
                   className={inp}
                 >
                   {periods.map(p => (
@@ -10674,35 +11091,19 @@ const [customCommitmentSubjects, setCustomCommitmentSubjects] = useState<string[
                   ))}
                 </select>
               </Field>
-            </div>
 
-            {/* Examiners selection */}
-            <div>
-              <label className="text-[11px] font-black text-slate-400 uppercase tracking-widest block mb-1.5 ml-1">
-                Cán bộ coi thi / Chấm điểm (Chọn nhanh)
-              </label>
-              <div className="max-h-32 overflow-y-auto bg-slate-50 border border-slate-200 rounded-xl p-2.5 custom-scrollbar grid grid-cols-1 sm:grid-cols-2 gap-1.5">
-                {teachers.slice(0, 30).map(t => {
-                  const isChecked = quickSessionData.examinerUserIds.includes(t.userId);
-                  return (
-                    <label key={t.userId} className="flex items-center gap-2 p-1 rounded-lg hover:bg-white text-xs font-semibold text-slate-700 cursor-pointer select-none">
-                      <input
-                        type="checkbox"
-                        checked={isChecked}
-                        onChange={() => {
-                          setQuickSessionData(prev => {
-                            const cur = prev.examinerUserIds;
-                            const next = isChecked ? cur.filter(id => id !== t.userId) : [...cur, t.userId];
-                            return { ...prev, examinerUserIds: next };
-                          });
-                        }}
-                        className="rounded border-slate-300 text-indigo-600 focus:ring-indigo-500 w-4 h-4 cursor-pointer"
-                      />
-                      <span className="truncate">{t.teacherName}</span>
-                    </label>
-                  );
-                })}
-              </div>
+              <Field label="Đợt khảo sát (Tùy chọn)">
+                <select
+                  value={quickSessionData.batchId || ""}
+                  onChange={e => setQuickSessionData(prev => ({ ...prev, batchId: e.target.value }))}
+                  className={inp}
+                >
+                  <option value="">Khảo sát lẻ (Không thuộc đợt)</option>
+                  {(periods.find(p => p.id === (quickSessionData.periodId || periods[0]?.id))?.batches || []).map(b => (
+                    <option key={b.id} value={b.id}>{b.name}</option>
+                  ))}
+                </select>
+              </Field>
             </div>
 
             <Field label="Ghi chú ca">
@@ -10725,18 +11126,18 @@ const [customCommitmentSubjects, setCustomCommitmentSubjects] = useState<string[
         title={editingSession ? `Chỉnh sửa Ca: ${editingSession.sessionCode}` : "Tạo Ca / Phiên khảo sát mới"}
         size="lg"
         footer={
-          <div className="flex justify-end gap-2 w-full">
+          <div className="flex gap-3 w-full">
             <button
               type="button"
               onClick={() => setIsSessionModalOpen(false)}
-              className="px-4 py-2 text-xs font-bold text-slate-500 hover:bg-slate-100 rounded-xl transition-all cursor-pointer"
+              className="flex-1 px-6 py-3 border border-[#D9E2EC] text-[#64748B] hover:text-[#1E293B] hover:bg-slate-100 rounded-xl transition-all cursor-pointer text-xs font-bold uppercase tracking-wider"
             >
               Hủy
             </button>
             <button
               type="button"
               onClick={handleSaveSession}
-              className="flex items-center gap-2 px-5 py-2.5 bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl text-xs font-black shadow-sm active:scale-95 transition-all cursor-pointer"
+              className="flex-1 px-6 py-3 bg-[#00B5E2] hover:bg-[#0098C2] text-white rounded-xl text-xs font-bold shadow-md shadow-[#00B5E2]/15 transition-all active:scale-95 cursor-pointer uppercase tracking-wider flex items-center justify-center gap-2"
             >
               <Check className="w-4 h-4" />
               <span>{editingSession ? "Lưu thay đổi" : "Tạo phiên"}</span>
@@ -10744,180 +11145,121 @@ const [customCommitmentSubjects, setCustomCommitmentSubjects] = useState<string[
           </div>
         }
       >
-        <form onSubmit={handleSaveSession} className="space-y-4">
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-3.5">
-            <Field label="Tên phiên khảo sát" required>
-              <input
-                type="text"
-                placeholder="Ca sáng 15/10 - Phòng 201"
-                value={sessionForm.name}
-                onChange={e => setSessionForm(prev => ({ ...prev, name: e.target.value }))}
-                className={inp}
-                required
-              />
-            </Field>
-
-            <Field label="Mã phiên (để trống sẽ tự sinh)">
-              <input
-                type="text"
-                placeholder="SES-20251015-001"
-                value={sessionForm.sessionCode}
-                onChange={e => setSessionForm(prev => ({ ...prev, sessionCode: e.target.value }))}
-                className={inp}
-              />
-            </Field>
-
-            <Field label="Ngày khảo sát" required>
-              <input
-                type="date"
-                value={sessionForm.sessionDate}
-                onChange={e => setSessionForm(prev => ({ ...prev, sessionDate: e.target.value }))}
-                className={inp}
-                required
-              />
-            </Field>
-
-            <Field label="Cơ sở khảo sát" required>
-              <select
-                value={sessionForm.campusId}
-                onChange={e => setSessionForm(prev => ({ ...prev, campusId: e.target.value }))}
-                className={inp}
-                required
-              >
-                {campuses.map(c => (
-                  <option key={c.id} value={c.id}>{c.campusName}</option>
-                ))}
-              </select>
-            </Field>
-
-            <Field label="Giờ bắt đầu" required>
-              <input
-                type="time"
-                value={sessionForm.startTime}
-                onChange={e => setSessionForm(prev => ({ ...prev, startTime: e.target.value }))}
-                className={inp}
-                required
-              />
-            </Field>
-
-            <Field label="Giờ kết thúc">
-              <input
-                type="time"
-                value={sessionForm.endTime}
-                onChange={e => setSessionForm(prev => ({ ...prev, endTime: e.target.value }))}
-                className={inp}
-              />
-            </Field>
-
-            <Field label="Phòng khảo sát">
-              <input
-                type="text"
-                placeholder="Phòng 201"
-                value={sessionForm.room}
-                onChange={e => setSessionForm(prev => ({ ...prev, room: e.target.value }))}
-                className={inp}
-              />
-            </Field>
-
-            <Field label="Sức chứa tối đa (HS)">
-              <input
-                type="number"
-                min="1"
-                max="200"
-                value={sessionForm.maxCapacity}
-                onChange={e => setSessionForm(prev => ({ ...prev, maxCapacity: parseInt(e.target.value, 10) || 30 }))}
-                className={inp}
-              />
-            </Field>
-
-            <Field label="Loại hình khảo sát">
-              <select
-                value={sessionForm.sessionType}
-                onChange={e => setSessionForm(prev => ({ ...prev, sessionType: e.target.value }))}
-                className={inp}
-              >
-                <option value="LE">Khảo sát lẻ / Đột xuất (Cá nhân)</option>
-                <option value="TAP_TRUNG">Khảo sát tập trung (Chiến dịch / Open Day)</option>
-              </select>
-            </Field>
-
-            <Field label="Trạng thái">
-              <select
-                value={sessionForm.status}
-                onChange={e => setSessionForm(prev => ({ ...prev, status: e.target.value }))}
-                className={inp}
-              >
-                <option value="SCHEDULED">Đã lên lịch (SCHEDULED)</option>
-                <option value="IN_PROGRESS">Đang diễn ra (IN_PROGRESS)</option>
-                <option value="COMPLETED">Hoàn thành (COMPLETED)</option>
-                <option value="CANCELLED">Đã hủy (CANCELLED)</option>
-              </select>
-            </Field>
-
-            <Field label="Kỳ khảo sát liên kết">
-              <select
-                value={sessionForm.periodId}
-                onChange={e => setSessionForm(prev => ({ ...prev, periodId: e.target.value }))}
-                className={inp}
-              >
-                <option value="">-- Không liên kết Kỳ --</option>
-                {periods.map(p => (
-                  <option key={p.id} value={p.id}>{p.name}</option>
-                ))}
-              </select>
-            </Field>
-
-            <Field label="Đợt khảo sát liên kết (tùy chọn)">
-              <select
-                value={sessionForm.batchId}
-                onChange={e => setSessionForm(prev => ({ ...prev, batchId: e.target.value }))}
-                className={inp}
-              >
-                <option value="">-- Không liên kết Đợt --</option>
-                {periods.find(p => p.id === sessionForm.periodId)?.batches?.map(b => (
-                  <option key={b.id} value={b.id}>{b.name}</option>
-                ))}
-              </select>
-            </Field>
-          </div>
-
-          <div>
-            <label className="text-[11px] font-black text-slate-400 uppercase tracking-widest block mb-1.5 ml-1">
-              Phân công cán bộ coi thi / Chấm điểm
-            </label>
-            <div className="max-h-36 overflow-y-auto bg-slate-50 border border-slate-200 rounded-xl p-2.5 custom-scrollbar grid grid-cols-1 sm:grid-cols-2 gap-1.5">
-              {teachers.map(t => {
-                const isChecked = sessionForm.examinerUserIds.includes(t.userId);
-                return (
-                  <label key={t.userId} className="flex items-center gap-2 p-1 rounded-lg hover:bg-white text-xs font-semibold text-slate-700 cursor-pointer select-none">
-                    <input
-                      type="checkbox"
-                      checked={isChecked}
-                      onChange={() => {
-                        setSessionForm(prev => {
-                          const cur = prev.examinerUserIds;
-                          const next = isChecked ? cur.filter(id => id !== t.userId) : [...cur, t.userId];
-                          return { ...prev, examinerUserIds: next };
-                        });
-                      }}
-                      className="rounded border-slate-300 text-indigo-600 focus:ring-indigo-500 w-4 h-4 cursor-pointer"
-                    />
-                    <span className="truncate">{t.teacherName}</span>
-                  </label>
-                );
-              })}
+        <form onSubmit={handleSaveSession} className="space-y-5 pt-1 text-left max-h-[75vh] overflow-y-auto px-1 custom-scrollbar">
+          <div className="bg-white border border-slate-200/80 p-4 sm:p-5 rounded-2xl space-y-4 shadow-2xs">
+            <div className="flex items-center gap-2 pb-2 border-b border-slate-100">
+              <span className="w-1.5 h-4 bg-teal-600 inline-block rounded-full"></span>
+              <h4 className="text-xs font-medium text-slate-800 uppercase tracking-wider">
+                Thông tin ca / phiên khảo sát
+              </h4>
             </div>
-          </div>
 
-          <Field label="Ghi chú">
-            <textarea
-              rows={2}
-              placeholder="Ghi chú chi tiết ca thi..."
-              value={sessionForm.notes}
-              onChange={e => setSessionForm(prev => ({ ...prev, notes: e.target.value }))}
-              className="w-full p-3 bg-slate-50/50 border border-slate-200 text-[#1E293B] placeholder-[#94A3B8] text-sm font-semibold rounded-xl outline-none focus:border-[#00A19A] focus:bg-white transition-all shadow-xs"
-            />
-          </Field>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-3.5">
+              <Field label="Tên phiên khảo sát" required>
+                <input
+                  type="text"
+                  placeholder="Ca sáng 15/10 - Phòng 201"
+                  value={sessionForm.name}
+                  onChange={e => setSessionForm(prev => ({ ...prev, name: e.target.value }))}
+                  className={inp}
+                  required
+                />
+              </Field>
+
+              <Field label="Mã phiên (để trống sẽ tự sinh)">
+                <input
+                  type="text"
+                  placeholder="SES-20251015-001"
+                  value={sessionForm.sessionCode}
+                  onChange={e => setSessionForm(prev => ({ ...prev, sessionCode: e.target.value }))}
+                  className={inp}
+                />
+              </Field>
+
+              <Field label="Ngày khảo sát" required>
+                <input
+                  type="date"
+                  value={sessionForm.sessionDate}
+                  onChange={e => setSessionForm(prev => ({ ...prev, sessionDate: e.target.value }))}
+                  className={inp}
+                  required
+                />
+              </Field>
+
+              <Field label="Cơ sở khảo sát" required>
+                <select
+                  value={sessionForm.campusId}
+                  onChange={e => setSessionForm(prev => ({ ...prev, campusId: e.target.value }))}
+                  className={inp}
+                  required
+                >
+                  {campuses.map(c => (
+                    <option key={c.id} value={c.id}>{c.campusName}</option>
+                  ))}
+                </select>
+              </Field>
+
+              <Field label="Loại hình khảo sát">
+                <select
+                  value={sessionForm.sessionType}
+                  onChange={e => setSessionForm(prev => ({ ...prev, sessionType: e.target.value }))}
+                  className={inp}
+                >
+                  <option value="LE">Khảo sát lẻ / Đột xuất (Cá nhân)</option>
+                  <option value="TAP_TRUNG">Khảo sát tập trung (Chiến dịch / Open Day)</option>
+                </select>
+              </Field>
+
+              <Field label="Trạng thái">
+                <select
+                  value={sessionForm.status}
+                  onChange={e => setSessionForm(prev => ({ ...prev, status: e.target.value }))}
+                  className={inp}
+                >
+                  <option value="SCHEDULED">Đã lên lịch (SCHEDULED)</option>
+                  <option value="IN_PROGRESS">Đang diễn ra (IN_PROGRESS)</option>
+                  <option value="COMPLETED">Hoàn thành (COMPLETED)</option>
+                  <option value="CANCELLED">Đã hủy (CANCELLED)</option>
+                </select>
+              </Field>
+
+              <Field label="Kỳ khảo sát liên kết">
+                <select
+                  value={sessionForm.periodId}
+                  onChange={e => setSessionForm(prev => ({ ...prev, periodId: e.target.value }))}
+                  className={inp}
+                >
+                  <option value="">-- Không liên kết Kỳ --</option>
+                  {periods.map(p => (
+                    <option key={p.id} value={p.id}>{p.name}</option>
+                  ))}
+                </select>
+              </Field>
+
+              <Field label="Đợt khảo sát liên kết (tùy chọn)">
+                <select
+                  value={sessionForm.batchId}
+                  onChange={e => setSessionForm(prev => ({ ...prev, batchId: e.target.value }))}
+                  className={inp}
+                >
+                  <option value="">-- Không liên kết Đợt --</option>
+                  {periods.find(p => p.id === sessionForm.periodId)?.batches?.map(b => (
+                    <option key={b.id} value={b.id}>{b.name}</option>
+                  ))}
+                </select>
+              </Field>
+            </div>
+
+            <Field label="Ghi chú">
+              <textarea
+                rows={2}
+                placeholder="Ghi chú chi tiết ca thi..."
+                value={sessionForm.notes}
+                onChange={e => setSessionForm(prev => ({ ...prev, notes: e.target.value }))}
+                className="w-full p-3 bg-slate-50/50 border border-slate-200 text-[#1E293B] placeholder-[#94A3B8] text-sm font-semibold rounded-xl outline-none focus:border-[#00A19A] focus:bg-white transition-all shadow-xs"
+              />
+            </Field>
+          </div>
         </form>
       </Modal>
 
@@ -11082,6 +11424,242 @@ const [customCommitmentSubjects, setCustomCommitmentSubjects] = useState<string[
           </div>
         </Modal>
       )}
+
+      {/* QUICK VIEW SCORECARD MODAL */}
+      {quickViewStudent && (() => {
+        const s = quickViewStudent;
+        const entranceRec = parseEntranceRecord(s.kqHocTap, s.grade);
+        const details = extractAcademicDetails(entranceRec, s.grade);
+        const skylineScores = extractSkylineScores(s.scores || []);
+        const firstSession = s.studentSessions?.[0];
+        const sessionInfo = firstSession?.session;
+        const registeredCampusObj = campuses.find((c: any) => c.id === s.registeredCampus || c.campusCode === s.registeredCampus || c.campusName === s.registeredCampus);
+        const batchObj = ((selPeriod?.batches || visiblePeriods.flatMap((p: any) => p.batches || [])) || []).find((b: any) => b.id === s.batchId);
+        const periodObj = visiblePeriods.find((p: any) => p.id === s.periodId);
+
+        let admBadge = {
+          bg: "bg-slate-100",
+          text: "text-slate-600",
+          border: "border-slate-200",
+          label: "Chờ xét duyệt"
+        };
+        if (s.isAbsent) {
+          admBadge = { bg: "bg-rose-50", text: "text-rose-700", border: "border-rose-200", label: "Vắng khảo sát" };
+        } else if (s.admissionResult === "PASS" || s.admissionResult === "DAT") {
+          admBadge = { bg: "bg-emerald-50", text: "text-emerald-700", border: "border-emerald-200", label: "✓ ĐẠT TRÚNG TUYỂN" };
+        } else if (s.admissionResult === "PASS_CONDITIONAL" || s.admissionResult === "CAM_KET") {
+          admBadge = { bg: "bg-amber-50", text: "text-amber-700", border: "border-amber-200", label: "⚡ ĐẠT CÓ ĐIỀU KIỆN / CAM KẾT" };
+        } else if (s.admissionResult === "FAIL" || s.admissionResult === "KHONG_DAT") {
+          admBadge = { bg: "bg-rose-50", text: "text-rose-700", border: "border-rose-200", label: "✕ KHÔNG ĐẠT" };
+        } else if (s.admissionResult === "HOC_THU") {
+          admBadge = { bg: "bg-blue-50", text: "text-blue-700", border: "border-blue-200", label: "HỌC THỬ" };
+        }
+
+        return (
+          <Modal
+            open={!!quickViewStudent}
+            onClose={() => setQuickViewStudent(null)}
+            title="Phiếu Tổng Hợp Hồ Sơ & Kết Quả Khảo Sát"
+            maxWidth="max-w-4xl"
+            footer={
+              <div className="flex items-center justify-between w-full">
+                <button
+                  type="button"
+                  onClick={() => {
+                    const toEdit = quickViewStudent;
+                    setQuickViewStudent(null);
+                    openEditStudent(toEdit);
+                  }}
+                  className="flex items-center gap-1.5 px-3.5 py-2 bg-white border border-slate-200 text-slate-700 hover:text-indigo-600 hover:border-indigo-200 rounded-xl text-xs font-bold transition-all cursor-pointer shadow-xs"
+                >
+                  <Edit2 className="w-3.5 h-3.5" />
+                  <span>Sửa thông tin học sinh</span>
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setQuickViewStudent(null)}
+                  className="px-4 py-2 bg-slate-900 hover:bg-black text-white rounded-xl text-xs font-bold transition-all cursor-pointer shadow-sm"
+                >
+                  Đóng
+                </button>
+              </div>
+            }
+          >
+            <div className="space-y-5">
+              {/* TOP HEADER SUMMARY */}
+              <div className="bg-gradient-to-br from-slate-900 via-indigo-950 to-slate-900 text-white rounded-2xl p-5 shadow-sm border border-slate-800">
+                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+                  <div className="space-y-1">
+                    <div className="flex items-center gap-2">
+                      <span className="font-mono text-xs font-bold bg-teal-500/20 text-teal-300 border border-teal-500/30 px-2.5 py-0.5 rounded-full">
+                        {s.studentCode}
+                      </span>
+                      {firstSession?.seatNumber && (
+                        <span className="font-mono text-xs font-bold bg-indigo-500/20 text-indigo-300 border border-indigo-500/30 px-2.5 py-0.5 rounded-full">
+                          SBD: {firstSession.seatNumber}
+                        </span>
+                      )}
+                      <span className={`text-[11px] font-bold px-2.5 py-0.5 rounded-full border ${admBadge.bg} ${admBadge.text} ${admBadge.border}`}>
+                        {admBadge.label}
+                      </span>
+                    </div>
+                    <h2 className="text-xl font-black tracking-tight text-white mt-1">
+                      {s.fullName}
+                    </h2>
+                    <p className="text-xs text-slate-300 font-medium">
+                      {s.gender || "—"} • Ngày sinh: {s.dateOfBirth ? new Date(s.dateOfBirth).toLocaleDateString('vi-VN') : "—"} • Đăng ký: <strong className="text-white">{s.grade}</strong> ({s.targetSystem || s.surveyFormType || "Tiêu chuẩn"})
+                    </p>
+                  </div>
+
+                  <div className="text-left sm:text-right text-xs space-y-1 bg-white/5 p-3 rounded-xl border border-white/10 sm:min-w-[200px]">
+                    <div className="text-slate-400 text-[10px] uppercase font-bold tracking-wider">Địa điểm & Ca thi</div>
+                    <div className="font-semibold text-teal-300">{registeredCampusObj?.campusName || s.registeredCampus || "Chưa xác định cơ sở"}</div>
+                    <div className="text-slate-300">{batchObj?.name || periodObj?.name || "Đợt khảo sát"}</div>
+                    {sessionInfo && (
+                      <div className="text-[11px] text-amber-300 font-medium pt-1 border-t border-white/10 mt-1">
+                        Ca: {sessionInfo.name || sessionInfo.sessionCode} • Phòng: {sessionInfo.room || "Chưa xếp"}
+                      </div>
+                    )}
+                  </div>
+                </div>
+              </div>
+
+              {/* SECTION 1: KẾT QUẢ KHẢO SÁT ĐẦU VÀO SKYLINE */}
+              <div className="bg-white rounded-2xl border border-teal-200/80 p-5 shadow-xs">
+                <div className="flex items-center justify-between pb-3 border-b border-slate-100 mb-4">
+                  <div className="flex items-center gap-2">
+                    <div className="w-8 h-8 rounded-xl bg-teal-50 border border-teal-200 text-teal-600 flex items-center justify-center font-bold">
+                      <Sparkles className="w-4 h-4" />
+                    </div>
+                    <div>
+                      <h3 className="text-sm font-bold text-slate-800">Kết Quả Khảo Sát Đầu Vào Tại Sky-Line</h3>
+                      <p className="text-[11px] text-slate-500 font-medium">Điểm thi thực tế các bài khảo sát được Hội đồng / GV Sky-Line chấm</p>
+                    </div>
+                  </div>
+                  {skylineScores.avg !== null && (
+                    <div className="text-right">
+                      <div className="text-[10px] text-slate-400 font-bold uppercase">Điểm TB khảo sát</div>
+                      <div className="text-lg font-black text-teal-700">{skylineScores.avg.toFixed(2)}</div>
+                    </div>
+                  )}
+                </div>
+
+                {/* Score Grid */}
+                <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 mb-4">
+                  <div className="bg-slate-50 border border-slate-200/80 rounded-xl p-3 text-center">
+                    <span className="text-[11px] font-bold text-slate-500 uppercase block mb-1">Toán</span>
+                    <span className="text-xl font-black text-slate-800">
+                      {skylineScores.math !== null ? skylineScores.math : "—"}
+                    </span>
+                  </div>
+                  <div className="bg-slate-50 border border-slate-200/80 rounded-xl p-3 text-center">
+                    <span className="text-[11px] font-bold text-slate-500 uppercase block mb-1">Tiếng Việt / Văn</span>
+                    <span className="text-xl font-black text-slate-800">
+                      {skylineScores.viet !== null ? skylineScores.viet : "—"}
+                    </span>
+                  </div>
+                  <div className="bg-slate-50 border border-slate-200/80 rounded-xl p-3 text-center">
+                    <span className="text-[11px] font-bold text-slate-500 uppercase block mb-1">Tiếng Anh</span>
+                    <span className="text-xl font-black text-slate-800">
+                      {skylineScores.eng !== null ? skylineScores.eng : "—"}
+                    </span>
+                  </div>
+                  <div className="bg-slate-50 border border-slate-200/80 rounded-xl p-3 text-center">
+                    <span className="text-[11px] font-bold text-slate-500 uppercase block mb-1">Tâm lý / Kỹ năng</span>
+                    <span className="text-xl font-black text-slate-800">
+                      {skylineScores.psy !== null ? skylineScores.psy : "—"}
+                    </span>
+                  </div>
+                </div>
+
+                {/* Other Skyline Subjects list */}
+                {s.scores && s.scores.length > 0 && (
+                  <div className="mt-3 overflow-x-auto">
+                    <table className="w-full text-xs text-left border border-slate-100 rounded-xl overflow-hidden">
+                      <thead className="bg-slate-50 text-slate-500 font-bold uppercase text-[10px]">
+                        <tr>
+                          <th className="px-3 py-2">Môn khảo sát</th>
+                          <th className="px-3 py-2 text-center w-20">Điểm số</th>
+                          <th className="px-3 py-2">Nhận xét của GV chấm</th>
+                        </tr>
+                      </thead>
+                      <tbody className="divide-y divide-slate-100 font-medium">
+                        {s.scores.map((sc: any, sIdx: number) => (
+                          <tr key={sc.id || sIdx} className="hover:bg-slate-50/50">
+                            <td className="px-3 py-2 font-semibold text-slate-700">{sc.subject?.name || sc.subjectName || "Môn khảo sát"}</td>
+                            <td className="px-3 py-2 text-center font-bold text-teal-700">{sc.score !== null && sc.score !== undefined ? sc.score : "—"}</td>
+                            <td className="px-3 py-2 text-slate-500 italic">{sc.note || sc.comment || "—"}</td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
+                )}
+
+                {/* Director note */}
+                {s.directorNote && (
+                  <div className="mt-3 p-3 bg-teal-50/60 border border-teal-100 rounded-xl text-xs">
+                    <span className="font-bold text-teal-900 block mb-0.5">Ý kiến chỉ đạo / Kết luận Hội đồng:</span>
+                    <p className="text-teal-800 italic leading-relaxed">{s.directorNote}</p>
+                  </div>
+                )}
+              </div>
+
+              {/* SECTION 2: HỒ SƠ TIỀN KHẢO SÁT (HỌC BẠ TRƯỜNG CŨ) */}
+              <div className="bg-white rounded-2xl border border-slate-200 p-5 shadow-xs">
+                <div className="flex items-center gap-2 pb-3 border-b border-slate-100 mb-4">
+                  <div className="w-8 h-8 rounded-xl bg-indigo-50 border border-indigo-200 text-indigo-600 flex items-center justify-center font-bold">
+                    <BookOpen className="w-4 h-4" />
+                  </div>
+                  <div>
+                    <h3 className="text-sm font-bold text-slate-800">Học Bạ / Kết Quả Học Tập Trường Cũ</h3>
+                    <p className="text-[11px] text-slate-500 font-medium">Thông tin nộp hồ sơ ban đầu từ phụ huynh & trường học trước đây</p>
+                  </div>
+                </div>
+
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 text-xs mb-4">
+                  <div className="space-y-1.5 bg-slate-50/60 p-3 rounded-xl border border-slate-100">
+                    <div className="text-slate-400 font-semibold text-[10px] uppercase">Đơn vị học tập cũ</div>
+                    <div className="font-bold text-slate-800">{s.oldSchoolName || "Chưa cập nhật trường cũ"}</div>
+                    <div className="text-slate-500 text-[11px]">
+                      {s.targetType || "—"} • {s.cityName || s.provinceName || ""} {s.districtName ? `• ${s.districtName}` : ""}
+                    </div>
+                  </div>
+                  <div className="space-y-1.5 bg-slate-50/60 p-3 rounded-xl border border-slate-100">
+                    <div className="text-slate-400 font-semibold text-[10px] uppercase">Đánh giá chung</div>
+                    <div className="text-slate-700">
+                      Học lực: <strong className="text-slate-900">{details.hocLuc || "—"}</strong> • Hạnh kiểm: <strong className="text-slate-900">{details.hanhKiem || "—"}</strong>
+                    </div>
+                    {details.generalComment && (
+                      <div className="text-slate-500 text-[11px] italic truncate" title={details.generalComment}>
+                        "{details.generalComment}"
+                      </div>
+                    )}
+                  </div>
+                </div>
+
+                {/* Academic Performance Badges */}
+                <div className="space-y-1.5">
+                  <span className="text-[11px] font-bold text-slate-600 block">Điểm các môn học bạ cũ:</span>
+                  <div className="flex flex-wrap items-center gap-1.5">
+                    {details.subjects.length > 0 ? (
+                      details.subjects.map((sub: any, sIdx: number) => (
+                        <div key={sIdx} className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-xs font-semibold bg-slate-100 text-slate-700 border border-slate-200">
+                          <span className="text-slate-500">{sub.name}:</span>
+                          <span className="font-bold text-slate-900">{sub.score}</span>
+                        </div>
+                      ))
+                    ) : (
+                      <span className="text-xs text-slate-400 italic">Chưa có dữ liệu chi tiết môn học bạ cũ.</span>
+                    )}
+                  </div>
+                </div>
+              </div>
+            </div>
+          </Modal>
+        );
+      })()}
+
       </div>
   )
 }

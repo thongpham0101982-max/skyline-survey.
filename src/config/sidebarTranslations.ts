@@ -12,6 +12,7 @@ export const SIDEBAR_TRANSLATIONS: SidebarTranslations = {
   categories: {
     SYSTEM: { vi: "Hệ thống", en: "System Administration" },
     KTDBCL: { vi: "Khảo thí & ĐBCL", en: "Testing & Quality Assurance" },
+    SPECIAL_SUBJECTS: { vi: "Môn học đặc thù Sky-Line", en: "Special Subjects Management" },
     EXPERIENTIAL: { vi: "Hoạt động trải nghiệm", en: "Experiential Activities" },
     LEARNING_RESOURCES: { vi: "Học liệu", en: "Learning Resources" },
     TRAINING: { vi: "Quản lý Đào tạo", en: "Academic Management" },
@@ -32,6 +33,11 @@ export const SIDEBAR_TRANSLATIONS: SidebarTranslations = {
     STUDENT_PORTAL_CONFIG: { vi: "Cổng ảnh học sinh", en: "Student Photo Portal" },
 
     // KTDBCL
+    KTDBCL_CONNECT: { vi: "KT&ĐBCL Connect", en: "QA & Testing Connect" },
+    KTDBCL_CONNECT_DASHBOARD: { vi: "1. Kênh tiếp nhận & Xử lý", en: "1. Request Inbox & Handling" },
+    KTDBCL_CONNECT_ANNOUNCEMENTS: { vi: "2. Thông báo nghiệp vụ", en: "2. Official Announcements" },
+    KTDBCL_CONNECT_KNOWLEDGE: { vi: "3. Kho tri thức & Hướng dẫn", en: "3. Knowledge Base & FAQ" },
+    KTDBCL_CONNECT_METRICS: { vi: "4. Dashboard & Thống kê", en: "4. Dashboard & Analytics" },
     KTDBCL_EXAMS: { vi: "QL Thành tích", en: "Achievements & Competitions" },
     KTDBCL_EXAM_CATEGORIES: { vi: "Quản lý danh mục", en: "Category Management" },
     KTDBCL_EXAM_ROUNDS: { vi: "Vòng thi", en: "Competition Rounds" },
@@ -54,6 +60,14 @@ export const SIDEBAR_TRANSLATIONS: SidebarTranslations = {
     COMPETENCY_ALIASES: { vi: "Từ điển Alias Môn & NL", en: "Subject & Competency Aliases" },
     COMPETENCY_HISTORY: { vi: "Lịch sử Import ĐGNL", en: "Import History" },
     KTDBCL_IMPORT_KQHT: { vi: "Import KQHT", en: "Import Academic Results" },
+
+    // SPECIAL_SUBJECTS
+    SPECIAL_SUBJECTS_ROOT: { vi: "Môn học đặc thù", en: "Special Subjects" },
+    SPEC_SUB_DASHBOARD: { vi: "1. Dashboard & Báo cáo", en: "1. Dashboard & Reports" },
+    SPEC_SUB_CATALOGS: { vi: "2. Danh mục Môn đặc thù", en: "2. Subject Catalogs" },
+    SPEC_SUB_CURRICULUMS: { vi: "3. Khung chương trình", en: "3. Curriculums & Lessons" },
+    SPEC_SUB_ASSIGNMENTS: { vi: "4. Phân công giảng dạy", en: "4. Teaching Assignments" },
+    SPEC_SUB_GRADEBOOK: { vi: "5. Sổ đánh giá (Admin)", en: "5. Gradebook (Admin)" },
 
     // EXPERIENTIAL
     EXPERIENTIAL_ACTIVITIES: { vi: "Hoạt động trải nghiệm", en: "Experiential Activities" },
@@ -133,6 +147,7 @@ export const SIDEBAR_TRANSLATIONS: SidebarTranslations = {
   },
   teacherNav: {
     overview: { vi: "Tổng quan", en: "Overview" },
+    ktdbcl_connect: { vi: "KT&ĐBCL Connect", en: "QA Connect & Support" },
     homeroom_section: { vi: "A. Công tác GVCN", en: "A. Homeroom Teacher" },
     homeroom_class: { vi: "1. Lớp chủ nhiệm", en: "1. Homeroom Class" },
     homeroom_surveys: { vi: "2. NSP Khảo sát", en: "2. Surveys & Feedback" },

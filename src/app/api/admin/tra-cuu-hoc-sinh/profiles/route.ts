@@ -82,11 +82,29 @@ export async function GET(req: NextRequest) {
               parent: true,
             },
           },
+          specialGradeEntries: {
+            include: {
+              assignment: {
+                include: {
+                  subject: true,
+                  teacher: { select: { teacherName: true } }
+                }
+              },
+              lesson: {
+                select: {
+                  periodIndex: true,
+                  lessonName: true,
+                  topic: { select: { name: true } }
+                }
+              }
+            },
+            orderBy: { createdAt: "desc" }
+          }
         },
       }),
     ]);
 
-    const formatted = students.map((s) => {
+    const formatted = students.map((s: any) => {
       const primaryParent = s.parents[0]?.parent;
       return {
         id: s.id,
@@ -108,6 +126,7 @@ export async function GET(req: NextRequest) {
         enrollmentDate: s.convertedAt ? s.convertedAt.toISOString() : null,
         emergencyContact: primaryParent?.phone || null,
         allergies: s.studentTypeNote || null,
+        specialGradeEntries: s.specialGradeEntries || []
       };
     });
 

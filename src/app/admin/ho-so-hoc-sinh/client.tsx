@@ -301,29 +301,20 @@ export function StudentProfilesAdminClient({
           const result = await res.json()
           let data = result.data || []
           
-          // If we filtered by grade locally (since database doesn't have grade on Student directly but has classId)
-          if (selectedGrade !== "all") {
+          // If we filtered by grade locally (only when no specific class is selected)
+          if (selectedGrade !== "all" && selectedClassId === "all") {
             data = data.filter((s: any) => s.class?.grade === selectedGrade)
           }
 
-          // If block filter is preschool/k12
-          data = data.filter((s: any) => {
-            const isPreschoolGrade = ["12 đến 18 tháng", "18 đến 24 tháng", "24 đến 36 tháng", "3 đến 4 tuổi", "4 đến 5 tuổi", "5 đến 6 tuổi"].includes(s.class?.grade)
-            return schoolBlock === "k12" ? !isPreschoolGrade : isPreschoolGrade
-          })
+          // If block filter is preschool/k12 (only when no specific class is selected)
+          if (selectedClassId === "all") {
+            data = data.filter((s: any) => {
+              const isPreschoolGrade = ["12 đến 18 tháng", "18 đến 24 tháng", "24 đến 36 tháng", "3 đến 4 tuổi", "4 đến 5 tuổi", "5 đến 6 tuổi"].includes(s.class?.grade)
+              return schoolBlock === "k12" ? !isPreschoolGrade : isPreschoolGrade
+            })
+          }
 
           setStudents(data)
-
-          // Set default selected student if not empty
-          if (data.length > 0) {
-            const hasCurrentStudent = data.some((s: any) => s.id === selectedStudentId)
-            if (!hasCurrentStudent) {
-              setSelectedStudentId(data[0].id)
-            }
-          } else {
-            setSelectedStudentId("")
-            setSelectedStudent(null)
-          }
         }
       } catch (err) {
         console.error("Error loading students list:", err)
@@ -382,12 +373,43 @@ export function StudentProfilesAdminClient({
   const filteredStudentsList = useMemo(() => {
     let list = students || [];
     if (selectedStudentType === "GIAO_LUU") {
-      list = list.filter((s: any) => s.studentType === "GIAO_LUU");
+      list = list.filter((s: any) => (s.studentType || s.student?.studentType) === "GIAO_LUU");
     } else if (selectedStudentType === "CHINH_KHOA") {
-      list = list.filter((s: any) => s.studentType !== "GIAO_LUU");
+      list = list.filter((s: any) => (s.studentType || s.student?.studentType) !== "GIAO_LUU");
     }
     return list;
   }, [students, selectedStudentType]);
+
+  // Dynamic counts for student types
+  const studentTypeCounts = useMemo(() => {
+    let chinhKhoa = 0;
+    let giaoLuu = 0;
+    for (const s of (students || [])) {
+      if ((s.studentType || s.student?.studentType) === "GIAO_LUU") {
+        giaoLuu++;
+      } else {
+        chinhKhoa++;
+      }
+    }
+    return {
+      all: (students || []).length,
+      chinhKhoa,
+      giaoLuu,
+    };
+  }, [students]);
+
+  // Synchronize selected student whenever filteredStudentsList changes
+  useEffect(() => {
+    if (filteredStudentsList.length > 0) {
+      setSelectedStudentId((currId) => {
+        const hasCurrent = filteredStudentsList.some((s: any) => s.id === currId);
+        return hasCurrent ? currId : filteredStudentsList[0].id;
+      });
+    } else {
+      setSelectedStudentId("");
+      setSelectedStudent(null);
+    }
+  }, [filteredStudentsList]);
 
   const tabs = [
     { id: "cv", label: "Xem chi tiết HSHS (A4)", icon: User },
@@ -562,9 +584,9 @@ export function StudentProfilesAdminClient({
               onChange={(e) => setSelectedStudentType(e.target.value)}
               className="w-full bg-slate-50 border border-slate-200 rounded-xl px-3 py-2 text-xs font-semibold focus:outline-none focus:ring-1 focus:ring-[#00A19A]"
             >
-              <option value="all">Tất cả diện HS</option>
-              <option value="CHINH_KHOA">Chính khóa</option>
-              <option value="GIAO_LUU">Giao lưu</option>
+              <option value="all">Tất cả diện HS ({studentTypeCounts.all})</option>
+              <option value="CHINH_KHOA">Chính khóa ({studentTypeCounts.chinhKhoa})</option>
+              <option value="GIAO_LUU">Giao lưu ({studentTypeCounts.giaoLuu})</option>
             </select>
           </div>
 
@@ -672,7 +694,29 @@ export function StudentProfilesAdminClient({
 
                 {/* Compact Scrollable List */}
                 <div className="max-h-60 overflow-y-auto space-y-1 pr-1 custom-scrollbar">
-                  {filteredStudentsList.map((s: any) => {
+                  {filteredStudentsList.length === 0 ? (
+                    <div className="py-6 px-3 text-center text-xs text-slate-400">
+                      {loadingStudents ? (
+                        <div className="flex items-center justify-center gap-1.5 text-slate-500 font-semibold">
+                          <Loader2 className="w-3.5 h-3.5 animate-spin text-[#00A19A]" />
+                          <span>Đang tải học sinh...</span>
+                        </div>
+                      ) : (
+                        <>
+                          <p>Không có học sinh nào phù hợp.</p>
+                          {students.length > 0 && selectedStudentType !== "all" && (
+                            <button
+                              type="button"
+                              onClick={() => setSelectedStudentType("all")}
+                              className="mt-2 text-[11px] text-[#00A19A] font-bold hover:underline cursor-pointer block mx-auto"
+                            >
+                              Bỏ lọc diện ({students.length} HS trong lớp)
+                            </button>
+                          )}
+                        </>
+                      )}
+                    </div>
+                  ) : filteredStudentsList.map((s: any) => {
                     const isSelected = s.id === selectedStudentId;
                     return (
                       <button
@@ -803,7 +847,30 @@ export function StudentProfilesAdminClient({
             </div>
 
             <div className="flex-1 overflow-y-auto space-y-1.5 pr-1 custom-scrollbar">
-              {filteredStudentsList.map((s: any) => {
+              {filteredStudentsList.length === 0 ? (
+                <div className="py-12 px-4 text-center text-xs text-slate-400">
+                  {loadingStudents ? (
+                    <div className="flex flex-col items-center gap-2 text-slate-500 font-semibold">
+                      <Loader2 className="w-5 h-5 animate-spin text-[#00A19A]" />
+                      <span>Đang tải học sinh...</span>
+                    </div>
+                  ) : (
+                    <>
+                      <Users className="w-8 h-8 text-slate-300 mx-auto mb-2" />
+                      <p>Không có học sinh nào phù hợp bộ lọc.</p>
+                      {students.length > 0 && selectedStudentType !== "all" && (
+                        <button
+                          type="button"
+                          onClick={() => setSelectedStudentType("all")}
+                          className="mt-3 px-3 py-1.5 bg-teal-50 text-[#00A19A] border border-teal-200 rounded-xl text-xs font-bold hover:bg-teal-100 transition-all cursor-pointer"
+                        >
+                          Xem tất cả {students.length} học sinh của lớp
+                        </button>
+                      )}
+                    </>
+                  )}
+                </div>
+              ) : filteredStudentsList.map((s: any) => {
                 const isSelected = s.id === selectedStudentId;
                 return (
                   <button
@@ -1813,8 +1880,9 @@ export function StudentProfilesAdminClient({
                                               <tr className="bg-slate-50 text-slate-700 font-bold border-b border-slate-200 text-[11px] uppercase tracking-wider">
                                                 <th className="py-2.5 px-3 text-center w-10">STT</th>
                                                 <th className="py-2.5 px-3 min-w-[180px]">Tên hoạt động</th>
-                                                <th className="py-2.5 px-3 min-w-[160px]">Chủ đề GD</th>
-                                                <th className="py-2.5 px-3 min-w-[140px]">Vai trò</th>
+                                                <th className="py-2.5 px-3 min-w-[130px]">Chủ đề GD</th>
+                                                <th className="py-2.5 px-3 min-w-[200px]">Nội dung giáo dục</th>
+                                                <th className="py-2.5 px-3 text-center min-w-[110px]">Vai trò</th>
                                                 <th className="py-2.5 px-3 text-center min-w-[110px]">Kết quả</th>
                                               </tr>
                                             </thead>
@@ -1828,7 +1896,10 @@ export function StudentProfilesAdminClient({
                                                   <td className="py-3 px-3 text-slate-600 font-medium">
                                                     {act.themeName || act.groupName || '—'}
                                                   </td>
-                                                  <td className="py-3 px-3">
+                                                  <td className="py-3 px-3 text-slate-600 font-normal leading-relaxed text-[11px]">
+                                                    {act.educationalContent || act.deliverables || act.themeAxisName || '—'}
+                                                  </td>
+                                                  <td className="py-3 px-3 text-center">
                                                     <span className="inline-block bg-[#00A19A]/10 text-[#003B3A] border border-[#00A19A]/20 px-2 py-0.5 rounded text-[10px] font-black uppercase">
                                                       {act.role || 'Thành viên'}
                                                     </span>
@@ -3176,6 +3247,11 @@ return (
                     <td className="py-3.5 px-3 text-center text-slate-400 font-bold">{idx + 1}</td>
                     <td className="py-3.5 px-4">
                       <div className="font-extrabold text-[#003B3A] text-xs leading-snug">{act.activityName}</div>
+                      {act.educationalContent && (
+                        <div className="text-[11px] text-slate-600 font-normal leading-relaxed mt-1">
+                          {act.educationalContent}
+                        </div>
+                      )}
                       {act.date && (
                         <div className="flex items-center gap-1 text-[10px] text-slate-500 font-semibold mt-1">
                           <Calendar className="w-3 h-3 text-slate-400" />
@@ -3402,11 +3478,39 @@ return (
               </div>
 
             </div>
+          ) : loadingStudents ? (
+            <div className="bg-white rounded-2xl border border-slate-200 shadow-sm p-16 text-center">
+              <Loader2 className="w-10 h-10 text-[#00A19A] animate-spin mx-auto mb-3 opacity-70" />
+              <h3 className="text-base font-bold text-slate-800">Đang tải danh sách học sinh...</h3>
+              <p className="text-slate-400 text-xs mt-1">Hệ thống đang truy xuất hồ sơ học sinh theo bộ lọc đã chọn.</p>
+            </div>
+          ) : students.length > 0 && filteredStudentsList.length === 0 && selectedStudentType !== "all" ? (
+            <div className="bg-white rounded-2xl border border-teal-200 bg-teal-50/20 shadow-sm p-12 text-center max-w-xl mx-auto my-8">
+              <Sparkles className="w-10 h-10 text-[#00A19A] mx-auto mb-3" />
+              <h3 className="text-base font-extrabold text-slate-800">
+                {selectedStudentType === "GIAO_LUU" ? "Không có học sinh diện Giao lưu" : "Không có học sinh diện Chính khóa"}
+              </h3>
+              <p className="text-slate-500 text-xs mt-1">
+                Lớp này có {students.length} học sinh nhưng {selectedStudentType === "GIAO_LUU" ? "tất cả đều thuộc diện Chính khóa." : "tất cả đều thuộc diện Giao lưu."}
+              </p>
+              <button
+                type="button"
+                onClick={() => setSelectedStudentType("all")}
+                className="mt-4 px-4 py-2 bg-[#00A19A] hover:bg-[#008f88] text-white text-xs font-bold rounded-xl shadow-xs transition-all cursor-pointer inline-flex items-center gap-1.5"
+              >
+                <Users className="w-3.5 h-3.5" />
+                <span>Xem tất cả {students.length} học sinh lớp này</span>
+              </button>
+            </div>
           ) : (
             <div className="bg-white rounded-2xl border border-slate-200 shadow-sm p-16 text-center">
               <Users className="w-12 h-12 text-slate-300 mx-auto mb-4" />
               <h3 className="text-base font-bold text-slate-800">Chọn học sinh</h3>
-              <p className="text-slate-400 text-xs mt-1">Sử dụng bộ lọc ở thanh phía trên và chọn một học sinh trong danh sách bên trái để hiển thị hồ sơ CV chi tiết.</p>
+              <p className="text-slate-400 text-xs mt-1">
+                {filteredStudentsList.length === 0
+                  ? (selectedClassId !== "all" ? "Lớp học này chưa có dữ liệu học sinh trong năm học đã chọn." : "Sử dụng bộ lọc ở thanh phía trên và chọn một lớp hoặc học sinh để hiển thị hồ sơ chi tiết.")
+                  : "Sử dụng bộ lọc ở thanh phía trên và chọn một học sinh trong danh sách để hiển thị hồ sơ CV chi tiết."}
+              </p>
             </div>
           )}
         </div>

@@ -4,6 +4,7 @@ import { auth } from '@/lib/auth';
 import { hasModulePermission } from '@/lib/permissions';
 import { normalizeActivityName } from '@/lib/experiential/name-normalizer';
 import { sendTLHNAllocationNotification } from '@/lib/experiential/email-notification';
+import { formatTimeFrameAndSemester } from '@/lib/experiential/timeframe-helper';
 
 export const dynamic = 'force-dynamic';
 
@@ -62,6 +63,12 @@ export async function GET(req: NextRequest, { params }: { params: Promise<{ id: 
       meta.plainDescription = catalog.description || '';
     }
 
+    if (meta.timeFrame) {
+      const timeInfo = formatTimeFrameAndSemester(meta.timeFrame, meta.academicYearId || '2026-2027', meta.semester);
+      meta.timeFrame = timeInfo.formattedTime;
+      meta.semester = timeInfo.semester;
+    }
+
     return NextResponse.json({
       id: catalog.id,
       code: catalog.code,
@@ -103,6 +110,12 @@ export async function PUT(req: NextRequest, { params }: { params: Promise<{ id: 
     }
 
     const updatedMeta = { ...currentMeta, ...meta };
+
+    if (updatedMeta.timeFrame) {
+      const timeInfo = formatTimeFrameAndSemester(updatedMeta.timeFrame, updatedMeta.academicYearId || '2026-2027', updatedMeta.semester);
+      updatedMeta.timeFrame = timeInfo.formattedTime;
+      updatedMeta.semester = timeInfo.semester;
+    }
 
     // Đồng bộ nếu có mảng cthsTeachers
     if (Array.isArray(updatedMeta.cthsTeachers)) {
@@ -158,14 +171,20 @@ export async function PUT(req: NextRequest, { params }: { params: Promise<{ id: 
               evalMode: updatedMeta.evaluationConfig?.mode || 'RUBRIC',
               assignedClasses: alloc.assignedClasses,
               status: 'ASSIGNED',
+              departmentId: alloc.departmentId || updatedMeta.departmentId || null,
+              departmentName: alloc.departmentName || updatedMeta.departmentName || null,
+              subjectTeacherId: alloc.subjectTeacherId || alloc.tlhnTeacherId || null,
+              subjectTeacherName: alloc.subjectTeacherName || alloc.tlhnTeacherName || null,
+              subjectTeacherEmail: alloc.subjectTeacherEmail || alloc.tlhnTeacherEmail || null,
               tlhnTeacherId: alloc.tlhnTeacherId,
               tlhnTeacherName: alloc.tlhnTeacherName
             };
 
             if (!actRecord) {
               let repTeacher = null;
-              if (alloc.tlhnTeacherId) {
-                repTeacher = await prisma.teacher.findUnique({ where: { id: alloc.tlhnTeacherId } });
+              const targetTeacherId = alloc.subjectTeacherId || alloc.tlhnTeacherId;
+              if (targetTeacherId) {
+                repTeacher = await prisma.teacher.findUnique({ where: { id: targetTeacherId } });
               }
               if (!repTeacher) {
                 repTeacher = await prisma.teacher.findFirst({ where: { campusId: alloc.campusId } }) || await prisma.teacher.findFirst();

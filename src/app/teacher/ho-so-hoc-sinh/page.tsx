@@ -1620,8 +1620,9 @@ export default function TeacherStudentProfilePage() {
                                               <tr className="bg-slate-50 text-slate-700 font-bold border-b border-slate-200 text-[11px] uppercase tracking-wider">
                                                 <th className="py-2.5 px-3 text-center w-10">STT</th>
                                                 <th className="py-2.5 px-3 min-w-[180px]">Tên hoạt động</th>
-                                                <th className="py-2.5 px-3 min-w-[160px]">Chủ đề GD</th>
-                                                <th className="py-2.5 px-3 min-w-[140px]">Vai trò</th>
+                                                <th className="py-2.5 px-3 min-w-[130px]">Chủ đề GD</th>
+                                                  <th className="py-2.5 px-3 min-w-[200px]">Nội dung giáo dục</th>
+                                                  <th className="py-2.5 px-3 text-center min-w-[110px]">Vai trò</th>
                                                 <th className="py-2.5 px-3 text-center min-w-[110px]">Kết quả</th>
                                               </tr>
                                             </thead>
@@ -1635,7 +1636,10 @@ export default function TeacherStudentProfilePage() {
                                                   <td className="py-3 px-3 text-slate-600 font-medium">
                                                     {act.themeName || act.groupName || '—'}
                                                   </td>
-                                                  <td className="py-3 px-3">
+                                                    <td className="py-3 px-3 text-slate-600 font-normal leading-relaxed text-[11px]">
+                                                      {act.educationalContent || act.deliverables || act.themeAxisName || '—'}
+                                                    </td>
+                                                    <td className="py-3 px-3 text-center">
                                                     <span className="inline-block bg-[#00A19A]/10 text-[#003B3A] border border-[#00A19A]/20 px-2 py-0.5 rounded text-[10px] font-black uppercase">
                                                       {act.role || 'Thành viên'}
                                                     </span>

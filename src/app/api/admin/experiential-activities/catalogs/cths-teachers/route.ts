@@ -37,6 +37,37 @@ export async function GET(req: NextRequest) {
             divisionCode: true
           }
         },
+        departmentAssignments: {
+          select: {
+            department: {
+              select: {
+                id: true,
+                code: true,
+                name: true
+              }
+            }
+          }
+        },
+        TeachingAssignment: {
+          select: {
+            subject: {
+              select: {
+                subjectName: true
+              }
+            },
+            class: {
+              select: {
+                className: true,
+                campusId: true,
+                campus: {
+                  select: {
+                    campusCode: true
+                  }
+                }
+              }
+            }
+          }
+        },
         user: {
           select: {
             id: true,
@@ -71,6 +102,16 @@ export async function GET(req: NextRequest) {
         deptName.includes('TRẢI NGHIỆM') ||
         divisionCode === 'BP_HDNG_CTHS';
 
+      const extraDepts = Array.isArray(t.departmentAssignments) ? t.departmentAssignments.map((da: any) => da.department).filter(Boolean) : [];
+      const allDeptIds = Array.from(new Set([t.departmentRel?.id, ...extraDepts.map((d: any) => d.id)].filter(Boolean)));
+      const allDeptNames = Array.from(new Set([t.departmentRel?.name, ...extraDepts.map((d: any) => d.name)].filter(Boolean)));
+      const allDeptCodes = Array.from(new Set([t.departmentRel?.code, ...extraDepts.map((d: any) => d.code)].filter(Boolean)));
+
+      const teachingAssignments = Array.isArray(t.TeachingAssignment) ? t.TeachingAssignment : [];
+      const teachingCampusCodes = Array.from(new Set(teachingAssignments.map((ta: any) => ta.class?.campus?.campusCode).filter(Boolean)));
+      const teachingSubjectNames = Array.from(new Set(teachingAssignments.map((ta: any) => ta.subject?.subjectName).filter(Boolean))).join(', ');
+      const teachingClasses = Array.from(new Set(teachingAssignments.map((ta: any) => ta.class?.className).filter(Boolean)));
+
       return {
         id: t.id,
         teacherCode: t.teacherCode,
@@ -82,7 +123,15 @@ export async function GET(req: NextRequest) {
         campusId: t.campusId,
         campusCode: t.campus?.campusCode || '',
         campusName: t.campus?.campusName || '',
+        departmentId: t.departmentRel?.id || '',
+        departmentCode: t.departmentRel?.code || '',
         departmentName: t.departmentRel?.name || '',
+        allDepartmentIds: allDeptIds,
+        allDepartmentNames: allDeptNames,
+        allDepartmentCodes: allDeptCodes,
+        teachingCampusCodes,
+        teachingSubjectNames,
+        teachingClasses,
         isCTHS
       };
     });

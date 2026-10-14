@@ -18,6 +18,7 @@ interface CatalogEvaluationConfigModalProps {
   onClose: () => void;
   onSaved: () => void;
   catalogItem: ActivityCatalogItem | null;
+  onConfigUpdated?: (config: ActivityEvaluationConfig) => void;
 }
 
 const DEFAULT_CRITERIA: CriterionItem[] = [
@@ -53,7 +54,8 @@ export function CatalogEvaluationConfigModal({
   isOpen,
   onClose,
   onSaved,
-  catalogItem
+  catalogItem,
+  onConfigUpdated
 }: CatalogEvaluationConfigModalProps) {
   const isEventActivity = catalogItem?.meta?.activityCategory === 'HOAT_DONG_SU_KIEN';
 
@@ -247,20 +249,26 @@ export function CatalogEvaluationConfigModal({
         completionLevels: mode === 'COMPLETION_LEVEL' ? completionLevels : []
       };
 
-      const res = await fetch(`/api/admin/experiential-activities/catalogs/${catalogItem.id}`, {
-        method: 'PUT',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          meta: {
-            ...catalogItem.meta,
-            evaluationConfig
-          }
-        })
-      });
+      if (onConfigUpdated) {
+        onConfigUpdated(evaluationConfig);
+      }
 
-      if (!res.ok) {
-        const err = await res.json();
-        throw new Error(err.error || 'Lỗi lưu cấu hình');
+      if (catalogItem?.id) {
+        const res = await fetch(`/api/admin/experiential-activities/catalogs/${catalogItem.id}`, {
+          method: 'PUT',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            meta: {
+              ...(catalogItem.meta || {}),
+              evaluationConfig
+            }
+          })
+        });
+
+        if (!res.ok) {
+          const err = await res.json();
+          throw new Error(err.error || 'Lỗi lưu cấu hình');
+        }
       }
 
       toast.success('Đã lưu Ma trận Hình thức Đánh giá thành công!');

@@ -122,11 +122,16 @@ export async function POST(req) {
              return NextResponse.json({ error: "Missing periodId" }, { status: 400 });
           }
           
+          const whereClause: any = { periodId };
+          if (batchId && batchId !== "all") {
+             if (batchId === "none") {
+                whereClause.batchId = null;
+             } else {
+                whereClause.batchId = batchId;
+             }
+          }
           targetAssignments = await prisma.inputAssessmentTeacherAssignment.findMany({
-             where: {
-                periodId,
-                batchId: batchId || null
-             },
+             where: whereClause,
              include: {
                 user: {
                    include: {

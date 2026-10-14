@@ -42,16 +42,22 @@ export async function POST(req: Request) {
       const allStudents = await (prisma as any).inputAssessmentStudent.findMany({
         select: { studentCode: true }
       })
-      const nums = allStudents.map((s: any) => {
-        const match = String(s.studentCode || "").match(/\d+$/)
-        return match ? parseInt(match[0], 10) : 0
-      }).filter((n: number) => !isNaN(n))
-      const maxNum = nums.length > 0 ? Math.max(...nums) : 0
-      const nextCode = "HS" + (maxNum + 1).toString().padStart(3, "0")
+      let finalStudentCode = (studentData.studentCode || "").trim()
+      if (!finalStudentCode) {
+        const allStudents = await (prisma as any).inputAssessmentStudent.findMany({
+          select: { studentCode: true }
+        })
+        const nums = allStudents.map((s: any) => {
+          const match = String(s.studentCode || "").match(/\d+$/)
+          return match ? parseInt(match[0], 10) : 0
+        }).filter((n: number) => !isNaN(n))
+        const maxNum = nums.length > 0 ? Math.max(...nums) : 0
+        finalStudentCode = "HS" + (maxNum + 1).toString().padStart(3, "0")
+      }
 
       const newStudent = await (prisma as any).inputAssessmentStudent.create({
         data: {
-          studentCode: nextCode,
+          studentCode: finalStudentCode,
           fullName: studentData.fullName.trim(),
           dateOfBirth: studentData.dateOfBirth ? new Date(studentData.dateOfBirth) : null,
           gender: studentData.gender || null,
@@ -63,6 +69,13 @@ export async function POST(req: Request) {
           periodId: periodId,
           batchId: batchId || null,
           surveyFormType: studentData.surveyFormType || "KHAO_SAT_DAU_VAO",
+          targetType: studentData.targetType || null,
+          oldSchoolName: studentData.oldSchoolName || null,
+          oldSchoolType: studentData.oldSchoolType || null,
+          cityName: studentData.cityName || null,
+          kqgdTieuHoc: studentData.kqgdTieuHoc || null,
+          kqHocTap: studentData.kqHocTap || null,
+          hoSoCtQuocTe: studentData.hoSoCtQuocTe || null,
           createdAt: new Date(),
         }
       })

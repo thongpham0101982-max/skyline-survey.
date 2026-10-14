@@ -51,18 +51,21 @@ export async function GET(req: NextRequest) {
     const campusId = searchParams.get("campusId")
     const classId = searchParams.get("classId")
     const search = searchParams.get("search")
+    const studentType = searchParams.get("studentType")
 
     // Build filters
-    const where: any = {
-      NOT: {
-        studentCode: { startsWith: "2" }
+    const where: any = {}
+    if (studentId) where.id = studentId
+    if (academicYearId && academicYearId !== "all") where.academicYearId = academicYearId
+    if (campusId && campusId !== "all") where.campusId = campusId
+    if (classId && classId !== "all") where.classId = classId
+    if (studentType && studentType !== "ALL" && studentType !== "all") {
+      if (studentType === "GIAO_LUU") {
+        where.studentType = "GIAO_LUU"
+      } else if (studentType === "CHINH_KHOA") {
+        where.studentType = { not: "GIAO_LUU" }
       }
     }
-    if (studentId) where.id = studentId
-    if (academicYearId) where.academicYearId = academicYearId
-    if (campusId) where.campusId = campusId
-    if (classId) where.classId = classId
-    if (studentType && studentType !== "ALL") where.studentType = studentType
     if (search) {
       where.OR = [
         { studentName: { contains: search } },
@@ -137,6 +140,24 @@ export async function GET(req: NextRequest) {
         subjectGradeEntries: {
           include: {
             subject: true
+          },
+          orderBy: { createdAt: "desc" }
+        },
+        specialGradeEntries: {
+          include: {
+            assignment: {
+              include: {
+                subject: true,
+                teacher: { select: { teacherName: true } }
+              }
+            },
+            lesson: {
+              select: {
+                periodIndex: true,
+                lessonName: true,
+                topic: { select: { name: true } }
+              }
+            }
           },
           orderBy: { createdAt: "desc" }
         }
@@ -306,7 +327,7 @@ export async function GET(req: NextRequest) {
           where: {
             OR: [
               ...(studentCodesArr.length > 0 ? [{ studentCode: { in: studentCodesArr } }] : []),
-              ...(studentNamesArr.length > 0 ? [{ studentName: { in: studentNamesArr } }] : [])
+              ...(studentNamesArr.length > 0 ? [{ fullName: { in: studentNamesArr } }] : [])
             ]
           }
         })
@@ -559,6 +580,11 @@ export async function GET(req: NextRequest) {
         gender,
         dob,
         status,
+        studentType: s.studentType || "CHINH_KHOA",
+        studentTypeNote: s.studentTypeNote || "",
+        convertedAt: s.convertedAt || null,
+        conversionReason: s.conversionReason || "",
+        convertedBy: s.convertedBy || "",
         
         // Exact structure expected by teacher tabs (profileData)
         student: s,
@@ -677,6 +703,8 @@ export async function GET(req: NextRequest) {
             const deliverables = recMeta.deliverables || catMeta.deliverables || "";
             const primarySubject = recMeta.subjectName || catMeta.primarySubjectName || "";
             const integratedSubjects = recMeta.integratedSubjects || catMeta.integratedSubjects || "";
+            const educationalContent = recMeta.educationalContent || catMeta.educationalContent || recMeta.content || catMeta.content || recMeta.description || catMeta.descriptionText || catMeta.learningOutcomes || "";
+            const themeName = recMeta.themeName || catMeta.themeName || resolvedGroup || "";
 
             return {
               id: p.id,
@@ -684,6 +712,8 @@ export async function GET(req: NextRequest) {
               activityId: p.recordId || p.record?.id,
               activityName: (resolvedName || "").trim(),
               groupName: (resolvedGroup || "").trim(),
+              themeName: (themeName || "").trim(),
+              educationalContent: (educationalContent || deliverables || "").trim(),
               strand: recMeta.strand || undefined,
               themeAxis,
               themeAxisName: themeAxisDict[themeAxis] || "Trải nghiệm",

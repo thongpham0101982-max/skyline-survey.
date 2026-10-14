@@ -11,6 +11,15 @@ function jsonResponse(data: any, status = 200) {
   return res
 }
 
+function resolveGrade(grade?: string | null, className?: string | null): string {
+  if (grade && !isNaN(Number(grade))) return String(Number(grade))
+  if (className) {
+    const match = className.match(/^(\d+)/)
+    if (match) return String(Number(match[1]))
+  }
+  return ""
+}
+
 export async function GET(req: Request) {
   try {
     const session = await auth()
@@ -22,6 +31,10 @@ export async function GET(req: Request) {
     const classId = searchParams.get("classId") || ""
     const statusColor = searchParams.get("statusColor") || ""
     const search = (searchParams.get("search") || "").trim()
+    const gradesParam = (searchParams.get("grades") || searchParams.get("grade") || "").trim()
+    const selectedGrades = gradesParam
+      ? gradesParam.split(",").map(g => g.trim().replace(/^[kK]/, "")).filter(Boolean)
+      : []
 
     // 1. Tự động lấy Năm học hoạt động mặc định nếu không truyền academicYearId
     if (!academicYearId) {
@@ -31,7 +44,36 @@ export async function GET(req: Request) {
       }
     }
 
-    // 2. Thiết lập điều kiện lọc học sinh (Bao gồm Năm học, trạng thái ACTIVE và loại trừ Mầm non)
+    // 2. Tìm kiếm đa trường: Tên HS, Mã HS, Tên Lớp, Tên GVCN
+    let matchingClassIds: string[] = []
+    let homeroomTeacherIds: string[] = []
+    let homeroomClassNames: string[] = []
+
+    if (search) {
+      const matchedTeachers = await prisma.teacher.findMany({
+        where: {
+          OR: [
+            { teacherName: { contains: search } },
+            { email: { contains: search } },
+            { phone: { contains: search } }
+          ]
+        },
+        select: { id: true, homeroomClass: true }
+      }).catch(() => [])
+
+      if (matchedTeachers.length > 0) {
+        homeroomTeacherIds = matchedTeachers.map(t => t.id)
+        homeroomClassNames = matchedTeachers.map(t => t.homeroomClass).filter(Boolean) as string[]
+
+        const assignments = await prisma.teacherClassAssignment.findMany({
+          where: { teacherId: { in: homeroomTeacherIds } },
+          select: { classId: true }
+        }).catch(() => [])
+        matchingClassIds = assignments.map(a => a.classId)
+      }
+    }
+
+    // 3. Thiết lập điều kiện lọc học sinh (Bao gồm Năm học, trạng thái ACTIVE và loại trừ Mầm non)
     const classConditions: any = {
       NOT: [
         { level: "Mam non" },
@@ -71,7 +113,11 @@ export async function GET(req: Request) {
     if (search) {
       whereStudent.OR = [
         { studentName: { contains: search } },
-        { studentCode: { contains: search } }
+        { studentCode: { contains: search } },
+        { class: { className: { contains: search } } },
+        ...(matchingClassIds.length > 0 ? [{ classId: { in: matchingClassIds } }] : []),
+        ...(homeroomTeacherIds.length > 0 ? [{ class: { homeroomTeacherId: { in: homeroomTeacherIds } } }] : []),
+        ...(homeroomClassNames.length > 0 ? [{ class: { className: { in: homeroomClassNames } } }] : [])
       ]
     }
 
@@ -81,6 +127,8 @@ export async function GET(req: Request) {
         id: true,
         studentCode: true,
         studentName: true,
+        gender: true,
+        dateOfBirth: true,
         academicYearId: true,
         classId: true,
         class: {
@@ -98,7 +146,7 @@ export async function GET(req: Request) {
     })
 
     // Lọc loại trừ thêm ở tầng JS để đảm bảo 100% không sót bất kỳ lớp Mầm non nào
-    const students = rawStudents.filter(st => {
+    const nonPreschoolStudents = rawStudents.filter(st => {
       const clsName = (st.class?.className || "").toLowerCase()
       const lvl = (st.class?.level || "").toLowerCase()
       const grd = (st.class?.grade || "").toLowerCase()
@@ -108,25 +156,58 @@ export async function GET(req: Request) {
       return !isMamNon
     })
 
-    const studentIds = students.map(s => s.id)
+    // Thu thập danh sách Khối có trong dữ liệu
+    const availableGradesSet = new Set<string>()
+    nonPreschoolStudents.forEach(st => {
+      const g = resolveGrade(st.class?.grade, st.class?.className)
+      if (g) availableGradesSet.add(g)
+    })
+    const availableGrades = Array.from(availableGradesSet).sort((a, b) => Number(a) - Number(b))
 
-    // 3. Fetch goals for these students
+    // Lọc theo Khối nếu được chọn
+    const students = selectedGrades.length > 0
+      ? nonPreschoolStudents.filter(st => {
+          const g = resolveGrade(st.class?.grade, st.class?.className)
+          return selectedGrades.includes(g)
+        })
+      : nonPreschoolStudents
+
+    const studentIds = students.map(s => s.id)
+    const studentCodes = students.map(s => s.studentCode).filter(Boolean)
+
+    // Lấy toàn bộ các ID học sinh (kể cả ID ở năm học trước) có cùng studentCode để tránh sót phiếu mục tiêu
+    const relatedStudentRecords = await prisma.student.findMany({
+      where: { studentCode: { in: studentCodes } },
+      select: { id: true, studentCode: true }
+    }).catch(() => [])
+
+    const codeToAllIdsMap: Record<string, string[]> = {}
+    relatedStudentRecords.forEach(r => {
+      if (!codeToAllIdsMap[r.studentCode]) codeToAllIdsMap[r.studentCode] = []
+      codeToAllIdsMap[r.studentCode].push(r.id)
+    })
+    const allStudentIds = Array.from(new Set([...studentIds, ...relatedStudentRecords.map(r => r.id)]))
+
+    // 4. Fetch goals for these students with academicYearId filter if provided
     const goals = await prisma.studentGoal.findMany({
-      where: { studentId: { in: studentIds } },
+      where: {
+        studentId: { in: allStudentIds },
+        ...(academicYearId ? { academicYearId } : {})
+      },
       include: { actions: true }
     }).catch(() => [])
 
-    // 4. Fetch warnings for these students
+    // 5. Fetch warnings for these students
     const warnings = await prisma.studentAdvisoryStatus.findMany({
-      where: { studentId: { in: studentIds } }
+      where: { studentId: { in: allStudentIds } }
     }).catch(() => [])
 
-    // 5. Fetch tracking logs
+    // 6. Fetch tracking logs
     const trackingLogs = await prisma.studentGoalTrackingLog.findMany({
-      where: { studentId: { in: studentIds } }
+      where: { studentId: { in: allStudentIds } }
     }).catch(() => [])
 
-    // 6. Fetch Teachers and Class Assignments to resolve GVCN accurately
+    // 7. Fetch Teachers and Class Assignments to resolve GVCN accurately
     const teachers = await prisma.teacher.findMany({
       select: {
         id: true,
@@ -157,7 +238,7 @@ export async function GET(req: Request) {
       classAssignmentMap[ca.classId].push(ca)
     })
 
-    // Group goals by student
+    // Group goals by studentId
     const studentGoalMap: Record<string, any[]> = {}
     goals.forEach(g => {
       if (!studentGoalMap[g.studentId]) studentGoalMap[g.studentId] = []
@@ -180,26 +261,47 @@ export async function GET(req: Request) {
 
     // Build comprehensive student list
     const studentRows = students.map(st => {
-      const stGoals = studentGoalMap[st.id] || []
+      let stGoals = studentGoalMap[st.id] || []
+      if (stGoals.length === 0 && st.studentCode && codeToAllIdsMap[st.studentCode]) {
+        for (const altId of codeToAllIdsMap[st.studentCode]) {
+          if (studentGoalMap[altId]?.length > 0) {
+            stGoals = studentGoalMap[altId]
+            break
+          }
+        }
+      }
+
       const hasSubmitted = stGoals.length > 0
-      const color = warningMap[st.id] || "GREEN"
+      const color = hasSubmitted ? (warningMap[st.id] || "GREEN") : "UNSUBMITTED"
       const parentSigned = stGoals.some(g => g.signedByParent)
-      const hasTeacherNotes = (teacherNoteCountMap[st.id] || 0) > 0
+      const signedByTeacher = stGoals.some(g => g.signedByTeacher)
+      const teacherComment = stGoals.find(g => g.teacherComment && g.teacherComment.trim())?.teacherComment || ""
+      const parentMessage = stGoals.find(g => g.parentMessage && g.parentMessage.trim())?.parentMessage || ""
+      const studentCommitment = stGoals.find(g => g.studentCommitment && g.studentCommitment.trim())?.studentCommitment || ""
+      const hasTeacherNotes = (teacherNoteCountMap[st.id] || 0) > 0 || signedByTeacher || teacherComment.length > 0
+
+      const resolvedGrade = resolveGrade(st.class?.grade, st.class?.className)
 
       return {
         id: st.id,
         studentCode: st.studentCode,
         studentName: st.studentName,
+        gender: st.gender || "—",
+        dateOfBirth: st.dateOfBirth ? new Date(st.dateOfBirth).toLocaleDateString("vi-VN") : "—",
         classId: st.classId || st.class?.id || "",
-        gradeLevel: (st.class as any)?.gradeLevel || st.class?.grade || st.class?.className || "Khối",
+        gradeLevel: resolvedGrade ? `Khối ${resolvedGrade}` : ((st.class as any)?.gradeLevel || st.class?.grade || "Khối"),
+        gradeNum: resolvedGrade ? Number(resolvedGrade) : 999,
         className: st.class?.className || "Chưa xếp lớp",
         campusName: st.class?.campus?.campusName || "Chưa xác định",
         campusCode: st.class?.campus?.campusCode || "CS",
         goalCount: stGoals.length,
         hasSubmitted,
         statusColor: color,
-        studentCommitment: stGoals[0]?.studentCommitment || "",
+        studentCommitment,
+        parentMessage,
+        teacherComment,
         parentSigned,
+        signedByTeacher,
         hasTeacherNotes,
         goals: stGoals
       }
@@ -212,30 +314,36 @@ export async function GET(req: Request) {
       if (!classGroupMap[cId]) {
         const matchingCls = st.classId ? students.find(s => s.class?.id === st.classId)?.class : null
         let gvcnName = ""
+        let gvcnPhone = ""
         
         // 1. Check homeroomTeacherId from Class
         if (matchingCls?.homeroomTeacherId && teacherMap[matchingCls.homeroomTeacherId]) {
           gvcnName = teacherMap[matchingCls.homeroomTeacherId].teacherName
+          gvcnPhone = teacherMap[matchingCls.homeroomTeacherId].phone || ""
         }
         
         // 2. Check TeacherClassAssignment
         if (!gvcnName && classAssignmentMap[cId] && classAssignmentMap[cId].length > 0) {
           const gAss = classAssignmentMap[cId].find((ca: any) => ca.roleInClass === "GVCN" || ca.roleInClass === "HOMEROOM") || classAssignmentMap[cId][0]
           gvcnName = gAss?.teacher?.teacherName || ""
+          gvcnPhone = gAss?.teacher?.phone || ""
         }
 
         // 3. Check Teacher homeroomClass
         if (!gvcnName && teacherMap[st.className]) {
           gvcnName = teacherMap[st.className].teacherName
+          gvcnPhone = teacherMap[st.className].phone || ""
         }
 
         classGroupMap[cId] = {
           classId: cId,
           className: st.className,
           gradeLevel: st.gradeLevel,
+          gradeNum: st.gradeNum,
           campusName: st.campusName,
           campusCode: st.campusCode,
           homeroomTeacherName: gvcnName || "Chưa phân công",
+          homeroomTeacherPhone: gvcnPhone,
           totalStudents: 0,
           submittedCount: 0,
           unsubmittedCount: 0,
@@ -249,12 +357,14 @@ export async function GET(req: Request) {
       }
 
       classGroupMap[cId].totalStudents += 1
-      if (st.hasSubmitted) classGroupMap[cId].submittedCount += 1
-      else classGroupMap[cId].unsubmittedCount += 1
-
-      if (st.statusColor === "GREEN") classGroupMap[cId].greenCount += 1
-      else if (st.statusColor === "YELLOW") classGroupMap[cId].yellowCount += 1
-      else if (st.statusColor === "RED") classGroupMap[cId].redCount += 1
+      if (st.hasSubmitted) {
+        classGroupMap[cId].submittedCount += 1
+        if (st.statusColor === "GREEN") classGroupMap[cId].greenCount += 1
+        else if (st.statusColor === "YELLOW") classGroupMap[cId].yellowCount += 1
+        else if (st.statusColor === "RED") classGroupMap[cId].redCount += 1
+      } else {
+        classGroupMap[cId].unsubmittedCount += 1
+      }
 
       if (st.parentSigned) classGroupMap[cId].parentSignedCount += 1
       if (st.hasTeacherNotes) classGroupMap[cId].reviewedByTeacherCount += 1
@@ -262,10 +372,28 @@ export async function GET(req: Request) {
       classGroupMap[cId].students.push(st)
     })
 
+    // Sắp xếp các lớp theo thứ tự tự nhiên (Natural Pedagogical Sort: Khối 1..12 -> Cơ sở -> Tên lớp)
     const classRows = Object.values(classGroupMap).map(cls => ({
       ...cls,
       submissionPercent: cls.totalStudents > 0 ? Math.round((cls.submittedCount / cls.totalStudents) * 100) : 0
-    })).sort((a, b) => a.className.localeCompare(b.className))
+    })).sort((a, b) => {
+      // 1. Thứ tự khối học 1 -> 12
+      const gradeA = a.gradeNum || 999
+      const gradeB = b.gradeNum || 999
+      if (gradeA !== gradeB) return gradeA - gradeB
+      
+      // 2. Thứ tự Cơ sở (CS1, CS2, CS3, CS4, CS5...)
+      const campusComp = (a.campusCode || "").localeCompare(b.campusCode || "")
+      if (campusComp !== 0) return campusComp
+
+      // 3. Thứ tự Tên lớp tự nhiên (ví dụ: 10.1 trước 10.2)
+      return a.className.localeCompare(b.className, undefined, { numeric: true })
+    })
+
+    // Sắp xếp học sinh trong mỗi lớp theo tên tiếng Việt
+    classRows.forEach(cls => {
+      cls.students.sort((a: any, b: any) => a.studentName.localeCompare(b.studentName, "vi"))
+    })
 
     // Filter students by statusColor if requested
     let finalRows = studentRows
@@ -284,6 +412,8 @@ export async function GET(req: Request) {
 
     return jsonResponse({
       currentAcademicYearId: academicYearId,
+      availableGrades,
+      appliedGrades: selectedGrades,
       metrics: {
         totalStudents,
         submittedCount,

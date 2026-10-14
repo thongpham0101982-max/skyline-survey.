@@ -21,6 +21,8 @@ export async function GET(req: Request) {
     const subjectId = searchParams.get('subjectId');
     const roleScope = searchParams.get('roleScope'); // 'ALL' | 'GVBM' | 'GVCN' | 'MY_CREATED'
     const scopeType = searchParams.get('scopeType'); // 'ALL' | 'ASSIGNED' | 'MY_CREATED'
+    const forTeacher = searchParams.get('forTeacher') === 'true' || searchParams.get('myClassesOnly') === 'true';
+    const targetClassId = searchParams.get('classId');
     const q = searchParams.get('q');
 
     const userRole = (session?.user as any)?.role || '';
@@ -31,12 +33,29 @@ export async function GET(req: Request) {
 
     let teacherRecord: any = null;
     let homeroomClassIds = new Set<string>();
+    let homeroomClassNames = new Set<string>();
+    let teachingClassIds = new Set<string>();
+    let allMyClassIds = new Set<string>();
+    let allMyClassNames = new Set<string>();
+    let homeroomClassesList: any[] = [];
     let teachingAssignmentsList: any[] = [];
 
-    if (!isManagement || userRole === 'TEACHER') {
+    if (forTeacher || !isManagement || userRole === 'TEACHER' || upperRole.includes('TEACHER')) {
       teacherRecord = await prisma.teacher.findUnique({
         where: { userId: session.user.id }
       });
+
+      if (!teacherRecord && session.user.email) {
+        teacherRecord = await prisma.teacher.findFirst({
+          where: {
+            OR: [
+              { email: session.user.email },
+              { teacherCode: session.user.email.split('@')[0] },
+              { teacherName: session.user.name || undefined }
+            ]
+          }
+        });
+      }
 
       if (teacherRecord) {
         // 1. Find Homeroom (GVCN) classes
@@ -45,12 +64,16 @@ export async function GET(req: Request) {
             OR: [
               { homeroomTeacherId: teacherRecord.id },
               { homeroomTeacherId: { contains: teacherRecord.id } },
+              { homeroomTeacherId: teacherRecord.teacherCode },
+              { homeroomTeacherId: { contains: teacherRecord.teacherCode } },
               { teachers: { some: { teacherId: teacherRecord.id, roleInClass: "GVCN" } } }
             ]
           },
           select: { id: true, className: true, campusId: true, grade: true, level: true }
         });
+        homeroomClassesList = homeroomClasses;
         homeroomClassIds = new Set(homeroomClasses.map(c => c.id));
+        homeroomClassNames = new Set(homeroomClasses.map(c => c.className).filter(Boolean));
 
         // 2. Find Subject Teaching (GVBM) assignments
         teachingAssignmentsList = await prisma.teachingAssignment.findMany({
@@ -60,6 +83,14 @@ export async function GET(req: Request) {
             subject: { select: { id: true, subjectName: true, subjectCode: true } }
           }
         });
+
+        teachingAssignmentsList.forEach(ta => {
+          if (ta.class?.id) teachingClassIds.add(ta.class.id);
+          if (ta.class?.className) allMyClassNames.add(ta.class.className);
+        });
+
+        allMyClassIds = new Set([...homeroomClassIds, ...teachingClassIds]);
+        homeroomClassNames.forEach(name => allMyClassNames.add(name));
       }
     }
 
@@ -251,8 +282,40 @@ export async function GET(req: Request) {
       }
 
       const isAssignedToMe = (isGVBM || isGVCN) && !isMyCreated;
-      const isVisibleToTeacher = isManagement || isMyCreated || isAssignedToMe || isGVBM || isGVCN;
+      const isVisibleToTeacher = forTeacher 
+        ? (isMyCreated || isAssignedToMe || isGVBM || isGVCN)
+        : (isManagement || isMyCreated || isAssignedToMe || isGVBM || isGVCN);
       const canManage = isManagement || isMyCreated || hasExpManageUpdate;
+
+      // Calculate class-specific progress for this teacher's class
+      let myClassProgress: any = null;
+      if (myAssignedClass) {
+        const classTargetId = myAssignedClass.classId;
+        const targetStudents = act.participants.filter(p => p.student?.classId === classTargetId || (classTargetId && p.student?.class?.id === classTargetId));
+        const evaluatedStudentsCount = targetStudents.filter(p => {
+          if (p.evalLevelId) return true;
+          try {
+            if (p.note) {
+              const parsed = JSON.parse(p.note);
+              return parsed.isCompleted || (parsed.finalResult && parsed.finalResult !== 'CAN_HO_TRO') || (parsed.calculatedPercent !== null && parsed.calculatedPercent > 0);
+            }
+          } catch {}
+          return false;
+        }).length;
+
+        const totalStudentsCount = targetStudents.length || myAssignedClass.totalStudents || 0;
+        const progressPct = totalStudentsCount > 0 ? Math.round((evaluatedStudentsCount / totalStudentsCount) * 100) : (myAssignedClass.status === 'COMPLETED' ? 100 : 0);
+        const classStatus = progressPct === 100 ? 'COMPLETED' : (evaluatedStudentsCount > 0 ? 'IN_PROGRESS' : (myAssignedClass.status || 'DRAFT'));
+
+        myClassProgress = {
+          classId: myAssignedClass.classId,
+          className: myAssignedClass.className,
+          status: classStatus,
+          evaluatedStudents: evaluatedStudentsCount,
+          totalStudents: totalStudentsCount,
+          percent: progressPct
+        };
+      }
 
         // Accurately extract campus codes & grades from assignedClasses
         const assignedCampusCodes = Array.from(new Set(
@@ -276,11 +339,56 @@ export async function GET(req: Request) {
 
         const computedGrades = assignedGrades.length > 0 ? assignedGrades : (extraData.grades || []);
 
+        let catMeta: any = {};
+        try {
+          if (act.catalog?.description && act.catalog.description.startsWith('{')) {
+            catMeta = JSON.parse(act.catalog.description);
+          }
+        } catch {}
+
+        const educationalContent = extraData.educationalContent || extraData.description || catMeta.educationalContent || catMeta.notes || '';
+        const learningOutcomes = extraData.learningOutcomes || extraData.objectives || catMeta.learningOutcomes || '';
+        const organizationFormat = extraData.organizationFormat || catMeta.organizationFormat || 'Trải nghiệm';
+        const deliverables = extraData.deliverables || catMeta.deliverables || '';
+        const evaluationConfig = extraData.evaluationConfig || catMeta.evaluationConfig || null;
+        const criteria = (extraData.criteria && extraData.criteria.length > 0) ? extraData.criteria : (evaluationConfig?.criteria || catMeta.criteria || []);
+        const evalMode = extraData.evalMode || evaluationConfig?.mode || catMeta.evalMode || 'CRITERIA';
+
+        const hasContent = !!(educationalContent && educationalContent.trim());
+        const hasOutcomes = !!(learningOutcomes && learningOutcomes.trim());
+        const hasFormat = !!(organizationFormat && organizationFormat.trim());
+        const hasDeliverables = !!(deliverables && deliverables.trim());
+        const hasEval = !!(evaluationConfig?.mode || extraData.evalMode || criteria.length > 0);
+
+        const missingProfessionalFields: string[] = [];
+        if (!hasOutcomes) missingProfessionalFields.push('Yêu cầu cần đạt');
+        if (!hasFormat) missingProfessionalFields.push('Hình thức tổ chức');
+        if (!hasDeliverables) missingProfessionalFields.push('Sản phẩm dự án');
+        if (!hasEval) missingProfessionalFields.push('Tiêu chí đánh giá');
+        if (!hasContent) missingProfessionalFields.push('Nội dung giáo dục');
+
+        const isProfessionalConfigured = missingProfessionalFields.length === 0;
+
+        const subjectTeacherId = extraData.subjectTeacherId || extraData.tlhnTeacherId || extraData.leadTeacherId || catMeta.subjectTeacherId || catMeta.cthsTeacherId || null;
+        const subjectTeacherEmail = extraData.subjectTeacherEmail || catMeta.subjectTeacherEmail || catMeta.cthsTeacherEmail || null;
+        const subjectTeacherName = extraData.subjectTeacherName || extraData.tlhnTeacherName || extraData.leadTeacherName || catMeta.subjectTeacherName || catMeta.cthsTeacherName || null;
+
+        const isAssignedSubjectTeacher = !!(
+          (teacherRecord && subjectTeacherId && teacherRecord.id === subjectTeacherId) ||
+          (session?.user?.email && subjectTeacherEmail && session.user.email.toLowerCase() === subjectTeacherEmail.toLowerCase()) ||
+          (teacherRecord && teacherRecord.teacherName && subjectTeacherName && teacherRecord.teacherName === subjectTeacherName) ||
+          (teacherRecord?.departmentId && extraData.departmentId && teacherRecord.departmentId === extraData.departmentId)
+        );
+
+        const canConfigureProfessional = isManagement || isMyCreated || isGVBM || isAssignedSubjectTeacher || canManage;
+
         return {
           id: act.id,
           code: act.code || '',
           name: act.name || act.catalog?.name || 'Hoạt động',
           catalogName: act.catalog?.name || '',
+          themeName: extraData.themeName || act.catalog?.theme?.name || catMeta.themeName || '',
+          semester: extraData.semester || act.semester || catMeta.semester || (extraData.timeRange && (extraData.timeRange.includes('HK2') || extraData.timeRange.includes('Học kỳ 2')) ? 2 : 1),
           academicYearId: act.academicYearId,
           academicYearName: act.academicYear?.name || '',
           campusId: extraData.campusId || act.teacher?.campusId || '',
@@ -288,53 +396,78 @@ export async function GET(req: Request) {
           campusName: computedCampusName,
           educationLevel: extraData.educationLevel || act.levelId || '',
           grades: computedGrades,
-        departmentId: extraData.departmentId || null,
-        departmentName: extraData.departmentName || null,
-        subjectId: extraData.subjectId || null,
-        subjectName: extraData.subjectName || null,
-        tcmOrSubjectLabel: extraData.departmentName || extraData.subjectName || act.subjectName || '',
-        date: act.date ? act.date.toISOString().split('T')[0] : '',
-        timeRange: extraData.timeRange || '',
-        location: extraData.locationText || (act.locationId && !act.locationId.startsWith('{') ? act.locationId : ''),
-        teacherId: act.teacherId,
-        teacherName: act.teacher?.teacherName || act.teacher?.user?.fullName || act.teacher?.user?.name || extraData.creatorName || '',
-        creatorName: extraData.creatorName || act.teacher?.teacherName || act.teacher?.user?.fullName || act.teacher?.user?.name || (act.teacher?.email ? act.teacher.email.split('@')[0] : 'Ban Quản trị'),
-        creatorEmail: extraData.creatorEmail || act.teacher?.email || act.teacher?.user?.email || '',
-        creatorRole: extraData.creatorRole || act.teacher?.user?.role || '',
-        description: extraData.description || '',
-        objectives: extraData.objectives || '',
-        strand: extraData.strand || 'BAN_THAN',
-        activityTypeId: extraData.activityTypeId || 'SU_KIEN',
-        activityTypeName: extraData.activityTypeName || act.catalog?.type?.name || 'Sự kiện / Lễ hội',
-        scale: extraData.scale || 'LOP',
-        evalMode: extraData.evalMode || 'CRITERIA',
-        criteria: extraData.criteria || [],
-        formulaType: extraData.formulaType || 'EQUAL_WEIGHT',
-        thresholds: extraData.thresholds || { outstanding: 85, good: 70, pass: 50 },
-        mandatoryRules: extraData.mandatoryRules || [],
-        deadline: extraData.deadline || '',
-        status: extraData.status || act.status || 'DRAFT',
-        assignedClasses: assignedClasses,
-        myAssignedClass: myAssignedClass || null,
-        isGVBM,
-        isGVCN,
-        hasTcmOrSubject,
-        assignedRole,
-        roleBadgeLabel,
-        roleBadgeTheme,
-        matchedRoleLabel: roleBadgeLabel,
-        isMyCreated,
-        isAssignedToMe,
-        canManage,
-        isTeacherOnly: !isManagement,
-        participantsCount: participantCount,
-        totalClassesCount: calculatedTotalClasses,
-        completedClassesCount: completedClasses,
-        inProgressClassesCount: inProgressClasses,
-        isVisibleToTeacher,
-        createdAt: act.createdAt.toISOString(),
-        updatedAt: act.updatedAt.toISOString()
-      };
+          departmentId: extraData.departmentId || null,
+          departmentName: extraData.departmentName || null,
+          subjectTeacherId,
+          subjectTeacherName,
+          leadTeacherName: extraData.leadTeacherName || subjectTeacherName || null,
+          subjectTeacherEmail,
+          subjectId: extraData.subjectId || null,
+          subjectName: extraData.subjectName || null,
+          primarySubjectName: extraData.primarySubjectName || extraData.subjectName || catMeta.primarySubjectName || null,
+          coopSubjectNames: extraData.integratedSubjects || extraData.coopSubjectNames || catMeta.integratedSubjects || catMeta.coopSubjectNames || null,
+          integratedSubjects: extraData.integratedSubjects || extraData.coopSubjectNames || catMeta.integratedSubjects || catMeta.coopSubjectNames || null,
+          tcmOrSubjectLabel: extraData.departmentName || extraData.subjectName || act.subjectName || '',
+          date: act.date ? act.date.toISOString().split('T')[0] : '',
+          timeRange: extraData.timeRange || '',
+          location: extraData.locationText || extraData.location || (act.locationId && !act.locationId.startsWith('{') ? act.locationId : ''),
+          teacherId: act.teacherId,
+          teacherName: act.teacher?.teacherName || act.teacher?.user?.fullName || act.teacher?.user?.name || extraData.creatorName || '',
+          creatorName: extraData.creatorName || act.teacher?.teacherName || act.teacher?.user?.fullName || act.teacher?.user?.name || (act.teacher?.email ? act.teacher.email.split('@')[0] : 'Ban Quản trị'),
+          creatorEmail: extraData.creatorEmail || act.teacher?.email || act.teacher?.user?.email || '',
+          creatorRole: extraData.creatorRole || act.teacher?.user?.role || '',
+          description: educationalContent,
+          objectives: learningOutcomes,
+          educationalContent,
+          learningOutcomes,
+          organizationFormat,
+          deliverables,
+          evaluationConfig,
+          isProfessionalConfigured,
+          missingProfessionalFields,
+          canConfigureProfessional,
+          strand: extraData.strand || 'BAN_THAN',
+          activityTypeId: extraData.activityTypeId || 'SU_KIEN',
+          activityTypeName: extraData.activityTypeName || act.catalog?.type?.name || 'Sự kiện / Lễ hội',
+          scale: extraData.scale || 'LOP',
+          evalMode,
+          criteria,
+          formulaType: extraData.formulaType || 'EQUAL_WEIGHT',
+          thresholds: extraData.thresholds || { outstanding: 85, good: 70, pass: 50 },
+          mandatoryRules: extraData.mandatoryRules || [],
+          deadline: extraData.deadline || '',
+          status: (() => {
+            const rawStatus = extraData.status || act.status || 'DRAFT';
+            if (rawStatus === 'COMPLETED' || rawStatus === 'LOCKED') return rawStatus;
+            if (completedClasses > 0 && calculatedTotalClasses > 0 && completedClasses === calculatedTotalClasses) return 'COMPLETED';
+            if (inProgressClasses > 0 || completedClasses > 0) return 'IN_PROGRESS';
+            // Các lớp nào đã triển khai: Đã gán lớp thì trạng thái là Đã triển khai (ASSIGNED)
+            if (calculatedTotalClasses > 0 || totalClasses > 0 || assignedClasses.length > 0) return 'ASSIGNED';
+            return rawStatus;
+          })(),
+          assignedClasses: assignedClasses,
+          myAssignedClass: myAssignedClass || null,
+          myClassProgress: myClassProgress || null,
+          canInputResult: true,
+          isGVBM,
+          isGVCN,
+          hasTcmOrSubject,
+          assignedRole,
+          roleBadgeLabel,
+          roleBadgeTheme,
+          matchedRoleLabel: roleBadgeLabel,
+          isMyCreated,
+          isAssignedToMe,
+          canManage,
+          isTeacherOnly: !isManagement,
+          participantsCount: participantCount,
+          totalClassesCount: calculatedTotalClasses,
+          completedClassesCount: completedClasses,
+          inProgressClassesCount: inProgressClasses,
+          isVisibleToTeacher,
+          createdAt: act.createdAt.toISOString(),
+          updatedAt: act.updatedAt.toISOString()
+        };
     });
 
     // =========================================================================
@@ -364,9 +497,57 @@ export async function GET(req: Request) {
           continue;
         }
 
+        const catAssignedClasses = (catMeta.allocatedCampuses || []).flatMap((c: any) => c.assignedClasses || []);
+        const matchedCatClass = catAssignedClasses.find((c: any) => {
+          if (targetClassId) return c.classId === targetClassId;
+          return (c.classId && allMyClassIds.has(c.classId)) ||
+                 (c.className && allMyClassNames.has(c.className)) ||
+                 (c.homeroomTeacherId && teacherRecord && c.homeroomTeacherId === teacherRecord.id);
+        });
+        const catMatchesTeacherClass = !!matchedCatClass;
+        const catIsMyCreated = !!(teacherRecord && (catMeta.creatorId === teacherRecord.id || catMeta.creatorUserId === session.user.id));
+
+        if (forTeacher && !catMatchesTeacherClass && !catIsMyCreated) {
+          continue;
+        }
+
         const evalCfg = catMeta.evaluationConfig || {};
         const isEventCat = catMeta.activityCategory === 'HOAT_DONG_SU_KIEN';
         const catGrades = Array.isArray(catMeta.grades) ? catMeta.grades : [];
+
+        const educationalContent = catMeta.educationalContent || catMeta.notes || '';
+        const learningOutcomes = catMeta.learningOutcomes || '';
+        const organizationFormat = catMeta.organizationFormat || 'Trải nghiệm';
+        const deliverables = catMeta.deliverables || '';
+        const evaluationConfig = catMeta.evaluationConfig || null;
+        const criteria = evalCfg.criteria || [];
+
+        const hasContent = !!(educationalContent && educationalContent.trim());
+        const hasOutcomes = !!(learningOutcomes && learningOutcomes.trim());
+        const hasFormat = !!(organizationFormat && organizationFormat.trim());
+        const hasDeliverables = !!(deliverables && deliverables.trim());
+        const hasEval = !!(evalCfg.mode || criteria.length > 0);
+
+        const missingProfessionalFields: string[] = [];
+        if (!hasOutcomes) missingProfessionalFields.push('Yêu cầu cần đạt');
+        if (!hasFormat) missingProfessionalFields.push('Hình thức tổ chức');
+        if (!hasDeliverables) missingProfessionalFields.push('Sản phẩm dự án');
+        if (!hasEval) missingProfessionalFields.push('Tiêu chí đánh giá');
+        if (!hasContent) missingProfessionalFields.push('Nội dung giáo dục');
+
+        const isProfessionalConfigured = missingProfessionalFields.length === 0;
+
+        const subjectTeacherId = catMeta.subjectTeacherId || catMeta.cthsTeacherId || null;
+        const subjectTeacherEmail = catMeta.subjectTeacherEmail || catMeta.cthsTeacherEmail || null;
+        const subjectTeacherName = catMeta.subjectTeacherName || catMeta.cthsTeacherName || null;
+
+        const isAssignedSubjectTeacher = !!(
+          (teacherRecord && subjectTeacherId && teacherRecord.id === subjectTeacherId) ||
+          (session?.user?.email && subjectTeacherEmail && session.user.email.toLowerCase() === subjectTeacherEmail.toLowerCase()) ||
+          (teacherRecord && teacherRecord.teacherName && subjectTeacherName && teacherRecord.teacherName === subjectTeacherName)
+        );
+
+        const canConfigureProfessional = isManagement || isAssignedSubjectTeacher || isGVBM;
 
         formatted.push({
           id: cat.id,
@@ -378,52 +559,78 @@ export async function GET(req: Request) {
           campusId: '',
           campusCode: 'Toàn trường',
           campusName: 'Toàn trường',
-          educationLevel: catMeta.educationLevels?.[0] || cat.level || '',
+          educationLevel: catMeta.educationLevels?.[0] || catMeta.educationLevel || cat.level || '',
           grades: catGrades,
-          departmentId: null,
-          departmentName: null,
+          departmentId: catMeta.departmentId || null,
+          departmentName: catMeta.departmentName || null,
+          subjectTeacherId,
+          subjectTeacherName,
+          subjectTeacherEmail,
           subjectId: null,
           subjectName: catMeta.primarySubjectName || null,
-          tcmOrSubjectLabel: catMeta.primarySubjectName || catMeta.integratedSubjects || 'Toàn trường',
+          primarySubjectName: catMeta.primarySubjectName || null,
+          coopSubjectNames: catMeta.integratedSubjects || catMeta.coopSubjectNames || null,
+          tcmOrSubjectLabel: catMeta.departmentName || catMeta.primarySubjectName || catMeta.integratedSubjects || 'Toàn trường',
+          themeName: catMeta.themeName || null,
+          programType: catMeta.programType || null,
+          semester: catMeta.semester || 1,
           date: '',
           timeRange: catMeta.timeFrame || '',
           location: catMeta.expectedLocation || 'Theo kế hoạch',
-          teacherId: catMeta.cthsTeacherId || '',
-          teacherName: catMeta.cthsTeacherName || 'BP HĐNGLL - Tổ CTHS',
-          creatorName: catMeta.cthsTeacherName || 'BP HĐNGLL - Tổ CTHS',
-          creatorEmail: catMeta.cthsTeacherEmail || '',
+          teacherId: subjectTeacherId || '',
+          teacherName: subjectTeacherName || 'BP HĐNGLL - Tổ CTHS',
+          creatorName: subjectTeacherName || 'BP HĐNGLL - Tổ CTHS',
+          creatorEmail: subjectTeacherEmail || '',
           creatorRole: 'CTHS',
-          description: catMeta.notes || catMeta.educationalContent || '',
-          objectives: catMeta.learningOutcomes || '',
-          strand: 'BAN_THAN',
+          description: educationalContent,
+          objectives: learningOutcomes,
+          educationalContent,
+          learningOutcomes,
+          organizationFormat,
+          deliverables,
+          evaluationConfig,
+          isProfessionalConfigured,
+          missingProfessionalFields,
+          canConfigureProfessional,
+          strand: catMeta.strand || 'BAN_THAN',
           activityTypeId: isEventCat ? 'SU_KIEN' : 'DU_AN',
-          activityTypeName: isEventCat ? 'Hoạt động sự kiện' : 'Trải nghiệm / Dự án',
+          activityTypeName: isEventCat ? 'Hoạt động sự kiện' : (catMeta.activityCategoryName || 'Trải nghiệm / Dự án'),
           scale: 'TOAN_TRUONG',
           evalMode: evalCfg.mode || (isEventCat ? 'ROLE_BASED' : 'CRITERIA'),
-          criteria: evalCfg.criteria || [],
+          criteria,
           formulaType: evalCfg.formulaType === 'AVERAGE' ? 'EQUAL_WEIGHT' : 'WEIGHTED',
           thresholds: { outstanding: 85, good: 70, pass: 50 },
           mandatoryRules: [],
           deadline: '',
-          status: 'ASSIGNED',
-          assignedClasses: [],
-          myAssignedClass: null,
-          isGVBM: true,
-          isGVCN: true,
+          status: cat.status || 'ASSIGNED',
+          allocatedCampuses: catMeta.allocatedCampuses || [],
+          assignedClasses: catAssignedClasses,
+          myAssignedClass: matchedCatClass || null,
+          myClassProgress: matchedCatClass ? {
+            classId: matchedCatClass.classId,
+            className: matchedCatClass.className,
+            status: 'DRAFT',
+            evaluatedStudents: 0,
+            totalStudents: matchedCatClass.totalStudents || 0,
+            percent: 0
+          } : null,
+          canInputResult: true,
+          isGVBM: forTeacher ? catMatchesTeacherClass : true,
+          isGVCN: forTeacher ? catMatchesTeacherClass : true,
           hasTcmOrSubject: true,
           assignedRole: isManagement ? 'ADMIN' : 'GVCN',
           roleBadgeLabel: isEventCat ? '🎪 Sự kiện ngoại khóa' : '🌟 Kế hoạch HĐTN',
           roleBadgeTheme: isEventCat ? 'purple' : 'teal',
           matchedRoleLabel: isEventCat ? '🎪 Sự kiện ngoại khóa' : '🌟 Kế hoạch HĐTN',
-          isMyCreated: true,
-          isAssignedToMe: true,
-          canManage: true,
-          isTeacherOnly: false,
+          isMyCreated: catIsMyCreated,
+          isAssignedToMe: catMatchesTeacherClass,
+          canManage: isManagement || catIsMyCreated,
+          isTeacherOnly: !isManagement,
           participantsCount: 0,
-          totalClassesCount: catGrades.length,
+          totalClassesCount: (catMeta.allocatedCampuses || []).reduce((acc: number, c: any) => acc + (c.assignedClassesCount || (c.assignedClasses?.length || 0)), 0) || catGrades.length,
           completedClassesCount: 0,
-          inProgressClassesCount: 0,
-          isVisibleToTeacher: true,
+          inProgressClassesCount: (catMeta.allocatedCampuses || []).filter((c: any) => c.status === 'DA_TRIEN_KHAI').length,
+          isVisibleToTeacher: forTeacher ? (catMatchesTeacherClass || catIsMyCreated) : true,
           isFromCatalog: true,
           createdAt: cat.createdAt.toISOString(),
           updatedAt: cat.updatedAt.toISOString()
@@ -433,10 +640,20 @@ export async function GET(req: Request) {
       console.error('Error fetching activity catalogs in list API:', catErr);
     }
 
-    // For regular teachers, strictly filter to ONLY visible activities
+    // For regular teachers or forTeacher=true, strictly filter to ONLY visible activities
     let result = formatted;
-    if (!isManagement) {
+    if (forTeacher) {
       result = result.filter(a => a.isVisibleToTeacher);
+    } else if (!isManagement) {
+      result = result.filter(a => a.isVisibleToTeacher);
+    }
+
+    if (targetClassId && targetClassId !== 'ALL') {
+      result = result.filter(a => 
+        (a.assignedClasses && a.assignedClasses.some((c: any) => c.classId === targetClassId || (c.className && homeroomClassesList.find(hc => hc.id === targetClassId)?.className === c.className))) ||
+        (a.myAssignedClass && a.myAssignedClass.classId === targetClassId) ||
+        (a.myClassProgress && a.myClassProgress.classId === targetClassId)
+      );
     }
 
     // Filter by Scope Type: ALL | ASSIGNED | MY_CREATED
@@ -588,6 +805,8 @@ export async function POST(req: Request) {
       themeAxis = null,
       themeName = null,
       integratedSubjects = null,
+      educationalContent = null,
+      semester = 1,
       deliverables = null,
       leadTeacherId = null,
       leadTeacherName = null
@@ -676,11 +895,14 @@ export async function POST(req: Request) {
       leadTeacherId,
       leadTeacherName,
       timeRange,
+      semester: Number(semester) || 1,
+      location: location || '',
       locationText: location || '',
-      description,
-      objectives,
+      description: educationalContent || description || '',
+      educationalContent: educationalContent || description || '',
+      objectives: objectives || educationalContent || description || '',
       evidenceUrls,
-      strand,
+      strand: strand || 'BAN_THAN',
       activityTypeId,
       activityTypeName: activityTypeName || 'Hoạt động trải nghiệm',
       scale,
@@ -705,7 +927,7 @@ export async function POST(req: Request) {
         name: name.trim(),
         catalogId: catalog.id,
         date: date ? new Date(date) : new Date(),
-        semester: 1,
+        semester: Number(semester) || 1,
         academicYearId: validAcademicYearId,
         levelId: educationLevel || null,
         formatId: scale || null,

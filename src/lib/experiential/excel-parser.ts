@@ -11,6 +11,7 @@ import {
   getEducationalThemeInfo
 } from './catalog-types';
 import { normalizeActivityName } from './name-normalizer';
+import { formatTimeFrameAndSemester } from './timeframe-helper';
 
 export const EXCEL_COLUMNS = [
   { key: 'stt', header: 'STT', width: 8 },
@@ -163,20 +164,18 @@ function parseProgramTypes(str: string, fallback: ProgramType): { primary: Progr
   return { primary: all[0] || fallback, all };
 }
 
-// Hàm hỗ trợ parse Thời gian & Học kỳ từ chuỗi (VD: "Tháng 10 (Học kỳ 1)" hoặc "Tháng 2, HK 2")
+// Hàm hỗ trợ parse Thời gian & Học kỳ: Định dạng chuẩn Tháng/Năm và mốc quy định HK tự động
 function parseTimeFrameAndSemester(timeStr: string, semStr: string): { timeFrame: string; semester: number } {
-  let semester = 1;
-  const combined = `${timeStr} ${semStr}`.toLowerCase();
-  if (combined.includes('2') || combined.includes('hk2') || combined.includes('học kỳ 2')) {
-    semester = 2;
+  let explicitSem: number | null = null;
+  const semCheck = `${semStr}`.toLowerCase();
+  if (semCheck.includes('2') || semCheck.includes('hk2') || semCheck.includes('học kỳ 2')) {
+    explicitSem = 2;
+  } else if (semCheck.includes('1') || semCheck.includes('hk1') || semCheck.includes('học kỳ 1')) {
+    explicitSem = 1;
   }
 
-  let timeFrame = timeStr.trim();
-  // Loại bỏ phần "(Học kỳ 1)", "(HK2)" nếu có trong timeFrame để chuỗi gọn gàng
-  timeFrame = timeFrame.replace(/\s*\(?(học kỳ|hk)\s*[12]\)?/gi, '').trim();
-  if (!timeFrame) timeFrame = 'Trong năm học';
-
-  return { timeFrame, semester };
+  const info = formatTimeFrameAndSemester(timeStr, '2026-2027', explicitSem);
+  return { timeFrame: info.formattedTime, semester: info.semester };
 }
 
 // Hàm hỗ trợ parse Hình thức & Tiêu chí đánh giá từ chuỗi Excel

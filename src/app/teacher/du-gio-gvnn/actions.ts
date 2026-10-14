@@ -170,8 +170,7 @@ export async function getForeignObservationData(academicYearId?: string) {
       }),
       prisma.class.findMany({
         where: {
-          status: "ACTIVE",
-          ...(activeYearId ? { academicYearId: activeYearId } : {})
+          status: "ACTIVE"
         },
         select: {
           id: true,
@@ -437,9 +436,35 @@ export async function createForeignObservationWithEvaluation(data: {
     let classObj = null;
     if (data.classId) {
       classObj = await prisma.class.findUnique({
-        where: { id: data.classId }
+        where: { id: data.classId },
+        include: { campus: true }
       });
     }
+
+    let slotCampusId = data.campusId || classObj?.campusId || null;
+    let slotCampusName = classObj?.campus?.campusName || null;
+
+    if (!slotCampusName && (data.className || classObj?.className)) {
+      const cName = data.className || classObj?.className || "";
+      const m = cName.match(/[-_. ](CS\d+)/i);
+      if (m) {
+        const found = await prisma.campus.findFirst({
+          where: {
+            OR: [
+              { campusName: m[1].toUpperCase() },
+              { campusCode: m[1].toUpperCase() }
+            ]
+          }
+        });
+        if (found) {
+          slotCampusId = found.id;
+          slotCampusName = found.campusName;
+        }
+      }
+    }
+
+    if (!slotCampusId) slotCampusId = hostTeacher.campusId || null;
+    if (!slotCampusName) slotCampusName = hostTeacher.campus?.campusName || null;
 
     const periodMap: Record<string, { start: string, end: string }> = {
       "Tiết 1": { start: "07:30", end: "08:15" },
@@ -476,8 +501,8 @@ export async function createForeignObservationWithEvaluation(data: {
         status: data.isDraft ? "DRAFT" : "COMPLETED",
         requestOrigin: "FOREIGN_WALKTHROUGH",
         academicYearId: academicYear?.id || null,
-        campusId: data.campusId || hostTeacher.campusId || null,
-        campusName: hostTeacher.campus?.campusName || null
+        campusId: slotCampusId,
+        campusName: slotCampusName
       }
     });
 

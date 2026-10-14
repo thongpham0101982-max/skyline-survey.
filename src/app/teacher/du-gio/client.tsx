@@ -362,7 +362,40 @@ export function getSlotCategoryInfo(slot: any): { key: "MAM_NON" | "GVNN_ESL" | 
   }
 
   // 4. Default to K-12 General Education
-  return { key: "K12", label: "Khối Phổ thông", shortCode: "Khối Phổ thông", badgeClass: "bg-emerald-100 text-emerald-900 border-emerald-300 ring-1 ring-emerald-400/30" };
+}
+
+export function isMatchPreschoolGrade(classGrade: string, targetGrade: string): boolean {
+  if (!targetGrade || targetGrade === "all") return true;
+  if (!classGrade) return false;
+
+  const cleanC = (classGrade || "").normalize("NFD").replace(/[\u0300-\u036f]/g, "").replace(/_/g, " ").toLowerCase().trim();
+  const cleanT = (targetGrade || "").normalize("NFD").replace(/[\u0300-\u036f]/g, "").replace(/_/g, " ").toLowerCase().trim();
+
+  if (cleanC === cleanT) return true;
+  if (cleanC.includes(cleanT) || cleanT.includes(cleanC)) return true;
+
+  // Mẫu giáo bé <-> Mầm <-> 3 đến 4 tuổi
+  const isBe = (s: string) => s.includes("mau giao be") || s === "mam" || s.includes("3 den 4") || s.includes("3-4");
+  if (isBe(cleanC) && isBe(cleanT)) return true;
+
+  // Mẫu giáo nhỡ <-> Chồi <-> 4 đến 5 tuổi
+  const isNho = (s: string) => s.includes("mau giao nho") || s === "choi" || s.includes("4 den 5") || s.includes("4-5");
+  if (isNho(cleanC) && isNho(cleanT)) return true;
+
+  // Mẫu giáo lớn <-> Lá <-> 5 đến 6 tuổi
+  const isLon = (s: string) => s.includes("mau giao lon") || s === "la" || s.includes("5 den 6") || s.includes("5-6");
+  if (isLon(cleanC) && isLon(cleanT)) return true;
+
+  // Nhà trẻ <-> 24-36 tháng, 18-24 tháng, 12-18 tháng
+  const isNhaTre = (s: string) => s.includes("nha tre") || s.includes("thang");
+  if (isNhaTre(cleanC) && isNhaTre(cleanT)) {
+    if (cleanT.includes("24-36") || cleanT.includes("24 den 36")) {
+      return cleanC.includes("24-36") || cleanC.includes("24 den 36") || cleanC === "nha tre";
+    }
+    return true;
+  }
+
+  return false;
 }
 
 interface ObservationClientProps {
@@ -1181,9 +1214,7 @@ export function ObservationClient(props: ObservationClientProps) {
       if (!reqGrade || reqGrade === "all") return true;
 
       if (cleanDbLevel === "mam non") {
-        const cleanCGrade = (c.grade || "").normalize("NFD").replace(/[\u0300-\u036f]/g, "").replace(/_/g, " ").toLowerCase().trim();
-        const cleanNGrade = reqGrade.normalize("NFD").replace(/[\u0300-\u036f]/g, "").replace(/_/g, " ").toLowerCase().trim();
-        return cleanCGrade === cleanNGrade || cleanCGrade.includes(cleanNGrade) || cleanNGrade.includes(cleanCGrade);
+        return isMatchPreschoolGrade(c.grade || "", reqGrade);
       }
 
       const cGradeNum = (c.grade || "").replace(/Khối\s+/gi, "").replace(/Khoi\s+/gi, "").trim();
@@ -1466,15 +1497,28 @@ export function ObservationClient(props: ObservationClientProps) {
   }
 
   const mamNonGrades = useMemo(() => {
-    const effectiveCampusId = newCampusId || reqCampusId || currentTeacher?.campusId || "";
-    const gradeSet = new Set<string>();
+    const baseGrades = [
+      "Nhà trẻ",
+      "Nhà trẻ 24-36 tháng",
+      "Mẫu giáo bé",
+      "Mẫu giáo nhỡ",
+      "Mẫu giáo lớn"
+    ];
+    const gradeSet = new Set<string>(baseGrades);
     classes.forEach((cls: any) => {
-      if (effectiveCampusId && cls.campusId !== effectiveCampusId) return;
       const lvlClean = (cls.level || "").normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase();
       if (lvlClean !== "mam non") return;
-      if (cls.grade) gradeSet.add(cls.grade);
+      if (cls.grade && cls.grade !== "ko thấy") gradeSet.add(cls.grade);
     });
-    const ORDER = ["Nhà trẻ 24-36 tháng", "Mẫu giáo bé", "Mẫu giáo nhỡ", "Mẫu giáo lớn"];
+    const ORDER = [
+      "Nhà trẻ",
+      "Nhà trẻ 12-18 tháng",
+      "Nhà trẻ 18-24 tháng",
+      "Nhà trẻ 24-36 tháng",
+      "Mẫu giáo bé",
+      "Mẫu giáo nhỡ",
+      "Mẫu giáo lớn"
+    ];
     return [...gradeSet].sort((a, b) => {
       const idxA = ORDER.indexOf(a);
       const idxB = ORDER.indexOf(b);
@@ -1483,7 +1527,7 @@ export function ObservationClient(props: ObservationClientProps) {
       if (idxB !== -1) return 1;
       return a.localeCompare(b, "vi");
     });
-  }, [classes, newCampusId, reqCampusId, currentTeacher?.campusId]);
+  }, [classes]);
 
   // Auto-sync ranking when surprise scores change
   useEffect(() => {
@@ -1504,7 +1548,13 @@ export function ObservationClient(props: ObservationClientProps) {
 
   const getGradesForLevel = (level: string) => {
     switch (level) {
-      case "Mầm non": return mamNonGrades.length > 0 ? mamNonGrades : ["Nhà trẻ 24-36 tháng", "Mẫu giáo bé", "Mẫu giáo nhỡ", "Mẫu giáo lớn"]
+      case "Mầm non": return mamNonGrades.length > 0 ? mamNonGrades : [
+        "Nhà trẻ",
+        "Nhà trẻ 24-36 tháng",
+        "Mẫu giáo bé",
+        "Mẫu giáo nhỡ",
+        "Mẫu giáo lớn"
+      ];
       case "Tiểu học": return ["Khối 1","Khối 2","Khối 3","Khối 4","Khối 5"]
       case "THCS": return ["Khối 6","Khối 7","Khối 8","Khối 9"]
       case "THPT": return ["Khối 10","Khối 11","Khối 12"]
@@ -1537,9 +1587,7 @@ export function ObservationClient(props: ObservationClientProps) {
       if (!newGrade || newGrade === "all") return true;
 
       if (cleanDbLevel === "mam non") {
-        const cleanCGrade = (c.grade || "").normalize("NFD").replace(/[\u0300-\u036f]/g, "").replace(/_/g, " ").toLowerCase().trim();
-        const cleanNGrade = newGrade.normalize("NFD").replace(/[\u0300-\u036f]/g, "").replace(/_/g, " ").toLowerCase().trim();
-        return cleanCGrade === cleanNGrade || cleanCGrade.includes(cleanNGrade) || cleanNGrade.includes(cleanCGrade);
+        return isMatchPreschoolGrade(c.grade || "", newGrade);
       }
 
       const cGradeNum = (c.grade || "").replace(/Khối\s+/gi, "").replace(/Khoi\s+/gi, "").trim();
@@ -1638,11 +1686,16 @@ export function ObservationClient(props: ObservationClientProps) {
         }
       }
       if (filterGrade && filterGrade !== "all") {
-        const cGradeClean = (c.grade || "").normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase().trim();
-        const fGradeClean = filterGrade.normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase().trim();
-        const fGradeNum = filterGrade.replace(/Khối\s+/gi, "").replace(/Khoi\s+/gi, "").trim();
-        if (cGradeClean !== fGradeClean && !cGradeClean.includes(fGradeClean) && !fGradeClean.includes(cGradeClean)) {
-          if (!cGradeClean.endsWith(fGradeNum) && cGradeClean !== fGradeNum) return false;
+        const isMN = filterLevel === "Mầm non" || (c.level && c.level.toLowerCase().includes("mầm"));
+        if (isMN) {
+          if (!isMatchPreschoolGrade(c.grade || "", filterGrade)) return false;
+        } else {
+          const cGradeClean = (c.grade || "").normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase().trim();
+          const fGradeClean = filterGrade.normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase().trim();
+          const fGradeNum = filterGrade.replace(/Khối\s+/gi, "").replace(/Khoi\s+/gi, "").trim();
+          if (cGradeClean !== fGradeClean && !cGradeClean.includes(fGradeClean) && !fGradeClean.includes(cGradeClean)) {
+            if (!cGradeClean.endsWith(fGradeNum) && cGradeClean !== fGradeNum) return false;
+          }
         }
       }
       return true;

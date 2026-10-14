@@ -33,13 +33,15 @@ interface EntranceAcademicRecordInputProps {
   grade?: string;
   onChange: (serializedJson: string) => void;
   disabled?: boolean;
+  hideSubjectScores?: boolean;
 }
 
 export function EntranceAcademicRecordInput({
   value,
   grade = "1",
   onChange,
-  disabled = false
+  disabled = false,
+  hideSubjectScores = false
 }: EntranceAcademicRecordInputProps) {
   // Parse state từ prop value ban đầu
   const [record, setRecord] = useState<EntranceAcademicRecord>(() => {
@@ -471,7 +473,7 @@ export function EntranceAcademicRecordInput({
           <div className="space-y-2.5">
             <div className="flex items-center justify-between">
               <span className="text-xs font-medium text-slate-700">
-                {isPrimary ? "Kết quả học tập các môn Tiểu học (Mức T/H/C & Điểm)" : isHighSchool ? "Môn học bắt buộc THPT" : "Môn học bắt buộc THCS"}
+                Kết quả học tập các môn
               </span>
               <button
                 type="button"
@@ -485,8 +487,8 @@ export function EntranceAcademicRecordInput({
 
             <div className="space-y-2">
               {(record.moet?.subjects || []).map((sub, idx) => (
-                <div key={sub.id || idx} className="flex flex-wrap sm:flex-nowrap items-center gap-2 bg-slate-50/80 p-2 rounded-xl border border-slate-200/50">
-                  <div className="w-full sm:w-1/3">
+                <div key={sub.id || idx} className="flex items-center gap-3 bg-slate-50/80 p-2 sm:p-2.5 rounded-xl border border-slate-200/50">
+                  <div className="flex-1">
                     <input
                       type="text"
                       disabled={disabled || idx < 3}
@@ -497,58 +499,26 @@ export function EntranceAcademicRecordInput({
                     />
                   </div>
 
-                  {isPrimary ? (
-                    <>
-                      {/* Chọn nhanh mức T / H / C */}
-                      <div className="flex items-center gap-1">
-                        {(["T", "H", "C"] as const).map(lvl => (
-                          <button
-                            type="button"
-                            key={lvl}
-                            disabled={disabled}
-                            onClick={() => handleMoetSubjectChange(idx, "level", lvl)}
-                            className={`px-3 py-1.5 text-xs rounded-lg font-medium transition-all cursor-pointer ${
-                              sub.level === lvl
-                                ? lvl === "T" ? "bg-emerald-600 text-white shadow-2xs" : lvl === "H" ? "bg-sky-600 text-white shadow-2xs" : "bg-rose-500 text-white shadow-2xs"
-                                : "bg-white text-slate-600 border border-slate-200 hover:bg-slate-100"
-                            }`}
-                          >
-                            {lvl === "T" ? "T (Tốt)" : lvl === "H" ? "H (HT)" : "C (Chưa)"}
-                          </button>
-                        ))}
-                      </div>
-
-                      {/* Điểm định kỳ */}
-                      <div className="flex-1 min-w-[90px]">
-                        <input
-                          type="text"
-                          disabled={disabled}
-                          placeholder="Điểm (1-10)"
-                          value={sub.score || ""}
-                          onChange={(e) => handleMoetSubjectChange(idx, "score", e.target.value)}
-                          className="w-full h-9.5 px-3 bg-white border border-slate-200 rounded-lg text-xs sm:text-sm font-medium text-slate-800 text-center outline-none focus:border-teal-500 leading-normal"
-                        />
-                      </div>
-                    </>
-                  ) : (
-                    <div className="flex-1">
-                      <input
-                        type="text"
-                        disabled={disabled}
-                        placeholder="Điểm trung bình (vd: 8.5)"
-                        value={sub.score || ""}
-                        onChange={(e) => handleMoetSubjectChange(idx, "score", e.target.value)}
-                        className="w-full h-9.5 px-3 bg-white border border-slate-200 rounded-lg text-xs sm:text-sm font-normal text-slate-800 outline-none focus:border-teal-500 leading-normal"
-                      />
-                    </div>
-                  )}
+                  <div className="w-32 sm:w-40 flex items-center gap-1.5">
+                    <span className="text-xs font-semibold text-slate-500 whitespace-nowrap">
+                      {isPrimary ? "Điểm:" : "ĐTB:"}
+                    </span>
+                    <input
+                      type="text"
+                      disabled={disabled}
+                      placeholder={isPrimary ? "Điểm" : "ĐTB"}
+                      value={sub.score || ""}
+                      onChange={(e) => handleMoetSubjectChange(idx, "score", e.target.value)}
+                      className="w-full h-9.5 px-3 bg-white border border-slate-200 rounded-lg text-xs sm:text-sm font-semibold text-slate-800 text-center outline-none focus:border-teal-500 leading-normal"
+                    />
+                  </div>
 
                   {idx >= 3 && (
                     <button
                       type="button"
                       disabled={disabled}
                       onClick={() => removeMoetSubject(idx)}
-                      className="p-1.5 text-slate-400 hover:text-rose-600 transition-colors"
+                      className="p-1.5 text-slate-400 hover:text-rose-600 transition-colors cursor-pointer"
                       title="Xóa môn"
                     >
                       <Trash2 className="w-3.5 h-3.5" />
@@ -560,7 +530,7 @@ export function EntranceAcademicRecordInput({
           </div>
 
           {/* Riêng THPT: Nhóm môn tổ hợp */}
-          {isHighSchool && (
+          {isHighSchool && !hideSubjectScores && (
             <div className="pt-2 border-t border-slate-100">
               <label className="block text-[11px] font-medium text-slate-500 mb-1">Các môn tổ hợp lựa chọn (THPT)</label>
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">

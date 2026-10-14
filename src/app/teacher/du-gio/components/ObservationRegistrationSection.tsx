@@ -316,7 +316,13 @@ interface CreateObservationModalProps {
 
 
 
-const mamNonGrades = ["Nhà trẻ", "Mầm", "Chồi", "Lá"];
+const DEFAULT_MAM_NON_GRADES = [
+  "Nhà trẻ",
+  "Nhà trẻ 24-36 tháng",
+  "Mẫu giáo bé",
+  "Mẫu giáo nhỡ",
+  "Mẫu giáo lớn"
+];
 
 function getTeacherAllDeptNames(t: any, departments?: any[]): string {
   if (!t) return "";
@@ -454,6 +460,28 @@ export function ObservationRegistrationSection(props: any) {
     periodOptions, getGradesForLevel, getKhacChuyenDeSubjectId, isPreschoolDepartment,
     k12Labels, maxScoresK12, getK12RankingDetails, getMamNonRankingDetails
   } = props;
+
+  const mamNonGradesList = React.useMemo(() => {
+    const fromProps = typeof getGradesForLevel === "function" ? getGradesForLevel("Mầm non") : [];
+    const set = new Set<string>([...DEFAULT_MAM_NON_GRADES, ...(fromProps || [])]);
+    const ORDER = [
+      "Nhà trẻ",
+      "Nhà trẻ 12-18 tháng",
+      "Nhà trẻ 18-24 tháng",
+      "Nhà trẻ 24-36 tháng",
+      "Mẫu giáo bé",
+      "Mẫu giáo nhỡ",
+      "Mẫu giáo lớn"
+    ];
+    return [...set].sort((a, b) => {
+      const idxA = ORDER.indexOf(a);
+      const idxB = ORDER.indexOf(b);
+      if (idxA !== -1 && idxB !== -1) return idxA - idxB;
+      if (idxA !== -1) return -1;
+      if (idxB !== -1) return 1;
+      return a.localeCompare(b, "vi");
+    });
+  }, [getGradesForLevel]);
 
   // Guaranteed reactive state for scoring (instant local reactivity + parent sync)
   const [internalScoresK12, setInternalScoresK12] = React.useState<number[]>(() => 
@@ -820,6 +848,12 @@ export function ObservationRegistrationSection(props: any) {
   // Danh sách Lớp học map theo Cơ sở (và Khối học), hoàn toàn độc lập không liên quan đến GV
   const availableClassesForAssigned = React.useMemo(() => {
     return (classes || []).filter((c: any) => {
+      // 1. Lọc theo năm học nếu người dùng chọn một năm học cụ thể
+      if (assignedAcademicYearId && c.academicYearId && c.academicYearId !== assignedAcademicYearId) {
+        return false;
+      }
+
+      // 2. Lọc theo cơ sở được chọn
       if (assignedCampusId) {
         const target = String(assignedCampusId).trim().toLowerCase();
         const cCampusId = String(c.campusId || "").trim().toLowerCase();
@@ -843,18 +877,45 @@ export function ObservationRegistrationSection(props: any) {
               else if (sId && c.className && String(c.className).toLowerCase().includes(sId)) matchCampus = true;
             }
           }
+          if (!matchCampus && (c.className && (String(c.className).toLowerCase().includes(`_${target}`) || String(c.className).toLowerCase().includes(target)))) {
+            matchCampus = true;
+          }
         }
         if (!matchCampus) return false;
       }
+
+      // 3. Phân biệt chính xác Mầm non và Phổ thông (K-12)
       const isMN = (() => {
-        const n = (c.name || c.className || "").toLowerCase();
-        const g = (c.grade || "").toLowerCase();
-        return n.includes("mầm") || n.includes("mam") || n.includes("chồi") || n.includes("choi") || n.includes("lá") || n.includes("la") || n.includes("nhà trẻ") || n.includes("nha tre") || n.includes("mgb") || n.includes("mgn") || n.includes("mgl") || g.includes("mầm non") || g.includes("nhà trẻ");
+        const lvl = (c.level || "").normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase();
+        if (lvl.includes("mam non") || lvl.includes("nha tre") || lvl.includes("mau giao") || lvl.includes("preschool") || lvl.includes("kindergarten")) {
+          return true;
+        }
+        if (lvl.includes("tieu hoc") || lvl.includes("thcs") || lvl.includes("thpt") || lvl.includes("pho thong")) {
+          return false;
+        }
+        const g = (c.grade || "").normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase();
+        if (g.includes("mam non") || g.includes("nha tre") || g.includes("mau giao") || g.includes("mg") || g.includes("nt") || g.includes("choi") || g.includes("la")) {
+          return true;
+        }
+        const n = (c.name || c.className || "").normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase();
+        return (
+          n.includes("mam") || n.includes("choi") || n.includes("la") ||
+          n.includes("nha tre") || n.includes("mgb") || n.includes("mgn") ||
+          n.includes("mgl") || n.includes("wings") || n.includes("flight") ||
+          n.includes("newton") || n.includes("einstein") || n.includes("ready for sky-line") ||
+          n.includes("roots") || n.includes("nest") ||
+          n.startsWith("sn ") || n.startsWith("nt") || n.startsWith("mg")
+        );
       })();
+
       if (assignedLevel === "Mầm non") return isMN;
       return !isMN;
+    }).sort((a: any, b: any) => {
+      const nameA = String(a.name || a.className || "");
+      const nameB = String(b.name || b.className || "");
+      return nameA.localeCompare(nameB, "vi", { numeric: true });
     });
-  }, [classes, assignedCampusId, assignedLevel, campuses]);
+  }, [classes, assignedCampusId, assignedLevel, campuses, assignedAcademicYearId]);
 
   // Tự động reset và đồng bộ khi đổi Khối học hoặc Tổ chuyên môn không còn thuộc Khối đã chọn
   React.useEffect(() => {
@@ -4060,7 +4121,10 @@ export function ObservationRegistrationSection(props: any) {
                       className="w-full text-xs font-bold p-3 rounded-xl border border-amber-200 bg-white focus:ring-2 focus:ring-amber-500 outline-none text-slate-800"
                     >
                       <option value="">Chọn khối học</option>
-                      {mamNonGrades.map((g: any) => <option key={g} value={g}>{g}</option>)}
+                      {mamNonGradesList.map((g: any) => <option key={g} value={g}>{g}</option>)}
+                      {["Mầm", "Chồi", "Lá"].includes(newGrade) && !mamNonGradesList.includes(newGrade) && (
+                        <option value={newGrade}>{newGrade}</option>
+                      )}
                     </select>
                   </div>
 
@@ -4075,7 +4139,7 @@ export function ObservationRegistrationSection(props: any) {
                           const sel = classes.find((c: any) => c.id === cId);
                           if (sel) {
                             if (!newCampusId && sel.campusId) setNewCampusId(sel.campusId);
-                            if (sel.grade && (!newGrade || newGrade === "all")) setNewGrade(sel.grade);
+                            if (sel.grade) setNewGrade(sel.grade);
                           }
                         }
                       }}

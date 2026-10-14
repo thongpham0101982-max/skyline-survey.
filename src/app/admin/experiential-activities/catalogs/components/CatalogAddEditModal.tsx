@@ -20,6 +20,11 @@ import {
   EducationalThemeItem
 } from '@/lib/experiential/catalog-types';
 import { normalizeActivityName } from '@/lib/experiential/name-normalizer';
+import { 
+  formatTimeFrameAndSemester, 
+  generateAcademicMonthOptions, 
+  getSemesterFromMonth 
+} from '@/lib/experiential/timeframe-helper';
 import { CatalogEvaluationConfigModal } from './CatalogEvaluationConfigModal';
 import { CatalogThemeConfigModal } from './CatalogThemeConfigModal';
 
@@ -54,6 +59,7 @@ export function CatalogAddEditModal({
   const currentItem = editingItem || initialData || null;
   const currentSheetCode = activeSheetCode || defaultSheetCode || 'TH_S';
   const currentSheetCfg = SHEET_CONFIGS.find(s => s.code === currentSheetCode) || SHEET_CONFIGS[1];
+  const monthOptions = useMemo(() => generateAcademicMonthOptions(academicYearId || '2026-2027'), [academicYearId]);
 
   const [formData, setFormData] = useState<any>({
     name: '',
@@ -70,7 +76,7 @@ export function CatalogAddEditModal({
     educationalContent: '',
     learningOutcomes: '',
     organizationFormat: 'Trải nghiệm',
-    timeFrame: 'Tháng 10',
+    timeFrame: 'Tháng 10/2026',
     semester: 1,
     expectedLocation: '',
     partners: '',
@@ -159,8 +165,14 @@ export function CatalogAddEditModal({
         educationalContent: meta.educationalContent || '',
         learningOutcomes: meta.learningOutcomes || '',
         organizationFormat: meta.organizationFormat || 'Trải nghiệm',
-        timeFrame: meta.timeFrame || currentItem.timeFrame || 'Tháng 10',
-        semester: meta.semester || currentItem.semester || 1,
+        timeFrame: (() => {
+          const info = formatTimeFrameAndSemester(meta.timeFrame || currentItem.timeFrame || 'Tháng 10/2026', academicYearId || '2026-2027', meta.semester || currentItem.semester);
+          return info.formattedTime;
+        })(),
+        semester: (() => {
+          const info = formatTimeFrameAndSemester(meta.timeFrame || currentItem.timeFrame || 'Tháng 10/2026', academicYearId || '2026-2027', meta.semester || currentItem.semester);
+          return info.semester;
+        })(),
         expectedLocation: meta.expectedLocation || currentItem.location || '',
         partners: meta.partners || '',
         primarySubjectName: meta.primarySubjectName || '',
@@ -175,6 +187,7 @@ export function CatalogAddEditModal({
         evaluationConfig: meta.evaluationConfig
       });
     } else {
+      const defaultTimeInfo = formatTimeFrameAndSemester('Tháng 10', academicYearId || '2026-2027', 1);
       setFormData({
         name: '',
         code: '',
@@ -190,8 +203,8 @@ export function CatalogAddEditModal({
         educationalContent: '',
         learningOutcomes: '',
         organizationFormat: 'Trải nghiệm',
-        timeFrame: 'Tháng 10',
-        semester: 1,
+        timeFrame: defaultTimeInfo.formattedTime,
+        semester: defaultTimeInfo.semester,
         expectedLocation: '',
         partners: '',
         primarySubjectName: '',
@@ -348,6 +361,7 @@ export function CatalogAddEditModal({
     }
 
     const normalizedName = normalizeActivityName(formData.name);
+    const timeInfo = formatTimeFrameAndSemester(formData.timeFrame, academicYearId || '2026-2027', formData.semester);
 
     setSaving(true);
     try {
@@ -357,6 +371,8 @@ export function CatalogAddEditModal({
         meta: {
           ...formData,
           name: normalizedName,
+          timeFrame: timeInfo.formattedTime,
+          semester: timeInfo.semester,
           academicYearId
         }
       };
@@ -689,26 +705,116 @@ export function CatalogAddEditModal({
                   )}
                 </div>
 
-                <div>
-                  <label className="block text-xs font-bold text-slate-700 mb-1">
-                    Thời gian & Học kỳ
-                  </label>
-                  <div className="flex items-center gap-2">
-                    <select
-                      value={formData.semester}
-                      onChange={e => setFormData({ ...formData, semester: parseInt(e.target.value, 10) })}
-                      className="w-1/2 text-xs px-3 py-2 rounded-xl border border-slate-200 focus:outline-hidden focus:border-[#00A19A] transition-all bg-white"
-                    >
-                      <option value={1}>Học kỳ 1</option>
-                      <option value={2}>Học kỳ 2</option>
-                    </select>
-                    <input
-                      type="text"
-                      placeholder="Tháng 10..."
-                      value={formData.timeFrame}
-                      onChange={e => setFormData({ ...formData, timeFrame: e.target.value })}
-                      className="w-1/2 text-xs px-3 py-2 rounded-xl border border-slate-200 focus:outline-hidden focus:border-[#00A19A] transition-all"
-                    />
+                <div className="space-y-2 p-3.5 rounded-2xl bg-slate-50 border border-slate-200">
+                  <div className="flex items-center justify-between">
+                    <label className="block text-xs font-black text-slate-800 uppercase tracking-wider flex items-center gap-1.5">
+                      <Calendar className="w-3.5 h-3.5 text-[#00A19A]" />
+                      <span>Thời gian & Học kỳ</span>
+                    </label>
+                    <span className="text-[10px] text-teal-800 font-bold bg-teal-50 px-2 py-0.5 rounded-md border border-teal-200">
+                      ⚡ Mốc tự động: T8-T1 ➔ HK 1 • T2-T7 ➔ HK 2
+                    </span>
+                  </div>
+
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
+                    {/* Chọn nhanh Tháng/Năm */}
+                    <div>
+                      <span className="text-[11px] font-bold text-slate-600 block mb-1">
+                        Chọn Tháng/Năm chuẩn:
+                      </span>
+                      <select
+                        value={monthOptions.some(opt => opt.value === formData.timeFrame) ? formData.timeFrame : 'CUSTOM'}
+                        onChange={e => {
+                          const val = e.target.value;
+                          if (val !== 'CUSTOM') {
+                            const matched = monthOptions.find(opt => opt.value === val);
+                            if (matched) {
+                              setFormData({
+                                ...formData,
+                                timeFrame: matched.value,
+                                semester: matched.semester
+                              });
+                            }
+                          }
+                        }}
+                        className="w-full text-xs px-3 py-2 rounded-xl border border-slate-200 focus:outline-hidden focus:border-[#00A19A] transition-all bg-white font-bold text-slate-800 cursor-pointer shadow-2xs"
+                      >
+                        <option value="CUSTOM">-- Tùy chỉnh Tháng/Năm khác --</option>
+                        <optgroup label="Học kỳ 1 (Tháng 8 - Tháng 1)">
+                          {monthOptions.filter(o => o.semester === 1).map(opt => (
+                            <option key={opt.value} value={opt.value}>{opt.label}</option>
+                          ))}
+                        </optgroup>
+                        <optgroup label="Học kỳ 2 (Tháng 2 - Tháng 7)">
+                          {monthOptions.filter(o => o.semester === 2).map(opt => (
+                            <option key={opt.value} value={opt.value}>{opt.label}</option>
+                          ))}
+                        </optgroup>
+                      </select>
+                    </div>
+
+                    {/* Học kỳ (Tự động cập nhật theo mốc tháng) */}
+                    <div>
+                      <div className="flex items-center justify-between mb-1">
+                        <span className="text-[11px] font-bold text-slate-600">
+                          Học kỳ quy định:
+                        </span>
+                        <span className={`text-[10px] font-black px-1.5 py-0.2 rounded-sm ${
+                          formData.semester === 1 ? 'bg-sky-100 text-sky-800' : 'bg-amber-100 text-amber-800'
+                        }`}>
+                          {formData.semester === 1 ? 'Học kỳ 1' : 'Học kỳ 2'}
+                        </span>
+                      </div>
+                      <select
+                        value={formData.semester}
+                        onChange={e => setFormData({ ...formData, semester: parseInt(e.target.value, 10) })}
+                        className={`w-full text-xs px-3 py-2 rounded-xl border focus:outline-hidden transition-all bg-white font-black cursor-pointer shadow-2xs ${
+                          formData.semester === 1 
+                            ? 'border-sky-300 text-sky-800 bg-sky-50/30' 
+                            : 'border-amber-300 text-amber-800 bg-amber-50/30'
+                        }`}
+                      >
+                        <option value={1}>Học kỳ 1 (T8, T9, T10, T11, T12, T1)</option>
+                        <option value={2}>Học kỳ 2 (T2, T3, T4, T5, T6, T7)</option>
+                      </select>
+                    </div>
+                  </div>
+
+                  {/* Input nhập tay/tùy chỉnh */}
+                  <div className="pt-1 border-t border-slate-200/60 mt-2">
+                    <div className="flex items-center gap-2">
+                      <span className="text-[11px] text-slate-500 font-semibold shrink-0">
+                        Định dạng:
+                      </span>
+                      <input
+                        type="text"
+                        placeholder="VD: Tháng 10/2026 hoặc 10/2026..."
+                        value={formData.timeFrame}
+                        onChange={e => {
+                          const val = e.target.value;
+                          const info = formatTimeFrameAndSemester(val, academicYearId || '2026-2027');
+                          setFormData({
+                            ...formData,
+                            timeFrame: val,
+                            semester: info.month !== null ? info.semester : formData.semester
+                          });
+                        }}
+                        onBlur={() => {
+                          if (formData.timeFrame) {
+                            const info = formatTimeFrameAndSemester(formData.timeFrame, academicYearId || '2026-2027');
+                            setFormData({
+                              ...formData,
+                              timeFrame: info.formattedTime,
+                              semester: info.semester
+                            });
+                          }
+                        }}
+                        className="flex-1 text-xs px-3 py-1.5 rounded-xl border border-slate-200 focus:outline-hidden focus:border-[#00A19A] transition-all bg-white font-bold text-slate-800"
+                      />
+                      <span className="text-[10px] text-slate-400 font-mono shrink-0">
+                        (Tháng MM/YYYY)
+                      </span>
+                    </div>
                   </div>
                 </div>
               </div>
@@ -834,13 +940,101 @@ export function CatalogAddEditModal({
               </div>
             </div>
 
-            {/* Section 2: Chuyên môn phối hợp & Sản phẩm học tập */}
+            {/* Section 2: Nhiệm vụ Chuyên môn của GV Phụ trách (GVBM / TCM) */}
             <div className="space-y-4 pt-4 border-t border-slate-100">
-              <h3 className="text-xs font-black uppercase tracking-wider text-slate-400 flex items-center gap-2">
-                <Layers className="w-3.5 h-3.5 text-indigo-500" />
-                2. Chuyên môn phụ trách & Sản phẩm học tập
-              </h3>
+              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 p-3 rounded-2xl bg-gradient-to-r from-indigo-50/80 via-teal-50/70 to-emerald-50/80 border border-indigo-200/80">
+                <div className="flex items-center gap-2">
+                  <div className="w-7 h-7 rounded-xl bg-indigo-600 text-white flex items-center justify-center font-bold shrink-0">
+                    <GraduationCap className="w-4 h-4" />
+                  </div>
+                  <div>
+                    <h3 className="text-xs font-black uppercase tracking-wider text-indigo-950">
+                      2. Cấu hình Chuyên môn dành cho GV Phụ trách
+                    </h3>
+                    <p className="text-[11px] text-slate-500 font-medium">
+                      GV Phụ trách (TCM / GVBM) hoàn thiện 4 mục: Yêu cầu cần đạt, Hình thức tổ chức, Sản phẩm học tập & Cấu hình đánh giá
+                    </p>
+                  </div>
+                </div>
+                <span className="text-[10px] font-black px-2.5 py-1 rounded-full bg-indigo-100 text-indigo-800 self-start sm:self-auto shrink-0 border border-indigo-200">
+                  Nhiệm vụ Chuyên môn
+                </span>
+              </div>
 
+              {/* BỔ SUNG CỘT / TRƯỜNG NỘI DUNG GIÁO DỤC */}
+              <div>
+                <label className="block text-xs font-bold text-slate-700 mb-1 flex items-center justify-between">
+                  <span className="flex items-center gap-1.5">
+                    <BookOpen className="w-3.5 h-3.5 text-[#00A19A]" />
+                    <span>Nội dung giáo dục</span>
+                    <span className="text-rose-500">*</span>
+                  </span>
+                  <span className="text-[10px] text-teal-700 font-bold bg-teal-50 px-2 py-0.5 rounded border border-teal-200">
+                    Hiển thị trên bảng Danh mục HĐTN & Ngoại khóa
+                  </span>
+                </label>
+                <textarea
+                  rows={2}
+                  placeholder="Mô tả tóm tắt nội dung giáo dục trải nghiệm (Ví dụ: Tìm hiểu quy trình làm gốm Bát Tràng, thực hành nhào nặn đất sét và vẽ họa tiết trang trí...)"
+                  value={formData.educationalContent || ''}
+                  onChange={e => setFormData({ ...formData, educationalContent: e.target.value })}
+                  className="w-full text-xs font-medium px-3.5 py-2.5 rounded-xl border border-slate-200 focus:outline-hidden focus:border-[#00A19A] focus:ring-2 focus:ring-[#00A19A]/20 transition-all resize-none"
+                />
+              </div>
+
+              {/* 1. Yêu cầu cần đạt */}
+              <div>
+                <label className="block text-xs font-bold text-slate-700 mb-1 flex items-center justify-between">
+                  <span className="flex items-center gap-1.5">
+                    <Award className="w-3.5 h-3.5 text-indigo-600" />
+                    <span>1. Yêu cầu cần đạt</span>
+                    <span className="text-rose-500">*</span>
+                  </span>
+                  <span className="text-[10px] text-slate-400 font-normal">
+                    Phẩm chất, năng lực và chuẩn đầu ra mong đợi của học sinh
+                  </span>
+                </label>
+                <textarea
+                  rows={2}
+                  placeholder="Ví dụ: Rèn luyện tính kiên nhẫn, khả năng sáng tạo thẩm mỹ, kỹ năng hợp tác nhóm và ý thức giữ gìn di sản văn hóa..."
+                  value={formData.learningOutcomes || ''}
+                  onChange={e => setFormData({ ...formData, learningOutcomes: e.target.value })}
+                  className="w-full text-xs font-medium px-3.5 py-2.5 rounded-xl border border-slate-200 focus:outline-hidden focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500/20 transition-all resize-none"
+                />
+              </div>
+
+              {/* 2. Hình thức tổ chức & 3. Sản phẩm học tập dự án */}
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-xs font-bold text-slate-700 mb-1 flex items-center gap-1.5">
+                    <Layers className="w-3.5 h-3.5 text-teal-600" />
+                    <span>2. Hình thức tổ chức</span>
+                  </label>
+                  <input
+                    type="text"
+                    placeholder="Ví dụ: Trải nghiệm thực địa, Tham quan dã ngoại, Dự án học tập..."
+                    value={formData.organizationFormat || ''}
+                    onChange={e => setFormData({ ...formData, organizationFormat: e.target.value })}
+                    className="w-full text-xs font-semibold px-3 py-2 rounded-xl border border-slate-200 focus:outline-hidden focus:border-teal-500 transition-all"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-xs font-bold text-slate-700 mb-1 flex items-center gap-1.5">
+                    <Sparkles className="w-3.5 h-3.5 text-emerald-600" />
+                    <span>3. Sản phẩm học tập dự án</span>
+                  </label>
+                  <input
+                    type="text"
+                    placeholder="Ví dụ: Sản phẩm gốm mộc, Bài thu hoạch nhóm, Video phóng sự, Poster..."
+                    value={formData.deliverables || ''}
+                    onChange={e => setFormData({ ...formData, deliverables: e.target.value })}
+                    className="w-full text-xs font-semibold px-3 py-2 rounded-xl border border-slate-200 focus:outline-hidden focus:border-emerald-500 transition-all"
+                  />
+                </div>
+              </div>
+
+              {/* Môn phối hợp / Tích hợp & Địa điểm dự kiến */}
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div>
                   <label className="block text-xs font-bold text-slate-700 mb-1">
@@ -849,7 +1043,7 @@ export function CatalogAddEditModal({
                   <input
                     type="text"
                     placeholder="Ví dụ: Lịch sử & Địa lí, Mỹ thuật, Tiếng Việt, GDTC..."
-                    value={formData.coopSubjectNames || formData.integratedSubjects}
+                    value={formData.coopSubjectNames || formData.integratedSubjects || ''}
                     onChange={e => setFormData({ 
                       ...formData, 
                       coopSubjectNames: e.target.value,
@@ -861,69 +1055,40 @@ export function CatalogAddEditModal({
                 </div>
 
                 <div>
-                  <label className="block text-xs font-bold text-slate-700 mb-1">
-                    Sản phẩm / Học tập dự án của học sinh
+                  <label className="block text-xs font-bold text-slate-700 mb-1 flex items-center gap-1.5">
+                    <MapPin className="w-3.5 h-3.5 text-rose-500" />
+                    <span>Địa điểm dự kiến</span>
                   </label>
                   <input
                     type="text"
-                    placeholder="Ví dụ: Tranh Đông Hồ / Bài thu hoạch / Poster bảo vệ môi trường / Video..."
-                    value={formData.deliverables}
-                    onChange={e => setFormData({ ...formData, deliverables: e.target.value })}
-                    className="w-full text-xs font-semibold px-3 py-2 rounded-xl border border-slate-200 focus:outline-hidden focus:border-emerald-500 transition-all"
-                  />
-                </div>
-              </div>
-
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div>
-                  <label className="block text-xs font-bold text-slate-700 mb-1">
-                    Địa điểm dự kiến
-                  </label>
-                  <input
-                    type="text"
-                    placeholder="Ví dụ: Bảo tàng Mỹ thuật Đà Nẵng, Hòa Phú Jungle..."
-                    value={formData.expectedLocation}
+                    placeholder="Ví dụ: Làng gốm Thanh Hà, Hội An / Rạp Metiz Cinema..."
+                    value={formData.expectedLocation || ''}
                     onChange={e => setFormData({ ...formData, expectedLocation: e.target.value })}
-                    className="w-full text-xs px-3 py-2 rounded-xl border border-slate-200 focus:outline-hidden focus:border-[#00A19A] transition-all"
-                  />
-                </div>
-
-                <div>
-                  <label className="block text-xs font-bold text-slate-700 mb-1">
-                    Hình thức tổ chức
-                  </label>
-                  <input
-                    type="text"
-                    placeholder="Ví dụ: Trải nghiệm, Tham quan dã ngoại, Hội thi..."
-                    value={formData.organizationFormat}
-                    onChange={e => setFormData({ ...formData, organizationFormat: e.target.value })}
                     className="w-full text-xs px-3 py-2 rounded-xl border border-slate-200 focus:outline-hidden focus:border-[#00A19A] transition-all"
                   />
                 </div>
               </div>
             </div>
 
-            {/* Section 3: Thiết lập Cấu hình & Hình thức đánh giá */}
+            {/* Section 3: Thiết lập Cấu hình & Tiêu chí đánh giá (Rubric / Vai trò) */}
             <div className="space-y-4 pt-4 border-t border-slate-100">
               <div className="flex items-center justify-between">
-                <h3 className="text-xs font-black uppercase tracking-wider text-slate-400 flex items-center gap-2">
-                  <Award className="w-3.5 h-3.5 text-amber-500" />
-                  3. {formData.activityCategory === 'HOAT_DONG_SU_KIEN' ? 'Vai trò học sinh tham gia sự kiện' : 'Cấu hình & Tiêu chí đánh giá'}
+                <h3 className="text-xs font-black uppercase tracking-wider text-slate-800 flex items-center gap-2">
+                  <Award className="w-4 h-4 text-amber-500" />
+                  <span>3. Cấu hình & Tiêu chí đánh giá</span>
                 </h3>
-                {initialData?.id && (
-                  <button
-                    type="button"
-                    onClick={() => setIsEvalConfigModalOpen(true)}
-                    className={`flex items-center gap-1.5 text-xs font-bold px-3 py-1.5 rounded-xl border transition-all cursor-pointer ${
-                      formData.activityCategory === 'HOAT_DONG_SU_KIEN'
-                        ? 'text-purple-700 bg-purple-50 hover:bg-purple-100 border-purple-200'
-                        : 'text-indigo-700 bg-indigo-50 hover:bg-indigo-100 border-indigo-200'
-                    }`}
-                  >
-                    <Sliders className="w-3.5 h-3.5" />
-                    <span>{formData.activityCategory === 'HOAT_DONG_SU_KIEN' ? 'Tùy chỉnh danh sách vai trò HS' : 'Thiết lập chi tiết tiêu chí Rubric'}</span>
-                  </button>
-                )}
+                <button
+                  type="button"
+                  onClick={() => setIsEvalConfigModalOpen(true)}
+                  className={`flex items-center gap-1.5 text-xs font-bold px-3 py-1.5 rounded-xl border shadow-2xs transition-all cursor-pointer ${
+                    formData.activityCategory === 'HOAT_DONG_SU_KIEN'
+                      ? 'text-purple-700 bg-purple-50 hover:bg-purple-100 border-purple-200'
+                      : 'text-indigo-700 bg-indigo-50 hover:bg-indigo-100 border-indigo-200'
+                  }`}
+                >
+                  <Sliders className="w-3.5 h-3.5" />
+                  <span>{formData.activityCategory === 'HOAT_DONG_SU_KIEN' ? 'Tùy chỉnh danh sách vai trò HS' : '⚙️ Thiết lập chi tiết tiêu chí Rubric'}</span>
+                </button>
               </div>
 
               {formData.activityCategory === 'HOAT_DONG_SU_KIEN' ? (
@@ -965,26 +1130,16 @@ export function CatalogAddEditModal({
                     </div>
                   </div>
 
-                  {!currentItem?.id && (
-                    <span className="text-[11px] text-slate-400 italic">
-                      (Có thể cấu hình tiêu chí chuyên sâu sau khi tạo)
-                    </span>
-                  )}
+                  <button
+                    type="button"
+                    onClick={() => setIsEvalConfigModalOpen(true)}
+                    className="text-xs font-bold text-amber-900 hover:underline px-2.5 py-1 bg-amber-100 rounded-lg border border-amber-300/80 transition-all cursor-pointer"
+                  >
+                    Chỉnh sửa Ma trận đánh giá
+                  </button>
                 </div>
               )}
 
-              <div>
-                <label className="block text-xs font-bold text-slate-700 mb-1">
-                  Yêu cầu cần đạt & Ghi chú thực hiện
-                </label>
-                <textarea
-                  rows={3}
-                  placeholder="Yêu cầu chuẩn đầu ra và hướng dẫn phối hợp thực hiện..."
-                  value={formData.learningOutcomes}
-                  onChange={e => setFormData({ ...formData, learningOutcomes: e.target.value })}
-                  className="w-full text-xs px-3 py-2 rounded-xl border border-slate-200 focus:outline-hidden focus:border-[#00A19A] transition-all resize-none"
-                />
-              </div>
             </div>
           </form>
 
@@ -1016,15 +1171,23 @@ export function CatalogAddEditModal({
       </div>
 
       {/* Sub-modal: Thiết lập Tiêu chí & Công thức đánh giá */}
-      {isEvalConfigModalOpen && currentItem && (
+      {isEvalConfigModalOpen && (
         <CatalogEvaluationConfigModal
           isOpen={isEvalConfigModalOpen}
           onClose={() => setIsEvalConfigModalOpen(false)}
           onSaved={() => {
             setIsEvalConfigModalOpen(false);
-            onSaved();
+            if (currentItem?.id) onSaved();
           }}
-          catalogItem={currentItem}
+          onConfigUpdated={(cfg) => {
+            setFormData((prev: any) => ({ ...prev, evaluationConfig: cfg }));
+          }}
+          catalogItem={currentItem || {
+            id: '',
+            code: formData.code || '',
+            name: formData.name || '',
+            meta: formData
+          } as any}
         />
       )}
 

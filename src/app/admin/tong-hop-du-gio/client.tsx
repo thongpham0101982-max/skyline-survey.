@@ -10,7 +10,7 @@ import {
   BookOpen, User, Award, ThumbsUp, MessageSquare, GraduationCap,
   Eye, Settings, Sparkles, Filter, TrendingUp, BarChart3, School,
   Baby, Building2, Star, CheckCheck, Clock, Mail, Send, FileSpreadsheet,
-  UserCheck, AlertTriangle, ArrowRight, BookMarked, Grid3X3, Table2, ArrowLeftRight, MapPin, RefreshCw, ListChecks, Info, HelpCircle, ShieldCheck, Target, Printer
+  UserCheck, AlertTriangle, ArrowRight, BookMarked, Grid3X3, Table2, ArrowLeftRight, MapPin, RefreshCw, ListChecks, Info, HelpCircle, ShieldCheck, Target, Printer, FileText
 } from "lucide-react"
 import { DetailedStatementView } from "@/components/dashboard/DetailedStatementView"
 
@@ -959,13 +959,37 @@ export function AdminTongHopClient({
     return "Chưa rõ cơ sở";
   };
 
-  // Helper to find slot's campus name
+  // Helper to find slot's campus name (prioritizing class campus & class name convention like 2S_CS4)
   const getSlotCampusName = (slot: any) => {
+    // 1. Check class name for explicit campus suffix (e.g. "2S_CS4", "3.3_CS2", "1.1INT_CS3")
+    if (slot?.className) {
+      const match = slot.className.match(/[-_. ](CS\d+)/i);
+      if (match) {
+        const csCode = match[1].toUpperCase();
+        const matchCampus = campuses.find(cp => cp.campusCode === csCode || cp.campusName === csCode);
+        if (matchCampus) return matchCampus.campusName;
+      }
+    }
+    // 2. Class relation campus
+    if (slot?.class?.campus?.campusName) return slot.class.campus.campusName;
+    if (slot?.class?.campusId) {
+      const c = campuses.find(cp => cp.id === slot.class.campusId);
+      if (c) return c.campusName;
+    }
+    if (slot?.classId && classes) {
+      const cls = classes.find(cl => cl.id === slot.classId);
+      if (cls?.campusId) {
+        const c = campuses.find(cp => cp.id === cls.campusId);
+        if (c) return c.campusName;
+      }
+    }
+    // 3. Slot direct campus
     if (slot?.campusName) return slot.campusName;
     if (slot?.campusId) {
       const c = campuses.find(cp => cp.id === slot.campusId);
       if (c) return c.campusName;
     }
+    // 4. Host teacher campus
     if (slot?.teacher?.campus?.campusName) return slot.teacher.campus.campusName;
     if (slot?.teacher?.campusId) {
       const c = campuses.find(cp => cp.id === slot.teacher.campusId);
@@ -1454,6 +1478,31 @@ export function AdminTongHopClient({
     } catch (e: any) {
       console.error("Export TTCM PDF error:", e);
       toast.error("Có lỗi xảy ra khi tạo bản in PDF");
+    }
+  };
+
+  // Export individual TTCM observation history sheet to printable PDF
+  const handleExportTTCMHistoryPdf = (targetTeacherId?: string) => {
+    try {
+      const tId = targetTeacherId || selectedTeacherId || selectedTeacher?.id;
+      if (!tId) {
+        toast.error("Vui lòng chọn một TTCM để xuất phiếu lịch sử dự giờ");
+        return;
+      }
+      const activeMonth = ttcmMatrixMonth !== "all" ? ttcmMatrixMonth : selectedMonth;
+      const params = new URLSearchParams({
+        teacherId: tId,
+        month: activeMonth,
+        autoPrint: "true"
+      });
+      if (filterAcademicYearId) params.append("academicYearId", filterAcademicYearId);
+
+      const url = `/api/admin/du-gio/export-ttcm-history-pdf?${params.toString()}`;
+      window.open(url, "_blank");
+      toast.success("Đang mở Phiếu Lịch sử dự giờ TTCM lưu hồ sơ...");
+    } catch (e: any) {
+      console.error("Export TTCM history sheet error:", e);
+      toast.error("Có lỗi xảy ra khi tạo phiếu lịch sử dự giờ");
     }
   };
 
@@ -4538,17 +4587,36 @@ export function AdminTongHopClient({
 
                         {/* Thao tác */}
                         <td className="py-2.5 px-2 text-center whitespace-nowrap">
-                          <div className="flex items-center justify-center gap-2">
+                          <div className="flex items-center justify-center gap-1.5">
                             <button
                               type="button"
                               onClick={() => {
                                 handleSwitchMainTab("tong-hop");
+                                if (item.block) {
+                                  if (item.block === "Mầm Non" || item.block === "Mầm non") setActiveBlockTab("Mầm non");
+                                  else if (item.block === "Điều hành") setActiveBlockTab("Điều hành");
+                                  else setActiveBlockTab("Phổ thông K-12");
+                                }
+                                if (item.deptId) {
+                                  setSelectedDeptId(item.deptId);
+                                }
                                 setSelectedTeacherId(item.id);
                                 setActiveDetailTab("lich-su-du");
                               }}
                               className="text-teal-700 hover:text-teal-900 hover:underline text-xs font-semibold cursor-pointer"
+                              title="Xem chi tiết lịch sử dự giờ trên giao diện"
                             >
                               Xem dự
+                            </button>
+                            <span className="text-slate-300">|</span>
+                            <button
+                              type="button"
+                              onClick={() => handleExportTTCMHistoryPdf(item.id)}
+                              className="text-indigo-600 hover:text-indigo-800 hover:underline text-xs font-semibold cursor-pointer flex items-center gap-0.5"
+                              title="Xuất phiếu tổng hợp lịch sử dự giờ để lưu hồ sơ"
+                            >
+                              <FileText className="w-3 h-3 inline" />
+                              <span>Xuất phiếu</span>
                             </button>
                             <span className="text-slate-300">|</span>
                             <button
@@ -4745,17 +4813,36 @@ export function AdminTongHopClient({
                               rowSpan={rowCount}
                               className="py-2.5 px-2 text-center bg-white align-top whitespace-nowrap"
                             >
-                              <div className="flex items-center justify-center gap-2">
+                              <div className="flex items-center justify-center gap-1.5">
                                 <button
                                   type="button"
                                   onClick={() => {
                                     handleSwitchMainTab("tong-hop");
+                                    if (item.block) {
+                                      if (item.block === "Mầm Non" || item.block === "Mầm non") setActiveBlockTab("Mầm non");
+                                      else if (item.block === "Điều hành") setActiveBlockTab("Điều hành");
+                                      else setActiveBlockTab("Phổ thông K-12");
+                                    }
+                                    if (item.deptId) {
+                                      setSelectedDeptId(item.deptId);
+                                    }
                                     setSelectedTeacherId(item.id);
                                     setActiveDetailTab("lich-su-du");
                                   }}
                                   className="text-teal-700 hover:text-teal-900 hover:underline text-xs font-semibold cursor-pointer"
+                                  title="Xem chi tiết lịch sử dự giờ trên giao diện"
                                 >
                                   Xem dự
+                                </button>
+                                <span className="text-slate-300">|</span>
+                                <button
+                                  type="button"
+                                  onClick={() => handleExportTTCMHistoryPdf(item.id)}
+                                  className="text-indigo-600 hover:text-indigo-800 hover:underline text-xs font-semibold cursor-pointer flex items-center gap-0.5"
+                                  title="Xuất phiếu tổng hợp lịch sử dự giờ để lưu hồ sơ"
+                                >
+                                  <FileText className="w-3 h-3 inline" />
+                                  <span>Xuất phiếu</span>
                                 </button>
                                 <span className="text-slate-300">|</span>
                                 <button
@@ -5216,11 +5303,20 @@ export function AdminTongHopClient({
                         )}
                       </div>
                       <div className="text-xs text-slate-500 mt-1">
-                        Tổ chuyên môn: <strong className="text-slate-800">{selectedDeptName}</strong> &bull; {selectedTeacher.email || "Chưa có email"}
+                        Tổ chuyên môn: <strong className="text-slate-800">{selectedTeacher.departmentRel?.name || (departments.find(d => d.id === selectedTeacher.departmentId)?.name) || selectedDeptName}</strong> &bull; {selectedTeacher.email || "Chưa có email"}
                       </div>
                     </div>
 
                     <div className="flex items-center gap-2 shrink-0">
+                      <button
+                        type="button"
+                        onClick={() => handleExportTTCMHistoryPdf(selectedTeacher.id)}
+                        className="px-3 py-1.5 rounded-lg bg-teal-50 hover:bg-teal-100 text-teal-800 border border-teal-200 font-semibold text-xs flex items-center gap-1.5 transition-all cursor-pointer shadow-2xs"
+                        title="Xuất phiếu tổng hợp lịch sử dự giờ của nhân sự này để lưu hồ sơ"
+                      >
+                        <Printer className="w-3.5 h-3.5 text-teal-700" />
+                        <span>Xuất phiếu lưu hồ sơ</span>
+                      </button>
                       <button
                         type="button"
                         onClick={() => openTargetConfig(selectedTeacher)}
@@ -5551,6 +5647,27 @@ export function AdminTongHopClient({
               {/* TAB 2: Lịch sử tiết dự */}
               {activeDetailTab === "lich-su-du" && selectedTeacher && (
                 <div className="bg-white p-5 rounded-3xl border border-slate-200/90 shadow-sm space-y-4">
+
+                  {/* Action Header for Tab Lịch sử tiết dự */}
+                  <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2.5 pb-1">
+                    <div className="flex items-center gap-2">
+                      <span className="text-xs font-bold text-slate-900">
+                        Danh sách các tiết dự giờ ({filteredObservedSlots.length} tiết)
+                      </span>
+                      <span className="text-[11px] text-slate-500 font-medium">
+                        &bull; Đã duyệt & hoàn thành đánh giá chuyên môn
+                      </span>
+                    </div>
+                    <button
+                      type="button"
+                      onClick={() => handleExportTTCMHistoryPdf(selectedTeacher.id)}
+                      className="px-3.5 py-1.5 rounded-xl bg-gradient-to-r from-[#003B3A] to-[#005A58] hover:from-[#002B2A] hover:to-[#004A48] text-white text-xs font-bold flex items-center gap-2 shadow-2xs transition-all cursor-pointer shrink-0 self-start sm:self-auto"
+                      title="Xuất phiếu tổng hợp lịch sử dự giờ của nhân sự này để lưu hồ sơ"
+                    >
+                      <Printer className="w-3.5 h-3.5 text-teal-300" />
+                      <span>Xuất phiếu lưu hồ sơ</span>
+                    </button>
+                  </div>
 
                   {/* Compact Filter Row */}
                   <div className="grid grid-cols-1 sm:grid-cols-12 gap-2.5 p-3 bg-slate-50 rounded-2xl border border-slate-200">

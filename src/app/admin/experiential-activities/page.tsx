@@ -1,6 +1,6 @@
 import { auth } from "@/lib/auth"
 import { redirect } from "next/navigation"
-import ExperientialActivitiesList from "@/app/teacher/experiential-activities/page"
+import AdminExperientialDeploymentView from "@/app/admin/experiential-activities/components/AdminExperientialDeploymentView"
 import { hasModulePermission } from "@/lib/permissions"
 
 export const metadata = { title: "Quản lý Hoạt động Trải nghiệm | Admin Portal" }
@@ -37,5 +37,5 @@ export default async function AdminExperientialIndexPage() {
     )
   }
 
-  return <ExperientialActivitiesList />
+  return <AdminExperientialDeploymentView />
 }

@@ -2152,6 +2152,14 @@ export async function GET(req: Request) {
                 || "Hoạt động trải nghiệm";
 
               const resolvedName = p.record?.name || recMeta.activityName || p.record?.catalog?.name || "Hoạt động trải nghiệm";
+              let catMeta: any = {};
+              try {
+                if (p.record?.catalog?.description && p.record.catalog.description.startsWith("{")) {
+                  catMeta = JSON.parse(p.record.catalog.description);
+                }
+              } catch {}
+              const themeName = recMeta.themeName || catMeta.themeName || "";
+              const educationalContent = recMeta.educationalContent || catMeta.educationalContent || recMeta.description || catMeta.descriptionText || catMeta.learningOutcomes || recMeta.deliverables || catMeta.deliverables || "";
 
               return {
                 id: p.id,
@@ -2159,6 +2167,8 @@ export async function GET(req: Request) {
                 activityId: p.recordId || p.record?.id,
                 activityName: (resolvedName || "").trim(),
                 groupName: (resolvedGroup || "").trim(),
+                themeName: (themeName || resolvedGroup || "").trim(),
+                educationalContent: (educationalContent || "").trim(),
                 strand: recMeta.strand || undefined,
                 role: (resolvedRole || "").trim(),
                 evalLevel: (resolvedEval || "").trim(),

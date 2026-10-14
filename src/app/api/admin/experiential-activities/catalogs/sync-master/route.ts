@@ -4,6 +4,7 @@ import { auth } from '@/lib/auth';
 import { hasModulePermission } from '@/lib/permissions';
 import { MASTER_ACTIVITIES_2026_2027 } from '@/lib/experiential/master-catalog-data';
 import { ActivityCatalogMeta } from '@/lib/experiential/catalog-types';
+import { formatTimeFrameAndSemester } from '@/lib/experiential/timeframe-helper';
 
 export const dynamic = 'force-dynamic';
 
@@ -61,6 +62,7 @@ export async function POST(req: NextRequest) {
     const results = [];
 
     for (const item of MASTER_ACTIVITIES_2026_2027) {
+      const tf = formatTimeFrameAndSemester(item.timeFrame, item.semester, activeYear?.name || '2026-2027');
       const meta: ActivityCatalogMeta = {
         academicYearId,
         activityCategory: 'TRAI_NGHIEM_DU_AN',
@@ -75,8 +77,8 @@ export async function POST(req: NextRequest) {
         educationalContent: item.educationalContent,
         learningOutcomes: item.learningOutcomes,
         organizationFormat: item.organizationFormat || 'Trải nghiệm',
-        timeFrame: item.timeFrame,
-        semester: item.semester,
+        timeFrame: tf.timeFrame,
+        semester: tf.semester,
         expectedLocation: item.expectedLocation,
         primarySubjectName: item.primarySubjectName,
         coopSubjectNames: item.integratedSubjects,

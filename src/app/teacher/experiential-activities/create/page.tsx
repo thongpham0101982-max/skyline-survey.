@@ -15,6 +15,7 @@ import {
   DEFAULT_5_CRITERIA, DEFAULT_THRESHOLDS, EVAL_LEVELS,
   ACTIVITY_PRESETS, ActivityPreset
 } from '@/lib/experiential/constants';
+import { DEFAULT_EDUCATIONAL_THEMES } from '@/lib/experiential/catalog-types';
 
 
 // Standard Sky-Line classes generator for 100% reliable UI fallback
@@ -206,7 +207,11 @@ export default function CreateActivityWizard() {
     timeRange: '08:00 - 11:30',
     location: '',
     description: '',
+    educationalContent: '',
     objectives: '',
+    themeName: 'Văn hóa – Truyền thống',
+    integratedSubjects: '',
+    leadTeacherName: '',
     evidenceUrls: [''],
     strand: 'BAN_THAN',
     activityTypeId: 'SU_KIEN',

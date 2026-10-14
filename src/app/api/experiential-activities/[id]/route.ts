@@ -282,8 +282,27 @@ export async function PUT(
         return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
       }
 
-      if (!isManagement) {
-        return NextResponse.json({ error: "Bạn không có quyền triển khai hoặc hiệu chỉnh kế hoạch hoạt động này" }, { status: 403 });
+      const catMeta = parseDbJson<any>(catalog.description, {});
+      let checkTeacher: any = null;
+      if (session?.user?.id) {
+        checkTeacher = await prisma.teacher.findUnique({ where: { userId: session.user.id } });
+      }
+      const isAssignedSubjectTeacherCatalog = !!(
+        (checkTeacher && (
+          (catMeta.subjectTeacherId && checkTeacher.id === catMeta.subjectTeacherId) ||
+          (catMeta.cthsTeacherId && checkTeacher.id === catMeta.cthsTeacherId) ||
+          (catMeta.tlhnTeacherId && checkTeacher.id === catMeta.tlhnTeacherId) ||
+          (catMeta.leadTeacherId && checkTeacher.id === catMeta.leadTeacherId) ||
+          (checkTeacher.departmentId && catMeta.departmentId && checkTeacher.departmentId === catMeta.departmentId)
+        )) ||
+        (session?.user?.email && (
+          (catMeta.subjectTeacherEmail && session.user.email.toLowerCase() === catMeta.subjectTeacherEmail.toLowerCase()) ||
+          (catMeta.cthsTeacherEmail && session.user.email.toLowerCase() === catMeta.cthsTeacherEmail.toLowerCase())
+        ))
+      );
+
+      if (!isManagement && !isAssignedSubjectTeacherCatalog) {
+        return NextResponse.json({ error: "Bạn không có quyền triển khai hoặc cấu hình chuyên môn cho kế hoạch hoạt động này" }, { status: 403 });
       }
 
       let teacher = await prisma.teacher.findUnique({
@@ -363,8 +382,6 @@ export async function PUT(
       const resolvedCampusName = actualCampusCodes.length > 0 ? actualCampusCodes.map((code: any) => `Sky-Line ${code}`).join(', ') : (body.campusName || '');
       const resolvedGrades = actualGrades.length > 0 ? actualGrades : (body.grades || []);
 
-      const catMeta = parseDbJson<any>(catalog.description, {});
-
       const fullMetadata = {
         campusId: body.campusId || teacher.campusId || '',
         campusCode: resolvedCampusCode,
@@ -378,6 +395,9 @@ export async function PUT(
         integratedSubjects: body.integratedSubjects || catMeta.integratedSubjects || '',
         leadTeacherId: body.leadTeacherId || null,
         leadTeacherName: body.leadTeacherName || '',
+        educationalContent: body.educationalContent !== undefined ? body.educationalContent : (catMeta.educationalContent || ''),
+        learningOutcomes: body.learningOutcomes !== undefined ? body.learningOutcomes : (body.objectives || catMeta.learningOutcomes || ''),
+        organizationFormat: body.organizationFormat !== undefined ? body.organizationFormat : (catMeta.organizationFormat || 'Trải nghiệm'),
         deliverables: body.deliverables || catMeta.deliverables || '',
         cthsTeachers: body.cthsTeachers || catMeta.cthsTeachers || [],
         evaluationConfig: body.evaluationConfig || catMeta.evaluationConfig || null,
@@ -392,8 +412,8 @@ export async function PUT(
         timeRange: body.timeRange || '',
         location: body.location || '',
         locationText: body.location || '',
-        description: body.description || '',
-        objectives: body.objectives || '',
+        description: body.description || body.educationalContent || '',
+        objectives: body.objectives || body.learningOutcomes || '',
         evidenceUrls: body.evidenceUrls || [],
         strand: body.strand || 'BAN_THAN',
         activityTypeId: body.activityTypeId || 'SU_KIEN',
@@ -433,6 +453,24 @@ export async function PUT(
           status: body.status === 'DRAFT' ? 'DRAFT' : 'SUBMITTED'
         }
       });
+
+      // Synchronize back to ActivityCatalog description
+      try {
+        const currentCatMeta = parseDbJson<any>(catalog.description, {});
+        await prisma.activityCatalog.update({
+          where: { id: catalog.id },
+          data: {
+            description: JSON.stringify({
+              ...currentCatMeta,
+              educationalContent: fullMetadata.educationalContent || currentCatMeta.educationalContent,
+              learningOutcomes: fullMetadata.learningOutcomes || currentCatMeta.learningOutcomes,
+              organizationFormat: fullMetadata.organizationFormat || currentCatMeta.organizationFormat,
+              deliverables: fullMetadata.deliverables || currentCatMeta.deliverables,
+              evaluationConfig: fullMetadata.evaluationConfig || currentCatMeta.evaluationConfig
+            })
+          }
+        });
+      } catch {}
 
       // Populate initial ActivityParticipant records
       const classIds = assignedClasses.map((c: any) => c.classId).filter(Boolean);
@@ -512,14 +550,43 @@ export async function PUT(
       teacherRecord = await prisma.teacher.findUnique({ where: { userId: session.user.id } });
     }
 
-    const isMyCreated = !!(teacherRecord && (existing.teacherId === teacherRecord.id || existing.teacher?.userId === session?.user?.id));
-    const canManage = isManagement || isMyCreated || hasExpManageUpdate;
-
-    if (!canManage) {
-      return NextResponse.json({ error: "Bạn không có quyền hiệu chỉnh kế hoạch hoạt động được giao từ cấp trên" }, { status: 403 });
+    const currentMeta = parseDbJson<any>(existing.locationId, {});
+    let catMeta: any = {};
+    if (existing.catalog?.description) {
+      catMeta = parseDbJson<any>(existing.catalog.description, {});
     }
 
-    const currentMeta = parseDbJson<any>(existing.locationId, {});
+    const isAssignedSubjectTeacher = !!(
+      (teacherRecord && (
+        (currentMeta.subjectTeacherId && teacherRecord.id === currentMeta.subjectTeacherId) ||
+        (currentMeta.leadTeacherId && teacherRecord.id === currentMeta.leadTeacherId) ||
+        (currentMeta.tlhnTeacherId && teacherRecord.id === currentMeta.tlhnTeacherId) ||
+        (currentMeta.cthsTeacherId && teacherRecord.id === currentMeta.cthsTeacherId) ||
+        (catMeta.subjectTeacherId && teacherRecord.id === catMeta.subjectTeacherId) ||
+        (catMeta.cthsTeacherId && teacherRecord.id === catMeta.cthsTeacherId) ||
+        (catMeta.tlhnTeacherId && teacherRecord.id === catMeta.tlhnTeacherId) ||
+        (catMeta.leadTeacherId && teacherRecord.id === catMeta.leadTeacherId) ||
+        (teacherRecord.departmentId && (currentMeta.departmentId === teacherRecord.departmentId || catMeta.departmentId === teacherRecord.departmentId))
+      )) ||
+      (session?.user?.email && (
+        (currentMeta.subjectTeacherEmail && session.user.email.toLowerCase() === currentMeta.subjectTeacherEmail.toLowerCase()) ||
+        (catMeta.subjectTeacherEmail && session.user.email.toLowerCase() === catMeta.subjectTeacherEmail.toLowerCase())
+      ))
+    );
+
+    const isMyCreated = !!(teacherRecord && (existing.teacherId === teacherRecord.id || existing.teacher?.userId === session?.user?.id));
+    const canManage = isManagement || isMyCreated || hasExpManageUpdate;
+    const canConfigureProfessional = canManage || isAssignedSubjectTeacher;
+
+    if (action === "LOCK" || action === "UNLOCK" || action === "DUPLICATE") {
+      if (!canManage) {
+        return NextResponse.json({ error: "Bạn không có quyền thực hiện thao tác quản lý này" }, { status: 403 });
+      }
+    } else {
+      if (!canConfigureProfessional) {
+        return NextResponse.json({ error: "Bạn không có quyền hiệu chỉnh kế hoạch hoạt động hoặc cấu hình chuyên môn được giao từ cấp trên" }, { status: 403 });
+      }
+    }
 
     if (action === "LOCK" || action === "UNLOCK") {
       const newStatus = action === "LOCK" ? "LOCKED" : "ASSIGNED";
@@ -583,11 +650,14 @@ export async function PUT(
       leadTeacherId: body.leadTeacherId !== undefined ? body.leadTeacherId : currentMeta.leadTeacherId,
       leadTeacherName: body.leadTeacherName !== undefined ? body.leadTeacherName : currentMeta.leadTeacherName,
       deliverables: body.deliverables !== undefined ? body.deliverables : currentMeta.deliverables,
+      educationalContent: body.educationalContent !== undefined ? body.educationalContent : (body.description !== undefined ? body.description : currentMeta.educationalContent),
+      learningOutcomes: body.learningOutcomes !== undefined ? body.learningOutcomes : (body.objectives !== undefined ? body.objectives : currentMeta.learningOutcomes),
+      organizationFormat: body.organizationFormat !== undefined ? body.organizationFormat : currentMeta.organizationFormat,
       cthsTeachers: body.cthsTeachers !== undefined ? body.cthsTeachers : currentMeta.cthsTeachers,
       evaluationConfig: body.evaluationConfig !== undefined ? body.evaluationConfig : currentMeta.evaluationConfig,
       grades: body.grades !== undefined ? body.grades : currentMeta.grades,
-      description: body.description !== undefined ? body.description : currentMeta.description,
-      objectives: body.objectives !== undefined ? body.objectives : currentMeta.objectives,
+      description: body.description !== undefined ? body.description : (body.educationalContent || currentMeta.description),
+      objectives: body.objectives !== undefined ? body.objectives : (body.learningOutcomes || currentMeta.objectives),
       evidenceUrls: body.evidenceUrls !== undefined ? body.evidenceUrls : currentMeta.evidenceUrls,
       timeRange: body.timeRange !== undefined ? body.timeRange : currentMeta.timeRange,
       location: body.location !== undefined ? body.location : currentMeta.location,
@@ -627,6 +697,39 @@ export async function PUT(
         status: body.status === "DRAFT" ? "DRAFT" : "SUBMITTED"
       }
     });
+
+    // Synchronize updates back to master ActivityCatalog
+    try {
+      let cat = null;
+      if (existing.catalogId) {
+        cat = await prisma.activityCatalog.findUnique({ where: { id: existing.catalogId } });
+      }
+      if (!cat && existing.code) {
+        cat = await prisma.activityCatalog.findUnique({ where: { code: existing.code } });
+      }
+      if (!cat && existing.name) {
+        cat = await prisma.activityCatalog.findFirst({ where: { name: existing.name } });
+      }
+
+      if (cat) {
+        const catMeta = parseDbJson<any>(cat.description, {});
+        await prisma.activityCatalog.update({
+          where: { id: cat.id },
+          data: {
+            description: JSON.stringify({
+              ...catMeta,
+              educationalContent: updatedMeta.educationalContent || catMeta.educationalContent,
+              learningOutcomes: updatedMeta.learningOutcomes || catMeta.learningOutcomes,
+              organizationFormat: updatedMeta.organizationFormat || catMeta.organizationFormat,
+              deliverables: updatedMeta.deliverables || catMeta.deliverables,
+              evaluationConfig: updatedMeta.evaluationConfig || catMeta.evaluationConfig
+            })
+          }
+        });
+      }
+    } catch (err) {
+      console.error('Failed to sync ActivityRecord back to ActivityCatalog:', err);
+    }
 
     // Auto-populate ActivityParticipant records for any newly assigned classes
     const assignedClasses = updatedMeta.assignedClasses || [];

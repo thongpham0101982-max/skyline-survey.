@@ -101,6 +101,7 @@ model Teacher {
   badges                     TeacherBadge[]
   ctqtPrimaryAssignments     CtqtTeachingAssignment[] @relation("CtqtPrimaryTeacher")
   ctqtDelegatedAssignments   CtqtTeachingAssignment[] @relation("CtqtDelegatedTeacher")
+  specialAssignments         SpecialTeachingAssignment[]
 
   @@index([campusId])
   @@index([departmentId])
@@ -210,6 +211,7 @@ model Class {
   ctqtTeachingAssignments CtqtTeachingAssignment[]
   ctqtGradeEntries       CtqtGradeEntry[]
   ctqtCompetencyEntries  CtqtCompetencyEntry[]
+  specialAssignments     SpecialTeachingAssignment[]
 
   @@index([campusId])
   @@index([academicYearId])
@@ -277,6 +279,8 @@ model Student {
   photo                  StudentPhoto?
   ctqtGradeEntries       CtqtGradeEntry[]
   ctqtCompetencyEntries  CtqtCompetencyEntry[]
+  specialGradeEntries    SpecialGradeEntry[]
+  specialProjectMembers  SpecialProjectMember[]
 
   @@unique([studentCode, academicYearId])
   @@index([classId])
@@ -519,6 +523,7 @@ model Subject {
   competencyAssessments      StudentCompetencyAssessment[]
   competencySummaries        StudentSubjectCompetencySummary[]
   textbooks                  Textbook[]
+  specialSubjects            SpecialSubject[]
 }
 
 model TeachingAssignment {
@@ -3219,3 +3224,438 @@ model ClassMonthlyEnrollment {
   @@index([snapshotId])
   @@index([classId])
 }
+
+// ============================================================================
+// PHÂN HỆ MÔN HỌC ĐẶC THÙ SKY-LINE (SPECIAL SUBJECTS MANAGEMENT)
+// ============================================================================
+
+model SpecialSubject {
+  id              String   @id @default(cuid())
+  code            String   @unique
+  name            String
+  levels          String   @default("PRIMARY")
+  campuses        String   @default("ALL")
+  description     String?
+  icon            String?  @default("BookOpen")
+  color           String?  @default("#00A19A")
+  status          String   @default("ACTIVE")
+  sortOrder       Int      @default(0)
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  legacySubjectId String?
+  legacySubject   Subject? @relation(fields: [legacySubjectId], references: [id], onDelete: SetNull)
+
+  curriculums     SpecialCurriculum[]
+  assignments     SpecialTeachingAssignment[]
+
+  @@index([status])
+  @@index([code])
+}
+
+model SpecialCurriculum {
+  id               String   @id @default(cuid())
+  subjectId        String
+  code             String   @unique
+  name             String
+  level            String
+  targetGrades     String
+  status           String   @default("ACTIVE")
+  createdAt        DateTime @default(now())
+  updatedAt        DateTime @updatedAt
+
+  subject          SpecialSubject @relation(fields: [subjectId], references: [id], onDelete: Cascade)
+  versions         SpecialCurriculumVersion[]
+
+  @@index([subjectId])
+}
+
+model SpecialCurriculumVersion {
+  id               String   @id @default(cuid())
+  curriculumId     String
+  versionCode      String
+  academicYearId   String
+  status           String   @default("DRAFT")
+  approvedBy       String?
+  approvedAt       DateTime?
+  description      String?
+  sourceDocument   String?
+  createdAt        DateTime @default(now())
+  updatedAt        DateTime @updatedAt
+
+  curriculum       SpecialCurriculum @relation(fields: [curriculumId], references: [id], onDelete: Cascade)
+  gradeConfigs     SpecialSubjectGradeConfig[]
+  topics           SpecialTopic[]
+  lessons          SpecialLesson[]
+
+  @@unique([curriculumId, versionCode])
+  @@index([curriculumId])
+  @@index([academicYearId])
+}
+
+model SpecialSubjectGradeConfig {
+  id               String   @id @default(cuid())
+  versionId        String
+  grade            String
+  totalPeriods     Int      @default(15)
+  periodMinutes    Int      @default(35)
+  overallGoal      String?
+  evalCycle        String   @default("PER_LESSON")
+  evalScaleType    String   @default("QUALITATIVE_3")
+  summaryFormula   String   @default("MOST_FREQUENT")
+  isLocked         Boolean  @default(false)
+  createdAt        DateTime @default(now())
+  updatedAt        DateTime @updatedAt
+
+  version          SpecialCurriculumVersion @relation(fields: [versionId], references: [id], onDelete: Cascade)
+  criteria         SpecialAssessmentCriterion[]
+
+  @@unique([versionId, grade])
+  @@index([versionId])
+}
+
+model SpecialTopic {
+  id               String   @id @default(cuid())
+  versionId        String
+  grade            String
+  code             String
+  name             String
+  sortOrder        Int      @default(0)
+  description      String?
+  createdAt        DateTime @default(now())
+  updatedAt        DateTime @updatedAt
+
+  version          SpecialCurriculumVersion @relation(fields: [versionId], references: [id], onDelete: Cascade)
+  lessons          SpecialLesson[]
+
+  @@unique([versionId, grade, code])
+  @@index([versionId, grade])
+}
+
+model SpecialLesson {
+  id                String   @id @default(cuid())
+  versionId         String
+  topicId           String?
+  grade             String
+  periodIndex       Int
+  lessonName        String
+  mainActivities    String?
+  objectives        String?
+  requirements      String?
+  expectedProduct   String?
+  isProject         Boolean  @default(false)
+  projectMinPeriods Int      @default(1)
+  status            String   @default("ACTIVE")
+  createdAt         DateTime @default(now())
+  updatedAt         DateTime @updatedAt
+
+  version           SpecialCurriculumVersion @relation(fields: [versionId], references: [id], onDelete: Cascade)
+  topic             SpecialTopic? @relation(fields: [topicId], references: [id], onDelete: SetNull)
+  criteria          SpecialAssessmentCriterion[]
+  gradeEntries      SpecialGradeEntry[]
+  projectGroups     SpecialProjectGroup[]
+
+  @@unique([versionId, grade, periodIndex])
+  @@index([versionId, grade])
+  @@index([topicId])
+}
+
+model SpecialAssessmentCriterion {
+  id               String   @id @default(cuid())
+  gradeConfigId    String?
+  lessonId         String?
+  competencyGroup  String   @default("CHUNG")
+  code             String
+  name             String
+  description      String?
+  weight           Float    @default(1.0)
+  sortOrder        Int      @default(0)
+  createdAt        DateTime @default(now())
+  updatedAt        DateTime @updatedAt
+
+  gradeConfig      SpecialSubjectGradeConfig? @relation(fields: [gradeConfigId], references: [id], onDelete: Cascade)
+  lesson           SpecialLesson? @relation(fields: [lessonId], references: [id], onDelete: Cascade)
+  rubricLevels     SpecialRubricLevel[]
+
+  @@index([gradeConfigId])
+  @@index([lessonId])
+}
+
+model SpecialRubricLevel {
+  id               String   @id @default(cuid())
+  criterionId      String
+  levelCode        String
+  levelName        String
+  numericValue     Float?
+  description      String
+  sortOrder        Int      @default(0)
+  createdAt        DateTime @default(now())
+  updatedAt        DateTime @updatedAt
+
+  criterion        SpecialAssessmentCriterion @relation(fields: [criterionId], references: [id], onDelete: Cascade)
+
+  @@unique([criterionId, levelCode])
+  @@index([criterionId])
+}
+
+model SpecialTeachingAssignment {
+  id               String   @id @default(cuid())
+  subjectId        String
+  teacherId        String
+  classId          String
+  academicYearId   String
+  semester         Int      @default(1)
+  isLeadTeacher    Boolean  @default(true)
+  status           String   @default("ACTIVE")
+  createdAt        DateTime @default(now())
+  updatedAt        DateTime @updatedAt
+
+  subject          SpecialSubject @relation(fields: [subjectId], references: [id], onDelete: Cascade)
+  teacher          Teacher        @relation(fields: [teacherId], references: [id], onDelete: Cascade)
+  class            Class          @relation(fields: [classId], references: [id], onDelete: Cascade)
+
+  gradeEntries     SpecialGradeEntry[]
+  projectGroups    SpecialProjectGroup[]
+
+  @@unique([subjectId, teacherId, classId, academicYearId, semester])
+  @@index([subjectId])
+  @@index([teacherId])
+  @@index([classId])
+  @@index([academicYearId])
+}
+
+model SpecialGradeEntry {
+  id                String   @id @default(cuid())
+  assignmentId      String
+  studentId         String
+  lessonId          String?
+  topicId           String?
+  evalScope         String   @default("LESSON")
+  evalResult        String?
+  numericScore      Float?
+  rubricDetails     String?
+  teacherFeedback   String?
+  studentProductUrl String?
+  attendanceStatus  String   @default("PRESENT")
+  status            String   @default("DRAFT")
+  lastUpdatedById   String?
+  createdAt         DateTime @default(now())
+  updatedAt         DateTime @updatedAt
+
+  assignment        SpecialTeachingAssignment @relation(fields: [assignmentId], references: [id], onDelete: Cascade)
+  student           Student                   @relation(fields: [studentId], references: [id], onDelete: Cascade)
+  lesson            SpecialLesson?            @relation(fields: [lessonId], references: [id], onDelete: SetNull)
+  auditLogs         SpecialGradeAudit[]
+
+  @@unique([assignmentId, studentId, lessonId, evalScope])
+  @@index([studentId])
+  @@index([assignmentId])
+  @@index([lessonId])
+  @@index([status])
+}
+
+model SpecialProjectGroup {
+  id               String   @id @default(cuid())
+  assignmentId     String
+  lessonId         String?
+  projectName      String
+  topicName        String?
+  description      String?
+  productUrl       String?
+  groupScore       String?
+  status           String   @default("IN_PROGRESS")
+  activityRecordId String?
+  createdAt        DateTime @default(now())
+  updatedAt        DateTime @updatedAt
+
+  assignment       SpecialTeachingAssignment @relation(fields: [assignmentId], references: [id], onDelete: Cascade)
+  lesson           SpecialLesson?            @relation(fields: [lessonId], references: [id], onDelete: SetNull)
+  members          SpecialProjectMember[]
+
+  @@index([assignmentId])
+  @@index([lessonId])
+}
+
+model SpecialProjectMember {
+  id               String   @id @default(cuid())
+  groupId          String
+  studentId        String
+  roleInGroup      String   @default("MEMBER")
+  individualEval   String?
+  individualNote   String?
+  createdAt        DateTime @default(now())
+  updatedAt        DateTime @updatedAt
+
+  group            SpecialProjectGroup @relation(fields: [groupId], references: [id], onDelete: Cascade)
+  student          Student             @relation(fields: [studentId], references: [id], onDelete: Cascade)
+
+  @@unique([groupId, studentId])
+  @@index([groupId])
+  @@index([studentId])
+}
+
+model SpecialGradeAudit {
+  id               String   @id @default(cuid())
+  gradeEntryId     String
+  actorUserId      String
+  action           String
+  oldValue         String?
+  newValue         String?
+  reason           String?
+  createdAt        DateTime @default(now())
+
+  gradeEntry       SpecialGradeEntry @relation(fields: [gradeEntryId], references: [id], onDelete: Cascade)
+
+  @@index([gradeEntryId])
+  @@index([actorUserId])
+}
+
+// ============================================================================
+// KT&ĐBCL CONNECT - KÊNH TRAO ĐỔI & HỖ TRỢ GIÁO VIÊN SKY-LINE
+// ============================================================================
+
+model KtdbclAnnouncement {
+  id              String   @id @default(cuid())
+  code            String   @unique
+  title           String
+  content         String
+  category        String   @default("THONG_BAO_CHUNG")
+  priority        String   @default("NORMAL")
+  targetScope     String   @default("ALL")
+  targetCampusIds String?
+  targetDeptIds   String?
+  targetLevels    String?
+  attachments     String?
+  isPublished     Boolean  @default(true)
+  publishedAt     DateTime @default(now())
+  createdById     String
+  creatorName     String?
+  pinned          Boolean  @default(false)
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  reads           KtdbclAnnouncementRead[]
+
+  @@index([category])
+  @@index([priority])
+  @@index([publishedAt])
+}
+
+model KtdbclAnnouncementRead {
+  id             String   @id @default(cuid())
+  announcementId String
+  userId         String
+  userName       String?
+  userRole       String?
+  campusCode     String?
+  readAt         DateTime @default(now())
+
+  announcement   KtdbclAnnouncement @relation(fields: [announcementId], references: [id], onDelete: Cascade)
+
+  @@unique([announcementId, userId])
+  @@index([userId])
+  @@index([announcementId])
+}
+
+model KtdbclRequest {
+  id                   String   @id @default(cuid())
+  requestCode          String   @unique
+  title                String
+  category             String   @default("KHAC")
+  requestType          String   @default("CAU_HOI")
+  priority             String   @default("NORMAL")
+  status               String   @default("NEW")
+  content              String
+  attachments          String?
+  senderId             String
+  senderName           String
+  senderRole           String?
+  senderEmail          String?
+  senderPhone          String?
+  teacherId            String?
+  campusId             String?
+  campusCode           String?
+  departmentId         String?
+  departmentName       String?
+  assignedToId         String?
+  assignedToName       String?
+  assignedAt           DateTime?
+  aiCategorySuggestion String?
+  aiUrgencyScore       Int?     @default(0)
+  aiSummary            String?
+  rating               Int?
+  ratingFeedback       String?
+  resolvedAt           DateTime?
+  reopenedAt           DateTime?
+  refModule            String?
+  refRecordId          String?
+  createdAt            DateTime @default(now())
+  updatedAt            DateTime @updatedAt
+
+  messages             KtdbclMessage[]
+  auditLogs            KtdbclAuditLog[]
+
+  @@index([status])
+  @@index([senderId])
+  @@index([campusId])
+  @@index([category])
+  @@index([assignedToId])
+  @@index([createdAt])
+}
+
+model KtdbclMessage {
+  id             String   @id @default(cuid())
+  requestId      String
+  senderId       String
+  senderName     String
+  senderRole     String
+  content        String
+  attachments    String?
+  isInternalNote Boolean  @default(false)
+  createdAt      DateTime @default(now())
+
+  request        KtdbclRequest @relation(fields: [requestId], references: [id], onDelete: Cascade)
+
+  @@index([requestId])
+  @@index([senderId])
+  @@index([createdAt])
+}
+
+model KtdbclKnowledgeItem {
+  id          String   @id @default(cuid())
+  title       String
+  category    String   @default("QUY_CHE_CHUNG")
+  question    String
+  answer      String
+  keywords    String?
+  attachments String?
+  isPublished Boolean  @default(true)
+  viewCount   Int      @default(0)
+  usefulCount Int      @default(0)
+  createdById String?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  @@index([category])
+  @@index([isPublished])
+}
+
+model KtdbclAuditLog {
+  id        String   @id @default(cuid())
+  requestId String
+  action    String
+  actorId   String
+  actorName String?
+  oldValue  String?
+  newValue  String?
+  notes     String?
+  createdAt DateTime @default(now())
+
+  request   KtdbclRequest @relation(fields: [requestId], references: [id], onDelete: Cascade)
+
+  @@index([requestId])
+  @@index([actorId])
+  @@index([createdAt])
+}
+
+

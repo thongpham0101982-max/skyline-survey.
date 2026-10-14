@@ -879,7 +879,8 @@ export default function AdminStudentProfilesPrintPage() {
                           <th className="py-1.5 px-2.5 text-center w-8">STT</th>
                           <th className="py-1.5 px-2.5">Tên hoạt động</th>
                           <th className="py-1.5 px-2.5">Chủ đề GD</th>
-                          <th className="py-1.5 px-2.5">Vai trò</th>
+                          <th className="py-1.5 px-2.5">Nội dung giáo dục</th>
+                          <th className="py-1.5 px-2.5 text-center">Vai trò</th>
                           <th className="py-1.5 px-2.5 text-center">Kết quả</th>
                         </tr>
                       </thead>
@@ -889,7 +890,8 @@ export default function AdminStudentProfilesPrintPage() {
                             <td className="py-1.5 px-2.5 text-center text-slate-400 font-bold">{idx + 1}</td>
                             <td className="py-1.5 px-2.5 font-extrabold text-[#003B3A]">{act.activityName}</td>
                             <td className="py-1.5 px-2.5 text-slate-600">{act.themeName || act.groupName || '—'}</td>
-                            <td className="py-1.5 px-2.5">
+                            <td className="py-1.5 px-2.5 text-slate-600 text-[9px] leading-tight">{act.educationalContent || act.deliverables || act.themeAxisName || '—'}</td>
+                            <td className="py-1.5 px-2.5 text-center">
                               <span className="bg-[#00A19A]/10 text-[#003B3A] border border-[#00A19A]/20 px-1.5 py-0.2 rounded text-[9px] font-black uppercase">
                                 {act.role || 'Thành viên'}
                               </span>

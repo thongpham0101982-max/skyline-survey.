@@ -1,0 +1,762 @@
+﻿{
+    "2":  [
+              {
+                  "periodIndex":  1,
+                  "topicName":  "Em làm chủ tài chính cá nhân",
+                  "lessonName":  "Đồng tiền quanh em",
+                  "mainActivities":  "• Khởi động: Trò chơi \u0027Đoán nhanh đồ vật\u0027.• HĐ1: Tìm hiểu \u0027Đồng tiền dùng để làm gì?\u0027 qua quan sát tranh \u0026 thảo luận (mua đồ ăn, sách vở, đi xe buýt, từ thiện...).• HĐ2: Nhận biết tiền Việt Nam (các mệnh giá 1.000đ, 2.000đ, 5.000đ, 10.000đ, 20.000đ).• HĐ3: \u0027Săn tìm đồ vật cần mua\u0027 (thực hành phân loại đồ vật cần dùng tiền).• HĐ4: Chia sẻ trải nghiệm cá nhân (nếu có 20.000đ em sẽ làm gì).",
+                  "objectives":  "• Nhận biết vai trò của đồng tiền trong cuộc sống hằng ngày.• Biết một số tình huống cần sử dụng tiền.• Hình thành ý thức sử dụng tiền đúng mục đích.• Mạnh dạn chia sẻ suy nghĩ và tích cực tham gia hoạt động nhóm.",
+                  "requirements":  "• Kĩ năng nhận diện mệnh giá tiền mặt cơ bản của Việt Nam.• Kĩ năng phân loại các nhu cầu mua sắm hằng ngày.• Thái độ tôn trọng giá trị đồng tiền và sự gắn kết gia đình.",
+                  "expectedProduct":  "• Bảng dán hình ảnh/tranh vẽ các đồ vật cần mua của nhóm.• Tờ phiếu hoạt động cá nhân chọn mệnh giá tiền đúng.",
+                  "isProject":  false
+              },
+              {
+                  "periodIndex":  2,
+                  "topicName":  "Em làm chủ tài chính cá nhân",
+                  "lessonName":  "Điều gì là cần thiết?",
+                  "mainActivities":  "• Khởi động: Trò chơi \u0027Mua nhanh thật nhanh\u0027.• HĐ1: Tìm hiểu khái niệm \u0027CẦN\u0027 (đồ dùng thiết yếu: cơm, nước, sách vở, thuốc, đồng phục).• HĐ2: Tìm hiểu khái niệm \u0027MUỐN\u0027 (sở thích cá nhân: đồ chơi, kẹo, xe điều khiển, gấu bông).• HĐ3: Trò chơi \u0027Giỏ hàng bí mật\u0027 (phân loại đồ vật vào giỏ CẦN và MUỐN, giải thích lý do).• HĐ4: Luyện tập làm phiếu mini khoanh tròn thứ cần thiết \u0026 Vận dụng chia sẻ chi tiêu 50.000đ.",
+                  "objectives":  "• Biết phân biệt rõ ràng giữa điều \u0027CẦN\u0027 và điều \u0027MUỐN\u0027.• Biết ưu tiên mua những đồ dùng cần thiết trước.• Hình thành thói quen chi tiêu hợp lý, tránh lãng phí.",
+                  "requirements":  "• Kĩ năng ra quyết định và lựa chọn ưu tiên mua sắm.• Kĩ năng tư duy phản biện khi giải thích lý do chọn món đồ.• Ý thức tiết kiệm cho bản thân và gia đình.",
+                  "expectedProduct":  "• Giỏ hàng phân loại thẻ hình \u0027CẦN\u0027 và \u0027MUỐN\u0027.• Phiếu mini luyện tập đã hoàn thành.",
+                  "isProject":  false
+              },
+              {
+                  "periodIndex":  3,
+                  "topicName":  "Em làm chủ tài chính cá nhân",
+                  "lessonName":  "Em làm chủ đồng tiền",
+                  "mainActivities":  "• Khởi động: Nghe câu chuyện \u0027Nam tiêu hết tiền lì xì\u0027 và thảo luận bài học.• HĐ1: Khám phá các mục đích sử dụng tiền (Ăn uống, Học tập, Tiết kiệm, Giải trí).• HĐ2: Học cách chia tiền hợp lý (Ví dụ chia 100.000đ: Ăn uống 40k, Học tập 30k, Tiết kiệm 20k, Giải trí 10k).• HĐ3: Thử thách \u0027Nhà quản lý tài ba\u0027 (Thảo luận nhóm chia tiền giả vào 4 trạm theo tình huống bí mật).",
+                  "objectives":  "• Biết đồng tiền cần được sử dụng hợp lý và khoa học.• Biết ưu tiên việc cần trước, việc muốn sau.• Hình thành thói quen tiết kiệm và quản lý tiền cá nhân.",
+                  "requirements":  "• Kĩ năng phân bổ ngân sách theo tỷ lệ phù hợp.• Kĩ năng làm việc nhóm và đàm phán giải quyết tình huống chi tiêu.• Ý thức chủ động quản lý tài chính cá nhân.",
+                  "expectedProduct":  "• Mô hình \u0027Ví tiền thông minh\u0027 / Bảng phân bổ 4 trạm chi tiêu của nhóm.• Phiếu bài tập khoanh chọn cách dùng tiền hợp lý.",
+                  "isProject":  false
+              },
+              {
+                  "periodIndex":  4,
+                  "topicName":  "Em làm chủ tài chính cá nhân",
+                  "lessonName":  "Siêu anh hùng tiết kiệm",
+                  "mainActivities":  "• Khởi động: Trò chơi \u0027Đúng hay lãng phí?\u0027.• HĐ1: Khám phá ý nghĩa tiết kiệm (tiết kiệm điện, nước, giữ gìn sách vở, quý trọng thời gian).• HĐ2: Phân tích các tình huống đúng/sai (\u0027Ai là siêu anh hùng tiết kiệm?\u0027).• HĐ3: Thử thách \u00271 ngày siêu tiết kiệm\u0027 (Hoàn thành bảng thử thách 5 nhiệm vụ trong ngày để nhận sao tiết kiệm).• HĐ4: Vận dụng cam kết thực hiện hành động tiết kiệm tại nhà.",
+                  "objectives":  "• Hiểu ý nghĩa của việc tiết kiệm trong cuộc sống và bảo vệ môi trường.• Biết tiết kiệm điện, nước, thời gian, đồ dùng học tập.• Hình thành thói quen tiết kiệm mỗi ngày.",
+                  "requirements":  "• Kĩ năng thực hành tiết kiệm trong sinh hoạt hằng ngày.• Ý thức trách nhiệm với cộng đồng và môi trường sống.• Tinh thần tự giác duy trì thói quen tốt.",
+                  "expectedProduct":  "• Bảng thử thách \u00271 ngày siêu tiết kiệm\u0027 dán đầy đủ sticker ngôi sao.• Huy hiệu \u0027Siêu anh hùng tiết kiệm\u0027.",
+                  "isProject":  false
+              },
+              {
+                  "periodIndex":  5,
+                  "topicName":  "Em làm chủ tài chính cá nhân",
+                  "lessonName":  "Tiền đi đâu mất rồi?",
+                  "mainActivities":  "• Khởi động: Trò chơi \u0027Bí mật chiếc ví\u0027.• HĐ1: Khám phá các khoản đã chi tiêu (Nhận biết chi tiêu hợp lý vs chưa hợp lý).• HĐ2: Hướng dẫn và thực hành lập \u0027Nhật ký đồng xu\u0027 (Ghi chép: Tên món đồ, Số tiền, Đánh dấu Cần thiết/Chưa cần thiết).• HĐ3: Thực hành nhóm ghi chép và phân loại các khoản tiền đã dùng trong ngày.• HĐ4: Vận dụng ghi lại sổ chi tiêu cá nhân trong 1 ngày ở nhà.",
+                  "objectives":  "• Biết ghi nhớ và theo dõi các khoản chi tiêu cá nhân.• Nhận biết và phân biệt khoản chi hợp lý và chưa hợp lý.• Hình thành thói quen quản lý chi tiêu có hệ thống.",
+                  "requirements":  "• Kĩ năng ghi chép, theo dõi và kiểm soát tài chính cá nhân.• Kĩ năng trung thực đánh giá bản thân.• Thói quen cẩn thận trong quản lý tiền bạc.",
+                  "expectedProduct":  "• Bảng \u0027Nhật ký đồng xu\u0027 hoàn chỉnh của học sinh.• Sổ theo dõi chi tiêu mini cá nhân.",
+                  "isProject":  false
+              },
+              {
+                  "periodIndex":  6,
+                  "topicName":  "Em làm chủ tài chính cá nhân",
+                  "lessonName":  "Em là người bán hàng",
+                  "mainActivities":  "• Khởi động: Trò chơi \u0027Đoán giá thật nhanh\u0027.• HĐ1: Tìm hiểu quy trình giao tiếp giữa Người bán - Người mua (Chào hỏi, Hỏi giá, Thanh toán, Cảm ơn).• HĐ2: Hướng dẫn tính tiền và trả tiền thừa (Ví dụ: mua 30.000đ, đưa 50.000đ, trả lại 20.000đ).• HĐ3: Thực hành \u0027Phiên chợ mini\u0027 (Chia nhóm đóng vai người bán - người mua giao dịch bằng tiền giả).• HĐ4: Bình chọn \u0027Cửa hàng thân thiện\u0027 đạt tiêu chí lịch sự, tính đúng, trung thực.",
+                  "objectives":  "• Thực hành kĩ năng mua bán đơn giản.• Biết hỏi giá, tính toán tiền và trả lại tiền thừa chính xác.• Rèn luyện sự tự tin, giao tiếp lịch sự, trung thực khi mua bán.",
+                  "requirements":  "• Kĩ năng tính toán cộng trừ tiền mặt đơn giản.• Kĩ năng giao tiếp ứng xử văn minh trong thương mại.• Trung thực và cẩn thận trong kiểm đếm tài chính.",
+                  "expectedProduct":  "• Gian hàng mini và bảng giá sản phẩm của nhóm.• Nhật ký giao dịch mua - bán trong phiên chợ.",
+                  "isProject":  false
+              },
+              {
+                  "periodIndex":  7,
+                  "topicName":  "Em làm chủ tài chính cá nhân",
+                  "lessonName":  "Công việc tạo ra giá trị",
+                  "mainActivities":  "• Khởi động: Nghe câu chuyện \u0027Đồng tiền từ sự chăm chỉ\u0027 (Bố làm việc vất vả kiếm tiền mua sách cho Bin).• HĐ1: Khám phá một số nghề nghiệp quen thuộc (Bác sĩ, Cô giáo, Đầu bếp, Nông dân, Công an, Lính cứu hỏa...).• HĐ2: Thảo luận về giá trị của lao động (Lao động tạo ra sản phẩm, thu nhập và đóng góp cho xã hội).• HĐ3: Hoạt động \u0027Đóng vai nghề nghiệp\u0027 (Diễn tả hành động nghề nghiệp và giới thiệu giá trị công việc).• HĐ4: Chia sẻ ước mơ nghề nghiệp tương lai.",
+                  "objectives":  "• Hiểu lao động chăm chỉ giúp tạo ra thu nhập và giá trị cho cuộc sống.• Biết trân trọng công sức lao động của cha mẹ và mọi người.• Nhận biết mọi nghề nghiệp chân chính đều có ích cho cộng đồng.",
+                  "requirements":  "• Kĩ năng thấu hiểu và biết ơn người lao động.• Định hướng thái độ tích cực đối với học tập và công việc.• Kĩ năng thể hiện bản thân qua đóng vai.",
+                  "expectedProduct":  "• Bức vẽ hoặc thẻ trình bày \u0027Nghề nghiệp em yêu thích\u0027.• Phiếu chia sẻ cảm nhận về giá trị lao động.",
+                  "isProject":  false
+              },
+              {
+                  "periodIndex":  8,
+                  "topicName":  "Em làm chủ tài chính cá nhân",
+                  "lessonName":  "Đồng tiền hạnh phúc",
+                  "mainActivities":  "• Khởi động: Nghe câu chuyện \u0027Chiếc heo đất đặc biệt\u0027 (Lan dùng tiền tiết kiệm giúp bạn bị ốm).• HĐ1: Tìm hiểu về việc dùng tiền cho những điều tốt (Tặng quà, quyên góp sách, giúp đỡ người khó khăn).• HĐ2: Thảo luận tình huống \u0027Chia sẻ yêu thương\u0027 (Khi bạn quên bút, khi bạn gặp khó khăn).• HĐ3: Thực hành làm \u0027Hộp quà yêu thương\u0027 (Viết lời nhắn gửi ấm áp, chuẩn bị món quà ý nghĩa tượng trưng).• HĐ4: Thực hiện thử thách \u0027Điều tử tế bí mật\u0027 và Cây điều ước từ tế.",
+                  "objectives":  "• Hiểu ý nghĩa cao đẹp của việc sẻ chia và giúp đỡ người khác.• Biết sử dụng đồng tiền đúng cách để mang lại niềm vui cho cộng đồng.• Biết yêu thương, quan tâm và đồng cảm với mọi người xung quanh.",
+                  "requirements":  "• Lòng nhân ái, sự sẻ chia và tinh thần vì cộng đồng.• Kĩ năng thể hiện tình cảm, sự trân trọng đối với người khác.• Thái độ sử dụng tài chính hướng tới giá trị nhân văn.",
+                  "expectedProduct":  "• \u0027Hộp quà yêu thương\u0027 chứa đựng thông điệp ý nghĩa.• Thẻ điều ước dán trên \u0027Cây điều ước từ tế\u0027.",
+                  "isProject":  false
+              },
+              {
+                  "periodIndex":  9,
+                  "topicName":  "Em làm chủ tài chính cá nhân",
+                  "lessonName":  "Nhà thông thái mua sắm",
+                  "mainActivities":  "• Khởi động: Trò chơi \u0027Mua gì đây?\u0027 (Ngân sách 50.000đ lựa chọn món đồ phù hợp trong bảng giá).• HĐ1: Học cách so sánh trước khi mua (So sánh giá, chất lượng, số lượng giữa các sản phẩm).• HĐ2: Phân tích tình huống chọn món đồ \u0027Thật sự cần\u0027 vs \u0027Sở thích thời điểm\u0027.• HĐ3: Thử thách \u0027Người mua hàng thông minh\u0027 (Giải quyết bài toán mua sắm theo ngân sách \u0026 tránh Bẫy mua sắm).• HĐ4: Thảo luận: \u0027Giá rẻ có luôn tốt không?\u0027 và bài học tiêu dùng thông minh.",
+                  "objectives":  "• Biết lựa chọn sản phẩm phù hợp với nhu cầu và ngân sách.• Biết so sánh giá cả, chất lượng và số lượng khi mua sắm.• Hình thành thói quen mua sắm thông minh, cân nhắc kỹ lưỡng.",
+                  "requirements":  "• Kĩ năng phân tích, so sánh và đánh giá sản phẩm.• Tinh thần tỉnh táo trước các gợi ý mua sắm không cần thiết.• Kĩ năng tính toán tiêu dùng hợp lý.",
+                  "expectedProduct":  "• Bảng lựa chọn mua sắm tối ưu của nhóm.• Phiếu giải quyết thử thách \u0027Bẫy mua sắm\u0027.",
+                  "isProject":  false
+              },
+              {
+                  "periodIndex":  10,
+                  "topicName":  "Em làm chủ tài chính cá nhân",
+                  "lessonName":  "Hội chợ tài chính nhí",
+                  "mainActivities":  "• Khởi động: Trò chơi \u0027Bánh xe kiến thức\u0027 (Ôn tập các bài học từ Tiết 1 đến Tiết 9).• HĐ1: Nhìn lại hành trình trải nghiệm tài chính nhí.• HĐ2: Tham gia 4 Trạm thử thách nhận Huy hiệu: + Trạm 1: Siêu tiết kiệm (Ghép tranh tiết kiệm/lãng phí). + Trạm 2: Người mua hàng thông thái (Mua sắm đúng ngân sách). + Trạm 3: Bán hàng tài ba (Tính tiền \u0026 trả tiền thừa). + Trạm 4: Trái tim nhân ái (Viết lời chúc yêu thương).• HĐ3: Tổng kết dự án giai đoạn 1, trao Giấy chứng nhận \u0027Nhà tài chính nhí\u0027.",
+                  "objectives":  "• Tổng kết, củng cố toàn bộ kiến thức và kỹ năng đã học từ Tiết 1 đến Tiết 9.• Vận dụng linh hoạt kiến thức tài chính vào thực tế cuộc sống.• Tự tin hợp tác, giao tiếp và xử lý tình huống linh hoạt.",
+                  "requirements":  "• Tổng hợp toàn bộ kĩ năng quản lý tài chính cá nhân lớp 2.• Tinh thần tự tin, chủ động và năng lực hợp tác nhóm.• Ý thức áp dụng bài học vào sinh hoạt hằng ngày.",
+                  "expectedProduct":  "• Bộ sưu tập 4 Huy hiệu thử thách đạt được.• Giấy chứng nhận \u0027Nhà tài chính nhí\u0027 của học sinh.",
+                  "isProject":  false
+              },
+              {
+                  "periodIndex":  11,
+                  "topicName":  "Em làm chủ tài chính cá nhân",
+                  "lessonName":  "Chiếc heo đất mơ ước",
+                  "mainActivities":  "• Khởi động: Nghe câu chuyện \u0027Ước mơ của Bin\u0027 (Tiết kiệm mua bộ sách khoa học 120.000đ).• HĐ1: Thảo luận \u0027Vì sao cần có mục tiêu tiết kiệm?\u0027 \u0026 \u0027Tiết kiệm để làm gì?\u0027.• HĐ2: Hoạt động sáng tạo: \u0027Trang trí heo đất mơ ước\u0027 từ hộp giấy/mô hình heo đất.• HĐ3: Viết mục tiêu ước mơ và số tiền dự kiến cần tiết kiệm vào thẻ ước mơ.• HĐ4: Xây dựng \u0027Bảng mục tiêu tiết kiệm của lớp\u0027 và cam kết thực hiện bỏ heo đất đều đặn.",
+                  "objectives":  "• Biết cách đặt mục tiêu tiết kiệm đơn giản và cụ thể.• Hình thành động lực và sự kiên trì tiết kiệm cho bản thân.• Hiểu được giá trị của việc kiên trì tích lũy từng ngày.",
+                  "requirements":  "• Kĩ năng lập mục tiêu cá nhân ngắn hạn và dài hạn.• Tính kiên trì, nhẫn nại và tinh thần trách nhiệm với ước mơ.• Kĩ năng sáng tạo và trang trí đồ dùng cá nhân.",
+                  "expectedProduct":  "• Mô hình \u0027Chiếc heo đất mơ ước\u0027 tự trang trí.• Thẻ mục tiêu tiết kiệm cá nhân dán trên bảng lớp.",
+                  "isProject":  false
+              },
+              {
+                  "periodIndex":  12,
+                  "topicName":  "Em làm chủ tài chính cá nhân",
+                  "lessonName":  "Mua sắm có kế hoạch",
+                  "mainActivities":  "• Khởi động: Nghe câu chuyện \u0027Minh mua quá nhiều\u0027 (Không lập danh sách nên mua vượt ngân sách).• HĐ1: Phân tích lợi ích của việc lập danh sách trước khi mua hàng.• HĐ2: Thực hành lập danh sách mua sắm ưu tiên (Cần mua trước, Muốn mua sau).• HĐ3: Trò chơi \u0027Siêu thị thông minh\u0027 (Nhận ngân sách giới hạn + danh sách cần mua, thực hành chọn đồ đúng kế hoạch).• HĐ4: Vận dụng lập \u0027Danh sách mua sắm cuối tuần\u0027 cùng cha mẹ.",
+                  "objectives":  "• Biết lập danh sách các món đồ cần mua trước khi đi siêu thị/chợ.• Hiểu rõ lợi ích của việc mua sắm có kế hoạch (tránh lãng phí, đúng ngân sách).• Lựa chọn sản phẩm phù hợp nhu cầu thực tế.",
+                  "requirements":  "• Kĩ năng lập kế hoạch và tuân thủ kỷ luật chi tiêu.• Kĩ năng làm việc theo danh mục và kiểm soát hành vi mua sắm.• Thói quen chuẩn bị chu đáo trước khi thực hiện công việc.",
+                  "expectedProduct":  "• \u0027Danh sách mua sắm có kế hoạch\u0027 của cá nhân/nhóm.• Phiếu kết quả mua sắm không vượt ngân sách.",
+                  "isProject":  false
+              },
+              {
+                  "periodIndex":  13,
+                  "topicName":  "Em làm chủ tài chính cá nhân",
+                  "lessonName":  "Đồ cũ vẫn có giá trị",
+                  "mainActivities":  "• Khởi động: Nghe câu chuyện \u0027Chiếc hộp bút của Bin\u0027 (Tự trang trí lại hộp bút cũ để tiếp tục dùng).• HĐ1: Khám phá khả năng tái sử dụng đồ cũ (sách cũ, chai nhựa, hộp giấy...).• HĐ2: Học cách giữ gìn đồ dùng học tập để sử dụng lâu bền.• HĐ3: Hoạt động trải nghiệm \u0027Biến cũ thành mới\u0027 (Làm chậu cây mini, hộp đựng bút từ vật liệu tái chế).• HĐ4: Xây dựng \u0027Góc đổi sách - đổi đồ dùng\u0027 trong lớp học.",
+                  "objectives":  "• Biết tái sử dụng và giữ gìn cẩn thận đồ dùng học tập, sinh hoạt.• Hiểu rằng tiết kiệm không chỉ là tiết kiệm tiền mà còn là tiết kiệm tài nguyên.• Ý thức bảo vệ môi trường thông qua hành động tái chế.",
+                  "requirements":  "• Kĩ năng khéo tay, tái chế và sáng tạo đồ dùng từ vật liệu cũ.• Ý thức giữ gìn tài sản cá nhân và tôn trọng tài nguyên.• Tinh thần sống xanh và bảo vệ môi trường.",
+                  "expectedProduct":  "• Sản phẩm tái chế sáng tạo (Hộp bút, Chậu cây mini...).• Các món đồ trao đổi tại \u0027Góc đổi đồ dùng\u0027.",
+                  "isProject":  false
+              },
+              {
+                  "periodIndex":  14,
+                  "topicName":  "Em làm chủ tài chính cá nhân",
+                  "lessonName":  "Em biết lựa chọn quảng cáo",
+                  "mainActivities":  "• Khởi động: Nghe câu chuyện \u0027Quảng cáo siêu hấp dẫn\u0027 (Bạn Na thích đồ chơi phát sáng trên TV).• HĐ1: Tìm hiểu cách thức quảng cáo thu hút trẻ em (âm thanh, màu sắc, lời hứa hẹn).• HĐ2: Thảo luận phân biệt \u0027Nên mua\u0027 vs \u0027Chưa cần mua\u0027 khi xem quảng cáo.• HĐ3: Thử thách \u0027Thám tử quảng cáo\u0027 (Phân tích các mẩu quảng cáo quen thuộc và đưa ra quyết định thông minh).• HĐ4: Luyện tập quy tắc: \u0027Dừng lại 3 giây suy nghĩ trước khi đòi mua đồ quảng cáo\u0027.",
+                  "objectives":  "• Nhận biết quảng cáo hấp dẫn chưa chắc đã là sản phẩm cần thiết.• Biết dừng lại suy nghĩ và đánh giá thực tế trước khi mua hàng.• Hình thành bản lĩnh tiêu dùng, không bị kích động mua sắm.",
+                  "requirements":  "• Kĩ năng tư duy phản biện trước các thông tin truyền thông/quảng cáo.• Kĩ năng tự làm chủ cảm xúc và mong muốn cá nhân.• Thái độ tiêu dùng tỉnh táo và có trách nhiệm.",
+                  "expectedProduct":  "• Phiếu đánh giá \u0027Thám tử quảng cáo\u0027 của học sinh.• Thẻ lựa chọn \u0027NÊN MUA / CHƯA CẦN MUA\u0027.",
+                  "isProject":  false
+              },
+              {
+                  "periodIndex":  15,
+                  "topicName":  "Em làm chủ tài chính cá nhân",
+                  "lessonName":  "Nhà tài chính nhí tài ba",
+                  "mainActivities":  "• Khởi động: Trò chơi \u0027Bánh xe nhà tài chính\u0027 (Ôn tập toàn bộ 15 tiết học).• HĐ1: Tổng kết hành trình 5 trụ cột: Tiết kiệm - Mua sắm - Quản lý tiền - Sẻ chia - Tái sử dụng.• HĐ2: Tham gia \u0027Hành trình nhà tài chính nhí\u0027 qua 4 trạm thử thách tổng hợp: + Trạm 1: Tính tiền nhanh \u0026 Trả tiền thừa. + Trạm 2: Chọn đồ cần thiết theo ngân sách. + Trạm 3: Tiết kiệm thông minh. + Trạm 4: Trái tim yêu thương sẻ chia.• HĐ3: Lễ tổng kết chương trình, vinh danh \u0026 trao chứng nhận \u0027Nhà tài chính nhí tài ba\u0027.",
+                  "objectives":  "• Tổng hợp và củng cố toàn bộ kiến thức, kĩ năng quản lý tài chính toàn khóa học.• Tự tin vận dụng các kỹ năng tài chính vào thực tế cuộc sống gia đình và nhà trường.• Rèn luyện kỹ năng hợp tác, giao tiếp và giải quyết vấn đề toàn diện.",
+                  "requirements":  "• Năng lực quản lý tài chính cá nhân toàn diện cấp độ Lớp 2.• Tự tin, chủ động trong giao tiếp và ra quyết định chi tiêu.• Sẵn sàng áp dụng các thói quen tài chính tốt vào cuộc sống.",
+                  "expectedProduct":  "• Bảng tổng hợp thành tích cá nhân toàn khóa học.• Bằng chứng nhận hoàn thành chương trình \u0027Nhà tài chính nhí tài ba\u0027.",
+                  "isProject":  true
+              }
+          ],
+    "4":  [
+              {
+                  "periodIndex":  1,
+                  "topicName":  "Tiêu dùng thông minh – Sống có trách nhiệm",
+                  "lessonName":  "Những lựa chọn của em",
+                  "mainActivities":  "-HĐ mở đầu: Trò chơi \"Giỏ hàng bí mật\". -HĐ khám phá: Phân tích tình huống mua sắm của một bạn nhỏ. - HĐ thực hành: Sắp xếp thứ tự ưu tiên các khoản chi trong ngân sách. - HĐ vận dụng: Thiết kế \"Giỏ hàng thông minh\" của nhóm.",
+                  "objectives":  "-Nhận biết được rằng nguồn tiền luôn có giới hạn.-Biết xác định và sắp xếp thứ tự ưu tiên khi sử dụng tiền.-Giải thích được lý do lựa chọn của bản thân trong các tình huống chi tiêu.-Bước đầu hình thành tư duy ra quyết định tài chính.",
+                  "requirements":  "Xác định được nhu cầu ưu tiên và giải thích được lựa chọn của mình",
+                  "expectedProduct":  "Phiếu sắp xếp thứ tự ưu tiên các khoản chi",
+                  "isProject":  false
+              },
+              {
+                  "periodIndex":  2,
+                  "topicName":  "Tiêu dùng thông minh – Sống có trách nhiệm",
+                  "lessonName":  "Tiêu ngay hay tiết kiệm đây?",
+                  "mainActivities":  "- HĐ mở đầu: Trò chơi \"Chi ngay hay để dành?\" với các tình huống thực tế. -HĐ khám phá: Phân tích lợi ích của chi tiêu hợp lí và tiết kiệm qua câu chuyện/tình huống. - HĐ thực hành: Lập kế hoạch sử dụng tiền tiêu vặt và lựa chọn chi tiêu hay tiết kiệm trong từng tình huống. - HĐ vận dụng: Thiết kế mục tiêu tiết kiệm và kế hoạch thực hiện trong 1 tháng.",
+                  "objectives":  "-Phân biệt được giữa mong muốn tức thời và mục tiêu dài hạn.-Hiểu được lợi ích của việc tiết kiệm và chờ đợi.-Biết lựa chọn giữa chi tiêu ngay và tiết kiệm cho mục tiêu lớn hơn.-Hình thành tính kiên trì và khả năng kiểm soát bản thân.",
+                  "requirements":  "Lựa chọn được phương án phù hợp trong từng tình huống",
+                  "expectedProduct":  "Bảng quyết định \u0027Chi ngay hay tiết kiệm\u0027",
+                  "isProject":  false
+              },
+              {
+                  "periodIndex":  3,
+                  "topicName":  "Tiêu dùng thông minh – Sống có trách nhiệm",
+                  "lessonName":  "Ba câu hỏi trước khi mở ví",
+                  "mainActivities":  " HĐ mở đầu: Trò chơi \"Mua hay không mua?\" với các tình huống mua sắm nhanh.  HĐ khám phá: Tìm hiểu 3 câu hỏi trước khi chi tiền: Có thực sự cần không? Có phù hợp với số tiền mình có không? Có lựa chọn tốt hơn không?  HĐ thực hành: Áp dụng 3 câu hỏi để phân tích và đưa ra quyết định trong các tình huống mua sắm.  HĐ vận dụng: Thiết kế thẻ nhắc \"3 câu hỏi trước khi mở ví\" để sử dụng hằng ngày.",
+                  "objectives":  "-Biết sử dụng ba câu hỏi trước khi mua một món đồ: +Mình có thật sự cần món đồ này không? +Mình đã có món tương tự chưa? +Nếu chưa mua hôm nay thì có ảnh hưởng gì không?-Nhận diện được các khoản chi chưa thực sự cần thiết.-Hình thành thói quen suy nghĩ trước khi chi tiêu.-Biết đưa ra quyết định mua sắm có trách nhiệm.",
+                  "requirements":  "Biết vận dụng 3 câu hỏi để đánh giá quyết định mua",
+                  "expectedProduct":  "Phiếu phân tích tình huống mua sắm",
+                  "isProject":  false
+              },
+              {
+                  "periodIndex":  4,
+                  "topicName":  "Tiêu dùng thông minh – Sống có trách nhiệm",
+                  "lessonName":  "Thử tài nhà mua sắm thông minh",
+                  "mainActivities":  " HĐ mở đầu: Trò chơi \"Ai là người mua sắm thông minh?\" với các lựa chọn mua hàng nhanh.  HĐ khám phá: So sánh giá cả, chất lượng và nhu cầu khi lựa chọn sản phẩm.  HĐ thực hành: Thực hiện thử thách mua sắm trong ngân sách tại \"siêu thị mini\" và giải thích lựa chọn.  HĐ vận dụng: Chia sẻ bí quyết mua sắm thông minh và xây dựng bộ nguyên tắc mua sắm của nhóm.",
+                  "objectives":  "-Biết so sánh các sản phẩm theo giá cả, chất lượng và nhu cầu sử dụng.-Biết lựa chọn sản phẩm phù hợp với ngân sách được giao.-Trình bày được lý do cho quyết định mua hàng của mình.-Phát triển kỹ năng phân tích và lựa chọn.",
+                  "requirements":  "So sánh được giá, chất lượng và nhu cầu",
+                  "expectedProduct":  "Giỏ hàng thông minh kèm giải thích",
+                  "isProject":  false
+              },
+              {
+                  "periodIndex":  5,
+                  "topicName":  "Tiêu dùng thông minh – Sống có trách nhiệm",
+                  "lessonName":  "Em quản lí tiền tiêu vặt",
+                  "mainActivities":  " HĐ mở đầu: Trò chơi \"Tiền tiêu vặt của em dùng vào việc gì?\".  HĐ khám phá: Tìm hiểu cách lập kế hoạch và ghi chép thu – chi từ tiền tiêu vặt.  HĐ thực hành: Lập Sổ thu chi cá nhân cho một tuần với số tiền tiêu vặt được giao.  HĐ vận dụng: Chia sẻ một thói quen quản lí tiền tiêu vặt mà em sẽ thực hiện từ hôm nay.",
+                  "objectives":  "-Nhận biết được các khoản thu và chi phổ biến của học sinh lớp 4.-Biết ghi chép các khoản thu chi đơn giản.-Biết phân loại các khoản chi theo nhóm.-Hình thành ý thức quản lí tiền cá nhân.",
+                  "requirements":  "Ghi được bảng thu - chi đơn giản",
+                  "expectedProduct":  "Sổ thu chi cá nhân",
+                  "isProject":  false
+              },
+              {
+                  "periodIndex":  6,
+                  "topicName":  "Tiêu dùng thông minh – Sống có trách nhiệm",
+                  "lessonName":  "Thử thách 50.000 đồng",
+                  "mainActivities":  "Làm việc nhóm; lập kế hoạch chi tiêu; trình bày",
+                  "objectives":  "-Biết xây dựng kế hoạch sử dụng một khoản tiền cố định.-Biết ưu tiên các khoản chi cần thiết trước.-Điều chỉnh được kế hoạch khi điều kiện thay đổi.-Rèn luyện kỹ năng làm việc nhóm và ra quyết định.",
+                  "requirements":  "Phân bổ ngân sách hợp lí",
+                  "expectedProduct":  "Kế hoạch sử dụng 50.000 đồng",
+                  "isProject":  false
+              },
+              {
+                  "periodIndex":  7,
+                  "topicName":  "Tiêu dùng thông minh – Sống có trách nhiệm",
+                  "lessonName":  "Tiết kiệm cho điều em yêu thích",
+                  "mainActivities":  " HĐ mở đầu: Trò chơi \"Ước mơ của em\" – chia sẻ món đồ hoặc mục tiêu em muốn đạt được.  HĐ khám phá: Tìm hiểu ý nghĩa của việc tiết kiệm và cách đặt mục tiêu tiết kiệm.  HĐ thực hành: Lập kế hoạch tiết kiệm để đạt được mục tiêu cá nhân (số tiền, thời gian, cách thực hiện).  HĐ vận dụng: Thiết kế \"Hũ tiết kiệm ước mơ\" và cam kết thực hiện kế hoạch tiết kiệm.",
+                  "objectives":  "-Xác định được mục tiêu tiết kiệm phù hợp với bản thân.-Tính toán được số tiền cần tiết kiệm và thời gian thực hiện.-Xây dựng được kế hoạch tiết kiệm khả thi.-Hình thành tính kiên trì và kỷ luật tài chính.",
+                  "requirements":  "Lập được mục tiêu và lộ trình tiết kiệm",
+                  "expectedProduct":  "Kế hoạch tiết kiệm cá nhân",
+                  "isProject":  false
+              },
+              {
+                  "periodIndex":  8,
+                  "topicName":  "Tiêu dùng thông minh – Sống có trách nhiệm",
+                  "lessonName":  "Nhật ký chi tiêu thông minh",
+                  "mainActivities":  " HĐ mở đầu: Trò chơi \"Đoán xem tiền đã đi đâu?\" qua các tình huống chi tiêu hằng ngày.  HĐ khám phá: Tìm hiểu vai trò của nhật ký chi tiêu và cách ghi chép thu – chi đơn giản.  HĐ thực hành: Thực hành ghi nhật ký chi tiêu từ một tình huống giả định và phân tích các khoản chi.  HĐ vận dụng: Đề xuất một thay đổi để chi tiêu hợp lí hơn và cam kết áp dụng trong tuần tiếp theo.",
+                  "objectives":  "-Ghi chép được các khoản thu và chi trong một khoảng thời gian nhất định.-Phân tích được thói quen sử dụng tiền của bản thân.\u0027-Nhận diện được những khoản chi chưa hợp lí.-Đề xuất được các giải pháp cải thiện việc sử dụng tiền.",
+                  "requirements":  "Đánh giá được thói quen sử dụng tiền",
+                  "expectedProduct":  "Nhật ký chi tiêu",
+                  "isProject":  false
+              },
+              {
+                  "periodIndex":  9,
+                  "topicName":  "Tiêu dùng thông minh – Sống có trách nhiệm",
+                  "lessonName":  "Em là người mua hàng thông thái",
+                  "mainActivities":  " HĐ mở đầu: Trò chơi \"Chọn đúng – Mua khéo\" với các sản phẩm và mức giá khác nhau.  HĐ khám phá: Tìm hiểu các tiêu chí lựa chọn sản phẩm (nhu cầu, giá cả, chất lượng, số lượng).  HĐ thực hành: So sánh các sản phẩm và đưa ra quyết định mua hàng phù hợp trong từng tình huống.  HĐ vận dụng: Xây dựng cẩm nang \"5 nguyên tắc mua hàng thông thái\" và chia sẻ với cả lớp.",
+                  "objectives":  "-Biết đọc giá và so sánh giá giữa các sản phẩm.-Biết lựa chọn sản phẩm phù hợp với nhu cầu và khả năng chi trả.-Biết cân nhắc giữa giá thành và giá trị sử dụng.-Phát triển tư duy tiêu dùng thông minh.",
+                  "requirements":  "Chọn được sản phẩm phù hợp",
+                  "expectedProduct":  "Phiếu so sánh sản phẩm",
+                  "isProject":  false
+              },
+              {
+                  "periodIndex":  10,
+                  "topicName":  "Tiêu dùng thông minh – Sống có trách nhiệm",
+                  "lessonName":  "Những chiếc bẫy mua sắm",
+                  "mainActivities":  " HĐ mở đầu: Trò chơi \"Có nên mua không?\" với các tình huống khuyến mãi hấp dẫn.  HĐ khám phá: Tìm hiểu những yếu tố dễ khiến người mua đưa ra quyết định thiếu cân nhắc (quảng cáo, giảm giá, bạn bè, cảm xúc...).  HĐ thực hành: Phân tích các tình huống mua sắm và nhận diện \"bẫy mua sắm\", đề xuất cách xử lí phù hợp.  HĐ vận dụng: Xây dựng bộ bí quyết tránh bẫy mua sắm và chia sẻ với cả lớp.",
+                  "objectives":  "-Nhận diện được tác động của quảng cáo, khuyến mãi và xu hướng bạn bè.-Hiểu được nguyên nhân của việc mua sắm bốc đồng.-Biết cách từ chối những khoản chi chưa cần thiết.-Hình thành nguyên tắc mua sắm phù hợp với bản thân.",
+                  "requirements":  "Phân biệt nhu cầu thật và quảng cáo",
+                  "expectedProduct":  "Poster \u0027Mẹo tránh mua sắm bốc đồng\u0027",
+                  "isProject":  false
+              },
+              {
+                  "periodIndex":  11,
+                  "topicName":  "Tiêu dùng thông minh – Sống có trách nhiệm",
+                  "lessonName":  "Đồng tiền biết sẻ chia",
+                  "mainActivities":  "-HĐ mở đầu: Trò chơi \"Em sẽ giúp ai?\" với các tình huống cần sự sẻ chia. -HĐ khám phá: Tìm hiểu ý nghĩa của việc sử dụng tiền để giúp đỡ người khác và đóng góp cho cộng đồng. -HĐ thực hành: Lập kế hoạch sử dụng một khoản tiền nhỏ cho hoạt động sẻ chia hoặc việc làm ý nghĩa. -HĐ vận dụng: Thiết kế \"Thông điệp sẻ chia\" và cam kết thực hiện một hành động đẹp trong cuộc sống.",
+                  "objectives":  "-Hiểu được ý nghĩa của việc chia sẻ và giúp đỡ người khác.-Biết cân đối giữa chi tiêu, tiết kiệm và đóng góp cho cộng đồng.-Nhận thức được trách nhiệm xã hội trong sử dụng tiền.-Hình thành thái độ sống nhân ái và biết sẻ chia.",
+                  "requirements":  "Đề xuất việc làm ý nghĩa",
+                  "expectedProduct":  "Kế hoạch \u0027Việc tốt từ đồng tiền nhỏ\u0027",
+                  "isProject":  false
+              },
+              {
+                  "periodIndex":  12,
+                  "topicName":  "Tiêu dùng thông minh – Sống có trách nhiệm",
+                  "lessonName":  "Khởi động dự án gian hàng nhí",
+                  "mainActivities":  "Thành lập nhóm; chọn ý tưởng; phân công",
+                  "objectives":  "-Hiểu được mục tiêu và yêu cầu của dự án.-Lựa chọn được ý tưởng phù hợp với ngân sách được giao.-Phân công nhiệm vụ cho các thành viên trong nhóm.\u0027-Xây dựng được mục tiêu tài chính cho dự án.",
+                  "requirements":  "Xây dựng ý tưởng và mục tiêu dự án",
+                  "expectedProduct":  "Hồ sơ dự án",
+                  "isProject":  true
+              },
+              {
+                  "periodIndex":  13,
+                  "topicName":  "Tiêu dùng thông minh – Sống có trách nhiệm",
+                  "lessonName":  "Lập kế hoạch tài chính cho dự án",
+                  "mainActivities":  "Khảo sát giá; lập dự toán; điều chỉnh",
+                  "objectives":  "-Thu thập được thông tin về giá cả và chi phí.-Xây dựng được bảng dự toán thu – chi.\u0027-Biết cân đối giữa nhu cầu và nguồn lực hiện có.-Điều chỉnh được kế hoạch để tối ưu chi phí.",
+                  "requirements":  "Xây dựng bảng dự toán",
+                  "expectedProduct":  "Bảng dự toán thu - chi",
+                  "isProject":  true
+              },
+              {
+                  "periodIndex":  14,
+                  "topicName":  "Tiêu dùng thông minh – Sống có trách nhiệm",
+                  "lessonName":  "Hoàn thiện sản phẩm dự án",
+                  "mainActivities":  "Thiết kế sản phẩm; làm poster; luyện thuyết trình",
+                  "objectives":  "-Hoàn thiện được kế hoạch tài chính của nhóm.-Thiết kế được poster hoặc sản phẩm giới thiệu dự án.-Chuẩn bị được nội dung thuyết trình rõ ràng.-Phối hợp hiệu quả với các thành viên trong nhóm.",
+                  "requirements":  "Chuẩn bị đầy đủ sản phẩm",
+                  "expectedProduct":  "Poster/gian hàng mẫu",
+                  "isProject":  true
+              },
+              {
+                  "periodIndex":  15,
+                  "topicName":  "Tiêu dùng thông minh – Sống có trách nhiệm",
+                  "lessonName":  "Báo cáo và phản biện",
+                  "mainActivities":  "Trưng bày; thuyết trình; phản biện; tổng kết",
+                  "objectives":  "-Giải thích được các quyết định tài chính đã đưa ra.-Tham gia phản biện và tiếp nhận góp ý tích cực.Rút ra được bài học về quản lí tài chính và làm việc nhóm.",
+                  "requirements":  "Trình bày và phản biện",
+                  "expectedProduct":  "Bài thuyết trình và phiếu tự đánh giá",
+                  "isProject":  true
+              }
+          ],
+    "5":  [
+              {
+                  "periodIndex":  1,
+                  "topicName":  "Em làm chủ tài chính trong cuộc sống hiện đại",
+                  "lessonName":  "Quyết định mua sắm",
+                  "mainActivities":  "-HĐ mở đầu: Trò chơi \"Em sẽ chọn gì?\" với các tình huống mua sắm. -HĐ khám phá: Phân tích các yếu tố ảnh hưởng đến quyết định mua hàng. -HĐ thực hành: Giải quyết tình huống và lựa chọn phương án mua sắm phù hợp. -HĐ vận dụng: Xây dựng 5 nguyên tắc trước khi chi tiền.",
+                  "objectives":  "-Nhận biết được các yếu tố ảnh hưởng đến quyết định mua sắm của bản thân.-Phân biệt được quyết định dựa trên nhu cầu thực tế và quyết định dựa trên cảm xúc.-Phân tích được một số tình huống mua sắm quen thuộc của học sinh lớp 5.\u0027-Bước đầu hình thành thói quen suy nghĩ trước khi chi tiền.",
+                  "requirements":  "Biết phân tích các yếu tố ảnh hưởng đến quyết định mua sắm và lựa chọn phương án phù hợp với nhu cầu, ngân sách.",
+                  "expectedProduct":  "Biết phân tích các yếu tố ảnh hưởng đến quyết định mua sắm và lựa chọn phương án phù hợp với nhu cầu, ngân sách.",
+                  "isProject":  false
+              },
+              {
+                  "periodIndex":  2,
+                  "topicName":  "Em làm chủ tài chính trong cuộc sống hiện đại",
+                  "lessonName":  "Người tiêu dùng thông thái",
+                  "mainActivities":  "-HĐ mở đầu: Trò chơi \"So sánh để lựa chọn\".-HĐ khám phá: Tìm hiểu cách so sánh giá cả, chất lượng và lợi ích sản phẩm.-HĐ thực hành: Phân tích và lựa chọn sản phẩm phù hợp trong từng tình huống.-HĐ vận dụng: Thiết kế cẩm nang người tiêu dùng thông thái.",
+                  "objectives":  "-Biết so sánh giá cả, chất lượng và lợi ích của các sản phẩm khác nhau.-Biết lựa chọn sản phẩm phù hợp với mục đích sử dụng và ngân sách.-Hiểu được nguyên tắc \"không phải sản phẩm đắt nhất là sản phẩm phù hợp nhất\".-Thực hiện được việc đưa ra quyết định mua hàng có lý do rõ ràng.",
+                  "requirements":  "Biết so sánh giá cả, chất lượng và lợi ích để lựa chọn sản phẩm phù hợp.",
+                  "expectedProduct":  "Phiếu so sánh sản phẩm và Cẩm nang người tiêu dùng thông thái.",
+                  "isProject":  false
+              },
+              {
+                  "periodIndex":  3,
+                  "topicName":  "Em làm chủ tài chính trong cuộc sống hiện đại",
+                  "lessonName":  "Bẫy tài chính quanh em",
+                  "mainActivities":  "-HĐ mở đầu: Trò chơi \"Có nên mua không?\"-HĐ khám phá: Nhận diện quảng cáo, giảm giá và các bẫy mua sắm.-HĐ thực hành: Phân tích các tình huống chi tiêu cảm tính.-HĐ vận dụng: Xây dựng bí quyết tránh bẫy tài chính.",
+                  "objectives":  "-Nhận diện được các hình thức tác động đến hành vi chi tiêu như quảng cáo, giảm giá, xu hướng đám đông.\u0027-Giải thích được nguyên nhân dẫn đến việc mua sắm bốc đồng.\u0027-Biết đặt câu hỏi trước khi quyết định mua hàng.\u0027-Đề xuất được các cách hạn chế chi tiêu cảm tính.",
+                  "requirements":  "Nhận diện được các bẫy mua sắm, quảng cáo và biết cách phòng tránh.",
+                  "expectedProduct":  "",
+                  "isProject":  false
+              },
+              {
+                  "periodIndex":  4,
+                  "topicName":  "Em làm chủ tài chính trong cuộc sống hiện đại",
+                  "lessonName":  "Nghệ thuật lựa chọn",
+                  "mainActivities":  "-HĐ mở đầu: Trò chơi \"Lựa chọn khó\".-HĐ khám phá: Quy trình ra quyết định tài chính.-HĐ thực hành: Giải quyết tình huống với nhiều phương án lựa chọn.-HĐ vận dụng: Chia sẻ quy trình ra quyết định của bản thân.",
+                  "objectives":  "-Áp dụng quy trình ra quyết định tài chính vào các tình huống thực tế.-Biết cân nhắc giữa nhiều phương án chi tiêu khác nhau.-Biết bảo vệ quan điểm và giải thích cho lựa chọn của mình.-Phát triển kỹ năng giải quyết vấn đề và ra quyết định.",
+                  "requirements":  "Biết vận dụng quy trình ra quyết định tài chính trong các tình huống thực tế.",
+                  "expectedProduct":  "Sơ đồ quy trình ra quyết định và phiếu xử lí tình huống.",
+                  "isProject":  false
+              },
+              {
+                  "periodIndex":  5,
+                  "topicName":  "Em làm chủ tài chính trong cuộc sống hiện đại",
+                  "lessonName":  "Lập ngân sách cá nhân",
+                  "mainActivities":  "-HĐ mở đầu: Trò chơi \"Tiền của em dùng vào đâu?\"-HĐ khám phá: Tìm hiểu cấu trúc ngân sách cá nhân.-HĐ thực hành: Lập ngân sách theo tuần hoặc tháng.-HĐ vận dụng: Điều chỉnh ngân sách phù hợp với mục tiêu.",
+                  "objectives":  "-Hiểu được khái niệm ngân sách cá nhân.-Xác định được các khoản thu và chi thường gặp của học sinh.-Xây dựng được một kế hoạch chi tiêu đơn giản theo tuần hoặc tháng.-Biết phân bổ tiền hợp lý giữa chi tiêu, tiết kiệm và dự phòng.",
+                  "requirements":  "Biết lập ngân sách cá nhân phù hợp với mục tiêu và khả năng tài chính.",
+                  "expectedProduct":  "Bảng ngân sách cá nhân theo tuần/tháng.",
+                  "isProject":  false
+              },
+              {
+                  "periodIndex":  6,
+                  "topicName":  "Em làm chủ tài chính trong cuộc sống hiện đại",
+                  "lessonName":  "Thử thách 500.000 đồng",
+                  "mainActivities":  "-HĐ mở đầu: Bốc thăm thử thách chi tiêu.-HĐ khám phá: Xác định thứ tự ưu tiên khi sử dụng tiền.-HĐ thực hành: Lập kế hoạch sử dụng 500.000 đồng.-HĐ vận dụng: Thuyết trình và bảo vệ phương án.",
+                  "objectives":  "-Thực hành lập kế hoạch sử dụng một khoản tiền cố định.-Biết ưu tiên các khoản chi cần thiết.-Điều chỉnh kế hoạch chi tiêu khi điều kiện thay đổi.-Hợp tác với bạn để đưa ra quyết định tài chính tối ưu.",
+                  "requirements":  "Biết xây dựng kế hoạch sử dụng ngân sách hợp lí và giải thích được các lựa chọn.",
+                  "expectedProduct":  "Kế hoạch sử dụng 500.000 đồng và bài trình bày của nhóm.",
+                  "isProject":  false
+              },
+              {
+                  "periodIndex":  7,
+                  "topicName":  "Em làm chủ tài chính trong cuộc sống hiện đại",
+                  "lessonName":  "Tiết kiệm cho mục tiêu lớn",
+                  "mainActivities":  "-HĐ mở đầu: Chia sẻ mục tiêu em muốn đạt được.-HĐ khám phá: Tìm hiểu cách lập mục tiêu tiết kiệm.--HĐ thực hành: Thiết kế kế hoạch tiết kiệm cá nhân.-HĐ vận dụng: Cam kết thực hiện mục tiêu.",
+                  "objectives":  "-Xác định được mục tiêu tài chính ngắn hạn và dài hạn.-Tính toán được số tiền cần tiết kiệm và thời gian thực hiện mục tiêu.-Lập được kế hoạch tiết kiệm cá nhân khả thi.-Hiểu được ý nghĩa của tính kiên trì và kỷ luật tài chính.",
+                  "requirements":  "Biết xác định mục tiêu tiết kiệm và xây dựng kế hoạch thực hiện khả thi.",
+                  "expectedProduct":  "Kế hoạch tiết kiệm cá nhân và Thẻ mục tiêu tiết kiệm.",
+                  "isProject":  false
+              },
+              {
+                  "periodIndex":  8,
+                  "topicName":  "Em làm chủ tài chính trong cuộc sống hiện đại",
+                  "lessonName":  "Nhật ký chi tiêu",
+                  "mainActivities":  "-HĐ mở đầu: Trò chơi \"Tiền đã đi đâu?\"-HĐ khám phá: Hướng dẫn ghi nhật ký thu – chi.-HĐ thực hành: Phân tích nhật ký chi tiêu.-HĐ vận dụng: Đề xuất thay đổi thói quen chi tiêu.",
+                  "objectives":  "-Ghi chép được các khoản thu và chi cá nhân.-Phân tích được thói quen chi tiêu của bản thân.-Nhận diện được những khoản chi chưa hợp lý.-Đề xuất được biện pháp cải thiện việc quản lí tiền.",
+                  "requirements":  "Biết ghi chép, theo dõi và đánh giá thói quen chi tiêu của bản thân.",
+                  "expectedProduct":  "",
+                  "isProject":  false
+              },
+              {
+                  "periodIndex":  9,
+                  "topicName":  "Em làm chủ tài chính trong cuộc sống hiện đại",
+                  "lessonName":  "Tiền mặt và thanh toán điện tử",
+                  "mainActivities":  "-HĐ mở đầu: Quan sát các phương thức thanh toán.-HĐ khám phá: So sánh tiền mặt và thanh toán điện tử.-HĐ thực hành: Lựa chọn hình thức thanh toán phù hợp.-HĐ vận dụng: Thiết kế cẩm nang thanh toán an toàn.",
+                  "objectives":  "-Nhận biết được các hình thức thanh toán phổ biến hiện nay.-Hiểu được ưu điểm và hạn chế của từng hình thức thanh toán.-Biết lựa chọn hình thức thanh toán phù hợp với từng tình huống.-Có ý thức sử dụng các phương thức thanh toán an toàn.",
+                  "requirements":  "Phân biệt được các hình thức thanh toán và lựa chọn phương thức phù hợp, an toàn.",
+                  "expectedProduct":  "Sơ đồ so sánh và Cẩm nang thanh toán an toàn.",
+                  "isProject":  false
+              },
+              {
+                  "periodIndex":  10,
+                  "topicName":  "Em làm chủ tài chính trong cuộc sống hiện đại",
+                  "lessonName":  "An toàn tài chính trên môi trường số",
+                  "mainActivities":  "-HĐ mở đầu: Trò chơi \"Thật hay lừa đảo?\"-HĐ khám phá: Nhận diện các hình thức lừa đảo trực tuyến.-HĐ thực hành: Xử lí tình huống mất an toàn tài chính.-HĐ vận dụng: Xây dựng 5 nguyên tắc bảo vệ tài khoản.",
+                  "objectives":  "Nhận diện được một số hình thức lừa đảo phổ biến trên môi trường số.Biết bảo vệ thông tin cá nhân và tài khoản của mình.Biết cách xử lí khi gặp tình huống nghi ngờ lừa đảo.Hình thành ý thức sử dụng công nghệ một cách an toàn và có trách nhiệm.",
+                  "requirements":  "Nhận diện được các nguy cơ lừa đảo tài chính và biết cách bảo vệ thông tin cá nhân.",
+                  "expectedProduct":  "Bộ quy tắc An toàn tài chính số hoặc poster tuyên truyền.",
+                  "isProject":  false
+              },
+              {
+                  "periodIndex":  11,
+                  "topicName":  "Em làm chủ tài chính trong cuộc sống hiện đại",
+                  "lessonName":  "Đồng tiền tạo ra giá trị",
+                  "mainActivities":  "-HĐ mở đầu: Câu chuyện về những việc làm ý nghĩa.-HĐ khám phá: Vai trò của đồng tiền đối với bản thân và cộng đồng.-HĐ thực hành: Thiết kế kế hoạch sử dụng tiền cho hoạt động cộng đồng.HĐ vận dụng: Chia sẻ thông điệp \"Đồng tiền tạo giá trị\".",
+                  "objectives":  "Hiểu được vai trò của việc chia sẻ và đóng góp cho cộng đồng.Nhận biết được giá trị xã hội của đồng tiền ngoài mục đích chi tiêu cá nhân.Biết cân đối giữa chi tiêu, tiết kiệm và sẻ chia.Xây dựng được thái độ sống trách nhiệm với cộng đồng",
+                  "requirements":  "Hiểu vai trò của đồng tiền trong việc tạo ra giá trị cho bản thân và cộng đồng; biết lập kế hoạch sử dụng tiền có ý nghĩa.",
+                  "expectedProduct":  "Kế hoạch hoạt động sẻ chia và thông điệp \"Đồng tiền tạo giá trị\".",
+                  "isProject":  false
+              },
+              {
+                  "periodIndex":  12,
+                  "topicName":  "Em làm chủ tài chính trong cuộc sống hiện đại",
+                  "lessonName":  "Khởi động dự án",
+                  "mainActivities":  "-HĐ mở đầu: Giới thiệu thử thách dự án.-HĐ khám phá: Tìm hiểu yêu cầu và tiêu chí dự án.--HĐ thực hành: Thành lập nhóm và lựa chọn ý tưởng.HĐ vận dụng: Hoàn thiện kế hoạch thực hiện.",
+                  "objectives":  "Hiểu được yêu cầu và tiêu chí của dự án.Lựa chọn được ý tưởng phù hợp với ngân sách được giao.Phân công nhiệm vụ rõ ràng cho từng thành viên.Xây dựng được mục tiêu tài chính cho dự án.",
+                  "requirements":  "Xây dựng được ý tưởng dự án, xác định mục tiêu, phân công nhiệm vụ và lập kế hoạch thực hiện.",
+                  "expectedProduct":  "Hồ sơ dự án (ý tưởng, mục tiêu, phân công nhiệm vụ).",
+                  "isProject":  true
+              },
+              {
+                  "periodIndex":  13,
+                  "topicName":  "Em làm chủ tài chính trong cuộc sống hiện đại",
+                  "lessonName":  "Lập kế hoạch tài chính",
+                  "mainActivities":  "-HĐ mở đầu: Khảo sát giá sản phẩm.-HĐ khám phá: Hướng dẫn lập bảng dự toán.-HĐ thực hành: Xây dựng kế hoạch thu – chi.-HĐ vận dụng: Điều chỉnh kế hoạch theo góp ý.",
+                  "objectives":  "Thu thập được thông tin cần thiết phục vụ dự án.Xây dựng được bảng dự toán thu - chi.Biết cân đối giữa nhu cầu và ngân sách.Điều chỉnh kế hoạch để tối ưu chi phí.",
+                  "requirements":  "Lập được kế hoạch tài chính cho dự án, dự toán thu – chi và phân bổ nguồn lực hợp lí.",
+                  "expectedProduct":  "Bảng dự toán kinh phí và kế hoạch tài chính của nhóm.",
+                  "isProject":  true
+              },
+              {
+                  "periodIndex":  14,
+                  "topicName":  "Em làm chủ tài chính trong cuộc sống hiện đại",
+                  "lessonName":  "Hoàn thiện sản phẩm",
+                  "mainActivities":  "-HĐ mở đầu: Kiểm tra tiến độ dự án.-HĐ khám phá: Hoàn thiện sản phẩm và bài thuyết trình.-HĐ thực hành: Luyện tập báo cáo theo nhóm.-HĐ vận dụng: Trưng bày sản phẩm và nhận phản hồi.",
+                  "objectives":  "Hoàn thiện bảng ngân sách và sản phẩm dự án.Chuẩn bị được nội dung thuyết trình rõ ràng, logic.Phối hợp hiệu quả với các thành viên trong nhóm.Rèn luyện kỹ năng trình bày và trực quan hóa dữ liệu.",
+                  "requirements":  "Hoàn thiện sản phẩm, chuẩn bị nội dung thuyết trình và phối hợp hiệu quả trong nhóm.",
+                  "expectedProduct":  "Sản phẩm dự án, poster, slide hoặc mô hình minh họa.",
+                  "isProject":  true
+              },
+              {
+                  "periodIndex":  15,
+                  "topicName":  "Em làm chủ tài chính trong cuộc sống hiện đại",
+                  "lessonName":  "Báo cáo và phản biện",
+                  "mainActivities":  "HĐ mở đầu: Khởi động triển lãm dự án.HĐ khám phá: Các nhóm trình bày kế hoạch tài chính.HĐ thực hành: Phản biện và đánh giá sản phẩm.HĐ vận dụng: Tổng kết bài học và trao chứng nhận \"Nhà quản lí tài chính nhí\".",
+                  "objectives":  "Trình bày được kế hoạch tài chính của nhóm trước tập thể.Giải thích được các quyết định tài chính đã đưa ra.Đưa ra và tiếp nhận ý kiến phản biện một cách tích cực.Rút ra được bài học về quản lí tài chính và làm việc nhóm.",
+                  "requirements":  "Trình bày, bảo vệ ý tưởng, phản biện và đánh giá kết quả dự án; rút ra bài học về quản lí tài chính.",
+                  "expectedProduct":  "Bài thuyết trình, sản phẩm dự án hoàn chỉnh và phiếu tự đánh giá/đánh giá đồng đẳng.",
+                  "isProject":  true
+              }
+          ],
+    "1":  [
+              {
+                  "periodIndex":  1,
+                  "topicName":  "Làm quen với tiền",
+                  "lessonName":  "Tiền quanh em – Tiền đến từ đâu?",
+                  "mainActivities":  "HĐ1. Khởi động: Hát bài \"Tiền của bé\" hoặc xem tranh về các nghề nghiệp.HĐ2. Khám phá: Quan sát tiền thật, nhận biết các mệnh giá 1.000đ, 2.000đ, 5.000đ, 10.000đ, 20.000đ, 50.000đ; tìm điểm giống và khác nhau.HĐ3. Tìm hiểu: Nghe kể chuyện \"Tiền đến từ đâu?\", thảo luận về công việc của bố mẹ và cách tạo ra thu nhập.HĐ4. Luyện tập: Trò chơi ghép đúng tên tiền – mệnh giá.HĐ5. Vận dụng: Chia sẻ một việc em sẽ làm để biết quý trọng đồng tiền.",
+                  "objectives":  "Nhận biết tiền là phương tiện trao đổi; nhận diện một số mệnh giá tiền Việt Nam.\u0027Hiểu tiền có được từ lao động.Nhận thức được sự vất vả của người lao động khi kiếm tiền.Hình thành ý thức quý trọng tiền, tránh lãng phí và biết trân trọng công sức của mọi người.",
+                  "requirements":  "Nhận biết tiền là phương tiện trao đổi; nhận diện một số mệnh giá tiền Việt Nam.\u0027Hiểu tiền có được từ lao động.Nhận thức được sự vất vả của người lao động khi kiếm tiền.Hình thành ý thức quý trọng tiền, tránh lãng phí và biết trân trọng công sức của mọi người.",
+                  "expectedProduct":  "Phiếu nhận biết các mệnh giá tiền Việt Nam; bảng ghép đúng tên tiền với mệnh giá; sơ đồ \"Tiền đến từ lao động\".",
+                  "isProject":  false
+              },
+              {
+                  "periodIndex":  2,
+                  "topicName":  "Làm quen với tiền",
+                  "lessonName":  "Tiền giúp ích gì?",
+                  "mainActivities":  "Hoạt động mở đầu: Quan sát tranh các hoạt động trong cuộc sống và trao đổi khi nào cần sử dụng tiền.Hoạt động khám phá: Tìm hiểu vai trò của tiền thông qua tranh tình huống; thảo luận những việc tiền có thể giúp thực hiện và những điều tiền không thể mua được.Hoạt động thực hành: Tham gia trò chơi \"Giỏ hàng thông minh\", phân loại nhu cầu và mong muốn; đóng vai người mua – người bán để lựa chọn món đồ phù hợp với số tiền được giao.",
+                  "objectives":  "Hiểu vai trò của tiền trong cuộc sống và sử dụng đúng mục đích.",
+                  "requirements":  "Hiểu vai trò của tiền trong cuộc sống và sử dụng đúng mục đích.",
+                  "expectedProduct":  "Phiếu học tập \"Tiền giúp em làm gì?\"; bảng phân loại \"Việc cần dùng tiền\" và \"Điều tiền không mua được\".",
+                  "isProject":  false
+              },
+              {
+                  "periodIndex":  3,
+                  "topicName":  "Làm quen với tiền",
+                  "lessonName":  "Em giữ gìn đồng tiền",
+                  "mainActivities":  "Hoạt động mở đầu: Quan sát hình ảnh các cách giữ gìn tiền (đúng và chưa đúng), chia sẻ nhận xét.Hoạt động khám phá: Tìm hiểu vì sao cần giữ gìn, bảo quản tiền; nhận biết các cách cất giữ tiền an toàn, sạch đẹp và không làm hư hỏng tiền.Hoạt động thực hành: Thực hành gấp ví giấy hoặc làm phong bì đựng tiền; phân loại các hành vi đúng – sai khi sử dụng và bảo quản tiền; cam kết thực hiện việc giữ gìn đồng tiền trong cuộc sống hằng ngày.",
+                  "objectives":  "Biết bảo quản tiền và sử dụng tiền văn minh.Nhận biết được một số nguy cơ mất an toàn khi sử dụng tiền.Hình thành ý thức bảo vệ tài sản của bản thân",
+                  "requirements":  "Biết bảo quản tiền và sử dụng tiền văn minh.Nhận biết được một số nguy cơ mất an toàn khi sử dụng tiền.Hình thành ý thức bảo vệ tài sản của bản thân",
+                  "expectedProduct":  "Ví giấy hoặc phong bì đựng tiền do học sinh tự làm; bảng cam kết giữ gìn và sử dụng tiền đúng cách.",
+                  "isProject":  false
+              },
+              {
+                  "periodIndex":  4,
+                  "topicName":  "Chi tiêu thông minh",
+                  "lessonName":  "Điều em cần hay em muốn?",
+                  "mainActivities":  "Hoạt động mở đầu: Quan sát tranh một số đồ dùng, đồ chơi và thực phẩm; chia sẻ những món em muốn mua.Hoạt động khám phá: Phân biệt nhu cầu và mong muốn thông qua các tình huống gần gũi; thảo luận vì sao cần ưu tiên những nhu cầu thiết yếu.Hoạt động thực hành: Tham gia trò chơi \"Giỏ hàng thông minh\", phân loại các món đồ thành Cần và Muốn; giải thích lựa chọn và chia sẻ trước lớp.",
+                  "objectives":  "Phân biệt được nhu cầu thiết yếu và mong muốn cá nhân.Biết ưu tiên những khoản chi cần thiết.Hình thành thói quen suy nghĩ trước khi chi tiêu.",
+                  "requirements":  "Phân biệt được nhu cầu thiết yếu và mong muốn cá nhân.Biết ưu tiên những khoản chi cần thiết.Hình thành thói quen suy nghĩ trước khi chi tiêu.",
+                  "expectedProduct":  "Giỏ hàng thông minh",
+                  "isProject":  false
+              },
+              {
+                  "periodIndex":  5,
+                  "topicName":  "Chi tiêu thông minh",
+                  "lessonName":  "Nghĩ trước khi mua",
+                  "mainActivities":  "Hoạt động mở đầu: Quan sát một số tình huống mua sắm quen thuộc; chia sẻ em sẽ chọn mua gì và vì sao.Hoạt động khám phá: Tìm hiểu các bước cần thực hiện trước khi mua một món đồ (xác định nhu cầu, xem giá, kiểm tra số tiền đang có, cân nhắc sự cần thiết).Hoạt động thực hành: Đóng vai người mua – người bán, lựa chọn sản phẩm phù hợp với số tiền được giao; giải thích lí do lựa chọn và nhận xét cách mua sắm hợp lí.",
+                  "objectives":  "Biết đặt câu hỏi trước khi mua và cân nhắc lựa chọn.",
+                  "requirements":  "Biết đặt câu hỏi trước khi mua và cân nhắc lựa chọn.",
+                  "expectedProduct":  "Phiếu phân loại \"Nhu cầu - Mong muốn\"; bảng nhóm \"Giỏ hàng thông minh\".",
+                  "isProject":  false
+              },
+              {
+                  "periodIndex":  6,
+                  "topicName":  "Chi tiêu thông minh",
+                  "lessonName":  "Em là người mua sắm thông thái",
+                  "mainActivities":  "Hoạt động mở đầu: Tham gia trò chơi \"Mua hay không mua?\" qua các tranh tình huống; nêu lí do lựa chọn.Hoạt động khám phá: Tìm hiểu cách lựa chọn sản phẩm phù hợp với nhu cầu, giá tiền và số tiền hiện có; biết so sánh các lựa chọn trước khi quyết định mua.Hoạt động thực hành: Lập danh sách mua sắm theo số tiền được giao; lựa chọn sản phẩm phù hợp, trình bày lí do và chia sẻ với nhóm về cách chi tiêu hợp lí.",
+                  "objectives":  "Biết lựa chọn sản phẩm phù hợp với nhu cầu và số tiền hiện có.So sánh được giá cả của một số mặt hàng quen thuộc và vận dụng mua sắm trong các tình huống.",
+                  "requirements":  "Biết lựa chọn sản phẩm phù hợp với nhu cầu và số tiền hiện có.So sánh được giá cả của một số mặt hàng quen thuộc và vận dụng mua sắm trong các tình huống.",
+                  "expectedProduct":  "Danh sách mua sắm phù hợp với số tiền được giao; bảng trình bày lí do lựa chọn sản phẩm.",
+                  "isProject":  false
+              },
+              {
+                  "periodIndex":  7,
+                  "topicName":  "Chi tiêu thông minh",
+                  "lessonName":  "Siêu thị tí hon",
+                  "mainActivities":  "Hoạt động mở đầu: Quan sát mô hình siêu thị mini; trao đổi về những việc cần làm khi đi mua sắm.Hoạt động khám phá: Tìm hiểu quy trình mua hàng (chọn sản phẩm – kiểm tra giá – thanh toán – nhận lại tiền và hóa đơn); rèn luyện cách giao tiếp lịch sự khi mua bán.Hoạt động thực hành: Tham gia Phiên chợ/Siêu thị tí hon; học sinh đóng vai người mua và người bán, thực hành lựa chọn hàng hóa, thanh toán đúng số tiền và kiểm tra tiền thừa sau khi mua.",
+                  "objectives":  "Thực hành mua bán đơn giản, tính tiền và trả tiền.",
+                  "requirements":  "Thực hành mua bán đơn giản, tính tiền và trả tiền.",
+                  "expectedProduct":  "Hóa đơn mua hàng đơn giản; kết quả thực hành mua bán và thanh toán đúng; phiếu đánh giá hoạt động nhóm.",
+                  "isProject":  false
+              },
+              {
+                  "periodIndex":  8,
+                  "topicName":  "Tiết kiệm mỗi ngày",
+                  "lessonName":  "Tiết kiệm là siêu năng lực",
+                  "mainActivities":  "Hoạt động mở đầu: Nghe kể chuyện hoặc xem video ngắn về một bạn nhỏ biết tiết kiệm; chia sẻ suy nghĩ sau câu chuyện.Hoạt động khám phá: Tìm hiểu ý nghĩa của việc tiết kiệm tiền, điện, nước, đồ dùng và thời gian; nhận biết những hành vi tiết kiệm và lãng phí trong cuộc sống hằng ngày.Hoạt động thực hành: Tham gia trò chơi \"Em chọn cách nào?\" để phân biệt hành vi tiết kiệm và lãng phí; lập bảng những việc em sẽ làm để thực hành tiết kiệm ở nhà và ở trường.",
+                  "objectives":  "Hiểu ý nghĩa của tiết kiệm đối với bản thân, gia đình và môi trường.Nêu được một số việc làm thể hiện sự tiết kiệm.",
+                  "requirements":  "Hiểu ý nghĩa của tiết kiệm đối với bản thân, gia đình và môi trường.Nêu được một số việc làm thể hiện sự tiết kiệm.",
+                  "expectedProduct":  "Bảng \"Việc em sẽ làm để tiết kiệm\"; poster hoặc tranh vẽ tuyên truyền về tiết kiệm.",
+                  "isProject":  false
+              },
+              {
+                  "periodIndex":  9,
+                  "topicName":  "Tiết kiệm mỗi ngày",
+                  "lessonName":  "Ước mơ trong ống heo",
+                  "mainActivities":  "Hoạt động mở đầu: Quan sát các mẫu heo đất, chia sẻ những món đồ hoặc ước mơ em muốn tiết kiệm để thực hiện.Hoạt động khám phá: Tìm hiểu cách lập mục tiêu tiết kiệm; biết xác định số tiền cần tiết kiệm và thời gian thực hiện để đạt được mục tiêu.Hoạt động thực hành: Trang trí ống heo hoặc làm hộp tiết kiệm; viết hoặc vẽ mục tiêu tiết kiệm của em lên \"Thẻ ước mơ\", chia sẻ kế hoạch tiết kiệm với bạn và giáo viên.",
+                  "objectives":  "Biết đặt mục tiêu tiết kiệm ngắn hạn.",
+                  "requirements":  "Biết đặt mục tiêu tiết kiệm ngắn hạn.",
+                  "expectedProduct":  "Ống heo hoặc hộp tiết kiệm tự trang trí; Thẻ mục tiêu tiết kiệm của cá nhân.",
+                  "isProject":  false
+              },
+              {
+                  "periodIndex":  10,
+                  "topicName":  "Tiết kiệm mỗi ngày",
+                  "lessonName":  "Tiết kiệm từ việc nhỏ",
+                  "mainActivities":  "Hoạt động mở đầu: Quan sát tranh về các hành động tiết kiệm và lãng phí; chia sẻ việc em đã từng làm để tiết kiệm ở nhà hoặc ở trường.Hoạt động khám phá: Tìm hiểu những việc làm đơn giản giúp tiết kiệm tiền, điện, nước, giấy, đồ dùng học tập và bảo vệ môi trường; nhận biết lợi ích của việc tiết kiệm hằng ngày.Hoạt động thực hành: Tham gia trò chơi \"Thử thách tiết kiệm\", xử lí các tình huống thực tế và xây dựng bảng cam kết thực hiện việc tiết kiệm mỗi ngày.",
+                  "objectives":  "Hình thành thói quen tiết kiệm điện, nước, đồ dùng và thời gian trong học tập và sinh hoạt hằng ngày.",
+                  "requirements":  "Hình thành thói quen tiết kiệm điện, nước, đồ dùng và thời gian trong học tập và sinh hoạt hằng ngày.",
+                  "expectedProduct":  "Bảng cam kết \"7 ngày thực hành tiết kiệm\"; nhật ký theo dõi việc tiết kiệm ở nhà và ở trường.",
+                  "isProject":  false
+              },
+              {
+                  "periodIndex":  11,
+                  "topicName":  "Tiết kiệm mỗi ngày",
+                  "lessonName":  "Nhật ký tiết kiệm",
+                  "mainActivities":  "Hoạt động mở đầu: Chia sẻ những việc em đã thực hiện để tiết kiệm trong tuần qua.Hoạt động khám phá: Tìm hiểu cách ghi nhật ký tiết kiệm; nhận biết lợi ích của việc theo dõi và duy trì thói quen tiết kiệm hằng ngày.Hoạt động thực hành: Hoàn thành Nhật ký tiết kiệm theo mẫu; chia sẻ kết quả với bạn, tự đánh giá việc thực hiện và đề ra mục tiêu tiết kiệm cho tuần tiếp theo.",
+                  "objectives":  "Theo dõi và tự đánh giá việc tiết kiệm hằng tuần.",
+                  "requirements":  "Theo dõi và tự đánh giá việc tiết kiệm hằng tuần.",
+                  "expectedProduct":  "Nhật ký tiết kiệm hoàn chỉnh trong một tuần; phiếu tự đánh giá việc thực hiện mục tiêu tiết kiệm.",
+                  "isProject":  false
+              },
+              {
+                  "periodIndex":  12,
+                  "topicName":  "Em làm chủ đồng tiền",
+                  "lessonName":  "Biết chia sẻ yêu thương",
+                  "mainActivities":  "Hoạt động mở đầu: Nghe kể chuyện hoặc xem tranh về một việc làm biết chia sẻ; trao đổi cảm nghĩ của em.Hoạt động khám phá: Tìm hiểu ý nghĩa của việc chia sẻ với gia đình, bạn bè và cộng đồng; nhận biết những cách chia sẻ phù hợp với lứa tuổi.Hoạt động thực hành: Tham gia hoạt động \"Hộp quà yêu thương\", lựa chọn đồ dùng hoặc số tiền tiết kiệm để chia sẻ; đóng vai xử lí các tình huống về tinh thần sẻ chia và trình bày thông điệp yêu thương.",
+                  "objectives":  "Hiểu ý nghĩa của chia sẻ và làm việc thiện phù hợp lứa tuổi.Biết dành một phần tiền hoặc đồ dùng để giúp đỡ người khác, hình thành lòng nhân ái.",
+                  "requirements":  "Hiểu ý nghĩa của chia sẻ và làm việc thiện phù hợp lứa tuổi.Biết dành một phần tiền hoặc đồ dùng để giúp đỡ người khác, hình thành lòng nhân ái.",
+                  "expectedProduct":  "Hộp quà yêu thương; tấm thiệp hoặc thông điệp chia sẻ; sản phẩm quyên góp tượng trưng (đồ dùng, sách, đồ chơi...).",
+                  "isProject":  false
+              },
+              {
+                  "periodIndex":  13,
+                  "topicName":  "Em làm chủ đồng tiền",
+                  "lessonName":  "Kế hoạch chi tiêu đầu tiên",
+                  "mainActivities":  "Hoạt động mở đầu: Quan sát tình huống \"Nếu em có 50.000 đồng, em sẽ sử dụng như thế nào?\" và chia sẻ ý kiến.Hoạt động khám phá: Tìm hiểu cách lập kế hoạch chi tiêu đơn giản; biết ưu tiên tiền cho nhu cầu thiết yếu, tiết kiệm và chia sẻ.Hoạt động thực hành: Lập kế hoạch chi tiêu cá nhân theo số tiền được giao; trình bày và giải thích cách phân chia tiền trước lớp.",
+                  "objectives":  "Biết chia tiền cho tiêu dùng, tiết kiệm và chia sẻ.Biết cách ghi chép thu, chi đơn giản.",
+                  "requirements":  "Biết chia tiền cho tiêu dùng, tiết kiệm và chia sẻ.Biết cách ghi chép thu, chi đơn giản.",
+                  "expectedProduct":  "Bảng kế hoạch chi tiêu cá nhân (tiêu dùng - tiết kiệm - chia sẻ); sơ đồ phân chia số tiền theo tình huống.",
+                  "isProject":  false
+              },
+              {
+                  "periodIndex":  14,
+                  "topicName":  "Em làm chủ đồng tiền",
+                  "lessonName":  "Nhà quản lí tài chính nhí",
+                  "mainActivities":  "Hoạt động mở đầu: Tham gia trò chơi ôn tập \"Rung chuông vàng\" hoặc \"Chiếc nón kỳ diệu\" về các kiến thức đã học.Hoạt động khám phá: Hệ thống hóa kiến thức về nhận biết tiền, chi tiêu thông minh, tiết kiệm và chia sẻ thông qua các tình huống thực tế.Hoạt động thực hành: Làm việc theo nhóm để giải quyết các tình huống tài chính; trình bày phương án và tự đánh giá, nhận xét lẫn nhau.",
+                  "objectives":  "Vận dụng kiến thức để giải quyết tình huống tài chính đơn giản.",
+                  "requirements":  "Vận dụng kiến thức để giải quyết tình huống tài chính đơn giản.",
+                  "expectedProduct":  "Phiếu giải quyết tình huống tài chính; sản phẩm thảo luận nhóm; bảng tổng hợp kiến thức đã học.",
+                  "isProject":  false
+              },
+              {
+                  "periodIndex":  15,
+                  "topicName":  "Dự án cuối khóa",
+                  "lessonName":  "Ngày hội tài chính nhí",
+                  "mainActivities":  "Hoạt động mở đầu: Tham gia khai mạc \"Ngày hội tài chính nhí\", giới thiệu các gian hàng và nhiệm vụ trải nghiệm.Hoạt động khám phá: Tham gia các trạm trải nghiệm: Nhận biết tiền – Mua sắm thông minh – Tiết kiệm – Chia sẻ; vận dụng kiến thức đã học để hoàn thành thử thách.Hoạt động thực hành: Tham gia Phiên chợ tuổi thơ, thực hành mua bán, thanh toán và lập kế hoạch chi tiêu; trưng bày sản phẩm (heo đất, kế hoạch tiết kiệm, nhật ký tiết kiệm), chia sẻ cảm nhận và nhận giấy chứng nhận \"Nhà quản lí tài chính nhí\".",
+                  "objectives":  "Tổng hợp kiến thức",
+                  "requirements":  "Tổng hợp kiến thức",
+                  "expectedProduct":  "Phiên chợ tuổi thơ",
+                  "isProject":  true
+              }
+          ],
+    "3":  [
+              {
+                  "periodIndex":  1,
+                  "topicName":  "Em là nhà quản lí tài chính nhí",
+                  "lessonName":  "Tiền dùng để làm gì?",
+                  "mainActivities":  "HĐ mở đầu: Trò chơi \"Đi chợ không dùng tiền\". HĐ khám phá: Quan sát tranh và thảo luận vai trò của tiền trong cuộc sống. HĐ thực hành: Phân loại hoạt động cần dùng tiền và không cần dùng tiền.",
+                  "objectives":  "Hiểu vai trò của tiền trong cuộc sống hằng ngày.",
+                  "requirements":  "Trình bày được công dụng của tiền; phân biệt hoạt động cần và không cần dùng tiền; hình thành ý thức trân trọng giá trị đồng tiền.",
+                  "expectedProduct":  "Phiếu phân loại \"Tiền dùng để làm gì?\"",
+                  "isProject":  false
+              },
+              {
+                  "periodIndex":  2,
+                  "topicName":  "Em là nhà quản lí tài chính nhí",
+                  "lessonName":  "Nhận biết các mệnh giá tiền Việt Nam",
+                  "mainActivities":  "HĐ mở đầu: Trò chơi \"Đoán tên đồng tiền\". HĐ khám phá: Quan sát các mệnh giá tiền Việt Nam. HĐ thực hành: Ghép mệnh giá, đổi tiền và mua bán đơn giản.",
+                  "objectives":  "Nhận biết các mệnh giá tiền Việt Nam thông dụng.",
+                  "requirements":  "Gọi đúng tên các mệnh giá; so sánh được giá trị của các tờ tiền; sử dụng đúng mệnh giá trong tình huống đơn giản.",
+                  "expectedProduct":  "Bộ thẻ mệnh giá tiền Việt Nam.",
+                  "isProject":  false
+              },
+              {
+                  "periodIndex":  3,
+                  "topicName":  "Em là nhà quản lí tài chính nhí",
+                  "lessonName":  "Đồng tiền từ đâu mà có?",
+                  "mainActivities":  "HĐ mở đầu: Xem tranh về các nghề nghiệp. HĐ khám phá: Tìm hiểu mối liên hệ giữa lao động và thu nhập. HĐ thực hành: Chia sẻ nghề nghiệp của người thân.",
+                  "objectives":  "Hiểu tiền được tạo ra từ lao động.",
+                  "requirements":  "Biết tiền là thành quả lao động; nhận thức được giá trị của công sức lao động; hình thành ý thức quý trọng đồng tiền.",
+                  "expectedProduct":  "Sơ đồ \"Tiền đến từ lao động\".",
+                  "isProject":  false
+              },
+              {
+                  "periodIndex":  4,
+                  "topicName":  "Em là nhà quản lí tài chính nhí",
+                  "lessonName":  "Nhu cầu và mong muốn",
+                  "mainActivities":  "HĐ mở đầu: Trò chơi lựa chọn. HĐ khám phá: So sánh nhu cầu và mong muốn. HĐ thực hành: Phân loại đồ dùng theo hai nhóm.",
+                  "objectives":  "Phân biệt nhu cầu và mong muốn cá nhân.",
+                  "requirements":  "Xác định được nhu cầu thiết yếu; biết ưu tiên khi chi tiêu; tránh mua sắm theo cảm xúc.",
+                  "expectedProduct":  "Bảng phân loại nhu cầu – mong muốn.",
+                  "isProject":  false
+              },
+              {
+                  "periodIndex":  5,
+                  "topicName":  "Em là nhà quản lí tài chính nhí",
+                  "lessonName":  "Em là người mua hàng thông minh",
+                  "mainActivities":  "HĐ mở đầu: Quan sát quảng cáo. HĐ khám phá: Tìm hiểu cách lựa chọn sản phẩm. HĐ thực hành: Đóng vai mua hàng.",
+                  "objectives":  "Biết lựa chọn sản phẩm phù hợp.",
+                  "requirements":  "So sánh giá, chất lượng và nhu cầu; lựa chọn sản phẩm hợp lí; biết cân nhắc trước khi mua.",
+                  "expectedProduct":  "Phiếu mua sắm thông minh.",
+                  "isProject":  false
+              },
+              {
+                  "periodIndex":  6,
+                  "topicName":  "Em là nhà quản lí tài chính nhí",
+                  "lessonName":  "Lập kế hoạch chi tiêu nhỏ",
+                  "mainActivities":  "HĐ mở đầu: Tình huống nhận tiền lì xì. HĐ khám phá: Các bước lập kế hoạch chi tiêu. HĐ thực hành: Thiết kế kế hoạch chi tiêu cá nhân.",
+                  "objectives":  "Biết lập kế hoạch sử dụng tiền.",
+                  "requirements":  "Phân chia tiền cho các mục đích; biết ưu tiên chi tiêu; tránh lãng phí.",
+                  "expectedProduct":  "Bảng kế hoạch chi tiêu.",
+                  "isProject":  false
+              },
+              {
+                  "periodIndex":  7,
+                  "topicName":  "Em là nhà quản lí tài chính nhí",
+                  "lessonName":  "Vì sao cần tiết kiệm?",
+                  "mainActivities":  "HĐ mở đầu: Kể chuyện \"Chú heo đất\". HĐ khám phá: Ý nghĩa của tiết kiệm. HĐ thực hành: Liệt kê việc làm tiết kiệm.",
+                  "objectives":  "Hiểu ý nghĩa của tiết kiệm.",
+                  "requirements":  "Nêu được lợi ích của tiết kiệm; thực hiện các hành vi tiết kiệm hằng ngày; hình thành thói quen tiết kiệm.",
+                  "expectedProduct":  "Poster \"Việc em có thể tiết kiệm\".",
+                  "isProject":  false
+              },
+              {
+                  "periodIndex":  8,
+                  "topicName":  "Em là nhà quản lí tài chính nhí",
+                  "lessonName":  "Mục tiêu tiết kiệm của em",
+                  "mainActivities":  "HĐ mở đầu: Chia sẻ món đồ mong muốn. HĐ khám phá: Xác định mục tiêu tiết kiệm. HĐ thực hành: Thiết kế kế hoạch tiết kiệm.",
+                  "objectives":  "Biết đặt mục tiêu tiết kiệm phù hợp.",
+                  "requirements":  "Xác định mục tiêu cụ thể; lập kế hoạch tiết kiệm; theo dõi tiến độ thực hiện.",
+                  "expectedProduct":  "Kế hoạch tiết kiệm cá nhân.",
+                  "isProject":  false
+              },
+              {
+                  "periodIndex":  9,
+                  "topicName":  "Em là nhà quản lí tài chính nhí",
+                  "lessonName":  "Thực hành tiết kiệm",
+                  "mainActivities":  "HĐ mở đầu: Quan sát hình ảnh. HĐ khám phá: Tiết kiệm điện, nước, giấy và tiền. HĐ thực hành: Thử thách tiết kiệm trong một tuần.",
+                  "objectives":  "Rèn luyện thói quen tiết kiệm trong cuộc sống.",
+                  "requirements":  "Thực hiện được các hành vi tiết kiệm; biết ghi nhận kết quả; có trách nhiệm với môi trường.",
+                  "expectedProduct":  "Nhật kí tiết kiệm.",
+                  "isProject":  false
+              },
+              {
+                  "periodIndex":  10,
+                  "topicName":  "Em là nhà quản lí tài chính nhí",
+                  "lessonName":  "Ghi chép thu – chi đơn giản",
+                  "mainActivities":  "HĐ mở đầu: Quan sát sổ thu chi. HĐ khám phá: Khái niệm thu và chi. HĐ thực hành: Ghi sổ thu – chi một tuần.",
+                  "objectives":  "Biết theo dõi việc sử dụng tiền.",
+                  "requirements":  "Phân biệt thu và chi; ghi chép chính xác; hình thành thói quen quản lí tiền.",
+                  "expectedProduct":  "Sổ thu – chi cá nhân.",
+                  "isProject":  false
+              },
+              {
+                  "periodIndex":  11,
+                  "topicName":  "Em là nhà quản lí tài chính nhí",
+                  "lessonName":  "Em quản lí tiền tiêu vặt",
+                  "mainActivities":  "HĐ mở đầu: Chia sẻ cách sử dụng tiền tiêu vặt. HĐ khám phá: Nguyên tắc sử dụng tiền tiêu vặt. HĐ thực hành: Xử lí tình huống chi tiêu.",
+                  "objectives":  "Biết sử dụng tiền tiêu vặt hợp lí.",
+                  "requirements":  "Chi tiêu đúng mục đích; biết cân nhắc trước khi mua; chịu trách nhiệm với quyết định của mình.",
+                  "expectedProduct":  "Phiếu xử lí tình huống.",
+                  "isProject":  false
+              },
+              {
+                  "periodIndex":  12,
+                  "topicName":  "Em là nhà quản lí tài chính nhí",
+                  "lessonName":  "Giải quyết tình huống tài chính",
+                  "mainActivities":  "HĐ mở đầu: Trò chơi \"Nếu là em\". HĐ khám phá: Phân tích các tình huống tài chính. HĐ thực hành: Thảo luận nhóm và đưa ra giải pháp.",
+                  "objectives":  "Phát triển năng lực ra quyết định tài chính.",
+                  "requirements":  "Biết lựa chọn phương án phù hợp; giải thích được lí do lựa chọn; hợp tác khi giải quyết vấn đề.",
+                  "expectedProduct":  "Bộ thẻ tình huống.",
+                  "isProject":  false
+              },
+              {
+                  "periodIndex":  13,
+                  "topicName":  "Em là nhà quản lí tài chính nhí",
+                  "lessonName":  "Chia sẻ và giúp đỡ người khác",
+                  "mainActivities":  "HĐ mở đầu: Kể chuyện về lòng nhân ái. HĐ khám phá: Ý nghĩa của việc chia sẻ. HĐ thực hành: Lập kế hoạch hoạt động thiện nguyện nhỏ.",
+                  "objectives":  "Hình thành tinh thần sẻ chia.",
+                  "requirements":  "Hiểu giá trị của việc giúp đỡ; biết chia sẻ phù hợp với khả năng; có tinh thần trách nhiệm với cộng đồng.",
+                  "expectedProduct":  "Kế hoạch \"Việc tốt của em\".",
+                  "isProject":  false
+              },
+              {
+                  "periodIndex":  14,
+                  "topicName":  "Em là nhà quản lí tài chính nhí",
+                  "lessonName":  "Bảo quản tiền và tài sản cá nhân",
+                  "mainActivities":  "HĐ mở đầu: Quan sát các tình huống mất đồ. HĐ khám phá: Cách bảo quản tiền và tài sản. HĐ thực hành: Xử lí tình huống an toàn.",
+                  "objectives":  "Biết bảo vệ tài sản cá nhân.",
+                  "requirements":  "Giữ gìn tiền và đồ dùng; nhận biết nguy cơ mất an toàn; biết nhờ người lớn hỗ trợ khi cần.",
+                  "expectedProduct":  "Cẩm nang bảo quản tài sản.",
+                  "isProject":  false
+              },
+              {
+                  "periodIndex":  15,
+                  "topicName":  "Em là nhà quản lí tài chính nhí",
+                  "lessonName":  "Em là nhà quản lí tài chính nhí",
+                  "mainActivities":  "HĐ mở đầu: Trò chơi ôn tập. HĐ khám phá: Tổng kết kiến thức đã học. HĐ thực hành: Thiết kế dự án quản lí một khoản tiền nhỏ và chia sẻ trước lớp.",
+                  "objectives":  "Vận dụng kiến thức và kĩ năng quản lí tài chính vào thực tế.",
+                  "requirements":  "Xây dựng được kế hoạch sử dụng tiền; biết chi tiêu, tiết kiệm và chia sẻ hợp lí; tự đánh giá quá trình học tập.",
+                  "expectedProduct":  "Hồ sơ \"Nhà quản lí tài chính nhí\".",
+                  "isProject":  true
+              }
+          ]
+}

@@ -63,6 +63,21 @@ export async function GET(req) {
           include: {
             subject: true
           }
+        },
+        studentSessions: {
+          include: {
+            session: {
+              select: {
+                id: true,
+                sessionCode: true,
+                name: true,
+                sessionDate: true,
+                startTime: true,
+                endTime: true,
+                room: true,
+              }
+            }
+          }
         }
       },
       orderBy: { createdAt: 'desc' }

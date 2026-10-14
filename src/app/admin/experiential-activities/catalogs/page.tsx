@@ -5,7 +5,7 @@ import {
   Plus, Search, Download, UploadCloud, Layers, Sparkles, 
   Building2, BookOpen, Calendar, MapPin, Edit3, Trash2, 
   RefreshCw, Award, Tag, Ban, RotateCcw, CheckSquare, 
-  UserCheck, Users, Sliders, CheckCircle2, Send
+  UserCheck, Users, Sliders, CheckCircle2, Send, ArrowUpDown
 } from 'lucide-react';
 import toast from 'react-hot-toast';
 import { ExperientialTabs } from '@/components/ExperientialTabs';
@@ -19,6 +19,7 @@ import {
   getEducationalThemeInfo,
   getEvaluationModeInfo
 } from '@/lib/experiential/catalog-types';
+import { formatTimeFrameAndSemester } from '@/lib/experiential/timeframe-helper';
 import { CatalogAddEditModal } from './components/CatalogAddEditModal';
 import { CatalogImportModal } from './components/CatalogImportModal';
 import { CatalogAllocateModal } from './components/CatalogAllocateModal';
@@ -133,6 +134,7 @@ function ActivityCatalogsContent() {
   const [academicYears, setAcademicYears] = useState<any[]>([]);
   const [selectedYearId, setSelectedYearId] = useState<string>('');
   const [catalogs, setCatalogs] = useState<ActivityCatalogItem[]>([]);
+  const [allCatalogs, setAllCatalogs] = useState<ActivityCatalogItem[]>([]);
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState('');
 
@@ -143,7 +145,8 @@ function ActivityCatalogsContent() {
   const [themeFilter, setThemeFilter] = useState<string>('ALL');
   const [themes, setThemes] = useState<EducationalThemeItem[]>(DEFAULT_EDUCATIONAL_THEMES);
   const [semesterFilter, setSemesterFilter] = useState<'ALL' | '1' | '2'>('ALL');
-  const [statusFilter, setStatusFilter] = useState<'ALL' | 'ACTIVE' | 'CANCELLED'>('ALL');
+  const [statusFilter, setStatusFilter] = useState<'ALL' | 'ACTIVE' | 'ALLOCATED' | 'UNALLOCATED' | 'CANCELLED'>('ALL');
+  const [timeSortOrder, setTimeSortOrder] = useState<'desc' | 'asc'>('desc');
 
   // Bulk actions state
   const [selectedIds, setSelectedIds] = useState<string[]>([]);
@@ -188,13 +191,15 @@ function ActivityCatalogsContent() {
     if (levelFilter !== 'ALL') url += `&level=${levelFilter}`;
     if (programTypeFilter !== 'ALL') url += `&programType=${programTypeFilter}`;
     if (categoryFilter !== 'ALL') url += `&category=${categoryFilter}`;
-    if (statusFilter !== 'ALL') url += `&status=${statusFilter}`;
+    if (statusFilter === 'ACTIVE' || statusFilter === 'CANCELLED') url += `&status=${statusFilter}`;
     if (search.trim()) url += `&q=${encodeURIComponent(search.trim())}`;
 
     fetch(url)
       .then(r => r.json())
       .then(data => {
-        let list = Array.isArray(data) ? data : [];
+        const rawList = Array.isArray(data) ? data : [];
+        setAllCatalogs(rawList);
+        let list = [...rawList];
         if (categoryFilter !== 'ALL') {
           list = list.filter(item => getActivityCategory(item) === categoryFilter);
         }
@@ -206,16 +211,46 @@ function ActivityCatalogsContent() {
           });
         }
         if (semesterFilter !== 'ALL') {
-          list = list.filter(item => item.meta?.semester === parseInt(semesterFilter, 10));
+          const targetSem = parseInt(semesterFilter, 10);
+          list = list.filter(item => {
+            const timeInfo = formatTimeFrameAndSemester(item.meta?.timeFrame, '2026-2027', item.meta?.semester);
+            return timeInfo.semester === targetSem;
+          });
         }
+        if (statusFilter === 'ALLOCATED') {
+          list = list.filter(item => item.meta?.allocatedCampuses && item.meta.allocatedCampuses.length > 0);
+        } else if (statusFilter === 'UNALLOCATED') {
+          list = list.filter(item => !item.meta?.allocatedCampuses || item.meta.allocatedCampuses.length === 0);
+        }
+
+        // Sắp xếp theo Thời gian & HK (mặc định Giảm dần theo yêu cầu)
+        const getTimeSortValue = (item: any): number => {
+          const meta = item?.meta || {};
+          const timeInfo = formatTimeFrameAndSemester(meta.timeFrame, '2026-2027', meta.semester);
+          const year = timeInfo.year || 2026;
+          const month = timeInfo.month !== null ? timeInfo.month : (timeInfo.semester === 2 ? 6 : 9);
+          const sem = timeInfo.semester || 1;
+          return year * 1000 + month * 10 + sem;
+        };
+
+        list.sort((a, b) => {
+          const valA = getTimeSortValue(a);
+          const valB = getTimeSortValue(b);
+          if (valA !== valB) {
+            return timeSortOrder === 'desc' ? valB - valA : valA - valB;
+          }
+          return (a.code || '').localeCompare(b.code || '');
+        });
+
         setCatalogs(list);
         setLoading(false);
       })
       .catch(() => {
+        setAllCatalogs([]);
         setCatalogs([]);
         setLoading(false);
       });
-  }, [selectedYearId, levelFilter, programTypeFilter, categoryFilter, themeFilter, semesterFilter, statusFilter, search]);
+  }, [selectedYearId, levelFilter, programTypeFilter, categoryFilter, themeFilter, semesterFilter, statusFilter, search, timeSortOrder]);
 
   useEffect(() => {
     loadCatalogs();
@@ -376,10 +411,11 @@ function ActivityCatalogsContent() {
   };
 
   // Stats calculation
-  const totalActivities = catalogs.length;
-  const eventCount = catalogs.filter(c => getActivityCategory(c) === 'HOAT_DONG_SU_KIEN').length;
-  const projectCount = catalogs.filter(c => getActivityCategory(c) === 'TRAI_NGHIEM_DU_AN').length;
-  const allocatedCount = catalogs.filter(c => c.meta?.allocatedCampuses && c.meta.allocatedCampuses.length > 0).length;
+  const sourceList = allCatalogs.length > 0 ? allCatalogs : catalogs;
+  const totalActivities = sourceList.length;
+  const eventCount = sourceList.filter(c => getActivityCategory(c) === 'HOAT_DONG_SU_KIEN').length;
+  const projectCount = sourceList.filter(c => getActivityCategory(c) === 'TRAI_NGHIEM_DU_AN').length;
+  const allocatedCount = sourceList.filter(c => c.meta?.allocatedCampuses && c.meta.allocatedCampuses.length > 0).length;
 
   return (
     <div className="space-y-5 max-w-[1600px] mx-auto pb-12 font-sans px-4 sm:px-6">
@@ -559,22 +595,37 @@ function ActivityCatalogsContent() {
               )}
             </button>
 
-            {/* Card 4: Đã bàn giao cơ sở */}
-            <div className="p-3.5 rounded-2xl border border-slate-200/90 bg-white">
+            {/* Card 4: Đã bàn giao cơ sở & Gán lớp */}
+            <button
+              type="button"
+              onClick={() => setStatusFilter(statusFilter === 'ALLOCATED' ? 'ALL' : 'ALLOCATED')}
+              className={`p-3.5 rounded-2xl border text-left transition-all cursor-pointer relative overflow-hidden group ${
+                statusFilter === 'ALLOCATED'
+                  ? 'bg-blue-50/70 border-blue-500 shadow-md ring-2 ring-blue-400/25'
+                  : 'bg-white border-slate-200/90 hover:border-blue-200 hover:bg-blue-50/20'
+              }`}
+            >
               <div className="flex items-center justify-between mb-1.5">
-                <span className="text-[11px] font-black uppercase tracking-wider text-slate-500">Đã bàn giao cơ sở</span>
-                <div className="w-7 h-7 rounded-xl bg-blue-50 text-blue-600 flex items-center justify-center">
+                <span className={`text-[11px] font-black uppercase tracking-wider ${statusFilter === 'ALLOCATED' ? 'text-blue-800' : 'text-slate-500'}`}>
+                  Đã bàn giao cơ sở
+                </span>
+                <div className={`w-7 h-7 rounded-xl flex items-center justify-center transition-colors ${statusFilter === 'ALLOCATED' ? 'bg-blue-200 text-blue-800' : 'bg-blue-50 text-blue-600'}`}>
                   <Building2 className="w-3.5 h-3.5" />
                 </div>
               </div>
               <div className="flex items-baseline gap-2">
-                <span className="text-2xl font-black text-slate-800">{allocatedCount}</span>
+                <span className={`text-2xl font-black ${statusFilter === 'ALLOCATED' ? 'text-blue-950' : 'text-slate-800'}`}>
+                  {allocatedCount}
+                </span>
                 <span className="text-xs font-bold text-slate-400">/ {totalActivities} hoạt động</span>
               </div>
-              <p className="text-[11px] text-slate-400 mt-1 line-clamp-1">
-                Đã đẩy dữ liệu xuống Tổ TLHN cơ sở
+              <p className={`text-[11px] mt-1 line-clamp-1 ${statusFilter === 'ALLOCATED' ? 'text-blue-700 font-bold' : 'text-slate-400'}`}>
+                {statusFilter === 'ALLOCATED' ? 'Đang lọc: Đã gán lớp' : 'Đã đẩy phân bổ cơ sở & lớp'}
               </p>
-            </div>
+              {statusFilter === 'ALLOCATED' && (
+                <div className="absolute bottom-0 left-0 right-0 h-1 bg-blue-500" />
+              )}
+            </button>
           </div>
 
           {/* Toolbar Lọc nâng cao: Bậc học, Hệ học, Chủ đề, Học kỳ, Trạng thái, Tìm kiếm */}
@@ -670,7 +721,7 @@ function ActivityCatalogsContent() {
                 </button>
               </div>
 
-              {/* Trạng thái */}
+              {/* Trạng thái / Tình trạng */}
               <div className="flex items-center gap-1 bg-slate-100 p-1 rounded-xl">
                 <button
                   onClick={() => setStatusFilter('ALL')}
@@ -687,6 +738,32 @@ function ActivityCatalogsContent() {
                   }`}
                 >
                   Áp dụng
+                </button>
+                <button
+                  onClick={() => setStatusFilter('ALLOCATED')}
+                  className={`px-2.5 py-1 rounded-lg text-xs font-bold transition-all cursor-pointer ${
+                    statusFilter === 'ALLOCATED' ? 'bg-white text-blue-700 shadow-2xs' : 'text-slate-600 hover:text-slate-900'
+                  }`}
+                  title="Chỉ hiển thị các hoạt động đã được gán lớp & cơ sở"
+                >
+                  <span className="flex items-center gap-1">
+                    <CheckCircle2 className="w-3 h-3 text-blue-600" />
+                    <span>Đã gán lớp</span>
+                    {allocatedCount > 0 && (
+                      <span className="text-[10px] font-black text-blue-800 bg-blue-100 px-1 rounded-sm">
+                        {allocatedCount}
+                      </span>
+                    )}
+                  </span>
+                </button>
+                <button
+                  onClick={() => setStatusFilter('UNALLOCATED')}
+                  className={`px-2.5 py-1 rounded-lg text-xs font-bold transition-all cursor-pointer ${
+                    statusFilter === 'UNALLOCATED' ? 'bg-white text-amber-700 shadow-2xs' : 'text-slate-600 hover:text-slate-900'
+                  }`}
+                  title="Chỉ hiển thị các hoạt động chưa được gán lớp"
+                >
+                  Chưa gán lớp
                 </button>
                 <button
                   onClick={() => setStatusFilter('CANCELLED')}
@@ -713,10 +790,21 @@ function ActivityCatalogsContent() {
             </div>
 
             {/* Nút làm mới & Đếm số */}
-            <div className="flex items-center gap-3">
+            <div className="flex items-center gap-2">
               <span className="text-xs text-slate-500 font-medium">
                 Hiển thị <span className="font-bold text-slate-800">{catalogs.length}</span> hoạt động
               </span>
+
+              {/* Nút chuyển đổi thứ tự sắp xếp Thời gian & HK */}
+              <button
+                type="button"
+                onClick={() => setTimeSortOrder(prev => (prev === 'desc' ? 'asc' : 'desc'))}
+                className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-bold text-[#003B3A] bg-teal-50 hover:bg-teal-100 border border-teal-200 shadow-2xs transition-all cursor-pointer"
+                title="Bấm để đổi chiều sắp xếp Thời gian & HK: Giảm dần ⇄ Tăng dần"
+              >
+                <ArrowUpDown className="w-3.5 h-3.5 text-[#00A19A]" />
+                <span>Thời gian: {timeSortOrder === 'desc' ? 'Giảm dần' : 'Tăng dần'}</span>
+              </button>
 
               <button
                 onClick={loadCatalogs}
@@ -748,7 +836,7 @@ function ActivityCatalogsContent() {
                   className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-bold text-teal-950 bg-gradient-to-r from-teal-300 to-emerald-300 hover:brightness-105 shadow-2xs transition-all cursor-pointer"
                 >
                   <UserCheck className="w-3.5 h-3.5" />
-                  <span>Gán GV CTHS ({selectedIds.length})</span>
+                  <span>Gán GVBM (TCM) ({selectedIds.length})</span>
                 </button>
 
                 <button
@@ -817,10 +905,26 @@ function ActivityCatalogsContent() {
                     <th className="py-3 px-3 min-w-[110px] whitespace-nowrap">Hệ học</th>
 
                     <th className="py-3 px-3 min-w-[140px]">Chủ đề giáo dục</th>
+                    <th className="py-3 px-3 min-w-[220px]">Nội dung giáo dục</th>
                     <th className="py-3 px-3 min-w-[130px]">Môn phối hợp</th>
-                    <th className="py-3 px-3 min-w-[100px] whitespace-nowrap">Thời gian & HK</th>
+                    <th 
+                      onClick={() => setTimeSortOrder(prev => (prev === 'desc' ? 'asc' : 'desc'))}
+                      className="py-3 px-3 min-w-[135px] whitespace-nowrap cursor-pointer select-none hover:bg-teal-50/70 transition-colors group"
+                      title="Bấm để đổi chiều sắp xếp theo Thời gian & HK: Giảm dần ⇄ Tăng dần"
+                    >
+                      <div className="flex items-center gap-1.5">
+                        <span>Thời gian & HK</span>
+                        <span className={`inline-flex items-center gap-0.5 px-1.5 py-0.2 rounded text-[10px] font-extrabold ${
+                          timeSortOrder === 'desc' 
+                            ? 'bg-teal-100 text-[#003B3A] border border-teal-300' 
+                            : 'bg-amber-100 text-amber-900 border border-amber-300'
+                        }`}>
+                          {timeSortOrder === 'desc' ? '↓ Giảm dần' : '↑ Tăng dần'}
+                        </span>
+                      </div>
+                    </th>
                     <th className="py-3 px-3 min-w-[110px]">Địa điểm</th>
-                    <th className="py-3 px-3 min-w-[150px]">GV Phụ trách (CTHS)</th>
+                    <th className="py-3 px-3 min-w-[155px]">GVBM Phụ trách (TCM)</th>
                     <th className="py-3 px-3 min-w-[160px]">Hình thức đánh giá</th>
                     <th className="py-3 px-3 min-w-[130px]">Cơ sở tiếp nhận</th>
                     <th className="py-3 px-3 text-center min-w-[110px] sticky right-0 bg-slate-50 border-l border-slate-200/80 shadow-xs">
@@ -832,14 +936,14 @@ function ActivityCatalogsContent() {
                 <tbody className="divide-y divide-slate-100 font-medium text-slate-700">
                   {loading ? (
                     <tr>
-                      <td colSpan={14} className="py-12 text-center text-slate-400">
+                      <td colSpan={15} className="py-12 text-center text-slate-400">
                         <RefreshCw className="w-6 h-6 animate-spin mx-auto mb-2 text-[#00A19A]" />
                         Đang tải danh mục hoạt động...
                       </td>
                     </tr>
                   ) : catalogs.length === 0 ? (
                     <tr>
-                      <td colSpan={14} className="py-12 text-center text-slate-400">
+                      <td colSpan={15} className="py-12 text-center text-slate-400">
                         <div className="w-12 h-12 rounded-2xl bg-slate-100 flex items-center justify-center mx-auto mb-3 text-slate-400">
                           <BookOpen className="w-6 h-6" />
                         </div>
@@ -867,6 +971,14 @@ function ActivityCatalogsContent() {
                       const allocatedCampuses = meta.allocatedCampuses || [];
                       const isSelected = selectedIds.includes(act.id);
                       const gradesInfo = formatGradesDisplay(meta.grades);
+                      const isAllocated = allocatedCampuses.length > 0;
+                      const totalAssignedClasses = allocatedCampuses.reduce((acc: number, a: any) => {
+                        const count = a.assignedClassesCount || (Array.isArray(a.assignedClasses) ? a.assignedClasses.length : 0) || (Array.isArray(a.selectedClassIds) ? a.selectedClassIds.length : 0);
+                        return acc + count;
+                      }, 0);
+                      const allocatedTooltip = isAllocated
+                        ? `Đã gán cho ${totalAssignedClasses > 0 ? `${totalAssignedClasses} lớp ` : ''}thuộc ${allocatedCampuses.map((a: any) => a.campusCode || a.campusName).join(', ')}`
+                        : 'Hoạt động này chưa được phân bổ xuống cơ sở và lớp';
 
                       // Danh sách Bậc học
                       const eduLevels = Array.isArray(meta.educationLevels) && meta.educationLevels.length > 0
@@ -940,6 +1052,28 @@ function ActivityCatalogsContent() {
                                     Áp dụng
                                   </span>
                                 )}
+                                {/* TÌNH TRẠNG GÁN LỚP */}
+                                {isAllocated ? (
+                                  <span 
+                                    className="inline-flex items-center gap-1 px-1.5 py-0.2 rounded-md text-[10px] font-extrabold bg-blue-50 text-blue-700 border border-blue-200 shadow-2xs cursor-help"
+                                    title={allocatedTooltip}
+                                  >
+                                    <CheckCircle2 className="w-2.5 h-2.5 text-blue-600 shrink-0" />
+                                    <span>Đã gán lớp</span>
+                                    {totalAssignedClasses > 0 && (
+                                      <span className="bg-blue-100 text-blue-800 px-1 rounded-sm text-[9px] font-mono font-bold">
+                                        {totalAssignedClasses}
+                                      </span>
+                                    )}
+                                  </span>
+                                ) : (
+                                  <span 
+                                    className="inline-flex items-center gap-1 px-1.5 py-0.2 rounded-md text-[10px] font-medium bg-slate-50 text-slate-400 border border-slate-200"
+                                    title={allocatedTooltip}
+                                  >
+                                    <span>Chưa gán lớp</span>
+                                  </span>
+                                )}
                               </div>
                             </div>
                           </td>
@@ -995,6 +1129,17 @@ function ActivityCatalogsContent() {
                             )}
                           </td>
 
+                          {/* Nội dung giáo dục */}
+                          <td className="py-2.5 px-3 align-middle">
+                            {meta.educationalContent ? (
+                              <div className="line-clamp-2 text-slate-700 font-medium text-[11px] leading-relaxed max-w-[240px]" title={meta.educationalContent}>
+                                {meta.educationalContent}
+                              </div>
+                            ) : (
+                              <span className="text-slate-400 font-normal italic">—</span>
+                            )}
+                          </td>
+
                           {/* Môn phối hợp / Tích hợp */}
                           <td className="py-2.5 px-3 align-middle">
                             {meta.primarySubjectName && (
@@ -1011,8 +1156,28 @@ function ActivityCatalogsContent() {
 
                           {/* Thời gian & HK */}
                           <td className="py-2.5 px-3 text-slate-600 align-middle whitespace-nowrap">
-                            <div className="font-bold text-slate-800">{meta.timeFrame || '—'}</div>
-                            <div className="text-[10px] text-slate-400">Học kỳ {meta.semester || 1}</div>
+                            {(() => {
+                              const timeInfo = formatTimeFrameAndSemester(meta.timeFrame, '2026-2027', meta.semester);
+                              return (
+                                <div className="space-y-0.5">
+                                  <div className="font-extrabold text-[12px] text-slate-800 flex items-center gap-1">
+                                    <Calendar className="w-3 h-3 text-[#00A19A] shrink-0" />
+                                    <span>{timeInfo.formattedTime}</span>
+                                  </div>
+                                  <div>
+                                    {timeInfo.semester === 1 ? (
+                                      <span className="inline-flex items-center gap-0.5 px-1.5 py-0.2 rounded-md text-[10px] font-extrabold bg-sky-50 text-sky-700 border border-sky-200 shadow-2xs">
+                                        Học kỳ 1
+                                      </span>
+                                    ) : (
+                                      <span className="inline-flex items-center gap-0.5 px-1.5 py-0.2 rounded-md text-[10px] font-extrabold bg-amber-50 text-amber-700 border border-amber-200 shadow-2xs">
+                                        Học kỳ 2
+                                      </span>
+                                    )}
+                                  </div>
+                                </div>
+                              );
+                            })()}
                           </td>
 
                           {/* Địa điểm */}
@@ -1025,24 +1190,28 @@ function ActivityCatalogsContent() {
                             </div>
                           </td>
 
-                          {/* GV Phụ trách (Tổ CTHS) */}
+                          {/* GVBM Phụ trách (Tổ Chuyên Môn) */}
                           <td className="py-2.5 px-3 align-middle">
-                            {meta.cthsTeacherName || (Array.isArray(meta.cthsTeachers) && meta.cthsTeachers.length > 0) ? (
+                            {meta.subjectTeacherName || meta.cthsTeacherName || (Array.isArray(meta.assignedTeachers) && meta.assignedTeachers.length > 0) || (Array.isArray(meta.cthsTeachers) && meta.cthsTeachers.length > 0) ? (
                               (() => {
-                                const teacherList = Array.isArray(meta.cthsTeachers) && meta.cthsTeachers.length > 0
-                                  ? meta.cthsTeachers
-                                  : [{
-                                      id: meta.cthsTeacherId || '',
-                                      teacherCode: meta.cthsTeacherCode || '',
-                                      teacherName: meta.cthsTeacherName || '',
-                                      campusCode: meta.cthsTeacherCampus || '',
-                                      phone: meta.cthsTeacherPhone || '',
-                                      email: meta.cthsTeacherEmail || ''
-                                    }];
+                                const teacherList = (Array.isArray(meta.assignedTeachers) && meta.assignedTeachers.length > 0)
+                                  ? meta.assignedTeachers
+                                  : (Array.isArray(meta.cthsTeachers) && meta.cthsTeachers.length > 0)
+                                    ? meta.cthsTeachers
+                                    : [{
+                                        id: meta.subjectTeacherId || meta.cthsTeacherId || '',
+                                        teacherCode: meta.subjectTeacherCode || meta.cthsTeacherCode || '',
+                                        teacherName: meta.subjectTeacherName || meta.cthsTeacherName || '',
+                                        departmentName: meta.departmentName || '',
+                                        campusCode: meta.cthsTeacherCampus || '',
+                                        phone: meta.cthsTeacherPhone || '',
+                                        email: meta.subjectTeacherEmail || meta.cthsTeacherEmail || ''
+                                      }];
                                 const firstTeacher = teacherList[0];
                                 const extraCount = teacherList.length - 1;
+                                const deptLabel = firstTeacher?.departmentName || meta.departmentName || '';
                                 const fullTooltip = teacherList.map((t: any) => 
-                                  `• ${t.teacherName} (Mã: ${t.teacherCode || '—'})${t.campusCode ? ` - CS: ${t.campusCode}` : ''}${t.phone ? ` - SĐT: ${t.phone}` : ''}${t.email ? ` - Email: ${t.email}` : ''}`
+                                  `• ${t.teacherName} (Mã: ${t.teacherCode || '—'})${t.departmentName ? ` - TCM: ${t.departmentName}` : ''}${t.campusCode ? ` - CS: ${t.campusCode}` : ''}${t.phone ? ` - SĐT: ${t.phone}` : ''}${t.email ? ` - Email: ${t.email}` : ''}`
                                 ).join('\n');
 
                                 return (
@@ -1053,10 +1222,10 @@ function ActivityCatalogsContent() {
                                       setIsAssignCTHSOpen(true);
                                     }}
                                     className="group cursor-pointer inline-flex items-center gap-2 px-2.5 py-1.5 rounded-xl bg-teal-50 border border-teal-200 hover:bg-teal-100 hover:border-teal-300 transition-all text-left shadow-2xs"
-                                    title={`GV Phụ trách Tổ CTHS:\n${fullTooltip}\n(Bấm để xem chi tiết / thay đổi)`}
+                                    title={`GVBM Phụ trách theo Tổ chuyên môn:\n${fullTooltip}\n(Bấm để xem chi tiết / thay đổi)`}
                                   >
                                     <div className="w-6 h-6 rounded-full bg-[#00A19A] text-white flex items-center justify-center text-[10px] font-black shrink-0 shadow-2xs">
-                                      {firstTeacher?.teacherName?.split(' ').slice(-1)[0]?.charAt(0) || 'C'}
+                                      {firstTeacher?.teacherName?.split(' ').slice(-1)[0]?.charAt(0) || 'G'}
                                     </div>
                                     <div className="min-w-0">
                                       <div className="text-[11px] font-extrabold text-teal-950 truncate max-w-[130px] flex items-center gap-1 leading-tight">
@@ -1067,12 +1236,14 @@ function ActivityCatalogsContent() {
                                           </span>
                                         )}
                                       </div>
-                                      <div className="text-[10px] text-teal-700 font-medium flex items-center gap-1">
-                                        {firstTeacher?.teacherCode && (
-                                          <span className="font-mono">{firstTeacher.teacherCode}</span>
-                                        )}
+                                      <div className="text-[10px] text-teal-800 font-medium flex items-center gap-1 truncate max-w-[140px]">
+                                        {deptLabel ? (
+                                          <span className="font-bold text-[#003B3A]">TCM: {deptLabel}</span>
+                                        ) : firstTeacher?.teacherCode ? (
+                                          <span className="font-mono text-teal-700">{firstTeacher.teacherCode}</span>
+                                        ) : null}
                                         {firstTeacher?.campusCode && (
-                                          <span>• {firstTeacher.campusCode}</span>
+                                          <span className="text-slate-500">• {firstTeacher.campusCode}</span>
                                         )}
                                       </div>
                                     </div>
@@ -1088,10 +1259,10 @@ function ActivityCatalogsContent() {
                                   setIsAssignCTHSOpen(true);
                                 }}
                                 className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-xl text-[11px] font-semibold text-slate-500 hover:text-[#00A19A] hover:bg-teal-50 border border-dashed border-slate-300 hover:border-teal-400 transition-all cursor-pointer shadow-2xs"
-                                title="Bấm để phân công GV thuộc Tổ CTHS phụ trách"
+                                title="Bấm để phân công GVBM theo Tổ chuyên môn phụ trách"
                               >
                                 <UserCheck className="w-3.5 h-3.5 text-slate-400" />
-                                <span>+ Gán GV</span>
+                                <span>+ Gán GVBM</span>
                               </button>
                             )}
                           </td>
@@ -1137,22 +1308,31 @@ function ActivityCatalogsContent() {
                           {/* Cơ sở tiếp nhận */}
                           <td className="py-2.5 px-3 align-middle">
                             {allocatedCampuses.length === 0 ? (
-                              <span className="text-[10px] text-slate-400 italic">Chưa đẩy cơ sở</span>
+                              <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md text-[10px] font-medium bg-slate-50 text-slate-400 border border-slate-200">
+                                Chưa gán lớp
+                              </span>
                             ) : (
-                              <div className="space-y-0.5">
-                                {allocatedCampuses.map((a: any) => {
-                                  const isDeployed = a.status === 'DA_TRIEN_KHAI';
-                                  const isAccepted = a.status === 'DA_TIEP_NHAN';
-                                  return (
-                                    <div key={a.campusId} className="flex items-center gap-1.5">
-                                      <span className={`w-1.5 h-1.5 rounded-full shrink-0 ${isDeployed ? 'bg-emerald-500' : isAccepted ? 'bg-amber-500' : 'bg-slate-300'}`} />
-                                      <span className="text-[11px] font-bold text-slate-700">{a.campusCode || a.campusName}</span>
-                                      <span className="text-[10px] text-slate-400">
-                                        {isDeployed ? '(Triển khai)' : isAccepted ? '(Đã nhận)' : '(Chờ)'}
-                                      </span>
-                                    </div>
-                                  );
-                                })}
+                              <div className="space-y-1">
+                                <div className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded-md text-[10px] font-extrabold bg-blue-50 text-blue-700 border border-blue-200 shadow-2xs">
+                                  <CheckCircle2 className="w-2.5 h-2.5 text-blue-600 shrink-0" />
+                                  <span>Đã gán {totalAssignedClasses > 0 ? `${totalAssignedClasses} lớp` : 'lớp'}</span>
+                                </div>
+                                <div className="space-y-0.5">
+                                  {allocatedCampuses.map((a: any) => {
+                                    const isDeployed = a.status === 'DA_TRIEN_KHAI';
+                                    const isAccepted = a.status === 'DA_TIEP_NHAN';
+                                    const classCount = a.assignedClassesCount || (Array.isArray(a.assignedClasses) ? a.assignedClasses.length : 0) || (Array.isArray(a.selectedClassIds) ? a.selectedClassIds.length : 0);
+                                    return (
+                                      <div key={a.campusId} className="flex items-center gap-1.5">
+                                        <span className={`w-1.5 h-1.5 rounded-full shrink-0 ${isDeployed ? 'bg-emerald-500' : isAccepted ? 'bg-amber-500' : 'bg-slate-300'}`} />
+                                        <span className="text-[11px] font-bold text-slate-700">{a.campusCode || a.campusName}</span>
+                                        <span className="text-[10px] text-slate-500">
+                                          {classCount > 0 ? `(${classCount} lớp)` : isDeployed ? '(Triển khai)' : isAccepted ? '(Đã nhận)' : '(Chờ)'}
+                                        </span>
+                                      </div>
+                                    );
+                                  })}
+                                </div>
                               </div>
                             )}
                           </td>
@@ -1160,18 +1340,31 @@ function ActivityCatalogsContent() {
                           {/* Thao tác (Sticky right) */}
                           <td className="py-2.5 px-2 text-center sticky right-0 bg-white/95 backdrop-blur-xs border-l border-slate-200/80 shadow-xs align-middle">
                             <div className="flex items-center justify-center gap-1">
-                              {/* Đẩy Hoạt Động Xuống Cơ Sở & Báo Mail GV Tổ TLHN */}
+                              {/* Đẩy Hoạt Động Xuống Cơ Sở & Báo Mail GV Tổ TLHN / Gán Lớp */}
                               <button
                                 type="button"
                                 onClick={() => {
                                   setAllocatingItem(act);
                                   setIsAllocateOpen(true);
                                 }}
-                                className="inline-flex items-center gap-1 px-2 py-1 rounded-xl bg-blue-50 hover:bg-blue-100 text-blue-700 border border-blue-200/80 font-bold text-[11px] transition-all cursor-pointer shadow-2xs shrink-0"
-                                title="Đẩy Hoạt Động Xuống Cơ Sở & Báo Mail GV Tổ TLHN"
+                                className={`inline-flex items-center gap-1 px-2 py-1 rounded-xl font-bold text-[11px] transition-all cursor-pointer shadow-2xs shrink-0 ${
+                                  isAllocated
+                                    ? 'bg-blue-100 hover:bg-blue-200/80 text-blue-800 border border-blue-300'
+                                    : 'bg-blue-50 hover:bg-blue-100 text-blue-700 border border-blue-200/80'
+                                }`}
+                                title={isAllocated ? `Đã gán ${totalAssignedClasses > 0 ? `${totalAssignedClasses} lớp` : ''} - Bấm để chỉnh sửa phân bổ hoặc gửi email` : "Đẩy Hoạt Động Xuống Cơ Sở & Gán lớp"}
                               >
-                                <Send className="w-3.5 h-3.5 text-blue-600" />
-                                <span>Đẩy cơ sở</span>
+                                {isAllocated ? (
+                                  <>
+                                    <CheckCircle2 className="w-3.5 h-3.5 text-blue-600 shrink-0" />
+                                    <span>Đã gán lớp</span>
+                                  </>
+                                ) : (
+                                  <>
+                                    <Send className="w-3.5 h-3.5 text-blue-600 shrink-0" />
+                                    <span>Đẩy cơ sở</span>
+                                  </>
+                                )}
                               </button>
 
                               {/* Chỉnh sửa */}
@@ -1182,9 +1375,22 @@ function ActivityCatalogsContent() {
                                   setIsAddEditOpen(true);
                                 }}
                                 className="p-1.5 rounded-lg text-slate-500 hover:text-[#00A19A] hover:bg-teal-50 transition-colors cursor-pointer"
-                                title="Chỉnh sửa hoạt động"
+                                title="Chỉnh sửa toàn bộ thông tin hoạt động"
                               >
                                 <Edit3 className="w-3.5 h-3.5" />
+                              </button>
+
+                              {/* Cấu hình Tiêu chí & Rubric Đánh giá */}
+                              <button
+                                type="button"
+                                onClick={() => {
+                                  setEvalConfigItem(act);
+                                  setIsConfigEvalOpen(true);
+                                }}
+                                className="p-1.5 rounded-lg text-amber-600 hover:text-amber-800 hover:bg-amber-50 transition-colors cursor-pointer"
+                                title="Cấu hình Chuyên môn & Tiêu chí Đánh giá"
+                              >
+                                <Sliders className="w-3.5 h-3.5" />
                               </button>
 
                               {/* Hủy / Kích hoạt lại */}

@@ -8,7 +8,7 @@ import {
   Square, Users, BookOpen, Calendar, Tag, ChevronDown,
   CheckCheck, Sparkles, Award, Filter, ShieldCheck, CheckCircle, 
   Download, Upload, FileSpreadsheet, Send, AlertTriangle,
-  Info, Clock, Lock, Unlock, Check, Printer, FileText, ExternalLink, Mail
+  Info, Clock, Lock, Unlock, Check, Printer, FileText, ExternalLink, Mail, Sliders
 } from 'lucide-react';
 import toast from 'react-hot-toast';
 import * as XLSX from 'xlsx';
@@ -17,10 +17,9 @@ import {
   STRAND_QUICK_REMARKS, ACTIVITY_STRANDS,
   PRESCHOOL_EVAL_LEVELS, PRESCHOOL_QUICK_REMARKS, CORE_THEME_AXES, SLA_EVALUATION_DAYS
 } from '@/lib/experiential/constants';
-import { 
-  calculateStudentResult, getRatingBadgeProps, getRatingLabel 
-} from '@/lib/experiential/formula';
+import { calculateStudentResult, getRatingBadgeProps, getRatingLabel } from '@/lib/experiential/formula';
 import { ActivityProgressModal } from '../components/ActivityProgressModal';
+import { TeacherProfessionalConfigModal } from '../components/TeacherProfessionalConfigModal';
 
 export default function ActivityResultInput() {
   const router = useRouter();
@@ -67,6 +66,9 @@ export default function ActivityResultInput() {
 
   // Progress & Reminder Modal
   const [showProgressModal, setShowProgressModal] = useState(false);
+
+  // Professional Config Modal (GV Phụ trách / TCM)
+  const [showProfessionalConfigModal, setShowProfessionalConfigModal] = useState(false);
 
   // Load Activity & Students
   const loadData = useCallback(async () => {
@@ -576,6 +578,15 @@ export default function ActivityResultInput() {
                 >
                   <Send className="w-3.5 h-3.5 text-blue-600" />
                   <span>Đẩy cơ sở & Báo mail</span>
+                </button>
+
+                <button
+                  onClick={() => setShowProfessionalConfigModal(true)}
+                  className="px-3.5 py-2.5 bg-amber-50 hover:bg-amber-100 border border-amber-200 text-amber-900 text-xs font-black rounded-xl shadow-2xs transition-all flex items-center gap-1.5 cursor-pointer"
+                  title="Cấu hình Chuyên môn: Yêu cầu cần đạt, Hình thức tổ chức, Sản phẩm học tập & Tiêu chí đánh giá"
+                >
+                  <Sliders className="w-3.5 h-3.5 text-amber-600" />
+                  <span>Cấu hình Chuyên môn & Tiêu chí</span>
                 </button>
               </>
             )}
@@ -1623,6 +1634,15 @@ export default function ActivityResultInput() {
           isOpen={showProgressModal}
           onClose={() => setShowProgressModal(false)}
         />
+        {showProfessionalConfigModal && (
+          <TeacherProfessionalConfigModal
+            isOpen={showProfessionalConfigModal}
+            onClose={() => setShowProfessionalConfigModal(false)}
+            onSaved={loadData}
+            activityId={id as string}
+            initialData={activity}
+          />
+        )}
         <style dangerouslySetInnerHTML={{ __html: `
           @media print {
             body * {

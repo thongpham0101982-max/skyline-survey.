@@ -56,6 +56,7 @@ interface StudentProfile {
   enrollmentDate: string | null;
   emergencyContact: string | null;
   allergies?: string | null;
+  specialGradeEntries?: any[];
 }
 export default function HoSoClient() {
   const [campuses, setCampuses] = useState<Campus[]>([]);
@@ -646,6 +647,55 @@ export default function HoSoClient() {
                     </span>
                   </div>
                 </div>
+              </div>
+
+              {/* MÔN HỌC ĐẶC THÙ SKY-LINE */}
+              <div>
+                <h4 className="text-xs font-bold text-slate-400 uppercase tracking-wider mb-3 flex items-center justify-between">
+                  <span className="flex items-center gap-1.5 text-teal-800">
+                    <Sparkles className="w-4 h-4 text-[#00A19A]" />
+                    Môn học đặc thù Sky-Line
+                  </span>
+                  <span className="text-[10px] px-2 py-0.5 rounded-full bg-teal-50 text-teal-800 border border-teal-200">
+                    {selectedStudent.specialGradeEntries?.length || 0} bài đã đánh giá
+                  </span>
+                </h4>
+                {selectedStudent.specialGradeEntries && selectedStudent.specialGradeEntries.length > 0 ? (
+                  <div className="space-y-2 max-h-48 overflow-y-auto pr-1">
+                    {selectedStudent.specialGradeEntries.map((ge: any) => (
+                      <div key={ge.id} className="p-3 bg-slate-50 rounded-xl border border-slate-200/80 flex items-center justify-between text-xs">
+                        <div>
+                          <div className="font-bold text-slate-900">
+                            Tiết {ge.lesson?.periodIndex || 1}: {ge.lesson?.lessonName || "Bài học"}
+                          </div>
+                          <div className="text-[11px] text-slate-500">
+                            {ge.assignment?.subject?.name} • GV: {ge.assignment?.teacher?.teacherName}
+                          </div>
+                          {ge.teacherFeedback && (
+                            <div className="text-[11px] text-slate-600 mt-1 italic">
+                              "{ge.teacherFeedback}"
+                            </div>
+                          )}
+                        </div>
+                        <div className="text-right shrink-0 ml-3">
+                          <span className={`inline-block px-2 py-0.5 rounded-full text-[10px] font-bold ${
+                            ge.evalResult === "TOT"
+                              ? "bg-emerald-100 text-emerald-800 border border-emerald-200"
+                              : ge.evalResult === "DAT"
+                              ? "bg-teal-100 text-teal-800 border border-teal-200"
+                              : "bg-amber-100 text-amber-800 border border-amber-200"
+                          }`}>
+                            {ge.evalResult === "TOT" ? "Tốt" : ge.evalResult === "DAT" ? "Đạt" : "Cần cố gắng"}
+                          </span>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                ) : (
+                  <div className="p-4 rounded-xl bg-slate-50 border border-dashed border-slate-200 text-center text-xs text-slate-400">
+                    Chưa có dữ liệu đánh giá môn học đặc thù cho học sinh này
+                  </div>
+                )}
               </div>
             </div>
 

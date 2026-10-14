@@ -407,8 +407,7 @@ export async function getObservationData(academicYearId?: string) {
           }),
           prisma.class.findMany({
             where: {
-              status: "ACTIVE",
-              ...(activeYearId ? { academicYearId: activeYearId } : {})
+              status: "ACTIVE"
             },
             select: { id: true, classCode: true, className: true, level: true, grade: true, campusId: true, academicYearId: true, homeroomTeacherId: true },
             orderBy: { className: "asc" }
@@ -615,7 +614,22 @@ export async function getObservationSlots(filters: {
       }
     }
     if (filters.grade && filters.grade !== "all") {
-      andConditions.push({ grade: filters.grade })
+      if (filters.level === "Mầm non") {
+        const fg = filters.grade.toLowerCase();
+        if (fg.includes("mẫu giáo bé") || fg === "mầm" || fg.includes("3 đến 4") || fg.includes("3-4")) {
+          andConditions.push({ grade: { in: ["Mẫu giáo bé", "Mầm", "3 đến 4 tuổi", "Mẫu giáo bé (3 - 4 tuổi)"] } });
+        } else if (fg.includes("mẫu giáo nhỡ") || fg === "chồi" || fg.includes("4 đến 5") || fg.includes("4-5")) {
+          andConditions.push({ grade: { in: ["Mẫu giáo nhỡ", "Chồi", "4 đến 5 tuổi", "Mẫu giáo nhỡ (4 - 5 tuổi)"] } });
+        } else if (fg.includes("mẫu giáo lớn") || fg === "lá" || fg.includes("5 đến 6") || fg.includes("5-6")) {
+          andConditions.push({ grade: { in: ["Mẫu giáo lớn", "Lá", "5 đến 6 tuổi", "Mẫu giáo lớn (5 - 6 tuổi)"] } });
+        } else if (fg.includes("nhà trẻ") || fg.includes("tháng")) {
+          andConditions.push({ grade: { in: ["Nhà trẻ", "Nhà trẻ 24-36 tháng", "Nhà trẻ 18-24 tháng", "Nhà trẻ 12-18 tháng", "24 đến 36 tháng"] } });
+        } else {
+          andConditions.push({ grade: filters.grade });
+        }
+      } else {
+        andConditions.push({ grade: filters.grade });
+      }
     }
     if (filters.period && filters.period !== "all") {
       andConditions.push({ startTime: filters.period })
@@ -817,6 +831,62 @@ export async function getObservationSlots(filters: {
   }
 }
 
+async function resolveActualSlotCampus(params: {
+  classId?: string | null
+  className?: string | null
+  campusId?: string | null
+  campusName?: string | null
+  fallbackTeacher?: any
+}) {
+  let resolvedCampusId = params.campusId || null
+  let resolvedCampusName = params.campusName || null
+
+  // 1. If classId is provided, check the class in DB
+  if (params.classId) {
+    try {
+      const cls = await prisma.class.findUnique({
+        where: { id: params.classId },
+        include: { campus: true }
+      })
+      if (cls) {
+        if (cls.campusId) resolvedCampusId = cls.campusId
+        if (cls.campus?.campusName) resolvedCampusName = cls.campus.campusName
+      }
+    } catch {}
+  }
+
+  // 2. Check class name for _CSx / .CSx / CSx pattern
+  const cName = (params.className || "").trim()
+  if (cName) {
+    const match = cName.match(/[-_. ](CS\d+)/i)
+    if (match) {
+      const suffix = match[1].toUpperCase()
+      try {
+        const foundCampus = await prisma.campus.findFirst({
+          where: {
+            OR: [
+              { campusName: suffix },
+              { campusCode: suffix }
+            ]
+          }
+        })
+        if (foundCampus) {
+          resolvedCampusId = foundCampus.id
+          resolvedCampusName = foundCampus.campusName
+        }
+      } catch {}
+    }
+  }
+
+  // 3. Fallback to teacher campus if still null
+  if (!resolvedCampusId && params.fallbackTeacher) {
+    resolvedCampusId = params.fallbackTeacher.campusId || null
+    resolvedCampusName = params.fallbackTeacher.campus?.campusName || null
+  }
+
+  return { campusId: resolvedCampusId, campusName: resolvedCampusName }
+}
+
 export async function createObservationSlot(data: {
   subjectId?: string
   subjectName: string
@@ -912,6 +982,14 @@ export async function createObservationSlot(data: {
         throw new Error(`Thầy/Cô đã đạt giới hạn tạo tối đa 2 tiết dạy trong tháng ${slotDate.getMonth() + 1}/${slotDate.getFullYear()}.`)
       }
 
+      const resolvedCampus = await resolveActualSlotCampus({
+        classId: data.classId,
+        className: data.className,
+        campusId: data.campusId,
+        campusName: data.campusName,
+        fallbackTeacher: currentTeacher
+      });
+
       return await tx.observationSlot.create({
         data: {
           teacherId: currentTeacher.id,
@@ -930,8 +1008,8 @@ export async function createObservationSlot(data: {
           targetDeptId: data.targetDeptId || currentTeacher.departmentId || null,
           maxSeats: 4,
           status: "ACTIVE",
-          campusId: data.campusId || null,
-          campusName: data.campusName || null,
+          campusId: resolvedCampus.campusId,
+          campusName: resolvedCampus.campusName,
           classId: data.classId || null,
           className: data.className || null,
           lessonPlanName: data.lessonPlanName || null,
@@ -2785,6 +2863,14 @@ export async function updateObservationSlot(slotId: string, data: {
       yearId = matchingYear?.id || activeYear?.id || null
     }
 
+    const resolvedCampus = await resolveActualSlotCampus({
+      classId: data.classId !== undefined ? data.classId : slot.classId,
+      className: data.className !== undefined ? data.className : slot.className,
+      campusId: data.campusId,
+      campusName: data.campusName,
+      fallbackTeacher: currentTeacher
+    });
+
     const updatedSlot = await prisma.observationSlot.update({
       where: { id: slotId },
       data: {
@@ -2815,8 +2901,8 @@ export async function updateObservationSlot(slotId: string, data: {
         })(),
         visibilityType: data.visibilityType,
         targetDeptId: data.targetDeptId || null,
-        campusId: data.campusId || null,
-        campusName: data.campusName || null,
+        campusId: resolvedCampus.campusId,
+        campusName: resolvedCampus.campusName,
         classId: data.classId || null,
         className: data.className || null,
         lessonPlanName: data.lessonPlanName !== undefined ? data.lessonPlanName : slot.lessonPlanName,
@@ -3173,6 +3259,12 @@ export async function requestObservationSlot(data: {
       return { success: false, error: "Không thể xin dự giờ các tiết dạy thuộc các tháng trước. Vui lòng chọn ngày trong tháng hiện tại hoặc các tháng sau!" };
     }
 
+    const resolvedCampus = await resolveActualSlotCampus({
+      classId: data.classId,
+      className: data.className,
+      fallbackTeacher: hostTeacher
+    });
+
     // Atomic database creation: ObservationSlot with initial Registration
     let newSlot: any;
     const slotCreateData: any = {
@@ -3195,8 +3287,8 @@ export async function requestObservationSlot(data: {
       status: "PENDING_TEACHER_APPROVAL",
       requestOrigin: "OBSERVER_REQUEST",
       academicYearId: activeYear?.id || null,
-      campusId: hostTeacher.campusId || null,
-      campusName: hostTeacher.campus?.campusName || null
+      campusId: resolvedCampus.campusId,
+      campusName: resolvedCampus.campusName
     };
 
     try {
@@ -4659,6 +4751,13 @@ export async function createSurpriseObservation(data: {
       }
     } else {
       // ===== TẠO PHIÊN DỰ GIỜ MỚI ĐỘC LẬP =====
+      const resolvedCampus = await resolveActualSlotCampus({
+        classId: data.classId,
+        className: data.className,
+        campusId: data.campusId,
+        fallbackTeacher: hostTeacher
+      });
+
       try {
         slotRecord = await prisma.observationSlot.create({
           data: {
@@ -4681,8 +4780,8 @@ export async function createSurpriseObservation(data: {
             status: "ACTIVE",
             requestOrigin: data.isCthsLog ? "CTHS_WORK_LOG" : (data.requestOrigin || "SURPRISE"),
             academicYearId: activeYear?.id || null,
-            campusId: data.campusId || hostTeacher.campusId || null,
-            campusName: data.campusName || hostTeacher.campus?.campusName || null
+            campusId: resolvedCampus.campusId,
+            campusName: resolvedCampus.campusName
           }
         });
       } catch (createErr: any) {
@@ -4707,8 +4806,8 @@ export async function createSurpriseObservation(data: {
               maxSeats: 4,
               status: "ACTIVE",
               academicYearId: activeYear?.id || null,
-              campusId: data.campusId || hostTeacher.campusId || null,
-              campusName: data.campusName || hostTeacher.campus?.campusName || null
+              campusId: resolvedCampus.campusId,
+              campusName: resolvedCampus.campusName
             }
           });
         } else {
@@ -6694,6 +6793,13 @@ export async function createAssignedObservation(data: {
     const subjectName = data.subjectName || (data.level === "Mầm non" ? "Chủ đề/Chuyên đề" : "Môn học");
     const topic = data.topic ? data.topic.trim() : `Chỉ định dự giờ: ${subjectName} - ${data.className}`;
 
+    const resolvedCampus = await resolveActualSlotCampus({
+      classId: data.classId,
+      className: data.className,
+      campusId: data.campusId,
+      fallbackTeacher: hostTeacher
+    });
+
     const newSlot = await prisma.observationSlot.create({
       data: {
         teacherId: hostTeacher.id,
@@ -6715,8 +6821,8 @@ export async function createAssignedObservation(data: {
         status: "ACTIVE",
         requestOrigin: "ASSIGNED",
         academicYearId: academicYearId || null,
-        campusId: data.campusId || hostTeacher.campusId || null,
-        campusName: hostTeacher.campus?.campusName || null,
+        campusId: resolvedCampus.campusId,
+        campusName: resolvedCampus.campusName,
         textbookId: (data as any).textbookId || null,
         chapterId: (data as any).chapterId || null,
         lessonId: (data as any).lessonId || null,
