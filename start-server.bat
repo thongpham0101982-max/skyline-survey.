@@ -11,7 +11,7 @@ echo ====================================================
 for /f "tokens=5" %%a in ('netstat -aon ^| findstr ":3000" ^| findstr "LISTENING"') do (
     taskkill /F /T /PID %%a >nul 2>&1
 )
-timeout /t 2 /nobreak >nul
+ping 127.0.0.1 -n 3 >nul
 
 :: Khoi chay Node.js 24/7 trong cua so rieng doc lap
 echo Dang khoi chay Skyline Server qua Node.js...

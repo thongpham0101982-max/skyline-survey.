@@ -1197,11 +1197,21 @@ export function ObservationClient(props: ObservationClientProps) {
     return cleaned;
   }, []);
 
+  const currentAcademicYearId = filterAcademicYearId || selectedYearId || activeAcademicYear?.id || "";
+
+  // Danh sách lớp học thuộc đúng Năm học hiện hành (hoặc năm học đang lọc)
+  const activeYearClasses = useMemo(() => {
+    if (!classes || classes.length === 0) return [];
+    if (!currentAcademicYearId) return classes;
+    const matched = classes.filter((c: any) => !c.academicYearId || c.academicYearId === currentAcademicYearId);
+    return matched.length > 0 ? matched : classes;
+  }, [classes, currentAcademicYearId]);
+
   const filteredReqClasses = useMemo(() => {
     const cleanDbLevel = reqLevel && reqLevel !== "all" ? normalizeLevel(reqLevel) : "";
     const numGrade = reqGrade ? reqGrade.replace(/Khối\s+/gi, "").replace(/Khoi\s+/gi, "").trim() : "";
 
-    return classes.filter((c: any) => {
+    return activeYearClasses.filter((c: any) => {
       if (reqCampusId && reqCampusId !== "all") {
         if (!isClassInCampus(c, reqCampusId)) return false;
       }
@@ -1220,7 +1230,7 @@ export function ObservationClient(props: ObservationClientProps) {
       const cGradeNum = (c.grade || "").replace(/Khối\s+/gi, "").replace(/Khoi\s+/gi, "").trim();
       return cGradeNum === numGrade || (c.grade || "").trim() === numGrade || cGradeNum.startsWith(numGrade + ".");
     });
-  }, [classes, reqLevel, reqGrade, reqCampusId, isClassInCampus, normalizeLevel]);
+  }, [activeYearClasses, reqLevel, reqGrade, reqCampusId, isClassInCampus, normalizeLevel]);
 
   const filteredTeachersForRequest = useMemo(() => {
     if (!reqDeptId) return teachers;
@@ -1505,7 +1515,7 @@ export function ObservationClient(props: ObservationClientProps) {
       "Mẫu giáo lớn"
     ];
     const gradeSet = new Set<string>(baseGrades);
-    classes.forEach((cls: any) => {
+    activeYearClasses.forEach((cls: any) => {
       const lvlClean = (cls.level || "").normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase();
       if (lvlClean !== "mam non") return;
       if (cls.grade && cls.grade !== "ko thấy") gradeSet.add(cls.grade);
@@ -1527,7 +1537,7 @@ export function ObservationClient(props: ObservationClientProps) {
       if (idxB !== -1) return 1;
       return a.localeCompare(b, "vi");
     });
-  }, [classes]);
+  }, [activeYearClasses]);
 
   // Auto-sync ranking when surprise scores change
   useEffect(() => {
@@ -1574,7 +1584,7 @@ export function ObservationClient(props: ObservationClientProps) {
     const cleanDbLevel = newLevel && newLevel !== "all" ? normalizeLevel(newLevel) : "";
     const numGrade = newGrade ? newGrade.replace(/Khối\s+/gi, "").replace(/Khoi\s+/gi, "").trim() : "";
 
-    return classes.filter((c: any) => {
+    return activeYearClasses.filter((c: any) => {
       if (effectiveCampusId && effectiveCampusId !== "all") {
         if (!isClassInCampus(c, effectiveCampusId)) return false;
       }
@@ -1593,7 +1603,7 @@ export function ObservationClient(props: ObservationClientProps) {
       const cGradeNum = (c.grade || "").replace(/Khối\s+/gi, "").replace(/Khoi\s+/gi, "").trim();
       return cGradeNum === numGrade || (c.grade || "").trim() === numGrade || cGradeNum.startsWith(numGrade + ".");
     });
-  }, [classes, newCampusId, newLevel, newGrade, isClassInCampus, normalizeLevel]);
+  }, [activeYearClasses, newCampusId, newLevel, newGrade, isClassInCampus, normalizeLevel]);
 
   
 
@@ -1672,7 +1682,7 @@ export function ObservationClient(props: ObservationClientProps) {
   }, [filterSchoolBlock, filterCampusId, filterDeptId, filterLevel, filterGrade, filterClassId, filterPeriod, filterDate, filterMonth, handleSearch])
 
   const filterAvailableClasses = useMemo(() => {
-    return classes.filter(c => {
+    return activeYearClasses.filter(c => {
       if (filterCampusId && filterCampusId !== "all" && c.campusId !== filterCampusId) return false;
       if (filterLevel && filterLevel !== "all") {
         let cleanLevel = filterLevel.normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase();
@@ -1700,7 +1710,7 @@ export function ObservationClient(props: ObservationClientProps) {
       }
       return true;
     });
-  }, [classes, filterCampusId, filterLevel, filterGrade]);
+  }, [activeYearClasses, filterCampusId, filterLevel, filterGrade]);
 
   const activeFilterCount = useMemo(() => {
     let count = 0
@@ -2381,9 +2391,9 @@ export function ObservationClient(props: ObservationClientProps) {
   }, [teachers, surpriseDeptId, isAdminUser, isBanDHCM, isQLCM, ttcmAllowedDepartments]);
 
   const filteredClassesForSurprise = useMemo(() => {
-    if (!classes || classes.length === 0) return [];
+    if (!activeYearClasses || activeYearClasses.length === 0) return [];
     const cleanDbLevel = surpriseLevel && surpriseLevel !== "all" ? normalizeLevel(surpriseLevel) : "";
-    return classes.filter((c: any) => {
+    return activeYearClasses.filter((c: any) => {
       const cLvl = normalizeLevel(c.level || "");
       if (isMamNonTeacher && cLvl !== "mam non") return false;
       if (!isMamNonTeacher && surpriseLevel !== "Mầm non" && cLvl === "mam non") return false;
@@ -2395,7 +2405,7 @@ export function ObservationClient(props: ObservationClientProps) {
       }
       return true;
     });
-  }, [classes, surpriseCampusId, isMamNonTeacher, surpriseLevel, isClassInCampus, normalizeLevel]);
+  }, [activeYearClasses, surpriseCampusId, isMamNonTeacher, surpriseLevel, isClassInCampus, normalizeLevel]);
 
 
 
@@ -4841,7 +4851,9 @@ export function ObservationClient(props: ObservationClientProps) {
           departments={departments}
           teachers={teachers}
           campuses={campuses}
-          classes={classes}
+          classes={activeYearClasses}
+          academicYears={academicYears}
+          selectedYearId={currentAcademicYearId}
           periodOptions={periodOptions}
           getGradesForLevel={getGradesForLevel}
           getKhacChuyenDeSubjectId={getKhacChuyenDeSubjectId}
@@ -9113,7 +9125,9 @@ export function ObservationClient(props: ObservationClientProps) {
         departments={departments}
         teachers={teachers}
         campuses={campuses}
-        classes={classes}
+        classes={activeYearClasses}
+        academicYears={academicYears}
+        selectedYearId={currentAcademicYearId}
         periodOptions={periodOptions}
         getGradesForLevel={getGradesForLevel}
         getKhacChuyenDeSubjectId={getKhacChuyenDeSubjectId}

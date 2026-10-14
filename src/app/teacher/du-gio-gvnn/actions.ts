@@ -170,7 +170,8 @@ export async function getForeignObservationData(academicYearId?: string) {
       }),
       prisma.class.findMany({
         where: {
-          status: "ACTIVE"
+          status: "ACTIVE",
+          ...(activeYearId ? { academicYearId: activeYearId } : {})
         },
         select: {
           id: true,

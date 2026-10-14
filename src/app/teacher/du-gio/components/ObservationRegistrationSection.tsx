@@ -304,6 +304,8 @@ interface CreateObservationModalProps {
   teachers: any[]
   campuses: any[]
   classes: any[]
+  academicYears?: any[]
+  selectedYearId?: string
   periodOptions: string[]
   getGradesForLevel: (lvl: string) => string[]
   getKhacChuyenDeSubjectId: (subs: any[]) => string
@@ -585,7 +587,13 @@ export function ObservationRegistrationSection(props: any) {
   }, [creationMode, surpriseTeacherId, surpriseDate, surprisePeriod, surpriseClassId, surpriseClassName, surpriseCampusId]);
 
   // ===== QUẢN LÝ CHỈ ĐỊNH DỰ GIỜ (ASSIGNED OBSERVATION) =====
-  const [assignedAcademicYearId, setAssignedAcademicYearId] = React.useState<string>("");
+  const [assignedAcademicYearId, setAssignedAcademicYearId] = React.useState<string>(() => props.selectedYearId || props.academicYearId || "");
+
+  React.useEffect(() => {
+    if (!assignedAcademicYearId && (props.selectedYearId || props.academicYearId)) {
+      setAssignedAcademicYearId(props.selectedYearId || props.academicYearId);
+    }
+  }, [props.selectedYearId, props.academicYearId]);
   const [assignedLevel, setAssignedLevel] = React.useState<string>(() => isMamNonTeacher ? "Mầm non" : "Phổ thông K-12");
   const [assignedGrade, setAssignedGrade] = React.useState<string>(() => isMamNonTeacher ? "Mầm non" : "Khối 10");
   const [assignedCampusId, setAssignedCampusId] = React.useState<string>(() => currentTeacher?.campusId || (campuses?.[0]?.id || ""));
@@ -847,9 +855,12 @@ export function ObservationRegistrationSection(props: any) {
 
   // Danh sách Lớp học map theo Cơ sở (và Khối học), hoàn toàn độc lập không liên quan đến GV
   const availableClassesForAssigned = React.useMemo(() => {
+    const activeYearFallback = (props.academicYears || []).find((y: any) => y.status === "ACTIVE")?.id || "";
+    const effectiveAssignedYear = assignedAcademicYearId || props.selectedYearId || props.academicYearId || activeYearFallback || "";
+
     return (classes || []).filter((c: any) => {
-      // 1. Lọc theo năm học nếu người dùng chọn một năm học cụ thể
-      if (assignedAcademicYearId && c.academicYearId && c.academicYearId !== assignedAcademicYearId) {
+      // 1. Lọc theo năm học nếu người dùng chọn một năm học cụ thể hoặc năm học được truyền vào
+      if (effectiveAssignedYear && c.academicYearId && c.academicYearId !== effectiveAssignedYear) {
         return false;
       }
 
@@ -915,7 +926,7 @@ export function ObservationRegistrationSection(props: any) {
       const nameB = String(b.name || b.className || "");
       return nameA.localeCompare(nameB, "vi", { numeric: true });
     });
-  }, [classes, assignedCampusId, assignedLevel, campuses, assignedAcademicYearId]);
+  }, [classes, assignedCampusId, assignedLevel, campuses, assignedAcademicYearId, props.selectedYearId, props.academicYearId, props.academicYears]);
 
   // Tự động reset và đồng bộ khi đổi Khối học hoặc Tổ chuyên môn không còn thuộc Khối đã chọn
   React.useEffect(() => {

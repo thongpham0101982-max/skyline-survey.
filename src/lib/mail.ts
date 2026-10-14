@@ -82,7 +82,7 @@ export async function sendEmail({
   enableAuditBcc = false
 }: SendEmailOptions): Promise<SendEmailResult> {
   const rawUser = (process.env.SMTP_USER || "").trim();
-  const rawPass = (process.env.SMTP_PASS || "").trim().replace(/\s+/g, "").replace(/[^a-zA-Z0-9]/g, "");
+  const rawPass = (process.env.SMTP_PASS || "").trim().replace(/\s+/g, "");
 
   const user = rawUser || "bankhaothi@skylineschool.edu.vn";
   
