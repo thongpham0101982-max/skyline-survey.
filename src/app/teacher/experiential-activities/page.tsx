@@ -13,6 +13,7 @@ import {
 import toast from "react-hot-toast";
 import { SKYLINE_ACTIVITY_TYPES, STANDARD_STUDENT_ROLES_6 } from "@/lib/experiential/constants";
 import { DEFAULT_EDUCATIONAL_THEMES, getEducationalThemeInfo } from "@/lib/experiential/catalog-types";
+import { formatTimeFrameAndSemester } from "@/lib/experiential/timeframe-helper";
 
 // Gợi ý hoạt động tiêu biểu bám sát 6 trụ cột cốt lõi
 const SAMPLE_PRESETS = [
@@ -106,6 +107,7 @@ export default function TeacherExperientialActivitiesPage() {
   const [loadingCatalogs, setLoadingCatalogs] = useState(false);
   const [catalogSearch, setCatalogSearch] = useState('');
   const [selectedCatalogId, setSelectedCatalogId] = useState('');
+  const [catalogMonthFilter, setCatalogMonthFilter] = useState<string>('ALL');
 
   const [createForm, setCreateForm] = useState({
     name: "",
@@ -1216,12 +1218,21 @@ export default function TeacherExperientialActivitiesPage() {
         const targetClass = myClasses.find(c => c.id === createForm.classId) || myClasses[0];
         const targetGrade = targetClass?.grade ? String(targetClass.grade).trim() : '';
 
-        // Filter catalogs matching grade or search
+        // Filter catalogs matching grade, month or search
         const filteredCatalogs = catalogActivities.filter(cat => {
           const meta = cat.meta || {};
           const grades = Array.isArray(meta.grades) ? meta.grades.map(String) : [];
           const matchesGrade = targetGrade ? (grades.length === 0 || grades.includes(targetGrade)) : true;
           if (!matchesGrade && !catalogSearch.trim()) return false;
+
+          if (catalogMonthFilter !== 'ALL') {
+            const timeInfo = formatTimeFrameAndSemester(meta.timeFrame, '2026-2027', meta.semester);
+            if (catalogMonthFilter === 'OTHER') {
+              if (timeInfo.month !== null) return false;
+            } else if (timeInfo.month !== parseInt(catalogMonthFilter, 10)) {
+              return false;
+            }
+          }
 
           if (catalogSearch.trim()) {
             const q = catalogSearch.toLowerCase().trim();
@@ -1333,15 +1344,46 @@ export default function TeacherExperientialActivitiesPage() {
                         <BookOpen className="w-4 h-4 text-[#00A19A]" />
                         Danh sách Hoạt động trải nghiệm từ Danh mục hệ thống:
                       </span>
-                      <div className="relative min-w-[240px]">
-                        <Search className="w-3.5 h-3.5 absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
-                        <input
-                          type="text"
-                          value={catalogSearch}
-                          onChange={e => setCatalogSearch(e.target.value)}
-                          placeholder="Tìm theo tên hoạt động, môn, chủ đề..."
-                          className="w-full pl-8 pr-3 py-1.5 rounded-xl border border-slate-200 text-xs focus:outline-hidden focus:border-[#00A19A] bg-slate-50"
-                        />
+                      <div className="flex items-center gap-2">
+                        {/* Dropdown Lọc Tháng */}
+                        <div className="flex items-center gap-1 bg-slate-50 border border-slate-200 rounded-xl px-2.5 py-1.5 shrink-0">
+                          <Clock className="w-3.5 h-3.5 text-slate-400" />
+                          <select
+                            value={catalogMonthFilter}
+                            onChange={e => setCatalogMonthFilter(e.target.value)}
+                            className="text-xs font-bold text-slate-700 bg-transparent focus:outline-hidden cursor-pointer"
+                          >
+                            <option value="ALL">Tất cả tháng</option>
+                            <optgroup label="Học kỳ 1">
+                              <option value="8">Tháng 8</option>
+                              <option value="9">Tháng 9</option>
+                              <option value="10">Tháng 10</option>
+                              <option value="11">Tháng 11</option>
+                              <option value="12">Tháng 12</option>
+                              <option value="1">Tháng 1</option>
+                            </optgroup>
+                            <optgroup label="Học kỳ 2">
+                              <option value="2">Tháng 2</option>
+                              <option value="3">Tháng 3</option>
+                              <option value="4">Tháng 4</option>
+                              <option value="5">Tháng 5</option>
+                              <option value="6">Tháng 6</option>
+                              <option value="7">Tháng 7</option>
+                            </optgroup>
+                          </select>
+                        </div>
+
+                        {/* Search Input */}
+                        <div className="relative min-w-[200px] flex-1">
+                          <Search className="w-3.5 h-3.5 absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
+                          <input
+                            type="text"
+                            value={catalogSearch}
+                            onChange={e => setCatalogSearch(e.target.value)}
+                            placeholder="Tìm theo tên HĐ, môn, chủ đề..."
+                            className="w-full pl-8 pr-3 py-1.5 rounded-xl border border-slate-200 text-xs focus:outline-hidden focus:border-[#00A19A] bg-slate-50"
+                          />
+                        </div>
                       </div>
                     </div>
 

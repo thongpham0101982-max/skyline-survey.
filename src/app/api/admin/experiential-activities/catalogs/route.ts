@@ -208,6 +208,16 @@ export async function GET(req: NextRequest) {
     if (statusParam && statusParam !== 'ALL') {
       filtered = filtered.filter(item => item.status === statusParam);
     }
+    const monthParam = searchParams.get('month');
+    if (monthParam && monthParam !== 'ALL') {
+      filtered = filtered.filter(item => {
+        const timeInfo = formatTimeFrameAndSemester(item.meta.timeFrame, item.meta.academicYearId || '2026-2027', item.meta.semester);
+        if (monthParam === 'OTHER') {
+          return timeInfo.month === null;
+        }
+        return timeInfo.month === parseInt(monthParam, 10);
+      });
+    }
     if (search.trim()) {
       const q = search.toLowerCase().trim();
       filtered = filtered.filter(item => 

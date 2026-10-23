@@ -5,7 +5,8 @@ import {
   Plus, Search, Download, UploadCloud, Layers, Sparkles, 
   Building2, BookOpen, Calendar, MapPin, Edit3, Trash2, 
   RefreshCw, Award, Tag, Ban, RotateCcw, CheckSquare, 
-  UserCheck, Users, Sliders, CheckCircle2, Send, ArrowUpDown, Eye
+  UserCheck, Users, Sliders, CheckCircle2, Send, ArrowUpDown, Eye,
+  Clock, X
 } from 'lucide-react';
 import toast from 'react-hot-toast';
 import { ExperientialTabs } from '@/components/ExperientialTabs';
@@ -147,6 +148,7 @@ function ActivityCatalogsContent() {
   const [themeFilter, setThemeFilter] = useState<string>('ALL');
   const [themes, setThemes] = useState<EducationalThemeItem[]>(DEFAULT_EDUCATIONAL_THEMES);
   const [semesterFilter, setSemesterFilter] = useState<'ALL' | '1' | '2'>('ALL');
+  const [monthFilter, setMonthFilter] = useState<string>('ALL'); // 'ALL' | '1'..'12' | 'OTHER'
   const [statusFilter, setStatusFilter] = useState<'ALL' | 'ACTIVE' | 'ALLOCATED' | 'UNALLOCATED' | 'CANCELLED'>('ALL');
   const [timeSortOrder, setTimeSortOrder] = useState<'desc' | 'asc'>('desc');
 
@@ -198,6 +200,7 @@ function ActivityCatalogsContent() {
     if (programTypeFilter !== 'ALL') url += `&programType=${programTypeFilter}`;
     if (categoryFilter !== 'ALL') url += `&category=${categoryFilter}`;
     if (statusFilter === 'ACTIVE' || statusFilter === 'CANCELLED') url += `&status=${statusFilter}`;
+    if (monthFilter !== 'ALL') url += `&month=${monthFilter}`;
     if (search.trim()) url += `&q=${encodeURIComponent(search.trim())}`;
 
     fetch(url)
@@ -221,6 +224,15 @@ function ActivityCatalogsContent() {
           list = list.filter(item => {
             const timeInfo = formatTimeFrameAndSemester(item.meta?.timeFrame, '2026-2027', item.meta?.semester);
             return timeInfo.semester === targetSem;
+          });
+        }
+        if (monthFilter !== 'ALL') {
+          list = list.filter(item => {
+            const timeInfo = formatTimeFrameAndSemester(item.meta?.timeFrame, '2026-2027', item.meta?.semester);
+            if (monthFilter === 'OTHER') {
+              return timeInfo.month === null;
+            }
+            return timeInfo.month === parseInt(monthFilter, 10);
           });
         }
         if (statusFilter === 'ALLOCATED') {
@@ -256,7 +268,7 @@ function ActivityCatalogsContent() {
         setCatalogs([]);
         setLoading(false);
       });
-  }, [selectedYearId, levelFilter, programTypeFilter, categoryFilter, themeFilter, semesterFilter, statusFilter, search, timeSortOrder]);
+  }, [selectedYearId, levelFilter, programTypeFilter, categoryFilter, themeFilter, semesterFilter, monthFilter, statusFilter, search, timeSortOrder]);
 
   useEffect(() => {
     loadCatalogs();
@@ -276,7 +288,7 @@ function ActivityCatalogsContent() {
 
   useEffect(() => {
     setSelectedIds([]);
-  }, [selectedYearId, levelFilter, programTypeFilter, categoryFilter, themeFilter, semesterFilter, statusFilter]);
+  }, [selectedYearId, levelFilter, programTypeFilter, categoryFilter, themeFilter, semesterFilter, monthFilter, statusFilter]);
 
   // Thống kê số hoạt động theo từng chủ đề
   const catalogsCountByTheme = useMemo(() => {
@@ -289,6 +301,73 @@ function ActivityCatalogsContent() {
     }
     return map;
   }, [catalogs]);
+
+  // Chu kỳ 12 tháng năm học Sky-Line (Tháng 8 năm nay đến Tháng 7 năm sau)
+  const SCHOOL_YEAR_MONTHS = useMemo(() => [
+    { month: 8, name: 'Tháng 8', shortName: 'T.08', semester: 1 },
+    { month: 9, name: 'Tháng 9', shortName: 'T.09', semester: 1 },
+    { month: 10, name: 'Tháng 10', shortName: 'T.10', semester: 1 },
+    { month: 11, name: 'Tháng 11', shortName: 'T.11', semester: 1 },
+    { month: 12, name: 'Tháng 12', shortName: 'T.12', semester: 1 },
+    { month: 1, name: 'Tháng 1', shortName: 'T.01', semester: 1 },
+    { month: 2, name: 'Tháng 2', shortName: 'T.02', semester: 2 },
+    { month: 3, name: 'Tháng 3', shortName: 'T.03', semester: 2 },
+    { month: 4, name: 'Tháng 4', shortName: 'T.04', semester: 2 },
+    { month: 5, name: 'Tháng 5', shortName: 'T.05', semester: 2 },
+    { month: 6, name: 'Tháng 6', shortName: 'T.06', semester: 2 },
+    { month: 7, name: 'Tháng 7', shortName: 'T.07', semester: 2 },
+  ], []);
+
+  // Phân bố sự kiện & tình trạng gán lớp theo từng tháng (dựa trên allCatalogs sau khi lọc bậc, hệ, loại, chủ đề)
+  const monthDistribution = useMemo(() => {
+    const stats: Record<string, { total: number; allocated: number; unallocated: number }> = {
+      ALL: { total: 0, allocated: 0, unallocated: 0 },
+      OTHER: { total: 0, allocated: 0, unallocated: 0 }
+    };
+    SCHOOL_YEAR_MONTHS.forEach(m => {
+      stats[String(m.month)] = { total: 0, allocated: 0, unallocated: 0 };
+    });
+
+    allCatalogs.forEach(item => {
+      if (categoryFilter !== 'ALL' && getActivityCategory(item) !== categoryFilter) return;
+      if (levelFilter !== 'ALL') {
+        const levels = Array.isArray(item.meta?.educationLevels) && item.meta.educationLevels.length > 0
+          ? item.meta.educationLevels
+          : [item.meta?.educationLevel || item.level];
+        if (!levels.includes(levelFilter)) return;
+      }
+      if (programTypeFilter !== 'ALL') {
+        const progs = Array.isArray(item.meta?.programTypes) && item.meta.programTypes.length > 0
+          ? item.meta.programTypes
+          : [item.meta?.programType];
+        if (!progs.includes(programTypeFilter)) return;
+      }
+      if (themeFilter !== 'ALL') {
+        const itemTheme = (item.meta?.themeName || '').toLowerCase().trim();
+        const filterTheme = themeFilter.toLowerCase().trim();
+        if (itemTheme !== filterTheme && !itemTheme.includes(filterTheme) && !filterTheme.includes(itemTheme)) return;
+      }
+
+      const timeInfo = formatTimeFrameAndSemester(item.meta?.timeFrame, '2026-2027', item.meta?.semester);
+      const isAllocated = Array.isArray(item.meta?.allocatedCampuses) && item.meta.allocatedCampuses.length > 0;
+      
+      stats.ALL.total++;
+      if (isAllocated) stats.ALL.allocated++;
+      else stats.ALL.unallocated++;
+
+      if (timeInfo.month && stats[String(timeInfo.month)]) {
+        stats[String(timeInfo.month)].total++;
+        if (isAllocated) stats[String(timeInfo.month)].allocated++;
+        else stats[String(timeInfo.month)].unallocated++;
+      } else {
+        stats.OTHER.total++;
+        if (isAllocated) stats.OTHER.allocated++;
+        else stats.OTHER.unallocated++;
+      }
+    });
+
+    return stats;
+  }, [allCatalogs, categoryFilter, levelFilter, programTypeFilter, themeFilter, SCHOOL_YEAR_MONTHS]);
 
   const handleToggleSelectAll = () => {
     if (selectedIds.length === catalogs.length && catalogs.length > 0) {
@@ -703,6 +782,37 @@ function ActivityCatalogsContent() {
                 </select>
               </div>
 
+              {/* BỘ LỌC THEO THÁNG */}
+              <div className="flex items-center gap-1.5 bg-slate-50 border border-slate-200 rounded-xl px-2.5 py-1.5" title="Lọc các sự kiện theo tháng diễn ra để tiện gán và giám sát">
+                <Clock className="w-3.5 h-3.5 text-slate-400" />
+                <select
+                  value={monthFilter}
+                  onChange={e => setMonthFilter(e.target.value)}
+                  className="text-xs font-bold text-slate-800 bg-transparent focus:outline-hidden cursor-pointer"
+                >
+                  <option value="ALL">Tất cả các tháng ({monthDistribution.ALL?.total || 0})</option>
+                  <optgroup label="Học kỳ 1 (Tháng 8 – 1)">
+                    <option value="8">Tháng 8 ({monthDistribution['8']?.total || 0})</option>
+                    <option value="9">Tháng 9 ({monthDistribution['9']?.total || 0})</option>
+                    <option value="10">Tháng 10 ({monthDistribution['10']?.total || 0})</option>
+                    <option value="11">Tháng 11 ({monthDistribution['11']?.total || 0})</option>
+                    <option value="12">Tháng 12 ({monthDistribution['12']?.total || 0})</option>
+                    <option value="1">Tháng 1 ({monthDistribution['1']?.total || 0})</option>
+                  </optgroup>
+                  <optgroup label="Học kỳ 2 (Tháng 2 – 7)">
+                    <option value="2">Tháng 2 ({monthDistribution['2']?.total || 0})</option>
+                    <option value="3">Tháng 3 ({monthDistribution['3']?.total || 0})</option>
+                    <option value="4">Tháng 4 ({monthDistribution['4']?.total || 0})</option>
+                    <option value="5">Tháng 5 ({monthDistribution['5']?.total || 0})</option>
+                    <option value="6">Tháng 6 ({monthDistribution['6']?.total || 0})</option>
+                    <option value="7">Tháng 7 ({monthDistribution['7']?.total || 0})</option>
+                  </optgroup>
+                  {monthDistribution.OTHER?.total > 0 && (
+                    <option value="OTHER">Chưa rõ tháng cụ thể ({monthDistribution.OTHER?.total})</option>
+                  )}
+                </select>
+              </div>
+
               {/* Học kỳ */}
               <div className="flex items-center gap-1 bg-slate-100 p-1 rounded-xl">
                 <button
@@ -826,6 +936,218 @@ function ActivityCatalogsContent() {
                 <span>Làm mới</span>
               </button>
             </div>
+          </div>
+
+          {/* THANH LỌC NHANH THEO THÁNG & GIÁM SÁT TIẾN ĐỘ GÁN LỚP */}
+          <div className="bg-white rounded-2xl border border-slate-200/90 p-3 shadow-2xs space-y-2.5">
+            <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-2.5">
+              
+              {/* Tiêu đề & Chọn Tháng dạng Pills */}
+              <div className="flex items-center gap-1.5 overflow-x-auto pb-1 lg:pb-0 scrollbar-thin">
+                <div className="flex items-center gap-1.5 shrink-0 pr-2 border-r border-slate-200 text-xs font-black text-slate-700">
+                  <Calendar className="w-4 h-4 text-[#00A19A]" />
+                  <span>Lọc theo Tháng:</span>
+                </div>
+
+                {/* Nút Tất cả */}
+                <button
+                  type="button"
+                  onClick={() => setMonthFilter('ALL')}
+                  className={`shrink-0 px-2.5 py-1 rounded-xl text-xs font-black transition-all cursor-pointer flex items-center gap-1.5 ${
+                    monthFilter === 'ALL'
+                      ? 'bg-gradient-to-r from-[#003B3A] to-[#00A19A] text-white shadow-xs'
+                      : 'bg-slate-100 text-slate-600 hover:bg-slate-200/80 hover:text-slate-900'
+                  }`}
+                >
+                  <span>Tất cả</span>
+                  <span className={`text-[10px] px-1.5 py-0.2 rounded-full ${
+                    monthFilter === 'ALL' ? 'bg-white/20 text-white font-bold' : 'bg-slate-200 text-slate-600 font-bold'
+                  }`}>
+                    {monthDistribution.ALL?.total || 0}
+                  </span>
+                </button>
+
+                {/* Nhóm HK1: 8..1 */}
+                <div className="flex items-center gap-1 shrink-0 pl-1">
+                  <span className="text-[10px] font-black uppercase text-indigo-700 bg-indigo-50 border border-indigo-200 px-1.5 py-0.5 rounded-md">
+                    HK1
+                  </span>
+                  {SCHOOL_YEAR_MONTHS.filter(m => m.semester === 1).map(m => {
+                    const st = monthDistribution[String(m.month)] || { total: 0, allocated: 0, unallocated: 0 };
+                    const isSelected = monthFilter === String(m.month);
+                    const hasItems = st.total > 0;
+                    const hasUnallocated = st.unallocated > 0;
+
+                    return (
+                      <button
+                        key={m.month}
+                        type="button"
+                        onClick={() => setMonthFilter(isSelected ? 'ALL' : String(m.month))}
+                        className={`shrink-0 px-2.5 py-1 rounded-xl text-xs font-bold transition-all cursor-pointer flex items-center gap-1 border ${
+                          isSelected
+                            ? 'bg-[#003B3A] border-[#003B3A] text-white shadow-xs font-black'
+                            : hasItems
+                            ? 'bg-white border-slate-200 hover:border-teal-300 hover:bg-teal-50/40 text-slate-700'
+                            : 'bg-slate-50/60 border-slate-100 text-slate-400 hover:bg-slate-100'
+                        }`}
+                        title={`${m.name}: ${st.total} sự kiện (${st.allocated} đã gán lớp, ${st.unallocated} chưa gán)`}
+                      >
+                        <span>{m.name}</span>
+                        {hasItems && (
+                          <span className={`text-[10px] px-1.5 py-0.2 rounded-full font-black ${
+                            isSelected
+                              ? 'bg-teal-400 text-teal-950'
+                              : hasUnallocated
+                              ? 'bg-amber-100 text-amber-900 border border-amber-200'
+                              : 'bg-teal-100 text-teal-800'
+                          }`}>
+                            {st.total}
+                          </span>
+                        )}
+                      </button>
+                    );
+                  })}
+                </div>
+
+                {/* Nhóm HK2: 2..7 */}
+                <div className="flex items-center gap-1 shrink-0 pl-1.5 border-l border-slate-200">
+                  <span className="text-[10px] font-black uppercase text-amber-800 bg-amber-50 border border-amber-200 px-1.5 py-0.5 rounded-md">
+                    HK2
+                  </span>
+                  {SCHOOL_YEAR_MONTHS.filter(m => m.semester === 2).map(m => {
+                    const st = monthDistribution[String(m.month)] || { total: 0, allocated: 0, unallocated: 0 };
+                    const isSelected = monthFilter === String(m.month);
+                    const hasItems = st.total > 0;
+                    const hasUnallocated = st.unallocated > 0;
+
+                    return (
+                      <button
+                        key={m.month}
+                        type="button"
+                        onClick={() => setMonthFilter(isSelected ? 'ALL' : String(m.month))}
+                        className={`shrink-0 px-2.5 py-1 rounded-xl text-xs font-bold transition-all cursor-pointer flex items-center gap-1 border ${
+                          isSelected
+                            ? 'bg-[#003B3A] border-[#003B3A] text-white shadow-xs font-black'
+                            : hasItems
+                            ? 'bg-white border-slate-200 hover:border-teal-300 hover:bg-teal-50/40 text-slate-700'
+                            : 'bg-slate-50/60 border-slate-100 text-slate-400 hover:bg-slate-100'
+                        }`}
+                        title={`${m.name}: ${st.total} sự kiện (${st.allocated} đã gán lớp, ${st.unallocated} chưa gán)`}
+                      >
+                        <span>{m.name}</span>
+                        {hasItems && (
+                          <span className={`text-[10px] px-1.5 py-0.2 rounded-full font-black ${
+                            isSelected
+                              ? 'bg-teal-400 text-teal-950'
+                              : hasUnallocated
+                              ? 'bg-amber-100 text-amber-900 border border-amber-200'
+                              : 'bg-teal-100 text-teal-800'
+                          }`}>
+                            {st.total}
+                          </span>
+                        )}
+                      </button>
+                    );
+                  })}
+                </div>
+
+                {/* Tháng khác / Chưa rõ */}
+                {monthDistribution.OTHER?.total > 0 && (
+                  <button
+                    type="button"
+                    onClick={() => setMonthFilter(monthFilter === 'OTHER' ? 'ALL' : 'OTHER')}
+                    className={`shrink-0 px-2 py-1 rounded-xl text-xs font-bold transition-all cursor-pointer flex items-center gap-1 border ${
+                      monthFilter === 'OTHER'
+                        ? 'bg-[#003B3A] border-[#003B3A] text-white shadow-xs'
+                        : 'bg-slate-50 border-slate-200 text-slate-500 hover:bg-slate-100'
+                    }`}
+                  >
+                    <span>Khác</span>
+                    <span className="text-[10px] bg-slate-200 text-slate-700 px-1 rounded-full font-bold">
+                      {monthDistribution.OTHER.total}
+                    </span>
+                  </button>
+                )}
+              </div>
+
+              {/* Nút Tháng Hiện Tại */}
+              <div className="flex items-center gap-2 shrink-0">
+                <button
+                  type="button"
+                  onClick={() => {
+                    const currentMonth = new Date().getMonth() + 1;
+                    setMonthFilter(String(currentMonth));
+                  }}
+                  className="px-2.5 py-1 text-xs font-bold text-teal-800 bg-teal-50 hover:bg-teal-100 border border-teal-200 rounded-xl transition-all cursor-pointer flex items-center gap-1"
+                  title="Nhấp để chuyển nhanh tới sự kiện của tháng hiện tại"
+                >
+                  <Clock className="w-3.5 h-3.5 text-[#00A19A]" />
+                  <span>Tháng hiện tại (T.{new Date().getMonth() + 1})</span>
+                </button>
+              </div>
+            </div>
+
+            {/* Banner Giám sát khi đang chọn 1 tháng cụ thể */}
+            {monthFilter !== 'ALL' && (
+              <div className="bg-teal-50/70 border border-teal-200/80 rounded-xl p-2.5 flex flex-wrap items-center justify-between gap-2 text-xs animate-in fade-in duration-150">
+                <div className="flex items-center gap-2">
+                  <div className="w-6 h-6 rounded-lg bg-[#00A19A] text-white flex items-center justify-center font-black text-xs shrink-0 shadow-2xs">
+                    {monthFilter === 'OTHER' ? '?' : `T${monthFilter}`}
+                  </div>
+                  <div>
+                    <span className="font-extrabold text-[#003B3A]">
+                      {monthFilter === 'OTHER' ? 'Các sự kiện chưa định rõ tháng' : `Giám sát sự kiện Tháng ${monthFilter}:`}
+                    </span>
+                    <span className="ml-1.5 text-slate-700">
+                      Tổng số: <strong>{monthDistribution[monthFilter]?.total || 0}</strong> sự kiện •{' '}
+                      <span className="text-emerald-800 font-bold">
+                        Đã gán lớp: {monthDistribution[monthFilter]?.allocated || 0}
+                      </span> •{' '}
+                      <span className="text-amber-800 font-bold">
+                        Chưa gán lớp: {monthDistribution[monthFilter]?.unallocated || 0}
+                      </span>
+                    </span>
+                  </div>
+                </div>
+
+                <div className="flex items-center gap-1.5">
+                  <button
+                    type="button"
+                    onClick={() => setStatusFilter('UNALLOCATED')}
+                    className={`px-2 py-0.5 rounded-lg text-[11px] font-bold transition-all cursor-pointer ${
+                      statusFilter === 'UNALLOCATED'
+                        ? 'bg-amber-600 text-white font-black shadow-2xs'
+                        : 'bg-amber-100 hover:bg-amber-200 text-amber-900 border border-amber-300'
+                    }`}
+                  >
+                    Lọc chưa gán ({monthDistribution[monthFilter]?.unallocated || 0})
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setStatusFilter('ALLOCATED')}
+                    className={`px-2 py-0.5 rounded-lg text-[11px] font-bold transition-all cursor-pointer ${
+                      statusFilter === 'ALLOCATED'
+                        ? 'bg-blue-600 text-white font-black shadow-2xs'
+                        : 'bg-blue-100 hover:bg-blue-200 text-blue-900 border border-blue-300'
+                    }`}
+                  >
+                    Lọc đã gán ({monthDistribution[monthFilter]?.allocated || 0})
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setMonthFilter('ALL');
+                      setStatusFilter('ALL');
+                    }}
+                    className="px-2 py-0.5 rounded-lg text-[11px] font-bold text-slate-500 hover:text-slate-800 hover:bg-slate-200/60 transition-colors cursor-pointer flex items-center gap-0.5"
+                    title="Bỏ lọc tháng"
+                  >
+                    <X className="w-3 h-3" />
+                    <span>Bỏ lọc</span>
+                  </button>
+                </div>
+              </div>
+            )}
           </div>
 
           {/* Bulk Action Bar */}
