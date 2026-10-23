@@ -28,11 +28,11 @@ const DEFAULT_CRITERIA: CriterionItem[] = [
 ];
 
 export const DEFAULT_EVENT_ROLES = [
-  'Trưởng nhóm / Điều phối viên học sinh',
-  'Phó ban / Thư ký ghi chép',
-  'Ban tổ chức / Tiết mục văn nghệ',
-  'Hậu cần / Kỹ thuật sự kiện',
-  'Thành viên tích cực / Nòng cốt',
+  'Trưởng nhóm / Điều phối viên',
+  'Thư ký / Ghi chép',
+  'Thuyết trình / Báo cáo viên',
+  'Hậu cần / Kỹ thuật',
+  'Thành viên tích cực',
   'Thành viên tham gia'
 ];
 

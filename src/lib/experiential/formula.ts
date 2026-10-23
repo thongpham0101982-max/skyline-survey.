@@ -57,12 +57,31 @@ export function calculateStudentResult(params: {
     };
   }
 
-  if (evalMode === 'PARTICIPATION_ONLY') {
+  if (evalMode === 'PARTICIPATION_ONLY' || evalMode === 'ROLE_BASED') {
     return {
       percentage: 100,
       rating: 'PARTICIPATED' as ResultRating,
       isMandatoryRestricted: false,
       isCompleted: true
+    };
+  }
+
+  if (evalMode === 'COMPLETION_LEVEL' || evalMode === 'PASS_FAIL') {
+    const rawVal = params.finalResult || (criteriaScores && Object.values(criteriaScores)[0]);
+    if (rawVal === 'HOAN_THANH_TOT' || rawVal === 'TOT' || rawVal === 3 || rawVal === '3') {
+      return { percentage: 100, rating: 'OUTSTANDING' as ResultRating, isMandatoryRestricted: false, isCompleted: true };
+    }
+    if (rawVal === 'HOAN_THANH' || rawVal === 'DAT' || rawVal === 2 || rawVal === '2') {
+      return { percentage: 80, rating: 'PASS' as ResultRating, isMandatoryRestricted: false, isCompleted: true };
+    }
+    if (rawVal === 'CHUA_HOAN_THANH' || rawVal === 'CAN_HO_TRO' || rawVal === 1 || rawVal === '1') {
+      return { percentage: 50, rating: 'NEEDS_SUPPORT' as ResultRating, isMandatoryRestricted: false, isCompleted: true };
+    }
+    return {
+      percentage: null,
+      rating: 'CHUA_DANH_GIA' as ResultRating,
+      isMandatoryRestricted: false,
+      isCompleted: false
     };
   }
 
@@ -94,17 +113,19 @@ export function calculateStudentResult(params: {
     criteriaConfig.forEach(c => {
       const score = Number(criteriaScores[c.id]) || 0;
       const weight = Number(c.weight) || 0;
+      const maxScore = Number(c.maxScore) || 4;
       if (score > 0) {
-        weightedSum += (score / 4) * (weight / totalWeight) * 100;
+        weightedSum += (score / maxScore) * (weight / totalWeight) * 100;
       }
     });
     calculatedPercent = Math.round(weightedSum);
   } else {
-    // EQUAL WEIGHT
+    // EQUAL WEIGHT / AVERAGE: Tổng điểm chia tổng thang điểm
     let totalScore = 0;
-    let totalMaxScore = criteriaConfig.length * 4;
+    let totalMaxScore = 0;
     criteriaConfig.forEach(c => {
       totalScore += Number(criteriaScores[c.id]) || 0;
+      totalMaxScore += Number(c.maxScore) || 4;
     });
     calculatedPercent = totalMaxScore > 0 ? Math.round((totalScore / totalMaxScore) * 100) : 0;
   }

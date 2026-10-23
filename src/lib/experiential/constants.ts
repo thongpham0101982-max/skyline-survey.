@@ -62,17 +62,31 @@ export const ACTIVITY_SCALES = [
   { id: 'TOAN_HE_THONG', name: 'Quy mô Toàn hệ thống Sky-Line' }
 ];
 
-// Vai trò học sinh
+// 6 Vai trò học sinh chuẩn hệ thống Sky-Line
+export const STANDARD_STUDENT_ROLES_6 = [
+  'Trưởng nhóm / Điều phối viên',
+  'Thư ký / Ghi chép',
+  'Thuyết trình / Báo cáo viên',
+  'Hậu cần / Kỹ thuật',
+  'Thành viên tích cực',
+  'Thành viên tham gia'
+] as const;
+
+// Danh mục Vai trò học sinh (6 vai trò chuẩn)
 export const STUDENT_ROLES = [
-  { id: 'TRUONG_NHOM', name: 'Trưởng nhóm', code: 'NT' },
-  { id: 'THANH_VIEN', name: 'Thành viên', code: 'TV' },
-  { id: 'DIEU_PHOI', name: 'Điều phối viên', code: 'DP' },
-  { id: 'THUYET_TRINH', name: 'Thuyết trình', code: 'TT' },
-  { id: 'SAN_PHAM', name: 'Phụ trách sản phẩm', code: 'SP' },
-  { id: 'HAU_CAN', name: 'Hậu cần', code: 'HC' },
-  { id: 'DAI_DIEN', name: 'Đại diện lớp', code: 'DD' },
-  { id: 'TINH_NGUYEN', name: 'Tình nguyện viên', code: 'TNV' },
-  { id: 'KHAC', name: 'Khác', code: 'KHAC' }
+  { id: 'TRUONG_NHOM', name: 'Trưởng nhóm / Điều phối viên', code: 'TN', desc: 'Chỉ huy, điều phối nhóm hoàn thành nhiệm vụ' },
+  { id: 'THU_KY', name: 'Thư ký / Ghi chép', code: 'TK', desc: 'Ghi chép biên bản, tổng hợp tư liệu, theo dõi tiến độ' },
+  { id: 'THUYET_TRINH', name: 'Thuyết trình / Báo cáo viên', code: 'TT', desc: 'Đại diện trình bày, báo cáo sản phẩm, phản biện' },
+  { id: 'HAU_CAN', name: 'Hậu cần / Kỹ thuật', code: 'HC', desc: 'Chuẩn bị đạo cụ, thiết bị, âm thanh, điều kiện thực hiện' },
+  { id: 'TICH_CUC', name: 'Thành viên tích cực', code: 'TC', desc: 'Đóng góp nòng cốt, chủ động hỗ trợ đồng đội' },
+  { id: 'THANH_VIEN', name: 'Thành viên tham gia', code: 'TV', desc: 'Tham gia đầy đủ các hoạt động theo hướng dẫn' }
+];
+
+// Danh sách các Mức Hoàn Thành cho Chế độ 2
+export const COMPLETION_LEVEL_OPTIONS = [
+  { id: 'HOAN_THANH_TOT', name: 'Hoàn thành tốt', points: 3, badgeCls: 'bg-emerald-50 text-emerald-800 border-emerald-300' },
+  { id: 'HOAN_THANH', name: 'Hoàn thành', points: 2, badgeCls: 'bg-sky-50 text-sky-800 border-sky-300' },
+  { id: 'CHUA_HOAN_THANH', name: 'Chưa hoàn thành', points: 1, badgeCls: 'bg-amber-50 text-amber-800 border-amber-300' }
 ];
 
 // Điểm danh học sinh

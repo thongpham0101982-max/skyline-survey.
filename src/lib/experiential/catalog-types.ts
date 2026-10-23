@@ -129,6 +129,22 @@ export interface ActivityEvaluationConfig {
   completionLevels?: string[]; // Danh sách các mức hoàn thành cho Chế độ 2
 }
 
+// 6 Vai trò học sinh chuẩn hệ thống Sky-Line
+export const DEFAULT_EVENT_ROLES = [
+  'Trưởng nhóm / Điều phối viên',
+  'Thư ký / Ghi chép',
+  'Thuyết trình / Báo cáo viên',
+  'Hậu cần / Kỹ thuật',
+  'Thành viên tích cực',
+  'Thành viên tham gia'
+];
+
+export const DEFAULT_COMPLETION_LEVELS = [
+  'Hoàn thành tốt',
+  'Hoàn thành',
+  'Chưa hoàn thành'
+];
+
 export const EDUCATION_LEVEL_OPTIONS: { value: CatalogEducationLevel; label: string; shortLabel: string }[] = [
   { value: 'MN', label: 'Mầm non', shortLabel: 'MN' },
   { value: 'TIEU_HOC', label: 'Tiểu học', shortLabel: 'TH' },

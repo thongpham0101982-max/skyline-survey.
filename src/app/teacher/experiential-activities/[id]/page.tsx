@@ -1,5 +1,5 @@
-"use client"
 // @ts-nocheck
+"use client";
 import React, { useState, useEffect, useCallback, useRef } from 'react';
 import { useRouter, useParams, useSearchParams, usePathname } from 'next/navigation';
 import { 
@@ -243,17 +243,22 @@ export default function ActivityResultInput() {
       activity.name.toLowerCase().includes('sport day')
     ));
 
-  const eventRolesList: string[] = (Array.isArray(activity?.rolesList) && activity.rolesList.length > 0)
-    ? activity.rolesList
-    : (Array.isArray(activity?.meta?.evaluationConfig?.rolesList) && activity.meta.evaluationConfig.rolesList.length > 0)
-      ? activity.meta.evaluationConfig.rolesList
-      : [
-          'Trưởng nhóm',
-          'Phó ban',
-          'Ban tổ chức',
-          'Thành viên tích cực',
-          'Thành viên tham gia'
-        ];
+  const rawRoles = activity?.rolesList || activity?.meta?.evaluationConfig?.rolesList;
+  const eventRolesList: string[] = (Array.isArray(rawRoles) && rawRoles.length > 0)
+    ? rawRoles
+    : [
+        'Trưởng nhóm / Điều phối viên',
+        'Thư ký / Ghi chép',
+        'Thuyết trình / Báo cáo viên',
+        'Hậu cần / Kỹ thuật',
+        'Thành viên tích cực',
+        'Thành viên tham gia'
+      ];
+
+  const rawMode = String(activity?.evalMode || activity?.meta?.evaluationConfig?.mode || '').toUpperCase();
+  const isModeParticipation = rawMode === 'PARTICIPATION_ONLY' || rawMode === 'ROLE_BASED' || isEventActivity;
+  const isModeCompletion = (rawMode === 'COMPLETION_LEVEL' || rawMode === 'PASS_FAIL') && !isEventActivity;
+  const isModeRubric = !isModeParticipation && !isModeCompletion && !isPreschool;
 
   // Pre-submission validation
   const handleRequestSubmit = () => {
@@ -272,13 +277,27 @@ export default function ActivityResultInput() {
       return;
     }
 
-    // Đối với Hoạt động sự kiện: Chỉ tính vai trò tham gia của học sinh & điểm danh (không yêu cầu điểm rubric)
-    if (isEventActivity) {
+    // Chế độ 1: Chỉ ghi nhận tham gia & vai trò
+    if (isModeParticipation) {
       setUncompletedStudents([]);
       setShowConfirmSubmitModal(true);
       return;
     }
 
+    // Chế độ 2: Đánh giá mức hoàn thành
+    if (isModeCompletion) {
+      const uncompleted = currentClassStudents.filter(s => {
+        if (s.attendance === 'PRESENT') {
+          return !s.finalResult || s.finalResult === 'CHUA_DANH_GIA';
+        }
+        return false;
+      });
+      setUncompletedStudents(uncompleted);
+      setShowConfirmSubmitModal(true);
+      return;
+    }
+
+    // Chế độ 3: Đánh giá theo Rubric tiêu chí
     const uncompleted = currentClassStudents.filter(s => {
       if (s.attendance === 'PRESENT') {
         const scores = s.criteriaScores || {};
@@ -819,8 +838,8 @@ export default function ActivityResultInput() {
                   <th className="py-3.5 px-3 min-w-[130px]">Điểm danh</th>
                   <th className="py-3.5 px-3 min-w-[130px]">Vai trò</th>
 
-                  {/* CRITERIA HEADERS - Chỉ hiển thị cho Trải nghiệm / Dự án Phổ thông K-12 */}
-                  {!isEventActivity && !isPreschool && (activity?.criteria || []).map((crit, idx) => (
+                  {/* CHẾ ĐỘ 3: CRITERIA HEADERS */}
+                  {isModeRubric && (activity?.criteria || []).map((crit, idx) => (
                     <th key={crit.id} className="py-3.5 px-3 min-w-[180px] text-center border-l border-slate-100 bg-slate-50/90" title={crit.description || crit.name}>
                       <div className="font-black text-slate-800 line-clamp-1">{crit.name}</div>
                       <div className="text-[10px] text-slate-400 font-bold">
@@ -839,8 +858,18 @@ export default function ActivityResultInput() {
                     </th>
                   )}
 
+                  {/* CHẾ ĐỘ 2: MỨC HOÀN THÀNH HEADER */}
+                  {isModeCompletion && !isPreschool && (
+                    <th className="py-3.5 px-4 min-w-[280px] text-center border-l border-slate-100 bg-amber-50/50">
+                      <div className="font-black text-amber-900">Mức Hoàn Thành (Chế độ 2)</div>
+                      <div className="text-[10px] text-amber-700 font-bold">
+                        🌟 Hoàn thành tốt • ✅ Hoàn thành • ⚠️ Chưa hoàn thành
+                      </div>
+                    </th>
+                  )}
+
                   {/* SUMMARY & REMARK */}
-                  {!isEventActivity && !isPreschool && (
+                  {isModeRubric && (
                     <>
                       <th className="py-3.5 px-3 min-w-[100px] text-center border-l border-slate-200">Điểm %</th>
                       <th className="py-3.5 px-3 min-w-[130px] text-center">Xếp loại</th>
@@ -856,7 +885,7 @@ export default function ActivityResultInput() {
               <tbody className="divide-y divide-slate-100 font-semibold text-slate-700">
                 {filteredStudents.length === 0 ? (
                   <tr>
-                    <td colSpan={(isEventActivity ? 5 : isPreschool ? 6 : 7) + (!isEventActivity && !isPreschool ? (activity?.criteria?.length || 0) : 0)} className="py-12 text-center text-slate-400 font-bold">
+                    <td colSpan={(isPreschool ? 6 : isModeParticipation ? 5 : isModeCompletion ? 6 : 7) + (isModeRubric ? (activity?.criteria?.length || 0) : 0)} className="py-12 text-center text-slate-400 font-bold">
                       Không tìm thấy học sinh nào phù hợp
                     </td>
                   </tr>
@@ -904,26 +933,21 @@ export default function ActivityResultInput() {
                           </select>
                         </td>
 
-                        {/* ROLES */}
+                        {/* ROLES (6 VAI TRÒ CHUẨN) */}
                         <td className="py-3 px-3 whitespace-nowrap">
                           <select
-                            value={st.roles?.[0] || (isEventActivity ? (eventRolesList[4] || eventRolesList[0] || 'Thành viên tham gia') : 'THANH_VIEN')}
+                            value={st.roles?.[0] || eventRolesList[5] || eventRolesList[0] || 'Thành viên tham gia'}
                             disabled={isLocked || isAbsent}
                             onChange={e => updateStudent(st.id, { roles: [e.target.value] })}
                             className={`py-1 px-2 border rounded-lg text-xs font-bold outline-none ${
-                              isEventActivity
+                              isModeParticipation
                                 ? 'bg-purple-50 border-purple-200 text-purple-900 font-extrabold'
                                 : 'bg-slate-50 border-slate-200 text-slate-700'
                             }`}
                           >
-                            {isEventActivity
-                              ? eventRolesList.map((roleName: string) => (
-                                  <option key={roleName} value={roleName}>{roleName}</option>
-                                ))
-                              : STUDENT_ROLES.map(role => (
-                                  <option key={role.id} value={role.name}>{role.name}</option>
-                                ))
-                            }
+                            {eventRolesList.map((roleName: string) => (
+                              <option key={roleName} value={roleName}>{roleName}</option>
+                            ))}
                           </select>
                         </td>
 
@@ -961,8 +985,45 @@ export default function ActivityResultInput() {
                           </td>
                         )}
 
-                        {/* DYNAMIC CRITERIA 4-LEVEL BUTTONS - Chỉ hiển thị cho K-12 */}
-                        {!isEventActivity && !isPreschool && (activity?.criteria || []).map(crit => {
+                        {/* CHẾ ĐỘ 2: 3 NÚT CHỌN MỨC HOÀN THÀNH */}
+                        {isModeCompletion && !isPreschool && (
+                          <td className="py-3 px-3 text-center border-l border-slate-100">
+                            {isAbsent ? (
+                              <span className="text-[11px] text-slate-400 italic">Vắng / Miễn</span>
+                            ) : (
+                              <div className="inline-flex items-center gap-1.5 bg-slate-100 p-1 rounded-xl border border-slate-200">
+                                {[
+                                  { id: 'HOAN_THANH_TOT', label: 'Tốt', icon: '🌟', btnCls: 'bg-emerald-600 text-white', percent: 100 },
+                                  { id: 'HOAN_THANH', label: 'Hoàn thành', icon: '✅', btnCls: 'bg-sky-600 text-white', percent: 80 },
+                                  { id: 'CHUA_HOAN_THANH', label: 'Chưa đạt', icon: '⚠️', btnCls: 'bg-amber-600 text-white', percent: 50 },
+                                ].map(lvl => {
+                                  const isActive = st.finalResult === lvl.id || (lvl.id === 'HOAN_THANH_TOT' && (st.finalResult === 'OUTSTANDING' || st.finalResult === 'TOT')) || (lvl.id === 'HOAN_THANH' && (st.finalResult === 'PASS' || st.finalResult === 'DAT')) || (lvl.id === 'CHUA_HOAN_THANH' && (st.finalResult === 'NEEDS_SUPPORT' || st.finalResult === 'CAN_HO_TRO'));
+                                  return (
+                                    <button
+                                      key={lvl.id}
+                                      type="button"
+                                      disabled={isLocked}
+                                      onClick={() => updateStudent(st.id, { 
+                                        finalResult: lvl.id, 
+                                        calculatedPercent: lvl.percent,
+                                        isCompleted: true 
+                                      })}
+                                      className={`px-2.5 py-1.5 rounded-lg text-xs font-black transition-all flex items-center gap-1.5 cursor-pointer ${
+                                        isActive ? lvl.btnCls + ' shadow-sm' : 'text-slate-600 hover:bg-white hover:text-slate-900'
+                                      }`}
+                                    >
+                                      <span>{lvl.icon}</span>
+                                      <span>{lvl.label}</span>
+                                    </button>
+                                  );
+                                })}
+                              </div>
+                            )}
+                          </td>
+                        )}
+
+                        {/* CHẾ ĐỘ 3: DYNAMIC CRITERIA 4-LEVEL BUTTONS - Chỉ hiển thị khi dùng Rubric */}
+                        {isModeRubric && (activity?.criteria || []).map(crit => {
                           const currentScore = st.criteriaScores?.[crit.id];
 
                           if (isAbsent) {
@@ -986,7 +1047,7 @@ export default function ActivityResultInput() {
                                       type="button"
                                       disabled={isLocked}
                                       onClick={() => handleSetScore(st.id, crit.id, lvl)}
-                                      className={`w-6 h-6 rounded text-[11px] font-black transition-all flex items-center justify-center ${
+                                      className={`w-6 h-6 rounded text-[11px] font-black transition-all flex items-center justify-center cursor-pointer ${
                                         isLevelActive
                                           ? lvl === 4 ? 'bg-purple-600 text-white shadow-xs'
                                             : lvl === 3 ? 'bg-emerald-600 text-white shadow-xs'
@@ -994,7 +1055,7 @@ export default function ActivityResultInput() {
                                             : 'bg-amber-500 text-white shadow-xs'
                                           : 'text-slate-500 hover:bg-white hover:text-slate-900'
                                       }`}
-                                      title={`Mức ${lvl}  ${lvlInfo?.name}`}
+                                      title={`Mức ${lvl} — ${lvlInfo?.name}`}
                                     >
                                       {lvl}
                                     </button>
@@ -1005,8 +1066,8 @@ export default function ActivityResultInput() {
                           );
                         })}
 
-                        {/* CALCULATED PERCENT & FINAL RATING - Chỉ hiển thị cho Trải nghiệm / Dự án K-12 */}
-                        {!isEventActivity && !isPreschool && (
+                        {/* CALCULATED PERCENT & FINAL RATING - Chỉ hiển thị cho Chế độ 3 Rubric */}
+                        {isModeRubric && (
                           <>
                             <td className="py-3 px-3 text-center border-l border-slate-200 whitespace-nowrap">
                               {st.calculatedPercent !== null ? (

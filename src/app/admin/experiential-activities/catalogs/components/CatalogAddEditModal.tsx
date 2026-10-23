@@ -474,15 +474,16 @@ export function CatalogAddEditModal({
                         onClick={() => {
                           const updatedEval = opt.value === 'HOAT_DONG_SU_KIEN'
                             ? {
-                                mode: 'ROLE_BASED' as const,
-                                modeTitle: 'Ghi nhận tham gia & Vai trò học sinh',
+                                mode: 'PARTICIPATION_ONLY' as const,
+                                modeTitle: 'Chế độ 1 – Chỉ ghi nhận tham gia',
                                 hasRoleAssessment: true,
                                 criteria: [],
                                 rolesList: formData.evaluationConfig?.rolesList || [
-                                  'Trưởng nhóm / Điều phối viên học sinh',
-                                  'Phó nhóm / Thư ký ghi chép',
-                                  'Ban tổ chức / Tiết mục văn nghệ',
-                                  'Thành viên tích cực / Nòng cốt',
+                                  'Trưởng nhóm / Điều phối viên',
+                                  'Thư ký / Ghi chép',
+                                  'Thuyết trình / Báo cáo viên',
+                                  'Hậu cần / Kỹ thuật',
+                                  'Thành viên tích cực',
                                   'Thành viên tham gia'
                                 ],
                                 completionBenchmark: 'Tham gia đầy đủ sự kiện'
@@ -1101,17 +1102,26 @@ export function CatalogAddEditModal({
               </div>
 
               {formData.activityCategory === 'HOAT_DONG_SU_KIEN' ? (
-                <div className="p-4 rounded-2xl bg-purple-50/70 border border-purple-200/80 space-y-1.5">
-                  <div className="text-xs font-bold text-purple-950 flex items-center gap-2">
-                    <Users className="w-4 h-4 text-purple-700" />
-                    <span>Hoạt động sự kiện: Chỉ tính vai trò tham gia của học sinh & điểm danh</span>
+                <div className="p-4 rounded-2xl bg-purple-50/70 border border-purple-200/80 space-y-2">
+                  <div className="flex items-center justify-between">
+                    <div className="text-xs font-bold text-purple-950 flex items-center gap-2">
+                      <Users className="w-4 h-4 text-purple-700" />
+                      <span>Chế độ 1: Chỉ ghi nhận tham gia & 6 vai trò học sinh</span>
+                    </div>
+                    <button
+                      type="button"
+                      onClick={() => setIsEvalConfigModalOpen(true)}
+                      className="text-xs font-bold text-purple-900 hover:underline px-2.5 py-1 bg-purple-100 rounded-lg border border-purple-300/80 transition-all cursor-pointer"
+                    >
+                      Cấu hình vai trò
+                    </button>
                   </div>
                   <p className="text-[11px] text-purple-900 leading-relaxed">
-                    Học sinh tham gia sự kiện sẽ được GVCN / Ban tổ chức ghi nhận vai trò (Trưởng ban, Diễn viên, Thành viên tích cực...) và điểm danh tham gia. Hệ thống không tính điểm số hay xếp loại kết quả qua Rubric.
+                    Học sinh tham gia sự kiện sẽ được ghi nhận điểm danh và đánh giá qua 1 trong 6 vai trò chuẩn. Không tính điểm số hay tiêu chí định lượng qua Rubric.
                   </p>
                   <div className="pt-1 flex flex-wrap gap-1">
                     {(formData.evaluationConfig?.rolesList || [
-                      'Trưởng nhóm', 'Phó ban', 'Ban tổ chức', 'Thành viên tích cực', 'Thành viên tham gia'
+                      'Trưởng nhóm / Điều phối viên', 'Thư ký / Ghi chép', 'Thuyết trình / Báo cáo viên', 'Hậu cần / Kỹ thuật', 'Thành viên tích cực', 'Thành viên tham gia'
                     ]).map((r: string, idx: number) => (
                       <span key={idx} className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-white text-purple-800 border border-purple-200">
                         {r}
@@ -1120,31 +1130,30 @@ export function CatalogAddEditModal({
                   </div>
                 </div>
               ) : (
-                <div className="p-4 rounded-2xl bg-amber-50/60 border border-amber-200/80 flex items-center justify-between">
+                <div className="p-4 rounded-2xl bg-teal-50/60 border border-teal-200/80 flex items-center justify-between">
                   <div>
-                    <div className="text-xs font-bold text-amber-950 flex items-center gap-2">
-                      <span>Hình thức:</span>
-                      <span className="px-2 py-0.5 rounded-full bg-amber-200 text-amber-900 font-extrabold text-[11px]">
-                        {formData.evaluationConfig?.mode === 'PASS_FAIL' ? 'Đạt / Chưa đạt' 
-                          : formData.evaluationConfig?.mode === 'ROLE_BASED' ? 'Theo Vai trò học sinh'
-                          : formData.evaluationConfig?.mode === 'SCORE_10' ? 'Thang điểm 10'
-                          : `Tiêu chí Rubric (${formData.evaluationConfig?.criteria?.length || 3} tiêu chí)`}
+                    <div className="text-xs font-bold text-slate-800 flex items-center gap-2">
+                      <span>Hình thức đánh giá:</span>
+                      <span className="px-2.5 py-0.5 rounded-full bg-teal-100 text-[#003B3A] font-extrabold text-[11px] border border-teal-300">
+                        {formData.evaluationConfig?.mode === 'PARTICIPATION_ONLY' 
+                          ? 'Chế độ 1: Ghi nhận tham gia' 
+                          : formData.evaluationConfig?.mode === 'COMPLETION_LEVEL' 
+                            ? 'Chế độ 2: Đánh giá Mức hoàn thành' 
+                            : `Chế độ 3: Rubric (${formData.evaluationConfig?.criteria?.length || 3} tiêu chí - ${formData.evaluationConfig?.formulaType === 'AVERAGE' ? 'Đồng trọng số' : 'Trọng số'})`}
                       </span>
                     </div>
-                    <div className="text-[11px] text-amber-800 mt-1">
-                      Chuẩn đạt: <strong>{formData.evaluationConfig?.completionBenchmark || 'Điểm TB >= 5.0'}</strong>
-                      {formData.evaluationConfig?.hasRoleAssessment && (
-                        <span className="ml-2 font-medium">• Có đánh giá vai trò (Trưởng nhóm / Thành viên)</span>
-                      )}
+                    <div className="text-[11px] text-slate-600 mt-1">
+                      Chuẩn đạt: <strong className="text-slate-800">{formData.evaluationConfig?.completionBenchmark || 'Điểm TB >= 5.0'}</strong>
+                      <span className="ml-2 font-medium">• Danh mục vai trò: {(formData.evaluationConfig?.rolesList || []).length || 6} vai trò chuẩn</span>
                     </div>
                   </div>
 
                   <button
                     type="button"
                     onClick={() => setIsEvalConfigModalOpen(true)}
-                    className="text-xs font-bold text-amber-900 hover:underline px-2.5 py-1 bg-amber-100 rounded-lg border border-amber-300/80 transition-all cursor-pointer"
+                    className="text-xs font-bold text-[#003B3A] hover:underline px-3 py-1.5 bg-teal-100 hover:bg-teal-200/80 rounded-xl border border-teal-300 transition-all cursor-pointer shadow-2xs"
                   >
-                    Chỉnh sửa Ma trận đánh giá
+                    Ma trận đánh giá Rubric
                   </button>
                 </div>
               )}
