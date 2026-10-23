@@ -11,7 +11,7 @@ import {
   Sliders, Info, HelpCircle
 } from "lucide-react";
 import toast from "react-hot-toast";
-import { SKYLINE_ACTIVITY_TYPES } from "@/lib/experiential/constants";
+import { SKYLINE_ACTIVITY_TYPES, STANDARD_STUDENT_ROLES_6 } from "@/lib/experiential/constants";
 import { DEFAULT_EDUCATIONAL_THEMES, getEducationalThemeInfo } from "@/lib/experiential/catalog-types";
 
 // Gợi ý hoạt động tiêu biểu bám sát 6 trụ cột cốt lõi
@@ -101,8 +101,15 @@ export default function TeacherExperientialActivitiesPage() {
   // Create Modal State
   const [showCreateModal, setShowCreateModal] = useState(false);
   const [creating, setCreating] = useState(false);
+  const [createSource, setCreateSource] = useState<'CATALOG' | 'CUSTOM'>('CATALOG');
+  const [catalogActivities, setCatalogActivities] = useState<any[]>([]);
+  const [loadingCatalogs, setLoadingCatalogs] = useState(false);
+  const [catalogSearch, setCatalogSearch] = useState('');
+  const [selectedCatalogId, setSelectedCatalogId] = useState('');
+
   const [createForm, setCreateForm] = useState({
     name: "",
+    catalogId: "",
     classId: "",
     themeName: "Văn hóa – Truyền thống",
     educationalContent: "",
@@ -114,8 +121,26 @@ export default function TeacherExperientialActivitiesPage() {
     semester: 1,
     timeRange: "Học kỳ 1",
     description: "",
-    objectives: ""
+    objectives: "",
+    criteria: []
   });
+
+  const loadCatalogsForTeacher = useCallback(async () => {
+    try {
+      setLoadingCatalogs(true);
+      const res = await fetch('/api/admin/experiential-activities/catalogs');
+      if (res.ok) {
+        const data = await res.json();
+        if (Array.isArray(data)) {
+          setCatalogActivities(data);
+        }
+      }
+    } catch (e) {
+      console.error('Error fetching catalogs for teacher:', e);
+    } finally {
+      setLoadingCatalogs(false);
+    }
+  }, []);
 
   // 1. Initial Load: Academic Years, Teacher Classes & Educational Themes
   useEffect(() => {
@@ -279,6 +304,7 @@ export default function TeacherExperientialActivitiesPage() {
     try {
       const payload = {
         name: createForm.name.trim(),
+        catalogId: createForm.catalogId || undefined,
         academicYearId: selectedYearId,
         educationLevel: targetClass.level || "PHO_THONG",
         grades: [targetClass.grade || "7"],
@@ -288,7 +314,8 @@ export default function TeacherExperientialActivitiesPage() {
         integratedSubjects: createForm.integratedSubjects,
         location: createForm.location || "Theo kế hoạch của lớp",
         leadTeacherName: createForm.leadTeacherName,
-        evalMode: createForm.evalMode,
+        evalMode: createForm.evalMode || "ROLE_BASED",
+        criteria: createForm.criteria || [],
         activityTypeId: createForm.activityTypeId,
         activityTypeName: SKYLINE_ACTIVITY_TYPES.find(t => t.id === createForm.activityTypeId)?.name || "Hoạt động trải nghiệm",
         scale: "LOP",
@@ -324,12 +351,14 @@ export default function TeacherExperientialActivitiesPage() {
       }
 
       const created = await res.json();
-      toast.success("Tạo hoạt động trải nghiệm cho lớp thành công!");
+      toast.success("Đã thêm hoạt động cho lớp thành công! Đang chuyển đến bảng đánh giá vai trò học sinh...");
       setShowCreateModal(false);
+      
       // Reset form
       setCreateForm(prev => ({
         ...prev,
         name: "",
+        catalogId: "",
         themeName: "Văn hóa – Truyền thống",
         educationalContent: "",
         integratedSubjects: "",
@@ -337,17 +366,16 @@ export default function TeacherExperientialActivitiesPage() {
         leadTeacherName: "",
         evalMode: "ROLE_BASED",
         description: "",
-        objectives: ""
+        objectives: "",
+        criteria: []
       }));
+      setSelectedCatalogId("");
 
-      // Reload list and direct teacher to result input page
+      // Reload list and redirect teacher to result input page
       await loadActivities();
 
       if (created?.id) {
-        const confirmGo = confirm("Hoạt động đã được khởi tạo! Bạn có muốn vào nhập kết quả đánh giá cho học sinh lớp ngay bây giờ?");
-        if (confirmGo) {
-          router.push(`/teacher/experiential-activities/${created.id}?classId=${targetClass.id}`);
-        }
+        router.push(`/teacher/experiential-activities/${created.id}?classId=${targetClass.id}`);
       }
     } catch (err: any) {
       console.error(err);
@@ -1182,93 +1210,112 @@ export default function TeacherExperientialActivitiesPage() {
       )}
 
       {/* =========================================================================
-          MODAL TẠO HOẠT ĐỘNG TRẢI NGHIỆM MỚI CHO LỚP (DÀNH CHO GVCN)
+          MODAL TẠO HOẠT ĐỘNG TRẢI NGHIỆM CHO LỚP (DÀNH CHO GVCN & GV PHỤ TRÁCH)
       ========================================================================= */}
-      {showCreateModal && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-sm animate-fade-in">
-          <div className="bg-white rounded-3xl shadow-2xl max-w-2xl w-full overflow-hidden border border-slate-200 flex flex-col max-h-[92vh]">
-            
-            {/* Modal Header */}
-            <div className="bg-gradient-to-r from-[#003B3A] to-[#00A19A] p-5 text-white flex items-center justify-between shrink-0">
-              <div className="flex items-center gap-2.5">
-                <div className="w-10 h-10 rounded-2xl bg-white/15 flex items-center justify-center backdrop-blur-md">
-                  <Compass className="w-5 h-5 text-teal-200" />
-                </div>
-                <div>
-                  <h2 className="text-lg font-black text-white">Thêm Hoạt Động Trải Nghiệm Cho Lớp</h2>
-                  <p className="text-xs text-teal-100 font-medium">Bám sát Chủ đề giáo dục, Nội dung giáo dục, Môn phối hợp & TCM phụ trách</p>
-                </div>
-              </div>
-              <button
-                type="button"
-                onClick={() => setShowCreateModal(false)}
-                className="w-8 h-8 rounded-full bg-white/10 hover:bg-white/20 flex items-center justify-center text-white transition-colors cursor-pointer"
-              >
-                <X className="w-4 h-4" />
-              </button>
-            </div>
+      {showCreateModal && (() => {
+        const targetClass = myClasses.find(c => c.id === createForm.classId) || myClasses[0];
+        const targetGrade = targetClass?.grade ? String(targetClass.grade).trim() : '';
 
-            {/* Modal Body Form */}
-            <form onSubmit={handleCreateActivity} className="p-6 overflow-y-auto space-y-4 text-xs font-sans">
+        // Filter catalogs matching grade or search
+        const filteredCatalogs = catalogActivities.filter(cat => {
+          const meta = cat.meta || {};
+          const grades = Array.isArray(meta.grades) ? meta.grades.map(String) : [];
+          const matchesGrade = targetGrade ? (grades.length === 0 || grades.includes(targetGrade)) : true;
+          if (!matchesGrade && !catalogSearch.trim()) return false;
+
+          if (catalogSearch.trim()) {
+            const q = catalogSearch.toLowerCase().trim();
+            const matchesText = 
+              cat.name.toLowerCase().includes(q) ||
+              (cat.code && cat.code.toLowerCase().includes(q)) ||
+              (meta.themeName && meta.themeName.toLowerCase().includes(q)) ||
+              (meta.primarySubjectName && meta.primarySubjectName.toLowerCase().includes(q)) ||
+              (meta.integratedSubjects && meta.integratedSubjects.toLowerCase().includes(q));
+            return matchesText;
+          }
+          return true;
+        });
+
+        return (
+          <div className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-4 bg-slate-900/60 backdrop-blur-xs animate-fade-in">
+            <div className="bg-white rounded-3xl shadow-2xl max-w-3xl w-full overflow-hidden border border-slate-200 flex flex-col max-h-[94vh]">
               
-              {/* Presets Quick Pick */}
-              <div className="bg-teal-50/70 p-3 rounded-2xl border border-teal-200/80">
-                <span className="text-[11px] font-black uppercase text-[#003B3A] tracking-wider flex items-center gap-1.5 mb-2">
-                  <Sparkles className="w-3.5 h-3.5 text-[#00A19A]" />
-                  Gợi ý hoạt động tiêu biểu (Click để chọn nhanh):
-                </span>
-                <div className="flex flex-wrap gap-1.5">
-                  {SAMPLE_PRESETS.map((preset, idx) => (
-                    <button
-                      key={idx}
-                      type="button"
-                      onClick={() => {
-                        setCreateForm(prev => ({
-                          ...prev,
-                          name: preset.name,
-                          themeName: preset.themeName,
-                          educationalContent: preset.educationalContent,
-                          integratedSubjects: preset.integratedSubjects,
-                          location: preset.location,
-                          leadTeacherName: preset.leadTeacherName,
-                          activityTypeId: preset.activityTypeId,
-                          evalMode: preset.evalMode
-                        }));
-                        toast.success(`Đã chọn: ${preset.name}`);
-                      }}
-                      className="px-2.5 py-1 bg-white hover:bg-teal-100 border border-teal-200 text-teal-900 rounded-xl text-[11px] font-semibold transition-all cursor-pointer"
-                    >
-                      {preset.name}
-                    </button>
-                  ))}
+              {/* Modal Header */}
+              <div className="bg-gradient-to-r from-[#003B3A] via-[#005B58] to-[#00A19A] p-5 text-white flex items-center justify-between shrink-0 shadow-sm">
+                <div className="flex items-center gap-3">
+                  <div className="w-10 h-10 rounded-2xl bg-white/15 flex items-center justify-center backdrop-blur-md font-bold text-teal-200 shadow-2xs">
+                    <Compass className="w-5 h-5" />
+                  </div>
+                  <div>
+                    <h2 className="text-base sm:text-lg font-black text-white flex items-center gap-2">
+                      <span>Thêm Hoạt Động Cho Lớp & Đánh Giá Vai Trò Học Sinh</span>
+                    </h2>
+                    <p className="text-xs text-teal-100 font-medium">
+                      Chọn hoạt động từ Danh mục chuẩn của Trường hoặc tự tạo hoạt động riêng cho lớp
+                    </p>
+                  </div>
                 </div>
+                <button
+                  type="button"
+                  onClick={() => setShowCreateModal(false)}
+                  className="w-8 h-8 rounded-full bg-white/10 hover:bg-white/20 flex items-center justify-center text-white transition-colors cursor-pointer"
+                >
+                  <X className="w-4 h-4" />
+                </button>
               </div>
 
-              {/* 1. Tên hoạt động */}
-              <div>
-                <label className="block text-xs font-black text-slate-800 mb-1">
-                  Tên hoạt động trải nghiệm <span className="text-red-500">*</span>
-                </label>
-                <input
-                  type="text"
-                  required
-                  placeholder="Ví dụ: Tham quan trải nghiệm Làng gốm Thanh Hà, Dự án STEM Năng lượng xanh..."
-                  value={createForm.name}
-                  onChange={e => setCreateForm({ ...createForm, name: e.target.value })}
-                  className="w-full text-xs px-3.5 py-2.5 rounded-xl border border-slate-300 focus:border-[#00A19A] focus:outline-hidden font-medium"
-                />
+              {/* Source Mode Tabs */}
+              <div className="flex border-b border-slate-200 bg-slate-50 px-6 pt-3 gap-2 shrink-0">
+                <button
+                  type="button"
+                  onClick={() => setCreateSource('CATALOG')}
+                  className={`flex items-center gap-2 px-4 py-2.5 rounded-t-2xl font-black text-xs transition-all cursor-pointer border-t border-x ${
+                    createSource === 'CATALOG'
+                      ? 'bg-white text-[#003B3A] border-slate-200 -mb-px shadow-2xs'
+                      : 'text-slate-500 hover:text-slate-800 border-transparent hover:bg-slate-100'
+                  }`}
+                >
+                  <Sparkles className={`w-3.5 h-3.5 ${createSource === 'CATALOG' ? 'text-[#00A19A]' : 'text-slate-400'}`} />
+                  <span>1. Chọn Từ Danh Mục Khung Của Trường (Khuyên dùng)</span>
+                  <span className="text-[10px] px-1.5 py-0.2 rounded-full bg-teal-100 text-[#003B3A] font-bold">
+                    {catalogActivities.length} HĐ
+                  </span>
+                </button>
+
+                <button
+                  type="button"
+                  onClick={() => setCreateSource('CUSTOM')}
+                  className={`flex items-center gap-2 px-4 py-2.5 rounded-t-2xl font-black text-xs transition-all cursor-pointer border-t border-x ${
+                    createSource === 'CUSTOM'
+                      ? 'bg-white text-[#003B3A] border-slate-200 -mb-px shadow-2xs'
+                      : 'text-slate-500 hover:text-slate-800 border-transparent hover:bg-slate-100'
+                  }`}
+                >
+                  <Edit3 className={`w-3.5 h-3.5 ${createSource === 'CUSTOM' ? 'text-[#00A19A]' : 'text-slate-400'}`} />
+                  <span>2. Tự Nhập Hoạt Động Riêng Của Lớp</span>
+                </button>
               </div>
 
-              {/* 2. Lớp áp dụng & Chủ đề giáo dục */}
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3.5">
-                <div>
-                  <label className="block text-xs font-black text-slate-800 mb-1">
-                    Lớp áp dụng <span className="text-red-500">*</span>
-                  </label>
+              {/* Modal Body Form */}
+              <form onSubmit={handleCreateActivity} className="p-6 overflow-y-auto space-y-4 text-xs font-sans flex-1">
+                
+                {/* Chọn Lớp Áp Dụng Đầu Tiên */}
+                <div className="p-3.5 rounded-2xl bg-teal-50/70 border border-teal-200 flex flex-wrap items-center justify-between gap-3">
+                  <div className="flex items-center gap-2">
+                    <GraduationCap className="w-5 h-5 text-[#00A19A]" />
+                    <div>
+                      <label className="block text-xs font-black text-[#003B3A]">
+                        Lớp tiếp nhận hoạt động:
+                      </label>
+                      <p className="text-[11px] text-teal-800">
+                        {targetClass ? `Khối ${targetClass.grade || '—'} • Cấp ${targetClass.level || 'Phổ thông'} • ${targetClass.campus?.campusName || ''}` : 'Chọn lớp'}
+                      </p>
+                    </div>
+                  </div>
                   <select
                     value={createForm.classId}
                     onChange={e => setCreateForm({ ...createForm, classId: e.target.value })}
-                    className="w-full text-xs px-3 py-2.5 rounded-xl border border-slate-300 focus:border-[#00A19A] focus:outline-hidden font-bold bg-white cursor-pointer"
+                    className="text-xs px-3.5 py-2 rounded-xl border border-teal-300 focus:border-[#00A19A] focus:outline-hidden font-bold bg-white text-slate-800 shadow-2xs cursor-pointer min-w-[180px]"
                   >
                     {myClasses.map(c => (
                       <option key={c.id} value={c.id}>
@@ -1278,174 +1325,354 @@ export default function TeacherExperientialActivitiesPage() {
                   </select>
                 </div>
 
-                <div>
-                  <label className="block text-xs font-black text-slate-800 mb-1 flex items-center gap-1">
-                    <Sparkles className="w-3.5 h-3.5 text-teal-600" />
-                    Chủ đề giáo dục <span className="text-red-500">*</span>
-                  </label>
-                  <select
-                    value={createForm.themeName}
-                    onChange={e => setCreateForm({ ...createForm, themeName: e.target.value })}
-                    className="w-full text-xs px-3 py-2.5 rounded-xl border border-slate-300 focus:border-[#00A19A] focus:outline-hidden font-bold bg-white cursor-pointer"
-                  >
-                    {educationalThemes.map(t => (
-                      <option key={t.id || t.code} value={t.name}>{t.name}</option>
-                    ))}
-                  </select>
+                {/* TAB 1: CHỌN TỪ DANH MỤC */}
+                {createSource === 'CATALOG' && (
+                  <div className="space-y-3">
+                    <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-2.5">
+                      <span className="text-xs font-black text-slate-800 flex items-center gap-1.5">
+                        <BookOpen className="w-4 h-4 text-[#00A19A]" />
+                        Danh sách Hoạt động trải nghiệm từ Danh mục hệ thống:
+                      </span>
+                      <div className="relative min-w-[240px]">
+                        <Search className="w-3.5 h-3.5 absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
+                        <input
+                          type="text"
+                          value={catalogSearch}
+                          onChange={e => setCatalogSearch(e.target.value)}
+                          placeholder="Tìm theo tên hoạt động, môn, chủ đề..."
+                          className="w-full pl-8 pr-3 py-1.5 rounded-xl border border-slate-200 text-xs focus:outline-hidden focus:border-[#00A19A] bg-slate-50"
+                        />
+                      </div>
+                    </div>
+
+                    {/* Catalog Items Carousel / List */}
+                    {loadingCatalogs ? (
+                      <div className="p-8 text-center bg-slate-50 rounded-2xl border border-slate-200 text-slate-500 flex items-center justify-center gap-2">
+                        <RefreshCw className="w-4 h-4 animate-spin text-[#00A19A]" />
+                        <span>Đang tải danh mục hoạt động...</span>
+                      </div>
+                    ) : filteredCatalogs.length === 0 ? (
+                      <div className="p-6 text-center bg-slate-50 rounded-2xl border border-slate-200 text-slate-500">
+                        <p className="font-semibold text-xs text-slate-700">Chưa có hoạt động phù hợp trong Danh mục cho khối lớp này</p>
+                        <p className="text-[11px] text-slate-400 mt-1">Thầy/Cô có thể chuyển sang tab <strong>"2. Tự Nhập Hoạt Động"</strong> để tạo trực tiếp.</p>
+                      </div>
+                    ) : (
+                      <div className="max-h-56 overflow-y-auto space-y-2 pr-1 divide-y divide-slate-100 border border-slate-200 rounded-2xl p-2 bg-slate-50/50">
+                        {filteredCatalogs.map(cat => {
+                          const meta = cat.meta || {};
+                          const isSelected = createForm.catalogId === cat.id || selectedCatalogId === cat.id;
+                          return (
+                            <div
+                              key={cat.id}
+                              onClick={() => {
+                                setSelectedCatalogId(cat.id);
+                                setCreateForm(prev => ({
+                                  ...prev,
+                                  name: cat.name,
+                                  catalogId: cat.id,
+                                  themeName: meta.themeName || cat.theme?.name || "Văn hóa – Truyền thống",
+                                  educationalContent: meta.educationalContent || meta.learningOutcomes || "",
+                                  integratedSubjects: meta.coopSubjectNames || meta.integratedSubjects || "",
+                                  location: meta.expectedLocation || "Theo kế hoạch của lớp",
+                                  leadTeacherName: meta.subjectTeacherName || meta.cthsTeacherName || "",
+                                  activityTypeId: meta.activityTypeId || "THAM_QUAN",
+                                  evalMode: meta.evalConfig?.mode || "ROLE_BASED",
+                                  criteria: meta.evalConfig?.criteria || [],
+                                  semester: Number(meta.semester) || 1,
+                                  timeRange: meta.timeFrame || "Trong năm học",
+                                  objectives: meta.learningOutcomes || meta.educationalContent || ""
+                                }));
+                                toast.success(`Đã chọn: ${cat.name}`);
+                              }}
+                              className={`p-3 rounded-xl transition-all cursor-pointer flex items-center justify-between gap-3 ${
+                                isSelected
+                                  ? 'bg-teal-50 border-2 border-[#00A19A] shadow-xs'
+                                  : 'bg-white hover:bg-slate-100/80 border border-slate-200'
+                              }`}
+                            >
+                              <div className="space-y-1 min-w-0">
+                                <div className="flex items-center gap-2">
+                                  {cat.code && (
+                                    <span className="font-mono text-[10px] font-bold px-1.5 py-0.5 rounded bg-slate-100 text-slate-700">
+                                      {cat.code}
+                                    </span>
+                                  )}
+                                  <span className="font-black text-xs text-slate-900 truncate">
+                                    {cat.name}
+                                  </span>
+                                </div>
+                                <div className="flex flex-wrap items-center gap-2 text-[10.5px] text-slate-500">
+                                  {meta.themeName && (
+                                    <span className="font-semibold text-teal-800 bg-teal-50 px-2 py-0.2 rounded-full border border-teal-200">
+                                      {meta.themeName}
+                                    </span>
+                                  )}
+                                  {meta.primarySubjectName && (
+                                    <span>Môn: <strong className="text-indigo-700">{meta.primarySubjectName}</strong></span>
+                                  )}
+                                  {meta.timeFrame && (
+                                    <span>• {meta.timeFrame}</span>
+                                  )}
+                                </div>
+                              </div>
+
+                              <button
+                                type="button"
+                                className={`px-3 py-1.5 rounded-xl text-xs font-bold shrink-0 transition-all cursor-pointer ${
+                                  isSelected
+                                    ? 'bg-[#00A19A] text-white shadow-2xs'
+                                    : 'bg-slate-100 hover:bg-teal-100 text-slate-700 hover:text-[#003B3A]'
+                                }`}
+                              >
+                                {isSelected ? '✓ Đã chọn' : 'Chọn HĐ'}
+                              </button>
+                            </div>
+                          );
+                        })}
+                      </div>
+                    )}
+                  </div>
+                )}
+
+                {/* TAB 2 HOẶC THÔNG TIN CHI TIẾT ĐÃ CHỌN */}
+                {createSource === 'CUSTOM' && (
+                  <div className="bg-teal-50/60 p-3 rounded-2xl border border-teal-200/80">
+                    <span className="text-[11px] font-black uppercase text-[#003B3A] tracking-wider flex items-center gap-1.5 mb-2">
+                      <Sparkles className="w-3.5 h-3.5 text-[#00A19A]" />
+                      Gợi ý chủ điểm nhanh (Click để điền mẫu):
+                    </span>
+                    <div className="flex flex-wrap gap-1.5">
+                      {SAMPLE_PRESETS.map((preset, idx) => (
+                        <button
+                          key={idx}
+                          type="button"
+                          onClick={() => {
+                            setCreateForm(prev => ({
+                              ...prev,
+                              name: preset.name,
+                              catalogId: "",
+                              themeName: preset.themeName,
+                              educationalContent: preset.educationalContent,
+                              integratedSubjects: preset.integratedSubjects,
+                              location: preset.location,
+                              leadTeacherName: preset.leadTeacherName,
+                              activityTypeId: preset.activityTypeId,
+                              evalMode: preset.evalMode
+                            }));
+                            toast.success(`Đã chọn: ${preset.name}`);
+                          }}
+                          className="px-2.5 py-1 bg-white hover:bg-teal-100 border border-teal-200 text-teal-900 rounded-xl text-[11px] font-semibold transition-all cursor-pointer"
+                        >
+                          {preset.name}
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+                )}
+
+                {/* Tên hoạt động & Chủ đề */}
+                <div className="grid grid-cols-1 sm:grid-cols-3 gap-3.5">
+                  <div className="sm:col-span-2">
+                    <label className="block text-xs font-black text-slate-800 mb-1">
+                      Tên hoạt động trải nghiệm <span className="text-red-500">*</span>
+                    </label>
+                    <input
+                      type="text"
+                      required
+                      placeholder="Ví dụ: Tham quan trải nghiệm Làng gốm Thanh Hà, Dự án STEM..."
+                      value={createForm.name}
+                      onChange={e => setCreateForm({ ...createForm, name: e.target.value })}
+                      className="w-full text-xs px-3.5 py-2.5 rounded-xl border border-slate-300 focus:border-[#00A19A] focus:outline-hidden font-bold text-slate-900 bg-white"
+                    />
+                  </div>
+
+                  <div>
+                    <label className="block text-xs font-black text-slate-800 mb-1 flex items-center gap-1">
+                      <Sparkles className="w-3.5 h-3.5 text-teal-600" />
+                      Chủ đề giáo dục
+                    </label>
+                    <select
+                      value={createForm.themeName}
+                      onChange={e => setCreateForm({ ...createForm, themeName: e.target.value })}
+                      className="w-full text-xs px-3 py-2.5 rounded-xl border border-slate-300 focus:border-[#00A19A] focus:outline-hidden font-bold bg-white cursor-pointer"
+                    >
+                      {educationalThemes.map(t => (
+                        <option key={t.id || t.code} value={t.name}>{t.name}</option>
+                      ))}
+                    </select>
+                  </div>
                 </div>
-              </div>
 
-              {/* 3. Nội dung giáo dục */}
-              <div>
-                <label className="block text-xs font-black text-slate-800 mb-1 flex items-center gap-1">
-                  <FileText className="w-3.5 h-3.5 text-teal-600" />
-                  Nội dung giáo dục <span className="text-red-500">*</span>
-                </label>
-                <textarea
-                  rows={2}
-                  required
-                  placeholder="Ghi rõ nội dung trọng tâm của hoạt động: kiến thức, kỹ năng rèn luyện hoặc sản phẩm dự kiến..."
-                  value={createForm.educationalContent}
-                  onChange={e => setCreateForm({ ...createForm, educationalContent: e.target.value })}
-                  className="w-full text-xs p-3 rounded-xl border border-slate-300 focus:border-[#00A19A] focus:outline-hidden resize-none font-medium"
-                />
-              </div>
-
-              {/* 4. Môn phối hợp & GVBM Phụ trách (TCM) */}
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3.5">
+                {/* Nội dung giáo dục */}
                 <div>
                   <label className="block text-xs font-black text-slate-800 mb-1 flex items-center gap-1">
-                    <BookOpen className="w-3.5 h-3.5 text-teal-600" />
-                    Môn phối hợp / Tích hợp
+                    <FileText className="w-3.5 h-3.5 text-teal-600" />
+                    Nội dung giáo dục & Yêu cầu cần đạt
                   </label>
-                  <input
-                    type="text"
-                    placeholder="Ví dụ: Lịch sử & Địa lí, Mỹ thuật, Tin học, Tiếng Anh..."
-                    value={createForm.integratedSubjects}
-                    onChange={e => setCreateForm({ ...createForm, integratedSubjects: e.target.value })}
-                    className="w-full text-xs px-3.5 py-2.5 rounded-xl border border-slate-300 focus:border-[#00A19A] focus:outline-hidden font-medium"
+                  <textarea
+                    rows={2}
+                    placeholder="Ghi rõ nội dung trọng tâm của hoạt động: kỹ năng rèn luyện hoặc sản phẩm dự kiến..."
+                    value={createForm.educationalContent}
+                    onChange={e => setCreateForm({ ...createForm, educationalContent: e.target.value })}
+                    className="w-full text-xs p-3 rounded-xl border border-slate-300 focus:border-[#00A19A] focus:outline-hidden resize-none font-medium"
                   />
                 </div>
 
-                <div>
-                  <label className="block text-xs font-black text-slate-800 mb-1 flex items-center gap-1">
-                    <User className="w-3.5 h-3.5 text-teal-600" />
-                    GVBM Phụ trách (TCM)
-                  </label>
-                  <input
-                    type="text"
-                    placeholder="Ví dụ: TCM Khoa học Tự nhiên, TCM Xã hội, Thầy/Cô GVBM..."
-                    value={createForm.leadTeacherName}
-                    onChange={e => setCreateForm({ ...createForm, leadTeacherName: e.target.value })}
-                    className="w-full text-xs px-3.5 py-2.5 rounded-xl border border-slate-300 focus:border-[#00A19A] focus:outline-hidden font-medium"
-                  />
-                </div>
-              </div>
+                {/* Môn phối hợp & GVBM Phụ trách */}
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3.5">
+                  <div>
+                    <label className="block text-xs font-black text-slate-800 mb-1 flex items-center gap-1">
+                      <BookOpen className="w-3.5 h-3.5 text-teal-600" />
+                      Môn phối hợp / Tích hợp
+                    </label>
+                    <input
+                      type="text"
+                      placeholder="Ví dụ: Lịch sử & Địa lí, Mỹ thuật, Tin học..."
+                      value={createForm.integratedSubjects}
+                      onChange={e => setCreateForm({ ...createForm, integratedSubjects: e.target.value })}
+                      className="w-full text-xs px-3.5 py-2.5 rounded-xl border border-slate-300 focus:border-[#00A19A] focus:outline-hidden font-medium"
+                    />
+                  </div>
 
-              {/* 5. Địa điểm & Hình thức đánh giá */}
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3.5">
-                <div>
-                  <label className="block text-xs font-black text-slate-800 mb-1 flex items-center gap-1">
-                    <MapPin className="w-3.5 h-3.5 text-teal-600" />
-                    Địa điểm tổ chức
-                  </label>
-                  <input
-                    type="text"
-                    placeholder="Ví dụ: Tại lớp, Phòng Lab STEM, Hội trường, Dã ngoại..."
-                    value={createForm.location}
-                    onChange={e => setCreateForm({ ...createForm, location: e.target.value })}
-                    className="w-full text-xs px-3.5 py-2.5 rounded-xl border border-slate-300 focus:border-[#00A19A] focus:outline-hidden font-medium"
-                  />
+                  <div>
+                    <label className="block text-xs font-black text-slate-800 mb-1 flex items-center gap-1">
+                      <User className="w-3.5 h-3.5 text-teal-600" />
+                      GVBM Phụ trách (TCM)
+                    </label>
+                    <input
+                      type="text"
+                      placeholder="Ví dụ: TCM Khoa học Xã hội, Thầy/Cô GVBM..."
+                      value={createForm.leadTeacherName}
+                      onChange={e => setCreateForm({ ...createForm, leadTeacherName: e.target.value })}
+                      className="w-full text-xs px-3.5 py-2.5 rounded-xl border border-slate-300 focus:border-[#00A19A] focus:outline-hidden font-medium"
+                    />
+                  </div>
                 </div>
 
-                <div>
-                  <label className="block text-xs font-black text-slate-800 mb-1 flex items-center gap-1">
-                    <Award className="w-3.5 h-3.5 text-teal-600" />
-                    Hình thức đánh giá học sinh
-                  </label>
+                {/* HÌNH THỨC ĐÁNH GIÁ VAI TRÒ HỌC SINH (TRỌNG TÂM CỦA GVCN) */}
+                <div className="p-4 rounded-2xl bg-amber-50/70 border-2 border-amber-300/80 space-y-2.5">
+                  <div className="flex items-center justify-between">
+                    <span className="text-xs font-black text-amber-950 flex items-center gap-1.5">
+                      <Award className="w-4 h-4 text-amber-600" />
+                      Hình thức đánh giá học sinh trong lớp:
+                    </span>
+                    <span className="text-[10px] font-extrabold px-2 py-0.5 rounded-full bg-amber-200 text-amber-900">
+                      Bổ sung Hồ sơ học sinh cuối năm
+                    </span>
+                  </div>
+
                   <select
                     value={createForm.evalMode}
                     onChange={e => setCreateForm({ ...createForm, evalMode: e.target.value })}
-                    className="w-full text-xs px-3 py-2.5 rounded-xl border border-slate-300 focus:border-[#00A19A] focus:outline-hidden font-bold bg-white cursor-pointer"
+                    className="w-full text-xs px-3.5 py-2.5 rounded-xl border border-amber-300 focus:border-[#00A19A] focus:outline-hidden font-black text-slate-900 bg-white cursor-pointer"
                   >
-                    <option value="ROLE_BASED">👥 Theo Vai trò thành viên (Trưởng nhóm, Thư ký, Tích cực...)</option>
+                    <option value="ROLE_BASED">👥 Đánh giá theo 6 Vai trò Học sinh (Khuyên dùng cho GVCN)</option>
                     <option value="CRITERIA">📊 Theo Rubric Tiêu chí Năng lực (4 Mức chuẩn)</option>
                     <option value="PARTICIPATION_ONLY">✅ Điểm danh Tham gia (Đạt / Chưa đạt)</option>
                   </select>
-                </div>
-              </div>
 
-              {/* 6. Học kỳ & Thời gian & Loại hình hoạt động */}
-              <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
-                <div>
-                  <label className="block text-xs font-black text-slate-800 mb-1">Học kỳ</label>
-                  <select
-                    value={createForm.semester}
-                    onChange={e => setCreateForm({ ...createForm, semester: Number(e.target.value) })}
-                    className="w-full text-xs px-3 py-2.5 rounded-xl border border-slate-300 focus:border-[#00A19A] focus:outline-hidden font-semibold bg-white cursor-pointer"
-                  >
-                    <option value={1}>Học kỳ 1</option>
-                    <option value={2}>Học kỳ 2</option>
-                  </select>
-                </div>
-
-                <div>
-                  <label className="block text-xs font-black text-slate-800 mb-1">Thời gian dự kiến</label>
-                  <input
-                    type="text"
-                    placeholder="Ví dụ: Tháng 10/2026, Tuần 8"
-                    value={createForm.timeRange}
-                    onChange={e => setCreateForm({ ...createForm, timeRange: e.target.value })}
-                    className="w-full text-xs px-3 py-2.5 rounded-xl border border-slate-300 focus:border-[#00A19A] focus:outline-hidden"
-                  />
-                </div>
-
-                <div>
-                  <label className="block text-xs font-black text-slate-800 mb-1">Loại hình hoạt động</label>
-                  <select
-                    value={createForm.activityTypeId}
-                    onChange={e => setCreateForm({ ...createForm, activityTypeId: e.target.value })}
-                    className="w-full text-xs px-3 py-2.5 rounded-xl border border-slate-300 focus:border-[#00A19A] focus:outline-hidden font-semibold bg-white cursor-pointer"
-                  >
-                    {SKYLINE_ACTIVITY_TYPES.map(t => (
-                      <option key={t.id} value={t.id}>{t.name}</option>
-                    ))}
-                  </select>
-                </div>
-              </div>
-
-              {/* Modal Footer Actions */}
-              <div className="pt-3 border-t border-slate-200 flex items-center justify-end gap-2.5">
-                <button
-                  type="button"
-                  onClick={() => setShowCreateModal(false)}
-                  className="px-4 py-2.5 rounded-xl text-xs font-bold text-slate-600 hover:bg-slate-100 transition-colors cursor-pointer"
-                >
-                  Hủy bỏ
-                </button>
-
-                <button
-                  type="submit"
-                  disabled={creating}
-                  className="px-5 py-2.5 rounded-xl text-xs font-black text-white bg-gradient-to-r from-[#003B3A] to-[#00A19A] hover:brightness-105 shadow-md shadow-teal-700/20 flex items-center gap-1.5 cursor-pointer disabled:opacity-50"
-                >
-                  {creating ? (
-                    <>
-                      <div className="w-3.5 h-3.5 border-2 border-white border-t-transparent rounded-full animate-spin" />
-                      <span>Đang khởi tạo...</span>
-                    </>
-                  ) : (
-                    <>
-                      <Check className="w-4 h-4" strokeWidth={3} />
-                      <span>Tạo Hoạt Động & Bắt Đầu Nhập Điểm</span>
-                    </>
+                  {/* 6 vai trò học sinh preview */}
+                  {createForm.evalMode === 'ROLE_BASED' && (
+                    <div className="pt-1 space-y-1.5">
+                      <div className="text-[11px] font-bold text-amber-900 flex items-center gap-1">
+                        <span>Danh mục 6 Vai trò Học sinh sẽ được dùng để đánh giá:</span>
+                      </div>
+                      <div className="grid grid-cols-2 sm:grid-cols-3 gap-1.5">
+                        {STANDARD_STUDENT_ROLES_6.map(r => (
+                          <div key={r.name} className="flex items-center gap-1.5 p-1.5 rounded-lg bg-white border border-amber-200 text-[11px]">
+                            <span>{r.icon}</span>
+                            <span className="font-bold text-slate-800">{r.name}</span>
+                          </div>
+                        ))}
+                      </div>
+                      <p className="text-[10.5px] text-amber-800 italic pt-0.5">
+                        💡 Ngay sau khi bấm tạo, hệ thống sẽ tự động khởi tạo danh sách học sinh của lớp và đưa Thầy/Cô đến ngay bảng phân công & đánh giá vai trò học sinh.
+                      </p>
+                    </div>
                   )}
-                </button>
-              </div>
-            </form>
+                </div>
+
+                {/* Học kỳ & Thời gian */}
+                <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                  <div>
+                    <label className="block text-xs font-black text-slate-800 mb-1">Học kỳ</label>
+                    <select
+                      value={createForm.semester}
+                      onChange={e => setCreateForm({ ...createForm, semester: Number(e.target.value) })}
+                      className="w-full text-xs px-3 py-2.5 rounded-xl border border-slate-300 focus:border-[#00A19A] focus:outline-hidden font-semibold bg-white cursor-pointer"
+                    >
+                      <option value={1}>Học kỳ 1</option>
+                      <option value={2}>Học kỳ 2</option>
+                    </select>
+                  </div>
+
+                  <div>
+                    <label className="block text-xs font-black text-slate-800 mb-1">Thời gian dự kiến</label>
+                    <input
+                      type="text"
+                      placeholder="Ví dụ: Tháng 10/2026, Tuần 8"
+                      value={createForm.timeRange}
+                      onChange={e => setCreateForm({ ...createForm, timeRange: e.target.value })}
+                      className="w-full text-xs px-3 py-2.5 rounded-xl border border-slate-300 focus:border-[#00A19A] focus:outline-hidden"
+                    />
+                  </div>
+
+                  <div>
+                    <label className="block text-xs font-black text-slate-800 mb-1">Địa điểm</label>
+                    <input
+                      type="text"
+                      placeholder="Ví dụ: Tại lớp, Phòng Lab STEM, Hội trường..."
+                      value={createForm.location}
+                      onChange={e => setCreateForm({ ...createForm, location: e.target.value })}
+                      className="w-full text-xs px-3 py-2.5 rounded-xl border border-slate-300 focus:border-[#00A19A] focus:outline-hidden"
+                    />
+                  </div>
+                </div>
+
+                {/* Modal Footer Actions */}
+                <div className="pt-4 border-t border-slate-200 flex flex-col sm:flex-row items-center justify-between gap-3 shrink-0">
+                  <div className="text-[11px] text-slate-500">
+                    Lớp áp dụng: <strong className="text-slate-800">{targetClass?.className || 'Chưa chọn'}</strong>
+                    {createForm.catalogId && (
+                      <span className="ml-2 text-teal-700 font-bold">
+                        • Liên kết Danh mục khung
+                      </span>
+                    )}
+                  </div>
+
+                  <div className="flex items-center gap-2.5 w-full sm:w-auto justify-end">
+                    <button
+                      type="button"
+                      onClick={() => setShowCreateModal(false)}
+                      className="px-4 py-2.5 rounded-xl text-xs font-bold text-slate-600 hover:bg-slate-100 transition-colors cursor-pointer"
+                    >
+                      Hủy bỏ
+                    </button>
+
+                    <button
+                      type="submit"
+                      disabled={creating}
+                      className="px-5 py-2.5 rounded-xl text-xs font-black text-white bg-gradient-to-r from-[#003B3A] to-[#00A19A] hover:brightness-105 shadow-md shadow-teal-700/20 flex items-center gap-2 cursor-pointer disabled:opacity-50"
+                    >
+                      {creating ? (
+                        <>
+                          <div className="w-3.5 h-3.5 border-2 border-white border-t-transparent rounded-full animate-spin" />
+                          <span>Đang khởi tạo...</span>
+                        </>
+                      ) : (
+                        <>
+                          <Check className="w-4 h-4" strokeWidth={3} />
+                          <span>Thêm Hoạt Động & Đánh Giá Vai Trò Học Sinh Ngay &rarr;</span>
+                        </>
+                      )}
+                    </button>
+                  </div>
+                </div>
+              </form>
+            </div>
           </div>
-        </div>
-      )}
+        );
+      })()}
 
     </div>
   );

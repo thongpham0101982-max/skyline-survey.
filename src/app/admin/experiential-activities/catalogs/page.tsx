@@ -29,6 +29,7 @@ import { CatalogEvaluationConfigModal } from './components/CatalogEvaluationConf
 import { CatalogThemeConfigModal } from './components/CatalogThemeConfigModal';
 import { CatalogThemeManagementView } from './components/CatalogThemeManagementView';
 import { CatalogQuickViewDrawer } from './components/CatalogQuickViewDrawer';
+import { AssignCatalogToClassModal } from './components/AssignCatalogToClassModal';
 
 export function getActivityCategory(item: ActivityCatalogItem): CatalogActivityCategory {
   const meta: any = item.meta || {};
@@ -166,6 +167,8 @@ function ActivityCatalogsContent() {
   const [isThemeConfigOpen, setIsThemeConfigOpen] = useState(false);
   const [quickViewItem, setQuickViewItem] = useState<ActivityCatalogItem | null>(null);
   const [isQuickViewOpen, setIsQuickViewOpen] = useState(false);
+  const [isAssignToClassOpen, setIsAssignToClassOpen] = useState(false);
+  const [assignToClassItem, setAssignToClassItem] = useState<any>(null);
 
   useEffect(() => {
     fetch('/api/academic-years')
@@ -1366,6 +1369,19 @@ function ActivityCatalogsContent() {
                                 )}
                               </button>
 
+                              {/* Thêm vào lớp của tôi (Dành cho GVCN để đánh giá vai trò học sinh) */}
+                              <button
+                                type="button"
+                                onClick={() => {
+                                  setAssignToClassItem(act);
+                                  setIsAssignToClassOpen(true);
+                                }}
+                                className="p-1.5 rounded-lg text-emerald-700 hover:text-emerald-950 hover:bg-emerald-50 transition-colors cursor-pointer"
+                                title="Dành cho GVCN: Thêm hoạt động này vào lớp của tôi để đánh giá vai trò của Học sinh"
+                              >
+                                <UserCheck className="w-3.5 h-3.5 text-emerald-600" />
+                              </button>
+
                               {/* Xem nhanh Quick-View */}
                               <button
                                 type="button"
@@ -1532,6 +1548,21 @@ function ActivityCatalogsContent() {
           setEvalConfigItem(item);
           setIsConfigEvalOpen(true);
         }}
+        onOpenAssignToClass={(item) => {
+          setAssignToClassItem(item);
+          setIsAssignToClassOpen(true);
+        }}
+      />
+
+      <AssignCatalogToClassModal
+        isOpen={isAssignToClassOpen}
+        onClose={() => {
+          setIsAssignToClassOpen(false);
+          setAssignToClassItem(null);
+        }}
+        catalogItem={assignToClassItem}
+        academicYearId={selectedYearId}
+        onSuccess={loadCatalogs}
       />
     </div>
   );

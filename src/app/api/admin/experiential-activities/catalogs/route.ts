@@ -8,6 +8,21 @@ import { formatTimeFrameAndSemester } from '@/lib/experiential/timeframe-helper'
 
 export const dynamic = 'force-dynamic';
 
+async function checkCatalogReadPermission(session: any) {
+  if (!session?.user?.id) return false;
+  const userRole = (session?.user as any)?.role || '';
+  const upper = userRole.toUpperCase().trim();
+  const ALLOWED = [
+    'ADMIN', 'ADMINISTRATOR', 'SUPER_ADMIN', 
+    'KT_DBCL', 'KTDBCL', 'GDCS', 'GIAO_VU_CS', 'GIAO_VU', 
+    'BGH', 'QLCM', 'TTCM', 
+    'CTHS', 'CONG_TAC_HOC_SINH', 'BAN_CTHS', 'GV_HDTN', 'BP_NK',
+    'TEACHER', 'GIAO_VIEN', 'GV_MN', 'GVNN', 'GVCN'
+  ];
+  if (ALLOWED.some(r => upper.includes(r))) return true;
+  return await hasModulePermission(userRole, ['EXPERIENTIAL_ACTIVITIES', 'EXP_ACT_MANAGE'], 'canRead');
+}
+
 async function checkAdminOrCTHSPermission(session: any) {
   if (!session?.user?.id) return false;
   const userRole = (session?.user as any)?.role || '';
@@ -19,13 +34,13 @@ async function checkAdminOrCTHSPermission(session: any) {
     'CTHS', 'CONG_TAC_HOC_SINH', 'BAN_CTHS', 'GV_HDTN', 'BP_NK'
   ];
   if (ALLOWED.some(r => upper.includes(r))) return true;
-  return await hasModulePermission(userRole, ['EXPERIENTIAL_ACTIVITIES', 'EXP_ACT_MANAGE'], 'canRead');
+  return await hasModulePermission(userRole, ['EXPERIENTIAL_ACTIVITIES', 'EXP_ACT_MANAGE'], 'canCreate');
 }
 
 export async function GET(req: NextRequest) {
   try {
     const session = await auth();
-    const isAllowed = await checkAdminOrCTHSPermission(session);
+    const isAllowed = await checkCatalogReadPermission(session);
     if (!isAllowed) {
       return NextResponse.json({ error: 'Bạn không có quyền truy cập Danh mục HĐTN & Ngoại khóa' }, { status: 403 });
     }

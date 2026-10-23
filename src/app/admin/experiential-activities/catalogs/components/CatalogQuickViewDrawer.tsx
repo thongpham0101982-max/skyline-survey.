@@ -3,7 +3,7 @@ import React from 'react';
 import { 
   X, Calendar, MapPin, BookOpen, Layers, Award, Tag, 
   Building2, Users, Sliders, CheckCircle2, AlertCircle, 
-  Clock, Send, Edit3, Sparkles, FileText, CheckCheck, Target
+  Clock, Send, Edit3, Sparkles, FileText, CheckCheck, Target, UserCheck
 } from 'lucide-react';
 import { 
   ActivityCatalogItem,
@@ -19,6 +19,7 @@ interface CatalogQuickViewDrawerProps {
   onOpenAllocate?: (item: ActivityCatalogItem) => void;
   onOpenEdit?: (item: ActivityCatalogItem) => void;
   onOpenEvalConfig?: (item: ActivityCatalogItem) => void;
+  onOpenAssignToClass?: (item: ActivityCatalogItem) => void;
 }
 
 export function CatalogQuickViewDrawer({
@@ -27,7 +28,8 @@ export function CatalogQuickViewDrawer({
   item,
   onOpenAllocate,
   onOpenEdit,
-  onOpenEvalConfig
+  onOpenEvalConfig,
+  onOpenAssignToClass
 }: CatalogQuickViewDrawerProps) {
   if (!open || !item) return null;
 
@@ -394,6 +396,21 @@ export function CatalogQuickViewDrawer({
             </button>
 
             <div className="flex items-center gap-2">
+              {onOpenAssignToClass && (
+                <button
+                  type="button"
+                  onClick={() => {
+                    onClose();
+                    onOpenAssignToClass(item);
+                  }}
+                  className="px-3.5 py-2 bg-emerald-50 hover:bg-emerald-100 text-emerald-800 font-bold rounded-xl border border-emerald-200 shadow-2xs transition-colors flex items-center gap-1.5 cursor-pointer"
+                  title="Thêm hoạt động này vào lớp của tôi để đánh giá vai trò học sinh"
+                >
+                  <UserCheck className="w-3.5 h-3.5 text-emerald-600" />
+                  <span>Thêm vào lớp của tôi</span>
+                </button>
+              )}
+
               {onOpenEdit && (
                 <button
                   type="button"
