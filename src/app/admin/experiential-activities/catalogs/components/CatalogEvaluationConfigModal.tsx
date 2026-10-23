@@ -266,8 +266,12 @@ export function CatalogEvaluationConfigModal({
         });
 
         if (!res.ok) {
-          const err = await res.json();
-          throw new Error(err.error || 'Lỗi lưu cấu hình');
+          let errData: any = null;
+          try {
+            const text = await res.text();
+            errData = text ? JSON.parse(text) : {};
+          } catch {}
+          throw new Error(errData?.error || `Lỗi lưu cấu hình (Mã lỗi: ${res.status})`);
         }
       }
 

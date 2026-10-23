@@ -59,19 +59,23 @@ interface CatalogAllocateModalProps {
   onClose: () => void;
   onAllocated: () => void;
   catalogItem: any;
+  academicYearId?: string;
 }
 
 export function CatalogAllocateModal({
   isOpen,
   onClose,
   onAllocated,
-  catalogItem
+  catalogItem,
+  academicYearId
 }: CatalogAllocateModalProps) {
   const [campuses, setCampuses] = useState<CampusItem[]>([]);
   const [departments, setDepartments] = useState<any[]>([]);
   const [tlhnTeachers, setTlhnTeachers] = useState<TLHNTeacherItem[]>([]);
   const [allClasses, setAllClasses] = useState<ClassItem[]>([]);
   const [loadingData, setLoadingData] = useState<boolean>(false);
+
+  const effectiveYearId = academicYearId || catalogItem?.meta?.academicYearId || '';
 
   const [selectedCampusIds, setSelectedCampusIds] = useState<string[]>([]);
   const [campusDeptAssign, setCampusDeptAssign] = useState<Record<string, string>>({}); // campusId -> departmentId
@@ -101,10 +105,11 @@ export function CatalogAllocateModal({
   useEffect(() => {
     if (isOpen) {
       setLoadingData(true);
+      const classQuery = effectiveYearId ? `?academicYearId=${effectiveYearId}` : '';
       Promise.all([
         fetch('/api/campuses').then(r => r.json()).catch(() => []),
         fetch('/api/admin/experiential-activities/catalogs/cths-teachers').then(r => r.json()).catch(() => []),
-        fetch('/api/classes').then(r => r.json()).catch(() => []),
+        fetch(`/api/classes${classQuery}`).then(r => r.json()).catch(() => []),
         fetch('/api/departments').then(r => r.json()).catch(() => ({ departments: [] }))
       ]).then(([campusData, teacherData, classData, deptData]) => {
         if (Array.isArray(campusData)) setCampuses(campusData);
@@ -116,7 +121,7 @@ export function CatalogAllocateModal({
         setLoadingData(false);
       });
     }
-  }, [isOpen]);
+  }, [isOpen, effectiveYearId]);
 
   // Initialize form state when catalogItem opens
   useEffect(() => {
@@ -360,16 +365,23 @@ export function CatalogAllocateModal({
     const emailSet = new Set<string>();
     selectedCampusIds.forEach(cId => {
       const classIds = campusSelectedClassIds[cId] || [];
-      allClasses
-        .filter(c => c.campusId === cId && classIds.includes(c.id))
-        .forEach(c => {
-          if (c.homeroomTeacher?.email) {
-            emailSet.add(c.homeroomTeacher.email.toLowerCase().trim());
-          }
-        });
+      const campusAlloc = currentAllocations.find((a: any) => a.campusId === cId);
+      classIds.forEach(id => {
+        // 1. Check in allClasses
+        const cls = allClasses.find(c => c.id === id);
+        if (cls?.homeroomTeacher?.email && cls.homeroomTeacher.email.includes('@')) {
+          emailSet.add(cls.homeroomTeacher.email.toLowerCase().trim());
+          return;
+        }
+        // 2. Fallback to existing assignedClasses in currentAllocations
+        const prevCls = (campusAlloc?.assignedClasses || []).find((ac: any) => (ac.classId || ac.id) === id);
+        if (prevCls?.homeroomTeacherEmail && prevCls.homeroomTeacherEmail.includes('@')) {
+          emailSet.add(prevCls.homeroomTeacherEmail.toLowerCase().trim());
+        }
+      });
     });
     return emailSet.size;
-  }, [selectedCampusIds, campusSelectedClassIds, allClasses]);
+  }, [selectedCampusIds, campusSelectedClassIds, allClasses, currentAllocations]);
 
   // Submit allocation
   const handleSubmit = async () => {
@@ -399,23 +411,26 @@ export function CatalogAllocateModal({
         const finalTeacherName = assignedTeacherObj?.teacherName || catalogItem?.meta?.subjectTeacherName || found?.subjectTeacherName || '';
         const finalTeacherEmail = assignedTeacherObj?.email || catalogItem?.meta?.subjectTeacherEmail || found?.subjectTeacherEmail || '';
 
-        // Build list of assignedClasses with GVCN and GVBM / TCM info
-        const assignedClasses = allClasses
-          .filter(c => c.campusId === cId && selectedClassIds.includes(c.id))
-          .map(c => ({
-            classId: c.id,
-            className: c.className,
-            grade: c.grade,
-            level: c.level,
-            homeroomTeacherId: c.homeroomTeacher?.id || '',
-            homeroomTeacherName: c.homeroomTeacher?.teacherName || '',
-            homeroomTeacherEmail: c.homeroomTeacher?.email || '',
+        // Build list of assignedClasses with GVCN and GVBM / TCM info (support allClasses + fallback)
+        const assignedClasses = selectedClassIds.map(clsId => {
+          const cls = allClasses.find(c => c.id === clsId && c.campusId === cId);
+          const prevCls = (found?.assignedClasses || []).find((ac: any) => (ac.classId || ac.id) === clsId);
+
+          return {
+            classId: clsId,
+            className: cls?.className || prevCls?.className || '',
+            grade: cls?.grade !== undefined ? cls.grade : (prevCls?.grade || ''),
+            level: cls?.level || prevCls?.level || '',
+            homeroomTeacherId: cls?.homeroomTeacher?.id || prevCls?.homeroomTeacherId || '',
+            homeroomTeacherName: cls?.homeroomTeacher?.teacherName || prevCls?.homeroomTeacherName || '',
+            homeroomTeacherEmail: cls?.homeroomTeacher?.email || prevCls?.homeroomTeacherEmail || '',
             departmentId: finalDeptId,
             departmentName: finalDeptName,
             subjectTeacherId: finalTeacherId,
             subjectTeacherName: finalTeacherName,
             subjectTeacherEmail: finalTeacherEmail
-          }));
+          };
+        }).filter(c => c.className);
 
         return {
           campusId: cId,
@@ -441,6 +456,11 @@ export function CatalogAllocateModal({
         };
       });
 
+      if (!catalogItem?.id) {
+        toast.error('Không tìm thấy thông tin hoạt động để cập nhật');
+        return;
+      }
+
       const res = await fetch(`/api/admin/experiential-activities/catalogs/${catalogItem.id}`, {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
@@ -451,13 +471,21 @@ export function CatalogAllocateModal({
         })
       });
 
-      if (!res.ok) {
-        const err = await res.json();
-        throw new Error(err.error || 'Lỗi khi phân bổ');
+      let data: any = null;
+      const responseText = await res.text();
+      try {
+        data = responseText ? JSON.parse(responseText) : {};
+      } catch {
+        if (!res.ok) {
+          throw new Error(`Máy chủ phản hồi lỗi (${res.status}): Không thể xử lý phản hồi từ hệ thống`);
+        }
       }
 
-      const data = await res.json();
-      const emailCount = data.emailNotification?.count;
+      if (!res.ok) {
+        throw new Error(data?.error || `Lỗi khi phân bổ kế hoạch (Mã lỗi: ${res.status})`);
+      }
+
+      const emailCount = data?.emailNotification?.count;
       
       if (sendEmailNotification) {
         toast.success(`Đã phân bổ kế hoạch xuống ${newAllocatedCampuses.length} cơ sở, ${totalSelectedClasses} lớp và gửi email thông báo tới GVCN và GV Tổ TLHN thành công!`);
@@ -656,14 +684,27 @@ export function CatalogAllocateModal({
                         <tr>
                           <td className="py-1.5 px-3 font-semibold text-slate-600">GVBM Phụ trách (TCM):</td>
                           <td className="py-1.5 px-3 font-bold text-[#00A19A]">
-                            {catalogItem.meta?.subjectTeacherName ? (
-                              <span>
-                                {catalogItem.meta.subjectTeacherName}
-                                {catalogItem.meta.departmentName ? ` (TCM: ${catalogItem.meta.departmentName})` : ''}
-                              </span>
-                            ) : (
-                              catalogItem.meta?.departmentName ? `Tổ Chuyên Môn: ${catalogItem.meta.departmentName}` : 'GVBM Phụ trách theo Tổ chuyên môn cơ sở'
-                            )}
+                            {(() => {
+                              const assignedTeacherNames = selectedCampusIds
+                                .map(cId => {
+                                  const tId = campusTeacherAssign[cId];
+                                  const tObj = tlhnTeachers.find(t => t.id === tId);
+                                  const cObj = campuses.find(c => c.id === cId);
+                                  if (tObj) return `${tObj.teacherName} (${cObj?.campusCode || ''})`;
+                                  const existingAlloc = currentAllocations.find((a: any) => a.campusId === cId);
+                                  if (existingAlloc?.subjectTeacherName) return `${existingAlloc.subjectTeacherName} (${cObj?.campusCode || ''})`;
+                                  return null;
+                                })
+                                .filter(Boolean);
+
+                              if (assignedTeacherNames.length > 0) {
+                                return assignedTeacherNames.join(', ');
+                              }
+                              if (catalogItem.meta?.subjectTeacherName) {
+                                return `${catalogItem.meta.subjectTeacherName} ${catalogItem.meta.departmentName ? `(TCM: ${catalogItem.meta.departmentName})` : ''}`;
+                              }
+                              return catalogItem.meta?.departmentName ? `Tổ Chuyên Môn: ${catalogItem.meta.departmentName}` : 'GVBM Phụ trách theo Tổ chuyên môn cơ sở';
+                            })()}
                           </td>
                         </tr>
                       </tbody>
@@ -686,7 +727,7 @@ export function CatalogAllocateModal({
           <div className="flex items-center justify-between pt-1">
             <label className="text-xs font-bold text-slate-800 flex items-center gap-2">
               <Building2 className="w-4 h-4 text-[#00A19A]" />
-              1. Chọn cơ sở tiếp nhận ({selectedCampusIds.length}/{campuses.length}):
+              1. Chọn cơ sở tiếp nhận ({selectedCampusIds.length}{campuses.length > 0 ? `/${campuses.length}` : ''}):
             </label>
             <div className="flex gap-2 text-xs">
               <button
@@ -708,6 +749,12 @@ export function CatalogAllocateModal({
           </div>
 
           {/* CAMPUS CARDS WITH GRADE & CLASS SELECTION */}
+          {loadingData ? (
+            <div className="py-12 flex flex-col items-center justify-center gap-2.5 text-slate-400 bg-slate-50/60 rounded-2xl border border-dashed border-slate-200">
+              <div className="w-7 h-7 border-2 border-[#00A19A] border-t-transparent rounded-full animate-spin" />
+              <span className="text-xs font-semibold text-slate-500">Đang tải danh sách cơ sở, lớp học và giáo viên phụ trách...</span>
+            </div>
+          ) : (
           <div className="space-y-4">
             {campuses.map(campus => {
               const isSelected = selectedCampusIds.includes(campus.id);
@@ -1132,6 +1179,7 @@ export function CatalogAllocateModal({
               );
             })}
           </div>
+          )}
 
         </div>
 

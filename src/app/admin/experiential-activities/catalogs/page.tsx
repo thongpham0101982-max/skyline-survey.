@@ -5,7 +5,7 @@ import {
   Plus, Search, Download, UploadCloud, Layers, Sparkles, 
   Building2, BookOpen, Calendar, MapPin, Edit3, Trash2, 
   RefreshCw, Award, Tag, Ban, RotateCcw, CheckSquare, 
-  UserCheck, Users, Sliders, CheckCircle2, Send, ArrowUpDown
+  UserCheck, Users, Sliders, CheckCircle2, Send, ArrowUpDown, Eye
 } from 'lucide-react';
 import toast from 'react-hot-toast';
 import { ExperientialTabs } from '@/components/ExperientialTabs';
@@ -28,9 +28,10 @@ import { CatalogBulkDeleteModal } from './components/CatalogBulkDeleteModal';
 import { CatalogEvaluationConfigModal } from './components/CatalogEvaluationConfigModal';
 import { CatalogThemeConfigModal } from './components/CatalogThemeConfigModal';
 import { CatalogThemeManagementView } from './components/CatalogThemeManagementView';
+import { CatalogQuickViewDrawer } from './components/CatalogQuickViewDrawer';
 
 export function getActivityCategory(item: ActivityCatalogItem): CatalogActivityCategory {
-  const meta = item.meta || {};
+  const meta: any = item.meta || {};
   if (meta.activityCategory) return meta.activityCategory;
   const name = (item.name || meta.name || '').toLowerCase();
   const format = (meta.organizationFormat || '').toLowerCase();
@@ -163,6 +164,8 @@ function ActivityCatalogsContent() {
   const [evalConfigItem, setEvalConfigItem] = useState<any>(null);
   const [isSyncingMaster, setIsSyncingMaster] = useState(false);
   const [isThemeConfigOpen, setIsThemeConfigOpen] = useState(false);
+  const [quickViewItem, setQuickViewItem] = useState<ActivityCatalogItem | null>(null);
+  const [isQuickViewOpen, setIsQuickViewOpen] = useState(false);
 
   useEffect(() => {
     fetch('/api/academic-years')
@@ -378,8 +381,12 @@ function ActivityCatalogsContent() {
         method: 'DELETE'
       });
       if (!res.ok) {
-        const err = await res.json();
-        throw new Error(err.error || 'Lỗi khi xóa');
+        let errData: any = null;
+        try {
+          const text = await res.text();
+          errData = text ? JSON.parse(text) : {};
+        } catch {}
+        throw new Error(errData?.error || `Lỗi khi xóa (Mã lỗi: ${res.status})`);
       }
       toast.success('Đã xóa hoạt động thành công');
       loadCatalogs();
@@ -881,39 +888,43 @@ function ActivityCatalogsContent() {
             </div>
           )}
 
-          {/* Bảng Dữ liệu Danh mục: ĐÃ TÁCH CỘT BẬC HỌC VÀ HỆ HỌC */}
+          {/* Bảng Dữ liệu Danh mục: 8 CỘT TINH GỌN, HIỆN ĐẠI, KHÔNG TRÀN MÀN HÌNH */}
           <div className="bg-white border border-slate-200 rounded-3xl shadow-2xs overflow-hidden">
             <div className="overflow-x-auto">
               <table className="w-full text-xs text-left border-collapse">
                 <thead className="bg-slate-50/90 text-slate-700 font-bold border-b border-slate-200">
                   <tr>
-                    <th className="py-3 px-3 text-center w-10">
-                      <input
-                        type="checkbox"
-                        checked={catalogs.length > 0 && selectedIds.length === catalogs.length}
-                        onChange={handleToggleSelectAll}
-                        title="Chọn tất cả hoạt động"
-                        className="w-4 h-4 rounded text-[#00A19A] border-slate-300 focus:ring-[#00A19A] cursor-pointer"
-                      />
+                    {/* Cột 1: STT & Checkbox */}
+                    <th className="py-3 px-2 text-center w-14 whitespace-nowrap">
+                      <div className="flex items-center justify-center gap-1.5">
+                        <input
+                          type="checkbox"
+                          checked={catalogs.length > 0 && selectedIds.length === catalogs.length}
+                          onChange={handleToggleSelectAll}
+                          title="Chọn tất cả hoạt động"
+                          className="w-4 h-4 rounded text-[#00A19A] border-slate-300 focus:ring-[#00A19A] cursor-pointer"
+                        />
+                        <span className="text-slate-500 font-bold text-[11px]">STT</span>
+                      </div>
                     </th>
-                    <th className="py-3 px-2 text-center w-12 text-slate-500 font-bold">STT</th>
-                    <th className="py-3 px-3 w-28 whitespace-nowrap">Khối áp dụng</th>
-                    <th className="py-3 px-4 min-w-[220px]">Tên hoạt động</th>
-                    
-                    {/* TÁCH 2 CỘT RIÊNG: BẬC HỌC VÀ HỆ HỌC */}
-                    <th className="py-3 px-3 min-w-[110px] whitespace-nowrap">Bậc học</th>
-                    <th className="py-3 px-3 min-w-[110px] whitespace-nowrap">Hệ học</th>
 
-                    <th className="py-3 px-3 min-w-[140px]">Chủ đề giáo dục</th>
-                    <th className="py-3 px-3 min-w-[220px]">Nội dung giáo dục</th>
-                    <th className="py-3 px-3 min-w-[130px]">Môn phối hợp</th>
+                    {/* Cột 2: Hoạt động & Khối lớp / Bậc / Hệ */}
+                    <th className="py-3 px-3 min-w-[260px]">Hoạt động & Đối tượng</th>
+
+                    {/* Cột 3: Chủ đề giáo dục */}
+                    <th className="py-3 px-3 min-w-[130px]">Chủ đề giáo dục</th>
+
+                    {/* Cột 4: Môn học & Phụ trách */}
+                    <th className="py-3 px-3 min-w-[170px]">Môn học & Phụ trách</th>
+
+                    {/* Cột 5: Thời gian & Địa điểm (Sortable) */}
                     <th 
                       onClick={() => setTimeSortOrder(prev => (prev === 'desc' ? 'asc' : 'desc'))}
-                      className="py-3 px-3 min-w-[135px] whitespace-nowrap cursor-pointer select-none hover:bg-teal-50/70 transition-colors group"
+                      className="py-3 px-3 min-w-[145px] whitespace-nowrap cursor-pointer select-none hover:bg-teal-50/70 transition-colors group"
                       title="Bấm để đổi chiều sắp xếp theo Thời gian & HK: Giảm dần ⇄ Tăng dần"
                     >
                       <div className="flex items-center gap-1.5">
-                        <span>Thời gian & HK</span>
+                        <span>Thời gian & Địa điểm</span>
                         <span className={`inline-flex items-center gap-0.5 px-1.5 py-0.2 rounded text-[10px] font-extrabold ${
                           timeSortOrder === 'desc' 
                             ? 'bg-teal-100 text-[#003B3A] border border-teal-300' 
@@ -923,11 +934,15 @@ function ActivityCatalogsContent() {
                         </span>
                       </div>
                     </th>
-                    <th className="py-3 px-3 min-w-[110px]">Địa điểm</th>
-                    <th className="py-3 px-3 min-w-[155px]">GVBM Phụ trách (TCM)</th>
-                    <th className="py-3 px-3 min-w-[160px]">Hình thức đánh giá</th>
-                    <th className="py-3 px-3 min-w-[130px]">Cơ sở tiếp nhận</th>
-                    <th className="py-3 px-3 text-center min-w-[110px] sticky right-0 bg-slate-50 border-l border-slate-200/80 shadow-xs">
+
+                    {/* Cột 6: Hình thức đánh giá */}
+                    <th className="py-3 px-3 min-w-[150px]">Hình thức đánh giá</th>
+
+                    {/* Cột 7: Cơ sở & Lớp tiếp nhận */}
+                    <th className="py-3 px-3 min-w-[150px]">Cơ sở & Lớp tiếp nhận</th>
+
+                    {/* Cột 8: Thao tác (Sticky right) */}
+                    <th className="py-3 px-3 text-center min-w-[130px] sticky right-0 bg-slate-50 border-l border-slate-200/80 shadow-xs">
                       Thao tác
                     </th>
                   </tr>
@@ -936,14 +951,14 @@ function ActivityCatalogsContent() {
                 <tbody className="divide-y divide-slate-100 font-medium text-slate-700">
                   {loading ? (
                     <tr>
-                      <td colSpan={15} className="py-12 text-center text-slate-400">
+                      <td colSpan={8} className="py-12 text-center text-slate-400">
                         <RefreshCw className="w-6 h-6 animate-spin mx-auto mb-2 text-[#00A19A]" />
                         Đang tải danh mục hoạt động...
                       </td>
                     </tr>
                   ) : catalogs.length === 0 ? (
                     <tr>
-                      <td colSpan={15} className="py-12 text-center text-slate-400">
+                      <td colSpan={8} className="py-12 text-center text-slate-400">
                         <div className="w-12 h-12 rounded-2xl bg-slate-100 flex items-center justify-center mx-auto mb-3 text-slate-400">
                           <BookOpen className="w-6 h-6" />
                         </div>
@@ -967,7 +982,7 @@ function ActivityCatalogsContent() {
                     </tr>
                   ) : (
                     catalogs.map((act, idx) => {
-                      const meta = act.meta || {};
+                      const meta: any = act.meta || {};
                       const allocatedCampuses = meta.allocatedCampuses || [];
                       const isSelected = selectedIds.includes(act.id);
                       const gradesInfo = formatGradesDisplay(meta.grades);
@@ -997,117 +1012,100 @@ function ActivityCatalogsContent() {
                       return (
                         <tr 
                           key={act.id} 
-                          className={`hover:bg-slate-50/80 transition-colors ${isSelected ? 'bg-teal-50/40' : ''}`}
+                          className={`hover:bg-teal-50/20 transition-colors ${isSelected ? 'bg-teal-50/40' : ''}`}
                         >
-                          {/* Checkbox */}
-                          <td className="py-2.5 px-3 text-center align-middle">
-                            <input
-                              type="checkbox"
-                              checked={isSelected}
-                              onChange={() => handleToggleSelectOne(act.id)}
-                              className="w-4 h-4 rounded text-[#00A19A] border-slate-300 focus:ring-[#00A19A] cursor-pointer"
-                            />
+                          {/* Cột 1: Checkbox & STT */}
+                          <td className="py-2.5 px-2 text-center align-top">
+                            <div className="flex items-center justify-center gap-1.5 pt-0.5">
+                              <input
+                                type="checkbox"
+                                checked={isSelected}
+                                onChange={() => handleToggleSelectOne(act.id)}
+                                className="w-4 h-4 rounded text-[#00A19A] border-slate-300 focus:ring-[#00A19A] cursor-pointer"
+                              />
+                              <span className="text-slate-400 font-semibold text-[11px] w-5 text-center">{idx + 1}</span>
+                            </div>
                           </td>
 
-                          {/* STT */}
-                          <td className="py-2.5 px-2 text-center text-slate-400 font-semibold align-middle">{idx + 1}</td>
-
-                          {/* Khối lớp */}
-                          <td className="py-2.5 px-3 align-middle">
-                            <span 
-                              className={`inline-flex items-center px-2 py-0.5 rounded-lg text-[11px] font-extrabold whitespace-nowrap ${
-                                gradesInfo.isAll 
-                                  ? 'bg-blue-50 text-blue-800 border border-blue-200' 
-                                  : 'bg-slate-100 text-slate-800 border border-slate-200'
-                              }`}
-                              title={`Danh sách khối: ${gradesInfo.fullText || gradesInfo.label}`}
-                            >
-                              {gradesInfo.label}
-                            </span>
-                          </td>
-
-                          {/* Tên hoạt động & Phân loại */}
-                          <td className="py-2.5 px-4 align-middle">
-                            <div>
-                              <div className={`font-bold text-[13px] leading-snug ${act.status === 'CANCELLED' ? 'text-slate-400 line-through' : 'text-slate-900 hover:text-[#00A19A] transition-colors'}`}>
-                                {act.name}
+                          {/* Cột 2: Tên hoạt động & Khối / Bậc / Hệ - Click mở QuickView */}
+                          <td className="py-2.5 px-3 align-top">
+                            <div className="space-y-1.5">
+                              {/* Tên hoạt động */}
+                              <div 
+                                className="group cursor-pointer inline-flex items-start gap-1.5"
+                                onClick={() => {
+                                  setQuickViewItem(act);
+                                  setIsQuickViewOpen(true);
+                                }}
+                                title="Bấm để xem nhanh toàn bộ thông tin chi tiết (Nội dung, Mục tiêu, Tiêu chí)"
+                              >
+                                <span className={`font-bold text-[13px] leading-snug group-hover:text-[#00A19A] transition-colors ${act.status === 'CANCELLED' ? 'text-slate-400 line-through' : 'text-slate-900'}`}>
+                                  {act.name}
+                                </span>
+                                <Eye className="w-3.5 h-3.5 text-[#00A19A] opacity-0 group-hover:opacity-100 transition-opacity shrink-0 mt-0.5" />
                               </div>
-                              <div className="flex items-center gap-1.5 flex-wrap mt-1">
-                                <span className="text-[10px] font-mono text-slate-400">{act.code}</span>
+
+                              {/* Badges: Mã, Khối, Bậc, Hệ, Phân loại, Trạng thái (KHÔNG có badge gán lớp ở đây) */}
+                              <div className="flex items-center gap-1.5 flex-wrap">
+                                <span className="text-[10px] font-mono text-slate-500 bg-slate-100 px-1.5 py-0.2 rounded border border-slate-200">
+                                  {act.code}
+                                </span>
+
+                                {/* Khối lớp */}
+                                <span 
+                                  className={`inline-flex items-center px-1.5 py-0.2 rounded-md text-[10px] font-extrabold ${
+                                    gradesInfo.isAll 
+                                      ? 'bg-blue-50 text-blue-800 border border-blue-200' 
+                                      : 'bg-slate-100 text-slate-800 border border-slate-200'
+                                  }`}
+                                  title={`Danh sách khối: ${gradesInfo.fullText || gradesInfo.label}`}
+                                >
+                                  {gradesInfo.label}
+                                </span>
+
+                                {/* Bậc học */}
+                                {eduLevels.map((lvl: string) => (
+                                  <span
+                                    key={lvl}
+                                    className="px-1.5 py-0.2 rounded-md text-[10px] font-bold bg-blue-50 text-blue-800 border border-blue-200 whitespace-nowrap"
+                                  >
+                                    {formatEduLevelName(lvl)}
+                                  </span>
+                                ))}
+
+                                {/* Hệ học */}
+                                {progTypes.map((prog: string) => (
+                                  <span
+                                    key={prog}
+                                    className="px-1.5 py-0.2 rounded-md text-[10px] font-bold bg-indigo-50 text-indigo-800 border border-indigo-200 whitespace-nowrap"
+                                  >
+                                    {formatProgTypeName(prog)}
+                                  </span>
+                                ))}
+
+                                {/* Phân loại */}
                                 {isEvent ? (
                                   <span className="px-1.5 py-0.2 rounded-md text-[10px] font-bold bg-purple-100/80 text-purple-800 border border-purple-200">
-                                    Sự kiện (Vai trò HS)
+                                    Sự kiện
                                   </span>
                                 ) : (
                                   <span className="px-1.5 py-0.2 rounded-md text-[10px] font-bold bg-teal-100/80 text-[#003B3A] border border-teal-200">
-                                    Trải nghiệm / Dự án
+                                    Trải nghiệm
                                   </span>
                                 )}
-                                {act.status === 'CANCELLED' ? (
+
+                                {/* Trạng thái nếu Hủy */}
+                                {act.status === 'CANCELLED' && (
                                   <span className="px-1.5 py-0.2 rounded-md text-[10px] font-bold bg-rose-50 text-rose-700 border border-rose-200">
                                     Đã hủy
-                                  </span>
-                                ) : (
-                                  <span className="px-1.5 py-0.2 rounded-md text-[10px] font-bold bg-emerald-50 text-emerald-700 border border-emerald-200">
-                                    Áp dụng
-                                  </span>
-                                )}
-                                {/* TÌNH TRẠNG GÁN LỚP */}
-                                {isAllocated ? (
-                                  <span 
-                                    className="inline-flex items-center gap-1 px-1.5 py-0.2 rounded-md text-[10px] font-extrabold bg-blue-50 text-blue-700 border border-blue-200 shadow-2xs cursor-help"
-                                    title={allocatedTooltip}
-                                  >
-                                    <CheckCircle2 className="w-2.5 h-2.5 text-blue-600 shrink-0" />
-                                    <span>Đã gán lớp</span>
-                                    {totalAssignedClasses > 0 && (
-                                      <span className="bg-blue-100 text-blue-800 px-1 rounded-sm text-[9px] font-mono font-bold">
-                                        {totalAssignedClasses}
-                                      </span>
-                                    )}
-                                  </span>
-                                ) : (
-                                  <span 
-                                    className="inline-flex items-center gap-1 px-1.5 py-0.2 rounded-md text-[10px] font-medium bg-slate-50 text-slate-400 border border-slate-200"
-                                    title={allocatedTooltip}
-                                  >
-                                    <span>Chưa gán lớp</span>
                                   </span>
                                 )}
                               </div>
                             </div>
                           </td>
 
-                          {/* CỘT 1 TÁCH: BẬC HỌC */}
-                          <td className="py-2.5 px-3 align-middle">
-                            <div className="flex flex-wrap gap-1">
-                              {eduLevels.map((lvl: string) => (
-                                <span
-                                  key={lvl}
-                                  className="px-2 py-0.5 rounded-lg text-[10px] font-bold bg-blue-50 text-blue-800 border border-blue-200 whitespace-nowrap"
-                                >
-                                  {formatEduLevelName(lvl)}
-                                </span>
-                              ))}
-                            </div>
-                          </td>
-
-                          {/* CỘT 2 TÁCH: HỆ HỌC */}
-                          <td className="py-2.5 px-3 align-middle">
-                            <div className="flex flex-wrap gap-1">
-                              {progTypes.map((prog: string) => (
-                                <span
-                                  key={prog}
-                                  className="px-2 py-0.5 rounded-lg text-[10px] font-bold bg-indigo-50 text-indigo-800 border border-indigo-200 whitespace-nowrap"
-                                >
-                                  {formatProgTypeName(prog)}
-                                </span>
-                              ))}
-                            </div>
-                          </td>
-
-                          {/* Chủ đề giáo dục */}
-                          <td className="py-2.5 px-3 align-middle">
+                          {/* Cột 3: Chủ đề giáo dục */}
+                          <td className="py-2.5 px-3 align-top">
                             {meta.themeName ? (
                               (() => {
                                 const themeInfo = getEducationalThemeInfo(meta.themeName);
@@ -1129,146 +1127,132 @@ function ActivityCatalogsContent() {
                             )}
                           </td>
 
-                          {/* Nội dung giáo dục */}
-                          <td className="py-2.5 px-3 align-middle">
-                            {meta.educationalContent ? (
-                              <div className="line-clamp-2 text-slate-700 font-medium text-[11px] leading-relaxed max-w-[240px]" title={meta.educationalContent}>
-                                {meta.educationalContent}
-                              </div>
-                            ) : (
-                              <span className="text-slate-400 font-normal italic">—</span>
-                            )}
-                          </td>
-
-                          {/* Môn phối hợp / Tích hợp */}
-                          <td className="py-2.5 px-3 align-middle">
-                            {meta.primarySubjectName && (
-                              <div className="mb-0.5">
-                                <span className="font-bold text-indigo-700 bg-indigo-50/80 border border-indigo-200 px-1.5 py-0.2 rounded text-[10px] inline-block">
-                                  Chủ trì: {meta.primarySubjectName}
-                                </span>
-                              </div>
-                            )}
-                            <div className="text-slate-600 text-[11px] line-clamp-1" title={meta.coopSubjectNames || meta.integratedSubjects || ''}>
-                              {meta.coopSubjectNames || meta.integratedSubjects || <span className="text-slate-400 font-normal italic">—</span>}
-                            </div>
-                          </td>
-
-                          {/* Thời gian & HK */}
-                          <td className="py-2.5 px-3 text-slate-600 align-middle whitespace-nowrap">
-                            {(() => {
-                              const timeInfo = formatTimeFrameAndSemester(meta.timeFrame, '2026-2027', meta.semester);
-                              return (
-                                <div className="space-y-0.5">
-                                  <div className="font-extrabold text-[12px] text-slate-800 flex items-center gap-1">
-                                    <Calendar className="w-3 h-3 text-[#00A19A] shrink-0" />
-                                    <span>{timeInfo.formattedTime}</span>
+                          {/* Cột 4: Môn học & Phụ trách (Môn chủ trì, tích hợp, GVBM TCM) */}
+                          <td className="py-2.5 px-3 align-top">
+                            <div className="space-y-1.5">
+                              {/* Môn chủ trì & Môn phối hợp */}
+                              <div>
+                                {meta.primarySubjectName && (
+                                  <div className="mb-0.5">
+                                    <span className="font-bold text-indigo-700 bg-indigo-50/90 border border-indigo-200 px-1.5 py-0.2 rounded text-[10px] inline-block">
+                                      Chủ trì: {meta.primarySubjectName}
+                                    </span>
                                   </div>
-                                  <div>
-                                    {timeInfo.semester === 1 ? (
-                                      <span className="inline-flex items-center gap-0.5 px-1.5 py-0.2 rounded-md text-[10px] font-extrabold bg-sky-50 text-sky-700 border border-sky-200 shadow-2xs">
-                                        Học kỳ 1
-                                      </span>
-                                    ) : (
-                                      <span className="inline-flex items-center gap-0.5 px-1.5 py-0.2 rounded-md text-[10px] font-extrabold bg-amber-50 text-amber-700 border border-amber-200 shadow-2xs">
-                                        Học kỳ 2
-                                      </span>
-                                    )}
+                                )}
+                                {(meta.coopSubjectNames || meta.integratedSubjects) && (
+                                  <div className="text-slate-600 text-[10px] line-clamp-1" title={meta.coopSubjectNames || meta.integratedSubjects}>
+                                    <span className="text-slate-500">Phối hợp: </span>
+                                    <span className="font-medium text-slate-700">{meta.coopSubjectNames || meta.integratedSubjects}</span>
                                   </div>
-                                </div>
-                              );
-                            })()}
-                          </td>
+                                )}
+                              </div>
 
-                          {/* Địa điểm */}
-                          <td className="py-2.5 px-3 text-slate-600 align-middle">
-                            <div className="flex items-center gap-1">
-                              <MapPin className="w-3 h-3 text-slate-400 shrink-0" />
-                              <span className="truncate max-w-[120px]" title={meta.expectedLocation || ''}>
-                                {meta.expectedLocation || <span className="text-slate-400 font-normal italic">—</span>}
-                              </span>
-                            </div>
-                          </td>
+                              {/* GVBM Phụ trách / TCM */}
+                              <div>
+                                {meta.subjectTeacherName || meta.cthsTeacherName || (Array.isArray(meta.assignedTeachers) && meta.assignedTeachers.length > 0) || (Array.isArray(meta.cthsTeachers) && meta.cthsTeachers.length > 0) ? (
+                                  (() => {
+                                    const teacherList = (Array.isArray(meta.assignedTeachers) && meta.assignedTeachers.length > 0)
+                                      ? meta.assignedTeachers
+                                      : (Array.isArray(meta.cthsTeachers) && meta.cthsTeachers.length > 0)
+                                        ? meta.cthsTeachers
+                                        : [{
+                                            id: meta.subjectTeacherId || meta.cthsTeacherId || '',
+                                            teacherCode: meta.subjectTeacherCode || meta.cthsTeacherCode || '',
+                                            teacherName: meta.subjectTeacherName || meta.cthsTeacherName || '',
+                                            departmentName: meta.departmentName || '',
+                                            campusCode: meta.cthsTeacherCampus || '',
+                                            phone: meta.cthsTeacherPhone || '',
+                                            email: meta.subjectTeacherEmail || meta.cthsTeacherEmail || ''
+                                          }];
+                                    const firstTeacher = teacherList[0];
+                                    const extraCount = teacherList.length - 1;
+                                    const deptLabel = firstTeacher?.departmentName || meta.departmentName || '';
+                                    const fullTooltip = teacherList.map((t: any) => 
+                                      `• ${t.teacherName} (Mã: ${t.teacherCode || '—'})${t.departmentName ? ` - TCM: ${t.departmentName}` : ''}${t.campusCode ? ` - CS: ${t.campusCode}` : ''}${t.phone ? ` - SĐT: ${t.phone}` : ''}${t.email ? ` - Email: ${t.email}` : ''}`
+                                    ).join('\n');
 
-                          {/* GVBM Phụ trách (Tổ Chuyên Môn) */}
-                          <td className="py-2.5 px-3 align-middle">
-                            {meta.subjectTeacherName || meta.cthsTeacherName || (Array.isArray(meta.assignedTeachers) && meta.assignedTeachers.length > 0) || (Array.isArray(meta.cthsTeachers) && meta.cthsTeachers.length > 0) ? (
-                              (() => {
-                                const teacherList = (Array.isArray(meta.assignedTeachers) && meta.assignedTeachers.length > 0)
-                                  ? meta.assignedTeachers
-                                  : (Array.isArray(meta.cthsTeachers) && meta.cthsTeachers.length > 0)
-                                    ? meta.cthsTeachers
-                                    : [{
-                                        id: meta.subjectTeacherId || meta.cthsTeacherId || '',
-                                        teacherCode: meta.subjectTeacherCode || meta.cthsTeacherCode || '',
-                                        teacherName: meta.subjectTeacherName || meta.cthsTeacherName || '',
-                                        departmentName: meta.departmentName || '',
-                                        campusCode: meta.cthsTeacherCampus || '',
-                                        phone: meta.cthsTeacherPhone || '',
-                                        email: meta.subjectTeacherEmail || meta.cthsTeacherEmail || ''
-                                      }];
-                                const firstTeacher = teacherList[0];
-                                const extraCount = teacherList.length - 1;
-                                const deptLabel = firstTeacher?.departmentName || meta.departmentName || '';
-                                const fullTooltip = teacherList.map((t: any) => 
-                                  `• ${t.teacherName} (Mã: ${t.teacherCode || '—'})${t.departmentName ? ` - TCM: ${t.departmentName}` : ''}${t.campusCode ? ` - CS: ${t.campusCode}` : ''}${t.phone ? ` - SĐT: ${t.phone}` : ''}${t.email ? ` - Email: ${t.email}` : ''}`
-                                ).join('\n');
-
-                                return (
-                                  <button 
+                                    return (
+                                      <button 
+                                        type="button"
+                                        onClick={() => {
+                                          setSelectedIds([act.id]);
+                                          setIsAssignCTHSOpen(true);
+                                        }}
+                                        className="group cursor-pointer inline-flex items-center gap-1.5 px-2 py-1 rounded-xl bg-teal-50 border border-teal-200 hover:bg-teal-100 hover:border-teal-300 transition-all text-left shadow-2xs w-full max-w-[180px]"
+                                        title={`GVBM Phụ trách theo Tổ chuyên môn:\n${fullTooltip}\n(Bấm để xem chi tiết / thay đổi)`}
+                                      >
+                                        <div className="w-5 h-5 rounded-full bg-[#00A19A] text-white flex items-center justify-center text-[9px] font-black shrink-0">
+                                          {firstTeacher?.teacherName?.split(' ').slice(-1)[0]?.charAt(0) || 'G'}
+                                        </div>
+                                        <div className="min-w-0 flex-1">
+                                          <div className="text-[11px] font-bold text-teal-950 truncate flex items-center gap-1 leading-tight">
+                                            <span>{firstTeacher?.teacherName}</span>
+                                            {extraCount > 0 && (
+                                              <span className="text-[8px] font-bold px-1 rounded-full bg-teal-200 text-[#003B3A]">
+                                                +{extraCount}
+                                              </span>
+                                            )}
+                                          </div>
+                                          {deptLabel ? (
+                                            <div className="text-[9px] text-[#003B3A] font-medium truncate">
+                                              TCM: {deptLabel}
+                                            </div>
+                                          ) : null}
+                                        </div>
+                                        <Edit3 className="w-3 h-3 text-teal-600 opacity-60 group-hover:opacity-100 shrink-0" />
+                                      </button>
+                                    );
+                                  })()
+                                ) : (
+                                  <button
                                     type="button"
                                     onClick={() => {
                                       setSelectedIds([act.id]);
                                       setIsAssignCTHSOpen(true);
                                     }}
-                                    className="group cursor-pointer inline-flex items-center gap-2 px-2.5 py-1.5 rounded-xl bg-teal-50 border border-teal-200 hover:bg-teal-100 hover:border-teal-300 transition-all text-left shadow-2xs"
-                                    title={`GVBM Phụ trách theo Tổ chuyên môn:\n${fullTooltip}\n(Bấm để xem chi tiết / thay đổi)`}
+                                    className="inline-flex items-center gap-1 px-2 py-1 rounded-lg text-[10px] font-medium text-slate-500 hover:text-[#00A19A] hover:bg-teal-50 border border-dashed border-slate-300 hover:border-teal-400 transition-all cursor-pointer shadow-2xs"
+                                    title="Bấm để phân công GVBM theo Tổ chuyên môn phụ trách"
                                   >
-                                    <div className="w-6 h-6 rounded-full bg-[#00A19A] text-white flex items-center justify-center text-[10px] font-black shrink-0 shadow-2xs">
-                                      {firstTeacher?.teacherName?.split(' ').slice(-1)[0]?.charAt(0) || 'G'}
-                                    </div>
-                                    <div className="min-w-0">
-                                      <div className="text-[11px] font-extrabold text-teal-950 truncate max-w-[130px] flex items-center gap-1 leading-tight">
-                                        <span>{firstTeacher?.teacherName}</span>
-                                        {extraCount > 0 && (
-                                          <span className="text-[9px] font-bold px-1 rounded-full bg-teal-200 text-[#003B3A]">
-                                            +{extraCount}
-                                          </span>
-                                        )}
-                                      </div>
-                                      <div className="text-[10px] text-teal-800 font-medium flex items-center gap-1 truncate max-w-[140px]">
-                                        {deptLabel ? (
-                                          <span className="font-bold text-[#003B3A]">TCM: {deptLabel}</span>
-                                        ) : firstTeacher?.teacherCode ? (
-                                          <span className="font-mono text-teal-700">{firstTeacher.teacherCode}</span>
-                                        ) : null}
-                                        {firstTeacher?.campusCode && (
-                                          <span className="text-slate-500">• {firstTeacher.campusCode}</span>
-                                        )}
-                                      </div>
-                                    </div>
-                                    <Edit3 className="w-3 h-3 text-teal-600 opacity-60 group-hover:opacity-100 shrink-0 ml-0.5" />
+                                    <UserCheck className="w-3 h-3 text-slate-400" />
+                                    <span>+ Gán GVBM</span>
                                   </button>
-                                );
-                              })()
-                            ) : (
-                              <button
-                                type="button"
-                                onClick={() => {
-                                  setSelectedIds([act.id]);
-                                  setIsAssignCTHSOpen(true);
-                                }}
-                                className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-xl text-[11px] font-semibold text-slate-500 hover:text-[#00A19A] hover:bg-teal-50 border border-dashed border-slate-300 hover:border-teal-400 transition-all cursor-pointer shadow-2xs"
-                                title="Bấm để phân công GVBM theo Tổ chuyên môn phụ trách"
-                              >
-                                <UserCheck className="w-3.5 h-3.5 text-slate-400" />
-                                <span>+ Gán GVBM</span>
-                              </button>
-                            )}
+                                )}
+                              </div>
+                            </div>
                           </td>
 
-                          {/* HÌNH THỨC ĐÁNH GIÁ (3 CHẾ ĐỘ RÕ RÀNG) */}
-                          <td className="py-2.5 px-3 align-middle">
+                          {/* Cột 5: Thời gian & Địa điểm (Sạch sẽ, không badge thừa) */}
+                          <td className="py-2.5 px-3 align-top whitespace-nowrap">
+                            {(() => {
+                              const timeInfo = formatTimeFrameAndSemester(meta.timeFrame, '2026-2027', meta.semester);
+                              return (
+                                <div className="space-y-1">
+                                  <div className="font-extrabold text-[12px] text-slate-800 flex items-center gap-1.5">
+                                    <Calendar className="w-3.5 h-3.5 text-[#00A19A] shrink-0" />
+                                    <span>{timeInfo.formattedTime}</span>
+                                    {timeInfo.semester === 1 ? (
+                                      <span className="inline-flex items-center px-1.5 py-0.2 rounded text-[10px] font-extrabold bg-sky-50 text-sky-700 border border-sky-200">
+                                        HK1
+                                      </span>
+                                    ) : (
+                                      <span className="inline-flex items-center px-1.5 py-0.2 rounded text-[10px] font-extrabold bg-amber-50 text-amber-700 border border-amber-200">
+                                        HK2
+                                      </span>
+                                    )}
+                                  </div>
+                                  {meta.expectedLocation && (
+                                    <div className="flex items-center gap-1 text-slate-600 text-[11px]" title={meta.expectedLocation}>
+                                      <MapPin className="w-3 h-3 text-slate-400 shrink-0" />
+                                      <span className="truncate max-w-[130px]">{meta.expectedLocation}</span>
+                                    </div>
+                                  )}
+                                </div>
+                              );
+                            })()}
+                          </td>
+
+                          {/* Cột 6: Hình thức đánh giá (3 Chế độ rõ ràng) */}
+                          <td className="py-2.5 px-3 align-top">
                             {(() => {
                               const rawMode = evalCfg?.mode || (isEvent ? 'PARTICIPATION_ONLY' : 'RUBRIC');
                               const evalInfo = getEvaluationModeInfo(rawMode);
@@ -1295,25 +1279,40 @@ function ActivityCatalogsContent() {
                                     setIsConfigEvalOpen(true);
                                   }}
                                   className={`group inline-flex items-center gap-1.5 px-2.5 py-1 rounded-xl border text-[11px] font-bold transition-all cursor-pointer ${evalInfo.badgeCls} hover:brightness-95`}
-                                  title={`Ma trận đánh giá: ${evalInfo.name}\n${evalInfo.tagline}`}
+                                  title={`Ma trận đánh giá: ${evalInfo.name}\n${evalInfo.tagline}\n(Bấm để cấu hình)`}
                                 >
                                   <Sliders className="w-3 h-3 shrink-0 opacity-80" />
-                                  <span className="truncate max-w-[130px]">{badgeText}</span>
+                                  <span className="truncate max-w-[125px]">{badgeText}</span>
                                   <Edit3 className="w-3 h-3 opacity-50 group-hover:opacity-100 shrink-0" />
                                 </button>
                               );
                             })()}
                           </td>
 
-                          {/* Cơ sở tiếp nhận */}
-                          <td className="py-2.5 px-3 align-middle">
+                          {/* Cột 7: Cơ sở & Lớp tiếp nhận (Nơi duy nhất hiển thị tình trạng gán lớp) */}
+                          <td className="py-2.5 px-3 align-top">
                             {allocatedCampuses.length === 0 ? (
-                              <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md text-[10px] font-medium bg-slate-50 text-slate-400 border border-slate-200">
-                                Chưa gán lớp
-                              </span>
+                              <button
+                                type="button"
+                                onClick={() => {
+                                  setAllocatingItem(act);
+                                  setIsAllocateOpen(true);
+                                }}
+                                className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md text-[10px] font-medium bg-slate-50 text-slate-400 border border-slate-200 hover:bg-teal-50 hover:text-[#00A19A] hover:border-teal-300 transition-colors cursor-pointer"
+                                title="Bấm để phân bổ cơ sở & gán lớp"
+                              >
+                                <span>Chưa gán lớp</span>
+                              </button>
                             ) : (
-                              <div className="space-y-1">
-                                <div className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded-md text-[10px] font-extrabold bg-blue-50 text-blue-700 border border-blue-200 shadow-2xs">
+                              <div 
+                                className="space-y-1 cursor-pointer group"
+                                onClick={() => {
+                                  setAllocatingItem(act);
+                                  setIsAllocateOpen(true);
+                                }}
+                                title="Bấm để xem hoặc chỉnh sửa danh sách lớp tiếp nhận"
+                              >
+                                <div className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded-md text-[10px] font-extrabold bg-blue-50 text-blue-700 border border-blue-200 shadow-2xs group-hover:bg-blue-100 transition-colors">
                                   <CheckCircle2 className="w-2.5 h-2.5 text-blue-600 shrink-0" />
                                   <span>Đã gán {totalAssignedClasses > 0 ? `${totalAssignedClasses} lớp` : 'lớp'}</span>
                                 </div>
@@ -1337,10 +1336,10 @@ function ActivityCatalogsContent() {
                             )}
                           </td>
 
-                          {/* Thao tác (Sticky right) */}
-                          <td className="py-2.5 px-2 text-center sticky right-0 bg-white/95 backdrop-blur-xs border-l border-slate-200/80 shadow-xs align-middle">
+                          {/* Cột 8: Thao tác (Sticky right) */}
+                          <td className="py-2.5 px-2 text-center sticky right-0 bg-white/95 backdrop-blur-xs border-l border-slate-200/80 shadow-xs align-top">
                             <div className="flex items-center justify-center gap-1">
-                              {/* Đẩy Hoạt Động Xuống Cơ Sở & Báo Mail GV Tổ TLHN / Gán Lớp */}
+                              {/* Đẩy cơ sở & Gán lớp */}
                               <button
                                 type="button"
                                 onClick={() => {
@@ -1356,15 +1355,28 @@ function ActivityCatalogsContent() {
                               >
                                 {isAllocated ? (
                                   <>
-                                    <CheckCircle2 className="w-3.5 h-3.5 text-blue-600 shrink-0" />
-                                    <span>Đã gán lớp</span>
+                                    <CheckCircle2 className="w-3 h-3 text-blue-600 shrink-0" />
+                                    <span>Đã gán</span>
                                   </>
                                 ) : (
                                   <>
-                                    <Send className="w-3.5 h-3.5 text-blue-600 shrink-0" />
-                                    <span>Đẩy cơ sở</span>
+                                    <Send className="w-3 h-3 text-blue-600 shrink-0" />
+                                    <span>Đẩy CS</span>
                                   </>
                                 )}
+                              </button>
+
+                              {/* Xem nhanh Quick-View */}
+                              <button
+                                type="button"
+                                onClick={() => {
+                                  setQuickViewItem(act);
+                                  setIsQuickViewOpen(true);
+                                }}
+                                className="p-1.5 rounded-lg text-slate-600 hover:text-[#00A19A] hover:bg-teal-50 transition-colors cursor-pointer"
+                                title="Xem nhanh toàn diện thông tin (Quick-View Drawer)"
+                              >
+                                <Eye className="w-3.5 h-3.5" />
                               </button>
 
                               {/* Chỉnh sửa */}
@@ -1448,6 +1460,7 @@ function ActivityCatalogsContent() {
         isOpen={isImportOpen}
         onClose={() => setIsImportOpen(false)}
         onImportSuccess={loadCatalogs}
+        academicYearId={selectedYearId}
       />
 
       <CatalogAllocateModal
@@ -1458,6 +1471,7 @@ function ActivityCatalogsContent() {
         }}
         onAllocated={loadCatalogs}
         catalogItem={allocatingItem}
+        academicYearId={selectedYearId}
       />
 
       <CatalogAssignCTHSModal
@@ -1474,7 +1488,7 @@ function ActivityCatalogsContent() {
       <CatalogBulkDeleteModal
         isOpen={isBulkDeleteOpen}
         onClose={() => setIsBulkDeleteOpen(false)}
-        onDeleted={() => {
+        onSuccess={() => {
           loadCatalogs();
           setSelectedIds([]);
         }}
@@ -1494,11 +1508,29 @@ function ActivityCatalogsContent() {
       <CatalogThemeConfigModal
         isOpen={isThemeConfigOpen}
         onClose={() => setIsThemeConfigOpen(false)}
-        onSaved={() => {
-          fetch('/api/admin/experiential-activities/catalogs/themes')
-            .then(r => r.json())
-            .then(data => { if (Array.isArray(data)) setThemes(data); })
-            .catch(() => {});
+        onThemesUpdated={(updatedThemes) => {
+          if (Array.isArray(updatedThemes)) setThemes(updatedThemes);
+        }}
+      />
+
+      <CatalogQuickViewDrawer
+        open={isQuickViewOpen}
+        onClose={() => {
+          setIsQuickViewOpen(false);
+          setQuickViewItem(null);
+        }}
+        item={quickViewItem}
+        onOpenAllocate={(item) => {
+          setAllocatingItem(item);
+          setIsAllocateOpen(true);
+        }}
+        onOpenEdit={(item) => {
+          setEditingItem(item);
+          setIsAddEditOpen(true);
+        }}
+        onOpenEvalConfig={(item) => {
+          setEvalConfigItem(item);
+          setIsConfigEvalOpen(true);
         }}
       />
     </div>

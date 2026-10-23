@@ -326,13 +326,21 @@ export function CatalogAssignCTHSModal({
         body: JSON.stringify(payload)
       });
 
-      if (!res.ok) {
-        const err = await res.json();
-        throw new Error(err.error || 'Lỗi khi gán giáo viên');
+      let data: any = null;
+      const responseText = await res.text();
+      try {
+        data = responseText ? JSON.parse(responseText) : {};
+      } catch {
+        if (!res.ok) {
+          throw new Error(`Máy chủ phản hồi lỗi (${res.status}): Không thể xử lý phản hồi từ hệ thống`);
+        }
       }
 
-      const data = await res.json();
-      toast.success(data.message || 'Đã phân công GVBM phụ trách theo Tổ chuyên môn thành công');
+      if (!res.ok) {
+        throw new Error(data?.error || `Lỗi khi gán giáo viên (Mã lỗi: ${res.status})`);
+      }
+
+      toast.success(data?.message || 'Đã phân công GVBM phụ trách theo Tổ chuyên môn thành công');
       if (onSaved) onSaved();
       if (onSuccess) onSuccess();
       onClose();

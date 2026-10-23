@@ -389,9 +389,18 @@ export function CatalogAddEditModal({
         body: JSON.stringify(payload)
       });
 
+      let data: any = null;
+      const responseText = await res.text();
+      try {
+        data = responseText ? JSON.parse(responseText) : {};
+      } catch {
+        if (!res.ok) {
+          throw new Error(`Máy chủ phản hồi lỗi (${res.status}): Không thể xử lý phản hồi từ hệ thống`);
+        }
+      }
+
       if (!res.ok) {
-        const err = await res.json();
-        throw new Error(err.error || 'Lỗi khi lưu thông tin');
+        throw new Error(data?.error || `Lỗi khi lưu thông tin (Mã lỗi: ${res.status})`);
       }
 
       toast.success(currentItem?.id ? 'Đã cập nhật hoạt động thành công' : 'Đã thêm mới hoạt động thành công');
