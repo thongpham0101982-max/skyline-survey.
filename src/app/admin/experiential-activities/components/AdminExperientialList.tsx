@@ -222,7 +222,7 @@ export default function AdminExperientialList() {
             </div>
             <div className="flex items-center gap-3 shrink-0 flex-wrap">
               <button onClick={handleExportExcel} className="px-4 py-3 bg-white hover:bg-slate-50 text-slate-700 text-xs font-black rounded-2xl border border-slate-200/80 shadow-2xs transition-all">Xuất Excel</button>
-              <button onClick={() => router.push('/admin/experiential-activities/catalogs')} className="px-6 py-3 bg-gradient-to-r from-blue-700 via-indigo-600 to-[#00A19A] hover:from-blue-800 hover:to-indigo-700 text-white text-xs sm:text-sm font-black rounded-2xl shadow-lg shadow-blue-500/25 transition-all flex items-center gap-2.5 group transform active:scale-95 cursor-pointer" title="Đẩy Hoạt Động Xuống Cơ Sở & Báo Mail GV Tổ TLHN">
+              <button onClick={() => router.push('/admin/experiential-activities/catalogs')} className="px-6 py-3 bg-gradient-to-r from-blue-700 via-indigo-600 to-[#00A19A] hover:from-blue-800 hover:to-indigo-700 text-white text-xs sm:text-sm font-black rounded-2xl shadow-lg shadow-blue-500/25 transition-all flex items-center gap-2.5 group transform active:scale-95 cursor-pointer" title="Đẩy Hoạt Động Xuống Cơ Sở & Gán Lớp Tiếp Nhận">
                 Đẩy Hoạt Động Xuống Cơ Sở
               </button>
             </div>
@@ -391,7 +391,7 @@ export default function AdminExperientialList() {
                           {act.canManage ? (
                             <div className="flex items-center gap-1">
                               <button onClick={() => setProgressModalActivity(act)} className="p-2 rounded-xl bg-slate-100 hover:bg-[#00A19A]/10 text-slate-600 hover:text-[#003B3A]" title="Tiến độ">Tiến độ</button>
-                              <button onClick={e=>{e.stopPropagation(); router.push(`/admin/experiential-activities/catalogs?allocateId=${act.catalogId || act.id}`);}} className="p-2 rounded-xl bg-blue-50 hover:bg-blue-100 text-blue-700 font-bold" title="Đẩy Hoạt Động Xuống Cơ Sở & Báo Mail GV Tổ TLHN">Đẩy cơ sở</button>
+                              <button onClick={e=>{e.stopPropagation(); router.push(`/admin/experiential-activities/catalogs?allocateId=${act.catalogId || act.id}`);}} className="p-2 rounded-xl bg-blue-50 hover:bg-blue-100 text-blue-700 font-bold" title="Đẩy Hoạt Động Xuống Cơ Sở & Gán Lớp Tiếp Nhận">Đẩy cơ sở</button>
                               <button onClick={e=>handleDuplicate(e, act)} className="p-2 rounded-xl bg-slate-100 hover:bg-indigo-50 text-slate-600 hover:text-indigo-600" title="Nhân bản">Nhân bản</button>
                               <button onClick={e=>handleToggleLock(e, act)} className={`p-2 rounded-xl ${locked?'bg-amber-50 text-amber-700 hover:bg-amber-100':'bg-slate-100 text-slate-600 hover:bg-slate-200'}`} title={locked?'Mở khóa':'Khóa'}>{locked?'Mở khóa':'Khóa'}</button>
                               <button onClick={e=>handleDelete(e, act.id)} className="p-2 rounded-xl bg-slate-100 hover:bg-rose-50 text-slate-400 hover:text-rose-600" title="Xóa">Xóa</button>

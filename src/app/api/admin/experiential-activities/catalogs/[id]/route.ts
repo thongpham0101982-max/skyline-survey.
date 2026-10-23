@@ -22,7 +22,7 @@ async function checkAdminOrCTHSPermission(session: any) {
   return await hasModulePermission(userRole, ['EXPERIENTIAL_ACTIVITIES', 'EXP_ACT_MANAGE'], 'canUpdate');
 }
 
-export async function GET(req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
+export async function GET(req: NextRequest, { params }: { params: Promise<{ id: string }> | { id: string } }) {
   try {
     const session = await auth();
     const isAllowed = await checkAdminOrCTHSPermission(session);
@@ -30,7 +30,11 @@ export async function GET(req: NextRequest, { params }: { params: Promise<{ id: 
       return NextResponse.json({ error: 'Không có quyền truy cập' }, { status: 403 });
     }
 
-    const { id } = await params;
+    const resolvedParams = params instanceof Promise ? await params : params;
+    const id = resolvedParams?.id;
+    if (!id) {
+      return NextResponse.json({ error: 'Thiếu mã hoạt động' }, { status: 400 });
+    }
     const catalog = await prisma.activityCatalog.findUnique({
       where: { id },
       include: {
@@ -84,7 +88,7 @@ export async function GET(req: NextRequest, { params }: { params: Promise<{ id: 
   }
 }
 
-export async function PUT(req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
+export async function PUT(req: NextRequest, { params }: { params: Promise<{ id: string }> | { id: string } }) {
   try {
     const session = await auth();
     const isAllowed = await checkAdminOrCTHSPermission(session);
@@ -92,7 +96,11 @@ export async function PUT(req: NextRequest, { params }: { params: Promise<{ id: 
       return NextResponse.json({ error: 'Không có quyền cập nhật' }, { status: 403 });
     }
 
-    const { id } = await params;
+    const resolvedParams = params instanceof Promise ? await params : params;
+    const id = resolvedParams?.id;
+    if (!id) {
+      return NextResponse.json({ error: 'Thiếu mã hoạt động (ID)' }, { status: 400 });
+    }
     const body = await req.json();
     const { name, meta = {}, action } = body;
 
@@ -135,10 +143,20 @@ export async function PUT(req: NextRequest, { params }: { params: Promise<{ id: 
       for (const alloc of body.allocatedCampuses) {
         if (Array.isArray(alloc.assignedClasses) && alloc.assignedClasses.length > 0) {
           try {
-            let academicYearId = updatedMeta.academicYearId;
+            let validYear = null;
+            if (updatedMeta.academicYearId) {
+              validYear = await prisma.academicYear.findUnique({ where: { id: updatedMeta.academicYearId } });
+              if (!validYear) {
+                validYear = await prisma.academicYear.findFirst({ where: { name: updatedMeta.academicYearId } });
+              }
+            }
+            if (!validYear) {
+              validYear = await prisma.academicYear.findFirst({ where: { status: 'ACTIVE' } }) || await prisma.academicYear.findFirst();
+            }
+            const academicYearId = validYear?.id;
             if (!academicYearId) {
-              const activeYear = await prisma.academicYear.findFirst({ where: { status: 'ACTIVE' } }) || await prisma.academicYear.findFirst();
-              academicYearId = activeYear?.id || '';
+              console.warn('[ALLOCATE_CAMPUSES] Không tìm thấy năm học hợp lệ trong hệ thống');
+              continue;
             }
 
             let actRecord = null;
@@ -191,13 +209,15 @@ export async function PUT(req: NextRequest, { params }: { params: Promise<{ id: 
               }
 
               if (repTeacher) {
+                const randomSuffix = Math.random().toString(36).substring(2, 6).toUpperCase();
+                const recordCode = `HDTN-${alloc.campusCode || 'CS'}-${Date.now().toString().slice(-6)}-${randomSuffix}`;
                 actRecord = await prisma.activityRecord.create({
                   data: {
-                    code: `HDTN-${alloc.campusCode || 'CS'}-${Date.now().toString().slice(-6)}`,
+                    code: recordCode,
                     name: existing.name,
                     catalogId: existing.id,
                     date: new Date(),
-                    semester: updatedMeta.semester || 1,
+                    semester: Number(updatedMeta.semester) || 1,
                     academicYearId,
                     levelId: updatedMeta.educationLevel || null,
                     formatId: 'LOP',
@@ -265,7 +285,7 @@ export async function PUT(req: NextRequest, { params }: { params: Promise<{ id: 
         }
       }
 
-      // Gửi email thông báo cho GVCN các lớp & GV Tổ TLHN tại các cơ sở được phân bổ
+      // Gửi email thông báo cho GVCN các lớp & GVBM Phụ trách tại các cơ sở được phân bổ (KHÔNG gửi email cho Tổ TLHN)
       if (body.sendEmail !== false && body.allocatedCampuses.length > 0) {
         try {
           emailResult = await sendTLHNAllocationNotification({
@@ -293,7 +313,7 @@ export async function PUT(req: NextRequest, { params }: { params: Promise<{ id: 
             allocatedCampuses: body.allocatedCampuses
           });
         } catch (emailErr) {
-          console.error('[ALLOCATE_CAMPUSES] Lỗi khi gửi email cho GV Tổ TLHN / GVCN:', emailErr);
+          console.error('[ALLOCATE_CAMPUSES] Lỗi khi gửi email thông báo phân bổ cho GVCN / GVBM:', emailErr);
         }
       }
     }
@@ -330,7 +350,7 @@ export async function PUT(req: NextRequest, { params }: { params: Promise<{ id: 
   }
 }
 
-export async function DELETE(req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
+export async function DELETE(req: NextRequest, { params }: { params: Promise<{ id: string }> | { id: string } }) {
   try {
     const session = await auth();
     const isAllowed = await checkAdminOrCTHSPermission(session);
@@ -338,7 +358,11 @@ export async function DELETE(req: NextRequest, { params }: { params: Promise<{ i
       return NextResponse.json({ error: 'Không có quyền xóa' }, { status: 403 });
     }
 
-    const { id } = await params;
+    const resolvedParams = params instanceof Promise ? await params : params;
+    const id = resolvedParams?.id;
+    if (!id) {
+      return NextResponse.json({ error: 'Thiếu mã hoạt động' }, { status: 400 });
+    }
     const { searchParams } = new URL(req.url);
     const cancelInstead = searchParams.get('cancelInstead') === 'true';
 

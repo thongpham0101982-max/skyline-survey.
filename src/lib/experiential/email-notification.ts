@@ -404,7 +404,7 @@ export async function sendExperientialActivityNotification(payload: ActivityNoti
     const allClassNames = assignedClasses.map(c => c.className).join(", ");
     const formattedDate = date ? new Date(date).toLocaleDateString("vi-VN") : "Theo lịch công tác";
     const displaySenderName = senderName || "Tổ CTHS - Ban HĐNGLL";
-    const authSmtpUser = process.env.SMTP_USER || "bankhaothi@skylineschool.edu.vn";
+    const authSmtpUser = process.env.SMTP_USER || "ktdbcl@skylineschool.edu.vn";
     const fromAddress = `"${displaySenderName}" <${authSmtpUser}>`;
     const resolvedReplyTo = (replyTo && replyTo.includes('@')) ? replyTo : (senderEmail && senderEmail.includes('@') ? senderEmail : authSmtpUser);
 
@@ -625,7 +625,7 @@ export async function sendExperientialActivityNotification(payload: ActivityNoti
                 Đơn vị gửi: <strong style="color: #FFFFFF;">${displaySenderName}</strong> ${senderEmail ? `(${senderEmail})` : ""}
               </p>
               <p style="margin: 0; font-size: 10px; color: rgba(255, 255, 255, 0.65); line-height: 1.5;">
-                Email hỗ trợ: <a href="mailto:bankhaothi@skylineschool.edu.vn" style="color: #FDE047; text-decoration: none; font-weight: 600;">bankhaothi@skylineschool.edu.vn</a> • Website: <a href="https://skylineschool.edu.vn" target="_blank" style="color: #FDE047; text-decoration: none; font-weight: 600;">skylineschool.edu.vn</a>
+                Email hỗ trợ: <a href="mailto:ktdbcl@skylineschool.edu.vn" style="color: #FDE047; text-decoration: none; font-weight: 600;">ktdbcl@skylineschool.edu.vn</a> • Website: <a href="https://skylineschool.edu.vn" target="_blank" style="color: #FDE047; text-decoration: none; font-weight: 600;">skylineschool.edu.vn</a>
               </p>
               <p style="margin: 6px 0 0 0; font-size: 10px; color: rgba(255, 255, 255, 0.4);">
                 Email này được gửi tự động đến GVCN và CC Giám đốc Cơ sở liên quan. Vui lòng không trả lời trực tiếp email này.
@@ -665,7 +665,7 @@ export async function sendExperientialActivityNotification(payload: ActivityNoti
 }
 
 /**
- * Payload thông báo phân bổ kế hoạch hoạt động ngoại khóa cho GV Tổ TLHN
+ * Payload thông báo phân bổ kế hoạch hoạt động ngoại khóa cho GVCN & GVBM Phụ trách (không gửi Tổ TLHN)
  */
 export interface TLHNAllocationEmailPayload {
   catalogId: string;
@@ -712,9 +712,17 @@ export interface TLHNAllocationEmailPayload {
 }
 
 /**
- * Gửi email thông báo cho GV Tổ TLHN tại các cơ sở khi Ban ĐHCM / BP HĐNGLL - Tổ CTHS phân bổ kế hoạch hoạt động
+/**
+ * Gửi email thông báo phân bổ kế hoạch hoạt động:
+ * - Gửi email thông báo tới GVCN các lớp tiếp nhận để nhập vai trò học sinh
+ * - Gửi email thông báo tới GVBM Phụ trách theo Tổ chuyên môn (nếu được gán đích danh)
+ * - KHÔNG gửi email cho Tổ TLHN
  */
 export async function sendTLHNAllocationNotification(payload: TLHNAllocationEmailPayload) {
+  return sendActivityAllocationNotification(payload);
+}
+
+export async function sendActivityAllocationNotification(payload: TLHNAllocationEmailPayload) {
   try {
     const {
       catalogId,
@@ -741,119 +749,37 @@ export async function sendTLHNAllocationNotification(payload: TLHNAllocationEmai
     } = payload;
 
     if (!allocatedCampuses || allocatedCampuses.length === 0) {
-      console.log('[TLHN Email] Không có cơ sở phân bổ, bỏ qua gửi email.');
+      console.log('[Allocation Email] Không có cơ sở phân bổ, bỏ qua gửi email.');
       return { success: true, count: 0 };
     }
 
-    const campusIds = allocatedCampuses.map(a => a.campusId).filter(Boolean);
-
-    // 1. Tìm các giáo viên thuộc Tổ TLHN tại các cơ sở được phân bổ
-    const tlhnTeachers = await prisma.teacher.findMany({
-      where: {
-        campusId: { in: campusIds },
-        status: 'ACTIVE',
-        OR: [
-          { departmentRel: { name: { contains: 'TLHN' } } },
-          { departmentRel: { name: { contains: 'Tâm lý' } } },
-          { position: { contains: 'TLHN' } },
-          { positions: { contains: 'TLHN' } },
-          { position: { contains: 'Tâm lý' } },
-          { positions: { contains: 'Tâm lý' } },
-          { user: { role: { contains: 'TLHN' } } },
-          { user: { role: { contains: 'HDTN' } } }
-        ]
-      },
-      include: {
-        campus: true,
-        user: true,
-        departmentRel: true
-      }
-    });
-
-    // 2. Thu thập danh sách người nhận email (loại bỏ trùng lặp)
-    const recipientMap = new Map<string, {
+    // 1. Thu thập danh sách GVBM Phụ trách theo Tổ Chuyên Môn được gán đích danh (KHÔNG quét Tổ TLHN)
+    const subjectTeacherMap = new Map<string, {
       email: string;
       teacherName: string;
-      teacherCode: string;
       campusName: string;
       campusCode: string;
+      departmentName?: string;
     }>();
 
-    // Thêm các GV Tổ TLHN tìm được theo cơ sở
-    tlhnTeachers.forEach(t => {
-      const email = t.email || t.user?.email;
-      if (email && email.includes('@')) {
-        const cleanEmail = email.trim().toLowerCase();
-        recipientMap.set(cleanEmail, {
-          email: cleanEmail,
-          teacherName: t.teacherName || t.user?.fullName || 'Thầy/Cô',
-          teacherCode: t.teacherCode || '',
-          campusName: t.campus?.campusName || '',
-          campusCode: t.campus?.campusCode || ''
-        });
-      }
-    });
-
-    // Thêm các GV có email trực tiếp trong allocatedCampuses (nếu người dùng gán đích danh)
     allocatedCampuses.forEach(alloc => {
-      if (alloc.tlhnTeacherEmail && alloc.tlhnTeacherEmail.includes('@')) {
-        const cleanEmail = alloc.tlhnTeacherEmail.trim().toLowerCase();
-        if (!recipientMap.has(cleanEmail)) {
-          recipientMap.set(cleanEmail, {
+      const targetEmail = alloc.subjectTeacherEmail;
+      const targetName = alloc.subjectTeacherName;
+      if (targetEmail && targetEmail.includes('@')) {
+        const cleanEmail = targetEmail.trim().toLowerCase();
+        if (!subjectTeacherMap.has(cleanEmail)) {
+          subjectTeacherMap.set(cleanEmail, {
             email: cleanEmail,
-            teacherName: alloc.tlhnTeacherName || 'Thầy/Cô Tổ TLHN',
-            teacherCode: '',
+            teacherName: targetName || 'Thầy/Cô Phụ trách Hoạt động',
             campusName: alloc.campusName || '',
-            campusCode: alloc.campusCode || ''
+            campusCode: alloc.campusCode || '',
+            departmentName: alloc.departmentName || ''
           });
         }
       }
     });
 
-    // Nếu một số cơ sở không có GV Tổ TLHN, tìm email của GDCS / Ban Giám hiệu cơ sở để không bỏ sót kế hoạch
-    for (const alloc of allocatedCampuses) {
-      const hasTeacherForCampus = Array.from(recipientMap.values()).some(
-        r => r.campusCode === alloc.campusCode || r.campusName === alloc.campusName
-      );
-      if (!hasTeacherForCampus) {
-        const campusWithMgr = await prisma.campus.findUnique({
-          where: { id: alloc.campusId },
-          include: {
-            manager: true,
-            userAssignments: {
-              where: { role: { in: ['GDCS', 'GIAO_VU_CS', 'GIAO_VU', 'BGH'] } },
-              include: { user: true }
-            }
-          }
-        });
-
-        if (campusWithMgr?.manager?.email) {
-          const mEmail = campusWithMgr.manager.email.trim().toLowerCase();
-          recipientMap.set(mEmail, {
-            email: mEmail,
-            teacherName: campusWithMgr.manager.fullName || 'Ban Giám đốc Cơ sở',
-            teacherCode: '',
-            campusName: campusWithMgr.campusName,
-            campusCode: campusWithMgr.campusCode
-          });
-        }
-
-        campusWithMgr?.userAssignments?.forEach((ua: any) => {
-          if (ua.user?.email) {
-            const uEmail = ua.user.email.trim().toLowerCase();
-            recipientMap.set(uEmail, {
-              email: uEmail,
-              teacherName: ua.user.fullName || 'Cán bộ Cơ sở',
-              teacherCode: '',
-              campusName: campusWithMgr.campusName,
-              campusCode: campusWithMgr.campusCode
-            });
-          }
-        });
-      }
-    }
-
-    const recipients = Array.from(recipientMap.values());
+    const subjectRecipients = Array.from(subjectTeacherMap.values());
 
     // 2b. Thu thập danh sách GVCN từ các lớp được chọn phân bổ
     const gvcnRecipientMap = new Map<string, {
@@ -876,12 +802,51 @@ export async function sendTLHNAllocationNotification(payload: TLHNAllocationEmai
             try {
               const tIds = cls.homeroomTeacherId.split(',').map((id: string) => id.trim()).filter(Boolean);
               const foundTeacher = await prisma.teacher.findFirst({
-                where: { id: { in: tIds } },
+                where: {
+                  OR: [
+                    { id: { in: tIds } },
+                    { teacherCode: { in: tIds } }
+                  ]
+                },
                 include: { user: true }
               });
               if (foundTeacher) {
                 gvcnEmail = foundTeacher.email || foundTeacher.user?.email || '';
                 gvcnName = gvcnName || foundTeacher.teacherName || foundTeacher.user?.fullName || '';
+              }
+            } catch {}
+          }
+
+          if ((!gvcnEmail || !gvcnEmail.includes('@')) && cls.classId) {
+            try {
+              const dbClass = await prisma.class.findUnique({
+                where: { id: cls.classId },
+                include: {
+                  teachers: {
+                    where: { roleInClass: 'GVCN' },
+                    include: { teacher: true }
+                  }
+                }
+              });
+              if (dbClass) {
+                const assignedGVCN = dbClass.teachers?.[0]?.teacher;
+                if (assignedGVCN?.email) {
+                  gvcnEmail = assignedGVCN.email;
+                  gvcnName = gvcnName || assignedGVCN.teacherName;
+                } else if (dbClass.homeroomTeacherId) {
+                  const ht = await prisma.teacher.findFirst({
+                    where: {
+                      OR: [
+                        { id: dbClass.homeroomTeacherId },
+                        { teacherCode: dbClass.homeroomTeacherId }
+                      ]
+                    }
+                  });
+                  if (ht?.email) {
+                    gvcnEmail = ht.email;
+                    gvcnName = gvcnName || ht.teacherName;
+                  }
+                }
               }
             } catch {}
           }
@@ -906,8 +871,8 @@ export async function sendTLHNAllocationNotification(payload: TLHNAllocationEmai
       }
     }
 
-    if (recipients.length === 0 && gvcnRecipientMap.size === 0) {
-      console.log('[TLHN/GVCN Email] Không tìm thấy email của GV Tổ TLHN hoặc GVCN tại các cơ sở.');
+    if (subjectRecipients.length === 0 && gvcnRecipientMap.size === 0) {
+      console.log('[Allocation/GVCN Email] Không tìm thấy email của GVBM Phụ trách hoặc GVCN tại các cơ sở phân bổ.');
       return { success: true, count: 0 };
     }
 
@@ -922,8 +887,8 @@ export async function sendTLHNAllocationNotification(payload: TLHNAllocationEmai
 
     const emailSubject = `[Sky-line SMS - HĐTN] Kế hoạch hoạt động ngoại khóa từ BP HĐNGLL - Tổ CTHS: ${activityName}`;
 
-    // 3. Gửi email tới từng thầy cô Tổ TLHN
-    const tlhnPromises = recipients.map(async recipient => {
+    // 3. Gửi email tới GVBM Phụ trách theo Tổ chuyên môn tại các cơ sở (nếu có)
+    const subjectPromises = subjectRecipients.map(async recipient => {
       const emailHtml = `
 <!DOCTYPE html>
 <html lang="vi">
@@ -979,7 +944,7 @@ export async function sendTLHNAllocationNotification(payload: TLHNAllocationEmai
                 <tr>
                   <td style="padding: 16px 18px;">
                     <div style="font-size: 13.5px; font-weight: 700; color: #003B3A; line-height: 1.6;">
-                      Các Thầy/Cô vừa nhận được Kế hoạch hoạt động ngoại khóa/trải nghiệm từ BP HĐNGLL - Tổ CTHS. Kính nhờ các Thầy/Cô vui lòng triển khai kế hoạch đến GVCN, GVBM liên quan tại cơ sở để phối hợp thực hiện đúng tiến độ.
+                      Thầy/Cô vừa nhận được phân công phụ trách Kế hoạch hoạt động ngoại khóa/trải nghiệm từ BP HĐNGLL - Tổ CTHS. Kính nhờ Thầy/Cô theo dõi tiến độ và phối hợp cùng GVCN các lớp tiếp nhận để triển khai hoạt động hiệu quả.
                     </div>
                   </td>
                 </tr>
@@ -1042,7 +1007,7 @@ export async function sendTLHNAllocationNotification(payload: TLHNAllocationEmai
                 <tr>
                   <td align="center" bgcolor="#00A19A" style="border-radius: 10px; background-color: #00A19A;">
                     <a href="${dispatchUrl}" target="_blank" style="display: inline-block; padding: 14px 32px; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Arial, sans-serif; font-size: 13.5px; color: #FFFFFF; font-weight: 800; text-decoration: none; border-radius: 10px; text-transform: uppercase; letter-spacing: 0.5px; border: 1px solid #00A19A;">
-                      TIẾP NHẬN & TRIỂN KHAI KẾ HOẠCH TẠI CƠ SỞ &rarr;
+                      XEM CHI TIẾT KẾ HOẠCH & ĐỒNG HÀNH TRIỂN KHAI &rarr;
                     </a>
                   </td>
                 </tr>
@@ -1052,10 +1017,10 @@ export async function sendTLHNAllocationNotification(payload: TLHNAllocationEmai
               <table role="presentation" border="0" cellpadding="0" cellspacing="0" width="100%" style="background-color: #FFFBEB; border: 1px solid #FEF3C7; border-left: 4px solid #F59E0B; border-radius: 8px; margin-top: 20px;">
                 <tr>
                   <td style="padding: 14px 16px; font-size: 12.5px; color: #92400E; line-height: 1.55;">
-                    <strong style="color: #78350F;">💡 Nhiệm vụ của GV Tổ TLHN tại Cơ sở:</strong><br/>
-                    1. Nhấp vào nút bấm trên hoặc đăng nhập vào Cổng Giáo viên: <em>Quản lý Hoạt động trải nghiệm &rarr; Hoạt động tiếp nhận từ cơ sở</em>.<br/>
-                    2. Bấm <strong>"Tiếp nhận"</strong> để xác nhận kế hoạch từ Tổ CTHS.<br/>
-                    3. Chọn các lớp tại cơ sở tham gia và thông báo kế hoạch tới <strong>GVCN, GVBM liên quan</strong> để phối hợp thực hiện.
+                    <strong style="color: #78350F;">💡 Nhiệm vụ của GVBM Phụ trách tại Cơ sở:</strong><br/>
+                    1. Nhấp vào nút bấm trên hoặc đăng nhập vào Cổng Giáo viên: <em>Quản lý Hoạt động trải nghiệm</em>.<br/>
+                    2. Nắm bắt kế hoạch hoạt động và phối hợp cùng GVCN các lớp tiếp nhận.<br/>
+                    3. Hỗ trợ đánh giá kết quả rèn luyện & vai trò của học sinh sau khi hoàn thành hoạt động.
                   </td>
                 </tr>
               </table>
@@ -1076,7 +1041,7 @@ export async function sendTLHNAllocationNotification(payload: TLHNAllocationEmai
                 Đơn vị gửi thông báo: <strong style="color: #FFFFFF;">${senderName}</strong>
               </p>
               <p style="margin: 0; font-size: 10px; color: rgba(255, 255, 255, 0.65); line-height: 1.5;">
-                Email hỗ trợ: <a href="mailto:bankhaothi@skylineschool.edu.vn" style="color: #FDE047; text-decoration: none; font-weight: 600;">bankhaothi@skylineschool.edu.vn</a> • Website: <a href="https://skylineschool.edu.vn" target="_blank" style="color: #FDE047; text-decoration: none; font-weight: 600;">skylineschool.edu.vn</a>
+                Email hỗ trợ: <a href="mailto:ktdbcl@skylineschool.edu.vn" style="color: #FDE047; text-decoration: none; font-weight: 600;">ktdbcl@skylineschool.edu.vn</a> • Website: <a href="https://skylineschool.edu.vn" target="_blank" style="color: #FDE047; text-decoration: none; font-weight: 600;">skylineschool.edu.vn</a>
               </p>
               <p style="margin: 6px 0 0 0; font-size: 10px; color: rgba(255, 255, 255, 0.4);">
                 Email thông báo tự động từ Hệ thống Sky-line SMS. Vui lòng không trả lời trực tiếp email này.
@@ -1093,15 +1058,19 @@ export async function sendTLHNAllocationNotification(payload: TLHNAllocationEmai
       `;
 
       try {
-        await sendEmail({
+        const sendRes = await sendEmail({
           from: fromAddress,
           to: recipient.email,
           subject: emailSubject,
           html: emailHtml
         });
-        console.log(`[TLHN Email] Đã gửi email kế hoạch HĐTN thành công tới ${recipient.email} (${recipient.teacherName} - ${recipient.campusCode})`);
+        if (sendRes.success) {
+          console.log(`[Subject Teacher Email] Đã gửi email kế hoạch HĐTN thành công tới ${recipient.email} (${recipient.teacherName} - ${recipient.campusCode})`);
+        } else {
+          console.error(`[Subject Teacher Email] Lỗi khi gửi email tới ${recipient.email}:`, sendRes.error || sendRes.reason);
+        }
       } catch (err: any) {
-        console.error(`[TLHN Email] Lỗi khi gửi email tới ${recipient.email}:`, err?.message);
+        console.error(`[Subject Teacher Email] Lỗi khi gửi email tới ${recipient.email}:`, err?.message);
       }
     });
 
@@ -1242,7 +1211,7 @@ export async function sendTLHNAllocationNotification(payload: TLHNAllocationEmai
                 Đơn vị gửi thông báo: <strong style="color: #FFFFFF;">${senderName}</strong>
               </p>
               <p style="margin: 0; font-size: 10px; color: rgba(255, 255, 255, 0.65); line-height: 1.5;">
-                Email hỗ trợ: <a href="mailto:bankhaothi@skylineschool.edu.vn" style="color: #FDE047; text-decoration: none; font-weight: 600;">bankhaothi@skylineschool.edu.vn</a> • Website: <a href="https://skylineschool.edu.vn" target="_blank" style="color: #FDE047; text-decoration: none; font-weight: 600;">skylineschool.edu.vn</a>
+                Email hỗ trợ: <a href="mailto:ktdbcl@skylineschool.edu.vn" style="color: #FDE047; text-decoration: none; font-weight: 600;">ktdbcl@skylineschool.edu.vn</a> • Website: <a href="https://skylineschool.edu.vn" target="_blank" style="color: #FDE047; text-decoration: none; font-weight: 600;">skylineschool.edu.vn</a>
               </p>
             </td>
           </tr>
@@ -1256,23 +1225,32 @@ export async function sendTLHNAllocationNotification(payload: TLHNAllocationEmai
       `;
 
       try {
-        await sendEmail({
+        const sendRes = await sendEmail({
           from: fromAddress,
           to: gvcn.email,
           subject: gvcnSubject,
           html: gvcnEmailHtml
         });
-        console.log(`[GVCN Email] Đã gửi email kế hoạch HĐTN thành công tới GVCN ${gvcn.gvcnName} (${gvcn.email}) lớp ${gvcn.className}`);
+        if (sendRes.success) {
+          console.log(`[GVCN Email] Đã gửi email kế hoạch HĐTN thành công tới GVCN ${gvcn.gvcnName} (${gvcn.email}) lớp ${gvcn.className}`);
+        } else {
+          console.error(`[GVCN Email] Lỗi khi gửi email tới ${gvcn.email}:`, sendRes.error || sendRes.reason);
+        }
       } catch (err: any) {
         console.error(`[GVCN Email] Lỗi khi gửi email tới ${gvcn.email}:`, err?.message);
       }
     });
 
-    await Promise.allSettled([...tlhnPromises, ...gvcnPromises]);
-    const totalSent = recipients.length + gvcnRecipientMap.size;
-    return { success: true, count: totalSent, gvcnCount: gvcnRecipientMap.size, tlhnCount: recipients.length };
+    await Promise.allSettled([...subjectPromises, ...gvcnPromises]);
+    const totalSent = subjectRecipients.length + gvcnRecipientMap.size;
+    return { 
+      success: true, 
+      count: totalSent, 
+      gvcnCount: gvcnRecipientMap.size, 
+      subjectTeacherCount: subjectRecipients.length 
+    };
   } catch (error: any) {
-    console.error('[TLHN Email] Lỗi xử lý gửi email phân bổ hoạt động:', error);
+    console.error('[Allocation Email] Lỗi xử lý gửi email phân bổ hoạt động:', error);
     return { success: false, error: error?.message };
   }
 }

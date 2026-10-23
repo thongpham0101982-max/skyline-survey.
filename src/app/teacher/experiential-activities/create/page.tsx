@@ -168,9 +168,9 @@ export default function CreateActivityWizard() {
   const [currentStep, setCurrentStep] = useState(1);
   const [isSubmitting, setIsSubmitting] = useState(false);
 
-  // Chuyển hướng hợp nhất: Quy trình chuẩn phân bổ HĐTN là "Đẩy Hoạt Động Xuống Cơ Sở & Báo Mail GV Tổ TLHN"
+  // Chuyển hướng hợp nhất: Quy trình chuẩn phân bổ HĐTN là "Đẩy Hoạt Động Xuống Cơ Sở & Gán Lớp Tiếp Nhận"
   useEffect(() => {
-    toast('Đang chuyển tới quy trình chuẩn: Đẩy Hoạt Động Xuống Cơ Sở & Báo Mail GV Tổ TLHN', {
+    toast('Đang chuyển tới quy trình chuẩn: Đẩy Hoạt Động Xuống Cơ Sở & Gán Lớp Tiếp Nhận', {
       icon: '🧭',
       duration: 4000
     });
@@ -225,7 +225,7 @@ export default function CreateActivityWizard() {
     sendEmail: true,
     senderOption: 'CTHS', // 'CTHS' | 'KTDBCL' | 'BGH' | 'TCM' | 'CUSTOM'
     senderName: 'Tổ CTHS - Ban HĐNGLL',
-    senderEmail: 'bankhaothi@skylineschool.edu.vn',
+    senderEmail: 'ktdbcl@skylineschool.edu.vn',
     replyTo: '',
     customMessage: 'Thầy cô vui lòng thực hiện đánh giá vai trò của Học sinh lớp.',
     includeGdcs: true,
@@ -680,10 +680,10 @@ export default function CreateActivityWizard() {
             </div>
             <div>
               <h3 className="text-sm sm:text-base font-black">
-                Quy trình chuẩn: Đẩy Hoạt Động Xuống Cơ Sở & Báo Mail GV Tổ TLHN
+                Quy trình chuẩn: Đẩy Hoạt Động Xuống Cơ Sở & Gán Lớp Tiếp Nhận
               </h3>
               <p className="text-xs text-blue-100 mt-0.5">
-                Hệ thống đã hợp nhất quy trình: BP HĐNGLL - Tổ CTHS phân bổ kế hoạch trực tiếp từ Danh mục để GV Tổ TLHN các cơ sở tiếp nhận và phân công lớp
+                Hệ thống đã chuẩn hóa quy trình: BP HĐNGLL - Tổ CTHS phân bổ kế hoạch trực tiếp từ Danh mục đến các Khối Lớp, Cơ sở và GVCN tiếp nhận
               </p>
             </div>
           </div>
@@ -956,19 +956,20 @@ export default function CreateActivityWizard() {
               </div>
             </div>
 
-            {/* MẠCH HOẠT ĐỘNG TRẢI NGHIỆM */}
+            {/* CHỦ ĐỀ GIÁO DỤC CỐT LÕI */}
             <div className="space-y-2 pt-3">
-              <label className="block text-xs font-black text-slate-800">
-                Chọn Mạch hoạt động trải nghiệm <span className="text-rose-500">*</span>
+              <label className="block text-xs font-black text-slate-800 flex items-center gap-1.5">
+                <Sparkles className="w-4 h-4 text-[#00A19A]" />
+                Chọn Chủ đề giáo dục <span className="text-rose-500">*</span>
               </label>
-              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
-                {ACTIVITY_STRANDS.map(strand => {
-                  const isSelected = formData.strand === strand.id;
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-2.5">
+                {DEFAULT_EDUCATIONAL_THEMES.slice(0, 6).map(theme => {
+                  const isSelected = formData.themeName === theme.name;
                   return (
                     <div
-                      key={strand.id}
-                      onClick={() => setFormData({ ...formData, strand: strand.id })}
-                      className={`cursor-pointer p-4 rounded-2xl border-2 transition-all flex flex-col justify-between ${
+                      key={theme.id}
+                      onClick={() => setFormData({ ...formData, themeName: theme.name })}
+                      className={`cursor-pointer p-3.5 rounded-2xl border-2 transition-all flex flex-col justify-between ${
                         isSelected
                           ? 'bg-[#00A19A]/10 border-[#00A19A] shadow-sm'
                           : 'bg-slate-50/70 border-slate-200/70 hover:bg-slate-100'
@@ -976,14 +977,60 @@ export default function CreateActivityWizard() {
                     >
                       <div className="space-y-1">
                         <div className="flex items-center justify-between">
-                          <span className="text-xs font-black text-slate-800">{strand.name}</span>
+                          <span className="text-xs font-black text-slate-800">{theme.name}</span>
                           {isSelected && <CheckCircle2 className="w-4 h-4 text-[#00A19A]" />}
                         </div>
-                        <p className="text-[11px] text-slate-500 font-medium leading-relaxed">{strand.desc}</p>
+                        <p className="text-[11px] text-slate-500 font-medium leading-relaxed">{theme.description}</p>
                       </div>
                     </div>
                   );
                 })}
+              </div>
+            </div>
+
+            {/* NỘI DUNG GIÁO DỤC */}
+            <div className="space-y-1.5 pt-2">
+              <label className="block text-xs font-black text-slate-700 flex items-center gap-1">
+                <BookOpen className="w-3.5 h-3.5 text-teal-600" />
+                Nội dung giáo dục trọng tâm
+              </label>
+              <textarea
+                rows={2}
+                placeholder="Ghi rõ nội dung trọng tâm của hoạt động: kỹ năng, phẩm chất, kiến thức rèn luyện hoặc sản phẩm dự kiến..."
+                value={formData.educationalContent || ''}
+                onChange={e => setFormData({ ...formData, educationalContent: e.target.value, description: e.target.value })}
+                className="w-full py-2.5 px-4 bg-slate-50 border border-slate-200 rounded-xl text-xs font-bold text-slate-800 focus:bg-white focus:ring-2 focus:ring-[#00A19A]/30 focus:border-[#00A19A] outline-none resize-none"
+              />
+            </div>
+
+            {/* MÔN PHỐI HỢP & GVBM PHỤ TRÁCH (TCM) */}
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 pt-1">
+              <div>
+                <label className="block text-xs font-black text-slate-700 mb-1.5 flex items-center gap-1">
+                  <BookOpen className="w-3.5 h-3.5 text-teal-600" />
+                  Môn phối hợp / Tích hợp
+                </label>
+                <input
+                  type="text"
+                  placeholder="Ví dụ: Lịch sử & Địa lí, Mỹ thuật, Tin học, Tiếng Anh..."
+                  value={formData.integratedSubjects || ''}
+                  onChange={e => setFormData({ ...formData, integratedSubjects: e.target.value })}
+                  className="w-full py-2.5 px-4 bg-slate-50 border border-slate-200 rounded-xl text-xs font-bold text-slate-800 focus:bg-white focus:ring-2 focus:ring-[#00A19A]/30 focus:border-[#00A19A] outline-none"
+                />
+              </div>
+
+              <div>
+                <label className="block text-xs font-black text-slate-700 mb-1.5 flex items-center gap-1">
+                  <User className="w-3.5 h-3.5 text-teal-600" />
+                  GVBM Phụ trách (TCM)
+                </label>
+                <input
+                  type="text"
+                  placeholder="Ví dụ: TCM Khoa học Tự nhiên, TCM Xã hội, Thầy/Cô GVBM..."
+                  value={formData.leadTeacherName || ''}
+                  onChange={e => setFormData({ ...formData, leadTeacherName: e.target.value })}
+                  className="w-full py-2.5 px-4 bg-slate-50 border border-slate-200 rounded-xl text-xs font-bold text-slate-800 focus:bg-white focus:ring-2 focus:ring-[#00A19A]/30 focus:border-[#00A19A] outline-none"
+                />
               </div>
             </div>
 

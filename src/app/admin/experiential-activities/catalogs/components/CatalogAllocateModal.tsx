@@ -488,7 +488,7 @@ export function CatalogAllocateModal({
       const emailCount = data?.emailNotification?.count;
       
       if (sendEmailNotification) {
-        toast.success(`Đã phân bổ kế hoạch xuống ${newAllocatedCampuses.length} cơ sở, ${totalSelectedClasses} lớp và gửi email thông báo tới GVCN và GV Tổ TLHN thành công!`);
+        toast.success(`Đã phân bổ kế hoạch xuống ${newAllocatedCampuses.length} cơ sở, ${totalSelectedClasses} lớp và gửi email thông báo tới GVCN thành công!`);
       } else {
         toast.success(`Đã lưu phân bổ ${newAllocatedCampuses.length} cơ sở và ${totalSelectedClasses} lớp thành công!`);
       }
@@ -516,10 +516,10 @@ export function CatalogAllocateModal({
             </div>
             <div>
               <h2 className="text-base font-extrabold text-slate-800 flex items-center gap-2">
-                <span>Đẩy Cơ Sở: Chọn Cơ Sở & Khối Lớp & Báo Mail GVCN</span>
+                <span>Đẩy Hoạt Động & Gán Lớp Tiếp Nhận</span>
               </h2>
               <p className="text-xs text-slate-500 font-medium">
-                BP HĐNGLL - Tổ CTHS phân bổ kế hoạch trực tiếp đến Khối Lớp, GVCN và GV Tổ TLHN tiếp nhận
+                BP HĐNGLL - Tổ CTHS phân bổ kế hoạch trực tiếp đến Khối Lớp, Cơ sở và GVCN tiếp nhận
               </p>
             </div>
           </div>
@@ -878,7 +878,7 @@ export function CatalogAllocateModal({
                             </span>
                           ) : isAccepted ? (
                             <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[10px] font-bold bg-amber-50 text-amber-700 border border-amber-200">
-                              <Clock className="w-2.5 h-2.5" /> Đã nhận ({foundAlloc.tlhnTeacherName || 'GV'})
+                              <Clock className="w-2.5 h-2.5" /> Đã nhận ({foundAlloc.subjectTeacherName || foundAlloc.tlhnTeacherName || 'GV'})
                             </span>
                           ) : (
                             <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[10px] font-bold bg-slate-100 text-slate-600 border border-slate-200">
@@ -1189,7 +1189,7 @@ export function CatalogAllocateModal({
             Tổng cộng: <strong className="text-slate-900">{selectedCampusIds.length} cơ sở</strong> • <strong className="text-[#00A19A]">{totalSelectedClasses} lớp</strong>
             {sendEmailNotification && (
               <span className="text-teal-700 font-semibold ml-2">
-                (Sẽ gửi email đến {totalGVCNs} GVCN & GV Tổ TLHN)
+                (Sẽ gửi email đến {totalGVCNs} GVCN lớp tiếp nhận)
               </span>
             )}
           </div>

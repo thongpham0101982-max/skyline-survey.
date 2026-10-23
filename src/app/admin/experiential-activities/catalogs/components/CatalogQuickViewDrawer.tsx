@@ -354,7 +354,7 @@ export function CatalogQuickViewDrawer({
                               {a.campusName || `Cơ sở ${a.campusCode || a.campusId}`}
                             </div>
                             <div className="text-[10px] text-slate-500">
-                              GV tiếp nhận: <strong className="text-slate-700">{a.tlhnTeacherName || 'GV Tổ TLHN'}</strong>
+                              GV tiếp nhận: <strong className="text-slate-700">{a.subjectTeacherName || a.tlhnTeacherName || 'GV Phụ trách cơ sở'}</strong>
                             </div>
                           </div>
                         </div>
