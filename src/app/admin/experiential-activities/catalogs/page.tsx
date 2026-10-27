@@ -6,7 +6,7 @@ import {
   Building2, BookOpen, Calendar, MapPin, Edit3, Trash2, 
   RefreshCw, Award, Tag, Ban, RotateCcw, CheckSquare, 
   UserCheck, Users, Sliders, CheckCircle2, Send, ArrowUpDown, Eye,
-  Clock, X
+  Clock, X, Printer
 } from 'lucide-react';
 import toast from 'react-hot-toast';
 import { ExperientialTabs } from '@/components/ExperientialTabs';
@@ -31,6 +31,7 @@ import { CatalogThemeConfigModal } from './components/CatalogThemeConfigModal';
 import { CatalogThemeManagementView } from './components/CatalogThemeManagementView';
 import { CatalogQuickViewDrawer } from './components/CatalogQuickViewDrawer';
 import { AssignCatalogToClassModal } from './components/AssignCatalogToClassModal';
+import ClassEventEvaluationBookModal from '@/components/experiential/ClassEventEvaluationBookModal';
 
 export function getActivityCategory(item: ActivityCatalogItem): CatalogActivityCategory {
   const meta: any = item.meta || {};
@@ -171,6 +172,8 @@ function ActivityCatalogsContent() {
   const [isQuickViewOpen, setIsQuickViewOpen] = useState(false);
   const [isAssignToClassOpen, setIsAssignToClassOpen] = useState(false);
   const [assignToClassItem, setAssignToClassItem] = useState<any>(null);
+  const [isEvaluationBookOpen, setIsEvaluationBookOpen] = useState(false);
+  const [evaluationBookItem, setEvaluationBookItem] = useState<any>(null);
 
   useEffect(() => {
     fetch('/api/academic-years')
@@ -1704,6 +1707,19 @@ function ActivityCatalogsContent() {
                                 <UserCheck className="w-3.5 h-3.5 text-emerald-600" />
                               </button>
 
+                              {/* Xuất Sổ Kế hoạch chi tiết & Đánh giá sự kiện theo lớp (PDF / In ấn) */}
+                              <button
+                                type="button"
+                                onClick={() => {
+                                  setEvaluationBookItem(act);
+                                  setIsEvaluationBookOpen(true);
+                                }}
+                                className="p-1.5 rounded-lg text-emerald-700 hover:text-emerald-950 hover:bg-emerald-50 transition-colors cursor-pointer"
+                                title="Xuất Sổ Kế hoạch chi tiết & Đánh giá sự kiện theo lớp (PDF / In ấn)"
+                              >
+                                <Printer className="w-3.5 h-3.5 text-emerald-600" />
+                              </button>
+
                               {/* Xem nhanh Quick-View */}
                               <button
                                 type="button"
@@ -1874,6 +1890,10 @@ function ActivityCatalogsContent() {
           setAssignToClassItem(item);
           setIsAssignToClassOpen(true);
         }}
+        onOpenEvaluationBook={(item) => {
+          setEvaluationBookItem(item);
+          setIsEvaluationBookOpen(true);
+        }}
       />
 
       <AssignCatalogToClassModal
@@ -1886,6 +1906,18 @@ function ActivityCatalogsContent() {
         academicYearId={selectedYearId}
         onSuccess={loadCatalogs}
       />
+
+      {isEvaluationBookOpen && evaluationBookItem && (
+        <ClassEventEvaluationBookModal
+          isOpen={isEvaluationBookOpen}
+          onClose={() => {
+            setIsEvaluationBookOpen(false);
+            setEvaluationBookItem(null);
+          }}
+          activity={evaluationBookItem}
+          classes={evaluationBookItem.meta?.allocatedCampuses?.flatMap((a: any) => a.assignedClasses || []) || []}
+        />
+      )}
     </div>
   );
 }

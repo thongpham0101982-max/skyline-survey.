@@ -20,6 +20,7 @@ import {
 import { calculateStudentResult, getRatingBadgeProps, getRatingLabel } from '@/lib/experiential/formula';
 import { ActivityProgressModal } from '../components/ActivityProgressModal';
 import { TeacherProfessionalConfigModal } from '../components/TeacherProfessionalConfigModal';
+import ClassEventEvaluationBookModal from '@/components/experiential/ClassEventEvaluationBookModal';
 
 export default function ActivityResultInput() {
   const router = useRouter();
@@ -69,6 +70,9 @@ export default function ActivityResultInput() {
 
   // Professional Config Modal (GV Phụ trách / TCM)
   const [showProfessionalConfigModal, setShowProfessionalConfigModal] = useState(false);
+
+  // Class Event Evaluation Book Modal (Xuất Sổ PDF & Lập Kế Hoạch Chi Tiết)
+  const [showEvaluationBookModal, setShowEvaluationBookModal] = useState(false);
 
   // Load Activity & Students
   const loadData = useCallback(async () => {
@@ -611,6 +615,16 @@ export default function ActivityResultInput() {
             )}
 
             <button
+              type="button"
+              onClick={() => setShowEvaluationBookModal(true)}
+              className="px-4 py-2.5 bg-emerald-50 hover:bg-emerald-100 border border-emerald-300 text-emerald-900 text-xs font-black rounded-xl shadow-2xs transition-all flex items-center gap-1.5 cursor-pointer"
+              title="Xuất Sổ Đánh Giá Sự Kiện Theo Lớp & Lập Kế Hoạch Chi Tiết (PDF / In ấn)"
+            >
+              <Printer className="w-3.5 h-3.5 text-emerald-600" />
+              <span>Xuất Sổ PDF & Kế Hoạch</span>
+            </button>
+
+            <button
               onClick={() => handleSave(false)}
               disabled={saving || isLocked}
               className="px-4 py-2.5 bg-white hover:bg-slate-50 border border-slate-200 text-slate-700 text-xs font-black rounded-xl shadow-2xs transition-all flex items-center gap-1.5"
@@ -723,9 +737,9 @@ export default function ActivityResultInput() {
             </div>
           </div>
 
-          {/* Progress Mini Bar */}
-          <div className="flex items-center gap-4">
-            <div className="w-48 space-y-1">
+          {/* Progress Mini Bar & Export Class Book */}
+          <div className="flex items-center gap-3">
+            <div className="w-44 space-y-1">
               <div className="flex items-center justify-between text-[11px] font-black">
                 <span className="text-slate-600">Tiến độ lớp:</span>
                 <span className="text-[#00A19A]">{completedCurrentClass}/{totalCurrentClass} HS ({percentClass}%)</span>
@@ -737,6 +751,16 @@ export default function ActivityResultInput() {
                 />
               </div>
             </div>
+
+            <button
+              type="button"
+              onClick={() => setShowEvaluationBookModal(true)}
+              className="px-3 py-1.5 bg-emerald-50 hover:bg-emerald-100 border border-emerald-300 text-emerald-800 text-xs font-black rounded-xl shadow-2xs transition-all flex items-center gap-1.5 cursor-pointer shrink-0"
+              title="Xuất Sổ Đánh Giá & Kế Hoạch của lớp này (PDF / In)"
+            >
+              <Printer className="w-3.5 h-3.5 text-emerald-600" />
+              <span>Sổ PDF</span>
+            </button>
           </div>
         </div>
 
@@ -1704,13 +1728,36 @@ export default function ActivityResultInput() {
             initialData={activity}
           />
         )}
+        {showEvaluationBookModal && (
+          <ClassEventEvaluationBookModal
+            isOpen={showEvaluationBookModal}
+            onClose={() => setShowEvaluationBookModal(false)}
+            activity={activity}
+            currentClassId={selectedClassId}
+            classes={assignedClassesList}
+            students={students}
+            onSavePlan={async (plan) => {
+              try {
+                await fetch(`/api/experiential-activities/${id}`, {
+                  method: 'PATCH',
+                  headers: { 'Content-Type': 'application/json' },
+                  body: JSON.stringify({ detailedPlan: plan })
+                });
+              } catch (e) {
+                console.error("Error saving plan:", e);
+              }
+            }}
+          />
+        )}
         <style dangerouslySetInnerHTML={{ __html: `
           @media print {
             body * {
               visibility: hidden !important;
             }
             #printable-certificate,
-            #printable-certificate * {
+            #printable-certificate *,
+            #class-evaluation-book-pdf-content,
+            #class-evaluation-book-pdf-content * {
               visibility: visible !important;
             }
             #printable-certificate {
@@ -1722,6 +1769,16 @@ export default function ActivityResultInput() {
               margin: 0 !important;
               padding: 24px !important;
               border: 3px double #0f766e !important;
+              box-shadow: none !important;
+              background: white !important;
+            }
+            #class-evaluation-book-pdf-content {
+              position: absolute !important;
+              left: 0 !important;
+              top: 0 !important;
+              width: 100% !important;
+              margin: 0 !important;
+              padding: 0 !important;
               box-shadow: none !important;
               background: white !important;
             }

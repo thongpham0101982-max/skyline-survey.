@@ -8,7 +8,7 @@ import {
   Layers, ArrowUpRight, CheckCircle, BarChart3, RefreshCw, X, Eye, 
   FileSpreadsheet, Download, Lock, Unlock, Copy, AlertCircle, Building2, 
   GraduationCap, Shield, Leaf, User, BookOpen, Send, MapPin, 
-  Award, FolderKanban, Check, ChevronDown, Sliders
+  Award, FolderKanban, Check, ChevronDown, Sliders, Printer
 } from "lucide-react";
 import toast from "react-hot-toast";
 import * as XLSX from "xlsx";
@@ -17,6 +17,7 @@ import { getEducationalThemeInfo } from "@/lib/experiential/catalog-types";
 import { formatTimeFrameAndSemester } from "@/lib/experiential/timeframe-helper";
 import { ActivityProgressModal } from "@/app/teacher/experiential-activities/components/ActivityProgressModal";
 import { TeacherProfessionalConfigModal } from "@/app/teacher/experiential-activities/components/TeacherProfessionalConfigModal";
+import ClassEventEvaluationBookModal from "@/components/experiential/ClassEventEvaluationBookModal";
 import { ExperientialTabs } from "@/components/ExperientialTabs";
 
 function formatGradesDisplay(grades: any): { label: string; fullText: string; isAll: boolean; count: number } {
@@ -118,6 +119,8 @@ export default function ExperientialActivitiesList() {
   const [viewMode, setViewMode] = useState<"list" | "grid">("list");
   const [progressModalActivity, setProgressModalActivity] = useState<any>(null);
   const [configModalActivity, setConfigModalActivity] = useState<any>(null);
+  const [isEvaluationBookOpen, setIsEvaluationBookOpen] = useState(false);
+  const [evaluationBookActivity, setEvaluationBookActivity] = useState<any>(null);
 
   // Load Initial Academic Years & Campuses
   useEffect(() => {
@@ -1104,6 +1107,20 @@ export default function ExperientialActivitiesList() {
                             <span>Sổ ĐG</span>
                           </button>
 
+                          {/* Nút Xuất Sổ Kế hoạch chi tiết & Đánh giá theo lớp (PDF / In ấn) */}
+                          <button
+                            type="button"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              setEvaluationBookActivity(act);
+                              setIsEvaluationBookOpen(true);
+                            }}
+                            className="p-1.5 rounded-lg text-emerald-700 hover:text-emerald-950 hover:bg-emerald-50 border border-emerald-200 transition-colors cursor-pointer shadow-2xs"
+                            title="Xuất Sổ Kế hoạch chi tiết & Đánh giá sự kiện theo lớp (PDF / In ấn)"
+                          >
+                            <Printer className="w-3.5 h-3.5 text-emerald-600" />
+                          </button>
+
                           {/* Nút theo dõi tiến độ chi tiết */}
                           <button
                             type="button"
@@ -1260,6 +1277,19 @@ export default function ExperientialActivitiesList() {
                             type="button"
                             onClick={e => {
                               e.stopPropagation();
+                              setEvaluationBookActivity(act);
+                              setIsEvaluationBookOpen(true);
+                            }}
+                            className="p-1.5 rounded-xl border border-emerald-200 bg-emerald-50 hover:bg-emerald-100 text-emerald-700 text-xs font-bold transition-all flex items-center gap-1 cursor-pointer"
+                            title="Xuất Sổ Kế hoạch & Đánh giá theo lớp (PDF / In ấn)"
+                          >
+                            <Printer className="w-3.5 h-3.5 text-emerald-600" />
+                          </button>
+
+                          <button
+                            type="button"
+                            onClick={e => {
+                              e.stopPropagation();
                               router.push(act.myAssignedClass?.classId ? `${basePath}/${act.id}?classId=${act.myAssignedClass.classId}` : `${basePath}/${act.id}`);
                             }}
                             className="px-3.5 py-1.5 bg-gradient-to-r from-[#003B3A] to-[#00A19A] text-white text-xs font-bold rounded-xl shadow-xs flex items-center gap-1.5 hover:brightness-105 cursor-pointer"
@@ -1297,6 +1327,20 @@ export default function ExperientialActivitiesList() {
           }}
           activityId={configModalActivity.id}
           initialData={configModalActivity}
+        />
+      )}
+
+      {/* CLASS EVENT EVALUATION BOOK MODAL */}
+      {isEvaluationBookOpen && evaluationBookActivity && (
+        <ClassEventEvaluationBookModal
+          isOpen={isEvaluationBookOpen}
+          onClose={() => {
+            setIsEvaluationBookOpen(false);
+            setEvaluationBookActivity(null);
+          }}
+          activity={evaluationBookActivity}
+          currentClassId={evaluationBookActivity.myAssignedClass?.classId}
+          classes={evaluationBookActivity.assignedClasses || []}
         />
       )}
     </div>
