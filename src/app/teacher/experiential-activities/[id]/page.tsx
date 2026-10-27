@@ -1750,6 +1750,10 @@ export default function ActivityResultInput() {
           />
         )}
         <style dangerouslySetInnerHTML={{ __html: `
+          @page {
+            size: A4 portrait;
+            margin: 12mm 10mm 12mm 10mm;
+          }
           @media print {
             body * {
               visibility: hidden !important;
@@ -1776,8 +1780,9 @@ export default function ActivityResultInput() {
               position: absolute !important;
               left: 0 !important;
               top: 0 !important;
-              width: 100% !important;
-              margin: 0 !important;
+              width: 190mm !important;
+              max-width: 190mm !important;
+              margin: 0 auto !important;
               padding: 0 !important;
               box-shadow: none !important;
               background: white !important;

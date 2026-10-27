@@ -252,7 +252,7 @@ export default function ClassEventEvaluationBookModal({
     window.print();
   };
 
-  // Xử lý Tải file PDF bằng html2pdf.js
+  // Xử lý Tải file PDF bằng html2pdf.js chuẩn khổ A4 dọc
   const handleDownloadPDF = async () => {
     const element = document.getElementById("class-evaluation-book-pdf-content");
     if (!element) {
@@ -261,26 +261,44 @@ export default function ClassEventEvaluationBookModal({
     }
 
     setIsExportingPDF(true);
-    const toastId = toast.loading("Đang kết xuất Sổ Kế hoạch & Đánh giá PDF...");
+    const toastId = toast.loading("Đang kết xuất Sổ Kế hoạch & Đánh giá PDF khổ A4 dọc...");
     try {
       const html2pdf = (await import("html2pdf.js")).default;
       const safeClassName = (activeClass?.className || "Lop").replace(/[^a-zA-Z0-9_-]/g, "_");
       const safeActName = (activity?.name || "HoatDong").replace(/[^a-zA-Z0-9_\u00C0-\u024F]/g, "_").substring(0, 30);
-      const filename = `So_Danh_Gia_Su_Kien_${safeClassName}_${safeActName}.pdf`;
+      const filename = `So_Danh_Gia_Su_Kien_${safeClassName}_${safeActName}_A4_Doc.pdf`;
 
+      // Cấu hình A4 portrait chuẩn xác: Lề 12mm x 10mm, khổ 210mm x 297mm
       const opt: any = {
-        margin: [10, 10, 10, 10],
+        margin: [12, 10, 12, 10], // mm [trên, trái, dưới, phải]
         filename,
         image: { type: "jpeg", quality: 0.98 },
-        html2canvas: { scale: 2, useCORS: true, logging: false },
-        jsPDF: { unit: "mm", format: "a4", orientation: "portrait" }
+        html2canvas: {
+          scale: 2,
+          useCORS: true,
+          logging: false,
+          letterRendering: true,
+          windowWidth: 794, // 210mm tại 96 DPI
+          width: 718        // 190mm tại 96 DPI
+        },
+        jsPDF: {
+          unit: "mm",
+          format: "a4",
+          orientation: "portrait",
+          compress: true
+        },
+        pagebreak: {
+          mode: ["avoid-all", "css", "legacy"],
+          before: ".a4-page-break-before",
+          avoid: ["tr", ".a4-avoid-break", ".a4-signature-section"]
+        }
       };
 
       await html2pdf().set(opt).from(element).save();
-      toast.success(`Đã tải xuống file: ${filename}`, { id: toastId });
+      toast.success(`Đã tải xuống file PDF A4 dọc: ${filename}`, { id: toastId });
     } catch (err: any) {
       console.error("Lỗi xuất PDF, chuyển sang Print:", err);
-      toast.error("Không thể kết xuất PDF trực tiếp. Đang mở hộp thoại In để lưu PDF...", { id: toastId });
+      toast.error("Không thể kết xuất PDF trực tiếp. Đang mở hộp thoại In để lưu PDF A4...", { id: toastId });
       setTimeout(() => {
         window.print();
       }, 500);
@@ -451,6 +469,12 @@ export default function ClassEventEvaluationBookModal({
                 Chỉ Bảng Đánh Giá Lớp
               </button>
             </div>
+          </div>
+
+          {/* Badge Khổ A4 Dọc */}
+          <div className="flex items-center gap-1.5 bg-emerald-50 text-emerald-800 border border-emerald-200 px-2.5 py-1 rounded-xl font-bold text-[11px]">
+            <CheckCircle2 className="w-3.5 h-3.5 text-emerald-600" />
+            <span>Định dạng: A4 Khổ Dọc (Portrait 210 × 297 mm)</span>
           </div>
         </div>
 
@@ -683,14 +707,30 @@ export default function ClassEventEvaluationBookModal({
 
           {/* TAB 2: XEM TRƯỚC SỔ A4 CHUẨN IN ẤN VĂN BẢN SƯ PHẠM */}
           {activeTab === "PREVIEW" && (
-            <div
-              id="class-evaluation-book-pdf-content"
-              ref={printRef}
-              className="max-w-[210mm] mx-auto bg-white p-8 sm:p-10 shadow-lg rounded-xl print:shadow-none print:p-0 print:m-0 print:max-w-none text-slate-900 font-serif text-[13px] leading-relaxed"
-              style={{
-                fontFamily: "'Times New Roman', Times, serif"
-              }}
-            >
+            <div className="w-full flex justify-center py-4 sm:py-6 overflow-x-auto bg-slate-200/70 print:bg-white print:p-0 print:overflow-visible">
+              {/* Khung mô phỏng tờ giấy A4 khổ dọc ngoài đời thực (210mm x 297mm) */}
+              <div
+                className="bg-white shadow-2xl border border-slate-300 print:border-none print:shadow-none print:p-0 shrink-0"
+                style={{
+                  width: "210mm",
+                  minWidth: "210mm",
+                  minHeight: "297mm",
+                  padding: "12mm 10mm",
+                  boxSizing: "border-box"
+                }}
+              >
+                {/* Vùng nội dung 190mm chuẩn A4 dọc xuất PDF & in ấn */}
+                <div
+                  id="class-evaluation-book-pdf-content"
+                  ref={printRef}
+                  className="text-slate-900 font-serif text-[12px] leading-normal print:w-full"
+                  style={{
+                    fontFamily: "'Times New Roman', Times, serif",
+                    width: "190mm",
+                    maxWidth: "190mm",
+                    boxSizing: "border-box"
+                  }}
+                >
               
               {/* QUỐC HIỆU - TIÊU NGỮ & ĐƠN VỊ CHỦ QUẢN */}
               <div className="grid grid-cols-2 gap-4 pb-4 border-b-2 border-slate-800">
@@ -841,7 +881,10 @@ export default function ClassEventEvaluationBookModal({
 
               {/* Ngắt trang giữa Kế hoạch và Bảng đánh giá nếu in toàn bộ */}
               {printScope === "FULL" && (
-                <div className="hidden print:block" style={{ pageBreakBefore: "always" }} />
+                <div
+                  className="a4-page-break-before"
+                  style={{ pageBreakBefore: "always", breakBefore: "page", height: 0, margin: 0, padding: 0 }}
+                />
               )}
 
               {/* =========================================================================
@@ -858,18 +901,18 @@ export default function ClassEventEvaluationBookModal({
                     </span>
                   </div>
 
-                  {/* Bảng Danh sách Học sinh */}
-                  <table className="w-full border-collapse border border-slate-500 text-[11px] leading-tight">
+                  {/* Bảng Danh sách Học sinh - Cố định 190mm chuẩn A4 dọc */}
+                  <table className="w-full table-fixed border-collapse border border-slate-500 text-[10.5px] leading-tight">
                     <thead>
                       <tr className="bg-slate-200/90 text-center font-bold text-slate-900">
-                        <th className="border border-slate-400 p-1.5 w-8">STT</th>
-                        <th className="border border-slate-400 p-1.5 w-16">Mã HS</th>
-                        <th className="border border-slate-400 p-1.5 text-left pl-2">Họ và tên học sinh</th>
-                        <th className="border border-slate-400 p-1.5 w-16">Tham gia</th>
-                        <th className="border border-slate-400 p-1.5 w-28">Vai trò đảm nhận (6 Vai trò)</th>
-                        <th className="border border-slate-400 p-1.5 w-20">Xếp loại</th>
-                        <th className="border border-slate-400 p-1.5 w-12">% Điểm</th>
-                        <th className="border border-slate-400 p-1.5 text-left pl-2">Nhận xét chi tiết của GVCN</th>
+                        <th className="border border-slate-400 p-1 text-center" style={{ width: "8mm" }}>STT</th>
+                        <th className="border border-slate-400 p-1 text-center" style={{ width: "18mm" }}>Mã HS</th>
+                        <th className="border border-slate-400 p-1 text-left pl-2" style={{ width: "40mm" }}>Họ và tên học sinh</th>
+                        <th className="border border-slate-400 p-1 text-center" style={{ width: "16mm" }}>Tham gia</th>
+                        <th className="border border-slate-400 p-1 text-left pl-1.5" style={{ width: "28mm" }}>Vai trò (6 Vai trò)</th>
+                        <th className="border border-slate-400 p-1 text-center" style={{ width: "18mm" }}>Xếp loại</th>
+                        <th className="border border-slate-400 p-1 text-center" style={{ width: "12mm" }}>% Điểm</th>
+                        <th className="border border-slate-400 p-1 text-left pl-2" style={{ width: "50mm" }}>Nhận xét chi tiết của GVCN</th>
                       </tr>
                     </thead>
                     <tbody>
@@ -900,23 +943,27 @@ export default function ClassEventEvaluationBookModal({
                           }
 
                           return (
-                            <tr key={st.id || idx} className={idx % 2 === 1 ? "bg-slate-50/60" : "bg-white"}>
-                              <td className="border border-slate-400 p-1.5 text-center font-sans">{idx + 1}</td>
-                              <td className="border border-slate-400 p-1.5 text-center font-sans font-medium text-slate-600">
+                            <tr
+                              key={st.id || idx}
+                              className={`a4-avoid-break ${idx % 2 === 1 ? "bg-slate-50/60" : "bg-white"}`}
+                              style={{ pageBreakInside: "avoid", breakInside: "avoid" }}
+                            >
+                              <td className="border border-slate-400 p-1 text-center font-sans">{idx + 1}</td>
+                              <td className="border border-slate-400 p-1 text-center font-sans font-medium text-slate-600 truncate">
                                 {st.studentCode || "—"}
                               </td>
-                              <td className="border border-slate-400 p-1.5 font-bold text-slate-900 pl-2">
+                              <td className="border border-slate-400 p-1 font-bold text-slate-900 pl-2">
                                 {st.studentName}
                               </td>
-                              <td className="border border-slate-400 p-1.5 text-center">
+                              <td className="border border-slate-400 p-1 text-center">
                                 {isPresent ? (
                                   <span className="text-emerald-700 font-bold">Có mặt</span>
                                 ) : (
                                   <span className="text-rose-600 font-semibold italic">Vắng</span>
                                 )}
                               </td>
-                              <td className="border border-slate-400 p-1.5 font-semibold text-slate-800">
-                                <span className={`px-1.5 py-0.5 rounded text-[10px] inline-block ${
+                              <td className="border border-slate-400 p-1 font-semibold text-slate-800 pl-1.5">
+                                <span className={`px-1 py-0.5 rounded text-[9.5px] inline-block ${
                                   roleKey === "TN" ? "bg-amber-100 text-amber-900 font-bold" :
                                   roleKey === "PN" ? "bg-blue-100 text-blue-900 font-bold" :
                                   roleKey === "TK" ? "bg-purple-100 text-purple-900 font-bold" :
@@ -926,13 +973,13 @@ export default function ClassEventEvaluationBookModal({
                                   {roleName}
                                 </span>
                               </td>
-                              <td className="border border-slate-400 p-1.5 text-center font-bold">
+                              <td className="border border-slate-400 p-1 text-center font-bold">
                                 {isPresent ? ratingText : "—"}
                               </td>
-                              <td className="border border-slate-400 p-1.5 text-center font-sans font-semibold">
+                              <td className="border border-slate-400 p-1 text-center font-sans font-semibold">
                                 {isPresent && st.calculatedPercent !== null && st.calculatedPercent !== undefined ? `${st.calculatedPercent}%` : "—"}
                               </td>
-                              <td className="border border-slate-400 p-1.5 text-slate-700 italic pl-2">
+                              <td className="border border-slate-400 p-1 text-slate-700 italic pl-2 text-[10px]">
                                 {st.teacherRemark || st.notes || (isPresent ? "Tham gia tích cực, hoàn thành tốt nhiệm vụ." : "Vắng mặt có lý do.")}
                               </td>
                             </tr>
@@ -972,9 +1019,12 @@ export default function ClassEventEvaluationBookModal({
                   PHẦN III: NHẬN XÉT CHUNG CỦA GVCN & KÝ PHÊ DUYỆT BÁO CÁO
               ========================================================================= */}
               {(printScope === "FULL" || printScope === "EVAL_ONLY") && (
-                <div className="mt-6 page-break-inside-avoid">
+                <div
+                  className="mt-6 a4-signature-section a4-avoid-break"
+                  style={{ pageBreakInside: "avoid", breakInside: "avoid" }}
+                >
                   {planData.generalTeacherRemark && (
-                    <div className="mb-6 text-[12.5px]">
+                    <div className="mb-4 text-[12px]">
                       <strong className="text-slate-900">Đánh giá chung của Giáo viên chủ nhiệm:</strong>
                       <p className="italic text-slate-800 pl-4 mt-0.5">
                         {planData.generalTeacherRemark}
@@ -983,23 +1033,23 @@ export default function ClassEventEvaluationBookModal({
                   )}
 
                   {/* Khung Chữ ký 3 Bên */}
-                  <div className="pt-4">
-                    <div className="text-right italic text-[12px] text-slate-600 mb-2">
+                  <div className="pt-2">
+                    <div className="text-right italic text-[11.5px] text-slate-600 mb-2">
                       Ngày ...... tháng ...... năm 20......
                     </div>
 
-                    <div className="grid grid-cols-3 gap-2 text-center text-[12px]">
+                    <div className="grid grid-cols-3 gap-2 text-center text-[11.5px]">
                       <div>
                         <p className="font-bold uppercase text-slate-900">GIÁO VIÊN CHỦ NHIỆM</p>
-                        <p className="italic text-[11px] text-slate-500">(Ký và ghi rõ họ tên)</p>
-                        <div className="h-20" />
+                        <p className="italic text-[10.5px] text-slate-500">(Ký và ghi rõ họ tên)</p>
+                        <div className="h-16" />
                         <p className="font-bold text-slate-900">{planData.leadTeacher}</p>
                       </div>
 
                       <div>
                         <p className="font-bold uppercase text-slate-900">TỔ TRƯỞNG CHUYÊN MÔN / CTHS</p>
-                        <p className="italic text-[11px] text-slate-500">(Ký và ghi rõ họ tên)</p>
-                        <div className="h-20" />
+                        <p className="italic text-[10.5px] text-slate-500">(Ký và ghi rõ họ tên)</p>
+                        <div className="h-16" />
                         <p className="font-bold text-slate-900">
                           {activity.cthsTeacherName || "Tổ CTHS / BP HĐNGLL"}
                         </p>
@@ -1007,8 +1057,8 @@ export default function ClassEventEvaluationBookModal({
 
                       <div>
                         <p className="font-bold uppercase text-slate-900">BAN GIÁM HIỆU PHÊ DUYỆT</p>
-                        <p className="italic text-[11px] text-slate-500">(Ký tên và đóng dấu)</p>
-                        <div className="h-20" />
+                        <p className="italic text-[10.5px] text-slate-500">(Ký tên và đóng dấu)</p>
+                        <div className="h-16" />
                         <p className="font-bold text-slate-900">
                           {activeClass?.campusName ? `BGH Cơ sở ${activeClass.campusName}` : "Ban Giám hiệu"}
                         </p>
@@ -1018,6 +1068,8 @@ export default function ClassEventEvaluationBookModal({
                 </div>
               )}
 
+                </div>
+              </div>
             </div>
           )}
 
@@ -1029,7 +1081,7 @@ export default function ClassEventEvaluationBookModal({
         <div className="p-3.5 border-t border-slate-200 bg-slate-50 flex items-center justify-between gap-3 shrink-0 print:hidden text-xs">
           <div className="flex items-center gap-2 text-slate-500">
             <span className="font-medium">
-              Khổ in chuẩn: <strong>A4 Portrait</strong> • Thể thức sư phạm GD Sky-Line
+              Khổ in chuẩn: <strong>A4 Portrait (210 × 297 mm)</strong> • Thể thức sư phạm GD Sky-Line
             </span>
           </div>
 
@@ -1058,12 +1110,68 @@ export default function ClassEventEvaluationBookModal({
               className="px-5 py-2 bg-[#003B3A] hover:bg-[#002b2a] text-white font-black rounded-xl shadow-md transition-all flex items-center gap-1.5 cursor-pointer disabled:opacity-50"
             >
               <Download className="w-4 h-4 text-teal-300" />
-              <span>{isExportingPDF ? "Đang xuất PDF..." : "Tải File PDF"}</span>
+              <span>{isExportingPDF ? "Đang xuất PDF A4..." : "Tải File PDF A4"}</span>
             </button>
           </div>
         </div>
 
       </div>
+
+      {/* Embedded Style ép buộc định dạng A4 Portrait khi in ấn */}
+      <style dangerouslySetInnerHTML={{ __html: `
+        @page {
+          size: A4 portrait !important;
+          margin: 12mm 10mm 12mm 10mm !important;
+        }
+        @media print {
+          html, body {
+            width: 210mm !important;
+            height: auto !important;
+            margin: 0 !important;
+            padding: 0 !important;
+            background: #ffffff !important;
+            -webkit-print-color-adjust: exact !important;
+            print-color-adjust: exact !important;
+          }
+          body * {
+            visibility: hidden !important;
+          }
+          #class-evaluation-book-pdf-content,
+          #class-evaluation-book-pdf-content * {
+            visibility: visible !important;
+          }
+          #class-evaluation-book-pdf-content {
+            position: absolute !important;
+            left: 0 !important;
+            top: 0 !important;
+            width: 190mm !important;
+            max-width: 190mm !important;
+            margin: 0 auto !important;
+            padding: 0 !important;
+            border: none !important;
+            box-shadow: none !important;
+            background: white !important;
+          }
+          .a4-page-break-before {
+            page-break-before: always !important;
+            break-before: page !important;
+            display: block !important;
+            height: 0 !important;
+          }
+          .a4-avoid-break,
+          .a4-signature-section,
+          tr, table {
+            page-break-inside: avoid !important;
+            break-inside: avoid !important;
+          }
+          thead {
+            display: table-header-group !important;
+          }
+          tfoot {
+            display: table-footer-group !important;
+          }
+        }
+      ` }} />
     </div>
   );
 }
