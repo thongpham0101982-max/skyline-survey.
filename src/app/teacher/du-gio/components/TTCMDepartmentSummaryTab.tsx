@@ -29,11 +29,13 @@ import {
   Lightbulb,
   ThumbsUp,
   UserCheck,
-  Settings
+  Settings,
+  CalendarRange
 } from "lucide-react";
 import * as XLSX from "xlsx";
 import toast from "react-hot-toast";
 import { getTTCMDepartmentOverview, updateTeacherObservationTargets } from "../actions";
+import { ObservationMonthlyTimelineTab } from "./ObservationMonthlyTimelineTab";
 
 export interface TeacherProgressInfo {
   key: "EXCEEDED" | "MET" | "IN_PROGRESS" | "UNMET" | "PARTICIPATED" | "NO_TARGET";
@@ -217,7 +219,7 @@ export function TTCMDepartmentSummaryTab({
   const [selectedMonth, setSelectedMonth] = useState<string>("all");
   const [originFilter, setOriginFilter] = useState<"ALL" | "PLAN" | "SURPRISE">("ALL");
   const [activeSubTab, setActiveSubTab] = useState<
-    "overview" | "competency" | "warnings" | "ratings" | "feedback"
+    "overview" | "competency" | "warnings" | "ratings" | "feedback" | "timeline"
   >("overview");
   const [searchTeacherQuery, setSearchTeacherQuery] = useState("");
   const [filterProgressStatus, setFilterProgressStatus] = useState<
@@ -1092,6 +1094,22 @@ export function TTCMDepartmentSummaryTab({
           >
             <MessageSquare className="w-4 h-4" />
             <span>5. Góp ý & Nhận xét</span>
+          </button>
+
+          <button
+            type="button"
+            onClick={() => setActiveSubTab("timeline")}
+            className={`flex items-center gap-2 px-4 py-2.5 rounded-xl text-xs font-black transition-all shrink-0 cursor-pointer ${
+              activeSubTab === "timeline"
+                ? "bg-[#00A19A] text-white shadow-md shadow-teal-900/20"
+                : "text-slate-600 hover:bg-slate-100 hover:text-slate-900"
+            }`}
+          >
+            <CalendarRange className="w-4 h-4" />
+            <span>6. Phân bổ Thời gian & Tiến độ Tháng</span>
+            <span className="px-1.5 py-0.5 rounded-full text-[10px] bg-white/20 text-white font-bold">
+              {filteredSlots.length} tiết
+            </span>
           </button>
         </div>
       </div>
@@ -2161,6 +2179,20 @@ export function TTCMDepartmentSummaryTab({
             )}
           </div>
         </div>
+      )}
+
+      {/* 7.2. SUB-TAB 6: PHÂN BỔ THỜI GIAN & TIẾN ĐỘ THÁNG */}
+      {activeSubTab === "timeline" && (
+        <ObservationMonthlyTimelineTab
+          slots={slots}
+          teachers={teachers}
+          department={department}
+          selectedMonth={selectedMonth}
+          availableMonths={availableMonths}
+          isPreschool={isPreschool}
+          openEvalModal={openEvalModal}
+          RATING_COLORS={RATING_COLORS}
+        />
       )}
 
       {/* 8. TEACHER DETAIL HISTORY MODAL */}
