@@ -13,6 +13,7 @@ import {
   Clock,
   Users,
   GraduationCap, 
+  ArrowRightLeft,
   Filter, 
   CheckCircle2, 
   XCircle, 
@@ -38,7 +39,9 @@ import {
   Info,
   RotateCcw,
   Check,
-  ExternalLink
+  ExternalLink,
+  HeartHandshake,
+  Printer
 } from "lucide-react";
 import { confirmEnrollmentAction, revertEnrollmentAction } from "../student-transfers/actions";
 import { getSurveyFormAgeGroup, getProbationAgeGroup } from "@/lib/preschool";
@@ -47,9 +50,12 @@ import { InputAssessmentsClient } from "../input-assessments/client";
 import { PreschoolInputAssessmentsClient } from "../preschool-input-assessments/client";
 import { parseEntranceRecord, serializeEntranceRecord, extractAcademicDetails } from "@/lib/entranceAcademicRecord";
 import { EntranceAcademicRecordInput } from "@/components/assessments/EntranceAcademicRecordInput";
+import { StudentOrientationModal } from "@/components/orientation/StudentOrientationModal";
+import { StudentOrientationReportModal } from "@/components/orientation/StudentOrientationReportModal";
 
 interface StudentInfoClientProps {
-  initialTab?: "general" | "preschool";
+  pageMode?: "danh-sach" | "ket-qua";
+  initialTab?: "general" | "preschool" | "transfer";
   initialSubTab?: "periods" | "students" | "info" | "result";
   initialGeneralStudents: any[];
   initialPreschoolStudents: any[];
@@ -204,6 +210,7 @@ const cleanBatchName = (name?: string | null) => {
 };
 
 export function StudentInfoClient({ 
+  pageMode = "danh-sach",
   initialTab = "general",
   initialSubTab = "students",
   initialGeneralStudents = [], 
@@ -227,7 +234,8 @@ export function StudentInfoClient({
   departments = [],
   currentUser = null,
   rolePermissions = [],
-  gradesPreschool = []
+  gradesPreschool = [],
+  destinationSchools = []
 }: StudentInfoClientProps) {
   useEffect(() => {
     console.log("--- StudentInfoClient VERSION 3.0 LOADED ---");
@@ -256,7 +264,7 @@ export function StudentInfoClient({
     }));
   }, [rawPreschoolPeriods]);
 
-  const [activeTab, setActiveTab] = useState<"general" | "preschool">(initialTab);
+  const [activeTab, setActiveTab] = useState<"general" | "preschool" | "transfer">(initialTab);
 
   useEffect(() => {
     if (initialTab && initialTab !== activeTab) {
@@ -264,12 +272,36 @@ export function StudentInfoClient({
     }
   }, [initialTab]);
 
+  const isTransferStudent = useCallback((s: any) => {
+    if (!s) return false;
+    const periodName = (s.period?.name || "").toLowerCase();
+    const criteria = (s.admissionCriteria || "").toLowerCase();
+    const target = (s.targetType || "").toLowerCase();
+    const batchName = (s.batch?.name || "").toLowerCase();
+    return periodName.includes("chuyển hệ") || periodName.includes("chuyen he") ||
+           criteria.includes("chuyển hệ") || criteria.includes("chuyen he") ||
+           target.includes("chuyển hệ") || target.includes("chuyen he") ||
+           batchName.includes("chuyen_he") || batchName.includes("chuyển hệ") ||
+           Boolean(s.className && s.surveySystem && s.surveyFormType && s.surveySystem !== s.surveyFormType);
+  }, []);
+
+  const transferStudentsCount = useMemo(() => {
+    return initialGeneralStudents.filter(isTransferStudent).length;
+  }, [initialGeneralStudents, isTransferStudent]);
+
+  const generalEntranceCount = useMemo(() => {
+    return initialGeneralStudents.filter(s => !isTransferStudent(s)).length;
+  }, [initialGeneralStudents, isTransferStudent]);
+
   const [devAreas, setDevAreas] = useState<any[]>([]);
   const [devAreasLoading, setDevAreasLoading] = useState(false);
   const [preschoolInputAreas, setPreschoolInputAreas] = useState<any[]>([]);
   const [preschoolInputScores, setPreschoolInputScores] = useState<any[]>([]);
   const [preschoolInputLoading, setPreschoolInputLoading] = useState(false);
   const [preschoolAssignments, setPreschoolAssignments] = useState<any[]>([]);
+  const [orientationTargetStudent, setOrientationTargetStudent] = useState<any | null>(null);
+  const [reportTargetStudent, setReportTargetStudent] = useState<any | null>(null);
+  const [activeReportOrientationData, setActiveReportOrientationData] = useState<any | null>(null);
 
   
   // Search & Filter state
@@ -850,13 +882,18 @@ export function StudentInfoClient({
       </div>
     );
   };
-  const [subTab, setSubTab] = useState<"periods" | "students" | "info" | "result">(initialSubTab);
+  const effectiveInitialSubTab = useMemo<"periods" | "students" | "info" | "result">(() => {
+    if (pageMode === "ket-qua") {
+      return initialSubTab === "result" ? "result" : "info";
+    }
+    return initialSubTab === "periods" ? "periods" : "students";
+  }, [pageMode, initialSubTab]);
+
+  const [subTab, setSubTab] = useState<"periods" | "students" | "info" | "result">(effectiveInitialSubTab);
 
   useEffect(() => {
-    if (initialSubTab && initialSubTab !== subTab) {
-      setSubTab(initialSubTab);
-    }
-  }, [initialSubTab]);
+    setSubTab(effectiveInitialSubTab);
+  }, [effectiveInitialSubTab]);
 
   useEffect(() => {
     setSelectedIds([]);
@@ -923,7 +960,7 @@ export function StudentInfoClient({
   };
 
   // Reset filters when changing tab
-  const handleTabChange = (tab: "general" | "preschool") => {
+  const handleTabChange = (tab: "general" | "preschool" | "transfer") => {
     setActiveTab(tab);
     updateUrlParams(tab, subTab);
     setSearchQuery("");
@@ -945,8 +982,10 @@ export function StudentInfoClient({
 
   // Get active dataset
   const currentDataset = useMemo(() => {
-    return activeTab === "general" ? initialGeneralStudents : initialPreschoolStudents;
-  }, [activeTab, initialGeneralStudents, initialPreschoolStudents]);
+    if (activeTab === "preschool") return initialPreschoolStudents;
+    if (activeTab === "transfer") return initialGeneralStudents.filter(isTransferStudent);
+    return initialGeneralStudents.filter(s => !isTransferStudent(s));
+  }, [activeTab, initialGeneralStudents, initialPreschoolStudents, isTransferStudent]);
 
   // Extract unique periods, batches, grades for filter options
   const filterOptions = useMemo(() => {
@@ -1149,9 +1188,18 @@ export function StudentInfoClient({
   };
 
   // Get current active tab periods list
+  const isTransferPeriod = useCallback((p: any) => {
+    if (!p) return false;
+    const name = (p.name || "").toLowerCase();
+    const hasBatch = (p.batches || []).some((b: any) => (b.name || "").toLowerCase().includes("chuyen_he") || (b.name || "").toLowerCase().includes("chuyển hệ"));
+    return name.includes("chuyển hệ") || name.includes("chuyen he") || name.includes("chuyenhe") || hasBatch;
+  }, []);
+
   const activePeriodsList = useMemo(() => {
-    return activeTab === "general" ? generalPeriods : preschoolPeriods;
-  }, [activeTab, generalPeriods, preschoolPeriods]);
+    if (activeTab === "preschool") return preschoolPeriods;
+    if (activeTab === "transfer") return generalPeriods.filter(isTransferPeriod);
+    return generalPeriods.filter(p => !isTransferPeriod(p));
+  }, [activeTab, generalPeriods, preschoolPeriods, isTransferPeriod]);
 
   const uniquePeriodNames = useMemo(() => {
     const names = new Set();
@@ -2116,10 +2164,12 @@ export function StudentInfoClient({
               </span>
             </div>
             <h1 className="text-2xl sm:text-3xl font-black text-white tracking-tight">
-              Nhập TT HS & Kết Quả Khảo Sát
+              {pageMode === "ket-qua" ? "Kết quả khảo sát" : "Danh sách Khảo sát"}
             </h1>
             <p className="text-white/80 text-xs sm:text-sm font-medium mt-1.5 max-w-2xl leading-relaxed">
-              Quản lý đợt khảo sát, danh sách dự tuyển, kiểm tra lại và xét duyệt nhập học cho học sinh Phổ thông & Mầm non chuẩn quy trình chất lượng Sky-Line.
+              {pageMode === "ket-qua"
+                ? "Quản lý kết quả khảo sát, danh sách khảo sát lại và xét duyệt nhập học cho học sinh Phổ thông & Mầm non chuẩn quy trình chất lượng Sky-Line."
+                : "Quản lý tạo đợt khảo sát, tiếp nhận hồ sơ học sinh đăng ký dự tuyển, nguyện vọng và thành tích học sinh Phổ thông & Mầm non chuẩn quy trình chất lượng Sky-Line."}
             </p>
           </div>
 
@@ -2138,7 +2188,7 @@ export function StudentInfoClient({
               <span className={`px-2 py-0.5 rounded-full text-[10px] font-extrabold ${
                 activeTab === "general" ? "bg-[#00A19A]/15 text-[#00736E]" : "bg-white/20 text-white"
               }`}>
-                {initialGeneralStudents.length}
+                {generalEntranceCount}
               </span>
             </button>
 
@@ -2158,6 +2208,23 @@ export function StudentInfoClient({
                 {initialPreschoolStudents.length}
               </span>
             </button>
+
+            <button
+              onClick={() => handleTabChange("transfer")}
+              className={`flex items-center gap-2.5 px-5 py-3 rounded-xl text-xs font-black transition-all cursor-pointer ${
+                activeTab === "transfer"
+                  ? "bg-gradient-to-r from-amber-500 to-orange-500 text-white shadow-lg shadow-amber-500/30 scale-[1.02]"
+                  : "text-white/80 hover:text-white hover:bg-white/10"
+              }`}
+            >
+              <ArrowRightLeft className={`w-4 h-4 ${activeTab === "transfer" ? "text-white" : "text-amber-300"}`} />
+              <span>Học sinh Chuyển hệ</span>
+              <span className={`px-2 py-0.5 rounded-full text-[10px] font-extrabold ${
+                activeTab === "transfer" ? "bg-white text-orange-700" : "bg-white/20 text-white"
+              }`}>
+                {transferStudentsCount}
+              </span>
+            </button>
           </div>
         </div>
       </div>
@@ -2165,57 +2232,64 @@ export function StudentInfoClient({
       {/* Workflow Navigation Sub-tabs & Action Toolbar */}
       <div className="bg-white rounded-2xl border border-slate-200/80 p-2.5 shadow-xs flex flex-wrap items-center justify-between gap-3">
         <div className="flex flex-wrap items-center gap-1.5 sm:gap-2">
-          <button
-            onClick={() => handleSubTabChange("periods")}
-            className={`flex items-center gap-2 px-4 py-2.5 rounded-xl text-xs font-bold transition-all cursor-pointer ${
-              subTab === "periods"
-                ? "bg-[#00A19A] text-white shadow-sm shadow-[#00A19A]/20"
-                : "text-slate-650 hover:text-[#00A19A] hover:bg-teal-50/50"
-            }`}
-          >
-            <Clock className="w-4 h-4" />
-            <span>1. Tạo đợt khảo sát</span>
-          </button>
-          <button
-            onClick={() => handleSubTabChange("students")}
-            className={`flex items-center gap-2 px-4 py-2.5 rounded-xl text-xs font-bold transition-all cursor-pointer ${
-              subTab === "students"
-                ? "bg-[#00A19A] text-white shadow-sm shadow-[#00A19A]/20"
-                : "text-slate-650 hover:text-[#00A19A] hover:bg-teal-50/50"
-            }`}
-          >
-            <Users className="w-4 h-4" />
-            <span>2. Danh sách khảo sát</span>
-          </button>
-          <button
-            onClick={() => handleSubTabChange("info")}
-            className={`flex items-center gap-2 px-4 py-2.5 rounded-xl text-xs font-bold transition-all cursor-pointer ${
-              subTab === "info"
-                ? "bg-[#00A19A] text-white shadow-sm shadow-[#00A19A]/20"
-                : "text-slate-650 hover:text-[#00A19A] hover:bg-teal-50/50"
-            }`}
-          >
-            <RefreshCw className="w-4 h-4" />
-            <span>3. TT Khảo sát lại</span>
-            {retestStats.total > 0 && (
-              <span className={`px-1.5 py-0.5 rounded-full text-[10px] font-black ${
-                subTab === "info" ? "bg-white/20 text-white" : "bg-rose-100 text-rose-600"
-              }`}>
-                {retestStats.total}
-              </span>
-            )}
-          </button>
-          <button
-            onClick={() => handleSubTabChange("result")}
-            className={`flex items-center gap-2 px-4 py-2.5 rounded-xl text-xs font-bold transition-all cursor-pointer ${
-              subTab === "result"
-                ? "bg-[#00A19A] text-white shadow-sm shadow-[#00A19A]/20"
-                : "text-slate-650 hover:text-[#00A19A] hover:bg-teal-50/50"
-            }`}
-          >
-            <CheckCircle2 className="w-4 h-4" />
-            <span>4. Kết quả & Nhập học</span>
-          </button>
+          {pageMode === "ket-qua" ? (
+            <>
+              <button
+                onClick={() => handleSubTabChange("info")}
+                className={`flex items-center gap-2 px-4 py-2.5 rounded-xl text-xs font-bold transition-all cursor-pointer ${
+                  subTab === "info"
+                    ? "bg-[#00A19A] text-white shadow-sm shadow-[#00A19A]/20"
+                    : "text-slate-650 hover:text-[#00A19A] hover:bg-teal-50/50"
+                }`}
+              >
+                <RefreshCw className="w-4 h-4" />
+                <span>1. TT Khảo sát lại</span>
+                {retestStats.total > 0 && (
+                  <span className={`px-1.5 py-0.5 rounded-full text-[10px] font-black ${
+                    subTab === "info" ? "bg-white/20 text-white" : "bg-rose-100 text-rose-600"
+                  }`}>
+                    {retestStats.total}
+                  </span>
+                )}
+              </button>
+              <button
+                onClick={() => handleSubTabChange("result")}
+                className={`flex items-center gap-2 px-4 py-2.5 rounded-xl text-xs font-bold transition-all cursor-pointer ${
+                  subTab === "result"
+                    ? "bg-[#00A19A] text-white shadow-sm shadow-[#00A19A]/20"
+                    : "text-slate-650 hover:text-[#00A19A] hover:bg-teal-50/50"
+                }`}
+              >
+                <CheckCircle2 className="w-4 h-4" />
+                <span>2. Kết quả & Nhập học</span>
+              </button>
+            </>
+          ) : (
+            <>
+              <button
+                onClick={() => handleSubTabChange("periods")}
+                className={`flex items-center gap-2 px-4 py-2.5 rounded-xl text-xs font-bold transition-all cursor-pointer ${
+                  subTab === "periods"
+                    ? "bg-[#00A19A] text-white shadow-sm shadow-[#00A19A]/20"
+                    : "text-slate-650 hover:text-[#00A19A] hover:bg-teal-50/50"
+                }`}
+              >
+                <Clock className="w-4 h-4" />
+                <span>1. Tạo đợt khảo sát</span>
+              </button>
+              <button
+                onClick={() => handleSubTabChange("students")}
+                className={`flex items-center gap-2 px-4 py-2.5 rounded-xl text-xs font-bold transition-all cursor-pointer ${
+                  subTab === "students"
+                    ? "bg-[#00A19A] text-white shadow-sm shadow-[#00A19A]/20"
+                    : "text-slate-650 hover:text-[#00A19A] hover:bg-teal-50/50"
+                }`}
+              >
+                <Users className="w-4 h-4" />
+                <span>2. Danh sách khảo sát</span>
+              </button>
+            </>
+          )}
         </div>
 
         {/* Action Buttons for info and result tabs */}
@@ -2406,6 +2480,28 @@ export function StudentInfoClient({
               rolePermissions={rolePermissions}
               mode="input"
               forcedTab={subTab}
+              viewMode="general"
+              destinationSchools={destinationSchools}
+            />
+          ) : activeTab === "transfer" ? (
+            <InputAssessmentsClient
+              academicYears={academicYears}
+              campuses={campuses}
+              examBoardUsers={examBoardUsers}
+              giaoVuCSUsers={giaoVuCSUsers}
+              gdcsUsers={gdcsUsers}
+              subjects={subjects}
+              eduSystems={eduSystems}
+              grades={grades}
+              configs={configs}
+              teachers={teachers}
+              departments={departments}
+              currentUser={currentUser}
+              rolePermissions={rolePermissions}
+              mode="input"
+              forcedTab={subTab}
+              viewMode="transfer"
+              destinationSchools={destinationSchools}
             />
           ) : (
             <PreschoolInputAssessmentsClient
@@ -2942,6 +3038,23 @@ export function StudentInfoClient({
                               }
                             >
                               <RotateCcw className="w-4 h-4" />
+                            </button>
+                            <button
+                              onClick={() => setOrientationTargetStudent(s)}
+                              className="p-1.5 text-purple-600 hover:text-purple-800 hover:bg-purple-50 border border-purple-200 rounded-xl transition-all cursor-pointer shadow-xs active:scale-95"
+                              title="Phiếu Định Hướng Đầu Vào (3 Tab)"
+                            >
+                              <HeartHandshake className="w-4 h-4" />
+                            </button>
+                            <button
+                              onClick={() => {
+                                setReportTargetStudent(s);
+                                setActiveReportOrientationData(null);
+                              }}
+                              className="p-1.5 text-teal-600 hover:text-teal-800 hover:bg-teal-50 border border-teal-200 rounded-xl transition-all cursor-pointer shadow-xs active:scale-95"
+                              title="Báo Cáo Nhận Diện & Định Hướng (A4)"
+                            >
+                              <Printer className="w-4 h-4" />
                             </button>
                             <button
                               onClick={() => {
@@ -4074,6 +4187,7 @@ export function StudentInfoClient({
                               <EntranceAcademicRecordInput
                                 value={formState.kqHocTap}
                                 grade={formState.grade || "1"}
+                                hocKy={formState.hocKy || (generalPeriods.find(p => p.id === formState.periodId)?.name || "")}
                                 onChange={(serializedJson) => {
                                   try {
                                     const parsed = JSON.parse(serializedJson);
@@ -5669,6 +5783,36 @@ export function StudentInfoClient({
             </div>
           </div>
         </div>
+      )}
+
+      {/* MODAL PHIẾU ĐỊNH HƯỚNG ĐẦU VÀO (2 TAB) */}
+      {orientationTargetStudent && (
+        <StudentOrientationModal
+          isOpen={!!orientationTargetStudent}
+          onClose={() => setOrientationTargetStudent(null)}
+          student={orientationTargetStudent}
+          onOpenReport={(stu, orData) => {
+            setReportTargetStudent(stu);
+            setActiveReportOrientationData(orData);
+          }}
+          onSuccess={() => {
+            // refresh data
+            window.location.reload();
+          }}
+        />
+      )}
+
+      {/* MODAL BÁO CÁO NHẬN DIỆN VÀ ĐỊNH HƯỚNG ĐẦU VÀO (A4) */}
+      {reportTargetStudent && (
+        <StudentOrientationReportModal
+          isOpen={!!reportTargetStudent}
+          onClose={() => {
+            setReportTargetStudent(null);
+            setActiveReportOrientationData(null);
+          }}
+          student={reportTargetStudent}
+          orientationData={activeReportOrientationData}
+        />
       )}
     </div>
   );

@@ -3,11 +3,12 @@
 // @ts-nocheck
 
 import { useState, useEffect, useMemo } from "react";
+import { useSearchParams } from "next/navigation";
 import { 
     BookOpen, Users, Save, CheckCircle2, CalendarDays, Layers, X, Clock, 
     SlidersHorizontal, ShieldCheck, GraduationCap, TrendingUp, AlertCircle, 
     Search, ChevronDown, ChevronUp, Sparkles, Filter, Check, RotateCcw, 
-    HelpCircle, FileSpreadsheet, ShieldAlert, Award
+    HelpCircle, FileSpreadsheet, ShieldAlert, Award, HeartHandshake, Printer
 } from "lucide-react";
 import { ResponsiveContainer, ComposedChart, Bar, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend } from "recharts";
 import PsychologyAssessmentForm from "./PsychologyAssessmentForm";
@@ -16,6 +17,8 @@ import ThinkingSkillsForm from "./ThinkingSkillsForm";
 import PreschoolEvaluationForm from "./PreschoolEvaluationForm";
 import DeadlineCountdownBanner from "@/components/shared/DeadlineCountdownBanner";
 import ReportExportDrawer from "@/components/testing/ReportExportDrawer";
+import { StudentOrientationModal } from "@/components/orientation/StudentOrientationModal";
+import { StudentOrientationReportModal } from "@/components/orientation/StudentOrientationReportModal";
 import { calculateCompositeScore, getColumnMaxScore, parseMaxScores, roundScore } from "@/lib/grading/formula-calculator";
 
 const QUICK_REMARKS = [
@@ -30,10 +33,22 @@ const QUICK_REMARKS = [
 ];
 
 export default function TeacherAssessmentsClient({ user }: { user: any }) {
+    const searchParams = useSearchParams();
+    const urlPeriodId = searchParams.get("periodId") || "";
+    const urlBatchId = searchParams.get("batchId") || "";
+    const urlSubjectId = searchParams.get("subjectId") || "";
+    const urlStudentCode = searchParams.get("studentCode") || "";
+    const urlStudentId = searchParams.get("studentId") || "";
+    const urlAutoOpen = searchParams.get("autoOpen") === "true";
+
     const [assignments, setAssignments] = useState<any[]>([]);
     const [isMounted, setIsMounted] = useState(false);
     const [activeChartTab, setActiveChartTab] = useState<"grade" | "class">("grade");
     const [isChartCollapsed, setIsChartCollapsed] = useState<boolean>(true);
+    const [highlightedStudentCode, setHighlightedStudentCode] = useState<string>("");
+    const [orientationTargetStudent, setOrientationTargetStudent] = useState<any | null>(null);
+    const [reportTargetStudent, setReportTargetStudent] = useState<any | null>(null);
+    const [activeReportOrientationData, setActiveReportOrientationData] = useState<any | null>(null);
 
     useEffect(() => {
         setIsMounted(true);
@@ -45,6 +60,15 @@ export default function TeacherAssessmentsClient({ user }: { user: any }) {
 
     useEffect(() => {
         if (Array.isArray(assignments) && assignments.length > 0 && !selectedPeriodId) {
+            // Prioritize Deep Link Period & Batch from Email
+            if (urlPeriodId && assignments.some(a => a.periodId === urlPeriodId)) {
+                setSelectedPeriodId(urlPeriodId);
+                if (urlBatchId && assignments.some(a => a.periodId === urlPeriodId && (a.batchId === urlBatchId || urlBatchId === "all"))) {
+                    setSelectedBatchId(urlBatchId);
+                }
+                return;
+            }
+
             const allBatchesMap = new Map();
             assignments.forEach(a => {
                 if (a && a.batch && a.period) {
@@ -87,7 +111,7 @@ export default function TeacherAssessmentsClient({ user }: { user: any }) {
                 }
             }
         }
-    }, [assignments, selectedPeriodId]);
+    }, [assignments, selectedPeriodId, urlPeriodId, urlBatchId]);
 
     useEffect(() => {
         if (!Array.isArray(assignments) || assignments.length === 0) {
@@ -184,12 +208,15 @@ export default function TeacherAssessmentsClient({ user }: { user: any }) {
     const [isBulkSaving, setIsBulkSaving] = useState<boolean>(false);
     const [quickCommentTarget, setQuickCommentTarget] = useState<{ studentId: string; colIndex: number } | null>(null);
 
-    const [academicYear, setAcademicYear] = useState<string | null>(null);
+    const [academicYear, setAcademicYear] = useState<string>("");
     const [gradeConfigs, setGradeConfigs] = useState<any[]>([]);
+    const [refreshStudentTrigger, setRefreshStudentTrigger] = useState<number>(0);
+    const fetchStudents = () => setRefreshStudentTrigger(prev => prev + 1);
 
     useEffect(() => {
         const handleYearChange = () => {
-            setAcademicYear(localStorage.getItem("selectedAcademicYear"));
+            const yr = localStorage.getItem("selectedAcademicYear") || "";
+            setAcademicYear(yr);
         };
         window.addEventListener("academicYearChanged", handleYearChange);
         handleYearChange();
@@ -197,8 +224,7 @@ export default function TeacherAssessmentsClient({ user }: { user: any }) {
     }, []);
 
     useEffect(() => {
-        if (academicYear === null) return;
-        fetch(`/api/teacher-assessments?action=getStats&academicYearId=${academicYear}`)
+        fetch(`/api/teacher-assessments?action=getStats&academicYearId=${academicYear || ""}`)
             .then(res => res.json())
             .then(data => {
                 if (data && typeof data.total === 'number') {
@@ -209,7 +235,7 @@ export default function TeacherAssessmentsClient({ user }: { user: any }) {
             })
             .catch(() => setStats(null));
 
-        fetch(`/api/teacher-assessments?action=getGradeConfigs&academicYearId=${academicYear}`)
+        fetch(`/api/teacher-assessments?action=getGradeConfigs&academicYearId=${academicYear || ""}`)
             .then(res => res.json())
             .then(data => {
                 if (Array.isArray(data)) {
@@ -220,9 +246,8 @@ export default function TeacherAssessmentsClient({ user }: { user: any }) {
     }, [academicYear]);
 
     useEffect(() => {
-        if (academicYear === null) return;
         setLoading(true);
-        fetch(`/api/teacher-assessments?action=getAssignments&academicYearId=${academicYear}`)
+        fetch(`/api/teacher-assessments?action=getAssignments&academicYearId=${academicYear || ""}`)
             .then(res => res.json())
             .then(data => {
                 if(Array.isArray(data)) {
@@ -364,6 +389,12 @@ export default function TeacherAssessmentsClient({ user }: { user: any }) {
     useEffect(() => {
         if (!selectedPeriodId || !Array.isArray(assignments) || assignments.length === 0) return;
 
+        // If URL param specifies batchId, prioritize it!
+        if (urlBatchId && assignments.some(a => a.periodId === selectedPeriodId && (a.batchId === urlBatchId || urlBatchId === "all"))) {
+            setSelectedBatchId(urlBatchId);
+            return;
+        }
+
         const bMap = new Map();
         assignments.forEach(a => {
             if (a.periodId === selectedPeriodId && a.batch) {
@@ -394,11 +425,18 @@ export default function TeacherAssessmentsClient({ user }: { user: any }) {
         }
         
         setSelectedBatchId(targetBatchId);
-    }, [selectedPeriodId, assignments]);
+    }, [selectedPeriodId, assignments, urlBatchId]);
 
     // Auto-select assignment (subject) when availableAssignments changes
     useEffect(() => {
         if (availableAssignments.length > 0) {
+            if (urlSubjectId) {
+                const targetAssign = availableAssignments.find(a => a.subjectId === urlSubjectId || a.id === urlSubjectId);
+                if (targetAssign) {
+                    setSelectedAssignmentId(targetAssign.id);
+                    return;
+                }
+            }
             const currentValid = availableAssignments.some(a => a.id === selectedAssignmentId);
             if (!currentValid) {
                 setSelectedAssignmentId(availableAssignments[0].id);
@@ -406,7 +444,7 @@ export default function TeacherAssessmentsClient({ user }: { user: any }) {
         } else {
             setSelectedAssignmentId("");
         }
-    }, [availableAssignments, selectedAssignmentId]);
+    }, [availableAssignments, selectedAssignmentId, urlSubjectId]);
 
     // Reset tab, search, and page when filters change
     useEffect(() => {
@@ -477,13 +515,13 @@ export default function TeacherAssessmentsClient({ user }: { user: any }) {
                 setStudents([]);
                 setLoading(false);
             });
-    }, [selectedAssignmentId, assignments, availableAssignments, selectedBatchId, selectedGrade, selectedSystemCode]);
+    }, [selectedAssignmentId, assignments, availableAssignments, selectedBatchId, selectedGrade, selectedSystemCode, refreshStudentTrigger]);
 
     const handleScoreChange = (studentId: string, colIndex: number, val: string) => {
         const assignment = availableAssignments.find(a => a.id === selectedAssignmentId) || assignments.find(a => a.id === selectedAssignmentId);
         if (activeGradeConfig) {
             const maxAllowed = activeGradeConfig.parsedMaxScores?.[colIndex];
-            const colType = activeGradeConfig.parsedTypes?.[colIndex] || "SCORE_10";
+            const colType = String(activeGradeConfig.parsedTypes?.[colIndex] || "SCORE_10");
             const colName = activeGradeConfig.parsedNames?.[colIndex] || `Cột ${colIndex + 1}`;
             
             if (colType.startsWith("SCORE_") && maxAllowed !== undefined && !isNaN(Number(maxAllowed))) {
@@ -696,6 +734,7 @@ export default function TeacherAssessmentsClient({ user }: { user: any }) {
     const subNameNormalized = subName.normalize("NFC");
     const gradeVal = String(currentAssignment?.grade || "").replace("Khối ", "").trim();
     const isPsychSubject = subName.includes("tâm lý") || subCode.includes("tly");
+    const isOrientationSubject = subName.includes("định hướng") || subCode.includes("pdhdv") || subCode.includes("pvdh") || subName.includes("phỏng vấn định hướng");
     const isPreschoolSubject = currentAssignment?.isPreschool || currentAssignment?.subjectId === "preschool" || currentAssignment?.subjectId === "preschool-probation" || currentAssignment?.isPreschoolProbation;
     const isPreschoolProbationSubject = currentAssignment?.isPreschoolProbation || currentAssignment?.subjectId === "preschool-probation" || subName.includes("học thử") || subCode.includes("probation");
     const isChildDevSubject = (subNameNormalized.includes("chuẩn phát triển trẻ em") || subNameNormalized.includes("bộ chuẩn phát triển") || subCode.includes("cpt") || subCode.includes("tci")) && (gradeVal === "1" || gradeVal === "Tất cả" || gradeVal === "" || gradeVal === "");
@@ -719,6 +758,7 @@ export default function TeacherAssessmentsClient({ user }: { user: any }) {
                 else setAssignments([]);
             });
     };
+
 
     const handleUnlockRequestSubmit = async () => {
         if (!unlockReason.trim()) { alert("Vui lòng nhập lý do."); return; }
@@ -792,6 +832,50 @@ export default function TeacherAssessmentsClient({ user }: { user: any }) {
         const start = (safeCurrentPage - 1) * 10;
         return currentTabStudents.slice(start, start + 10);
     }, [currentTabStudents, safeCurrentPage]);
+
+    // Handle Auto-Scroll, Page Switching & Modal Opening for Deep Link from Email
+    useEffect(() => {
+        if (!urlStudentCode && !urlStudentId) return;
+        if (!Array.isArray(students) || students.length === 0) return;
+
+        const targetIndex = searchedStudents.findIndex((s: any) => 
+            (urlStudentCode && (s.studentCode === urlStudentCode || String(s.studentCode).toLowerCase() === urlStudentCode.toLowerCase())) ||
+            (urlStudentId && s.id === urlStudentId)
+        );
+
+        if (targetIndex >= 0) {
+            const target = searchedStudents[targetIndex];
+            if (evaluationTab !== "all") {
+                setEvaluationTab("all");
+            }
+            const targetPage = Math.floor(targetIndex / 10) + 1;
+            setCurrentPage(targetPage);
+            setHighlightedStudentCode(target.studentCode);
+
+            setTimeout(() => {
+                const el = document.getElementById(`student-row-${target.studentCode || target.id}`);
+                if (el) {
+                    el.scrollIntoView({ behavior: "smooth", block: "center" });
+                }
+            }, 350);
+
+            if (urlAutoOpen) {
+                if (isPsychSubject) {
+                    setActivePsychStudent(target);
+                    setIsPsychModalOpen(true);
+                } else if (isThinkingSkillsSubject) {
+                    setActiveThinkingSkillsStudent(target);
+                    setIsThinkingSkillsModalOpen(true);
+                } else if (isChildDevSubject) {
+                    setActiveChildDevStudent(target);
+                    setIsChildDevModalOpen(true);
+                } else if (isPreschoolSubject) {
+                    setActivePreschoolStudent(target);
+                    setIsPreschoolModalOpen(true);
+                }
+            }
+        }
+    }, [students, searchedStudents, urlStudentCode, urlStudentId, urlAutoOpen, isPsychSubject, isThinkingSkillsSubject, isChildDevSubject, isPreschoolSubject, evaluationTab]);
 
     const gradeChartData = useMemo(() => {
         if (!stats?.grades) return [];
@@ -1183,7 +1267,7 @@ export default function TeacherAssessmentsClient({ user }: { user: any }) {
             )}
 
             {/* 5. Main Assessment Table Section */}
-            {currentAssignment && (
+            {currentAssignment ? (
                 <div className="bg-white rounded-2xl border border-slate-200/80 shadow-sm overflow-hidden transition-all">
                     
                     {/* Header Bar */}
@@ -1404,7 +1488,7 @@ export default function TeacherAssessmentsClient({ user }: { user: any }) {
 
                                             {/* Form Column */}
                                             <th className="px-4 py-3 min-w-[240px] font-bold text-[#005854] bg-[#F0FDFA] uppercase tracking-wider text-xs text-center">
-                                                {isPreschoolProbationSubject ? "Form ĐG Học Thử" : (isPsychSubject || isChildDevSubject || isThinkingSkillsSubject || isPreschoolSubject ? "Form Khảo Sát" : (hideComments ? "Chi Tiết Điểm" : "Chi Tiết Điểm & Nhận Xét"))}
+                                                {isOrientationSubject ? "Phiếu Định Hướng (3 Tab)" : isPreschoolProbationSubject ? "Form ĐG Học Thử" : (isPsychSubject || isChildDevSubject || isThinkingSkillsSubject || isPreschoolSubject ? "Form Khảo Sát" : (hideComments ? "Chi Tiết Điểm" : "Chi Tiết Điểm & Nhận Xét"))}
                                             </th>
 
                                             {/* Specialized Columns */}
@@ -1437,9 +1521,14 @@ export default function TeacherAssessmentsClient({ user }: { user: any }) {
                                             const serialNumber = (safeCurrentPage - 1) * 10 + idx + 1;
                                             const isSaved = isStudentSaved(st);
                                             const isDirty = dirtyStudentIds.has(st.id);
+                                            const isHighlighted = highlightedStudentCode === st.studentCode || (urlStudentId && st.id === urlStudentId);
 
                                             return (
-                                                <tr key={st.id} className="hover:bg-teal-50/25 transition-colors group">
+                                                <tr 
+                                                    key={st.id} 
+                                                    id={`student-row-${st.studentCode || st.id}`}
+                                                    className={`transition-all duration-300 group ${isHighlighted ? "bg-amber-100/70 ring-2 ring-amber-500 shadow-md" : "hover:bg-teal-50/25"}`}
+                                                >
                                                     {/* Sticky Left: STT */}
                                                     <td className="px-3 py-3 text-center text-slate-600 bg-white md:sticky md:left-0 z-10 font-bold text-xs border-b border-slate-100 shadow-[2px_0_6px_rgba(0,0,0,0.03)] group-hover:bg-[#F0FDFA]/70 transition-colors">
                                                         {serialNumber}
@@ -1564,6 +1653,29 @@ export default function TeacherAssessmentsClient({ user }: { user: any }) {
                                                                     <span className="text-[10px] text-slate-400 font-medium">Chưa đánh giá</span>
                                                                 )}
                                                             </div>
+                                                        ) : isOrientationSubject ? (
+                                                            // Specialized Orientation Form (2 Tabs)
+                                                            <div className="flex flex-col items-center justify-center gap-1.5 py-1">
+                                                                <button 
+                                                                    type="button"
+                                                                    onClick={() => setOrientationTargetStudent(st)}
+                                                                    className="bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-700 hover:to-purple-700 text-white font-bold py-1.5 px-4 rounded-xl shadow-xs flex items-center gap-1.5 transition-all active:scale-95 text-xs cursor-pointer"
+                                                                >
+                                                                    <HeartHandshake className="w-3.5 h-3.5" /> 
+                                                                    <span>Mở Phiếu Định Hướng (3 Tab)</span>
+                                                                </button>
+                                                                <button
+                                                                    type="button"
+                                                                    onClick={() => {
+                                                                        setReportTargetStudent(st);
+                                                                        setActiveReportOrientationData(null);
+                                                                    }}
+                                                                    className="inline-flex items-center gap-1 text-[11px] font-bold text-teal-700 hover:text-teal-900 hover:underline cursor-pointer"
+                                                                >
+                                                                    <Printer className="w-3 h-3" />
+                                                                    <span>Xem & In Báo Cáo A4</span>
+                                                                </button>
+                                                            </div>
                                                         ) : isPsychSubject ? (
                                                             // Specialized Psychology Display
                                                             <div className="flex flex-col items-center justify-center gap-1.5 py-1">
@@ -1618,7 +1730,7 @@ export default function TeacherAssessmentsClient({ user }: { user: any }) {
                                                                 {(() => {
                                                                     const colCount = activeGradeConfig?.columnCount ?? (currentAssignment?.subject?.scoreColumns ?? 1);
                                                                     const parsedNames = activeGradeConfig?.parsedNames || [];
-                                                                    const colType = activeGradeConfig?.colType || "SCORE_10";
+                                                                    const colType = String(activeGradeConfig?.colType || "SCORE_10");
                                                                     const isGradeType = colType.startsWith("GRADE_");
                                                                     const subNameLower = (currentAssignment?.subject?.name || "").toLowerCase();
                                                                     const isGrade1 = String(st.grade || "").toLowerCase().replace("khối", "").replace("khoi", "").trim() === "1";
@@ -1637,7 +1749,7 @@ export default function TeacherAssessmentsClient({ user }: { user: any }) {
                                                                                 }
 
                                                                                 const maxScore = activeGradeConfig 
-                                                                                    ? getColumnMaxScore(activeGradeConfig, colIdx)
+                                                                                    ? (activeGradeConfig.parsedMaxScores?.[colIdx] ?? getColumnMaxScore(activeGradeConfig.parsedTypes?.[colIdx], activeGradeConfig.parsedMaxScores, colIdx))
                                                                                     : (subNameLower.includes("vấn đáp") ? 30 : subNameLower.includes("viết") ? 70 : 10);
                                                                                 
                                                                                 let maxScoreBadge = "";
@@ -2072,6 +2184,20 @@ export default function TeacherAssessmentsClient({ user }: { user: any }) {
                         </>
                     )}
                 </div>
+            ) : (
+                <div className="bg-white rounded-2xl border border-slate-200/80 shadow-xs p-8 md:p-12 text-center flex flex-col items-center justify-center gap-3">
+                    <div className="w-14 h-14 rounded-2xl bg-teal-50 text-[#00A19A] flex items-center justify-center shadow-xs">
+                        <BookOpen className="w-7 h-7" />
+                    </div>
+                    <h3 className="text-base font-bold text-slate-800">
+                        {assignments.length === 0 ? "Chưa có Phân công Khảo sát trong Kỳ này" : "Vui lòng chọn Kỳ và Môn khảo sát"}
+                    </h3>
+                    <p className="text-xs text-slate-500 max-w-md leading-relaxed">
+                        {assignments.length === 0 
+                            ? "Hiện tại tài khoản chưa ghi nhận phân công nhập điểm khảo sát nào cho năm học đang chọn. Thầy/Cô vui lòng liên hệ Ban Khảo thí / BGH để được cấu hình phân công."
+                            : "Thầy/Cô hãy chọn Kỳ khảo sát, Đợt và Môn học ở bộ lọc phía trên để hiển thị danh sách học sinh cần chấm điểm."}
+                    </p>
+                </div>
             )}
 
             {/* Modals & Drawers */}
@@ -2258,6 +2384,37 @@ export default function TeacherAssessmentsClient({ user }: { user: any }) {
                     };
                 })}
             />
+
+            {/* MODAL PHIẾU ĐỊNH HƯỚNG ĐẦU VÀO (2 TAB) */}
+            {orientationTargetStudent && (
+                <StudentOrientationModal
+                    isOpen={!!orientationTargetStudent}
+                    onClose={() => setOrientationTargetStudent(null)}
+                    student={orientationTargetStudent}
+                    onOpenReport={(stu, orData) => {
+                        setReportTargetStudent(stu);
+                        setActiveReportOrientationData(orData);
+                    }}
+                    onSuccess={() => {
+                        if (typeof fetchStudents === "function") {
+                            fetchStudents();
+                        }
+                    }}
+                />
+            )}
+
+            {/* MODAL BÁO CÁO NHẬN DIỆN VÀ ĐỊNH HƯỚNG ĐẦU VÀO (A4) */}
+            {reportTargetStudent && (
+                <StudentOrientationReportModal
+                    isOpen={!!reportTargetStudent}
+                    onClose={() => {
+                        setReportTargetStudent(null);
+                        setActiveReportOrientationData(null);
+                    }}
+                    student={reportTargetStudent}
+                    orientationData={activeReportOrientationData}
+                />
+            )}
         </div>
     );
 }
