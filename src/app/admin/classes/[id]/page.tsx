@@ -1,8 +1,8 @@
 import { PageHeader } from "@/components/PageHeader"
 import { prisma } from "@/lib/db"
-import { notFound } from "next/navigation"
+import { redirect } from "next/navigation"
 import Link from "next/link"
-import { ArrowLeft } from "lucide-react"
+import { ArrowLeft, AlertCircle, Home, BookOpen } from "lucide-react"
 import { AdminClassStudentsClient } from "./client"
 import { sortVietnameseStudents } from "@/lib/vietnameseSort"
 
@@ -10,14 +10,11 @@ export const dynamic = "force-dynamic"
 export const revalidate = 0
 
 export default async function AdminClassDetailPage({ params }: any) {
-  const { id: classId } = await params
-  
-  const activeSurveys = await prisma.surveyPeriod.findMany({
-    where: { status: 'ACTIVE' },
-    orderBy: { endDate: 'asc' }
-  });
+  const { id: rawClassId } = await params
+  const classId = (rawClassId || '').trim()
 
-  const classInfo = await prisma.class.findUnique({
+  // 1. Direct query by class ID
+  let classInfo = await prisma.class.findUnique({
     where: { id: classId },
     include: {
       campus: true,
@@ -31,7 +28,139 @@ export default async function AdminClassDetailPage({ params }: any) {
     }
   })
 
-  if (!classInfo) return notFound()
+  // 2. Fallback: match by classCode (e.g. C-26_27-18)
+  if (!classInfo && classId) {
+    const byCode = await prisma.class.findFirst({
+      where: { classCode: classId },
+      select: { id: true }
+    })
+    if (byCode) {
+      redirect(`/admin/classes/${byCode.id}`)
+    }
+  }
+
+  // 3. Fallback: match by className (e.g. 2.2INT_CS5 or 1.1_CS1)
+  if (!classInfo && classId) {
+    const byName = await prisma.class.findFirst({
+      where: {
+        OR: [
+          { className: classId },
+          { className: classId.replace(/_/g, ' ') },
+          { className: classId.replace(/\s+/g, '_') }
+        ]
+      },
+      select: { id: true }
+    })
+    if (byName) {
+      redirect(`/admin/classes/${byName.id}`)
+    }
+  }
+
+  // 4. Fuzzy / Typo recovery for CUIDs (e.g. cmrekxidq... vs cmrekxidg...)
+  if (!classInfo && classId && classId.length >= 20) {
+    const prefix = classId.substring(0, 8)
+    const suffix = classId.substring(classId.length - 10)
+    const candidateClasses = await prisma.class.findMany({
+      where: {
+        OR: [
+          { id: { startsWith: prefix } },
+          { id: { endsWith: suffix } }
+        ]
+      },
+      select: { id: true }
+    })
+
+    for (const cand of candidateClasses) {
+      let diff = 0
+      const len = Math.min(cand.id.length, classId.length)
+      for (let i = 0; i < len; i++) {
+        if (cand.id[i] !== classId[i]) diff++
+      }
+      diff += Math.abs(cand.id.length - classId.length)
+      if (diff <= 2) {
+        redirect(`/admin/classes/${cand.id}`)
+      }
+    }
+  }
+
+  // 5. Graceful Fallback if class is truly not found
+  if (!classInfo) {
+    const sampleClasses = await prisma.class.findMany({
+      take: 6,
+      orderBy: { className: 'asc' },
+      select: { id: true, className: true, classCode: true, grade: true }
+    })
+
+    return (
+      <div className="space-y-6 max-w-4xl mx-auto py-8 px-4">
+        <PageHeader
+          title="Không tìm thấy lớp học"
+          description={`Mã lớp hoặc định danh: "${classId}"`}
+          breadcrumbs={[
+            { label: "Cấu hình hệ thống" },
+            { label: "Lớp học", href: "/admin/classes" },
+            { label: "Không tìm thấy" }
+          ]}
+        />
+
+        <div className="bg-white rounded-2xl border border-slate-200 shadow-sm p-8 text-center space-y-6">
+          <div className="w-16 h-16 rounded-full bg-amber-50 text-amber-600 flex items-center justify-center mx-auto border border-amber-200">
+            <AlertCircle className="w-8 h-8" />
+          </div>
+
+          <div className="space-y-2">
+            <h2 className="text-xl font-bold text-slate-800">Lớp học không tồn tại hoặc đã được cập nhật</h2>
+            <p className="text-sm text-slate-500 max-w-lg mx-auto">
+              Hệ thống không tìm thấy lớp học có định danh <code className="bg-slate-100 text-slate-700 px-2 py-0.5 rounded font-mono text-xs">{classId}</code>. Đường dẫn có thể chứa ký tự chưa chuẩn hoặc lớp học đã được sắp xếp lại.
+            </p>
+          </div>
+
+          <div className="flex items-center justify-center gap-3 pt-2">
+            <Link
+              href="/admin/classes"
+              className="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl bg-blue-600 hover:bg-blue-700 text-white font-semibold text-sm shadow-sm transition-all"
+            >
+              <ArrowLeft className="w-4 h-4" /> Quay lại Danh sách Lớp học
+            </Link>
+            <Link
+              href="/admin"
+              className="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-700 font-semibold text-sm transition-all"
+            >
+              <Home className="w-4 h-4" /> Về Trang Quản Trị
+            </Link>
+          </div>
+
+          {sampleClasses.length > 0 && (
+            <div className="pt-6 border-t border-slate-100 text-left">
+              <p className="text-xs font-semibold text-slate-400 uppercase tracking-wider mb-3">
+                Các lớp học gợi ý:
+              </p>
+              <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
+                {sampleClasses.map(sc => (
+                  <Link
+                    key={sc.id}
+                    href={`/admin/classes/${sc.id}`}
+                    className="p-3 rounded-lg border border-slate-200 hover:border-blue-400 hover:bg-blue-50/50 transition-all text-xs font-medium text-slate-700 flex justify-between items-center group"
+                  >
+                    <span className="flex items-center gap-1.5">
+                      <BookOpen className="w-3.5 h-3.5 text-blue-500" />
+                      Lớp {sc.className}
+                    </span>
+                    <span className="text-slate-400 group-hover:text-blue-600 text-[11px]">{sc.classCode}</span>
+                  </Link>
+                ))}
+              </div>
+            </div>
+          )}
+        </div>
+      </div>
+    )
+  }
+
+  const activeSurveys = await prisma.surveyPeriod.findMany({
+    where: { status: 'ACTIVE' },
+    orderBy: { endDate: 'asc' }
+  });
 
   // Pre-fetch candidate student codes from Input Assessment tables
   const studentCodes = (classInfo.students || []).map(s => s.studentCode).filter(Boolean);

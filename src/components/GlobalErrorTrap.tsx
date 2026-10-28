@@ -29,6 +29,15 @@ export function GlobalErrorTrap() {
       )
     }
 
+    const isAuthFetchError = (msg: string = "") => {
+      const lower = msg.toLowerCase()
+      return (
+        lower.includes("clientfetcherror") ||
+        lower.includes("errors.authjs.dev") ||
+        (lower.includes("unexpected token '<'") && lower.includes("json"))
+      )
+    }
+
     const triggerCleanReload = () => {
       const now = Date.now()
       if (now - lastAutoReload > 10000) {
@@ -52,6 +61,16 @@ export function GlobalErrorTrap() {
       const reason = event.reason
       const msg = String(reason?.message || reason || "")
 
+      if (isAuthFetchError(msg)) {
+        event.preventDefault()
+        console.warn("[GlobalErrorTrap] Handled non-fatal Auth.js session fetch rejection:", msg)
+        try {
+          const portals = document.querySelectorAll("nextjs-portal")
+          portals.forEach(p => p.remove())
+        } catch (_) {}
+        return
+      }
+
       if (isTransientRouterError(msg)) {
         // Prevent default browser/Next.js overlay from popping up
         event.preventDefault()
@@ -69,6 +88,16 @@ export function GlobalErrorTrap() {
 
     const handleError = (event: ErrorEvent) => {
       const msg = String(event.message || event.error?.message || "")
+
+      if (isAuthFetchError(msg)) {
+        event.preventDefault()
+        console.warn("[GlobalErrorTrap] Handled non-fatal Auth.js error event:", msg)
+        try {
+          const portals = document.querySelectorAll("nextjs-portal")
+          portals.forEach(p => p.remove())
+        } catch (_) {}
+        return
+      }
 
       if (isTransientRouterError(msg)) {
         event.preventDefault()
@@ -91,7 +120,13 @@ export function GlobalErrorTrap() {
       const portals = document.querySelectorAll("nextjs-portal")
       portals.forEach(portal => {
         const text = portal.shadowRoot?.textContent || portal.textContent || ""
-        if (text.includes("unexpected response") || text.includes("E394")) {
+        if (
+          text.includes("unexpected response") ||
+          text.includes("E394") ||
+          text.includes("ClientFetchError") ||
+          text.includes("errors.authjs.dev") ||
+          text.includes("<!DOCTYPE")
+        ) {
           portal.remove()
         }
       })
