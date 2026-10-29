@@ -303,7 +303,7 @@ export async function GET(req: NextRequest) {
           where: {
             OR: [
               ...(studentCodesArr.length > 0 ? [{ studentCode: { in: studentCodesArr } }] : []),
-              ...(studentNamesArr.length > 0 ? [{ studentName: { in: studentNamesArr } }] : [])
+              ...(studentNamesArr.length > 0 ? [{ fullName: { in: studentNamesArr } }] : [])
             ]
           },
           include: {
@@ -575,11 +575,14 @@ export async function GET(req: NextRequest) {
         classCode,
         className,
         class: s.class,
+        academicYear: s.academicYear,
+        yearTheme: s.academicYear?.theme || (s.academicYear?.yearThemes ? (() => { try { const yt = JSON.parse(s.academicYear.yearThemes); return yt?.[0]?.title || ""; } catch { return ""; } })() : "") || "",
         studentCode,
         studentName,
         gender,
         dob,
         status,
+        specialGradeEntries: s.specialGradeEntries || [],
         studentType: s.studentType || "CHINH_KHOA",
         studentTypeNote: s.studentTypeNote || "",
         convertedAt: s.convertedAt || null,
@@ -590,9 +593,9 @@ export async function GET(req: NextRequest) {
         student: s,
         termScores: s.termScores || [],
         termSummaries: s.termSummaries || [],
-        goals: (s.goals && s.goals.length > 0) ? s.goals : (crossScoreMap.get(studentCode)?.goals || []),
-        goalTrackings: (s.goalTrackings && s.goalTrackings.length > 0) ? s.goalTrackings : (crossScoreMap.get(studentCode)?.goalTrackings || []),
-        termEvaluations: (s.termEvaluations && s.termEvaluations.length > 0) ? s.termEvaluations : (crossScoreMap.get(studentCode)?.termEvaluations || []),
+        goals: (s.goals && s.goals.length > 0) ? s.goals : ((crossScoreMap.get(studentCode) as any)?.goals || []),
+        goalTrackings: (s.goalTrackings && s.goalTrackings.length > 0) ? s.goalTrackings : ((crossScoreMap.get(studentCode) as any)?.goalTrackings || []),
+        termEvaluations: (s.termEvaluations && s.termEvaluations.length > 0) ? s.termEvaluations : ((crossScoreMap.get(studentCode) as any)?.termEvaluations || []),
         subjectGradeEntries: s.subjectGradeEntries || [],
         commitment: s.learningCommitments?.[0] || null,
         orientation: (() => {

@@ -1129,6 +1129,24 @@ export async function GET(req: Request) {
               include: {
                 subject: true
               }
+            },
+            specialGradeEntries: {
+              include: {
+                assignment: {
+                  include: {
+                    subject: true,
+                    teacher: { select: { teacherName: true } }
+                  }
+                },
+                lesson: {
+                  select: {
+                    periodIndex: true,
+                    lessonName: true,
+                    topic: { select: { name: true } }
+                  }
+                }
+              },
+              orderBy: { createdAt: "desc" }
             }
           }
         })
@@ -1861,6 +1879,17 @@ export async function GET(req: Request) {
       const studentIds = students.map(s => s.id)
       const studentCodes = students.map(s => s.studentCode).filter(Boolean)
 
+      const studentCodeMappings = await prisma.studentCodeMapping.findMany({
+        where: { databaseCode: { in: studentCodes } },
+        select: { databaseCode: true, markFileCode: true }
+      });
+      const vneduMap = new Map<string, string>();
+      studentCodeMappings.forEach((m: any) => {
+        if (m.databaseCode && m.markFileCode && !vneduMap.has(m.databaseCode)) {
+          vneduMap.set(m.databaseCode, m.markFileCode);
+        }
+      });
+
       // Pre-aggregate cross-record advisory (goals, trackings, evaluations) by studentCode
       const crossScoreMap = new Map<string, { goals: any[]; goalTrackings: any[]; termEvaluations: any[] }>();
       if (studentCodes.length > 0) {
@@ -2061,11 +2090,15 @@ export async function GET(req: Request) {
           classCode,
           className,
           class: s.class,
+          academicYear: s.academicYear,
+          yearTheme: s.academicYear?.theme || (s.academicYear?.yearThemes ? (() => { try { const yt = JSON.parse(s.academicYear.yearThemes); return yt?.[0]?.title || ""; } catch { return ""; } })() : "") || "",
           studentCode,
+          vneduCode: vneduMap.get(studentCode) || null,
           studentName,
           gender,
           dob,
           status,
+          specialGradeEntries: s.specialGradeEntries || [],
           student: s,
           commitment: s.learningCommitments?.[0] || null,
           commitmentContent,

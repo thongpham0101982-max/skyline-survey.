@@ -11,8 +11,12 @@ import {
   Search, Calendar, MapPin, CheckCircle, AlertTriangle, GraduationCap,
   Layers, School, Building2, RotateCcw, RefreshCw, Trash2,
   ChevronLeft, ChevronRight, Maximize2, Minimize2,
-  Camera, Upload, Phone, Mail, Activity, ChevronDown, X, Check
+  Camera, Upload, Phone, Mail, Activity, ChevronDown, X, Check,
+  FolderArchive, FolderDown, Sliders
 } from "lucide-react"
+import StudentProfileCoverA4 from "@/components/student/StudentProfileCoverA4"
+import StudentProfileSectionConfigModal from "@/components/student/StudentProfileSectionConfigModal"
+import { resolveStudentSectionVisibility } from "@/lib/studentProfileSectionConfig"
 
 function normalizeClassKey(name: string): string {
   if (!name) return "";
@@ -122,6 +126,26 @@ export function StudentProfilesAdminClient({
   const [isStudentDrawerOpen, setIsStudentDrawerOpen] = useState(false)
   const studentDropdownRef = useRef<HTMLDivElement>(null)
 
+  // Section Config State
+  const [isConfigModalOpen, setIsConfigModalOpen] = useState(false)
+  const [configMap, setConfigMap] = useState<Record<string, Record<string, boolean>>>({})
+
+  const loadConfigs = async () => {
+    try {
+      const res = await fetch("/api/admin/student-profiles/section-config")
+      const json = await res.json()
+      if (json.success && json.data) {
+        setConfigMap(json.data)
+      }
+    } catch (e) {
+      console.error("Error loading section configs:", e)
+    }
+  }
+
+  useEffect(() => {
+    loadConfigs()
+  }, [])
+
   useEffect(() => {
     function handleClickOutside(event: MouseEvent) {
       if (studentDropdownRef.current && !studentDropdownRef.current.contains(event.target as Node)) {
@@ -135,31 +159,64 @@ export function StudentProfilesAdminClient({
   const [avatarTimestamp, setAvatarTimestamp] = useState(Date.now())
   const [isUploadingAvatar, setIsUploadingAvatar] = useState(false)
   const [isDownloadingPDF, setIsDownloadingPDF] = useState(false)
+  const [cvViewMode, setCvViewMode] = useState<"all" | "cover" | "content">("all")
   const [avatarErrorMap, setAvatarErrorMap] = useState<Record<string, boolean>>({})
   const fileInputRef = useRef<HTMLInputElement>(null)
 
     const handleDownloadPDF = async () => {
-    const element = document.getElementById("a4-student-portfolio");
+    const targetElementId = cvViewMode === "content" 
+      ? "a4-student-portfolio" 
+      : (cvViewMode === "cover" ? "a4-student-cover-wrapper" : "a4-student-portfolio-full-wrapper");
+    const element = document.getElementById(targetElementId) || document.getElementById("a4-student-portfolio");
     if (!element) {
-      window.open(`/admin/ho-so-hoc-sinh/print?type=student&studentId=${selectedStudentId}&academicYearId=${selectedYearId}&autoprint=1`, "_blank");
+      window.open(`/admin/ho-so-hoc-sinh/print?type=student&studentId=${selectedStudentId}&academicYearId=${selectedYearId}&mode=${cvViewMode === 'cover' ? 'cover' : (cvViewMode === 'content' ? 'content' : 'all')}`, "_blank");
       return;
     }
     setIsDownloadingPDF(true);
     try {
       const html2pdf = (await import("html2pdf.js")).default;
-      const sName = selectedStudent?.studentName ? String(selectedStudent.studentName).trim().replace(/\s+/g, "_") : "HocSinh";
-      const sCode = selectedStudent?.studentCode || "0000";
+      const sClass = String(selectedStudent?.className || selectedStudent?.class?.className || "Lop").trim().replace(/[\\/:*?"<>|]/g, "_");
+      const sCode = String(selectedStudent?.studentCode || selectedStudent?.code || "HS").trim().replace(/[\\/:*?"<>|]/g, "_");
+      const sName = String(selectedStudent?.studentName || selectedStudent?.fullName || "").trim().replace(/[\\/:*?"<>|]/g, "_");
+      const filename = `${sClass}_${sCode}_${sName}.pdf`;
       const opt: any = {
-        margin: [8, 10, 8, 10],
-        filename: `HSHS_${sCode}_${sName}.pdf`,
+        margin: [0, 0, 0, 0],
+        filename,
         image: { type: 'jpeg', quality: 0.98 },
-        html2canvas: { scale: 2, useCORS: true, logging: false },
+        html2canvas: { 
+          scale: 2, 
+          useCORS: true, 
+          logging: false,
+          onclone: (clonedDoc: Document) => {
+            clonedDoc.querySelectorAll("style").forEach((styleEl) => {
+              if (styleEl.textContent && /(lab|oklch|oklab|lch)\([^)]*\)/i.test(styleEl.textContent)) {
+                styleEl.textContent = styleEl.textContent
+                  .replace(/lab\([^)]*\)/gi, "rgba(0,0,0,0)")
+                  .replace(/oklch\([^)]*\)/gi, "rgba(0,0,0,0)")
+                  .replace(/oklab\([^)]*\)/gi, "rgba(0,0,0,0)")
+                  .replace(/lch\([^)]*\)/gi, "rgba(0,0,0,0)");
+              }
+            });
+            const portfolio = clonedDoc.getElementById("a4-student-portfolio");
+            if (portfolio) {
+              portfolio.style.border = "none";
+              portfolio.style.boxShadow = "none";
+              portfolio.style.borderRadius = "0px";
+              portfolio.style.padding = "12mm 14mm";
+              portfolio.style.width = "210mm";
+              portfolio.style.maxWidth = "210mm";
+            }
+            clonedDoc.querySelectorAll(".no-print, .pdf-hide, button").forEach((el: any) => {
+              el.style.display = "none";
+            });
+          }
+        },
         jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' }
       };
       await html2pdf().set(opt).from(element).save();
     } catch (err) {
       console.error("Download PDF error, fallback to print window:", err);
-      window.open(`/admin/ho-so-hoc-sinh/print?type=student&studentId=${selectedStudentId}&academicYearId=${selectedYearId}&autoprint=1`, "_blank");
+      window.open(`/admin/ho-so-hoc-sinh/print?type=student&studentId=${selectedStudentId}&academicYearId=${selectedYearId}&mode=${cvViewMode === 'cover' ? 'cover' : (cvViewMode === 'content' ? 'content' : 'all')}`, "_blank");
     } finally {
       setIsDownloadingPDF(false);
     }
@@ -337,29 +394,31 @@ export function StudentProfilesAdminClient({
     setSelectedStudent(student || null)
   }, [selectedStudentId, students])
 
-  // Batch Export PDF Handler
-  const handleBatchPdfExport = (scope: "class" | "grade" | "campus" | "block") => {
+  // Batch Export PDF / ZIP Handler
+  const handleBatchPdfExport = (scope: "class" | "grade" | "campus" | "block", asZip: boolean = false) => {
     const params = new URLSearchParams()
     params.set("type", scope)
     params.set("academicYearId", selectedYearId)
     params.set("block", schoolBlock)
+    params.set("mode", cvViewMode === "cover" ? "cover" : (cvViewMode === "content" ? "content" : "all"))
+    if (asZip) params.set("autoexportzip", "1")
 
     if (scope === "class") {
       if (selectedClassId === "all") {
-        alert("Vui lòng chọn một Lớp cụ thể để xuất PDF.")
+        alert("Vui lòng chọn một Lớp cụ thể để xuất.")
         return
       }
       params.set("classId", selectedClassId)
     } else if (scope === "grade") {
       if (selectedGrade === "all") {
-        alert("Vui lòng chọn một Khối cụ thể để xuất PDF.")
+        alert("Vui lòng chọn một Khối cụ thể để xuất.")
         return
       }
       params.set("grade", selectedGrade)
       if (selectedCampusId !== "all") params.set("campusId", selectedCampusId)
     } else if (scope === "campus") {
       if (selectedCampusId === "all") {
-        alert("Vui lòng chọn một Cơ sở cụ thể để xuất PDF.")
+        alert("Vui lòng chọn một Cơ sở cụ thể để xuất.")
         return
       }
       params.set("campusId", selectedCampusId)
@@ -600,35 +659,44 @@ export function StudentProfilesAdminClient({
           </div>
           <div className="flex flex-wrap gap-2">
             <button
-              onClick={() => handleBatchPdfExport("class")}
+              onClick={() => handleBatchPdfExport("class", true)}
+              disabled={selectedClassId === "all"}
+              className="flex items-center gap-1.5 px-3.5 py-2 bg-gradient-to-r from-purple-700 via-indigo-600 to-teal-600 hover:from-purple-800 hover:to-teal-700 text-white rounded-xl disabled:opacity-40 disabled:cursor-not-allowed transition-all cursor-pointer shadow-xs font-bold"
+              title="Xuất theo lớp thành thư mục ZIP, bên trong là từng file PDF theo từng học sinh (Lớp_MaHS_Hovaten.pdf)"
+            >
+              <FolderArchive className="w-3.5 h-3.5" />
+              <span>Xuất ZIP Lớp (Từng file HS)</span>
+            </button>
+            <button
+              onClick={() => handleBatchPdfExport("class", false)}
               disabled={selectedClassId === "all"}
               className="flex items-center gap-1.5 px-3.5 py-2 bg-slate-50 hover:bg-slate-100 text-slate-700 border border-slate-200/80 rounded-xl disabled:opacity-40 disabled:cursor-not-allowed transition-all cursor-pointer shadow-2xs"
             >
               <Printer className="w-3.5 h-3.5 text-slate-500" />
-              <span>Xuất PDF Lớp</span>
+              <span>In Cả Lớp</span>
             </button>
             <button
-              onClick={() => handleBatchPdfExport("grade")}
+              onClick={() => handleBatchPdfExport("grade", false)}
               disabled={selectedGrade === "all"}
               className="flex items-center gap-1.5 px-3.5 py-2 bg-slate-50 hover:bg-slate-100 text-slate-700 border border-slate-200/80 rounded-xl disabled:opacity-40 disabled:cursor-not-allowed transition-all cursor-pointer shadow-2xs"
             >
               <Printer className="w-3.5 h-3.5 text-slate-500" />
-              <span>Xuất PDF Khối</span>
+              <span>In Khối</span>
             </button>
             <button
-              onClick={() => handleBatchPdfExport("campus")}
+              onClick={() => handleBatchPdfExport("campus", false)}
               disabled={selectedCampusId === "all"}
               className="flex items-center gap-1.5 px-3.5 py-2 bg-slate-50 hover:bg-slate-100 text-slate-700 border border-slate-200/80 rounded-xl disabled:opacity-40 disabled:cursor-not-allowed transition-all cursor-pointer shadow-2xs"
             >
               <Printer className="w-3.5 h-3.5 text-slate-500" />
-              <span>Xuất PDF Cơ sở</span>
+              <span>In Cơ sở</span>
             </button>
             <button
-              onClick={() => handleBatchPdfExport("block")}
+              onClick={() => handleBatchPdfExport("block", false)}
               className="flex items-center gap-1.5 px-4 py-2 bg-gradient-to-r from-[#00A19A] to-[#009085] hover:opacity-95 text-white rounded-xl shadow-md shadow-[#00A19A]/20 transition-all cursor-pointer"
             >
               <Printer className="w-3.5 h-3.5" />
-              <span>Xuất PDF Bậc Học</span>
+              <span>In Bậc Học</span>
             </button>
           </div>
         </div>
@@ -1128,25 +1196,35 @@ export function StudentProfilesAdminClient({
                     type="button"
                     onClick={handleDownloadPDF}
                     disabled={isDownloadingPDF}
-                    className="flex items-center gap-1.5 bg-[#00A19A] hover:bg-[#005B55] text-white px-3.5 py-1.5 rounded-xl text-xs font-black shadow-sm hover:shadow-md transition-all cursor-pointer transform active:scale-95 disabled:opacity-75"
-                    title="Tải trực tiếp file PDF về máy tính"
+                    className="flex items-center gap-1.5 bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-700 hover:to-teal-700 text-white px-4 py-1.5 rounded-xl text-xs font-black shadow-sm hover:shadow-md transition-all cursor-pointer transform active:scale-95 disabled:opacity-75"
+                    title="Xuất trực tiếp file PDF chỉ chứa nội dung hồ sơ (không dính giao diện web, URL hay ngày giờ)"
                   >
                     {isDownloadingPDF ? (
                       <>
                         <Loader2 className="w-3.5 h-3.5 animate-spin" />
-                        <span>Đang lưu PDF...</span>
+                        <span>Đang xuất PDF...</span>
                       </>
                     ) : (
                       <>
                         <Download className="w-3.5 h-3.5" />
-                        <span>Lưu file PDF</span>
+                        <span>Xuất file PDF (.pdf)</span>
                       </>
                     )}
                   </button>
 
                   <button
                     type="button"
-                    onClick={() => window.open(`/admin/ho-so-hoc-sinh/print?type=student&studentId=${selectedStudentId}&academicYearId=${selectedYearId}&autoprint=1`, "_blank")}
+                    onClick={() => setIsConfigModalOpen(true)}
+                    className="flex items-center gap-1.5 bg-white border border-teal-500 text-teal-800 hover:bg-teal-50 px-3.5 py-1.5 rounded-xl text-xs font-black shadow-2xs transition-all cursor-pointer"
+                    title="Cấu hình hiển thị các mục Hồ sơ theo Khối và Hệ học"
+                  >
+                    <Sliders className="w-3.5 h-3.5 text-teal-600" />
+                    <span>Cấu hình Hồ sơ</span>
+                  </button>
+
+                  <button
+                    type="button"
+                    onClick={() => window.open(`/admin/ho-so-hoc-sinh/print?type=student&studentId=${selectedStudentId}&academicYearId=${selectedYearId}&mode=${cvViewMode === 'cover' ? 'cover' : (cvViewMode === 'content' ? 'content' : 'all')}`, "_blank")}
                     className="hidden sm:flex items-center gap-1.5 bg-white border border-teal-400 text-[#00A19A] hover:bg-teal-50 px-3 py-1.5 rounded-xl text-xs font-extrabold shadow-2xs transition-all cursor-pointer"
                     title="Mở hộp thoại in / Lưu dưới dạng PDF chuẩn vector"
                   >
@@ -1157,16 +1235,32 @@ export function StudentProfilesAdminClient({
                   <button
                     type="button"
                     onClick={() => {
-                      if (selectedClassId && selectedClassId !== "all") {
-                        window.open(`/admin/ho-so-hoc-sinh/print?type=class&classId=${selectedClassId}&academicYearId=${selectedYearId}&autoprint=1`, "_blank");
-                      } else {
-                        window.open(`/admin/ho-so-hoc-sinh/print?type=class&academicYearId=${selectedYearId}&autoprint=1`, "_blank");
-                      }
+                      const targetClassId = (selectedClassId && selectedClassId !== "all") 
+                        ? selectedClassId 
+                        : (selectedStudent?.classId || selectedStudent?.class?.id);
+                      const targetParam = targetClassId ? `&classId=${targetClassId}` : "";
+                      window.open(`/admin/ho-so-hoc-sinh/print?type=class${targetParam}&academicYearId=${selectedYearId}&mode=${cvViewMode === 'cover' ? 'cover' : (cvViewMode === 'content' ? 'content' : 'all')}&autoexportzip=1`, "_blank");
+                    }}
+                    className="flex items-center gap-1.5 bg-gradient-to-r from-purple-700 via-indigo-600 to-[#00A19A] hover:from-purple-800 hover:to-teal-800 text-white px-3.5 py-1.5 rounded-xl text-xs font-black shadow-xs hover:shadow-md transition-all cursor-pointer transform active:scale-95"
+                    title="Xuất theo lớp thành thư mục ZIP, bên trong là từng file PDF theo từng học sinh (Lớp_MaHS_Hovaten.pdf)"
+                  >
+                    <FolderArchive className="w-3.5 h-3.5 text-purple-200" />
+                    <span>Xuất ZIP Theo Lớp</span>
+                  </button>
+
+                  <button
+                    type="button"
+                    onClick={() => {
+                      const targetClassId = (selectedClassId && selectedClassId !== "all") 
+                        ? selectedClassId 
+                        : (selectedStudent?.classId || selectedStudent?.class?.id);
+                      const targetParam = targetClassId ? `&classId=${targetClassId}` : "";
+                      window.open(`/admin/ho-so-hoc-sinh/print?type=class${targetParam}&academicYearId=${selectedYearId}&mode=${cvViewMode === 'cover' ? 'cover' : (cvViewMode === 'content' ? 'content' : 'all')}&autoprint=1`, "_blank");
                     }}
                     className="hidden md:flex items-center gap-1.5 bg-white border border-slate-300 text-slate-700 hover:bg-slate-50 px-3 py-1.5 rounded-xl text-xs font-bold shadow-2xs transition-all cursor-pointer"
-                    title="In toàn bộ hồ sơ học sinh trong lớp thành tập file PDF"
+                    title="In toàn bộ hồ sơ học sinh trong lớp qua máy in trình duyệt"
                   >
-                    <FileText className="w-3.5 h-3.5 text-slate-500" />
+                    <Printer className="w-3.5 h-3.5 text-slate-500" />
                     <span>In Cả Lớp</span>
                   </button>
                 </div>
@@ -1198,12 +1292,121 @@ export function StudentProfilesAdminClient({
               <div className="p-6 flex-grow">
                 {selectedStudent ? (
                   <div>
-                    {/* TAB: CV INTEGRATED */}
-{/* TAB: CV INTEGRATED - 6 CORE SECTIONS */}
-                    {(activeTab === "cv" || activeTab === "advisory_360") && (
-                      <div className="bg-slate-200/60 p-3 sm:p-6 rounded-3xl border border-slate-300/60 shadow-inner flex flex-col items-center">
-                        {/* Standard A4 Page Container (210mm x 297mm proportions) */}
-                        <div id="a4-student-portfolio" className="w-full max-w-[210mm] min-h-[297mm] bg-white border border-slate-300 shadow-2xl rounded-2xl sm:rounded-3xl p-6 sm:p-10 font-sans relative overflow-hidden space-y-6 text-slate-800">
+                    {/* TAB: CV INTEGRATED - 6 CORE SECTIONS */}
+                    {(activeTab === "cv" || activeTab === "advisory_360") && (() => {
+                      const sectionVisibility = resolveStudentSectionVisibility(selectedStudent, configMap);
+                      const coverStudentData = {
+                        studentName: selectedStudent?.studentName || selectedStudent?.fullName || "HỌC SINH SKY-LINE",
+                        studentCode: selectedStudent?.studentCode || selectedStudent?.code || "",
+                        vneduCode: selectedStudent?.vneduCode || selectedStudent?.markFileCode || null,
+                        className: selectedStudent?.className || selectedStudent?.class?.className || "",
+                        campusName: selectedStudent?.campusName || selectedStudent?.campus?.campusName || "Sky-Line",
+                        yearName: selectedStudent?.yearName || selectedStudent?.academicYear?.name || "2025-2026",
+                        yearTheme: selectedStudent?.yearTheme || selectedStudent?.academicYear?.theme || null,
+                        qrDataUrl: selectedStudent?.qrDataUrl || null,
+                      };
+
+                      return (
+                        <div className="bg-slate-200/60 p-3 sm:p-6 rounded-3xl border border-slate-300/60 shadow-inner flex flex-col items-center">
+                          {/* CV VIEW SUB-TOOLBAR: Điều khiển chọn Bìa / Ruột / Trọn bộ */}
+                          <div className="w-full max-w-[210mm] mb-5 flex flex-wrap items-center justify-between gap-3 bg-white/95 backdrop-blur-md p-3 rounded-2xl border border-slate-300 shadow-sm">
+                            <div className="flex items-center gap-1.5 bg-slate-100 p-1 rounded-xl">
+                              <button
+                                onClick={() => setCvViewMode("all")}
+                                className={`px-3.5 py-1.5 rounded-lg text-xs font-bold transition-all cursor-pointer ${
+                                  cvViewMode === "all"
+                                    ? "bg-[#003B3A] text-white shadow-xs font-black"
+                                    : "text-slate-600 hover:text-slate-900"
+                                }`}
+                              >
+                                Trọn bộ (Bìa A4 + Ruột)
+                              </button>
+                              <button
+                                onClick={() => setCvViewMode("cover")}
+                                className={`px-3.5 py-1.5 rounded-lg text-xs font-bold transition-all cursor-pointer ${
+                                  cvViewMode === "cover"
+                                    ? "bg-[#003B3A] text-white shadow-xs font-black"
+                                    : "text-slate-600 hover:text-slate-900"
+                                }`}
+                              >
+                                Bìa Học Sinh (A4)
+                              </button>
+                              <button
+                                onClick={() => setCvViewMode("content")}
+                                className={`px-3.5 py-1.5 rounded-lg text-xs font-bold transition-all cursor-pointer ${
+                                  cvViewMode === "content"
+                                    ? "bg-[#003B3A] text-white shadow-xs font-black"
+                                    : "text-slate-600 hover:text-slate-900"
+                                }`}
+                              >
+                                Ruột Hồ Sơ (A4)
+                              </button>
+                            </div>
+
+                            <div className="flex items-center gap-2">
+                              {cvViewMode === "cover" && (
+                                <button
+                                  onClick={() => window.open(`/admin/ho-so-hoc-sinh/print?type=student&studentId=${selectedStudentId}&academicYearId=${selectedYearId}&mode=cover`, "_blank")}
+                                  className="inline-flex items-center gap-1.5 bg-teal-50 hover:bg-teal-100 text-[#003B3A] border border-teal-200 px-3.5 py-1.5 rounded-xl text-xs font-bold transition-all cursor-pointer shadow-2xs"
+                                  title="In hoặc Lưu PDF riêng trang bìa A4"
+                                >
+                                  <Printer className="w-3.5 h-3.5 text-[#00A19A]" />
+                                  <span>In / Xuất PDF Bìa A4</span>
+                                </button>
+                              )}
+                              {cvViewMode === "content" && (
+                                <button
+                                  onClick={() => window.open(`/admin/ho-so-hoc-sinh/print?type=student&studentId=${selectedStudentId}&academicYearId=${selectedYearId}&mode=content`, "_blank")}
+                                  className="inline-flex items-center gap-1.5 bg-teal-50 hover:bg-teal-100 text-[#003B3A] border border-teal-200 px-3.5 py-1.5 rounded-xl text-xs font-bold transition-all cursor-pointer shadow-2xs"
+                                  title="In hoặc Lưu PDF đúng mẫu Hồ sơ Năng lực (Ruột A4)"
+                                >
+                                  <Printer className="w-3.5 h-3.5 text-[#00A19A]" />
+                                  <span>In / Xuất PDF Ruột Hồ Sơ</span>
+                                </button>
+                              )}
+                              <button
+                                onClick={() => window.open(`/admin/ho-so-hoc-sinh/print?type=student&studentId=${selectedStudentId}&academicYearId=${selectedYearId}&mode=all`, "_blank")}
+                                className="inline-flex items-center gap-1.5 bg-gradient-to-r from-[#003B3A] to-[#00A19A] hover:brightness-110 text-white px-4 py-1.5 rounded-xl text-xs font-bold transition-all cursor-pointer shadow-sm"
+                                title="In trọn bộ gồm trang bìa A4 và toàn bộ hồ sơ năng lực"
+                              >
+                                <Printer className="w-3.5 h-3.5" />
+                                <span>In Trọn Bộ A4</span>
+                              </button>
+                            </div>
+                          </div>
+
+                          <div id="a4-student-portfolio-full-wrapper" className="w-full flex flex-col items-center">
+                          {/* TRANG 1: BÌA HỒ SƠ HỌC SINH (A4) */}
+                          {(cvViewMode === "all" || cvViewMode === "cover") && (
+                            <div id="a4-student-cover-wrapper" className="w-full max-w-[210mm] mb-8 space-y-3">
+                              <div className="flex items-center justify-between px-2 text-xs font-bold text-slate-500">
+                                <span className="flex items-center gap-1.5 text-[#003B3A] font-extrabold uppercase tracking-wider text-[11px]">
+                                  <GraduationCap className="w-4 h-4 text-[#00A19A]" />
+                                  Trang Bìa Hồ Sơ Học Sinh (Khổ A4)
+                                </span>
+                                <span className="bg-teal-50 text-teal-800 border border-teal-200 px-2.5 py-0.5 rounded-full text-[10px] font-black">
+                                  Mã QR e-Portfolio Lifelong
+                                </span>
+                              </div>
+                              <StudentProfileCoverA4 student={coverStudentData} mode="preview" showExtraMeta={true} />
+                            </div>
+                          )}
+
+                          {/* DẢI PHÂN CÁCH TRANG TRỰC QUAN */}
+                          {cvViewMode === "all" && (
+                            <div className="no-print pdf-hide w-full max-w-[210mm] my-6 flex items-center gap-3 text-slate-400 text-xs font-bold">
+                              <div className="flex-1 h-px bg-slate-300" />
+                              <span className="px-4 py-1.5 bg-white rounded-full border border-slate-300 shadow-2xs text-slate-700 uppercase tracking-widest text-[11px] font-black flex items-center gap-2">
+                                <FileText className="w-3.5 h-3.5 text-[#00A19A]" />
+                                Ruột Hồ Sơ Năng Lực Học Sinh 360°
+                              </span>
+                              <div className="flex-1 h-px bg-slate-300" />
+                            </div>
+                          )}
+
+                          {/* TRANG 2: RUỘT HỒ SƠ A4 */}
+                          {(cvViewMode === "all" || cvViewMode === "content") && (
+                            <div id="a4-student-portfolio" className="w-full max-w-[210mm] min-h-[297mm] bg-white border border-slate-300 shadow-2xl rounded-2xl sm:rounded-3xl p-6 sm:p-10 font-sans relative overflow-hidden space-y-6 text-slate-800">
                           {/* TOP DECORATIVE BANNER */}
                           <div className="absolute top-0 left-0 right-0 h-3.5 bg-gradient-to-r from-[#003B3A] via-[#00A19A] to-[#48BFE3]" />
 
@@ -1263,7 +1466,7 @@ export function StudentProfilesAdminClient({
                                         <User className="w-12 h-12 text-teal-700/60" />
                                         <span className="text-[10px] font-bold text-teal-800">Chưa có ảnh</span>
                                       </div>
-                                      <div className="absolute inset-0 bg-black/50 opacity-0 group-hover:opacity-100 transition-opacity flex flex-col items-center justify-center text-white text-[10px] font-black space-y-1">
+                                      <div className="no-print pdf-hide absolute inset-0 bg-black/50 opacity-0 group-hover:opacity-100 transition-opacity flex flex-col items-center justify-center text-white text-[10px] font-black space-y-1">
                                         <Camera className="w-6 h-6" />
                                         <span>Đổi ảnh</span>
                                       </div>
@@ -1274,7 +1477,7 @@ export function StudentProfilesAdminClient({
                                         </div>
                                       )}
                                     </div>
-                                    <div className="flex items-center gap-1.5">
+                                    <div className="no-print pdf-hide flex items-center gap-1.5">
                                       <button
                                         type="button"
                                         onClick={() => fileInputRef.current?.click()}
@@ -1335,6 +1538,14 @@ export function StudentProfilesAdminClient({
                                         })()}
                                       </span>
                                     </div>
+                                    {(selectedStudent?.yearTheme || selectedStudent?.academicYear?.theme) && (
+                                      <div className="col-span-1 sm:col-span-2 lg:col-span-3 space-y-0.5 pt-2 border-t border-slate-100">
+                                        <span className="text-[10px] text-teal-700 font-bold uppercase tracking-wider block">Chủ đề theo Năm học</span>
+                                        <span className="text-xs font-black text-slate-800 italic block">
+                                          &ldquo;{selectedStudent?.yearTheme || selectedStudent?.academicYear?.theme}&rdquo;
+                                        </span>
+                                      </div>
+                                    )}
                                   </div>
                                 </div>
                               </div>
@@ -1411,7 +1622,7 @@ export function StudentProfilesAdminClient({
                                 return (
                                   <div className="space-y-7">
                                     {/* SECTION II: CỐ VẤN HỌC TẬP & NHẬT KÝ THEO DÕI MỤC TIÊU */}
-            {(() => {
+            {sectionVisibility.advisoryGoals && (() => {
               const goals = (selectedStudent?.goals || []);
               const trackings = (selectedStudent?.goalTrackings || []);
               const evaluations = (selectedStudent?.termEvaluations || []);
@@ -1432,9 +1643,9 @@ export function StudentProfilesAdminClient({
                 { key: "PHAM_CHAT", label: "4. Mục tiêu phẩm chất & Đạo đức", weight: 15 }
               ];
 
-              const advisoryRows = [];
+              const advisoryRows: any[] = [];
               categories.forEach(cat => {
-                const matchedGoals = goals.filter((g) => {
+                const matchedGoals = goals.filter((g: any) => {
                   const gc = String(g.category || "").toUpperCase();
                   if (cat.key === "HOC_TAP" && (gc.includes("HOC_TAP") || gc.includes("HỌC TẬP"))) return true;
                   if (cat.key === "THOI_QUEN" && (gc.includes("THOI_QUEN") || gc.includes("THÓI QUEN") || gc.includes("SUC_KHOE"))) return true;
@@ -1460,8 +1671,8 @@ export function StudentProfilesAdminClient({
                     recommendations: evalItem?.recommendations || ""
                   });
                 } else {
-                  matchedGoals.forEach((g, idx) => {
-                    const tracking = trackings.find((t) =>
+                  matchedGoals.forEach((g: any, idx: number) => {
+                    const tracking = trackings.find((t: any) =>
                       (t.goalId && t.goalId === g.id) ||
                       (t.targetText && g.targetText && t.targetText.trim() === g.targetText.trim()) ||
                       (t.category && String(t.category).includes(cat.label))
@@ -1487,7 +1698,7 @@ export function StudentProfilesAdminClient({
                 }
               });
 
-              const renderProgressBadge = (status) => {
+              const renderProgressBadge = (status: any) => {
                 const s = String(status || "").toUpperCase();
                 if (s === "DAT" || s === "HOAN_THANH") {
                   return (
@@ -1633,20 +1844,22 @@ export function StudentProfilesAdminClient({
             })()}
 
                                     {/* SECTION III: KẾT QUẢ HỌC TẬP VĂN HÓA (MOET) */}
-                                    <div className="space-y-4">
-                                      <h3 className="text-xs font-black text-[#003B3A] uppercase tracking-wider flex items-center justify-between border-b border-slate-100 pb-2">
-                                        <div className="flex items-center gap-2">
-                                          <div className="w-2.5 h-2.5 rounded-full bg-[#00A19A]" />
-                                          <ClipboardCheck className="w-4 h-4 text-[#00A19A]" />
-                                          <span>III. KẾT QUẢ HỌC TẬP VĂN HÓA (MOET)</span>
-                                        </div>
-                                        <span className="text-[10px] font-bold text-teal-700 bg-teal-50 px-2 py-0.5 rounded border border-teal-200">
-                                          Chương trình Bộ GD&amp;ĐT
-                                        </span>
-                                      </h3>
+                                     {(sectionVisibility.moetPeriodicGrades || sectionVisibility.moetTermGrades) && (
+                                       <div className="space-y-4">
+                                         <h3 className="text-xs font-black text-[#003B3A] uppercase tracking-wider flex items-center justify-between border-b border-slate-100 pb-2">
+                                           <div className="flex items-center gap-2">
+                                             <div className="w-2.5 h-2.5 rounded-full bg-[#00A19A]" />
+                                             <ClipboardCheck className="w-4 h-4 text-[#00A19A]" />
+                                             <span>I. KẾT QUẢ HỌC TẬP VĂN HÓA (MOET)</span>
+                                           </div>
+                                           <span className="text-[10px] font-bold text-teal-700 bg-teal-50 px-2 py-0.5 rounded border border-teal-200">
+                                             Chương trình Bộ GD&amp;ĐT
+                                           </span>
+                                         </h3>
 
-                                      {/* Bảng 1: Kết quả kiểm tra định kỳ (KSĐN, GK1, CK1, GK2, CK2) */}
+                                         {sectionVisibility.moetPeriodicGrades && (
                                       <div className="space-y-1.5">
+                                        {/* Bảng 1: Kết quả kiểm tra định kỳ (KSĐN, GK1, CK1, GK2, CK2) */}
                                         <div className="flex items-center justify-between text-[11px] font-black text-slate-800 uppercase tracking-wide">
                                           <span>1. Điểm kiểm tra định kỳ (KSĐN, GK1, CK1, GK2, CK2)</span>
                                           <span className="text-[10px] font-normal text-slate-400">Thang điểm 10</span>
@@ -1686,9 +1899,11 @@ export function StudentProfilesAdminClient({
                                           </div>
                                         )}
                                       </div>
+                                         )}
 
-                                      {/* Bảng 2: Bảng điểm Học tập tổng kết (CK1 / HK1, CK2 / HK2, Cả năm) */}
+                                         {sectionVisibility.moetTermGrades && (
                                       <div className="space-y-1.5 pt-2">
+                                        {/* Bảng 2: Bảng điểm Học tập tổng kết (CK1 / HK1, CK2 / HK2, Cả năm) */}
                                         <div className="flex items-center justify-between text-[11px] font-black text-slate-800 uppercase tracking-wide">
                                           <span>2. Bảng điểm Học tập tổng kết (CK1, CK2, Cả năm)</span>
                                           <span className="text-[10px] font-normal text-slate-400">Kết quả Học bạ</span>
@@ -1756,10 +1971,73 @@ export function StudentProfilesAdminClient({
                                           </div>
                                         </div>
                                       </div>
-                                    </div>
+                                         )}
+                                       </div>
+                                     )}
 
-                                    {/* SECTION IV: KẾT QUẢ HỌC TẬP CHƯƠNG TRÌNH SONG NGỮ */}
-                                    <div className="space-y-3">
+                                     {/* MÔN HỌC ĐẶC THÙ SKY-LINE (SKL) */}
+                                     {sectionVisibility.specialSubjects && (
+                                       <div className="space-y-3">
+                                         <h3 className="text-xs font-black text-[#003B3A] uppercase tracking-wider flex items-center justify-between border-b border-slate-100 pb-2">
+                                           <div className="flex items-center gap-2">
+                                             <div className="w-2.5 h-2.5 rounded-full bg-indigo-600" />
+                                             <Sparkles className="w-4 h-4 text-indigo-600" />
+                                             <span>MÔN HỌC ĐẶC THÙ SKY-LINE (SKL)</span>
+                                           </div>
+                                           <span className="text-[10px] font-bold text-indigo-700 bg-indigo-50 px-2.5 py-0.5 rounded-full border border-indigo-200">
+                                             Chương trình Bản sắc Sky-Line
+                                           </span>
+                                         </h3>
+                                         {(!selectedStudent?.specialGradeEntries || selectedStudent.specialGradeEntries.length === 0) ? (
+                                           <div className="bg-slate-50 border border-slate-200 p-3.5 rounded-xl text-center text-xs text-slate-400 italic">
+                                             Chưa ghi nhận đánh giá môn đặc thù Sky-Line (Chào Xuân/Xuân Hội, Giáo dục Tài chính, v.v.).
+                                           </div>
+                                         ) : (
+                                           <div className="border border-indigo-100 rounded-xl overflow-hidden bg-white shadow-2xs">
+                                             <table className="w-full text-left text-xs border-collapse">
+                                               <thead className="bg-indigo-50/70 text-[10px] font-black text-indigo-950 uppercase tracking-wider border-b border-indigo-200">
+                                                 <tr>
+                                                   <th className="py-2.5 px-3 text-center w-8">STT</th>
+                                                   <th className="py-2.5 px-3 w-1/4">Môn học / Chuyên đề</th>
+                                                   <th className="py-2.5 px-2 text-center w-28">Đánh giá</th>
+                                                   <th className="py-2.5 px-3">Nhận xét &amp; Ghi nhận của Giáo viên</th>
+                                                 </tr>
+                                               </thead>
+                                               <tbody className="divide-y divide-indigo-50 font-semibold text-slate-700">
+                                                 {selectedStudent.specialGradeEntries.map((spec: any, idx: number) => {
+                                                   const evalText = spec.resultScore !== undefined && spec.resultScore !== null
+                                                     ? String(spec.resultScore)
+                                                     : spec.resultText || "Đạt";
+                                                   return (
+                                                     <tr key={idx} className="hover:bg-indigo-50/30">
+                                                       <td className="py-2.5 px-3 text-center font-mono text-slate-400">{idx + 1}</td>
+                                                       <td className="py-2.5 px-3">
+                                                         <div className="font-bold text-slate-900">{spec.subjectName || spec.subjectCode || "Môn đặc thù"}</div>
+                                                         {spec.evalPeriod && (
+                                                           <div className="text-[10px] text-slate-400 font-normal">Đợt: {spec.evalPeriod}</div>
+                                                         )}
+                                                       </td>
+                                                       <td className="py-2.5 px-2 text-center">
+                                                         <span className="text-[10px] font-black bg-indigo-50 text-indigo-800 border border-indigo-200 px-2 py-0.5 rounded">
+                                                           {evalText}
+                                                         </span>
+                                                       </td>
+                                                       <td className="py-2.5 px-3 text-[11px] text-slate-600 font-normal italic">
+                                                         {spec.teacherFeedback || "Học sinh tham gia tích cực, nắm vững kiến thức thực hành kỹ năng."}
+                                                       </td>
+                                                     </tr>
+                                                   );
+                                                 })}
+                                               </tbody>
+                                             </table>
+                                           </div>
+                                         )}
+                                       </div>
+                                     )}
+
+                                     {/* SECTION IV: KẾT QUẢ HỌC TẬP CHƯƠNG TRÌNH SONG NGỮ */}
+                                     {sectionVisibility.bilingualGrades && (
+<div className="space-y-3">
                                       <h3 className="text-xs font-black text-[#003B3A] uppercase tracking-wider flex items-center justify-between border-b border-slate-100 pb-2">
                                         <div className="flex items-center gap-2">
                                           <div className="w-2.5 h-2.5 rounded-full bg-blue-500" />
@@ -1790,7 +2068,7 @@ export function StudentProfilesAdminClient({
                                               </tr>
                                             </thead>
                                             <tbody className="divide-y divide-blue-50 font-semibold text-slate-700">
-                                              {(bilingualTermRows.length > 0 ? bilingualTermRows : bilingualPeriodicRows).map((r, idx) => {
+                                              {(bilingualTermRows.length > 0 ? (bilingualTermRows as any[]) : (bilingualPeriodicRows as any[])).map((r: any, idx: number) => {
                                                 const pItem = bilingualPeriodicRows.find(p => p.name === r.name);
                                                 const ksdnVal = pItem ? (pItem.ksdn || pItem.gk1) : "—";
                                                 return (
@@ -1814,9 +2092,11 @@ export function StudentProfilesAdminClient({
                                         </div>
                                       )}
                                     </div>
+                                     )}
 
-                                    {/* SECTION V: THÀNH TÍCH & KHEN THƯỞNG CỦA HỌC SINH */}
-                                    <div className="space-y-3">
+                                     {/* SECTION V: THÀNH TÍCH & KHEN THƯỞNG CỦA HỌC SINH */}
+                                     {sectionVisibility.achievements && (
+<div className="space-y-3">
                                       <h3 className="text-xs font-black text-[#003B3A] uppercase tracking-wider flex items-center gap-2 border-b border-slate-100 pb-2">
                                         <div className="w-2.5 h-2.5 rounded-full bg-amber-500" />
                                         <Award className="w-4 h-4 text-amber-500" />
@@ -1861,9 +2141,11 @@ export function StudentProfilesAdminClient({
                                         </div>
                                       )}
                                     </div>
+                                     )}
 
-                                    {/* SECTION VI: HOẠT ĐỘNG TRẢI NGHIỆM */}
-                                    <div className="space-y-3">
+                                     {/* SECTION VI: HOẠT ĐỘNG TRẢI NGHIỆM */}
+                                     {sectionVisibility.experientialActivities && (
+<div className="space-y-3">
                                       <h3 className="text-xs font-black text-[#003B3A] uppercase tracking-wider flex items-center gap-2 border-b border-slate-100 pb-2">
                                         <div className="w-2.5 h-2.5 rounded-full bg-sky-500" />
                                         <BookOpen className="w-4 h-4 text-sky-500" />
@@ -1916,29 +2198,11 @@ export function StudentProfilesAdminClient({
                                         </div>
                                       )}
                                     </div>
+                                     )}
 
-                                    {/* SECTION VII: ĐỊNH HƯỚNG NGHỀ NGHIỆP & HƯỚNG NGHIỆP */}
-                                    <div className="space-y-3">
-                                      <h3 className="text-xs font-black text-[#003B3A] uppercase tracking-wider flex items-center gap-2 border-b border-slate-100 pb-2">
-                                        <div className="w-2.5 h-2.5 rounded-full bg-sky-500" />
-                                        <Compass className="w-4 h-4 text-sky-600" />
-                                        VII. ĐỊNH HƯỚNG NGHỀ NGHIỆP &amp; HƯỚNG NGHIỆP
-                                      </h3>
-                                      <div className="bg-sky-50/40 border border-sky-100 p-4 rounded-2xl space-y-1.5 text-xs shadow-2xs">
-                                        <div className="text-[10px] text-sky-700 font-black uppercase">Nhóm ngành quan tâm &amp; Kế hoạch phát triển cá nhân</div>
-                                        <div className="font-black text-slate-800">
-                                          {selectedStudent?.orientation?.result || selectedStudent?.careerOrientations?.[0]?.result || "Công nghệ thông tin - Quản trị kinh doanh / Kế hoạch tài chính & học tập cá nhân."}
-                                        </div>
-                                        {selectedStudent?.orientation?.notes && (
-                                          <p className="text-slate-600 italic text-[11px] pt-1">
-                                            "{selectedStudent.orientation.notes}"
-                                          </p>
-                                        )}
-                                      </div>
-                                    </div>
-
-                                    {/* SECTION VIII: NHẬN XÉT NỔI BẬT ĐỊNH KỲ TỪ GIÁO VIÊN CHỦ NHIỆM */}
-                                    <div className="space-y-3">
+                                     {/* SECTION VIII: NHẬN XÉT NỔI BẬT ĐỊNH KỲ TỪ GIÁO VIÊN CHỦ NHIỆM */}
+                                     {sectionVisibility.homeroomTeacherComment && (
+<div className="space-y-3">
                                       <h3 className="text-xs font-black text-[#003B3A] uppercase tracking-wider flex items-center gap-2 border-b border-slate-100 pb-2">
                                         <div className="w-2.5 h-2.5 rounded-full bg-emerald-500" />
                                         <MessageSquare className="w-4 h-4 text-emerald-600" />
@@ -1954,8 +2218,9 @@ export function StudentProfilesAdminClient({
                                         </p>
                                       </div>
                                     </div>
+                                     )}
 
-                                    {/* SECTION IX: KHUNG KÝ XÁC THỰC 3 BÊN */}
+                                     {/* SECTION IX: KHUNG KÝ XÁC THỰC 3 BÊN */}
                                     <div className="pt-6 border-t-2 border-slate-100 mt-8">
                                       <div className="text-right text-[11px] font-medium text-slate-500 italic mb-4">
                                         Đà Nẵng, ngày {new Date().getDate()} tháng {new Date().getMonth() + 1} năm {new Date().getFullYear()}
@@ -2045,8 +2310,11 @@ export function StudentProfilesAdminClient({
                             </div>
                           </div>
                         </div>
-                      </div>
-                    )}
+                      )}
+                    </div>
+                  </div>
+                );
+              })()}
 
                     
                     {activeTab === "competencies" && (
@@ -2093,7 +2361,7 @@ export function StudentProfilesAdminClient({
                         ["1", "2", "3", "4", "5"].some(g => classCodeStr.startsWith(g + ".") || classCodeStr.startsWith(g + "_")) ||
                         /^[1-5][._\s]/i.test(classCodeStr)
 
-                      const isCheckSymbol = (v) => {
+                      const isCheckSymbol = (v: any) => {
                         if (!v || v === "—") return false
                         const s = String(v).trim()
                         if (["✓", "", "v", "V", "x", "X", "1", "true", "True"].includes(s)) return true
@@ -2105,7 +2373,7 @@ export function StudentProfilesAdminClient({
                       let primaryKqgdHK2 = ""
                       let primaryKqgdCN = ""
 
-                      const isKqgdSubject = (code, name) => {
+                      const isKqgdSubject = (code: any, name: any) => {
                         const c = String(code || "").toUpperCase()
                         const n = String(name || "").trim().toLowerCase()
                         return c === "HOAN_THANH_XUAT_SAC" || c === "HOAN_THANH_TOT" || c === "HOAN_THANH" || c === "CHUA_HOAN_THANH" ||
@@ -2114,7 +2382,7 @@ export function StudentProfilesAdminClient({
                       }
 
                       const subjectMap = new Map()
-                      rawScores.forEach((ts) => {
+                      rawScores.forEach((ts: any) => {
                         let subName = ts.subject?.subjectName || "Môn học"
                         let subCode = ts.subject?.subjectCode || ""
 
@@ -2247,7 +2515,7 @@ export function StudentProfilesAdminClient({
 
                       const hasData = subjectRows.length > 0 || rawSummaries.length > 0 || !!finalKqgdCN
 
-                      const formatScoreBadge = (val) => {
+                      const formatScoreBadge = (val: any) => {
                         if (val === null || val === undefined || val === "—") return <span className="text-slate-400 font-normal">—</span>
                         
                         if (typeof val === "object" && val !== null && (val.score !== undefined || val.grade !== undefined)) {
@@ -2686,7 +2954,7 @@ return (
                                         </thead>
                                         <tbody>
                                           {(selectedStudent.entranceSurvey.scores || []).length > 0 ? (
-                                            selectedStudent.entranceSurvey.scores.map((sc, idx) => (
+                                            selectedStudent.entranceSurvey.scores.map((sc: any, idx: number) => (
                                               <tr key={idx} className="font-semibold text-slate-705">
                                                 <td className="p-2 border border-slate-200 font-bold">{sc.areaName}</td>
                                                 <td className="p-2 border border-slate-200">{sc.criterionName}</td>
@@ -2710,10 +2978,10 @@ return (
                                   let psychVal = survey.psychologyScore
                                   let oralComment = ""
                                   let psychConclusion = ""
-                                  ;(survey.scores || []).forEach((sc) => {
+                                  ;(survey.scores || []).forEach((sc: any) => {
                                     const sName = (sc.subjectName || "").toLowerCase().normalize("NFC")
                                     const scoresArr = Array.isArray(sc.scores) ? sc.scores : []
-                                    const scoreVal = scoresArr.find((x) => x !== undefined && x !== null && x !== "")
+                                    const scoreVal = scoresArr.find((x: any) => x !== undefined && x !== null && x !== "")
                                     const commentsArr = Array.isArray(sc.comments) ? sc.comments : []
                                     if (sName.includes("toán") || sName.includes("math")) {
                                       if (scoreVal !== undefined) mathVal = scoreVal
@@ -2727,7 +2995,7 @@ return (
                                         oralComment = commentsArr[0] || ""
                                       }
                                     } else if (sName.includes("tâm lý")) {
-                                      const total = scoresArr.reduce((s, v) => s + (parseFloat(v) || 0), 0)
+                                      const total = scoresArr.reduce((s: number, v: any) => s + (parseFloat(v) || 0), 0)
                                       psychVal = total
                                       psychConclusion = commentsArr[0] || ""
                                     }
@@ -2797,11 +3065,11 @@ return (
 
                                       {/* Committed Subjects & Approval Details */}
                                       {(survey.directorNote || survey.admissionResult === "Đạt cam kết" || survey.admissionResult === "Đạt - Cam kết") && (() => {
-                                        const parseCommittedSubjects = (note) => {
+                                        const parseCommittedSubjects = (note: any) => {
                                           if (!note) return []
                                           const match = note.match(/(?:Môn cam kết|Mon cam ket):\s*\[([^\]]+)\]/i)
                                           if (match && match[1]) {
-                                            return match[1].split(',').map((s) => s.trim())
+                                            return match[1].split(',').map((s: any) => s.trim())
                                           }
                                           return []
                                         }
@@ -2815,7 +3083,7 @@ return (
                                               <div className="text-xs">
                                                 <span className="text-slate-500 font-bold">Môn cam kết:</span>
                                                 <div className="flex flex-wrap gap-1.5 mt-1.5">
-                                                  {committedSubjects.map((sub, idx) => (
+                                                  {committedSubjects.map((sub: any, idx: number) => (
                                                     <span key={idx} className="bg-amber-100/80 text-amber-850 border border-amber-200/60 px-2.5 py-0.5 rounded-md font-bold text-[10px]">
                                                       {sub}
                                                     </span>
@@ -2967,7 +3235,7 @@ return (
                           </h4>
                           {(selectedStudent.transfers || []).length > 0 ? (
                             <div className="space-y-3">
-                              {selectedStudent.transfers.map((tr) => (
+                              {selectedStudent.transfers.map((tr: any) => (
                                 <div key={tr.id} className="bg-orange-50 border border-orange-200 p-4 rounded-xl text-xs font-semibold text-slate-705 shadow-2xs animate-in fade-in duration-200">
                                   <div className="font-black text-slate-800">Học sinh Chuyển đến / Chuyển đi: {tr.type === "IN" ? "Chuyển đến" : tr.type === "OUT" ? "Chuyển đi" : "Chuyển lớp"}</div>
                                   <div className="mt-1">Ngày thực hiện: {new Date(tr.transferDate).toLocaleDateString('vi-VN')}</div>
@@ -3355,15 +3623,15 @@ return (
                           </span>
                         </h4>
 
-                        {((selectedStudent.highlightComments || []).filter((c) => c.category !== "ANNOUNCEMENT")).length === 0 ? (
+                        {((selectedStudent.highlightComments || []).filter((c: any) => c.category !== "ANNOUNCEMENT")).length === 0 ? (
                           <div className="text-xs text-slate-400 italic text-center py-12 border border-dashed border-slate-200 rounded-2xl bg-slate-50/50">
                             Chưa có nhận xét nổi bật định kỳ nào từ giáo viên chủ nhiệm.
                           </div>
                         ) : (
                           <div className="space-y-3">
                             {(selectedStudent.highlightComments || [])
-                              .filter((c) => c.category !== "ANNOUNCEMENT")
-                              .map((c) => (
+                              .filter((c: any) => c.category !== "ANNOUNCEMENT")
+                              .map((c: any) => (
                                 <div key={c.id} className="bg-slate-50 border border-slate-200 rounded-xl p-4 text-xs font-semibold hover:border-slate-355 transition-all animate-in fade-in duration-200">
                                   <div className="flex justify-between items-center mb-2">
                                     <span className="inline-block px-2.5 py-0.5 bg-[#00A19A]/15 text-[#00A19A] text-[9px] font-black rounded-full uppercase tracking-wider shadow-2xs border border-[#00A19A]/10">
@@ -3391,7 +3659,7 @@ return (
                           <div className="text-xs text-slate-400 italic text-center py-12">Học sinh không thuộc đối tượng nhận hỗ trợ học tập/tâm lý trong năm học này.</div>
                         ) : (
                           <div className="space-y-6">
-                            {selectedStudent.learningSupportTargets.map((target) => {
+                            {selectedStudent.learningSupportTargets.map((target: any) => {
                               const isTerminated = target.terminationStatus === "TERMINATED";
                               const isPending = target.terminationStatus === "PENDING_TERMINATION";
                               const gvName = target.assignments?.[0]?.teacher?.teacherName || "Chưa phân công";
@@ -3447,7 +3715,7 @@ return (
                                         <div className="text-xs text-slate-400 italic py-2">Chưa có nhận xét định kỳ từ giáo viên phụ trách.</div>
                                       ) : (
                                         <div className="relative border-l-2 border-[#00A19A]/30 pl-5 space-y-5 ml-1.5">
-                                          {(target.evaluations || []).map((ev) => (
+                                          {(target.evaluations || []).map((ev: any) => (
                                             <div key={ev.id} className="relative group">
                                               <span className="absolute -left-[27px] top-1 bg-white border-2 border-[#00A19A] rounded-full h-3.5 w-3.5 flex items-center justify-center shadow-sm">
                                                 <span className="h-1.5 w-1.5 bg-[#00A19A] rounded-full"></span>
@@ -3515,6 +3783,13 @@ return (
           )}
         </div>
 
+
+      {/* MODAL CẤU HÌNH HỒ SƠ THEO KHỐI & HỆ */}
+      <StudentProfileSectionConfigModal
+        isOpen={isConfigModalOpen}
+        onClose={() => setIsConfigModalOpen(false)}
+        onSaved={loadConfigs}
+      />
       </div>
     </div>
   )
