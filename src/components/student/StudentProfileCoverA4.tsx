@@ -165,25 +165,32 @@ export default function StudentProfileCoverA4({
       {/* CHỦ ĐỀ NĂM HỌC HIỂN THỊ TRÊN BÌA HỒ SƠ */}
       {student.yearTheme && (
         <div
-          className="absolute flex items-center gap-2.5 px-3 py-1.5 rounded-lg border border-teal-400/40"
+          className="absolute flex items-center gap-2.5 px-3.5 py-2 rounded-xl border border-teal-300/40"
           style={{
             bottom: showExtraMeta ? '3.8%' : '2.5%',
             left: '6%',
             maxWidth: '74%',
             zIndex: 10,
-            background: 'rgba(0, 43, 42, 0.82)',
-            boxShadow: '0 4px 12px rgba(0,0,0,0.3)',
+            background: 'linear-gradient(135deg, rgba(0, 43, 42, 0.88) 0%, rgba(0, 80, 76, 0.82) 100%)',
+            boxShadow: '0 4px 14px rgba(0,0,0,0.32)',
             WebkitPrintColorAdjust: 'exact',
             printColorAdjust: 'exact',
           }}
         >
-          <div className="w-1.5 h-6 rounded-full bg-[#00A19A] shrink-0" />
+          <div className="w-1.5 h-7 rounded-full bg-gradient-to-b from-amber-300 via-[#00A19A] to-teal-300 shrink-0" />
           <div className="flex flex-col overflow-hidden">
-            <span className="text-[8px] font-black uppercase tracking-widest text-teal-300 whitespace-nowrap">
-              CHỦ ĐỀ THEO NĂM HỌC {student.yearName ? `(${student.yearName})` : ''}
+            <span className="text-[8px] font-black uppercase tracking-widest text-teal-200 whitespace-nowrap">
+              ✦ CHỦ ĐỀ THEO NĂM HỌC {student.yearName ? `(${student.yearName})` : ''}
             </span>
-            <span className="text-[11px] font-black text-white italic tracking-wide truncate max-w-[420px]" title={student.yearTheme}>
-              "{student.yearTheme}"
+            <span
+              className="text-[13px] sm:text-[14px] font-bold text-amber-100 italic tracking-wide truncate max-w-[440px] leading-snug"
+              style={{
+                fontFamily: "var(--font-playfair), 'Playfair Display', 'Palatino Linotype', 'Book Antiqua', Georgia, 'Times New Roman', serif",
+                textShadow: '0 1px 3px rgba(0,0,0,0.45)',
+              }}
+              title={student.yearTheme}
+            >
+              &ldquo;{student.yearTheme}&rdquo;
             </span>
           </div>
         </div>

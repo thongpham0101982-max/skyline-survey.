@@ -951,6 +951,23 @@ export default function TeacherStudentProfilesPrintPage() {
                         {student.homeroomTeacherName || "Giáo viên Chủ nhiệm"}
                       </div>
                     </div>
+                    {(student.yearTheme || student.academicYear?.theme) && (
+                      <div className="col-span-3 pt-2 mt-0.5 border-t border-teal-100/80">
+                        <div className="inline-flex items-baseline gap-2.5 bg-gradient-to-r from-teal-50/90 via-emerald-50/40 to-transparent px-3 py-1.5 rounded-lg border-l-3 border-[#00A19A]">
+                          <span className="text-[10px] text-teal-700 font-extrabold uppercase tracking-widest shrink-0">
+                            ✦ Chủ đề theo Năm học:
+                          </span>
+                          <span
+                            className="text-sm font-bold italic text-[#003B3A] tracking-wide leading-snug"
+                            style={{
+                              fontFamily: "var(--font-playfair), 'Playfair Display', 'Palatino Linotype', 'Book Antiqua', Georgia, 'Times New Roman', serif",
+                            }}
+                          >
+                            &ldquo;{student.yearTheme || student.academicYear?.theme}&rdquo;
+                          </span>
+                        </div>
+                      </div>
+                    )}
                   </div>
                 </div>
               </div>

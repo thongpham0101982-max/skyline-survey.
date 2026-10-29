@@ -1197,9 +1197,7 @@ export default function TeacherStudentProfilePage() {
                           <div className="border-b-2 border-slate-100 pb-5 pt-2">
                             <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-5">
                               <div className="flex items-center gap-3.5">
-                                <div className="h-12 px-2.5 py-1.5 rounded-2xl bg-white border border-teal-100 shadow-sm flex items-center justify-center">
-                                  <img src="/logo.png" alt="Sky-Line School" className="h-9 w-auto object-contain" />
-                                </div>
+                                <img src="/logo.png" alt="Sky-Line School" className="h-11 w-auto object-contain" />
                                 <div>
                                   <div className="font-black text-[11px] tracking-widest text-[#00A19A] uppercase">HỆ THỐNG GIÁO DỤC SKY-LINE</div>
                                   <h2 className="text-xl sm:text-2xl font-black text-slate-900 uppercase tracking-tight">HỒ SƠ NĂNG LỰC HỌC SINH</h2>
@@ -1322,11 +1320,20 @@ export default function TeacherStudentProfilePage() {
                                       </span>
                                     </div>
                                     {(selectedStudent?.yearTheme || selectedStudent?.academicYear?.theme) && (
-                                      <div className="col-span-1 sm:col-span-2 lg:col-span-3 space-y-0.5 pt-2 border-t border-slate-100">
-                                        <span className="text-[10px] text-teal-700 font-bold uppercase tracking-wider block">Chủ đề theo Năm học</span>
-                                        <span className="text-xs font-black text-slate-800 italic block">
-                                          &ldquo;{selectedStudent?.yearTheme || selectedStudent?.academicYear?.theme}&rdquo;
-                                        </span>
+                                      <div className="col-span-1 sm:col-span-2 lg:col-span-3 pt-2.5 mt-0.5 border-t border-teal-100/80">
+                                        <div className="inline-flex flex-col sm:flex-row sm:items-baseline gap-1 sm:gap-2.5 bg-gradient-to-r from-teal-50/90 via-emerald-50/40 to-transparent px-3.5 py-2 rounded-xl border-l-3 border-[#00A19A]">
+                                          <span className="text-[10px] text-teal-700 font-extrabold uppercase tracking-widest shrink-0">
+                                            ✦ Chủ đề theo Năm học:
+                                          </span>
+                                          <span
+                                            className="text-base sm:text-[17px] font-bold italic text-[#003B3A] tracking-wide leading-snug"
+                                            style={{
+                                              fontFamily: "var(--font-playfair), 'Playfair Display', 'Palatino Linotype', 'Book Antiqua', Georgia, 'Times New Roman', serif",
+                                            }}
+                                          >
+                                            &ldquo;{selectedStudent?.yearTheme || selectedStudent?.academicYear?.theme}&rdquo;
+                                          </span>
+                                        </div>
                                       </div>
                                     )}
                                   </div>

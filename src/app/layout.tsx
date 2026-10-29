@@ -2,7 +2,8 @@ import type { Metadata, Viewport } from "next";
 import "./globals.css";
 import { AuthProvider } from "@/components/AuthProvider";
 import { Toaster } from "react-hot-toast";
-import { Open_Sans, Be_Vietnam_Pro } from "next/font/google";
+import { Open_Sans, Be_Vietnam_Pro, Playfair_Display } from "next/font/google";
+const playfairDisplay = Playfair_Display({ subsets: ["vietnamese", "latin"], weight: ["600", "700"], style: ["normal", "italic"], variable: "--font-playfair", display: "swap" });
 import { PwaManager } from "@/components/pwa/PwaManager";
 import { WebPushPrompt } from "@/components/pwa/WebPushPrompt";
 import { GlobalErrorTrap } from "@/components/GlobalErrorTrap";
@@ -31,15 +32,15 @@ export const viewport: Viewport = {
 
 export const metadata: Metadata = {
   title: {
-    default: "SSM - Sky-Line",
-    template: "%s | SSM Sky-Line",
+    default: "SSQM SkyLineSchool",
+    template: "%s | SSQM SkyLineSchool",
   },
-  description: "Hệ thống Quản lý và Điều hành Công việc Giáo dục Sky-Line (SSM)",
+  description: "Hệ thống Quản trị Chất lượng & Điều hành Công việc Giáo dục SkyLineSchool (SSQM)",
   manifest: "/manifest.webmanifest",
   appleWebApp: {
     capable: true,
     statusBarStyle: "default",
-    title: "SSM",
+    title: "SSQM SkyLineSchool",
   },
   icons: {
     icon: [
@@ -59,7 +60,7 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="vi" className={`${openSans.variable} ${beVietnamPro.variable}`} suppressHydrationWarning>
+    <html lang="vi" className={`${openSans.variable} ${beVietnamPro.variable} ${playfairDisplay.variable}`} suppressHydrationWarning>
       <body className={`${openSans.className} font-sans antialiased`} suppressHydrationWarning>
         <AuthProvider>
           <GlobalErrorTrap />
