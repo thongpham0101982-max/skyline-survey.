@@ -9,7 +9,12 @@ const port = parseInt(process.env.PORT || '3000', 10);
 // Detect mode: default to PRODUCTION for high performance and stability
 const fs = require('fs');
 const path = require('path');
+const hasBuild = fs.existsSync(path.resolve(__dirname, '.next/BUILD_ID'));
 const isDev = process.env.NODE_ENV === 'development';
+if (!isDev && !hasBuild) {
+  console.warn('[Skyline Server] .next/BUILD_ID đang được cập nhật bởi next build. Đợi 3 giây để khởi động lại...');
+  setTimeout(() => process.exit(1), 3000);
+}
 
 process.on('uncaughtException', (err) => {
   console.error('[Skyline Server] Uncaught Exception:', err);
@@ -79,39 +84,34 @@ app.prepare().then(() => {
     }
     
     // =========================================================================
-    // TỰ ĐỘNG SAO LƯU DỮ LIỆU ĐỊNH KỲ (BACKUP SCHEDULE: 23:00 THỨ 6 HẰNG TUẦN)
+    // GIÁM SÁT HỆ THỐNG SAO LƯU DỮ LIỆU ĐỊNH KỲ (PASSIVE WATCHDOG)
+    // Master Scheduler: Windows Task Scheduler (SkylineSurvey_WeeklyBackup) lúc 23:00 Thứ 6
+    // In-App Cron được cấu hình chế độ Giám sát thụ động (Passive Watchdog) để triệt tiêu hoàn toàn chạy trùng lặp
     // =========================================================================
-    const { fork } = require('child_process');
-    const backupScriptPath = path.join(__dirname, 'scripts', 'backup-db.js');
     const lockFilePath = path.join(__dirname, 'data-backups', '.last_backup_date');
+    let lastLoggedFridayDate = '';
 
     setInterval(() => {
       try {
         const now = new Date();
         const dayOfWeek = now.getDay(); // 5 = Thứ Sáu (Friday)
         const hour = now.getHours();     // 23 = 23h00
-        const minute = now.getMinutes(); // 0-2 phút đầu tiên
 
-        if (dayOfWeek === 5 && hour === 23 && minute <= 2) {
+        // Ghi nhận log giám sát định kỳ vào tối Thứ 6
+        if (dayOfWeek === 5 && hour === 23) {
           const todayStr = now.toISOString().split('T')[0];
-          let alreadyRan = false;
-          if (fs.existsSync(lockFilePath)) {
-            const lastDate = fs.readFileSync(lockFilePath, 'utf8').trim();
-            if (lastDate === todayStr) {
-              alreadyRan = true;
+          if (lastLoggedFridayDate !== todayStr) {
+            lastLoggedFridayDate = todayStr;
+            let hasBackupToday = false;
+            if (fs.existsSync(lockFilePath)) {
+              const lastDate = fs.readFileSync(lockFilePath, 'utf8').trim();
+              if (lastDate === todayStr) hasBackupToday = true;
             }
-          }
-
-          if (!alreadyRan) {
-            console.log(`[Backup Scheduler] Kích hoạt tự động sao lưu định kỳ Thứ 6 lúc 23h (${now.toLocaleString('vi-VN')})...`);
-            const child = fork(backupScriptPath, ['--trigger=IN_APP_CRON']);
-            child.on('exit', (code) => {
-              console.log(`[Backup Scheduler] Tiến trình sao lưu kết thúc với mã thoát: ${code}`);
-            });
+            console.log(`[Backup Watchdog] Thứ 6 lúc 23h (${now.toLocaleString('vi-VN')}) - Master Scheduler: WINDOWS_SCHEDULER. Trạng thái sao lưu hôm nay: ${hasBackupToday ? 'ĐÃ HOÀN TẤT' : 'ĐANG CHỜ / ĐANG CHẠY'}`);
           }
         }
       } catch (scheduleErr) {
-        console.error('[Backup Scheduler] Lỗi bộ hẹn giờ sao lưu:', scheduleErr);
+        console.error('[Backup Watchdog] Lỗi bộ giám sát sao lưu:', scheduleErr);
       }
     }, 60 * 1000); // Kiểm tra mỗi 60 giây
   });
