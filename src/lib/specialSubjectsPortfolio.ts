@@ -37,6 +37,7 @@ export const SPECIAL_SUBJECTS_CATALOG_META: Record<
     levelBadge: string;
     grades: string[];
     sortOrder: number;
+    firstLessonByGrade: Record<string, string>;
   }
 > = {
   CXXH: {
@@ -46,6 +47,17 @@ export const SPECIAL_SUBJECTS_CATALOG_META: Record<
     levelBadge: "Tiểu học & THCS",
     grades: ["1", "2", "3", "4", "5", "6", "7", "8", "9"],
     sortOrder: 1,
+    firstLessonByGrade: {
+      "1": "Xây dựng lớp học tử tế",
+      "2": "Quy ước về lớp học hạnh phúc",
+      "3": "Quy ước về lớp học hạnh phúc",
+      "4": "Thỏa thuận lớp học",
+      "5": "Giá trị của tập thể",
+      "6": "Mạng lưới của tôi",
+      "7": "Hệ sinh thái các mối quan hệ",
+      "8": "Tôi ảnh hưởng đến hệ thống như thế nào",
+      "9": "Tôi trong thế giới kết nối",
+    },
   },
   GDHN: {
     code: "GDHN",
@@ -54,6 +66,15 @@ export const SPECIAL_SUBJECTS_CATALOG_META: Record<
     levelBadge: "SECONDARY - HIGH_SCHOOL",
     grades: ["6", "7", "8", "9", "10", "11", "12"],
     sortOrder: 2,
+    firstLessonByGrade: {
+      "6": "Điều tôi thích",
+      "7": "Tính cách và màu sắc",
+      "8": "Nghề nghiệp trong mắt tôi",
+      "9": "Tôi là ai? Nhìn lại bản thân trước ngưỡng cửa",
+      "10": "Tôi là ai sau một năm? Nhìn lại và cập nhật hành trình bản thân",
+      "11": "Tôi muốn gì sau khi tốt nghiệp? Xác định mục tiêu ưu tiên",
+      "12": "Tôi đã ở đâu, tôi muốn đến đâu?",
+    },
   },
   GDGT: {
     code: "GDGT",
@@ -62,6 +83,12 @@ export const SPECIAL_SUBJECTS_CATALOG_META: Record<
     levelBadge: "SECONDARY",
     grades: ["6", "7", "8", "9"],
     sortOrder: 3,
+    firstLessonByGrade: {
+      "6": "Tôi đã lớn rồi! Hành trình dậy thì",
+      "7": "Giới tính, giới và sự đa dạng",
+      "8": "Làm chủ bản thân tuổi vị thành niên",
+      "9": "Trưởng thành về thể chất và cảm xúc",
+    },
   },
   FIN_EDU: {
     code: "FIN_EDU",
@@ -70,6 +97,17 @@ export const SPECIAL_SUBJECTS_CATALOG_META: Record<
     levelBadge: "Tiểu học • SECONDARY",
     grades: ["1", "2", "3", "4", "5", "6", "7", "8", "9"],
     sortOrder: 4,
+    firstLessonByGrade: {
+      "1": "Tiền quanh em – Tiền đến từ đâu?",
+      "2": "Đồng tiền quanh em",
+      "3": "Tiền dùng để làm gì?",
+      "4": "Những lựa chọn của em",
+      "5": "Quyết định mua sắm",
+      "6": "Hành trình của đồng tiền",
+      "7": "Bản chất của tiền tiêu vặt",
+      "8": "Tiền mặt và sự lên ngôi của thanh toán số",
+      "9": "Phân tích cấu trúc ngân sách cá nhân",
+    },
   },
 };
 
@@ -279,7 +317,10 @@ export function buildStudentSpecialSubjectsPortfolio(params: {
         lessons.push({
           id: e.lessonId || e.id || `entry-${idx}`,
           periodIndex: e.lesson?.periodIndex || idx + 1,
-          lessonName: e.lesson?.lessonName || meta.name,
+          lessonName:
+            e.lesson?.lessonName ||
+            meta.firstLessonByGrade[grade || "1"] ||
+            meta.name,
           topicName: e.lesson?.topic?.name || "Chuyên đề",
           evalResult: evalRes,
           evalLabel: formatSpecialEvalLabel(evalRes),
@@ -288,6 +329,26 @@ export function buildStudentSpecialSubjectsPortfolio(params: {
           status: e.status || "COMPLETED",
           isEvaluated: Boolean(evalRes || fb),
         });
+      });
+    }
+
+    // Fallback Lesson 1 of the curriculum if dbLessons wasn't provided
+    if (lessons.length === 0) {
+      const firstLessonName =
+        meta.firstLessonByGrade[grade] ||
+        Object.values(meta.firstLessonByGrade)[0] ||
+        meta.name;
+      lessons.push({
+        id: `${meta.code}-g${grade || "1"}-p1`,
+        periodIndex: 1,
+        lessonName: firstLessonName,
+        topicName: "Bài học chuẩn hóa",
+        evalResult: null,
+        evalLabel: "Chưa đánh giá",
+        teacherFeedback: "",
+        evaluatorName: assignedTeacher,
+        status: "UNGRADED",
+        isEvaluated: false,
       });
     }
 

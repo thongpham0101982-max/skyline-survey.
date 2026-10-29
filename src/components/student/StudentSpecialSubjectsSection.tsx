@@ -10,6 +10,7 @@ import {
 } from "lucide-react";
 import {
   SpecialSubjectPortfolioItem,
+  SPECIAL_SUBJECTS_CATALOG_META,
   buildStudentSpecialSubjectsPortfolio,
 } from "@/lib/specialSubjectsPortfolio";
 
@@ -137,40 +138,42 @@ export function StudentSpecialSubjectsSection({
                       )
                     : [];
 
-                // Nếu GVBM chưa nhập đánh giá bài nào cho môn này -> hiển thị 1 dòng tĩnh trống (—)
-                if (evaluatedRows.length === 0) {
-                  return (
-                    <tr key={sub.code} className="hover:bg-slate-50/70 transition-colors align-middle">
-                      <td className="py-2.5 px-3.5">
-                        <div className="flex items-center gap-2.5">
-                          <div
-                            className={`w-7 h-7 rounded-lg border flex items-center justify-center shrink-0 ${iconBg}`}
-                          >
-                            <Icon className="w-3.5 h-3.5" />
-                          </div>
-                          <span className="font-bold text-slate-900 leading-snug">
-                            {sub.name}
-                          </span>
-                        </div>
-                      </td>
-                      <td className="py-2.5 px-3.5 text-slate-400 font-normal">—</td>
-                      <td className="py-2.5 px-2.5 text-center">
-                        {renderLevelBadge(null)}
-                      </td>
-                      <td className="py-2.5 px-3.5 text-slate-400 font-normal">—</td>
-                    </tr>
-                  );
-                }
+                const meta = SPECIAL_SUBJECTS_CATALOG_META[sub.code];
+                const fallbackFirstLessonName =
+                  meta?.firstLessonByGrade?.[sub.studentGrade || "1"] ||
+                  (meta?.firstLessonByGrade
+                    ? Object.values(meta.firstLessonByGrade)[0]
+                    : "") ||
+                  sub.name;
 
-                // Nếu GVBM đã nhập đánh giá -> hiển thị đúng danh sách các bài học thực tế GVBM đã nhập
-                return evaluatedRows.map((lesson, idx) => (
+                const displayRows =
+                  evaluatedRows.length > 0
+                    ? evaluatedRows
+                    : Array.isArray(sub.lessons) && sub.lessons.length > 0
+                    ? [sub.lessons[0]]
+                    : [
+                        {
+                          id: `${sub.code}-p1`,
+                          periodIndex: 1,
+                          lessonName: fallbackFirstLessonName,
+                          topicName: "",
+                          evalResult: null,
+                          evalLabel: "Chưa đánh giá",
+                          teacherFeedback: "",
+                          evaluatorName: "",
+                          status: "UNGRADED",
+                          isEvaluated: false,
+                        },
+                      ];
+
+                return displayRows.map((lesson, idx) => (
                   <tr
                     key={`${sub.code}-${lesson.id || idx}`}
                     className="hover:bg-slate-50/70 transition-colors align-top"
                   >
                     {idx === 0 && (
                       <td
-                        rowSpan={evaluatedRows.length}
+                        rowSpan={displayRows.length}
                         className="py-2.5 px-3.5 border-r border-slate-100 align-top"
                       >
                         <div className="flex items-center gap-2.5">
@@ -185,7 +188,7 @@ export function StudentSpecialSubjectsSection({
                         </div>
                       </td>
                     )}
-                    <td className="py-2.5 px-3.5">
+                    <td className="py-2.5 px-3.5 align-middle">
                       <div className="font-semibold text-slate-800 leading-snug">
                         {lesson.periodIndex
                           ? `Bài ${lesson.periodIndex}: ${lesson.lessonName}`
@@ -195,7 +198,7 @@ export function StudentSpecialSubjectsSection({
                     <td className="py-2.5 px-2.5 text-center align-middle">
                       {renderLevelBadge(lesson.evalLabel)}
                     </td>
-                    <td className="py-2.5 px-3.5">
+                    <td className="py-2.5 px-3.5 align-middle">
                       {lesson.teacherFeedback && lesson.teacherFeedback.trim() ? (
                         <div className="text-[11px] text-slate-700 font-normal leading-relaxed">
                           {lesson.teacherFeedback.trim()}
