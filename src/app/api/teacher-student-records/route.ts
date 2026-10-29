@@ -2,6 +2,7 @@
 import { NextResponse } from "next/server"
 import { prisma } from "@/lib/db"
 import { auth } from "@/lib/auth"
+import { buildStudentSpecialSubjectsPortfolio } from "@/lib/specialSubjectsPortfolio"
 
 export const dynamic = "force-dynamic"
 
@@ -1689,6 +1690,48 @@ export async function GET(req: Request) {
         return NextResponse.json({
           student,
           homeroomTeacherName: resolvedHomeroomTeacherName,
+          specialGradeEntries: student?.specialGradeEntries || [],
+          specialSubjectsPortfolio: await (async () => {
+            const lessonsBySubjectAndGrade = new Map<string, any[]>()
+            const teacherByClassAndSubject = new Map<string, string[] | string>()
+            try {
+              const allSpecLessons = await (prisma as any).specialLesson.findMany({
+                where: { status: "ACTIVE" },
+                orderBy: [{ grade: "asc" }, { periodIndex: "asc" }],
+                select: {
+                  id: true,
+                  grade: true,
+                  periodIndex: true,
+                  lessonName: true,
+                  topic: { select: { name: true, code: true } },
+                  version: {
+                    select: {
+                      curriculum: {
+                        select: {
+                          subject: { select: { code: true, name: true } }
+                        }
+                      }
+                    }
+                  }
+                }
+              })
+              for (const l of allSpecLessons || []) {
+                const subCode = (l.version?.curriculum?.subject?.code || "").toUpperCase()
+                if (!subCode || !l.grade) continue
+                const key = `${subCode}_${l.grade}`
+                if (!lessonsBySubjectAndGrade.has(key)) lessonsBySubjectAndGrade.set(key, [])
+                const arr = lessonsBySubjectAndGrade.get(key)!
+                if (!arr.some((x: any) => x.periodIndex === l.periodIndex)) {
+                  arr.push(l)
+                }
+              }
+            } catch {}
+            return buildStudentSpecialSubjectsPortfolio({
+              student,
+              lessonsBySubjectAndGrade,
+              homeroomTeacherName: resolvedHomeroomTeacherName,
+            })
+          })(),
           termScores: student?.termScores || [],
           termSummaries: student?.termSummaries || [],
           subjectGradeEntries: student?.subjectGradeEntries || [],
@@ -1792,6 +1835,24 @@ export async function GET(req: Request) {
           },
           termSummaries: true,
           competencySummaries: { include: { subject: true } },
+          specialGradeEntries: {
+            include: {
+              assignment: {
+                include: {
+                  subject: true,
+                  teacher: { select: { teacherName: true } }
+                }
+              },
+              lesson: {
+                select: {
+                  periodIndex: true,
+                  lessonName: true,
+                  topic: { select: { name: true } }
+                }
+              }
+            },
+            orderBy: { createdAt: "desc" }
+          },
           goals: {
             include: { actions: true },
             orderBy: { createdAt: "desc" }
@@ -1891,6 +1952,39 @@ export async function GET(req: Request) {
       });
 
       // Pre-aggregate cross-record advisory (goals, trackings, evaluations) by studentCode
+      const lessonsBySubjectAndGrade = new Map<string, any[]>();
+      try {
+        const allSpecLessons = await (prisma as any).specialLesson.findMany({
+          where: { status: "ACTIVE" },
+          orderBy: [{ grade: "asc" }, { periodIndex: "asc" }],
+          select: {
+            id: true,
+            grade: true,
+            periodIndex: true,
+            lessonName: true,
+            topic: { select: { name: true, code: true } },
+            version: {
+              select: {
+                curriculum: {
+                  select: {
+                    subject: { select: { code: true, name: true } }
+                  }
+                }
+              }
+            }
+          }
+        });
+        for (const l of allSpecLessons || []) {
+          const subCode = (l.version?.curriculum?.subject?.code || "").toUpperCase();
+          if (!subCode || !l.grade) continue;
+          const key = `${subCode}_${l.grade}`;
+          if (!lessonsBySubjectAndGrade.has(key)) lessonsBySubjectAndGrade.set(key, []);
+          const arr = lessonsBySubjectAndGrade.get(key)!;
+          if (!arr.some((x: any) => x.periodIndex === l.periodIndex)) {
+            arr.push(l);
+          }
+        }
+      } catch {}
       const crossScoreMap = new Map<string, { goals: any[]; goalTrackings: any[]; termEvaluations: any[] }>();
       if (studentCodes.length > 0) {
         try {
@@ -2099,6 +2193,11 @@ export async function GET(req: Request) {
           dob,
           status,
           specialGradeEntries: s.specialGradeEntries || [],
+          specialSubjectsPortfolio: buildStudentSpecialSubjectsPortfolio({
+            student: s,
+            lessonsBySubjectAndGrade,
+            homeroomTeacherName,
+          }),
           student: s,
           commitment: s.learningCommitments?.[0] || null,
           commitmentContent,

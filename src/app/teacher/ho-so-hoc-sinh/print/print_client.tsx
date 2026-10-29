@@ -10,6 +10,7 @@ import {
 } from "lucide-react"
 import StudentProfileCoverA4 from "@/components/student/StudentProfileCoverA4"
 import StudentProfileSectionConfigModal from "@/components/student/StudentProfileSectionConfigModal"
+import { StudentSpecialSubjectsSection } from "@/components/student/StudentSpecialSubjectsSection"
 import { resolveStudentSectionVisibility, DEFAULT_PROFILE_SECTIONS } from "@/lib/studentProfileSectionConfig"
 
 const getCategoryLabel = (cat: string) => {
@@ -1309,61 +1310,8 @@ export default function TeacherStudentProfilesPrintPage() {
 
               {/* MÔN HỌC ĐẶC THÙ SKY-LINE (SKL) */}
               {sectionVisibility.specialSubjects && (
-                <div className="space-y-2 print-section-avoid">
-                  <h3 className="section-heading text-xs font-black text-[#003B3A] uppercase tracking-wider flex items-center justify-between border-b border-slate-200 pb-1.5">
-                    <div className="flex items-center gap-2">
-                      <div className="w-2.5 h-2.5 rounded-full bg-indigo-600" />
-                      <Sparkles className="w-4 h-4 text-indigo-600" />
-                      <span>MÔN HỌC ĐẶC THÙ SKY-LINE (SKL)</span>
-                    </div>
-                    <span className="text-[9px] font-bold text-indigo-700 bg-indigo-50 px-2 py-0.5 rounded border border-indigo-200">
-                      Chương trình Bản sắc Sky-Line
-                    </span>
-                  </h3>
-                  {(!student.specialGradeEntries || student.specialGradeEntries.length === 0) ? (
-                    <div className="bg-slate-50 border border-slate-200 p-2.5 rounded-lg text-center text-xs text-slate-400 italic">
-                      Chưa ghi nhận đánh giá môn đặc thù Sky-Line (Chào Xuân/Xuân Hội, Giáo dục Tài chính, v.v.).
-                    </div>
-                  ) : (
-                    <div className="border border-indigo-100 rounded-lg overflow-hidden bg-white">
-                      <table className="w-full text-left text-xs border-collapse">
-                        <thead className="bg-indigo-50/70 text-[9px] font-black text-indigo-950 uppercase tracking-wider border-b border-indigo-200">
-                          <tr>
-                            <th className="py-1.5 px-2.5 text-center w-8">STT</th>
-                            <th className="py-1.5 px-2.5 w-1/4">Môn học / Chuyên đề</th>
-                            <th className="py-1.5 px-2 text-center w-28">Đánh giá</th>
-                            <th className="py-1.5 px-2.5">Nhận xét &amp; Ghi nhận của Giáo viên</th>
-                          </tr>
-                        </thead>
-                        <tbody className="divide-y divide-indigo-50 font-semibold text-slate-700">
-                          {student.specialGradeEntries.map((spec: any, idx: number) => {
-                            const evalText = spec.resultScore !== undefined && spec.resultScore !== null
-                              ? String(spec.resultScore)
-                              : spec.resultText || "Đạt";
-                            return (
-                              <tr key={idx}>
-                                <td className="py-1.5 px-2.5 text-center font-mono text-slate-400">{idx + 1}</td>
-                                <td className="py-1.5 px-2.5">
-                                  <div className="font-bold text-slate-900">{spec.subjectName || spec.subjectCode || "Môn đặc thù"}</div>
-                                  {spec.evalPeriod && (
-                                    <div className="text-[9px] text-slate-400 font-normal">Đợt: {spec.evalPeriod}</div>
-                                  )}
-                                </td>
-                                <td className="py-1.5 px-2 text-center">
-                                  <span className="text-[9px] font-black bg-indigo-50 text-indigo-800 border border-indigo-200 px-2 py-0.5 rounded">
-                                    {evalText}
-                                  </span>
-                                </td>
-                                <td className="py-1.5 px-2.5 text-[11px] text-slate-600 font-normal italic">
-                                  {spec.teacherFeedback || "Học sinh tham gia tích cực, nắm vững kiến thức thực hành kỹ năng."}
-                                </td>
-                              </tr>
-                            );
-                          })}
-                        </tbody>
-                      </table>
-                    </div>
-                  )}
+                <div className="print-section-avoid">
+                  <StudentSpecialSubjectsSection student={student} isPrintMode={true} />
                 </div>
               )}
 

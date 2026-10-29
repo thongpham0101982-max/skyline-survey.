@@ -10,6 +10,7 @@ function normalizeClassKey(name: string): string {
 import { NextRequest, NextResponse } from "next/server"
 import { prisma } from "@/lib/db"
 import { auth } from "@/lib/auth"
+import { buildStudentSpecialSubjectsPortfolio } from "@/lib/specialSubjectsPortfolio"
 
 const ALLOWED_ROLES = ["ADMIN", "ADMINISTRATOR", "KT_DBCL", "GDCS", "GIAO_VU_CS", "GIAO_VU"]
 
@@ -416,6 +417,63 @@ export async function GET(req: NextRequest) {
 
     const categories = await prisma.activityCategory.findMany()
 
+    // Pre-fetch Special Subjects lessons and assignments for accurate portfolio per grade
+    const lessonsBySubjectAndGrade = new Map<string, any[]>()
+    const teacherByClassAndSubject = new Map<string, string>()
+    try {
+      const [allSpecLessons, allSpecAssigns] = await Promise.all([
+        (prisma as any).specialLesson.findMany({
+          where: { status: "ACTIVE" },
+          orderBy: [{ grade: "asc" }, { periodIndex: "asc" }],
+          select: {
+            id: true,
+            grade: true,
+            periodIndex: true,
+            lessonName: true,
+            topic: { select: { name: true, code: true } },
+            version: {
+              select: {
+                status: true,
+                curriculum: {
+                  select: {
+                    subject: { select: { code: true, name: true } }
+                  }
+                }
+              }
+            }
+          }
+        }),
+        (prisma as any).specialTeachingAssignment.findMany({
+          where: { status: "ACTIVE" },
+          select: {
+            classId: true,
+            subject: { select: { code: true } },
+            teacher: { select: { teacherName: true } }
+          }
+        })
+      ])
+
+      for (const l of allSpecLessons || []) {
+        const subCode = (l.version?.curriculum?.subject?.code || "").toUpperCase()
+        if (!subCode || !l.grade) continue
+        const key = `${subCode}_${l.grade}`
+        if (!lessonsBySubjectAndGrade.has(key)) lessonsBySubjectAndGrade.set(key, [])
+        const arr = lessonsBySubjectAndGrade.get(key)!
+        if (!arr.some((x: any) => x.periodIndex === l.periodIndex)) {
+          arr.push(l)
+        }
+      }
+
+      for (const a of allSpecAssigns || []) {
+        const subCode = (a.subject?.code || "").toUpperCase()
+        if (a.classId && subCode && a.teacher?.teacherName) {
+          teacherByClassAndSubject.set(`${a.classId}_${subCode}`, a.teacher.teacherName)
+        }
+      }
+    } catch (specErr) {
+      console.error("Error fetching special subject lessons in student-profiles:", specErr)
+    }
+
     const roleDict: Record<string, string> = {
       TGIA: "Tham gia",
       TV: "Thành viên",
@@ -583,6 +641,12 @@ export async function GET(req: NextRequest) {
         dob,
         status,
         specialGradeEntries: s.specialGradeEntries || [],
+        specialSubjectsPortfolio: buildStudentSpecialSubjectsPortfolio({
+          student: s,
+          lessonsBySubjectAndGrade,
+          teacherByClassAndSubject,
+          homeroomTeacherName,
+        }),
         studentType: s.studentType || "CHINH_KHOA",
         studentTypeNote: s.studentTypeNote || "",
         convertedAt: s.convertedAt || null,
