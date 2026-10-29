@@ -16,6 +16,7 @@ import {
 } from "lucide-react"
 import StudentProfileCoverA4 from "@/components/student/StudentProfileCoverA4"
 import StudentProfileSectionConfigModal from "@/components/student/StudentProfileSectionConfigModal"
+import StudentProfileInlineSectionToggles from "@/components/student/StudentProfileInlineSectionToggles"
 import { resolveStudentSectionVisibility } from "@/lib/studentProfileSectionConfig"
 
 function normalizeClassKey(name: string): string {
@@ -650,6 +651,16 @@ export function StudentProfilesAdminClient({
           </div>
 
         </div>
+
+        {/* INLINE SECTION VISIBILITY TOGGLES (BẬT / TẮT TRỰC QUAN THEO KHỐI & HỆ HỌC) */}
+        <StudentProfileInlineSectionToggles
+          configMap={configMap}
+          onConfigMapChange={setConfigMap}
+          selectedStudent={selectedStudent}
+          selectedGradeFilter={selectedGrade}
+          academicYearId={selectedYearId}
+          onOpenFullModal={() => setIsConfigModalOpen(true)}
+        />
 
         {/* Batch Export PDF buttons */}
         <div className="pt-3 border-t border-slate-100 flex flex-wrap gap-3 items-center justify-between text-xs font-bold">

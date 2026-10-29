@@ -20,6 +20,7 @@ import {
 } from "lucide-react"
 import StudentProfileCoverA4 from "@/components/student/StudentProfileCoverA4"
 import StudentProfileSectionConfigModal from "@/components/student/StudentProfileSectionConfigModal"
+import StudentProfileInlineSectionToggles from "@/components/student/StudentProfileInlineSectionToggles"
 import { resolveStudentSectionVisibility } from "@/lib/studentProfileSectionConfig"
 
 function normalizeClassKey(name: string): string {
@@ -1078,6 +1079,17 @@ export default function TeacherStudentProfilePage() {
 
                       return (
                         <div className="bg-slate-200/60 p-3 sm:p-6 rounded-3xl border border-slate-300/60 shadow-inner flex flex-col items-center">
+                          {/* INLINE SECTION VISIBILITY TOGGLES */}
+                          <div className="w-full max-w-[210mm] mb-4">
+                            <StudentProfileInlineSectionToggles
+                              configMap={configMap}
+                              onConfigMapChange={setConfigMap}
+                              selectedStudent={selectedStudent}
+                              academicYearId={selectedYearId}
+                              onOpenFullModal={() => setIsConfigModalOpen(true)}
+                            />
+                          </div>
+
                           {/* CV VIEW SUB-TOOLBAR: Điều khiển chọn Bìa / Ruột / Trọn bộ */}
                           <div className="w-full max-w-[210mm] mb-5 flex flex-wrap items-center justify-between gap-3 bg-white/95 backdrop-blur-md p-3 rounded-2xl border border-slate-300 shadow-sm">
                             <div className="flex items-center gap-1.5 bg-slate-100 p-1 rounded-xl">
