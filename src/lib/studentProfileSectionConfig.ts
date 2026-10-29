@@ -22,7 +22,13 @@ export const DEFAULT_PROFILE_SECTIONS: ProfileSectionVisibility = {
   careerOrientation: false,
 };
 
-export const SECTION_DEFINITIONS = [
+export const SECTION_DEFINITIONS: Array<{
+  key: keyof ProfileSectionVisibility;
+  label: string;
+  shortLabel: string;
+  description: string;
+  category: string;
+}> = [
   {
     key: "advisoryGoals",
     label: "CỐ VẤN HỌC TẬP & NHẬT KÝ THEO DÕI MỤC TIÊU",
@@ -81,16 +87,51 @@ export const SECTION_DEFINITIONS = [
   },
 ];
 
+export function normalizeGradeKey(rawInput: any): string {
+  const s = String(rawInput || "").trim();
+  if (!s || s.toUpperCase() === "ALL") return "ALL";
+  const cleaned = s.replace(/^khối\s+/i, "").replace(/^lớp\s+/i, "").trim();
+  if (cleaned.includes("tháng") || cleaned.includes("tuổi")) {
+    return cleaned;
+  }
+  const m = cleaned.match(/^(1[0-2]|[1-9])(?:\b|[._/A-Za-z])/);
+  if (m) return m[1];
+  return cleaned;
+}
+
+export function normalizeEduSystemKey(rawInput: any): string {
+  const s = String(rawInput || "").trim().toUpperCase();
+  if (!s || s === "ALL") return "ALL";
+  if (s.includes("SB") || s.includes("SONG BẰNG") || s.includes("SONG BANG") || s.includes("GAC") || s.includes("CAMBRIDGE")) return "SB";
+  if (s.includes("HNG") || s.includes("QUỐC TẾ") || s.includes("QUOC TE") || s.includes("SONG NGỮ") || s.includes("SONG NGU")) return "HNG";
+  if (s.includes("HNS") || s.includes("SKY-LINE") || s.includes("CHẤT LƯỢNG CAO") || s.includes("CLC")) return "HNS";
+  if (s.includes("MNG")) return "MNG";
+  if (s.includes("MNS")) return "MNS";
+  return s;
+}
+
 export function resolveStudentSectionVisibility(
   student: any,
   configMap: Record<string, Record<string, boolean>> = {}
 ): ProfileSectionVisibility {
-  const rawGrade = String(student?.class?.grade || student?.grade || "").trim();
-  const rawEdu = String(student?.class?.educationSystem || student?.educationSystem || "").trim().toUpperCase();
+  const rawGrade =
+    student?.class?.grade ||
+    student?.grade ||
+    student?.student?.class?.grade ||
+    student?.className ||
+    student?.class?.className ||
+    "";
+  const rawEdu =
+    student?.class?.educationSystem ||
+    student?.educationSystem ||
+    student?.studyProgram ||
+    student?.student?.class?.educationSystem ||
+    student?.className ||
+    student?.class?.className ||
+    "";
 
-  // Normalize grade: e.g. "Khối 1" -> "1"
-  const grade = rawGrade.replace(/^khối\s+/i, "").trim();
-  const edu = rawEdu;
+  const grade = normalizeGradeKey(rawGrade);
+  const edu = normalizeEduSystemKey(rawEdu);
 
   const checks = [
     `${grade}_${edu}`,
