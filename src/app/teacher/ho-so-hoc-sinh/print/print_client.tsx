@@ -11,6 +11,7 @@ import {
 import StudentProfileCoverA4 from "@/components/student/StudentProfileCoverA4"
 import StudentProfileSectionConfigModal from "@/components/student/StudentProfileSectionConfigModal"
 import { StudentSpecialSubjectsSection } from "@/components/student/StudentSpecialSubjectsSection"
+import { SubjectCompetencyCard } from "@/components/competency/SubjectCompetencyCard"
 import { resolveStudentSectionVisibility, DEFAULT_PROFILE_SECTIONS } from "@/lib/studentProfileSectionConfig"
 
 const getCategoryLabel = (cat: string) => {
@@ -1551,6 +1552,7 @@ export default function TeacherStudentProfilesPrintPage() {
                   <span>Hồ sơ Năng lực Học sinh</span>
                 </div>
               {/* PHỤ LỤC: KẾT QUẢ ĐÁNH GIÁ NĂNG LỰC TOÀN DIỆN (RADAR 360°) */}
+              {sectionVisibility.subjectCompetencyRadar !== false && (
               <div style={{ pageBreakBefore: "always", breakBefore: "page" }} className="pt-6 border-t-2 border-slate-300 print:break-before-page print:page-break-before-always space-y-4">
                 <div className="border-b-2 border-slate-200 pb-3 flex justify-between items-center">
                   <div className="space-y-0.5">
@@ -1569,26 +1571,23 @@ export default function TeacherStudentProfilesPrintPage() {
 
                 {compSummaries.length === 0 ? (
                   <div className="bg-slate-50 border border-slate-200 p-4 rounded-xl text-center text-xs text-slate-400 italic">
-                    Chưa có dữ liệu đánh giá năng lực chi tiết.
+                    Chưa có dữ liệu biểu đồ radar năng lực môn học.
                   </div>
                 ) : (
-                  <div className="space-y-3">
-                    <div className="grid grid-cols-2 gap-2 text-xs">
-                      {compSummaries.map((cs: any, idx: number) => (
-                        <div key={idx} className="bg-slate-50 border border-slate-200 p-2.5 rounded-lg space-y-1">
-                          <div className="flex justify-between items-center">
-                            <span className="font-bold text-slate-800">{cs.subject?.subjectName || cs.subjectName || "Môn học"}</span>
-                            <span className="font-black text-[#00A19A] text-xs">{cs.subjectScore ? `${cs.subjectScore}%` : "Đạt"}</span>
-                          </div>
-                          <div className="w-full bg-slate-200 rounded-full h-1.5 overflow-hidden">
-                            <div
-                              className="bg-gradient-to-r from-teal-500 to-teal-700 h-full rounded-full"
-                              style={{ width: `${Math.min(100, cs.subjectScore || 85)}%` }}
-                            />
-                          </div>
-                        </div>
-                      ))}
-                    </div>
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4 print:grid-cols-2">
+                    {compSummaries.map((cs: any, idx: number) => (
+                      <SubjectCompetencyCard
+                        key={cs.id || cs.subjectId || idx}
+                        subjectName={cs.subject?.subjectName || cs.subjectName || "Môn học"}
+                        subjectCode={cs.subject?.subjectCode || cs.subjectCode || "MON"}
+                        subjectScore={cs.subjectScore}
+                        evaluatedCount={cs.evaluatedCount || 0}
+                        totalCompetencies={cs.totalCompetencies || (cs.radarData?.length || 0)}
+                        radarData={Array.isArray(cs.radarData) ? cs.radarData : []}
+                        assessmentPeriodLabel={cs.assessmentPeriod || "Đánh giá Năng lực"}
+                        benchmarkScore={75}
+                      />
+                    ))}
                   </div>
                 )}
 
@@ -1597,6 +1596,7 @@ export default function TeacherStudentProfilesPrintPage() {
                   <span>Phụ lục Hồ sơ Năng lực</span>
                 </div>
               </div>
+              )}
               </div>
 
             </div>

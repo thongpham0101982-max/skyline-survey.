@@ -13,6 +13,7 @@ export const DEFAULT_PROFILE_SECTIONS: Record<string, boolean> = {
   achievements: true,
   experientialActivities: true,
   homeroomTeacherComment: true,
+  subjectCompetencyRadar: true,
   careerOrientation: false, // Bỏ theo chỉ đạo
 };
 

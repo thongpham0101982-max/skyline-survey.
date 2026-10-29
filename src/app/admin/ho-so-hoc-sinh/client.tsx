@@ -2230,42 +2230,44 @@ export function StudentProfilesAdminClient({
                                         <span>Trang A4 Chuẩn • Học bạ Điện tử Chính thức</span>
                                       </div>
                                       {/* PHỤ LỤC: KẾT QUẢ ĐÁNH GIÁ NĂNG LỰC TOÀN DIỆN (RADAR 360°) */}
-                                      <div className="mt-8 pt-6 border-t-2 border-dashed border-teal-300 space-y-4">
-                                        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 bg-gradient-to-r from-teal-50 to-emerald-50 border border-teal-200 p-4 rounded-2xl">
-                                          <div className="flex items-center gap-3">
-                                            <div className="w-3 h-3 rounded-full bg-[#00A19A]" />
-                                            <div>
-                                              <span className="text-[10px] font-black uppercase text-[#00A19A] tracking-wider block">PHỤ LỤC HỒ SƠ</span>
-                                              <h3 className="text-xs sm:text-sm font-black text-[#003B3A] uppercase tracking-wider flex items-center gap-2">
-                                                <Sparkles className="w-4 h-4 text-teal-600" />
-                                                <span>PHỤ LỤC: KẾT QUẢ ĐÁNH GIÁ NĂNG LỰC TOÀN DIỆN (RADAR 360°)</span>
-                                              </h3>
+                                      {sectionVisibility.subjectCompetencyRadar !== false && (
+                                        <div className="mt-8 pt-6 border-t-2 border-dashed border-teal-300 space-y-4">
+                                          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 bg-gradient-to-r from-teal-50 to-emerald-50 border border-teal-200 p-4 rounded-2xl">
+                                            <div className="flex items-center gap-3">
+                                              <div className="w-3 h-3 rounded-full bg-[#00A19A]" />
+                                              <div>
+                                                <span className="text-[10px] font-black uppercase text-[#00A19A] tracking-wider block">PHỤ LỤC HỒ SƠ</span>
+                                                <h3 className="text-xs sm:text-sm font-black text-[#003B3A] uppercase tracking-wider flex items-center gap-2">
+                                                  <Sparkles className="w-4 h-4 text-teal-600" />
+                                                  <span>PHỤ LỤC: KẾT QUẢ ĐÁNH GIÁ NĂNG LỰC TOÀN DIỆN (RADAR 360°)</span>
+                                                </h3>
+                                              </div>
+                                            </div>
+                                            <div className="flex items-center gap-2">
+                                              <span className="text-[10px] font-extrabold text-teal-800 bg-white px-2.5 py-1 rounded-full border border-teal-200 shadow-2xs">
+                                                Khung 5 Phẩm chất - 10 Năng lực GDPT 2018
+                                              </span>
+                                              <button
+                                                type="button"
+                                                onClick={() => setActiveTab("competencies")}
+                                                className="text-[11px] font-bold text-[#00A19A] hover:text-[#005B55] flex items-center gap-1 hover:underline cursor-pointer bg-white px-2.5 py-1 rounded-lg border border-teal-200 shadow-2xs transition-all"
+                                              >
+                                                <span>Mở rộng</span>
+                                                <ChevronRight className="w-3.5 h-3.5" />
+                                              </button>
                                             </div>
                                           </div>
-                                          <div className="flex items-center gap-2">
-                                            <span className="text-[10px] font-extrabold text-teal-800 bg-white px-2.5 py-1 rounded-full border border-teal-200 shadow-2xs">
-                                              Khung 5 Phẩm chất - 10 Năng lực GDPT 2018
-                                            </span>
-                                            <button
-                                              type="button"
-                                              onClick={() => setActiveTab("competencies")}
-                                              className="text-[11px] font-bold text-[#00A19A] hover:text-[#005B55] flex items-center gap-1 hover:underline cursor-pointer bg-white px-2.5 py-1 rounded-lg border border-teal-200 shadow-2xs transition-all"
-                                            >
-                                              <span>Mở rộng</span>
-                                              <ChevronRight className="w-3.5 h-3.5" />
-                                            </button>
+
+                                          <div className="bg-slate-50/70 border border-slate-200/90 rounded-2xl p-3 sm:p-5 shadow-2xs">
+                                            <StudentCompetencyPortfolio
+                                              studentId={selectedStudent?.id || selectedStudentId}
+                                              studentCode={selectedStudent?.studentCode}
+                                              studentName={selectedStudent?.studentName}
+                                              initialAcademicYearId={selectedYearId}
+                                            />
                                           </div>
                                         </div>
-
-                                        <div className="bg-slate-50/70 border border-slate-200/90 rounded-2xl p-3 sm:p-5 shadow-2xs">
-                                          <StudentCompetencyPortfolio
-                                            studentId={selectedStudent?.id || selectedStudentId}
-                                            studentCode={selectedStudent?.studentCode}
-                                            studentName={selectedStudent?.studentName}
-                                            initialAcademicYearId={selectedYearId}
-                                          />
-                                        </div>
-                                      </div>
+                                      )}
                                     </div>
                                   </div>
                                 );

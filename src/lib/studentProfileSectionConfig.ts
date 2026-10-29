@@ -7,6 +7,7 @@ export interface ProfileSectionVisibility {
   achievements: boolean;           // VI. THÀNH TÍCH & BẢNG VÀNG KHEN THƯỞNG
   experientialActivities: boolean; // HOẠT ĐỘNG TRẢI NGHIỆM
   homeroomTeacherComment: boolean; // VIII. NHẬN XÉT NỔI BẬT ĐỊNH KỲ TỪ GIÁO VIÊN CHỦ NHIỆM
+  subjectCompetencyRadar: boolean; // BIỂU ĐỒ RADAR NĂNG LỰC MÔN HỌC
   careerOrientation?: boolean;     // Luôn false / đã bỏ
 }
 
@@ -19,6 +20,7 @@ export const DEFAULT_PROFILE_SECTIONS: ProfileSectionVisibility = {
   achievements: true,
   experientialActivities: true,
   homeroomTeacherComment: true,
+  subjectCompetencyRadar: true,
   careerOrientation: false,
 };
 
@@ -84,6 +86,13 @@ export const SECTION_DEFINITIONS: Array<{
     shortLabel: "Nhận xét nổi bật định kỳ từ GVCN",
     description: "Đánh giá quá trình rèn luyện, thái độ học tập và đóng góp từ GVCN",
     category: "Đánh giá & Nhận xét",
+  },
+  {
+    key: "subjectCompetencyRadar",
+    label: "BIỂU ĐỒ RADAR NĂNG LỰC MÔN HỌC",
+    shortLabel: "Biểu đồ radar năng lực môn học",
+    description: "Phụ lục đánh giá năng lực toàn diện 360° & Biểu đồ radar năng lực theo từng môn học",
+    category: "Đánh giá Năng lực",
   },
 ];
 
