@@ -1166,7 +1166,25 @@ export async function GET(req: Request) {
               id: true,
               goals: { include: { actions: true }, orderBy: { createdAt: "desc" } },
               goalTrackings: { orderBy: { createdAt: "desc" } },
-              termEvaluations: { orderBy: { createdAt: "desc" } }
+              termEvaluations: { orderBy: { createdAt: "desc" } },
+              specialGradeEntries: {
+                include: {
+                  assignment: {
+                    include: {
+                      subject: true,
+                      teacher: { select: { teacherName: true } }
+                    }
+                  },
+                  lesson: {
+                    select: {
+                      periodIndex: true,
+                      lessonName: true,
+                      topic: { select: { name: true } }
+                    }
+                  }
+                },
+                orderBy: { createdAt: "desc" }
+              }
             }
           });
           const allGoals: any[] = [];
@@ -1188,6 +1206,13 @@ export async function GET(req: Request) {
           if (allGoals.length > 0 && (!student.goals || student.goals.length === 0)) student.goals = allGoals;
           if (allGt.length > 0 && (!student.goalTrackings || student.goalTrackings.length === 0)) student.goalTrackings = allGt;
           if (allTe.length > 0 && (!student.termEvaluations || student.termEvaluations.length === 0)) student.termEvaluations = allTe;
+          const allSge: any[] = [];
+          for (const cr of crossRecords) {
+            ((cr as any).specialGradeEntries || []).forEach((sge: any) => {
+              if (!allSge.some((ex: any) => ex.id === sge.id || (ex.lessonId && ex.lessonId === sge.lessonId))) allSge.push(sge);
+            });
+          }
+          if (allSge.length > 0 && (!student.specialGradeEntries || student.specialGradeEntries.length === 0)) student.specialGradeEntries = allSge;
         } catch (crErr) {
           console.error("Error aggregating cross-record advisory for studentCode:", crErr);
         }
@@ -1994,7 +2019,25 @@ export async function GET(req: Request) {
               studentCode: true,
               goals: { include: { actions: true }, orderBy: { createdAt: "desc" } },
               goalTrackings: { orderBy: { createdAt: "desc" } },
-              termEvaluations: { orderBy: { createdAt: "desc" } }
+              termEvaluations: { orderBy: { createdAt: "desc" } },
+              specialGradeEntries: {
+                include: {
+                  assignment: {
+                    include: {
+                      subject: true,
+                      teacher: { select: { teacherName: true } }
+                    }
+                  },
+                  lesson: {
+                    select: {
+                      periodIndex: true,
+                      lessonName: true,
+                      topic: { select: { name: true } }
+                    }
+                  }
+                },
+                orderBy: { createdAt: "desc" }
+              }
             }
           });
           for (const cr of crossRecs) {

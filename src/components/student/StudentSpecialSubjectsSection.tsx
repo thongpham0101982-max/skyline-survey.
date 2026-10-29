@@ -14,7 +14,6 @@ import {
 import {
   SpecialSubjectPortfolioItem,
   buildStudentSpecialSubjectsPortfolio,
-  formatSpecialEvalLabel,
 } from "@/lib/specialSubjectsPortfolio";
 
 interface StudentSpecialSubjectsSectionProps {
@@ -42,7 +41,6 @@ export function StudentSpecialSubjectsSection({
     return buildStudentSpecialSubjectsPortfolio({ student });
   }, [student]);
 
-  // Track selected lesson per subject (default: first evaluated lesson, or first lesson index 0)
   const [selectedLessonBySubject, setSelectedLessonBySubject] = useState<
     Record<string, string>
   >({});
@@ -131,35 +129,38 @@ export function StudentSpecialSubjectsSection({
           <table className="w-full text-left text-xs border-collapse">
             <thead className="bg-slate-50 text-[10px] font-black text-slate-600 uppercase tracking-wider border-b border-slate-200">
               <tr>
-                <th className="py-2.5 px-3 w-[24%]">Mã &amp; Môn học</th>
-                <th className="py-2.5 px-3 w-[18%]">Cấp học &amp; Đối tượng</th>
-                <th className="py-2.5 px-3 w-[28%]">Hồ sơ Bài học / Tiết dạy</th>
+                <th className="py-2.5 px-3 w-[23%]">Mã &amp; Môn học</th>
+                <th className="py-2.5 px-3 w-[17%]">Cấp học &amp; Đối tượng</th>
+                <th className="py-2.5 px-3 w-[29%]">Hồ sơ Bài học / Tiết dạy</th>
                 <th className="py-2.5 px-2 text-center w-[11%]">Mức</th>
-                <th className="py-2.5 px-3 w-[19%]">Nhận xét của Giáo viên</th>
+                <th className="py-2.5 px-3 w-[20%]">Nhận xét của Giáo viên</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-slate-100 font-semibold text-slate-700">
               {portfolio.map((sub) => {
                 const { Icon, iconBg, badgeBg } = getSubjectVisual(sub.code);
-                const selectedLessonId = selectedLessonBySubject[sub.code] || "ALL";
+                const selectedLessonId =
+                  selectedLessonBySubject[sub.code] ||
+                  sub.defaultLessonId ||
+                  sub.lessons[0]?.id ||
+                  "";
+
                 const activeLesson =
-                  selectedLessonId !== "ALL"
-                    ? sub.lessons.find((l) => l.id === selectedLessonId) || null
-                    : null;
+                  sub.lessons.find((l) => l.id === selectedLessonId) ||
+                  sub.lessons[0] ||
+                  null;
 
                 const displayLevel = activeLesson
                   ? activeLesson.evalLabel
                   : sub.overallLabel;
 
-                const displayFeedback = activeLesson
-                  ? activeLesson.teacherFeedback ||
-                    (activeLesson.evalResult
-                      ? "Học sinh hoàn thành nội dung bài học theo yêu cầu cần đạt."
-                      : "Chưa có nhận xét cho tiết học này.")
-                  : sub.teacherFeedback ||
-                    (sub.evaluatedCount > 0
-                      ? `Đã đánh giá ${sub.evaluatedCount}/${sub.totalLessons} bài học chuẩn hóa Khối ${sub.studentGrade}.`
-                      : `Chương trình chuẩn hóa Khối ${sub.studentGrade} (${sub.totalLessons} bài) — Giáo viên Chủ nhiệm đánh giá theo từng tiết dạy.`);
+                // Strictly actual teacher feedback from GVBM — no synthetic fallback
+                const actualLessonFeedback = activeLesson?.teacherFeedback?.trim() || "";
+                const actualOverallFeedback = sub.teacherFeedback?.trim() || "";
+                const displayFeedback = actualLessonFeedback || actualOverallFeedback;
+
+                const evaluatorName =
+                  activeLesson?.evaluatorName || sub.teacherName || "";
 
                 const isExpanded = expandedSubjectCode === sub.code;
 
@@ -198,19 +199,19 @@ export function StudentSpecialSubjectsSection({
                           </span>
                           {sub.studentGrade && (
                             <span className="text-[9px] font-black px-1.5 py-0.2 rounded bg-slate-100 text-slate-700 border border-slate-200">
-                              Đang học: Khối {sub.studentGrade}
+                              Khối {sub.studentGrade}
                             </span>
                           )}
                         </div>
                       </td>
 
-                      {/* 3. Hồ sơ Bài học / Tiết dạy (e.g., 27 bài) */}
+                      {/* 3. Hồ sơ Bài học / Tiết dạy */}
                       <td className="py-2.5 px-3">
                         <div className="flex items-center justify-between gap-1.5 mb-1">
                           <span className="text-[10px] font-black text-[#003B3A] uppercase tracking-wide flex items-center gap-1">
                             <BookOpen className="w-3 h-3 text-teal-600 shrink-0" />
                             <span>
-                              Hồ sơ Bài học / Tiết dạy ({sub.totalLessons} bài)
+                              Bài học / Tiết dạy ({sub.totalLessons} bài)
                             </span>
                           </span>
                           {!isPrintMode && sub.lessons.length > 0 && (
@@ -223,7 +224,11 @@ export function StudentSpecialSubjectsSection({
                               }
                               className="no-print text-[10px] font-bold text-teal-700 hover:text-teal-900 bg-teal-50 hover:bg-teal-100 px-1.5 py-0.5 rounded border border-teal-200 inline-flex items-center gap-0.5 transition cursor-pointer"
                             >
-                              <span>{isExpanded ? "Thu gọn" : "DS bài"}</span>
+                              <span>
+                                {isExpanded
+                                  ? "Thu gọn"
+                                  : `DS (${sub.evaluatedCount}/${sub.totalLessons})`}
+                              </span>
                               {isExpanded ? (
                                 <ChevronUp className="w-3 h-3" />
                               ) : (
@@ -244,43 +249,44 @@ export function StudentSpecialSubjectsSection({
                             }
                             className="no-print w-full text-[11px] font-bold border border-slate-200 rounded-lg px-2 py-1 bg-slate-50 hover:bg-white focus:bg-white focus:outline-none focus:ring-1 focus:ring-teal-500 text-slate-800 truncate"
                           >
-                            <option value="ALL">
-                              Tổng hợp Hồ sơ ({sub.totalLessons} bài • Đã chấm:{" "}
-                              {sub.evaluatedCount}/{sub.totalLessons})
-                            </option>
                             {sub.lessons.map((l) => (
                               <option key={l.id} value={l.id}>
-                                Tiết {l.periodIndex}: {l.lessonName} (
-                                {l.evalLabel})
+                                Tiết {l.periodIndex}: {l.lessonName}
+                                {l.isEvaluated ? ` • [${l.evalLabel}]` : ""}
                               </option>
                             ))}
                           </select>
                         ) : null}
 
-                        {/* Print mode or subtitle summary */}
+                        {/* Subtitle: actual lesson & GVBM evaluated count */}
                         <div className="text-[10px] text-slate-500 font-medium mt-1 leading-snug">
                           {activeLesson ? (
-                            <span>
-                              <strong className="text-slate-700">
-                                Tiết {activeLesson.periodIndex}:
-                              </strong>{" "}
-                              {activeLesson.lessonName}{" "}
-                              <span className="text-slate-400">
-                                ({activeLesson.topicName})
+                            <div>
+                              <span className="font-bold text-slate-700">
+                                Tiết {activeLesson.periodIndex}:{" "}
+                                {activeLesson.lessonName}
                               </span>
-                            </span>
-                          ) : (
-                            <span>
-                              Quy mô Khối {sub.studentGrade}:{" "}
-                              <strong className="text-slate-800">
-                                {sub.totalLessons} bài học chuẩn hóa
-                              </strong>{" "}
-                              • Đã ghi nhận:{" "}
-                              <strong className="text-teal-700">
-                                {sub.evaluatedCount}/{sub.totalLessons} bài
-                              </strong>
-                            </span>
-                          )}
+                              {activeLesson.topicName && (
+                                <span className="text-slate-400">
+                                  {" "}
+                                  ({activeLesson.topicName})
+                                </span>
+                              )}
+                            </div>
+                          ) : null}
+                          <div className="mt-0.5">
+                            {sub.evaluatedCount > 0 ? (
+                              <span className="text-teal-700 font-bold">
+                                GVBM đã chấm: {sub.evaluatedCount}/
+                                {sub.totalLessons} bài
+                              </span>
+                            ) : (
+                              <span className="text-slate-400 italic">
+                                Chưa có bài học được GVBM đánh giá (0/
+                                {sub.totalLessons} bài)
+                              </span>
+                            )}
+                          </div>
                         </div>
                       </td>
 
@@ -291,30 +297,36 @@ export function StudentSpecialSubjectsSection({
 
                       {/* 5. Nhận xét của Giáo viên */}
                       <td className="py-2.5 px-3">
-                        <div className="text-[11px] text-slate-700 font-normal italic leading-relaxed">
-                          {displayFeedback}
-                        </div>
-                        {sub.teacherName && (
+                        {displayFeedback ? (
+                          <div className="text-[11px] text-slate-800 font-medium leading-relaxed">
+                            {displayFeedback}
+                          </div>
+                        ) : (
+                          <div className="text-[11px] text-slate-400 font-normal italic">
+                            Chưa có nhận xét từ GVBM
+                          </div>
+                        )}
+                        {evaluatorName && (
                           <div className="text-[9px] text-slate-400 font-bold mt-1">
-                            GV đánh giá: {sub.teacherName}
+                            GV phụ trách: {evaluatorName}
                           </div>
                         )}
                       </td>
                     </tr>
 
-                    {/* Expanded 27-lesson portfolio table (Web interactive mode) */}
+                    {/* Expanded lesson portfolio table */}
                     {!isPrintMode && isExpanded && sub.lessons.length > 0 && (
                       <tr className="bg-slate-50/70 no-print">
                         <td colSpan={5} className="p-3 border-t border-slate-200">
                           <div className="bg-white border border-slate-200 rounded-xl overflow-hidden shadow-2xs">
                             <div className="px-3 py-2 bg-teal-50/60 border-b border-slate-200 flex items-center justify-between">
                               <span className="text-[11px] font-black text-[#003B3A] uppercase">
-                                Chi tiết Hồ sơ Bài học / Tiết dạy môn {sub.name} (
+                                Hồ sơ Bài học / Tiết dạy môn {sub.name} (
                                 {sub.code}) — Khối {sub.studentGrade} (
                                 {sub.totalLessons} bài)
                               </span>
                               <span className="text-[10px] font-bold text-teal-800">
-                                Đã đánh giá: {sub.evaluatedCount}/
+                                Đã chấm thực tế: {sub.evaluatedCount}/
                                 {sub.totalLessons} tiết
                               </span>
                             </div>
@@ -335,7 +347,7 @@ export function StudentSpecialSubjectsSection({
                                       Mức
                                     </th>
                                     <th className="py-1.5 px-2.5">
-                                      Nhận xét của Giáo viên
+                                      Nhận xét của Giáo viên (GVBM)
                                     </th>
                                   </tr>
                                 </thead>

@@ -6,7 +6,9 @@ export interface SpecialLessonPortfolioItem {
   evalResult: string | null;
   evalLabel: string;
   teacherFeedback: string;
+  evaluatorName: string;
   status: string;
+  isEvaluated: boolean;
 }
 
 export interface SpecialSubjectPortfolioItem {
@@ -17,11 +19,13 @@ export interface SpecialSubjectPortfolioItem {
   studentGrade: string;
   totalLessons: number;
   evaluatedCount: number;
+  defaultLessonId: string;
   overallResult: string | null; // "TOT" | "HOAN_THANH" | "DAT" | "CAN_CO_GANG" | null
   overallLabel: string;         // "Tốt" | "Đạt" | "Cần cố gắng" | "Chưa đánh giá"
-  teacherFeedback: string;
-  teacherName: string;
+  teacherFeedback: string;      // Strictly actual feedback from GVBM
+  teacherName: string;          // Assigned GVBM / evaluator name
   lessons: SpecialLessonPortfolioItem[];
+  evaluatedLessons: SpecialLessonPortfolioItem[];
 }
 
 export const SPECIAL_SUBJECTS_CATALOG_META: Record<
@@ -98,6 +102,39 @@ export function formatSpecialEvalLabel(rawResult?: string | null): string {
   return rawResult;
 }
 
+function resolveEntryEvalResult(entry: any): string | null {
+  if (!entry) return null;
+  if (entry.evalResult && entry.evalResult !== "CHUA_DANH_GIA") {
+    return entry.evalResult;
+  }
+  if (entry.resultText) return entry.resultText;
+  if (entry.rubricDetails) {
+    try {
+      const parsed =
+        typeof entry.rubricDetails === "string"
+          ? JSON.parse(entry.rubricDetails)
+          : entry.rubricDetails;
+      const vals = Object.values(parsed || {}).filter(
+        (v: any) => Boolean(v) && v !== "CHUA_DANH_GIA"
+      ) as string[];
+      if (vals.length > 0) {
+        let tot = 0,
+          ht = 0,
+          ccg = 0;
+        vals.forEach((v) => {
+          if (v === "TOT") tot++;
+          else if (v === "HOAN_THANH" || v === "DAT") ht++;
+          else if (v === "CAN_CO_GANG") ccg++;
+        });
+        if (ccg >= vals.length / 2) return "CAN_CO_GANG";
+        if (tot >= ht && tot > 0) return "TOT";
+        return "HOAN_THANH";
+      }
+    } catch {}
+  }
+  return null;
+}
+
 export function extractStudentGradeNumber(student: any): string {
   const rawGrade =
     student?.class?.grade ||
@@ -134,34 +171,29 @@ export function buildStudentSpecialSubjectsPortfolio(params: {
 
   const classId = student?.classId || student?.class?.id || student?.student?.classId || "";
 
-  // Determine which special subjects apply to this student's grade
   const orderedMetaList = Object.values(SPECIAL_SUBJECTS_CATALOG_META).sort(
     (a, b) => a.sortOrder - b.sortOrder
   );
 
   const applicableMetas = orderedMetaList.filter((meta) => {
     if (grade && meta.grades.includes(grade)) return true;
-    // Also include if student already has grade entries for this subject
     return rawEntries.some((e: any) => {
       const code = (e?.assignment?.subject?.code || e?.subjectCode || "").toUpperCase();
       return code === meta.code;
     });
   });
 
-  // Fallback for preschool or unknown grade if no subject matched: return empty
   if (applicableMetas.length === 0) return [];
 
   return applicableMetas.map((meta) => {
     const mapKey = `${meta.code}_${grade || "1"}`;
     const dbLessons = lessonsBySubjectAndGrade?.get(mapKey) || [];
 
-    // Filter student's grade entries belonging to this subject
     const subjectEntries = rawEntries.filter((e: any) => {
       const code = (e?.assignment?.subject?.code || e?.subjectCode || "").toUpperCase();
       return code === meta.code;
     });
 
-    // Map entries by lessonId and periodIndex
     const entryByLessonId = new Map<string, any>();
     const entryByPeriod = new Map<number, any>();
     let generalEntry: any = null;
@@ -178,12 +210,23 @@ export function buildStudentSpecialSubjectsPortfolio(params: {
       }
     }
 
+    const assignedTeacher =
+      subjectEntries.find((e: any) => e?.assignment?.teacher?.teacherName)?.assignment?.teacher?.teacherName ||
+      (classId && teacherByClassAndSubject?.get(`${classId}_${meta.code}`)) ||
+      homeroomTeacherName ||
+      student?.homeroomTeacherName ||
+      "";
+
     const lessons: SpecialLessonPortfolioItem[] = dbLessons.map((l: any) => {
       const matched =
         entryByLessonId.get(l.id) ||
         entryByPeriod.get(Number(l.periodIndex)) ||
         null;
-      const evalRes = matched?.evalResult || null;
+      const evalRes = resolveEntryEvalResult(matched);
+      const rawFeedback = matched?.teacherFeedback ? String(matched.teacherFeedback).trim() : "";
+      const isEvaluated = Boolean(
+        (evalRes && evalRes !== "CHUA_DANH_GIA") || rawFeedback.length > 0
+      );
       return {
         id: l.id,
         periodIndex: Number(l.periodIndex),
@@ -191,77 +234,101 @@ export function buildStudentSpecialSubjectsPortfolio(params: {
         topicName: l.topic?.name || l.topicName || "Chủ đề bài học",
         evalResult: evalRes,
         evalLabel: formatSpecialEvalLabel(evalRes),
-        teacherFeedback: matched?.teacherFeedback || "",
-        status: matched?.status || (evalRes ? "COMPLETED" : "UNGRADED"),
+        teacherFeedback: rawFeedback,
+        evaluatorName: matched?.assignment?.teacher?.teacherName || assignedTeacher,
+        status: matched?.status || (isEvaluated ? "COMPLETED" : "UNGRADED"),
+        isEvaluated,
       };
     });
 
-    // If dbLessons wasn't preloaded on client but student has subjectEntries with lessons, include them
+    // If general entry (without specific lessonId) exists and no lesson matched it, attach to lesson 1 or append
+    if (generalEntry && !lessons.some((l) => l.isEvaluated)) {
+      const genRes = resolveEntryEvalResult(generalEntry);
+      const genFb = generalEntry?.teacherFeedback ? String(generalEntry.teacherFeedback).trim() : "";
+      if (lessons.length > 0 && (genRes || genFb)) {
+        lessons[0] = {
+          ...lessons[0],
+          evalResult: genRes,
+          evalLabel: formatSpecialEvalLabel(genRes),
+          teacherFeedback: genFb,
+          evaluatorName: generalEntry?.assignment?.teacher?.teacherName || assignedTeacher,
+          status: generalEntry?.status || "COMPLETED",
+          isEvaluated: true,
+        };
+      } else if (lessons.length === 0 && (genRes || genFb)) {
+        lessons.push({
+          id: generalEntry.id || "general-1",
+          periodIndex: 1,
+          lessonName: meta.name,
+          topicName: "Đánh giá môn đặc thù",
+          evalResult: genRes,
+          evalLabel: formatSpecialEvalLabel(genRes),
+          teacherFeedback: genFb,
+          evaluatorName: generalEntry?.assignment?.teacher?.teacherName || assignedTeacher,
+          status: generalEntry?.status || "COMPLETED",
+          isEvaluated: true,
+        });
+      }
+    }
+
+    // Fallback if dbLessons wasn't loaded but student has subjectEntries
     if (lessons.length === 0 && subjectEntries.length > 0) {
       subjectEntries.forEach((e: any, idx: number) => {
+        const evalRes = resolveEntryEvalResult(e);
+        const fb = e.teacherFeedback ? String(e.teacherFeedback).trim() : "";
         lessons.push({
           id: e.lessonId || e.id || `entry-${idx}`,
           periodIndex: e.lesson?.periodIndex || idx + 1,
           lessonName: e.lesson?.lessonName || meta.name,
-          topicName: e.lesson?.topic?.name || "Chuyên đề thực hành",
-          evalResult: e.evalResult || e.resultText || null,
-          evalLabel: formatSpecialEvalLabel(e.evalResult || e.resultText),
-          teacherFeedback: e.teacherFeedback || "",
+          topicName: e.lesson?.topic?.name || "Chuyên đề",
+          evalResult: evalRes,
+          evalLabel: formatSpecialEvalLabel(evalRes),
+          teacherFeedback: fb,
+          evaluatorName: e?.assignment?.teacher?.teacherName || assignedTeacher,
           status: e.status || "COMPLETED",
+          isEvaluated: Boolean(evalRes || fb),
         });
       });
     }
 
-    // Compute overall result using Sky-Line Most-Frequent rule across evaluated lessons
-    const evaluatedEntries = subjectEntries.filter(
-      (e: any) =>
-        e.evalResult &&
-        e.evalResult !== "CHUA_DANH_GIA" &&
-        e.evalResult !== "VANG"
-    );
+    const evaluatedLessons = lessons.filter((l) => l.isEvaluated);
 
+    // Overall level across evaluated lessons (only if at least 1 lesson was evaluated by GVBM)
     let overallResult: string | null = null;
-    if (evaluatedEntries.length > 0) {
-      let tot = 0;
-      let dat = 0;
-      let ccg = 0;
-      evaluatedEntries.forEach((e: any) => {
-        const lbl = formatSpecialEvalLabel(e.evalResult);
-        if (lbl === "Tốt") tot++;
-        else if (lbl === "Đạt") dat++;
-        else if (lbl === "Cần cố gắng") ccg++;
+    if (evaluatedLessons.length > 0) {
+      let tot = 0,
+        dat = 0,
+        ccg = 0;
+      evaluatedLessons.forEach((l) => {
+        if (l.evalLabel === "Tốt") tot++;
+        else if (l.evalLabel === "Đạt") dat++;
+        else if (l.evalLabel === "Cần cố gắng") ccg++;
       });
-      if (ccg > 0 && ccg >= evaluatedEntries.length / 2) {
+      if (ccg > 0 && ccg >= evaluatedLessons.length / 2) {
         overallResult = "CAN_CO_GANG";
       } else if (tot >= dat && tot > 0) {
         overallResult = "TOT";
-      } else {
+      } else if (dat > 0) {
         overallResult = "DAT";
       }
-    } else if (generalEntry?.evalResult) {
-      overallResult = generalEntry.evalResult;
     }
 
-    // Aggregate teacher feedback from latest evaluated entries
-    const feedbackList = subjectEntries
-      .map((e: any) => {
-        if (!e.teacherFeedback || !String(e.teacherFeedback).trim()) return "";
-        const prefix = e.lesson?.periodIndex ? `Tiết ${e.lesson.periodIndex}: ` : "";
-        return `${prefix}${String(e.teacherFeedback).trim()}`;
-      })
-      .filter(Boolean);
-
+    // Strictly actual feedback from GVBM (no synthetic/boilerplate text)
+    const feedbackList = evaluatedLessons
+      .filter((l) => l.teacherFeedback.length > 0)
+      .map((l) =>
+        evaluatedLessons.length > 1
+          ? `Tiết ${l.periodIndex}: ${l.teacherFeedback}`
+          : l.teacherFeedback
+      );
     const teacherFeedback = feedbackList.join(" | ");
 
-    // Resolve teacher name
-    const assignedTeacher =
-      (classId && teacherByClassAndSubject?.get(`${classId}_${meta.code}`)) ||
-      subjectEntries.find((e: any) => e?.assignment?.teacher?.teacherName)?.assignment?.teacher?.teacherName ||
-      homeroomTeacherName ||
-      student?.homeroomTeacherName ||
-      "Giáo viên Chủ nhiệm";
+    // Default lesson: latest evaluated lesson by GVBM, or Lesson 1
+    const defaultLessonId =
+      evaluatedLessons.length > 0
+        ? evaluatedLessons[evaluatedLessons.length - 1].id
+        : lessons[0]?.id || "";
 
-    // Level badge refined for CXXH by grade
     let levelBadge = meta.levelBadge;
     if (meta.code === "CXXH") {
       const gNum = parseInt(grade, 10);
@@ -275,12 +342,14 @@ export function buildStudentSpecialSubjectsPortfolio(params: {
       levelBadge,
       studentGrade: grade,
       totalLessons: lessons.length,
-      evaluatedCount: evaluatedEntries.length,
+      evaluatedCount: evaluatedLessons.length,
+      defaultLessonId,
       overallResult,
       overallLabel: formatSpecialEvalLabel(overallResult),
       teacherFeedback,
       teacherName: assignedTeacher,
       lessons,
+      evaluatedLessons,
     };
   });
 }

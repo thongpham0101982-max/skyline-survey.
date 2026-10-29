@@ -259,14 +259,38 @@ export async function GET(req: NextRequest) {
             studentCode: true,
             termScores: { include: { subject: true } },
             termSummaries: true,
-            subjectGradeEntries: { include: { subject: true }, orderBy: { createdAt: "desc" } }
+            subjectGradeEntries: { include: { subject: true }, orderBy: { createdAt: "desc" } },
+            specialGradeEntries: {
+              include: {
+                assignment: {
+                  include: {
+                    subject: true,
+                    teacher: { select: { teacherName: true } }
+                  }
+                },
+                lesson: {
+                  select: {
+                    periodIndex: true,
+                    lessonName: true,
+                    topic: { select: { name: true } }
+                  }
+                }
+              },
+              orderBy: { createdAt: "desc" }
+            }
           }
         });
         for (const cr of crossRecs) {
           if (!crossScoreMap.has(cr.studentCode)) {
             crossScoreMap.set(cr.studentCode, { termScores: [], termSummaries: [], subjectGradeEntries: [] });
           }
-          const b = crossScoreMap.get(cr.studentCode)!;
+          const b = crossScoreMap.get(cr.studentCode)! as any;
+          if (!b.specialGradeEntries) b.specialGradeEntries = [];
+          (cr.specialGradeEntries || []).forEach((sge: any) => {
+            if (!b.specialGradeEntries.some((ex: any) => ex.id === sge.id || (ex.lessonId && ex.lessonId === sge.lessonId))) {
+              b.specialGradeEntries.push(sge);
+            }
+          });
           (cr.termScores || []).forEach((ts: any) => {
             if (ts.score !== null || ts.evaluationGrade !== null) {
               const k = `${ts.subjectId || ts.subject?.subjectName}_${ts.semester}`;
@@ -640,9 +664,12 @@ export async function GET(req: NextRequest) {
         gender,
         dob,
         status,
-        specialGradeEntries: s.specialGradeEntries || [],
+        specialGradeEntries: (s.specialGradeEntries && s.specialGradeEntries.length > 0) ? s.specialGradeEntries : ((crossScoreMap.get(studentCode) as any)?.specialGradeEntries || []),
         specialSubjectsPortfolio: buildStudentSpecialSubjectsPortfolio({
-          student: s,
+          student: {
+            ...s,
+            specialGradeEntries: (s.specialGradeEntries && s.specialGradeEntries.length > 0) ? s.specialGradeEntries : ((crossScoreMap.get(studentCode) as any)?.specialGradeEntries || []),
+          },
           lessonsBySubjectAndGrade,
           teacherByClassAndSubject,
           homeroomTeacherName,
