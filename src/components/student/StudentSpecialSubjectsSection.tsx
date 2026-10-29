@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useMemo } from "react";
+import React, { useEffect, useMemo, useState } from "react";
 import {
   Sparkles,
   Heart,
@@ -9,9 +9,11 @@ import {
   Coins,
 } from "lucide-react";
 import {
+  SpecialLessonPortfolioItem,
   SpecialSubjectPortfolioItem,
   SPECIAL_SUBJECTS_CATALOG_META,
   buildStudentSpecialSubjectsPortfolio,
+  formatSpecialEvalLabel,
 } from "@/lib/specialSubjectsPortfolio";
 
 interface StudentSpecialSubjectsSectionProps {
@@ -22,7 +24,7 @@ interface StudentSpecialSubjectsSectionProps {
 export function StudentSpecialSubjectsSection({
   student,
 }: StudentSpecialSubjectsSectionProps) {
-  const portfolio: SpecialSubjectPortfolioItem[] = useMemo(() => {
+  const basePortfolio: SpecialSubjectPortfolioItem[] = useMemo(() => {
     if (
       Array.isArray(student?.specialSubjectsPortfolio) &&
       student.specialSubjectsPortfolio.length > 0
@@ -37,6 +39,105 @@ export function StudentSpecialSubjectsSection({
     }
     return buildStudentSpecialSubjectsPortfolio({ student });
   }, [student]);
+
+  const [fetchedLessonsMap, setFetchedLessonsMap] = useState<
+    Record<string, SpecialLessonPortfolioItem[]>
+  >({});
+
+  useEffect(() => {
+    let cancelled = false;
+    const subjectsNeedingFetch = basePortfolio.filter(
+      (sub) => !Array.isArray(sub.lessons) || sub.lessons.length <= 1
+    );
+    if (subjectsNeedingFetch.length === 0) return;
+
+    const rawEntries: any[] = Array.isArray(student?.specialGradeEntries)
+      ? student.specialGradeEntries
+      : Array.isArray(student?.student?.specialGradeEntries)
+      ? student.student.specialGradeEntries
+      : [];
+
+    subjectsNeedingFetch.forEach(async (sub) => {
+      const grade = sub.studentGrade || "1";
+      const key = `${sub.code}_${grade}`;
+      if (fetchedLessonsMap[key]) return;
+      try {
+        const res = await fetch(
+          `/api/special-subjects/structure?subjectCode=${encodeURIComponent(
+            sub.code
+          )}&grade=${encodeURIComponent(grade)}`
+        );
+        if (!res.ok) return;
+        const data = await res.json();
+        if (cancelled || !Array.isArray(data?.lessons) || data.lessons.length === 0) {
+          return;
+        }
+        const subjectEntries = rawEntries.filter((e: any) => {
+          const code = (
+            e?.assignment?.subject?.code ||
+            e?.subjectCode ||
+            ""
+          ).toUpperCase();
+          return code === sub.code;
+        });
+
+        const mapped: SpecialLessonPortfolioItem[] = data.lessons.map(
+          (l: any) => {
+            const matched =
+              subjectEntries.find(
+                (e: any) =>
+                  e.lessonId === l.id ||
+                  Number(e?.lesson?.periodIndex) === Number(l.periodIndex)
+              ) || null;
+            const evalRes =
+              matched?.evalResult && matched.evalResult !== "CHUA_DANH_GIA"
+                ? matched.evalResult
+                : matched?.resultText || null;
+            const rawFb = matched?.teacherFeedback
+              ? String(matched.teacherFeedback).trim()
+              : "";
+            return {
+              id: l.id,
+              periodIndex: Number(l.periodIndex),
+              lessonName: l.lessonName || `Bài ${l.periodIndex}`,
+              topicName: l.topicName || l.topic?.name || "Chủ đề bài học",
+              evalResult: evalRes,
+              evalLabel: formatSpecialEvalLabel(evalRes),
+              teacherFeedback: rawFb,
+              evaluatorName: "",
+              status: evalRes || rawFb ? "COMPLETED" : "UNGRADED",
+              isEvaluated: Boolean(evalRes || rawFb),
+            };
+          }
+        );
+
+        if (!cancelled) {
+          setFetchedLessonsMap((prev) => ({ ...prev, [key]: mapped }));
+        }
+      } catch {}
+    });
+
+    return () => {
+      cancelled = true;
+    };
+  }, [basePortfolio, student, fetchedLessonsMap]);
+
+  const portfolio = useMemo(() => {
+    return basePortfolio.map((sub) => {
+      const key = `${sub.code}_${sub.studentGrade || "1"}`;
+      const fetched = fetchedLessonsMap[key];
+      if (
+        fetched &&
+        fetched.length > (Array.isArray(sub.lessons) ? sub.lessons.length : 0)
+      ) {
+        return {
+          ...sub,
+          lessons: fetched,
+        };
+      }
+      return sub;
+    });
+  }, [basePortfolio, fetchedLessonsMap]);
 
   const getSubjectVisual = (code: string) => {
     switch (code) {
@@ -118,26 +219,16 @@ export function StudentSpecialSubjectsSection({
           <table className="w-full text-left text-xs border-collapse">
             <thead className="bg-slate-50 text-[10px] font-black text-slate-600 uppercase tracking-wider border-b border-slate-200">
               <tr>
-                <th className="py-2.5 px-3.5 w-[26%]">Môn học</th>
-                <th className="py-2.5 px-3.5 w-[34%]">Bài học</th>
-                <th className="py-2.5 px-2.5 text-center w-[15%]">Kết quả bài</th>
-                <th className="py-2.5 px-3.5 w-[25%]">Nhận xét của giáo viên</th>
+                <th className="py-2.5 px-3 w-[18%]">Môn học</th>
+                <th className="py-2.5 px-3 w-[22%]">Chủ đề</th>
+                <th className="py-2.5 px-3 w-[28%]">Bài học</th>
+                <th className="py-2.5 px-2 text-center w-[12%]">Kết quả bài</th>
+                <th className="py-2.5 px-3 w-[20%]">Nhận xét của giáo viên</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-slate-100 font-semibold text-slate-700">
               {portfolio.map((sub) => {
                 const { Icon, iconBg } = getSubjectVisual(sub.code);
-                const evaluatedRows =
-                  Array.isArray(sub.evaluatedLessons) && sub.evaluatedLessons.length > 0
-                    ? sub.evaluatedLessons
-                    : Array.isArray(sub.lessons)
-                    ? sub.lessons.filter(
-                        (l) =>
-                          (l.evalResult && l.evalResult !== "CHUA_DANH_GIA") ||
-                          Boolean(l.teacherFeedback && l.teacherFeedback.trim())
-                      )
-                    : [];
-
                 const meta = SPECIAL_SUBJECTS_CATALOG_META[sub.code];
                 const fallbackFirstLessonName =
                   meta?.firstLessonByGrade?.[sub.studentGrade || "1"] ||
@@ -146,17 +237,19 @@ export function StudentSpecialSubjectsSection({
                     : "") ||
                   sub.name;
 
-                const displayRows =
-                  evaluatedRows.length > 0
-                    ? evaluatedRows
-                    : Array.isArray(sub.lessons) && sub.lessons.length > 0
-                    ? [sub.lessons[0]]
+                // Hiển thị đầy đủ danh sách tất cả chủ đề và bài học của môn học theo khối lớp
+                const displayRows: SpecialLessonPortfolioItem[] =
+                  Array.isArray(sub.lessons) && sub.lessons.length > 0
+                    ? sub.lessons
+                    : Array.isArray(sub.evaluatedLessons) &&
+                      sub.evaluatedLessons.length > 0
+                    ? sub.evaluatedLessons
                     : [
                         {
                           id: `${sub.code}-p1`,
                           periodIndex: 1,
                           lessonName: fallbackFirstLessonName,
-                          topicName: "",
+                          topicName: "Chủ đề 1",
                           evalResult: null,
                           evalLabel: "Chưa đánh giá",
                           teacherFeedback: "",
@@ -166,49 +259,81 @@ export function StudentSpecialSubjectsSection({
                         },
                       ];
 
-                return displayRows.map((lesson, idx) => (
-                  <tr
-                    key={`${sub.code}-${lesson.id || idx}`}
-                    className="hover:bg-slate-50/70 transition-colors align-top"
-                  >
-                    {idx === 0 && (
-                      <td
-                        rowSpan={displayRows.length}
-                        className="py-2.5 px-3.5 border-r border-slate-100 align-top"
-                      >
-                        <div className="flex items-center gap-2.5">
-                          <div
-                            className={`w-7 h-7 rounded-lg border flex items-center justify-center shrink-0 ${iconBg}`}
-                          >
-                            <Icon className="w-3.5 h-3.5" />
+                return displayRows.map((lesson, idx) => {
+                  const currTopic = (lesson.topicName || "—").trim();
+                  const prevTopic =
+                    idx > 0
+                      ? (displayRows[idx - 1].topicName || "—").trim()
+                      : null;
+                  const isFirstOfTopic = idx === 0 || currTopic !== prevTopic;
+
+                  let topicSpan = 1;
+                  if (isFirstOfTopic) {
+                    for (let j = idx + 1; j < displayRows.length; j++) {
+                      const nextTopic = (
+                        displayRows[j].topicName || "—"
+                      ).trim();
+                      if (nextTopic === currTopic) {
+                        topicSpan++;
+                      } else {
+                        break;
+                      }
+                    }
+                  }
+
+                  return (
+                    <tr
+                      key={`${sub.code}-${lesson.id || idx}`}
+                      className="hover:bg-slate-50/70 transition-colors align-top"
+                    >
+                      {idx === 0 && (
+                        <td
+                          rowSpan={displayRows.length}
+                          className="py-2.5 px-3 border-r border-slate-100 align-top bg-white"
+                        >
+                          <div className="flex items-start gap-2">
+                            <div
+                              className={`w-7 h-7 rounded-lg border flex items-center justify-center shrink-0 mt-0.5 ${iconBg}`}
+                            >
+                              <Icon className="w-3.5 h-3.5" />
+                            </div>
+                            <span className="font-bold text-slate-900 leading-snug">
+                              {sub.name}
+                            </span>
                           </div>
-                          <span className="font-bold text-slate-900 leading-snug">
-                            {sub.name}
-                          </span>
+                        </td>
+                      )}
+                      {isFirstOfTopic && (
+                        <td
+                          rowSpan={topicSpan}
+                          className="py-2 px-3 border-r border-slate-100 align-top text-slate-700 font-semibold leading-snug bg-slate-50/30"
+                        >
+                          {currTopic}
+                        </td>
+                      )}
+                      <td className="py-2 px-3 align-middle">
+                        <div className="font-semibold text-slate-800 leading-snug">
+                          {lesson.periodIndex
+                            ? `Bài ${lesson.periodIndex}: ${lesson.lessonName}`
+                            : lesson.lessonName}
                         </div>
                       </td>
-                    )}
-                    <td className="py-2.5 px-3.5 align-middle">
-                      <div className="font-semibold text-slate-800 leading-snug">
-                        {lesson.periodIndex
-                          ? `Bài ${lesson.periodIndex}: ${lesson.lessonName}`
-                          : lesson.lessonName}
-                      </div>
-                    </td>
-                    <td className="py-2.5 px-2.5 text-center align-middle">
-                      {renderLevelBadge(lesson.evalLabel)}
-                    </td>
-                    <td className="py-2.5 px-3.5 align-middle">
-                      {lesson.teacherFeedback && lesson.teacherFeedback.trim() ? (
-                        <div className="text-[11px] text-slate-700 font-normal leading-relaxed">
-                          {lesson.teacherFeedback.trim()}
-                        </div>
-                      ) : (
-                        <span className="text-slate-400 font-normal">—</span>
-                      )}
-                    </td>
-                  </tr>
-                ));
+                      <td className="py-2 px-2 text-center align-middle">
+                        {renderLevelBadge(lesson.evalLabel)}
+                      </td>
+                      <td className="py-2 px-3 align-middle">
+                        {lesson.teacherFeedback &&
+                        lesson.teacherFeedback.trim() ? (
+                          <div className="text-[11px] text-slate-700 font-normal leading-relaxed">
+                            {lesson.teacherFeedback.trim()}
+                          </div>
+                        ) : (
+                          <span className="text-slate-400 font-normal">—</span>
+                        )}
+                      </td>
+                    </tr>
+                  );
+                });
               })}
             </tbody>
           </table>
