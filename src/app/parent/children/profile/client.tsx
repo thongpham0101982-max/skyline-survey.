@@ -26,12 +26,14 @@ import {
   Heart,
   Globe,
   Loader2,
-  ChevronRight
+  ChevronRight,
+  Lock,
+  Clock
 } from "lucide-react"
 import StudentProfileCoverA4 from "@/components/student/StudentProfileCoverA4"
 import { StudentSpecialSubjectsSection } from "@/components/student/StudentSpecialSubjectsSection"
 import { StudentCompetencyPortfolio } from "@/components/competency/StudentCompetencyPortfolio"
-import { resolveStudentSectionVisibility } from "@/lib/studentProfileSectionConfig"
+import { resolveStudentSectionVisibility, resolveParentPortalUnlocked } from "@/lib/studentProfileSectionConfig"
 
 const getCategoryLabel = (cat: string) => {
   if (!cat) return "Lĩnh vực khác"
@@ -73,6 +75,7 @@ export default function ParentStudentProfilePage({
   const [isDownloadingPDF, setIsDownloadingPDF] = useState(false)
   const [cvViewMode, setCvViewMode] = useState<"all" | "cover" | "content">("all")
   const [configMap, setConfigMap] = useState<Record<string, Record<string, boolean>>>({})
+  const [configLoaded, setConfigLoaded] = useState<boolean>(false)
   const [activeTab, setActiveTab] = useState<
     | "hshs_detail"
     | "advisory"
@@ -95,6 +98,7 @@ export default function ParentStudentProfilePage({
         }
       })
       .catch(() => {})
+      .finally(() => setConfigLoaded(true))
   }, [])
 
   useEffect(() => {
@@ -510,6 +514,71 @@ export default function ParentStudentProfilePage({
             </div>
           </div>
         )
+      ) : !configLoaded ? (
+        <div className="py-16 text-center text-xs font-extrabold text-slate-400 animate-pulse bg-white rounded-3xl border border-slate-200">
+          <Loader2 className="w-7 h-7 mx-auto mb-2 text-[#00A19A] animate-spin" />
+          Đang kiểm tra trạng thái Hồ sơ Học sinh...
+        </div>
+      ) : !resolveParentPortalUnlocked(enrichedStudent, configMap) ? (
+        <div className="bg-white rounded-3xl border border-slate-200/90 shadow-sm overflow-hidden relative">
+          <div className="h-2 bg-gradient-to-r from-[#003B3A] via-[#00A19A] to-[#48BFE3]" />
+          <div className="p-8 sm:p-14 text-center max-w-2xl mx-auto space-y-6">
+            <div className="w-20 h-20 rounded-3xl bg-gradient-to-br from-teal-50 to-amber-50 border-2 border-teal-200/80 flex items-center justify-center mx-auto shadow-xs relative">
+              <Clock className="w-10 h-10 text-[#00A19A]" />
+              <div className="absolute -bottom-1.5 -right-1.5 w-7 h-7 rounded-xl bg-amber-500 text-white flex items-center justify-center shadow-sm border-2 border-white">
+                <Lock className="w-3.5 h-3.5" />
+              </div>
+            </div>
+
+            <div className="space-y-2.5">
+              <span className="inline-flex items-center gap-1.5 px-3.5 py-1 rounded-full bg-amber-50 text-amber-800 border border-amber-200 text-[11px] font-black uppercase tracking-wider">
+                <Lock className="w-3 h-3 text-amber-600" />
+                Thông báo Hệ thống Hồ sơ Học sinh
+              </span>
+              <h2 className="text-xl sm:text-2xl font-black text-[#003B3A] tracking-tight">
+                Hồ sơ đang cập nhật
+              </h2>
+              <p className="text-sm sm:text-base font-bold text-slate-700 leading-relaxed max-w-xl mx-auto">
+                Hệ thống sẽ mở định kỳ giữa Kỳ 1, Cuối Kỳ 1, Giữa kỳ 2, Cuối kỳ 2 để phụ huynh truy cập
+              </p>
+            </div>
+
+            <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 pt-2">
+              {[
+                { code: "GK1", title: "Giữa Kỳ 1", desc: "Đợt mở định kỳ 1" },
+                { code: "CK1", title: "Cuối Kỳ 1", desc: "Đợt mở định kỳ 2" },
+                { code: "GK2", title: "Giữa Kỳ 2", desc: "Đợt mở định kỳ 3" },
+                { code: "CK2", title: "Cuối Kỳ 2", desc: "Đợt mở định kỳ 4" }
+              ].map((period) => (
+                <div
+                  key={period.code}
+                  className="p-3.5 rounded-2xl bg-slate-50/90 border border-slate-200/80 text-center space-y-1 shadow-2xs"
+                >
+                  <div className="w-7 h-7 rounded-lg bg-teal-50 text-[#00A19A] border border-teal-200/70 font-black text-[10px] flex items-center justify-center mx-auto">
+                    {period.code}
+                  </div>
+                  <div className="text-xs font-black text-slate-800">{period.title}</div>
+                  <div className="text-[10px] font-semibold text-slate-400">{period.desc}</div>
+                </div>
+              ))}
+            </div>
+
+            <div className="p-4 rounded-2xl bg-teal-50/50 border border-teal-200/70 text-xs text-slate-600 font-medium leading-relaxed">
+              Hồ sơ năng lực 360° của học sinh <strong className="text-slate-900">{enrichedStudent.studentName}</strong> (Lớp{" "}
+              <strong className="text-slate-900">{classNameStr}</strong> • GVCN:{" "}
+              <strong className="text-[#003B3A]">{homeroomTeacherName}</strong>) hiện đang trong quá trình rà soát và cập nhật dữ liệu chuyên môn.
+            </div>
+
+            <div className="pt-1 flex justify-center">
+              <Link
+                href="/parent"
+                className="px-5 py-2.5 rounded-2xl bg-[#003B3A] text-white text-xs font-bold hover:bg-[#004D4A] transition-all shadow-xs"
+              >
+                Quay về trang Tổng quan
+              </Link>
+            </div>
+          </div>
+        </div>
       ) : (
         <div className="space-y-6">
           {/* TAB BAR SYNCHRONIZED WITH GVCN STUDENT PROFILE */}

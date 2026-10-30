@@ -1,9 +1,11 @@
 export interface ProfileSectionVisibility {
+  parentPortalUnlocked?: boolean;  // MỞ / KHÓA HỒ SƠ HỌC SINH ĐỐI VỚI PHỤ HUYNH
   advisoryGoals: boolean;          // CỐ VẤN HỌC TẬP & NHẬT KÝ THEO DÕI MỤC TIÊU
   moetPeriodicGrades: boolean;     // I. KẾT QUẢ HỌC TẬP VĂN HÓA (MOET) - 1. Điểm kiểm tra định kỳ (KSĐN, GK1, CK1, GK2, CK2)
   moetTermGrades: boolean;         // I. KẾT QUẢ HỌC TẬP VĂN HÓA (MOET) - 2. Bảng điểm Học tập tổng kết (CK1, CK2, Cả năm)
   specialSubjects: boolean;        // MÔN HỌC ĐẶC THÙ SKL (CXXH, FIN_EDU, GDGT, GDHN...)
   bilingualGrades: boolean;        // IV. KẾT QUẢ HỌC TẬP CHƯƠNG TRÌNH SONG NGỮ
+  internationalCertificates: boolean; // V. KẾT QUẢ KHẢO THÍ QUỐC TẾ & CHỨNG CHỈ (CAMBRIDGE / IELTS / PEARSON)
   achievements: boolean;           // VI. THÀNH TÍCH & BẢNG VÀNG KHEN THƯỞNG
   experientialActivities: boolean; // HOẠT ĐỘNG TRẢI NGHIỆM
   homeroomTeacherComment: boolean; // VIII. NHẬN XÉT NỔI BẬT ĐỊNH KỲ TỪ GIÁO VIÊN CHỦ NHIỆM
@@ -12,11 +14,13 @@ export interface ProfileSectionVisibility {
 }
 
 export const DEFAULT_PROFILE_SECTIONS: ProfileSectionVisibility = {
+  parentPortalUnlocked: false,
   advisoryGoals: true,
   moetPeriodicGrades: true,
   moetTermGrades: true,
   specialSubjects: true,
   bilingualGrades: true,
+  internationalCertificates: true,
   achievements: true,
   experientialActivities: true,
   homeroomTeacherComment: true,
@@ -64,6 +68,13 @@ export const SECTION_DEFINITIONS: Array<{
     label: "IV. KẾT QUẢ HỌC TẬP CHƯƠNG TRÌNH SONG NGỮ",
     shortLabel: "Chương trình Song ngữ (ESL, CAM...)",
     description: "Bảng điểm các môn tiếng Anh quốc tế, Cambridge, Toán/Khoa học tiếng Anh",
+    category: "Quốc tế & Song ngữ",
+  },
+  {
+    key: "internationalCertificates",
+    label: "V. KẾT QUẢ KHẢO THÍ QUỐC TẾ & CHỨNG CHỈ (CAMBRIDGE / IELTS / PEARSON)",
+    shortLabel: "Chứng chỉ Quốc tế (Cambridge, IELTS, Pearson)",
+    description: "Hộ chiếu khảo thí quốc tế: Starters/Movers/Flyers, KET/PET, IELTS, Pearson iPrimary/iLS, Checkpoint",
     category: "Quốc tế & Song ngữ",
   },
   {
@@ -167,4 +178,12 @@ export function resolveStudentSectionVisibility(
   });
 
   return result;
+}
+
+export function resolveParentPortalUnlocked(
+  student: any,
+  configMap: Record<string, Record<string, boolean>> = {}
+): boolean {
+  const vis = resolveStudentSectionVisibility(student, configMap);
+  return Boolean(vis.parentPortalUnlocked);
 }

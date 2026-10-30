@@ -3,7 +3,7 @@
 import React, { useState, useEffect } from "react";
 import {
   X, Check, Settings2, Sliders, CheckSquare, Square,
-  RotateCcw, Save, Layers, School, Info, ShieldCheck, Sparkles, Loader2
+  RotateCcw, Save, Layers, School, Info, ShieldCheck, Sparkles, Loader2, Lock, Unlock
 } from "lucide-react";
 import {
   SECTION_DEFINITIONS,
@@ -270,6 +270,55 @@ export default function StudentProfileSectionConfigModal({
                 Khi chọn <strong>"Tất cả"</strong>, cấu hình sẽ áp dụng mặc định cho các Khối/Hệ chưa có cấu hình riêng lẻ. Khi chọn cụ thể Khối và Hệ (ví dụ: Khối 1 - Hệ Song bằng), hệ thống sẽ ưu tiên áp dụng cấu hình riêng này khi xuất Hồ sơ.
               </span>
             </div>
+          </div>
+
+          {/* Toggle Mở / Khóa Cổng Phụ huynh */}
+          <div
+            onClick={() => handleToggle("parentPortalUnlocked")}
+            className={`p-4 rounded-xl border-2 transition cursor-pointer flex items-center justify-between gap-3 ${
+              currentSections.parentPortalUnlocked
+                ? "bg-emerald-50/80 border-emerald-300 shadow-2xs"
+                : "bg-amber-50/80 border-amber-300 shadow-2xs"
+            }`}
+          >
+            <div className="flex items-start gap-3">
+              <div
+                className={`w-9 h-9 rounded-xl flex items-center justify-center shrink-0 text-white ${
+                  currentSections.parentPortalUnlocked ? "bg-emerald-600" : "bg-amber-500"
+                }`}
+              >
+                {currentSections.parentPortalUnlocked ? (
+                  <Unlock className="w-4 h-4" />
+                ) : (
+                  <Lock className="w-4 h-4" />
+                )}
+              </div>
+              <div>
+                <div className="text-xs font-black uppercase text-slate-900 flex items-center gap-2">
+                  <span>MỞ KHÓA HỒ SƠ HỌC SINH CHO PHỤ HUYNH XEM</span>
+                  <span
+                    className={`px-2 py-0.5 rounded-full text-[10px] font-black ${
+                      currentSections.parentPortalUnlocked
+                        ? "bg-emerald-100 text-emerald-900 border border-emerald-300"
+                        : "bg-amber-100 text-amber-900 border border-amber-300"
+                    }`}
+                  >
+                    {currentSections.parentPortalUnlocked ? "ĐANG MỞ KHÓA" : "ĐANG KHÓA"}
+                  </span>
+                </div>
+                <p className="text-[11px] text-slate-600 mt-0.5">
+                  {currentSections.parentPortalUnlocked
+                    ? "Phụ huynh thuộc phạm vi này được phép xem đầy đủ Hồ sơ Năng lực Học sinh."
+                    : 'Khi khóa, Phụ huynh sẽ thấy: "Hồ sơ đang cập nhật, Hệ thống sẽ mở định kỳ giữa Kỳ 1, Cuối Kỳ 1, Giữa kỳ 2, Cuối kỳ 2 để phụ huynh truy cập".'}
+                </p>
+              </div>
+            </div>
+            <input
+              type="checkbox"
+              checked={Boolean(currentSections.parentPortalUnlocked)}
+              onChange={() => {}}
+              className="w-5 h-5 rounded text-emerald-600 focus:ring-emerald-500 border-slate-300 cursor-pointer shrink-0"
+            />
           </div>
 
           {/* Quick toggle actions */}

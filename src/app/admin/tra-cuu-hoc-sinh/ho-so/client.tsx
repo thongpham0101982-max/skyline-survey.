@@ -19,6 +19,11 @@ import {
   RefreshCw,
   X,
   BadgeCheck,
+  BookMarked,
+  Lock,
+  Unlock,
+  Loader2,
+  ShieldCheck,
 } from "lucide-react";
 import * as XLSX from "xlsx";
 
@@ -39,6 +44,7 @@ interface ClassItem {
 interface StudentProfile {
   id: string;
   studentId: string;
+  vneduCode?: string | null;
   fullName: string;
   dateOfBirth: string | null;
   gender: string | null;
@@ -77,7 +83,48 @@ export default function HoSoClient() {
 
   const [selectedStudent, setSelectedStudent] = useState<StudentProfile | null>(null);
   const [isModalOpen, setIsModalOpen] = useState<boolean>(false);
+  const [parentPortalUnlocked, setParentPortalUnlocked] = useState<boolean>(false);
+  const [savingPortalLock, setSavingPortalLock] = useState<boolean>(false);
   const printRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    fetch("/api/admin/student-profiles/section-config")
+      .then((res) => res.json())
+      .then((json) => {
+        if (json?.success && json?.data) {
+          const allCfg = json.data["ALL_ALL"] || json.data["DEFAULT"] || {};
+          setParentPortalUnlocked(Boolean(allCfg.parentPortalUnlocked));
+        }
+      })
+      .catch(() => {});
+  }, []);
+
+  const handleToggleParentPortal = async () => {
+    const nextUnlocked = !parentPortalUnlocked;
+    setParentPortalUnlocked(nextUnlocked);
+    try {
+      setSavingPortalLock(true);
+      const res = await fetch("/api/admin/student-profiles/section-config", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          grade: "ALL",
+          educationSystem: "ALL",
+          toggleParentPortalOnly: true,
+          parentPortalUnlocked: nextUnlocked,
+        }),
+      });
+      const json = await res.json();
+      if (json?.success && json?.data) {
+        const allCfg = json.data["ALL_ALL"] || json.data["DEFAULT"] || {};
+        setParentPortalUnlocked(Boolean(allCfg.parentPortalUnlocked));
+      }
+    } catch (e) {
+      console.error("Error toggling parent portal lock:", e);
+    } finally {
+      setSavingPortalLock(false);
+    }
+  };
 
   useEffect(() => {
     async function fetchFilters() {
@@ -148,35 +195,110 @@ export default function HoSoClient() {
 
   const handleExportExcel = () => {
     if (students.length === 0) {
-      alert("Không có dữ liệu để xuất Excel");
+      alert("KhÃ´ng cÃ³ dá»¯ liá»‡u Ä‘á»ƒ xuáº¥t Excel");
       return;
     }
     const dataToExport = students.map((s, idx) => ({
       "STT": idx + 1,
-      "Mã học sinh": s.studentId,
-      "Họ và tên": s.fullName,
-      "Ngày sinh": s.dateOfBirth ? new Date(s.dateOfBirth).toLocaleDateString("vi-VN") : "",
-      "Giới tính": s.gender || "",
-      "Lớp": s.className,
-      "Khối": s.grade ? `Khối ${s.grade}` : "Mầm non",
-      "Cơ sở": s.campusName,
-      "Phụ huynh": s.parentName || "",
-      "Số điện thoại": s.parentPhone || "",
+      "MÃ£ há»c sinh": s.studentId,
+      "MÃ£ VnEdu (phá»¥)": s.vneduCode || "",
+      "Há» vÃ  tÃªn": s.fullName,
+      "NgÃ y sinh": s.dateOfBirth ? new Date(s.dateOfBirth).toLocaleDateString("vi-VN") : "",
+      "Giá»›i tÃ­nh": s.gender || "",
+      "Lá»›p": s.className,
+      "Khá»‘i": s.grade ? `Khá»‘i ${s.grade}` : "Máº§m non",
+      "CÆ¡ sá»Ÿ": s.campusName,
+      "Phá»¥ huynh": s.parentName || "",
+      "Sá»‘ Ä‘iá»‡n thoáº¡i": s.parentPhone || "",
       "Email": s.parentEmail || "",
-      "Địa chỉ": s.address || "",
-      "Trạng thái": s.status === "ACTIVE" ? "Đang học" : "Khác",
+      "Äá»‹a chá»‰": s.address || "",
+      "Tráº¡ng thÃ¡i": s.status === "ACTIVE" ? "Äang há»c" : "KhÃ¡c",
     }));
 
     const ws = XLSX.utils.json_to_sheet(dataToExport);
     const wb = XLSX.utils.book_new();
-    XLSX.utils.book_append_sheet(wb, ws, "Danh sách học sinh");
+    XLSX.utils.book_append_sheet(wb, ws, "Danh sÃ¡ch há»c sinh");
     XLSX.writeFile(wb, `Ho_So_Hoc_Sinh_SkyLine_${new Date().toISOString().slice(0, 10)}.xlsx`);
   };
 
   const maleCount = useMemo(() => students.filter((s) => s.gender === "Nam" || s.gender === "MALE").length, [students]);
-  const femaleCount = useMemo(() => students.filter((s) => s.gender === "Nữ" || s.gender === "FEMALE").length, [students]);
+  const femaleCount = useMemo(() => students.filter((s) => s.gender === "Ná»¯" || s.gender === "FEMALE").length, [students]);
   return (
     <div className="space-y-6">
+      {/* BANNER MỞ / KHÓA HỒ SƠ HỌC SINH ĐỐI VỚI PHỤ HUYNH */}
+      <div
+        className={`rounded-2xl p-4 border-2 shadow-xs transition-all flex flex-col md:flex-row md:items-center justify-between gap-3 ${
+          parentPortalUnlocked
+            ? "bg-gradient-to-r from-emerald-50/90 via-white to-teal-50/70 border-emerald-300"
+            : "bg-gradient-to-r from-amber-50/90 via-white to-orange-50/60 border-amber-300"
+        }`}
+      >
+        <div className="flex items-start sm:items-center gap-3">
+          <div
+            className={`w-10 h-10 rounded-xl flex items-center justify-center shrink-0 shadow-xs ${
+              parentPortalUnlocked ? "bg-emerald-600 text-white" : "bg-amber-500 text-white"
+            }`}
+          >
+            {parentPortalUnlocked ? <Unlock className="w-5 h-5" /> : <Lock className="w-5 h-5" />}
+          </div>
+          <div className="space-y-0.5">
+            <div className="flex flex-wrap items-center gap-2">
+              <span className="text-xs sm:text-sm font-black text-slate-900 uppercase tracking-wide">
+                QUYỀN TRUY CẬP HỒ SƠ HỌC SINH CỦA PHỤ HUYNH
+              </span>
+              <span
+                className={`inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[10px] font-black uppercase border ${
+                  parentPortalUnlocked
+                    ? "bg-emerald-100 text-emerald-900 border-emerald-300"
+                    : "bg-amber-100 text-amber-900 border-amber-300"
+                }`}
+              >
+                {parentPortalUnlocked ? (
+                  <>
+                    <ShieldCheck className="w-3 h-3 text-emerald-700" />
+                    <span>ĐANG MỞ KHÓA CHO PHỤ HUYNH</span>
+                  </>
+                ) : (
+                  <>
+                    <ShieldAlert className="w-3 h-3 text-amber-700" />
+                    <span>ĐANG KHÓA ĐỐI VỚI PHỤ HUYNH</span>
+                  </>
+                )}
+              </span>
+            </div>
+            <p className="text-[11px] text-slate-600 font-medium leading-relaxed">
+              {parentPortalUnlocked
+                ? "Phụ huynh hiện có thể xem đầy đủ Hồ sơ Năng lực Học sinh 360° (A4) trên cổng Phụ huynh."
+                : 'Khi khóa, giao diện Phụ huynh hiển thị: "Hồ sơ đang cập nhật, Hệ thống sẽ mở định kỳ giữa Kỳ 1, Cuối Kỳ 1, Giữa kỳ 2, Cuối kỳ 2 để phụ huynh truy cập".'}
+            </p>
+          </div>
+        </div>
+
+        <button
+          type="button"
+          onClick={handleToggleParentPortal}
+          disabled={savingPortalLock}
+          className={`flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-black shadow-sm transition-all cursor-pointer active:scale-95 disabled:opacity-60 shrink-0 self-end md:self-center ${
+            parentPortalUnlocked
+              ? "bg-amber-600 hover:bg-amber-700 text-white"
+              : "bg-gradient-to-r from-[#003B3A] to-[#00A19A] hover:brightness-110 text-white"
+          }`}
+        >
+          {savingPortalLock ? (
+            <Loader2 className="w-4 h-4 animate-spin" />
+          ) : parentPortalUnlocked ? (
+            <Lock className="w-4 h-4" />
+          ) : (
+            <Unlock className="w-4 h-4" />
+          )}
+          <span>
+            {parentPortalUnlocked
+              ? "Khóa Hồ sơ HS (Đóng cổng Phụ huynh)"
+              : "Mở Khóa Hồ sơ HS (Cho Phụ huynh xem)"}
+          </span>
+        </button>
+      </div>
+
       {/* FILTER BAR CARD */}
       <div className="bg-white rounded-2xl p-5 border border-slate-200/80 shadow-xs">
         <form onSubmit={handleSearchSubmit} className="space-y-4">
@@ -185,7 +307,7 @@ export default function HoSoClient() {
               <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
               <input
                 type="text"
-                placeholder="Tìm theo Mã học sinh, Họ tên, SĐT phụ huynh..."
+                placeholder="TÃ¬m theo MÃ£ há»c sinh, Há» tÃªn, SÄT phá»¥ huynh..."
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
                 className="w-full pl-10 pr-4 py-2.5 bg-slate-50 border border-slate-300 rounded-xl text-sm focus:outline-hidden focus:ring-2 focus:ring-[#00A19A] text-slate-800"
@@ -196,7 +318,7 @@ export default function HoSoClient() {
               className="px-5 py-2.5 bg-[#00A19A] hover:bg-[#008B85] text-white text-sm font-semibold rounded-xl transition flex items-center justify-center gap-2 shadow-sm shrink-0"
             >
               <Search className="w-4 h-4" />
-              <span>Tìm kiếm</span>
+              <span>TÃ¬m kiáº¿m</span>
             </button>
             <button
               type="button"
@@ -204,21 +326,21 @@ export default function HoSoClient() {
               className="px-4 py-2.5 bg-emerald-50 hover:bg-emerald-100 text-emerald-700 border border-emerald-300 rounded-xl text-sm font-semibold transition flex items-center justify-center gap-2 shrink-0"
             >
               <Download className="w-4 h-4" />
-              <span>Xuất Excel</span>
+              <span>Xuáº¥t Excel</span>
             </button>
           </div>
 
           <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-3 pt-2 border-t border-slate-100">
             <div>
               <label className="block text-[11px] font-bold text-slate-500 uppercase tracking-wider mb-1">
-                Cơ sở
+                CÆ¡ sá»Ÿ
               </label>
               <select
                 value={selectedCampus}
                 onChange={(e) => { setSelectedCampus(e.target.value); setPage(1); }}
                 className="w-full bg-slate-50 border border-slate-300 rounded-xl px-3 py-2 text-xs font-semibold text-slate-700 focus:outline-hidden focus:ring-2 focus:ring-[#00A19A]"
               >
-                <option value="all">Tất cả cơ sở</option>
+                <option value="all">Táº¥t cáº£ cÆ¡ sá»Ÿ</option>
                 {campuses.map((c) => (
                   <option key={c.id} value={c.id}>{c.name}</option>
                 ))}
@@ -227,50 +349,50 @@ export default function HoSoClient() {
 
             <div>
               <label className="block text-[11px] font-bold text-slate-500 uppercase tracking-wider mb-1">
-                Cấp học
+                Cáº¥p há»c
               </label>
               <select
                 value={selectedBlock}
                 onChange={(e) => { setSelectedBlock(e.target.value); setPage(1); }}
                 className="w-full bg-slate-50 border border-slate-300 rounded-xl px-3 py-2 text-xs font-semibold text-slate-700 focus:outline-hidden focus:ring-2 focus:ring-[#00A19A]"
               >
-                <option value="all">Tất cả cấp học</option>
-                <option value="MAM_NON">Mầm non (Preschool)</option>
-                <option value="TIEU_HOC">Tiểu học (Lớp 1-5)</option>
-                <option value="THCS">THCS (Lớp 6-9)</option>
-                <option value="THPT">THPT (Lớp 10-12)</option>
+                <option value="all">Táº¥t cáº£ cáº¥p há»c</option>
+                <option value="MAM_NON">Máº§m non (Preschool)</option>
+                <option value="TIEU_HOC">Tiá»ƒu há»c (Lá»›p 1-5)</option>
+                <option value="THCS">THCS (Lá»›p 6-9)</option>
+                <option value="THPT">THPT (Lá»›p 10-12)</option>
               </select>
             </div>
 
             <div>
               <label className="block text-[11px] font-bold text-slate-500 uppercase tracking-wider mb-1">
-                Khối lớp
+                Khá»‘i lá»›p
               </label>
               <select
                 value={selectedGrade}
                 onChange={(e) => { setSelectedGrade(e.target.value); setPage(1); }}
                 className="w-full bg-slate-50 border border-slate-300 rounded-xl px-3 py-2 text-xs font-semibold text-slate-700 focus:outline-hidden focus:ring-2 focus:ring-[#00A19A]"
               >
-                <option value="all">Tất cả các khối</option>
+                <option value="all">Táº¥t cáº£ cÃ¡c khá»‘i</option>
                 {Array.from({ length: 12 }, (_, i) => i + 1).map((g) => (
-                  <option key={g} value={g.toString()}>Khối {g}</option>
+                  <option key={g} value={g.toString()}>Khá»‘i {g}</option>
                 ))}
               </select>
             </div>
 
             <div>
               <label className="block text-[11px] font-bold text-slate-500 uppercase tracking-wider mb-1">
-                Lớp học
+                Lá»›p há»c
               </label>
               <select
                 value={selectedClass}
                 onChange={(e) => { setSelectedClass(e.target.value); setPage(1); }}
                 className="w-full bg-slate-50 border border-slate-300 rounded-xl px-3 py-2 text-xs font-semibold text-slate-700 focus:outline-hidden focus:ring-2 focus:ring-[#00A19A]"
               >
-                <option value="all">Tất cả các lớp</option>
+                <option value="all">Táº¥t cáº£ cÃ¡c lá»›p</option>
                 {classesToShow.map((cls) => (
                   <option key={cls.id} value={cls.id}>
-                    {cls.className} ({cls.grade ? `K${cls.grade}` : "Mầm non"})
+                    {cls.className} ({cls.grade ? `K${cls.grade}` : "Máº§m non"})
                   </option>
                 ))}
               </select>
@@ -278,18 +400,18 @@ export default function HoSoClient() {
 
             <div>
               <label className="block text-[11px] font-bold text-slate-500 uppercase tracking-wider mb-1">
-                Trạng thái
+                Tráº¡ng thÃ¡i
               </label>
               <select
                 value={statusFilter}
                 onChange={(e) => { setStatusFilter(e.target.value); setPage(1); }}
                 className="w-full bg-slate-50 border border-slate-300 rounded-xl px-3 py-2 text-xs font-semibold text-slate-700 focus:outline-hidden focus:ring-2 focus:ring-[#00A19A]"
               >
-                <option value="all">Tất cả trạng thái</option>
-                <option value="ACTIVE">Đang học</option>
-                <option value="INACTIVE">Tạm nghỉ / Bảo lưu</option>
-                <option value="TRANSFERRED">Chuyển trường</option>
-                <option value="GRADUATED">Đã tốt nghiệp</option>
+                <option value="all">Táº¥t cáº£ tráº¡ng thÃ¡i</option>
+                <option value="ACTIVE">Äang há»c</option>
+                <option value="INACTIVE">Táº¡m nghá»‰ / Báº£o lÆ°u</option>
+                <option value="TRANSFERRED">Chuyá»ƒn trÆ°á»ng</option>
+                <option value="GRADUATED">ÄÃ£ tá»‘t nghiá»‡p</option>
               </select>
             </div>
           </div>
@@ -304,7 +426,7 @@ export default function HoSoClient() {
           </div>
           <div>
             <div className="text-xl font-bold text-slate-800">{totalStudents}</div>
-            <div className="text-xs text-slate-500 font-medium">Học sinh trong bộ lọc</div>
+            <div className="text-xs text-slate-500 font-medium">Há»c sinh trong bá»™ lá»c</div>
           </div>
         </div>
 
@@ -314,7 +436,7 @@ export default function HoSoClient() {
           </div>
           <div>
             <div className="text-xl font-bold text-slate-800">{maleCount}</div>
-            <div className="text-xs text-slate-500 font-medium">Nam (trên trang)</div>
+            <div className="text-xs text-slate-500 font-medium">Nam (trÃªn trang)</div>
           </div>
         </div>
 
@@ -324,7 +446,7 @@ export default function HoSoClient() {
           </div>
           <div>
             <div className="text-xl font-bold text-slate-800">{femaleCount}</div>
-            <div className="text-xs text-slate-500 font-medium">Nữ (trên trang)</div>
+            <div className="text-xs text-slate-500 font-medium">Ná»¯ (trÃªn trang)</div>
           </div>
         </div>
 
@@ -336,7 +458,7 @@ export default function HoSoClient() {
             <div className="text-xl font-bold text-slate-800">
               {students.filter((s) => s.status === "ACTIVE").length}
             </div>
-            <div className="text-xs text-slate-500 font-medium">Đang theo học</div>
+            <div className="text-xs text-slate-500 font-medium">Äang theo há»c</div>
           </div>
         </div>
       </div>
@@ -345,7 +467,7 @@ export default function HoSoClient() {
         <div className="p-4 border-b border-slate-100 flex items-center justify-between">
           <h2 className="text-base font-bold text-[#003B3A] flex items-center gap-2">
             <GraduationCap className="w-5 h-5 text-[#00A19A]" />
-            Danh sách hồ sơ học sinh ({totalStudents})
+            Danh sÃ¡ch há»“ sÆ¡ há»c sinh ({totalStudents})
           </h2>
           <div className="text-xs text-slate-500">
             Trang {page} / {totalPages || 1}
@@ -357,13 +479,13 @@ export default function HoSoClient() {
             <thead className="bg-slate-50/75 border-b border-slate-200 text-slate-600 text-xs font-semibold uppercase tracking-wider">
               <tr>
                 <th className="py-3.5 px-4 w-12 text-center">STT</th>
-                <th className="py-3.5 px-4">Mã HS</th>
-                <th className="py-3.5 px-4">Họ và tên</th>
-                <th className="py-3.5 px-4">Ngày sinh & Giới tính</th>
-                <th className="py-3.5 px-4">Lớp & Cơ sở</th>
-                <th className="py-3.5 px-4">Phụ huynh & Liên hệ</th>
-                <th className="py-3.5 px-4 text-center">Trạng thái</th>
-                <th className="py-3.5 px-4 text-center">Thao tác</th>
+                <th className="py-3.5 px-4">MÃ£ HS</th>
+                <th className="py-3.5 px-4">Há» vÃ  tÃªn</th>
+                <th className="py-3.5 px-4">NgÃ y sinh & Giá»›i tÃ­nh</th>
+                <th className="py-3.5 px-4">Lá»›p & CÆ¡ sá»Ÿ</th>
+                <th className="py-3.5 px-4">Phá»¥ huynh & LiÃªn há»‡</th>
+                <th className="py-3.5 px-4 text-center">Tráº¡ng thÃ¡i</th>
+                <th className="py-3.5 px-4 text-center">Thao tÃ¡c</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-slate-100">
@@ -371,14 +493,14 @@ export default function HoSoClient() {
                 <tr>
                   <td colSpan={8} className="py-12 text-center text-slate-500">
                     <RefreshCw className="w-6 h-6 animate-spin mx-auto mb-2 text-[#00A19A]" />
-                    Đang tải dữ liệu hồ sơ học sinh...
+                    Äang táº£i dá»¯ liá»‡u há»“ sÆ¡ há»c sinh...
                   </td>
                 </tr>
               ) : students.length === 0 ? (
                 <tr>
                   <td colSpan={8} className="py-12 text-center text-slate-500">
                     <User className="w-8 h-8 mx-auto mb-2 text-slate-300" />
-                    Không tìm thấy học sinh nào phù hợp với bộ lọc.
+                    KhÃ´ng tÃ¬m tháº¥y há»c sinh nÃ o phÃ¹ há»£p vá»›i bá»™ lá»c.
                   </td>
                 </tr>
               ) : (
@@ -389,8 +511,18 @@ export default function HoSoClient() {
                       <td className="py-3 px-4 text-center text-xs text-slate-400 font-mono">
                         {(page - 1) * pageSize + index + 1}
                       </td>
-                      <td className="py-3 px-4 font-mono font-bold text-xs text-[#003B3A]">
-                        {stu.studentId}
+                      <td className="py-3 px-4">
+                        <div className="font-mono font-bold text-xs text-[#003B3A]">
+                          {stu.studentId}
+                        </div>
+                        {stu.vneduCode && (
+                          <div className="text-[11px] font-mono text-slate-500 font-medium mt-1 flex items-center gap-1">
+                            <span className="text-[9px] uppercase px-1.5 py-0.5 rounded bg-amber-50 border border-amber-200 text-amber-700 font-semibold tracking-wider">
+                              VnEdu
+                            </span>
+                            <span className="text-slate-600">{stu.vneduCode}</span>
+                          </div>
+                        )}
                       </td>
                       <td className="py-3 px-4">
                         <div className="flex items-center gap-3">
@@ -402,7 +534,7 @@ export default function HoSoClient() {
                               {stu.fullName}
                             </span>
                             <div className="text-[11px] text-slate-400">
-                              {stu.schoolBlock === "MAM_NON" ? "Mầm non" : stu.grade ? `Khối ${stu.grade}` : ""}
+                              {stu.schoolBlock === "MAM_NON" ? "Máº§m non" : stu.grade ? `Khá»‘i ${stu.grade}` : ""}
                             </div>
                           </div>
                         </div>
@@ -446,7 +578,7 @@ export default function HoSoClient() {
                               : "bg-amber-50 text-amber-700 border border-amber-200"
                           }`}
                         >
-                          {stu.status === "ACTIVE" ? "Đang học" : stu.status === "GRADUATED" ? "Tốt nghiệp" : "Khác"}
+                          {stu.status === "ACTIVE" ? "Äang há»c" : stu.status === "GRADUATED" ? "Tá»‘t nghiá»‡p" : "KhÃ¡c"}
                         </span>
                       </td>
                       <td className="py-3 px-4 text-center">
@@ -458,19 +590,27 @@ export default function HoSoClient() {
                               setIsModalOpen(true);
                             }}
                             className="p-1.5 rounded-lg bg-teal-50 text-[#00A19A] hover:bg-[#00A19A] hover:text-white transition"
-                            title="Xem hồ sơ chi tiết 360°"
+                            title="Xem há»“ sÆ¡ chi tiáº¿t 360Â°"
                           >
                             <Eye className="w-4 h-4" />
                           </button>
                           <button
                             type="button"
                             onClick={() => {
-                              setSelectedStudent(stu);
-                              setIsModalOpen(true);
-                              setTimeout(() => window.print(), 300);
+                              window.open(`/teacher/ho-so-hoc-sinh/print?type=student&studentId=${stu.id}&mode=cover&autoprint=1`, "_blank");
                             }}
-                            className="p-1.5 rounded-lg bg-slate-100 text-slate-600 hover:bg-slate-200 transition"
-                            title="In phiếu hồ sơ A4"
+                            className="p-1.5 rounded-lg bg-amber-50 text-amber-700 hover:bg-amber-600 hover:text-white transition cursor-pointer"
+                            title="In riÃªng BÃ¬a Há»“ sÆ¡ A4 (tá»± Ä‘á»™ng gÃ¡n MÃ£ HS & MÃ£ QR)"
+                          >
+                            <BookMarked className="w-4 h-4" />
+                          </button>
+                          <button
+                            type="button"
+                            onClick={() => {
+                              window.open(`/teacher/ho-so-hoc-sinh/print?type=student&studentId=${stu.id}&mode=all&autoprint=1`, "_blank");
+                            }}
+                            className="p-1.5 rounded-lg bg-slate-100 text-slate-600 hover:bg-slate-200 transition cursor-pointer"
+                            title="In trá»n bá»™ Há»“ sÆ¡ kÃ¨m BÃ¬a A4"
                           >
                             <Printer className="w-4 h-4" />
                           </button>
@@ -487,8 +627,8 @@ export default function HoSoClient() {
         {/* PAGINATION */}
         <div className="p-4 border-t border-slate-100 flex items-center justify-between">
           <div className="text-xs text-slate-500">
-            Hiển thị {students.length > 0 ? (page - 1) * pageSize + 1 : 0} đến{" "}
-            {Math.min(page * pageSize, totalStudents)} trong tổng số {totalStudents} học sinh
+            Hiá»ƒn thá»‹ {students.length > 0 ? (page - 1) * pageSize + 1 : 0} Ä‘áº¿n{" "}
+            {Math.min(page * pageSize, totalStudents)} trong tá»•ng sá»‘ {totalStudents} há»c sinh
           </div>
           <div className="flex items-center gap-2">
             <button
@@ -522,21 +662,47 @@ export default function HoSoClient() {
                 </div>
                 <div>
                   <h3 className="text-lg font-bold">{selectedStudent.fullName}</h3>
-                  <p className="text-xs text-teal-100 flex items-center gap-2">
-                    <span>Mã HS: {selectedStudent.studentId}</span>
-                    <span>•</span>
-                    <span>Lớp: {selectedStudent.className}</span>
+                  <p className="text-xs text-teal-100 flex flex-wrap items-center gap-2">
+                    <span>MÃ£ HS: <strong className="font-mono text-white">{selectedStudent.studentId}</strong></span>
+                    {selectedStudent.vneduCode && (
+                      <>
+                        <span>â€¢</span>
+                        <span className="bg-amber-400/20 text-amber-200 border border-amber-300/30 px-1.5 py-0.5 rounded text-[11px] font-mono">
+                          MÃ£ VnEdu: {selectedStudent.vneduCode}
+                        </span>
+                      </>
+                    )}
+                    <span>â€¢</span>
+                    <span>Lá»›p: {selectedStudent.className}</span>
                   </p>
                 </div>
               </div>
               <div className="flex items-center gap-2">
                 <button
                   type="button"
-                  onClick={() => window.print()}
-                  className="px-3 py-1.5 bg-white/20 hover:bg-white/30 text-white rounded-lg text-xs font-semibold flex items-center gap-1.5 transition"
+                  onClick={() => {
+                    if (selectedStudent) {
+                      window.open(`/teacher/ho-so-hoc-sinh/print?type=student&studentId=${selectedStudent.id}&mode=cover&autoprint=1`, "_blank");
+                    }
+                  }}
+                  className="px-3 py-1.5 bg-amber-500 hover:bg-amber-600 text-white rounded-lg text-xs font-bold flex items-center gap-1.5 transition shadow-xs cursor-pointer"
+                  title="In riÃªng BÃ¬a Há»“ sÆ¡ A4 (tá»± Ä‘á»™ng gÃ¡n MÃ£ HS & MÃ£ QR)"
+                >
+                  <BookMarked className="w-3.5 h-3.5" />
+                  <span>In BÃ¬a A4</span>
+                </button>
+                <button
+                  type="button"
+                  onClick={() => {
+                    if (selectedStudent) {
+                      window.open(`/teacher/ho-so-hoc-sinh/print?type=student&studentId=${selectedStudent.id}&mode=all&autoprint=1`, "_blank");
+                    }
+                  }}
+                  className="px-3 py-1.5 bg-white/20 hover:bg-white/30 text-white rounded-lg text-xs font-semibold flex items-center gap-1.5 transition cursor-pointer"
+                  title="In trá»n bá»™ BÃ¬a vÃ  Há»“ sÆ¡ A4"
                 >
                   <Printer className="w-3.5 h-3.5" />
-                  <span>In A4</span>
+                  <span>In Trá»n Bá»™ A4</span>
                 </button>
                 <button
                   type="button"
@@ -552,42 +718,48 @@ export default function HoSoClient() {
               <div>
                 <h4 className="text-xs font-bold text-slate-400 uppercase tracking-wider mb-3 flex items-center gap-1.5">
                   <User className="w-4 h-4 text-[#00A19A]" />
-                  Thông tin cá nhân học sinh
+                  ThÃ´ng tin cÃ¡ nhÃ¢n há»c sinh
                 </h4>
-                <div className="grid grid-cols-2 sm:grid-cols-3 gap-4 bg-slate-50 p-4 rounded-xl border border-slate-100">
+                <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-4 bg-slate-50 p-4 rounded-xl border border-slate-100">
                   <div>
-                    <span className="block text-[11px] text-slate-400 font-medium">Họ và tên</span>
+                    <span className="block text-[11px] text-slate-400 font-medium">Há» vÃ  tÃªn</span>
                     <span className="font-semibold text-slate-800">{selectedStudent.fullName}</span>
                   </div>
                   <div>
-                    <span className="block text-[11px] text-slate-400 font-medium">Mã học sinh</span>
+                    <span className="block text-[11px] text-slate-400 font-medium">MÃ£ há»c sinh (MÃ£ chÃ­nh)</span>
                     <span className="font-mono font-bold text-[#003B3A]">{selectedStudent.studentId}</span>
                   </div>
                   <div>
-                    <span className="block text-[11px] text-slate-400 font-medium">Ngày sinh</span>
-                    <span className="font-medium text-slate-700">
-                      {selectedStudent.dateOfBirth
-                        ? new Date(selectedStudent.dateOfBirth).toLocaleDateString("vi-VN")
-                        : "Chưa cập nhật"}
+                    <span className="block text-[11px] text-slate-400 font-medium">MÃ£ VnEdu (MÃ£ phá»¥)</span>
+                    <span className="font-mono font-semibold text-amber-700 bg-amber-50 px-1.5 py-0.5 rounded border border-amber-200 inline-block">
+                      {selectedStudent.vneduCode || "ChÆ°a cÃ³"}
                     </span>
                   </div>
                   <div>
-                    <span className="block text-[11px] text-slate-400 font-medium">Giới tính</span>
-                    <span className="font-medium text-slate-700">{selectedStudent.gender || "Chưa cập nhật"}</span>
+                    <span className="block text-[11px] text-slate-400 font-medium">NgÃ y sinh</span>
+                    <span className="font-medium text-slate-700">
+                      {selectedStudent.dateOfBirth
+                        ? new Date(selectedStudent.dateOfBirth).toLocaleDateString("vi-VN")
+                        : "ChÆ°a cáº­p nháº­t"}
+                    </span>
                   </div>
                   <div>
-                    <span className="block text-[11px] text-slate-400 font-medium">Lớp học hiện tại</span>
+                    <span className="block text-[11px] text-slate-400 font-medium">Giá»›i tÃ­nh</span>
+                    <span className="font-medium text-slate-700">{selectedStudent.gender || "ChÆ°a cáº­p nháº­t"}</span>
+                  </div>
+                  <div>
+                    <span className="block text-[11px] text-slate-400 font-medium">Lá»›p há»c hiá»‡n táº¡i</span>
                     <span className="font-bold text-[#00A19A]">{selectedStudent.className}</span>
                   </div>
                   <div>
-                    <span className="block text-[11px] text-slate-400 font-medium">Cơ sở Sky-Line</span>
+                    <span className="block text-[11px] text-slate-400 font-medium">CÆ¡ sá»Ÿ Sky-Line</span>
                     <span className="font-medium text-slate-700">{selectedStudent.campusName}</span>
                   </div>
                   <div className="sm:col-span-3">
-                    <span className="block text-[11px] text-slate-400 font-medium">Địa chỉ thường trú</span>
+                    <span className="block text-[11px] text-slate-400 font-medium">Äá»‹a chá»‰ thÆ°á»ng trÃº</span>
                     <span className="font-medium text-slate-700 flex items-center gap-1">
                       <MapPin className="w-3.5 h-3.5 text-slate-400 shrink-0" />
-                      {selectedStudent.address || "Chưa cập nhật"}
+                      {selectedStudent.address || "ChÆ°a cáº­p nháº­t"}
                     </span>
                   </div>
                 </div>
@@ -596,26 +768,26 @@ export default function HoSoClient() {
               <div>
                 <h4 className="text-xs font-bold text-slate-400 uppercase tracking-wider mb-3 flex items-center gap-1.5">
                   <Phone className="w-4 h-4 text-[#00A19A]" />
-                  Thông tin phụ huynh & Liên hệ khẩn cấp
+                  ThÃ´ng tin phá»¥ huynh & LiÃªn há»‡ kháº©n cáº¥p
                 </h4>
                 <div className="grid grid-cols-2 gap-4 bg-slate-50 p-4 rounded-xl border border-slate-100">
                   <div>
-                    <span className="block text-[11px] text-slate-400 font-medium">Phụ huynh / Người giám hộ</span>
-                    <span className="font-semibold text-slate-800">{selectedStudent.parentName || "Chưa cập nhật"}</span>
+                    <span className="block text-[11px] text-slate-400 font-medium">Phá»¥ huynh / NgÆ°á»i giÃ¡m há»™</span>
+                    <span className="font-semibold text-slate-800">{selectedStudent.parentName || "ChÆ°a cáº­p nháº­t"}</span>
                   </div>
                   <div>
-                    <span className="block text-[11px] text-slate-400 font-medium">Số điện thoại liên lạc</span>
+                    <span className="block text-[11px] text-slate-400 font-medium">Sá»‘ Ä‘iá»‡n thoáº¡i liÃªn láº¡c</span>
                     <span className="font-mono font-semibold text-[#003B3A]">
-                      {selectedStudent.parentPhone || "Chưa cập nhật"}
+                      {selectedStudent.parentPhone || "ChÆ°a cáº­p nháº­t"}
                     </span>
                   </div>
                   <div>
-                    <span className="block text-[11px] text-slate-400 font-medium">Email phụ huynh</span>
-                    <span className="text-slate-700">{selectedStudent.parentEmail || "Chưa cập nhật"}</span>
+                    <span className="block text-[11px] text-slate-400 font-medium">Email phá»¥ huynh</span>
+                    <span className="text-slate-700">{selectedStudent.parentEmail || "ChÆ°a cáº­p nháº­t"}</span>
                   </div>
                   <div>
-                    <span className="block text-[11px] text-slate-400 font-medium">Liên hệ khẩn cấp</span>
-                    <span className="text-slate-700">{selectedStudent.emergencyContact || "Theo số điện thoại phụ huynh"}</span>
+                    <span className="block text-[11px] text-slate-400 font-medium">LiÃªn há»‡ kháº©n cáº¥p</span>
+                    <span className="text-slate-700">{selectedStudent.emergencyContact || "Theo sá»‘ Ä‘iá»‡n thoáº¡i phá»¥ huynh"}</span>
                   </div>
                 </div>
               </div>
@@ -623,17 +795,17 @@ export default function HoSoClient() {
               <div>
                 <h4 className="text-xs font-bold text-slate-400 uppercase tracking-wider mb-3 flex items-center gap-1.5">
                   <ShieldAlert className="w-4 h-4 text-[#00A19A]" />
-                  Tình trạng học tập & Y tế
+                  TÃ¬nh tráº¡ng há»c táº­p & Y táº¿
                 </h4>
                 <div className="grid grid-cols-3 gap-4 bg-slate-50 p-4 rounded-xl border border-slate-100 text-xs">
                   <div>
-                    <span className="block text-[11px] text-slate-400 font-medium">Trạng thái hồ sơ</span>
+                    <span className="block text-[11px] text-slate-400 font-medium">Tráº¡ng thÃ¡i há»“ sÆ¡</span>
                     <span className="font-bold text-emerald-700">
-                      {selectedStudent.status === "ACTIVE" ? "Đang theo học" : selectedStudent.status}
+                      {selectedStudent.status === "ACTIVE" ? "Äang theo há»c" : selectedStudent.status}
                     </span>
                   </div>
                   <div>
-                    <span className="block text-[11px] text-slate-400 font-medium">Ngày nhập học</span>
+                    <span className="block text-[11px] text-slate-400 font-medium">NgÃ y nháº­p há»c</span>
                     <span className="font-medium text-slate-700">
                       {selectedStudent.enrollmentDate
                         ? new Date(selectedStudent.enrollmentDate).toLocaleDateString("vi-VN")
@@ -641,23 +813,23 @@ export default function HoSoClient() {
                     </span>
                   </div>
                   <div>
-                    <span className="block text-[11px] text-slate-400 font-medium">Dị ứng / Lưu ý y tế</span>
+                    <span className="block text-[11px] text-slate-400 font-medium">Dá»‹ á»©ng / LÆ°u Ã½ y táº¿</span>
                     <span className="font-medium text-amber-700">
-                      {selectedStudent.allergies || "Không có"}
+                      {selectedStudent.allergies || "KhÃ´ng cÃ³"}
                     </span>
                   </div>
                 </div>
               </div>
 
-              {/* MÔN HỌC ĐẶC THÙ SKY-LINE */}
+              {/* MÃ”N Há»ŒC Äáº¶C THÃ™ SKY-LINE */}
               <div>
                 <h4 className="text-xs font-bold text-slate-400 uppercase tracking-wider mb-3 flex items-center justify-between">
                   <span className="flex items-center gap-1.5 text-teal-800">
                     <Sparkles className="w-4 h-4 text-[#00A19A]" />
-                    Môn học đặc thù Sky-Line
+                    MÃ´n há»c Ä‘áº·c thÃ¹ Sky-Line
                   </span>
                   <span className="text-[10px] px-2 py-0.5 rounded-full bg-teal-50 text-teal-800 border border-teal-200">
-                    {selectedStudent.specialGradeEntries?.length || 0} bài đã đánh giá
+                    {selectedStudent.specialGradeEntries?.length || 0} bÃ i Ä‘Ã£ Ä‘Ã¡nh giÃ¡
                   </span>
                 </h4>
                 {selectedStudent.specialGradeEntries && selectedStudent.specialGradeEntries.length > 0 ? (
@@ -666,10 +838,10 @@ export default function HoSoClient() {
                       <div key={ge.id} className="p-3 bg-slate-50 rounded-xl border border-slate-200/80 flex items-center justify-between text-xs">
                         <div>
                           <div className="font-bold text-slate-900">
-                            Tiết {ge.lesson?.periodIndex || 1}: {ge.lesson?.lessonName || "Bài học"}
+                            Tiáº¿t {ge.lesson?.periodIndex || 1}: {ge.lesson?.lessonName || "BÃ i há»c"}
                           </div>
                           <div className="text-[11px] text-slate-500">
-                            {ge.assignment?.subject?.name} • GV: {ge.assignment?.teacher?.teacherName}
+                            {ge.assignment?.subject?.name} â€¢ GV: {ge.assignment?.teacher?.teacherName}
                           </div>
                           {ge.teacherFeedback && (
                             <div className="text-[11px] text-slate-600 mt-1 italic">
@@ -678,14 +850,24 @@ export default function HoSoClient() {
                           )}
                         </div>
                         <div className="text-right shrink-0 ml-3">
-                          <span className={`inline-block px-2 py-0.5 rounded-full text-[10px] font-bold ${
+                          <span className={`inline-block px-2.5 py-0.5 rounded-full text-[10px] font-bold ${
                             ge.evalResult === "TOT"
-                              ? "bg-emerald-100 text-emerald-800 border border-emerald-200"
-                              : ge.evalResult === "DAT"
-                              ? "bg-teal-100 text-teal-800 border border-teal-200"
-                              : "bg-amber-100 text-amber-800 border border-amber-200"
+                              ? "bg-emerald-100 text-emerald-800 border border-emerald-300"
+                              : ge.evalResult === "HOAN_THANH" || ge.evalResult === "PASS" || ge.evalResult === "DAT"
+                              ? "bg-teal-100 text-teal-800 border border-teal-300"
+                              : ge.evalResult === "VANG"
+                              ? "bg-slate-200 text-slate-700"
+                              : "bg-amber-100 text-amber-800 border border-amber-300"
                           }`}>
-                            {ge.evalResult === "TOT" ? "Tốt" : ge.evalResult === "DAT" ? "Đạt" : "Cần cố gắng"}
+                            {ge.evalResult === "TOT" 
+                              ? "Tá»‘t" 
+                              : ge.evalResult === "HOAN_THANH" 
+                              ? "HoÃ n thÃ nh"
+                              : ge.evalResult === "PASS" || ge.evalResult === "DAT"
+                              ? "Äáº¡t"
+                              : ge.evalResult === "VANG"
+                              ? "Váº¯ng"
+                              : "Cáº§n cá»‘ gáº¯ng"}
                           </span>
                         </div>
                       </div>
@@ -693,7 +875,7 @@ export default function HoSoClient() {
                   </div>
                 ) : (
                   <div className="p-4 rounded-xl bg-slate-50 border border-dashed border-slate-200 text-center text-xs text-slate-400">
-                    Chưa có dữ liệu đánh giá môn học đặc thù cho học sinh này
+                    ChÆ°a cÃ³ dá»¯ liá»‡u Ä‘Ã¡nh giÃ¡ mÃ´n há»c Ä‘áº·c thÃ¹ cho há»c sinh nÃ y
                   </div>
                 )}
               </div>
@@ -705,7 +887,7 @@ export default function HoSoClient() {
                 onClick={() => setIsModalOpen(false)}
                 className="px-4 py-2 bg-slate-200 hover:bg-slate-300 text-slate-700 rounded-xl text-xs font-semibold transition"
               >
-                Đóng
+                ÄÃ³ng
               </button>
               <button
                 type="button"
@@ -713,7 +895,7 @@ export default function HoSoClient() {
                 className="px-4 py-2 bg-[#00A19A] hover:bg-[#008B85] text-white rounded-xl text-xs font-semibold flex items-center gap-1.5 transition shadow-sm"
               >
                 <Printer className="w-4 h-4" />
-                <span>In phiếu hồ sơ A4</span>
+                <span>In phiáº¿u há»“ sÆ¡ A4</span>
               </button>
             </div>
           </div>
