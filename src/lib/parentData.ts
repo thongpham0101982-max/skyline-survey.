@@ -146,23 +146,67 @@ export async function getParentProfileWithStudents(userId: string) {
 
 export async function resolveHomeroomTeacher(child: any) {
   let gvcnName = "Chưa phân công"
-  if (child.class) {
+  if (child?.class) {
     if (child.class.homeroomTeacherId) {
-      const teacher = await prisma.teacher.findFirst({
-        where: {
-          OR: [
-            { id: child.class.homeroomTeacherId },
-            { teacherCode: child.class.homeroomTeacherId },
-            { userId: child.class.homeroomTeacherId }
-          ]
-        },
-        select: { teacherName: true }
-      }).catch(() => null)
-      if (teacher?.teacherName) gvcnName = teacher.teacherName
+      const ids = String(child.class.homeroomTeacherId)
+        .split(",")
+        .map((s) => s.trim())
+        .filter(Boolean)
+      if (ids.length > 0) {
+        const teachers = await prisma.teacher.findMany({
+          where: {
+            OR: [
+              { id: { in: ids } },
+              { teacherCode: { in: ids } },
+              { userId: { in: ids } }
+            ]
+          },
+          select: { teacherName: true }
+        }).catch(() => [])
+        const names = teachers.map((t: any) => t.teacherName).filter(Boolean)
+        if (names.length > 0) gvcnName = names.join(", ")
+      }
     }
     if (gvcnName === "Chưa phân công" && child.class.teachers && child.class.teachers.length > 0) {
-      const hrAss = child.class.teachers.find((t: any) => t.roleInClass === 'HOMEROOM' || t.roleInClass === 'GVCN') || child.class.teachers[0]
+      const hrAss = child.class.teachers.find((t: any) =>
+        t.roleInClass?.toUpperCase() === "HOMEROOM" ||
+        t.roleInClass?.toUpperCase() === "GVCN" ||
+        t.roleInClass?.toLowerCase().includes("chủ nhiệm")
+      ) || child.class.teachers[0]
       if (hrAss?.teacher?.teacherName) gvcnName = hrAss.teacher.teacherName
+    }
+    if (gvcnName === "Chưa phân công" && child.class.className) {
+      const clsName = child.class.className.trim()
+      const hrByClassStr = await prisma.teacher.findFirst({
+        where: { homeroomClass: { contains: clsName } },
+        select: { teacherName: true }
+      }).catch(() => null)
+      if (hrByClassStr?.teacherName) {
+        gvcnName = hrByClassStr.teacherName
+      } else {
+        const siblingClass = await prisma.class.findFirst({
+          where: {
+            className: clsName,
+            homeroomTeacherId: { not: null }
+          },
+          select: { homeroomTeacherId: true }
+        }).catch(() => null)
+        if (siblingClass?.homeroomTeacherId) {
+          const sibIds = String(siblingClass.homeroomTeacherId).split(",").map((s) => s.trim()).filter(Boolean)
+          const sibTeachers = await prisma.teacher.findMany({
+            where: {
+              OR: [
+                { id: { in: sibIds } },
+                { teacherCode: { in: sibIds } },
+                { userId: { in: sibIds } }
+              ]
+            },
+            select: { teacherName: true }
+          }).catch(() => [])
+          const sibNames = sibTeachers.map((t: any) => t.teacherName).filter(Boolean)
+          if (sibNames.length > 0) gvcnName = sibNames.join(", ")
+        }
+      }
     }
   }
   return gvcnName
@@ -175,6 +219,62 @@ export async function getParentChildren(userId: string, academicYearId?: string)
   if (!parent) return []
 
   let allStudents = (parent.students || []).map((s: any) => s.student).filter(Boolean)
+
+  // Expand by studentCode so switching academic years or having links on older records always finds the student's current/target year record
+  const studentCodes = Array.from(new Set(allStudents.map((s: any) => s.studentCode).filter(Boolean)))
+  if (studentCodes.length > 0) {
+    const siblingRecords = await prisma.student.findMany({
+      where: { studentCode: { in: studentCodes } },
+      include: {
+        class: {
+          include: {
+            campus: true,
+            academicYear: true,
+            teachers: {
+              include: {
+                teacher: true
+              }
+            }
+          }
+        },
+        academicYear: true,
+        surveyForms: {
+          select: {
+            id: true,
+            status: true,
+            surveyPeriodId: true,
+            parentId: true,
+            submissionDateTime: true
+          }
+        },
+        advisoryStatuses: {
+          orderBy: { createdAt: "desc" },
+          take: 1
+        },
+        goals: {
+          take: 5
+        }
+      },
+      orderBy: { academicYear: { name: "desc" } }
+    }).catch(() => [])
+
+    if (siblingRecords.length > 0) {
+      const existingIds = new Set(allStudents.map((s: any) => s.id))
+      for (const sib of siblingRecords) {
+        if (!existingIds.has(sib.id)) {
+          allStudents.push(sib)
+          existingIds.add(sib.id)
+        }
+      }
+    }
+  }
+
+  // Sort so active/latest academic year comes first when no specific academicYearId is requested
+  allStudents.sort((a: any, b: any) => {
+    const yA = a.academicYear?.name || a.class?.academicYear?.name || ""
+    const yB = b.academicYear?.name || b.class?.academicYear?.name || ""
+    return yB.localeCompare(yA)
+  })
 
   const uniqueStudentsMap = new Map<string, any>()
 
