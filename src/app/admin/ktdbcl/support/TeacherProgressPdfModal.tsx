@@ -399,39 +399,387 @@ export function TeacherProgressPdfModal({
     tch => tch.monthEvaluatedCount > 0 || tch.totalEvalsYear > 0
   ).length
 
-  // Xử lý tải PDF
-  const handleDownloadPdf = async () => {
+  // CSS thuần HEX dành riêng cho #teacher-progress-report-pdf (tránh lỗi oklch/lab của Tailwind v4 trên html2canvas & đảm bảo in Vector sắc nét)
+  const pdfHexStyles = `
+    #teacher-progress-report-pdf {
+      background-color: #ffffff !important;
+      color: #0f172a !important;
+      border-color: #e2e8f0 !important;
+      font-family: 'Inter', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Arial, sans-serif !important;
+      -webkit-print-color-adjust: exact !important;
+      print-color-adjust: exact !important;
+    }
+    #teacher-progress-report-pdf *,
+    #teacher-progress-report-pdf *::before,
+    #teacher-progress-report-pdf *::after {
+      box-sizing: border-box !important;
+      border-color: #cbd5e1;
+      outline-color: transparent !important;
+      box-shadow: none !important;
+    }
+    #teacher-progress-report-pdf table {
+      width: 100% !important;
+      border-collapse: collapse !important;
+      border: 1px solid #94a3b8 !important;
+    }
+    #teacher-progress-report-pdf thead {
+      display: table-header-group !important;
+    }
+    #teacher-progress-report-pdf tr {
+      page-break-inside: avoid !important;
+      break-inside: avoid !important;
+    }
+    #teacher-progress-report-pdf th,
+    #teacher-progress-report-pdf td {
+      border: 1px solid #cbd5e1 !important;
+      vertical-align: middle !important;
+    }
+    #teacher-progress-report-pdf th {
+      background-color: #f1f5f9 !important;
+      color: #1e293b !important;
+      font-weight: 800 !important;
+    }
+    #teacher-progress-report-pdf .page-break-inside-avoid {
+      page-break-inside: avoid !important;
+      break-inside: avoid !important;
+    }
+    /* Text Colors (HEX) */
+    #teacher-progress-report-pdf .text-slate-950 { color: #020617 !important; }
+    #teacher-progress-report-pdf .text-slate-900 { color: #0f172a !important; }
+    #teacher-progress-report-pdf .text-slate-800 { color: #1e293b !important; }
+    #teacher-progress-report-pdf .text-slate-700 { color: #334155 !important; }
+    #teacher-progress-report-pdf .text-slate-600 { color: #475569 !important; }
+    #teacher-progress-report-pdf .text-slate-500 { color: #64748b !important; }
+    #teacher-progress-report-pdf .text-slate-400 { color: #94a3b8 !important; }
+    #teacher-progress-report-pdf .text-amber-950 { color: #451a03 !important; }
+    #teacher-progress-report-pdf .text-amber-900 { color: #78350f !important; }
+    #teacher-progress-report-pdf .text-amber-800 { color: #92400e !important; }
+    #teacher-progress-report-pdf .text-amber-700 { color: #b45309 !important; }
+    #teacher-progress-report-pdf .text-indigo-950 { color: #1e1b4b !important; }
+    #teacher-progress-report-pdf .text-indigo-900 { color: #312e81 !important; }
+    #teacher-progress-report-pdf .text-indigo-800 { color: #3730a3 !important; }
+    #teacher-progress-report-pdf .text-indigo-700 { color: #4338ca !important; }
+    #teacher-progress-report-pdf .text-indigo-600 { color: #4f46e5 !important; }
+    #teacher-progress-report-pdf .text-teal-900 { color: #134e4a !important; }
+    #teacher-progress-report-pdf .text-teal-800 { color: #115e59 !important; }
+    #teacher-progress-report-pdf .text-teal-700 { color: #0f766e !important; }
+    #teacher-progress-report-pdf .text-emerald-900 { color: #064e3b !important; }
+    #teacher-progress-report-pdf .text-emerald-800 { color: #065f46 !important; }
+    #teacher-progress-report-pdf .text-emerald-700 { color: #047857 !important; }
+    #teacher-progress-report-pdf .text-emerald-600 { color: #059669 !important; }
+    #teacher-progress-report-pdf .text-rose-900 { color: #881337 !important; }
+    #teacher-progress-report-pdf .text-rose-800 { color: #9f1239 !important; }
+    #teacher-progress-report-pdf .text-rose-700 { color: #be123c !important; }
+    #teacher-progress-report-pdf .text-rose-600 { color: #e11d48 !important; }
+    #teacher-progress-report-pdf .text-purple-900 { color: #581c87 !important; }
+    #teacher-progress-report-pdf .text-purple-700 { color: #7e22ce !important; }
+    #teacher-progress-report-pdf .text-purple-600 { color: #9333ea !important; }
+    /* Background Colors (HEX) */
+    #teacher-progress-report-pdf .bg-white { background-color: #ffffff !important; }
+    #teacher-progress-report-pdf .bg-slate-50,
+    #teacher-progress-report-pdf .bg-slate-50\\/60 { background-color: #f8fafc !important; }
+    #teacher-progress-report-pdf .bg-slate-100 { background-color: #f1f5f9 !important; }
+    #teacher-progress-report-pdf .bg-indigo-50\\/60,
+    #teacher-progress-report-pdf .bg-indigo-50\\/70 { background-color: #eef2ff !important; }
+    #teacher-progress-report-pdf .bg-teal-50\\/70,
+    #teacher-progress-report-pdf .bg-teal-50\\/30 { background-color: #f0fdfa !important; }
+    #teacher-progress-report-pdf .bg-rose-50\\/60 { background-color: #fff1f2 !important; }
+    #teacher-progress-report-pdf .bg-amber-50\\/80,
+    #teacher-progress-report-pdf .bg-amber-50\\/40,
+    #teacher-progress-report-pdf .bg-amber-50\\/20 { background-color: #fffbeb !important; }
+    #teacher-progress-report-pdf .bg-amber-100\\/80 { background-color: #fef3c7 !important; }
+    /* Border Colors (HEX) */
+    #teacher-progress-report-pdf .border-slate-900 { border-color: #0f172a !important; }
+    #teacher-progress-report-pdf .border-slate-300 { border-color: #cbd5e1 !important; }
+    #teacher-progress-report-pdf .border-slate-200,
+    #teacher-progress-report-pdf .border-slate-200\\/80 { border-color: #e2e8f0 !important; }
+    #teacher-progress-report-pdf .border-amber-200\\/80 { border-color: #fde68a !important; }
+    #teacher-progress-report-pdf .border-indigo-200\\/80 { border-color: #c7d2fe !important; }
+    #teacher-progress-report-pdf .border-teal-200\\/80 { border-color: #99f6e4 !important; }
+    #teacher-progress-report-pdf .border-purple-200\\/80 { border-color: #e9d5ff !important; }
+    #teacher-progress-report-pdf .border-emerald-200\\/80 { border-color: #a7f3d0 !important; }
+  `
+
+  // Tạo chuỗi HTML độc lập chuẩn A4 (phục vụ cả Server Puppeteer Vector PDF & Iframe Print)
+  const buildStandalonePdfHtml = (element: HTMLElement, titleText: string) => {
+    const headStyles = Array.from(document.querySelectorAll("link[rel='stylesheet'], style"))
+      .map(node => node.outerHTML)
+      .join("\n")
+
+    return `<!DOCTYPE html>
+<html lang="vi">
+<head>
+  <meta charset="utf-8" />
+  <title>${titleText}</title>
+  ${headStyles}
+  <style>
+    @page {
+      size: A4 ${orientation};
+      margin: 7mm;
+    }
+    html, body {
+      margin: 0 !important;
+      padding: 0 !important;
+      background: #ffffff !important;
+      color: #0f172a !important;
+      font-family: 'Inter', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Arial, sans-serif !important;
+      -webkit-print-color-adjust: exact !important;
+      print-color-adjust: exact !important;
+    }
+    #teacher-progress-report-pdf {
+      width: 100% !important;
+      max-width: 100% !important;
+      margin: 0 !important;
+      padding: 4mm !important;
+      border: none !important;
+      border-radius: 0 !important;
+      box-shadow: none !important;
+    }
+    ${pdfHexStyles}
+  </style>
+</head>
+<body>
+  ${element.outerHTML}
+</body>
+</html>`
+  }
+
+  // In A4 thông qua Iframe độc lập để không bị cắt trang bởi Modal scroll
+  const handlePrintA4 = () => {
     const element = document.getElementById("teacher-progress-report-pdf")
     if (!element) {
       window.print()
       return
     }
 
+    const safeCampus = isAllCampus ? "Toan_He_Thong" : campusNameDisplay.replace(/[^a-zA-Z0-9_\u00C0-\u1EF9]/g, "_").slice(0, 20)
+    const safeTeacher = isAllTeacher ? "Tat_Ca_GV" : teacherNameDisplay.replace(/[^a-zA-Z0-9_\u00C0-\u1EF9]/g, "_").slice(0, 25)
+    const safeMonth = activeMonth.replace(/\s+/g, "_")
+    const safeYear = academicYearName.replace(/[^a-zA-Z0-9_-]/g, "_")
+    const pdfTitle = `So_PDF_Danh_Gia_${supportType === "PSYCHOLOGICAL" ? "Tam_Ly" : "Hoc_Tap"}_${safeCampus}_${safeTeacher}_${safeMonth}_${safeYear}`
+
+    const existingIframe = document.getElementById("skyline-support-print-iframe")
+    if (existingIframe) existingIframe.remove()
+
+    const iframe = document.createElement("iframe")
+    iframe.id = "skyline-support-print-iframe"
+    iframe.style.position = "fixed"
+    iframe.style.right = "0"
+    iframe.style.bottom = "0"
+    iframe.style.width = "0"
+    iframe.style.height = "0"
+    iframe.style.border = "0"
+    iframe.style.visibility = "hidden"
+    document.body.appendChild(iframe)
+
+    const iframeDoc = iframe.contentWindow?.document || iframe.contentDocument
+    if (!iframeDoc) {
+      window.print()
+      return
+    }
+
+    iframeDoc.open()
+    iframeDoc.write(buildStandalonePdfHtml(element, pdfTitle))
+    iframeDoc.close()
+
+    setTimeout(() => {
+      try {
+        iframe.contentWindow?.focus()
+        iframe.contentWindow?.print()
+      } catch {
+        window.print()
+      } finally {
+        setTimeout(() => {
+          if (document.body.contains(iframe)) {
+            document.body.removeChild(iframe)
+          }
+        }, 2000)
+      }
+    }, 450)
+  }
+
+  // Xử lý tải trực tiếp file PDF (Ưu tiên Vector PDF qua Server Puppeteer, Fallback html2pdf với bộ chuẩn hóa màu RGB)
+  const handleDownloadPdf = async () => {
+    const element = document.getElementById("teacher-progress-report-pdf")
+    if (!element) {
+      handlePrintA4()
+      return
+    }
+
     setIsDownloading(true)
     const toastId = toast.loading("Đang khởi tạo Sổ PDF theo dõi đánh giá chuẩn A4...")
 
+    const safeCampus = isAllCampus ? "Toan_He_Thong" : campusNameDisplay.replace(/[^a-zA-Z0-9_\u00C0-\u1EF9]/g, "_").slice(0, 20)
+    const safeTeacher = isAllTeacher ? "Tat_Ca_GV" : teacherNameDisplay.replace(/[^a-zA-Z0-9_\u00C0-\u1EF9]/g, "_").slice(0, 25)
+    const safeMonth = activeMonth.replace(/\s+/g, "_")
+    const safeYear = academicYearName.replace(/[^a-zA-Z0-9_-]/g, "_")
+    const filename = `So_PDF_Danh_Gia_${supportType === "PSYCHOLOGICAL" ? "Tam_Ly" : "Hoc_Tap"}_${safeCampus}_${safeTeacher}_${safeMonth}_${safeYear}.pdf`
+
     try {
+      // 1. Ưu tiên kết xuất PDF Vector sắc nét từ Server (Puppeteer A4)
+      try {
+        const standaloneHtml = buildStandalonePdfHtml(element, filename.replace(/\.pdf$/i, ""))
+        const res = await fetch("/api/admin/student-profiles/render-pdf", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            html: standaloneHtml,
+            fileName: filename,
+            landscape: orientation === "landscape",
+            margin: { top: "6mm", right: "6mm", bottom: "6mm", left: "6mm" }
+          })
+        })
+
+        if (res.ok) {
+          const blob = await res.blob()
+          if (blob && blob.size > 500) {
+            const url = URL.createObjectURL(blob)
+            const a = document.createElement("a")
+            a.href = url
+            a.download = filename
+            document.body.appendChild(a)
+            a.click()
+            a.remove()
+            setTimeout(() => URL.revokeObjectURL(url), 3000)
+            toast.success(`Đã xuất Sổ PDF chuẩn A4: ${filename}`, { id: toastId, duration: 4000 })
+            return
+          }
+        }
+      } catch (serverErr) {
+        console.warn("Server PDF render fallback to html2pdf:", serverErr)
+      }
+
+      // 2. Fallback: html2pdf.js ở trình duyệt với bộ chuyển đổi 100% oklch/lab -> RGB
       const html2pdf = (await import("html2pdf.js")).default
-      const safeCampus = isAllCampus ? "Toan_He_Thong" : campusNameDisplay.replace(/[^a-zA-Z0-9_\u00C0-\u1EF9]/g, "_").slice(0, 20)
-      const safeTeacher = isAllTeacher ? "Tat_Ca_GV" : teacherNameDisplay.replace(/[^a-zA-Z0-9_\u00C0-\u1EF9]/g, "_").slice(0, 25)
-      const safeMonth = activeMonth.replace(/\s+/g, "_")
-      const safeYear = academicYearName.replace(/[^a-zA-Z0-9_-]/g, "_")
-      const filename = `So_PDF_Danh_Gia_${supportType === "PSYCHOLOGICAL" ? "Tam_Ly" : "Hoc_Tap"}_${safeCampus}_${safeTeacher}_${safeMonth}_${safeYear}.pdf`
+
+      // Bộ chuyển đổi mọi hàm màu hiện đại (oklch, oklab, lab, lch, color) sang rgb/rgba qua Canvas 1x1
+      const canvas = document.createElement("canvas")
+      canvas.width = 1
+      canvas.height = 1
+      const ctx = canvas.getContext("2d", { willReadFrequently: true })
+      const colorCache = new Map<string, string>()
+
+      const convertCssColorToRgb = (rawColor: string): string => {
+        if (!rawColor || !/(oklch|oklab|lab|lch|color\(|color-mix)/i.test(rawColor)) return rawColor
+        const cached = colorCache.get(rawColor)
+        if (cached) return cached
+        if (!ctx) return "#0f172a"
+        try {
+          ctx.clearRect(0, 0, 1, 1)
+          ctx.fillStyle = "rgba(0,0,0,0)"
+          ctx.fillStyle = rawColor
+          ctx.fillRect(0, 0, 1, 1)
+          const [r, g, b, a] = ctx.getImageData(0, 0, 1, 1).data
+          const result =
+            a === 0
+              ? "rgba(0, 0, 0, 0)"
+              : a === 255
+                ? `rgb(${r}, ${g}, ${b})`
+                : `rgba(${r}, ${g}, ${b}, ${(a / 255).toFixed(3)})`
+          colorCache.set(rawColor, result)
+          return result
+        } catch {
+          return "#0f172a"
+        }
+      }
+
+      const replaceModernColorsInText = (cssText: string): string => {
+        if (!cssText || !/(oklch|oklab|lab|lch|color\(|color-mix)/i.test(cssText)) return cssText
+        return cssText.replace(
+          /(?:oklch|oklab|lab|lch|color-mix|color)\([^()]*(?:\([^()]*\)[^()]*)*\)/gi,
+          match => convertCssColorToRgb(match)
+        )
+      }
+
+      const origNodes = [element, ...Array.from(element.querySelectorAll("*"))] as HTMLElement[]
 
       const opt: any = {
         margin: [6, 6, 6, 6],
         filename,
         image: { type: "jpeg", quality: 0.98 },
-        html2canvas: { scale: 2, useCORS: true, logging: false },
+        pagebreak: {
+          mode: ["css", "legacy"],
+          avoid: ["tr", ".page-break-inside-avoid"]
+        },
+        html2canvas: {
+          scale: 2,
+          useCORS: true,
+          logging: false,
+          scrollX: 0,
+          scrollY: 0,
+          backgroundColor: "#ffffff",
+          onclone: (clonedDoc: Document) => {
+            // Chuyển đổi mọi hàm màu oklch/lab trong các thẻ <style> của tài liệu clone
+            clonedDoc.querySelectorAll("style").forEach(styleEl => {
+              if (styleEl.textContent) {
+                styleEl.textContent = replaceModernColorsInText(styleEl.textContent)
+              }
+            })
+
+            const clonedRoot = clonedDoc.getElementById("teacher-progress-report-pdf")
+            if (!clonedRoot) return
+
+            const clonedNodes = [clonedRoot, ...Array.from(clonedRoot.querySelectorAll("*"))] as HTMLElement[]
+            const colorProps = [
+              "color",
+              "backgroundColor",
+              "borderTopColor",
+              "borderRightColor",
+              "borderBottomColor",
+              "borderLeftColor",
+              "outlineColor",
+              "textDecorationColor"
+            ] as const
+
+            for (let i = 0; i < clonedNodes.length; i++) {
+              const origEl = origNodes[i]
+              const cloneEl = clonedNodes[i]
+              if (!origEl || !cloneEl || !cloneEl.style) continue
+
+              const computed = window.getComputedStyle(origEl)
+              for (const prop of colorProps) {
+                const val = computed[prop]
+                if (val) {
+                  ;(cloneEl.style as any)[prop] = convertCssColorToRgb(val)
+                }
+              }
+              if (computed.boxShadow && computed.boxShadow !== "none") {
+                cloneEl.style.boxShadow = "none"
+              }
+              if (computed.backgroundImage && /(oklch|oklab|lab|lch|color)/i.test(computed.backgroundImage)) {
+                cloneEl.style.backgroundImage = "none"
+              }
+            }
+
+            // Đặt kích thước chuẩn A4 cho container cần chụp và loại bỏ giới hạn cuộn của Modal
+            let parent = clonedRoot.parentElement
+            while (parent && parent !== clonedDoc.body) {
+              parent.style.overflow = "visible"
+              parent.style.maxHeight = "none"
+              parent.style.height = "auto"
+              parent.style.position = "static"
+              parent = parent.parentElement
+            }
+
+            clonedRoot.style.width = orientation === "landscape" ? "1060px" : "750px"
+            clonedRoot.style.maxWidth = orientation === "landscape" ? "1060px" : "750px"
+            clonedRoot.style.margin = "0"
+            clonedRoot.style.padding = "16px"
+            clonedRoot.style.border = "none"
+            clonedRoot.style.borderRadius = "0"
+            clonedRoot.style.boxShadow = "none"
+            clonedRoot.style.backgroundColor = "#ffffff"
+          }
+        },
         jsPDF: { unit: "mm", format: "a4", orientation }
       }
 
       await html2pdf().set(opt).from(element).save()
       toast.success(`Đã xuất Sổ PDF: ${filename}`, { id: toastId, duration: 4000 })
     } catch (err) {
-      console.error("html2pdf error, fallback to window.print:", err)
+      console.error("html2pdf error, fallback to handlePrintA4:", err)
       toast.dismiss(toastId)
-      window.print()
+      handlePrintA4()
     } finally {
       setIsDownloading(false)
     }
@@ -479,6 +827,7 @@ export function TeacherProgressPdfModal({
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/75 backdrop-blur-xs p-2 sm:p-4 overflow-y-auto animate-in fade-in duration-200">
       <style>{`
+        ${pdfHexStyles}
         @media print {
           body * {
             visibility: hidden;
@@ -587,7 +936,7 @@ export function TeacherProgressPdfModal({
               {/* Nút In ấn / Print to PDF */}
               <button
                 type="button"
-                onClick={() => window.print()}
+                onClick={handlePrintA4}
                 className="px-3 py-2 rounded-xl bg-white/15 hover:bg-white/25 text-white font-bold text-xs flex items-center gap-1.5 border border-white/20 transition-all cursor-pointer"
                 title="Mở hộp thoại In hoặc Lưu PDF chuẩn của trình duyệt"
               >
