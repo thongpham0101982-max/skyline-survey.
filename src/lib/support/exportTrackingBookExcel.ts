@@ -474,6 +474,8 @@ export function exportTrackingBookExcel(
 export interface ExportTeacherProgressReportOptions {
   teacherId?: string
   teacherName?: string
+  campusId?: string
+  campusName?: string
   academicYearName?: string
   selectedMonth?: string
   supportType?: "PSYCHOLOGICAL" | "ACADEMIC" | "ALL"
@@ -481,21 +483,96 @@ export interface ExportTeacherProgressReportOptions {
 }
 
 /**
- * Xuất Báo Cáo Theo Dõi Tiến Độ Theo Từng Giáo Viên
- * Hỗ trợ xuất riêng cho từng giáo viên hoặc xuất tổng hợp toàn bộ giáo viên kèm sheet đối chiếu
+ * Helper kiểm tra bản ghi đánh giá có khớp với Tuần w trong Tháng m hay không
+ */
+export function findWeekEvaluation(evals: any[], weekLabel: string, monthLabel: string) {
+  if (!evals || evals.length === 0) return null
+  const monthNumMatch = monthLabel.match(/\d+/)
+  const monthNum = monthNumMatch ? parseInt(monthNumMatch[0], 10) : null
+  const weekNumMatch = weekLabel.match(/\d+/)
+  const weekNum = weekNumMatch ? parseInt(weekNumMatch[0], 10) : 1
+
+  // 1. Ưu tiên khớp chính xác periodName có chứa cả Tuần và Tháng
+  const exact = evals.find(
+    (e: any) =>
+      e.periodName === `${weekLabel} - ${monthLabel}` ||
+      (e.periodName && e.periodName.includes(weekLabel) && e.periodName.includes(monthLabel))
+  )
+  if (exact) return exact
+
+  // 2. Khớp periodType === "WEEK" và periodName === weekLabel trong cùng tháng createdAt
+  const byWeekType = evals.find((e: any) => {
+    if (e.periodName === weekLabel || (e.periodName && e.periodName.includes(weekLabel) && !e.periodName.includes("Tháng"))) {
+      if (!monthNum || !e.createdAt) return true
+      const d = new Date(e.createdAt)
+      return !isNaN(d.getTime()) && d.getMonth() + 1 === monthNum
+    }
+    return false
+  })
+  if (byWeekType) return byWeekType
+
+  // 3. Nếu đánh giá có periodType === "WEEK" trong tháng đó và ngày tạo rơi vào tuần tương ứng
+  const byDateWeek = evals.find((e: any) => {
+    if (e.periodType !== "WEEK" || !e.createdAt || !monthNum) return false
+    const d = new Date(e.createdAt)
+    if (isNaN(d.getTime()) || d.getMonth() + 1 !== monthNum) return false
+    const wOfDate = Math.min(Math.ceil(d.getDate() / 7), 5)
+    return wOfDate === weekNum
+  })
+  return byDateWeek || null
+}
+
+/**
+ * Helper kiểm tra bản ghi đánh giá của Tháng m (bao gồm cả đánh giá tổng kết tháng hoặc đánh giá tuần trong tháng)
+ */
+export function findMonthEvaluations(evals: any[], monthLabel: string) {
+  if (!evals || evals.length === 0) return []
+  const monthNumMatch = monthLabel.match(/\d+/)
+  const monthNum = monthNumMatch ? parseInt(monthNumMatch[0], 10) : null
+
+  return evals.filter((e: any) => {
+    if (e.periodName === monthLabel || (e.periodName && e.periodName.includes(monthLabel))) {
+      return true
+    }
+    if (monthNum && e.createdAt) {
+      const d = new Date(e.createdAt)
+      if (!isNaN(d.getTime()) && d.getMonth() + 1 === monthNum) {
+        return true
+      }
+    }
+    return false
+  })
+}
+
+/**
+ * Xuất Báo Cáo Theo Dõi Tiến Độ Theo Cơ Sở & Theo Từng Giáo Viên (Định kỳ Tuần & Tháng)
+ * Hỗ trợ xuất riêng cho từng cơ sở / từng giáo viên hoặc xuất tổng hợp toàn hệ thống kèm sheet đối chiếu
  */
 export function exportTeacherProgressReportExcel(
-  targets: any[],
+  rawTargets: any[],
   options: ExportTeacherProgressReportOptions = {}
 ) {
-  if (!targets || targets.length === 0) {
+  if (!rawTargets || rawTargets.length === 0) {
     throw new Error("Không có dữ liệu học sinh để xuất báo cáo tiến độ.")
   }
 
   const academicYear = options.academicYearName || "2026-2027"
-  const activeMonth = options.selectedMonth && options.selectedMonth !== "ALL" ? options.selectedMonth : "Tháng 9"
+  const activeMonth = options.selectedMonth && options.selectedMonth !== "ALL" ? options.selectedMonth : "Tháng 10"
   const targetTeacherId = options.teacherId || "ALL"
+  const targetCampusId = options.campusId || "ALL"
   const exportTimestamp = new Date().toLocaleString("vi-VN")
+
+  // Lọc theo Cơ sở nếu có chọn Cơ sở
+  const targets = rawTargets.filter(t => {
+    if (targetCampusId === "ALL") return true
+    const cId = t.student?.class?.campusId || t.student?.campusId || t.campusId
+    const cName = t.student?.class?.campus?.campusName || t.student?.campus?.campusName || t.campusName || ""
+    return cId === targetCampusId || cName === targetCampusId || (options.campusName && cName === options.campusName)
+  })
+
+  if (targets.length === 0) {
+    throw new Error("Không có học sinh nào thuộc phạm vi cơ sở đã chọn.")
+  }
 
   // Helper trích xuất danh sách GV phân công của target
   const getAssignedTeachers = (t: any): { id: string; name: string }[] => {
@@ -510,6 +587,9 @@ export function exportTeacherProgressReportExcel(
     }
     if (t.createdBy?.teacherName) {
       return [{ id: t.createdBy.id || "CREATOR", name: t.createdBy.teacherName }]
+    }
+    if (t.counselorName) {
+      return [{ id: t.counselorName, name: t.counselorName }]
     }
     return [{ id: "UNASSIGNED", name: "Chưa phân công GV" }]
   }
@@ -526,7 +606,7 @@ export function exportTeacherProgressReportExcel(
     }
 
     const tName = options.teacherName || getAssignedTeachers(teacherTargets[0])[0]?.name || "Giao_Vien"
-    const prefix = options.fileNamePrefix || (options.supportType === "PSYCHOLOGICAL" ? "BC_Tien_Do_Tam_Ly_GV" : "BC_Tien_Do_Hoc_Tap_GV")
+    const prefix = options.fileNamePrefix || (options.supportType === "PSYCHOLOGICAL" ? "So_Theo_Doi_Tam_Ly_GV" : "So_Theo_Doi_Hoc_Tap_GV")
 
     return exportTrackingBookExcel(teacherTargets, {
       teacherName: tName,
@@ -537,8 +617,133 @@ export function exportTeacherProgressReportExcel(
     })
   }
 
-  // TRƯỜNG HỢP 2: Xuất báo cáo tiến độ TỔNG HỢP TOÀN BỘ THEO TỪNG GIÁO VIÊN
+  // TRƯỜNG HỢP 2: Xuất Sổ Theo Dõi Đánh Giá Định Kỳ TỔNG HỢP THEO CƠ SỞ & THEO GIÁO VIÊN (TUẦN & THÁNG)
   const workbook = XLSX.utils.book_new()
+  const weeksList = MONTH_WEEKS_CONFIG[activeMonth] || ["Tuần 1", "Tuần 2", "Tuần 3", "Tuần 4"]
+
+  // -------------------------------------------------------------------------
+  // SHEET 1: THỐNG KÊ THEO CƠ SỞ & TÌNH TRẠNG ĐÁNH GIÁ ĐỊNH KỲ TUẦN / THÁNG
+  // -------------------------------------------------------------------------
+  const campusMap: Record<string, {
+    campusName: string
+    targets: any[]
+    teachers: Set<string>
+    activeCount: number
+    termCount: number
+    commitmentCount: number
+    weekEvalCounts: number[]
+    monthEvaluatedStudents: number
+    totalEvals: number
+  }> = {}
+
+  targets.forEach(t => {
+    const campusName = t.student?.class?.campus?.campusName || t.student?.campus?.campusName || t.campusName || "Chưa rõ Cơ sở"
+    if (!campusMap[campusName]) {
+      campusMap[campusName] = {
+        campusName,
+        targets: [],
+        teachers: new Set(),
+        activeCount: 0,
+        termCount: 0,
+        commitmentCount: 0,
+        weekEvalCounts: weeksList.map(() => 0),
+        monthEvaluatedStudents: 0,
+        totalEvals: 0
+      }
+    }
+    const cGroup = campusMap[campusName]
+    cGroup.targets.push(t)
+    getAssignedTeachers(t).forEach(tch => {
+      if (tch.id !== "UNASSIGNED") cGroup.teachers.add(tch.name)
+    })
+
+    const isTerm = t.terminationStatus === "TERMINATED"
+    if (isTerm) cGroup.termCount++
+    else cGroup.activeCount++
+
+    const isCommitment = t.sourceType === "ADMISSION" || (t.notes && t.notes.includes("Cam kết")) || t.hasPsychCommitment
+    if (isCommitment) cGroup.commitmentCount++
+
+    const evals = t.evaluations || []
+    cGroup.totalEvals += evals.length
+
+    weeksList.forEach((w, wIdx) => {
+      if (findWeekEvaluation(evals, w, activeMonth)) {
+        cGroup.weekEvalCounts[wIdx]++
+      }
+    })
+
+    if (findMonthEvaluations(evals, activeMonth).length > 0) {
+      cGroup.monthEvaluatedStudents++
+    }
+  })
+
+  const campusList = Object.values(campusMap).sort((a, b) => b.targets.length - a.targets.length)
+
+  const campusHeader = [
+    ["HỆ THỐNG GIÁO DỤC SKY-LINE"],
+    ["SỔ THEO DÕI ĐÁNH GIÁ TÂM LÝ THEO CƠ SỞ & TÌNH TRẠNG ĐÁNH GIÁ ĐỊNH KỲ TUẦN - THÁNG"],
+    [`Năm học: ${academicYear} | Kỳ đối chiếu: ${activeMonth} | Xuất ngày: ${exportTimestamp}`],
+    [],
+    [
+      "STT",
+      "Cơ sở",
+      "Tổng số HS",
+      "Diện Cam kết",
+      "Đang theo dõi",
+      "Đã chấm dứt",
+      "Số GV phụ trách",
+      ...weeksList.map(w => `ĐG ${w} (${activeMonth})`),
+      `Đã ĐG trong ${activeMonth}`,
+      `Chưa ĐG trong ${activeMonth}`,
+      "Tỷ lệ ĐG định kỳ (%)",
+      "Tổng lượt ĐG tích lũy",
+      "Tình trạng đánh giá tại Cơ sở"
+    ]
+  ]
+
+  const campusRows = campusList.map((c, idx) => {
+    const total = c.targets.length
+    const pendingEval = Math.max(0, c.activeCount - c.monthEvaluatedStudents)
+    const evalRate = c.activeCount > 0 ? Math.round((c.monthEvaluatedStudents / c.activeCount) * 100) : 100
+    let evalStatus = "Đã hoàn thành 100% ĐG định kỳ"
+    if (c.monthEvaluatedStudents === 0 && c.activeCount > 0) evalStatus = `Chưa cập nhật ĐG ${activeMonth} (${c.activeCount} HS chờ ĐG)`
+    else if (pendingEval > 0) evalStatus = `Đang đánh giá (${c.monthEvaluatedStudents}/${c.activeCount} HS đang theo dõi)`
+
+    return [
+      idx + 1,
+      c.campusName,
+      total,
+      c.commitmentCount,
+      c.activeCount,
+      c.termCount,
+      c.teachers.size,
+      ...c.weekEvalCounts.map(cnt => `${cnt}/${c.activeCount} HS`),
+      `${c.monthEvaluatedStudents} HS`,
+      `${pendingEval} HS`,
+      `${evalRate}%`,
+      c.totalEvals,
+      evalStatus
+    ]
+  })
+
+  const wsCampus = XLSX.utils.aoa_to_sheet([...campusHeader, ...campusRows])
+  wsCampus["!cols"] = [
+    { wch: 6 },
+    { wch: 20 },
+    { wch: 12 },
+    { wch: 14 },
+    { wch: 14 },
+    { wch: 14 },
+    { wch: 15 },
+    ...weeksList.map(() => ({ wch: 16 })),
+    { wch: 18 },
+    { wch: 18 },
+    { wch: 18 },
+    { wch: 18 },
+    { wch: 36 }
+  ]
+  XLSX.utils.book_append_sheet(workbook, wsCampus, "Theo_Co_So_Tuan_Thang")
 
   // Gom nhóm học sinh theo từng Giáo viên
   const teacherMap: Record<string, {
@@ -553,15 +758,17 @@ export function exportTeacherProgressReportExcel(
     commitmentCount: number
     evalCount: number
     goodCount: number
+    weekEvalCounts: number[]
+    monthEvaluatedCount: number
   }> = {}
 
   targets.forEach(t => {
     const assignedTeachers = getAssignedTeachers(t)
     const isTerm = t.terminationStatus === "TERMINATED"
     const isPending = t.terminationStatus === "PENDING_TERMINATION"
-    const isCommitment = t.sourceType === "ADMISSION" || (t.notes && t.notes.includes("Cam kết Khảo sát đầu vào")) || t.sourceType === "ASSESSMENT"
-    const campus = t.student?.class?.campus?.campusName || t.student?.campus?.campusName || ""
-    const className = t.student?.class?.className || ""
+    const isCommitment = t.sourceType === "ADMISSION" || (t.notes && t.notes.includes("Cam kết Khảo sát đầu vào")) || t.sourceType === "ASSESSMENT" || t.hasPsychCommitment
+    const campus = t.student?.class?.campus?.campusName || t.student?.campus?.campusName || t.campusName || ""
+    const className = t.student?.class?.className || t.className || ""
     const match = className.match(/^(\d+)/)
     const grade = match ? `Khối ${match[1]}` : className
     const evals = t.evaluations || []
@@ -579,7 +786,9 @@ export function exportTeacherProgressReportExcel(
           termCount: 0,
           commitmentCount: 0,
           evalCount: 0,
-          goodCount: 0
+          goodCount: 0,
+          weekEvalCounts: weeksList.map(() => 0),
+          monthEvaluatedCount: 0
         }
       }
       const group = teacherMap[tch.id]
@@ -593,6 +802,16 @@ export function exportTeacherProgressReportExcel(
       if (isCommitment) group.commitmentCount++
       group.evalCount += evals.length
 
+      weeksList.forEach((w, wIdx) => {
+        if (findWeekEvaluation(evals, w, activeMonth)) {
+          group.weekEvalCounts[wIdx]++
+        }
+      })
+
+      if (findMonthEvaluations(evals, activeMonth).length > 0) {
+        group.monthEvaluatedCount++
+      }
+
       evals.forEach((ev: any) => {
         const lvl = (ev.trackingLevel || "").toLowerCase()
         if (lvl.includes("đạt") || lvl.includes("tốt") || lvl.includes("ổn định") || lvl.includes("tiến bộ")) {
@@ -605,13 +824,13 @@ export function exportTeacherProgressReportExcel(
   const teacherList = Object.values(teacherMap).sort((a, b) => b.targets.length - a.targets.length)
 
   // -------------------------------------------------------------------------
-  // SHEET 1: TỔNG HỢP TIẾN ĐỘ THEO TỪNG GIÁO VIÊN
+  // SHEET 2: TÌNH TRẠNG ĐÁNH GIÁ ĐỊNH KỲ CỦA GV THEO TUẦN & THÁNG
   // -------------------------------------------------------------------------
   const summaryHeader = [
     ["HỆ THỐNG GIÁO DỤC SKY-LINE"],
     [options.supportType === "PSYCHOLOGICAL" 
-      ? "BÁO CÁO TIẾN ĐỘ HỖ TRỢ TÂM LÝ HỌC ĐƯỜNG THEO TỪNG CHUYÊN VIÊN / GIÁO VIÊN"
-      : "BÁO CÁO THEO DÕI TIẾN ĐỘ BỒI DƯỠNG HỌC TẬP THEO TỪNG GIÁO VIÊN"
+      ? "TÌNH TRẠNG ĐÁNH GIÁ TÂM LÝ ĐỊNH KỲ THEO TUẦN & THÁNG CỦA TỪNG GIÁO VIÊN / CHUYÊN VIÊN"
+      : "BÁO CÁO THEO DÕI TIẾN ĐỘ BỒI DƯỠNG HỌC TẬP ĐỊNH KỲ THEO TỪNG GIÁO VIÊN"
     ],
     [`Năm học: ${academicYear} | Kỳ theo dõi: ${activeMonth} | Xuất ngày: ${exportTimestamp} | Tổng số nhân sự phụ trách: ${teacherList.length}`],
     [],
@@ -623,25 +842,27 @@ export function exportTeacherProgressReportExcel(
       "Tổng số HS phụ trách",
       "Diện Cam kết (CKĐV)",
       "Đang theo dõi (🟡)",
-      "Chờ duyệt kết thúc (⏳)",
-      "Đã chấm dứt theo dõi (🏁)",
-      "Tỷ lệ hoàn thành (%)",
-      "Tổng lượt ghi nhận",
-      "Lượt tiến bộ / Đạt",
-      "Đánh giá tiến độ chung"
+      "Đã chấm dứt (🏁)",
+      ...weeksList.map(w => `ĐG ${w}`),
+      `Đã ĐG trong ${activeMonth}`,
+      `Chưa ĐG trong ${activeMonth}`,
+      "Tỷ lệ ĐG kỳ này (%)",
+      "Tổng lượt ghi nhận năm",
+      "Tình trạng đánh giá định kỳ của GV"
     ]
   ]
 
   const summaryRows = teacherList.map((t, idx) => {
     const total = t.targets.length
-    const termRate = total > 0 ? `${Math.round((t.termCount / total) * 100)}%` : "0%"
     const campusStr = Array.from(t.campusNames).join(", ") || "Toàn trường"
     const gradeStr = Array.from(t.grades).join(", ") || "—"
+    const pendingEval = Math.max(0, t.activeCount - t.monthEvaluatedCount)
+    const evalRateNum = t.activeCount > 0 ? Math.round((t.monthEvaluatedCount / t.activeCount) * 100) : 100
 
-    let statusText = "Đang tích cực can thiệp"
-    if (t.termCount > 0 && t.activeCount === 0) statusText = "Đã hoàn thành 100% ca"
-    else if (t.termCount > 0) statusText = `Đã hoàn thành ${t.termCount} ca, tiếp tục theo dõi`
-    else if (t.evalCount === 0) statusText = "Mới tiếp nhận / Chưa ghi nhận"
+    let statusText = "Đã hoàn thành đánh giá định kỳ"
+    if (t.activeCount === 0 && t.termCount > 0) statusText = "Đã hoàn thành 100% ca theo dõi"
+    else if (t.monthEvaluatedCount === 0) statusText = `Chưa cập nhật ĐG ${activeMonth} (Cần ĐG ${t.activeCount} HS)`
+    else if (pendingEval > 0) statusText = `Đang đánh giá định kỳ (${t.monthEvaluatedCount}/${t.activeCount} HS, còn ${pendingEval} HS)`
 
     return [
       idx + 1,
@@ -651,11 +872,12 @@ export function exportTeacherProgressReportExcel(
       total,
       t.commitmentCount,
       t.activeCount,
-      t.pendingCount,
       t.termCount,
-      termRate,
+      ...t.weekEvalCounts.map(cnt => `${cnt}/${t.activeCount}`),
+      t.monthEvaluatedCount,
+      pendingEval,
+      `${evalRateNum}%`,
       t.evalCount,
-      t.goodCount,
       statusText
     ]
   })
@@ -663,8 +885,10 @@ export function exportTeacherProgressReportExcel(
   // Dòng tổng cộng
   const grandTotalStudents = targets.length
   const grandTerminated = targets.filter(t => t.terminationStatus === "TERMINATED").length
-  const grandActive = targets.filter(t => t.terminationStatus === "ACTIVE").length
-  const grandRate = grandTotalStudents > 0 ? `${Math.round((grandTerminated / grandTotalStudents) * 100)}%` : "0%"
+  const grandActive = targets.filter(t => t.terminationStatus !== "TERMINATED").length
+  const grandEvalMonth = targets.filter(t => findMonthEvaluations(t.evaluations || [], activeMonth).length > 0).length
+  const grandPendingMonth = Math.max(0, grandActive - grandEvalMonth)
+  const grandEvalRate = grandActive > 0 ? `${Math.round((grandEvalMonth / grandActive) * 100)}%` : "100%"
   const grandEvals = targets.reduce((sum, t) => sum + (t.evaluations?.length || 0), 0)
 
   const summaryFooter = [
@@ -675,34 +899,130 @@ export function exportTeacherProgressReportExcel(
       "",
       "",
       grandTotalStudents,
-      targets.filter(t => t.sourceType === "ADMISSION" || (t.notes && t.notes.includes("Cam kết"))).length,
+      targets.filter(t => t.sourceType === "ADMISSION" || (t.notes && t.notes.includes("Cam kết")) || t.hasPsychCommitment).length,
       grandActive,
-      targets.filter(t => t.terminationStatus === "PENDING_TERMINATION").length,
       grandTerminated,
-      grandRate,
+      ...weeksList.map(w => {
+        const cnt = targets.filter(t => findWeekEvaluation(t.evaluations || [], w, activeMonth)).length
+        return `${cnt}/${grandActive}`
+      }),
+      grandEvalMonth,
+      grandPendingMonth,
+      grandEvalRate,
       grandEvals,
-      "",
-      "Toàn bộ học sinh tâm lý & hỗ trợ học tập"
+      "Tổng hợp tình trạng đánh giá định kỳ theo Tuần & Tháng"
     ]
   ]
 
   const wsSummary = XLSX.utils.aoa_to_sheet([...summaryHeader, ...summaryRows, ...summaryFooter])
   wsSummary["!cols"] = [
     { wch: 6 },
-    { wch: 30 },
+    { wch: 28 },
     { wch: 18 },
     { wch: 16 },
     { wch: 16 },
     { wch: 16 },
     { wch: 16 },
-    { wch: 18 },
-    { wch: 20 },
-    { wch: 18 },
+    { wch: 16 },
+    ...weeksList.map(() => ({ wch: 12 })),
     { wch: 16 },
     { wch: 16 },
-    { wch: 32 }
+    { wch: 16 },
+    { wch: 18 },
+    { wch: 38 }
   ]
-  XLSX.utils.book_append_sheet(workbook, wsSummary, "Tong_Hop_Tung_Giao_Vien")
+  XLSX.utils.book_append_sheet(workbook, wsSummary, "Tinh_Trang_DG_Giao_Vien")
+
+  // -------------------------------------------------------------------------
+  // SHEET 3: MA TRẬN ĐÁNH GIÁ ĐỊNH KỲ THEO TUẦN TRONG THÁNG
+  // -------------------------------------------------------------------------
+  const weekMatrixHeader = [
+    ["HỆ THỐNG GIÁO DỤC SKY-LINE"],
+    [`SỔ THEO DÕI ĐÁNH GIÁ ĐỊNH KỲ THEO TUẦN (${activeMonth.toUpperCase()})`],
+    [`Năm học: ${academicYear} | Xuất ngày: ${exportTimestamp}`],
+    [],
+    [
+      "STT",
+      "Cơ sở",
+      "Giáo viên / Chuyên viên",
+      "Mã HS",
+      "Họ và tên học sinh",
+      "Lớp",
+      "Diện can thiệp",
+      ...weeksList.map(w => `📅 ${w}`),
+      `⭐ Tổng kết ${activeMonth}`,
+      "Tình trạng ĐG của GV",
+      "Trạng thái hồ sơ",
+      "Nhận xét / Ghi chú mới nhất"
+    ]
+  ]
+
+  const weekMatrixRows: any[][] = []
+  let wmStt = 1
+  teacherList.forEach(tch => {
+    tch.targets.forEach((t: any) => {
+      const isCommitment = t.sourceType === "ADMISSION" || (t.notes && t.notes.includes("Cam kết")) || t.hasPsychCommitment
+      const student = t.student || {}
+      const stName = student.studentName || student.fullName || t.studentName || "—"
+      const stCode = student.studentCode || student.code || t.studentCode || "—"
+      const className = student.class?.className || t.className || "—"
+      const campusName = student.class?.campus?.campusName || student.campus?.campusName || t.campusName || "—"
+      const evals = t.evaluations || []
+      const isTerminated = t.terminationStatus === "TERMINATED"
+
+      const weekVals = weeksList.map(w => {
+        const wEv = findWeekEvaluation(evals, w, activeMonth)
+        return wEv ? (wEv.trackingLevel || "Đã ĐG") : "Chưa ĐG"
+      })
+
+      const monthEvals = findMonthEvaluations(evals, activeMonth)
+      const monthSummaryEv = monthEvals.find((e: any) => e.periodType === "MONTH" || !e.periodName?.includes("Tuần")) || monthEvals[0]
+      const monthSummaryText = monthSummaryEv ? (monthSummaryEv.trackingLevel || "Đã ĐG") : "Chưa ĐG"
+
+      const evaluatedWeeksCount = weekVals.filter(v => v !== "Chưa ĐG").length
+      let gvEvalStatus = "Chưa cập nhật ĐG"
+      if (isTerminated && monthEvals.length === 0) gvEvalStatus = "Đã kết thúc theo dõi"
+      else if (evaluatedWeeksCount > 0 && monthSummaryEv) gvEvalStatus = `Đã ĐG (${evaluatedWeeksCount} tuần & Tháng)`
+      else if (evaluatedWeeksCount > 0) gvEvalStatus = `Đã ĐG ${evaluatedWeeksCount}/${weeksList.length} tuần`
+      else if (monthSummaryEv) gvEvalStatus = `Đã ĐG định kỳ ${activeMonth}`
+
+      const sortedEvals = [...evals].sort((a: any, b: any) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime())
+      const latestEval = sortedEvals[0]
+      const latestComment = latestEval ? latestEval.comment : (t.reason || t.notes || "—")
+
+      weekMatrixRows.push([
+        wmStt++,
+        campusName,
+        tch.teacherName,
+        stCode,
+        stName,
+        className,
+        isCommitment ? "⭐️ Cam kết" : "Thường kỳ",
+        ...weekVals,
+        monthSummaryText,
+        gvEvalStatus,
+        isTerminated ? "Đã chấm dứt" : "Đang theo dõi",
+        latestComment
+      ])
+    })
+  })
+
+  const wsWeekMatrix = XLSX.utils.aoa_to_sheet([...weekMatrixHeader, ...weekMatrixRows])
+  wsWeekMatrix["!cols"] = [
+    { wch: 6 },
+    { wch: 14 },
+    { wch: 26 },
+    { wch: 14 },
+    { wch: 24 },
+    { wch: 10 },
+    { wch: 14 },
+    ...weeksList.map(() => ({ wch: 16 })),
+    { wch: 18 },
+    { wch: 24 },
+    { wch: 16 },
+    { wch: 45 }
+  ]
+  XLSX.utils.book_append_sheet(workbook, wsWeekMatrix, `DG_Tuan_${activeMonth.replace(/\s+/g, "_")}`)
 
   // -------------------------------------------------------------------------
   // SHEET 2: DANH SÁCH CHI TIẾT HỌC SINH THEO TỪNG GIÁO VIÊN
@@ -835,7 +1155,7 @@ export function exportTeacherProgressReportExcel(
       const evals = t.evaluations || []
 
       const monthValues = ACADEMIC_MONTHS.map((m) => {
-        const monthEvals = evals.filter((e: any) => e.periodName === m || (e.periodName && e.periodName.includes(m)))
+        const monthEvals = findMonthEvaluations(evals, m)
         if (monthEvals.length === 0) return "—"
         const ev = monthEvals[monthEvals.length - 1]
         return ev.trackingLevel || "Đạt"
@@ -878,7 +1198,10 @@ export function exportTeacherProgressReportExcel(
   // Tên file xuất ra
   const sanitizedYear = academicYear.replace(/[^a-zA-Z0-9_-]/g, "_")
   const typeTag = options.supportType === "PSYCHOLOGICAL" ? "Tam_Ly" : "Hoc_Tap"
-  const fileName = `Bao_Cao_Tien_Do_${typeTag}_Theo_Tung_Giao_Vien_${sanitizedYear}.xlsx`
+  const campusTag = options.campusName && options.campusId !== "ALL"
+    ? `_${options.campusName.replace(/[^a-zA-Z0-9_\u00C0-\u1EF9]/g, "_")}`
+    : "_Theo_Co_So_GV"
+  const fileName = `So_Theo_Doi_Danh_Gia_${typeTag}${campusTag}_${sanitizedYear}.xlsx`
 
   XLSX.writeFile(workbook, fileName)
   return fileName

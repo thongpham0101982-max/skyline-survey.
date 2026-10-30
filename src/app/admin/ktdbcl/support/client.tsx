@@ -11,6 +11,7 @@ import * as XLSX from "xlsx"
 import { OverviewDashboard } from "./overview"
 import { exportTrackingBookExcel } from "@/lib/support/exportTrackingBookExcel"
 import { TeacherProgressPdfModal } from "./TeacherProgressPdfModal"
+import { SchoolCampusArtwork } from "@/components/UserWelcomeCard"
 
 interface Props {
   academicYears: any[]
@@ -1551,110 +1552,154 @@ export function SupportClient({
 
   return (
     <div className="space-y-6">
-      {/* Upper header section */}
-      <div className="flex flex-col md:flex-row md:items-center md:justify-between border-b pb-5">
-        <div>
-          <h1 className="text-3xl font-extrabold text-slate-900 tracking-tight flex items-center gap-2">
-            <GraduationCap className="h-9 w-9 text-indigo-600" />
-            Hỗ trợ học tập & Tâm lý
-          </h1>
-          <p className="text-slate-500 mt-1">
-            Quản lý danh sách bồi dưỡng, phân công giáo viên phụ trách và theo dõi định kỳ học sinh
-          </p>
+      {/* Unified Sky-Line Campus Top Banner Frame (Compact & Harmonious) */}
+      <div className="no-campus-banner relative rounded-2xl border border-slate-200/80 bg-white shadow-xs overflow-hidden">
+        {/* Top brand accent bar */}
+        <div className="h-1 w-full bg-gradient-to-r from-[#003B3A] via-[#00A19A] to-[#D49A3D]" />
+
+        {/* Right-side flush campus illustration with smooth left fade */}
+        <div className="hidden sm:block absolute top-0 right-0 bottom-0 sm:w-[48%] md:w-[44%] lg:w-[40%] z-0 pointer-events-none">
+          <SchoolCampusArtwork opacityClass="opacity-65" />
         </div>
 
-        {/* Global Year Switcher */}
-        <div className="flex items-center gap-3 mt-4 md:mt-0">
-          <label className="text-sm font-semibold text-slate-700">Năm học:</label>
-          <select
-            value={selectedYearId}
-            onChange={(e) => {
-              setSelectedYearId(e.target.value)
-              localStorage.setItem("academicYearId", e.target.value)
-              window.dispatchEvent(new Event("academicYearChanged"))
-            }}
-            className="rounded-lg border-slate-300 border py-2 px-3 focus:outline-none focus:ring-2 focus:ring-indigo-500 text-sm font-medium"
-          >
-            {academicYears.map((year) => (
-              <option key={year.id} value={year.id}>
-                {year.name}
-              </option>
-            ))}
-          </select>
-          
-          <button 
-            onClick={fetchAllData}
-            className="p-2 border rounded-lg hover:bg-slate-50 transition-colors"
-          >
-            <RefreshCw className="h-4 w-4 text-slate-600" />
-          </button>
+        {/* Ambient left glow */}
+        <div
+          className="absolute inset-y-0 left-0 w-2/3 pointer-events-none z-0"
+          style={{
+            background:
+              "radial-gradient(circle at 0% 0%, rgba(0, 161, 154, 0.06), transparent 65%)"
+          }}
+        />
+
+        <div className="relative z-10 px-4 py-3 sm:px-5 sm:py-3.5">
+          {/* Main header row: Left title + Right Slogan & Year Switcher */}
+          <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-3 pb-3 border-b border-slate-200/70">
+            <div className="flex items-center gap-3 min-w-0">
+              <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-[#003B3A] to-[#00A19A] text-white flex items-center justify-center shadow-xs shrink-0">
+                <GraduationCap className="h-5 w-5" />
+              </div>
+              <div className="min-w-0">
+                <div className="flex items-center gap-2 flex-wrap">
+                  <h1 className="text-lg sm:text-xl font-black text-slate-900 tracking-tight leading-tight">
+                    Hỗ trợ Học tập &amp; Tâm lý Học đường
+                  </h1>
+                  <span className="hidden md:inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-extrabold uppercase tracking-wider bg-teal-50 text-[#003B3A] border border-teal-200/70">
+                    KT&amp;ĐBCL
+                  </span>
+                </div>
+                <p className="text-xs text-slate-500 font-medium mt-0.5 truncate">
+                  Quản lý danh sách bồi dưỡng, phân công giáo viên phụ trách và theo dõi định kỳ học sinh
+                </p>
+              </div>
+            </div>
+
+            {/* Right: Slogan pill + Year Switcher */}
+            <div className="flex flex-wrap items-center gap-2 self-start lg:self-center">
+              <span
+                className="hidden xl:inline-flex items-center gap-1.5 text-xs font-bold px-2.5 py-1 rounded-full bg-white/85 backdrop-blur-md border border-slate-200/70 shadow-2xs"
+                style={{
+                  fontFamily: "'Dancing Script', 'Caveat', 'Segoe Script', cursive",
+                  color: "#003B3A"
+                }}
+              >
+                <Sparkles className="w-3 h-3 text-amber-500 shrink-0" />
+                <span>Nơi khởi nguồn hạnh phúc &amp; đam mê khám phá</span>
+                <span className="text-rose-500 text-[10px]">♡</span>
+              </span>
+
+              <div className="flex items-center gap-1.5 bg-white/90 backdrop-blur-md px-2.5 py-1 rounded-xl border border-slate-200/90 shadow-2xs">
+                <Calendar className="w-3.5 h-3.5 text-[#00A19A]" />
+                <label className="text-[11px] font-bold text-slate-600 whitespace-nowrap">Năm học:</label>
+                <select
+                  value={selectedYearId}
+                  onChange={(e) => {
+                    setSelectedYearId(e.target.value)
+                    localStorage.setItem("academicYearId", e.target.value)
+                    window.dispatchEvent(new Event("academicYearChanged"))
+                  }}
+                  className="rounded-lg bg-slate-50 border border-slate-200 py-0.5 px-2 focus:outline-none focus:ring-2 focus:ring-teal-500 text-xs font-extrabold text-[#003B3A]"
+                >
+                  {academicYears.map((year) => (
+                    <option key={year.id} value={year.id}>
+                      {year.name}
+                    </option>
+                  ))}
+                </select>
+
+                <button
+                  onClick={fetchAllData}
+                  title="Làm mới dữ liệu"
+                  className="p-1 border border-slate-200 rounded-lg bg-white hover:bg-teal-50 hover:border-teal-200 text-slate-600 hover:text-[#003B3A] transition-colors"
+                >
+                  <RefreshCw className={`h-3.5 w-3.5 ${loading ? "animate-spin text-[#00A19A]" : ""}`} />
+                </button>
+              </div>
+            </div>
+          </div>
+
+          {/* Integrated Main Tabs Navigation */}
+          <div className="flex items-center gap-1.5 pt-2.5 overflow-x-auto no-scrollbar">
+            <button
+              onClick={() => setActiveTab("overview")}
+              className={`px-3.5 py-1.5 rounded-xl text-xs font-extrabold flex items-center gap-1.5 transition-all whitespace-nowrap ${
+                activeTab === "overview"
+                  ? "bg-[#003B3A] text-white shadow-xs"
+                  : "text-slate-600 hover:text-slate-900 hover:bg-white/80"
+              }`}
+            >
+              <LayoutDashboard className="h-3.5 w-3.5" />
+              Tổng quan
+            </button>
+
+            <button
+              onClick={() => setActiveTab("academic")}
+              className={`px-3.5 py-1.5 rounded-xl text-xs font-extrabold flex items-center gap-1.5 transition-all whitespace-nowrap relative ${
+                activeTab === "academic"
+                  ? "bg-[#003B3A] text-white shadow-xs"
+                  : "text-slate-600 hover:text-slate-900 hover:bg-white/80"
+              }`}
+            >
+              <GraduationCap className="h-3.5 w-3.5" />
+              <span>Hỗ trợ Học tập</span>
+              {academicPendingCount > 0 && (
+                <span className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded-full text-[10px] font-black bg-amber-500 text-white shadow-2xs">
+                  <Bell className="h-2.5 w-2.5 fill-white" />
+                  <span>{academicPendingCount} mới</span>
+                </span>
+              )}
+            </button>
+
+            <button
+              onClick={() => setActiveTab("psychology")}
+              className={`px-3.5 py-1.5 rounded-xl text-xs font-extrabold flex items-center gap-1.5 transition-all whitespace-nowrap relative ${
+                activeTab === "psychology"
+                  ? "bg-[#003B3A] text-white shadow-xs"
+                  : "text-slate-600 hover:text-slate-900 hover:bg-white/80"
+              }`}
+            >
+              <Users className="h-3.5 w-3.5" />
+              <span>Hỗ trợ Tâm lý</span>
+              {psychologyPendingCount > 0 && (
+                <span className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded-full text-[10px] font-black bg-amber-500 text-white shadow-2xs">
+                  <Bell className="h-2.5 w-2.5 fill-white" />
+                  <span>{psychologyPendingCount} mới</span>
+                </span>
+              )}
+            </button>
+
+            <button
+              onClick={() => setActiveTab("commitments")}
+              className={`px-3.5 py-1.5 rounded-xl text-xs font-extrabold flex items-center gap-1.5 transition-all whitespace-nowrap ${
+                activeTab === "commitments"
+                  ? "bg-[#003B3A] text-white shadow-xs"
+                  : "text-slate-600 hover:text-slate-900 hover:bg-white/80"
+              }`}
+            >
+              <UserCheck className="h-3.5 w-3.5" />
+              Số HS Cam kết/Theo dõi
+            </button>
+          </div>
         </div>
-      </div>
-
-      {/* Main Tabs Navigation */}
-      <div className="flex border-b border-slate-200">
-        <button
-          onClick={() => setActiveTab("overview")}
-          className={`py-4 px-6 font-semibold border-b-2 text-sm flex items-center gap-2 transition-all ${
-            activeTab === "overview"
-              ? "border-indigo-600 text-indigo-600 font-bold"
-              : "border-transparent text-slate-500 hover:text-slate-700"
-          }`}
-        >
-          <LayoutDashboard className="h-4 w-4" />
-          Tổng quan
-        </button>
-
-        <button
-          onClick={() => setActiveTab("academic")}
-          className={`py-4 px-6 font-semibold border-b-2 text-sm flex items-center gap-2 transition-all relative ${
-            activeTab === "academic"
-              ? "border-indigo-600 text-indigo-600 font-bold"
-              : "border-transparent text-slate-500 hover:text-slate-700"
-          }`}
-        >
-          <GraduationCap className="h-4 w-4" />
-          <span>Hỗ trợ Học tập</span>
-          {academicPendingCount > 0 && (
-            <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-bold bg-amber-500 text-white shadow-xs animate-pulse">
-              <Bell className="h-3 w-3 fill-white animate-bounce" />
-              <span>{academicPendingCount} mới</span>
-            </span>
-          )}
-        </button>
-
-        <button
-          onClick={() => setActiveTab("psychology")}
-          className={`py-4 px-6 font-semibold border-b-2 text-sm flex items-center gap-2 transition-all relative ${
-            activeTab === "psychology"
-              ? "border-indigo-600 text-indigo-600 font-bold"
-              : "border-transparent text-slate-500 hover:text-slate-700"
-          }`}
-        >
-          <Users className="h-4 w-4" />
-          <span>Hỗ trợ Tâm lý</span>
-          {psychologyPendingCount > 0 && (
-            <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-bold bg-amber-500 text-white shadow-xs animate-pulse">
-              <Bell className="h-3 w-3 fill-white animate-bounce" />
-              <span>{psychologyPendingCount} mới</span>
-            </span>
-          )}
-        </button>
-
-        <button
-          onClick={() => setActiveTab("commitments")}
-          className={`py-4 px-6 font-semibold border-b-2 text-sm flex items-center gap-2 transition-all ${
-            activeTab === "commitments"
-              ? "border-indigo-600 text-indigo-600 font-bold"
-              : "border-transparent text-slate-500 hover:text-slate-700"
-          }`}
-        >
-          <UserCheck className="h-4 w-4" />
-          Số HS Cam kết/Theo dõi
-        </button>
-
-
-
       </div>
 
       {/* Tab 0: Tổng quan */}
@@ -4155,7 +4200,9 @@ export function SupportClient({
           return t.supportType === "ACADEMIC" || t.sourceType !== "TAM_LY"
         })}
         teacherStats={[]}
+        campuses={campuses}
         selectedTeacherId={pdfTeacherId}
+        selectedCampusId={selectedCampusId || "ALL"}
         academicYearName={academicYears.find(y => y.id === selectedYearId)?.name || "2026-2027"}
         supportType={pdfSupportType}
       />
