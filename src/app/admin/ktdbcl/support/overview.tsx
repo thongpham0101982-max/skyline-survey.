@@ -35,20 +35,78 @@ import {
   LabelList
 } from "recharts"
 
-// Bảng màu định danh chuẩn 5 Cơ sở theo chuẩn Flexidata (skyline-dashboard-design)
-const CAMPUS_COLOR_MAP: Record<string, { hex: string; bg: string; text: string; border: string }> = {
-  CS1: { hex: "#48BFE3", bg: "bg-[#48BFE3]/10", text: "text-[#0284C7]", border: "border-[#48BFE3]/30" },
-  CS2: { hex: "#6C5CE7", bg: "bg-[#6C5CE7]/10", text: "text-[#6C5CE7]", border: "border-[#6C5CE7]/30" },
-  CS3: { hex: "#2E1065", bg: "bg-[#2E1065]/10", text: "text-[#2E1065]", border: "border-[#2E1065]/30" },
-  CS4: { hex: "#D97706", bg: "bg-[#D97706]/10", text: "text-[#D97706]", border: "border-[#D97706]/30" },
-  CS5: { hex: "#475569", bg: "bg-[#475569]/10", text: "text-[#475569]", border: "border-[#475569]/30" },
+// Bảng màu định danh thống nhất 5 Cơ sở Hệ thống Giáo dục Sky-Line:
+// - CS1: Xanh Sky-Line (#00A19A)
+// - CS2: Xanh - Tím Global (Gradient #00A19A -> #6D28D9 / #4F46E5)
+// - CS3: Tím Global (#7C3AED)
+// - CS4: Vàng đất (#D49A3D)
+// - CS5: Xanh biển (#0284C7)
+const CAMPUS_COLOR_MAP: Record<
+  string,
+  {
+    hex: string
+    chartFill: string
+    dotStyle: { background: string }
+    barStyle: { background: string }
+    bg: string
+    text: string
+    border: string
+  }
+> = {
+  CS1: {
+    hex: "#00A19A",
+    chartFill: "#00A19A",
+    dotStyle: { background: "#00A19A" },
+    barStyle: { background: "#00A19A" },
+    bg: "bg-[#00A19A]/10",
+    text: "text-[#00736E]",
+    border: "border-[#00A19A]/30",
+  },
+  CS2: {
+    hex: "#4F46E5",
+    chartFill: "url(#campusGradCS2)",
+    dotStyle: { background: "linear-gradient(135deg, #00A19A 0%, #6D28D9 100%)" },
+    barStyle: { background: "linear-gradient(90deg, #00A19A 0%, #6D28D9 100%)" },
+    bg: "bg-indigo-50",
+    text: "text-indigo-700",
+    border: "border-indigo-200",
+  },
+  CS3: {
+    hex: "#7C3AED",
+    chartFill: "#7C3AED",
+    dotStyle: { background: "#7C3AED" },
+    barStyle: { background: "#7C3AED" },
+    bg: "bg-purple-50",
+    text: "text-purple-700",
+    border: "border-purple-200",
+  },
+  CS4: {
+    hex: "#D49A3D",
+    chartFill: "#D49A3D",
+    dotStyle: { background: "#D49A3D" },
+    barStyle: { background: "#D49A3D" },
+    bg: "bg-amber-50",
+    text: "text-[#92400E]",
+    border: "border-amber-200",
+  },
+  CS5: {
+    hex: "#0284C7",
+    chartFill: "#0284C7",
+    dotStyle: { background: "#0284C7" },
+    barStyle: { background: "#0284C7" },
+    bg: "bg-sky-50",
+    text: "text-sky-700",
+    border: "border-sky-200",
+  },
 }
 
 function getCampusColorInfo(campusName: string = "", idx: number = 0) {
   const upper = campusName.toUpperCase()
-  for (const key of ["CS1", "CS2", "CS3", "CS4", "CS5"]) {
-    if (upper.includes(key)) return CAMPUS_COLOR_MAP[key]
-  }
+  if (upper.includes("CS1") || upper.includes("CƠ SỞ 1") || upper.includes("CENTRAL")) return CAMPUS_COLOR_MAP.CS1
+  if (upper.includes("CS2") || upper.includes("CƠ SỞ 2") || upper.includes("RIVERSIDE")) return CAMPUS_COLOR_MAP.CS2
+  if (upper.includes("CS3") || upper.includes("CƠ SỞ 3") || upper.includes("HILL")) return CAMPUS_COLOR_MAP.CS3
+  if (upper.includes("CS4") || upper.includes("CƠ SỞ 4") || upper.includes("BEACH") || upper.includes("INTERNATIONAL")) return CAMPUS_COLOR_MAP.CS4
+  if (upper.includes("CS5") || upper.includes("CƠ SỞ 5") || upper.includes("GLOBAL")) return CAMPUS_COLOR_MAP.CS5
   const fallbackKeys = ["CS1", "CS2", "CS3", "CS4", "CS5"]
   return CAMPUS_COLOR_MAP[fallbackKeys[idx % fallbackKeys.length]]
 }
@@ -1743,6 +1801,12 @@ export function OverviewDashboard({
                         data={psychCampusStats}
                         margin={{ top: 16, right: 12, left: -22, bottom: 0 }}
                       >
+                        <defs>
+                          <linearGradient id="campusGradCS2" x1="0" y1="0" x2="0" y2="1">
+                            <stop offset="0%" stopColor="#00A19A" />
+                            <stop offset="100%" stopColor="#6D28D9" />
+                          </linearGradient>
+                        </defs>
                         <CartesianGrid strokeDasharray="3 3" stroke="#f1f5f9" vertical={false} />
                         <XAxis
                           dataKey="campusName"
@@ -1763,7 +1827,7 @@ export function OverviewDashboard({
                                 <div className="bg-slate-900/95 text-white p-2.5 rounded-xl shadow-xl text-xs font-mono tabular-nums">
                                   <p className="font-bold text-teal-300 font-sans mb-1">{d.campusName}</p>
                                   <p>Tổng số: <strong>{d.count} HS</strong></p>
-                                  <p className="text-amber-300">Đang theo dõi: {d.active} HS</p>
+                                  <p className="text-teal-300">Đang theo dõi: {d.active} HS</p>
                                   <p className="text-emerald-300">Đã chấm dứt: {d.terminated} HS</p>
                                 </div>
                               )
@@ -1775,7 +1839,7 @@ export function OverviewDashboard({
                           {psychCampusStats.map((entry, idx) => (
                             <Cell
                               key={`campus-cell-${idx}`}
-                              fill={getCampusColorInfo(entry.campusName, idx).hex}
+                              fill={getCampusColorInfo(entry.campusName, idx).chartFill}
                             />
                           ))}
                           <LabelList
@@ -1807,9 +1871,9 @@ export function OverviewDashboard({
                             <div className="flex items-center gap-2 min-w-0">
                               <span
                                 className="w-2.5 h-2.5 rounded-full shrink-0"
-                                style={{ backgroundColor: cColor.hex }}
+                                style={cColor.dotStyle}
                               />
-                              <span className="font-extrabold text-slate-800 truncate">{c.campusName}</span>
+                              <span className={`font-extrabold truncate ${cColor.text}`}>{c.campusName}</span>
                               <span className="text-[10px] text-slate-500 font-mono tabular-nums">
                                 ({c.active} đang TD • {c.terminated} xong)
                               </span>
@@ -2049,9 +2113,9 @@ export function OverviewDashboard({
                           <span className="font-extrabold text-slate-800 flex items-center gap-1.5 truncate">
                             <span
                               className="w-2.5 h-2.5 rounded-full shrink-0"
-                              style={{ backgroundColor: cColor.hex }}
+                              style={cColor.dotStyle}
                             />
-                            <span className="truncate">{item.campusName}</span>
+                            <span className={`truncate ${cColor.text}`}>{item.campusName}</span>
                           </span>
                           <div className="flex items-center gap-1 shrink-0">
                             {item.commitmentCount > 0 && (
@@ -2087,11 +2151,11 @@ export function OverviewDashboard({
                           </div>
                         </div>
 
-                        {/* Thanh tỉ lệ kép trực quan (Teal - Theo dõi vs Deep Pine/Emerald - Chấm dứt) */}
+                        {/* Thanh tỉ lệ kép trực quan theo màu định danh Cơ sở (Theo dõi) vs Deep Pine (Chấm dứt) */}
                         <div className="h-2 w-full bg-slate-200/60 rounded-full overflow-hidden flex mb-1.5">
                           <div
-                            className="h-full bg-[#00A19A] transition-all duration-500"
-                            style={{ width: `${activePercent}%` }}
+                            className="h-full transition-all duration-500"
+                            style={{ width: `${activePercent}%`, ...cColor.barStyle }}
                             title={`Đang theo dõi: ${item.active} HS (${activePercent}%)`}
                           />
                           <div
@@ -2102,8 +2166,8 @@ export function OverviewDashboard({
                         </div>
 
                         <div className="flex items-center justify-between text-[10px] font-bold">
-                          <span className="text-[#00736E] flex items-center gap-1">
-                            <span className="w-1.5 h-1.5 rounded-full bg-[#00A19A]" />
+                          <span className={`${cColor.text} flex items-center gap-1`}>
+                            <span className="w-1.5 h-1.5 rounded-full" style={cColor.dotStyle} />
                             {item.active} đang theo dõi
                           </span>
                           <span className="text-[#003B3A] flex items-center gap-1">
@@ -2734,7 +2798,17 @@ export function OverviewDashboard({
                           {/* Lớp & Cơ sở */}
                           <td className="px-3 py-2.5">
                             <span className="font-bold text-slate-800 text-xs">Lớp {className}</span>
-                            <div className="text-[10px] text-[#135E5B] font-semibold mt-0.5">{campusName}</div>
+                            {(() => {
+                              const cColor = getCampusColorInfo(campusName)
+                              return (
+                                <div className="mt-0.5">
+                                  <span className={`inline-flex items-center gap-1 px-1.5 py-0.5 rounded-md text-[10px] font-bold border ${cColor.bg} ${cColor.text} ${cColor.border}`}>
+                                    <span className="w-1.5 h-1.5 rounded-full shrink-0" style={cColor.dotStyle} />
+                                    {campusName}
+                                  </span>
+                                </div>
+                              )
+                            })()}
                           </td>
 
                           {/* Diện can thiệp */}
@@ -3093,14 +3167,20 @@ export function OverviewDashboard({
                 Cơ sở có học sinh phụ đạo
               </h3>
               <div className="space-y-2.5">
-                {acadCampusStats.filter(c => c.count > 0).map((c, i) => (
-                  <div key={i} className="flex justify-between items-center p-2.5 rounded-xl bg-slate-50 border border-slate-100 text-xs">
-                    <span className="font-bold text-slate-800">{c.campusName}</span>
-                    <span className="px-2.5 py-0.5 rounded-full bg-cyan-100 text-cyan-800 font-black">
-                      {c.count} HS
-                    </span>
-                  </div>
-                ))}
+                {acadCampusStats.filter(c => c.count > 0).map((c, i) => {
+                  const cColor = getCampusColorInfo(c.campusName, i)
+                  return (
+                    <div key={i} className="flex justify-between items-center p-2.5 rounded-xl bg-slate-50 border border-slate-100 text-xs">
+                      <span className={`font-bold flex items-center gap-1.5 ${cColor.text}`}>
+                        <span className="w-2.5 h-2.5 rounded-full shrink-0" style={cColor.dotStyle} />
+                        {c.campusName}
+                      </span>
+                      <span className={`px-2.5 py-0.5 rounded-full border font-black ${cColor.bg} ${cColor.text} ${cColor.border}`}>
+                        {c.count} HS
+                      </span>
+                    </div>
+                  )
+                })}
               </div>
             </div>
 
@@ -3237,7 +3317,18 @@ export function OverviewDashboard({
                       <td className="py-3 px-4 font-bold text-slate-900">{t.student?.studentName}</td>
                       <td className="py-3 px-4">
                         <span className="font-bold">Lớp {t.student?.class?.className}</span>
-                        <div className="text-[10px] text-teal-700">{t.student?.class?.campus?.campusName}</div>
+                        {(() => {
+                          const cName = t.student?.class?.campus?.campusName || ""
+                          const cColor = getCampusColorInfo(cName)
+                          return (
+                            <div className="mt-0.5">
+                              <span className={`inline-flex items-center gap-1 px-1.5 py-0.5 rounded-md text-[10px] font-bold border ${cColor.bg} ${cColor.text} ${cColor.border}`}>
+                                <span className="w-1.5 h-1.5 rounded-full shrink-0" style={cColor.dotStyle} />
+                                {cName}
+                              </span>
+                            </div>
+                          )
+                        })()}
                       </td>
                       <td className="py-3 px-4">
                         {(t.assignments || []).map((a: any) => a.teacher?.teacherName).filter(Boolean).join(", ") || "Chưa phân công"}
@@ -3343,20 +3434,25 @@ export function OverviewDashboard({
               </div>
 
               {/* Campus Tabs */}
-              <div className="flex bg-slate-100 p-1 rounded-xl border border-slate-200/60 overflow-x-auto self-start sm:self-auto">
-                {campuses.map(c => (
-                  <button
-                    key={c.id}
-                    onClick={() => setSelectedCampusTabId(c.id)}
-                    className={`py-1.5 px-3.5 text-xs font-bold rounded-lg transition-all whitespace-nowrap ${
-                      selectedCampusTabId === c.id
-                        ? "bg-white text-teal-700 shadow-xs font-black"
-                        : "text-slate-500 hover:text-slate-800"
-                    }`}
-                  >
-                    {c.campusName}
-                  </button>
-                ))}
+              <div className="flex bg-slate-100 p-1 rounded-xl border border-slate-200/60 overflow-x-auto self-start sm:self-auto gap-1">
+                {campuses.map((c, idx) => {
+                  const cColor = getCampusColorInfo(c.campusName, idx)
+                  const isSelected = selectedCampusTabId === c.id
+                  return (
+                    <button
+                      key={c.id}
+                      onClick={() => setSelectedCampusTabId(c.id)}
+                      className={`py-1.5 px-3 text-xs font-bold rounded-lg transition-all whitespace-nowrap inline-flex items-center gap-1.5 ${
+                        isSelected
+                          ? `bg-white ${cColor.text} shadow-xs font-black ring-1 ${cColor.border}`
+                          : "text-slate-600 hover:text-slate-900"
+                      }`}
+                    >
+                      <span className="w-2 h-2 rounded-full shrink-0" style={cColor.dotStyle} />
+                      {c.campusName}
+                    </button>
+                  )
+                })}
               </div>
             </div>
 
