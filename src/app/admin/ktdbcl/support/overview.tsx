@@ -9,17 +9,23 @@ import {
   Calendar, Layers, ShieldCheck, HeartHandshake,
   UserCheck, AlertTriangle, ChevronRight, ChevronLeft, UserPlus,
   Compass, ArrowUpRight, ArrowDownRight, Award,
-  FileSpreadsheet, Download, Printer
+  FileSpreadsheet, Download, Printer,
+  SlidersHorizontal, RotateCcw, Activity, BarChart3
 } from "lucide-react"
 import toast from "react-hot-toast"
 import { exportTeacherProgressReportExcel } from "@/lib/support/exportTrackingBookExcel"
 import { TeacherProgressPdfModal } from "./TeacherProgressPdfModal"
+import { KPICard } from "@/components/KPICard"
+import { DashboardChartCard } from "@/components/dashboard/DashboardChartCard"
+import { SmartAlertCenter, SmartAlertItem } from "@/components/dashboard/SmartAlertCenter"
 import {
   ResponsiveContainer,
   AreaChart,
   Area,
   BarChart,
   Bar,
+  ComposedChart,
+  Line,
   XAxis,
   YAxis,
   CartesianGrid,
@@ -28,6 +34,24 @@ import {
   Cell,
   LabelList
 } from "recharts"
+
+// Bảng màu định danh chuẩn 5 Cơ sở theo chuẩn Flexidata (skyline-dashboard-design)
+const CAMPUS_COLOR_MAP: Record<string, { hex: string; bg: string; text: string; border: string }> = {
+  CS1: { hex: "#48BFE3", bg: "bg-[#48BFE3]/10", text: "text-[#0284C7]", border: "border-[#48BFE3]/30" },
+  CS2: { hex: "#6C5CE7", bg: "bg-[#6C5CE7]/10", text: "text-[#6C5CE7]", border: "border-[#6C5CE7]/30" },
+  CS3: { hex: "#2E1065", bg: "bg-[#2E1065]/10", text: "text-[#2E1065]", border: "border-[#2E1065]/30" },
+  CS4: { hex: "#D97706", bg: "bg-[#D97706]/10", text: "text-[#D97706]", border: "border-[#D97706]/30" },
+  CS5: { hex: "#475569", bg: "bg-[#475569]/10", text: "text-[#475569]", border: "border-[#475569]/30" },
+}
+
+function getCampusColorInfo(campusName: string = "", idx: number = 0) {
+  const upper = campusName.toUpperCase()
+  for (const key of ["CS1", "CS2", "CS3", "CS4", "CS5"]) {
+    if (upper.includes(key)) return CAMPUS_COLOR_MAP[key]
+  }
+  const fallbackKeys = ["CS1", "CS2", "CS3", "CS4", "CS5"]
+  return CAMPUS_COLOR_MAP[fallbackKeys[idx % fallbackKeys.length]]
+}
 
 interface OverviewDashboardProps {
   targets: any[]
@@ -732,776 +756,1225 @@ export function OverviewDashboard({
     return result
   }, [targets, campuses])
 
+  // =========================================================================
+  // 12. FLEXIDATA EXECUTIVE METRICS & SMART ALERTS (SKYLINE-DASHBOARD-DESIGN)
+  // =========================================================================
+  const [distributionTab, setDistributionTab] = useState<"CAMPUS" | "GRADE" | "TEACHER">("CAMPUS")
+
+  // Thống kê tiến độ đánh giá định kỳ (Tuần / Tháng) thực tế của HS Tâm lý đang theo dõi
+  const psychPeriodicEvalStats = useMemo(() => {
+    const activeTargets = psychologyTargets.filter(t => t.terminationStatus === "ACTIVE")
+    let evaluatedActiveCount = 0
+    activeTargets.forEach(t => {
+      const hasEval = (Array.isArray(t.evaluations) && t.evaluations.length > 0) || Boolean(t.status && t.status.trim() !== "")
+      if (hasEval) evaluatedActiveCount++
+    })
+    const evalRate = activeTargets.length > 0
+      ? Math.round((evaluatedActiveCount / activeTargets.length) * 100)
+      : 100
+    return {
+      activeTotal: activeTargets.length,
+      evaluatedActiveCount,
+      missingEvalCount: Math.max(0, activeTargets.length - evaluatedActiveCount),
+      evalRate,
+    }
+  }, [psychologyTargets])
+
+  // Cảnh báo Điều hành Thông minh (SmartAlertCenter) tự động phát hiện điểm nghẽn
+  const supportSmartAlerts = useMemo<SmartAlertItem[]>(() => {
+    const list: SmartAlertItem[] = []
+
+    const unassignedPsych = psychologyTargets.filter(
+      t => t.terminationStatus === "ACTIVE" && !(t.assignments || []).some((a: any) => a.teacher)
+    ).length
+    if (unassignedPsych > 0) {
+      list.push({
+        id: "unassigned-psych",
+        severity: "CRITICAL",
+        category: "STUDENT_SUPPORT",
+        categoryLabel: "Phân công Chuyên viên",
+        scopeText: "Hỗ trợ Tâm lý",
+        title: `${unassignedPsych} học sinh Tâm lý đang theo dõi chưa được phân công Giáo viên / Chuyên viên`,
+        description: "Cần phân công chuyên viên phụ trách để thiết lập lộ trình đồng hành và cập nhật sổ theo dõi định kỳ.",
+        metricBadge: `${unassignedPsych} HS chưa phân công`,
+        actionLabel: "Lọc HS chưa phân công",
+        onClick: () => {
+          setSupportScope("PSYCHOLOGICAL")
+          setPsychTeacherFilter("UNASSIGNED")
+        },
+      })
+    }
+
+    if (psychPeriodicEvalStats.missingEvalCount > 0) {
+      list.push({
+        id: "missing-periodic-eval",
+        severity: "WARNING",
+        category: "PROGRESS_GAP",
+        categoryLabel: "Đánh giá Định kỳ Tuần/Tháng",
+        scopeText: "Toàn hệ thống CS1–CS5",
+        title: `${psychPeriodicEvalStats.missingEvalCount}/${psychPeriodicEvalStats.activeTotal} học sinh đang theo dõi cần cập nhật nhận xét định kỳ`,
+        description: `Tiến độ cập nhật đánh giá định kỳ hiện đạt ${psychPeriodicEvalStats.evalRate}%. Có thể xuất Sổ PDF theo Cơ sở & GV để rà soát chi tiết.`,
+        metricBadge: `Đạt ${psychPeriodicEvalStats.evalRate}%`,
+        actionLabel: "Mở Sổ PDF rà soát",
+        onClick: () => handleOpenPdfModal(psychTeacherFilter, psychCampusFilter),
+      })
+    }
+
+    if (psychCommitmentActive > 0) {
+      list.push({
+        id: "active-commitment-psych",
+        severity: "INFO",
+        category: "STUDENT_SUPPORT",
+        categoryLabel: "Cam kết Đầu vào (CKĐV)",
+        scopeText: "Diện Cam kết Tâm lý",
+        title: `${psychCommitmentActive} học sinh diện Cam kết Tâm lý đang trong lộ trình theo dõi sát hàng tuần`,
+        description: `Tổng cộng ${psychCommitmentTargets.length} hồ sơ cam kết (${psychCommitmentActive} đang theo dõi, ${psychCommitmentTerminated} đã hoàn thành mục tiêu).`,
+        metricBadge: `${psychCommitmentActive} HS Cam kết`,
+        actionLabel: "Lọc diện Cam kết",
+        onClick: () => {
+          setSupportScope("PSYCHOLOGICAL")
+          setPsychCommitmentFilter(psychCommitmentFilter === "COMMITMENT_ONLY" ? "ALL" : "COMMITMENT_ONLY")
+        },
+      })
+    }
+
+    if (totalPendingTerm > 0) {
+      list.push({
+        id: "pending-termination",
+        severity: "WARNING",
+        category: "OVERDUE_TASK",
+        categoryLabel: "Phê duyệt Kết thúc",
+        scopeText: "BGH / KT&ĐBCL",
+        title: `${totalPendingTerm} hồ sơ đề xuất chấm dứt hỗ trợ đang chờ Ban Giám hiệu / KT&ĐBCL phê duyệt`,
+        description: "Kiểm tra kết quả đánh giá cuối kỳ trước khi xác nhận hoàn thành lộ trình hỗ trợ.",
+        metricBadge: `${totalPendingTerm} chờ duyệt`,
+        actionLabel: "Xem đề xuất",
+        onClick: () => {
+          setSupportScope("PSYCHOLOGICAL")
+          setPsychStatusFilter("PENDING_TERMINATION")
+        },
+      })
+    }
+
+    return list
+  }, [
+    psychologyTargets,
+    psychPeriodicEvalStats,
+    psychCommitmentActive,
+    psychCommitmentTargets.length,
+    psychCommitmentTerminated,
+    totalPendingTerm,
+    psychTeacherFilter,
+    psychCampusFilter,
+    psychCommitmentFilter,
+  ])
+
+  const hasActivePsychFilters =
+    Boolean(psychSearch) ||
+    psychCampusFilter !== "ALL" ||
+    psychGradeFilter !== "ALL" ||
+    psychTeacherFilter !== "ALL" ||
+    psychStatusFilter !== "ALL" ||
+    psychCommitmentFilter !== "ALL" ||
+    psychTermMonthFilter !== "ALL"
+
+  const resetAllPsychFilters = () => {
+    setPsychSearch("")
+    setPsychCampusFilter("ALL")
+    setPsychGradeFilter("ALL")
+    setPsychTeacherFilter("ALL")
+    setPsychStatusFilter("ALL")
+    setPsychCommitmentFilter("ALL")
+    setPsychTermMonthFilter("ALL")
+  }
+
   return (
-    <div className="space-y-6 text-slate-800 animate-in fade-in duration-300">
+    <div className="space-y-5 text-slate-800 animate-in fade-in duration-300">
 
       {/* =====================================================================
-          HEADER & SEGMENTED SCOPE SWITCHER (TÁCH VĂN HÓA & TÂM LÝ)
+          UNIFIED EXECUTIVE FILTER & CONTROL BAR (CHUẨN MẪU FLEXIDATA)
           ===================================================================== */}
-      <div className="no-campus-banner bg-white border border-slate-200/80 rounded-2xl px-5 py-4 shadow-2xs flex flex-col lg:flex-row lg:items-center justify-between gap-4 relative overflow-hidden">
-        <div className="space-y-1 z-10">
-          <div className="flex items-center gap-3">
-            <div className={`p-2.5 rounded-xl text-white shadow-sm shrink-0 ${
+      <div className="no-campus-banner bg-white border border-slate-200/80 rounded-2xl shadow-2xs overflow-hidden sticky top-2 z-20">
+        {/* Tầng 1: Nhận diện Phân hệ + Chuyển đổi Góc nhìn + Xuất Sổ PDF / Excel Điều hành */}
+        <div className="px-4 py-3 sm:px-5 border-b border-slate-100 flex flex-col lg:flex-row lg:items-center justify-between gap-3">
+          <div className="flex items-center gap-3 min-w-0">
+            <div className={`p-2.5 rounded-xl text-white shadow-xs shrink-0 ${
               supportScope === "PSYCHOLOGICAL"
                 ? "bg-gradient-to-tr from-[#003B3A] to-[#00A19A]"
                 : supportScope === "ACADEMIC"
                 ? "bg-gradient-to-tr from-blue-600 to-teal-500"
                 : "bg-gradient-to-tr from-[#135E5B] to-[#1E8B87]"
             }`}>
-              {supportScope === "PSYCHOLOGICAL" ? <Brain className="w-5 h-5" /> : supportScope === "ACADEMIC" ? <BookOpen className="w-5 h-5" /> : <Layers className="w-5 h-5" />}
+              {supportScope === "PSYCHOLOGICAL" ? <Brain className="w-4 h-4" /> : supportScope === "ACADEMIC" ? <BookOpen className="w-4 h-4" /> : <Layers className="w-4 h-4" />}
             </div>
-            <div>
-              <h2 className="text-base md:text-lg font-black text-slate-900 tracking-tight flex items-center gap-2">
-                {supportScope === "PSYCHOLOGICAL" && "Dashboard Hỗ trợ Tâm lý Học đường"}
-                {supportScope === "ACADEMIC" && "Dashboard Phụ đạo Văn hóa & Học thuật"}
-                {supportScope === "ALL" && "Báo cáo Toàn cảnh Hợp nhất Học thuật & Tâm lý"}
-              </h2>
-              <p className="text-xs text-slate-500 font-medium mt-0.5">
-                {supportScope === "PSYCHOLOGICAL" && "Theo dõi sức khỏe tinh thần, tư vấn tâm sinh lý và lộ trình đồng hành cùng học sinh"}
-                {supportScope === "ACADEMIC" && "Giám sát kế hoạch bồi dưỡng kiến thức, phụ đạo bộ môn và đánh giá sự tiến bộ học tập"}
-                {supportScope === "ALL" && "Hệ thống chỉ số tích hợp toàn trường giữa hai mảng Văn hóa và Tâm lý học đường"}
+            <div className="min-w-0">
+              <div className="flex items-center gap-2 flex-wrap">
+                <h2 className="text-sm sm:text-base font-black text-slate-900 tracking-tight">
+                  {supportScope === "PSYCHOLOGICAL" && "Trung tâm Điều hành Hỗ trợ Tâm lý Học đường"}
+                  {supportScope === "ACADEMIC" && "Trung tâm Điều hành Phụ đạo Văn hóa & Học thuật"}
+                  {supportScope === "ALL" && "Báo cáo Điều hành Hợp nhất Học thuật & Tâm lý"}
+                </h2>
+                <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md text-[10px] font-black uppercase tracking-wider bg-teal-50 text-[#003B3A] border border-teal-200/70">
+                  Flexidata Executive
+                </span>
+              </div>
+              <p className="text-[11px] text-slate-500 font-medium truncate mt-0.5">
+                {supportScope === "PSYCHOLOGICAL" && "Giám sát lưu lượng theo dõi, diện cam kết tâm lý, tiến độ đánh giá định kỳ Tuần/Tháng của Chuyên viên theo từng Cơ sở"}
+                {supportScope === "ACADEMIC" && "Giám sát kế hoạch bồi dưỡng kiến thức, phân công giáo viên bộ môn và đánh giá sự tiến bộ học tập"}
+                {supportScope === "ALL" && "Hệ thống chỉ số tích hợp toàn trường giữa hai mảng Phụ đạo Văn hóa và Tư vấn Tâm lý học đường"}
               </p>
             </div>
           </div>
+
+          <div className="flex flex-wrap items-center gap-2 self-start lg:self-center">
+            {/* Segmented Scope Switcher */}
+            <div className="flex items-center gap-1 p-1 bg-slate-100/90 border border-slate-200/70 rounded-xl overflow-x-auto">
+              <button
+                onClick={() => setSupportScope("PSYCHOLOGICAL")}
+                className={`flex items-center gap-1.5 px-3 py-1.5 text-xs font-black rounded-lg transition-all duration-200 whitespace-nowrap cursor-pointer ${
+                  supportScope === "PSYCHOLOGICAL"
+                    ? "bg-[#003B3A] text-white shadow-2xs"
+                    : "text-slate-600 hover:text-slate-900 hover:bg-white/70"
+                }`}
+              >
+                <Brain className="w-3.5 h-3.5" />
+                <span>Hỗ trợ Tâm lý</span>
+                <span className={`px-1.5 py-0.2 text-[10px] rounded-full font-extrabold tabular-nums ${
+                  supportScope === "PSYCHOLOGICAL"
+                    ? "bg-white/20 text-white"
+                    : "bg-teal-100 text-[#003B3A]"
+                }`}>
+                  {psychologyTargets.length}
+                </span>
+              </button>
+
+              <button
+                onClick={() => setSupportScope("ACADEMIC")}
+                className={`flex items-center gap-1.5 px-3 py-1.5 text-xs font-black rounded-lg transition-all duration-200 whitespace-nowrap cursor-pointer ${
+                  supportScope === "ACADEMIC"
+                    ? "bg-gradient-to-r from-blue-600 to-cyan-600 text-white shadow-2xs"
+                    : "text-slate-600 hover:text-slate-900 hover:bg-white/70"
+                }`}
+              >
+                <BookOpen className="w-3.5 h-3.5" />
+                <span>Phụ đạo Văn hóa</span>
+                <span className={`px-1.5 py-0.2 text-[10px] rounded-full font-extrabold tabular-nums ${
+                  supportScope === "ACADEMIC"
+                    ? "bg-white/20 text-white"
+                    : "bg-blue-100 text-blue-700"
+                }`}>
+                  {academicTargets.length}
+                </span>
+              </button>
+
+              <button
+                onClick={() => setSupportScope("ALL")}
+                className={`flex items-center gap-1.5 px-3 py-1.5 text-xs font-bold rounded-lg transition-all duration-200 whitespace-nowrap cursor-pointer ${
+                  supportScope === "ALL"
+                    ? "bg-slate-800 text-white shadow-2xs"
+                    : "text-slate-600 hover:text-slate-900 hover:bg-white/70"
+                }`}
+              >
+                <Layers className="w-3.5 h-3.5" />
+                <span>Toàn cảnh Hợp nhất</span>
+                <span className={`px-1.5 py-0.2 text-[10px] rounded-full font-bold tabular-nums ${
+                  supportScope === "ALL"
+                    ? "bg-white/20 text-white"
+                    : "bg-slate-200 text-slate-700"
+                }`}>
+                  {targets.length}
+                </span>
+              </button>
+            </div>
+
+            {/* Nút Xuất Sổ PDF & Excel Trực tiếp trên Thanh Điều hành */}
+            <div className="flex items-center gap-1.5">
+              <button
+                type="button"
+                onClick={() => handleOpenPdfModal(psychTeacherFilter, psychCampusFilter)}
+                className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-rose-50 hover:bg-rose-100 text-rose-700 border border-rose-200/90 text-xs font-black shadow-2xs transition-all cursor-pointer"
+                title="Xem trước & Xuất Sổ PDF chuẩn A4 theo Cơ sở & Giáo viên định kỳ Tuần/Tháng"
+              >
+                <Printer className="w-3.5 h-3.5 text-rose-600" />
+                <span>Sổ PDF (Cơ sở &amp; GV)</span>
+              </button>
+              <button
+                type="button"
+                onClick={() => {
+                  const curTeacher = psychTeacherStats.find(t => t.teacherId === psychTeacherFilter)
+                  const curCampus = psychCampusStats.find(c => c.campusId === psychCampusFilter)
+                  handleExportTeacherReport(
+                    psychTeacherFilter,
+                    curTeacher?.teacherName,
+                    psychCampusFilter,
+                    curCampus?.campusName
+                  )
+                }}
+                className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-[#003B3A] hover:bg-[#002827] text-white text-xs font-black shadow-2xs transition-all cursor-pointer"
+                title="Xuất Sổ theo dõi đánh giá Excel đa sheet theo Cơ sở & Giáo viên"
+              >
+                <FileSpreadsheet className="w-3.5 h-3.5 text-[#2DD4BF]" />
+                <span>Xuất Excel</span>
+              </button>
+            </div>
+          </div>
         </div>
 
-        {/* Segmented Switcher */}
-        <div className="flex items-center gap-1.5 p-1 bg-slate-100/90 border border-slate-200/70 rounded-xl z-10 self-start lg:self-auto overflow-x-auto">
-          <button
-            onClick={() => setSupportScope("PSYCHOLOGICAL")}
-            className={`flex items-center gap-2 px-3.5 py-2 text-xs font-black rounded-lg transition-all duration-200 whitespace-nowrap ${
-              supportScope === "PSYCHOLOGICAL"
-                ? "bg-[#003B3A] text-white shadow-xs"
-                : "text-slate-600 hover:text-slate-900 hover:bg-white/60"
-            }`}
-          >
-            <Brain className="w-3.5 h-3.5" />
-            <span>Hỗ trợ Tâm lý</span>
-            <span className={`px-2 py-0.5 text-[10px] rounded-full font-extrabold ${
-              supportScope === "PSYCHOLOGICAL"
-                ? "bg-white/20 text-white"
-                : "bg-teal-100 text-[#003B3A]"
-            }`}>
-              {psychologyTargets.length}
-            </span>
-          </button>
+        {/* Tầng 2: Thanh Bộ lọc Điều hành Hợp nhất (Unified Filter Bar chuẩn Flexidata) */}
+        {supportScope === "PSYCHOLOGICAL" && (
+          <div className="px-4 py-2.5 sm:px-5 bg-slate-50/70 flex flex-wrap items-center justify-between gap-2.5">
+            <div className="flex flex-wrap items-center gap-2">
+              <div className="flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-[#003B3A] text-white text-[11px] font-bold tracking-wide uppercase shadow-2xs">
+                <SlidersHorizontal className="w-3.5 h-3.5 text-[#2DD4BF]" />
+                <span>Bộ lọc Điều hành</span>
+              </div>
 
-          <button
-            onClick={() => setSupportScope("ACADEMIC")}
-            className={`flex items-center gap-2 px-3.5 py-2 text-xs font-black rounded-lg transition-all duration-200 whitespace-nowrap ${
-              supportScope === "ACADEMIC"
-                ? "bg-gradient-to-r from-blue-600 to-cyan-600 text-white shadow-xs"
-                : "text-slate-600 hover:text-slate-900 hover:bg-white/60"
-            }`}
-          >
-            <BookOpen className="w-3.5 h-3.5" />
-            <span>Phụ đạo Văn hóa</span>
-            <span className={`px-2 py-0.5 text-[10px] rounded-full font-extrabold ${
-              supportScope === "ACADEMIC"
-                ? "bg-white/20 text-white"
-                : "bg-blue-100 text-blue-700"
-            }`}>
-              {academicTargets.length}
-            </span>
-          </button>
+              {/* Filter Cơ sở */}
+              <div className="flex items-center gap-1.5 bg-white border border-slate-200/90 rounded-xl px-2.5 py-1 hover:border-teal-500/40 transition-colors">
+                <Building2 className="w-3.5 h-3.5 text-[#00A19A] shrink-0" />
+                <span className="text-[11px] font-semibold text-slate-400">Cơ sở:</span>
+                <select
+                  value={psychCampusFilter}
+                  onChange={(e) => setPsychCampusFilter(e.target.value)}
+                  className="bg-transparent text-xs font-bold text-slate-800 focus:outline-none cursor-pointer pr-1"
+                >
+                  <option value="ALL">Tất cả Cơ sở ({campuses.length})</option>
+                  {campuses.map(c => (
+                    <option key={c.id} value={c.id}>{c.campusName}</option>
+                  ))}
+                </select>
+              </div>
 
-          <button
-            onClick={() => setSupportScope("ALL")}
-            className={`flex items-center gap-2 px-3.5 py-2 text-xs font-bold rounded-lg transition-all duration-200 whitespace-nowrap ${
-              supportScope === "ALL"
-                ? "bg-slate-800 text-white shadow-xs"
-                : "text-slate-600 hover:text-slate-900 hover:bg-white/60"
-            }`}
-          >
-            <Layers className="w-3.5 h-3.5" />
-            <span>Toàn cảnh Hợp nhất</span>
-            <span className={`px-2 py-0.5 text-[10px] rounded-full font-bold ${
-              supportScope === "ALL"
-                ? "bg-white/20 text-white"
-                : "bg-slate-200 text-slate-700"
-            }`}>
-              {targets.length}
-            </span>
-          </button>
-        </div>
+              {/* Filter Khối lớp */}
+              <div className="flex items-center gap-1.5 bg-white border border-slate-200/90 rounded-xl px-2.5 py-1 hover:border-teal-500/40 transition-colors">
+                <Compass className="w-3.5 h-3.5 text-[#D97706] shrink-0" />
+                <span className="text-[11px] font-semibold text-slate-400">Khối:</span>
+                <select
+                  value={psychGradeFilter}
+                  onChange={(e) => setPsychGradeFilter(e.target.value)}
+                  className="bg-transparent text-xs font-bold text-slate-800 focus:outline-none cursor-pointer pr-1"
+                >
+                  <option value="ALL">Tất cả Khối ({psychGradeStats.length})</option>
+                  {psychGradeStats.map((g, i) => (
+                    <option key={i} value={g.gradeName}>{g.gradeName} ({g.count})</option>
+                  ))}
+                </select>
+              </div>
+
+              {/* Filter GV / Chuyên viên */}
+              <div className="flex items-center gap-1.5 bg-white border border-slate-200/90 rounded-xl px-2.5 py-1 hover:border-teal-500/40 transition-colors">
+                <GraduationCap className="w-3.5 h-3.5 text-[#003B3A] shrink-0" />
+                <span className="text-[11px] font-semibold text-slate-400">Chuyên viên:</span>
+                <select
+                  value={psychTeacherFilter}
+                  onChange={(e) => setPsychTeacherFilter(e.target.value)}
+                  className="bg-transparent text-xs font-bold text-slate-800 focus:outline-none cursor-pointer pr-1 max-w-[170px] truncate"
+                >
+                  <option value="ALL">Tất cả GV ({psychTeacherStats.length})</option>
+                  {psychTeacherStats.map(t => (
+                    <option key={t.teacherId} value={t.teacherId}>
+                      {t.teacherName} ({t.count} ca)
+                    </option>
+                  ))}
+                </select>
+              </div>
+
+              {/* Filter Diện can thiệp */}
+              <div className="flex items-center gap-1.5 bg-white border border-slate-200/90 rounded-xl px-2.5 py-1 hover:border-amber-500/40 transition-colors">
+                <HeartHandshake className="w-3.5 h-3.5 text-amber-600 shrink-0" />
+                <span className="text-[11px] font-semibold text-slate-400">Diện:</span>
+                <select
+                  value={psychCommitmentFilter}
+                  onChange={(e: any) => setPsychCommitmentFilter(e.target.value)}
+                  className="bg-transparent text-xs font-bold text-slate-800 focus:outline-none cursor-pointer pr-1"
+                >
+                  <option value="ALL">Tất cả diện ({psychologyTargets.length})</option>
+                  <option value="COMMITMENT_ONLY">⭐️ Cam kết Tâm lý ({psychCommitmentTargets.length})</option>
+                  <option value="REGULAR_ONLY">Theo dõi thường kỳ ({psychologyTargets.length - psychCommitmentTargets.length})</option>
+                </select>
+              </div>
+
+              {/* Filter Trạng thái */}
+              <div className="flex items-center gap-1.5 bg-white border border-slate-200/90 rounded-xl px-2.5 py-1 hover:border-teal-500/40 transition-colors">
+                <CheckCircle2 className="w-3.5 h-3.5 text-emerald-600 shrink-0" />
+                <span className="text-[11px] font-semibold text-slate-400">Trạng thái:</span>
+                <select
+                  value={psychStatusFilter}
+                  onChange={(e) => setPsychStatusFilter(e.target.value)}
+                  className="bg-transparent text-xs font-bold text-slate-800 focus:outline-none cursor-pointer pr-1"
+                >
+                  <option value="ALL">Tất cả ({psychologyTargets.length})</option>
+                  <option value="ACTIVE">Đang theo dõi ({totalActivePsych})</option>
+                  <option value="PENDING_TERMINATION">Chờ duyệt ({psychologyTargets.filter(t => t.terminationStatus === "PENDING_TERMINATION").length})</option>
+                  <option value="TERMINATED">Đã chấm dứt ({totalTerminatedPsych})</option>
+                </select>
+              </div>
+
+              {/* Ô tìm kiếm nhanh */}
+              <div className="relative">
+                <Search className="w-3.5 h-3.5 text-slate-400 absolute left-2.5 top-1/2 -translate-y-1/2" />
+                <input
+                  type="text"
+                  value={psychSearch}
+                  onChange={(e) => setPsychSearch(e.target.value)}
+                  placeholder="Tìm tên, mã HS, lớp..."
+                  className="pl-8 pr-3 py-1 text-xs rounded-xl border border-slate-200/90 bg-white focus:outline-none focus:ring-2 focus:ring-[#00A19A] w-40 sm:w-48 font-medium"
+                />
+              </div>
+            </div>
+
+            {/* Bên phải: Trạng thái hiển thị + Đặt lại bộ lọc */}
+            <div className="flex items-center gap-2 ml-auto">
+              {hasActivePsychFilters && (
+                <button
+                  type="button"
+                  onClick={resetAllPsychFilters}
+                  className="inline-flex items-center gap-1 px-2.5 py-1 rounded-xl text-[11px] font-bold text-rose-700 bg-rose-50 hover:bg-rose-100 border border-rose-200/80 transition-colors cursor-pointer"
+                >
+                  <RotateCcw className="w-3 h-3" />
+                  <span>Đặt lại</span>
+                </button>
+              )}
+              <div className="hidden xl:flex items-center gap-1.5 text-[11px] font-bold text-slate-600 bg-white px-2.5 py-1 rounded-xl border border-slate-200/80">
+                <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
+                <span className="font-mono tabular-nums text-[#003B3A] font-black">{filteredPsychStudents.length}</span>
+                <span>/ {psychologyTargets.length} hồ sơ</span>
+              </div>
+            </div>
+          </div>
+        )}
       </div>
 
       {/* =====================================================================
-          PHÂN HỆ 1: DASHBOARD HỖ TRỢ TÂM LÝ HỌC ĐƯỜNG (CHUYÊN SÂU 100%)
+          PHÂN HỆ 1: DASHBOARD HỖ TRỢ TÂM LÝ HỌC ĐƯỜNG (CHUẨN FLEXIDATA)
           ===================================================================== */}
       {supportScope === "PSYCHOLOGICAL" && (
-        <div className="space-y-6 animate-in fade-in duration-300">
+        <div className="space-y-5 animate-in fade-in duration-300">
 
-          {/* 1.1 THẺ CHỈ SỐ KPI TÂM LÝ HỌC ĐƯỜNG CHUẨN BRAND SKY-LINE */}
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4">
-            
-            {/* Card 1: Tổng số HS Tâm lý theo dõi (Màu vàng đất nhẹ) */}
-            <div className="bg-white border border-slate-200/80 rounded-3xl p-5 shadow-xs hover:shadow-md transition-all relative overflow-hidden group">
-              <div className="absolute right-0 bottom-0 w-24 h-24 bg-gradient-to-br from-amber-100/60 to-yellow-50/20 rounded-tl-full opacity-70 group-hover:scale-110 transition-transform pointer-events-none" />
-              <div className="flex items-center gap-3.5 z-10 relative">
-                <div className="p-3 bg-gradient-to-br from-[#D49A3D] to-[#B88029] text-white rounded-2xl shadow-sm shadow-amber-200">
-                  <Brain className="h-6 w-6" />
-                </div>
-                <div>
-                  <div className="text-3xl font-black text-slate-800 leading-none tracking-tight">
-                    {psychologyTargets.length}
-                  </div>
-                  <div className="text-[11px] text-[#92400E] font-extrabold uppercase mt-1 tracking-wider">
-                    HS Tâm lý theo dõi
-                  </div>
-                  <div className="text-[10px] text-slate-500 font-medium mt-0.5 flex items-center gap-1.5">
-                    <span className="font-bold text-[#B45309]">{totalActivePsych} đang theo dõi</span>
-                    <span>•</span>
-                    <span className="font-bold text-[#135E5B]">{totalTerminatedPsych} đã chấm dứt</span>
-                  </div>
-                </div>
-              </div>
-            </div>
+          {/* 1.1 DẢI 5 THẺ CHỈ SỐ ĐIỀU HÀNH CHUẨN KPICARD FLEXIDATA */}
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-3.5">
+            <KPICard
+              title="Hồ sơ Tâm lý Theo dõi"
+              value={psychologyTargets.length}
+              unit="học sinh"
+              icon={Brain}
+              colorTheme="teal"
+              trend="neutral"
+              trendValue={`${Math.round((totalActivePsych / (psychologyTargets.length || 1)) * 100)}% đang TD`}
+              comparisonText="lưu lượng hiện hành"
+              progress={Math.round((totalActivePsych / (psychologyTargets.length || 1)) * 100)}
+              subMetrics={[
+                { label: "Đang theo dõi", value: `${totalActivePsych} HS`, colorClass: "text-[#00736E]" },
+                { label: "Đã chấm dứt", value: `${totalTerminatedPsych} HS` },
+              ]}
+              onClick={() => setPsychStatusFilter(psychStatusFilter === "ACTIVE" ? "ALL" : "ACTIVE")}
+              hrefLabel={psychStatusFilter === "ACTIVE" ? "Đang lọc: Đang theo dõi (Nhấn để bỏ)" : "Lọc học sinh đang theo dõi"}
+            />
 
-            {/* Card 2: Nhận diện Học sinh Cam kết về Tâm lý (YÊU CẦU TRỌNG TÂM) */}
-            <div 
+            <KPICard
+              title="Diện Cam kết Tâm lý"
+              value={psychCommitmentTargets.length}
+              unit="hồ sơ"
+              icon={HeartHandshake}
+              colorTheme="amber"
+              trend={psychCommitmentActive > 0 ? "up" : "neutral"}
+              trendValue={`${Math.round((psychCommitmentTargets.length / (psychologyTargets.length || 1)) * 100)}% tổng ca`}
+              comparisonText="diện KS đầu vào"
+              progress={psychCommitmentTargets.length > 0 ? Math.round((psychCommitmentTerminated / psychCommitmentTargets.length) * 100) : 0}
+              subMetrics={[
+                { label: "Đang theo dõi", value: `${psychCommitmentActive} HS`, colorClass: "text-amber-700" },
+                { label: "Đã hoàn thành", value: `${psychCommitmentTerminated} HS` },
+              ]}
               onClick={() => setPsychCommitmentFilter(psychCommitmentFilter === "COMMITMENT_ONLY" ? "ALL" : "COMMITMENT_ONLY")}
-              className={`bg-white border rounded-3xl p-5 shadow-xs hover:shadow-md transition-all relative overflow-hidden group cursor-pointer ${
-                psychCommitmentFilter === "COMMITMENT_ONLY"
-                  ? "border-amber-400 ring-2 ring-amber-400/30 bg-amber-50/30"
-                  : "border-amber-200/70 hover:border-amber-300"
-              }`}
-              title="Nhấn để lọc danh sách học sinh cam kết tâm lý"
-            >
-              <div className="absolute right-0 bottom-0 w-24 h-24 bg-gradient-to-br from-amber-100/60 to-orange-50/20 rounded-tl-full opacity-70 group-hover:scale-110 transition-transform pointer-events-none" />
-              <div className="flex items-center gap-3.5 z-10 relative">
-                <div className="p-3 bg-gradient-to-br from-amber-500 to-amber-600 text-white rounded-2xl shadow-sm shadow-amber-200">
-                  <HeartHandshake className="h-6 w-6" />
-                </div>
-                <div className="flex-1">
-                  <div className="flex items-center justify-between">
-                    <div className="text-3xl font-black text-amber-700 leading-none tracking-tight">
-                      {psychCommitmentTargets.length}
-                    </div>
-                    <span className="text-[9px] font-black uppercase px-2 py-0.5 rounded-full bg-amber-100 text-amber-800 border border-amber-200">
-                      {Math.round((psychCommitmentTargets.length / (psychologyTargets.length || 1)) * 100)}% ca
-                    </span>
-                  </div>
-                  <div className="text-[11px] text-amber-900 font-extrabold uppercase mt-1 tracking-wider flex items-center gap-1">
-                    HS Cam kết Tâm lý
-                    <Sparkles className="w-3 h-3 text-amber-500 fill-amber-400 inline" />
-                  </div>
-                  <div className="text-[10px] text-amber-800 font-semibold mt-0.5">
-                    {psychCommitmentActive} đang theo dõi • {psychCommitmentTerminated} đã hoàn thành
-                  </div>
-                </div>
-              </div>
-            </div>
+              hrefLabel={psychCommitmentFilter === "COMMITMENT_ONLY" ? "Đang lọc: Diện Cam kết (Nhấn để bỏ)" : "Lọc riêng HS Cam kết Tâm lý"}
+            />
 
-            {/* Card 3: Tiếp nhận mới từng tháng (TÍNH TOÁN ĐỘNG) */}
-            <div className="bg-white border border-slate-200/80 rounded-3xl p-5 shadow-xs hover:shadow-md transition-all relative overflow-hidden group">
-              <div className="absolute right-0 bottom-0 w-24 h-24 bg-gradient-to-br from-amber-100/40 to-orange-50/20 rounded-tl-full opacity-70 group-hover:scale-110 transition-transform pointer-events-none" />
-              <div className="flex items-center gap-3.5 z-10 relative">
-                <div className="p-3 bg-gradient-to-br from-[#E0A84E] to-[#C88E35] text-white rounded-2xl shadow-sm shadow-amber-200">
-                  <UserPlus className="h-6 w-6" />
-                </div>
-                <div>
-                  <div className="text-3xl font-black text-[#92400E] leading-none tracking-tight">
-                    +{latestMonthWithActivity.newCases}
-                  </div>
-                  <div className="text-[11px] text-[#B45309] font-extrabold uppercase mt-1 tracking-wider">
-                    Tiếp nhận mới {latestMonthWithActivity.name}
-                  </div>
-                  <div className="text-[10px] text-slate-500 font-medium mt-0.5 flex items-center gap-1">
-                    {prevMonthNewCases > 0 ? (
-                      latestMonthWithActivity.newCases >= prevMonthNewCases ? (
-                        <span className="text-emerald-600 font-bold flex items-center gap-0.5">
-                          <ArrowUpRight className="w-3 h-3" />
-                          +{latestMonthWithActivity.newCases - prevMonthNewCases} so với {psychologyMonthlyTimeline[psychologyMonthlyTimeline.findIndex(m => m.month === latestMonthWithActivity.month) - 1]?.name}
-                        </span>
-                      ) : (
-                        <span className="text-slate-500 font-bold flex items-center gap-0.5">
-                          <ArrowDownRight className="w-3 h-3 text-amber-500" />
-                          {latestMonthWithActivity.newCases - prevMonthNewCases} so với {psychologyMonthlyTimeline[psychologyMonthlyTimeline.findIndex(m => m.month === latestMonthWithActivity.month) - 1]?.name}
-                        </span>
-                      )
-                    ) : (
-                      <span className="text-slate-400">Đầu kỳ năm học</span>
-                    )}
-                  </div>
-                </div>
-              </div>
-            </div>
+            <KPICard
+              title={`Tiếp nhận mới (${latestMonthWithActivity.name})`}
+              value={`+${latestMonthWithActivity.newCases}`}
+              unit="ca mới"
+              icon={UserPlus}
+              colorTheme="indigo"
+              trend={
+                prevMonthNewCases > 0
+                  ? latestMonthWithActivity.newCases >= prevMonthNewCases
+                    ? "up"
+                    : "down"
+                  : "neutral"
+              }
+              trendValue={
+                prevMonthNewCases > 0
+                  ? `${latestMonthWithActivity.newCases >= prevMonthNewCases ? "+" : ""}${latestMonthWithActivity.newCases - prevMonthNewCases} ca`
+                  : "Đầu kỳ"
+              }
+              comparisonText="so với tháng liền kề"
+              progress={peakCaseload.activeCaseload > 0 ? Math.round((totalActivePsych / peakCaseload.activeCaseload) * 100) : 100}
+              subMetrics={[
+                { label: "Quy mô cao nhất", value: `${peakCaseload.activeCaseload} HS (${peakCaseload.name})`, colorClass: "text-indigo-700" },
+                { label: "Tháng phát sinh", value: `${actualDataMonthlyTimeline.length} tháng` },
+              ]}
+            />
 
-            {/* Card 4: Số học sinh đã chấm dứt theo dõi theo Tháng (Xanh thương hiệu Sky-Line #135E5B) */}
-            <div 
+            <KPICard
+              title="Đã Chấm dứt Theo dõi"
+              value={totalTerminatedPsych}
+              unit="hồ sơ"
+              icon={CheckCircle2}
+              colorTheme="emerald"
+              trend="up"
+              trendValue={`${Math.round((totalTerminatedPsych / (psychologyTargets.length || 1)) * 100)}% hoàn tất`}
+              comparisonText="đạt mục tiêu ổn định"
+              progress={Math.round((totalTerminatedPsych / (psychologyTargets.length || 1)) * 100)}
+              subMetrics={
+                psychTerminatedMonths.length > 0
+                  ? psychTerminatedMonths.slice(0, 2).map(m => ({
+                      label: `Tháng ${m.month}`,
+                      value: `${m.count} ca`,
+                      colorClass: "text-emerald-700",
+                    }))
+                  : [{ label: "Trạng thái", value: "Chưa có ca chấm dứt" }]
+              }
               onClick={() => setPsychStatusFilter(psychStatusFilter === "TERMINATED" ? "ALL" : "TERMINATED")}
-              className={`bg-white border rounded-3xl p-5 shadow-xs hover:shadow-md transition-all relative overflow-hidden group cursor-pointer ${
-                psychStatusFilter === "TERMINATED"
-                  ? "border-[#135E5B] ring-2 ring-[#135E5B]/30 bg-teal-50/40"
-                  : "border-teal-200/70 hover:border-[#135E5B]"
-              }`}
-              title="Nhấn để lọc học sinh đã chấm dứt theo dõi"
-            >
-              <div className="absolute right-0 bottom-0 w-24 h-24 bg-gradient-to-br from-teal-100/60 to-emerald-50/20 rounded-tl-full opacity-70 group-hover:scale-110 transition-transform pointer-events-none" />
-              <div className="flex items-center gap-3.5 z-10 relative">
-                <div className="p-3 bg-gradient-to-br from-[#135E5B] to-[#1E8B87] text-white rounded-2xl shadow-sm shadow-teal-200">
-                  <CheckCircle2 className="h-6 w-6" />
-                </div>
-                <div className="flex-1">
-                  <div className="flex items-center justify-between">
-                    <div className="text-3xl font-black text-[#135E5B] leading-none tracking-tight">
-                      {totalTerminatedPsych} <span className="text-base text-slate-400 font-medium">ca</span>
-                    </div>
-                    <span className="text-[9px] font-black uppercase px-2 py-0.5 rounded-full bg-teal-100 text-[#135E5B] border border-teal-200">
-                      {Math.round((totalTerminatedPsych / (psychologyTargets.length || 1)) * 100)}% xong
-                    </span>
-                  </div>
-                  <div className="text-[11px] text-[#135E5B] font-extrabold uppercase mt-1 tracking-wider flex items-center gap-1">
-                    Đã chấm dứt theo dõi
-                  </div>
-                  <div className="text-[10px] text-[#0F4A47] font-bold mt-0.5 truncate" title={psychTerminatedMonths.map(m => `${m.month}: ${m.count} ca`).join(" • ")}>
-                    {psychTerminatedMonths.length > 0 ? (
-                      psychTerminatedMonths.map(m => `Th ${m.month.split('/')[0]}: ${m.count} ca`).join(" • ")
-                    ) : (
-                      "Chưa có ca chấm dứt"
-                    )}
-                  </div>
-                </div>
-              </div>
-            </div>
+              hrefLabel={psychStatusFilter === "TERMINATED" ? "Đang lọc: Đã chấm dứt (Nhấn để bỏ)" : "Lọc học sinh đã chấm dứt"}
+            />
 
-            {/* Card 5: Mạng lưới Cơ sở & Chuyên viên tham vấn */}
-            <div className="bg-white border border-slate-200/80 rounded-3xl p-5 shadow-xs hover:shadow-md transition-all relative overflow-hidden group">
-              <div className="absolute right-0 bottom-0 w-24 h-24 bg-gradient-to-br from-teal-100/50 to-cyan-50/20 rounded-tl-full opacity-70 group-hover:scale-110 transition-transform pointer-events-none" />
-              <div className="flex items-center gap-3.5 z-10 relative">
-                <div className="p-3 bg-gradient-to-br from-[#135E5B] to-[#1E8B87] text-white rounded-2xl shadow-sm shadow-teal-200">
-                  <Building2 className="h-6 w-6" />
-                </div>
-                <div>
-                  <div className="text-3xl font-black text-slate-800 leading-none tracking-tight">
-                    {psychCampusStats.filter(c => c.count > 0).length} <span className="text-base text-slate-400 font-medium">/ {campuses.length} CS</span>
-                  </div>
-                  <div className="text-[11px] text-teal-800 font-extrabold uppercase mt-1 tracking-wider">
-                    {psychTeacherStats.filter(t => t.teacherId !== "UNASSIGNED").length} Chuyên viên / GV
-                  </div>
-                  <div className="text-[10px] text-slate-500 font-medium mt-0.5">
-                    {psychCampusStats[0] ? `Nhiều nhất ở ${psychCampusStats[0].campusName} (${psychCampusStats[0].count})` : "Phân bổ toàn trường"}
-                  </div>
-                </div>
-              </div>
-            </div>
-
+            <KPICard
+              title="Mạng lưới & ĐG Định kỳ"
+              value={`${psychCampusStats.filter(c => c.count > 0).length}/${campuses.length}`}
+              unit="cơ sở"
+              icon={Building2}
+              colorTheme="purple"
+              trend={psychPeriodicEvalStats.evalRate >= 80 ? "up" : "neutral"}
+              trendValue={`${psychPeriodicEvalStats.evalRate}% đã ĐG`}
+              comparisonText="tiến độ Tuần/Tháng"
+              progress={psychPeriodicEvalStats.evalRate}
+              subMetrics={[
+                { label: "Chuyên viên / GV", value: `${psychTeacherStats.filter(t => t.teacherId !== "UNASSIGNED").length} GV`, colorClass: "text-purple-700" },
+                { label: "Đã ĐG định kỳ", value: `${psychPeriodicEvalStats.evaluatedActiveCount}/${psychPeriodicEvalStats.activeTotal} HS` },
+              ]}
+              onClick={() => handleOpenPdfModal(psychTeacherFilter, psychCampusFilter)}
+              hrefLabel="Mở Sổ PDF theo Cơ sở & GV"
+            />
           </div>
 
-          {/* 1.2 BIỂU ĐỒ & BẢNG THEO DÕI TÂM LÝ TỪNG THÁNG & CHẤM DỨT THEO THÁNG */}
-          <div className="bg-white border border-slate-200/80 rounded-3xl p-5 md:p-6 shadow-xs">
-            <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4 mb-5 pb-4 border-b border-slate-100">
-              <div>
-                <h2 className="text-base font-black text-slate-900 flex items-center gap-2">
-                  <Calendar className="h-5 w-5 text-[#135E5B]" />
-                  Biểu đồ Phác họa Số học sinh theo dõi & Chấm dứt theo dõi Tâm lý từng Tháng
-                </h2>
-                <p className="text-xs text-slate-500 mt-0.5">
-                  Dữ liệu trích xuất chính xác theo mốc tiếp nhận, lưu lượng duy trì và các mốc chấm dứt theo dõi hoàn thành mục tiêu qua 10 tháng năm học
-                </p>
-              </div>
+          {/* 1.2 TRUNG TÂM CẢNH BÁO SỚM (SMART ALERT CENTER CHUẨN FLEXIDATA) */}
+          <SmartAlertCenter alerts={supportSmartAlerts} lastUpdated="Tức thời" />
 
-              {/* Mode Toggles */}
-              <div className="flex flex-wrap items-center gap-2 self-start lg:self-auto">
-                <div className="flex bg-slate-100/90 p-1 rounded-2xl border border-slate-200/70 shadow-inner">
-                  <button
-                    onClick={() => setPsychChartMetric("comparison")}
-                    className={`px-3 py-1.5 text-xs font-bold rounded-xl transition-all ${
-                      psychChartMetric === "comparison"
-                        ? "bg-white text-[#135E5B] shadow-sm font-black scale-[1.02]"
-                        : "text-slate-600 hover:text-slate-900"
-                    }`}
-                  >
-                    Đối sánh biến động
-                  </button>
-                  <button
-                    onClick={() => setPsychChartMetric("activeCaseload")}
-                    className={`px-3 py-1.5 text-xs font-bold rounded-xl transition-all ${
-                      psychChartMetric === "activeCaseload"
-                        ? "bg-white text-[#92400E] shadow-sm font-black scale-[1.02]"
-                        : "text-slate-600 hover:text-slate-900"
-                    }`}
-                  >
-                    Đang theo dõi
-                  </button>
-                  <button
-                    onClick={() => setPsychChartMetric("terminated")}
-                    className={`px-3 py-1.5 text-xs font-bold rounded-xl transition-all ${
-                      psychChartMetric === "terminated"
-                        ? "bg-white text-[#135E5B] shadow-sm font-black scale-[1.02]"
-                        : "text-slate-600 hover:text-slate-900"
-                    }`}
-                  >
-                    Đã chấm dứt theo dõi
-                  </button>
-                  <button
-                    onClick={() => setPsychChartMetric("newCases")}
-                    className={`px-3 py-1.5 text-xs font-bold rounded-xl transition-all ${
-                      psychChartMetric === "newCases"
-                        ? "bg-white text-slate-800 shadow-sm font-black scale-[1.02]"
-                        : "text-slate-600 hover:text-slate-900"
-                    }`}
-                  >
-                    Tiếp nhận mới (+)
-                  </button>
-                </div>
+          {/* 1.3 BỐ CỤC SPLIT-VIEW 12 CỘT CHUẨN FLEXIDATA (7 CỘT XU HƯỚNG THÁNG + 5 CỘT PHÂN BỐ ĐA CHIỀU) */}
+          <div className="grid grid-cols-1 lg:grid-cols-12 gap-5 items-stretch">
 
-                <div className="flex bg-slate-100/90 p-1 rounded-2xl border border-slate-200/70 shadow-inner">
-                  <button
-                    onClick={() => setPsychViewMode("chart")}
-                    className={`px-3 py-1.5 text-xs font-bold rounded-xl transition-all ${
-                      psychViewMode === "chart"
-                        ? "bg-white text-slate-900 shadow-sm font-black"
-                        : "text-slate-600 hover:text-slate-900"
-                    }`}
-                  >
-                    Biểu đồ
-                  </button>
-                  <button
-                    onClick={() => setPsychViewMode("table")}
-                    className={`px-3 py-1.5 text-xs font-bold rounded-xl transition-all ${
-                      psychViewMode === "table"
-                        ? "bg-white text-slate-900 shadow-sm font-black"
-                        : "text-slate-600 hover:text-slate-900"
-                    }`}
-                  >
-                    Bảng số liệu
-                  </button>
-                </div>
-              </div>
+            {/* CỘT TRÁI (7/12): BIỂU ĐỒ XU HƯỚNG BIẾN ĐỘNG THEO THÁNG */}
+            <div className="lg:col-span-7 flex">
+              <DashboardChartCard
+                className="w-full"
+                title="Biến động Học sinh Theo dõi & Chấm dứt theo Tháng"
+                subtitle="Trích xuất theo mốc tiếp nhận, lưu lượng duy trì và hoàn thành mục tiêu qua 10 tháng năm học"
+                icon={Calendar}
+                unit="Học sinh (HS)"
+                legendItems={
+                  psychChartMetric === "comparison"
+                    ? [
+                        { label: "Đang theo dõi", color: "#D49A3D" },
+                        { label: "Đã chấm dứt", color: "#135E5B" },
+                        { label: "Tiếp nhận mới (+)", color: "#0284C7" },
+                      ]
+                    : psychChartMetric === "activeCaseload"
+                    ? [{ label: "Lũy kế đang theo dõi", color: "#D49A3D" }]
+                    : psychChartMetric === "terminated"
+                    ? [{ label: "Đã chấm dứt theo dõi", color: "#135E5B" }]
+                    : [{ label: "Tiếp nhận mới phát sinh (+)", color: "#0284C7" }]
+                }
+                headerRight={
+                  <div className="flex flex-wrap items-center gap-1.5">
+                    <div className="flex bg-white p-0.5 rounded-xl border border-slate-200/80 shadow-2xs">
+                      {[
+                        { id: "comparison", label: "Đối sánh" },
+                        { id: "activeCaseload", label: "Đang TD" },
+                        { id: "terminated", label: "Chấm dứt" },
+                        { id: "newCases", label: "Mới (+)" },
+                      ].map(tab => (
+                        <button
+                          key={tab.id}
+                          onClick={() => setPsychChartMetric(tab.id as any)}
+                          className={`px-2.5 py-1 text-[11px] font-bold rounded-lg transition-all cursor-pointer ${
+                            psychChartMetric === tab.id
+                              ? "bg-[#003B3A] text-white font-black shadow-2xs"
+                              : "text-slate-600 hover:text-slate-900"
+                          }`}
+                        >
+                          {tab.label}
+                        </button>
+                      ))}
+                    </div>
+
+                    <div className="flex bg-white p-0.5 rounded-xl border border-slate-200/80 shadow-2xs">
+                      <button
+                        onClick={() => setPsychViewMode("chart")}
+                        className={`px-2.5 py-1 text-[11px] font-bold rounded-lg transition-all cursor-pointer ${
+                          psychViewMode === "chart"
+                            ? "bg-slate-800 text-white font-black"
+                            : "text-slate-600 hover:text-slate-900"
+                        }`}
+                      >
+                        Biểu đồ
+                      </button>
+                      <button
+                        onClick={() => setPsychViewMode("table")}
+                        className={`px-2.5 py-1 text-[11px] font-bold rounded-lg transition-all cursor-pointer ${
+                          psychViewMode === "table"
+                            ? "bg-slate-800 text-white font-black"
+                            : "text-slate-600 hover:text-slate-900"
+                        }`}
+                      >
+                        Bảng số liệu
+                      </button>
+                    </div>
+                  </div>
+                }
+                footerSlot={
+                  <div className="flex flex-wrap items-center justify-between gap-2 w-full">
+                    <span>
+                      Tổng tiếp nhận: <strong className="text-slate-800 font-mono tabular-nums">{psychologyTargets.length} ca</strong> • Đang theo dõi: <strong className="text-[#B45309] font-mono tabular-nums">{totalActivePsych} ca</strong> • Đã chấm dứt: <strong className="text-[#135E5B] font-mono tabular-nums">{totalTerminatedPsych} ca</strong>
+                    </span>
+                    <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md bg-amber-50 text-[#92400E] border border-amber-200/70 font-bold text-[11px]">
+                      Đỉnh lưu lượng: {peakCaseload.activeCaseload} HS ({peakCaseload.name})
+                    </span>
+                  </div>
+                }
+              >
+                {psychViewMode === "chart" ? (
+                  <div className="w-full">
+                    <ResponsiveContainer width="100%" height={295}>
+                      {psychChartMetric === "comparison" ? (
+                        <ComposedChart
+                          data={actualDataMonthlyTimeline}
+                          margin={{ top: 22, right: 16, left: -18, bottom: 0 }}
+                          barGap={6}
+                        >
+                          <CartesianGrid strokeDasharray="3 3" stroke="#f1f5f9" vertical={false} />
+                          <XAxis
+                            dataKey="name"
+                            tickLine={false}
+                            axisLine={false}
+                            tick={{ fill: "#64748b", fontSize: 11, fontWeight: 700 }}
+                          />
+                          <YAxis
+                            tickLine={false}
+                            axisLine={false}
+                            tick={{ fill: "#64748b", fontSize: 11, fontWeight: 700 }}
+                            domain={[0, "auto"]}
+                          />
+                          <Tooltip
+                            content={({ active, payload }) => {
+                              if (active && payload && payload.length) {
+                                const d = payload[0].payload
+                                return (
+                                  <div className="bg-slate-900/95 text-white p-3.5 rounded-2xl shadow-2xl border border-slate-800 text-xs backdrop-blur-md">
+                                    <p className="font-extrabold text-teal-300 mb-2 border-b border-slate-700 pb-1 flex items-center justify-between gap-4">
+                                      <span>Tháng {d.month}</span>
+                                      <span className="text-[10px] text-slate-400 font-normal">{d.name}</span>
+                                    </p>
+                                    <div className="space-y-1.5 text-[11px] font-mono tabular-nums">
+                                      <p className="flex justify-between gap-6">
+                                        <span className="text-amber-200 font-sans">Đang theo dõi:</span>
+                                        <span className="font-black text-amber-300">{d.activeCaseload} HS</span>
+                                      </p>
+                                      <p className="flex justify-between gap-6">
+                                        <span className="text-teal-200 font-sans">Đã chấm dứt theo dõi:</span>
+                                        <span className="font-black text-teal-300">-{d.terminatedInMonth} ca</span>
+                                      </p>
+                                      <p className="flex justify-between gap-6 border-t border-slate-800 pt-1">
+                                        <span className="text-sky-200 font-sans">Tiếp nhận mới trong tháng:</span>
+                                        <span className="font-bold text-sky-300">+{d.newCases} ca</span>
+                                      </p>
+                                      {d.commitmentCases > 0 && (
+                                        <p className="flex justify-between gap-6 text-amber-400">
+                                          <span className="font-sans">Trong đó HS Cam kết:</span>
+                                          <span className="font-bold">{d.commitmentCases} HS</span>
+                                        </p>
+                                      )}
+                                    </div>
+                                  </div>
+                                )
+                              }
+                              return null
+                            }}
+                          />
+                          <Bar
+                            dataKey="activeCaseload"
+                            name="activeCaseload"
+                            fill="#D49A3D"
+                            radius={[6, 6, 0, 0]}
+                            maxBarSize={42}
+                          >
+                            <LabelList
+                              dataKey="activeCaseload"
+                              position="top"
+                              fill="#92400E"
+                              fontSize={11}
+                              fontWeight={800}
+                              formatter={(v: any) => (Number(v) > 0 ? `${v}` : "")}
+                            />
+                          </Bar>
+                          <Bar
+                            dataKey="terminatedInMonth"
+                            name="terminatedInMonth"
+                            fill="#135E5B"
+                            radius={[6, 6, 0, 0]}
+                            maxBarSize={42}
+                          >
+                            <LabelList
+                              dataKey="terminatedInMonth"
+                              position="top"
+                              fill="#135E5B"
+                              fontSize={11}
+                              fontWeight={800}
+                              formatter={(v: any) => (Number(v) > 0 ? `${v}` : "")}
+                            />
+                          </Bar>
+                          <Line
+                            type="monotone"
+                            dataKey="newCases"
+                            name="newCases"
+                            stroke="#0284C7"
+                            strokeWidth={2.5}
+                            dot={{ r: 4, fill: "#0284C7", strokeWidth: 2, stroke: "#fff" }}
+                            activeDot={{ r: 6 }}
+                          />
+                        </ComposedChart>
+                      ) : psychChartMetric === "terminated" ? (
+                        <BarChart
+                          data={actualDataMonthlyTimeline}
+                          margin={{ top: 22, right: 16, left: -18, bottom: 0 }}
+                        >
+                          <CartesianGrid strokeDasharray="3 3" stroke="#f1f5f9" vertical={false} />
+                          <XAxis
+                            dataKey="name"
+                            tickLine={false}
+                            axisLine={false}
+                            tick={{ fill: "#64748b", fontSize: 11, fontWeight: 700 }}
+                          />
+                          <YAxis
+                            tickLine={false}
+                            axisLine={false}
+                            tick={{ fill: "#64748b", fontSize: 11, fontWeight: 700 }}
+                            domain={[0, "auto"]}
+                          />
+                          <Tooltip
+                            content={({ active, payload }) => {
+                              if (active && payload && payload.length) {
+                                const d = payload[0].payload
+                                return (
+                                  <div className="bg-slate-900/95 text-white p-3.5 rounded-2xl shadow-2xl border border-slate-800 text-xs backdrop-blur-md">
+                                    <p className="font-extrabold text-teal-300 mb-2 border-b border-slate-700 pb-1 flex items-center justify-between gap-4">
+                                      <span>Tháng {d.month}</span>
+                                      <span className="text-[10px] text-slate-400 font-normal">{d.name}</span>
+                                    </p>
+                                    <div className="space-y-1.5 text-[11px] font-mono tabular-nums">
+                                      <p className="flex justify-between gap-6">
+                                        <span className="text-teal-200 font-sans">Đã chấm dứt theo dõi:</span>
+                                        <span className="font-black text-teal-300 text-sm">{d.terminatedInMonth} ca</span>
+                                      </p>
+                                      <p className="flex justify-between gap-6 border-t border-slate-800 pt-1">
+                                        <span className="text-slate-400 font-sans">Tổng ca còn theo dõi:</span>
+                                        <span className="font-bold text-amber-300">{d.activeCaseload} HS</span>
+                                      </p>
+                                    </div>
+                                  </div>
+                                )
+                              }
+                              return null
+                            }}
+                          />
+                          <Bar dataKey="terminatedInMonth" fill="#135E5B" radius={[8, 8, 0, 0]} maxBarSize={48}>
+                            {actualDataMonthlyTimeline.map((entry, index) => (
+                              <Cell
+                                key={`cell-${index}`}
+                                fill={entry.terminatedInMonth > 0 ? "#135E5B" : "#e2e8f0"}
+                              />
+                            ))}
+                            <LabelList
+                              dataKey="terminatedInMonth"
+                              position="top"
+                              fill="#135E5B"
+                              fontSize={11}
+                              fontWeight={800}
+                              formatter={(v: any) => (Number(v) > 0 ? `${v}` : "")}
+                            />
+                          </Bar>
+                        </BarChart>
+                      ) : psychChartMetric === "activeCaseload" ? (
+                        <BarChart
+                          data={actualDataMonthlyTimeline}
+                          margin={{ top: 22, right: 16, left: -18, bottom: 0 }}
+                        >
+                          <CartesianGrid strokeDasharray="3 3" stroke="#f1f5f9" vertical={false} />
+                          <XAxis
+                            dataKey="name"
+                            tickLine={false}
+                            axisLine={false}
+                            tick={{ fill: "#64748b", fontSize: 11, fontWeight: 700 }}
+                          />
+                          <YAxis
+                            tickLine={false}
+                            axisLine={false}
+                            tick={{ fill: "#64748b", fontSize: 11, fontWeight: 700 }}
+                            domain={[0, "auto"]}
+                          />
+                          <Tooltip
+                            content={({ active, payload }) => {
+                              if (active && payload && payload.length) {
+                                const d = payload[0].payload
+                                return (
+                                  <div className="bg-slate-900/95 text-white p-3.5 rounded-2xl shadow-2xl border border-slate-800 text-xs backdrop-blur-md">
+                                    <p className="font-extrabold text-amber-300 mb-2 border-b border-slate-700 pb-1 flex items-center justify-between gap-4">
+                                      <span>Tháng {d.month}</span>
+                                      <span className="text-[10px] text-slate-400 font-normal">{d.name}</span>
+                                    </p>
+                                    <div className="space-y-1.5 text-[11px] font-mono tabular-nums">
+                                      <p className="flex justify-between gap-6">
+                                        <span className="text-slate-300 font-sans">Lũy kế đang theo dõi:</span>
+                                        <span className="font-black text-amber-300 text-sm">{d.activeCaseload} HS</span>
+                                      </p>
+                                      <p className="flex justify-between gap-6">
+                                        <span className="text-slate-300 font-sans">Tiếp nhận mới:</span>
+                                        <span className="font-bold text-slate-200">+{d.newCases} ca</span>
+                                      </p>
+                                      <p className="flex justify-between gap-6">
+                                        <span className="text-slate-300 font-sans">Đã chấm dứt:</span>
+                                        <span className="font-bold text-teal-300">-{d.terminatedInMonth} ca</span>
+                                      </p>
+                                    </div>
+                                  </div>
+                                )
+                              }
+                              return null
+                            }}
+                          />
+                          <Bar dataKey="activeCaseload" fill="#D49A3D" radius={[8, 8, 0, 0]} maxBarSize={48}>
+                            <LabelList
+                              dataKey="activeCaseload"
+                              position="top"
+                              fill="#92400E"
+                              fontSize={11}
+                              fontWeight={800}
+                              formatter={(v: any) => (Number(v) > 0 ? `${v}` : "")}
+                            />
+                          </Bar>
+                        </BarChart>
+                      ) : (
+                        <BarChart
+                          data={actualDataMonthlyTimeline}
+                          margin={{ top: 22, right: 16, left: -18, bottom: 0 }}
+                        >
+                          <CartesianGrid strokeDasharray="3 3" stroke="#f1f5f9" vertical={false} />
+                          <XAxis
+                            dataKey="name"
+                            tickLine={false}
+                            axisLine={false}
+                            tick={{ fill: "#64748b", fontSize: 11, fontWeight: 700 }}
+                          />
+                          <YAxis
+                            tickLine={false}
+                            axisLine={false}
+                            tick={{ fill: "#64748b", fontSize: 11, fontWeight: 700 }}
+                            domain={[0, "auto"]}
+                          />
+                          <Tooltip
+                            content={({ active, payload }) => {
+                              if (active && payload && payload.length) {
+                                const d = payload[0].payload
+                                return (
+                                  <div className="bg-slate-900/95 text-white p-3.5 rounded-2xl shadow-2xl border border-slate-800 text-xs backdrop-blur-md">
+                                    <p className="font-extrabold text-sky-300 mb-2 border-b border-slate-700 pb-1 flex items-center justify-between gap-4">
+                                      <span>Tháng {d.month}</span>
+                                      <span className="text-[10px] text-slate-400 font-normal">{d.name}</span>
+                                    </p>
+                                    <div className="space-y-1.5 text-[11px] font-mono tabular-nums">
+                                      <p className="flex justify-between gap-6">
+                                        <span className="text-slate-300 font-sans">Tiếp nhận mới:</span>
+                                        <span className="font-black text-sky-300 text-sm">+{d.newCases} ca</span>
+                                      </p>
+                                      <p className="flex justify-between gap-6 border-t border-slate-800 pt-1">
+                                        <span className="text-slate-300 font-sans">Lũy kế đang theo dõi:</span>
+                                        <span className="font-bold text-amber-200">{d.activeCaseload} HS</span>
+                                      </p>
+                                    </div>
+                                  </div>
+                                )
+                              }
+                              return null
+                            }}
+                          />
+                          <Bar dataKey="newCases" fill="#0284C7" radius={[8, 8, 0, 0]} maxBarSize={48}>
+                            <LabelList
+                              dataKey="newCases"
+                              position="top"
+                              fill="#0369A1"
+                              fontSize={11}
+                              fontWeight={800}
+                              formatter={(v: any) => (Number(v) > 0 ? `${v}` : "")}
+                            />
+                          </Bar>
+                        </BarChart>
+                      )}
+                    </ResponsiveContainer>
+                  </div>
+                ) : (
+                  <div className="overflow-x-auto border border-slate-100 rounded-xl">
+                    <table className="min-w-full text-xs text-slate-600">
+                      <thead className="bg-slate-50 text-slate-500 font-extrabold border-b border-slate-100 text-[10px] uppercase tracking-wider">
+                        <tr>
+                          <th className="py-2.5 px-3 text-left">Tháng</th>
+                          <th className="py-2.5 px-3 text-center">Mới (+)</th>
+                          <th className="py-2.5 px-3 text-center bg-teal-50/50 text-[#135E5B]">Chấm dứt (-)</th>
+                          <th className="py-2.5 px-3 text-center bg-amber-50/40 text-[#92400E]">Đang TD</th>
+                          <th className="py-2.5 px-3 text-center bg-amber-50/60 text-amber-900">Cam kết</th>
+                          <th className="py-2.5 px-3 text-left">Nhận định Điều hành</th>
+                        </tr>
+                      </thead>
+                      <tbody className="divide-y divide-slate-100 font-medium text-xs">
+                        {actualDataMonthlyTimeline.map((row, idx) => {
+                          const isHighActivity = row.newCases > 0 || row.terminatedInMonth > 0
+                          return (
+                            <tr key={idx} className={`hover:bg-slate-50/80 transition-colors ${row.terminatedInMonth > 0 ? "bg-teal-50/15" : ""}`}>
+                              <td className="py-2.5 px-3 font-bold text-slate-800 flex items-center gap-2 whitespace-nowrap">
+                                <span className={`w-2 h-2 rounded-full ${isHighActivity ? "bg-[#135E5B]" : "bg-slate-300"}`} />
+                                {row.month} ({row.name})
+                              </td>
+                              <td className="py-2.5 px-3 text-center font-mono tabular-nums">
+                                {row.newCases > 0 ? (
+                                  <span className="px-2 py-0.5 rounded-full bg-sky-50 text-sky-800 font-black border border-sky-200">
+                                    +{row.newCases}
+                                  </span>
+                                ) : (
+                                  <span className="text-slate-300 font-bold">0</span>
+                                )}
+                              </td>
+                              <td className="py-2.5 px-3 text-center bg-teal-50/20 font-mono tabular-nums">
+                                {row.terminatedInMonth > 0 ? (
+                                  <span className="px-2 py-0.5 rounded-full bg-teal-100 text-[#135E5B] font-black border border-teal-200">
+                                    -{row.terminatedInMonth}
+                                  </span>
+                                ) : (
+                                  <span className="text-slate-300 font-bold">0</span>
+                                )}
+                              </td>
+                              <td className="py-2.5 px-3 text-center bg-amber-50/20 font-mono tabular-nums">
+                                <span className="px-2.5 py-0.5 rounded-lg bg-amber-50 text-[#92400E] font-black border border-amber-200/80">
+                                  {row.activeCaseload} HS
+                                </span>
+                              </td>
+                              <td className="py-2.5 px-3 text-center bg-amber-50/30 font-mono tabular-nums">
+                                {row.commitmentCases > 0 ? (
+                                  <span className="px-2 py-0.5 rounded-full bg-amber-100 text-amber-800 font-black border border-amber-200 text-[11px]">
+                                    ⭐️ {row.commitmentCases}
+                                  </span>
+                                ) : (
+                                  <span className="text-slate-300">0</span>
+                                )}
+                              </td>
+                              <td className="py-2.5 px-3 text-left text-slate-600 text-[11px]">
+                                {row.newCases > 0 && row.terminatedInMonth > 0
+                                  ? `Tiếp nhận +${row.newCases} ca, hoàn thành ${row.terminatedInMonth} ca`
+                                  : row.newCases > 0
+                                  ? `Tiếp nhận mới +${row.newCases} học sinh`
+                                  : row.terminatedInMonth > 0
+                                  ? `Hoàn thành & chấm dứt ${row.terminatedInMonth} ca`
+                                  : `Duy trì đồng hành ${row.activeCaseload} học sinh`}
+                              </td>
+                            </tr>
+                          )
+                        })}
+                      </tbody>
+                    </table>
+                  </div>
+                )}
+              </DashboardChartCard>
             </div>
 
-            {/* Nội dung Biểu đồ / Bảng */}
-            {psychViewMode === "chart" ? (
-              <div className="w-full pl-0">
-                <div className="flex flex-col sm:flex-row sm:items-center justify-between text-xs text-slate-500 mb-3 px-2 gap-2">
-                  <div className="flex flex-wrap items-center gap-4">
-                    {psychChartMetric === "comparison" && (
-                      <div className="flex items-center gap-3">
-                        <span className="flex items-center gap-1.5 font-bold text-[#92400E]">
-                          <span className="w-3 h-3 rounded-md bg-[#D49A3D] inline-block shadow-xs" />
-                          Đang theo dõi
-                        </span>
-                        <span className="flex items-center gap-1.5 font-bold text-[#135E5B]">
-                          <span className="w-3 h-3 rounded-md bg-[#135E5B] inline-block shadow-xs" />
-                          Đã chấm dứt theo dõi
-                        </span>
-                      </div>
-                    )}
-                    {psychChartMetric === "activeCaseload" && (
-                      <span className="flex items-center gap-1.5 font-bold text-[#92400E]">
-                        <span className="w-3 h-3 rounded-full bg-[#D49A3D] inline-block" />
-                        Học sinh đang theo dõi
-                      </span>
-                    )}
-                    {psychChartMetric === "terminated" && (
-                      <span className="flex items-center gap-1.5 font-bold text-[#135E5B]">
-                        <span className="w-3 h-3 rounded-full bg-[#135E5B] inline-block" />
-                        Học sinh đã chấm dứt theo dõi
-                      </span>
-                    )}
-                    {psychChartMetric === "newCases" && (
-                      <span className="flex items-center gap-1.5 font-bold text-[#92400E]">
-                        <span className="w-3 h-3 rounded-full bg-[#D49A3D] inline-block" />
-                        Học sinh tiếp nhận mới phát sinh trong tháng
-                      </span>
-                    )}
-                    <span className="text-slate-400 text-[11px]">
-                      • Tổng tiếp nhận: <strong className="text-slate-700">{psychologyTargets.length} ca</strong> | Đang theo dõi: <strong className="text-[#B45309]">{totalActivePsych} ca</strong> | Đã chấm dứt: <strong className="text-[#135E5B]">{totalTerminatedPsych} ca</strong>
-                    </span>
-                  </div>
-                  <div className="flex items-center gap-2 self-start sm:self-auto">
-                    <span className="text-[11px] bg-amber-50 text-[#92400E] font-bold px-2.5 py-1 rounded-full border border-amber-200/70">
-                      Quy mô cao nhất: {peakCaseload.activeCaseload} HS ({peakCaseload.name})
-                    </span>
-                  </div>
-                </div>
-
-                <ResponsiveContainer width="100%" height={290}>
-                  {psychChartMetric === "comparison" ? (
-                    <BarChart
-                      data={actualDataMonthlyTimeline}
-                      margin={{ top: 25, right: 20, left: -20, bottom: 0 }}
-                      barGap={8}
-                    >
-                      <CartesianGrid strokeDasharray="3 3" stroke="#f1f5f9" vertical={false} />
-                      <XAxis
-                        dataKey="name"
-                        tickLine={false}
-                        axisLine={false}
-                        tick={{ fill: "#64748b", fontSize: 11, fontWeight: 700 }}
-                      />
-                      <YAxis
-                        tickLine={false}
-                        axisLine={false}
-                        tick={{ fill: "#64748b", fontSize: 11, fontWeight: 700 }}
-                        domain={[0, 'auto']}
-                      />
-                      <Tooltip
-                        content={({ active, payload }) => {
-                          if (active && payload && payload.length) {
-                            const d = payload[0].payload
-                            return (
-                              <div className="bg-slate-900/95 text-white p-3.5 rounded-2xl shadow-2xl border border-slate-800 text-xs backdrop-blur-md">
-                                <p className="font-extrabold text-teal-300 mb-2 border-b border-slate-700 pb-1 flex items-center justify-between gap-4">
-                                  <span>Tháng {d.month}</span>
-                                  <span className="text-[10px] text-slate-400 font-normal">{d.name}</span>
-                                </p>
-                                <div className="space-y-1.5 text-[11px]">
-                                  <p className="flex justify-between gap-6">
-                                    <span className="text-amber-200">Đang theo dõi:</span>
-                                    <span className="font-black text-amber-300">{d.activeCaseload} HS</span>
-                                  </p>
-                                  <p className="flex justify-between gap-6">
-                                    <span className="text-teal-200">Đã chấm dứt theo dõi:</span>
-                                    <span className="font-black text-teal-300">-{d.terminatedInMonth} ca</span>
-                                  </p>
-                                  <p className="flex justify-between gap-6 border-t border-slate-800 pt-1">
-                                    <span className="text-slate-400">Tiếp nhận mới trong tháng:</span>
-                                    <span className="font-bold text-slate-200">+{d.newCases} ca</span>
-                                  </p>
-                                  {d.commitmentCases > 0 && (
-                                    <p className="flex justify-between gap-6 text-amber-400">
-                                      <span>Trong đó có HS cam kết:</span>
-                                      <span className="font-bold">{d.commitmentCases} HS</span>
-                                    </p>
-                                  )}
-                                </div>
-                              </div>
-                            )
-                          }
-                          return null
-                        }}
-                      />
-                      <Legend 
-                        formatter={(value) => (
-                          <span className="text-xs font-bold text-slate-700">
-                            {value === "activeCaseload" ? "Học sinh đang theo dõi" : "Đã chấm dứt theo dõi"}
-                          </span>
-                        )}
-                      />
-                      <Bar 
-                        dataKey="activeCaseload" 
-                        name="activeCaseload"
-                        fill="#D49A3D" 
-                        radius={[6, 6, 0, 0]} 
-                        maxBarSize={48}
+            {/* CỘT PHẢI (5/12): PHÂN BỐ CƠ CẤU & XUẤT SỔ THEO CƠ SỞ / KHỐI / CHUYÊN VIÊN (CHUẨN FLEXIDATA) */}
+            <div className="lg:col-span-5 flex">
+              <DashboardChartCard
+                className="w-full"
+                title="Cơ cấu Phân bổ & Xuất Sổ Đánh giá"
+                subtitle="Đối sánh quy mô theo Cơ sở (CS1–CS5), Khối lớp & Chuyên viên kèm nút xuất Sổ PDF/Excel"
+                icon={BarChart3}
+                unit="Số lượng (HS)"
+                headerRight={
+                  <div className="flex bg-white p-0.5 rounded-xl border border-slate-200/80 shadow-2xs">
+                    {[
+                      { id: "CAMPUS", label: "Theo Cơ sở" },
+                      { id: "GRADE", label: "Theo Khối" },
+                      { id: "TEACHER", label: "Theo GV" },
+                    ].map(t => (
+                      <button
+                        key={t.id}
+                        onClick={() => setDistributionTab(t.id as any)}
+                        className={`px-2.5 py-1 text-[11px] font-bold rounded-lg transition-all cursor-pointer ${
+                          distributionTab === t.id
+                            ? "bg-[#003B3A] text-white font-black shadow-2xs"
+                            : "text-slate-600 hover:text-slate-900"
+                        }`}
                       >
-                        <LabelList 
-                          dataKey="activeCaseload" 
-                          position="top" 
-                          fill="#92400E" 
-                          fontSize={11} 
-                          fontWeight={800} 
-                          formatter={(v: any) => Number(v) > 0 ? `${v}` : ""} 
-                        />
-                      </Bar>
-                      <Bar 
-                        dataKey="terminatedInMonth" 
-                        name="terminatedInMonth"
-                        fill="#135E5B" 
-                        radius={[6, 6, 0, 0]} 
-                        maxBarSize={48}
-                      >
-                        <LabelList 
-                          dataKey="terminatedInMonth" 
-                          position="top" 
-                          fill="#135E5B" 
-                          fontSize={11} 
-                          fontWeight={800} 
-                          formatter={(v: any) => Number(v) > 0 ? `${v}` : ""} 
-                        />
-                      </Bar>
-                    </BarChart>
-                  ) : psychChartMetric === "terminated" ? (
-                    <BarChart
-                      data={actualDataMonthlyTimeline}
-                      margin={{ top: 25, right: 20, left: -20, bottom: 0 }}
+                        {t.label}
+                      </button>
+                    ))}
+                  </div>
+                }
+                footerSlot={
+                  <div className="flex items-center justify-between w-full">
+                    <span>Nhấn vào từng dòng để lọc nhanh hoặc in Sổ PDF / Excel</span>
+                    <button
+                      type="button"
+                      onClick={() => handleOpenPdfModal(psychTeacherFilter, psychCampusFilter)}
+                      className="text-[#003B3A] hover:underline font-black inline-flex items-center gap-1 cursor-pointer"
                     >
-                      <CartesianGrid strokeDasharray="3 3" stroke="#f1f5f9" vertical={false} />
-                      <XAxis
-                        dataKey="name"
-                        tickLine={false}
-                        axisLine={false}
-                        tick={{ fill: "#64748b", fontSize: 11, fontWeight: 700 }}
-                      />
-                      <YAxis
-                        tickLine={false}
-                        axisLine={false}
-                        tick={{ fill: "#64748b", fontSize: 11, fontWeight: 700 }}
-                        domain={[0, 'auto']}
-                      />
-                      <Tooltip
-                        content={({ active, payload }) => {
-                          if (active && payload && payload.length) {
-                            const d = payload[0].payload
-                            return (
-                              <div className="bg-slate-900/95 text-white p-3.5 rounded-2xl shadow-2xl border border-slate-800 text-xs backdrop-blur-md">
-                                <p className="font-extrabold text-teal-300 mb-2 border-b border-slate-700 pb-1 flex items-center justify-between gap-4">
-                                  <span>Tháng {d.month}</span>
-                                  <span className="text-[10px] text-slate-400 font-normal">{d.name}</span>
-                                </p>
-                                <div className="space-y-1.5 text-[11px]">
-                                  <p className="flex justify-between gap-6">
-                                    <span className="text-teal-200">Đã chấm dứt theo dõi:</span>
-                                    <span className="font-black text-teal-300 text-sm">{d.terminatedInMonth} ca</span>
-                                  </p>
-                                  {d.terminatedCommitment > 0 && (
-                                    <p className="flex justify-between gap-6 text-amber-300">
-                                      <span>Trong đó có HS cam kết:</span>
-                                      <span className="font-bold">{d.terminatedCommitment} ca</span>
-                                    </p>
-                                  )}
-                                  <p className="flex justify-between gap-6 border-t border-slate-800 pt-1">
-                                    <span className="text-slate-400">Tổng ca còn theo dõi:</span>
-                                    <span className="font-bold text-amber-300">{d.activeCaseload} HS</span>
-                                  </p>
+                      <Printer className="w-3 h-3 text-rose-600" />
+                      <span>Mở Sổ PDF Tổng hợp</span>
+                    </button>
+                  </div>
+                }
+              >
+                {distributionTab === "CAMPUS" && (
+                  <div className="space-y-3">
+                    <ResponsiveContainer width="100%" height={135}>
+                      <BarChart
+                        data={psychCampusStats}
+                        margin={{ top: 16, right: 12, left: -22, bottom: 0 }}
+                      >
+                        <CartesianGrid strokeDasharray="3 3" stroke="#f1f5f9" vertical={false} />
+                        <XAxis
+                          dataKey="campusName"
+                          tickLine={false}
+                          axisLine={false}
+                          tick={{ fill: "#475569", fontSize: 10, fontWeight: 800 }}
+                        />
+                        <YAxis
+                          tickLine={false}
+                          axisLine={false}
+                          tick={{ fill: "#64748b", fontSize: 10, fontWeight: 700 }}
+                        />
+                        <Tooltip
+                          content={({ active, payload }) => {
+                            if (active && payload && payload.length) {
+                              const d = payload[0].payload
+                              return (
+                                <div className="bg-slate-900/95 text-white p-2.5 rounded-xl shadow-xl text-xs font-mono tabular-nums">
+                                  <p className="font-bold text-teal-300 font-sans mb-1">{d.campusName}</p>
+                                  <p>Tổng số: <strong>{d.count} HS</strong></p>
+                                  <p className="text-amber-300">Đang theo dõi: {d.active} HS</p>
+                                  <p className="text-emerald-300">Đã chấm dứt: {d.terminated} HS</p>
                                 </div>
-                              </div>
-                            )
-                          }
-                          return null
-                        }}
-                      />
-                      <Bar dataKey="terminatedInMonth" fill="#135E5B" radius={[8, 8, 0, 0]} maxBarSize={56}>
-                        {actualDataMonthlyTimeline.map((entry, index) => (
-                          <Cell 
-                            key={`cell-${index}`} 
-                            fill={entry.terminatedInMonth > 0 ? "#135E5B" : "#e2e8f0"} 
+                              )
+                            }
+                            return null
+                          }}
+                        />
+                        <Bar dataKey="count" radius={[6, 6, 0, 0]} maxBarSize={36}>
+                          {psychCampusStats.map((entry, idx) => (
+                            <Cell
+                              key={`campus-cell-${idx}`}
+                              fill={getCampusColorInfo(entry.campusName, idx).hex}
+                            />
+                          ))}
+                          <LabelList
+                            dataKey="count"
+                            position="top"
+                            fill="#1e293b"
+                            fontSize={10}
+                            fontWeight={800}
                           />
-                        ))}
-                        <LabelList 
-                          dataKey="terminatedInMonth" 
-                          position="top" 
-                          fill="#135E5B" 
-                          fontSize={11} 
-                          fontWeight={800} 
-                          formatter={(v: any) => Number(v) > 0 ? `${v}` : ""} 
+                        </Bar>
+                      </BarChart>
+                    </ResponsiveContainer>
+
+                    <div className="space-y-1.5 max-h-[155px] overflow-y-auto pr-1">
+                      {psychCampusStats.map((c, idx) => {
+                        const cColor = getCampusColorInfo(c.campusName, idx)
+                        const pct = psychologyTargets.length > 0 ? Math.round((c.count / psychologyTargets.length) * 100) : 0
+                        const isSelected = psychCampusFilter === c.campusId
+                        return (
+                          <div
+                            key={c.campusId}
+                            onClick={() => setPsychCampusFilter(isSelected ? "ALL" : c.campusId)}
+                            className={`flex items-center justify-between px-3 py-2 rounded-xl border text-xs transition-all cursor-pointer ${
+                              isSelected
+                                ? "bg-teal-50/80 border-[#003B3A] ring-1 ring-[#003B3A]/20"
+                                : "bg-slate-50/70 border-slate-200/70 hover:bg-slate-100/80"
+                            }`}
+                          >
+                            <div className="flex items-center gap-2 min-w-0">
+                              <span
+                                className="w-2.5 h-2.5 rounded-full shrink-0"
+                                style={{ backgroundColor: cColor.hex }}
+                              />
+                              <span className="font-extrabold text-slate-800 truncate">{c.campusName}</span>
+                              <span className="text-[10px] text-slate-500 font-mono tabular-nums">
+                                ({c.active} đang TD • {c.terminated} xong)
+                              </span>
+                            </div>
+                            <div className="flex items-center gap-1.5 shrink-0">
+                              <span className="font-mono tabular-nums font-black text-slate-900">
+                                {c.count} HS <span className="text-[10px] font-normal text-slate-400">({pct}%)</span>
+                              </span>
+                              <button
+                                type="button"
+                                onClick={(e) => {
+                                  e.stopPropagation()
+                                  handleOpenPdfModal("ALL", c.campusId)
+                                }}
+                                className="p-1 rounded-lg bg-rose-50 hover:bg-rose-100 text-rose-700 border border-rose-200/80"
+                                title={`Xuất Sổ PDF Cơ sở ${c.campusName}`}
+                              >
+                                <Printer className="w-3 h-3" />
+                              </button>
+                              <button
+                                type="button"
+                                onClick={(e) => {
+                                  e.stopPropagation()
+                                  handleExportTeacherReport("ALL", undefined, c.campusId, c.campusName)
+                                }}
+                                className="p-1 rounded-lg bg-teal-50 hover:bg-teal-100 text-[#003B3A] border border-teal-200/80"
+                                title={`Xuất Excel Cơ sở ${c.campusName}`}
+                              >
+                                <Download className="w-3 h-3" />
+                              </button>
+                            </div>
+                          </div>
+                        )
+                      })}
+                    </div>
+                  </div>
+                )}
+
+                {distributionTab === "GRADE" && (
+                  <div className="space-y-3">
+                    <ResponsiveContainer width="100%" height={135}>
+                      <BarChart
+                        data={psychGradeStats}
+                        margin={{ top: 16, right: 12, left: -22, bottom: 0 }}
+                      >
+                        <CartesianGrid strokeDasharray="3 3" stroke="#f1f5f9" vertical={false} />
+                        <XAxis
+                          dataKey="gradeName"
+                          tickLine={false}
+                          axisLine={false}
+                          tick={{ fill: "#475569", fontSize: 10, fontWeight: 700 }}
                         />
-                      </Bar>
-                    </BarChart>
-                  ) : psychChartMetric === "activeCaseload" ? (
-                    <BarChart
-                      data={actualDataMonthlyTimeline}
-                      margin={{ top: 25, right: 20, left: -20, bottom: 0 }}
-                    >
-                      <CartesianGrid strokeDasharray="3 3" stroke="#f1f5f9" vertical={false} />
-                      <XAxis
-                        dataKey="name"
-                        tickLine={false}
-                        axisLine={false}
-                        tick={{ fill: "#64748b", fontSize: 11, fontWeight: 700 }}
-                      />
-                      <YAxis
-                        tickLine={false}
-                        axisLine={false}
-                        tick={{ fill: "#64748b", fontSize: 11, fontWeight: 700 }}
-                        domain={[0, 'auto']}
-                      />
-                      <Tooltip
-                        content={({ active, payload }) => {
-                          if (active && payload && payload.length) {
-                            const d = payload[0].payload
-                            return (
-                              <div className="bg-slate-900/95 text-white p-3.5 rounded-2xl shadow-2xl border border-slate-800 text-xs backdrop-blur-md">
-                                <p className="font-extrabold text-amber-300 mb-2 border-b border-slate-700 pb-1 flex items-center justify-between gap-4">
-                                  <span>Tháng {d.month}</span>
-                                  <span className="text-[10px] text-slate-400 font-normal">{d.name}</span>
-                                </p>
-                                <div className="space-y-1.5 text-[11px]">
-                                  <p className="flex justify-between gap-6">
-                                    <span className="text-slate-300">Lũy kế đang theo dõi:</span>
-                                    <span className="font-black text-amber-300 text-sm">{d.activeCaseload} HS</span>
-                                  </p>
-                                  <p className="flex justify-between gap-6">
-                                    <span className="text-slate-300">Tiếp nhận mới:</span>
-                                    <span className="font-bold text-slate-200">+{d.newCases} ca</span>
-                                  </p>
-                                  <p className="flex justify-between gap-6">
-                                    <span className="text-slate-300">Đã chấm dứt:</span>
-                                    <span className="font-bold text-teal-300">-{d.terminatedInMonth} ca</span>
-                                  </p>
-                                  {d.commitmentCases > 0 && (
-                                    <p className="flex justify-between gap-6 text-amber-400 pt-1 border-t border-slate-800">
-                                      <span>Trong đó diện Cam kết:</span>
-                                      <span className="font-bold">{d.commitmentCases} HS</span>
-                                    </p>
-                                  )}
-                                </div>
-                              </div>
-                            )
-                          }
-                          return null
-                        }}
-                      />
-                      <Bar dataKey="activeCaseload" fill="#D49A3D" radius={[8, 8, 0, 0]} maxBarSize={56}>
-                        <LabelList 
-                          dataKey="activeCaseload" 
-                          position="top" 
-                          fill="#92400E" 
-                          fontSize={11} 
-                          fontWeight={800} 
-                          formatter={(v: any) => Number(v) > 0 ? `${v}` : ""} 
+                        <YAxis
+                          tickLine={false}
+                          axisLine={false}
+                          tick={{ fill: "#64748b", fontSize: 10, fontWeight: 700 }}
                         />
-                      </Bar>
-                    </BarChart>
-                  ) : (
-                    <BarChart
-                      data={actualDataMonthlyTimeline}
-                      margin={{ top: 25, right: 20, left: -20, bottom: 0 }}
-                    >
-                      <CartesianGrid strokeDasharray="3 3" stroke="#f1f5f9" vertical={false} />
-                      <XAxis
-                        dataKey="name"
-                        tickLine={false}
-                        axisLine={false}
-                        tick={{ fill: "#64748b", fontSize: 11, fontWeight: 700 }}
-                      />
-                      <YAxis
-                        tickLine={false}
-                        axisLine={false}
-                        tick={{ fill: "#64748b", fontSize: 11, fontWeight: 700 }}
-                        domain={[0, 'auto']}
-                      />
-                      <Tooltip
-                        content={({ active, payload }) => {
-                          if (active && payload && payload.length) {
-                            const d = payload[0].payload
-                            return (
-                              <div className="bg-slate-900/95 text-white p-3.5 rounded-2xl shadow-2xl border border-slate-800 text-xs backdrop-blur-md">
-                                <p className="font-extrabold text-amber-300 mb-2 border-b border-slate-700 pb-1 flex items-center justify-between gap-4">
-                                  <span>Tháng {d.month}</span>
-                                  <span className="text-[10px] text-slate-400 font-normal">{d.name}</span>
-                                </p>
-                                <div className="space-y-1.5 text-[11px]">
-                                  <p className="flex justify-between gap-6">
-                                    <span className="text-slate-300">Tiếp nhận mới:</span>
-                                    <span className="font-black text-amber-300 text-sm">+{d.newCases} ca</span>
-                                  </p>
-                                  {d.newCommitments > 0 && (
-                                    <p className="flex justify-between gap-6 text-amber-400">
-                                      <span>Trong đó có HS cam kết:</span>
-                                      <span className="font-bold">{d.newCommitments} ca</span>
-                                    </p>
-                                  )}
-                                  <p className="flex justify-between gap-6 border-t border-slate-800 pt-1">
-                                    <span className="text-slate-300">Lũy kế đang theo dõi:</span>
-                                    <span className="font-bold text-amber-200">{d.activeCaseload} HS</span>
-                                  </p>
-                                </div>
-                              </div>
-                            )
-                          }
-                          return null
-                        }}
-                      />
-                      <Bar dataKey="newCases" fill="#D49A3D" radius={[8, 8, 0, 0]} maxBarSize={56}>
-                        <LabelList 
-                          dataKey="newCases" 
-                          position="top" 
-                          fill="#92400E" 
-                          fontSize={11} 
-                          fontWeight={800} 
-                          formatter={(v: any) => Number(v) > 0 ? `${v}` : ""} 
-                        />
-                      </Bar>
-                    </BarChart>
-                  )}
-                </ResponsiveContainer>
-              </div>
-            ) : (
-              <div className="overflow-x-auto border border-slate-100 rounded-2xl">
-                <table className="min-w-full text-xs text-slate-600">
-                  <thead className="bg-slate-50 text-slate-500 font-extrabold border-b border-slate-100 text-[11px] uppercase tracking-wider">
-                    <tr>
-                      <th className="py-3 px-4 text-left">Tháng trong năm học</th>
-                      <th className="py-3 px-4 text-center">Tiếp nhận mới (+)</th>
-                      <th className="py-3 px-4 text-center bg-teal-50/50 text-[#135E5B]">Đã chấm dứt theo dõi (-)</th>
-                      <th className="py-3 px-4 text-center bg-amber-50/40 text-[#92400E]">Lũy kế đang theo dõi</th>
-                      <th className="py-3 px-4 text-center bg-amber-50/60 text-amber-900">Trong đó: HS Cam kết</th>
-                      <th className="py-3 px-4 text-left">Đánh giá & Ghi chú quản trị</th>
-                    </tr>
-                  </thead>
-                  <tbody className="divide-y divide-slate-100 font-medium text-xs">
-                    {actualDataMonthlyTimeline.map((row, idx) => {
-                      const isHighActivity = row.newCases > 0 || row.terminatedInMonth > 0
+                        <Tooltip />
+                        <Bar dataKey="count" fill="#D97706" radius={[5, 5, 0, 0]} maxBarSize={28}>
+                          <LabelList dataKey="count" position="top" fill="#92400E" fontSize={10} fontWeight={800} />
+                        </Bar>
+                      </BarChart>
+                    </ResponsiveContainer>
+
+                    <div className="space-y-1.5 max-h-[155px] overflow-y-auto pr-1">
+                      {psychGradeStats.map((g, idx) => {
+                        const pct = psychologyTargets.length > 0 ? Math.round((g.count / psychologyTargets.length) * 100) : 0
+                        const isSelected = psychGradeFilter === g.gradeName
+                        return (
+                          <div
+                            key={idx}
+                            onClick={() => setPsychGradeFilter(isSelected ? "ALL" : g.gradeName)}
+                            className={`flex items-center justify-between px-3 py-2 rounded-xl border text-xs transition-all cursor-pointer ${
+                              isSelected
+                                ? "bg-amber-50/80 border-amber-500 ring-1 ring-amber-500/20"
+                                : "bg-slate-50/70 border-slate-200/70 hover:bg-slate-100/80"
+                            }`}
+                          >
+                            <div className="flex items-center gap-2">
+                              <span className="w-2 h-2 rounded-full bg-amber-500" />
+                              <span className="font-extrabold text-slate-800">{g.gradeName}</span>
+                              {g.commitmentCount > 0 && (
+                                <span className="text-[10px] px-1.5 py-0.2 rounded bg-amber-100 text-amber-900 font-black">
+                                  ⭐️ {g.commitmentCount} CK
+                                </span>
+                              )}
+                            </div>
+                            <div className="font-mono tabular-nums font-black text-slate-800">
+                              {g.count} HS <span className="text-[10px] font-normal text-slate-400">({pct}%)</span>
+                            </div>
+                          </div>
+                        )
+                      })}
+                    </div>
+                  </div>
+                )}
+
+                {distributionTab === "TEACHER" && (
+                  <div className="space-y-2 max-h-[295px] overflow-y-auto pr-1">
+                    {psychTeacherStats.map((t, idx) => {
+                      const pct = psychologyTargets.length > 0 ? Math.round((t.count / psychologyTargets.length) * 100) : 0
+                      const isSelected = psychTeacherFilter === t.teacherId
                       return (
-                        <tr key={idx} className={`hover:bg-slate-50/80 transition-colors ${row.terminatedInMonth > 0 ? "bg-teal-50/20" : ""}`}>
-                          <td className="py-3 px-4 font-bold text-slate-800 flex items-center gap-2">
-                            <span className={`w-2 h-2 rounded-full ${isHighActivity ? "bg-[#135E5B]" : "bg-slate-300"}`} />
-                            Tháng {row.month} ({row.name})
-                          </td>
-                          <td className="py-3 px-4 text-center">
-                            {row.newCases > 0 ? (
-                              <span className="px-2.5 py-0.5 rounded-full bg-amber-50 text-[#92400E] font-black border border-amber-200">
-                                +{row.newCases}
-                              </span>
-                            ) : (
-                              <span className="text-slate-300 font-bold">0</span>
-                            )}
-                          </td>
-                          <td className="py-3 px-4 text-center bg-teal-50/30">
-                            {row.terminatedInMonth > 0 ? (
-                              <span className="px-2.5 py-0.5 rounded-full bg-teal-100 text-[#135E5B] font-black border border-teal-200">
-                                -{row.terminatedInMonth} ca
-                              </span>
-                            ) : (
-                              <span className="text-slate-300 font-bold">0</span>
-                            )}
-                          </td>
-                          <td className="py-3 px-4 text-center bg-amber-50/20">
-                            <span className="px-3 py-1 rounded-xl bg-amber-50 text-[#92400E] font-black border border-amber-200/80 text-xs">
-                              {row.activeCaseload} HS
+                        <div
+                          key={idx}
+                          onClick={() => setPsychTeacherFilter(isSelected ? "ALL" : t.teacherId)}
+                          className={`flex items-center justify-between px-3 py-2.5 rounded-xl border text-xs transition-all cursor-pointer ${
+                            isSelected
+                              ? "bg-teal-50/80 border-[#003B3A] ring-1 ring-[#003B3A]/20"
+                              : "bg-slate-50/70 border-slate-200/70 hover:bg-slate-100/80"
+                          }`}
+                        >
+                          <div className="flex items-center gap-2.5 min-w-0">
+                            <div className="w-7 h-7 rounded-full bg-[#003B3A] text-white flex items-center justify-center font-black text-[11px] shrink-0">
+                              {t.teacherName.charAt(0)}
+                            </div>
+                            <div className="min-w-0">
+                              <p className="font-extrabold text-slate-800 truncate">{t.teacherName}</p>
+                              <p className="text-[10px] text-slate-500 truncate">
+                                {t.campusList || "Toàn trường"} • {t.active} đang TD / {t.terminated} xong
+                              </p>
+                            </div>
+                          </div>
+                          <div className="flex items-center gap-1.5 shrink-0">
+                            <span className="font-mono tabular-nums font-black text-slate-900">
+                              {t.count} ca <span className="text-[10px] font-normal text-slate-400">({pct}%)</span>
                             </span>
-                          </td>
-                          <td className="py-3 px-4 text-center bg-amber-50/30">
-                            {row.commitmentCases > 0 ? (
-                              <span className="px-2.5 py-0.5 rounded-full bg-amber-100 text-amber-800 font-black border border-amber-200 text-[11px] inline-flex items-center gap-1">
-                                <Sparkles className="w-2.5 h-2.5 text-amber-600" />
-                                {row.commitmentCases} HS
-                              </span>
-                            ) : (
-                              <span className="text-slate-300">0</span>
-                            )}
-                          </td>
-                          <td className="py-3 px-4 text-left text-slate-600 font-medium">
-                            {row.newCases > 0 && row.terminatedInMonth > 0 && (
-                              <span className="text-[#135E5B] font-bold">
-                                Tiếp nhận +{row.newCases} ca, hoàn thành & kết thúc {row.terminatedInMonth} ca can thiệp
-                              </span>
-                            )}
-                            {row.newCases > 0 && row.terminatedInMonth === 0 && (
-                              <span className="text-[#92400E] font-bold">
-                                Tiếp nhận mới {row.newCases} ca học sinh cần hỗ trợ
-                              </span>
-                            )}
-                            {row.newCases === 0 && row.terminatedInMonth > 0 && (
-                              <span className="text-[#135E5B] font-bold">
-                                Chấm dứt theo dõi {row.terminatedInMonth} ca đạt mục tiêu rèn luyện
-                              </span>
-                            )}
-                            {row.newCases === 0 && row.terminatedInMonth === 0 && row.activeCaseload > 0 && (
-                              <span className="text-slate-400">Duy trì đồng hành {row.activeCaseload} học sinh định kỳ</span>
-                            )}
-                            {row.activeCaseload === 0 && (
-                              <span className="text-slate-300">—</span>
-                            )}
-                          </td>
-                        </tr>
+                            <button
+                              type="button"
+                              onClick={(e) => {
+                                e.stopPropagation()
+                                handleOpenPdfModal(t.teacherId)
+                              }}
+                              className="p-1 rounded-lg bg-rose-50 hover:bg-rose-100 text-rose-700 border border-rose-200/80"
+                              title={`Xuất Sổ PDF định kỳ Tuần/Tháng của ${t.teacherName}`}
+                            >
+                              <Printer className="w-3 h-3" />
+                            </button>
+                            <button
+                              type="button"
+                              onClick={(e) => {
+                                e.stopPropagation()
+                                handleExportTeacherReport(t.teacherId, t.teacherName)
+                              }}
+                              className="p-1 rounded-lg bg-teal-50 hover:bg-teal-100 text-[#003B3A] border border-teal-200/80"
+                              title={`Xuất Excel của ${t.teacherName}`}
+                            >
+                              <Download className="w-3 h-3" />
+                            </button>
+                          </div>
+                        </div>
                       )
                     })}
-                  </tbody>
-                </table>
-              </div>
-            )}
+                  </div>
+                )}
+              </DashboardChartCard>
+            </div>
+
           </div>
 
-          {/* 1.3 KHỐI PHÂN TÍCH 3 CHIỀU: CƠ SỞ, KHỐI LỚP, GV PHỤ TRÁCH (BỐ CỤC CÂN ĐỐI, ĐỐI SÁNH THEO DÕI & CHẤM DỨT) */}
+          {/* 1.4 KHỐI PHÂN TÍCH 3 CHIỀU: CƠ SỞ, KHỐI LỚP, GV PHỤ TRÁCH (BỐ CỤC CÂN ĐỐI, ĐỐI SÁNH THEO DÕI & CHẤM DỨT) */}
           <div className="grid grid-cols-1 md:grid-cols-3 gap-5 items-stretch">
 
             {/* Chiều 1: Thống kê theo Cơ sở */}
-            <div className="bg-white border border-slate-200/80 rounded-3xl p-5 shadow-xs flex flex-col justify-between h-[450px]">
+            <div className="bg-white border border-slate-200/80 rounded-2xl p-5 shadow-2xs flex flex-col justify-between h-[450px]">
               <div>
                 <div className="pb-3 border-b border-slate-100 mb-3">
                   <div className="flex items-center justify-between gap-2">
@@ -2411,92 +2884,83 @@ export function OverviewDashboard({
       )}
 
       {/* =====================================================================
-          PHÂN HỆ 2: DASHBOARD PHỤ ĐẠO VĂN HÓA & HỌC THUẬT (CHUYÊN SÂU 100%)
+          PHÂN HỆ 2: DASHBOARD PHỤ ĐẠO VĂN HÓA & HỌC THUẬT (CHUẨN FLEXIDATA)
           ===================================================================== */}
       {supportScope === "ACADEMIC" && (
-        <div className="space-y-6 animate-in fade-in duration-300">
+        <div className="space-y-5 animate-in fade-in duration-300">
 
-          {/* 2.1 Thẻ Chỉ số KPI Văn hóa */}
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-            <div className="bg-white border border-blue-100 rounded-3xl p-5 shadow-sm hover:shadow-md transition-all relative overflow-hidden group">
-              <div className="absolute right-0 bottom-0 w-24 h-24 bg-blue-50/60 rounded-tl-full opacity-60 group-hover:scale-110 transition-transform" />
-              <div className="flex items-center gap-3.5 z-10 relative">
-                <div className="p-3 bg-blue-100/70 text-blue-700 rounded-2xl shadow-inner">
-                  <BookOpen className="h-6 w-6" />
-                </div>
-                <div>
-                  <div className="text-3xl font-black text-slate-800 leading-none tracking-tight">
-                    {academicTargets.length}
-                  </div>
-                  <div className="text-[11px] text-blue-800 font-extrabold uppercase mt-1 tracking-wider">
-                    HS Phụ đạo Văn hóa
-                  </div>
-                  <div className="text-[10px] text-slate-400 font-medium mt-0.5">
-                    Toán, Văn, Tiếng Anh & bộ môn
-                  </div>
-                </div>
-              </div>
-            </div>
+          {/* 2.1 Thẻ Chỉ số KPI Văn hóa chuẩn KPICard Flexidata */}
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3.5">
+            <KPICard
+              title="Hồ sơ Phụ đạo Văn hóa"
+              value={academicTargets.length}
+              unit="học sinh"
+              icon={BookOpen}
+              colorTheme="sky"
+              trend="neutral"
+              trendValue={`${academicTargets.filter(t => t.terminationStatus === "ACTIVE").length} đang học`}
+              comparisonText="Toán, Văn, Anh & bộ môn"
+              subMetrics={[
+                { label: "Đang bồi dưỡng", value: `${academicTargets.filter(t => t.terminationStatus === "ACTIVE").length} HS`, colorClass: "text-sky-700" },
+                { label: "Đã hoàn thành", value: `${academicTargets.filter(t => t.terminationStatus === "TERMINATED").length} HS` },
+              ]}
+            />
 
-            <div className="bg-white border border-cyan-100 rounded-3xl p-5 shadow-sm hover:shadow-md transition-all relative overflow-hidden group">
-              <div className="absolute right-0 bottom-0 w-24 h-24 bg-cyan-50/60 rounded-tl-full opacity-60 group-hover:scale-110 transition-transform" />
-              <div className="flex items-center gap-3.5 z-10 relative">
-                <div className="p-3 bg-cyan-100/70 text-cyan-700 rounded-2xl shadow-inner">
-                  <Building2 className="h-6 w-6" />
-                </div>
-                <div>
-                  <div className="text-3xl font-black text-cyan-700 leading-none tracking-tight">
-                    {acadCampusStats.filter(c => c.count > 0).length} <span className="text-base text-slate-400 font-medium">/ {campuses.length}</span>
-                  </div>
-                  <div className="text-[11px] text-cyan-800 font-extrabold uppercase mt-1 tracking-wider">
-                    Cơ sở triển khai
-                  </div>
-                  <div className="text-[10px] text-slate-400 font-medium mt-0.5">
-                    CS4 (4), CS1 (3), CS3 (2), CS5 (2), CS2 (1)
-                  </div>
-                </div>
-              </div>
-            </div>
+            <KPICard
+              title="Cơ sở Triển khai"
+              value={`${acadCampusStats.filter(c => c.count > 0).length}/${campuses.length}`}
+              unit="cơ sở"
+              icon={Building2}
+              colorTheme="teal"
+              trend="up"
+              trendValue={`${Math.round((acadCampusStats.filter(c => c.count > 0).length / (campuses.length || 1)) * 100)}% độ phủ`}
+              comparisonText="toàn hệ thống"
+              subMetrics={acadCampusStats.filter(c => c.count > 0).slice(0, 2).map(c => ({
+                label: c.campusName,
+                value: `${c.count} HS`,
+                colorClass: "text-[#00736E]",
+              }))}
+            />
 
-            <div className="bg-white border border-indigo-100 rounded-3xl p-5 shadow-sm hover:shadow-md transition-all relative overflow-hidden group">
-              <div className="absolute right-0 bottom-0 w-24 h-24 bg-indigo-50/60 rounded-tl-full opacity-60 group-hover:scale-110 transition-transform" />
-              <div className="flex items-center gap-3.5 z-10 relative">
-                <div className="p-3 bg-indigo-100/70 text-indigo-700 rounded-2xl shadow-inner">
-                  <GraduationCap className="h-6 w-6" />
-                </div>
-                <div>
-                  <div className="text-3xl font-black text-indigo-700 leading-none tracking-tight">
-                    {acadTeacherStats.length}
-                  </div>
-                  <div className="text-[11px] text-indigo-800 font-extrabold uppercase mt-1 tracking-wider">
-                    Giáo viên phụ đạo
-                  </div>
-                  <div className="text-[10px] text-slate-400 font-medium mt-0.5">
-                    Phân bổ theo từng bộ môn
-                  </div>
-                </div>
-              </div>
-            </div>
+            <KPICard
+              title="Giáo viên Phụ đạo"
+              value={acadTeacherStats.filter(t => t.teacherId !== "UNASSIGNED").length}
+              unit="giáo viên"
+              icon={GraduationCap}
+              colorTheme="indigo"
+              trend="neutral"
+              trendValue={`${acadGradeStats.length} khối lớp`}
+              comparisonText="phân công bộ môn"
+              subMetrics={[
+                { label: "Tổng GV tham gia", value: `${acadTeacherStats.length} GV`, colorClass: "text-indigo-700" },
+                { label: "Số khối lớp", value: `${acadGradeStats.length} khối` },
+              ]}
+              onClick={() => handleOpenPdfModal("ALL")}
+              hrefLabel="Xuất Sổ PDF Tiến độ Giáo viên"
+            />
 
-            <div className="bg-white border border-emerald-100 rounded-3xl p-5 shadow-sm hover:shadow-md transition-all relative overflow-hidden group">
-              <div className="absolute right-0 bottom-0 w-24 h-24 bg-emerald-50/60 rounded-tl-full opacity-60 group-hover:scale-110 transition-transform" />
-              <div className="flex items-center gap-3.5 z-10 relative">
-                <div className="p-3 bg-emerald-100/70 text-emerald-700 rounded-2xl shadow-inner">
-                  <TrendingUp className="h-6 w-6" />
-                </div>
-                <div>
-                  <div className="text-3xl font-black text-emerald-700 leading-none tracking-tight">
-                    {academicMonthlyStats.length > 0 ? `${academicMonthlyStats[academicMonthlyStats.length - 1].total} lượt` : "0 lượt"}
-                  </div>
-                  <div className="text-[11px] text-emerald-800 font-extrabold uppercase mt-1 tracking-wider">
-                    Đánh giá định kỳ
-                  </div>
-                  <div className="text-[10px] text-slate-400 font-medium mt-0.5">
-                    Ghi nhận trong tháng 09/2026
-                  </div>
-                </div>
-              </div>
-            </div>
+            <KPICard
+              title="Lượt Đánh giá Định kỳ"
+              value={academicMonthlyStats.length > 0 ? academicMonthlyStats[academicMonthlyStats.length - 1].total : 0}
+              unit="lượt"
+              icon={TrendingUp}
+              colorTheme="emerald"
+              trend="up"
+              trendValue={
+                academicMonthlyStats.length > 0 && academicMonthlyStats[academicMonthlyStats.length - 1].total > 0
+                  ? `${Math.round((academicMonthlyStats[academicMonthlyStats.length - 1].good / academicMonthlyStats[academicMonthlyStats.length - 1].total) * 100)}% tiến bộ`
+                  : "Theo dõi định kỳ"
+              }
+              comparisonText="ghi nhận mới nhất"
+              subMetrics={[
+                {
+                  label: "Đạt & Tiến bộ",
+                  value: `${academicMonthlyStats.length > 0 ? academicMonthlyStats[academicMonthlyStats.length - 1].good : 0} lượt`,
+                  colorClass: "text-emerald-700",
+                },
+                { label: "Số kỳ ghi nhận", value: `${academicMonthlyStats.length} tháng` },
+              ]}
+            />
           </div>
 
           {/* 2.2 Biểu đồ Tiến độ Phụ đạo Văn hóa */}
@@ -2791,60 +3255,76 @@ export function OverviewDashboard({
       )}
 
       {/* =====================================================================
-          PHÂN HỆ 3: BÁO CÁO TOÀN CẢNH HỢP NHẤT (UNIFIED VIEW)
+          PHÂN HỆ 3: BÁO CÁO TOÀN CẢNH HỢP NHẤT (UNIFIED VIEW CHUẨN FLEXIDATA)
           ===================================================================== */}
       {supportScope === "ALL" && (
-        <div className="space-y-6 animate-in fade-in duration-300">
+        <div className="space-y-5 animate-in fade-in duration-300">
 
-          {/* 3.1 Bảng Ma trận So sánh Văn hóa vs Tâm lý */}
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-            <div className="bg-white border border-slate-200/80 rounded-3xl p-5 shadow-sm">
-              <div className="flex items-center gap-3">
-                <div className="p-3 bg-slate-100 text-slate-800 rounded-2xl">
-                  <Users className="w-6 h-6" />
-                </div>
-                <div>
-                  <div className="text-3xl font-black text-slate-900">{totalUniqueStudents}</div>
-                  <div className="text-[11px] text-slate-500 font-bold uppercase">Tổng HS Toàn trường</div>
-                </div>
-              </div>
-            </div>
+          {/* 3.1 Bảng Ma trận So sánh Văn hóa vs Tâm lý chuẩn KPICard Flexidata */}
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3.5">
+            <KPICard
+              title="Tổng Học sinh Toàn trường"
+              value={totalUniqueStudents}
+              unit="học sinh"
+              icon={Users}
+              colorTheme="teal"
+              trend="neutral"
+              trendValue={`${targets.length} lượt hồ sơ`}
+              comparisonText="tích hợp 2 phân hệ"
+              subMetrics={[
+                { label: "Đang theo dõi", value: `${totalActive} ca`, colorClass: "text-[#00736E]" },
+                { label: "Đã chấm dứt", value: `${totalTerminated} ca` },
+              ]}
+            />
 
-            <div className="bg-white border border-blue-100 rounded-3xl p-5 shadow-sm">
-              <div className="flex items-center gap-3">
-                <div className="p-3 bg-blue-100 text-blue-700 rounded-2xl">
-                  <BookOpen className="w-6 h-6" />
-                </div>
-                <div>
-                  <div className="text-3xl font-black text-blue-700">{academicTargets.length}</div>
-                  <div className="text-[11px] text-blue-800 font-bold uppercase">Phụ đạo Văn hóa (38.7%)</div>
-                </div>
-              </div>
-            </div>
+            <KPICard
+              title="Phụ đạo Văn hóa"
+              value={academicTargets.length}
+              unit="hồ sơ"
+              icon={BookOpen}
+              colorTheme="sky"
+              trend="neutral"
+              trendValue={`${targets.length > 0 ? Math.round((academicTargets.length / targets.length) * 100) : 0}% tỷ trọng`}
+              comparisonText="bồi dưỡng bộ môn"
+              subMetrics={[
+                { label: "Đang bồi dưỡng", value: `${academicTargets.filter(t => t.terminationStatus === "ACTIVE").length} ca`, colorClass: "text-sky-700" },
+                { label: "Đã hoàn thành", value: `${academicTargets.filter(t => t.terminationStatus === "TERMINATED").length} ca` },
+              ]}
+              onClick={() => setSupportScope("ACADEMIC")}
+              hrefLabel="Chuyển sang Phụ đạo Văn hóa"
+            />
 
-            <div className="bg-white border border-violet-100 rounded-3xl p-5 shadow-sm">
-              <div className="flex items-center gap-3">
-                <div className="p-3 bg-violet-100 text-violet-700 rounded-2xl">
-                  <Brain className="w-6 h-6" />
-                </div>
-                <div>
-                  <div className="text-3xl font-black text-violet-700">{psychologyTargets.length}</div>
-                  <div className="text-[11px] text-violet-800 font-bold uppercase">Hỗ trợ Tâm lý (61.3%)</div>
-                </div>
-              </div>
-            </div>
+            <KPICard
+              title="Hỗ trợ Tâm lý Học đường"
+              value={psychologyTargets.length}
+              unit="hồ sơ"
+              icon={Brain}
+              colorTheme="purple"
+              trend="up"
+              trendValue={`${targets.length > 0 ? Math.round((psychologyTargets.length / targets.length) * 100) : 0}% tỷ trọng`}
+              comparisonText="tham vấn & đồng hành"
+              subMetrics={[
+                { label: "Đang theo dõi", value: `${totalActivePsych} ca`, colorClass: "text-purple-700" },
+                { label: "Đã chấm dứt", value: `${totalTerminatedPsych} ca` },
+              ]}
+              onClick={() => setSupportScope("PSYCHOLOGICAL")}
+              hrefLabel="Chuyển sang Hỗ trợ Tâm lý"
+            />
 
-            <div className="bg-white border border-emerald-100 rounded-3xl p-5 shadow-sm">
-              <div className="flex items-center gap-3">
-                <div className="p-3 bg-emerald-100 text-emerald-700 rounded-2xl">
-                  <CheckCircle2 className="w-6 h-6" />
-                </div>
-                <div>
-                  <div className="text-3xl font-black text-emerald-700">{totalActive}</div>
-                  <div className="text-[11px] text-emerald-800 font-bold uppercase">Ca đang hoạt động</div>
-                </div>
-              </div>
-            </div>
+            <KPICard
+              title="Hồ sơ Đang Hoạt động"
+              value={totalActive}
+              unit="ca"
+              icon={CheckCircle2}
+              colorTheme="emerald"
+              trend="up"
+              trendValue={`${targets.length > 0 ? Math.round((totalActive / targets.length) * 100) : 0}% hiệu lực`}
+              comparisonText="toàn hệ thống"
+              subMetrics={[
+                { label: "Chờ duyệt kết thúc", value: `${totalPendingTerm} ca`, colorClass: totalPendingTerm > 0 ? "text-amber-600" : undefined },
+                { label: "Đã hoàn tất", value: `${totalTerminated} ca` },
+              ]}
+            />
           </div>
 
           {/* 3.2 Bảng Thống kê Lớp tại Cơ sở */}
