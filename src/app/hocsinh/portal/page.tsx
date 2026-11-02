@@ -421,43 +421,6 @@ export default function StudentPortalHomePage() {
             </div>
           )}
 
-          {/* CARD 1: HỒ SƠ ĐÁNH GIÁ NĂNG LỰC (BIỂU ĐỒ RADAR) */}
-          <div className="bg-white rounded-3xl p-6 border border-slate-200/90 shadow-sm hover:shadow-xl hover:-translate-y-1 transition-all duration-300 flex flex-col justify-between space-y-5 relative overflow-hidden group">
-            <div className="space-y-3.5">
-              <div
-                className="w-14 h-14 rounded-2xl flex items-center justify-center font-bold shadow-inner border group-hover:scale-105 transition-transform"
-                style={{
-                  backgroundColor: campusTheme.lightAccentBg,
-                  borderColor: campusTheme.borderSubtle
-                }}
-              >
-                <Activity className="w-7 h-7" style={{ color: campusTheme.primaryColor }} />
-              </div>
-              <div>
-                <span
-                  className="text-[10px] font-black uppercase tracking-widest block"
-                  style={{ color: campusTheme.primaryColor }}
-                >
-                  TIỆN ÍCH NỔI BẬT
-                </span>
-                <h3 className="text-lg font-black text-slate-900 group-hover:text-teal-700 transition-colors mt-0.5">
-                  Radar Năng Lực
-                </h3>
-              </div>
-              <p className="text-xs text-slate-500 font-medium leading-relaxed">
-                Theo dõi trực quan các trục năng lực môn học qua biểu đồ mạng nhện đa chiều, điểm tích lũy và chuẩn đầu ra từng học kỳ.
-              </p>
-            </div>
-
-            <Link
-              href="/hocsinh/portal/danh-gia-nang-luc"
-              className={`w-full py-3.5 rounded-2xl bg-gradient-to-r ${campusTheme.buttonGradient} text-white text-xs font-black flex items-center justify-center gap-2 shadow-md transition-all active:scale-95 text-center cursor-pointer`}
-            >
-              <span>Khám phá Radar</span>
-              <ArrowRight className="w-4 h-4" />
-            </Link>
-          </div>
-
           {/* CARD 2: HƯỚNG NGHIỆP • SKL_PSYCH (5 BỘ CÔNG CỤ CHUẨN HÓA) */}
           <div className="bg-white rounded-3xl p-6 border border-purple-200/90 shadow-sm hover:shadow-xl hover:-translate-y-1 transition-all duration-300 flex flex-col justify-between space-y-5 relative overflow-hidden group">
             <div className="space-y-3.5">

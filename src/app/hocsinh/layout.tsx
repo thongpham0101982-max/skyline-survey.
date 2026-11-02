@@ -137,14 +137,6 @@ export default function HocSinhLayout({ children }: { children: React.ReactNode 
       activeClass: "bg-purple-500/35 text-white border border-purple-400/60"
     },
     {
-      href: "/hocsinh/portal/danh-gia-nang-luc",
-      labelVi: "Radar Năng lực",
-      labelEn: "Competency Radar",
-      icon: Activity,
-      iconColor: "text-sky-300",
-      activeClass: "bg-white/20 text-white border border-[#135E5B]/30"
-    },
-    {
       href: "/hocsinh/portal/muc-tieu",
       labelVi: "Sổ Mục tiêu SMART",
       labelEn: "SMART Goals",
@@ -476,23 +468,25 @@ export default function HocSinhLayout({ children }: { children: React.ReactNode 
             <span>Thông báo</span>
           </Link>
 
-          <Link
-            href="/hocsinh/portal/danh-gia-nang-luc"
-            className={`flex flex-col items-center gap-1 text-[10px] transition-colors ${
-              pathname.includes("/danh-gia-nang-luc")
-                ? "text-[#003B3A] font-bold"
-                : "text-slate-500 hover:text-[#003B3A] font-medium"
-            }`}
-          >
-            <div
-              className={`p-1.5 rounded-xl transition-all ${
-                pathname.includes("/danh-gia-nang-luc") ? "bg-teal-50 text-[#003B3A] shadow-xs" : ""
+          {isGrade4To12 && (
+            <Link
+              href="/hocsinh/portal/reflection"
+              className={`flex flex-col items-center gap-1 text-[10px] transition-colors ${
+                pathname.includes("/reflection")
+                  ? "text-[#5B2D8B] font-bold"
+                  : "text-slate-500 hover:text-[#5B2D8B] font-medium"
               }`}
             >
-              <Activity className="w-4 h-4" />
-            </div>
-            <span>Năng lực</span>
-          </Link>
+              <div
+                className={`p-1.5 rounded-xl transition-all ${
+                  pathname.includes("/reflection") ? "bg-purple-100 text-[#5B2D8B] shadow-xs" : ""
+                }`}
+              >
+                <Award className="w-4 h-4" />
+              </div>
+              <span>Trưởng thành</span>
+            </Link>
+          )}
 
           <Link
             href="/hocsinh/portal/muc-tieu"
