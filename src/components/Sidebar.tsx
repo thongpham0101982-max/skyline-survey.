@@ -129,6 +129,16 @@ function SidebarContent({ role, permissionModules, actualRole, taskCount = 0, is
     if (module === "TEACHER_TRANSFERS") {
       hasParent = hasParent || permissionModules?.includes("TEACHERS") || permissionModules?.includes("STUDENT_TRANSFERS") || false
     }
+    if (module === "KPI_IP21_REFLECTION_PRIDE") {
+      hasParent =
+        hasParent ||
+        isGDCS ||
+        normalizedRole.includes("KTDBCL") ||
+        normalizedRole.includes("DBCL") ||
+        permissionModules?.includes("SURVEY_PERIODS") ||
+        permissionModules?.includes("COMPETENCY_ASSESSMENT") ||
+        false
+    }
     if (hasParent) return true
     if (subModules && subModules.length > 0) {
       return subModules.some((sub) => permissionModules?.includes(sub.code))

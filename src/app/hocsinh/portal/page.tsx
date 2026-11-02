@@ -199,34 +199,54 @@ export default function StudentPortalHomePage() {
         }
       />
 
-      {/* 1B. NHIỆM VỤ MỚI: HÀNH TRÌNH TRƯỞNG THÀNH 5 PHẨM CHẤT & PRIDE NPS (CHỈ HIỂN THỊ CHO KHỐI 4-12 KHI ADMIN MỞ KỲ) */}
-      {reflectionTaskInfo?.eligible && reflectionTaskInfo?.hasOpenTask && reflectionTaskInfo?.activePeriod && (
-        <SkylineFlagMascot
-          variant={reflectionTaskInfo?.reflection?.status === "SUBMITTED" ? "celebration" : "notification"}
-          badgeText={`HÀNH TRÌNH TRƯỞNG THÀNH • KHỐI ${gradeNum} • KỲ ĐANG MỞ`}
-          title={
-            reflectionTaskInfo?.reflection?.status === "SUBMITTED"
-              ? `Bạn đã hoàn thành Tự nhìn nhận 5 Phẩm chất (${reflectionTaskInfo.activePeriod.title})`
-              : `Nhiệm vụ mới: ${reflectionTaskInfo.activePeriod.title}`
-          }
-          message={
-            reflectionTaskInfo.activePeriod.guidelineMascotMsg ||
-            "Cùng Linh vật Sky-Line cầm cờ nhìn lại kết quả học tập, tự đánh giá 5 phẩm chất theo 14 tiêu chí, đặt mục tiêu phát triển bản thân và phản hồi khảo sát Tự hào Sky-Line (Pride NPS) ẩn danh nhé!"
-          }
-          actionButton={
-            <Link
-              href="/hocsinh/portal/reflection"
-              className="inline-flex items-center gap-2 rounded-xl bg-amber-400 px-5 py-2.5 text-xs font-extrabold text-purple-950 shadow-md transition hover:bg-amber-300"
-            >
-              <span>
-                {reflectionTaskInfo?.reflection?.status === "SUBMITTED"
-                  ? "Xem lại Hành trình trưởng thành & Phản hồi Pride NPS"
-                  : "Bắt đầu Hành trình trưởng thành (7 bước)"}
-              </span>
-              <ArrowRight className="h-4 w-4" />
-            </Link>
-          }
-        />
+      {/* 1B. NHIỆM VỤ MỚI: HÀNH TRÌNH TRƯỞNG THÀNH 5 PHẨM CHẤT & PRIDE NPS (CHỈ HIỂN THỊ CHO KHỐI 4-12) */}
+      {(reflectionTaskInfo?.eligible ?? (Number(gradeNum) >= 4 && Number(gradeNum) <= 12)) && (
+        reflectionTaskInfo?.hasOpenTask && reflectionTaskInfo?.activePeriod ? (
+          <SkylineFlagMascot
+            variant={reflectionTaskInfo?.reflection?.status === "SUBMITTED" ? "celebration" : "notification"}
+            badgeText={`HÀNH TRÌNH TRƯỞNG THÀNH • KHỐI ${gradeNum} • KỲ ĐANG MỞ`}
+            title={
+              reflectionTaskInfo?.reflection?.status === "SUBMITTED"
+                ? `Bạn đã hoàn thành Tự nhìn nhận 5 Phẩm chất (${reflectionTaskInfo.activePeriod.title})`
+                : `Nhiệm vụ mới: ${reflectionTaskInfo.activePeriod.title}`
+            }
+            message={
+              reflectionTaskInfo.activePeriod.guidelineMascotMsg ||
+              "Cùng Linh vật Sky-Line cầm cờ nhìn lại kết quả học tập, tự đánh giá 5 phẩm chất theo 14 tiêu chí, đặt mục tiêu phát triển bản thân và phản hồi khảo sát Tự hào Sky-Line (Pride NPS) ẩn danh nhé!"
+            }
+            actionButton={
+              <Link
+                href="/hocsinh/portal/reflection"
+                className="inline-flex items-center gap-2 rounded-xl bg-amber-400 px-5 py-2.5 text-xs font-extrabold text-purple-950 shadow-md transition hover:bg-amber-300"
+              >
+                <span>
+                  {reflectionTaskInfo?.reflection?.status === "SUBMITTED"
+                    ? "Xem lại Hành trình trưởng thành & Phản hồi Pride NPS"
+                    : "Bắt đầu Hành trình trưởng thành (7 bước)"}
+                </span>
+                <ArrowRight className="h-4 w-4" />
+              </Link>
+            }
+          />
+        ) : (
+          <SkylineFlagMascot
+            variant="guideline"
+            badgeText={`HÀNH TRÌNH TRƯỞNG THÀNH • KHỐI ${gradeNum} • ${
+              reflectionTaskInfo?.periodState === "CLOSED" ? "ĐÃ ĐÓNG KỲ" : "CHƯA MỞ KỲ MỚI"
+            }`}
+            title="Hành trình Trưởng thành 5 Phẩm chất & Tự hào Sky-Line (Pride NPS)"
+            message="Cùng Linh vật Sky-Line cầm cờ theo dõi kết quả học tập - rèn luyện, tự nhìn nhận 5 phẩm chất theo 14 tiêu chí (Trách nhiệm, Yêu thương, Tự lập, Hợp tác, Tự hào Sky-Line) và đặt mục tiêu phát triển bản thân khi Ban KT&ĐBCL mở kỳ khảo sát."
+            actionButton={
+              <Link
+                href="/hocsinh/portal/reflection"
+                className="inline-flex items-center gap-2 rounded-xl bg-purple-700 px-5 py-2.5 text-xs font-extrabold text-white shadow-md transition hover:bg-purple-800"
+              >
+                <span>Mở Hành trình trưởng thành (7 bước)</span>
+                <ArrowRight className="h-4 w-4" />
+              </Link>
+            }
+          />
+        )
       )}
 
       {/* 2. HỒ SƠ CHỨNG CHỈ & KẾT QUẢ KHẢO THÍ QUỐC TẾ (NẾU CÓ) */}
@@ -346,6 +366,57 @@ export default function StudentPortalHomePage() {
         </div>
 
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
+          {/* CARD 0: HÀNH TRÌNH TRƯỞNG THÀNH 5 PHẨM CHẤT & PRIDE NPS (KHỐI 4-12) */}
+          {(reflectionTaskInfo?.eligible ?? (Number(gradeNum) >= 4 && Number(gradeNum) <= 12)) && (
+            <div className="bg-white rounded-3xl p-6 border-2 border-purple-300 shadow-sm hover:shadow-xl hover:-translate-y-1 transition-all duration-300 flex flex-col justify-between space-y-5 relative overflow-hidden group">
+              <div className="space-y-3.5">
+                <div className="flex items-center justify-between gap-2">
+                  <div className="w-14 h-14 rounded-2xl bg-purple-50 text-purple-700 flex items-center justify-center font-bold shadow-inner border border-purple-200 group-hover:scale-105 transition-transform">
+                    <Award className="w-7 h-7" />
+                  </div>
+                  <span
+                    className={`text-[10px] font-black uppercase px-2.5 py-1 rounded-full ${
+                      reflectionTaskInfo?.hasOpenTask
+                        ? "bg-amber-100 text-amber-800 border border-amber-300"
+                        : "bg-purple-50 text-purple-700 border border-purple-200"
+                    }`}
+                  >
+                    {reflectionTaskInfo?.hasOpenTask
+                      ? reflectionTaskInfo?.reflection?.status === "SUBMITTED"
+                        ? "Đã hoàn thành"
+                        : "Kỳ đang mở"
+                      : reflectionTaskInfo?.periodState === "CLOSED"
+                      ? "Đã đóng kỳ"
+                      : "Khối 4–12"}
+                  </span>
+                </div>
+                <div>
+                  <span className="text-[10px] font-black text-purple-700 uppercase tracking-widest block">
+                    KPI IP2.1 • 5 PHẨM CHẤT & PRIDE NPS
+                  </span>
+                  <h3 className="text-lg font-black text-slate-900 group-hover:text-purple-700 transition-colors mt-0.5">
+                    Hành Trình Trưởng Thành
+                  </h3>
+                </div>
+                <p className="text-xs text-slate-500 font-medium leading-relaxed">
+                  Tự nhìn nhận <strong className="text-slate-700">5 phẩm chất theo 14 tiêu chí</strong>, bổ sung minh chứng, đặt mục tiêu bản thân và phản hồi <strong className="text-slate-700">Pride NPS ẩn danh</strong>.
+                </p>
+              </div>
+
+              <Link
+                href="/hocsinh/portal/reflection"
+                className="w-full py-3.5 rounded-2xl bg-gradient-to-r from-purple-700 to-indigo-700 hover:from-purple-800 hover:to-indigo-800 text-white text-xs font-black flex items-center justify-center gap-2 shadow-md shadow-purple-200 transition-all active:scale-95 text-center cursor-pointer"
+              >
+                <span>
+                  {reflectionTaskInfo?.hasOpenTask
+                    ? "Vào Hành trình trưởng thành"
+                    : "Xem Hành trình trưởng thành"}
+                </span>
+                <ArrowRight className="w-4 h-4" />
+              </Link>
+            </div>
+          )}
+
           {/* CARD 1: HỒ SƠ ĐÁNH GIÁ NĂNG LỰC (BIỂU ĐỒ RADAR) */}
           <div className="bg-white rounded-3xl p-6 border border-slate-200/90 shadow-sm hover:shadow-xl hover:-translate-y-1 transition-all duration-300 flex flex-col justify-between space-y-5 relative overflow-hidden group">
             <div className="space-y-3.5">
