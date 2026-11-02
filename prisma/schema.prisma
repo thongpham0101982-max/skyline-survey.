@@ -5240,5 +5240,500 @@ model ParentMeetingAuditLog {
   @@map("parent_meeting_audit_logs")
 }
 
+// ============================================================================
+// TRUNG TÂM THÔNG BÁO & LIÊN LẠC (NOTIFICATION & COMMUNICATION CENTER)
+// ============================================================================
+
+model SsmNotification {
+  id                    String                      @id @default(cuid())
+  code                  String                      @unique
+  category              String                      @default("EXAM") // EXAM, TEACHER, ACADEMIC_RESULT, SYSTEM, ADVISORY, EXPERIENTIAL, PARENT_MEETING, COMPETENCY
+  subType               String                      @default("GENERAL") // EXAM_SCHEDULE, EXAM_LMS_GUIDE, EXAM_SCHEDULE_CHANGE, EXAM_MAKEUP, EXAM_ABSENT, EXAM_RESULT, GVCN_ANNOUNCEMENT, GVBM_STUDY_GUIDE, SYSTEM_NOTICE
+  title                 String
+  summary               String?
+  contentHtml           String
+  priority              String                      @default("NORMAL") // NORMAL, IMPORTANT, URGENT
+  senderUnit            String                      @default("Ban KT&ĐBCL")
+  senderUserId          String
+  senderName            String
+  senderRole            String                      // KT_DBCL, ADMIN, GVCN, GVBM, SYSTEM
+  academicYearId        String?
+  campusId              String?
+  gradeLevels           String?                     // e.g. "10,11,12"
+  classIdsJson          String?                     // JSON array of classIds
+  subjectId             String?
+  subjectName           String?
+  testingPeriodId       String?
+  testingPeriodName     String?
+  testingSubjectExamId  String?
+  testingSessionId      String?
+  examScheduleMetaJson  String?                     // JSON snapshot: room, date, startTime, endTime, examFormat, lmsUrl
+  beforeChangeJson      String?                     // JSON snapshot before schedule change
+  afterChangeJson       String?                     // JSON snapshot after schedule change
+  deepLink              String?
+  targetRolesJson       String                      @default("[\"PARENT\",\"STUDENT\"]")
+  targetScopeJson       String?
+  status                String                      @default("DRAFT") // DRAFT, PENDING_APPROVAL, APPROVED, SCHEDULED, SENDING, PUBLISHED, PARTIALLY_FAILED, CANCELLED, RECALLED
+  requiresApproval      Boolean                     @default(false)
+  requireAcknowledge    Boolean                     @default(false)
+  acknowledgeDeadline   DateTime?
+  allowReply            Boolean                     @default(false)
+  scheduledAt           DateTime?
+  publishedAt           DateTime?
+  recalledAt            DateTime?
+  recallReason          String?
+  idempotencyKey        String?                     @unique
+  totalRecipients       Int                         @default(0)
+  sentSuccessCount      Int                         @default(0)
+  sentFailedCount       Int                         @default(0)
+  readCount             Int                         @default(0)
+  acknowledgedCount     Int                         @default(0)
+  replyCount            Int                         @default(0)
+  createdAt             DateTime                    @default(now())
+  updatedAt             DateTime                    @updatedAt
+
+  recipients            SsmNotificationRecipient[]
+  deliveries            SsmNotificationDelivery[]
+  attachments           SsmNotificationAttachment[]
+  approvals             SsmNotificationApproval[]
+  readReceipts          SsmNotificationReadReceipt[]
+  responses             SsmNotificationResponse[]
+  auditLogs             SsmNotificationAuditLog[]
+
+  @@index([category, status, publishedAt])
+  @@index([academicYearId, campusId, status])
+  @@index([testingPeriodId, testingSubjectExamId])
+  @@index([senderUserId, status])
+  @@map("ssm_notifications")
+}
+
+model SsmNotificationRecipient {
+  id                  String                      @id @default(cuid())
+  notificationId      String
+  recipientUserId     String                      // User.id or STUDENT:<studentId>
+  recipientRole       String                      @default("PARENT") // PARENT, STUDENT, TEACHER
+  recipientName       String
+  recipientEmail      String?
+  studentId           String?
+  studentName         String?
+  studentCode         String?
+  classId             String?
+  className           String?
+  gradeLevel          String?
+  campusId            String?
+  campusName          String?
+  deliveryStatus      String                      @default("SENT") // PENDING, SENT, FAILED, RECALLED
+  deliveredAt         DateTime?
+  isRead              Boolean                     @default(false)
+  readAt              DateTime?
+  isAcknowledged      Boolean                     @default(false)
+  acknowledgedAt      DateTime?
+  acknowledgeNote     String?
+  remindedCount       Int                         @default(0)
+  lastRemindedAt      DateTime?
+  personalMetaJson    String?                     // e.g. seatNumber, candidateNumber, roomName (never exposed to other students)
+  createdAt           DateTime                    @default(now())
+  updatedAt           DateTime                    @updatedAt
+
+  notification        SsmNotification             @relation(fields: [notificationId], references: [id], onDelete: Cascade)
+  deliveries          SsmNotificationDelivery[]
+  readReceipts        SsmNotificationReadReceipt[]
+  responses           SsmNotificationResponse[]
+
+  @@unique([notificationId, recipientUserId, studentId])
+  @@index([recipientUserId, isRead, createdAt])
+  @@index([studentId, recipientRole, createdAt])
+  @@index([notificationId, classId, isRead, isAcknowledged])
+  @@index([campusId, classId, isRead])
+  @@map("ssm_notification_recipients")
+}
+
+model SsmNotificationDelivery {
+  id                  String                      @id @default(cuid())
+  notificationId      String
+  recipientId         String
+  channel             String                      @default("IN_APP") // IN_APP, MOBILE_WEB, EMAIL, ZALO_MINI_APP
+  status              String                      @default("SENT") // QUEUED, SENT, FAILED, SKIPPED
+  providerMessageId   String?
+  errorMessage        String?
+  retryCount          Int                         @default(0)
+  sentAt              DateTime?
+  createdAt           DateTime                    @default(now())
+
+  notification        SsmNotification             @relation(fields: [notificationId], references: [id], onDelete: Cascade)
+  recipient           SsmNotificationRecipient    @relation(fields: [recipientId], references: [id], onDelete: Cascade)
+
+  @@index([notificationId, channel, status])
+  @@index([recipientId])
+  @@map("ssm_notification_deliveries")
+}
+
+model SsmNotificationTemplate {
+  id                  String                      @id @default(cuid())
+  code                String                      @unique
+  name                String
+  category            String                      @default("EXAM")
+  subType             String                      @default("EXAM_SCHEDULE")
+  titleTemplate       String
+  contentTemplate     String
+  defaultPriority     String                      @default("NORMAL")
+  requireAcknowledge  Boolean                     @default(false)
+  allowReply          Boolean                     @default(false)
+  isActive            Boolean                     @default(true)
+  createdAt           DateTime                    @default(now())
+  updatedAt           DateTime                    @updatedAt
+
+  @@index([category, isActive])
+  @@map("ssm_notification_templates")
+}
+
+model SsmNotificationAttachment {
+  id                  String                      @id @default(cuid())
+  notificationId      String
+  fileName            String
+  fileType            String
+  fileSize            Int                         @default(0)
+  fileUrl             String
+  uploadedByUserId    String
+  isSafe              Boolean                     @default(true)
+  createdAt           DateTime                    @default(now())
+
+  notification        SsmNotification             @relation(fields: [notificationId], references: [id], onDelete: Cascade)
+
+  @@index([notificationId])
+  @@map("ssm_notification_attachments")
+}
+
+model SsmNotificationApproval {
+  id                  String                      @id @default(cuid())
+  notificationId      String
+  stepOrder           Int                         @default(1)
+  approverUserId      String?
+  approverName        String?
+  approverRole        String                      @default("KT_DBCL")
+  status              String                      @default("PENDING") // PENDING, APPROVED, REJECTED
+  comment             String?
+  decidedAt           DateTime?
+  createdAt           DateTime                    @default(now())
+
+  notification        SsmNotification             @relation(fields: [notificationId], references: [id], onDelete: Cascade)
+
+  @@index([notificationId, status])
+  @@map("ssm_notification_approvals")
+}
+
+model SsmNotificationEvent {
+  id                  String                      @id @default(cuid())
+  eventType           String                      // EVENT_EXAM_SCHEDULE_PUBLISHED, EVENT_EXAM_REMINDER, EVENT_EXAM_SCHEDULE_CHANGED, EVENT_EXAM_STUDENT_ABSENT, EVENT_EXAM_RESULT_PUBLISHED, EVENT_EXAM_MAKEUP_SCHEDULED
+  idempotencyKey      String                      @unique
+  sourceModule        String                      @default("KHAO_THI_SO")
+  sourceId            String
+  payloadJson         String
+  status              String                      @default("PROCESSED") // PROCESSED, SKIPPED_DUPLICATE, FAILED
+  notificationId      String?
+  triggeredByUserId   String
+  errorMessage        String?
+  processedAt         DateTime                    @default(now())
+  createdAt           DateTime                    @default(now())
+
+  @@index([eventType, sourceId])
+  @@map("ssm_notification_events")
+}
+
+model SsmNotificationReadReceipt {
+  id                  String                      @id @default(cuid())
+  notificationId      String
+  recipientId         String
+  userId              String
+  studentId           String?
+  deviceInfo          String?
+  ipAddress           String?
+  readAt              DateTime                    @default(now())
+  acknowledgedAt      DateTime?
+  acknowledgeNote     String?
+
+  notification        SsmNotification             @relation(fields: [notificationId], references: [id], onDelete: Cascade)
+  recipient           SsmNotificationRecipient    @relation(fields: [recipientId], references: [id], onDelete: Cascade)
+
+  @@index([notificationId, userId])
+  @@index([recipientId])
+  @@map("ssm_notification_read_receipts")
+}
+
+model SsmNotificationResponse {
+  id                  String                      @id @default(cuid())
+  notificationId      String
+  recipientId         String?
+  senderUserId        String
+  senderName          String
+  senderRole          String                      // PARENT, STUDENT, GVCN, GVBM, KT_DBCL
+  studentId           String?
+  studentName         String?
+  classId             String?
+  className           String?
+  content             String
+  parentResponseId    String?
+  status              String                      @default("OPEN") // OPEN, ANSWERED, CLOSED
+  repliedByUserId     String?
+  repliedByName       String?
+  repliedAt           DateTime?
+  createdAt           DateTime                    @default(now())
+
+  notification        SsmNotification             @relation(fields: [notificationId], references: [id], onDelete: Cascade)
+  recipient           SsmNotificationRecipient?   @relation(fields: [recipientId], references: [id], onDelete: SetNull)
+
+  @@index([notificationId, createdAt])
+  @@index([studentId, classId])
+  @@map("ssm_notification_responses")
+}
+
+model SsmNotificationAuditLog {
+  id                  String                      @id @default(cuid())
+  notificationId      String?
+  actorUserId         String
+  actorName           String
+  actorRole           String
+  action              String                      // CREATE_DRAFT, UPDATE_DRAFT, SUBMIT_APPROVAL, APPROVE, REJECT, PUBLISH, SCHEDULE, RECALL, AMEND, REMIND_UNREAD, TRIGGER_EVENT
+  fromStatus          String?
+  toStatus            String?
+  beforeJson          String?
+  afterJson           String?
+  note                String?
+  createdAt           DateTime                    @default(now())
+
+  notification        SsmNotification?            @relation(fields: [notificationId], references: [id], onDelete: SetNull)
+
+  @@index([notificationId, createdAt])
+  @@index([actorUserId, createdAt])
+  @@map("ssm_notification_audit_logs")
+}
+
+model SsmNotificationPreference {
+  id                      String                  @id @default(cuid())
+  userId                  String                  @unique
+  enableInApp             Boolean                 @default(true)
+  enableEmail             Boolean                 @default(false)
+  enableZaloMiniApp       Boolean                 @default(false)
+  examReminderDaysJson    String                  @default("[3,1]")
+  quietHoursStart         String?                 @default("22:00")
+  quietHoursEnd           String?                 @default("06:30")
+  updatedAt               DateTime                @updatedAt
+
+  @@map("ssm_notification_preferences")
+}
 
 
+
+
+
+// =========================================================================
+// SKY-LINE AI ADVISOR: PHÂN CÔNG GVBM & TƯ VẤN PHHS
+// =========================================================================
+
+model SubjectTeacherAdvisoryTask {
+  id                         String    @id @default(cuid())
+  studentId                  String
+  classId                    String?
+  academicYearId             String    @default("")
+  subjectId                  String?
+  subjectName                String
+  currentScore               Float?
+  assignedByTeacherId        String
+  assignedByTeacherName      String?
+  assignedToTeacherId        String
+  assignedToTeacherName      String?
+  consultationPrompt         String
+  supportGoal                String
+  dueDate                    DateTime?
+  aiSuggestedContext         String?
+  gvbmProfessionalAssessment String?
+  gvbmProposedSolutions      String?
+  gvbmParentAdvice           String?
+  gvbmRespondedAt            DateTime?
+  status                     String    @default("ASSIGNED") // ASSIGNED | GVBM_RESPONDED | APPROVED_FOR_PARENT | PARENT_ACKNOWLEDGED
+  cvhtReviewNote             String?
+  publishedParentAdvice      String?
+  publishedAt                DateTime?
+  parentAcknowledged         Boolean   @default(false)
+  parentAcknowledgedAt       DateTime?
+  parentFeedback             String?
+  parentRequestFollowUp      Boolean   @default(false)
+  createdAt                  DateTime  @default(now())
+  updatedAt                  DateTime  @updatedAt
+
+  @@index([studentId, academicYearId])
+  @@index([assignedToTeacherId, status])
+  @@index([assignedByTeacherId, status])
+}
+
+// =========================================================================
+// KHẢO SÁT HOLLAND (SKL_PSYCH v2.6.1) – KHÁM PHÁ SỞ THÍCH NGHỀ NGHIỆP (108 CÂU)
+// =========================================================================
+
+model StudentHollandAssessment {
+  id                        String    @id @default(cuid())
+  studentId                 String
+  studentCode               String?
+  classId                   String?
+  academicYearId            String    @default("")
+  version                   String    @default("SKL_PSYCH v2.6.1")
+  status                    String    @default("DRAFT") // DRAFT | COMPLETED
+  answeredCount             Int       @default(0)
+  currentStep               Int       @default(1)
+  answersJson               String    @default("{}")
+  scoreR                    Int       @default(0)
+  scoreI                    Int       @default(0)
+  scoreA                    Int       @default(0)
+  scoreS                    Int       @default(0)
+  scoreE                    Int       @default(0)
+  scoreC                    Int       @default(0)
+  hollandCode               String?
+  top3Json                  String?
+  reportSummaryJson         String?
+  studentReflection         String?
+  linkedGoalIdsJson         String?
+  consultationRequested     Boolean   @default(false)
+  consultationRequestTopic  String?
+  consultationRequestNote   String?
+  consultationRequestStatus String    @default("NONE") // NONE | PENDING | SCHEDULED | COMPLETED
+  consultationScheduledDate String?
+  advisorId                 String?
+  advisorName               String?
+  advisorReviewNote         String?
+  isPublishedToParent       Boolean   @default(false)
+  publishedToParentAt       DateTime?
+  parentAcknowledged        Boolean   @default(false)
+  parentAcknowledgedAt      DateTime?
+  parentFeedback            String?
+  submittedAt               DateTime?
+  createdAt                 DateTime  @default(now())
+  updatedAt                 DateTime  @updatedAt
+
+  @@index([studentId, academicYearId])
+  @@index([studentCode])
+  @@index([classId, status])
+}
+
+// =========================================================================
+// SKY-LINE REFLECTION & PRIDE NPS (KPI IP2.1 & PHẨM CHẤT HỌC SINH KHỐI 4-12)
+// =========================================================================
+
+model ReflectionPridePeriod {
+  id                  String   @id @default(cuid())
+  code                String   @unique
+  name                String
+  academicYearId      String
+  semester            String   @default("HK1") // HK1 | HK2 | CA_NAM
+  criteriaVersion     String   @default("v2026.1")
+  status              String   @default("DRAFT") // DRAFT | OPEN | CLOSED | PUBLISHED
+  startDate           DateTime
+  endDate             DateTime
+  extendedUntil       DateTime?
+  publishedAt         DateTime?
+  targetGradesJson    String   @default("[\"4\",\"5\",\"6\",\"7\",\"8\",\"9\",\"10\",\"11\",\"12\"]")
+  targetCampusIdsJson String   @default("[\"ALL\"]")
+  targetClassIdsJson  String   @default("[\"ALL\"]")
+  ip21TargetRate      Float    @default(90.0)
+  ip21PassThreshold   Float    @default(72.0)
+  minNpsAnonSample    Int      @default(5)
+  description         String?
+  createdByUserId     String?
+  createdByName       String?
+  createdAt           DateTime @default(now())
+  updatedAt           DateTime @updatedAt
+
+  @@index([academicYearId, semester, status])
+  @@map("reflection_pride_periods")
+}
+
+model StudentQualityReflection {
+  id                         String    @id @default(cuid())
+  periodId                   String
+  academicYearId             String
+  semester                   String    @default("HK1")
+  campusId                   String
+  classId                    String
+  gradeLevel                 String
+  studentId                  String
+  studentCode                String
+  studentName                String
+  criteriaVersion            String    @default("v2026.1")
+  status                     String    @default("DRAFT") // DRAFT | SUBMITTED
+  currentStep                Int       @default(1)
+  academicSnapshotJson       String    @default("{}")
+  achievementsReflection     String    @default("")
+  improvementsReflection     String    @default("")
+  selectedHighlightTagsJson  String    @default("[]")
+  criteriaRatingsJson        String    @default("{}")
+  q1PatriotismScore          Float     @default(0)
+  q2CompassionScore          Float     @default(0)
+  q3DiligenceScore           Float     @default(0)
+  q4HonestyScore             Float     @default(0)
+  q5PrideScore               Float     @default(0)
+  ip21Score16                Float     @default(0)
+  ip21Percent                Float     @default(0)
+  ip21Passed                 Int       @default(0)
+  extendedScore20            Float     @default(0)
+  extendedPercent            Float     @default(0)
+  evidenceText               String?
+  evidenceLinksJson          String    @default("[]")
+  overallSelfComment         String?
+  developmentGoalsJson       String    @default("[]")
+  supportRequestText         String?
+  submittedAt                DateTime?
+  hasCompletedPrideNps       Int       @default(0)
+  gvcnComment                String?
+  gvcnStrengthsNote          String?
+  gvcnGuidanceNote           String?
+  gvcnReviewedById           String?
+  gvcnReviewedByName         String?
+  gvcnReviewedAt             DateTime?
+  cvhtLinkedGoalId           String?
+  cvhtLinkedLogId            String?
+  cvhtSyncStatus             String    @default("NONE") // NONE | LINKED
+  createdAt                  DateTime  @default(now())
+  updatedAt                  DateTime  @updatedAt
+
+  @@unique([periodId, studentId])
+  @@index([academicYearId, semester, campusId, gradeLevel, classId])
+  @@index([studentId, academicYearId])
+  @@index([periodId, classId, status])
+  @@map("student_quality_reflections")
+}
+
+model PrideNpsAnonymousResponse {
+  id                    String   @id @default(cuid())
+  periodId              String
+  academicYearId        String
+  semester              String   @default("HK1")
+  campusId              String
+  classId               String
+  gradeLevel            String
+  criteriaVersion       String   @default("v2026.1")
+  submissionTokenHash   String   @unique
+  npsScore              Int
+  npsGroup              String   // PROMOTER | PASSIVE | DETRACTOR
+  prideDriversJson      String   @default("[]")
+  proudMomentText       String?
+  improvementSuggestion String?
+  createdAt             DateTime @default(now())
+
+  @@index([periodId, campusId, gradeLevel, classId])
+  @@index([academicYearId, semester, campusId])
+  @@map("pride_nps_anonymous_responses")
+}
+
+model ReflectionTaskReminderLog {
+  id               String   @id @default(cuid())
+  periodId         String
+  classId          String
+  studentId        String
+  studentName      String?
+  remindedByUserId String
+  remindedByName   String
+  message          String
+  createdAt        DateTime @default(now())
+
+  @@index([periodId, classId, studentId])
+  @@map("reflection_task_reminder_logs")
+}

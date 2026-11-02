@@ -77,7 +77,7 @@ function SidebarContent({ role, permissionModules, actualRole, taskCount = 0, is
   const [hasGeneral, setHasGeneral] = useState(false)
   const [specialSubjectCodes, setSpecialSubjectCodes] = useState<string[]>(assignedSpecialSubjects || [])
   const [loadingAssignments, setLoadingAssignments] = useState(true)
-  const [expandedCategories, setExpandedCategories] = useState<Record<string, boolean>>({ SPECIAL_SUBJECTS: true, STUDENT_LOOKUP: true, KTDBCL: true, ASSESSMENT: true, TRAINING: true, SYSTEM: true })
+  const [expandedCategories, setExpandedCategories] = useState<Record<string, boolean>>({ SYSTEM_KPIS: true, SPECIAL_SUBJECTS: true, STUDENT_LOOKUP: true, KTDBCL: true, ASSESSMENT: true, TRAINING: true, SYSTEM: true })
 
   useEffect(() => {
     if (typeof window !== "undefined") {
@@ -498,6 +498,34 @@ function SidebarContent({ role, permissionModules, actualRole, taskCount = 0, is
 
               {/* Khảo thí Số - Nhiệm vụ Khảo thí được phân công */}
               <Link 
+                href="/teacher/ban-tin-thong-bao" 
+                onClick={() => setIsOpen(false)} 
+                className={`group relative flex items-center ${isCollapsed ? 'justify-center px-2' : 'px-3'} py-2 rounded-xl transition-all duration-300 text-xs font-medium mb-1.5 ${
+                  pathname.startsWith('/teacher/ban-tin-thong-bao') 
+                    ? "bg-gradient-to-r from-[#5B2D8B]/55 to-purple-500/30 border border-purple-400/60 text-white shadow-md shadow-black/10" 
+                    : "text-white/80 hover:text-white hover:bg-white/10 hover:translate-x-1"
+                }`}
+              >
+                <div className={`w-7 h-7 rounded-lg flex items-center justify-center transition-all ${isCollapsed ? 'mx-auto' : 'mr-2.5'} ${
+                  pathname.startsWith('/teacher/ban-tin-thong-bao')
+                    ? "bg-purple-500/30 border border-purple-400/60 shadow-[0_0_8px_rgba(168,85,247,0.4)]"
+                    : "bg-white/10 border border-white/15 group-hover:border-purple-400/40"
+                }`}>
+                  <Bell className={`w-4 h-4 transition-all ${
+                    pathname.startsWith('/teacher/ban-tin-thong-bao') ? "text-purple-200" : "text-slate-300 group-hover:text-purple-200 group-hover:scale-110"
+                  }`} />
+                </div>
+                {!isCollapsed && (
+                  <div className="flex items-center justify-between flex-1">
+                    <span>{lang === "en" ? "Notification Center" : "Trung tâm Thông báo"}</span>
+                    <span className="text-[9px] bg-purple-500/30 text-purple-200 px-1.5 py-0.5 rounded-full font-bold">
+                      GVCN•BM
+                    </span>
+                  </div>
+                )}
+              </Link>
+
+              <Link 
                 href="/teacher/khao-thi-so" 
                 onClick={() => setIsOpen(false)} 
                 className={`group relative flex items-center ${isCollapsed ? 'justify-center px-2' : 'px-3'} py-2 rounded-xl transition-all duration-300 text-xs font-medium mb-3 ${
@@ -557,6 +585,35 @@ function SidebarContent({ role, permissionModules, actualRole, taskCount = 0, is
                       }`} />
                     </div>
                     {!isCollapsed && <span>{SIDEBAR_TRANSLATIONS.teacherNav.homeroom_class[lang]}</span>}
+                  </Link>
+
+                  {/* 1b. Lớp Học sinh -> NPS Tự hào Học sinh SKL (5 Phẩm chất & Pride NPS) */}
+                  <Link 
+                    href="/teacher/nps-tu-hao-skl" 
+                    onClick={() => setIsOpen(false)} 
+                    className={`group relative flex items-center ${isCollapsed ? 'justify-center px-2' : 'px-3'} py-2 rounded-xl transition-all duration-300 text-xs font-medium mb-1.5 ${
+                      pathname.startsWith('/teacher/nps-tu-hao-skl') 
+                        ? "bg-gradient-to-r from-[#5B2D8B]/60 to-purple-500/30 border border-purple-400/60 text-white shadow-md shadow-black/10" 
+                        : "text-white/85 hover:text-white hover:bg-white/10 hover:translate-x-1"
+                    }`}
+                  >
+                    <div className={`w-7 h-7 rounded-lg flex items-center justify-center transition-all ${isCollapsed ? 'mx-auto' : 'mr-2.5'} ${
+                      pathname.startsWith('/teacher/nps-tu-hao-skl')
+                        ? "bg-purple-500/30 border border-purple-400/60 shadow-[0_0_8px_rgba(168,85,247,0.4)]"
+                        : "bg-white/5 border border-white/10 group-hover:border-purple-400/40"
+                    }`}>
+                      <Award className={`w-4 h-4 transition-all ${
+                        pathname.startsWith('/teacher/nps-tu-hao-skl') ? "text-amber-300" : "text-purple-200 group-hover:text-amber-300 group-hover:scale-110"
+                      }`} />
+                    </div>
+                    {!isCollapsed && (
+                      <div className="flex items-center justify-between flex-1">
+                        <span>{lang === "en" ? "Student Pride NPS & Qualities" : "NPS Tự hào Học sinh SKL"}</span>
+                        <span className="text-[9px] bg-amber-400/25 text-amber-200 px-1.5 py-0.5 rounded-full font-bold">
+                          IP2.1
+                        </span>
+                      </div>
+                    )}
                   </Link>
 
                   {/* Phối hợp Giáo dục (GVCN) */}
@@ -1309,6 +1366,17 @@ function SidebarContent({ role, permissionModules, actualRole, taskCount = 0, is
               </Link>
 
               <Link 
+                href="/parent/thong-bao" 
+                onClick={() => setIsOpen(false)} 
+                className={`group relative flex items-center ${isCollapsed ? 'justify-center px-2' : 'px-3'} py-2.5 rounded-xl transition-all text-xs font-medium ${
+                  pathname.startsWith('/parent/thong-bao') ? "bg-purple-500/35 text-white border border-purple-400/60" : "text-white/85 hover:text-white hover:bg-white/10"
+                }`}
+              >
+                <Bell className="w-4 h-4 mr-2.5 text-purple-300 shrink-0" />
+                {!isCollapsed && <span className="whitespace-nowrap overflow-hidden text-ellipsis">{SIDEBAR_TRANSLATIONS.parentNav.notifications?.[lang] || (lang === "en" ? "Notifications & Inbox" : "Thông báo & Liên lạc")}</span>}
+              </Link>
+
+              <Link 
                 href="/parent/surveys" 
                 onClick={() => setIsOpen(false)} 
                 className={`group relative flex items-center ${isCollapsed ? 'justify-center px-2' : 'px-3'} py-2.5 rounded-xl transition-all text-xs font-medium ${
@@ -1350,6 +1418,15 @@ function SidebarContent({ role, permissionModules, actualRole, taskCount = 0, is
               >
                 <Compass className="w-4 h-4 mr-2.5 text-emerald-300 shrink-0" />
                 {!isCollapsed && <span className="whitespace-nowrap overflow-hidden text-ellipsis">{SIDEBAR_TRANSLATIONS.parentNav.advisory[lang]}</span>}
+              </Link>
+
+              <Link 
+                href="/parent/children/advisory?tab=skl_psych" 
+                onClick={() => setIsOpen(false)} 
+                className={`group relative flex items-center ${isCollapsed ? 'justify-center px-2' : 'px-3'} py-2.5 rounded-xl transition-all text-xs font-medium text-white/75 hover:text-white hover:bg-white/10`}
+              >
+                <Sparkles className="w-4 h-4 mr-2.5 text-amber-300 shrink-0" />
+                {!isCollapsed && <span className="whitespace-nowrap overflow-hidden text-ellipsis">{lang === "en" ? "Career & Psych" : "Khảo sát Hướng nghiệp"}</span>}
               </Link>
 
               <Link 

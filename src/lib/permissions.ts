@@ -118,6 +118,8 @@ export async function getRoleReadableModules(roleCode: string): Promise<string[]
     readableModules.add("KTDBCL_HPH_MEETINGS")
     readableModules.add("KTDBCL_HPH_FEEDBACK")
     readableModules.add("KTDBCL_HPH_MINUTES")
+    readableModules.add("KPI_PHAM_CHAT_TU_HAO")
+    readableModules.add("KTDBCL_KTS_NOTIFICATIONS")
   }
 
   // Automatically grant parent module if any submodule is readable

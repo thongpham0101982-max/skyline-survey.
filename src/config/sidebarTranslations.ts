@@ -10,6 +10,7 @@ export interface SidebarTranslations {
 
 export const SIDEBAR_TRANSLATIONS: SidebarTranslations = {
   categories: {
+    SYSTEM_KPIS: { vi: "KPIs Hệ thống", en: "System KPIs" },
     SYSTEM: { vi: "Hệ thống", en: "System Administration" },
     KTDBCL: { vi: "Khảo thí & ĐBCL", en: "Testing & Quality Assurance" },
     SPECIAL_SUBJECTS: { vi: "Môn học đặc thù Sky-Line", en: "Special Subjects Management" },
@@ -24,6 +25,12 @@ export const SIDEBAR_TRANSLATIONS: SidebarTranslations = {
     OTHER: { vi: "QA WORKSPACE KT&ĐBCL", en: "QA WORKSPACE KT&ĐBCL" },
   },
   modules: {
+    // SYSTEM_KPIS
+    KPI_PHAM_CHAT_TU_HAO: {
+      vi: "Phẩm chất HS & Tự hào Sky-Line",
+      en: "Student Qualities (IP2.1) & Pride NPS",
+    },
+
     // SYSTEM
     AUDIT_LOGS: { vi: "Nhật ký Hệ thống", en: "System Audit Logs" },
     MAINTENANCE: { vi: "Sao lưu & Bảo trì", en: "Backup & Maintenance" },
@@ -35,6 +42,7 @@ export const SIDEBAR_TRANSLATIONS: SidebarTranslations = {
 
     // KTDBCL
     KTDBCL_CONNECT: { vi: "KT&ĐBCL Connect", en: "QA & Testing Connect" },
+    KTDBCL_KTS_NOTIFICATIONS: { vi: "9. Thông báo Khảo thí", en: "9. Exam Notifications" },
     KTDBCL_HOP_PHU_HUYNH: { vi: "Họp Phụ huynh số", en: "Digital Parent Meeting" },
     KTDBCL_HPH_OVERVIEW: { vi: "1. Dashboard Chất lượng (11 KPI)", en: "1. Quality Dashboard (11 KPIs)" },
     KTDBCL_HPH_MEETINGS: { vi: "2. Quản lý Lịch họp & Phê duyệt", en: "2. Meeting Schedule & Approval" },
@@ -207,6 +215,7 @@ export const SIDEBAR_TRANSLATIONS: SidebarTranslations = {
   },
   parentNav: {
     overview: { vi: "Tổng quan", en: "Overview" },
+    notifications: { vi: "Thông báo & Liên lạc", en: "Notifications & Inbox" },
     meetings: { vi: "Họp Phụ huynh", en: "Parent Meetings" },
     surveys: { vi: "Khảo sát định kỳ", en: "Periodic Surveys" },
     grades: { vi: "Điểm kiểm tra", en: "Assessment Grades" },

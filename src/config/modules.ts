@@ -40,6 +40,20 @@ import {
 
 export const APP_CATEGORIES = [
   {
+    id: "SYSTEM_KPIS",
+    name: "KPIs Hệ thống",
+    color: "violet",
+    icon: BarChart3,
+    modules: [
+      {
+        code: "KPI_PHAM_CHAT_TU_HAO",
+        name: "Phẩm chất HS & Tự hào Sky-Line",
+        icon: Award,
+        href: "/admin/kpis/pham-chat-tu-hao",
+      },
+    ],
+  },
+  {
     id: "SYSTEM",
     name: "Hệ thống",
     color: "violet",
@@ -74,6 +88,7 @@ export const APP_CATEGORIES = [
           { code: "KTDBCL_KTS_GRADING", name: "6. Chấm bài (OMR & LMS)", href: "/admin/ktdbcl/khao-thi-so?tab=grading" },
           { code: "KTDBCL_KTS_RESULTS", name: "7. Kết quả & Duyệt điểm", href: "/admin/ktdbcl/khao-thi-so?tab=results" },
           { code: "KTDBCL_KTS_REPORTS", name: "8. Báo cáo & Lưu trữ", href: "/admin/ktdbcl/khao-thi-so?tab=reports" },
+          { code: "KTDBCL_KTS_NOTIFICATIONS", name: "9. Thông báo Khảo thí", href: "/admin/ktdbcl/khao-thi-so?tab=notifications" },
         ]
       },
       {
