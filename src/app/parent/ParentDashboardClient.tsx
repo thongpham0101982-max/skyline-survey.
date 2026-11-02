@@ -21,6 +21,7 @@ import {
   ShieldCheck
 } from "lucide-react"
 import { useCampusTheme, resolveCampusTheme } from "@/hooks/useCampusTheme"
+import { UserWelcomeCard } from "@/components/UserWelcomeCard"
 
 interface ParentDashboardClientProps {
   parent: any
@@ -117,99 +118,37 @@ export default function ParentDashboardClient({
         </div>
       ) : null}
 
-      {/* 2. HERO BANNER BRAND THEME THEO CƠ SỞ */}
-      <div 
-        className="relative overflow-hidden rounded-[2.2rem] text-white shadow-2xl transition-all duration-700"
-        style={{
-          background: campusTheme.headerGradient
-        }}
-      >
-        {/* Lớp nền blur gradient tạo chiều sâu thẩm mỹ */}
-        <div className="absolute right-0 top-0 -mr-20 -mt-20 w-80 h-80 rounded-full bg-white/10 blur-3xl pointer-events-none" />
-        <div className="absolute left-1/3 bottom-0 -mb-20 w-64 h-64 rounded-full bg-white/10 blur-2xl pointer-events-none" />
-
-        <div className="relative z-10 p-6 sm:p-8 lg:p-10 flex flex-col md:flex-row md:items-center justify-between gap-6">
-          <div className="space-y-3.5 max-w-3xl">
-            
-            {/* Huy hiệu nhận diện Cơ sở & Brand Sky-Line */}
-            <div className="flex flex-wrap items-center gap-2">
-              <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-white/15 backdrop-blur-md border border-white/25 text-[11px] font-black uppercase tracking-wider text-white shadow-xs">
-                <Sparkles className="w-3.5 h-3.5 text-amber-300 animate-pulse" />
-                <span>CỔNG THÔNG TIN PHỤ HUYNH • SKY-LINE</span>
-              </div>
-
-              {/* Badge Cơ Sở Đào Tạo Hiện Tại */}
-              <div 
-                className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-[11px] font-black bg-white text-slate-900 shadow-sm"
-              >
-                <School className="w-3.5 h-3.5" style={{ color: campusTheme.primaryColor }} />
-                <span>{campusTheme.name}</span>
-                {campusTheme.locationName && (
-                  <span className="text-[10px] text-slate-500 font-medium">({campusTheme.locationName})</span>
-                )}
-              </div>
-            </div>
-
-            {/* Lời chào trân trọng */}
-            <h1 className="text-2xl sm:text-3xl lg:text-4xl font-black tracking-tight text-white leading-tight">
-              <span>Xin chào </span>
-              <span className="text-amber-300 drop-shadow-xs">{parentDisplayName}</span>
-              <span>! 👋</span>
-            </h1>
-
-            {/* Khẩu hiệu & Tinh thần giáo dục của Cơ sở */}
-            <p className="text-xs sm:text-sm text-white/90 font-medium leading-relaxed max-w-2xl">
-              {campusTheme.motto} • Đồng hành cùng con em trong năm học{" "}
-              <span className="font-extrabold text-white bg-white/20 px-2.5 py-0.5 rounded-full border border-white/25">
-                {defaultYear?.name || "2026 - 2027"}
+      {/* 2. HERO BANNER ĐỒNG BỘ NHẬN DIỆN TRƯỜNG HỌC SKY-LINE */}
+      <UserWelcomeCard
+        userName={parentDisplayName}
+        greetingTitle={`Xin chào, ${parentDisplayName}!`}
+        greetingSubtitle={`Đồng hành cùng con em phát triển toàn diện tại ${campusTheme.name} trong năm học ${defaultYear?.name || "2026-2027"}.`}
+        campusName={campusTheme.name}
+        campusCode={campusTheme.code}
+        roleBadgeText="CỔNG PHỤ HUYNH"
+        teacherCode={activeChild?.studentCode}
+        codeLabel="Mã HS"
+        academicYear={defaultYear?.name || "2026-2027"}
+        showAcademicYear={true}
+        customMetaChips={
+          activeChild ? (
+            <>
+              <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-xl text-xs font-bold bg-white/95 border border-slate-200/80 text-slate-700 shadow-2xs">
+                <User className="w-3.5 h-3.5 text-[#00A19A] shrink-0" />
+                <span>Học sinh: {activeChild.studentName}</span>
               </span>
-            </p>
-
-            {/* Card Tóm Tắt Học Sinh Đang Chọn */}
-            {activeChild && (
-              <div className="inline-flex flex-wrap items-center gap-3 pt-2">
-                <div className="bg-black/20 backdrop-blur-md border border-white/20 px-3.5 py-2 rounded-2xl flex items-center gap-3">
-                  <div 
-                    className="w-8 h-8 rounded-xl flex items-center justify-center font-black text-xs text-white shadow-inner"
-                    style={{ backgroundColor: campusTheme.primaryColor }}
-                  >
-                    {activeChild.studentName?.charAt(0) || "S"}
-                  </div>
-                  <div className="text-left text-xs">
-                    <div className="font-black text-white flex items-center gap-1.5">
-                      <span>{activeChild.studentName}</span>
-                      <span className="text-[10px] font-normal text-white/70">
-                        (Mã HS: <strong className="text-amber-300 font-bold">{activeChild.studentCode || "---"}</strong>)
-                      </span>
-                    </div>
-                    <div className="text-[11px] text-white/80 font-medium">
-                      Lớp: <strong className="text-white">{activeChild.class?.className || "---"}</strong> • GVCN: <strong className="text-white">{homeroomTeacherName}</strong>
-                    </div>
-                  </div>
-                </div>
-              </div>
-            )}
-          </div>
-
-          {/* Right Status Panel: Học sinh liên kết & Trạng thái đồng hành */}
-          <div className="flex flex-row md:flex-col items-center md:items-end justify-between md:justify-center gap-3 shrink-0 bg-white/15 backdrop-blur-md border border-white/20 p-5 rounded-3xl shadow-sm">
-            <div className="text-left md:text-right space-y-0.5">
-              <div className="text-[10px] font-black text-white/80 uppercase tracking-widest">
-                Học sinh liên kết
-              </div>
-              <div className="text-2xl sm:text-3xl font-black text-white">
-                {childrenList.length} học sinh
-              </div>
-            </div>
-            <div className="text-right">
-              <span className="inline-flex items-center gap-1.5 text-[11px] font-black text-amber-300 bg-amber-400/20 px-3 py-1 rounded-full border border-amber-300/30 shadow-xs">
-                <HeartHandshake className="w-3.5 h-3.5" />
-                <span>Đồng hành 360°</span>
+              <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-xl text-xs font-bold bg-white/95 border border-slate-200/80 text-slate-700 shadow-2xs">
+                <GraduationCap className="w-3.5 h-3.5 text-[#AE882E] shrink-0" />
+                <span>Lớp: {activeChild.class?.className || "---"}</span>
               </span>
-            </div>
-          </div>
-        </div>
-      </div>
+              <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-xl text-xs font-bold bg-white/95 border border-slate-200/80 text-slate-700 shadow-2xs">
+                <HeartHandshake className="w-3.5 h-3.5 text-emerald-600 shrink-0" />
+                <span>GVCN: {homeroomTeacherName}</span>
+              </span>
+            </>
+          ) : undefined
+        }
+      />
 
       {/* 3. KHỐI THẺ 4 TÍNH NĂNG CHÍNH (ACTION HUB) - CHUẨN ĐẸP, BÁM SÁT BRAND SKY-LINE */}
       <div className="space-y-6">
@@ -366,6 +305,62 @@ export default function ParentDashboardClient({
               className="w-full py-3.5 rounded-2xl bg-sky-600 hover:bg-sky-700 text-white text-xs font-black flex items-center justify-center gap-2 shadow-md shadow-sky-300 transition-all active:scale-95 text-center cursor-pointer"
             >
               <span>Xem Hồ sơ 360°</span>
+              <ArrowRight className="w-4 h-4" />
+            </Link>
+          </div>
+
+          {/* CARD 5: TRAO ĐỔI & ĐỒNG HÀNH (PHỐI HỢP GIÁO DỤC) */}
+          <div className="bg-white rounded-3xl p-6 border border-purple-200/90 shadow-sm hover:shadow-xl hover:-translate-y-1 transition-all duration-300 flex flex-col justify-between space-y-5 relative overflow-hidden group">
+            <div className="space-y-3.5">
+              <div className="w-14 h-14 rounded-2xl bg-purple-50 text-[#6E3D89] flex items-center justify-center font-bold shadow-inner border border-purple-100 group-hover:scale-105 transition-transform">
+                <MessageSquareText className="w-7 h-7" />
+              </div>
+              <div>
+                <span className="text-[10px] font-black text-[#6E3D89] uppercase tracking-widest block">
+                  KẾT NỐI GVCN & GVBM
+                </span>
+                <h3 className="text-lg font-black text-slate-900 group-hover:text-[#6E3D89] transition-colors mt-0.5">
+                  Trao Đổi & Đồng Hành
+                </h3>
+              </div>
+              <p className="text-xs text-slate-500 font-medium leading-relaxed">
+                Liên hệ trực tiếp với <strong className="text-slate-700">GVCN và Giáo viên Bộ môn</strong> đúng phân công của con, theo dõi tiến độ xử lý ý kiến và đánh giá chất lượng CSAT/NPS.
+              </p>
+            </div>
+
+            <Link 
+              href="/parent/trao-doi-dong-hanh"
+              className="w-full py-3.5 rounded-2xl bg-[#6E3D89] hover:bg-[#5B3172] text-white text-xs font-black flex items-center justify-center gap-2 shadow-md shadow-purple-200 transition-all active:scale-95 text-center cursor-pointer"
+            >
+              <span>Mở Trao đổi & Đồng hành</span>
+              <ArrowRight className="w-4 h-4" />
+            </Link>
+          </div>
+
+          {/* CARD 6: HỌP PHỤ HUYNH SỐ & ĐIỂM DANH QR */}
+          <div className="bg-white rounded-3xl p-6 border border-teal-200/90 shadow-sm hover:shadow-xl hover:-translate-y-1 transition-all duration-300 flex flex-col justify-between space-y-5 relative overflow-hidden group">
+            <div className="space-y-3.5">
+              <div className="w-14 h-14 rounded-2xl bg-teal-50 text-[#00A19A] flex items-center justify-center font-bold shadow-inner border border-teal-100 group-hover:scale-105 transition-transform">
+                <Calendar className="w-7 h-7" />
+              </div>
+              <div>
+                <span className="text-[10px] font-black text-[#00A19A] uppercase tracking-widest block">
+                  HỌP PHỤ HUYNH SỐ
+                </span>
+                <h3 className="text-lg font-black text-slate-900 group-hover:text-[#00A19A] transition-colors mt-0.5">
+                  Lịch Họp, QR & Biên Bản
+                </h3>
+              </div>
+              <p className="text-xs text-slate-500 font-medium leading-relaxed">
+                Xác nhận tham dự họp PHHS, mở <strong className="text-slate-700">mã QR điểm danh điện tử</strong>, gửi câu hỏi trước/trong/sau cuộc họp và xem Biên bản họp lớp chính thức.
+              </p>
+            </div>
+
+            <Link 
+              href={`/parent/hop-phu-huynh${activeChild?.id ? `?studentId=${activeChild.id}` : ""}`}
+              className="w-full py-3.5 rounded-2xl bg-[#00A19A] hover:bg-[#008983] text-white text-xs font-black flex items-center justify-center gap-2 shadow-md shadow-teal-200 transition-all active:scale-95 text-center cursor-pointer"
+            >
+              <span>Mở Họp Phụ Huynh Số</span>
               <ArrowRight className="w-4 h-4" />
             </Link>
           </div>

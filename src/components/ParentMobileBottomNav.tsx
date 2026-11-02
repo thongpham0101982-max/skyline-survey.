@@ -3,7 +3,7 @@
 import React, { useState } from "react"
 import Link from "next/link"
 import { usePathname } from "next/navigation"
-import { Home, ClipboardList, Compass, GraduationCap, KeyRound, Award } from "lucide-react"
+import { Home, ClipboardList, Compass, GraduationCap, KeyRound, Award, MessageSquare, QrCode } from "lucide-react"
 import { ChangePasswordModal } from "@/components/ChangePasswordModal"
 
 export function ParentMobileBottomNav() {
@@ -11,8 +11,10 @@ export function ParentMobileBottomNav() {
   const [isPasswordModalOpen, setIsPasswordModalOpen] = useState(false)
 
   const isHome = pathname === "/parent"
+  const isMeetings = pathname.includes("/parent/hop-phu-huynh")
   const isSurveys = pathname.includes("/parent/surveys")
   const isAdvisory = pathname.includes("/parent/children/advisory")
+  const isCoordination = pathname.includes("/parent/trao-doi-dong-hanh")
   const isProfile = pathname.includes("/parent/children/profile")
   const isGrades = pathname.includes("/parent/grades")
 
@@ -29,6 +31,30 @@ export function ParentMobileBottomNav() {
             <Home className="w-4 h-4" />
           </div>
           <span>Tổng quan</span>
+        </Link>
+
+        <Link
+          href="/parent/hop-phu-huynh"
+          className={`flex flex-col items-center gap-1 text-[10px] transition-colors ${
+            isMeetings ? "text-[#00A19A] font-bold" : "text-slate-500 hover:text-[#00A19A] font-medium"
+          }`}
+        >
+          <div className={`p-1.5 rounded-xl transition-all ${isMeetings ? "bg-teal-100 text-[#003B3A] shadow-xs" : ""}`}>
+            <QrCode className="w-4 h-4" />
+          </div>
+          <span>Họp PH</span>
+        </Link>
+
+        <Link
+          href="/parent/trao-doi-dong-hanh"
+          className={`flex flex-col items-center gap-1 text-[10px] transition-colors ${
+            isCoordination ? "text-[#6E3D89] font-bold" : "text-slate-500 hover:text-[#6E3D89] font-medium"
+          }`}
+        >
+          <div className={`p-1.5 rounded-xl transition-all ${isCoordination ? "bg-purple-100 text-[#6E3D89] shadow-xs" : ""}`}>
+            <MessageSquare className="w-4 h-4" />
+          </div>
+          <span>Trao đổi</span>
         </Link>
 
         <Link
@@ -55,7 +81,6 @@ export function ParentMobileBottomNav() {
           <span>Cố vấn</span>
         </Link>
 
-
         <Link
           href="/parent/grades"
           className={`flex flex-col items-center gap-1 text-[10px] transition-colors ${
@@ -65,8 +90,9 @@ export function ParentMobileBottomNav() {
           <div className={`p-1.5 rounded-xl transition-all ${isGrades ? "bg-teal-50 text-[#003B3A] shadow-xs" : ""}`}>
             <Award className="w-4 h-4" />
           </div>
-          <span>Điểm kiểm tra</span>
+          <span>Điểm</span>
         </Link>
+
         <Link
           href="/parent/children/profile"
           className={`flex flex-col items-center gap-1 text-[10px] transition-colors ${

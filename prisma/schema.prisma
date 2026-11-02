@@ -137,6 +137,9 @@ model AcademicYear {
   endDate                         DateTime
   status                          String                           @default("ACTIVE")
   isOff                           Boolean                          @default(false)
+  theme                           String?
+  pillars                         String?
+  yearThemes                      String?
   assessmentConfigs               AssessmentConfig[]
   preschoolAssessmentConfigs      PreschoolAssessmentConfig[]
   classes                         Class[]
@@ -611,21 +614,31 @@ model WorkTask {
   staffNote        String?
   staffUpdatedAt   DateTime?
   collaborators    String?
+  taskGroupId      String?
+  department       String?          @default("KT&ĐBCL")
+  priority         String?          @default("MEDIUM")
+  completedAt      DateTime?
   attachments      TaskAttachment[]
   comments         TaskComment[]
   assignedToUser   User?            @relation("TaskAssignee", fields: [assignedToUserId], references: [id])
   assignedBy       User             @relation("TaskAssigner", fields: [assignedById], references: [id])
   academicYear     AcademicYear?    @relation(fields: [academicYearId], references: [id])
+  taskGroup        TaskGroup?       @relation(fields: [taskGroupId], references: [id])
 }
 
 model TaskComment {
-  id        String   @id @default(cuid())
-  taskId    String
-  userId    String
-  content   String
-  createdAt DateTime @default(now())
-  user      User     @relation("TaskComments", fields: [userId], references: [id])
-  task      WorkTask @relation(fields: [taskId], references: [id], onDelete: Cascade)
+  id               String    @id @default(cuid())
+  taskId           String
+  userId           String
+  content          String
+  commentType      String?   @default("GENERAL")
+  actionAssigneeId String?
+  actionDueDate    DateTime?
+  actionStatus     String?   @default("NONE")
+  mentionedUserIds String?
+  createdAt        DateTime  @default(now())
+  user             User      @relation("TaskComments", fields: [userId], references: [id])
+  task             WorkTask  @relation(fields: [taskId], references: [id], onDelete: Cascade)
 }
 
 model TaskAttachment {
@@ -769,6 +782,7 @@ model InputAssessmentStudent {
   period              InputAssessmentPeriod    @relation(fields: [periodId], references: [id], onDelete: Cascade)
   scores              StudentAssessmentScore[]
   studentSessions     InputAssessmentStudentSession[]
+  orientationRecord   StudentOrientationRecord?
 
   enrollmentStatus  String?
   enrollmentClassId String?
@@ -951,6 +965,7 @@ model Department {
   blockCM     String?
   divisionCode String?
   teamsWebhookUrl String?
+  taskConfig  String?
   status      String    @default("ACTIVE")
   createdAt   DateTime  @default(now())
   updatedAt   DateTime  @updatedAt
@@ -1288,8 +1303,9 @@ model TaskGroup {
   description   String?
   memberUserIds String?
   leaderUserId  String?
-  createdAt     DateTime @default(now())
-  updatedAt     DateTime @updatedAt
+  createdAt     DateTime    @default(now())
+  updatedAt     DateTime    @updatedAt
+  workTasks     WorkTask[]
 }
 
 model ObservationSlot {
@@ -2619,6 +2635,77 @@ model StudentGoalUnlock {
 }
 
 // ============================================================================
+// TRI-PARTY ADVISORY UPGRADE (GV/CVHT - HS - PHHS) - Additive Models
+// ============================================================================
+
+model AdvisoryRecordPolicy {
+  id                  String    @id @default(cuid())
+  entityType          String
+  entityId            String
+  studentId           String
+  academicYearId      String    @default("")
+  privacyTier         String    @default("SHARED_EDUCATIONAL")
+  shareWithParent     Int       @default(1)
+  advisorReviewStatus String?
+  advisorReviewNote   String?
+  privateAdvisorNotes String?
+  parentSharedSummary String?
+  parentAcknowledged  Int       @default(0)
+  parentFeedback      String?
+  parentFeedbackAt    DateTime?
+  evidenceNotes       String?
+  sessionFormat       String?   @default("DIRECT")
+  sessionStatus       String?   @default("COMPLETED")
+  updatedById         String?
+  updatedByRole       String?
+  createdAt           DateTime  @default(now())
+  updatedAt           DateTime  @updatedAt
+
+  @@unique([entityType, entityId])
+  @@index([studentId, entityType])
+  @@index([entityType, entityId])
+}
+
+model ParentAdvisorExchange {
+  id                 String    @id @default(cuid())
+  studentId          String
+  academicYearId     String    @default("")
+  parentId           String?
+  parentName         String?
+  teacherId          String?
+  teacherName        String?
+  topic              String    @default("PHOI_HOP_GIA_DINH")
+  message            String
+  homeSupportSummary String?
+  preferredTime      String?
+  status             String    @default("PENDING")
+  advisorResponse    String?
+  respondedAt        DateTime?
+  createdAt          DateTime  @default(now())
+  updatedAt          DateTime  @updatedAt
+
+  @@index([studentId, academicYearId])
+  @@index([status])
+}
+
+model AdvisoryAuditLog {
+  id          String   @id @default(cuid())
+  studentId   String
+  actorId     String
+  actorRole   String
+  actorName   String?
+  entityType  String
+  entityId    String
+  action      String
+  privacyTier String   @default("SHARED_EDUCATIONAL")
+  summary     String?
+  changesJson String?
+  createdAt   DateTime @default(now())
+
+  @@index([studentId, createdAt])
+}
+
+// ============================================================================
 // WAVE 2: ENTERPRISE AI MODELS (Additive - Zero Breaking Changes)
 // ============================================================================
 
@@ -3354,6 +3441,7 @@ model SpecialLesson {
   criteria          SpecialAssessmentCriterion[]
   gradeEntries      SpecialGradeEntry[]
   projectGroups     SpecialProjectGroup[]
+  teachingLogs      SpecialTeachingLog[]
 
   @@unique([versionId, grade, periodIndex])
   @@index([versionId, grade])
@@ -3365,6 +3453,7 @@ model SpecialAssessmentCriterion {
   gradeConfigId    String?
   lessonId         String?
   competencyGroup  String   @default("CHUNG")
+  programLevel     String?
   code             String
   name             String
   description      String?
@@ -3416,6 +3505,7 @@ model SpecialTeachingAssignment {
 
   gradeEntries     SpecialGradeEntry[]
   projectGroups    SpecialProjectGroup[]
+  teachingLogs     SpecialTeachingLog[]
 
   @@unique([subjectId, teacherId, classId, academicYearId, semester])
   @@index([subjectId])
@@ -3508,6 +3598,26 @@ model SpecialGradeAudit {
 
   @@index([gradeEntryId])
   @@index([actorUserId])
+}
+
+model SpecialTeachingLog {
+  id               String   @id @default(cuid())
+  assignmentId     String
+  lessonId         String
+  taughtDate       DateTime @default(now())
+  completedPeriods Int      @default(1)
+  notes            String?
+  attendanceCount  Int?
+  status           String   @default("COMPLETED")
+  createdAt        DateTime @default(now())
+  updatedAt        DateTime @updatedAt
+
+  assignment       SpecialTeachingAssignment @relation(fields: [assignmentId], references: [id], onDelete: Cascade)
+  lesson           SpecialLesson             @relation(fields: [lessonId], references: [id], onDelete: Cascade)
+
+  @@unique([assignmentId, lessonId])
+  @@index([assignmentId])
+  @@index([lessonId])
 }
 
 // ============================================================================
@@ -3657,5 +3767,1478 @@ model KtdbclAuditLog {
   @@index([actorId])
   @@index([createdAt])
 }
+
+model OrientationQuestionCatalog {
+  id                 String   @id @default(cuid())
+  gradeGroup         String   // "KHOI_1", "KHOI_2_5", "KHOI_6_9", "KHOI_10_12", "ALL"
+  grade              String?  @default("ALL") // "Khối 1", "Khối 6", etc.
+  category           String   // "HOA_NHAP_GIAO_TIEP", "THOI_QUEN_HOC_TAP", "SO_THICH_NANG_KHIEU", "DINH_HUONG_TUONG_LAI", "TAM_LY_CAM_XUC"
+  categoryLabel      String?  // Label tiếng Việt hiển thị
+  questionText       String   // Nội dung câu hỏi phỏng vấn
+  suggestedGuideline String?  // Hướng dẫn quan sát cho GV
+  sampleAnswers      String?  // Gợi ý phản hồi / thang quan sát (JSON string)
+  sortOrder          Int      @default(0)
+  status             String   @default("ACTIVE") // ACTIVE, INACTIVE
+  createdAt          DateTime @default(now())
+  updatedAt          DateTime @updatedAt
+
+  @@index([gradeGroup, status])
+  @@index([category])
+}
+
+model StudentOrientationRecord {
+  id                       String   @id @default(cuid())
+  studentId                String   @unique
+  student                  InputAssessmentStudent @relation(fields: [studentId], references: [id], onDelete: Cascade)
+  academicYearId           String?
+  interviewerId            String?
+  interviewerName          String?
+  interviewDate            DateTime? @default(now())
+  status                   String   @default("DRAFT") // DRAFT, COMPLETED
+
+  // Tab 1 – Phỏng vấn học sinh
+  adaptationLevel          String?  // "RAT_TICH_CUC", "ON_DINH", "CAN_HO_TRO", "CAN_LUU_Y_DAC_BIET"
+  interviewData            String?  // JSON string: danh sách câu hỏi, câu trả lời tóm tắt, mức độ đánh giá
+  studentStrengths         String?  // Điểm mạnh nổi trội của học sinh
+  studentNeedsSupport      String?  // Điểm cần hỗ trợ ban đầu
+  interviewerGeneralRemark String?  // Nhận xét tổng quan của GV phỏng vấn
+
+  // Tab 2 – Trao đổi PHHS
+  parentExpectations       String?  // Nguyện vọng, kỳ vọng của gia đình
+  parentHealthNotes        String?  // Lưu ý về sức khỏe, dinh dưỡng, dị ứng
+  parentPersonalityNotes   String?  // Thói quen, tính cách ở nhà do PH cung cấp
+  parentSpecialRequests    String?  // Đề xuất, mong muốn hỗ trợ đặc biệt
+  cooperationCommitment    String?  // Nội dung cam kết phối hợp giáo dục
+  parentRepresentativeName String?  // Người đại diện PHHS trao đổi
+  parentPhone              String?  // Số điện thoại PHHS
+
+  // Tổng hợp định hướng của Hội đồng tiếp nhận
+  proposedEduSystem        String?  // Đề xuất Hệ đào tạo (Hội nhập, Quốc tế, Song ngữ...)
+  proposedClassPlacement   String?  // Đề xuất phân lớp
+  admissionConsultantNote  String?  // Ý kiến của Tư vấn tuyển sinh / BGH
+
+  // Khảo sát Tâm lý
+  psychologyReferralStatus String?   @default("NONE") // NONE, REQUESTED, COMPLETED
+  psychologyReferralReason String?
+  psychologyTeacherId      String?
+  psychologyTeacherName    String?
+  psychologyData           String?
+
+  createdAt                DateTime @default(now())
+  updatedAt                DateTime @updatedAt
+
+  @@index([studentId])
+  @@index([academicYearId])
+}
+
+// ==========================================
+// MODULE: SKY-LINE ALUMNI (CỰU HỌC SINH)
+// ==========================================
+
+model AlumniProfile {
+  id                      String    @id @default(cuid())
+  studentCode             String    @unique
+  originalStudentId       String?
+  studentName             String
+  englishName             String?
+  gender                  String?
+  dateOfBirth             DateTime?
+  personalEmail           String?
+  personalPhone           String?
+  
+  // Dữ liệu thời điểm tốt nghiệp tại Sky-Line
+  campusId                String
+  graduationGrade         String    @default("12")
+  graduationYear          Int
+  graduationBatch         String?
+  educationSystem         String?
+  lastClassName           String?
+  
+  // Trạng thái hiện tại
+  currentResidenceCountry String?   @default("Việt Nam")
+  currentResidenceCity    String?
+  currentAcademicStatus   String?   @default("STUDYING")
+  currentCareerStatus     String?   @default("WORKING")
+  currentEmployer         String?
+  currentJobTitle         String?
+  
+  // Trạng thái xác minh dữ liệu
+  verificationStatus      String    @default("UNVERIFIED")
+  lastVerifiedAt          DateTime?
+  verifiedById            String?
+  lastSelfUpdatedAt       DateTime?
+
+  // Cấu hình hiển thị & Mạng lưới
+  allowContact            Boolean   @default(true)
+  joinAlumniNetwork       Boolean   @default(true)
+  allowMediaSharing       Boolean   @default(false)
+  dataConsentAccepted     Boolean   @default(false)
+  dataConsentDate         DateTime?
+
+  createdAt               DateTime  @default(now())
+  updatedAt               DateTime  @updatedAt
+
+  qrTokens                AlumniQrToken[]
+  educations              AlumniEducation[]
+  careers                 AlumniCareer[]
+  submissions             AlumniUpdateSubmission[]
+  consentLogs             AlumniConsentLog[]
+
+  @@index([graduationYear])
+  @@index([campusId])
+  @@index([verificationStatus])
+  @@index([graduationGrade])
+}
+
+model AlumniQrToken {
+  id               String        @id @default(cuid())
+  alumniId         String
+  publicToken      String        @unique
+  status           String        @default("ACTIVE")
+  expiresAt        DateTime?
+  generatedById    String?
+  revokedById      String?
+  revokedAt        DateTime?
+  revocationReason String?
+  scanCount        Int           @default(0)
+  lastScannedAt    DateTime?
+  createdAt        DateTime      @default(now())
+
+  alumni           AlumniProfile @relation(fields: [alumniId], references: [id], onDelete: Cascade)
+
+  @@index([alumniId])
+  @@index([publicToken])
+  @@index([status])
+}
+
+model AlumniEducation {
+  id              String        @id @default(cuid())
+  alumniId        String
+  degreeLevel     String
+  institutionName String
+  institutionCode String?
+  majorName       String
+  specialization  String?
+  country         String        @default("Việt Nam")
+  city            String?
+  startYear       Int
+  endYear         Int?
+  isCurrent       Boolean       @default(false)
+  scholarshipInfo String?
+  isVerified      Boolean       @default(false)
+  createdAt       DateTime      @default(now())
+  updatedAt       DateTime      @updatedAt
+
+  alumni          AlumniProfile @relation(fields: [alumniId], references: [id], onDelete: Cascade)
+
+  @@index([alumniId])
+  @@index([country])
+  @@index([institutionName])
+}
+
+model AlumniCareer {
+  id              String        @id @default(cuid())
+  alumniId        String
+  jobTitle        String
+  industry        String
+  organization    String?
+  workCountry     String        @default("Việt Nam")
+  workCity        String?
+  startDate       DateTime?
+  endDate         DateTime?
+  isCurrent       Boolean       @default(true)
+  isVerified      Boolean       @default(false)
+  createdAt       DateTime      @default(now())
+  updatedAt       DateTime      @updatedAt
+
+  alumni          AlumniProfile @relation(fields: [alumniId], references: [id], onDelete: Cascade)
+
+  @@index([alumniId])
+  @@index([industry])
+  @@index([workCountry])
+}
+
+model AlumniUpdateSubmission {
+  id             String        @id @default(cuid())
+  alumniId       String
+  submissionCode String        @unique
+  payload        String
+  status         String        @default("PENDING")
+  reviewerId     String?
+  reviewedAt     DateTime?
+  reviewNotes    String?
+  ipAddress      String?
+  userAgent      String?
+  createdAt      DateTime      @default(now())
+  updatedAt      DateTime      @updatedAt
+
+  alumni         AlumniProfile @relation(fields: [alumniId], references: [id], onDelete: Cascade)
+
+  @@index([alumniId])
+  @@index([status])
+  @@index([createdAt])
+}
+
+model AlumniCatalog {
+  id          String   @id @default(cuid())
+  type        String
+  code        String
+  name        String
+  nameEn      String?
+  parentCode  String?
+  isVerified  Boolean  @default(true)
+  usageCount  Int      @default(0)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  @@unique([type, code])
+  @@index([type])
+  @@index([parentCode])
+}
+
+model AlumniConsentLog {
+  id          String        @id @default(cuid())
+  alumniId    String
+  consentType String
+  granted     Boolean
+  ipAddress   String?
+  timestamp   DateTime      @default(now())
+
+  alumni      AlumniProfile @relation(fields: [alumniId], references: [id], onDelete: Cascade)
+
+  @@index([alumniId])
+}
+
+
+
+
+// ============================================================================
+// MODULE: QUẢN LÝ KẾT QUẢ CÁC KỲ THI QUỐC TẾ & CHỨNG CHỈ HỌC SINH
+// ============================================================================
+
+model IntlExamRuleSet {
+  id                  String   @id @default(cuid())
+  examFamily          String   // CAMBRIDGE_YLE | CAMBRIDGE_MAIN | IELTS | PEARSON_EDEXCEL | CAMBRIDGE_CHECKPOINT
+  examType            String   // STARTERS | MOVERS | FLYERS | KET | PET | IELTS | IPRIMARY | ILOWERSECONDARY | PRIMARY_CHECKPOINT | LOWER_SECONDARY_CHECKPOINT
+  versionCode         String   @unique // e.g., "KET_CAMBRIDGE_SCALE_2020_V1", "CHECKPOINT_50_2023_V1"
+  versionName         String
+  organization        String   // "Cambridge English", "Cambridge International", "IELTS Partners", "Pearson Edexcel"
+  effectiveFrom       DateTime @default(now())
+  effectiveTo         DateTime?
+  scaleUnit           String   // "SHIELD" | "CAMBRIDGE_SCALE" | "IELTS_BAND" | "PEARSON_SCORE" | "CHECKPOINT_50" | "CHECKPOINT_6"
+  minOverall          Float?
+  maxOverall          Float?
+  stepSize            Float?   @default(1.0)
+  gradeBoundariesJson String   // JSON array of official grade/CEFR/level rules
+  skylineTargetsJson  String?  // JSON object of configurable Sky-Line internal targets (e.g., 10 shields, IELTS 6.5)
+  skillsConfigJson    String   // JSON array of official skills/subjects & min/max per component
+  allowPartialImport  Boolean  @default(true)
+  isDefault           Boolean  @default(true)
+  status              String   @default("ACTIVE")
+  createdAt           DateTime @default(now())
+  updatedAt           DateTime @updatedAt
+
+  sessions            IntlExamSession[]
+  results             IntlExamResult[]
+
+  @@index([examFamily, examType, isDefault])
+}
+
+model IntlExamSession {
+  id               String   @id @default(cuid())
+  sessionCode      String   @unique // e.g., "CAM-FLYERS-2026-08", "CHK-SEC-2024-2025"
+  sessionName      String   // e.g., "Kỳ thi Cambridge Tháng 08/2026", "Cambridge Checkpoint 2024-2025"
+  examFamily       String
+  examType         String
+  academicYearId   String?
+  academicYearText String   // e.g., "2024-2025", "2025-2026", "2026-2027"
+  examDate         DateTime?
+  examMonth        Int?
+  examYear         Int?
+  ruleSetId        String
+  notes            String?
+  createdById      String?
+  createdAt        DateTime @default(now())
+  updatedAt        DateTime @updatedAt
+
+  ruleSet          IntlExamRuleSet  @relation(fields: [ruleSetId], references: [id])
+  results          IntlExamResult[]
+
+  @@index([examFamily, examType])
+  @@index([academicYearText])
+}
+
+model IntlExamResult {
+  id                      String   @id @default(cuid())
+  sessionId               String
+  ruleSetId               String
+  examFamily              String   // CAMBRIDGE_YLE | CAMBRIDGE_MAIN | IELTS | PEARSON_EDEXCEL | CAMBRIDGE_CHECKPOINT
+  examType                String   // STARTERS | MOVERS | FLYERS | KET | PET | IELTS | IPRIMARY | ILOWERSECONDARY | PRIMARY_CHECKPOINT | LOWER_SECONDARY_CHECKPOINT
+  
+  // Liên thông Học sinh SSM + Snapshot lịch sử
+  studentId               String?  // FK -> Student.id (nullable khi đang chờ đối soát lịch sử)
+  studentCodeSnapshot     String?  // Mã HS gốc SSM / Mã SKL
+  studentNameSnapshot     String   // Họ tên chuẩn hóa NFC
+  studentDobSnapshot      DateTime?
+  campusIdSnapshot        String?  // FK -> Campus.id
+  campusCodeSnapshot      String?  // CS1, CS2, CS3, CS4, CS5
+  gradeSnapshot           String?  // "1".."12"
+  classIdSnapshot         String?
+  classNameSnapshot       String?  // "5/1", "12A", "9GAC"
+  eduSystemSnapshot       String?  // "Hội nhập", "Song ngữ", "Quốc tế", "Tích hợp"
+  academicYearText        String   // "2022-2023", "2023-2024", "2024-2025", "2026-2027"
+  examDate                DateTime?
+  sittingStatus           String   @default("COMPLETED") // COMPLETED | ABSENT | WITHDRAWN | PENDING_RESULT
+
+  // 1. Nhóm trường chuyên biệt cho Cambridge YLE (Starters / Movers / Flyers)
+  yleTotalShields         Int?     // 0..15
+  yleResultCode           String?  // "RW4-L5-S5"
+  yleSkylineGroup         String?  // "0_6" | "7_9" | "10_14" | "15"
+  yleMeetsInternalTarget  Boolean?
+
+  // 2. Nhóm trường chuyên biệt cho Cambridge Main Suite (KET / PET)
+  camOverallScale         Int?     // Official Overall Cambridge English Scale (80..170)
+  camCalculatedAverage    Float?   // Reference average of 4 skills (for QA comparison only)
+  camOfficialGrade        String?  // "GRADE_A" | "GRADE_B" | "GRADE_C" | "LEVEL_A1" | "LEVEL_A2" | "BELOW_THRESHOLD"
+  camOfficialStatement    String?  // Raw statement e.g. "Pass at Grade A", "Council of Europe Level A1"
+  camCefrLevel            String?  // "A1" | "A2" | "B1" | "B2" | "BELOW_A1"
+  camAwardedCertificate   Boolean? // true if >= 100 (KET) or >= 120 (PET)
+  camMeetsTargetLevel     Boolean? // true if >= 120 (KET A2) or >= 140 (PET B1)
+  camExceedsLevel         Boolean? // true if Grade A (vượt khung B1 cho KET / B2 cho PET)
+
+  // 3. Nhóm trường chuyên biệt cho IELTS
+  ieltsOverallBand        Float?   // Official Overall Band (0.0..9.0, step 0.5)
+  ieltsCalculatedOverall  Float?   // Official rounded average from 4 skills (for QA check)
+  ieltsBandGroup          String?  // "UNDER_4_0" | "4_0_4_5" | "5_0_5_5" | "6_0_6_5" | "7_0_7_5" | "8_0_PLUS"
+  ieltsCefrLevel          String?  // "A2" | "B1" | "B2" | "C1" | "C2"
+  ieltsStrongestSkill     String?  // "LISTENING" | "READING" | "WRITING" | "SPEAKING" | "TIE"
+  ieltsWeakestSkill       String?  // "LISTENING" | "READING" | "WRITING" | "SPEAKING" | "TIE"
+  ieltsAttemptNumber      Int      @default(1)
+  ieltsIsLatest           Boolean  @default(true)
+  ieltsIsHighest          Boolean  @default(true)
+
+  // 4. Trạng thái đầy đủ dữ liệu & đối soát
+  dataCompleteness        String   @default("FULL_COMPONENTS") // FULL_COMPONENTS | HISTORICAL_OVERALL_ONLY | PARTIAL_SUBJECTS
+  isHistoricalImport      Boolean  @default(false)
+  isStudentVerified       Boolean  @default(false)
+  importBatchId           String?
+  remarks                 String?
+  createdById             String?
+  createdAt               DateTime @default(now())
+  updatedAt               DateTime @updatedAt
+
+  session                 IntlExamSession        @relation(fields: [sessionId], references: [id], onDelete: Cascade)
+  ruleSet                 IntlExamRuleSet        @relation(fields: [ruleSetId], references: [id])
+  skillResults            IntlExamSkillResult[]
+  certificate             IntlCertificateRecord?
+
+  @@index([examFamily, examType, academicYearText])
+  @@index([studentId])
+  @@index([campusCodeSnapshot, gradeSnapshot, classNameSnapshot])
+  @@index([sittingStatus])
+  @@index([isStudentVerified])
+}
+
+model IntlExamSkillResult {
+  id                  String   @id @default(cuid())
+  resultId            String
+  componentType       String   // "SKILL" (YLE/KET/PET/IELTS) | "SUBJECT" (Pearson/Checkpoint)
+  componentCode       String   // "RW" | "LISTENING" | "READING" | "WRITING" | "SPEAKING" | "MATH" | "SCIENCE" | "ESL"
+  componentName       String   // "Reading & Writing", "Mathematics", "English as a Second Language"
+  scaleUnit           String   // "SHIELD" | "CAMBRIDGE_SCALE" | "IELTS_BAND" | "PEARSON_SCORE" | "CHECKPOINT_50" | "CHECKPOINT_6"
+  numericScore        Float?   // Shields (0..5), Scale (80..170), Band (0..9), Pearson Score, Checkpoint Score (0..50)
+  maxNumericScore     Float?   // 5, 150, 170, 9.0, 50.0, etc.
+  officialBandCode    String?  // Pearson: "P1"|"P2"|"P3"|"S1"|"S2"|"S3"|"S4"; Checkpoint: "UNCLASSIFIED"|"BASIC"|"ASPIRING"|"GOOD"|"HIGH"|"OUTSTANDING"
+  officialBandLabel   String?  // Raw label from statement of results
+  isHighOutstanding   Boolean? // For Checkpoint: true if HIGH or OUTSTANDING (31-50)
+  isLowPerformance    Boolean? // Flag for academic intervention (e.g., Basic/Aspiring or <=2 shields or P1)
+  sortOrder           Int      @default(0)
+  createdAt           DateTime @default(now())
+  updatedAt           DateTime @updatedAt
+
+  result              IntlExamResult @relation(fields: [resultId], references: [id], onDelete: Cascade)
+
+  @@unique([resultId, componentCode])
+  @@index([componentCode, officialBandCode])
+  @@index([resultId])
+}
+
+model IntlCertificateRecord {
+  id                  String    @id @default(cuid())
+  resultId            String    @unique
+  studentId           String?
+  certificateNumber   String?   // Candidate ID / Certificate Reference / TRF Number
+  candidateNumber     String?
+  centerNumber        String?   // e.g., VNxxx
+  issueDate           DateTime?
+  expiryDate          DateTime? // Relevant for IELTS (2-year validity reference)
+  certificateStatus   String    @default("PENDING") // PENDING | RECEIVED_AT_SCHOOL | ISSUED_TO_STUDENT | DIGITAL_VERIFIED | NOT_AWARDED
+  receivedByStudentAt DateTime?
+  receivedByName      String?
+  fileUrl             String?   // PDF/Image scan of Statement of Results / Certificate
+  statementFileUrl    String?   // Secondary attachment (Statement of Results vs Certificate)
+  verificationUrl     String?
+  notes               String?
+  createdAt           DateTime  @default(now())
+  updatedAt           DateTime  @updatedAt
+
+  result              IntlExamResult @relation(fields: [resultId], references: [id], onDelete: Cascade)
+
+  @@index([studentId])
+  @@index([certificateStatus])
+  @@index([certificateNumber])
+}
+
+model IntlImportBatch {
+  id                String   @id @default(cuid())
+  batchCode         String   @unique
+  fileName          String
+  fileHash          String?
+  totalSheets       Int      @default(1)
+  totalRows         Int      @default(0)
+  validRows         Int      @default(0)
+  warningRows       Int      @default(0)
+  errorRows         Int      @default(0)
+  matchedStudents   Int      @default(0)
+  unmatchedStudents Int      @default(0)
+  status            String   @default("PREVIEW") // PREVIEW | COMMITTED | CANCELLED
+  summaryJson       String?
+  importedById      String?
+  createdAt         DateTime @default(now())
+  updatedAt         DateTime @updatedAt
+
+  stagingRecords    IntlStagingRecord[]
+}
+
+model IntlStagingRecord {
+  id                  String   @id @default(cuid())
+  batchId             String
+  sheetName           String
+  rowNumber           Int
+  detectedExamFamily  String
+  detectedExamType    String
+  rawPayloadJson      String   // Original cells from Excel row
+  normalizedJson      String   // Parsed & normalized fields + component scores
+  matchedStudentId    String?
+  matchedStudentCode  String?
+  matchedStudentName  String?
+  matchConfidence     String   @default("UNMATCHED") // EXACT_CODE | EXACT_NAME_DOB_CLASS | FUZZY_CANDIDATE | HISTORICAL_UNLINKED
+  candidateMatchesJson String? // Top 3 candidate students in SSM if fuzzy
+  validationStatus    String   @default("VALID") // VALID | WARNING | ERROR | SKIPPED_DRAFT
+  validationMessages  String?  // JSON array of warnings/errors
+  isCommitted         Boolean  @default(false)
+  createdResultId     String?
+  createdAt           DateTime @default(now())
+
+  batch               IntlImportBatch @relation(fields: [batchId], references: [id], onDelete: Cascade)
+
+  @@index([batchId, validationStatus])
+  @@index([matchConfidence])
+}
+
+// ============================================================================
+// PHÂN HỆ KHẢO THÍ SỐ ĐỊNH KỲ (DIGITAL TESTING & OMR / LMS PLATFORM)
+// ============================================================================
+
+model TestingPeriod {
+  id             String   @id @default(cuid())
+  code           String   @unique
+  name           String
+  academicYearId String
+  semester       String   @default("HK1")
+  examType       String   @default("MIDTERM")
+  programType    String   @default("MOET")
+  campusId       String?
+  gradeLevels    String
+  startDate      DateTime
+  endDate        DateTime
+  isMakeup       Boolean  @default(false)
+  parentPeriodId String?
+  status         String   @default("DRAFT")
+  description    String?
+  createdById    String?
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+
+  subjectExams   TestingSubjectExam[]
+
+  @@index([academicYearId, semester])
+}
+
+model TestingSubjectExam {
+  id                 String    @id @default(cuid())
+  periodId           String
+  subjectId          String
+  gradeLevel         String
+  campusId           String?
+  examFormat         String    @default("PAPER_OMR")
+  durationMinutes    Int       @default(60)
+  maxScore           Float     @default(10.0)
+  mcqWeight          Float     @default(7.0)
+  essayWeight        Float     @default(3.0)
+  moodleCourseId     Int?
+  moodleQuizId       Int?
+  moodleCmId         Int?
+  moodleSyncStatus   String    @default("NOT_LINKED")
+  moodleVerifiedAt   DateTime?
+  moodleVerifiedBy   String?
+  workflowStep       Int       @default(1)
+  status             String    @default("PLANNING")
+  gradebookSyncedAt  DateTime?
+  gradebookSyncedBy  String?
+  createdAt          DateTime  @default(now())
+  updatedAt          DateTime  @updatedAt
+
+  period             TestingPeriod            @relation(fields: [periodId], references: [id], onDelete: Cascade)
+  tasks              TestingTaskAssignment[]
+  matrices           TestingMatrix[]
+  papers             TestingPaperSubmission[]
+  questions          TestingQuestion[]
+  sessions           TestingSession[]
+  omrBatches         TestingOmrBatch[]
+  results            TestingCandidateResult[]
+
+  @@unique([periodId, subjectId, gradeLevel, campusId])
+}
+
+model TestingTaskAssignment {
+  id             String    @id @default(cuid())
+  subjectExamId  String
+  teacherId      String
+  role           String
+  assignedScope  String?
+  dueDate        DateTime
+  status         String    @default("PENDING")
+  completedAt    DateTime?
+  approverId     String?
+  reviewNote     String?
+  remindedCount  Int       @default(0)
+  lastRemindedAt DateTime?
+  createdAt      DateTime  @default(now())
+  updatedAt      DateTime  @updatedAt
+
+  subjectExam    TestingSubjectExam @relation(fields: [subjectExamId], references: [id], onDelete: Cascade)
+
+  @@index([teacherId, status])
+  @@index([subjectExamId, role])
+}
+
+model TestingMatrix {
+  id              String    @id @default(cuid())
+  subjectExamId   String
+  version         Int       @default(1)
+  title           String
+  matrixJson      String
+  specDocumentUrl String?
+  totalQuestions  Int       @default(0)
+  totalPoints     Float     @default(10.0)
+  nbPercent       Float     @default(40)
+  thPercent       Float     @default(30)
+  vdPercent       Float     @default(20)
+  vdcPercent      Float     @default(10)
+  status          String    @default("DRAFT")
+  submittedById   String
+  submittedAt     DateTime?
+  reviewedById    String?
+  reviewedAt      DateTime?
+  reviewComment   String?
+  createdAt       DateTime  @default(now())
+  updatedAt       DateTime  @updatedAt
+
+  subjectExam     TestingSubjectExam @relation(fields: [subjectExamId], references: [id], onDelete: Cascade)
+
+  @@unique([subjectExamId, version])
+}
+
+model TestingPaperSubmission {
+  id               String    @id @default(cuid())
+  subjectExamId    String
+  matrixId         String?
+  version          Int       @default(1)
+  submissionMode   String    @default("PAPER_FILE")
+  paperFileUrl     String?
+  answerKeyUrl     String?
+  gradingGuideUrl  String?
+  moodleCheckJson  String?
+  isOfficial       Boolean   @default(false)
+  status           String    @default("DRAFT")
+  submittedById    String
+  submittedAt      DateTime?
+  peerReviewerId   String?
+  peerReviewNote   String?
+  peerReviewedAt   DateTime?
+  approvedById     String?
+  approvedAt       DateTime?
+  approvalComment  String?
+  createdAt        DateTime  @default(now())
+  updatedAt        DateTime  @updatedAt
+
+  subjectExam      TestingSubjectExam    @relation(fields: [subjectExamId], references: [id], onDelete: Cascade)
+  variants         TestingPaperVariant[]
+
+  @@index([subjectExamId, isOfficial])
+}
+
+model TestingQuestion {
+  id               String   @id @default(cuid())
+  subjectExamId    String?
+  subjectId        String
+  gradeLevel       String
+  sectionCode      String   @default("PART_I_MCQ")
+  topicName        String
+  cognitiveLevel   String   @default("NB")
+  questionType     String   @default("MCQ")
+  questionCode     String
+  stemContent      String
+  optionsJson      String?
+  correctAnswer    String
+  points           Float    @default(0.25)
+  allowShuffleOpts Boolean  @default(true)
+  questionGroupId  String?
+  authorTeacherId  String?
+  isApprovedBank   Boolean  @default(false)
+  createdAt        DateTime @default(now())
+  updatedAt        DateTime @updatedAt
+
+  subjectExam      TestingSubjectExam? @relation(fields: [subjectExamId], references: [id], onDelete: SetNull)
+
+  @@index([subjectExamId, sectionCode])
+}
+
+model TestingPaperVariant {
+  id                String   @id @default(cuid())
+  paperId           String
+  variantCode       String
+  seedValue         Int
+  questionOrderJson String
+  answerKeyMapJson  String
+  printableDocUrl   String?
+  omrTemplateUrl    String?
+  createdAt         DateTime @default(now())
+
+  paper             TestingPaperSubmission @relation(fields: [paperId], references: [id], onDelete: Cascade)
+
+  @@unique([paperId, variantCode])
+}
+
+model TestingSession {
+  id                String    @id @default(cuid())
+  subjectExamId     String
+  classId           String
+  roomName          String
+  examDate          DateTime
+  startTime         String
+  endTime           String
+  slotNumber        Int?
+  totalRegistered   Int       @default(0)
+  presentCount      Int       @default(0)
+  absentCount       Int       @default(0)
+  collectedPapers   Int       @default(0)
+  incidentSummary   String?
+  evidenceUrlsJson  String?
+  minutesStatus     String    @default("PENDING")
+  signedByProctorId String?
+  signedAt          DateTime?
+  createdAt         DateTime  @default(now())
+  updatedAt         DateTime  @updatedAt
+
+  subjectExam       TestingSubjectExam      @relation(fields: [subjectExamId], references: [id], onDelete: Cascade)
+  proctors          TestingSessionProctor[]
+  roster            TestingSessionRoster[]
+
+  @@index([subjectExamId, classId])
+}
+
+model TestingSessionProctor {
+  id              String    @id @default(cuid())
+  sessionId       String
+  teacherId       String
+  proctorRole     String    @default("PROCTOR_1")
+  conflictWarning String?
+  checkedInAt     DateTime?
+  createdAt       DateTime  @default(now())
+
+  session         TestingSession @relation(fields: [sessionId], references: [id], onDelete: Cascade)
+
+  @@unique([sessionId, teacherId])
+}
+
+model TestingSessionRoster {
+  id               String   @id @default(cuid())
+  sessionId        String
+  studentId        String
+  candidateNumber  String
+  seatNumber       String?
+  variantCode      String?
+  attendanceStatus String   @default("PRESENT")
+  paperSubmitted   Boolean  @default(true)
+  violationLevel   String?
+  violationNote    String?
+  needsMakeup      Boolean  @default(false)
+  createdAt        DateTime @default(now())
+  updatedAt        DateTime @updatedAt
+
+  session          TestingSession @relation(fields: [sessionId], references: [id], onDelete: Cascade)
+
+  @@unique([sessionId, studentId])
+}
+
+model TestingOmrBatch {
+  id               String   @id @default(cuid())
+  subjectExamId    String
+  sessionId        String?
+  batchName        String
+  uploadedById     String
+  totalSheets      Int      @default(0)
+  recognizedSheets Int      @default(0)
+  flaggedSheets    Int      @default(0)
+  status           String   @default("PROCESSING")
+  createdAt        DateTime @default(now())
+  updatedAt        DateTime @updatedAt
+
+  subjectExam      TestingSubjectExam @relation(fields: [subjectExamId], references: [id], onDelete: Cascade)
+  sheets           TestingOmrSheet[]
+}
+
+model TestingOmrSheet {
+  id                String    @id @default(cuid())
+  batchId           String
+  studentId         String?
+  candidateNumber   String?
+  variantCode       String?
+  imageUrl          String
+  confidenceScore   Float     @default(0)
+  rawBubbleMapJson  String
+  verifiedMapJson   String?
+  anomalyFlagsJson  String?
+  mcqScore          Float?
+  correctCount      Int?
+  totalQuestions    Int?
+  recognitionStatus String    @default("RECOGNIZED")
+  reviewedById      String?
+  reviewedAt        DateTime?
+  reviewReason      String?
+  createdAt         DateTime  @default(now())
+  updatedAt         DateTime  @updatedAt
+
+  batch             TestingOmrBatch @relation(fields: [batchId], references: [id], onDelete: Cascade)
+}
+
+model TestingCandidateResult {
+  id                  String    @id @default(cuid())
+  subjectExamId       String
+  studentId           String
+  classId             String
+  candidateNumber     String?
+  variantCode         String?
+  sourceType          String    @default("OMR_PAPER")
+  moodleAttemptId     Int?
+  omrSheetId          String?
+  mcqScore            Float?
+  essayScore          Float?
+  penaltyDeduction    Float     @default(0)
+  finalScore          Float     @default(0)
+  topicBreakdownJson  String?
+  levelBreakdownJson  String?
+  essayGradedById     String?
+  essayComment        String?
+  reconciliationFlag  String    @default("MATCHED")
+  approvalStatus      String    @default("DRAFT")
+  isLocked            Boolean   @default(false)
+  approvedById        String?
+  approvedAt          DateTime?
+  syncedGradeEntryId  String?
+  createdAt           DateTime  @default(now())
+  updatedAt           DateTime  @updatedAt
+
+  subjectExam         TestingSubjectExam @relation(fields: [subjectExamId], references: [id], onDelete: Cascade)
+
+  @@unique([subjectExamId, studentId])
+}
+
+// ============================================================================
+// PHÂN HỆ PHỐI HỢP GIÁO DỤC & CHẤT LƯỢNG PHẢN HỒI (EDUCATIONAL COORDINATION & QA)
+// ============================================================================
+
+model CommunicationThread {
+  id                  String                     @id @default(cuid())
+  threadCode          String                     @unique
+  threadType          String                     @default("PARENT_GVCN") // PARENT_GVCN, PARENT_GVBM, GVCN_GVBM_COORD, ESCALATED_SUPPORT
+  academicYearId      String
+  campusId            String
+  classId             String
+  studentId           String
+  parentId            String?
+  teacherId           String
+  subjectId           String?
+  assignmentId        String?
+  assignmentType      String?                    // HOMEROOM, MOET, CTQT, SPECIAL
+  topic               String                     // 1..7 standard topics
+  subjectTitle        String
+  status              String                     @default("NEW") // NEW, READ, IN_DISCUSSION, ARCHIVED
+  visibility          String                     @default("PRIVATE") // PRIVATE, SHARED_WITH_GVCN, ESCALATED_QA
+  priority            String                     @default("NORMAL") // LOW, NORMAL, HIGH, URGENT
+  slaDueAt            DateTime?
+  firstRespondedAt    DateTime?
+  isOnTime            Boolean?
+  lastMessageAt       DateTime                   @default(now())
+  lastMessagePreview  String?
+  unreadCountParent   Int                        @default(0)
+  unreadCountTeacher  Int                        @default(0)
+  createdByUserId     String
+  createdAt           DateTime                   @default(now())
+  updatedAt           DateTime                   @updatedAt
+
+  messages            CommunicationMessage[]
+  participants        CommunicationParticipant[]
+  cases               CommunicationCase[]
+  attachments         CommunicationAttachment[]
+
+  @@index([academicYearId, campusId])
+  @@index([classId, studentId])
+  @@index([teacherId, status])
+  @@index([parentId, status])
+  @@index([subjectId])
+  @@map("communication_threads")
+}
+
+model CommunicationMessage {
+  id                  String                     @id @default(cuid())
+  threadId            String
+  senderUserId        String
+  senderName          String
+  senderRole          String                     // PARENT, GVCN, GVBM, TTCM, QLCM, KT_DBCL, SYSTEM
+  messageType         String                     @default("TEXT") // TEXT, SYSTEM_LOG, CASE_UPDATE, COORDINATION_NOTE
+  content             String
+  isInternalNote      Boolean                    @default(false)
+  clientMessageId     String?                    @unique
+  readByJson          String                     @default("[]")
+  createdAt           DateTime                   @default(now())
+
+  thread              CommunicationThread        @relation(fields: [threadId], references: [id], onDelete: Cascade)
+  attachments         CommunicationAttachment[]
+
+  @@index([threadId, createdAt])
+  @@index([senderUserId])
+  @@map("communication_messages")
+}
+
+model CommunicationParticipant {
+  id                  String                     @id @default(cuid())
+  threadId            String
+  userId              String
+  userName            String?
+  role                String                     // PARENT, GVCN, GVBM, TTCM, QLCM, KT_DBCL
+  accessScope         String                     @default("FULL") // FULL, SUMMARY_ONLY, FROM_JOIN_DATE
+  lastReadAt          DateTime?
+  isMuted             Boolean                    @default(false)
+  joinedAt            DateTime                   @default(now())
+
+  thread              CommunicationThread        @relation(fields: [threadId], references: [id], onDelete: Cascade)
+
+  @@unique([threadId, userId])
+  @@index([userId, role])
+  @@map("communication_participants")
+}
+
+model CommunicationCase {
+  id                      String                      @id @default(cuid())
+  caseCode                String                      @unique
+  threadId                String?
+  academicYearId          String
+  campusId                String
+  classId                 String
+  studentId               String
+  subjectId               String?
+  parentId                String?
+  teacherId               String?
+  departmentId            String?
+  createdByUserId         String
+  requesterRole           String                      // PARENT, GVCN, GVBM, KT_DBCL
+  assignedToUserId        String
+  assignedToName          String?
+  assignedRole            String                      // GVCN, GVBM, TTCM, QLCM, KT_DBCL
+  category                String                      // 1..7 standard topics
+  title                   String
+  description             String
+  priority                String                      @default("NORMAL") // LOW, NORMAL, HIGH, URGENT
+  status                  String                      @default("NEW") // NEW, ASSIGNED, IN_PROGRESS, WAITING_INFO, RESOLVED, COMPLETED, REOPENED
+  slaTargetHours          Int                         @default(16)
+  slaDueAt                DateTime
+  firstResponseAt         DateTime?
+  resolvedAt              DateTime?
+  completedAt             DateTime?
+  reopenedCount           Int                         @default(0)
+  isOverdue               Boolean                     @default(false)
+  isResolvedOnTime        Boolean?
+  supportPlanMeasures     String?
+  supportProgressNote     String?
+  supportOutcomeProposal  String?                     // CONTINUE, COMPLETE, ESCALATE
+  resolutionSummary       String?
+  verifiedConclusion      String?
+  linkedSupportTargetId   String?
+  parentConfirmedAt       DateTime?
+  reopenReason            String?
+  isPrivateContent        Boolean                     @default(false)
+  createdAt               DateTime                    @default(now())
+  updatedAt               DateTime                    @updatedAt
+
+  thread                  CommunicationThread?        @relation(fields: [threadId], references: [id], onDelete: SetNull)
+  history                 CommunicationCaseHistory[]
+  attachments             CommunicationAttachment[]
+  satisfaction            CommunicationSatisfaction?
+
+  @@index([academicYearId, campusId, status])
+  @@index([classId, studentId])
+  @@index([assignedToUserId, status])
+  @@index([teacherId, status])
+  @@index([parentId, status])
+  @@index([slaDueAt, status])
+  @@map("communication_cases")
+}
+
+model CommunicationCaseHistory {
+  id                  String                     @id @default(cuid())
+  caseId              String
+  actorUserId         String
+  actorName           String
+  actorRole           String
+  action              String                     // CREATE, ASSIGN, STATUS_CHANGE, FORWARD, UPDATE_PLAN, RESOLVE, CONFIRM, REOPEN, SLA_REMINDER
+  fromStatus          String?
+  toStatus            String?
+  fromAssigneeId      String?
+  toAssigneeId        String?
+  note                String?
+  createdAt           DateTime                   @default(now())
+
+  caseRecord          CommunicationCase          @relation(fields: [caseId], references: [id], onDelete: Cascade)
+
+  @@index([caseId, createdAt])
+  @@map("communication_case_history")
+}
+
+model CommunicationAttachment {
+  id                  String                     @id @default(cuid())
+  threadId            String?
+  messageId           String?
+  caseId              String?
+  uploadedByUserId    String
+  fileName            String
+  fileType            String
+  fileSize            Int
+  fileUrl             String
+  checksum            String?
+  isSafe              Boolean                    @default(true)
+  createdAt           DateTime                   @default(now())
+
+  thread              CommunicationThread?       @relation(fields: [threadId], references: [id], onDelete: Cascade)
+  message             CommunicationMessage?      @relation(fields: [messageId], references: [id], onDelete: Cascade)
+  caseRecord          CommunicationCase?         @relation(fields: [caseId], references: [id], onDelete: Cascade)
+
+  @@index([threadId])
+  @@index([messageId])
+  @@index([caseId])
+  @@map("communication_attachments")
+}
+
+model CommunicationNotification {
+  id                  String                     @id @default(cuid())
+  userId              String
+  threadId            String?
+  caseId              String?
+  notificationType    String                     // NEW_MESSAGE, CASE_ASSIGNED, SLA_DUE_SOON, SLA_OVERDUE, CASE_RESOLVED, CASE_REOPENED, SURVEY_INVITE, IMPROVEMENT_ASSIGNED
+  title               String
+  body                String
+  linkUrl             String?
+  isRead              Boolean                    @default(false)
+  readAt              DateTime?
+  createdAt           DateTime                   @default(now())
+
+  @@index([userId, isRead, createdAt])
+  @@map("communication_notifications")
+}
+
+model CommunicationSatisfaction {
+  id                  String                     @id @default(cuid())
+  caseId              String                     @unique
+  threadId            String?
+  parentId            String
+  studentId           String
+  teacherId           String?
+  academicYearId      String
+  campusId            String
+  classId             String
+  subjectId           String?
+  csatScore           Int                        // 1..5
+  timelinessScore     Int?                       // 1..5
+  clarityScore        Int?                       // 1..5
+  supportScore        Int?                       // 1..5
+  comment             String?
+  isResolvedConfirmed Boolean                    @default(true)
+  createdAt           DateTime                   @default(now())
+
+  caseRecord          CommunicationCase          @relation(fields: [caseId], references: [id], onDelete: Cascade)
+
+  @@index([academicYearId, campusId])
+  @@index([teacherId])
+  @@index([classId, subjectId])
+  @@map("communication_satisfaction")
+}
+
+model NpsSurveyPeriod {
+  id                  String                     @id @default(cuid())
+  code                String                     @unique
+  title               String
+  description         String?
+  academicYearId      String
+  campusId            String?
+  semester            String                     @default("HK1") // HK1, HK2, CA_NAM, DOT_XUAT
+  targetScope         String                     @default("ALL") // ALL, GVCN_ONLY, GVBM_ONLY
+  minSampleSize       Int                        @default(5)
+  status              String                     @default("DRAFT") // DRAFT, PUBLISHED, CLOSED
+  startDate           DateTime
+  endDate             DateTime
+  publishedAt         DateTime?
+  createdByUserId     String
+  createdAt           DateTime                   @default(now())
+  updatedAt           DateTime                   @updatedAt
+
+  assignments         NpsSurveyAssignment[]
+  responses           NpsSurveyResponse[]
+
+  @@index([academicYearId, status])
+  @@index([campusId])
+  @@map("nps_survey_periods")
+}
+
+model NpsSurveyAssignment {
+  id                  String                     @id @default(cuid())
+  periodId            String
+  academicYearId      String
+  campusId            String
+  classId             String
+  teacherId           String
+  subjectId           String?
+  roleType            String                     // GVCN, GVBM
+  sourceAssignmentId  String?
+  expectedParentCount Int                        @default(0)
+  responseCount       Int                        @default(0)
+  isEligibleToPublish Boolean                    @default(false)
+  createdAt           DateTime                   @default(now())
+  updatedAt           DateTime                   @updatedAt
+
+  period              NpsSurveyPeriod            @relation(fields: [periodId], references: [id], onDelete: Cascade)
+  responses           NpsSurveyResponse[]
+
+  @@unique([periodId, classId, teacherId, roleType, subjectId])
+  @@index([periodId, teacherId])
+  @@index([academicYearId, campusId, roleType])
+  @@map("nps_survey_assignments")
+}
+
+model NpsSurveyResponse {
+  id                    String                   @id @default(cuid())
+  periodId              String
+  assignmentId          String
+  academicYearId        String
+  campusId              String
+  classId               String
+  teacherId             String
+  subjectId             String?
+  roleType              String                   // GVCN, GVBM
+  parentId              String
+  studentId             String
+  npsScore              Int                      // 0..10
+  npsGroup              String                   // PROMOTER (9-10), PASSIVE (7-8), DETRACTOR (0-6)
+  criteriaCommunication Int                      // 1..5 Chất lượng trao đổi
+  criteriaTimeliness    Int                      // 1..5 Mức độ kịp thời
+  criteriaClarity       Int                      // 1..5 Sự rõ ràng của thông tin
+  criteriaSupport       Int                      // 1..5 Mức độ đồng hành, hỗ trợ
+  criteriaCoordination  Int                      // 1..5 Hiệu quả phối hợp giáo dục
+  criteriaAverage       Float                    // Trung bình 5 tiêu chí 1..5 (tách biệt với NPS)
+  feedbackTopic         String?
+  comment               String?
+  createdAt             DateTime                 @default(now())
+
+  period                NpsSurveyPeriod          @relation(fields: [periodId], references: [id], onDelete: Cascade)
+  assignment            NpsSurveyAssignment      @relation(fields: [assignmentId], references: [id], onDelete: Cascade)
+
+  @@unique([periodId, assignmentId, parentId, studentId])
+  @@index([periodId, teacherId, roleType])
+  @@index([academicYearId, campusId, classId, subjectId])
+  @@map("nps_survey_responses")
+}
+
+model QualityImprovementAction {
+  id                             String          @id @default(cuid())
+  issueCode                      String          @unique
+  academicYearId                 String
+  campusId                       String
+  departmentId                   String?
+  classId                        String?
+  subjectId                      String?
+  teacherId                      String?
+  sourceType                     String          @default("QA_AUDIT") // NPS_SURVEY, CASE_RECURRING, CSAT_LOW, QA_AUDIT, AI_SUGGESTED
+  title                          String
+  content                        String
+  verifiedRootCause              String
+  actionPlan                     String
+  assigneeUserId                 String
+  assigneeName                   String?
+  assignedByUserId               String
+  dueDate                        DateTime
+  evidenceUrl                    String?
+  evidenceNote                   String?
+  status                         String          @default("OPEN") // OPEN, IN_PROGRESS, PENDING_VERIFICATION, VERIFIED_EFFECTIVE, NEEDS_FOLLOWUP, CLOSED
+  verificationResult             String?
+  verifiedByUserId               String?
+  verifiedAt                     DateTime?
+  postImprovementEffectiveness   String?
+  recurrenceCount                Int             @default(0)
+  linkedPeriodId                 String?
+  aiSuggestionMetaJson           String?
+  isHumanApproved                Boolean         @default(true)
+  createdAt                      DateTime        @default(now())
+  updatedAt                      DateTime        @updatedAt
+
+  @@index([academicYearId, campusId, status])
+  @@index([teacherId, status])
+  @@index([assigneeUserId, status])
+  @@map("quality_improvement_actions")
+}
+
+// ============================================================================
+// HỌP PHỤ HUYNH SỐ (DIGITAL PARENT MEETING) - Additive Models
+// ============================================================================
+
+model ParentMeeting {
+  id                 String                     @id @default(cuid())
+  meetingCode        String                     @unique
+  title              String
+  meetingType        String                     @default("DINH_KY") // DINH_KY, CHUYEN_DE, DOT_XUAT, CA_NHAN
+  academicYearId     String
+  semester           String                     @default("HK1") // HK1, HK2, CA_NAM
+  campusId           String
+  grade              String?
+  level              String?
+  startTime          DateTime
+  endTime            DateTime
+  location           String?
+  onlineLink         String?
+  agenda             String?
+  contentSummary     String?
+  hostUserId         String
+  hostName           String
+  plannerUserId      String
+  plannerName        String
+  status             String                     @default("DRAFT") // DRAFT, PENDING_APPROVAL, PUBLISHED, IN_PROGRESS, COMPLETED, CANCELLED
+  rsvpOpenAt         DateTime?
+  rsvpCloseAt        DateTime?
+  checkInOpenAt      DateTime?
+  checkInCloseAt     DateTime?
+  allowPreQuestions  Boolean                    @default(true)
+  publishedAt        DateTime?
+  approvedByUserId   String?
+  approvedByName     String?
+  approvedAt         DateTime?
+  cancelReason       String?
+  clonedFromId       String?
+  createdAt          DateTime                   @default(now())
+  updatedAt          DateTime                   @updatedAt
+
+  classes            ParentMeetingClass[]
+  invitations        ParentMeetingInvitation[]
+  qrSessions         ParentMeetingQrSession[]
+  attendances        ParentMeetingAttendance[]
+  feedbackLinks      ParentMeetingFeedbackLink[]
+  minutes            ParentMeetingMinutes[]
+  tasks              ParentMeetingTask[]
+  auditLogs          ParentMeetingAuditLog[]
+
+  @@index([academicYearId, campusId, status])
+  @@index([startTime, status])
+  @@index([hostUserId])
+  @@map("parent_meetings")
+}
+
+model ParentMeetingClass {
+  id                  String        @id @default(cuid())
+  meetingId           String
+  classId             String
+  className           String
+  grade               String?
+  campusId            String
+  homeroomTeacherId   String?
+  homeroomTeacherName String?
+  roomOverride        String?
+  onlineLinkOverride  String?
+  preparationNotes    String?
+  keyDocumentsJson    String?
+  totalStudents       Int           @default(0)
+  createdAt           DateTime      @default(now())
+  updatedAt           DateTime      @updatedAt
+
+  meeting             ParentMeeting @relation(fields: [meetingId], references: [id], onDelete: Cascade)
+
+  @@unique([meetingId, classId])
+  @@index([classId])
+  @@index([homeroomTeacherId])
+  @@map("parent_meeting_classes")
+}
+
+model ParentMeetingInvitation {
+  id                   String        @id @default(cuid())
+  meetingId            String
+  classId              String
+  studentId            String
+  studentCode          String?
+  studentName          String
+  parentId             String
+  parentUserId         String?
+  parentName           String
+  parentPhone          String?
+  parentEmail          String?
+  relationship         String        @default("PHU_HUYNH")
+  rsvpStatus           String        @default("PENDING") // PENDING, CONFIRMED, ABSENT, DELEGATED
+  attendeeRole         String?       // BO, ME, NGUOI_GIAM_HO, NGUOI_DAI_DIEN, CA_BO_VA_ME
+  attendeeName         String?
+  attendeePhone        String?
+  delegateRelationship String?
+  absenceReason        String?
+  expectedHeadcount    Int           @default(1)
+  rsvpNote             String?
+  rsvpUpdatedAt        DateTime?
+  notifiedAt           DateTime?
+  createdAt            DateTime      @default(now())
+  updatedAt            DateTime      @updatedAt
+
+  meeting              ParentMeeting @relation(fields: [meetingId], references: [id], onDelete: Cascade)
+
+  @@unique([meetingId, studentId, parentId])
+  @@index([meetingId, classId, rsvpStatus])
+  @@index([parentId, studentId])
+  @@index([parentUserId])
+  @@map("parent_meeting_invitations")
+}
+
+model ParentMeetingQrSession {
+  id                  String        @id @default(cuid())
+  tokenHash           String        @unique
+  qrToken             String        @unique
+  meetingId           String
+  classId             String
+  studentId           String
+  parentId            String
+  issuedToUserId      String
+  attendeeRole        String        @default("PHU_HUYNH")
+  attendeeName        String?
+  status              String        @default("ACTIVE") // ACTIVE, USED, EXPIRED, REVOKED
+  expiresAt           DateTime
+  scanCount           Int           @default(0)
+  firstScannedAt      DateTime?
+  lastScannedAt       DateTime?
+  lastScannedByUserId String?
+  nonce               String
+  createdAt           DateTime      @default(now())
+  updatedAt           DateTime      @updatedAt
+
+  meeting             ParentMeeting @relation(fields: [meetingId], references: [id], onDelete: Cascade)
+
+  @@index([meetingId, studentId, parentId])
+  @@index([expiresAt, status])
+  @@map("parent_meeting_qr_sessions")
+}
+
+model ParentMeetingAttendance {
+  id               String        @id @default(cuid())
+  meetingId        String
+  classId          String
+  studentId        String
+  studentName      String?
+  parentId         String
+  qrSessionId      String?
+  checkInMethod    String        @default("QR_SCAN") // QR_SCAN, MANUAL
+  attendanceStatus String        @default("PRESENT") // PRESENT, LATE, EXCUSED_ABSENT, UNEXCUSED_ABSENT
+  attendeeName     String
+  attendeeRole     String        @default("PHU_HUYNH") // BO, ME, NGUOI_GIAM_HO, NGUOI_DAI_DIEN, CA_BO_VA_ME
+  attendeeCount    Int           @default(1)
+  relationshipNote String?
+  manualReason     String?       // NO_PHONE, QR_ERROR, NO_INTERNET, TWO_GUARDIANS, DELEGATE, LATE_ARRIVAL, OTHER
+  isLate           Boolean       @default(false)
+  checkedInAt      DateTime      @default(now())
+  verifiedByUserId String
+  verifiedByName   String
+  idempotencyKey   String        @unique
+  createdAt        DateTime      @default(now())
+  updatedAt        DateTime      @updatedAt
+
+  meeting          ParentMeeting @relation(fields: [meetingId], references: [id], onDelete: Cascade)
+
+  @@unique([meetingId, studentId, parentId])
+  @@index([meetingId, classId, attendanceStatus])
+  @@index([studentId, meetingId])
+  @@map("parent_meeting_attendance")
+}
+
+model ParentMeetingFeedbackLink {
+  id                  String        @id @default(cuid())
+  feedbackCode        String        @unique
+  meetingId           String
+  classId             String
+  campusId            String
+  academicYearId      String
+  studentId           String
+  studentName         String?
+  parentId            String
+  parentName          String?
+  threadId            String?
+  caseId              String?
+  stage               String        @default("PRE_MEETING") // PRE_MEETING, DURING_MEETING, POST_MEETING
+  topicGroup          String        @default("KET_QUA_HOC_TAP") // KET_QUA_HOC_TAP, CHAT_LUONG_MON_HOC, CO_VAN_HOC_TAP, PHOI_HOP_GVCN_GVBM, HOAT_DONG_GIAO_DUC, MOI_TRUONG_DICH_VU, KIEN_NGHI_KHAC
+  title               String
+  content             String
+  attachmentsJson     String?
+  visibilityScope     String        @default("PRIVATE") // PRIVATE, CLASS_SHARED_ANONYMOUS, ESCALATED
+  isAnonymousInMinutes Boolean      @default(true)
+  allowShareInSummary Boolean       @default(false)
+  receiverUserId      String
+  receiverName        String
+  assigneeUserId      String
+  assigneeName        String
+  assigneeRole        String        @default("GVCN") // GVCN, GVBM, CVHT, BGH, KT_DBCL, BO_PHAN_KHAC
+  dueAt               DateTime
+  businessStatus      String        @default("NEW") // NEW, IN_PROGRESS, WAITING_COORDINATION, RESPONDED, COMPLETED
+  resolutionSummary   String?
+  csatScore           Int?
+  csatComment         String?
+  csatRatedAt         DateTime?
+  createdAt           DateTime      @default(now())
+  updatedAt           DateTime      @updatedAt
+
+  meeting             ParentMeeting @relation(fields: [meetingId], references: [id], onDelete: Cascade)
+
+  @@index([meetingId, classId, businessStatus])
+  @@index([assigneeUserId, businessStatus])
+  @@index([parentId, studentId])
+  @@index([campusId, academicYearId, topicGroup])
+  @@map("parent_meeting_feedback_links")
+}
+
+model ParentMeetingMinutes {
+  id                     String                        @id @default(cuid())
+  meetingId              String
+  classId                String
+  className              String?
+  campusId               String
+  academicYearId         String
+  version                Int                           @default(1)
+  status                 String                        @default("DRAFT") // DRAFT, PENDING_APPROVAL, APPROVED, PUBLISHED, REJECTED
+  totalStudents          Int                           @default(0)
+  invitedCount           Int                           @default(0)
+  confirmedCount         Int                           @default(0)
+  presentStudentCount    Int                           @default(0)
+  actualAttendeeCount    Int                           @default(0)
+  attendanceRate         Float                         @default(0)
+  attendeeSummary        String?
+  presentationContent    String?
+  discussionIssues       String?
+  generalFeedbackSummary String?
+  conclusions            String?
+  agreedActions          String?
+  nextTasksSummary       String?
+  recorderUserId         String
+  recorderName           String
+  approverUserId         String?
+  approverName           String?
+  approvedAt             DateTime?
+  approvalNote           String?
+  publishedAt            DateTime?
+  createdAt              DateTime                      @default(now())
+  updatedAt              DateTime                      @updatedAt
+
+  meeting                ParentMeeting                 @relation(fields: [meetingId], references: [id], onDelete: Cascade)
+  versions               ParentMeetingMinutesVersion[]
+
+  @@unique([meetingId, classId])
+  @@index([campusId, status])
+  @@map("parent_meeting_minutes")
+}
+
+model ParentMeetingMinutesVersion {
+  id              String               @id @default(cuid())
+  minutesId       String
+  versionNumber   Int
+  snapshotJson    String
+  changedByUserId String
+  changedByName   String
+  changeSummary   String?
+  createdAt       DateTime             @default(now())
+
+  minutes         ParentMeetingMinutes @relation(fields: [minutesId], references: [id], onDelete: Cascade)
+
+  @@index([minutesId, versionNumber])
+  @@map("parent_meeting_minutes_versions")
+}
+
+model ParentMeetingTask {
+  id               String        @id @default(cuid())
+  taskCode         String        @unique
+  meetingId        String
+  classId          String
+  campusId         String
+  academicYearId   String
+  minutesId        String?
+  feedbackLinkId   String?
+  studentId        String?
+  studentName      String?
+  linkedWorkTaskId String?
+  title            String
+  description      String?
+  assigneeUserId   String
+  assigneeName     String
+  assigneeRole     String        @default("GVCN") // GVCN, GVBM, CVHT, BGH, KT_DBCL, BO_PHAN_KHAC
+  department       String?
+  dueAt            DateTime
+  priority         String        @default("NORMAL") // LOW, NORMAL, HIGH, URGENT
+  status           String        @default("NEW") // NEW, IN_PROGRESS, WAITING_COORDINATION, COMPLETED, CANCELLED
+  visibleToParents Boolean       @default(false)
+  evidenceUrl      String?
+  evidenceNote     String?
+  resultSummary    String?
+  completedAt      DateTime?
+  createdByUserId  String
+  createdByName    String
+  createdAt        DateTime      @default(now())
+  updatedAt        DateTime      @updatedAt
+
+  meeting          ParentMeeting @relation(fields: [meetingId], references: [id], onDelete: Cascade)
+
+  @@index([meetingId, classId, status])
+  @@index([assigneeUserId, status, dueAt])
+  @@index([campusId, academicYearId])
+  @@map("parent_meeting_tasks")
+}
+
+model ParentMeetingAuditLog {
+  id           String         @id @default(cuid())
+  meetingId    String?
+  classId      String?
+  actorUserId  String
+  actorName    String
+  actorRole    String
+  action       String
+  targetType   String
+  targetId     String
+  metadataJson String?
+  ipAddress    String?
+  createdAt    DateTime       @default(now())
+
+  meeting      ParentMeeting? @relation(fields: [meetingId], references: [id], onDelete: SetNull)
+
+  @@index([meetingId, createdAt])
+  @@index([actorUserId, createdAt])
+  @@map("parent_meeting_audit_logs")
+}
+
 
 

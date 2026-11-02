@@ -40,9 +40,17 @@ export async function getRolePermissions(roleCode: string): Promise<any[]> {
   if (!pAny || !pAny.permission) return []
 
   try {
-    return await pAny.permission.findMany({
+    const raw = await pAny.permission.findMany({
       where: { roleCode: { in: variants } }
     })
+    const perms = [...raw]
+    const studentInfoPerm = perms.find((p: any) => p.module === "STUDENT_INFO")
+    if (studentInfoPerm && !perms.some((p: any) => p.module === "KET_QUA_KHAO_SAT")) {
+      perms.push({ ...studentInfoPerm, module: "KET_QUA_KHAO_SAT" })
+      perms.push({ ...studentInfoPerm, module: "KQKS_K12" })
+      perms.push({ ...studentInfoPerm, module: "KQKS_MAM_NON" })
+    }
+    return perms
   } catch (err) {
     console.error("Error fetching permissions for role:", roleCode, err)
     return []
@@ -63,6 +71,54 @@ export async function getRoleReadableModules(roleCode: string): Promise<string[]
   const readableModules = new Set<string>(
     permissions.filter((p: any) => p.canRead).map((p: any) => p.module)
   )
+
+  if (readableModules.has("STUDENT_INFO") || readableModules.has("STUDENT_INFO_K12")) {
+    readableModules.add("KET_QUA_KHAO_SAT")
+    readableModules.add("KQKS_K12")
+    readableModules.add("KQKS_MAM_NON")
+  }
+
+  // Cho phép Ban KT&ĐBCL, Quản lý Cơ sở, BGH, Giáo vụ và Giáo viên truy cập chức năng In bảng tên Họp PHHS trong Học liệu
+  if (
+    [
+      "KT_DBCL",
+      "KTDBCL",
+      "BAN_DHCM",
+      "GDCS",
+      "GĐCS",
+      "GD_CS",
+      "GĐ_CS",
+      "GIAO_VU_CS",
+      "GIAO_VU",
+      "BGH",
+      "BGH_CS",
+      "TEACHER",
+      "GV",
+      "GIAO_VIEN",
+    ].some((r) => upper === r || upper.includes(r))
+  ) {
+    readableModules.add("NAMEPLATES_PHHS")
+  }
+
+  if (
+    [
+      "KT_DBCL",
+      "KTDBCL",
+      "BAN_DHCM",
+      "GDCS",
+      "GĐCS",
+      "GD_CS",
+      "GĐ_CS",
+      "BGH",
+      "BGH_CS",
+    ].some((r) => upper === r || upper.includes(r))
+  ) {
+    readableModules.add("KTDBCL_HOP_PHU_HUYNH")
+    readableModules.add("KTDBCL_HPH_OVERVIEW")
+    readableModules.add("KTDBCL_HPH_MEETINGS")
+    readableModules.add("KTDBCL_HPH_FEEDBACK")
+    readableModules.add("KTDBCL_HPH_MINUTES")
+  }
 
   // Automatically grant parent module if any submodule is readable
   APP_CATEGORIES.forEach((cat: any) => {
