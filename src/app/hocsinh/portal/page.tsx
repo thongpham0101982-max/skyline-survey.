@@ -371,8 +371,12 @@ export default function StudentPortalHomePage() {
             <div className="bg-white rounded-3xl p-6 border-2 border-purple-300 shadow-sm hover:shadow-xl hover:-translate-y-1 transition-all duration-300 flex flex-col justify-between space-y-5 relative overflow-hidden group">
               <div className="space-y-3.5">
                 <div className="flex items-center justify-between gap-2">
-                  <div className="w-14 h-14 rounded-2xl bg-purple-50 text-purple-700 flex items-center justify-center font-bold shadow-inner border border-purple-200 group-hover:scale-105 transition-transform">
-                    <Award className="w-7 h-7" />
+                  <div className="w-14 h-14 rounded-2xl bg-purple-50 text-purple-700 flex items-center justify-center font-bold shadow-inner border border-purple-200 group-hover:scale-105 transition-transform p-1.5">
+                    <img
+                      src="/images/skyline-mascot-flag.png"
+                      alt="Linh vật Sky-Line cầm cờ"
+                      className="w-full h-full object-contain"
+                    />
                   </div>
                   <span
                     className={`text-[10px] font-black uppercase px-2.5 py-1 rounded-full ${
