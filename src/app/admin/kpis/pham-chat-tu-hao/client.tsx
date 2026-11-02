@@ -856,14 +856,18 @@ export default function AdminReflectionPrideClient() {
           </div>
 
           {/* NAVIGATION TABS */}
-          <div className="mt-5 flex gap-1.5 overflow-x-auto pb-1">
+          <div className="mt-5 flex flex-wrap gap-1.5 pb-1">
             {[
               { id: 'OVERVIEW', label: '1. Tổng quan KPI & Tiến độ', icon: BarChart3 },
               { id: 'QUALITIES', label: '2. Phân tích 4 Phẩm chất IP2.1 & Tự hào SKL', icon: Award },
               { id: 'PRIDE_NPS', label: '3. Phân tích Pride NPS', icon: Heart },
               { id: 'CLASSES', label: '4. Tổng hợp tất cả lớp', icon: Users },
               { id: 'COMPARISON', label: '5. So sánh Cơ sở, Khối & HK1/HK2', icon: Layers },
-              { id: 'PERIODS', label: '6. Quản lý Kỳ khảo sát', icon: Calendar },
+              {
+                id: 'PERIODS',
+                label: `6. Quản lý Kỳ khảo sát (${data?.periods?.length || 0})`,
+                icon: Calendar,
+              },
               { id: 'REPORTS', label: '7. Báo cáo & Xuất Excel/PDF', icon: Download },
             ].map((t) => {
               const Icon = t.icon;
@@ -873,7 +877,7 @@ export default function AdminReflectionPrideClient() {
                   key={t.id}
                   type="button"
                   onClick={() => setActiveTab(t.id as AdminTab)}
-                  className={`inline-flex shrink-0 items-center gap-2 rounded-t-xl px-4 py-2.5 text-xs font-bold transition ${
+                  className={`inline-flex shrink-0 items-center gap-2 rounded-xl px-3.5 py-2 text-xs font-bold transition ${
                     active
                       ? 'bg-[#F6F5FA] text-purple-950 shadow-sm'
                       : 'bg-white/10 text-purple-100 hover:bg-white/20'
@@ -935,6 +939,69 @@ export default function AdminReflectionPrideClient() {
                ===================================================================== */}
             {activeTab === 'OVERVIEW' && (
               <div className="space-y-6">
+                {/* THÔNG TIN KỲ KHẢO SÁT ĐANG ÁP DỤNG */}
+                {data.selectedPeriod && (
+                  <div className="flex flex-col justify-between gap-4 rounded-2xl border border-purple-200 bg-white p-4 shadow-sm sm:flex-row sm:items-center">
+                    <div className="space-y-1">
+                      <div className="flex flex-wrap items-center gap-2">
+                        <span className="rounded-md bg-purple-100 px-2 py-0.5 text-[11px] font-extrabold text-purple-900">
+                          KỲ KHẢO SÁT ĐANG XEM
+                        </span>
+                        <span className="rounded-md bg-slate-100 px-2 py-0.5 text-[11px] font-bold text-slate-700">
+                          Mã kỳ: {data.selectedPeriod.code}
+                        </span>
+                        <span className="rounded-md bg-amber-100 px-2 py-0.5 text-[11px] font-bold text-amber-900">
+                          {data.selectedPeriod.semester} • Phiên bản {data.selectedPeriod.criteriaVersion}
+                        </span>
+                        {periodStatusBadge(data.selectedPeriod.status)}
+                      </div>
+                      <h2 className="text-base font-extrabold text-slate-900">
+                        {data.selectedPeriod.title}
+                      </h2>
+                      <p className="text-xs text-slate-600">
+                        Thời gian mở kỳ:{' '}
+                        <strong>
+                          {data.selectedPeriod.startDate
+                            ? new Date(data.selectedPeriod.startDate).toLocaleDateString('vi-VN')
+                            : '—'}
+                        </strong>{' '}
+                        đến{' '}
+                        <strong>
+                          {data.selectedPeriod.extendedUntil
+                            ? new Date(data.selectedPeriod.extendedUntil).toLocaleDateString('vi-VN')
+                            : data.selectedPeriod.endDate
+                            ? new Date(data.selectedPeriod.endDate).toLocaleDateString('vi-VN')
+                            : '—'}
+                        </strong>{' '}
+                        • Phạm vi: Khối {(data.selectedPeriod.targetGrades || ['4', '5', '6', '7', '8', '9', '10', '11', '12']).join(', ')}
+                      </p>
+                    </div>
+                    <div className="flex flex-wrap items-center gap-2">
+                      <button
+                        type="button"
+                        onClick={() => setActiveTab('PERIODS')}
+                        className="inline-flex items-center gap-1.5 rounded-xl border border-purple-200 bg-purple-50 px-3.5 py-2 text-xs font-extrabold text-purple-900 transition hover:bg-purple-100"
+                      >
+                        <Calendar className="h-3.5 w-3.5" />
+                        Quản lý Kỳ khảo sát ({data.periods.length})
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setExtendModalPeriod(data.selectedPeriod);
+                          setExtendDateValue(
+                            (data.selectedPeriod?.extendedUntil || data.selectedPeriod?.endDate || '').slice(0, 10)
+                          );
+                        }}
+                        className="inline-flex items-center gap-1.5 rounded-xl border border-amber-200 bg-amber-50 px-3 py-2 text-xs font-bold text-amber-900 transition hover:bg-amber-100"
+                      >
+                        <Clock className="h-3.5 w-3.5" />
+                        Gia hạn kỳ
+                      </button>
+                    </div>
+                  </div>
+                )}
+
                 {/* 4 KPI Cards trọng tâm */}
                 <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
                   {/* Card 1: KPI IP2.1 Chính thức */}

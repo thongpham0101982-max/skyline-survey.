@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server"
 import { prisma } from "@/lib/db"
+import { getStudentSession } from "@/lib/student-session"
 import { resolveAdvisoryCaller, verifyStudentRelationship } from "@/lib/advisory/rbac-guard"
 import { ensureReflectionPrideTables } from "@/lib/reflection-pride/db-sync"
 import {
@@ -210,26 +211,34 @@ async function buildSsmAcademicAndTrainingSnapshot(student: any, academicYearId:
 export async function GET(req: Request) {
   try {
     await ensureReflectionPrideTables()
+    const studentSess = await getStudentSession().catch(() => null)
     const caller = await resolveAdvisoryCaller()
-    if (!caller.authenticated) {
+    if (!caller.authenticated && !studentSess?.studentId) {
       return jsonResponse({ error: "Chưa đăng nhập hệ thống." }, 401)
     }
 
     const { searchParams } = new URL(req.url)
-    const targetStudentId = searchParams.get("studentId") || caller.studentId || ""
+    const explicitStudentId = searchParams.get("studentId") || ""
+    const targetStudentId = explicitStudentId || studentSess?.studentId || caller.studentId || ""
     const requestedPeriodId = searchParams.get("periodId") || ""
 
     if (!targetStudentId) {
       return jsonResponse({ error: "Không xác định được hồ sơ học sinh." }, 400)
     }
 
-    const rel = await verifyStudentRelationship(caller, targetStudentId)
-    if (!rel.allowed || !rel.student) {
-      return jsonResponse({ error: rel.reason || "Không có quyền truy cập hồ sơ học sinh này." }, 403)
+    let resolvedStudentId = targetStudentId
+    if (studentSess?.studentId && (!explicitStudentId || explicitStudentId === studentSess.studentId)) {
+      resolvedStudentId = studentSess.studentId
+    } else {
+      const rel = await verifyStudentRelationship(caller, targetStudentId)
+      if (!rel.allowed || !rel.student) {
+        return jsonResponse({ error: rel.reason || "Không có quyền truy cập hồ sơ học sinh này." }, 403)
+      }
+      resolvedStudentId = rel.student.id
     }
 
     const student = await prisma.student.findUnique({
-      where: { id: rel.student.id },
+      where: { id: resolvedStudentId },
       include: {
         class: true,
         campus: true,
@@ -455,27 +464,35 @@ export async function GET(req: Request) {
 export async function POST(req: Request) {
   try {
     await ensureReflectionPrideTables()
+    const studentSess = await getStudentSession().catch(() => null)
     const caller = await resolveAdvisoryCaller()
-    if (!caller.authenticated) {
+    if (!caller.authenticated && !studentSess?.studentId) {
       return jsonResponse({ error: "Chưa đăng nhập hệ thống." }, 401)
     }
 
     const body = await req.json()
     const action = String(body.action || "SAVE_DRAFT").toUpperCase()
-    const targetStudentId = body.studentId || caller.studentId || ""
+    const explicitStudentId = body.studentId ? String(body.studentId) : ""
+    const targetStudentId = explicitStudentId || studentSess?.studentId || caller.studentId || ""
     const periodId = String(body.periodId || "").trim()
 
     if (!targetStudentId || !periodId) {
       return jsonResponse({ error: "Thiếu thông tin học sinh hoặc kỳ khảo sát." }, 400)
     }
 
-    const rel = await verifyStudentRelationship(caller, targetStudentId)
-    if (!rel.allowed || !rel.student) {
-      return jsonResponse({ error: rel.reason || "Không có quyền thực hiện thao tác này." }, 403)
+    let resolvedStudentId = targetStudentId
+    if (studentSess?.studentId && (!explicitStudentId || explicitStudentId === studentSess.studentId)) {
+      resolvedStudentId = studentSess.studentId
+    } else {
+      const rel = await verifyStudentRelationship(caller, targetStudentId)
+      if (!rel.allowed || !rel.student) {
+        return jsonResponse({ error: rel.reason || "Không có quyền thực hiện thao tác này." }, 403)
+      }
+      resolvedStudentId = rel.student.id
     }
 
     const student = await prisma.student.findUnique({
-      where: { id: rel.student.id },
+      where: { id: resolvedStudentId },
       include: { class: true, campus: true }
     })
 
