@@ -199,54 +199,34 @@ export default function StudentPortalHomePage() {
         }
       />
 
-      {/* 1B. NHIỆM VỤ MỚI: HÀNH TRÌNH TRƯỞNG THÀNH 5 PHẨM CHẤT & PRIDE NPS (CHỈ HIỂN THỊ CHO KHỐI 4-12) */}
-      {(reflectionTaskInfo?.eligible ?? (Number(gradeNum) >= 4 && Number(gradeNum) <= 12)) && (
-        reflectionTaskInfo?.hasOpenTask && reflectionTaskInfo?.activePeriod ? (
-          <SkylineFlagMascot
-            variant={reflectionTaskInfo?.reflection?.status === "SUBMITTED" ? "celebration" : "notification"}
-            badgeText={`HÀNH TRÌNH TRƯỞNG THÀNH • KHỐI ${gradeNum} • KỲ ĐANG MỞ`}
-            title={
-              reflectionTaskInfo?.reflection?.status === "SUBMITTED"
-                ? `Bạn đã hoàn thành Tự nhìn nhận 5 Phẩm chất (${reflectionTaskInfo.activePeriod.title})`
-                : `Nhiệm vụ mới: ${reflectionTaskInfo.activePeriod.title}`
-            }
-            message={
-              reflectionTaskInfo.activePeriod.guidelineMascotMsg ||
-              "Cùng Linh vật Sky-Line cầm cờ nhìn lại kết quả học tập, tự đánh giá 5 phẩm chất theo 14 tiêu chí, đặt mục tiêu phát triển bản thân và phản hồi khảo sát Tự hào Sky-Line (Pride NPS) ẩn danh nhé!"
-            }
-            actionButton={
-              <Link
-                href="/hocsinh/portal/reflection"
-                className="inline-flex items-center gap-2 rounded-xl bg-amber-400 px-5 py-2.5 text-xs font-extrabold text-purple-950 shadow-md transition hover:bg-amber-300"
-              >
-                <span>
-                  {reflectionTaskInfo?.reflection?.status === "SUBMITTED"
-                    ? "Xem lại Hành trình trưởng thành & Phản hồi Pride NPS"
-                    : "Bắt đầu Hành trình trưởng thành (7 bước)"}
-                </span>
-                <ArrowRight className="h-4 w-4" />
-              </Link>
-            }
-          />
-        ) : (
-          <SkylineFlagMascot
-            variant="guide"
-            badgeText={`HÀNH TRÌNH TRƯỞNG THÀNH • KHỐI ${gradeNum} • ${
-              reflectionTaskInfo?.periodState === "CLOSED" ? "ĐÃ ĐÓNG KỲ" : "CHƯA MỞ KỲ MỚI"
-            }`}
-            title="Hành trình Trưởng thành 5 Phẩm chất & Tự hào Sky-Line (Pride NPS)"
-            message="Cùng Linh vật Sky-Line cầm cờ theo dõi kết quả học tập - rèn luyện, tự nhìn nhận 5 phẩm chất theo 14 tiêu chí (Trách nhiệm, Yêu thương, Tự lập, Hợp tác, Tự hào Sky-Line) và đặt mục tiêu phát triển bản thân khi Ban KT&ĐBCL mở kỳ khảo sát."
-            actionButton={
-              <Link
-                href="/hocsinh/portal/reflection"
-                className="inline-flex items-center gap-2 rounded-xl bg-purple-700 px-5 py-2.5 text-xs font-extrabold text-white shadow-md transition hover:bg-purple-800"
-              >
-                <span>Mở Hành trình trưởng thành (7 bước)</span>
-                <ArrowRight className="h-4 w-4" />
-              </Link>
-            }
-          />
-        )
+      {/* 1B. NHIỆM VỤ MỚI: HÀNH TRÌNH TRƯỞNG THÀNH 5 PHẨM CHẤT & PRIDE NPS (CHỈ HIỂN THỊ KHI ADMIN MỞ KỲ) */}
+      {reflectionTaskInfo?.eligible && reflectionTaskInfo?.hasOpenTask && reflectionTaskInfo?.activePeriod && (
+        <SkylineFlagMascot
+          variant={reflectionTaskInfo?.reflection?.status === "SUBMITTED" ? "celebration" : "notification"}
+          badgeText={`HÀNH TRÌNH TRƯỞNG THÀNH • KHỐI ${gradeNum} • KỲ ĐANG MỞ`}
+          title={
+            reflectionTaskInfo?.reflection?.status === "SUBMITTED"
+              ? `Bạn đã hoàn thành Tự nhìn nhận 5 Phẩm chất (${reflectionTaskInfo.activePeriod.title})`
+              : `Nhiệm vụ mới: ${reflectionTaskInfo.activePeriod.title}`
+          }
+          message={
+            reflectionTaskInfo.activePeriod.guidelineMascotMsg ||
+            "Cùng Linh vật Sky-Line cầm cờ nhìn lại kết quả học tập, tự đánh giá 5 phẩm chất theo 14 tiêu chí, đặt mục tiêu phát triển bản thân và phản hồi khảo sát Tự hào Sky-Line (Pride NPS) ẩn danh nhé!"
+          }
+          actionButton={
+            <Link
+              href="/hocsinh/portal/reflection"
+              className="inline-flex items-center gap-2 rounded-xl bg-amber-400 px-5 py-2.5 text-xs font-extrabold text-purple-950 shadow-md transition hover:bg-amber-300"
+            >
+              <span>
+                {reflectionTaskInfo?.reflection?.status === "SUBMITTED"
+                  ? "Xem lại Hành trình trưởng thành & Phản hồi Pride NPS"
+                  : "Bắt đầu Hành trình trưởng thành (7 bước)"}
+              </span>
+              <ArrowRight className="h-4 w-4" />
+            </Link>
+          }
+        />
       )}
 
       {/* 2. HỒ SƠ CHỨNG CHỈ & KẾT QUẢ KHẢO THÍ QUỐC TẾ (NẾU CÓ) */}
