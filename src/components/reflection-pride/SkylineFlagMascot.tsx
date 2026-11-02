@@ -77,7 +77,7 @@ export function SkylineFlagMascot({
     },
   };
 
-  const style = variantStyles[variant];
+  const style = variantStyles[variant] || variantStyles.guide;
   const svgSize = size === 'sm' ? 84 : size === 'lg' ? 132 : 108;
 
   return (

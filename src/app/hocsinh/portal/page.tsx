@@ -230,7 +230,7 @@ export default function StudentPortalHomePage() {
           />
         ) : (
           <SkylineFlagMascot
-            variant="guideline"
+            variant="guide"
             badgeText={`HÀNH TRÌNH TRƯỞNG THÀNH • KHỐI ${gradeNum} • ${
               reflectionTaskInfo?.periodState === "CLOSED" ? "ĐÃ ĐÓNG KỲ" : "CHƯA MỞ KỲ MỚI"
             }`}
