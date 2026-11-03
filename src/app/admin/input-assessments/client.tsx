@@ -564,6 +564,7 @@ export function InputAssessmentsClient({
   const TAB_PERMISSION_MAP: Record<string, string> = {
     periods: "INPUT_ASSESSMENTS_PERIODS",
     categories: "INPUT_ASSESSMENTS_CATEGORIES",
+    regulation: "INPUT_ASSESSMENTS_CATEGORIES",
     subjects: "INPUT_ASSESSMENTS_SUBJECTS",
     mapping: "INPUT_ASSESSMENTS_MAPPING",
     students: "INPUT_ASSESSMENTS_STUDENTS",
@@ -573,7 +574,7 @@ export function InputAssessmentsClient({
 
   const getTabPermissions = (tabId: string) => {
     const userRole = (currentUser?.role || "").toUpperCase();
-    if (userRole === "ADMIN" || userRole === "KT_DBCL" || tabId === "categories") {
+    if (userRole === "ADMIN" || userRole === "KT_DBCL" || tabId === "categories" || tabId === "regulation") {
       return { canRead: true, canCreate: true, canUpdate: true, canDelete: true };
     }
 
@@ -760,14 +761,14 @@ export function InputAssessmentsClient({
       const urlTab = params.get("tab")
       const urlSubTab = params.get("subTab")
       const urlSub = params.get("sub") || params.get("catTab")
-      if (urlTab === "categories" || urlSubTab === "categories" || urlSub === "regulation" || urlSub === "orientation") {
+      if (urlTab === "regulation" || urlSubTab === "regulation" || urlSub === "regulation") {
+        setTab("regulation")
+      } else if (urlTab === "categories" || urlSubTab === "categories" || urlSub === "orientation") {
         setTab("categories")
         if (urlSub === "orientation") {
           setCatSubTab("orientation")
-        } else if (urlSub === "regulation") {
-          setCatSubTab("regulation")
         }
-      } else if (urlSubTab && ["categories", "subjects", "mapping", "periods", "students"].includes(urlSubTab)) {
+      } else if (urlSubTab && ["categories", "subjects", "mapping", "regulation", "periods", "students"].includes(urlSubTab)) {
         setTab(urlSubTab)
       }
     }
@@ -4452,7 +4453,7 @@ ${reportForm.directorNote}`;
 
   useEffect(() => { fetchPeriods() }, [fetchPeriods])
   useEffect(() => { if (tab === "students") fetchStudents() }, [tab, fetchStudents])
-  useEffect(() => { if (tab === "categories") fetchConfigs() }, [tab, fetchConfigs])
+  useEffect(() => { if (tab === "categories" || tab === "regulation") fetchConfigs() }, [tab, fetchConfigs])
   useEffect(() => { if (tab === "assignments") fetchAssignments() }, [tab, fetchAssignments])
 
   useEffect(() => {
@@ -5829,13 +5830,14 @@ const [customCommitmentSubjects, setCustomCommitmentSubjects] = useState<string[
       <div className="bg-white border border-slate-200 shadow-sm rounded-xl px-1 py-1">
         <div className="flex flex-wrap gap-0.5">
           {[
-            { id:"categories",           label:"Danh m\u1ee5c",   tip:"Danh m\u1ee5c & Nh\u1eadp Quy ch\u1ebf Tuy\u1ec3n sinh",            icon:Settings },
+            { id:"categories",           label:"Danh m\u1ee5c",   tip:"Danh m\u1ee5c Tuy\u1ec3n sinh & C\u00e2u h\u1ecfi \u0111\u1ecbnh h\u01b0\u1edbng",            icon:Settings },
             { id:"subjects",             label:"M\u00f4n KS",     tip:"M\u00f4n kh\u1ea3o s\u00e1t",        icon:BookOpen },
             { id:"mapping",              label:"C\u1ea5u h\u00ecnh",   tip:"C\u1ea5u h\u00ecnh theo Kh\u1ed1i",  icon:Layers },
+            { id:"regulation",           label:"Nh\u1eadp quy ch\u1ebf tuy\u1ec3n sinh", tip:"Nh\u1eadp & C\u1ea5u h\u00ecnh Quy ch\u1ebf Tuy\u1ec3n sinh", icon:ClipboardList },
             { id:"periods",              label:"T\u1ea1o \u0111\u1ee3t kh\u1ea3o s\u00e1t",      tip:"K\u1ef3 & \u0110\u1ee3t kh\u1ea3o s\u00e1t",        icon:Clock },
             { id:"students",             label:"Danh s\u00e1ch Kh\u1ea3o s\u00e1t",   tip:"DS HS kh\u1ea3o s\u00e1t",      icon:Users },
 
-          ].filter(t => !(mode === "input" && ["categories", "subjects", "mapping"].includes(t.id))).map(t => {
+          ].filter(t => !(mode === "input" && ["categories", "subjects", "mapping", "regulation"].includes(t.id))).map(t => {
             const p = getTabPermissions(t.id);
             const canRead = p.canRead;
             const isTabReadOnly = canRead && !p.canCreate && !p.canUpdate && !p.canDelete;
@@ -9954,6 +9956,21 @@ const [customCommitmentSubjects, setCustomCommitmentSubjects] = useState<string[
         </div>
       )}
 
+      {/* ===== TAB: REGULATION (NHẬP QUY CHẾ TUYỂN SINH) ===== */}
+      {tab === "regulation" && (
+        <div className={"space-y-5 animate-in fade-in slide-in-from-bottom-2 duration-500 " + (isReadOnly ? "select-none" : "")}>
+          <AdmissionRegulationManager
+            initialConfig={parseAdmissionRegulationConfig(configs)}
+            availableSubjects={subjectsList}
+            availableSystems={currentEduSystems.length > 0 ? currentEduSystems : eduSystems}
+            readOnly={isReadOnly}
+            onConfigSaved={() => {
+              fetchConfigs()
+            }}
+          />
+        </div>
+      )}
+
       {/* ===== TAB: CATEGORIES & ORIENTATION QUESTIONS ===== */}
       {tab === "categories" && (
         <div className={"space-y-5 animate-in fade-in slide-in-from-bottom-2 duration-500 " + (isReadOnly ? "select-none" : "")}>
@@ -9964,7 +9981,7 @@ const [customCommitmentSubjects, setCustomCommitmentSubjects] = useState<string[
             </div>
           )}
 
-          {/* SUB-TABS NAVIGATION: Danh mục chung vs Nhập Quy chế Tuyển sinh vs Ngân hàng Câu hỏi định hướng */}
+          {/* SUB-TABS NAVIGATION: Danh mục chung vs Ngân hàng Câu hỏi định hướng */}
           <div className="flex flex-wrap items-center justify-between gap-3 bg-white p-2.5 rounded-3xl border border-slate-200 shadow-xs">
             <div className="flex flex-wrap items-center gap-2">
               <button
@@ -9982,24 +9999,6 @@ const [customCommitmentSubjects, setCustomCommitmentSubjects] = useState<string[
                   catSubTab === "general" ? "bg-white/20 text-white" : "bg-slate-200 text-slate-700"
                 }`}>
                   8 nhóm
-                </span>
-              </button>
-
-              <button
-                type="button"
-                onClick={() => setCatSubTab("regulation")}
-                className={`flex items-center gap-2 px-5 py-2.5 rounded-2xl text-xs font-black transition-all cursor-pointer ${
-                  catSubTab === "regulation"
-                    ? "bg-gradient-to-r from-[#003B3A] via-[#005854] to-[#00736E] text-white shadow-md shadow-teal-900/20"
-                    : "text-slate-600 hover:text-[#005854] hover:bg-teal-50"
-                }`}
-              >
-                <BookOpen className="w-4 h-4" />
-                <span>Nhập Quy chế Tuyển sinh</span>
-                <span className={`px-2 py-0.5 rounded-full text-[10px] font-bold ${
-                  catSubTab === "regulation" ? "bg-white/20 text-white" : "bg-teal-100 text-[#005854]"
-                }`}>
-                  {parseAdmissionRegulationConfig(configs).rules.length} nhóm
                 </span>
               </button>
 
@@ -10025,8 +10024,6 @@ const [customCommitmentSubjects, setCustomCommitmentSubjects] = useState<string[
             <div className="text-xs text-slate-400 font-semibold px-3">
               {catSubTab === "orientation"
                 ? "Phiếu định hướng 2 Tab • Đánh giá định tính phi điểm số"
-                : catSubTab === "regulation"
-                ? "Quy chế xét tuyển học bạ, miễn môn & phân luồng khảo sát K-12"
                 : "Cấu hình chuẩn hệ thống khảo sát"}
             </div>
           </div>
@@ -10075,21 +10072,6 @@ const [customCommitmentSubjects, setCustomCommitmentSubjects] = useState<string[
                   </div>
                 </div>
               ))}
-            </div>
-          )}
-
-          {/* VIEW 1B: NHẬP & CẤU HÌNH QUY CHẾ TUYỂN SINH */}
-          {catSubTab === "regulation" && (
-            <div className="animate-in fade-in duration-300">
-              <AdmissionRegulationManager
-                initialConfig={parseAdmissionRegulationConfig(configs)}
-                availableSubjects={subjectsList}
-                availableSystems={currentEduSystems.length > 0 ? currentEduSystems : eduSystems}
-                readOnly={isReadOnly}
-                onConfigSaved={() => {
-                  fetchConfigs()
-                }}
-              />
             </div>
           )}
 
