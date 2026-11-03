@@ -6,7 +6,14 @@ import {
   AlertCircle, X, Plus, RefreshCw, Users, ExternalLink, ArrowUpRight, Sparkles, Check, RotateCcw,
   Award, ShieldCheck, Zap, FileCheck2, School
 } from "lucide-react"
-import { analyzeStudentAcademicAndRegulation, matchRecommendedSubjectIds } from "@/lib/admissionRegulationEngine"
+import {
+  analyzeStudentAcademicAndRegulation,
+  matchRecommendedSubjectIds,
+  AdmissionRegulationConfig,
+  DEFAULT_ADMISSION_REGULATIONS,
+  parseAdmissionRegulationConfig
+} from "@/lib/admissionRegulationEngine"
+import { AdmissionRegulationManager } from "@/components/admin/AdmissionRegulationManager"
 
 // ─── Helpers ───
 function getInitials(name?: string) {
@@ -496,6 +503,19 @@ export function PhanCongK12Client({
   }
 
   const [teacherAssignBatchMode, setTeacherAssignBatchMode] = useState<"current" | "all">("current")
+  const [regulationConfig, setRegulationConfig] = useState<AdmissionRegulationConfig>(DEFAULT_ADMISSION_REGULATIONS)
+  const [showRegulationModal, setShowRegulationModal] = useState(false)
+
+  useEffect(() => {
+    fetch("/api/assessment-configs?categoryType=QUY_CHE_TS")
+      .then(r => (r.ok ? r.json() : []))
+      .then(data => {
+        if (Array.isArray(data) && data.length > 0) {
+          setRegulationConfig(parseAdmissionRegulationConfig(data))
+        }
+      })
+      .catch(() => {})
+  }, [])
 
   const getSystemBadgeStyle = (sys?: string) => {
     const s = (sys || "").toUpperCase()
@@ -543,7 +563,7 @@ export function PhanCongK12Client({
     const allSystems = new Set<string>()
 
     targetStudents.forEach(st => {
-      const insight = analyzeStudentAcademicAndRegulation(st)
+      const insight = analyzeStudentAcademicAndRegulation(st, regulationConfig)
       insight.recommendedSubjectNames.forEach(n => allRecSubjectNames.add(n))
       if (st.grade) allGrades.add(String(st.grade).replace(/\D/g, "") || String(st.grade))
       const sys = String(st.surveySystem || "").toUpperCase().trim()
@@ -598,6 +618,15 @@ export function PhanCongK12Client({
           </div>
 
           <div className="flex items-center gap-2">
+            <button
+              type="button"
+              onClick={() => setShowRegulationModal(true)}
+              title="Nhập & Cấu hình Quy chế Tuyển sinh, điều kiện miễn môn và ngưỡng xét học bạ"
+              className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-bold text-white bg-gradient-to-r from-[#005854] to-[#00736E] hover:from-[#003B3A] hover:to-[#005854] rounded-xl shadow-2xs transition-all cursor-pointer"
+            >
+              <BookOpen className="w-3.5 h-3.5 text-teal-200" />
+              <span>Nhập Quy chế Tuyển sinh</span>
+            </button>
             <button
               onClick={fetchPeriods}
               disabled={pLoading}
@@ -709,7 +738,16 @@ export function PhanCongK12Client({
                   <span>Phân bổ Học sinh theo Khối trong đợt</span>
                   {statsLoading && <Loader2 className="w-3.5 h-3.5 text-[#00736E] animate-spin" />}
                 </div>
-                <div className="flex items-center gap-3">
+                <div className="flex flex-wrap items-center gap-3">
+                  <button
+                    type="button"
+                    onClick={() => setShowRegulationModal(true)}
+                    className="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg bg-white hover:bg-teal-50 text-[#005854] border border-teal-200/90 text-[11px] font-bold transition-all cursor-pointer shadow-2xs"
+                    title="Nhập & Cấu hình Quy chế Tuyển sinh (Ngưỡng điểm học bạ, môn miễn, môn bắt buộc)"
+                  >
+                    <BookOpen className="w-3.5 h-3.5 text-[#00736E]" />
+                    <span>Nhập Quy chế ({regulationConfig.rules.length} nhóm)</span>
+                  </button>
                   {gradesWithStudents.length > 0 && (
                     <button
                       type="button"
@@ -723,7 +761,7 @@ export function PhanCongK12Client({
                     </button>
                   )}
                   <span className="text-[11px] text-slate-400 font-normal">
-                    Bấm vào từng khối để xem danh sách học sinh
+                    Bấm vào từng khối để xem KQHT & đối chiếu Quy chế
                   </span>
                 </div>
               </div>
@@ -782,6 +820,15 @@ export function PhanCongK12Client({
                             <Zap className="w-3 h-3 text-teal-200" />
                             <span>Nạp Môn • Khối • Hệ theo Quy chế</span>
                           </button>
+                          <button
+                            type="button"
+                            onClick={() => setShowRegulationModal(true)}
+                            className="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg bg-white hover:bg-teal-50 text-[#005854] border border-teal-200 text-[11px] font-bold transition-all cursor-pointer shadow-2xs"
+                            title="Mở bảng Nhập & Cấu hình Quy chế Tuyển sinh"
+                          >
+                            <BookOpen className="w-3 h-3 text-[#00736E]" />
+                            <span>Nhập Quy chế</span>
+                          </button>
                           {!asSelGrades.includes(String(grade)) && (
                             <button
                               type="button"
@@ -815,7 +862,7 @@ export function PhanCongK12Client({
                           </thead>
                           <tbody className="divide-y divide-slate-100 bg-white">
                             {studentsList.map((st: any, sIdx: number) => {
-                              const insight = analyzeStudentAcademicAndRegulation(st)
+                              const insight = analyzeStudentAcademicAndRegulation(st, regulationConfig)
                               const sysCode = st.surveySystem || "HNS"
                               const criteria = st.admissionCriteria || "Khảo sát"
                               const campusObj = campuses.find((c: any) =>
@@ -1816,7 +1863,7 @@ export function PhanCongK12Client({
                   <tbody className="divide-y divide-slate-100">
                     {getAssignedStudentsForGroup(viewingStudentAssignment).map((st: any, sIdx: number) => {
                       const sysCode = st.surveySystem || st.surveyFormType || "Tiêu chuẩn"
-                      const insight = analyzeStudentAcademicAndRegulation(st)
+                      const insight = analyzeStudentAcademicAndRegulation(st, regulationConfig)
                       const directLink = `/teacher/input-assessments?periodId=${asPeriodId}&batchId=${viewingStudentAssignment.batchId || ""}&grade=${encodeURIComponent(st.grade || "")}&studentCode=${encodeURIComponent(st.studentCode)}&studentId=${st.id}&autoOpen=true`
                       return (
                         <tr key={st.id || sIdx} className="hover:bg-teal-50/30 transition-colors align-top">
@@ -1890,6 +1937,27 @@ export function PhanCongK12Client({
               </button>
             </div>
 
+          </div>
+        </div>
+      )}
+
+      {/* Modal Nhập & Cấu hình Quy chế Tuyển sinh */}
+      {showRegulationModal && (
+        <div className="fixed inset-0 z-[350] flex items-center justify-center p-3 sm:p-4 animate-in fade-in duration-200">
+          <div className="absolute inset-0 bg-slate-900/50 backdrop-blur-xs" onClick={() => setShowRegulationModal(false)} />
+          <div className="relative w-full max-w-6xl z-10 animate-in zoom-in-95 duration-200 shadow-2xl rounded-2xl">
+            <AdmissionRegulationManager
+              initialConfig={regulationConfig}
+              availableSubjects={initialSubjects}
+              availableSystems={currentEduSystems}
+              isModal={true}
+              readOnly={!canUpdate}
+              onConfigSaved={newCfg => {
+                setRegulationConfig(newCfg)
+                notify("Đã lưu Quy chế Tuyển sinh & cập nhật đối chiếu học sinh!")
+              }}
+              onClose={() => setShowRegulationModal(false)}
+            />
           </div>
         </div>
       )}

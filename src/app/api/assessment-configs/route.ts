@@ -22,8 +22,27 @@ export async function GET(req: any) {
 
 export async function POST(req: any) {
   try {
-    const { categoryType, code, name, academicYearId } = await req.json();
+    const { categoryType, code, name, academicYearId, upsert } = await req.json();
     if (!categoryType || !code || !name) return NextResponse.json({ error: "Thieu thong tin" }, { status: 400 });
+
+    if (upsert || categoryType === "QUY_CHE_TS") {
+      const existing = await (prisma as any).assessmentConfig.findFirst({
+        where: {
+          categoryType,
+          code,
+          ...(academicYearId ? { academicYearId } : {})
+        }
+      });
+      if (existing) {
+        const updated = await (prisma as any).assessmentConfig.update({
+          where: { id: existing.id },
+          data: { name },
+          include: { academicYear: true }
+        });
+        return NextResponse.json(updated);
+      }
+    }
+
     const count = await (prisma as any).assessmentConfig.count({ where: { categoryType } });
     const data: any = { categoryType, code, name, sortOrder: count };
     if (academicYearId) data.academicYearId = academicYearId;

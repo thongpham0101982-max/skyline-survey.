@@ -1,5 +1,139 @@
 import { parseEntranceRecord, ProgramType } from "./entranceAcademicRecord"
 
+export interface AdmissionRegulationRule {
+  id: string
+  name: string
+  grades: string[] // ["1"], ["2","3","4","5"], ["6","7","8","9"], ["10","11","12"]
+  systems: string[] // ["HNS", "HNG", "SB"]
+  minAcademicRatings: string[] // ["Hoàn thành xuất sắc", "Hoàn thành tốt", "Tốt", "Giỏi", "Khá"]
+  minConductRatings: string[] // ["Tốt", "Đạt", "Hoàn thành tốt"]
+  minCoreScoreHNS: number // Điểm tối thiểu Toán, Tiếng Việt/Ngữ Văn để xét học bạ Hệ HNS (VD: 7.0)
+  minCoreScoreHNG_SB: number // Điểm tối thiểu Toán, Tiếng Việt/Ngữ Văn để xét học bạ Hệ HNG/SB (VD: 8.0)
+  minEnglishScoreDirect: number // Điểm Tiếng Anh tối thiểu xét tuyển thẳng (VD: 8.0)
+  intlCertKeywords: string // Từ khóa chứng chỉ quốc tế/thành tích được xét tuyển thẳng/miễn TA
+  defaultSubjects: string[] // Môn bắt buộc khảo sát tiêu chuẩn
+  transcriptExemptSubjects: string[] // Môn được miễn khi đạt ngưỡng Học bạ trường cũ
+  directAdmissionSubjects: string[] // Môn cần khảo sát/phỏng vấn khi thuộc diện Tuyển thẳng
+  regulationNote: string // Ghi chú quy chế chi tiết của nhóm khối
+  isActive: boolean
+}
+
+export interface AdmissionRegulationConfig {
+  documentTitle: string
+  effectiveYear: string
+  generalNotes: string
+  updatedAt?: string
+  rules: AdmissionRegulationRule[]
+}
+
+export const DEFAULT_ADMISSION_REGULATIONS: AdmissionRegulationConfig = {
+  documentTitle: "Quy chế Tuyển sinh & Điều kiện Tiếp nhận Học sinh Phổ thông Sky-Line",
+  effectiveYear: "2026-2027",
+  generalNotes:
+    "1. Học sinh đầu cấp Lớp 1 tham gia đánh giá Tâm lý, Năng lực tư duy & Giao tiếp Tiếng Anh đầu vào.\n" +
+    "2. Học sinh từ Lớp 2 đến Lớp 12 có học bạ trường cũ thuộc chương trình Bộ GD&ĐT đạt mức Khá/Tốt trở lên và điểm Toán, Tiếng Việt/Ngữ Văn đạt ngưỡng quy định theo Hệ đăng ký (HNS ≥ 7.0; HNG/SB ≥ 8.0) được xét học bạ miễn khảo sát Toán & Tiếng Việt/Ngữ Văn.\n" +
+    "3. Học sinh thuộc diện Tuyển thẳng hoặc có Chứng chỉ Tiếng Anh quốc tế (Cambridge Flyers/KET/PET/IELTS...) đạt chuẩn theo quy chế chỉ tham gia Phỏng vấn Định hướng đầu vào & Tiếng Anh vấn đáp xếp lớp.",
+  rules: [
+    {
+      id: "rule-k1",
+      name: "Đầu cấp Tiểu học — Khối 1",
+      grades: ["1"],
+      systems: ["HNS", "HNG", "SB"],
+      minAcademicRatings: ["Hoàn thành", "Đạt"],
+      minConductRatings: ["Đạt", "Tốt"],
+      minCoreScoreHNS: 0,
+      minCoreScoreHNG_SB: 0,
+      minEnglishScoreDirect: 0,
+      intlCertKeywords: "Cambridge, Starters, Movers",
+      defaultSubjects: ["Tâm lý", "Năng lực tư duy", "Tiếng Anh (vấn đáp)"],
+      transcriptExemptSubjects: [],
+      directAdmissionSubjects: ["Tâm lý", "Tiếng Anh (vấn đáp)"],
+      regulationNote: "Học sinh vào Lớp 1: Đánh giá Tâm lý, Năng lực tư duy & Giao tiếp Tiếng Anh đầu vào (không yêu cầu điểm học bạ phổ thông).",
+      isActive: true
+    },
+    {
+      id: "rule-k2-k5",
+      name: "Tiểu học Chuyển ngang — Khối 2 đến Khối 5",
+      grades: ["2", "3", "4", "5"],
+      systems: ["HNS", "HNG", "SB"],
+      minAcademicRatings: ["Hoàn thành xuất sắc", "Hoàn thành tốt", "Tốt", "Giỏi", "Khá"],
+      minConductRatings: ["Tốt", "Đạt", "Hoàn thành tốt"],
+      minCoreScoreHNS: 7.0,
+      minCoreScoreHNG_SB: 8.0,
+      minEnglishScoreDirect: 8.0,
+      intlCertKeywords: "Starters, Movers, Flyers, Cambridge, Toefl Primary",
+      defaultSubjects: ["Toán học", "Tiếng Việt", "Tiếng Anh (viết)", "Tiếng Anh (vấn đáp)", "Tâm lý"],
+      transcriptExemptSubjects: ["Toán học", "Tiếng Việt"],
+      directAdmissionSubjects: ["Tiếng Anh (vấn đáp)", "Tâm lý"],
+      regulationNote: "KQHT Hoàn thành tốt/Xuất sắc, điểm Toán & Tiếng Việt ≥ 7.0 (HNS) hoặc ≥ 8.0 (HNG/SB): Xét học bạ miễn Toán & Tiếng Việt, chỉ khảo sát Tiếng Anh & Tâm lý.",
+      isActive: true
+    },
+    {
+      id: "rule-k6-k9",
+      name: "Đầu cấp Lớp 6 & THCS — Khối 6 đến Khối 9",
+      grades: ["6", "7", "8", "9"],
+      systems: ["HNS", "HNG", "SB"],
+      minAcademicRatings: ["Xuất sắc", "Giỏi", "Tốt", "Khá", "Hoàn thành xuất sắc", "Hoàn thành tốt"],
+      minConductRatings: ["Tốt", "Khá"],
+      minCoreScoreHNS: 7.0,
+      minCoreScoreHNG_SB: 8.0,
+      minEnglishScoreDirect: 8.0,
+      intlCertKeywords: "Flyers, KET, PET, FCE, IELTS, TOEFL, Cambridge, Học sinh giỏi",
+      defaultSubjects: ["Toán học", "Ngữ Văn", "Tiếng Anh (viết)", "Tiếng Anh (vấn đáp)", "Phiếu định hướng đầu vào"],
+      transcriptExemptSubjects: ["Toán học", "Ngữ Văn"],
+      directAdmissionSubjects: ["Tiếng Anh (vấn đáp)", "Phiếu định hướng đầu vào"],
+      regulationNote: "Học lực Khá/Tốt, Rèn luyện Tốt, điểm Toán & Ngữ Văn ≥ 7.0 (HNS) hoặc ≥ 8.0 (HNG/SB): Xét học bạ miễn Toán & Ngữ Văn, phân công khảo sát Tiếng Anh & Phỏng vấn Định hướng.",
+      isActive: true
+    },
+    {
+      id: "rule-k10-k12",
+      name: "Đầu cấp Lớp 10 & THPT — Khối 10 đến Khối 12",
+      grades: ["10", "11", "12"],
+      systems: ["HNS", "HNG", "SB"],
+      minAcademicRatings: ["Xuất sắc", "Giỏi", "Tốt", "Khá"],
+      minConductRatings: ["Tốt"],
+      minCoreScoreHNS: 7.0,
+      minCoreScoreHNG_SB: 8.0,
+      minEnglishScoreDirect: 8.0,
+      intlCertKeywords: "IELTS, PET, FCE, CAE, TOEFL, SAT, Học sinh giỏi",
+      defaultSubjects: ["Toán học", "Ngữ Văn", "Tiếng Anh (viết)", "Tiếng Anh (vấn đáp)", "Phiếu định hướng đầu vào"],
+      transcriptExemptSubjects: ["Toán học", "Ngữ Văn"],
+      directAdmissionSubjects: ["Tiếng Anh (vấn đáp)", "Phiếu định hướng đầu vào"],
+      regulationNote: "Học lực Khá/Tốt, Rèn luyện Tốt, điểm TB Toán & Ngữ Văn đạt ngưỡng quy chế: Xét học bạ môn Việt Nam; có IELTS/Chứng chỉ QT đạt chuẩn được xét Tuyển thẳng.",
+      isActive: true
+    }
+  ]
+}
+
+export function parseAdmissionRegulationConfig(configsOrJson?: any): AdmissionRegulationConfig {
+  if (!configsOrJson) return DEFAULT_ADMISSION_REGULATIONS
+
+  try {
+    if (typeof configsOrJson === "string") {
+      const parsed = JSON.parse(configsOrJson)
+      if (parsed && Array.isArray(parsed.rules) && parsed.rules.length > 0) {
+        return { ...DEFAULT_ADMISSION_REGULATIONS, ...parsed }
+      }
+    } else if (Array.isArray(configsOrJson)) {
+      const found = configsOrJson.find(
+        (c: any) => c.categoryType === "QUY_CHE_TS" && (c.code === "SKYLINE_K12_REGULATION" || c.name)
+      )
+      if (found && found.name) {
+        const parsed = JSON.parse(found.name)
+        if (parsed && Array.isArray(parsed.rules) && parsed.rules.length > 0) {
+          return { ...DEFAULT_ADMISSION_REGULATIONS, ...parsed }
+        }
+      }
+    } else if (typeof configsOrJson === "object" && Array.isArray(configsOrJson.rules)) {
+      return { ...DEFAULT_ADMISSION_REGULATIONS, ...configsOrJson }
+    }
+  } catch (e) {
+    // Fallback to default
+  }
+
+  return DEFAULT_ADMISSION_REGULATIONS
+}
+
 export interface StudentAcademicInsight {
   programType: ProgramType
   programLabel: string
@@ -21,6 +155,7 @@ export interface StudentAcademicInsight {
   regulationReason: string
   recommendedSubjectNames: string[]
   exemptedSubjectNames: string[]
+  appliedRuleName?: string
 }
 
 const PROGRAM_LABELS: Record<ProgramType, string> = {
@@ -43,7 +178,11 @@ function parseScoreNum(val?: string | null): number | null {
   return isNaN(n) ? null : n
 }
 
-export function analyzeStudentAcademicAndRegulation(student: any): StudentAcademicInsight {
+export function analyzeStudentAcademicAndRegulation(
+  student: any,
+  customConfig?: AdmissionRegulationConfig
+): StudentAcademicInsight {
+  const regConfig = customConfig || DEFAULT_ADMISSION_REGULATIONS
   const gradeStr = String(student?.grade || "1").replace(/\D/g, "") || "1"
   const gradeNum = parseInt(gradeStr, 10) || 1
   const rawKq = student?.kqHocTap || ""
@@ -118,9 +257,27 @@ export function analyzeStudentAcademicAndRegulation(student: any): StudentAcadem
   const sysCode = String(student?.surveySystem || student?.surveyFormType || "HNS").toUpperCase()
   const criteria = String(student?.admissionCriteria || "").toLowerCase()
 
+  // Tìm quy tắc Quy chế Tuyển sinh phù hợp với Khối & Hệ của học sinh
+  const matchedRule =
+    regConfig.rules.find(
+      r =>
+        r.isActive !== false &&
+        r.grades.includes(gradeStr) &&
+        (r.systems.length === 0 || r.systems.some(sys => sysCode.includes(sys.toUpperCase())))
+    ) ||
+    regConfig.rules.find(r => r.isActive !== false && r.grades.includes(gradeStr)) ||
+    DEFAULT_ADMISSION_REGULATIONS.rules.find(r => r.grades.includes(gradeStr)) ||
+    DEFAULT_ADMISSION_REGULATIONS.rules[1]
+
+  const defaultSubs =
+    matchedRule?.defaultSubjects && matchedRule.defaultSubjects.length > 0
+      ? matchedRule.defaultSubjects
+      : gradeNum === 1
+      ? ["Tâm lý", "Năng lực tư duy", "Tiếng Anh (vấn đáp)"]
+      : ["Toán học", vnSubjectName, "Tiếng Anh (viết)", "Tiếng Anh (vấn đáp)", psychSubjectName]
+
   // Xác định gợi ý theo Quy chế Tuyển sinh Sky-Line
-  if (gradeNum === 1) {
-    const recSubs = ["Tâm lý", "Năng lực tư duy", "Tiếng Anh (vấn đáp)"]
+  if (gradeNum === 1 && matchedRule.minCoreScoreHNS === 0 && matchedRule.minCoreScoreHNG_SB === 0) {
     return {
       programType,
       programLabel,
@@ -138,9 +295,10 @@ export function analyzeStudentAcademicAndRegulation(student: any): StudentAcadem
       regulationStatus: "KHAO_SAT_DAU_CAP_K1",
       regulationBadgeLabel: "Khảo sát đầu cấp K1",
       regulationBadgeColor: "bg-teal-50 text-[#005854] border-teal-200",
-      regulationReason: "Học sinh vào Lớp 1: Đánh giá Tâm lý / Năng lực tư duy & Giao tiếp Tiếng Anh đầu vào.",
-      recommendedSubjectNames: recSubs,
-      exemptedSubjectNames: []
+      regulationReason: matchedRule.regulationNote || "Học sinh vào Lớp 1: Đánh giá Tâm lý / Năng lực tư duy & Giao tiếp Tiếng Anh đầu vào.",
+      recommendedSubjectNames: defaultSubs,
+      exemptedSubjectNames: [],
+      appliedRuleName: matchedRule.name
     }
   }
 
@@ -162,26 +320,52 @@ export function analyzeStudentAcademicAndRegulation(student: any): StudentAcadem
       regulationStatus: "CHUA_DU_THONG_TIN",
       regulationBadgeLabel: "Chưa có KQHT • Khảo sát đủ môn",
       regulationBadgeColor: "bg-amber-50 text-amber-700 border-amber-200",
-      regulationReason: `Chưa có điểm học bạ trường cũ. Theo quy chế cần phân công khảo sát đầy đủ Toán, ${vnSubjectName}, Tiếng Anh & ${psychSubjectName}.`,
-      recommendedSubjectNames: ["Toán học", vnSubjectName, "Tiếng Anh (viết)", "Tiếng Anh (vấn đáp)", psychSubjectName],
-      exemptedSubjectNames: []
+      regulationReason: `Chưa có điểm học bạ trường cũ. Theo quy chế (${matchedRule.name}) cần phân công khảo sát đầy đủ: ${defaultSubs.join(", ")}.`,
+      recommendedSubjectNames: defaultSubs,
+      exemptedSubjectNames: [],
+      appliedRuleName: matchedRule.name
     }
   }
 
-  // Kiểm tra điều kiện Xét tuyển / Miễn môn văn hóa theo Quy chế Tuyển sinh
+  // Kiểm tra điều kiện Xét tuyển / Miễn môn văn hóa theo Quy chế Tuyển sinh đã cấu hình
   const ratingNorm = academicRating.toLowerCase()
-  const isGoodRating =
-    ratingNorm.includes("xuất sắc") ||
-    ratingNorm.includes("tốt") ||
-    ratingNorm.includes("giỏi") ||
-    ratingNorm.includes("khá")
-  const minCoreThreshold = sysCode.includes("HNG") || sysCode.includes("SB") ? 8.0 : 7.0
+  const allowedRatings =
+    matchedRule.minAcademicRatings && matchedRule.minAcademicRatings.length > 0
+      ? matchedRule.minAcademicRatings.map(r => r.toLowerCase().trim()).filter(Boolean)
+      : ["xuất sắc", "tốt", "giỏi", "khá"]
+  const isGoodRating = allowedRatings.some(r => ratingNorm.includes(r))
+
+  const minCoreThreshold =
+    sysCode.includes("HNG") || sysCode.includes("SB")
+      ? matchedRule.minCoreScoreHNG_SB ?? 8.0
+      : matchedRule.minCoreScoreHNS ?? 7.0
+  const minEngDirect = matchedRule.minEnglishScoreDirect ?? minCoreThreshold
+
   const mathPass = mathScore !== null && mathScore >= minCoreThreshold
   const litPass = litScore !== null && litScore >= minCoreThreshold
-  const engPass = engScore !== null && engScore >= (sysCode.includes("HNG") || sysCode.includes("SB") ? 8.0 : 7.0)
-  const hasIntlEngCert = /ielts|cambridge|flyers|ket|pet|fce|toefl|movers/i.test(achievements)
+  const engPass = engScore !== null && engScore >= minEngDirect
 
-  if (criteria.includes("tuyển thẳng") || (isGoodRating && mathPass && litPass && (engPass || hasIntlEngCert) && achievements.length > 0)) {
+  const certKeywords = (matchedRule.intlCertKeywords || "ielts,cambridge,flyers,ket,pet,fce,toefl,movers")
+    .split(",")
+    .map(k => k.trim().toLowerCase())
+    .filter(Boolean)
+  const achLower = achievements.toLowerCase()
+  const hasIntlEngCert = certKeywords.some(k => achLower.includes(k))
+
+  const exemptSubsCfg =
+    matchedRule.transcriptExemptSubjects && matchedRule.transcriptExemptSubjects.length > 0
+      ? matchedRule.transcriptExemptSubjects
+      : ["Toán học", vnSubjectName]
+
+  const directSubsCfg =
+    matchedRule.directAdmissionSubjects && matchedRule.directAdmissionSubjects.length > 0
+      ? matchedRule.directAdmissionSubjects
+      : ["Tiếng Anh (vấn đáp)", psychSubjectName]
+
+  if (
+    criteria.includes("tuyển thẳng") ||
+    (isGoodRating && mathPass && litPass && (engPass || hasIntlEngCert) && achievements.length > 0)
+  ) {
     return {
       programType,
       programLabel,
@@ -199,13 +383,15 @@ export function analyzeStudentAcademicAndRegulation(student: any): StudentAcadem
       regulationStatus: "TUYEN_THANG_GOI_Y",
       regulationBadgeLabel: "Đủ ĐK Xét tuyển / Tuyển thẳng",
       regulationBadgeColor: "bg-emerald-50 text-emerald-700 border-emerald-200",
-      regulationReason: `KQHT đạt "${academicRating}" (Toán ${mathScore ?? "—"}, ${vnSubjectName} ${litScore ?? "—"}, Anh ${engScore ?? "—"})${achievements ? ` kèm thành tích "${achievements}"` : ""}. Đề xuất miễn Toán & ${vnSubjectName}, chỉ phân công phỏng vấn Định hướng/Tâm lý & Tiếng Anh xếp lớp.`,
-      recommendedSubjectNames: ["Tiếng Anh (vấn đáp)", psychSubjectName],
-      exemptedSubjectNames: ["Toán học", vnSubjectName]
+      regulationReason: `KQHT đạt "${academicRating}" (Toán ${mathScore ?? "—"}, ${vnSubjectName} ${litScore ?? "—"}, Anh ${engScore ?? "—"} ≥ ${minCoreThreshold})${achievements ? ` kèm thành tích "${achievements}"` : ""}. Đề xuất miễn ${exemptSubsCfg.join(" & ")}, chỉ phân công ${directSubsCfg.join(" & ")}.`,
+      recommendedSubjectNames: directSubsCfg,
+      exemptedSubjectNames: exemptSubsCfg,
+      appliedRuleName: matchedRule.name
     }
   }
 
   if (criteria.includes("xét tuyển") || (isGoodRating && mathPass && litPass && programType === "BO_GD_DT")) {
+    const remainingSubs = defaultSubs.filter(s => !exemptSubsCfg.includes(s))
     return {
       programType,
       programLabel,
@@ -223,29 +409,27 @@ export function analyzeStudentAcademicAndRegulation(student: any): StudentAcadem
       regulationStatus: "XET_TUYEN_HOC_BA",
       regulationBadgeLabel: "Đủ ĐK Xét học bạ Toán - Văn",
       regulationBadgeColor: "bg-sky-50 text-sky-700 border-sky-200",
-      regulationReason: `Điểm học bạ Toán (${mathScore}) & ${vnSubjectName} (${litScore}) ≥ ${minCoreThreshold} (${academicRating}). Có thể xét học bạ môn Việt Nam và chỉ phân công khảo sát Tiếng Anh + ${psychSubjectName}.`,
-      recommendedSubjectNames: ["Tiếng Anh (viết)", "Tiếng Anh (vấn đáp)", psychSubjectName],
-      exemptedSubjectNames: ["Toán học", vnSubjectName]
+      regulationReason: `Điểm học bạ Toán (${mathScore}) & ${vnSubjectName} (${litScore}) ≥ ${minCoreThreshold} (${academicRating}). Đủ điều kiện miễn ${exemptSubsCfg.join(", ")}, chỉ phân công khảo sát ${remainingSubs.join(", ")}.`,
+      recommendedSubjectNames: remainingSubs.length > 0 ? remainingSubs : ["Tiếng Anh (viết)", "Tiếng Anh (vấn đáp)", psychSubjectName],
+      exemptedSubjectNames: exemptSubsCfg,
+      appliedRuleName: matchedRule.name
     }
   }
 
-  // Trường hợp cần khảo sát đầy đủ (hoặc khảo sát lại các môn chưa đạt ngưỡng)
+  // Trường hợp cần khảo sát đầy đủ (hoặc miễn từng môn đơn lẻ nếu đạt ngưỡng)
   const requiredSubs: string[] = []
   const exemptedSubs: string[] = []
 
-  if (mathPass && programType === "BO_GD_DT" && isGoodRating) {
-    exemptedSubs.push("Toán học")
-  } else {
-    requiredSubs.push("Toán học")
-  }
-
-  if (litPass && programType === "BO_GD_DT" && isGoodRating) {
-    exemptedSubs.push(vnSubjectName)
-  } else {
-    requiredSubs.push(vnSubjectName)
-  }
-
-  requiredSubs.push("Tiếng Anh (viết)", "Tiếng Anh (vấn đáp)", psychSubjectName)
+  defaultSubs.forEach(sub => {
+    const subLower = sub.toLowerCase()
+    if (subLower.includes("toán") && mathPass && programType === "BO_GD_DT" && isGoodRating && exemptSubsCfg.includes(sub)) {
+      exemptedSubs.push(sub)
+    } else if ((subLower.includes("tiếng việt") || subLower.includes("ngữ văn")) && litPass && programType === "BO_GD_DT" && isGoodRating && exemptSubsCfg.includes(sub)) {
+      exemptedSubs.push(sub)
+    } else {
+      requiredSubs.push(sub)
+    }
+  })
 
   return {
     programType,
@@ -264,9 +448,10 @@ export function analyzeStudentAcademicAndRegulation(student: any): StudentAcadem
     regulationStatus: "KHAO_SAT_DAY_DU",
     regulationBadgeLabel: "Khảo sát theo môn quy định",
     regulationBadgeColor: "bg-indigo-50 text-indigo-700 border-indigo-200",
-    regulationReason: `Hệ ${sysCode} (${programLabel}): Phân công khảo sát ${requiredSubs.join(", ")}.`,
+    regulationReason: `Hệ ${sysCode} (${programLabel} • Ngưỡng miễn: ≥ ${minCoreThreshold}): Phân công khảo sát ${requiredSubs.join(", ")}.`,
     recommendedSubjectNames: requiredSubs,
-    exemptedSubjectNames: exemptedSubs
+    exemptedSubjectNames: exemptedSubs,
+    appliedRuleName: matchedRule.name
   }
 }
 

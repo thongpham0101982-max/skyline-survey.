@@ -21,6 +21,8 @@ import { parseEntranceRecord, serializeEntranceRecord, extractAcademicDetails } 
 import { getDestinationSchoolsAction } from "@/app/admin/truong-lien-ket/actions";
 import { StudentOrientationModal } from "@/components/orientation/StudentOrientationModal";
 import { StudentOrientationReportModal } from "@/components/orientation/StudentOrientationReportModal";
+import { AdmissionRegulationManager } from "@/components/admin/AdmissionRegulationManager";
+import { parseAdmissionRegulationConfig } from "@/lib/admissionRegulationEngine";
 
 
 // ========= TYPES =========
@@ -726,7 +728,7 @@ export function InputAssessmentsClient({
   const [cForm, setCForm] = useState({ categoryType:"DIEN_KS", code:"", name:"" })
 
   // ───────── ORIENTATION QUESTION CATALOG STATE ─────────
-  const [catSubTab, setCatSubTab] = useState<"general" | "orientation">("general")
+  const [catSubTab, setCatSubTab] = useState<"general" | "orientation" | "regulation">("general")
   const [orientationTargetStudent, setOrientationTargetStudent] = useState<any | null>(null)
   const [reportTargetStudent, setReportTargetStudent] = useState<any | null>(null)
   const [activeReportOrientationData, setActiveReportOrientationData] = useState<any | null>(null)
@@ -7244,7 +7246,7 @@ const [customCommitmentSubjects, setCustomCommitmentSubjects] = useState<string[
                                   value={quickAddDraft.studentCode}
                                   onChange={e => setQuickAddDraft(p => ({ ...p, studentCode: e.target.value }))}
                                   placeholder="Mã HS..."
-                                  className="h-7 w-20 px-1.5 bg-white border border-emerald-300 rounded-md font-mono text-[11px] font-bold text-teal-800 outline-none focus:border-teal-600"
+                                  className="raw-input py-0 h-7 w-24 px-2 bg-white border border-emerald-300 rounded-md font-mono text-[11px] font-bold text-teal-800 outline-none focus:border-teal-600"
                                 />
                                 <button
                                   type="button"
@@ -7257,7 +7259,7 @@ const [customCommitmentSubjects, setCustomCommitmentSubjects] = useState<string[
                               </div>
                             </td>
                             <td className="px-2 py-2 border-r border-emerald-200/50">
-                              <div className="flex flex-col gap-1">
+                              <div className="flex flex-col gap-1 min-w-[185px]">
                                 <input
                                   type="text"
                                   value={quickAddDraft.fullName}
@@ -7271,13 +7273,13 @@ const [customCommitmentSubjects, setCustomCommitmentSubjects] = useState<string[
                                   }}
                                   onKeyDown={e => { if (e.key === "Enter") saveQuickAddRow(); }}
                                   placeholder="Nhập Họ và tên HS * (Enter để lưu)"
-                                  className="h-7 w-full px-2 bg-white border border-emerald-300 rounded-md text-xs font-bold text-slate-800 placeholder-slate-400 outline-none focus:border-teal-600"
+                                  className="raw-input py-0 h-7 w-full px-2 bg-white border border-emerald-300 rounded-md text-xs font-bold text-slate-800 placeholder-slate-400 outline-none focus:border-teal-600"
                                 />
                                 <div className="flex items-center gap-1">
                                   <select
                                     value={quickAddDraft.gender}
                                     onChange={e => setQuickAddDraft(p => ({ ...p, gender: e.target.value }))}
-                                    className="h-6 px-1.5 bg-white border border-slate-200 rounded text-[10px] font-semibold text-slate-700 outline-none cursor-pointer"
+                                    className="raw-select py-0 h-7 min-w-[62px] px-1.5 bg-white border border-slate-200 rounded-md text-[11px] font-semibold text-slate-700 outline-none cursor-pointer"
                                   >
                                     <option value="Nam">Nam</option>
                                     <option value="Nữ">Nữ</option>
@@ -7286,17 +7288,17 @@ const [customCommitmentSubjects, setCustomCommitmentSubjects] = useState<string[
                                     type="date"
                                     value={quickAddDraft.dateOfBirth}
                                     onChange={e => setQuickAddDraft(p => ({ ...p, dateOfBirth: e.target.value }))}
-                                    className="h-6 flex-1 px-1.5 bg-white border border-slate-200 rounded text-[10px] font-medium text-slate-700 outline-none"
+                                    className="raw-input py-0 h-7 flex-1 px-1.5 bg-white border border-slate-200 rounded-md text-[11px] font-medium text-slate-700 outline-none"
                                   />
                                 </div>
                               </div>
                             </td>
                             <td className="px-2 py-2 border-r border-emerald-200/50">
-                              <div className="flex flex-col gap-1">
+                              <div className="flex flex-col gap-1 min-w-[175px]">
                                 <select
                                   value={quickAddDraft.batchId}
                                   onChange={e => setQuickAddDraft(p => ({ ...p, batchId: e.target.value }))}
-                                  className="h-6 w-full px-1.5 bg-white border border-slate-200 rounded text-[10px] font-semibold text-slate-700 outline-none cursor-pointer"
+                                  className="raw-select py-0 h-7 w-full px-1.5 bg-white border border-slate-200 rounded-md text-[11px] font-semibold text-slate-700 outline-none cursor-pointer"
                                 >
                                   <option value="">-- Khảo sát lẻ --</option>
                                   {(selPeriod?.batches || visiblePeriods.flatMap(p => p.batches || [])).map((b: any) => (
@@ -7306,11 +7308,11 @@ const [customCommitmentSubjects, setCustomCommitmentSubjects] = useState<string[
                                 <select
                                   value={quickAddDraft.registeredCampus}
                                   onChange={e => setQuickAddDraft(p => ({ ...p, registeredCampus: e.target.value }))}
-                                  className="h-6 w-full px-1.5 bg-white border border-slate-200 rounded text-[10px] font-semibold text-teal-700 outline-none cursor-pointer"
+                                  className="raw-select py-0 h-7 w-full px-1.5 bg-white border border-slate-200 rounded-md text-[11px] font-semibold text-teal-700 outline-none cursor-pointer"
                                 >
                                   <option value="">-- Chọn Cơ sở --</option>
                                   {campuses.map(c => (
-                                    <option key={c.id} value={c.id}>{c.campusName}</option>
+                                    <option key={c.id} value={c.id}>{c.campusCode || c.campusName}</option>
                                   ))}
                                 </select>
                               </div>
@@ -7319,7 +7321,7 @@ const [customCommitmentSubjects, setCustomCommitmentSubjects] = useState<string[
                               <select
                                 value={quickAddDraft.grade}
                                 onChange={e => setQuickAddDraft(p => ({ ...p, grade: e.target.value }))}
-                                className="h-7 w-full px-1.5 bg-white border border-slate-200 rounded-md text-xs font-bold text-slate-800 outline-none cursor-pointer"
+                                className="raw-select py-0 h-7 min-w-[60px] w-full px-1.5 bg-white border border-slate-200 rounded-md text-xs font-bold text-slate-800 outline-none cursor-pointer"
                               >
                                 {activeGrades.map(g => <option key={g} value={g}>K{g}</option>)}
                               </select>
@@ -7328,7 +7330,7 @@ const [customCommitmentSubjects, setCustomCommitmentSubjects] = useState<string[
                               <select
                                 value={quickAddDraft.surveyFormType}
                                 onChange={e => setQuickAddDraft(p => ({ ...p, surveyFormType: e.target.value }))}
-                                className="h-7 w-full px-1.5 bg-white border border-sky-200 rounded-md text-[11px] font-bold text-sky-800 outline-none cursor-pointer"
+                                className="raw-select py-0 h-7 min-w-[68px] w-full px-1.5 bg-white border border-sky-200 rounded-md text-[11px] font-bold text-sky-800 outline-none cursor-pointer"
                               >
                                 <option value="">-- Hệ --</option>
                                 {currentEduSystems.map(es => <option key={es.code} value={es.code}>{es.code}</option>)}
@@ -7338,7 +7340,7 @@ const [customCommitmentSubjects, setCustomCommitmentSubjects] = useState<string[
                               <select
                                 value={quickAddDraft.admissionCriteria}
                                 onChange={e => setQuickAddDraft(p => ({ ...p, admissionCriteria: e.target.value }))}
-                                className="h-7 w-full px-1.5 bg-white border border-slate-200 rounded-md text-[11px] font-medium text-slate-700 outline-none cursor-pointer"
+                                className="raw-select py-0 h-7 min-w-[92px] w-full px-1.5 bg-white border border-slate-200 rounded-md text-[11px] font-medium text-slate-700 outline-none cursor-pointer"
                               >
                                 <option value="">-- Diện KS --</option>
                                 {configs.filter(c => c.categoryType === "DIEN_KS").map(c => <option key={c.id} value={c.name}>{c.name}</option>)}
@@ -7348,7 +7350,7 @@ const [customCommitmentSubjects, setCustomCommitmentSubjects] = useState<string[
                               <select
                                 value={quickAddDraft.surveySystem}
                                 onChange={e => setQuickAddDraft(p => ({ ...p, surveySystem: e.target.value }))}
-                                className="h-7 w-full px-1.5 bg-white border border-slate-200 rounded-md text-[11px] font-semibold text-teal-800 outline-none cursor-pointer"
+                                className="raw-select py-0 h-7 min-w-[82px] w-full px-1.5 bg-white border border-slate-200 rounded-md text-[11px] font-semibold text-teal-800 outline-none cursor-pointer"
                               >
                                 <option value="">-- Hình thức --</option>
                                 {configs.filter(c => c.categoryType === "HINH_THUC_KS").map(c => <option key={c.id} value={c.name}>{c.name}</option>)}
@@ -7358,7 +7360,7 @@ const [customCommitmentSubjects, setCustomCommitmentSubjects] = useState<string[
                               <select
                                 value={quickAddDraft.programType}
                                 onChange={e => setQuickAddDraft(p => ({ ...p, programType: e.target.value as any }))}
-                                className="h-7 w-full px-1.5 bg-white border border-teal-200 rounded-md text-[11px] font-bold text-teal-800 outline-none cursor-pointer"
+                                className="raw-select py-0 h-7 min-w-[112px] w-full px-1.5 bg-white border border-teal-200 rounded-md text-[11px] font-bold text-teal-800 outline-none cursor-pointer"
                               >
                                 <option value="BO_GD_DT">Bộ GD&ĐT</option>
                                 <option value="SONG_NGU">Song ngữ</option>
@@ -7384,11 +7386,11 @@ const [customCommitmentSubjects, setCustomCommitmentSubjects] = useState<string[
                                 }}
                                 onKeyDown={e => { if (e.key === "Enter") saveQuickAddRow(); }}
                                 placeholder="Chọn hoặc nhập tên trường..."
-                                className="h-7 w-full px-2 bg-white border border-slate-200 rounded-md text-[11px] font-medium text-slate-800 outline-none focus:border-teal-600"
+                                className="raw-input py-0 h-7 min-w-[170px] w-full px-2 bg-white border border-slate-200 rounded-md text-[11px] font-medium text-slate-800 outline-none focus:border-teal-600"
                               />
                             </td>
                             <td className="px-2 py-2 border-r border-emerald-200/50">
-                              <div className="flex flex-col gap-1">
+                              <div className="flex flex-col gap-1 min-w-[165px]">
                                 <select
                                   value={quickAddDraft.targetType}
                                   onChange={e => {
@@ -7399,19 +7401,19 @@ const [customCommitmentSubjects, setCustomCommitmentSubjects] = useState<string[
                                       cityName: loc === "Nội tỉnh" ? "Thành phố Đà Nẵng" : loc === "Nước ngoài" ? "Hoa Kỳ (Mỹ)" : ""
                                     }));
                                   }}
-                                  className="h-6 w-full px-1.5 bg-white border border-slate-200 rounded text-[10px] font-semibold text-slate-700 outline-none cursor-pointer"
+                                  className="raw-select py-0 h-7 w-full px-1.5 bg-white border border-slate-200 rounded-md text-[11px] font-semibold text-slate-700 outline-none cursor-pointer"
                                 >
                                   <option value="Nội tỉnh">Nội tỉnh (Đà Nẵng)</option>
                                   <option value="Ngoại tỉnh">Ngoại tỉnh</option>
                                   <option value="Nước ngoài">Nước ngoài</option>
                                 </select>
                                 {quickAddDraft.targetType === "Nội tỉnh" ? (
-                                  <input readOnly value="Thành phố Đà Nẵng" className="h-6 w-full px-1.5 bg-slate-100 border border-slate-200 rounded text-[10px] text-slate-500 outline-none" />
+                                  <input readOnly value="Thành phố Đà Nẵng" className="raw-input py-0 h-7 w-full px-1.5 bg-slate-100 border border-slate-200 rounded-md text-[11px] text-slate-500 outline-none" />
                                 ) : quickAddDraft.targetType === "Ngoại tỉnh" ? (
                                   <select
                                     value={quickAddDraft.cityName}
                                     onChange={e => setQuickAddDraft(p => ({ ...p, cityName: e.target.value }))}
-                                    className="h-6 w-full px-1.5 bg-white border border-slate-200 rounded text-[10px] text-slate-700 outline-none cursor-pointer"
+                                    className="raw-select py-0 h-7 w-full px-1.5 bg-white border border-slate-200 rounded-md text-[11px] text-slate-700 outline-none cursor-pointer"
                                   >
                                     <option value="">-- Chọn Tỉnh/TP --</option>
                                     {vietnamProvinces.map(pr => <option key={pr} value={pr}>{pr}</option>)}
@@ -7420,7 +7422,7 @@ const [customCommitmentSubjects, setCustomCommitmentSubjects] = useState<string[
                                   <select
                                     value={quickAddDraft.cityName}
                                     onChange={e => setQuickAddDraft(p => ({ ...p, cityName: e.target.value }))}
-                                    className="h-6 w-full px-1.5 bg-white border border-slate-200 rounded text-[10px] text-slate-700 outline-none cursor-pointer"
+                                    className="raw-select py-0 h-7 w-full px-1.5 bg-white border border-slate-200 rounded-md text-[11px] text-slate-700 outline-none cursor-pointer"
                                   >
                                     <option value="">-- Chọn Quốc gia --</option>
                                     {worldCountries.map(c => <option key={c} value={c}>{c}</option>)}
@@ -7432,7 +7434,7 @@ const [customCommitmentSubjects, setCustomCommitmentSubjects] = useState<string[
                               <select
                                 value={quickAddDraft.oldSchoolType}
                                 onChange={e => setQuickAddDraft(p => ({ ...p, oldSchoolType: e.target.value }))}
-                                className="h-7 w-full px-1.5 bg-white border border-slate-200 rounded-md text-[11px] font-medium text-slate-700 outline-none cursor-pointer"
+                                className="raw-select py-0 h-7 min-w-[92px] w-full px-1.5 bg-white border border-slate-200 rounded-md text-[11px] font-medium text-slate-700 outline-none cursor-pointer"
                               >
                                 <option value="Công lập">Công lập</option>
                                 <option value="Tư thục">Tư thục</option>
@@ -7444,7 +7446,7 @@ const [customCommitmentSubjects, setCustomCommitmentSubjects] = useState<string[
                               <select
                                 value={quickAddDraft.transcriptPeriod}
                                 onChange={e => setQuickAddDraft(p => ({ ...p, transcriptPeriod: e.target.value }))}
-                                className="h-7 w-full px-1.5 bg-white border border-slate-200 rounded-md text-[11px] font-semibold text-teal-800 outline-none cursor-pointer"
+                                className="raw-select py-0 h-7 min-w-[78px] w-full px-1.5 bg-white border border-slate-200 rounded-md text-[11px] font-semibold text-teal-800 outline-none cursor-pointer"
                               >
                                 <option value="Cả năm">Cả năm</option>
                                 <option value="HK1">HK1</option>
@@ -7458,14 +7460,14 @@ const [customCommitmentSubjects, setCustomCommitmentSubjects] = useState<string[
                                 value={quickAddDraft.overallRating}
                                 onChange={e => setQuickAddDraft(p => ({ ...p, overallRating: e.target.value }))}
                                 placeholder="Xếp loại..."
-                                className="h-7 w-full px-2 bg-white border border-slate-200 rounded-md text-[11px] font-semibold text-emerald-800 outline-none focus:border-teal-600"
+                                className="raw-input py-0 h-7 min-w-[115px] w-full px-2 bg-white border border-slate-200 rounded-md text-[11px] font-semibold text-emerald-800 outline-none focus:border-teal-600"
                               />
                             </td>
                             <td className="px-2 py-2 border-r border-emerald-200/50 text-center">
                               <select
                                 value={quickAddDraft.kqRenLuyen}
                                 onChange={e => setQuickAddDraft(p => ({ ...p, kqRenLuyen: e.target.value }))}
-                                className="h-7 w-full px-1.5 bg-white border border-slate-200 rounded-md text-[11px] font-semibold text-indigo-800 outline-none cursor-pointer"
+                                className="raw-select py-0 h-7 min-w-[82px] w-full px-1.5 bg-white border border-slate-200 rounded-md text-[11px] font-semibold text-indigo-800 outline-none cursor-pointer"
                               >
                                 <option value="Tốt">Tốt</option>
                                 <option value="Khá">Khá</option>
@@ -7480,7 +7482,7 @@ const [customCommitmentSubjects, setCustomCommitmentSubjects] = useState<string[
                                 onChange={e => setQuickAddDraft(p => ({ ...p, mathScoreOld: e.target.value }))}
                                 onKeyDown={e => { if (e.key === "Enter") saveQuickAddRow(); }}
                                 placeholder="Điểm"
-                                className="h-7 w-14 px-1.5 bg-white border border-teal-200 rounded-md text-center text-xs font-bold text-teal-800 outline-none focus:border-teal-600"
+                                className="raw-input py-0 h-7 w-14 px-1.5 bg-white border border-teal-200 rounded-md text-center text-xs font-bold text-teal-800 outline-none focus:border-teal-600"
                               />
                             </td>
                             <td className="px-1.5 py-2 border-r border-emerald-200/50 text-center">
@@ -7490,7 +7492,7 @@ const [customCommitmentSubjects, setCustomCommitmentSubjects] = useState<string[
                                 onChange={e => setQuickAddDraft(p => ({ ...p, litScoreOld: e.target.value }))}
                                 onKeyDown={e => { if (e.key === "Enter") saveQuickAddRow(); }}
                                 placeholder="Điểm"
-                                className="h-7 w-14 px-1.5 bg-white border border-indigo-200 rounded-md text-center text-xs font-bold text-indigo-800 outline-none focus:border-indigo-600"
+                                className="raw-input py-0 h-7 w-14 px-1.5 bg-white border border-indigo-200 rounded-md text-center text-xs font-bold text-indigo-800 outline-none focus:border-indigo-600"
                               />
                             </td>
                             <td className="px-1.5 py-2 border-r border-emerald-200/50 text-center">
@@ -7500,7 +7502,7 @@ const [customCommitmentSubjects, setCustomCommitmentSubjects] = useState<string[
                                 onChange={e => setQuickAddDraft(p => ({ ...p, engScoreOld: e.target.value }))}
                                 onKeyDown={e => { if (e.key === "Enter") saveQuickAddRow(); }}
                                 placeholder="Điểm"
-                                className="h-7 w-14 px-1.5 bg-white border border-sky-200 rounded-md text-center text-xs font-bold text-sky-800 outline-none focus:border-sky-600"
+                                className="raw-input py-0 h-7 w-14 px-1.5 bg-white border border-sky-200 rounded-md text-center text-xs font-bold text-sky-800 outline-none focus:border-sky-600"
                               />
                             </td>
                             <td className="px-2 py-2 border-r border-emerald-200/50">
@@ -7510,7 +7512,7 @@ const [customCommitmentSubjects, setCustomCommitmentSubjects] = useState<string[
                                 onChange={e => setQuickAddDraft(p => ({ ...p, achievements: e.target.value }))}
                                 onKeyDown={e => { if (e.key === "Enter") saveQuickAddRow(); }}
                                 placeholder="Giải thưởng, khen thưởng..."
-                                className="h-7 w-full px-2 bg-white border border-amber-200 rounded-md text-[11px] font-medium text-amber-900 outline-none focus:border-amber-500"
+                                className="raw-input py-0 h-7 min-w-[140px] w-full px-2 bg-white border border-amber-200 rounded-md text-[11px] font-medium text-amber-900 outline-none focus:border-amber-500"
                               />
                             </td>
                             <td className="px-2.5 py-2 whitespace-nowrap text-right pr-3 sticky right-0 z-10 bg-emerald-50 border-l border-emerald-200 shadow-[-6px_0_12px_-4px_rgba(15,23,42,0.08)]">
@@ -7778,7 +7780,7 @@ const [customCommitmentSubjects, setCustomCommitmentSubjects] = useState<string[
                               {/* 3. Họ và tên + Ngày sinh & Giới tính */}
                               <td className="px-2.5 py-2 whitespace-nowrap border-r border-slate-100">
                                 {isInline ? (
-                                  <div className="flex flex-col gap-1 min-w-[175px]">
+                                  <div className="flex flex-col gap-1 min-w-[185px]">
                                     <input
                                       type="text"
                                       value={rowDraft.fullName}
@@ -7791,13 +7793,13 @@ const [customCommitmentSubjects, setCustomCommitmentSubjects] = useState<string[
                                         }
                                       }}
                                       onKeyDown={e => { if (e.key === "Enter") saveInlineRow(s); }}
-                                      className="h-7 w-full px-2 bg-white border border-slate-200 hover:border-slate-300 focus:border-teal-600 rounded-md text-xs font-bold text-slate-800 outline-none transition-colors"
+                                      className="raw-input py-0 h-7 w-full px-2 bg-white border border-slate-200 hover:border-slate-300 focus:border-teal-600 rounded-md text-xs font-bold text-slate-800 outline-none transition-colors"
                                     />
                                     <div className="flex items-center gap-1">
                                       <select
                                         value={rowDraft.gender}
                                         onChange={e => updateInlineCell(s, parsedRowDefaults, "gender", e.target.value)}
-                                        className="h-6 px-1.5 bg-white border border-slate-200 rounded text-[10px] font-semibold text-slate-700 outline-none cursor-pointer"
+                                        className="raw-select py-0 h-7 min-w-[62px] px-1.5 bg-white border border-slate-200 rounded-md text-[11px] font-semibold text-slate-700 outline-none cursor-pointer"
                                       >
                                         <option value="Nam">Nam</option>
                                         <option value="Nữ">Nữ</option>
@@ -7806,7 +7808,7 @@ const [customCommitmentSubjects, setCustomCommitmentSubjects] = useState<string[
                                         type="date"
                                         value={rowDraft.dateOfBirth}
                                         onChange={e => updateInlineCell(s, parsedRowDefaults, "dateOfBirth", e.target.value)}
-                                        className="h-6 flex-1 px-1.5 bg-white border border-slate-200 rounded text-[10px] font-medium text-slate-700 outline-none"
+                                        className="raw-input py-0 h-7 flex-1 px-1.5 bg-white border border-slate-200 rounded-md text-[11px] font-medium text-slate-700 outline-none"
                                       />
                                     </div>
                                   </div>
@@ -7843,11 +7845,11 @@ const [customCommitmentSubjects, setCustomCommitmentSubjects] = useState<string[
                               {/* 4. Đợt & Cơ sở khảo sát */}
                               <td className="px-2.5 py-2 border-r border-slate-100 whitespace-nowrap">
                                 {isInline ? (
-                                  <div className="flex flex-col gap-1 min-w-[165px]">
+                                  <div className="flex flex-col gap-1 min-w-[175px]">
                                     <select
                                       value={rowDraft.batchId}
                                       onChange={e => updateInlineCell(s, parsedRowDefaults, "batchId", e.target.value)}
-                                      className="h-6 w-full px-1.5 bg-white border border-slate-200 rounded text-[10px] font-semibold text-slate-700 outline-none cursor-pointer"
+                                      className="raw-select py-0 h-7 w-full px-1.5 bg-white border border-slate-200 rounded-md text-[11px] font-semibold text-slate-700 outline-none cursor-pointer"
                                     >
                                       <option value="">-- Khảo sát lẻ --</option>
                                       {(periodObj?.batches || selPeriod?.batches || visiblePeriods.flatMap(p => p.batches || [])).map((b: any) => (
@@ -7857,11 +7859,11 @@ const [customCommitmentSubjects, setCustomCommitmentSubjects] = useState<string[
                                     <select
                                       value={registeredCampusObj?.id || rowDraft.registeredCampus}
                                       onChange={e => updateInlineCell(s, parsedRowDefaults, "registeredCampus", e.target.value)}
-                                      className="h-6 w-full px-1.5 bg-white border border-slate-200 rounded text-[10px] font-semibold text-teal-700 outline-none cursor-pointer"
+                                      className="raw-select py-0 h-7 w-full px-1.5 bg-white border border-slate-200 rounded-md text-[11px] font-semibold text-teal-700 outline-none cursor-pointer"
                                     >
                                       <option value="">-- Chọn Cơ sở --</option>
                                       {campuses.map(c => (
-                                        <option key={c.id} value={c.id}>{c.campusName}</option>
+                                        <option key={c.id} value={c.id}>{c.campusCode || c.campusName}</option>
                                       ))}
                                     </select>
                                   </div>
@@ -8097,7 +8099,7 @@ const [customCommitmentSubjects, setCustomCommitmentSubjects] = useState<string[
                                     <select
                                       value={rowDraft.grade}
                                       onChange={e => updateInlineCell(s, parsedRowDefaults, "grade", e.target.value)}
-                                      className="h-7 w-full px-1.5 bg-white border border-slate-200 hover:border-slate-300 focus:border-teal-600 rounded-md text-xs font-bold text-slate-800 outline-none cursor-pointer"
+                                      className="raw-select py-0 h-7 min-w-[60px] w-full px-1.5 bg-white border border-slate-200 hover:border-slate-300 focus:border-teal-600 rounded-md text-xs font-bold text-slate-800 outline-none cursor-pointer"
                                     >
                                       {activeGrades.map(g => <option key={g} value={g}>K{g}</option>)}
                                     </select>
@@ -8108,7 +8110,7 @@ const [customCommitmentSubjects, setCustomCommitmentSubjects] = useState<string[
                                     <select
                                       value={rowDraft.surveyFormType}
                                       onChange={e => updateInlineCell(s, parsedRowDefaults, "surveyFormType", e.target.value)}
-                                      className="h-7 w-full px-1.5 bg-sky-50/60 border border-sky-200 hover:border-sky-300 focus:border-sky-500 rounded-md text-[11px] font-bold text-sky-800 outline-none cursor-pointer"
+                                      className="raw-select py-0 h-7 min-w-[68px] w-full px-1.5 bg-sky-50/60 border border-sky-200 hover:border-sky-300 focus:border-sky-500 rounded-md text-[11px] font-bold text-sky-800 outline-none cursor-pointer"
                                     >
                                       <option value="">-- Hệ --</option>
                                       {currentEduSystems.map(es => <option key={es.code} value={es.code}>{es.code}</option>)}
@@ -8120,7 +8122,7 @@ const [customCommitmentSubjects, setCustomCommitmentSubjects] = useState<string[
                                     <select
                                       value={rowDraft.admissionCriteria}
                                       onChange={e => updateInlineCell(s, parsedRowDefaults, "admissionCriteria", e.target.value)}
-                                      className="h-7 w-full px-1.5 bg-white border border-slate-200 hover:border-slate-300 focus:border-teal-600 rounded-md text-[11px] font-medium text-slate-700 outline-none cursor-pointer"
+                                      className="raw-select py-0 h-7 min-w-[92px] w-full px-1.5 bg-white border border-slate-200 hover:border-slate-300 focus:border-teal-600 rounded-md text-[11px] font-medium text-slate-700 outline-none cursor-pointer"
                                     >
                                       <option value="">-- Chọn --</option>
                                       {configs.filter(c => c.categoryType === "DIEN_KS").map(c => <option key={c.id} value={c.name}>{c.name}</option>)}
@@ -8132,7 +8134,7 @@ const [customCommitmentSubjects, setCustomCommitmentSubjects] = useState<string[
                                     <select
                                       value={rowDraft.surveySystem}
                                       onChange={e => updateInlineCell(s, parsedRowDefaults, "surveySystem", e.target.value)}
-                                      className="h-7 w-full px-1.5 bg-teal-50/40 border border-teal-200/80 hover:border-teal-300 focus:border-teal-600 rounded-md text-[11px] font-semibold text-teal-800 outline-none cursor-pointer"
+                                      className="raw-select py-0 h-7 min-w-[82px] w-full px-1.5 bg-teal-50/40 border border-teal-200/80 hover:border-teal-300 focus:border-teal-600 rounded-md text-[11px] font-semibold text-teal-800 outline-none cursor-pointer"
                                     >
                                       <option value="">-- Chọn --</option>
                                       {configs.filter(c => c.categoryType === "HINH_THUC_KS").map(c => <option key={c.id} value={c.name}>{c.name}</option>)}
@@ -8144,7 +8146,7 @@ const [customCommitmentSubjects, setCustomCommitmentSubjects] = useState<string[
                                     <select
                                       value={rowDraft.programType}
                                       onChange={e => updateInlineCell(s, parsedRowDefaults, "programType", e.target.value)}
-                                      className="h-7 w-full px-1.5 bg-white border border-teal-200 hover:border-teal-300 focus:border-teal-600 rounded-md text-[11px] font-bold text-teal-800 outline-none cursor-pointer"
+                                      className="raw-select py-0 h-7 min-w-[112px] w-full px-1.5 bg-white border border-teal-200 hover:border-teal-300 focus:border-teal-600 rounded-md text-[11px] font-bold text-teal-800 outline-none cursor-pointer"
                                     >
                                       <option value="BO_GD_DT">Bộ GD&ĐT</option>
                                       <option value="SONG_NGU">Song ngữ</option>
@@ -8162,7 +8164,7 @@ const [customCommitmentSubjects, setCustomCommitmentSubjects] = useState<string[
                                       onChange={e => updateInlineCell(s, parsedRowDefaults, "oldSchoolName", e.target.value)}
                                       onKeyDown={e => { if (e.key === "Enter") saveInlineRow(s); }}
                                       placeholder="Nhập hoặc chọn trường cũ..."
-                                      className="h-7 w-full min-w-[175px] px-2 bg-white border border-slate-200 hover:border-slate-300 focus:border-teal-600 rounded-md text-[11px] font-semibold text-slate-800 placeholder-slate-300 outline-none"
+                                      className="raw-input py-0 h-7 w-full min-w-[175px] px-2 bg-white border border-slate-200 hover:border-slate-300 focus:border-teal-600 rounded-md text-[11px] font-semibold text-slate-800 placeholder-slate-300 outline-none"
                                     />
                                   </td>
 
@@ -8172,19 +8174,19 @@ const [customCommitmentSubjects, setCustomCommitmentSubjects] = useState<string[
                                       <select
                                         value={rowDraft.targetType}
                                         onChange={e => updateInlineCell(s, parsedRowDefaults, "targetType", e.target.value)}
-                                        className="h-6 w-full px-1.5 bg-white border border-slate-200 rounded text-[10px] font-semibold text-slate-700 outline-none cursor-pointer"
+                                        className="raw-select py-0 h-7 w-full px-1.5 bg-white border border-slate-200 rounded-md text-[11px] font-semibold text-slate-700 outline-none cursor-pointer"
                                       >
                                         <option value="Nội tỉnh">Nội tỉnh (Đà Nẵng)</option>
                                         <option value="Ngoại tỉnh">Ngoại tỉnh</option>
                                         <option value="Nước ngoài">Nước ngoài</option>
                                       </select>
                                       {rowDraft.targetType === "Nội tỉnh" ? (
-                                        <input readOnly value="Thành phố Đà Nẵng" className="h-6 w-full px-1.5 bg-slate-100 border border-slate-200 rounded text-[10px] text-slate-500 outline-none" />
+                                        <input readOnly value="Thành phố Đà Nẵng" className="raw-input py-0 h-7 w-full px-1.5 bg-slate-100 border border-slate-200 rounded-md text-[11px] text-slate-500 outline-none" />
                                       ) : rowDraft.targetType === "Ngoại tỉnh" ? (
                                         <select
                                           value={rowDraft.cityName}
                                           onChange={e => updateInlineCell(s, parsedRowDefaults, "cityName", e.target.value)}
-                                          className="h-6 w-full px-1.5 bg-white border border-slate-200 rounded text-[10px] text-slate-700 outline-none cursor-pointer"
+                                          className="raw-select py-0 h-7 w-full px-1.5 bg-white border border-slate-200 rounded-md text-[11px] text-slate-700 outline-none cursor-pointer"
                                         >
                                           <option value="">-- Chọn Tỉnh/TP --</option>
                                           {vietnamProvinces.map(pr => <option key={pr} value={pr}>{pr}</option>)}
@@ -8193,7 +8195,7 @@ const [customCommitmentSubjects, setCustomCommitmentSubjects] = useState<string[
                                         <select
                                           value={rowDraft.cityName}
                                           onChange={e => updateInlineCell(s, parsedRowDefaults, "cityName", e.target.value)}
-                                          className="h-6 w-full px-1.5 bg-white border border-slate-200 rounded text-[10px] text-slate-700 outline-none cursor-pointer"
+                                          className="raw-select py-0 h-7 w-full px-1.5 bg-white border border-slate-200 rounded-md text-[11px] text-slate-700 outline-none cursor-pointer"
                                         >
                                           <option value="">-- Chọn Quốc gia --</option>
                                           {worldCountries.map(c => <option key={c} value={c}>{c}</option>)}
@@ -8207,7 +8209,7 @@ const [customCommitmentSubjects, setCustomCommitmentSubjects] = useState<string[
                                     <select
                                       value={rowDraft.oldSchoolType}
                                       onChange={e => updateInlineCell(s, parsedRowDefaults, "oldSchoolType", e.target.value)}
-                                      className="h-7 w-full px-1.5 bg-white border border-slate-200 hover:border-slate-300 focus:border-teal-600 rounded-md text-[11px] font-medium text-slate-700 outline-none cursor-pointer"
+                                      className="raw-select py-0 h-7 min-w-[92px] w-full px-1.5 bg-white border border-slate-200 hover:border-slate-300 focus:border-teal-600 rounded-md text-[11px] font-medium text-slate-700 outline-none cursor-pointer"
                                     >
                                       <option value="">-- Loại hình --</option>
                                       <option value="Công lập">Công lập</option>
@@ -8222,7 +8224,7 @@ const [customCommitmentSubjects, setCustomCommitmentSubjects] = useState<string[
                                     <select
                                       value={rowDraft.transcriptPeriod}
                                       onChange={e => updateInlineCell(s, parsedRowDefaults, "transcriptPeriod", e.target.value)}
-                                      className="h-7 w-full px-1.5 bg-white border border-slate-200 hover:border-slate-300 focus:border-teal-600 rounded-md text-[11px] font-semibold text-teal-800 outline-none cursor-pointer"
+                                      className="raw-select py-0 h-7 min-w-[78px] w-full px-1.5 bg-white border border-slate-200 hover:border-slate-300 focus:border-teal-600 rounded-md text-[11px] font-semibold text-teal-800 outline-none cursor-pointer"
                                     >
                                       <option value="Cả năm">Cả năm</option>
                                       <option value="HK1">HK1</option>
@@ -8239,7 +8241,7 @@ const [customCommitmentSubjects, setCustomCommitmentSubjects] = useState<string[
                                       onChange={e => updateInlineCell(s, parsedRowDefaults, "overallRating", e.target.value)}
                                       onKeyDown={e => { if (e.key === "Enter") saveInlineRow(s); }}
                                       placeholder="Xếp loại..."
-                                      className="h-7 w-full min-w-[120px] px-2 bg-white border border-emerald-200 hover:border-emerald-300 focus:border-emerald-600 rounded-md text-[11px] font-semibold text-emerald-800 placeholder-slate-300 outline-none"
+                                      className="raw-input py-0 h-7 w-full min-w-[120px] px-2 bg-white border border-emerald-200 hover:border-emerald-300 focus:border-emerald-600 rounded-md text-[11px] font-semibold text-emerald-800 placeholder-slate-300 outline-none"
                                     />
                                   </td>
 
@@ -8248,7 +8250,7 @@ const [customCommitmentSubjects, setCustomCommitmentSubjects] = useState<string[
                                     <select
                                       value={rowDraft.kqRenLuyen}
                                       onChange={e => updateInlineCell(s, parsedRowDefaults, "kqRenLuyen", e.target.value)}
-                                      className="h-7 w-full px-1.5 bg-white border border-indigo-200 hover:border-indigo-300 focus:border-indigo-600 rounded-md text-[11px] font-semibold text-indigo-800 outline-none cursor-pointer"
+                                      className="raw-select py-0 h-7 min-w-[82px] w-full px-1.5 bg-white border border-indigo-200 hover:border-indigo-300 focus:border-indigo-600 rounded-md text-[11px] font-semibold text-indigo-800 outline-none cursor-pointer"
                                     >
                                       <option value="">-- Chọn --</option>
                                       <option value="Tốt">Tốt</option>
@@ -8266,7 +8268,7 @@ const [customCommitmentSubjects, setCustomCommitmentSubjects] = useState<string[
                                       onChange={e => updateInlineCell(s, parsedRowDefaults, "mathScoreOld", e.target.value)}
                                       onKeyDown={e => { if (e.key === "Enter") saveInlineRow(s); }}
                                       placeholder="—"
-                                      className="h-7 w-14 px-1.5 bg-white border border-teal-200 hover:border-teal-300 focus:border-teal-600 rounded-md text-center text-xs font-bold text-teal-800 placeholder-slate-300 outline-none"
+                                      className="raw-input py-0 h-7 w-14 px-1.5 bg-white border border-teal-200 hover:border-teal-300 focus:border-teal-600 rounded-md text-center text-xs font-bold text-teal-800 placeholder-slate-300 outline-none"
                                     />
                                   </td>
 
@@ -8278,7 +8280,7 @@ const [customCommitmentSubjects, setCustomCommitmentSubjects] = useState<string[
                                       onChange={e => updateInlineCell(s, parsedRowDefaults, "litScoreOld", e.target.value)}
                                       onKeyDown={e => { if (e.key === "Enter") saveInlineRow(s); }}
                                       placeholder="—"
-                                      className="h-7 w-14 px-1.5 bg-white border border-indigo-200 hover:border-indigo-300 focus:border-indigo-600 rounded-md text-center text-xs font-bold text-indigo-800 placeholder-slate-300 outline-none"
+                                      className="raw-input py-0 h-7 w-14 px-1.5 bg-white border border-indigo-200 hover:border-indigo-300 focus:border-indigo-600 rounded-md text-center text-xs font-bold text-indigo-800 placeholder-slate-300 outline-none"
                                     />
                                   </td>
 
@@ -8290,7 +8292,7 @@ const [customCommitmentSubjects, setCustomCommitmentSubjects] = useState<string[
                                       onChange={e => updateInlineCell(s, parsedRowDefaults, "engScoreOld", e.target.value)}
                                       onKeyDown={e => { if (e.key === "Enter") saveInlineRow(s); }}
                                       placeholder="—"
-                                      className="h-7 w-14 px-1.5 bg-white border border-sky-200 hover:border-sky-300 focus:border-sky-600 rounded-md text-center text-xs font-bold text-sky-800 placeholder-slate-300 outline-none"
+                                      className="raw-input py-0 h-7 w-14 px-1.5 bg-white border border-sky-200 hover:border-sky-300 focus:border-sky-600 rounded-md text-center text-xs font-bold text-sky-800 placeholder-slate-300 outline-none"
                                     />
                                   </td>
 
@@ -8302,7 +8304,7 @@ const [customCommitmentSubjects, setCustomCommitmentSubjects] = useState<string[
                                       onChange={e => updateInlineCell(s, parsedRowDefaults, "achievements", e.target.value)}
                                       onKeyDown={e => { if (e.key === "Enter") saveInlineRow(s); }}
                                       placeholder="Giải thưởng, khen thưởng..."
-                                      className="h-7 w-full min-w-[150px] px-2 bg-white border border-amber-200 hover:border-amber-300 focus:border-amber-500 rounded-md text-[11px] font-medium text-amber-900 placeholder-slate-300 outline-none"
+                                      className="raw-input py-0 h-7 w-full min-w-[150px] px-2 bg-white border border-amber-200 hover:border-amber-300 focus:border-amber-500 rounded-md text-[11px] font-medium text-amber-900 placeholder-slate-300 outline-none"
                                     />
                                   </td>
                                 </>
@@ -8804,6 +8806,19 @@ const [customCommitmentSubjects, setCustomCommitmentSubjects] = useState<string[
                   {orientationQuestions.length} câu hỏi
                 </span>
               </button>
+
+              <button
+                type="button"
+                onClick={() => setCatSubTab("regulation")}
+                className={`flex items-center gap-2 px-5 py-2.5 rounded-2xl text-xs font-black transition-all ${
+                  catSubTab === "regulation"
+                    ? "bg-gradient-to-r from-[#003B3A] via-[#005854] to-[#00736E] text-white shadow-md shadow-teal-900/20"
+                    : "text-slate-600 hover:text-[#005854] hover:bg-teal-50"
+                }`}
+              >
+                <BookOpen className="w-4 h-4" />
+                <span>Nhập Quy chế Tuyển sinh & Phân luồng KS</span>
+              </button>
             </div>
 
             <div className="text-xs text-slate-400 font-semibold px-3">
@@ -8855,6 +8870,21 @@ const [customCommitmentSubjects, setCustomCommitmentSubjects] = useState<string[
                   </div>
                 </div>
               ))}
+            </div>
+          )}
+
+          {/* VIEW 1B: NHẬP & CẤU HÌNH QUY CHẾ TUYỂN SINH */}
+          {catSubTab === "regulation" && (
+            <div className="animate-in fade-in duration-300">
+              <AdmissionRegulationManager
+                initialConfig={parseAdmissionRegulationConfig(configs)}
+                availableSubjects={subjects}
+                availableSystems={eduSystems}
+                readOnly={isReadOnly}
+                onConfigSaved={() => {
+                  fetchConfigs()
+                }}
+              />
             </div>
           )}
 
