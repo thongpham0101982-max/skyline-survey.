@@ -1653,6 +1653,7 @@ export function InputAssessmentsClient({
   const [sessionCandidateUnassignedOnly, setSessionCandidateUnassignedOnly] = useState<boolean>(true)
   const [selectedCandidateIds, setSelectedCandidateIds] = useState<string[]>([])
   const [isSavingSessionStudents, setIsSavingSessionStudents] = useState(false)
+  const [sessionViewLayout, setSessionViewLayout] = useState<"cards" | "table">("cards")
 
 
   const filteredSessions = useMemo(() => {
@@ -6771,422 +6772,706 @@ const [customCommitmentSubjects, setCustomCommitmentSubjects] = useState<string[
           })()}
 
           {/* VIEW MODE 1: SESSIONS */}
-          {periodSubView === "sessions" && (
-            <div className="space-y-4">
-              {/* SESSIONS FILTER BAR */}
-              <div className="bg-white p-4 rounded-2xl border border-slate-200 shadow-sm flex flex-col md:flex-row items-stretch md:items-center justify-between gap-3">
-                <div className="flex-1 flex flex-wrap items-center gap-3">
-                  {/* Search box */}
-                  <div className="relative min-w-[220px] flex-1 sm:flex-initial">
-                    <Search className="w-4 h-4 text-slate-400 absolute left-3 top-1/2 -translate-y-1/2" />
-                    <input
-                      type="text"
-                      placeholder="Tìm theo tên phiên, mã, phòng, HS..."
-                      value={sessionSearch}
-                      onChange={e => setSessionSearch(e.target.value)}
-                      className="w-full pl-9 pr-3 py-1.5 bg-slate-50 border border-slate-200 rounded-xl text-xs font-semibold text-slate-700 placeholder-slate-400 outline-none focus:border-[#00A19A] focus:bg-white transition-all shadow-xs"
-                    />
-                    {sessionSearch && (
-                      <button onClick={() => setSessionSearch("")} className="absolute right-2.5 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600">
-                        <X className="w-3.5 h-3.5" />
+          {periodSubView === "sessions" && (() => {
+            const openSessionsCount = sessions.filter(s => s.status === "SCHEDULED" || s.status === "IN_PROGRESS").length;
+            const completedSessionsCount = sessions.filter(s => s.status === "COMPLETED").length;
+            const totalSessionStudents = sessions.reduce((sum, s) => sum + (s.studentSessions?.length || 0), 0);
+
+            const buildSessionTeachersList = (sessionItem: SessionItem) => {
+              const combinedTeachersMap = new Map<string, { fullName: string; subjects: string[] }>();
+              (sessionItem.examiners || []).forEach((ex: any) => {
+                if (ex.user?.id || ex.userId) {
+                  const uid = ex.user?.id || ex.userId;
+                  combinedTeachersMap.set(uid, {
+                    fullName: ex.user?.fullName || "Giáo viên",
+                    subjects: ex.subjectCode ? [ex.subjectCode] : []
+                  });
+                }
+              });
+              const batchAssigns = (sessionItem as any).batch?.InputAssessmentTeacherAssignment || [];
+              batchAssigns.forEach((ba: any) => {
+                const uid = ba.user?.id || ba.userId;
+                if (!uid) return;
+                const subName = ba.subject?.name || ba.subject?.code || "";
+                if (!combinedTeachersMap.has(uid)) {
+                  combinedTeachersMap.set(uid, {
+                    fullName: ba.user?.fullName || "Giáo viên",
+                    subjects: subName ? [subName] : []
+                  });
+                } else if (subName) {
+                  const entry = combinedTeachersMap.get(uid)!;
+                  if (!entry.subjects.includes(subName)) entry.subjects.push(subName);
+                }
+              });
+              return Array.from(combinedTeachersMap.entries());
+            };
+
+            const handleToggleSessionStatus = async (sessionItem: SessionItem, targetStatus?: string) => {
+              if (cannotUpdate) return;
+              const nextStatus = targetStatus || (sessionItem.status === "COMPLETED" ? "SCHEDULED" : "COMPLETED");
+              try {
+                const res = await fetch("/api/input-assessment-sessions", {
+                  method: "PUT",
+                  headers: { "Content-Type": "application/json" },
+                  body: JSON.stringify({ id: sessionItem.id, status: nextStatus })
+                });
+                if (res.ok) {
+                  if (sessionItem.batchId && (nextStatus === "COMPLETED" || nextStatus === "SCHEDULED")) {
+                    await fetch("/api/input-assessments", {
+                      method: "PUT",
+                      headers: { "Content-Type": "application/json" },
+                      body: JSON.stringify({
+                        action: "UPDATE_BATCH",
+                        id: sessionItem.batchId,
+                        data: { status: nextStatus === "COMPLETED" ? "COMPLETED" : "ACTIVE" }
+                      })
+                    });
+                  }
+                  notify(nextStatus === "COMPLETED" ? "Đã chuyển Phiên ca thi sang Hoàn thành!" : "Đã cập nhật trạng thái Phiên ca thi!");
+                  fetchSessions();
+                  fetchPeriods();
+                }
+              } catch {
+                notify("Lỗi cập nhật trạng thái phiên", "err");
+              }
+            };
+
+            const openEditSessionModal = (sessionItem: SessionItem) => {
+              if (cannotUpdate) return;
+              setEditingSession(sessionItem);
+              setSessionForm({
+                name: sessionItem.name,
+                sessionCode: sessionItem.sessionCode,
+                sessionDate: sessionItem.sessionDate ? new Date(sessionItem.sessionDate).toISOString().slice(0, 10) : "",
+                startTime: sessionItem.startTime || "08:00",
+                endTime: sessionItem.endTime || "10:30",
+                room: sessionItem.room || "",
+                campusId: sessionItem.campusId,
+                periodId: sessionItem.periodId || "",
+                batchId: sessionItem.batchId || "",
+                maxCapacity: sessionItem.maxCapacity || 30,
+                sessionType: sessionItem.sessionType || "LE",
+                status: sessionItem.status || "SCHEDULED",
+                notes: sessionItem.notes || "",
+                examinerUserIds: sessionItem.examiners?.map(e => e.userId) || [],
+              });
+              setIsSessionModalOpen(true);
+            };
+
+            return (
+              <div className="space-y-4">
+                {/* SESSIONS HERO SUMMARY BANNER */}
+                <div className="bg-gradient-to-r from-[#003B3A] via-[#005854] to-[#00736E] rounded-2xl p-4 sm:p-5 text-white shadow-sm flex flex-col lg:flex-row lg:items-center justify-between gap-4">
+                  <div className="space-y-1.5">
+                    <div className="flex items-center gap-2 flex-wrap">
+                      <span className="px-2.5 py-0.5 rounded-full bg-amber-400/20 text-amber-200 border border-amber-300/30 text-[10px] font-black uppercase tracking-wider">
+                        Điều phối Phiên / Lịch Ca Thi
+                      </span>
+                      <span className="text-xs text-teal-100 font-semibold">
+                        Chuẩn quy trình Tuyển sinh Sky-Line
+                      </span>
+                    </div>
+                    <h3 className="text-base sm:text-lg font-black tracking-tight text-white">
+                      Quản lý Lịch Ca Thi, Phòng Khảo sát &amp; Phân công Cán bộ Chấm thi
+                    </h3>
+                    <p className="text-xs text-teal-100/90 max-w-3xl">
+                      Mỗi phiên ca thi liên kết trực tiếp với <strong>Đợt khảo sát</strong>, <strong>Danh sách Học sinh trong ca</strong> và <strong>7. Phân công khảo sát</strong>. Khi đánh dấu <strong>Hoàn thành</strong>, phiên và đợt liên kết sẽ tự động ẩn khỏi danh sách đang mở.
+                    </p>
+                  </div>
+
+                  <div className="flex flex-wrap items-center gap-2.5 shrink-0">
+                    <div className="bg-white/10 border border-white/15 rounded-xl px-3.5 py-2 text-center min-w-[92px]">
+                      <span className="block text-[10px] font-bold uppercase text-teal-200">Tổng phiên</span>
+                      <span className="text-base font-black text-white">{sessions.length}</span>
+                    </div>
+                    <div className="bg-white/10 border border-white/15 rounded-xl px-3.5 py-2 text-center min-w-[92px]">
+                      <span className="block text-[10px] font-bold uppercase text-teal-200">Đang mở</span>
+                      <span className="text-base font-black text-emerald-300">{openSessionsCount}</span>
+                    </div>
+                    <div className="bg-white/10 border border-white/15 rounded-xl px-3.5 py-2 text-center min-w-[92px]">
+                      <span className="block text-[10px] font-bold uppercase text-teal-200">Hoàn thành</span>
+                      <span className="text-base font-black text-sky-300">{completedSessionsCount}</span>
+                    </div>
+                    <div className="bg-white/10 border border-white/15 rounded-xl px-3.5 py-2 text-center min-w-[92px]">
+                      <span className="block text-[10px] font-bold uppercase text-teal-200">HS trong ca</span>
+                      <span className="text-base font-black text-amber-300">{totalSessionStudents} HS</span>
+                    </div>
+                  </div>
+                </div>
+
+                {/* SESSIONS FILTER BAR */}
+                <div className="bg-white p-3.5 rounded-2xl border border-slate-200 shadow-xs flex flex-col xl:flex-row items-stretch xl:items-center justify-between gap-3">
+                  <div className="flex-1 flex flex-wrap items-center gap-2.5">
+                    {/* Search box */}
+                    <div className="relative min-w-[260px] flex-1 sm:max-w-sm">
+                      <Search className="w-4 h-4 text-slate-400 absolute left-3 top-1/2 -translate-y-1/2" />
+                      <input
+                        type="text"
+                        placeholder="Tìm theo tên phiên, mã ca, phòng thi, tên học sinh..."
+                        value={sessionSearch}
+                        onChange={e => setSessionSearch(e.target.value)}
+                        className="w-full h-9 pl-9 pr-8 bg-slate-50 border border-slate-200 rounded-xl text-xs font-semibold text-slate-800 placeholder-slate-400 outline-none focus:border-[#00A19A] focus:bg-white transition-all"
+                      />
+                      {sessionSearch && (
+                        <button onClick={() => setSessionSearch("")} className="absolute right-2.5 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 cursor-pointer">
+                          <X className="w-3.5 h-3.5" />
+                        </button>
+                      )}
+                    </div>
+
+                    {/* Campus Filter */}
+                    <div className="flex items-center gap-1.5">
+                      <label className="text-xs font-bold text-slate-500 flex items-center gap-1 whitespace-nowrap">
+                        <Building className="w-3.5 h-3.5 text-[#00736E]" /> Cơ sở:
+                      </label>
+                      <select
+                        value={sessionCampusFilter}
+                        onChange={e => setSessionCampusFilter(e.target.value)}
+                        className="raw-select h-9 py-1 bg-slate-50 border border-slate-200 rounded-xl px-3 text-xs font-bold text-slate-700 outline-none focus:border-[#00A19A] cursor-pointer"
+                      >
+                        <option value="all">Tất cả Cơ sở</option>
+                        {campuses.map(c => (
+                          <option key={c.id} value={c.id}>{c.campusName}</option>
+                        ))}
+                      </select>
+                    </div>
+
+                    {/* Type Filter */}
+                    <div className="flex items-center gap-1.5">
+                      <label className="text-xs font-bold text-slate-500 whitespace-nowrap">Loại:</label>
+                      <select
+                        value={sessionTypeFilter}
+                        onChange={e => setSessionTypeFilter(e.target.value)}
+                        className="raw-select h-9 py-1 bg-slate-50 border border-slate-200 rounded-xl px-3 text-xs font-bold text-slate-700 outline-none focus:border-[#00A19A] cursor-pointer"
+                      >
+                        <option value="all">Tất cả Loại</option>
+                        <option value="LE">Khảo sát lẻ / Đột xuất</option>
+                        <option value="TAP_TRUNG">Tập trung (Open Day)</option>
+                      </select>
+                    </div>
+
+                    {/* Status Filter */}
+                    <div className="flex items-center gap-1.5">
+                      <label className="text-xs font-bold text-slate-500 whitespace-nowrap">Trạng thái:</label>
+                      <select
+                        value={sessionStatusFilter}
+                        onChange={e => setSessionStatusFilter(e.target.value)}
+                        className="raw-select h-9 py-1 bg-slate-50 border border-slate-200 rounded-xl px-3 text-xs font-bold text-slate-700 outline-none focus:border-[#00A19A] cursor-pointer"
+                      >
+                        <option value="all">Tất cả ({sessions.length})</option>
+                        <option value="SCHEDULED">Đã xếp lịch ({openSessionsCount})</option>
+                        <option value="IN_PROGRESS">Đang diễn ra</option>
+                        <option value="COMPLETED">✓ Hoàn thành ({completedSessionsCount})</option>
+                        <option value="CANCELLED">Đã hủy</option>
+                      </select>
+                    </div>
+
+                    {/* Date Filter */}
+                    <div className="flex items-center gap-1.5">
+                      <label className="text-xs font-bold text-slate-500 flex items-center gap-1 whitespace-nowrap">
+                        <Calendar className="w-3.5 h-3.5 text-[#00736E]" /> Ngày:
+                      </label>
+                      <input
+                        type="date"
+                        value={sessionDateFilter}
+                        onChange={e => setSessionDateFilter(e.target.value)}
+                        className="raw-input h-9 py-1 bg-slate-50 border border-slate-200 rounded-xl px-2.5 text-xs font-semibold text-slate-700 outline-none focus:border-[#00A19A] cursor-pointer"
+                      />
+                    </div>
+
+                    {/* Reset Button */}
+                    {(sessionCampusFilter !== "all" || sessionStatusFilter !== "all" || sessionTypeFilter !== "all" || sessionDateFilter || sessionSearch) && (
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setSessionCampusFilter("all");
+                          setSessionStatusFilter("all");
+                          setSessionTypeFilter("all");
+                          setSessionDateFilter("");
+                          setSessionSearch("");
+                        }}
+                        className="text-xs font-bold text-rose-600 hover:text-rose-700 hover:bg-rose-50 px-2.5 py-1.5 rounded-xl transition-colors flex items-center gap-1 cursor-pointer whitespace-nowrap"
+                      >
+                        <X className="w-3.5 h-3.5" /> Xóa lọc
                       </button>
                     )}
                   </div>
 
-                  {/* Campus Filter */}
-                  <div className="flex items-center gap-1.5">
-                    <label className="text-xs font-bold text-slate-500 flex items-center gap-1">
-                      <Building className="w-3.5 h-3.5 text-[#00736E]" /> CS:
-                    </label>
-                    <select
-                      value={sessionCampusFilter}
-                      onChange={e => setSessionCampusFilter(e.target.value)}
-                      className="bg-slate-50 border border-slate-200 rounded-xl px-2.5 py-1.5 text-xs font-bold text-slate-700 outline-none focus:border-[#00A19A] cursor-pointer shadow-xs"
-                    >
-                      <option value="all">Tất cả Cơ sở</option>
-                      {campuses.map(c => (
-                        <option key={c.id} value={c.id}>{c.campusName}</option>
-                      ))}
-                    </select>
-                  </div>
-
-                  {/* Type Filter */}
-                  <div className="flex items-center gap-1.5">
-                    <label className="text-xs font-bold text-slate-500">Loại:</label>
-                    <select
-                      value={sessionTypeFilter}
-                      onChange={e => setSessionTypeFilter(e.target.value)}
-                      className="bg-slate-50 border border-slate-200 rounded-xl px-2.5 py-1.5 text-xs font-bold text-slate-700 outline-none focus:border-[#00A19A] cursor-pointer shadow-xs"
-                    >
-                      <option value="all">Tất cả Loại</option>
-                      <option value="LE">Khảo sát lẻ / Đột xuất</option>
-                      <option value="TAP_TRUNG">Tập trung (Open Day)</option>
-                    </select>
-                  </div>
-
-                  {/* Status Filter */}
-                  <div className="flex items-center gap-1.5">
-                    <label className="text-xs font-bold text-slate-500">Trạng thái:</label>
-                    <select
-                      value={sessionStatusFilter}
-                      onChange={e => setSessionStatusFilter(e.target.value)}
-                      className="bg-slate-50 border border-slate-200 rounded-xl px-2.5 py-1.5 text-xs font-bold text-slate-700 outline-none focus:border-[#00A19A] cursor-pointer shadow-xs"
-                    >
-                      <option value="all">Tất cả</option>
-                      <option value="SCHEDULED">Đã xếp lịch</option>
-                      <option value="IN_PROGRESS">Đang diễn ra</option>
-                      <option value="COMPLETED">Hoàn thành</option>
-                      <option value="CANCELLED">Đã hủy</option>
-                    </select>
-                  </div>
-
-                  {/* Date Filter */}
-                  <div className="flex items-center gap-1.5">
-                    <label className="text-xs font-bold text-slate-500 flex items-center gap-1">
-                      <Calendar className="w-3.5 h-3.5 text-[#00736E]" /> Ngày:
-                    </label>
-                    <input
-                      type="date"
-                      value={sessionDateFilter}
-                      onChange={e => setSessionDateFilter(e.target.value)}
-                      className="bg-slate-50 border border-slate-200 rounded-xl px-2.5 py-1 text-xs font-semibold text-slate-700 outline-none focus:border-[#00A19A] cursor-pointer shadow-xs"
-                    />
-                  </div>
-
-                  {/* Reset Button */}
-                  {(sessionCampusFilter !== "all" || sessionStatusFilter !== "all" || sessionTypeFilter !== "all" || sessionDateFilter || sessionSearch) && (
-                    <button
-                      onClick={() => {
-                        setSessionCampusFilter("all");
-                        setSessionStatusFilter("all");
-                        setSessionTypeFilter("all");
-                        setSessionDateFilter("");
-                        setSessionSearch("");
-                      }}
-                      className="text-xs font-bold text-rose-600 hover:text-rose-700 hover:bg-rose-50 px-2.5 py-1 rounded-lg transition-colors flex items-center gap-1 cursor-pointer"
-                    >
-                      <X className="w-3.5 h-3.5" /> Xóa lọc
-                    </button>
-                  )}
-                </div>
-              </div>
-
-              {/* SESSIONS CARDS GRID */}
-              {sessionsLoading ? (
-                <Spin />
-              ) : filteredSessions.length === 0 ? (
-                <div className="bg-white border border-slate-200 rounded-2xl p-8 text-center space-y-3 shadow-xs">
-                  <div className="w-12 h-12 rounded-2xl bg-teal-50 border border-teal-100 text-[#00736E] flex items-center justify-center mx-auto">
-                    <Clock className="w-6 h-6" />
-                  </div>
-                  <div>
-                    <p className="text-sm font-black text-slate-800">
-                      {sessionStatusFilter === "SCHEDULED" && sessions.filter(s => s.status === "COMPLETED").length > 0
-                        ? `Hiện không có Phiên / Lịch ca thi nào đang mở (${sessions.filter(s => s.status === "COMPLETED").length} phiên đã Hoàn thành)`
-                        : "Không có phiên khảo sát nào phù hợp"}
-                    </p>
-                    <p className="text-xs text-slate-500 mt-1">
-                      Nhấn &apos;⚡ Tiếp nhận &amp; Xếp lịch KS lẻ (30s)&apos; để xếp ca mới hoặc bấm bên dưới để xem lại các phiên đã hoàn thành.
-                    </p>
-                  </div>
-                  {sessionStatusFilter === "SCHEDULED" && sessions.filter(s => s.status === "COMPLETED").length > 0 && (
-                    <div className="pt-1">
+                  {/* Right Side: View Toggle & Count */}
+                  <div className="flex items-center justify-between xl:justify-end gap-3 shrink-0">
+                    <span className="text-xs font-bold text-slate-500 whitespace-nowrap">
+                      Hiển thị <strong className="text-[#005854]">{filteredSessions.length}</strong> / {sessions.length} phiên
+                    </span>
+                    <div className="inline-flex items-center bg-slate-100 p-1 rounded-xl border border-slate-200/80">
                       <button
                         type="button"
-                        onClick={() => setSessionStatusFilter("COMPLETED")}
-                        className="px-4 py-2 bg-sky-50 hover:bg-sky-100 text-sky-800 border border-sky-200 rounded-xl text-xs font-bold transition-all cursor-pointer"
+                        onClick={() => setSessionViewLayout("cards")}
+                        className={`px-2.5 py-1 rounded-lg text-[11px] font-black transition-all cursor-pointer flex items-center gap-1 ${
+                          sessionViewLayout === "cards"
+                            ? "bg-[#00736E] text-white shadow-2xs"
+                            : "text-slate-600 hover:text-slate-900"
+                        }`}
                       >
-                        Xem {sessions.filter(s => s.status === "COMPLETED").length} phiên đã Hoàn thành
+                        <Layers className="w-3.5 h-3.5" />
+                        <span>Thẻ ca thi</span>
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => setSessionViewLayout("table")}
+                        className={`px-2.5 py-1 rounded-lg text-[11px] font-black transition-all cursor-pointer flex items-center gap-1 ${
+                          sessionViewLayout === "table"
+                            ? "bg-[#00736E] text-white shadow-2xs"
+                            : "text-slate-600 hover:text-slate-900"
+                        }`}
+                      >
+                        <ClipboardList className="w-3.5 h-3.5" />
+                        <span>Bảng danh sách</span>
                       </button>
                     </div>
-                  )}
+                  </div>
                 </div>
-              ) : (
-                <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
-                  {filteredSessions.map(sessionItem => {
-                    const stCount = sessionItem.studentSessions?.length || 0;
 
-                    const statusBadgeMap: Record<string, { label: string; cls: string }> = {
-                      SCHEDULED: { label: "Đã lên lịch", cls: "bg-teal-50 text-[#005854] border-teal-200" },
-                      IN_PROGRESS: { label: "Đang diễn ra", cls: "bg-amber-50 text-amber-700 border-amber-200" },
-                      COMPLETED: { label: "Hoàn thành", cls: "bg-emerald-50 text-emerald-700 border-emerald-200" },
-                      CANCELLED: { label: "Đã hủy", cls: "bg-slate-100 text-slate-500 border-slate-200" },
-                    };
-                    const sBadge = statusBadgeMap[sessionItem.status] || statusBadgeMap.SCHEDULED;
+                {/* SESSIONS CONTENT */}
+                {sessionsLoading ? (
+                  <Spin />
+                ) : filteredSessions.length === 0 ? (
+                  <div className="bg-white border border-slate-200 rounded-2xl p-8 text-center space-y-3 shadow-xs">
+                    <div className="w-12 h-12 rounded-2xl bg-teal-50 border border-teal-100 text-[#00736E] flex items-center justify-center mx-auto">
+                      <Clock className="w-6 h-6" />
+                    </div>
+                    <div>
+                      <p className="text-sm font-black text-slate-800">
+                        {sessionStatusFilter === "SCHEDULED" && completedSessionsCount > 0
+                          ? `Hiện không có Phiên / Lịch ca thi nào đang mở (${completedSessionsCount} phiên đã Hoàn thành)`
+                          : "Không có phiên khảo sát nào phù hợp"}
+                      </p>
+                      <p className="text-xs text-slate-500 mt-1">
+                        Nhấn &apos;⚡ Tiếp nhận &amp; Xếp lịch KS lẻ (30s)&apos; để xếp ca mới hoặc bấm bên dưới để xem lại các phiên đã hoàn thành.
+                      </p>
+                    </div>
+                    {sessionStatusFilter === "SCHEDULED" && completedSessionsCount > 0 && (
+                      <div className="pt-1">
+                        <button
+                          type="button"
+                          onClick={() => setSessionStatusFilter("COMPLETED")}
+                          className="px-4 py-2 bg-sky-50 hover:bg-sky-100 text-sky-800 border border-sky-200 rounded-xl text-xs font-bold transition-all cursor-pointer"
+                        >
+                          Xem {completedSessionsCount} phiên đã Hoàn thành
+                        </button>
+                      </div>
+                    )}
+                  </div>
+                ) : sessionViewLayout === "table" ? (
+                  /* TABLE LAYOUT FOR SESSIONS */
+                  <div className="bg-white border border-slate-200 rounded-2xl shadow-xs overflow-hidden">
+                    <div className="overflow-x-auto max-h-[620px] overflow-y-auto custom-scrollbar">
+                      <table className="w-full text-left border-collapse">
+                        <thead className="sticky top-0 z-10 bg-[#003B3A] text-white">
+                          <tr>
+                            <th className="px-4 py-3 text-[10px] font-black uppercase tracking-wider whitespace-nowrap">Mã Ca / Đợt</th>
+                            <th className="px-4 py-3 text-[10px] font-black uppercase tracking-wider">Tên Phiên / Lịch Ca Thi</th>
+                            <th className="px-4 py-3 text-[10px] font-black uppercase tracking-wider whitespace-nowrap">Cơ sở &amp; Phòng</th>
+                            <th className="px-4 py-3 text-[10px] font-black uppercase tracking-wider whitespace-nowrap">Ngày &amp; Giờ thi</th>
+                            <th className="px-4 py-3 text-[10px] font-black uppercase tracking-wider whitespace-nowrap">Học sinh trong ca</th>
+                            <th className="px-4 py-3 text-[10px] font-black uppercase tracking-wider">Cán bộ Khảo sát</th>
+                            <th className="px-4 py-3 text-[10px] font-black uppercase tracking-wider whitespace-nowrap">Trạng thái</th>
+                            <th className="px-4 py-3 text-[10px] font-black uppercase tracking-wider text-right pr-5 whitespace-nowrap">Thao tác nhanh</th>
+                          </tr>
+                        </thead>
+                        <tbody className="divide-y divide-slate-100 text-xs">
+                          {filteredSessions.map(sessionItem => {
+                            const stCount = sessionItem.studentSessions?.length || 0;
+                            const combinedList = buildSessionTeachersList(sessionItem);
+                            const isCompleted = sessionItem.status === "COMPLETED";
+                            const dateStr = sessionItem.sessionDate
+                              ? new Date(sessionItem.sessionDate).toLocaleDateString("vi-VN", { day: "2-digit", month: "2-digit", year: "numeric" })
+                              : "--/--/----";
 
-                    const dateStr = sessionItem.sessionDate
-                      ? new Date(sessionItem.sessionDate).toLocaleDateString("vi-VN", { day: "2-digit", month: "2-digit", year: "numeric" })
-                      : "--/--/----";
-
-                    return (
-                      <div
-                        key={sessionItem.id}
-                        className="bg-white rounded-2xl border border-slate-200 hover:border-[#00A19A] hover:shadow-md transition-all p-5 flex flex-col justify-between group"
-                      >
-                        <div>
-                          {/* Card Header */}
-                          <div className="flex items-start justify-between gap-2 mb-2.5">
-                            <div className="flex flex-wrap items-center gap-1.5">
-                              <span className={`inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-black uppercase tracking-wider border ${sBadge.cls}`}>
-                                {sBadge.label}
-                              </span>
-                              <span className="inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-bold bg-slate-100 text-slate-600 border border-slate-200">
-                                {sessionItem.sessionType === "TAP_TRUNG" ? "Tập trung" : "Khảo sát lẻ"}
-                              </span>
-                              {(sessionItem as any).batch?.name && (
-                                <span className="inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-bold bg-amber-50 text-amber-800 border border-amber-200">
-                                  Đợt #{(sessionItem as any).batch.batchNumber}
-                                </span>
-                              )}
-                            </div>
-
-                            <div className="flex items-center gap-1 opacity-80 group-hover:opacity-100 transition-opacity">
-                              <button
-                                type="button"
-                                onClick={async () => {
-                                  if (cannotUpdate) return;
-                                  const nextStatus = sessionItem.status === "COMPLETED" ? "SCHEDULED" : "COMPLETED";
-                                  try {
-                                    const res = await fetch("/api/input-assessment-sessions", {
-                                      method: "PUT",
-                                      headers: { "Content-Type": "application/json" },
-                                      body: JSON.stringify({ id: sessionItem.id, status: nextStatus })
-                                    });
-                                    if (res.ok) {
-                                      if (sessionItem.batchId && (nextStatus === "COMPLETED" || nextStatus === "SCHEDULED")) {
-                                        await fetch("/api/input-assessments", {
-                                          method: "PUT",
-                                          headers: { "Content-Type": "application/json" },
-                                          body: JSON.stringify({
-                                            action: "UPDATE_BATCH",
-                                            id: sessionItem.batchId,
-                                            data: { status: nextStatus === "COMPLETED" ? "COMPLETED" : "ACTIVE" }
-                                          })
-                                        });
-                                      }
-                                      notify(nextStatus === "COMPLETED" ? "Đã chuyển Phiên ca thi sang Hoàn thành!" : "Đã mở lại Phiên ca thi!");
-                                      fetchSessions();
-                                      fetchPeriods();
-                                    }
-                                  } catch {
-                                    notify("Lỗi cập nhật trạng thái phiên", "err");
-                                  }
-                                }}
-                                className={`px-2 py-1 rounded-lg text-[10px] font-bold transition-all cursor-pointer border ${
-                                  sessionItem.status === "COMPLETED"
-                                    ? "bg-teal-50 text-[#00736E] border-teal-200 hover:bg-teal-100"
-                                    : "bg-emerald-50 text-emerald-700 border-emerald-200 hover:bg-emerald-600 hover:text-white"
-                                } ${cannotUpdate ? "pointer-events-none opacity-40" : ""}`}
-                                title={sessionItem.status === "COMPLETED" ? "Mở lại phiên ca thi này" : "Đánh dấu Hoàn thành phiên ca thi này (ẩn khỏi Phân công GV)"}
-                              >
-                                {sessionItem.status === "COMPLETED" ? "Mở lại" : "✓ Hoàn thành"}
-                              </button>
-                              <button
-                                onClick={() => {
-                                  if (cannotUpdate) return;
-                                  setEditingSession(sessionItem);
-                                  setSessionForm({
-                                    name: sessionItem.name,
-                                    sessionCode: sessionItem.sessionCode,
-                                    sessionDate: sessionItem.sessionDate ? new Date(sessionItem.sessionDate).toISOString().slice(0, 10) : "",
-                                    startTime: sessionItem.startTime || "08:00",
-                                    endTime: sessionItem.endTime || "10:30",
-                                    room: sessionItem.room || "",
-                                    campusId: sessionItem.campusId,
-                                    periodId: sessionItem.periodId || "",
-                                    batchId: sessionItem.batchId || "",
-                                    maxCapacity: sessionItem.maxCapacity || 30,
-                                    sessionType: sessionItem.sessionType || "LE",
-                                    status: sessionItem.status || "SCHEDULED",
-                                    notes: sessionItem.notes || "",
-                                    examinerUserIds: sessionItem.examiners?.map(e => e.userId) || [],
-                                  });
-                                  setIsSessionModalOpen(true);
-                                }}
-                                className={"p-1.5 text-slate-400 hover:text-[#00736E] hover:bg-teal-50 rounded-lg transition-all " + (cannotUpdate ? "pointer-events-none opacity-40" : "")}
-                                title="Chỉnh sửa phiên"
-                              >
-                                <Edit2 className="w-3.5 h-3.5" />
-                              </button>
-
-                              <button
-                                onClick={() => {
-                                  if (cannotDelete) return;
-                                  setConfirm({
-                                    msg: `Xóa phiên "${sessionItem.name}"? Dữ liệu chỉ có thể xóa khi chưa có điểm nhập.`,
-                                    fn: () => doDeleteSession(sessionItem.id)
-                                  });
-                                }}
-                                className={"p-1.5 text-slate-400 hover:text-rose-600 hover:bg-rose-50 rounded-lg transition-all " + (cannotDelete ? "pointer-events-none opacity-40" : "")}
-                                title="Xóa phiên"
-                              >
-                                <Trash2 className="w-3.5 h-3.5" />
-                              </button>
-                            </div>
-                          </div>
-
-                          {/* Session Name & Code */}
-                          <h4 className="text-sm font-black text-slate-800 line-clamp-1 group-hover:text-[#005854] transition-colors">
-                            {sessionItem.name}
-                          </h4>
-                          <p className="font-mono text-[11px] font-bold text-slate-400 mt-0.5">
-                            {sessionItem.sessionCode}
-                          </p>
-
-                          {/* Info Rows */}
-                          <div className="grid grid-cols-2 gap-2 mt-3.5 text-xs text-slate-600 font-semibold bg-slate-50/70 p-3 rounded-xl border border-slate-100">
-                            <div className="flex items-center gap-1.5">
-                              <Calendar className="w-3.5 h-3.5 text-[#00736E] shrink-0" />
-                              <span className="truncate">{dateStr}</span>
-                            </div>
-                            <div className="flex items-center gap-1.5">
-                              <Clock className="w-3.5 h-3.5 text-[#00736E] shrink-0" />
-                              <span className="truncate">{sessionItem.startTime || "--"} → {sessionItem.endTime || "--"}</span>
-                            </div>
-                            <div className="flex items-center gap-1.5">
-                              <Building className="w-3.5 h-3.5 text-[#00736E] shrink-0" />
-                              <span className="truncate">{sessionItem.campus?.campusName || "--"}</span>
-                            </div>
-                            <div className="flex items-center gap-1.5">
-                              <span className="w-3.5 h-3.5 rounded bg-teal-100 text-[#005854] font-black text-[9px] flex items-center justify-center shrink-0">P</span>
-                              <span className="truncate font-bold text-slate-700">{sessionItem.room || "Chưa xếp phòng"}</span>
-                            </div>
-                          </div>
-
-                          {/* Enrolled Students Preview List */}
-                          <div className="mt-3 bg-slate-50/80 px-3 py-2 rounded-xl border border-slate-100 space-y-1.5">
-                            <div className="flex items-center justify-between text-[11px] font-bold text-slate-500">
-                              <span className="flex items-center gap-1">
-                                <Users className="w-3.5 h-3.5 text-[#00736E]" />
-                                <span>Học sinh trong ca:</span>
-                              </span>
-                              <span className={`font-black text-xs ${stCount > 0 ? "text-[#00736E]" : "text-amber-600"}`}>
-                                {stCount} học sinh
-                              </span>
-                            </div>
-                            {stCount > 0 && (
-                              <div className="flex flex-wrap gap-1 pt-0.5">
-                                {sessionItem.studentSessions?.slice(0, 3).map((ss: any) => (
-                                  <span
-                                    key={ss.id}
-                                    className="inline-flex items-center gap-1 px-2 py-0.5 rounded-lg bg-white border border-teal-200/80 text-[11px] font-bold text-slate-700"
-                                  >
-                                    <span>{ss.student?.fullName}</span>
-                                    {ss.student?.grade && (
-                                      <span className="text-[10px] text-[#00736E] font-black">
-                                        (K{ss.student.grade}{ss.student?.surveyFormType ? `-${ss.student.surveyFormType}` : ""})
+                            return (
+                              <tr key={sessionItem.id} className={`transition-colors group ${isCompleted ? "bg-slate-50/70 opacity-85 hover:opacity-100" : "hover:bg-teal-50/40"}`}>
+                                <td className="px-4 py-3 whitespace-nowrap">
+                                  <div className="flex flex-col gap-1">
+                                    <span className="font-mono text-[11px] font-black text-[#005854]">
+                                      {sessionItem.sessionCode}
+                                    </span>
+                                    {(sessionItem as any).batch?.batchNumber && (
+                                      <span className="inline-flex items-center w-fit px-2 py-0.5 rounded-md text-[10px] font-bold bg-amber-50 text-amber-800 border border-amber-200">
+                                        Đợt #{(sessionItem as any).batch.batchNumber}
                                       </span>
                                     )}
+                                  </div>
+                                </td>
+                                <td className="px-4 py-3">
+                                  <div className="font-black text-slate-800 text-xs sm:text-sm group-hover:text-[#005854]">
+                                    {sessionItem.name}
+                                  </div>
+                                  <span className="inline-flex items-center mt-1 px-2 py-0.5 rounded-full text-[10px] font-bold bg-slate-100 text-slate-600">
+                                    {sessionItem.sessionType === "TAP_TRUNG" ? "Tập trung" : "Khảo sát lẻ"}
                                   </span>
-                                ))}
-                                {stCount > 3 && (
-                                  <span className="text-[10px] font-bold text-slate-400 px-1.5 py-0.5">+{stCount - 3} HS khác</span>
+                                </td>
+                                <td className="px-4 py-3 whitespace-nowrap">
+                                  <div className="font-bold text-slate-700">{sessionItem.campus?.campusName || "--"}</div>
+                                  <div className="text-[11px] text-slate-500">{sessionItem.room || "Chưa xếp phòng"}</div>
+                                </td>
+                                <td className="px-4 py-3 whitespace-nowrap">
+                                  <div className="font-bold text-slate-700 flex items-center gap-1">
+                                    <Calendar className="w-3.5 h-3.5 text-[#00736E]" />
+                                    <span>{dateStr}</span>
+                                  </div>
+                                  <div className="text-[11px] text-slate-500 flex items-center gap-1 mt-0.5">
+                                    <Clock className="w-3 h-3 text-slate-400" />
+                                    <span>{sessionItem.startTime || "--"} → {sessionItem.endTime || "--"}</span>
+                                  </div>
+                                </td>
+                                <td className="px-4 py-3">
+                                  <button
+                                    type="button"
+                                    onClick={() => {
+                                      setSelectedSessionForDetail(sessionItem);
+                                      setIsAddingStudentsToSession(false);
+                                    }}
+                                    className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-xl text-xs font-black transition-all cursor-pointer border whitespace-nowrap ${
+                                      stCount > 0
+                                        ? "bg-teal-50 text-[#005854] border-teal-200 hover:bg-[#00736E] hover:text-white"
+                                        : "bg-amber-50 text-amber-800 border-amber-200 hover:bg-amber-500 hover:text-white"
+                                    }`}
+                                  >
+                                    <Users className="w-3.5 h-3.5" />
+                                    <span>{stCount} HS</span>
+                                  </button>
+                                  {stCount > 0 && (
+                                    <div className="flex flex-wrap gap-1 mt-1 max-w-[220px]">
+                                      {sessionItem.studentSessions?.slice(0, 2).map((ss: any) => (
+                                        <span key={ss.id} className="text-[10px] font-bold text-slate-600 bg-slate-100 px-1.5 py-0.5 rounded">
+                                          {ss.student?.fullName}
+                                        </span>
+                                      ))}
+                                      {stCount > 2 && <span className="text-[10px] text-slate-400 font-bold">+{stCount - 2}</span>}
+                                    </div>
+                                  )}
+                                </td>
+                                <td className="px-4 py-3">
+                                  {combinedList.length === 0 ? (
+                                    <span className="text-[11px] italic text-slate-400">Chưa phân công</span>
+                                  ) : (
+                                    <div className="flex flex-wrap gap-1 max-w-[240px]">
+                                      {combinedList.map(([uid, info]) => (
+                                        <span key={uid} className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md bg-teal-50/70 border border-teal-200 text-slate-700 text-[10px] font-bold">
+                                          <span>{info.fullName}</span>
+                                          {info.subjects.length > 0 && (
+                                            <span className="text-[9px] text-[#00736E]">({info.subjects.slice(0, 2).join(", ")})</span>
+                                          )}
+                                        </span>
+                                      ))}
+                                    </div>
+                                  )}
+                                </td>
+                                <td className="px-4 py-3 whitespace-nowrap">
+                                  <div className="flex items-center gap-1.5">
+                                    <select
+                                      value={sessionItem.status || "SCHEDULED"}
+                                      onChange={e => handleToggleSessionStatus(sessionItem, e.target.value)}
+                                      disabled={cannotUpdate}
+                                      className={`raw-select h-8 py-1 px-2.5 rounded-lg text-xs font-bold leading-normal border outline-none cursor-pointer transition-all ${
+                                        sessionItem.status === "COMPLETED"
+                                          ? "bg-sky-50 text-sky-700 border-sky-200"
+                                          : sessionItem.status === "CANCELLED"
+                                          ? "bg-slate-100 text-slate-500 border-slate-200"
+                                          : "bg-emerald-50 text-emerald-700 border-emerald-200"
+                                      }`}
+                                    >
+                                      <option value="SCHEDULED">Đã xếp lịch</option>
+                                      <option value="IN_PROGRESS">Đang diễn ra</option>
+                                      <option value="COMPLETED">✓ Hoàn thành</option>
+                                      <option value="CANCELLED">Đã hủy</option>
+                                    </select>
+                                  </div>
+                                </td>
+                                <td className="px-4 py-3 text-right pr-5 whitespace-nowrap">
+                                  <div className="flex items-center justify-end gap-1.5">
+                                    <button
+                                      type="button"
+                                      onClick={() => handleOpenAddStudentsToSession(sessionItem)}
+                                      className="h-8 px-2.5 bg-emerald-50 hover:bg-emerald-600 text-emerald-700 hover:text-white border border-emerald-200 rounded-lg text-[11px] font-bold transition-all cursor-pointer inline-flex items-center gap-1 whitespace-nowrap shrink-0"
+                                    >
+                                      <UserPlus className="w-3.5 h-3.5 shrink-0" />
+                                      <span>+ HS</span>
+                                    </button>
+                                    <a
+                                      href={`/admin/phan-cong-khao-sat?tab=k12&sessionId=${sessionItem.id}${sessionItem.periodId ? `&periodId=${sessionItem.periodId}` : ""}${sessionItem.batchId ? `&batchId=${sessionItem.batchId}` : ""}`}
+                                      className="h-8 px-2.5 bg-amber-50 hover:bg-amber-600 text-amber-800 hover:text-white border border-amber-200 rounded-lg text-[11px] font-bold transition-all cursor-pointer inline-flex items-center gap-1 whitespace-nowrap shrink-0"
+                                    >
+                                      <UserCheck className="w-3.5 h-3.5 shrink-0" />
+                                      <span>Phân công GV</span>
+                                    </a>
+                                    <button
+                                      type="button"
+                                      onClick={() => openEditSessionModal(sessionItem)}
+                                      className="p-1.5 text-slate-400 hover:text-[#00736E] hover:bg-teal-50 rounded-lg transition-all cursor-pointer"
+                                      title="Chỉnh sửa phiên"
+                                    >
+                                      <Edit2 className="w-3.5 h-3.5" />
+                                    </button>
+                                    <button
+                                      type="button"
+                                      onClick={() => {
+                                        if (cannotDelete) return;
+                                        setConfirm({
+                                          msg: `Xóa phiên "${sessionItem.name}"? Dữ liệu chỉ có thể xóa khi chưa có điểm nhập.`,
+                                          fn: () => doDeleteSession(sessionItem.id)
+                                        });
+                                      }}
+                                      className="p-1.5 text-slate-400 hover:text-rose-600 hover:bg-rose-50 rounded-lg transition-all cursor-pointer"
+                                      title="Xóa phiên"
+                                    >
+                                      <Trash2 className="w-3.5 h-3.5" />
+                                    </button>
+                                  </div>
+                                </td>
+                              </tr>
+                            );
+                          })}
+                        </tbody>
+                      </table>
+                    </div>
+                  </div>
+                ) : (
+                  /* REDESIGNED BALANCED SESSIONS CARDS GRID */
+                  <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
+                    {filteredSessions.map(sessionItem => {
+                      const stCount = sessionItem.studentSessions?.length || 0;
+                      const combinedList = buildSessionTeachersList(sessionItem);
+
+                      const dateStr = sessionItem.sessionDate
+                        ? new Date(sessionItem.sessionDate).toLocaleDateString("vi-VN", { day: "2-digit", month: "2-digit", year: "numeric" })
+                        : "--/--/----";
+
+                      return (
+                        <div
+                          key={sessionItem.id}
+                          className="bg-white rounded-2xl border border-slate-200 hover:border-[#00A19A] hover:shadow-md transition-all p-4 sm:p-5 flex flex-col justify-between group"
+                        >
+                          <div>
+                            {/* Top Status & Quick Controls Bar */}
+                            <div className="flex items-center justify-between gap-2 pb-3 mb-3 border-b border-slate-100">
+                              <div className="flex items-center gap-1.5 flex-wrap">
+                                <select
+                                  value={sessionItem.status || "SCHEDULED"}
+                                  onChange={e => handleToggleSessionStatus(sessionItem, e.target.value)}
+                                  disabled={cannotUpdate}
+                                  className={`raw-select h-7 py-0.5 px-2.5 rounded-lg text-[11px] font-extrabold leading-normal border outline-none cursor-pointer transition-all ${
+                                    sessionItem.status === "COMPLETED"
+                                      ? "bg-sky-50 text-sky-700 border-sky-200"
+                                      : sessionItem.status === "IN_PROGRESS"
+                                      ? "bg-amber-50 text-amber-700 border-amber-200"
+                                      : sessionItem.status === "CANCELLED"
+                                      ? "bg-slate-100 text-slate-500 border-slate-200"
+                                      : "bg-teal-50 text-[#005854] border-teal-200"
+                                  }`}
+                                  title="Đổi trạng thái Phiên / Lịch ca thi"
+                                >
+                                  <option value="SCHEDULED">Đã lên lịch</option>
+                                  <option value="IN_PROGRESS">Đang diễn ra</option>
+                                  <option value="COMPLETED">✓ Hoàn thành</option>
+                                  <option value="CANCELLED">Đã hủy</option>
+                                </select>
+
+                                <span className="inline-flex items-center h-7 px-2.5 rounded-lg text-[11px] font-bold bg-slate-100 text-slate-600 border border-slate-200/80 whitespace-nowrap">
+                                  {sessionItem.sessionType === "TAP_TRUNG" ? "Tập trung" : "Khảo sát lẻ"}
+                                </span>
+
+                                {(sessionItem as any).batch?.batchNumber && (
+                                  <span className="inline-flex items-center h-7 px-2 rounded-lg text-[11px] font-black bg-amber-50 text-amber-800 border border-amber-200 whitespace-nowrap">
+                                    Đợt #{(sessionItem as any).batch.batchNumber}
+                                  </span>
                                 )}
                               </div>
-                            )}
-                          </div>
 
-                          {/* Examiners list */}
-                          <div className="mt-2.5 text-[11px] text-slate-500">
-                            <div className="flex items-center justify-between gap-2 mb-1">
-                              <span className="font-bold text-slate-400 uppercase tracking-wider text-[10px]">
-                                Cán bộ khảo sát:
-                              </span>
-                              <a
-                                href={`/admin/phan-cong-khao-sat?tab=k12&sessionId=${sessionItem.id}${sessionItem.periodId ? `&periodId=${sessionItem.periodId}` : ""}${sessionItem.batchId ? `&batchId=${sessionItem.batchId}` : ""}`}
-                                className="inline-flex items-center gap-1 text-[10px] font-bold text-[#00736E] hover:text-[#003B3A] hover:underline"
-                                title="Mở trang Phân công Khảo sát cho Phiên / Lịch ca thi này"
-                              >
-                                <UserCheck className="w-3 h-3" />
-                                <span>Phân công GV &rarr;</span>
-                              </a>
+                              <div className="flex items-center gap-1 shrink-0">
+                                {sessionItem.status !== "COMPLETED" && !cannotUpdate && (
+                                  <button
+                                    type="button"
+                                    onClick={() => handleToggleSessionStatus(sessionItem, "COMPLETED")}
+                                    className="h-7 px-2.5 rounded-lg text-[11px] font-bold transition-all cursor-pointer border bg-emerald-50 text-emerald-700 border-emerald-200 hover:bg-emerald-600 hover:text-white whitespace-nowrap"
+                                    title="Đánh dấu Hoàn thành phiên ca thi này (ẩn khỏi Phân công GV)"
+                                  >
+                                    ✓ Hoàn thành
+                                  </button>
+                                )}
+                                <button
+                                  type="button"
+                                  onClick={() => openEditSessionModal(sessionItem)}
+                                  className={"p-1.5 text-slate-400 hover:text-[#00736E] hover:bg-teal-50 rounded-lg transition-all cursor-pointer " + (cannotUpdate ? "pointer-events-none opacity-40" : "")}
+                                  title="Chỉnh sửa phiên"
+                                >
+                                  <Edit2 className="w-3.5 h-3.5" />
+                                </button>
+                                <button
+                                  type="button"
+                                  onClick={() => {
+                                    if (cannotDelete) return;
+                                    setConfirm({
+                                      msg: `Xóa phiên "${sessionItem.name}"? Dữ liệu chỉ có thể xóa khi chưa có điểm nhập.`,
+                                      fn: () => doDeleteSession(sessionItem.id)
+                                    });
+                                  }}
+                                  className={"p-1.5 text-slate-400 hover:text-rose-600 hover:bg-rose-50 rounded-lg transition-all cursor-pointer " + (cannotDelete ? "pointer-events-none opacity-40" : "")}
+                                  title="Xóa phiên"
+                                >
+                                  <Trash2 className="w-3.5 h-3.5" />
+                                </button>
+                              </div>
                             </div>
-                            {(() => {
-                              const combinedTeachersMap = new Map<string, { fullName: string; subjects: string[] }>();
-                              (sessionItem.examiners || []).forEach((ex: any) => {
-                                if (ex.user?.id || ex.userId) {
-                                  const uid = ex.user?.id || ex.userId;
-                                  combinedTeachersMap.set(uid, {
-                                    fullName: ex.user?.fullName || "Giáo viên",
-                                    subjects: ex.subjectCode ? [ex.subjectCode] : []
-                                  });
-                                }
-                              });
-                              const batchAssigns = (sessionItem as any).batch?.InputAssessmentTeacherAssignment || [];
-                              batchAssigns.forEach((ba: any) => {
-                                const uid = ba.user?.id || ba.userId;
-                                if (!uid) return;
-                                const subName = ba.subject?.name || ba.subject?.code || "";
-                                if (!combinedTeachersMap.has(uid)) {
-                                  combinedTeachersMap.set(uid, {
-                                    fullName: ba.user?.fullName || "Giáo viên",
-                                    subjects: subName ? [subName] : []
-                                  });
-                                } else if (subName) {
-                                  const entry = combinedTeachersMap.get(uid)!;
-                                  if (!entry.subjects.includes(subName)) entry.subjects.push(subName);
-                                }
-                              });
-                              const combinedList = Array.from(combinedTeachersMap.entries());
-                              if (combinedList.length === 0) {
-                                return <span className="italic text-slate-400 text-[11px]">-- Chưa phân công --</span>;
-                              }
-                              return (
-                                <div className="flex flex-wrap gap-1">
-                                  {combinedList.map(([uid, info]) => (
-                                    <span key={uid} className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md bg-white border border-teal-200/90 text-slate-700 text-[10px] font-bold shadow-2xs">
-                                      <span>{info.fullName}</span>
-                                      {info.subjects.length > 0 && (
-                                        <span className="text-[9px] text-[#00736E] font-semibold">
-                                          ({info.subjects.slice(0, 2).join(", ")}{info.subjects.length > 2 ? `+${info.subjects.length - 2}` : ""})
-                                        </span>
-                                      )}
-                                    </span>
-                                  ))}
+
+                            {/* Session Name & Code */}
+                            <div className="mb-3">
+                              <h4 className="text-[15px] font-black text-slate-800 line-clamp-1 group-hover:text-[#005854] transition-colors" title={sessionItem.name}>
+                                {sessionItem.name}
+                              </h4>
+                              <p className="font-mono text-[11px] font-bold text-slate-400 mt-0.5">
+                                Mã ca: {sessionItem.sessionCode}
+                              </p>
+                            </div>
+
+                            {/* Schedule & Room Info Grid */}
+                            <div className="grid grid-cols-2 gap-2 text-xs text-slate-700 font-semibold bg-slate-50/90 p-3 rounded-xl border border-slate-100">
+                              <div className="flex items-center gap-1.5">
+                                <Calendar className="w-3.5 h-3.5 text-[#00736E] shrink-0" />
+                                <span className="truncate">{dateStr}</span>
+                              </div>
+                              <div className="flex items-center gap-1.5">
+                                <Clock className="w-3.5 h-3.5 text-[#00736E] shrink-0" />
+                                <span className="truncate">{sessionItem.startTime || "--"} → {sessionItem.endTime || "--"}</span>
+                              </div>
+                              <div className="flex items-center gap-1.5">
+                                <Building className="w-3.5 h-3.5 text-[#00736E] shrink-0" />
+                                <span className="truncate font-bold">{sessionItem.campus?.campusName || "--"}</span>
+                              </div>
+                              <div className="flex items-center gap-1.5">
+                                <span className="w-4 h-4 rounded bg-teal-100 text-[#005854] font-black text-[9px] flex items-center justify-center shrink-0">P</span>
+                                <span className="truncate font-bold text-slate-800">{sessionItem.room || "Chưa xếp phòng"}</span>
+                              </div>
+                            </div>
+
+                            {/* Two Harmonized Info Boxes: Students & Examiners */}
+                            <div className="mt-2.5 space-y-2">
+                              {/* Box 1: Students in Session */}
+                              <div className="bg-teal-50/35 px-3 py-2.5 rounded-xl border border-teal-100/80 min-h-[64px] flex flex-col justify-between">
+                                <div className="flex items-center justify-between text-[11px] font-bold text-slate-600">
+                                  <span className="flex items-center gap-1.5">
+                                    <Users className="w-3.5 h-3.5 text-[#00736E]" />
+                                    <span>Học sinh trong ca</span>
+                                  </span>
+                                  <span className={`px-2 py-0.5 rounded-full font-black text-[10px] ${
+                                    stCount > 0
+                                      ? "bg-teal-100/80 text-[#005854]"
+                                      : "bg-amber-100/80 text-amber-800"
+                                  }`}>
+                                    {stCount} học sinh
+                                  </span>
                                 </div>
-                              );
-                            })()}
+                                <div className="pt-1.5">
+                                  {stCount > 0 ? (
+                                    <div className="flex flex-wrap gap-1">
+                                      {sessionItem.studentSessions?.slice(0, 3).map((ss: any) => (
+                                        <span
+                                          key={ss.id}
+                                          className="inline-flex items-center gap-1 px-2 py-0.5 rounded-lg bg-white border border-teal-200/90 text-[11px] font-bold text-slate-700 shadow-2xs"
+                                        >
+                                          <span>{ss.student?.fullName}</span>
+                                          {ss.student?.grade && (
+                                            <span className="text-[10px] text-[#00736E] font-black">
+                                              (K{ss.student.grade}{ss.student?.surveyFormType ? `-${ss.student.surveyFormType}` : ""})
+                                            </span>
+                                          )}
+                                        </span>
+                                      ))}
+                                      {stCount > 3 && (
+                                        <span className="text-[10px] font-bold text-slate-500 px-1.5 py-0.5">+{stCount - 3} HS khác</span>
+                                      )}
+                                    </div>
+                                  ) : (
+                                    <span className="text-[11px] italic text-slate-400">Chưa xếp học sinh vào ca khảo sát này</span>
+                                  )}
+                                </div>
+                              </div>
+
+                              {/* Box 2: Examiners / Assigned Teachers */}
+                              <div className="bg-slate-50/90 px-3 py-2.5 rounded-xl border border-slate-100 min-h-[64px] flex flex-col justify-between">
+                                <div className="flex items-center justify-between text-[11px] font-bold text-slate-600">
+                                  <span className="flex items-center gap-1.5">
+                                    <UserCheck className="w-3.5 h-3.5 text-[#00736E]" />
+                                    <span>Cán bộ khảo sát</span>
+                                  </span>
+                                  <span className={`px-2 py-0.5 rounded-full font-black text-[10px] ${
+                                    combinedList.length > 0
+                                      ? "bg-emerald-100/80 text-emerald-800"
+                                      : "bg-slate-200/70 text-slate-500"
+                                  }`}>
+                                    {combinedList.length > 0 ? `${combinedList.length} giáo viên` : "Chưa phân công"}
+                                  </span>
+                                </div>
+                                <div className="pt-1.5">
+                                  {combinedList.length > 0 ? (
+                                    <div className="flex flex-wrap gap-1">
+                                      {combinedList.map(([uid, info]) => (
+                                        <span key={uid} className="inline-flex items-center gap-1 px-2 py-0.5 rounded-lg bg-white border border-teal-200/90 text-slate-700 text-[11px] font-bold shadow-2xs">
+                                          <span>{info.fullName}</span>
+                                          {info.subjects.length > 0 && (
+                                            <span className="text-[10px] text-[#00736E] font-semibold">
+                                              ({info.subjects.slice(0, 2).join(", ")}{info.subjects.length > 2 ? `+${info.subjects.length - 2}` : ""})
+                                            </span>
+                                          )}
+                                        </span>
+                                      ))}
+                                    </div>
+                                  ) : (
+                                    <span className="text-[11px] italic text-slate-400">Chưa phân công giáo viên coi / chấm khảo sát</span>
+                                  )}
+                                </div>
+                              </div>
+                            </div>
+                          </div>
+
+                          {/* Card Footer Actions */}
+                          <div className="mt-3.5 pt-3 border-t border-slate-100 flex items-center justify-between gap-2">
+                            <button
+                              type="button"
+                              onClick={() => {
+                                setSelectedSessionForDetail(sessionItem);
+                                setIsAddingStudentsToSession(false);
+                              }}
+                              className="flex-1 h-8 flex items-center justify-center gap-1.5 px-2.5 bg-teal-50 hover:bg-[#00736E] text-[#005854] hover:text-white rounded-xl text-[11px] font-bold transition-all cursor-pointer border border-teal-200/80 shadow-2xs whitespace-nowrap"
+                            >
+                              <Users className="w-3.5 h-3.5 shrink-0" />
+                              <span>DS &amp; Điểm ({stCount})</span>
+                            </button>
+                            <button
+                              type="button"
+                              onClick={() => handleOpenAddStudentsToSession(sessionItem)}
+                              className="h-8 flex items-center justify-center gap-1 px-2.5 bg-emerald-50 hover:bg-emerald-600 text-emerald-700 hover:text-white rounded-xl text-[11px] font-bold transition-all cursor-pointer border border-emerald-200/80 shadow-2xs whitespace-nowrap shrink-0"
+                              title="Bổ sung học sinh vào ca khảo sát này"
+                            >
+                              <UserPlus className="w-3.5 h-3.5 shrink-0" />
+                              <span>+ Thêm HS</span>
+                            </button>
+                            <a
+                              href={`/admin/phan-cong-khao-sat?tab=k12&sessionId=${sessionItem.id}${sessionItem.periodId ? `&periodId=${sessionItem.periodId}` : ""}${sessionItem.batchId ? `&batchId=${sessionItem.batchId}` : ""}`}
+                              className="h-8 flex items-center justify-center gap-1 px-2.5 bg-amber-50 hover:bg-amber-600 text-amber-800 hover:text-white rounded-xl text-[11px] font-bold transition-all cursor-pointer border border-amber-200/90 shadow-2xs whitespace-nowrap shrink-0"
+                              title="Phân công Giáo viên khảo sát cho Phiên / Lịch ca thi này"
+                            >
+                              <UserCheck className="w-3.5 h-3.5 shrink-0" />
+                              <span>Phân công GV</span>
+                            </a>
                           </div>
                         </div>
-
-                        {/* Card Footer Button */}
-                        <div className="mt-4 pt-3 border-t border-slate-100 flex items-center justify-between gap-1.5">
-                          <button
-                            type="button"
-                            onClick={() => {
-                              setSelectedSessionForDetail(sessionItem);
-                              setIsAddingStudentsToSession(false);
-                            }}
-                            className="flex-1 flex items-center justify-center gap-1 py-2 px-2.5 bg-teal-50 hover:bg-[#00736E] text-[#005854] hover:text-white rounded-xl text-[11px] font-bold transition-all cursor-pointer border border-teal-200/80 shadow-xs"
-                          >
-                            <Users className="w-3.5 h-3.5 shrink-0" />
-                            <span className="truncate">DS HS ({stCount}) &amp; Điểm</span>
-                          </button>
-                          <a
-                            href={`/admin/phan-cong-khao-sat?tab=k12&sessionId=${sessionItem.id}${sessionItem.periodId ? `&periodId=${sessionItem.periodId}` : ""}${sessionItem.batchId ? `&batchId=${sessionItem.batchId}` : ""}`}
-                            className="flex items-center justify-center gap-1 py-2 px-2.5 bg-amber-50 hover:bg-amber-600 text-amber-800 hover:text-white rounded-xl text-[11px] font-bold transition-all cursor-pointer border border-amber-200/90 shadow-xs shrink-0"
-                            title="Phân công Giáo viên khảo sát cho Phiên / Lịch ca thi này"
-                          >
-                            <UserCheck className="w-3.5 h-3.5 shrink-0" />
-                            <span>Phân công GV</span>
-                          </a>
-                          <button
-                            type="button"
-                            onClick={() => handleOpenAddStudentsToSession(sessionItem)}
-                            className="flex items-center justify-center gap-1 py-2 px-2.5 bg-emerald-50 hover:bg-emerald-600 text-emerald-700 hover:text-white rounded-xl text-[11px] font-bold transition-all cursor-pointer border border-emerald-200/80 shadow-xs shrink-0"
-                            title="Bổ sung học sinh vào ca khảo sát này"
-                          >
-                            <UserPlus className="w-3.5 h-3.5 shrink-0" />
-                            <span>+ HS</span>
-                          </button>
-                        </div>
-                      </div>
-                    );
-                  })}
-                </div>
-              )}
-            </div>
-          )}
+                      );
+                    })}
+                  </div>
+                )}
+              </div>
+            );
+          })()}
 
           {/* VIEW MODE 2: BATCHES (HISTORICAL PARITY) */}
           {periodSubView === "batches" && (
@@ -7207,7 +7492,7 @@ const [customCommitmentSubjects, setCustomCommitmentSubjects] = useState<string[
                 <select
                   value={batchCampusFilter}
                   onChange={e => setBatchCampusFilter(e.target.value)}
-                  className="bg-slate-50 border border-slate-200 rounded-xl px-3 py-1.5 text-xs font-bold text-slate-700 outline-none focus:border-indigo-500 cursor-pointer shadow-sm"
+                  className="raw-select h-9 py-1 bg-slate-50 border border-slate-200 rounded-xl px-3 text-xs font-bold text-slate-700 outline-none focus:border-indigo-500 cursor-pointer shadow-sm"
                 >
                   <option value="all">Tất cả Cơ sở</option>
                   {campuses.map(c => (
@@ -7224,12 +7509,12 @@ const [customCommitmentSubjects, setCustomCommitmentSubjects] = useState<string[
                 <select
                   value={batchStatusFilter}
                   onChange={e => setBatchStatusFilter(e.target.value)}
-                  className="bg-slate-50 border border-slate-200 rounded-xl px-3 py-1.5 text-xs font-bold text-slate-700 outline-none focus:border-indigo-500 cursor-pointer shadow-sm"
+                  className="raw-select h-9 py-1 bg-slate-50 border border-slate-200 rounded-xl px-3 text-xs font-bold text-slate-700 outline-none focus:border-indigo-500 cursor-pointer shadow-sm"
                 >
                   <option value="all">Tất cả Trạng thái</option>
-                  <option value="ACTIVE">🟢 Đang mở</option>
-                  <option value="COMPLETED">☑️ Hoàn thành</option>
-                  <option value="LOCKED">🔒 Đã khóa</option>
+                  <option value="ACTIVE">Đang mở</option>
+                  <option value="COMPLETED">✓ Hoàn thành</option>
+                  <option value="LOCKED">Đã khóa</option>
                 </select>
               </div>
 
