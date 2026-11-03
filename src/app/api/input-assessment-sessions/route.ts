@@ -76,7 +76,18 @@ export async function GET(req: Request) {
           select: { id: true, code: true, name: true }
         },
         batch: {
-          select: { id: true, batchNumber: true, name: true }
+          select: {
+            id: true,
+            batchNumber: true,
+            name: true,
+            status: true,
+            InputAssessmentTeacherAssignment: {
+              include: {
+                user: { select: { id: true, fullName: true, email: true } },
+                subject: { select: { id: true, code: true, name: true } }
+              }
+            }
+          }
         },
         examiners: {
           include: {

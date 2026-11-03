@@ -6887,6 +6887,46 @@ const [customCommitmentSubjects, setCustomCommitmentSubjects] = useState<string[
 
                             <div className="flex items-center gap-1 opacity-80 group-hover:opacity-100 transition-opacity">
                               <button
+                                type="button"
+                                onClick={async () => {
+                                  if (cannotUpdate) return;
+                                  const nextStatus = sessionItem.status === "COMPLETED" ? "SCHEDULED" : "COMPLETED";
+                                  try {
+                                    const res = await fetch("/api/input-assessment-sessions", {
+                                      method: "PUT",
+                                      headers: { "Content-Type": "application/json" },
+                                      body: JSON.stringify({ id: sessionItem.id, status: nextStatus })
+                                    });
+                                    if (res.ok) {
+                                      if (sessionItem.batchId && (nextStatus === "COMPLETED" || nextStatus === "SCHEDULED")) {
+                                        await fetch("/api/input-assessments", {
+                                          method: "PUT",
+                                          headers: { "Content-Type": "application/json" },
+                                          body: JSON.stringify({
+                                            type: "BATCH",
+                                            id: sessionItem.batchId,
+                                            status: nextStatus === "COMPLETED" ? "COMPLETED" : "ACTIVE"
+                                          })
+                                        });
+                                      }
+                                      notify(nextStatus === "COMPLETED" ? "Đã chuyển Phiên ca thi sang Hoàn thành!" : "Đã mở lại Phiên ca thi!");
+                                      fetchSessions();
+                                      fetchPeriods();
+                                    }
+                                  } catch {
+                                    notify("Lỗi cập nhật trạng thái phiên", "err");
+                                  }
+                                }}
+                                className={`px-2 py-1 rounded-lg text-[10px] font-bold transition-all cursor-pointer border ${
+                                  sessionItem.status === "COMPLETED"
+                                    ? "bg-teal-50 text-[#00736E] border-teal-200 hover:bg-teal-100"
+                                    : "bg-emerald-50 text-emerald-700 border-emerald-200 hover:bg-emerald-600 hover:text-white"
+                                } ${cannotUpdate ? "pointer-events-none opacity-40" : ""}`}
+                                title={sessionItem.status === "COMPLETED" ? "Mở lại phiên ca thi này" : "Đánh dấu Hoàn thành phiên ca thi này (ẩn khỏi Phân công GV)"}
+                              >
+                                {sessionItem.status === "COMPLETED" ? "Mở lại" : "✓ Hoàn thành"}
+                              </button>
+                              <button
                                 onClick={() => {
                                   if (cannotUpdate) return;
                                   setEditingSession(sessionItem);
@@ -6993,44 +7033,96 @@ const [customCommitmentSubjects, setCustomCommitmentSubjects] = useState<string[
 
                           {/* Examiners list */}
                           <div className="mt-2.5 text-[11px] text-slate-500">
-                            <span className="font-bold text-slate-400 uppercase tracking-wider text-[10px] block mb-1">
-                              Cán bộ khảo sát:
-                            </span>
-                            {sessionItem.examiners && sessionItem.examiners.length > 0 ? (
-                              <div className="flex flex-wrap gap-1">
-                                {sessionItem.examiners.map(ex => (
-                                  <span key={ex.id} className="inline-flex items-center px-2 py-0.5 rounded-md bg-white border border-slate-200 text-slate-700 text-[10px] font-bold">
-                                    {ex.user?.fullName}
-                                  </span>
-                                ))}
-                              </div>
-                            ) : (
-                              <span className="italic text-slate-400 text-[11px]">-- Chưa phân công --</span>
-                            )}
+                            <div className="flex items-center justify-between gap-2 mb-1">
+                              <span className="font-bold text-slate-400 uppercase tracking-wider text-[10px]">
+                                Cán bộ khảo sát:
+                              </span>
+                              <a
+                                href={`/admin/phan-cong-khao-sat?tab=k12&sessionId=${sessionItem.id}${sessionItem.periodId ? `&periodId=${sessionItem.periodId}` : ""}${sessionItem.batchId ? `&batchId=${sessionItem.batchId}` : ""}`}
+                                className="inline-flex items-center gap-1 text-[10px] font-bold text-[#00736E] hover:text-[#003B3A] hover:underline"
+                                title="Mở trang Phân công Khảo sát cho Phiên / Lịch ca thi này"
+                              >
+                                <UserCheck className="w-3 h-3" />
+                                <span>Phân công GV &rarr;</span>
+                              </a>
+                            </div>
+                            {(() => {
+                              const combinedTeachersMap = new Map<string, { fullName: string; subjects: string[] }>();
+                              (sessionItem.examiners || []).forEach((ex: any) => {
+                                if (ex.user?.id || ex.userId) {
+                                  const uid = ex.user?.id || ex.userId;
+                                  combinedTeachersMap.set(uid, {
+                                    fullName: ex.user?.fullName || "Giáo viên",
+                                    subjects: ex.subjectCode ? [ex.subjectCode] : []
+                                  });
+                                }
+                              });
+                              const batchAssigns = (sessionItem as any).batch?.InputAssessmentTeacherAssignment || [];
+                              batchAssigns.forEach((ba: any) => {
+                                const uid = ba.user?.id || ba.userId;
+                                if (!uid) return;
+                                const subName = ba.subject?.name || ba.subject?.code || "";
+                                if (!combinedTeachersMap.has(uid)) {
+                                  combinedTeachersMap.set(uid, {
+                                    fullName: ba.user?.fullName || "Giáo viên",
+                                    subjects: subName ? [subName] : []
+                                  });
+                                } else if (subName) {
+                                  const entry = combinedTeachersMap.get(uid)!;
+                                  if (!entry.subjects.includes(subName)) entry.subjects.push(subName);
+                                }
+                              });
+                              const combinedList = Array.from(combinedTeachersMap.entries());
+                              if (combinedList.length === 0) {
+                                return <span className="italic text-slate-400 text-[11px]">-- Chưa phân công --</span>;
+                              }
+                              return (
+                                <div className="flex flex-wrap gap-1">
+                                  {combinedList.map(([uid, info]) => (
+                                    <span key={uid} className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md bg-white border border-teal-200/90 text-slate-700 text-[10px] font-bold shadow-2xs">
+                                      <span>{info.fullName}</span>
+                                      {info.subjects.length > 0 && (
+                                        <span className="text-[9px] text-[#00736E] font-semibold">
+                                          ({info.subjects.slice(0, 2).join(", ")}{info.subjects.length > 2 ? `+${info.subjects.length - 2}` : ""})
+                                        </span>
+                                      )}
+                                    </span>
+                                  ))}
+                                </div>
+                              );
+                            })()}
                           </div>
                         </div>
 
                         {/* Card Footer Button */}
-                        <div className="mt-4 pt-3 border-t border-slate-100 flex items-center justify-between gap-2">
+                        <div className="mt-4 pt-3 border-t border-slate-100 flex items-center justify-between gap-1.5">
                           <button
                             type="button"
                             onClick={() => {
                               setSelectedSessionForDetail(sessionItem);
                               setIsAddingStudentsToSession(false);
                             }}
-                            className="flex-1 flex items-center justify-center gap-1.5 py-2 px-3 bg-teal-50 hover:bg-[#00736E] text-[#005854] hover:text-white rounded-xl text-xs font-bold transition-all cursor-pointer border border-teal-200/80 shadow-xs"
+                            className="flex-1 flex items-center justify-center gap-1 py-2 px-2.5 bg-teal-50 hover:bg-[#00736E] text-[#005854] hover:text-white rounded-xl text-[11px] font-bold transition-all cursor-pointer border border-teal-200/80 shadow-xs"
                           >
-                            <Users className="w-3.5 h-3.5" />
-                            <span>Danh sách HS ({stCount}) &amp; Điểm</span>
+                            <Users className="w-3.5 h-3.5 shrink-0" />
+                            <span className="truncate">DS HS ({stCount}) &amp; Điểm</span>
                           </button>
+                          <a
+                            href={`/admin/phan-cong-khao-sat?tab=k12&sessionId=${sessionItem.id}${sessionItem.periodId ? `&periodId=${sessionItem.periodId}` : ""}${sessionItem.batchId ? `&batchId=${sessionItem.batchId}` : ""}`}
+                            className="flex items-center justify-center gap-1 py-2 px-2.5 bg-amber-50 hover:bg-amber-600 text-amber-800 hover:text-white rounded-xl text-[11px] font-bold transition-all cursor-pointer border border-amber-200/90 shadow-xs shrink-0"
+                            title="Phân công Giáo viên khảo sát cho Phiên / Lịch ca thi này"
+                          >
+                            <UserCheck className="w-3.5 h-3.5 shrink-0" />
+                            <span>Phân công GV</span>
+                          </a>
                           <button
                             type="button"
                             onClick={() => handleOpenAddStudentsToSession(sessionItem)}
-                            className="flex items-center justify-center gap-1.5 py-2 px-3 bg-emerald-50 hover:bg-emerald-600 text-emerald-700 hover:text-white rounded-xl text-xs font-bold transition-all cursor-pointer border border-emerald-200/80 shadow-xs"
+                            className="flex items-center justify-center gap-1 py-2 px-2.5 bg-emerald-50 hover:bg-emerald-600 text-emerald-700 hover:text-white rounded-xl text-[11px] font-bold transition-all cursor-pointer border border-emerald-200/80 shadow-xs shrink-0"
                             title="Bổ sung học sinh vào ca khảo sát này"
                           >
-                            <UserPlus className="w-3.5 h-3.5" />
-                            <span className="text-[11px] font-bold">+ Bổ sung HS</span>
+                            <UserPlus className="w-3.5 h-3.5 shrink-0" />
+                            <span>+ HS</span>
                           </button>
                         </div>
                       </div>
@@ -15949,6 +16041,13 @@ const [customCommitmentSubjects, setCustomCommitmentSubjects] = useState<string[
                   </div>
 
                   <div className="flex items-center gap-2">
+                    <a
+                      href={`/admin/phan-cong-khao-sat?tab=k12&sessionId=${selectedSessionForDetail.id}${selectedSessionForDetail.periodId ? `&periodId=${selectedSessionForDetail.periodId}` : ""}${selectedSessionForDetail.batchId ? `&batchId=${selectedSessionForDetail.batchId}` : ""}`}
+                      className="flex items-center gap-1.5 px-3.5 py-2 bg-amber-50 hover:bg-amber-600 text-amber-800 hover:text-white rounded-xl text-xs font-bold transition-all cursor-pointer border border-amber-200 shadow-2xs"
+                    >
+                      <UserCheck className="w-3.5 h-3.5" />
+                      <span>Phân công GV khảo sát</span>
+                    </a>
                     <button
                       type="button"
                       onClick={() => handleOpenAddStudentsToSession()}

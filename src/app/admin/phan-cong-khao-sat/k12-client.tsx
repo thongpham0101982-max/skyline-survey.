@@ -4,7 +4,7 @@ import {
   UserCheck, GraduationCap, BookOpen, Layers, Search, Trash2,
   Mail, Edit2, Loader2, Filter, Calendar, UserPlus, CheckCircle2,
   AlertCircle, X, Plus, RefreshCw, Users, ExternalLink, ArrowUpRight, Sparkles, Check, RotateCcw,
-  Award, ShieldCheck, Zap, FileCheck2, School
+  Award, ShieldCheck, Zap, FileCheck2, School, Clock
 } from "lucide-react"
 import {
   analyzeStudentAcademicAndRegulation,
@@ -185,8 +185,47 @@ export function PhanCongK12Client({
   const [asPeriodId, setAsPeriodId] = useState("")
   const [asBatchId, setAsBatchId] = useState("")
   const [asFilterBatchId, setAsFilterBatchId] = useState("")
+  const [asSessionId, setAsSessionId] = useState("")
   const [asNotifyingId, setAsNotifyingId] = useState<string | null>(null)
   const [asNotifyingAll, setAsNotifyingAll] = useState(false)
+
+  // ─── Sessions (Phiên / Lịch ca thi) State ───
+  const [sessions, setSessions] = useState<any[]>([])
+  const [sLoading, setSLoading] = useState(false)
+  const [initialUrlHandled, setInitialUrlHandled] = useState(false)
+
+  const fetchSessions = useCallback(async () => {
+    if (!yearId) return
+    setSLoading(true)
+    try {
+      const res = await fetch(`/api/input-assessment-sessions?academicYearId=${yearId}&t=${Date.now()}`)
+      if (res.ok) {
+        const data = await res.json()
+        setSessions(Array.isArray(data) ? data : [])
+      }
+    } catch (err) {
+      console.error(err)
+    } finally {
+      setSLoading(false)
+    }
+  }, [yearId])
+
+  useEffect(() => { fetchSessions() }, [fetchSessions])
+
+  const visibleSessions = useMemo(() => {
+    const active = sessions.filter((s: any) => s.status !== "COMPLETED" && s.status !== "CANCELLED" && s.batch?.status !== "COMPLETED")
+    if (!currentUser?.role || isAdmin) return active
+    if (["GDCS", "GĐ_CS", "GIAO_VU_CS", "GĐCS"].includes(userRole)) {
+      const allowedIds = currentUser.campusIds || []
+      return active.filter((s: any) => !s.campusId || allowedIds.includes(s.campusId))
+    }
+    return active
+  }, [sessions, currentUser, isAdmin, userRole])
+
+  const asSelSession = useMemo(() => {
+    if (!asSessionId) return null
+    return sessions.find((s: any) => s.id === asSessionId) || null
+  }, [sessions, asSessionId])
 
   // ─── Student stats state ───
   const [studentStats, setStudentStats] = useState<Record<string, any[]>>({})
@@ -199,6 +238,28 @@ export function PhanCongK12Client({
   const [viewingStudentAssignment, setViewingStudentAssignment] = useState<any | null>(null)
 
   const fetchStudentStats = useCallback(async () => {
+    // Ưu tiên nếu đang chọn Phiên / Lịch ca thi cụ thể
+    if (asSessionId) {
+      const sess = sessions.find((s: any) => s.id === asSessionId)
+      if (sess) {
+        const sessionStudents = (sess.studentSessions || []).map((ss: any) => ss.student).filter(Boolean)
+        const grouped: Record<string, any[]> = {}
+        sessionStudents.forEach((s: any) => {
+          const g = String(s.grade || "Chưa xác định").replace(/^Khối\s+/i, "").trim() || "Chưa xác định"
+          if (!grouped[g]) grouped[g] = []
+          grouped[g].push(s)
+        })
+        setStudentStats(grouped)
+        const gradeKeys = Object.keys(grouped)
+        if (gradeKeys.length > 0) {
+          const autoExp: Record<string, boolean> = {}
+          gradeKeys.forEach(k => { autoExp[k] = true })
+          setExpandedGrades(autoExp)
+        }
+        return
+      }
+    }
+
     if (!asPeriodId) {
       setStudentStats({})
       return
@@ -234,7 +295,7 @@ export function PhanCongK12Client({
     } finally {
       setStatsLoading(false)
     }
-  }, [asPeriodId, asBatchId])
+  }, [asPeriodId, asBatchId, asSessionId, sessions])
 
   useEffect(() => {
     fetchStudentStats()
@@ -332,8 +393,9 @@ export function PhanCongK12Client({
     return sorted[0] || null
   }, [asSelPeriod])
 
-  // Tự động gán Đợt mới nhất khi chọn Kỳ khảo sát
+  // Tự động gán Đợt mới nhất khi chọn Kỳ khảo sát (chỉ khi không đang chọn Phiên / Lịch ca thi)
   useEffect(() => {
+    if (asSessionId) return
     if (latestBatch) {
       setAsBatchId(latestBatch.id)
       setAsFilterBatchId(latestBatch.id)
@@ -342,7 +404,94 @@ export function PhanCongK12Client({
       setAsFilterBatchId("all")
     }
     setShowCustomBatch(false)
-  }, [asPeriodId, latestBatch])
+  }, [asPeriodId, latestBatch, asSessionId])
+
+  // Chọn Phiên / Lịch ca thi (InputAssessmentSession)
+  const handleSelectSession = useCallback((sessionId: string) => {
+    if (!sessionId) {
+      setAsSessionId("")
+      if (latestBatch) {
+        setAsBatchId(latestBatch.id)
+        setAsFilterBatchId(latestBatch.id)
+      }
+      return
+    }
+    const sess = sessions.find((s: any) => s.id === sessionId)
+    if (!sess) return
+    setAsSessionId(sessionId)
+
+    // Xác định Kỳ khảo sát của phiên (ưu tiên periodId của phiên hoặc kỳ Khảo sát lẻ)
+    let targetPeriodId = sess.periodId || ""
+    if (!targetPeriodId) {
+      const lePeriod = visiblePeriods.find((p: any) =>
+        (p.name || "").toLowerCase().includes("khảo sát lẻ") || (p.name || "").toLowerCase().includes("lẻ")
+      )
+      targetPeriodId = lePeriod?.id || visiblePeriods[0]?.id || ""
+    }
+    if (targetPeriodId && targetPeriodId !== asPeriodId) {
+      setAsPeriodId(targetPeriodId)
+    }
+
+    // Xác định Đợt khảo sát liên kết (nếu có)
+    const targetPeriodObj = visiblePeriods.find((p: any) => p.id === targetPeriodId)
+    let targetBatchId = sess.batchId || ""
+    if (!targetBatchId && targetPeriodObj?.batches) {
+      const matchedByName = targetPeriodObj.batches.find((b: any) => b.name === sess.name)
+      if (matchedByName) targetBatchId = matchedByName.id
+    }
+    setAsBatchId(targetBatchId)
+    setAsFilterBatchId(targetBatchId || "all")
+
+    // Tự động chọn Khối & Hệ của học sinh trong phiên
+    const sessionStudents = (sess.studentSessions || []).map((ss: any) => ss.student).filter(Boolean)
+    if (sessionStudents.length > 0) {
+      const sGrades = Array.from(new Set(
+        sessionStudents.map((st: any) => String(st.grade || "").replace(/\D/g, "") || String(st.grade || "")).filter(Boolean)
+      )) as string[]
+      if (sGrades.length > 0) setAsSelGrades(sGrades)
+
+      const sSystems = new Set<string>()
+      sessionStudents.forEach((st: any) => {
+        const sys = String(st.surveySystem || st.surveyFormType || "").toUpperCase().trim()
+        if (sys) {
+          currentEduSystems.forEach((es: any) => {
+            const code = String(es.code || "").toUpperCase()
+            if (sys.includes(code) || code.includes(sys)) sSystems.add(es.code)
+          })
+        }
+      })
+      if (sSystems.size > 0) setAsSelSystems(Array.from(sSystems))
+    }
+  }, [sessions, visiblePeriods, asPeriodId, latestBatch, currentEduSystems])
+
+  // Nhận diện tham số URL (?sessionId=...&periodId=...&batchId=...) khi chuyển từ trang Tạo đợt / Phiên ca thi sang
+  useEffect(() => {
+    if (initialUrlHandled || typeof window === "undefined") return
+    const params = new URLSearchParams(window.location.search)
+    const qSessionId = params.get("sessionId")
+    const qPeriodId = params.get("periodId")
+    const qBatchId = params.get("batchId")
+
+    if (qSessionId) {
+      if (sessions.length > 0 && visiblePeriods.length > 0) {
+        handleSelectSession(qSessionId)
+        setInitialUrlHandled(true)
+      }
+      return
+    }
+    if (qPeriodId && visiblePeriods.length > 0) {
+      setAsPeriodId(qPeriodId)
+      if (qBatchId) {
+        setAsBatchId(qBatchId)
+        setAsFilterBatchId(qBatchId)
+      }
+      setInitialUrlHandled(true)
+      return
+    }
+    if (sessions.length > 0 || visiblePeriods.length > 0) {
+      setInitialUrlHandled(true)
+    }
+  }, [sessions, visiblePeriods, initialUrlHandled, handleSelectSession])
 
   const groupedAssignments = useMemo(() => {
     const groups: Record<string, any> = {}
@@ -408,10 +557,24 @@ export function PhanCongK12Client({
       const res = await fetch("/api/input-assessment-assignments", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ action: "BULK_ASSIGN", periodId: asPeriodId, batchId: asBatchId || null, assignments: payloads })
+        body: JSON.stringify({
+          action: "BULK_ASSIGN",
+          periodId: asPeriodId,
+          batchId: asBatchId || null,
+          sessionId: asSessionId || null,
+          assignments: payloads
+        })
       })
       if (res.ok) {
-        await res.json()
+        const resData = await res.json()
+        const finalBatchId = resData.batchId || asBatchId || null
+        const finalPeriodId = resData.periodId || asPeriodId
+        if (resData.batchId && resData.batchId !== asBatchId) {
+          setAsBatchId(resData.batchId)
+          setAsFilterBatchId(resData.batchId)
+        }
+        fetchPeriods()
+        fetchSessions()
         fetchAssignments()
         if (fetchFilterBatchStudents) fetchFilterBatchStudents()
         setAsSelSubjects([]); setAsSelGrades([]); setAsSelSystems([])
@@ -425,8 +588,8 @@ export function PhanCongK12Client({
               body: JSON.stringify({ 
                 action: "NOTIFY_SINGLE", 
                 userId: asTeacherId, 
-                periodId: asPeriodId, 
-                batchId: asBatchId || null 
+                periodId: finalPeriodId, 
+                batchId: finalBatchId 
               })
             })
             if (notifyRes.ok) {
@@ -611,11 +774,17 @@ export function PhanCongK12Client({
               <Calendar className="w-3.5 h-3.5" />
             </div>
             <div>
-              <div className="flex items-center gap-2">
-                <h2 className="text-xs sm:text-sm font-bold text-[#003B3A]">Ngữ cảnh Kỳ & Đợt Khảo sát K-12</h2>
+              <div className="flex items-center gap-2 flex-wrap">
+                <h2 className="text-xs sm:text-sm font-bold text-[#003B3A]">Ngữ cảnh Kỳ, Đợt &amp; Phiên / Lịch ca thi K-12</h2>
                 {asPeriodId && (
                   <span className="px-2.5 py-0.5 rounded-full text-[11px] font-bold bg-[#00A19A]/15 text-[#005854] border border-[#00A19A]/25">
                     Tổng: {totalStudentsInBatch} học sinh
+                  </span>
+                )}
+                {asSelSession && (
+                  <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[11px] font-bold bg-amber-50 text-amber-800 border border-amber-300">
+                    <Clock className="w-3 h-3 text-amber-600" />
+                    <span>Đang chọn ca: {asSelSession.name}</span>
                   </span>
                 )}
               </div>
@@ -633,12 +802,12 @@ export function PhanCongK12Client({
               <span>Nhập Quy chế Tuyển sinh</span>
             </button>
             <button
-              onClick={fetchPeriods}
-              disabled={pLoading}
-              title="Làm mới dữ liệu kỳ khảo sát"
+              onClick={() => { fetchPeriods(); fetchSessions(); }}
+              disabled={pLoading || sLoading}
+              title="Làm mới dữ liệu kỳ khảo sát & phiên ca thi"
               className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold text-[#005854] bg-teal-50/70 hover:bg-teal-100/80 border border-teal-200/70 rounded-xl transition-all cursor-pointer"
             >
-              <RefreshCw className={`w-3.5 h-3.5 text-[#00736E] ${pLoading ? "animate-spin" : ""}`} />
+              <RefreshCw className={`w-3.5 h-3.5 text-[#00736E] ${(pLoading || sLoading) ? "animate-spin" : ""}`} />
               <span>Làm mới</span>
             </button>
           </div>
@@ -647,13 +816,20 @@ export function PhanCongK12Client({
         <div className="p-4 sm:p-5 space-y-4">
           <div className="grid grid-cols-1 lg:grid-cols-12 gap-4 items-start">
             {/* Chọn Kỳ khảo sát */}
-            <div className="lg:col-span-5">
+            <div className="lg:col-span-4">
               <Field label="Kỳ khảo sát áp dụng" required>
                 <div className="relative">
                   <div className="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-[#00736E]">
                     <Calendar className="w-4 h-4" />
                   </div>
-                  <select value={asPeriodId} onChange={e => setAsPeriodId(e.target.value)} className={inp + " pl-10"}>
+                  <select
+                    value={asPeriodId}
+                    onChange={e => {
+                      setAsSessionId("")
+                      setAsPeriodId(e.target.value)
+                    }}
+                    className={inp + " pl-10"}
+                  >
                     <option value="">-- Chọn Kỳ khảo sát --</option>
                     {visiblePeriods.map(p => <option key={p.id} value={p.id}>{p.name}</option>)}
                   </select>
@@ -662,7 +838,7 @@ export function PhanCongK12Client({
             </div>
 
             {/* Đợt khảo sát đang áp dụng */}
-            <div className="lg:col-span-7">
+            <div className="lg:col-span-4">
               <Field label="Đợt khảo sát trong kỳ">
                 {!asPeriodId ? (
                   <div className="h-[42px] px-4 rounded-xl bg-slate-50 border border-dashed border-slate-200 flex items-center text-xs text-slate-400">
@@ -678,9 +854,13 @@ export function PhanCongK12Client({
                         <div className="min-w-0">
                           <div className="flex items-center gap-2 flex-wrap">
                             <span className="font-bold text-xs text-[#003B3A] truncate">
-                              {asBatchId ? (asSelPeriod?.batches?.find((b: any) => b.id === asBatchId)?.name || "Đợt khảo sát") : "Áp dụng Toàn kỳ / Khảo sát lẻ"}
+                              {asSelSession
+                                ? `Theo Phiên: ${asSelSession.name}`
+                                : asBatchId
+                                ? (asSelPeriod?.batches?.find((b: any) => b.id === asBatchId)?.name || "Đợt khảo sát")
+                                : "Áp dụng Toàn kỳ / Khảo sát lẻ"}
                             </span>
-                            {latestBatch && asBatchId === latestBatch.id && (
+                            {!asSelSession && latestBatch && asBatchId === latestBatch.id && (
                               <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-[#00736E] text-white">
                                 Mới nhất
                               </span>
@@ -689,11 +869,11 @@ export function PhanCongK12Client({
                         </div>
                       </div>
 
-                      {asSelPeriod?.batches && asSelPeriod.batches.length > 1 && (
+                      {asSelPeriod?.batches && asSelPeriod.batches.length > 0 && (
                         <button
                           type="button"
                           onClick={() => setShowCustomBatch(!showCustomBatch)}
-                          className="px-3 py-1 text-xs font-bold text-[#005854] bg-white hover:bg-teal-50 border border-teal-200 rounded-lg transition-colors cursor-pointer flex-shrink-0 shadow-2xs"
+                          className="px-2.5 py-1 text-xs font-bold text-[#005854] bg-white hover:bg-teal-50 border border-teal-200 rounded-lg transition-colors cursor-pointer flex-shrink-0 shadow-2xs"
                         >
                           {showCustomBatch ? "Đóng" : "Đổi đợt"}
                         </button>
@@ -707,7 +887,11 @@ export function PhanCongK12Client({
                           {latestBatch && asBatchId !== latestBatch.id && (
                             <button
                               type="button"
-                              onClick={() => setAsBatchId(latestBatch.id)}
+                              onClick={() => {
+                                setAsSessionId("")
+                                setAsBatchId(latestBatch.id)
+                                setAsFilterBatchId(latestBatch.id)
+                              }}
                               className="text-xs font-bold text-[#00736E] hover:underline cursor-pointer"
                             >
                               &larr; Về đợt mới nhất ({latestBatch.name})
@@ -716,7 +900,11 @@ export function PhanCongK12Client({
                         </div>
                         <select
                           value={asBatchId}
-                          onChange={e => setAsBatchId(e.target.value)}
+                          onChange={e => {
+                            setAsSessionId("")
+                            setAsBatchId(e.target.value)
+                            setAsFilterBatchId(e.target.value || "all")
+                          }}
                           className={inp}
                         >
                           <option value="">-- Áp dụng toàn kỳ / Khảo sát lẻ --</option>
@@ -732,7 +920,121 @@ export function PhanCongK12Client({
                 )}
               </Field>
             </div>
+
+            {/* Phiên / Lịch ca thi (InputAssessmentSession) */}
+            <div className="lg:col-span-4">
+              <Field label={`Phiên / Lịch ca thi (${visibleSessions.length} ca)`}>
+                <div className="relative flex items-center gap-1.5">
+                  <div className="relative flex-1">
+                    <div className="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-[#00736E]">
+                      <Clock className="w-4 h-4" />
+                    </div>
+                    <select
+                      value={asSessionId}
+                      onChange={e => handleSelectSession(e.target.value)}
+                      className={inp + " pl-10 " + (asSessionId ? "border-[#00736E] bg-teal-50/40 font-bold text-[#003B3A]" : "")}
+                    >
+                      <option value="">-- Chọn theo Phiên / Lịch ca thi ({visibleSessions.length}) --</option>
+                      {visibleSessions.map((s: any) => {
+                        const stCount = s.studentSessions?.length || 0
+                        const dStr = s.sessionDate ? new Date(s.sessionDate).toLocaleDateString("vi-VN") : ""
+                        const cCode = s.campus?.campusCode || s.campus?.campusName || ""
+                        return (
+                          <option key={s.id} value={s.id}>
+                            {cCode ? `[${cCode}] ` : ""}{s.name}{dStr ? ` (${dStr})` : ""} — {stCount} HS
+                          </option>
+                        )
+                      })}
+                    </select>
+                  </div>
+                  {asSessionId && (
+                    <button
+                      type="button"
+                      onClick={() => handleSelectSession("")}
+                      title="Bỏ lọc Phiên ca thi, quay về chọn theo Đợt"
+                      className="h-[42px] px-2.5 rounded-xl bg-slate-100 hover:bg-rose-50 text-slate-500 hover:text-rose-600 border border-slate-200 hover:border-rose-200 text-xs font-bold transition-colors cursor-pointer shrink-0"
+                    >
+                      ✕
+                    </button>
+                  )}
+                </div>
+              </Field>
+            </div>
           </div>
+
+          {/* Thanh chọn nhanh Phiên / Lịch ca thi đang mở */}
+          {visibleSessions.length > 0 && (
+            <div className="p-3 bg-gradient-to-r from-teal-50/60 via-slate-50/80 to-white rounded-xl border border-teal-200/70 space-y-2">
+              <div className="flex flex-wrap items-center justify-between gap-2">
+                <div className="flex items-center gap-1.5 text-xs font-bold text-[#003B3A]">
+                  <Clock className="w-3.5 h-3.5 text-[#00736E]" />
+                  <span>Chọn nhanh Phiên / Lịch ca thi ({visibleSessions.length} phiên đang mở):</span>
+                </div>
+                {asSessionId && (
+                  <button
+                    type="button"
+                    onClick={() => handleSelectSession("")}
+                    className="text-[11px] font-bold text-slate-500 hover:text-rose-600 underline cursor-pointer"
+                  >
+                    Bỏ chọn phiên (Xem theo Đợt khảo sát)
+                  </button>
+                )}
+              </div>
+              <div className="flex flex-wrap gap-2">
+                {visibleSessions.map((s: any) => {
+                  const isSel = asSessionId === s.id
+                  const stCount = s.studentSessions?.length || 0
+                  const dStr = s.sessionDate ? new Date(s.sessionDate).toLocaleDateString("vi-VN") : ""
+                  const cCode = s.campus?.campusCode || s.campus?.campusName || ""
+                  const exCount = (s.examiners?.length || 0) + (s.batch?.InputAssessmentTeacherAssignment?.length ? 1 : 0)
+                  return (
+                    <button
+                      key={s.id}
+                      type="button"
+                      onClick={() => handleSelectSession(isSel ? "" : s.id)}
+                      className={`inline-flex items-center gap-2 px-3 py-1.5 rounded-xl text-xs transition-all cursor-pointer border text-left ${
+                        isSel
+                          ? "bg-[#003B3A] border-[#003B3A] text-white font-bold shadow-xs"
+                          : stCount > 0
+                          ? "bg-white border-teal-300/90 text-slate-800 hover:border-[#00736E] hover:bg-teal-50/50 font-semibold shadow-2xs"
+                          : "bg-white/80 border-slate-200 text-slate-600 hover:border-teal-200 hover:bg-white"
+                      }`}
+                    >
+                      {cCode && (
+                        <span className={`px-1.5 py-0.5 rounded text-[10px] font-black ${
+                          isSel ? "bg-teal-500/30 text-teal-200" : "bg-teal-50 text-[#00736E]"
+                        }`}>
+                          {cCode}
+                        </span>
+                      )}
+                      <span className="truncate max-w-[230px]">{s.name}</span>
+                      {dStr && (
+                        <span className={`text-[10px] ${isSel ? "text-slate-300" : "text-slate-400"}`}>
+                          ({dStr})
+                        </span>
+                      )}
+                      <span className={`px-1.5 py-0.5 rounded-md text-[10px] font-bold ${
+                        isSel
+                          ? "bg-white/20 text-white"
+                          : stCount > 0
+                          ? "bg-emerald-50 text-emerald-700 border border-emerald-200"
+                          : "bg-slate-100 text-slate-500"
+                      }`}>
+                        {stCount} HS
+                      </span>
+                      {exCount === 0 && stCount > 0 && (
+                        <span className={`px-1.5 py-0.5 rounded text-[9px] font-bold ${
+                          isSel ? "bg-amber-400/30 text-amber-200" : "bg-amber-50 text-amber-700 border border-amber-200"
+                        }`}>
+                          Chưa PC
+                        </span>
+                      )}
+                    </button>
+                  )
+                })}
+              </div>
+            </div>
+          )}
 
           {/* Thanh chip phân bổ Học sinh theo Khối */}
           {asPeriodId && (
@@ -740,7 +1042,11 @@ export function PhanCongK12Client({
               <div className="flex flex-wrap items-center justify-between gap-2">
                 <div className="flex items-center gap-2 text-xs font-bold text-[#003B3A]">
                   <Users className="w-4 h-4 text-[#00736E]" />
-                  <span>Phân bổ Học sinh theo Khối trong đợt</span>
+                  <span>
+                    {asSelSession
+                      ? `Phân bổ Học sinh theo Khối trong Phiên: ${asSelSession.name}`
+                      : "Phân bổ Học sinh theo Khối trong đợt"}
+                  </span>
                   {statsLoading && <Loader2 className="w-3.5 h-3.5 text-[#00736E] animate-spin" />}
                 </div>
                 <div className="flex flex-wrap items-center gap-3">
