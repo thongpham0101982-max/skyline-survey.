@@ -818,6 +818,19 @@ export function PhanCongK12Client({
                               const insight = analyzeStudentAcademicAndRegulation(st)
                               const sysCode = st.surveySystem || "HNS"
                               const criteria = st.admissionCriteria || "Khảo sát"
+                              const campusObj = campuses.find((c: any) =>
+                                c.id === st.registeredCampus ||
+                                c.campusCode === st.registeredCampus ||
+                                c.campusName === st.registeredCampus ||
+                                c.id === st.admissionCampus ||
+                                c.campusCode === st.admissionCampus ||
+                                c.campusName === st.admissionCampus
+                              )
+                              const campusDisplay = campusObj
+                                ? (campusObj.campusCode || campusObj.campusName)
+                                : (st.admissionCampus && !/^cm[a-z0-9]{15,}$/i.test(st.admissionCampus)
+                                  ? st.admissionCampus
+                                  : (st.registeredCampus && !/^cm[a-z0-9]{15,}$/i.test(st.registeredCampus) ? st.registeredCampus : ""))
                               return (
                                 <tr key={st.id || sIdx} className="hover:bg-teal-50/30 transition-colors align-top">
                                   <td className="px-3 py-2.5 text-center text-slate-400 font-semibold">{sIdx + 1}</td>
@@ -827,9 +840,9 @@ export function PhanCongK12Client({
                                       <span className="text-[#00736E] font-mono text-[10px] font-bold bg-teal-50 px-1.5 py-0.2 rounded border border-teal-200/60">
                                         {st.studentCode}
                                       </span>
-                                      {st.registeredCampus && (
-                                        <span className="text-[10px] font-semibold text-slate-500 bg-slate-100 px-1.5 py-0.2 rounded">
-                                          {st.registeredCampus}
+                                      {campusDisplay && (
+                                        <span className="text-[10px] font-semibold text-slate-600 bg-slate-100 px-1.5 py-0.2 rounded border border-slate-200/60" title={campusObj?.campusName || campusDisplay}>
+                                          {campusDisplay}
                                         </span>
                                       )}
                                     </div>
