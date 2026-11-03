@@ -72,6 +72,32 @@ export async function getRoleReadableModules(roleCode: string): Promise<string[]
     permissions.filter((p: any) => p.canRead).map((p: any) => p.module)
   )
 
+  if (
+    readableModules.has("STUDENT_INFO") ||
+    readableModules.has("STUDENT_INFO_K12") ||
+    readableModules.has("CAU_HINH_KHAO_SAT") ||
+    readableModules.has("PHAN_CONG_KHAO_SAT") ||
+    readableModules.has("XET_DUYET_KET_QUA") ||
+    readableModules.has("INPUT_ASSESSMENTS") ||
+    [
+      "KT_DBCL",
+      "KTDBCL",
+      "BAN_DHCM",
+      "GDCS",
+      "GĐCS",
+      "GD_CS",
+      "GĐ_CS",
+      "GIAO_VU_CS",
+      "GIAO_VU",
+      "BGH",
+      "BGH_CS",
+      "TU_VAN",
+      "TVTS",
+    ].some((r) => upper === r || upper.includes(r))
+  ) {
+    readableModules.add("DIEU_HANH_KHAO_SAT")
+  }
+
   if (readableModules.has("STUDENT_INFO") || readableModules.has("STUDENT_INFO_K12")) {
     readableModules.add("KET_QUA_KHAO_SAT")
     readableModules.add("KQKS_K12")
