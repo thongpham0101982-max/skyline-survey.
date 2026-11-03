@@ -139,6 +139,22 @@ function SidebarContent({ role, permissionModules, actualRole, taskCount = 0, is
         permissionModules?.includes("COMPETENCY_ASSESSMENT") ||
         false
     }
+    if (module === "DIEU_HANH_KHAO_SAT") {
+      hasParent =
+        hasParent ||
+        isGDCS ||
+        normalizedRole.includes("KTDBCL") ||
+        normalizedRole.includes("DBCL") ||
+        normalizedRole.includes("GIAO_VU") ||
+        normalizedRole.includes("TU_VAN") ||
+        permissionModules?.includes("CAU_HINH_KHAO_SAT") ||
+        permissionModules?.includes("STUDENT_INFO") ||
+        permissionModules?.includes("PHAN_CONG_KHAO_SAT") ||
+        permissionModules?.includes("KET_QUA_KHAO_SAT") ||
+        permissionModules?.includes("XET_DUYET_KET_QUA") ||
+        permissionModules?.includes("INPUT_ASSESSMENTS") ||
+        false
+    }
     if (hasParent) return true
     if (subModules && subModules.length > 0) {
       return subModules.some((sub) => permissionModules?.includes(sub.code))

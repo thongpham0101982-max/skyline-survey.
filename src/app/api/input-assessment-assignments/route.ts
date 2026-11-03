@@ -2,6 +2,8 @@
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/db";
 import { sendEmail } from "@/lib/mail";
+import { auth } from "@/lib/auth";
+import { executeEntranceWorkflowAction } from "@/lib/entrance-progress/entranceProgressEngine";
 
 export async function GET(req) {
   try {
@@ -715,6 +717,33 @@ export async function POST(req) {
           }
        }
        
+       try {
+          const session = await auth();
+          const actorUser = (session?.user as any) || {
+             id: "system_giaovu",
+             fullName: "Giáo vụ / Ban KT&ĐBCL",
+             role: "GIAO_VU",
+          };
+          for (const [userId, group] of Object.entries(teacherGroups)) {
+             await executeEntranceWorkflowAction({
+                action: "CONFIRM",
+                targetScope: group.batchId ? "BATCH" : "PERIOD",
+                periodId: group.periodId,
+                batchId: group.batchId || null,
+                stageNumber: 3,
+                status: "COMPLETED",
+                note: `Công bố & thông báo phân công khảo sát cho GV ${group.user?.fullName || ""}`,
+                actor: {
+                   id: actorUser.id || "system_giaovu",
+                   fullName: actorUser.fullName || actorUser.name || "Giáo vụ",
+                   role: actorUser.role || "GIAO_VU",
+                   isSuperAdmin: Boolean(actorUser.isSuperAdmin || actorUser.role === "ADMIN"),
+                },
+             });
+          }
+       } catch (wfErr) {
+          console.warn("Workflow stage 3 sync warning:", wfErr);
+       }
        return NextResponse.json({
           success: true,
           sentCount,

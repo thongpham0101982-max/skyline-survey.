@@ -336,6 +336,12 @@ export const APP_CATEGORIES = [
     icon: ClipboardList,
     modules: [
       {
+        code: "DIEU_HANH_KHAO_SAT",
+        name: "Điều hành & Tiến độ KSĐV",
+        icon: Activity,
+        href: "/admin/dieu-hanh-khao-sat"
+      },
+      {
         code: "CAU_HINH_KHAO_SAT",
         name: "Cấu hình Khảo sát",
         icon: Settings,

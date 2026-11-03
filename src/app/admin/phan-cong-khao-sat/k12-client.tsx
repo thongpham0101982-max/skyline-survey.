@@ -803,7 +803,48 @@ export function PhanCongK12Client({
             </div>
           </div>
 
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-2 flex-wrap">
+            {asPeriodId && (
+              <button
+                type="button"
+                onClick={async () => {
+                  try {
+                    const res = await fetch("/api/admin/entrance-progress", {
+                      method: "POST",
+                      headers: { "Content-Type": "application/json" },
+                      body: JSON.stringify({
+                        action: "CONFIRM",
+                        targetScope: asBatchId ? "BATCH" : "PERIOD",
+                        periodId: asPeriodId,
+                        batchId: asBatchId || null,
+                        stageNumber: 3,
+                        status: "COMPLETED",
+                        note: "Giáo vụ xác nhận hoàn thành phân công và công bố nhiệm vụ khảo sát cho giáo viên",
+                      }),
+                    });
+                    const data = await res.json();
+                    if (res.ok && data.success) {
+                      notify(data.message || "Đã xác nhận hoàn thành phân công (Bước 3) & công bố nhiệm vụ cho Giáo viên!");
+                    } else {
+                      notify(data.error || "Không thể xác nhận hoàn thành phân công", "err");
+                    }
+                  } catch (e: any) {
+                    notify("Lỗi kết nối khi xác nhận phân công", "err");
+                  }
+                }}
+                className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-bold text-white bg-gradient-to-r from-[#00736E] to-[#00A19A] hover:opacity-95 rounded-xl shadow-xs transition-all cursor-pointer"
+                title="Xác nhận hoàn thành phân công Bước 3 và công bố nhiệm vụ khảo sát cho giáo viên"
+              >
+                <CheckCircle2 className="w-3.5 h-3.5" />
+                <span>Xác nhận hoàn thành phân công (B3)</span>
+              </button>
+            )}
+            <a
+              href="/admin/dieu-hanh-khao-sat"
+              className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-bold text-[#003B3A] bg-emerald-50 hover:bg-emerald-100 border border-emerald-200 rounded-xl transition-all"
+            >
+              <span>📊 Tiến độ 8 bước</span>
+            </a>
             <button
               onClick={() => { fetchPeriods(); fetchSessions(); }}
               disabled={pLoading || sLoading}

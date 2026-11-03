@@ -2,6 +2,8 @@
 import { NextResponse } from "next/server";
 import { auth } from "@/lib/auth";
 import { sendEmail } from "@/lib/mail";
+import { canIssueCongratulationLetter, executeEntranceWorkflowAction } from "@/lib/entrance-progress/entranceProgressEngine";
+import { isApprovedPassResult } from "@/lib/entrance-progress/constants";
 
 export async function POST(req: Request) {
   const session = await auth();
@@ -16,6 +18,26 @@ export async function POST(req: Request) {
     const protocol = req.headers.get("x-forwarded-proto") || "https";
     const baseUrl = `${protocol}://${host}`;
     const showAttachments = attachLetters === true;
+
+    // Kiểm soát Backend: Không phát hành thư chúc mừng khi chưa có kết luận Đạt đã phê duyệt
+    if (showAttachments) {
+      const invalidForCongrat = students.filter((s) => {
+        const resStr = s.admissionResult || s.surveyResult || null;
+        return !canIssueCongratulationLetter(
+          resStr,
+          isApprovedPassResult(resStr) ? "COMPLETED" : "IN_PROGRESS"
+        );
+      });
+      if (invalidForCongrat.length === students.length && Array.isArray(pdfAttachments) && pdfAttachments.length > 0) {
+        return NextResponse.json(
+          {
+            error: "Không được phép phát hành Thư chúc mừng khi chưa có kết luận Đạt đã được phê duyệt.",
+          },
+          { status: 400 }
+        );
+      }
+    }
+
     const totalStudents = students.length;
     const totalPassed = students.filter(s => { const r = (s.admissionResult || "").trim(); return r.includes("Dat") || r.includes("DAT") || r.includes("MIEN"); }).length;
     const totalPendingOrFailed = totalStudents - totalPassed;
@@ -50,6 +72,36 @@ export async function POST(req: Request) {
       if (!mailRes.success) {
         return NextResponse.json({ success: false, sent: false, error: mailRes.error || "SMTP error", html: emailHtml });
       }
+
+      // Đồng bộ Tiến độ Công đoạn 8 (Gửi thông báo, thư chúc mừng/thư mời)
+      try {
+        const user = session.user as any;
+        const actor = {
+          id: user?.id || "tuvan_sender",
+          fullName: user?.fullName || user?.name || "Cán bộ Tư vấn / Giáo vụ",
+          role: user?.role || "TU_VAN",
+          isSuperAdmin: Boolean(user?.isSuperAdmin),
+        };
+        for (const s of students) {
+          if (!s.id) continue;
+          await executeEntranceWorkflowAction({
+            action: "CONFIRM",
+            targetScope: "STUDENT",
+            periodId: s.periodId || "PERIOD_QUICK_EMAIL",
+            batchId: s.batchId || null,
+            studentIds: [String(s.id)],
+            stageNumber: 8,
+            status: "COMPLETED",
+            deliveryStatus: "SENT",
+            documentTypes: showAttachments && isApprovedPassResult(s.admissionResult) ? ["CONGRATULATION_LETTER"] : ["RESULT_NOTICE"],
+            note: `Đã gửi email thông báo/báo cáo kết quả tới ${to}`,
+            actor,
+          });
+        }
+      } catch (wfErr) {
+        console.warn("Workflow stage 8 sync warning:", wfErr);
+      }
+
       return NextResponse.json({ success: true, sent: true, messageId: mailRes.messageId });
     } catch (err) {
       console.error("SMTP SEND ERROR:", err);

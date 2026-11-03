@@ -1328,6 +1328,50 @@ export default function TeacherAssessmentsClient({ user }: { user: any }) {
 
                             <button
                                 type="button"
+                                onClick={async () => {
+                                    if (!currentAssignment) return;
+                                    try {
+                                        const evaluatedStudents = students.filter((st: any) => {
+                                            const sc = scoresMap[st.id];
+                                            return sc && (sc.score !== "" || sc.comment !== "" || (sc.extraScores && Object.keys(sc.extraScores).length > 0));
+                                        });
+                                        if (evaluatedStudents.length === 0) {
+                                            alert("Vui lòng nhập điểm/nhận xét cho ít nhất 1 học sinh trước khi xác nhận hoàn thành đánh giá.");
+                                            return;
+                                        }
+                                        const res = await fetch("/api/admin/entrance-progress", {
+                                            method: "POST",
+                                            headers: { "Content-Type": "application/json" },
+                                            body: JSON.stringify({
+                                                action: "CONFIRM",
+                                                targetScope: "STUDENT",
+                                                studentIds: evaluatedStudents.map((st: any) => st.id),
+                                                assignmentId: currentAssignment.id,
+                                                periodId: selectedPeriodId || currentAssignment.periodId,
+                                                batchId: currentAssignment.batchId || null,
+                                                stageNumber: 4,
+                                                status: "COMPLETED",
+                                                note: `GV xác nhận hoàn thành đánh giá môn ${currentAssignment?.subject?.name || ""}`,
+                                            }),
+                                        });
+                                        const data = await res.json();
+                                        if (res.ok && data.success) {
+                                            alert(`Đã xác nhận hoàn thành đánh giá (Bước 4) cho ${evaluatedStudents.length} học sinh! Tiến độ nhiệm vụ đã được đồng bộ lên Trung tâm Điều hành.`);
+                                        } else {
+                                            alert(data.error || "Không thể xác nhận hoàn thành đánh giá.");
+                                        }
+                                    } catch (e) {
+                                        alert("Lỗi kết nối khi xác nhận hoàn thành đánh giá.");
+                                    }
+                                }}
+                                className="text-xs font-bold border border-emerald-600 px-3.5 py-1.5 rounded-xl shadow-2xs bg-emerald-600 text-white hover:bg-emerald-700 transition-all flex items-center gap-1.5 cursor-pointer"
+                            >
+                                <CheckCircle2 className="w-4 h-4 text-white" />
+                                <span>Xác nhận hoàn thành đánh giá (B4)</span>
+                            </button>
+
+                            <button
+                                type="button"
                                 onClick={() => setIsExportDrawerOpen(true)}
                                 className="text-xs font-bold border border-slate-700 px-3.5 py-1.5 rounded-xl shadow-2xs bg-[#003B3A] text-white hover:bg-[#005854] transition-all flex items-center gap-1.5 cursor-pointer"
                                 aria-label="Mở báo cáo chuẩn hóa Bộ GD&ĐT và Cambridge"

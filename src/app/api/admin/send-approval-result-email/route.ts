@@ -3,6 +3,8 @@ import { NextResponse } from "next/server";
 import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/db";
 import { sendEmail } from "@/lib/mail";
+import { executeEntranceWorkflowAction } from "@/lib/entrance-progress/entranceProgressEngine";
+import { isOfficiallyApprovedConclusion } from "@/lib/entrance-progress/constants";
 
 export async function POST(req: Request) {
   const session = await auth();
@@ -530,6 +532,49 @@ export async function POST(req: Request) {
     // 6. Gửi email qua SMTP
     const recipientsTo = Array.from(toEmails);
     const recipientsCc = Array.from(ccEmails);
+
+    try {
+      const actor = {
+        id: (session.user as any)?.id || "gdcs_approver",
+        fullName: currentUserName,
+        role: (session.user as any)?.role || "GDCS",
+        isSuperAdmin: Boolean((session.user as any)?.isSuperAdmin),
+      };
+      for (const st of students) {
+        const stId = st.id ? String(st.id) : null;
+        if (!stId) continue;
+        const conclusion = st.admissionResult || st.surveyResult || "";
+        if (isOfficiallyApprovedConclusion(conclusion)) {
+          await executeEntranceWorkflowAction({
+            action: "CONFIRM",
+            targetScope: "STUDENT",
+            isPreschool: Boolean(isPreschool),
+            periodId: periodId || "PERIOD_APPROVAL",
+            batchId: batchId || null,
+            studentIds: [stId],
+            stageNumber: 6,
+            status: "COMPLETED",
+            admissionResult: conclusion,
+            note: st.directorNote || `GĐCS phê duyệt kết luận: ${conclusion}`,
+            actor,
+          });
+          await executeEntranceWorkflowAction({
+            action: "CONFIRM",
+            targetScope: "STUDENT",
+            isPreschool: Boolean(isPreschool),
+            periodId: periodId || "PERIOD_APPROVAL",
+            batchId: batchId || null,
+            studentIds: [stId],
+            stageNumber: 7,
+            status: "COMPLETED",
+            note: `Đã bàn giao kết quả xét duyệt qua email cho Tư vấn (${recipientsTo.join(", ")})`,
+            actor,
+          });
+        }
+      }
+    } catch (wfSyncErr) {
+      console.warn("Workflow Stage 6/7 sync warning:", wfSyncErr);
+    }
 
     const sendResult = await sendEmail({
       to: recipientsTo,

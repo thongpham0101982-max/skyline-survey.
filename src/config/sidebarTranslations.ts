@@ -139,6 +139,7 @@ export const SIDEBAR_TRANSLATIONS: SidebarTranslations = {
     ALUMNI_CONFIG: { vi: "7. Cấu hình và phân quyền", en: "7. Configuration & Access" },
 
     // ASSESSMENT
+    DIEU_HANH_KHAO_SAT: { vi: "Điều hành & Tiến độ KSĐV", en: "Entrance Progress & Operations" },
     CAU_HINH_KHAO_SAT: { vi: "Cấu hình Khảo sát", en: "Assessment Configuration" },
     CAU_HINH_FILE_DIEM_KSDV: { vi: "Cấu hình File điểm KSĐV", en: "Score Sheet Template" },
     INPUT_ASSESSMENT_REPORTS: { vi: "Xuất báo cáo", en: "Export Reports" },

@@ -2,6 +2,8 @@ import { NextResponse } from "next/server";
 import { prisma } from "@/lib/db";
 import { auth } from "@/lib/auth";
 import { getStudentOrientationRecord, upsertStudentOrientationRecord } from "@/lib/orientation/service";
+import { canUserConfirmStage } from "@/lib/entrance-progress/constants";
+import { executeEntranceWorkflowAction } from "@/lib/entrance-progress/entranceProgressEngine";
 
 export const dynamic = "force-dynamic";
 
@@ -126,7 +128,9 @@ export async function POST(request: Request) {
       if (data.literatureScore !== undefined) {
         studentUpdates.literatureScore = data.literatureScore ? String(data.literatureScore) : null;
       }
-      if (data.gdcsDecision) {
+      // Kiểm soát: Không tự động phê duyệt kết luận nếu người lưu chỉ là Giáo viên nhập điểm/định hướng
+      const canApproveStage6 = canUserConfirmStage(user?.role, 6, Boolean(user?.isSuperAdmin));
+      if (data.gdcsDecision && canApproveStage6) {
         if (data.gdcsDecision === "TIEP_NHAN_CHUAN") {
           studentUpdates.admissionResult = "Đạt";
         } else if (data.gdcsDecision === "TIEP_NHAN_DONG_HANH") {
@@ -135,7 +139,7 @@ export async function POST(request: Request) {
           studentUpdates.admissionResult = "Chờ duyệt";
         }
       }
-      if (data.gdcsGeneralNote !== undefined && data.gdcsGeneralNote !== null) {
+      if (data.gdcsGeneralNote !== undefined && data.gdcsGeneralNote !== null && canApproveStage6) {
         studentUpdates.directorNote = data.gdcsGeneralNote;
       }
       if (data.proposedEduSystem) {
@@ -146,6 +150,26 @@ export async function POST(request: Request) {
         await (prisma as any).inputAssessmentStudent.update({
           where: { id: studentId },
           data: studentUpdates
+        });
+      }
+
+      // Đồng bộ Tiến độ Công đoạn 5 (Hoàn thành bản định hướng kết quả)
+      if ((record as any)?.status === "COMPLETED" || data.status === "COMPLETED") {
+        await executeEntranceWorkflowAction({
+          action: "CONFIRM",
+          targetScope: "STUDENT",
+          periodId: (record as any)?.student?.periodId || data.periodId || "PERIOD_ORIENTATION",
+          batchId: (record as any)?.student?.batchId || data.batchId || null,
+          studentIds: [studentId],
+          stageNumber: 5,
+          status: "COMPLETED",
+          note: data.overallAssessment || "Hoàn thành phiếu định hướng đầu vào",
+          actor: {
+            id: user?.id || "interviewer",
+            fullName: user?.fullName || user?.name || "Giáo viên định hướng",
+            role: user?.role || "TEACHER",
+            isSuperAdmin: Boolean(user?.isSuperAdmin),
+          },
         });
       }
     } catch (syncErr) {
