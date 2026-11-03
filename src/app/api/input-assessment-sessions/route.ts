@@ -98,6 +98,14 @@ export async function GET(req: Request) {
                 grade: true,
                 admissionCriteria: true,
                 surveySystem: true,
+                surveyFormType: true,
+                oldSchoolName: true,
+                oldSchoolType: true,
+                targetType: true,
+                kqHocTap: true,
+                kqRenLuyen: true,
+                periodId: true,
+                batchId: true,
                 admissionCampus: true,
                 registeredCampus: true,
                 admissionResult: true,
@@ -163,6 +171,51 @@ export async function POST(req: Request) {
       finalCode = `SES-${dateStr}-${randSuffix}`
     }
 
+    // Auto-create Batch if batchId === "AUTO_CREATE" and periodId is provided
+    let effectiveBatchId = batchId && batchId !== "AUTO_CREATE" ? batchId : null
+    if (batchId === "AUTO_CREATE" && periodId) {
+      const [periodObj, campusObj] = await Promise.all([
+        (prisma as any).inputAssessmentPeriod.findUnique({
+          where: { id: periodId },
+          include: { batches: { select: { batchNumber: true } } }
+        }),
+        (prisma as any).campus.findUnique({
+          where: { id: campusId },
+          select: { campusCode: true, campusName: true }
+        })
+      ])
+      if (periodObj) {
+        const nums = (periodObj.batches || [])
+          .map((b: any) => Number(b.batchNumber))
+          .filter((n: number) => !isNaN(n) && n > 0)
+        const nextBatchNumber = nums.length > 0 ? Math.max(...nums) + 1 : 1
+        const pNameNorm = (periodObj.name || "").toLowerCase().normalize("NFC")
+        const periodCode =
+          pNameNorm.includes("khảo sát lẻ") || pNameNorm.includes("khao sat le")
+            ? "KSL"
+            : periodObj.code || "KSL"
+        const cCode = campusObj?.campusCode || campusObj?.campusName || "CS1"
+        const dObj = new Date(sessionDate)
+        const dd = String(dObj.getDate()).padStart(2, "0")
+        const mm = String(dObj.getMonth() + 1).padStart(2, "0")
+        const yyyy = dObj.getFullYear()
+        const scientificBatchName = `${cCode} _ ${periodCode} _ Đợt ${nextBatchNumber} _ KSĐV _ ${name} _ ${dd}/${mm}/${yyyy}`
+        const createdBatch = await (prisma as any).inputAssessmentBatch.create({
+          data: {
+            periodId,
+            batchNumber: nextBatchNumber,
+            name: scientificBatchName,
+            startDate: dObj,
+            endDate: dObj,
+            campusId,
+            assignedUserId: user?.id || null,
+            status: "ACTIVE"
+          }
+        })
+        effectiveBatchId = createdBatch.id
+      }
+    }
+
     const createdSession = await (prisma as any).inputAssessmentSession.create({
       data: {
         sessionCode: finalCode,
@@ -174,7 +227,7 @@ export async function POST(req: Request) {
         campusId,
         academicYearId,
         periodId: periodId || null,
-        batchId: batchId || null,
+        batchId: effectiveBatchId || null,
         maxCapacity: parseInt(maxCapacity, 10) || 30,
         sessionType,
         status,
@@ -257,6 +310,10 @@ export async function PUT(req: Request) {
 
       // Add students
       if (addStudentIds.length > 0) {
+        const targetSess = await tx.inputAssessmentSession.findUnique({
+          where: { id },
+          select: { periodId: true, batchId: true }
+        })
         for (const stId of addStudentIds) {
           await tx.inputAssessmentStudentSession.upsert({
             where: {
@@ -272,6 +329,15 @@ export async function PUT(req: Request) {
             },
             update: {}
           })
+          if (targetSess?.periodId || targetSess?.batchId) {
+            const stUpdate: any = {}
+            if (targetSess.periodId) stUpdate.periodId = targetSess.periodId
+            if (targetSess.batchId) stUpdate.batchId = targetSess.batchId
+            await tx.inputAssessmentStudent.update({
+              where: { id: stId },
+              data: stUpdate
+            })
+          }
         }
       }
 
@@ -311,7 +377,15 @@ export async function PUT(req: Request) {
         period: true,
         batch: true,
         examiners: { include: { user: true } },
-        studentSessions: { include: { student: true } }
+        studentSessions: {
+          include: {
+            student: {
+              include: {
+                scores: true
+              }
+            }
+          }
+        }
       }
     })
 
