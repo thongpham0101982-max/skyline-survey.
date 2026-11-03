@@ -1452,7 +1452,7 @@ main > div > :is(.space-y-4, .space-y-5, .space-y-6, .space-y-8) > div:first-chi
 
 /* Fix vertical text clipping inside compact height <select> elements */
 @layer base {
-  :where(select:is(.h-6, .h-7, .h-8, .h-9, .h-10)) {
+  :where(select:is(.h-6, .h-7, .h-8, .h-9, .h-10, .h-11)) {
     padding-top: 0;
     padding-bottom: 0;
     line-height: 1.25;
