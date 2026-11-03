@@ -1505,7 +1505,7 @@ export function InputAssessmentsClient({
   const [pLoading, setPLoading] = useState(false)
   const [expandedId, setExpandedId] = useState<string|null>(null)
   const [batchCampusFilter, setBatchCampusFilter] = useState("all")
-  const [batchStatusFilter, setBatchStatusFilter] = useState("all")
+  const [batchStatusFilter, setBatchStatusFilter] = useState("ACTIVE")
   const [batchSearch, setBatchSearch] = useState("")
   const [confirm, setConfirm] = useState<{msg:string; fn:()=>void}|null>(null)
   const [sendingEmailBatchId, setSendingEmailBatchId] = useState<string | null>(null);
@@ -1522,6 +1522,7 @@ export function InputAssessmentsClient({
       });
       if (res.ok) {
         fetchPeriods();
+        fetchSessions();
         notify(
           newStatus === "COMPLETED"
             ? "Đã chuyển đợt khảo sát sang trạng thái Hoàn thành (Ẩn khỏi Nhập thông tin & Phân công GV)"
@@ -1549,6 +1550,7 @@ export function InputAssessmentsClient({
       if (res.ok) {
         setSelectedBatchIds([]);
         fetchPeriods();
+        fetchSessions();
         notify(`Đã cập nhật ${ids.length} đợt khảo sát sang trạng thái "${STATUS_MAP[newStatus]?.label || newStatus}"`);
       } else {
         const d = await res.json();
@@ -1576,7 +1578,7 @@ export function InputAssessmentsClient({
   const [sessionsLoading, setSessionsLoading] = useState(false)
   const [periodSubView, setPeriodSubView] = useState<"ksl" | "batches" | "sessions">("ksl")
   const [sessionCampusFilter, setSessionCampusFilter] = useState("all")
-  const [sessionStatusFilter, setSessionStatusFilter] = useState("all")
+  const [sessionStatusFilter, setSessionStatusFilter] = useState("SCHEDULED")
   const [sessionTypeFilter, setSessionTypeFilter] = useState("all")
   const [sessionDateFilter, setSessionDateFilter] = useState("")
   const [sessionSearch, setSessionSearch] = useState("")
@@ -6198,7 +6200,7 @@ const [customCommitmentSubjects, setCustomCommitmentSubjects] = useState<string[
                   <span className={`px-2 py-0.5 text-[10px] font-black rounded-full ${
                     periodSubView === "ksl" ? "bg-white/20 text-white" : "bg-teal-50 text-[#00736E]"
                   }`}>
-                    {kslPeriod?.batches?.length || 0} đợt • {(kslPeriod as any)?._count?.students || 0} HS
+                    {(kslPeriod?.batches || []).filter(b => b.status === "ACTIVE").length} đang mở / {kslPeriod?.batches?.length || 0} đợt
                   </span>
                 </button>
 
@@ -6216,7 +6218,7 @@ const [customCommitmentSubjects, setCustomCommitmentSubjects] = useState<string[
                   <span className={`px-2 py-0.5 text-[10px] font-black rounded-full ${
                     periodSubView === "batches" ? "bg-white/20 text-white" : "bg-slate-200 text-slate-700"
                   }`}>
-                    {periods.reduce((acc, p) => acc + (p.batches?.length || 0), 0)}
+                    {periods.reduce((acc, p) => acc + ((p.batches || []).filter(b => b.status === "ACTIVE").length), 0)} đang mở
                   </span>
                 </button>
 
@@ -6234,7 +6236,7 @@ const [customCommitmentSubjects, setCustomCommitmentSubjects] = useState<string[
                   <span className={`px-2 py-0.5 text-[10px] font-black rounded-full ${
                     periodSubView === "sessions" ? "bg-white/20 text-white" : "bg-teal-50 text-[#00736E]"
                   }`}>
-                    {filteredSessions.length}
+                    {sessions.filter(s => s.status !== "COMPLETED" && s.status !== "CANCELLED").length}
                   </span>
                 </button>
               </div>
@@ -6522,7 +6524,39 @@ const [customCommitmentSubjects, setCustomCommitmentSubjects] = useState<string[
                 ) : !kslPeriod ? (
                   <Empty icon={Calendar} text="Chưa có Kỳ Khảo sát lẻ nào" sub="Nhấn 'Thêm Kỳ mới' để khởi tạo kỳ Khảo sát lẻ" />
                 ) : kslBatchesFiltered.length === 0 ? (
-                  <Empty icon={Search} text="Không tìm thấy Đợt Khảo sát lẻ nào phù hợp" sub="Thử từ khóa khác hoặc nhấn '⚡ Tiếp nhận & Xếp lịch KS lẻ (30s)' để tạo mới" />
+                  <div className="bg-white border border-slate-200 rounded-2xl p-8 text-center space-y-3 shadow-xs">
+                    <div className="w-12 h-12 rounded-2xl bg-teal-50 border border-teal-100 text-[#00736E] flex items-center justify-center mx-auto">
+                      <CheckCircle2 className="w-6 h-6" />
+                    </div>
+                    <div>
+                      <p className="text-sm font-black text-slate-800">
+                        {batchStatusFilter === "ACTIVE" && completedKslBatchesCount > 0
+                          ? `Hiện không có Đợt Khảo sát lẻ nào đang mở (${completedKslBatchesCount} đợt đã Hoàn thành)`
+                          : "Không tìm thấy Đợt Khảo sát lẻ nào phù hợp"}
+                      </p>
+                      <p className="text-xs text-slate-500 mt-1">
+                        Các đợt đã chuyển sang trạng thái <strong>Hoàn thành</strong> đã được ẩn khỏi danh sách đang mở, Nhập thông tin khảo sát và Phân công GV.
+                      </p>
+                    </div>
+                    <div className="flex flex-wrap items-center justify-center gap-2 pt-1">
+                      <button
+                        type="button"
+                        onClick={() => openQuickScheduleModal(kslPeriod?.id)}
+                        className="px-4 py-2 bg-[#00736E] hover:bg-[#005854] text-white rounded-xl text-xs font-black transition-all cursor-pointer shadow-xs"
+                      >
+                        ⚡ Tiếp nhận &amp; Xếp lịch KS lẻ mới
+                      </button>
+                      {batchStatusFilter === "ACTIVE" && completedKslBatchesCount > 0 && (
+                        <button
+                          type="button"
+                          onClick={() => setBatchStatusFilter("COMPLETED")}
+                          className="px-4 py-2 bg-sky-50 hover:bg-sky-100 text-sky-800 border border-sky-200 rounded-xl text-xs font-bold transition-all cursor-pointer"
+                        >
+                          Xem {completedKslBatchesCount} đợt đã Hoàn thành
+                        </button>
+                      )}
+                    </div>
+                  </div>
                 ) : (
                   <div className="bg-white border border-slate-200 rounded-2xl shadow-xs overflow-hidden">
                     <div className="overflow-x-auto max-h-[620px] overflow-y-auto custom-scrollbar">
@@ -6841,11 +6875,32 @@ const [customCommitmentSubjects, setCustomCommitmentSubjects] = useState<string[
               {sessionsLoading ? (
                 <Spin />
               ) : filteredSessions.length === 0 ? (
-                <Empty
-                  icon={Clock}
-                  text="Không có phiên khảo sát nào phù hợp"
-                  sub="Nhấn '⚡ Tiếp nhận & Xếp lịch KS lẻ (30s)' để xếp ca ngay cho học sinh hoặc 'Tạo phiên mới'"
-                />
+                <div className="bg-white border border-slate-200 rounded-2xl p-8 text-center space-y-3 shadow-xs">
+                  <div className="w-12 h-12 rounded-2xl bg-teal-50 border border-teal-100 text-[#00736E] flex items-center justify-center mx-auto">
+                    <Clock className="w-6 h-6" />
+                  </div>
+                  <div>
+                    <p className="text-sm font-black text-slate-800">
+                      {sessionStatusFilter === "SCHEDULED" && sessions.filter(s => s.status === "COMPLETED").length > 0
+                        ? `Hiện không có Phiên / Lịch ca thi nào đang mở (${sessions.filter(s => s.status === "COMPLETED").length} phiên đã Hoàn thành)`
+                        : "Không có phiên khảo sát nào phù hợp"}
+                    </p>
+                    <p className="text-xs text-slate-500 mt-1">
+                      Nhấn &apos;⚡ Tiếp nhận &amp; Xếp lịch KS lẻ (30s)&apos; để xếp ca mới hoặc bấm bên dưới để xem lại các phiên đã hoàn thành.
+                    </p>
+                  </div>
+                  {sessionStatusFilter === "SCHEDULED" && sessions.filter(s => s.status === "COMPLETED").length > 0 && (
+                    <div className="pt-1">
+                      <button
+                        type="button"
+                        onClick={() => setSessionStatusFilter("COMPLETED")}
+                        className="px-4 py-2 bg-sky-50 hover:bg-sky-100 text-sky-800 border border-sky-200 rounded-xl text-xs font-bold transition-all cursor-pointer"
+                      >
+                        Xem {sessions.filter(s => s.status === "COMPLETED").length} phiên đã Hoàn thành
+                      </button>
+                    </div>
+                  )}
+                </div>
               ) : (
                 <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
                   {filteredSessions.map(sessionItem => {
@@ -6903,9 +6958,9 @@ const [customCommitmentSubjects, setCustomCommitmentSubjects] = useState<string[
                                           method: "PUT",
                                           headers: { "Content-Type": "application/json" },
                                           body: JSON.stringify({
-                                            type: "BATCH",
+                                            action: "UPDATE_BATCH",
                                             id: sessionItem.batchId,
-                                            status: nextStatus === "COMPLETED" ? "COMPLETED" : "ACTIVE"
+                                            data: { status: nextStatus === "COMPLETED" ? "COMPLETED" : "ACTIVE" }
                                           })
                                         });
                                       }

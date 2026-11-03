@@ -133,28 +133,34 @@ export function PhanCongK12Client({
   const [pLoading, setPLoading] = useState(false)
 
   const visiblePeriods = useMemo(() => {
-    const activeBatchesPeriods = periods.map(p => ({
-      ...p,
-      batches: (p.batches || []).filter((b: any) => b.status === "ACTIVE")
-    }))
+    const activeBatchesPeriods = periods
+      .map(p => ({
+        ...p,
+        totalBatchesCount: (p.batches || []).length,
+        batches: (p.batches || []).filter((b: any) => b.status === "ACTIVE")
+      }))
+      // Ẩn các Kỳ khảo sát mà toàn bộ các đợt bên trong đã chuyển sang Hoàn thành (0 đợt đang mở)
+      .filter(p => p.totalBatchesCount === 0 || p.batches.length > 0)
 
     if (!currentUser?.role) return activeBatchesPeriods
     if (isAdmin) return activeBatchesPeriods
     if (["GDCS", "GĐ_CS", "GIAO_VU_CS", "GĐCS"].includes(userRole)) {
       const allowedIds = currentUser.campusIds || []
-      return activeBatchesPeriods.map(p => ({
-        ...p,
-        batches: (p.batches || []).filter((b: any) => {
-          if (!b.campusId) {
-            return allowedIds.some((id: string) => {
-              const campus = campuses.find((c: any) => c.id === id)
-              if (!campus) return false
-              return b.name.includes(campus.campusCode) || b.name.includes(campus.campusName)
-            })
-          }
-          return allowedIds.includes(b.campusId)
-        })
-      }))
+      return activeBatchesPeriods
+        .map(p => ({
+          ...p,
+          batches: (p.batches || []).filter((b: any) => {
+            if (!b.campusId) {
+              return allowedIds.some((id: string) => {
+                const campus = campuses.find((c: any) => c.id === id)
+                if (!campus) return false
+                return b.name.includes(campus.campusCode) || b.name.includes(campus.campusName)
+              })
+            }
+            return allowedIds.includes(b.campusId)
+          })
+        }))
+        .filter(p => p.totalBatchesCount === 0 || p.batches.length > 0)
     }
     return activeBatchesPeriods
   }, [periods, currentUser, campuses, isAdmin, userRole])
@@ -264,6 +270,12 @@ export function PhanCongK12Client({
       setStudentStats({})
       return
     }
+    const rawPeriod = periods.find((p: any) => p.id === asPeriodId)
+    const activeBatchesInPeriod = (rawPeriod?.batches || []).filter((b: any) => b.status === "ACTIVE")
+    if ((rawPeriod?.batches?.length || 0) > 0 && activeBatchesInPeriod.length === 0) {
+      setStudentStats({})
+      return
+    }
     setStatsLoading(true)
     try {
       let url = `/api/input-assessment-students?periodId=${asPeriodId}&excludeCompletedBatches=true`
@@ -358,8 +370,10 @@ export function PhanCongK12Client({
 
   // ─── Auto-set period ───
   useEffect(() => {
-    if (visiblePeriods.length > 0 && !asPeriodId) {
+    if (visiblePeriods.length > 0 && (!asPeriodId || !visiblePeriods.some(p => p.id === asPeriodId))) {
       setAsPeriodId(visiblePeriods[0].id)
+    } else if (visiblePeriods.length === 0 && asPeriodId) {
+      setAsPeriodId("")
     }
   }, [visiblePeriods, asPeriodId])
 

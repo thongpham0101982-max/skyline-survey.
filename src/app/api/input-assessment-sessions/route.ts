@@ -135,6 +135,63 @@ export async function GET(req: Request) {
       ]
     })
 
+    // Đồng bộ tự động các Phiên / Lịch ca thi cũ khi Đợt khảo sát (hoặc toàn bộ kỳ Khảo sát lẻ) đã chuyển sang Hoàn thành
+    try {
+      const scheduledLeSessions = sessions.filter((s: any) => s.status === "SCHEDULED" && (s.sessionType === "LE" || s.batch?.status === "COMPLETED"))
+      if (scheduledLeSessions.length > 0) {
+        const yearIds = Array.from(new Set(scheduledLeSessions.map((s: any) => s.academicYearId).filter(Boolean))) as string[]
+        const kslPeriods = yearIds.length > 0
+          ? await prisma.inputAssessmentPeriod.findMany({
+              where: {
+                academicYearId: { in: yearIds },
+                OR: [{ name: { contains: "Khảo sát lẻ" } }, { name: { contains: "lẻ" } }]
+              },
+              include: {
+                batches: { select: { id: true, name: true, status: true } }
+              }
+            })
+          : []
+
+        const idsToComplete: string[] = []
+        for (const s of scheduledLeSessions) {
+          if (s.batch?.status === "COMPLETED") {
+            s.status = "COMPLETED"
+            idsToComplete.push(s.id)
+            continue
+          }
+          const kslP = kslPeriods.find((p: any) => p.academicYearId === s.academicYearId)
+          if (kslP && Array.isArray(kslP.batches) && kslP.batches.length > 0) {
+            const matchedBatch = kslP.batches.find((b: any) => b.name && s.name && (b.name.includes(s.name) || s.name.includes(b.name)))
+            const allCompleted = kslP.batches.every((b: any) => b.status === "COMPLETED")
+            if (matchedBatch) {
+              if (!s.batchId) {
+                await (prisma as any).inputAssessmentSession.update({
+                  where: { id: s.id },
+                  data: { batchId: matchedBatch.id, periodId: kslP.id, ...(matchedBatch.status === "COMPLETED" ? { status: "COMPLETED" } : {}) }
+                })
+                s.batchId = matchedBatch.id
+                s.periodId = kslP.id
+              }
+              if (matchedBatch.status === "COMPLETED") {
+                s.status = "COMPLETED"
+              }
+            } else if (allCompleted && s.sessionType === "LE") {
+              s.status = "COMPLETED"
+              idsToComplete.push(s.id)
+            }
+          }
+        }
+        if (idsToComplete.length > 0) {
+          await (prisma as any).inputAssessmentSession.updateMany({
+            where: { id: { in: idsToComplete } },
+            data: { status: "COMPLETED" }
+          })
+        }
+      }
+    } catch (syncErr) {
+      console.error("Reconcile session status error:", syncErr)
+    }
+
     return NextResponse.json(sessions)
   } catch (error: any) {
     console.error("GET /api/input-assessment-sessions error:", error)

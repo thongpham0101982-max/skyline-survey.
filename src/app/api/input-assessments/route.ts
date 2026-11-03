@@ -147,8 +147,36 @@ export async function PUT(req) {
            ...(data.assignedUserId !== undefined && { assignedUserId: data.assignedUserId || null }),
            ...(data.status !== undefined && { status: data.status }),
            ...(data.batchNumber !== undefined && { batchNumber: typeof data.batchNumber === 'string' ? parseInt(data.batchNumber) : data.batchNumber }),
-        }
+        },
+        include: { period: true }
       });
+
+      if (data.status !== undefined) {
+        const targetSessionStatus = data.status === "COMPLETED" ? "COMPLETED" : "SCHEDULED";
+        await (prisma as any).inputAssessmentSession.updateMany({
+          where: { batchId: id },
+          data: { status: targetSessionStatus }
+        });
+
+        if (data.status === "COMPLETED" && result?.periodId) {
+          const activeRemaining = await (prisma as any).inputAssessmentBatch.count({
+            where: { periodId: result.periodId, status: "ACTIVE" }
+          });
+          if (activeRemaining === 0 && result?.period?.academicYearId) {
+            const pName = (result.period.name || "").toLowerCase();
+            if (pName.includes("khảo sát lẻ") || pName.includes("lẻ")) {
+              await (prisma as any).inputAssessmentSession.updateMany({
+                where: {
+                  academicYearId: result.period.academicYearId,
+                  sessionType: "LE",
+                  status: { not: "COMPLETED" }
+                },
+                data: { status: "COMPLETED" }
+              });
+            }
+          }
+        }
+      }
       return NextResponse.json(result);
     }
     else if (action === "BULK_UPDATE_BATCH_STATUS") {
@@ -161,6 +189,37 @@ export async function PUT(req) {
         where: { id: { in: ids } },
         data: { status }
       });
+
+      const targetSessionStatus = status === "COMPLETED" ? "COMPLETED" : "SCHEDULED";
+      await (prisma as any).inputAssessmentSession.updateMany({
+        where: { batchId: { in: ids } },
+        data: { status: targetSessionStatus }
+      });
+
+      if (status === "COMPLETED") {
+        const sampleBatch = await (prisma as any).inputAssessmentBatch.findFirst({
+          where: { id: { in: ids } },
+          include: { period: true }
+        });
+        if (sampleBatch?.periodId) {
+          const activeRemaining = await (prisma as any).inputAssessmentBatch.count({
+            where: { periodId: sampleBatch.periodId, status: "ACTIVE" }
+          });
+          if (activeRemaining === 0 && sampleBatch?.period?.academicYearId) {
+            const pName = (sampleBatch.period.name || "").toLowerCase();
+            if (pName.includes("khảo sát lẻ") || pName.includes("lẻ")) {
+              await (prisma as any).inputAssessmentSession.updateMany({
+                where: {
+                  academicYearId: sampleBatch.period.academicYearId,
+                  sessionType: "LE",
+                  status: { not: "COMPLETED" }
+                },
+                data: { status: "COMPLETED" }
+              });
+            }
+          }
+        }
+      }
       return NextResponse.json({ success: true, count: result.count });
     }
     else if (action === "SEND_ASSIGNMENT_EMAIL") {
