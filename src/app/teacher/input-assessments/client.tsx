@@ -251,7 +251,7 @@ export default function TeacherAssessmentsClient({ user }: { user: any }) {
             .then(res => res.json())
             .then(data => {
                 if(Array.isArray(data)) {
-                    setAssignments(data);
+                    setAssignments(data.filter((a: any) => a?.batch?.status !== "COMPLETED"));
                     setSelectedPeriodId("");
                     setSelectedBatchId("");
                     setSelectedAssignmentId("");

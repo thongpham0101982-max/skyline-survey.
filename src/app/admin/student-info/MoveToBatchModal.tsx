@@ -18,7 +18,7 @@ export function MoveToBatchModal({
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   const activePeriod = periods.find(p => p.id === selectedPeriodId);
-  const activeBatches = activePeriod?.batches || [];
+  const activeBatches = (activePeriod?.batches || []).filter((b: any) => b.status !== "COMPLETED" && b.status !== "LOCKED");
 
   const handleSubmit = async () => {
     if (!selectedPeriodId) {

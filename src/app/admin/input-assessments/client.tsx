@@ -164,13 +164,14 @@ const ORIENTATION_CATEGORIES = [
   { code: "NHAN_THUC_BAN_THAN", label: "Nhận thức Bản thân", color: "bg-amber-50 text-amber-800 border-amber-200" },
   { code: "DINH_HUONG_TUONG_LAI", label: "Định hướng Tương lai", color: "bg-indigo-50 text-indigo-800 border-indigo-200" }
 ]
-const STATUS_OPTS = ["ACTIVE", "LOCKED", "DRAFT", "CLOSED"]
+const STATUS_OPTS = ["ACTIVE", "COMPLETED", "LOCKED", "DRAFT", "CLOSED"]
 const STATUS_MAP: Record<string,{label:string,cls:string}> = {
-  ACTIVE:   { label:"Đang mở",   cls:"bg-emerald-50 text-emerald-700 rounded-full" },
-  LOCKED:   { label:"Đã khóa",   cls:"bg-slate-100 text-slate-700 rounded-full" },
-  DRAFT:    { label:"Bản nháp",  cls:"bg-amber-50 text-amber-700 rounded-full" },
-  CLOSED:   { label:"Kết thúc", cls:"bg-red-50 text-red-750 rounded-full" },
-  INACTIVE: { label:"Tắt",      cls:"bg-slate-100 text-slate-500 rounded-full" },
+  ACTIVE:    { label:"Đang mở",    cls:"bg-emerald-50 text-emerald-700 border border-emerald-200 rounded-full" },
+  COMPLETED: { label:"Hoàn thành", cls:"bg-sky-50 text-sky-700 border border-sky-200 rounded-full" },
+  LOCKED:    { label:"Đã khóa",    cls:"bg-slate-100 text-slate-700 rounded-full" },
+  DRAFT:     { label:"Bản nháp",   cls:"bg-amber-50 text-amber-700 rounded-full" },
+  CLOSED:    { label:"Kết thúc",   cls:"bg-red-50 text-red-750 rounded-full" },
+  INACTIVE:  { label:"Tắt",        cls:"bg-slate-100 text-slate-500 rounded-full" },
 }
 
 function Badge({ s }: { s: string }) {
@@ -1508,6 +1509,55 @@ export function InputAssessmentsClient({
   const [batchSearch, setBatchSearch] = useState("")
   const [confirm, setConfirm] = useState<{msg:string; fn:()=>void}|null>(null)
   const [sendingEmailBatchId, setSendingEmailBatchId] = useState<string | null>(null);
+  const [selectedBatchIds, setSelectedBatchIds] = useState<string[]>([]);
+  const [showCompletedBatches, setShowCompletedBatches] = useState<boolean>(false);
+
+  const updateSingleBatchStatus = async (batchId: string, newStatus: string, isPreschool = false) => {
+    if (cannotUpdate) return;
+    try {
+      const res = await fetch(isPreschool ? "/api/preschool-input-assessments" : "/api/input-assessments", {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ action: "UPDATE_BATCH", id: batchId, data: { status: newStatus } })
+      });
+      if (res.ok) {
+        fetchPeriods();
+        notify(
+          newStatus === "COMPLETED"
+            ? "Đã chuyển đợt khảo sát sang trạng thái Hoàn thành (Ẩn khỏi Nhập thông tin & Phân công GV)"
+            : newStatus === "ACTIVE"
+            ? "Đã mở lại đợt khảo sát"
+            : "Đã khóa đợt khảo sát"
+        );
+      } else {
+        const d = await res.json();
+        notify(d.error || "Lỗi cập nhật trạng thái đợt", "err");
+      }
+    } catch (e) {
+      notify("Lỗi kết nối máy chủ", "err");
+    }
+  };
+
+  const bulkUpdateBatchStatus = async (ids: string[], newStatus: string) => {
+    if (cannotUpdate || ids.length === 0) return;
+    try {
+      const res = await fetch("/api/input-assessments", {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ action: "BULK_UPDATE_BATCH_STATUS", data: { ids, status: newStatus } })
+      });
+      if (res.ok) {
+        setSelectedBatchIds([]);
+        fetchPeriods();
+        notify(`Đã cập nhật ${ids.length} đợt khảo sát sang trạng thái "${STATUS_MAP[newStatus]?.label || newStatus}"`);
+      } else {
+        const d = await res.json();
+        notify(d.error || "Lỗi cập nhật hàng loạt", "err");
+      }
+    } catch (e) {
+      notify("Lỗi kết nối máy chủ", "err");
+    }
+  };
 
   const kslPeriod = useMemo(() => {
     return visiblePeriods.find(p => {
@@ -3855,7 +3905,7 @@ ${reportForm.directorNote}`;
   useEffect(() => {
     const selP = visiblePeriods.find(p => p.id === sPeriodId);
     if (!selP || !selP.batches || selP.batches.length === 0) return;
-    const allBatches = (selP.batches || []).map(b => ({
+    const allBatches = (selP.batches || []).filter(b => b.status === "ACTIVE").map(b => ({
       ...b,
       periodId: selP.id,
       periodName: selP.name,
@@ -4535,7 +4585,7 @@ ${reportForm.directorNote}`;
     const effPeriod = periods.find(p => p.id === effPeriodId) || selPeriod;
     const initialBatchId = overrides?.batchId || ((sBatchId && sBatchId !== "none" && sBatchId !== "") 
       ? sBatchId 
-      : (effPeriod?.batches?.[0]?.id || ""));
+      : ((effPeriod?.batches || []).find(b => b.status === "ACTIVE")?.id || ""));
     const initialCampus = overrides?.registeredCampus || (effPeriod?.campusId 
       ? (campuses.find(c => c.id === effPeriod.campusId)?.campusName || "") 
       : (campuses[0]?.campusName || ""));
@@ -5385,11 +5435,15 @@ ${reportForm.directorNote}`;
 
   const groupedAssignments = useMemo(() => {
     const groups: Record<string, any> = {};
+    const completedBatchIds = new Set(
+      periods.flatMap(p => p.batches || []).filter(b => b.status === "COMPLETED").map(b => b.id)
+    );
+    const activeAssignments = assignments.filter(a => !a.batchId || (!completedBatchIds.has(a.batchId) && (a as any).batch?.status !== "COMPLETED"));
     const targetAssignments = (!asFilterBatchId || asFilterBatchId === "all")
-      ? assignments
+      ? activeAssignments
       : asFilterBatchId === "none"
-      ? assignments.filter(a => !a.batchId)
-      : assignments.filter(a => a.batchId === asFilterBatchId);
+      ? activeAssignments.filter(a => !a.batchId)
+      : activeAssignments.filter(a => a.batchId === asFilterBatchId);
     targetAssignments.forEach(a => {
         const key = `${a.userId}_${a.batchId || "none"}`;
         if (!groups[key]) {
@@ -5444,7 +5498,15 @@ ${reportForm.directorNote}`;
   const selPeriod = visiblePeriods.find(p => p.id === sPeriodId)
   const asSelPeriod = visiblePeriods.find(p => p.id === asPeriodId)
   const filtStu = useMemo(() => {
+    const completedBatchIds = new Set(
+      periods.flatMap(p => p.batches || []).filter(b => b.status === "COMPLETED").map(b => b.id)
+    );
     return students.filter(s => {
+      // Ẩn học sinh thuộc Đợt đã Hoàn thành khỏi danh sách nhập thông tin khảo sát (trừ khi bật Hiện đợt Hoàn thành hoặc đang chọn đích danh đợt đó)
+      const isBatchCompleted = (s as any).batch?.status === "COMPLETED" || (s.batchId && completedBatchIds.has(s.batchId));
+      if (isBatchCompleted && !showCompletedBatches && sBatchId !== s.batchId) {
+        return false;
+      }
       // Filter by viewMode (transfer vs general)
       if (viewMode === "transfer") {
         const pObj = periods.find(p => p.id === s.periodId);
@@ -5516,7 +5578,7 @@ ${reportForm.directorNote}`;
       }
       return true;
     });
-  }, [students, sSearch, sGradeFilter, sEduFilter, sCampusFilter, sResultFilter, sRecordFilter, campuses, selPeriod, visiblePeriods]);
+  }, [students, sSearch, sGradeFilter, sEduFilter, sCampusFilter, sResultFilter, sRecordFilter, campuses, selPeriod, visiblePeriods, periods, showCompletedBatches, sBatchId]);
 
   const paginatedFiltStu = useMemo(() => {
     const startIndex = (studentsCurrentPage - 1) * studentsPageSize;
@@ -5872,7 +5934,7 @@ const [customCommitmentSubjects, setCustomCommitmentSubjects] = useState<string[
                     <Field label="Đợt khảo sát (Không bắt buộc nếu là khảo sát lẻ)">
                       <select value={asBatchId} onChange={e=>setAsBatchId(e.target.value)} className={inp} disabled={!asPeriodId || isReadOnly}>
                          <option value="">-- Áp dụng Toàn kỳ & Khảo sát lẻ (Mặc định) --</option>
-                         {visiblePeriods.find(p=>p.id===asPeriodId)?.batches?.map(b=><option key={b.id} value={b.id}>{b.name}</option>)}
+                         {visiblePeriods.find(p=>p.id===asPeriodId)?.batches?.filter(b => b.status !== "COMPLETED").map(b=><option key={b.id} value={b.id}>{b.name}</option>)}
                       </select>
                     </Field>
 
@@ -6004,7 +6066,7 @@ const [customCommitmentSubjects, setCustomCommitmentSubjects] = useState<string[
                          >
                             <option value="">-- Tất cả đợt & Khảo sát lẻ --</option>
                             <option value="none">-- Chỉ Khảo sát lẻ / Toàn kỳ --</option>
-                            {asSelPeriod?.batches?.map(b=><option key={b.id} value={b.id}>{b.name}</option>)}
+                            {asSelPeriod?.batches?.filter(b => b.status !== "COMPLETED").map(b=><option key={b.id} value={b.id}>{b.name}</option>)}
                          </select>
                       </div>
                       {asPeriodId && (
@@ -6280,9 +6342,13 @@ const [customCommitmentSubjects, setCustomCommitmentSubjects] = useState<string[
                 }
               }
               if (batchStatusFilter && batchStatusFilter !== "all") {
-                const isLocked = b.status === "LOCKED" || b.status === "CLOSED";
-                if (batchStatusFilter === "ACTIVE" && isLocked) return false;
-                if (batchStatusFilter === "LOCKED" && !isLocked) return false;
+                if (batchStatusFilter === "COMPLETED") {
+                  if (b.status !== "COMPLETED") return false;
+                } else if (batchStatusFilter === "ACTIVE") {
+                  if (b.status !== "ACTIVE") return false;
+                } else if (batchStatusFilter === "LOCKED") {
+                  if (b.status !== "LOCKED" && b.status !== "CLOSED") return false;
+                }
               }
               if (batchSearch.trim()) {
                 const q = batchSearch.toLowerCase().trim();
@@ -6295,6 +6361,7 @@ const [customCommitmentSubjects, setCustomCommitmentSubjects] = useState<string[
 
             const totalKslStudents = (kslPeriod as any)?._count?.students || kslBatchesAll.reduce((sum, b) => sum + ((b as any)._count?.students ?? b.students?.length ?? 0), 0);
             const activeKslBatchesCount = kslBatchesAll.filter(b => b.status === "ACTIVE").length;
+            const completedKslBatchesCount = kslBatchesAll.filter(b => b.status === "COMPLETED").length;
 
             return (
               <div className="space-y-4">
@@ -6323,8 +6390,12 @@ const [customCommitmentSubjects, setCustomCommitmentSubjects] = useState<string[
                       <span className="text-base font-black text-white">{kslBatchesAll.length}</span>
                     </div>
                     <div className="bg-white/10 border border-white/15 rounded-xl px-3.5 py-2 text-center min-w-[95px]">
-                      <span className="block text-[10px] font-bold uppercase text-teal-200">Đang mở (ON)</span>
+                      <span className="block text-[10px] font-bold uppercase text-teal-200">Đang mở</span>
                       <span className="text-base font-black text-emerald-300">{activeKslBatchesCount}</span>
+                    </div>
+                    <div className="bg-white/10 border border-white/15 rounded-xl px-3.5 py-2 text-center min-w-[95px]">
+                      <span className="block text-[10px] font-bold uppercase text-teal-200">Hoàn thành</span>
+                      <span className="text-base font-black text-sky-300">{completedKslBatchesCount}</span>
                     </div>
                     <div className="bg-white/10 border border-white/15 rounded-xl px-3.5 py-2 text-center min-w-[95px]">
                       <span className="block text-[10px] font-bold uppercase text-teal-200">Tổng HS KS lẻ</span>
@@ -6392,8 +6463,9 @@ const [customCommitmentSubjects, setCustomCommitmentSubjects] = useState<string[
                         className="h-9 bg-slate-50 border border-slate-200 rounded-xl px-3 text-xs font-bold text-slate-700 outline-none focus:border-[#00A19A] cursor-pointer"
                       >
                         <option value="all">Tất cả ({kslBatchesAll.length})</option>
-                        <option value="ACTIVE">Đang mở ON ({activeKslBatchesCount})</option>
-                        <option value="LOCKED">Đã khóa OFF ({kslBatchesAll.length - activeKslBatchesCount})</option>
+                        <option value="ACTIVE">Đang mở ({activeKslBatchesCount})</option>
+                        <option value="COMPLETED">✓ Hoàn thành ({completedKslBatchesCount})</option>
+                        <option value="LOCKED">Đã khóa ({kslBatchesAll.length - activeKslBatchesCount - completedKslBatchesCount})</option>
                       </select>
                     </div>
 
@@ -6412,7 +6484,34 @@ const [customCommitmentSubjects, setCustomCommitmentSubjects] = useState<string[
                     )}
                   </div>
 
-                  <div className="flex items-center gap-2 text-xs font-bold text-slate-500">
+                  <div className="flex flex-wrap items-center gap-2 text-xs font-bold text-slate-500">
+                    {selectedBatchIds.length > 0 && !cannotUpdate && (
+                      <div className="flex items-center gap-1.5 bg-sky-50 border border-sky-200 px-2.5 py-1 rounded-xl">
+                        <span className="text-sky-800 text-[11px] font-black">Đã chọn {selectedBatchIds.length} đợt:</span>
+                        <button
+                          type="button"
+                          onClick={() => bulkUpdateBatchStatus(selectedBatchIds, "COMPLETED")}
+                          className="px-2.5 py-1 bg-sky-600 hover:bg-sky-700 text-white rounded-lg text-[11px] font-black transition-all cursor-pointer flex items-center gap-1 shadow-2xs"
+                        >
+                          <CheckCircle2 className="w-3 h-3" />
+                          <span>✓ Hoàn thành ({selectedBatchIds.length})</span>
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => bulkUpdateBatchStatus(selectedBatchIds, "ACTIVE")}
+                          className="px-2 py-1 bg-emerald-600 hover:bg-emerald-700 text-white rounded-lg text-[11px] font-bold transition-all cursor-pointer"
+                        >
+                          Mở lại
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => setSelectedBatchIds([])}
+                          className="px-1.5 py-1 text-slate-500 hover:text-slate-700 text-[11px] font-bold cursor-pointer"
+                        >
+                          Bỏ chọn
+                        </button>
+                      </div>
+                    )}
                     <span>Hiển thị <strong className="text-[#005854]">{kslBatchesFiltered.length}</strong> / {kslBatchesAll.length} đợt khảo sát lẻ</span>
                   </div>
                 </div>
@@ -6430,7 +6529,23 @@ const [customCommitmentSubjects, setCustomCommitmentSubjects] = useState<string[
                       <table className="w-full text-left border-collapse">
                         <thead className="sticky top-0 z-10 bg-[#003B3A] text-white">
                           <tr>
-                            <th className="px-4 py-3 text-[10px] font-black uppercase tracking-wider pl-5">Đợt #</th>
+                            <th className="px-3 py-3 text-center w-10 pl-4">
+                              <input
+                                type="checkbox"
+                                checked={kslBatchesFiltered.length > 0 && kslBatchesFiltered.every(b => selectedBatchIds.includes(b.id))}
+                                onChange={e => {
+                                  if (e.target.checked) {
+                                    setSelectedBatchIds(prev => Array.from(new Set([...prev, ...kslBatchesFiltered.map(b => b.id)])));
+                                  } else {
+                                    const filteredSet = new Set(kslBatchesFiltered.map(b => b.id));
+                                    setSelectedBatchIds(prev => prev.filter(id => !filteredSet.has(id)));
+                                  }
+                                }}
+                                className="w-3.5 h-3.5 rounded accent-[#00A19A] cursor-pointer"
+                                title="Chọn tất cả đợt đang hiển thị"
+                              />
+                            </th>
+                            <th className="px-3 py-3 text-[10px] font-black uppercase tracking-wider">Đợt #</th>
                             <th className="px-4 py-3 text-[10px] font-black uppercase tracking-wider">Học sinh / Nội dung Đợt Khảo sát lẻ</th>
                             <th className="px-4 py-3 text-[10px] font-black uppercase tracking-wider">Cơ sở</th>
                             <th className="px-4 py-3 text-[10px] font-black uppercase tracking-wider">Ngày KS</th>
@@ -6450,17 +6565,40 @@ const [customCommitmentSubjects, setCustomCommitmentSubjects] = useState<string[
                             const parts = cleanName.split(" _ ");
                             const highlightContent = parts.length >= 5 ? parts.slice(4, parts.length - 1).join(" _ ") || parts[3] : cleanName;
                             const stCount = (b as any)._count?.students ?? b.students?.length ?? 0;
+                            const isCompleted = b.status === "COMPLETED";
 
                             return (
-                              <tr key={b.id} className="hover:bg-teal-50/40 transition-colors group">
-                                <td className="px-4 py-3 pl-5">
-                                  <span className="inline-flex items-center justify-center px-2.5 py-1 rounded-lg bg-teal-50 text-[#005854] border border-teal-200/80 font-black text-xs">
+                              <tr key={b.id} className={`transition-colors group ${isCompleted ? "bg-slate-50/70 opacity-85 hover:opacity-100" : "hover:bg-teal-50/40"}`}>
+                                <td className="px-3 py-3 text-center pl-4">
+                                  <input
+                                    type="checkbox"
+                                    checked={selectedBatchIds.includes(b.id)}
+                                    onChange={e => {
+                                      if (e.target.checked) setSelectedBatchIds(prev => [...prev, b.id]);
+                                      else setSelectedBatchIds(prev => prev.filter(id => id !== b.id));
+                                    }}
+                                    className="w-3.5 h-3.5 rounded accent-[#00736E] cursor-pointer"
+                                  />
+                                </td>
+                                <td className="px-3 py-3">
+                                  <span className={`inline-flex items-center justify-center px-2.5 py-1 rounded-lg font-black text-xs border ${
+                                    isCompleted
+                                      ? "bg-sky-50 text-sky-700 border-sky-200"
+                                      : "bg-teal-50 text-[#005854] border-teal-200/80"
+                                  }`}>
                                     #{b.batchNumber}
                                   </span>
                                 </td>
                                 <td className="px-4 py-3">
-                                  <div className="font-black text-slate-800 text-xs sm:text-sm group-hover:text-[#005854] transition-colors">
-                                    {highlightContent}
+                                  <div className="flex items-center gap-2 flex-wrap">
+                                    <span className={`font-black text-xs sm:text-sm transition-colors ${isCompleted ? "text-slate-600" : "text-slate-800 group-hover:text-[#005854]"}`}>
+                                      {highlightContent}
+                                    </span>
+                                    {isCompleted && (
+                                      <span className="px-2 py-0.5 rounded-full bg-sky-100 text-sky-800 text-[10px] font-black uppercase tracking-wider">
+                                        ✓ Hoàn thành
+                                      </span>
+                                    )}
                                   </div>
                                   <div className="text-[11px] font-mono text-slate-400 mt-0.5">
                                     {cleanName}
@@ -6481,6 +6619,7 @@ const [customCommitmentSubjects, setCustomCommitmentSubjects] = useState<string[
                                   <button
                                     type="button"
                                     onClick={() => {
+                                      if (isCompleted) setShowCompletedBatches(true);
                                       setSPeriodId(kslPeriod.id);
                                       setSBatchId(b.id);
                                       setTab("students");
@@ -6497,32 +6636,34 @@ const [customCommitmentSubjects, setCustomCommitmentSubjects] = useState<string[
                                   </button>
                                 </td>
                                 <td className="px-4 py-3">
-                                  <div className="flex items-center gap-2">
-                                    <button
-                                      type="button"
-                                      onClick={async () => {
-                                        const newStatus = b.status === "ACTIVE" ? "LOCKED" : "ACTIVE";
-                                        try {
-                                          const res = await fetch("/api/input-assessments", {
-                                            method: "PUT",
-                                            headers: { "Content-Type": "application/json" },
-                                            body: JSON.stringify({ action: "UPDATE_BATCH", id: b.id, data: { status: newStatus } })
-                                          });
-                                          if (res.ok) fetchPeriods();
-                                        } catch (e) {}
-                                      }}
-                                      className={`relative inline-flex h-5 w-9 shrink-0 cursor-pointer items-center rounded-full transition-colors ${
-                                        b.status === "ACTIVE" ? "bg-[#00A19A]" : "bg-slate-300"
+                                  <div className="flex items-center gap-1.5">
+                                    <select
+                                      value={b.status === "COMPLETED" ? "COMPLETED" : b.status === "ACTIVE" ? "ACTIVE" : "LOCKED"}
+                                      onChange={e => updateSingleBatchStatus(b.id, e.target.value)}
+                                      disabled={cannotUpdate}
+                                      className={`h-7 px-2.5 rounded-lg text-[11px] font-black border outline-none cursor-pointer transition-all ${
+                                        b.status === "ACTIVE"
+                                          ? "bg-emerald-50 text-emerald-700 border-emerald-200 hover:border-emerald-400"
+                                          : b.status === "COMPLETED"
+                                          ? "bg-sky-50 text-sky-700 border-sky-200 hover:border-sky-400"
+                                          : "bg-slate-100 text-slate-600 border-slate-200 hover:border-slate-300"
                                       }`}
-                                      title={b.status === "ACTIVE" ? "Đang mở (Click để Khóa)" : "Đã khóa (Click để Mở)"}
+                                      title="Đổi trạng thái đợt khảo sát (Hoàn thành sẽ ẩn khỏi Nhập thông tin & Phân công GV)"
                                     >
-                                      <span className={`inline-block h-4 w-4 transform rounded-full bg-white shadow transition duration-200 ${
-                                        b.status === "ACTIVE" ? "translate-x-4" : "translate-x-0.5"
-                                      }`} />
-                                    </button>
-                                    <span className={`text-[10px] font-black uppercase ${b.status === "ACTIVE" ? "text-[#00736E]" : "text-slate-400"}`}>
-                                      {b.status === "ACTIVE" ? "ON" : "OFF"}
-                                    </span>
+                                      <option value="ACTIVE">🟢 Đang mở</option>
+                                      <option value="COMPLETED">☑️ Hoàn thành</option>
+                                      <option value="LOCKED">🔒 Đã khóa</option>
+                                    </select>
+                                    {b.status === "ACTIVE" && !cannotUpdate && (
+                                      <button
+                                        type="button"
+                                        onClick={() => updateSingleBatchStatus(b.id, "COMPLETED")}
+                                        className="px-2 py-1 rounded-lg bg-sky-50 hover:bg-sky-600 text-sky-700 hover:text-white border border-sky-200 text-[10px] font-black transition-all cursor-pointer whitespace-nowrap"
+                                        title="Đánh dấu Hoàn thành đợt này (Ẩn khỏi Nhập thông tin khảo sát & Phân công GV)"
+                                      >
+                                        ✓ Hoàn thành
+                                      </button>
+                                    )}
                                   </div>
                                 </td>
                                 <td className="px-4 py-3">
@@ -6530,31 +6671,39 @@ const [customCommitmentSubjects, setCustomCommitmentSubjects] = useState<string[
                                 </td>
                                 <td className="px-4 py-3 text-right pr-5">
                                   <div className="flex items-center justify-end gap-1">
-                                    <button
-                                      type="button"
-                                      onClick={() => {
-                                        if (cannotCreate) return;
-                                        openAddStudent({
-                                          periodId: kslPeriod.id,
-                                          batchId: b.id,
-                                          registeredCampus: selectedCampus?.campusName || ""
-                                        });
-                                      }}
-                                      disabled={cannotCreate}
-                                      className="px-2.5 py-1 bg-emerald-50 hover:bg-emerald-600 text-emerald-700 hover:text-white border border-emerald-200 rounded-lg text-[11px] font-bold transition-all cursor-pointer flex items-center gap-1"
-                                      title="Thêm học sinh mới vào đợt khảo sát lẻ này"
-                                    >
-                                      <UserPlus className="w-3 h-3" />
-                                      <span>+ HS</span>
-                                    </button>
-                                    <a
-                                      href={`/admin/phan-cong-khao-sat?tab=k12`}
-                                      className="px-2.5 py-1 bg-teal-50 hover:bg-[#00736E] text-[#005854] hover:text-white border border-teal-200 rounded-lg text-[11px] font-bold transition-all cursor-pointer flex items-center gap-1"
-                                      title="Chuyển sang Phân công Giáo viên chấm khảo sát"
-                                    >
-                                      <UserCheck className="w-3 h-3" />
-                                      <span>Phân công</span>
-                                    </a>
+                                    {!isCompleted ? (
+                                      <>
+                                        <button
+                                          type="button"
+                                          onClick={() => {
+                                            if (cannotCreate) return;
+                                            openAddStudent({
+                                              periodId: kslPeriod.id,
+                                              batchId: b.id,
+                                              registeredCampus: selectedCampus?.campusName || ""
+                                            });
+                                          }}
+                                          disabled={cannotCreate}
+                                          className="px-2.5 py-1 bg-emerald-50 hover:bg-emerald-600 text-emerald-700 hover:text-white border border-emerald-200 rounded-lg text-[11px] font-bold transition-all cursor-pointer flex items-center gap-1"
+                                          title="Thêm học sinh mới vào đợt khảo sát lẻ này"
+                                        >
+                                          <UserPlus className="w-3 h-3" />
+                                          <span>+ HS</span>
+                                        </button>
+                                        <a
+                                          href={`/admin/phan-cong-khao-sat?tab=k12`}
+                                          className="px-2.5 py-1 bg-teal-50 hover:bg-[#00736E] text-[#005854] hover:text-white border border-teal-200 rounded-lg text-[11px] font-bold transition-all cursor-pointer flex items-center gap-1"
+                                          title="Chuyển sang Phân công Giáo viên chấm khảo sát"
+                                        >
+                                          <UserCheck className="w-3 h-3" />
+                                          <span>Phân công</span>
+                                        </a>
+                                      </>
+                                    ) : (
+                                      <span className="text-[10px] font-bold text-slate-400 italic mr-1">
+                                        Đã hoàn thành
+                                      </span>
+                                    )}
                                     <button
                                       type="button"
                                       onClick={() => openEditBatch(b)}
@@ -6931,10 +7080,39 @@ const [customCommitmentSubjects, setCustomCommitmentSubjects] = useState<string[
                   className="bg-slate-50 border border-slate-200 rounded-xl px-3 py-1.5 text-xs font-bold text-slate-700 outline-none focus:border-indigo-500 cursor-pointer shadow-sm"
                 >
                   <option value="all">Tất cả Trạng thái</option>
-                  <option value="ACTIVE">Đang mở (ON)</option>
-                  <option value="LOCKED">Đã khóa (OFF)</option>
+                  <option value="ACTIVE">🟢 Đang mở</option>
+                  <option value="COMPLETED">☑️ Hoàn thành</option>
+                  <option value="LOCKED">🔒 Đã khóa</option>
                 </select>
               </div>
+
+              {selectedBatchIds.length > 0 && !cannotUpdate && (
+                <div className="flex items-center gap-1.5 bg-sky-50 border border-sky-200 px-2.5 py-1 rounded-xl">
+                  <span className="text-sky-800 text-[11px] font-black">Đã chọn {selectedBatchIds.length} đợt:</span>
+                  <button
+                    type="button"
+                    onClick={() => bulkUpdateBatchStatus(selectedBatchIds, "COMPLETED")}
+                    className="px-2.5 py-1 bg-sky-600 hover:bg-sky-700 text-white rounded-lg text-[11px] font-black transition-all cursor-pointer flex items-center gap-1 shadow-2xs"
+                  >
+                    <CheckCircle2 className="w-3 h-3" />
+                    <span>✓ Hoàn thành ({selectedBatchIds.length})</span>
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => bulkUpdateBatchStatus(selectedBatchIds, "ACTIVE")}
+                    className="px-2 py-1 bg-emerald-600 hover:bg-emerald-700 text-white rounded-lg text-[11px] font-bold transition-all cursor-pointer"
+                  >
+                    Mở lại
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setSelectedBatchIds([])}
+                    className="px-1.5 py-1 text-slate-500 hover:text-slate-700 text-[11px] font-bold cursor-pointer"
+                  >
+                    Bỏ chọn
+                  </button>
+                </div>
+              )}
 
               {/* Reset Filter Button */}
               {(batchCampusFilter !== "all" || batchStatusFilter !== "all") && (
@@ -6990,7 +7168,24 @@ const [customCommitmentSubjects, setCustomCommitmentSubjects] = useState<string[
                            <table className="w-full text-left border-collapse">
                              <thead>
                                <tr className="text-xs font-semibold">
-                                 <th className="px-4 py-3.5 border-b border-slate-200/80 text-[10px] font-black text-slate-500 uppercase tracking-widest pl-6">Mã Đợt</th>
+                                 <th className="px-3 py-3.5 border-b border-slate-200/80 text-center w-10 pl-4">
+                                   <input
+                                     type="checkbox"
+                                     checked={(p.batches || []).length > 0 && (p.batches || []).every(b => selectedBatchIds.includes(b.id))}
+                                     onChange={e => {
+                                       const pBatchIds = (p.batches || []).map(b => b.id);
+                                       if (e.target.checked) {
+                                         setSelectedBatchIds(prev => Array.from(new Set([...prev, ...pBatchIds])));
+                                       } else {
+                                         const pSet = new Set(pBatchIds);
+                                         setSelectedBatchIds(prev => prev.filter(id => !pSet.has(id)));
+                                       }
+                                     }}
+                                     className="w-3.5 h-3.5 rounded accent-[#00736E] cursor-pointer"
+                                     title="Chọn tất cả đợt của kỳ này"
+                                   />
+                                 </th>
+                                 <th className="px-3 py-3.5 border-b border-slate-200/80 text-[10px] font-black text-slate-500 uppercase tracking-widest">Mã Đợt</th>
                                  <th className="px-4 py-3.5 border-b border-slate-200/80 text-[10px] font-black text-slate-500 uppercase tracking-widest">Nội dung khảo sát</th>
                                  <th className="px-4 py-3.5 border-b border-slate-200/80 text-[10px] font-black text-slate-500 uppercase tracking-widest">Cơ sở</th>
                                  <th className="px-4 py-3.5 border-b border-slate-200/80 text-[10px] font-black text-slate-500 uppercase tracking-widest">Thời gian</th>
@@ -7014,9 +7209,13 @@ const [customCommitmentSubjects, setCustomCommitmentSubjects] = useState<string[
                                     }
                                   }
                                   if (batchStatusFilter && batchStatusFilter !== "all") {
-                                    const isLocked = b.status === "LOCKED" || b.status === "CLOSED";
-                                    if (batchStatusFilter === "ACTIVE" && isLocked) return false;
-                                    if (batchStatusFilter === "LOCKED" && !isLocked) return false;
+                                    if (batchStatusFilter === "COMPLETED") {
+                                      if (b.status !== "COMPLETED") return false;
+                                    } else if (batchStatusFilter === "ACTIVE") {
+                                      if (b.status !== "ACTIVE") return false;
+                                    } else if (batchStatusFilter === "LOCKED") {
+                                      if (b.status !== "LOCKED" && b.status !== "CLOSED") return false;
+                                    }
                                   }
                                   return true;
                                 }).map(b => {
@@ -7026,16 +7225,35 @@ const [customCommitmentSubjects, setCustomCommitmentSubjects] = useState<string[
                                  const assigneeName = assignee ? assignee.fullName : "-- Chưa gán --";
                                   const cleanName = (b.name || "").split("|")[0].trim();
                                   const stCount = (b as any)._count?.students ?? b.students?.length ?? 0;
+                                  const isCompleted = b.status === "COMPLETED";
 
                                   return (
-                                    <tr key={b.id} className="group hover:bg-slate-50/50 transition-colors text-xs font-semibold">
-                                      <td className="px-4 py-3 border-b border-slate-100 pl-6">
-                                        <span className="inline-flex items-center justify-center w-8 h-8 font-black text-indigo-600 text-xs">
+                                    <tr key={b.id} className={`group transition-colors text-xs font-semibold ${isCompleted ? "bg-slate-50/70 opacity-85 hover:opacity-100" : "hover:bg-slate-50/50"}`}>
+                                      <td className="px-3 py-3 border-b border-slate-100 text-center pl-4">
+                                        <input
+                                          type="checkbox"
+                                          checked={selectedBatchIds.includes(b.id)}
+                                          onChange={e => {
+                                            if (e.target.checked) setSelectedBatchIds(prev => [...prev, b.id]);
+                                            else setSelectedBatchIds(prev => prev.filter(id => id !== b.id));
+                                          }}
+                                          className="w-3.5 h-3.5 rounded accent-[#00736E] cursor-pointer"
+                                        />
+                                      </td>
+                                      <td className="px-3 py-3 border-b border-slate-100">
+                                        <span className={`inline-flex items-center justify-center w-8 h-8 font-black text-xs ${isCompleted ? "text-sky-700" : "text-indigo-600"}`}>
                                           #{b.batchNumber}
                                         </span>
                                       </td>
                                       <td className="px-4 py-3 border-b border-slate-100">
-                                        <p className="text-sm font-bold text-slate-800">{cleanName}</p>
+                                        <div className="flex items-center gap-2 flex-wrap">
+                                          <p className={`text-sm font-bold ${isCompleted ? "text-slate-600" : "text-slate-800"}`}>{cleanName}</p>
+                                          {isCompleted && (
+                                            <span className="px-2 py-0.5 rounded-full bg-sky-100 text-sky-800 text-[10px] font-black uppercase tracking-wider">
+                                              ✓ Hoàn thành
+                                            </span>
+                                          )}
+                                        </div>
                                         {b.name.includes("|") && (
                                           <p className="text-[10px] font-medium text-slate-400 truncate max-w-xs" title={b.name}>{b.name}</p>
                                         )}
@@ -7058,6 +7276,7 @@ const [customCommitmentSubjects, setCustomCommitmentSubjects] = useState<string[
                                           type="button"
                                           onClick={(e) => {
                                             e.stopPropagation();
+                                            if (isCompleted) setShowCompletedBatches(true);
                                             setSPeriodId(p.id);
                                             setSBatchId(b.id);
                                             setTab("students");
@@ -7070,33 +7289,35 @@ const [customCommitmentSubjects, setCustomCommitmentSubjects] = useState<string[
                                         </button>
                                       </td>
                                      <td className="px-4 py-3 border-b border-slate-100">
-                                       <div className="flex items-center gap-2">
-                                       <button
-                                         onClick={async () => {
-                                           const newStatus = b.status === "ACTIVE" ? "LOCKED" : "ACTIVE";
-                                           try {
-                                             const res = await fetch(b.isPreschool || false ? "/api/preschool-input-assessments" : "/api/input-assessments", {
-                                               method: "PUT",
-                                               headers: { "Content-Type": "application/json" },
-                                               body: JSON.stringify({ action: "UPDATE_BATCH", id: b.id, data: { status: newStatus } })
-                                             });
-                                             if (res.ok) { fetchPeriods(); }
-                                             else { const d = await res.json(); alert(d.error || "Lỗi cập nhật"); }
-                                           } catch(e) { alert("Lỗi mạng"); }
-                                         }}
-                                         className={`relative inline-flex h-5 w-9 shrink-0 cursor-pointer items-center justify-center rounded-full transition-colors focus:outline-none focus:ring-2 focus:ring-indigo-600 focus:ring-offset-2 ${
-                                           b.status === "ACTIVE" ? "bg-emerald-500" : "bg-slate-300"
-                                         }`}
-                                         title={b.status === "ACTIVE" ? "Đang mở (Click để Khóa)" : "Đã khóa (Click để Mở)"}
-                                       >
-                                         <span className={`pointer-events-none inline-block h-4 w-4 transform rounded-full bg-white shadow ring-0 transition duration-200 ease-in-out ${
-                                           b.status === "ACTIVE" ? "translate-x-4" : "translate-x-0"
-                                         }`} />
-                                       </button>
-                                       <span className={`text-[10px] font-black uppercase tracking-widest ${b.status === "ACTIVE" ? "text-emerald-600" : "text-slate-500"}`}>
-                                         {b.status === "ACTIVE" ? "ON" : "OFF"}
-                                       </span>
-                                     </div>
+                                       <div className="flex items-center gap-1.5">
+                                         <select
+                                           value={b.status === "COMPLETED" ? "COMPLETED" : b.status === "ACTIVE" ? "ACTIVE" : "LOCKED"}
+                                           onChange={e => updateSingleBatchStatus(b.id, e.target.value, Boolean((b as any).isPreschool))}
+                                           disabled={cannotUpdate}
+                                           className={`h-7 px-2.5 rounded-lg text-[11px] font-black border outline-none cursor-pointer transition-all ${
+                                             b.status === "ACTIVE"
+                                               ? "bg-emerald-50 text-emerald-700 border-emerald-200 hover:border-emerald-400"
+                                               : b.status === "COMPLETED"
+                                               ? "bg-sky-50 text-sky-700 border-sky-200 hover:border-sky-400"
+                                               : "bg-slate-100 text-slate-600 border-slate-200 hover:border-slate-300"
+                                           }`}
+                                           title="Đổi trạng thái đợt khảo sát (Hoàn thành sẽ ẩn khỏi Nhập thông tin & Phân công GV)"
+                                         >
+                                           <option value="ACTIVE">🟢 Đang mở</option>
+                                           <option value="COMPLETED">☑️ Hoàn thành</option>
+                                           <option value="LOCKED">🔒 Đã khóa</option>
+                                         </select>
+                                         {b.status === "ACTIVE" && !cannotUpdate && (
+                                           <button
+                                             type="button"
+                                             onClick={() => updateSingleBatchStatus(b.id, "COMPLETED", Boolean((b as any).isPreschool))}
+                                             className="px-2 py-1 rounded-lg bg-sky-50 hover:bg-sky-600 text-sky-700 hover:text-white border border-sky-200 text-[10px] font-black transition-all cursor-pointer whitespace-nowrap"
+                                             title="Đánh dấu Hoàn thành đợt này (Ẩn khỏi Nhập thông tin khảo sát & Phân công GV)"
+                                           >
+                                             ✓ Hoàn thành
+                                           </button>
+                                         )}
+                                       </div>
                                      </td>
                                                                            <td className="px-4 py-3 border-b border-slate-100">
                                         <div className="flex items-center justify-between gap-2 group/assignee">
@@ -7144,24 +7365,26 @@ const [customCommitmentSubjects, setCustomCommitmentSubjects] = useState<string[
                                       </td>
                                      <td className="px-4 py-3 border-b border-slate-100 text-right pr-6">
                                        <div className="flex items-center justify-end gap-1">
-                                         <button
-                                           type="button"
-                                           onClick={(e) => {
-                                             e.stopPropagation();
-                                             if (cannotCreate) return;
-                                             const selectedCampus = campuses.find(c => c.id === b.campusId);
-                                             openAddStudent({
-                                               periodId: p.id,
-                                               batchId: b.id,
-                                               registeredCampus: selectedCampus?.campusName || ""
-                                             });
-                                           }}
-                                           disabled={cannotCreate}
-                                           className={"p-2 text-emerald-600 hover:bg-emerald-50 rounded-xl transition-all cursor-pointer " + (cannotCreate ? "pointer-events-none opacity-40" : "")}
-                                           title="Thêm học sinh mới vào đợt này"
-                                         >
-                                           <UserPlus className="w-3.5 h-3.5" />
-                                         </button>
+                                         {!isCompleted && (
+                                           <button
+                                             type="button"
+                                             onClick={(e) => {
+                                               e.stopPropagation();
+                                               if (cannotCreate) return;
+                                               const selectedCampus = campuses.find(c => c.id === b.campusId);
+                                               openAddStudent({
+                                                 periodId: p.id,
+                                                 batchId: b.id,
+                                                 registeredCampus: selectedCampus?.campusName || ""
+                                               });
+                                             }}
+                                             disabled={cannotCreate}
+                                             className={"p-2 text-emerald-600 hover:bg-emerald-50 rounded-xl transition-all cursor-pointer " + (cannotCreate ? "pointer-events-none opacity-40" : "")}
+                                             title="Thêm học sinh mới vào đợt này"
+                                           >
+                                             <UserPlus className="w-3.5 h-3.5" />
+                                           </button>
+                                         )}
                                          <button onClick={() => openEditBatch(b)} className={"p-2 text-slate-400 hover:text-indigo-600 hover:bg-indigo-50 rounded-xl transition-all " + (cannotUpdate ? "pointer-events-none opacity-40" : "")} disabled={cannotUpdate} title="Chỉnh sửa">
                                            <Edit2 className="w-3.5 h-3.5" />
                                          </button>
@@ -7412,12 +7635,13 @@ const [customCommitmentSubjects, setCustomCommitmentSubjects] = useState<string[
                    <option value="">-- Tất cả đợt &amp; Khảo sát lẻ --</option>
                    <option value="none">-- Khảo sát lẻ (Chưa phân đợt) --</option>
                    {[...((sPeriodId && sPeriodId !== "all" ? selPeriod?.batches : visiblePeriods.flatMap(p => p.batches || [])) || [])]
+                     .filter((b: any) => showCompletedBatches || b.status !== "COMPLETED" || b.id === sBatchId)
                      .sort((a: any, b: any) => (Number(b.batchNumber) || 0) - (Number(a.batchNumber) || 0))
                      .map((b: any) => {
                        const bStCount = b._count?.students ?? b.students?.length ?? 0;
                        return (
                          <option key={b.id} value={b.id}>
-                           [{bStCount} HS] {b.name}
+                           [{bStCount} HS] {b.status === "COMPLETED" ? "✓ [Hoàn thành] " : ""}{b.name}
                          </option>
                        );
                      })}
@@ -7498,6 +7722,18 @@ const [customCommitmentSubjects, setCustomCommitmentSubjects] = useState<string[
                   className={`px-2.5 py-1 rounded-lg text-xs font-bold transition-all cursor-pointer ${sRecordFilter === "attachments" ? "bg-sky-600 text-white shadow-xs" : "bg-sky-50 text-sky-800 border border-sky-200/80 hover:bg-sky-100"}`}
                 >
                   📎 Có tệp đính kèm: {studentIntakeKPIs.withAttachments}
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setShowCompletedBatches(prev => !prev)}
+                  className={`px-2.5 py-1 rounded-lg text-xs font-bold transition-all cursor-pointer border ${
+                    showCompletedBatches
+                      ? "bg-indigo-600 text-white border-indigo-600 shadow-xs"
+                      : "bg-white text-slate-500 border-slate-200 hover:bg-slate-50"
+                  }`}
+                  title="Mặc định ẩn các học sinh thuộc Đợt đã Hoàn thành khỏi danh sách nhập thông tin khảo sát. Bấm để bật/tắt hiển thị lịch sử đợt đã hoàn thành."
+                >
+                  {showCompletedBatches ? "👁️ Đang hiện đợt Hoàn thành" : "🙈 Đang ẩn đợt Hoàn thành"}
                 </button>
               </div>
 
@@ -7826,7 +8062,9 @@ const [customCommitmentSubjects, setCustomCommitmentSubjects] = useState<string[
                                   className="raw-select py-0 h-7 w-full px-1.5 bg-white border border-slate-200 rounded-md text-[11px] font-semibold text-slate-700 outline-none cursor-pointer"
                                 >
                                   <option value="">-- Khảo sát lẻ --</option>
-                                  {(selPeriod?.batches || visiblePeriods.flatMap(p => p.batches || [])).map((b: any) => (
+                                  {(selPeriod?.batches || visiblePeriods.flatMap(p => p.batches || []))
+                                    .filter((b: any) => b.status !== "COMPLETED")
+                                    .map((b: any) => (
                                     <option key={b.id} value={b.id}>{b.name}</option>
                                   ))}
                                 </select>
@@ -8377,7 +8615,9 @@ const [customCommitmentSubjects, setCustomCommitmentSubjects] = useState<string[
                                       className="raw-select py-0 h-7 w-full px-1.5 bg-white border border-slate-200 rounded-md text-[11px] font-semibold text-slate-700 outline-none cursor-pointer"
                                     >
                                       <option value="">-- Khảo sát lẻ --</option>
-                                      {(periodObj?.batches || selPeriod?.batches || visiblePeriods.flatMap(p => p.batches || [])).map((b: any) => (
+                                      {(periodObj?.batches || selPeriod?.batches || visiblePeriods.flatMap(p => p.batches || []))
+                                        .filter((b: any) => b.status !== "COMPLETED" || b.id === rowDraft.batchId)
+                                        .map((b: any) => (
                                         <option key={b.id} value={b.id}>{b.name}</option>
                                       ))}
                                     </select>
@@ -12436,7 +12676,9 @@ const [customCommitmentSubjects, setCustomCommitmentSubjects] = useState<string[
                 <Field label="Đợt khảo sát">
                   <select value={sForm.batchId} onChange={e=>setSForm(f=>({...f,batchId:e.target.value}))} className={inp}>
                     <option value="">-- Không có / Mặc định --</option>
-                    {(periods.find(p => p.id === (sForm.periodId || sPeriodId))?.batches || []).map(b => (
+                    {(periods.find(p => p.id === (sForm.periodId || sPeriodId))?.batches || [])
+                      .filter(b => b.status !== "COMPLETED" || b.id === sForm.batchId)
+                      .map(b => (
                       <option key={b.id} value={b.id}>{b.name}</option>
                     ))}
                   </select>
@@ -12930,7 +13172,9 @@ const [customCommitmentSubjects, setCustomCommitmentSubjects] = useState<string[
                         className={inp}
                       >
                         <option value="">-- Mặc định / Chưa phân đợt --</option>
-                        {(periods.find(p => p.id === (sForm.periodId || sPeriodId))?.batches || []).map(b => (
+                        {(periods.find(p => p.id === (sForm.periodId || sPeriodId))?.batches || [])
+                          .filter(b => b.status !== "COMPLETED" || b.id === sForm.batchId)
+                          .map(b => (
                           <option key={b.id} value={b.id}>{b.name}</option>
                         ))}
                       </select>
@@ -15387,6 +15631,7 @@ const [customCommitmentSubjects, setCustomCommitmentSubjects] = useState<string[
                     <option value="AUTO_CREATE">✨ Tự động tạo Đợt Khảo sát lẻ mới (Chuẩn Sky-Line)</option>
                     <option value="none">-- Không gắn đợt --</option>
                     {[...(periods.find(p => p.id === (quickSessionData.periodId || kslPeriod?.id || periods[0]?.id))?.batches || [])]
+                      .filter(b => b.status !== "COMPLETED")
                       .sort((a, b) => (Number(b.batchNumber) || 0) - (Number(a.batchNumber) || 0))
                       .map(b => (
                         <option key={b.id} value={b.id}>{b.name}</option>
@@ -15609,6 +15854,7 @@ const [customCommitmentSubjects, setCustomCommitmentSubjects] = useState<string[
                   <option value="AUTO_CREATE">✨ Tự động tạo Đợt Khảo sát lẻ mới tương ứng</option>
                   <option value="">-- Không liên kết Đợt --</option>
                   {[...(periods.find(p => p.id === sessionForm.periodId)?.batches || [])]
+                    .filter(b => b.status !== "COMPLETED")
                     .sort((a, b) => (Number(b.batchNumber) || 0) - (Number(a.batchNumber) || 0))
                     .map(b => (
                       <option key={b.id} value={b.id}>{b.name}</option>

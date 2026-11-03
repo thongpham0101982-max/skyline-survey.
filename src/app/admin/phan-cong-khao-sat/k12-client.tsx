@@ -205,11 +205,12 @@ export function PhanCongK12Client({
     }
     setStatsLoading(true)
     try {
-      let url = `/api/input-assessment-students?periodId=${asPeriodId}`
+      let url = `/api/input-assessment-students?periodId=${asPeriodId}&excludeCompletedBatches=true`
       if (asBatchId) url += `&batchId=${asBatchId}`
       const res = await fetch(url)
       if (res.ok) {
-        const students = await res.json()
+        const rawStudents = await res.json()
+        const students = (Array.isArray(rawStudents) ? rawStudents : []).filter((s: any) => s.batch?.status !== "COMPLETED")
         const grouped: Record<string, any[]> = {}
         students.forEach((s: any) => {
           const g = s.grade || "Chưa xác định"
@@ -249,10 +250,10 @@ export function PhanCongK12Client({
       const activeBatchParam = asFilterBatchId && asFilterBatchId !== "all" 
         ? `&batchId=${asFilterBatchId}` 
         : (asBatchId ? `&batchId=${asBatchId}` : "")
-      const res = await fetch(`/api/input-assessment-students?periodId=${asPeriodId}${activeBatchParam}&t=${Date.now()}`)
+      const res = await fetch(`/api/input-assessment-students?periodId=${asPeriodId}${activeBatchParam}&excludeCompletedBatches=true&t=${Date.now()}`)
       if (res.ok) {
         const data = await res.json()
-        setFilterBatchStudents(Array.isArray(data) ? data : [])
+        setFilterBatchStudents((Array.isArray(data) ? data : []).filter((s: any) => s.batch?.status !== "COMPLETED"))
       } else {
         setFilterBatchStudents([])
       }
@@ -345,9 +346,13 @@ export function PhanCongK12Client({
 
   const groupedAssignments = useMemo(() => {
     const groups: Record<string, any> = {}
+    const completedBatchIds = new Set(
+      periods.flatMap((p: any) => p.batches || []).filter((b: any) => b.status === "COMPLETED").map((b: any) => b.id)
+    )
+    const activeAssignments = assignments.filter(a => !a.batchId || (!completedBatchIds.has(a.batchId) && a.batch?.status !== "COMPLETED"))
     const targetAssignments = (!asFilterBatchId || asFilterBatchId === "all")
-      ? assignments
-      : assignments.filter(a => a.batchId === asFilterBatchId)
+      ? activeAssignments
+      : activeAssignments.filter(a => a.batchId === asFilterBatchId)
     targetAssignments.forEach(a => {
       const key = `${a.userId}_${a.batchId || "null"}`
       if (!groups[key]) {

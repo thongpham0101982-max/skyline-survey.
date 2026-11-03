@@ -27,25 +27,38 @@ export async function GET(req) {
   const allowedCampusIds = user?.campusIds || [];
   try {
     const { searchParams } = new URL(req.url);
-    if (searchParams.get("get_max_code") === "true") {
-      const allStudents = await (prisma as any).inputAssessmentStudent.findMany({
+    if (searchParams.get("get_max_code") === "true") { const allCodes = await (prisma as any).inputAssessmentStudent.findMany({ where: { studentCode: { startsWith: "HS" } }, select: { studentCode: true } }); const nums = allCodes.map((s: any) => { const m = String(s.studentCode || "").match(/\d+$/); return m ? parseInt(m[0], 10) : 0; }).filter((n: number) => !isNaN(n)); const maxNum = nums.length > 0 ? Math.max(0, ...nums) : 0; return NextResponse.json({ nextCode: "HS" + (maxNum + 1).toString().padStart(3, "0") }); } if (false && searchParams.get("get_max_code") === "true") {
+      const topStudent = await (prisma as any).inputAssessmentStudent.findFirst({
+        where: { studentCode: { startsWith: "HS" } },
+        orderBy: { studentCode: "desc" },
         select: { studentCode: true }
       });
-      const nums = allStudents.map((s: any) => {
-        const match = String(s.studentCode || "").match(/\d+$/);
-        return match ? parseInt(match[0], 10) : 0;
-      }).filter((n: number) => !isNaN(n));
-      const maxNum = nums.length > 0 ? Math.max(...nums) : 0;
-      return NextResponse.json({ nextCode: "HS" + (maxNum + 1).toString().padStart(3, "0") });
+      if (topStudent?.studentCode) {
+        const match = String(topStudent.studentCode).match(/\d+$/);
+        const maxNum = match ? parseInt(match[0], 10) : 0;
+        return NextResponse.json({ nextCode: "HS" + (maxNum + 1).toString().padStart(3, "0") });
+      }
+      return NextResponse.json({ nextCode: "HS001" });
     }
     const periodId = searchParams.get("periodId");
     const batchId = searchParams.get("batchId");
+    const academicYearId = searchParams.get("academicYearId");
+    const campusCode = searchParams.get("campusCode");
+    const grade = searchParams.get("grade");
+    const unassignedOnly = searchParams.get("unassignedOnly") === "true";
+    const search = searchParams.get("search");
     
-    if (!periodId && searchParams.get("fetch_all") !== "true") {
-       return NextResponse.json({ error: "Missing periodId" }, { status: 400 });
+    if (!periodId && !academicYearId && searchParams.get("fetch_all") !== "true") {
+       return NextResponse.json({ error: "Missing periodId or academicYearId" }, { status: 400 });
     }
     
-    const where: any = (periodId && periodId !== "all") ? { periodId } : {};
+    const where: any = {};
+    if (periodId && periodId !== "all") {
+      where.periodId = periodId;
+    } else if (academicYearId) {
+      where.period = { academicYearId };
+    }
+
     if (batchId && batchId !== "all" && batchId !== "null") {
       where.OR = [
         { batchId: batchId },
@@ -54,6 +67,39 @@ export async function GET(req) {
     } else if (batchId === "null") {
       where.batchId = null;
     }
+
+    if (grade && grade !== "all") {
+      where.grade = grade;
+    }
+
+    if (campusCode && campusCode !== "all") {
+      where.OR = [
+        { registeredCampus: campusCode },
+        { admissionCampus: campusCode }
+      ];
+    }
+
+    if (unassignedOnly) {
+      where.studentSessions = { none: {} };
+    }
+
+    if (search && search.trim()) {
+      const q = search.trim();
+      const searchConditions = [
+        { fullName: { contains: q } },
+        { studentCode: { contains: q } }
+      ];
+      if (where.OR) {
+        where.AND = [
+          { OR: where.OR },
+          { OR: searchConditions }
+        ];
+        delete where.OR;
+      } else {
+        where.OR = searchConditions;
+      }
+    }
+
     
     const students = await (prisma as any).inputAssessmentStudent.findMany({
       where,
@@ -83,7 +129,11 @@ export async function GET(req) {
       orderBy: { createdAt: 'desc' }
     });
     
-    return NextResponse.json(students, { headers: { "X-API-Version": "20260516.1" } });
+    const excludeCompletedBatches = searchParams.get("excludeCompletedBatches") === "true";
+    const finalStudents = excludeCompletedBatches
+      ? students.filter((s: any) => s.batch?.status !== "COMPLETED")
+      : students;
+    return NextResponse.json(finalStudents, { headers: { "X-API-Version": "20260516.1" } });
   } catch (error) {
     return NextResponse.json({ error: error.message || "Internal Server Error" }, { status: 500 });
   }
@@ -521,7 +571,7 @@ export async function POST(req) {
                         BAN ĐÀO TẠO & KHẢO THÍ ĐẢM BẢO CHẤT LƯỢNG GIÁO DỤC
                       </p>
                       <p style="margin: 8px 0 0 0; font-size: 11px; color: #94A3B8;">
-                        Email hỗ trợ: <a href="mailto:bankhaothi@skylineschool.edu.vn" style="color: #99F6E4; text-decoration: underline;">bankhaothi@skylineschool.edu.vn</a> &bull; Website: <a href="https://skylineschool.edu.vn" target="_blank" style="color: #99F6E4; text-decoration: none;">skylineschool.edu.vn</a>
+                        Email hỗ trợ: <a href="mailto:ktdbcl@skylineschool.edu.vn" style="color: #99F6E4; text-decoration: underline;">ktdbcl@skylineschool.edu.vn</a> &bull; Website: <a href="https://skylineschool.edu.vn" target="_blank" style="color: #99F6E4; text-decoration: none;">skylineschool.edu.vn</a>
                       </p>
                     </td>
                   </tr>
@@ -538,7 +588,7 @@ export async function POST(req) {
           to: gdcsEmail,
           subject: `[Sky-line SMS - Xét Duyệt] Yêu cầu duyệt kết quả khảo sát đầu vào - Học sinh ${student.fullName} (${campusName})`,
           html: emailHtml,
-          replyTo: "bankhaothi@skylineschool.edu.vn"
+          replyTo: "ktdbcl@skylineschool.edu.vn"
         });
         return NextResponse.json({ success: true });
       } catch(err) {

@@ -61,7 +61,7 @@ export async function GET(req: any) {
     if (action === "getAssignments") {
         const academicYearId = searchParams.get("academicYearId");
         const userRole = ((session?.user as any)?.role || "").toUpperCase();
-        const isAdmin = ["ADMIN", "KT_DBCL", "KTDBCL", "GDCS", "GĐCS", "GD_CS", "GĐ_CS", "BGH", "BGH_CS", "BGH_MN"].includes(userRole);
+        const isAdmin = ["ADMIN", "SUPERADMIN", "SUPER_ADMIN", "KT_DBCL", "KTDBCL", "KHAO_THI", "ĐBCL", "DBCL", "GDCS", "GĐCS", "GD_CS", "GĐ_CS", "BGH", "BGH_CS", "BGH_MN", "GIAO_VU", "GIAO_VU_CS"].includes(userRole);
         
         let whereClause: any = {};
         if (!isAdmin) {
@@ -376,7 +376,7 @@ export async function GET(req: any) {
             console.error("Error fetching virtual probationary assignments:", eError);
         }
 
-        return NextResponse.json([...K12AssignmentsWithCount, ...mappedPreschool]);
+        return NextResponse.json([...K12AssignmentsWithCount, ...mappedPreschool].filter((a: any) => a?.batch?.status !== "COMPLETED"));
     }
     
     if (action === "getStats") {
@@ -385,23 +385,26 @@ export async function GET(req: any) {
             return NextResponse.json({ total: 0, grades: {} });
         }
 
+        const userRole = ((session?.user as any)?.role || "").toUpperCase();
+        const isAdmin = ["ADMIN", "SUPERADMIN", "SUPER_ADMIN", "KT_DBCL", "KTDBCL", "KHAO_THI", "ĐBCL", "DBCL", "GDCS", "GĐCS", "GD_CS", "GĐ_CS", "BGH", "BGH_CS", "BGH_MN", "GIAO_VU", "GIAO_VU_CS"].includes(userRole);
+
         const currentTeacher = await prisma.teacher.findUnique({
             where: { userId: session.user.id }
         });
 
-        if (!currentTeacher) {
+        if (!currentTeacher && !isAdmin) {
             return NextResponse.json({ total: 0, grades: {} });
         }
 
         const teacherAssignments = await prisma.inputAssessmentTeacherAssignment.findMany({
             where: {
-                userId: session.user.id,
+                ...(isAdmin ? {} : { userId: session.user.id }),
                 period: { academicYearId: academicYearId }
             }
         });
 
         const preschoolAssignmentsRaw = await (prisma as any).preschoolInputAssessmentTeacherAssignment.findMany({
-            where: {
+            where: isAdmin ? {} : {
                 OR: [
                     { userId: session.user.id },
                     { delegatedUserId: session.user.id }
@@ -1038,9 +1041,16 @@ export async function GET(req: any) {
             });
         }
         
+        const userRole = ((session?.user as any)?.role || "").toUpperCase();
+        const isAdmin = ["ADMIN", "SUPERADMIN", "SUPER_ADMIN", "KT_DBCL", "KTDBCL", "KHAO_THI", "ĐBCL", "DBCL", "GDCS", "GĐCS", "GD_CS", "GĐ_CS", "BGH", "BGH_CS", "BGH_MN", "GIAO_VU", "GIAO_VU_CS"].includes(userRole);
+
         // Luon load teacherAssignments de kiem tra quyen va loc dung khoi/he
         const teacherAssignments = await prisma.inputAssessmentTeacherAssignment.findMany({
-            where: { userId: session.user.id, periodId: periodId || undefined, subjectId: subjectId || undefined }
+            where: {
+                ...(isAdmin ? {} : { userId: session.user.id }),
+                periodId: periodId || undefined,
+                subjectId: subjectId || undefined
+            }
         });
         
         const sysList = await prisma.educationSystem.findMany();
@@ -1060,6 +1070,7 @@ export async function GET(req: any) {
                     grade: { in: assignedGrades }
                 } : {})
             },            include: {
+                batch: { select: { id: true, name: true, status: true } },
                 scores: {
                     where: { subjectId: subjectId || undefined },
                     include: { subject: true }
@@ -1070,7 +1081,7 @@ export async function GET(req: any) {
         // Filter in memory to bypass any strict case-sensitivity issues of SQLite
         
         
-        const filteredStudents = students.filter(st => {
+        const filteredStudents = students.filter(st => { if ((st as any).batch?.status === "COMPLETED") return false;
             // Check teacher assignments first
             if (teacherAssignments.length > 0) {
                 // The student must match at least one of the teacher's assignments for this subject
@@ -1108,9 +1119,9 @@ export async function GET(req: any) {
                     return gradeMatch && sysMatch;
                 });
                 
-                if (!matchesAssignment) return false;
-            } else if (!grade && !systemCode) {
-                // Neu khong co assignment nao, GV khong nen thay hoc sinh nao
+                if (!matchesAssignment && !isAdmin) return false;
+            } else if (!grade && !systemCode && !isAdmin) {
+                // Neu khong co assignment nao va khong phai Admin/QA, GV khong nen thay hoc sinh nao
                 return false;
             }
             // Loc theo khoi cu the (neu GV chon tu bo loc Khoi tren UI)
@@ -1228,7 +1239,8 @@ export async function GET(req: any) {
                     studentCode: { in: Array.from(eligibleStudentCodes) as string[] }
                 },
                 include: {
-                    scores: {
+                    batch: { select: { id: true, name: true, status: true } },
+                scores: {
                         where: { subjectId: subjectId || undefined },
                         include: { subject: true }
                     }
@@ -1238,7 +1250,7 @@ export async function GET(req: any) {
             const combinedMap = new Map();
             filteredStudents.forEach(s => combinedMap.set(s.id, s));
             allPeriodStudents.forEach(s => {
-                if (s.studentCode && eligibleStudentCodes.has(s.studentCode)) {
+                if (s.studentCode && eligibleStudentCodes.has(s.studentCode) && (s as any).batch?.status !== "COMPLETED") {
                     combinedMap.set(s.id, {
                         ...s,
                         isPreschool: false,
@@ -1275,6 +1287,7 @@ export async function GET(req: any) {
             orderBy: [{ grade: 'asc' }, { fullName: 'asc' }],
             include: {
                 batch: true,
+                batch: { select: { id: true, name: true, status: true } },
                 scores: {
                     include: { subject: true }
                 }
@@ -1294,6 +1307,7 @@ export async function GET(req: any) {
             include: {
                 period: true,
                 batch: true,
+                batch: { select: { id: true, name: true, status: true } },
                 scores: {
                     include: { subject: true }
                 }
@@ -1347,7 +1361,7 @@ export async function POST(req: any) {
     const { action, studentId, subjectId, scores, comments, teacherName, teacherId } = body;
 
     const userRole = ((session?.user as any)?.role || "").toUpperCase();
-    const isAdmin = ["ADMIN", "KT_DBCL", "KTDBCL", "GDCS", "GĐCS", "GD_CS", "GĐ_CS", "BGH", "BGH_CS", "BGH_MN"].includes(userRole);
+    const isAdmin = ["ADMIN", "SUPERADMIN", "SUPER_ADMIN", "KT_DBCL", "KTDBCL", "KHAO_THI", "ĐBCL", "DBCL", "GDCS", "GĐCS", "GD_CS", "GĐ_CS", "BGH", "BGH_CS", "BGH_MN", "GIAO_VU", "GIAO_VU_CS"].includes(userRole);
 
     if (action === "deleteScore") {
       if (!studentId || !subjectId) {
@@ -1367,7 +1381,7 @@ export async function POST(req: any) {
     if (!student) return NextResponse.json({error: "Student not found"}, {status: 404});
 
     const isPrtLocked = student.period?.status !== "ACTIVE";
-    const isBtcLocked = student.batch?.status === "LOCKED" || student.batch?.status === "CLOSED";
+    const isBtcLocked = student.batch?.status === "LOCKED" || student.batch?.status === "CLOSED" || student.batch?.status === "COMPLETED";
     
     // Admins and management roles can always enter and edit scores even if period/batch is locked
     if ((isPrtLocked || isBtcLocked) && !isAdmin) {

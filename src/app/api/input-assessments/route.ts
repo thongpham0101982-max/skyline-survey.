@@ -50,9 +50,15 @@ export async function GET(req) {
       include: {
         InputAssessmentTeacherAssignment: { select: { id: true, unlockRequestStatus: true, unlockReason: true, user: { select: { fullName: true, id: true } } } },
         assignedUser: { select: { fullName: true } },
+        _count: {
+          select: { students: true, batches: true }
+        },
         batches: {
           include: {
-            assignedUser: { select: { id: true, fullName: true } }
+            assignedUser: { select: { id: true, fullName: true } },
+            _count: {
+              select: { students: true }
+            }
           },
           orderBy: { batchNumber: 'asc' }
         }
@@ -144,6 +150,18 @@ export async function PUT(req) {
         }
       });
       return NextResponse.json(result);
+    }
+    else if (action === "BULK_UPDATE_BATCH_STATUS") {
+      const ids = Array.isArray(data?.ids) ? data.ids : [];
+      const status = data?.status;
+      if (!ids.length || !status) {
+        return NextResponse.json({ error: "Thiếu danh sách đợt hoặc trạng thái" }, { status: 400 });
+      }
+      const result = await (prisma as any).inputAssessmentBatch.updateMany({
+        where: { id: { in: ids } },
+        data: { status }
+      });
+      return NextResponse.json({ success: true, count: result.count });
     }
     else if (action === "SEND_ASSIGNMENT_EMAIL") {
       const batch = await (prisma as any).inputAssessmentBatch.findUnique({
@@ -382,7 +400,7 @@ async function notifyBatchAssignment(batch: any, appUrl?: string) {
                       BAN ĐÀO TẠO & KHẢO THÍ ĐẢM BẢO CHẤT LƯỢNG GIÁO DỤC
                     </p>
                     <p style="margin: 0; font-size: 10px; color: rgba(255, 255, 255, 0.65); line-height: 1.5;">
-                      Email hỗ trợ: <a href="mailto:bankhaothi@skylineschool.edu.vn" style="color: #FDE047; text-decoration: none; font-weight: 600;">bankhaothi@skylineschool.edu.vn</a> • Website: <a href="https://skylineschool.edu.vn" target="_blank" style="color: #FDE047; text-decoration: none; font-weight: 600;">skylineschool.edu.vn</a>
+                      Email hỗ trợ: <a href="mailto:ktdbcl@skylineschool.edu.vn" style="color: #FDE047; text-decoration: none; font-weight: 600;">ktdbcl@skylineschool.edu.vn</a> • Website: <a href="https://skylineschool.edu.vn" target="_blank" style="color: #FDE047; text-decoration: none; font-weight: 600;">skylineschool.edu.vn</a>
                     </p>
                     <p style="margin: 6px 0 0 0; font-size: 10px; color: rgba(255, 255, 255, 0.4);">
                       Đây là thư điện tử được gửi tự động từ Hệ thống Khảo sát Tuyển sinh Sky-Line.
@@ -403,7 +421,7 @@ async function notifyBatchAssignment(batch: any, appUrl?: string) {
         to: email,
         subject: `[Sky-line SMS] Thông báo phân công khảo sát - Đợt ${batchCode}`,
         html: emailHtml,
-        replyTo: "bankhaothi@skylineschool.edu.vn"
+        replyTo: "ktdbcl@skylineschool.edu.vn"
       });
     }
   } catch (err) {
