@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useMemo, useTransition } from "react";
+import React, { useState, useMemo, useTransition, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import {
   Globe,
@@ -32,7 +32,8 @@ import {
   Layers,
   Check,
   Star,
-  ClipboardList
+  ClipboardList,
+  Copy
 } from "lucide-react";
 import { createForeignObservationWithEvaluation } from "./actions";
 import { isSlotBelongsToForeignEsl, isExactWalkthroughForm } from "./utils";
@@ -603,6 +604,100 @@ export function ForeignObservationClient(props: {
     setTimeout(() => setToast(null), 4500);
   };
 
+  // Auto-save form draft to localStorage (protects against accidental reload / network errors)
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    const timer = setTimeout(() => {
+      const hasContent =
+        teacherId ||
+        topic ||
+        teacherVoice.workingWell ||
+        teacherVoice.challenges ||
+        summary.keyStrengths ||
+        summary.keyChallenges;
+      if (hasContent) {
+        try {
+          const draftPayload = {
+            savedAt: new Date().toISOString(),
+            teacherId,
+            campusId,
+            classId,
+            className,
+            subjectName,
+            numberOfStudents,
+            lessonDuration,
+            date,
+            period,
+            room,
+            topic,
+            selectedSkills,
+            indicatorData,
+            teacherVoice,
+            summary
+          };
+          localStorage.setItem("ssm_du_gio_gvnn_draft_v1", JSON.stringify(draftPayload));
+        } catch (e) {
+          // ignore quota error
+        }
+      }
+    }, 800);
+    return () => clearTimeout(timer);
+  }, [
+    teacherId,
+    campusId,
+    classId,
+    className,
+    subjectName,
+    numberOfStudents,
+    lessonDuration,
+    date,
+    period,
+    room,
+    topic,
+    selectedSkills,
+    indicatorData,
+    teacherVoice,
+    summary
+  ]);
+
+  // Restore draft from localStorage if present on first load
+  const [hasDraftRestored, setHasDraftRestored] = useState(false);
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    try {
+      const raw = localStorage.getItem("ssm_du_gio_gvnn_draft_v1");
+      if (raw) {
+        const d = JSON.parse(raw);
+        if (d && (d.teacherId || d.topic || d.summary?.keyStrengths || d.teacherVoice?.workingWell)) {
+          if (d.teacherId) setTeacherId(d.teacherId);
+          if (d.campusId) setCampusId(d.campusId);
+          if (d.classId) setClassId(d.classId);
+          if (d.className) setClassName(d.className);
+          if (d.subjectName) setSubjectName(d.subjectName);
+          if (d.numberOfStudents) setNumberOfStudents(d.numberOfStudents);
+          if (d.lessonDuration) setLessonDuration(d.lessonDuration);
+          if (d.date) setDate(d.date);
+          if (d.period) setPeriod(d.period);
+          if (d.room) setRoom(d.room);
+          if (d.topic) setTopic(d.topic);
+          if (Array.isArray(d.selectedSkills)) setSelectedSkills(d.selectedSkills);
+          if (d.indicatorData && typeof d.indicatorData === "object") {
+            setIndicatorData(prev => ({ ...prev, ...d.indicatorData }));
+          }
+          if (d.teacherVoice && typeof d.teacherVoice === "object") {
+            setTeacherVoice(prev => ({ ...prev, ...d.teacherVoice }));
+          }
+          if (d.summary && typeof d.summary === "object") {
+            setSummary(prev => ({ ...prev, ...d.summary }));
+          }
+          setHasDraftRestored(true);
+        }
+      }
+    } catch (e) {
+      console.warn("Could not restore draft from localStorage:", e);
+    }
+  }, []);
+
   const allTeachers = useMemo(() => {
     return props.teachers || [];
   }, [props.teachers]);
@@ -907,6 +1002,9 @@ export function ForeignObservationClient(props: {
       payloadIndicators[k] = v;
     });
 
+    const parsedAvg = parseFloat(stats.avg);
+    const validAvg = !isNaN(parsedAvg) ? parsedAvg : 0;
+
     const payload = {
       observerId: props.currentTeacher?.id,
       academicYearId: props.selectedYearId,
@@ -924,6 +1022,10 @@ export function ForeignObservationClient(props: {
       targetSkills: selectedSkills,
       indicators: payloadIndicators,
       teacherVoice: {
+        workingWell: teacherVoice.workingWell || "",
+        challenges: teacherVoice.challenges || "",
+        curriculumAdjustments: teacherVoice.curriculumAdjustments || "",
+        supportNeeded: teacherVoice.supportNeeded || "",
         reflectionQ1: teacherVoice.workingWell || "",
         reflectionQ2: teacherVoice.challenges || "",
         reflectionQ3: teacherVoice.curriculumAdjustments || "",
@@ -931,22 +1033,65 @@ export function ForeignObservationClient(props: {
       },
       summary,
       overallRating: stats.suggestedRating,
-      totalScore: parseFloat(stats.avg),
+      totalScore: validAvg,
+      avgScore: validAvg,
+      calculatedAvgScore: validAvg,
       isDraft
     };
 
     startTransition(async () => {
-      const res = await createForeignObservationWithEvaluation(payload);
-      if (res.success) {
-        showToast(isDraft ? t.toastSaveDraftSuccess : t.toastSubmitSuccess, "success");
-        router.refresh();
-        setTimeout(() => {
-          setActiveTab("evaluations");
-        }, 1200);
-      } else {
-        showToast(res.error || t.toastSaveError, "error");
+      try {
+        const res = await createForeignObservationWithEvaluation(payload);
+        if (res && res.success) {
+          if (!isDraft) {
+            try {
+              localStorage.removeItem("ssm_du_gio_gvnn_draft_v1");
+              setHasDraftRestored(false);
+            } catch (e) {}
+          }
+          showToast(isDraft ? t.toastSaveDraftSuccess : t.toastSubmitSuccess, "success");
+          router.refresh();
+          setTimeout(() => {
+            setActiveTab("evaluations");
+          }, 1200);
+        } else {
+          showToast((res && res.error) || t.toastSaveError, "error");
+        }
+      } catch (err: any) {
+        showToast(err?.message || "Lỗi xử lý gửi đánh giá", "error");
       }
     });
+  };
+
+  const handleCopyDraftToClipboard = () => {
+    try {
+      const summaryText = [
+        `=== THÔNG TIN DỰ GIỜ GVNN ESL ===`,
+        `Giáo viên: ${selectedTeacher?.teacherName || teacherId}`,
+        `Cơ sở: ${campusId} | Lớp: ${className} | Ngày: ${date} | ${period}`,
+        `Chủ đề bài dạy: ${topic}`,
+        `Điểm trung bình: ${stats.avg}/4.00 - Xếp loại: ${stats.suggestedRating}`,
+        `\n[TIÊU CHÍ ĐÁNH GIÁ (20 TIÊU CHÍ)]:`,
+        ...ESL_INDICATORS.map(ind => {
+          const item = indicatorData[ind.id] || { rating: "3", evidence: "", studentImpact: "" };
+          return `- ${ind.id}. ${ind.text}: [${item.rating}] ${item.evidence ? `(Minh chứng: ${item.evidence})` : ""} ${item.studentImpact ? `(Tác động: ${item.studentImpact})` : ""}`;
+        }),
+        `\n[Ý KIẾN GIÁO VIÊN]:`,
+        `1. Điểm dạy tốt: ${teacherVoice.workingWell}`,
+        `2. Khó khăn / Thử thách: ${teacherVoice.challenges}`,
+        `3. Điều chỉnh bài học: ${teacherVoice.curriculumAdjustments}`,
+        `4. Đề xuất hỗ trợ: ${teacherVoice.supportNeeded}`,
+        `\n[TỔNG KẾT & KẾ HOẠCH HÀNH ĐỘNG]:`,
+        `Ưu điểm: ${summary.keyStrengths}`,
+        `Khó khăn cần khắc phục: ${summary.keyChallenges}`,
+        `Kế hoạch đã thống nhất: ${summary.agreedActions}`
+      ].join("\n");
+
+      navigator.clipboard.writeText(summaryText);
+      showToast("Đã sao chép toàn bộ nội dung đánh giá vào bộ nhớ tạm!", "success");
+    } catch (e) {
+      showToast("Không thể tự động sao chép. Vui lòng chọn và copy thủ công.", "error");
+    }
   };
 
   return (
@@ -1080,6 +1225,40 @@ export function ForeignObservationClient(props: {
       <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6 sm:py-8 space-y-6">
         {activeTab === "walkthrough" && (
           <>
+            {hasDraftRestored && (
+              <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 p-4 rounded-2xl bg-amber-50 border border-amber-200 text-amber-900 text-xs font-semibold shadow-xs animate-in fade-in">
+                <div className="flex items-center gap-2.5">
+                  <Sparkles className="w-4 h-4 text-amber-600 flex-shrink-0" />
+                  <span>Hệ thống đã tự động khôi phục nội dung đánh giá bạn đang nhập dở từ bộ nhớ trình duyệt.</span>
+                </div>
+                <div className="flex items-center gap-2 self-end sm:self-auto">
+                  <button
+                    type="button"
+                    onClick={handleCopyDraftToClipboard}
+                    className="inline-flex items-center gap-1 px-3 py-1.5 rounded-xl bg-amber-100 text-amber-900 font-bold hover:bg-amber-200 transition cursor-pointer"
+                  >
+                    <Copy className="w-3.5 h-3.5" />
+                    <span>Sao lưu text</span>
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      if (confirm("Bạn có chắc muốn xóa bản nháp và nhập lại từ đầu?")) {
+                        try {
+                          localStorage.removeItem("ssm_du_gio_gvnn_draft_v1");
+                        } catch (e) {}
+                        setHasDraftRestored(false);
+                        window.location.reload();
+                      }
+                    }}
+                    className="px-3 py-1.5 rounded-xl bg-white border border-amber-300 text-amber-800 font-bold hover:bg-amber-100 transition cursor-pointer"
+                  >
+                    Xóa nháp & Nhập mới
+                  </button>
+                </div>
+              </div>
+            )}
+
             {/* CARD 1: Header Form Information */}
             <div className="bg-white rounded-3xl border border-slate-200 shadow-sm overflow-hidden transition hover:shadow-md">
               <div className="px-6 py-4 bg-gradient-to-r from-slate-900 via-slate-800 to-slate-900 text-white flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-slate-700">
@@ -1660,6 +1839,15 @@ export function ForeignObservationClient(props: {
               </div>
 
               <div className="flex items-center gap-3 w-full sm:w-auto">
+                <button
+                  type="button"
+                  title="Sao chép toàn bộ nội dung đã nhập vào bộ nhớ tạm để dự phòng an toàn"
+                  onClick={handleCopyDraftToClipboard}
+                  className="hidden md:inline-flex items-center justify-center gap-1.5 px-4 py-2.5 rounded-2xl bg-slate-100 text-slate-700 font-bold text-xs hover:bg-slate-200 transition cursor-pointer border border-slate-200 shadow-2xs"
+                >
+                  <Copy className="w-4 h-4 text-slate-500" />
+                  <span>Sao lưu text</span>
+                </button>
                 <button
                   type="button"
                   disabled={isPending}

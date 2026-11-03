@@ -96,11 +96,26 @@ export async function POST(request: Request) {
 
     const pAny = prisma as any
 
+    const checkIsEnglish = (sub: any) => {
+      if (!sub) return false
+      const c = (sub.code || "").toLowerCase()
+      const n = (sub.name || "").toLowerCase()
+      return c === "tav" || c === "tavd" || c === "ept" || c.includes("eng") || c.includes("esl") || n.includes("tiếng anh") || n.includes("english")
+    }
+
     // Chế độ gán hàng loạt nhiều môn (Batch Assign)
     if (batchSubjectIds && Array.isArray(batchSubjectIds) && batchSubjectIds.length > 0) {
+      const batchSubjects = await prisma.subject.findMany({
+        where: { id: { in: batchSubjectIds } }
+      })
+      const batchSubMap = new Map(batchSubjects.map(s => [s.id, s]))
+
       const results = []
       for (const targetSubId of batchSubjectIds) {
         if (!targetSubId) continue
+
+        const isSubEnglish = checkIsEnglish(batchSubMap.get(targetSubId))
+        const effectiveCommitment = isSubEnglish ? null : (commitmentThreshold != null ? parseFloat(commitmentThreshold) : null)
 
         const existing = await pAny.inputAssessmentGradeConfig.findFirst({
           where: {
@@ -128,7 +143,7 @@ export async function POST(request: Request) {
               weights: weightsStr,
               roundingRule: roundingRule || "ROUND_1",
               passScore: passScore != null ? parseFloat(passScore) : null,
-              commitmentThreshold: commitmentThreshold != null ? parseFloat(commitmentThreshold) : null
+              commitmentThreshold: effectiveCommitment
             }
           })
           results.push(updated)
@@ -152,7 +167,7 @@ export async function POST(request: Request) {
               weights: weightsStr,
               roundingRule: roundingRule || "ROUND_1",
               passScore: passScore != null ? parseFloat(passScore) : null,
-              commitmentThreshold: commitmentThreshold != null ? parseFloat(commitmentThreshold) : null
+              commitmentThreshold: effectiveCommitment
             }
           })
           results.push(created)
@@ -165,6 +180,10 @@ export async function POST(request: Request) {
     if (!subjectId) {
       return NextResponse.json({ success: false, error: "Vui lòng chọn môn khảo sát đầu vào" }, { status: 400 })
     }
+
+    const singleSub = await prisma.subject.findUnique({ where: { id: subjectId } })
+    const isSingleEnglish = checkIsEnglish(singleSub)
+    const effectiveCommitment = isSingleEnglish ? null : (commitmentThreshold != null ? parseFloat(commitmentThreshold) : null)
 
     const existing = await pAny.inputAssessmentGradeConfig.findFirst({
       where: {
@@ -193,7 +212,7 @@ export async function POST(request: Request) {
           weights: weightsStr,
           roundingRule: roundingRule || "ROUND_1",
           passScore: passScore != null ? parseFloat(passScore) : null,
-          commitmentThreshold: commitmentThreshold != null ? parseFloat(commitmentThreshold) : null
+          commitmentThreshold: effectiveCommitment
         }
       })
     } else {
@@ -216,7 +235,7 @@ export async function POST(request: Request) {
           weights: weightsStr,
           roundingRule: roundingRule || "ROUND_1",
           passScore: passScore != null ? parseFloat(passScore) : null,
-          commitmentThreshold: commitmentThreshold != null ? parseFloat(commitmentThreshold) : null
+          commitmentThreshold: effectiveCommitment
         }
       })
     }

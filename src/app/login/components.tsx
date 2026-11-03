@@ -155,7 +155,7 @@ export function PageFooter({ lang = "vi" }: { lang?: LoginLang }) {
 export function FeatureDrawer({ lang = "vi" }: { lang?: LoginLang }) {
   const [expanded, setExpanded] = useState(false)
   const t = LOGIN_TRANSLATIONS[lang] || LOGIN_TRANSLATIONS.vi;
-  const icons = [Microscope, Clock, Medal, BrainCircuit, Target, Lightbulb];
+  const icons = [ShieldCheck, FileText, Target, Clock, Heart, Medal, Microscope, BookOpen, Lightbulb, GraduationCap, BarChart3, BrainCircuit];
   const modules = t.featureDrawer.modules.map((m, idx) => ({
     ...m,
     icon: icons[idx] || Microscope
@@ -175,7 +175,7 @@ export function FeatureDrawer({ lang = "vi" }: { lang?: LoginLang }) {
         {expanded ? <ChevronUp className="w-4 h-4 text-[#00D2C4]" /> : <ChevronDown className="w-4 h-4 text-[#00D2C4]" />}
       </button>
 
-      <div className={`transition-all duration-300 overflow-hidden ${expanded ? 'max-h-[1200px] opacity-100 mt-3' : 'max-h-0 opacity-0'}`}>
+      <div className={`transition-all duration-300 overflow-hidden ${expanded ? 'max-h-[2000px] opacity-100 mt-3' : 'max-h-0 opacity-0'}`}>
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 bg-black/20 p-4 rounded-2xl border border-white/10 backdrop-blur-md">
           {modules.map((m) => {
             const MIcon = m.icon

@@ -28,7 +28,15 @@ export async function GET(req: NextRequest) {
         curriculums: {
           include: {
             versions: {
-              select: { id: true, versionCode: true, status: true, academicYearId: true }
+              select: { 
+                id: true, 
+                versionCode: true, 
+                status: true, 
+                academicYearId: true,
+                _count: {
+                  select: { lessons: true }
+                }
+              }
             }
           }
         },

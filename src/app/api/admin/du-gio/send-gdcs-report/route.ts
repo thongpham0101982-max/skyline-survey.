@@ -373,7 +373,7 @@ export async function POST(req: Request) {
                 BAN ĐÀO TẠO & KHẢO THÍ ĐẢM BẢO CHẤT LƯỢNG GIÁO DỤC
               </div>
               <div style="color: #475569;">
-                Email hỗ trợ: <a href="mailto:bankhaothi@skylineschool.edu.vn" style="color: #00A19A; font-weight: 700; text-decoration: none;">bankhaothi@skylineschool.edu.vn</a> &bull; Website: <a href="https://skylineschool.edu.vn" style="color: #00A19A; font-weight: 700; text-decoration: none;" target="_blank">skylineschool.edu.vn</a>
+                Email hỗ trợ: <a href="mailto:ktdbcl@skylineschool.edu.vn" style="color: #00A19A; font-weight: 700; text-decoration: none;">ktdbcl@skylineschool.edu.vn</a> &bull; Website: <a href="https://skylineschool.edu.vn" style="color: #00A19A; font-weight: 700; text-decoration: none;" target="_blank">skylineschool.edu.vn</a>
               </div>
               <div style="margin-top: 6px; color: #94A3B8; font-size: 10.5px;">
                 Email này được gửi tự động từ <strong>Hệ thống Quản trị Giáo dục Sky-line SMS</strong> phục vụ công tác điều hành chuyên môn.
@@ -616,7 +616,7 @@ export async function POST(req: Request) {
                 BAN ĐÀO TẠO & KHẢO THÍ ĐẢM BẢO CHẤT LƯỢNG GIÁO DỤC
               </div>
               <div style="color: #475569;">
-                Email: <a href="mailto:bankhaothi@skylineschool.edu.vn" style="color: #00A19A; font-weight: 700; text-decoration: none;">bankhaothi@skylineschool.edu.vn</a> &bull; Website: <a href="https://skylineschool.edu.vn" style="color: #00A19A; font-weight: 700; text-decoration: none;" target="_blank">skylineschool.edu.vn</a>
+                Email: <a href="mailto:ktdbcl@skylineschool.edu.vn" style="color: #00A19A; font-weight: 700; text-decoration: none;">ktdbcl@skylineschool.edu.vn</a> &bull; Website: <a href="https://skylineschool.edu.vn" style="color: #00A19A; font-weight: 700; text-decoration: none;" target="_blank">skylineschool.edu.vn</a>
               </div>
               <div style="margin-top: 6px; color: #94A3B8; font-size: 10.5px;">
                 Email này được gửi tự động từ <strong>Hệ thống Quản trị Giáo dục Sky-line SMS</strong> phục vụ công tác điều hành chuyên môn.

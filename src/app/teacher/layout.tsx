@@ -1,6 +1,6 @@
 import { PwaBottomNav } from "@/components/pwa/PwaBottomNav"
 export const dynamic = "force-dynamic"
-import { SSMAssistantWidget } from "@/components/SSMAssistantWidget"
+
 import { TeacherExperienceGlobalModal } from "@/components/modals/TeacherExperienceGlobalModal"
 import { MobileMenuTrigger } from "@/components/MobileMenuTrigger"
 import { Sidebar } from "@/components/Sidebar"
@@ -27,8 +27,9 @@ export default async function TeacherLayout({ children }: { children: React.Reac
 
   const roleCode = (session?.user as any)?.role || "TEACHER"
 
-  let isGVCN = false
+  let isGVCN = false; let isTTCM = false
   let isPreschoolTeacher = false
+  let assignedSpecialSubjects: string[] = []
   let readableModules: string[] = []
   try {
     const pAny = prisma as any
@@ -92,7 +93,42 @@ export default async function TeacherLayout({ children }: { children: React.Reac
             ]
           }
         }).catch(() => 0)
-        isGVCN = homeroomClassesCount > 0
+        isGVCN = homeroomClassesCount > 0 || Boolean(teacher.homeroomClass && teacher.homeroomClass.trim())
+        const upperRole = (roleCode || "").toUpperCase().trim()
+        const posLower = (teacher.position || "").toLowerCase().trim()
+        isTTCM =
+          ["TTCM", "TPCM", "TO_TRUONG", "TO_PHO", "NHOM_TRUONG", "NHOM_TRUONG_CM"].includes(upperRole) ||
+          posLower.includes("tổ trưởng") ||
+          posLower.includes("tổ phó") ||
+          posLower.includes("ttcm") ||
+          posLower.includes("tpcm") ||
+          Boolean(
+            teacher.departmentAssignments?.some((da: any) => {
+              const p = String(da.position || "").toLowerCase()
+              return p.includes("tổ trưởng") || p.includes("tổ phó") || p.includes("ttcm") || p.includes("tpcm") || p.includes("nhóm trưởng")
+            })
+          )
+
+        const activeYearForSpecial = await prisma.academicYear.findFirst({ where: { status: "ACTIVE" } }).catch(() => null);
+        const specialAssigns = await (prisma as any).specialTeachingAssignment?.findMany({
+          where: {
+            teacherId: teacher.id,
+            status: "ACTIVE",
+            ...(activeYearForSpecial?.id ? { academicYearId: activeYearForSpecial.id } : {})
+          },
+          select: {
+            subject: {
+              select: { code: true }
+            }
+          }
+        }).catch(() => []) || [];
+        assignedSpecialSubjects = Array.from(
+          new Set(
+            specialAssigns
+              .map((sa: any) => String(sa.subject?.code || "").toUpperCase().trim())
+              .filter(Boolean)
+          )
+        );
 
         const blockCMClean = (teacher.departmentRel?.blockCM || "").normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase();
         const deptNameClean = (teacher.departmentRel?.name || "").normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase();
@@ -143,7 +179,7 @@ export default async function TeacherLayout({ children }: { children: React.Reac
 
   return (
     <div className="flex min-h-dvh text-xs font-semibold bg-[#F8FAFC]">
-      <Sidebar role="TEACHER" permissionModules={readableModules} actualRole={roleCode} isGVCN={isGVCN} isPreschoolTeacher={isPreschoolTeacher} />
+      <Sidebar role="TEACHER" permissionModules={readableModules} actualRole={roleCode} isGVCN={isGVCN} isTTCM={isTTCM} isPreschoolTeacher={isPreschoolTeacher} assignedSpecialSubjects={assignedSpecialSubjects} />
       <main className="flex-1 flex flex-col relative min-w-0 overflow-hidden bg-[#F8FAFC]">
         <header className="teacher-layout-header h-16 border-b border-slate-200/70 bg-white/90 backdrop-blur-md sticky top-0 z-30 flex items-center justify-between px-4 sm:px-6 shrink-0 shadow-2xs">
           <div className="flex items-center gap-3">
@@ -178,7 +214,7 @@ export default async function TeacherLayout({ children }: { children: React.Reac
         </div>
         
         <PwaBottomNav role="TEACHER" />
-        <SSMAssistantWidget role="TEACHER" />
+
         {unconfirmedTeacherData && (
           <TeacherExperienceGlobalModal
             teacherId={unconfirmedTeacherData.teacherId}

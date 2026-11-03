@@ -285,8 +285,52 @@ export async function PUT(req: NextRequest, { params }: { params: Promise<{ id: 
         }
       }
 
-      // Gửi email thông báo cho GVCN các lớp & GVBM Phụ trách tại các cơ sở được phân bổ (KHÔNG gửi email cho Tổ TLHN)
-      if (body.sendEmail !== false && body.allocatedCampuses.length > 0) {
+      // Tập hợp các mã lớp đã được thông báo trước đó để tránh gửi lại trùng lặp
+      const previouslyNotifiedClassIds = new Set<string>();
+      if (Array.isArray(currentMeta.allocatedCampuses)) {
+        currentMeta.allocatedCampuses.forEach((alloc: any) => {
+          if (Array.isArray(alloc.assignedClasses)) {
+            alloc.assignedClasses.forEach((cls: any) => {
+              const cId = cls.classId || cls.id;
+              if (cId && (cls.isEmailSent === true || cls.notifiedAt || alloc.status === 'DA_TRIEN_KHAI')) {
+                previouslyNotifiedClassIds.add(cId);
+              }
+            });
+          }
+        });
+      }
+
+      // Lọc danh sách phân bổ chỉ chứa các lớp MỚI (chưa được gửi mail) để gửi thông báo
+      const newlyAllocatedCampusesForEmail = body.allocatedCampuses.map((alloc: any) => {
+        const newClasses = (alloc.assignedClasses || []).filter((cls: any) => {
+          const cId = cls.classId || cls.id;
+          return cId && !previouslyNotifiedClassIds.has(cId);
+        });
+        return {
+          ...alloc,
+          assignedClasses: newClasses
+        };
+      }).filter((alloc: any) => alloc.assignedClasses && alloc.assignedClasses.length > 0);
+
+      // Cập nhật trạng thái đã gửi mail (isEmailSent và notifiedAt) cho các lớp trong updatedMeta
+      const nowIso = new Date().toISOString();
+      updatedMeta.allocatedCampuses = (updatedMeta.allocatedCampuses || []).map((alloc: any) => {
+        if (Array.isArray(alloc.assignedClasses)) {
+          alloc.assignedClasses = alloc.assignedClasses.map((cls: any) => {
+            const cId = cls.classId || cls.id;
+            const wasPreviouslyNotified = cId && previouslyNotifiedClassIds.has(cId);
+            return {
+              ...cls,
+              isEmailSent: true,
+              notifiedAt: cls.notifiedAt || (wasPreviouslyNotified ? (alloc.deployedAt || nowIso) : (body.sendEmail !== false ? nowIso : null))
+            };
+          });
+        }
+        return alloc;
+      });
+
+      // Gửi email thông báo cho GVCN các lớp MỚI & GVBM Phụ trách tại các cơ sở được phân bổ (KHÔNG gửi email cho lớp đã gửi)
+      if (body.sendEmail !== false && newlyAllocatedCampusesForEmail.length > 0) {
         try {
           emailResult = await sendTLHNAllocationNotification({
             catalogId: existing.id,
@@ -310,11 +354,13 @@ export async function PUT(req: NextRequest, { params }: { params: Promise<{ id: 
             cthsTeacherName: updatedMeta.cthsTeacherName,
             senderName: session.user?.name || 'BP HĐNGLL - Tổ CTHS',
             senderEmail: session.user?.email || undefined,
-            allocatedCampuses: body.allocatedCampuses
+            allocatedCampuses: newlyAllocatedCampusesForEmail
           });
         } catch (emailErr) {
           console.error('[ALLOCATE_CAMPUSES] Lỗi khi gửi email thông báo phân bổ cho GVCN / GVBM:', emailErr);
         }
+      } else if (body.sendEmail !== false) {
+        console.log(`[ALLOCATE_CAMPUSES] Tất cả các lớp đã được gửi email trước đó (${previouslyNotifiedClassIds.size} lớp), không gửi trùng.`);
       }
     }
 

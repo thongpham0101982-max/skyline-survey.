@@ -51,16 +51,34 @@ export function isManagementRole(roleOrContext?: string | AdvisoryCallerContext 
 }
 
 export async function resolveTeacherAssignedClassIds(
-  caller: AdvisoryCallerContext,
+  callerOrUserId: AdvisoryCallerContext | string,
   academicYearId?: string
 ): Promise<string[]> {
-  if (!caller.authenticated) return []
+  const userId =
+    typeof callerOrUserId === "string"
+      ? callerOrUserId.trim()
+      : callerOrUserId?.authenticated
+      ? String(callerOrUserId.userId || "").trim()
+      : ""
+  if (!userId) return []
+  const teacherIdHint =
+    typeof callerOrUserId === "object" && callerOrUserId?.teacherId
+      ? String(callerOrUserId.teacherId).trim()
+      : ""
   const teacher = await prisma.teacher
-    .findUnique({ where: { userId: caller.userId } })
+    .findFirst({
+      where: {
+        OR: [
+          { userId },
+          { id: userId },
+          ...(teacherIdHint ? [{ id: teacherIdHint }] : [])
+        ]
+      }
+    })
     .catch(() => null)
   const candidateTokens = [
-    caller.userId,
-    caller.teacherId,
+    userId,
+    teacherIdHint,
     teacher?.id,
     teacher?.userId,
     teacher?.teacherCode

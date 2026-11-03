@@ -92,18 +92,6 @@ export function ObservationDetailDrawer({
   onRegister,
   onCancelRegister
 }: ObservationDetailDrawerProps) {
-  if (!slot) return null;
-
-  const registrations = Array.isArray(slot.registrations) ? slot.registrations : [];
-  const currentTeacherId = currentTeacher?.id;
-  const isOwnerTeacher = slot.teacherId === currentTeacherId;
-  const myReg = registrations.find((r: any) => r.teacherId === currentTeacherId);
-  const isRegistered = !!myReg;
-  const canRegisterMore = registrations.length < 4;
-  const isExpired = slot.status === "EXPIRED" || (slot.date && new Date(slot.date) < new Date(new Date().setHours(0, 0, 0, 0)));
-  const isSurprise = slot.requestOrigin === "SURPRISE" || (typeof slot.description === "string" && slot.description.includes("[SURPRISE]"));
-  const isAssigned = slot.requestOrigin === "ASSIGNED";
-
   // State for Digital Textbook integration (Mục XIV)
   const [readerOpen, setReaderOpen] = React.useState(false);
   const [textbookData, setTextbookData] = React.useState<any | null>(null);
@@ -127,6 +115,18 @@ export function ObservationDetailDrawer({
         .catch(() => setTextbookData(null));
     }
   }, [open, slot?.id, slot?.subjectId, slot?.grade]);
+
+  if (!slot) return null;
+
+  const registrations = Array.isArray(slot.registrations) ? slot.registrations : [];
+  const currentTeacherId = currentTeacher?.id;
+  const isOwnerTeacher = slot.teacherId === currentTeacherId;
+  const myReg = registrations.find((r: any) => r.teacherId === currentTeacherId);
+  const isRegistered = !!myReg;
+  const canRegisterMore = registrations.length < 4;
+  const isExpired = slot.status === "EXPIRED" || (slot.date && new Date(slot.date) < new Date(new Date().setHours(0, 0, 0, 0)));
+  const isSurprise = slot.requestOrigin === "SURPRISE" || (typeof slot.description === "string" && slot.description.includes("[SURPRISE]"));
+  const isAssigned = slot.requestOrigin === "ASSIGNED";
 
   // Phân loại danh mục chuyên môn (Mầm non, Phổ thông K12, hoặc GVNN ESL)
   const slotSubj = (slot?.subjectName || "").toLowerCase();

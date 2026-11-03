@@ -18,7 +18,8 @@ import {
   ChevronRight,
   MessageSquareText,
   Clock,
-  ShieldCheck
+  ShieldCheck,
+  Bell
 } from "lucide-react"
 import { useCampusTheme, resolveCampusTheme } from "@/hooks/useCampusTheme"
 import { UserWelcomeCard } from "@/components/UserWelcomeCard"
@@ -361,6 +362,62 @@ export default function ParentDashboardClient({
               className="w-full py-3.5 rounded-2xl bg-[#00A19A] hover:bg-[#008983] text-white text-xs font-black flex items-center justify-center gap-2 shadow-md shadow-teal-200 transition-all active:scale-95 text-center cursor-pointer"
             >
               <span>Mở Họp Phụ Huynh Số</span>
+              <ArrowRight className="w-4 h-4" />
+            </Link>
+          </div>
+
+          {/* CARD 7: TRUNG TÂM THÔNG BÁO & LIÊN LẠC */}
+          <div className="bg-white rounded-3xl p-6 border border-[#E9D8FD] shadow-sm hover:shadow-xl hover:-translate-y-1 transition-all duration-300 flex flex-col justify-between space-y-5 relative overflow-hidden group">
+            <div className="space-y-3.5">
+              <div className="w-14 h-14 rounded-2xl bg-[#F6F0FB] text-[#5B2D8B] flex items-center justify-center font-bold shadow-inner border border-[#E9D8FD] group-hover:scale-105 transition-transform">
+                <Bell className="w-7 h-7" />
+              </div>
+              <div>
+                <span className="text-[10px] font-black text-[#5B2D8B] uppercase tracking-widest block">
+                  KHẢO THÍ • GIÁO VIÊN • HỌC TẬP
+                </span>
+                <h3 className="text-lg font-black text-slate-900 group-hover:text-[#5B2D8B] transition-colors mt-0.5">
+                  Trung Tâm Thông Báo
+                </h3>
+              </div>
+              <p className="text-xs text-slate-500 font-medium leading-relaxed">
+                Nhận thông báo chính thức về <strong className="text-slate-700">Lịch kiểm tra, Phòng thi, Kết quả khảo thí</strong> từ Ban KT&ĐBCL và dặn dò từ GVCN/GVBM, xác nhận đã xem và phản hồi trực tiếp.
+              </p>
+            </div>
+
+            <Link 
+              href={`/parent/thong-bao${activeChild?.id ? `?studentId=${activeChild.id}` : ""}`}
+              className="w-full py-3.5 rounded-2xl bg-[#5B2D8B] hover:bg-[#4A2273] text-white text-xs font-black flex items-center justify-center gap-2 shadow-md shadow-purple-200 transition-all active:scale-95 text-center cursor-pointer"
+            >
+              <span>Mở Hộp Thư Thông Báo</span>
+              <ArrowRight className="w-4 h-4" />
+            </Link>
+          </div>
+
+          {/* CARD 8: HƯỚNG NGHIỆP • SKL_PSYCH (5 BỘ CÔNG CỤ CHUẨN HÓA) */}
+          <div className="bg-white rounded-3xl p-6 border border-purple-200/90 shadow-sm hover:shadow-xl hover:-translate-y-1 transition-all duration-300 flex flex-col justify-between space-y-5 relative overflow-hidden group">
+            <div className="space-y-3.5">
+              <div className="w-14 h-14 rounded-2xl bg-purple-50 text-[#5B2D8B] flex items-center justify-center font-bold shadow-inner border border-purple-100 group-hover:scale-105 transition-transform">
+                <Sparkles className="w-7 h-7" />
+              </div>
+              <div>
+                <span className="text-[10px] font-black text-[#5B2D8B] uppercase tracking-widest block">
+                  HƯỚNG NGHIỆP • SKL_PSYCH
+                </span>
+                <h3 className="text-lg font-black text-slate-900 group-hover:text-[#5B2D8B] transition-colors mt-0.5">
+                  Khảo Sát Tâm Lý & Hướng Nghiệp
+                </h3>
+              </div>
+              <p className="text-xs text-slate-500 font-medium leading-relaxed">
+                Đồng hành cùng con thực hiện & xem báo cáo chuyên sâu <strong className="text-slate-700">5 bộ công cụ SKL_PSYCH (DISC, EPI, HOLLAND, EQ Lyusin, MBTI)</strong>, gửi phản hồi và đề nghị tư vấn 1:1.
+              </p>
+            </div>
+
+            <Link 
+              href="/parent/children/advisory?tab=skl_psych"
+              className="w-full py-3.5 rounded-2xl bg-[#5B2D8B] hover:bg-[#4A2273] text-white text-xs font-black flex items-center justify-center gap-2 shadow-md shadow-purple-200 transition-all active:scale-95 text-center cursor-pointer"
+            >
+              <span>Mở 5 Bộ Công Cụ SKL_PSYCH</span>
               <ArrowRight className="w-4 h-4" />
             </Link>
           </div>

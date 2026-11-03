@@ -42,12 +42,43 @@ export async function GET() {
         grade: session.className ? (session.className.match(/\d+/) || ['8'])[0] : '8',
         academicYearName: academicYear?.name || '',
         academicYearTheme: academicYear?.theme || '',
-        academicYearPillars: academicYear?.pillars || ''
+        academicYearPillars: academicYear?.pillars || '',
+        intlExamResults: [],
+        intlHighlights: [],
       })
     }
 
     const cName = student.class?.className || session.className || ''
     const gradeVal = student.class?.grade || (cName ? (cName.match(/\d+/) || ['8'])[0] : '8')
+
+    const [intlExamResults, intlHighlights] = await Promise.all([
+      prisma.intlExamResult
+        .findMany({
+          where: {
+            OR: [
+              { studentId: student.id },
+              ...(student.studentCode ? [{ studentCodeSnapshot: student.studentCode }] : []),
+            ],
+            sittingStatus: 'COMPLETED',
+          },
+          include: {
+            skillResults: { orderBy: { displayOrder: 'asc' } },
+            certificate: true,
+          },
+          orderBy: [{ academicYearText: 'desc' }, { updatedAt: 'desc' }],
+        })
+        .catch(() => []),
+      prisma.studentHighlightComment
+        .findMany({
+          where: {
+            studentId: student.id,
+            category: 'INTL_EXAM_CERTIFICATE',
+          },
+          orderBy: { createdAt: 'desc' },
+          take: 5,
+        })
+        .catch(() => []),
+    ])
 
     return jsonResponse({
       id: student.id,
@@ -60,7 +91,9 @@ export async function GET() {
       academicYearId: academicYear?.id || student.academicYearId || '',
       academicYearName: academicYear?.name || '',
       academicYearTheme: academicYear?.theme || '',
-      academicYearPillars: academicYear?.pillars || ''
+      academicYearPillars: academicYear?.pillars || '',
+      intlExamResults,
+      intlHighlights,
     })
   } catch (error: any) {
     console.error("GET /api/hocsinh/me error:", error)

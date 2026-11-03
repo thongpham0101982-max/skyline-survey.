@@ -1,0 +1,1287 @@
+{
+  "subjectCode": "FIN_EDU",
+  "subjectName": "Giáo dục tài chính cá nhân",
+  "academicYearId": "cmnseevbh0000wjbmoigji2zd",
+  "grades": {
+    "6": {
+      "grade": "6",
+      "topicsCount": 1,
+      "lessonsCount": 10,
+      "criteriaCount": 30,
+      "topics": [
+        {
+          "topicCode": "TC06S.01",
+          "topicName": "Tôi và thế giới tiền bạc",
+          "lessons": [
+            {
+              "lessonIndex": 1,
+              "lessonCode": "TC06S.01.0001",
+              "lessonName": "Hành trình của đồng tiền",
+              "criteria": [
+                {
+                  "criterionIndex": 1,
+                  "sourceCode": "TC06S.01.0001.01",
+                  "description": "Hiểu nguồn gốc sơ khai của tiền và lý do xã hội cần có tiền để giao dịch.",
+                  "programLevel": "Mức 1",
+                  "guideDoc": null,
+                  "competencyGroup": "Hiểu"
+                },
+                {
+                  "criterionIndex": 2,
+                  "sourceCode": "TC06S.01.0001.02",
+                  "description": "Trình bày được định nghĩa cơ bản về tiền.",
+                  "programLevel": "Mức 2",
+                  "guideDoc": null,
+                  "competencyGroup": "Biết"
+                },
+                {
+                  "criterionIndex": 3,
+                  "sourceCode": "TC06S.01.0001.03",
+                  "description": "Nhận diện được sự thay đổi của tiền tệ qua thời gian.",
+                  "programLevel": "Mức 3",
+                  "guideDoc": null,
+                  "competencyGroup": "Vận dụng"
+                }
+              ]
+            },
+            {
+              "lessonIndex": 2,
+              "lessonCode": "TC06S.01.0002",
+              "lessonName": "Tiền từ đâu mà có?",
+              "criteria": [
+                {
+                  "criterionIndex": 1,
+                  "sourceCode": "TC06S.01.0002.04",
+                  "description": "Nhận thức tiền bạc là kết quả của sự nỗ lực lao động, không tự nhiên sinh ra.",
+                  "programLevel": "Mức 1",
+                  "guideDoc": null,
+                  "competencyGroup": "Hiểu"
+                },
+                {
+                  "criterionIndex": 2,
+                  "sourceCode": "TC06S.01.0002.05",
+                  "description": "Phân tích được một quy trình đánh đổi sức lao động lấy thu nhập.",
+                  "programLevel": "Mức 2",
+                  "guideDoc": null,
+                  "competencyGroup": "Biết"
+                },
+                {
+                  "criterionIndex": 3,
+                  "sourceCode": "TC06S.01.0002.06",
+                  "description": "Trân trọng sức lao động.",
+                  "programLevel": "Mức 3",
+                  "guideDoc": null,
+                  "competencyGroup": "Vận dụng"
+                }
+              ]
+            },
+            {
+              "lessonIndex": 3,
+              "lessonCode": "TC06S.01.0003",
+              "lessonName": "Nhu cầu và mong muốn",
+              "criteria": [
+                {
+                  "criterionIndex": 1,
+                  "sourceCode": "TC06S.01.0003.07",
+                  "description": "Phân biệt rõ sự khác nhau giữa việc cần thiết để sống và sở thích cá nhân.",
+                  "programLevel": "Mức 1",
+                  "guideDoc": null,
+                  "competencyGroup": "Hiểu"
+                },
+                {
+                  "criterionIndex": 2,
+                  "sourceCode": "TC06S.01.0003.08",
+                  "description": "Xếp đúng 8/10 mục vào nhóm tương ứng.",
+                  "programLevel": "Mức 2",
+                  "guideDoc": null,
+                  "competencyGroup": "Biết"
+                },
+                {
+                  "criterionIndex": 3,
+                  "sourceCode": "TC06S.01.0003.09",
+                  "description": "Lập luận bảo vệ được lựa chọn của mình.",
+                  "programLevel": "Mức 3",
+                  "guideDoc": null,
+                  "competencyGroup": "Vận dụng"
+                }
+              ]
+            },
+            {
+              "lessonIndex": 4,
+              "lessonCode": "TC06S.01.0004",
+              "lessonName": "Thế giới quanh ta vận hành bằng tiền",
+              "criteria": [
+                {
+                  "criterionIndex": 1,
+                  "sourceCode": "TC06S.01.0004.10",
+                  "description": "Hình dung được sự chuyển dịch giá trị của dòng tiền trong đời sống xã hội.",
+                  "programLevel": "Mức 1",
+                  "guideDoc": null,
+                  "competencyGroup": "Hiểu"
+                },
+                {
+                  "criterionIndex": 2,
+                  "sourceCode": "TC06S.01.0004.11",
+                  "description": "Giải thích được một vòng tuần hoàn của tiền.",
+                  "programLevel": "Mức 2",
+                  "guideDoc": null,
+                  "competencyGroup": "Biết"
+                },
+                {
+                  "criterionIndex": 3,
+                  "sourceCode": "TC06S.01.0004.12",
+                  "description": "Hiểu sự tương hỗ kinh tế.",
+                  "programLevel": "Mức 3",
+                  "guideDoc": null,
+                  "competencyGroup": "Vận dụng"
+                }
+              ]
+            },
+            {
+              "lessonIndex": 5,
+              "lessonCode": "TC06S.01.0005",
+              "lessonName": "Những thói quen xấu cần tránh",
+              "criteria": [
+                {
+                  "criterionIndex": 1,
+                  "sourceCode": "TC06S.01.0005.13",
+                  "description": "Nhận diện và kiên quyết loại bỏ các hành vi lãng phí nguồn lực trong sinh hoạt.",
+                  "programLevel": "Mức 1",
+                  "guideDoc": null,
+                  "competencyGroup": "Hiểu"
+                },
+                {
+                  "criterionIndex": 2,
+                  "sourceCode": "TC06S.01.0005.14",
+                  "description": "Nêu được hậu quả của 2 thói quen xấu.",
+                  "programLevel": "Mức 2",
+                  "guideDoc": null,
+                  "competencyGroup": "Biết"
+                },
+                {
+                  "criterionIndex": 3,
+                  "sourceCode": "TC06S.01.0005.15",
+                  "description": "Tự chấm điểm mức độ tiết kiệm của bản thân.",
+                  "programLevel": "Mức 3",
+                  "guideDoc": null,
+                  "competencyGroup": "Vận dụng"
+                }
+              ]
+            },
+            {
+              "lessonIndex": 6,
+              "lessonCode": "TC06S.01.0006",
+              "lessonName": "Đồng tiền Việt Nam và cách nhận diện",
+              "criteria": [
+                {
+                  "criterionIndex": 1,
+                  "sourceCode": "TC06S.01.0006.16",
+                  "description": "Nắm được kiến thức văn hóa, lịch sử trên đồng tiền và kỹ năng phân biệt thật giả cơ bản.",
+                  "programLevel": "Mức 1",
+                  "guideDoc": null,
+                  "competencyGroup": "Hiểu"
+                },
+                {
+                  "criterionIndex": 2,
+                  "sourceCode": "TC06S.01.0006.17",
+                  "description": "Liệt kê 3 đặc điểm nhận diện bảo an.",
+                  "programLevel": "Mức 2",
+                  "guideDoc": null,
+                  "competencyGroup": "Biết"
+                },
+                {
+                  "criterionIndex": 3,
+                  "sourceCode": "TC06S.01.0006.18",
+                  "description": "Kể tên được địa danh in trên tờ tiền thực hành.",
+                  "programLevel": "Mức 3",
+                  "guideDoc": null,
+                  "competencyGroup": "Vận dụng"
+                }
+              ]
+            },
+            {
+              "lessonIndex": 7,
+              "lessonCode": "TC06S.01.0007",
+              "lessonName": "Khái niệm thu nhập và chi tiêu",
+              "criteria": [
+                {
+                  "criterionIndex": 1,
+                  "sourceCode": "TC06S.01.0007.19",
+                  "description": "Hiểu cơ chế cơ bản nhất của dòng tiền cá nhân (có vào, có ra).",
+                  "programLevel": "Mức 1",
+                  "guideDoc": null,
+                  "competencyGroup": "Hiểu"
+                },
+                {
+                  "criterionIndex": 2,
+                  "sourceCode": "TC06S.01.0007.20",
+                  "description": "Xác định được 2 nguồn tiền vào và 3 khoản tiền ra của cá nhân.",
+                  "programLevel": "Mức 2",
+                  "guideDoc": null,
+                  "competencyGroup": "Biết"
+                },
+                {
+                  "criterionIndex": 3,
+                  "sourceCode": "TC06S.01.0007.21",
+                  "description": "Cân đối dòng tiền đơn giản.",
+                  "programLevel": "Mức 3",
+                  "guideDoc": null,
+                  "competencyGroup": "Vận dụng"
+                }
+              ]
+            },
+            {
+              "lessonIndex": 8,
+              "lessonCode": "TC06S.01.0008",
+              "lessonName": "Bắt đầu thói quen tiết kiệm",
+              "criteria": [
+                {
+                  "criterionIndex": 1,
+                  "sourceCode": "TC06S.01.0008.22",
+                  "description": "Xây dựng động lực và bắt tay vào việc thực hành thói quen tiết kiệm vật lý.",
+                  "programLevel": "Mức 1",
+                  "guideDoc": null,
+                  "competencyGroup": "Hiểu"
+                },
+                {
+                  "criterionIndex": 2,
+                  "sourceCode": "TC06S.01.0008.23",
+                  "description": "Trình bày được mục đích tiết kiệm.",
+                  "programLevel": "Mức 2",
+                  "guideDoc": null,
+                  "competencyGroup": "Biết"
+                },
+                {
+                  "criterionIndex": 3,
+                  "sourceCode": "TC06S.01.0008.24",
+                  "description": "Lập kế hoạch trích tiền hàng tuần rõ ràng.",
+                  "programLevel": "Mức 3",
+                  "guideDoc": null,
+                  "competencyGroup": "Vận dụng"
+                }
+              ]
+            },
+            {
+              "lessonIndex": 9,
+              "lessonCode": "TC06S.01.0009",
+              "lessonName": "Lên kế hoạch tài chính nhỏ",
+              "criteria": [
+                {
+                  "criterionIndex": 1,
+                  "sourceCode": "TC06S.01.0009.25",
+                  "description": "Tổng kết kiến thức toàn khóa; cam kết áp dụng bài học vào thực tế đời sống.",
+                  "programLevel": "Mức 1",
+                  "guideDoc": null,
+                  "competencyGroup": "Hiểu"
+                },
+                {
+                  "criterionIndex": 2,
+                  "sourceCode": "TC06S.01.0009.26",
+                  "description": "Nhắc lại được 3 khái niệm cốt lõi.",
+                  "programLevel": "Mức 2",
+                  "guideDoc": null,
+                  "competencyGroup": "Biết"
+                },
+                {
+                  "criterionIndex": 3,
+                  "sourceCode": "TC06S.01.0009.27",
+                  "description": "Hoàn thiện bản kế hoạch có mục tiêu, cách làm cụ thể.",
+                  "programLevel": "Mức 3",
+                  "guideDoc": null,
+                  "competencyGroup": "Vận dụng"
+                }
+              ]
+            },
+            {
+              "lessonIndex": 10,
+              "lessonCode": "TC06S.01.0010",
+              "lessonName": "Tổng kết hành trình lớp 6",
+              "criteria": [
+                {
+                  "criterionIndex": 1,
+                  "sourceCode": "TC06S.01.0010.28",
+                  "description": "Đánh giá lại toàn bộ thái độ và thói quen thay đổi sau năm học.",
+                  "programLevel": "Mức 1",
+                  "guideDoc": null,
+                  "competencyGroup": "Hiểu"
+                },
+                {
+                  "criterionIndex": 2,
+                  "sourceCode": "TC06S.01.0010.29",
+                  "description": "Trung thực chỉ ra điểm mạnh, điểm yếu hiện tại.",
+                  "programLevel": "Mức 2",
+                  "guideDoc": null,
+                  "competencyGroup": "Biết"
+                },
+                {
+                  "criterionIndex": 3,
+                  "sourceCode": "TC06S.01.0010.30",
+                  "description": "Viết 1 dòng động lực.",
+                  "programLevel": "Mức 3",
+                  "guideDoc": null,
+                  "competencyGroup": "Vận dụng"
+                }
+              ]
+            }
+          ]
+        }
+      ]
+    },
+    "7": {
+      "grade": "7",
+      "topicsCount": 1,
+      "lessonsCount": 10,
+      "criteriaCount": 30,
+      "topics": [
+        {
+          "topicCode": "TC07S.01",
+          "topicName": "Tôi học cách quản lý tiền",
+          "lessons": [
+            {
+              "lessonIndex": 1,
+              "lessonCode": "TC07S.01.0001",
+              "lessonName": "Bản chất của tiền tiêu vặt",
+              "criteria": [
+                {
+                  "criterionIndex": 1,
+                  "sourceCode": "TC07S.01.0001.01",
+                  "description": "Hiểu đúng vai trò giáo dục của tiền tiêu vặt và trách nhiệm quản trị khoản tiền được giao.",
+                  "programLevel": "Mức 1",
+                  "guideDoc": null,
+                  "competencyGroup": "Hiểu"
+                },
+                {
+                  "criterionIndex": 2,
+                  "sourceCode": "TC07S.01.0001.02",
+                  "description": "Nêu được 2 trách nhiệm khi nhận tiền tiêu vặt.",
+                  "programLevel": "Mức 2",
+                  "guideDoc": null,
+                  "competencyGroup": "Biết"
+                },
+                {
+                  "criterionIndex": 3,
+                  "sourceCode": "TC07S.01.0001.03",
+                  "description": "Phân loại các nguồn tiền hiện có của bản thân.",
+                  "programLevel": "Mức 3",
+                  "guideDoc": null,
+                  "competencyGroup": "Vận dụng"
+                }
+              ]
+            },
+            {
+              "lessonIndex": 2,
+              "lessonCode": "TC07S.01.0002",
+              "lessonName": "Nhật ký thu chi: Ghi chép để làm chủ",
+              "criteria": [
+                {
+                  "criterionIndex": 1,
+                  "sourceCode": "TC07S.01.0002.04",
+                  "description": "Nắm vững công cụ cốt lõi để theo dõi dòng tiền và tránh tình trạng mất kiểm soát tài chính.",
+                  "programLevel": "Mức 1",
+                  "guideDoc": null,
+                  "competencyGroup": "Hiểu"
+                },
+                {
+                  "criterionIndex": 2,
+                  "sourceCode": "TC07S.01.0002.05",
+                  "description": "Giải thích lý do bắt buộc phải ghi chép.",
+                  "programLevel": "Mức 2",
+                  "guideDoc": null,
+                  "competencyGroup": "Biết"
+                },
+                {
+                  "criterionIndex": 3,
+                  "sourceCode": "TC07S.01.0002.06",
+                  "description": "Kẻ bảng hoặc tạo mẫu ghi sổ đầy đủ cột mục.",
+                  "programLevel": "Mức 3",
+                  "guideDoc": null,
+                  "competencyGroup": "Vận dụng"
+                }
+              ]
+            },
+            {
+              "lessonIndex": 3,
+              "lessonCode": "TC07S.01.0003",
+              "lessonName": "Nhận diện những cạm bẫy lãng phí vô hình",
+              "criteria": [
+                {
+                  "criterionIndex": 1,
+                  "sourceCode": "TC07S.01.0003.07",
+                  "description": "Nâng cao khả năng \"đề kháng\" trước những quyết định mua sắm ngẫu hứng, bốc đồng.",
+                  "programLevel": "Mức 1",
+                  "guideDoc": null,
+                  "competencyGroup": "Hiểu"
+                },
+                {
+                  "criterionIndex": 2,
+                  "sourceCode": "TC07S.01.0003.08",
+                  "description": "Phân tích được 1 tình huống mua sắm sai lầm của bản thân.",
+                  "programLevel": "Mức 2",
+                  "guideDoc": null,
+                  "competencyGroup": "Biết"
+                },
+                {
+                  "criterionIndex": 3,
+                  "sourceCode": "TC07S.01.0003.09",
+                  "description": "Rút ra bài học kinh nghiệm.",
+                  "programLevel": "Mức 3",
+                  "guideDoc": null,
+                  "competencyGroup": "Vận dụng"
+                }
+              ]
+            },
+            {
+              "lessonIndex": 4,
+              "lessonCode": "TC07S.01.0004",
+              "lessonName": "Tiết kiệm chủ động và tiết kiệm gián tiếp",
+              "criteria": [
+                {
+                  "criterionIndex": 1,
+                  "sourceCode": "TC07S.01.0004.10",
+                  "description": "Đa dạng hóa phương pháp tiết kiệm, hiểu rằng giảm chi phí sinh hoạt cũng là một dạng tiết kiệm.",
+                  "programLevel": "Mức 1",
+                  "guideDoc": null,
+                  "competencyGroup": "Hiểu"
+                },
+                {
+                  "criterionIndex": 2,
+                  "sourceCode": "TC07S.01.0004.11",
+                  "description": "Liệt kê 3 cách tiết kiệm gián tiếp.",
+                  "programLevel": "Mức 2",
+                  "guideDoc": null,
+                  "competencyGroup": "Biết"
+                },
+                {
+                  "criterionIndex": 3,
+                  "sourceCode": "TC07S.01.0004.12",
+                  "description": "Thiết kế 1 giải pháp tái chế đồ dùng học tập.",
+                  "programLevel": "Mức 3",
+                  "guideDoc": null,
+                  "competencyGroup": "Vận dụng"
+                }
+              ]
+            },
+            {
+              "lessonIndex": 5,
+              "lessonCode": "TC07S.01.0005",
+              "lessonName": "Đặt mục tiêu tài chính hiệu quả",
+              "criteria": [
+                {
+                  "criterionIndex": 1,
+                  "sourceCode": "TC07S.01.0005.13",
+                  "description": "Biết cách cụ thể hóa ước mơ thành những mục tiêu tài chính có khả năng đo lường và thực thi.",
+                  "programLevel": "Mức 1",
+                  "guideDoc": null,
+                  "competencyGroup": "Hiểu"
+                },
+                {
+                  "criterionIndex": 2,
+                  "sourceCode": "TC07S.01.0005.14",
+                  "description": "Phân tích đủ 5 tiêu chí của mục tiêu cá nhân.",
+                  "programLevel": "Mức 2",
+                  "guideDoc": null,
+                  "competencyGroup": "Biết"
+                },
+                {
+                  "criterionIndex": 3,
+                  "sourceCode": "TC07S.01.0005.15",
+                  "description": "Đảm bảo tính thực tế, không viển vông.",
+                  "programLevel": "Mức 3",
+                  "guideDoc": null,
+                  "competencyGroup": "Vận dụng"
+                }
+              ]
+            },
+            {
+              "lessonIndex": 6,
+              "lessonCode": "TC07S.01.0006",
+              "lessonName": "Nghệ thuật khảo giá trước khi mua sắm",
+              "criteria": [
+                {
+                  "criterionIndex": 1,
+                  "sourceCode": "TC07S.01.0006.16",
+                  "description": "Phát triển thói quen nghiên cứu kỹ thị trường trước khi quyết định chi trả.",
+                  "programLevel": "Mức 1",
+                  "guideDoc": null,
+                  "competencyGroup": "Hiểu"
+                },
+                {
+                  "criterionIndex": 2,
+                  "sourceCode": "TC07S.01.0006.17",
+                  "description": "Xác định được 3 nguồn thông tin để so sánh.",
+                  "programLevel": "Mức 2",
+                  "guideDoc": null,
+                  "competencyGroup": "Biết"
+                },
+                {
+                  "criterionIndex": 3,
+                  "sourceCode": "TC07S.01.0006.18",
+                  "description": "Chọn được phương án mua hàng tối ưu nhất.",
+                  "programLevel": "Mức 3",
+                  "guideDoc": null,
+                  "competencyGroup": "Vận dụng"
+                }
+              ]
+            },
+            {
+              "lessonIndex": 7,
+              "lessonCode": "TC07S.01.0007",
+              "lessonName": "Xây dựng quỹ khẩn cấp mini",
+              "criteria": [
+                {
+                  "criterionIndex": 1,
+                  "sourceCode": "TC07S.01.0007.19",
+                  "description": "Hiểu ý nghĩa của việc quản trị rủi ro cấp độ cơ bản và duy trì sự an toàn tài chính.",
+                  "programLevel": "Mức 1",
+                  "guideDoc": null,
+                  "competencyGroup": "Hiểu"
+                },
+                {
+                  "criterionIndex": 2,
+                  "sourceCode": "TC07S.01.0007.20",
+                  "description": "Nêu được 2 trường hợp cần dùng quỹ khẩn cấp.",
+                  "programLevel": "Mức 2",
+                  "guideDoc": null,
+                  "competencyGroup": "Biết"
+                },
+                {
+                  "criterionIndex": 3,
+                  "sourceCode": "TC07S.01.0007.21",
+                  "description": "Lên mức trích lập hợp lý hàng tháng.",
+                  "programLevel": "Mức 3",
+                  "guideDoc": null,
+                  "competencyGroup": "Vận dụng"
+                }
+              ]
+            },
+            {
+              "lessonIndex": 8,
+              "lessonCode": "TC07S.01.0008",
+              "lessonName": "Xử lý khi ngân sách thâm hụt",
+              "criteria": [
+                {
+                  "criterionIndex": 1,
+                  "sourceCode": "TC07S.01.0008.22",
+                  "description": "Hình thành kỹ năng giải quyết khủng hoảng tài chính cá nhân ở quy mô nhỏ.",
+                  "programLevel": "Mức 1",
+                  "guideDoc": null,
+                  "competencyGroup": "Hiểu"
+                },
+                {
+                  "criterionIndex": 2,
+                  "sourceCode": "TC07S.01.0008.23",
+                  "description": "Xác định được các khoản chi phí linh hoạt có thể cắt bỏ.",
+                  "programLevel": "Mức 2",
+                  "guideDoc": null,
+                  "competencyGroup": "Biết"
+                },
+                {
+                  "criterionIndex": 3,
+                  "sourceCode": "TC07S.01.0008.24",
+                  "description": "Cam kết không vay mượn tiêu xài.",
+                  "programLevel": "Mức 3",
+                  "guideDoc": null,
+                  "competencyGroup": "Vận dụng"
+                }
+              ]
+            },
+            {
+              "lessonIndex": 9,
+              "lessonCode": "TC07S.01.0009",
+              "lessonName": "Ý nghĩa của việc chia sẻ tài chính",
+              "criteria": [
+                {
+                  "criterionIndex": 1,
+                  "sourceCode": "TC07S.01.0009.25",
+                  "description": "Hiểu được giá trị nhân văn của tiền bạc, tiền không chỉ phục vụ cá nhân mà còn mang lại giá trị cho cộng đồng.",
+                  "programLevel": "Mức 1",
+                  "guideDoc": null,
+                  "competencyGroup": "Hiểu"
+                },
+                {
+                  "criterionIndex": 2,
+                  "sourceCode": "TC07S.01.0009.26",
+                  "description": "Xây dựng được 1 ý tưởng chia sẻ phù hợp với sức mình.",
+                  "programLevel": "Mức 2",
+                  "guideDoc": null,
+                  "competencyGroup": "Biết"
+                },
+                {
+                  "criterionIndex": 3,
+                  "sourceCode": "TC07S.01.0009.27",
+                  "description": "Lý giải được lợi ích tinh thần.",
+                  "programLevel": "Mức 3",
+                  "guideDoc": null,
+                  "competencyGroup": "Vận dụng"
+                }
+              ]
+            },
+            {
+              "lessonIndex": 10,
+              "lessonCode": "TC07S.01.0010",
+              "lessonName": "Sổ tay quản lý tiền tài ba",
+              "criteria": [
+                {
+                  "criterionIndex": 1,
+                  "sourceCode": "TC07S.01.0010.28",
+                  "description": "Củng cố năng lực thực hành xuyên suốt, cam kết duy trì thói quen theo dõi chi tiêu.",
+                  "programLevel": "Mức 1",
+                  "guideDoc": null,
+                  "competencyGroup": "Hiểu"
+                },
+                {
+                  "criterionIndex": 2,
+                  "sourceCode": "TC07S.01.0010.29",
+                  "description": "Trình bày sổ tay khoa học, sạch đẹp.",
+                  "programLevel": "Mức 2",
+                  "guideDoc": null,
+                  "competencyGroup": "Biết"
+                },
+                {
+                  "criterionIndex": 3,
+                  "sourceCode": "TC07S.01.0010.30",
+                  "description": "Tự đánh giá mức độ duy trì thói quen của bản thân.",
+                  "programLevel": "Mức 3",
+                  "guideDoc": null,
+                  "competencyGroup": "Vận dụng"
+                }
+              ]
+            }
+          ]
+        }
+      ]
+    },
+    "8": {
+      "grade": "8",
+      "topicsCount": 1,
+      "lessonsCount": 10,
+      "criteriaCount": 29,
+      "topics": [
+        {
+          "topicCode": "TC08S.01",
+          "topicName": "Tôi là người tiêu dùng thông minh",
+          "lessons": [
+            {
+              "lessonIndex": 1,
+              "lessonCode": "TC08S.01.0001",
+              "lessonName": "Tiền mặt và sự lên ngôi của thanh toán số",
+              "criteria": [
+                {
+                  "criterionIndex": 1,
+                  "sourceCode": "TC08S.01.0001.01",
+                  "description": "Nắm bắt xu hướng dịch chuyển tài chính toàn cầu; hiểu ưu nhược điểm của công nghệ.",
+                  "programLevel": "Mức 1",
+                  "guideDoc": null,
+                  "competencyGroup": "Hiểu"
+                },
+                {
+                  "criterionIndex": 2,
+                  "sourceCode": "TC08S.01.0001.02",
+                  "description": "Phân biệt rõ các loại hình thanh toán số hiện tại.",
+                  "programLevel": "Mức 2",
+                  "guideDoc": null,
+                  "competencyGroup": "Biết"
+                },
+                {
+                  "criterionIndex": 3,
+                  "sourceCode": "TC08S.01.0001.03",
+                  "description": "Nêu 2 bất cập khi không dùng tiền mặt.",
+                  "programLevel": "Mức 3",
+                  "guideDoc": null,
+                  "competencyGroup": "Vận dụng"
+                }
+              ]
+            },
+            {
+              "lessonIndex": 2,
+              "lessonCode": "TC08S.01.0002",
+              "lessonName": "Ngân hàng số và ví điện tử",
+              "criteria": [
+                {
+                  "criterionIndex": 1,
+                  "sourceCode": "TC08S.01.0002.04",
+                  "description": "Nắm vững cách thức vận hành của công cụ thanh toán phổ biến và quy tắc an toàn.",
+                  "programLevel": "Mức 1",
+                  "guideDoc": null,
+                  "competencyGroup": "Hiểu"
+                },
+                {
+                  "criterionIndex": 2,
+                  "sourceCode": "TC08S.01.0002.05",
+                  "description": "Nêu được 3 tiện ích cốt lõi của ví điện tử.",
+                  "programLevel": "Mức 2",
+                  "guideDoc": null,
+                  "competencyGroup": "Biết"
+                },
+                {
+                  "criterionIndex": 3,
+                  "sourceCode": "TC08S.01.0002.06",
+                  "description": "Trình bày cách thức tránh bị mất tiền oan.",
+                  "programLevel": "Mức 3",
+                  "guideDoc": null,
+                  "competencyGroup": "Vận dụng"
+                }
+              ]
+            },
+            {
+              "lessonIndex": 3,
+              "lessonCode": "TC08S.01.0003",
+              "lessonName": "Mua sắm thông minh trên thương mại điện tử",
+              "criteria": [
+                {
+                  "criterionIndex": 1,
+                  "sourceCode": "TC08S.01.0003.07",
+                  "description": "Mài giũa kỹ năng phân tích, chọn lọc thông tin trên không gian mua sắm trực tuyến hỗn loạn.",
+                  "programLevel": "Mức 1",
+                  "guideDoc": null,
+                  "competencyGroup": "Hiểu"
+                },
+                {
+                  "criterionIndex": 2,
+                  "sourceCode": "TC08S.01.0003.08",
+                  "description": "Liệt kê đủ 4 tiêu chí đánh giá uy tín của một gian hàng.",
+                  "programLevel": "Mức 2",
+                  "guideDoc": null,
+                  "competencyGroup": "Biết"
+                },
+                {
+                  "criterionIndex": 3,
+                  "sourceCode": "TC08S.01.0003.09",
+                  "description": "Kiểm chứng chéo được một sản phẩm.",
+                  "programLevel": "Mức 3",
+                  "guideDoc": null,
+                  "competencyGroup": "Vận dụng"
+                }
+              ]
+            },
+            {
+              "lessonIndex": 4,
+              "lessonCode": "TC08S.01.0004",
+              "lessonName": "Đọc vị các thủ thuật quảng cáo",
+              "criteria": [
+                {
+                  "criterionIndex": 1,
+                  "sourceCode": "TC08S.01.0004.10",
+                  "description": "Hình thành tư duy phản biện, không dễ dàng tin tưởng và bị dẫn dắt bởi truyền thông.",
+                  "programLevel": "Mức 1",
+                  "guideDoc": null,
+                  "competencyGroup": "Hiểu"
+                },
+                {
+                  "criterionIndex": 2,
+                  "sourceCode": "TC08S.01.0004.11",
+                  "description": "Phân tích được ít nhất 2 thủ thuật tâm lý được sử dụng.",
+                  "programLevel": "Mức 2",
+                  "guideDoc": null,
+                  "competencyGroup": "Biết"
+                },
+                {
+                  "criterionIndex": 3,
+                  "sourceCode": "TC08S.01.0004.12",
+                  "description": "Đưa ra quan điểm cá nhân độc lập.",
+                  "programLevel": "Mức 3",
+                  "guideDoc": null,
+                  "competencyGroup": "Vận dụng"
+                }
+              ]
+            },
+            {
+              "lessonIndex": 5,
+              "lessonCode": "TC08S.01.0005",
+              "lessonName": "Bẫy giảm giá và tâm lý sợ bỏ lỡ",
+              "criteria": [
+                {
+                  "criterionIndex": 1,
+                  "sourceCode": "TC08S.01.0005.13",
+                  "description": "Nhận diện sự điều khiển cảm xúc trong kinh doanh; rèn luyện bản lĩnh từ chối cám dỗ.",
+                  "programLevel": "Mức 1",
+                  "guideDoc": null,
+                  "competencyGroup": "Hiểu"
+                },
+                {
+                  "criterionIndex": 2,
+                  "sourceCode": "TC08S.01.0005.14",
+                  "description": "Giải thích được cơ chế bẫy giảm giá.",
+                  "programLevel": "Mức 2",
+                  "guideDoc": null,
+                  "competencyGroup": "Biết"
+                },
+                {
+                  "criterionIndex": 3,
+                  "sourceCode": "TC08S.01.0005.15",
+                  "description": "Hoàn thành 3 câu hỏi buộc phải trả lời trước khi mua.",
+                  "programLevel": "Mức 3",
+                  "guideDoc": null,
+                  "competencyGroup": "Vận dụng"
+                }
+              ]
+            },
+            {
+              "lessonIndex": 6,
+              "lessonCode": "TC08S.01.0006",
+              "lessonName": "Cảnh giác trước lừa đảo tài chính qua mạng",
+              "criteria": [
+                {
+                  "criterionIndex": 1,
+                  "sourceCode": "TC08S.01.0006.16",
+                  "description": "Xây dựng bức tường phòng thủ vững chắc bảo vệ tài sản và dữ liệu số cá nhân.",
+                  "programLevel": "Mức 1",
+                  "guideDoc": null,
+                  "competencyGroup": "Hiểu"
+                },
+                {
+                  "criterionIndex": 2,
+                  "sourceCode": "TC08S.01.0006.17",
+                  "description": "Nêu được 3 kịch bản lừa đảo phổ biến.",
+                  "programLevel": "Mức 2",
+                  "guideDoc": null,
+                  "competencyGroup": "Biết"
+                },
+                {
+                  "criterionIndex": 3,
+                  "sourceCode": "TC08S.01.0006.18",
+                  "description": "Đưa ra phương án xử lý kiên quyết khi gặp phải.",
+                  "programLevel": "Mức 3",
+                  "guideDoc": null,
+                  "competencyGroup": "Vận dụng"
+                }
+              ]
+            },
+            {
+              "lessonIndex": 7,
+              "lessonCode": "TC08S.01.0007",
+              "lessonName": "Tiền ảo và những rủi ro đi kèm",
+              "criteria": [
+                {
+                  "criterionIndex": 1,
+                  "sourceCode": "TC08S.01.0007.19",
+                  "description": "Nhận thức tính chất phi pháp lý và rủi ro trắng tay của các kênh đầu tư chưa được kiểm chứng.",
+                  "programLevel": "Mức 1",
+                  "guideDoc": null,
+                  "competencyGroup": "Hiểu"
+                },
+                {
+                  "criterionIndex": 2,
+                  "sourceCode": "TC08S.01.0007.20",
+                  "description": "Giải thích được lý do tiền ảo mang rủi ro cực cao.",
+                  "programLevel": "Mức 2",
+                  "guideDoc": null,
+                  "competencyGroup": "Biết"
+                },
+                {
+                  "criterionIndex": 3,
+                  "sourceCode": "TC08S.01.0007.21",
+                  "description": "Nhận diện mô hình mời chào đa cấp.",
+                  "programLevel": "Mức 3",
+                  "guideDoc": null,
+                  "competencyGroup": "Vận dụng"
+                }
+              ]
+            },
+            {
+              "lessonIndex": 8,
+              "lessonCode": "TC08S.01.0008",
+              "lessonName": "Giá trị thực tế và giá trị thương hiệu",
+              "criteria": [
+                {
+                  "criterionIndex": 1,
+                  "sourceCode": "TC08S.01.0008.22",
+                  "description": "Hiểu bản chất cấu thành giá của sản phẩm, đưa ra quyết định mua dựa trên giá trị sử dụng.",
+                  "programLevel": "Mức 1",
+                  "guideDoc": null,
+                  "competencyGroup": "Hiểu"
+                },
+                {
+                  "criterionIndex": 2,
+                  "sourceCode": "TC08S.01.0008.23",
+                  "description": "Tách bạch được giá trị công năng và giá cả vô hình.",
+                  "programLevel": "Mức 2",
+                  "guideDoc": null,
+                  "competencyGroup": "Biết"
+                },
+                {
+                  "criterionIndex": 3,
+                  "sourceCode": "TC08S.01.0008.24",
+                  "description": "Phản biện thói quen chạy theo hàng hiệu.",
+                  "programLevel": "Mức 3",
+                  "guideDoc": null,
+                  "competencyGroup": "Vận dụng"
+                }
+              ]
+            },
+            {
+              "lessonIndex": 9,
+              "lessonCode": "TC08S.01.0009",
+              "lessonName": "Lập kế hoạch mua sắm mặt hàng giá trị lớn",
+              "criteria": [
+                {
+                  "criterionIndex": 1,
+                  "sourceCode": "TC08S.01.0009.25",
+                  "description": "Tổng hợp kỹ năng lập kế hoạch, khảo giá, tiết kiệm vào một bài toán thực tế quy mô lớn.",
+                  "programLevel": "Mức 1",
+                  "guideDoc": null,
+                  "competencyGroup": "Hiểu"
+                },
+                {
+                  "criterionIndex": 2,
+                  "sourceCode": "TC08S.01.0009.26",
+                  "description": "Lên lộ trình dòng tiền chi tiết.",
+                  "programLevel": "Mức 2",
+                  "guideDoc": null,
+                  "competencyGroup": "Biết"
+                },
+                {
+                  "criterionIndex": 3,
+                  "sourceCode": "TC08S.01.0009.27",
+                  "description": "Dự phòng được phương án trả góp hoặc xin tài trợ từ gia đình.",
+                  "programLevel": "Mức 3",
+                  "guideDoc": null,
+                  "competencyGroup": "Vận dụng"
+                }
+              ]
+            },
+            {
+              "lessonIndex": 10,
+              "lessonCode": "TC08S.01.0010",
+              "lessonName": "Bộ quy tắc người tiêu dùng thế hệ mới",
+              "criteria": [
+                {
+                  "criterionIndex": 1,
+                  "sourceCode": "TC08S.01.0010.28",
+                  "description": "Hệ thống hóa toàn bộ kiến thức năm học thành hệ giá trị cốt lõi hướng dẫn hành vi.",
+                  "programLevel": "Mức 1",
+                  "guideDoc": null,
+                  "competencyGroup": "Hiểu"
+                },
+                {
+                  "criterionIndex": 2,
+                  "sourceCode": "TC08S.01.0010.29",
+                  "description": "Hoàn thiện bộ quy tắc cá nhân gồm ít nhất 5 điều khoản chặt chẽ, rõ ràng.",
+                  "programLevel": "Mức 2",
+                  "guideDoc": null,
+                  "competencyGroup": "Biết"
+                }
+              ]
+            }
+          ]
+        }
+      ]
+    },
+    "9": {
+      "grade": "9",
+      "topicsCount": 1,
+      "lessonsCount": 10,
+      "criteriaCount": 29,
+      "topics": [
+        {
+          "topicCode": "TC09S.01",
+          "topicName": "Tài chính cho tương lai độc lập",
+          "lessons": [
+            {
+              "lessonIndex": 1,
+              "lessonCode": "TC09S.01.0001",
+              "lessonName": "Phân tích cấu trúc ngân sách cá nhân",
+              "criteria": [
+                {
+                  "criterionIndex": 1,
+                  "sourceCode": "TC09S.01.0001.01",
+                  "description": "Làm quen với việc điều phối dòng thu nhập phức tạp, thay vì chỉ quản lý tiền ăn vặt đơn giản.",
+                  "programLevel": "Mức 1",
+                  "guideDoc": null,
+                  "competencyGroup": "Hiểu"
+                },
+                {
+                  "criterionIndex": 2,
+                  "sourceCode": "TC09S.01.0001.02",
+                  "description": "Liệt kê đủ các nhóm chi phí sống.",
+                  "programLevel": "Mức 2",
+                  "guideDoc": null,
+                  "competencyGroup": "Biết"
+                },
+                {
+                  "criterionIndex": 3,
+                  "sourceCode": "TC09S.01.0001.03",
+                  "description": "Sắp xếp tỷ trọng chi tiêu hợp lý với ngân sách cho trước.",
+                  "programLevel": "Mức 3",
+                  "guideDoc": null,
+                  "competencyGroup": "Vận dụng"
+                }
+              ]
+            },
+            {
+              "lessonIndex": 2,
+              "lessonCode": "TC09S.01.0002",
+              "lessonName": "Thẻ ghi nợ và thẻ tín dụng",
+              "criteria": [
+                {
+                  "criterionIndex": 1,
+                  "sourceCode": "TC09S.01.0002.04",
+                  "description": "Nắm vững bản chất cốt lõi của công cụ thanh toán ngân hàng để không trở thành con nợ thẻ.",
+                  "programLevel": "Mức 1",
+                  "guideDoc": null,
+                  "competencyGroup": "Hiểu"
+                },
+                {
+                  "criterionIndex": 2,
+                  "sourceCode": "TC09S.01.0002.05",
+                  "description": "Trình bày đúng cơ chế thẻ tín dụng.",
+                  "programLevel": "Mức 2",
+                  "guideDoc": null,
+                  "competencyGroup": "Biết"
+                },
+                {
+                  "criterionIndex": 3,
+                  "sourceCode": "TC09S.01.0002.06",
+                  "description": "Nêu được 2 hậu quả khi quẹt thẻ tín dụng quá đà.",
+                  "programLevel": "Mức 3",
+                  "guideDoc": null,
+                  "competencyGroup": "Vận dụng"
+                }
+              ]
+            },
+            {
+              "lessonIndex": 3,
+              "lessonCode": "TC09S.01.0003",
+              "lessonName": "Ma trận nợ nần và tín dụng đen",
+              "criteria": [
+                {
+                  "criterionIndex": 1,
+                  "sourceCode": "TC09S.01.0003.07",
+                  "description": "Xây dựng sức đề kháng tuyệt đối với mọi hình thức vay nặng lãi, bảo vệ an toàn cá nhân.",
+                  "programLevel": "Mức 1",
+                  "guideDoc": null,
+                  "competencyGroup": "Hiểu"
+                },
+                {
+                  "criterionIndex": 2,
+                  "sourceCode": "TC09S.01.0003.08",
+                  "description": "Giải thích được cơ chế bẫy lãi suất.",
+                  "programLevel": "Mức 2",
+                  "guideDoc": null,
+                  "competencyGroup": "Biết"
+                },
+                {
+                  "criterionIndex": 3,
+                  "sourceCode": "TC09S.01.0003.09",
+                  "description": "Lập kịch bản từ chối lời dụ dỗ vay tiền qua app.",
+                  "programLevel": "Mức 3",
+                  "guideDoc": null,
+                  "competencyGroup": "Vận dụng"
+                }
+              ]
+            },
+            {
+              "lessonIndex": 4,
+              "lessonCode": "TC09S.01.0004",
+              "lessonName": "Ý thức bảo mật danh tính tài chính",
+              "criteria": [
+                {
+                  "criterionIndex": 1,
+                  "sourceCode": "TC09S.01.0004.10",
+                  "description": "Hiểu ranh giới bảo mật thông tin trên môi trường mạng để ngăn ngừa rủi ro bị vay nợ giả mạo.",
+                  "programLevel": "Mức 1",
+                  "guideDoc": null,
+                  "competencyGroup": "Hiểu"
+                },
+                {
+                  "criterionIndex": 2,
+                  "sourceCode": "TC09S.01.0004.11",
+                  "description": "Nêu được 3 nguyên tắc bảo vệ thông tin CCCD.",
+                  "programLevel": "Mức 2",
+                  "guideDoc": null,
+                  "competencyGroup": "Biết"
+                },
+                {
+                  "criterionIndex": 3,
+                  "sourceCode": "TC09S.01.0004.12",
+                  "description": "Thiết lập mật khẩu mạnh đạt chuẩn.",
+                  "programLevel": "Mức 3",
+                  "guideDoc": null,
+                  "competencyGroup": "Vận dụng"
+                }
+              ]
+            },
+            {
+              "lessonIndex": 5,
+              "lessonCode": "TC09S.01.0005",
+              "lessonName": "Bức tranh chi phí sinh hoạt khi tự lập",
+              "criteria": [
+                {
+                  "criterionIndex": 1,
+                  "sourceCode": "TC09S.01.0005.13",
+                  "description": "Có góc nhìn thực tế, không màu hồng về cuộc sống tự lập, thấu hiểu áp lực của cha mẹ.",
+                  "programLevel": "Mức 1",
+                  "guideDoc": null,
+                  "competencyGroup": "Hiểu"
+                },
+                {
+                  "criterionIndex": 2,
+                  "sourceCode": "TC09S.01.0005.14",
+                  "description": "Liệt kê không sót các khoản phí cố định và biến đổi.",
+                  "programLevel": "Mức 2",
+                  "guideDoc": null,
+                  "competencyGroup": "Biết"
+                },
+                {
+                  "criterionIndex": 3,
+                  "sourceCode": "TC09S.01.0005.15",
+                  "description": "Dự toán con số sát thực tế thị trường.",
+                  "programLevel": "Mức 3",
+                  "guideDoc": null,
+                  "competencyGroup": "Vận dụng"
+                }
+              ]
+            },
+            {
+              "lessonIndex": 6,
+              "lessonCode": "TC09S.01.0006",
+              "lessonName": "Quy tắc quản lý tài chính phân bổ chuẩn",
+              "criteria": [
+                {
+                  "criterionIndex": 1,
+                  "sourceCode": "TC09S.01.0006.16",
+                  "description": "Nắm bắt công cụ lập ngân sách kinh điển được sử dụng toàn cầu để cân bằng cuộc sống.",
+                  "programLevel": "Mức 1",
+                  "guideDoc": null,
+                  "competencyGroup": "Hiểu"
+                },
+                {
+                  "criterionIndex": 2,
+                  "sourceCode": "TC09S.01.0006.17",
+                  "description": "Tính toán chính xác phân bổ dòng tiền theo phần trăm.",
+                  "programLevel": "Mức 2",
+                  "guideDoc": null,
+                  "competencyGroup": "Biết"
+                },
+                {
+                  "criterionIndex": 3,
+                  "sourceCode": "TC09S.01.0006.18",
+                  "description": "Điều chỉnh nhu cầu linh hoạt theo khung.",
+                  "programLevel": "Mức 3",
+                  "guideDoc": null,
+                  "competencyGroup": "Vận dụng"
+                }
+              ]
+            },
+            {
+              "lessonIndex": 7,
+              "lessonCode": "TC09S.01.0007",
+              "lessonName": "Quản lý rủi ro và các loại hình bảo hiểm",
+              "criteria": [
+                {
+                  "criterionIndex": 1,
+                  "sourceCode": "TC09S.01.0007.19",
+                  "description": "Hiểu bảo hiểm là công cụ chuyển giao rủi ro, không phải kênh đầu tư sinh lời.",
+                  "programLevel": "Mức 1",
+                  "guideDoc": null,
+                  "competencyGroup": "Hiểu"
+                },
+                {
+                  "criterionIndex": 2,
+                  "sourceCode": "TC09S.01.0007.20",
+                  "description": "Giải thích được nguyên lý cơ bản của bảo hiểm.",
+                  "programLevel": "Mức 2",
+                  "guideDoc": null,
+                  "competencyGroup": "Biết"
+                },
+                {
+                  "criterionIndex": 3,
+                  "sourceCode": "TC09S.01.0007.21",
+                  "description": "Nhận diện vai trò của quỹ khẩn cấp.",
+                  "programLevel": "Mức 3",
+                  "guideDoc": null,
+                  "competencyGroup": "Vận dụng"
+                }
+              ]
+            },
+            {
+              "lessonIndex": 8,
+              "lessonCode": "TC09S.01.0008",
+              "lessonName": "Đầu tư vào bản thân: Khoản sinh lời nhất",
+              "criteria": [
+                {
+                  "criterionIndex": 1,
+                  "sourceCode": "TC09S.01.0008.22",
+                  "description": "Thay đổi tư duy từ chi tiêu tiêu sản sang đầu tư tích lũy giá trị bản thân dài hạn.",
+                  "programLevel": "Mức 1",
+                  "guideDoc": null,
+                  "competencyGroup": "Hiểu"
+                },
+                {
+                  "criterionIndex": 2,
+                  "sourceCode": "TC09S.01.0008.23",
+                  "description": "Phân biệt được tiêu sản và tài sản trí tuệ.",
+                  "programLevel": "Mức 2",
+                  "guideDoc": null,
+                  "competencyGroup": "Biết"
+                },
+                {
+                  "criterionIndex": 3,
+                  "sourceCode": "TC09S.01.0008.24",
+                  "description": "Lập danh sách 2 kỹ năng ưu tiên cần học.",
+                  "programLevel": "Mức 3",
+                  "guideDoc": null,
+                  "competencyGroup": "Vận dụng"
+                }
+              ]
+            },
+            {
+              "lessonIndex": 9,
+              "lessonCode": "TC09S.01.0009",
+              "lessonName": "Lên kế hoạch tài chính cho năm đầu sau trung học",
+              "criteria": [
+                {
+                  "criterionIndex": 1,
+                  "sourceCode": "TC09S.01.0009.25",
+                  "description": "Vận dụng tổng hợp các năng lực để xây dựng nền tảng tài chính cho con đường học tập tiếp theo.",
+                  "programLevel": "Mức 1",
+                  "guideDoc": null,
+                  "competencyGroup": "Hiểu"
+                },
+                {
+                  "criterionIndex": 2,
+                  "sourceCode": "TC09S.01.0009.26",
+                  "description": "Hoàn thiện hồ sơ đầy đủ cấu trúc ngân sách, nguồn thu, dự phòng rủi ro và cam kết thực hiện.",
+                  "programLevel": "Mức 2",
+                  "guideDoc": null,
+                  "competencyGroup": "Biết"
+                }
+              ]
+            },
+            {
+              "lessonIndex": 10,
+              "lessonCode": "TC09S.01.0010",
+              "lessonName": "Trách nhiệm tài chính và sự độc lập",
+              "criteria": [
+                {
+                  "criterionIndex": 1,
+                  "sourceCode": "TC09S.01.0010.27",
+                  "description": "Khẳng định bản lĩnh tự lập, sẵn sàng bước vào ngưỡng cửa cấp trung học phổ thông.",
+                  "programLevel": "Mức 1",
+                  "guideDoc": null,
+                  "competencyGroup": "Hiểu"
+                },
+                {
+                  "criterionIndex": 2,
+                  "sourceCode": "TC09S.01.0010.28",
+                  "description": "Phản biện sắc sảo, trình bày tự tin.",
+                  "programLevel": "Mức 2",
+                  "guideDoc": null,
+                  "competencyGroup": "Biết"
+                },
+                {
+                  "criterionIndex": 3,
+                  "sourceCode": "TC09S.01.0010.29",
+                  "description": "Hoàn thiện bản cam kết thể hiện sự thấu đáo, trưởng thành.",
+                  "programLevel": "Mức 3",
+                  "guideDoc": null,
+                  "competencyGroup": "Vận dụng"
+                }
+              ]
+            }
+          ]
+        }
+      ]
+    }
+  }
+}

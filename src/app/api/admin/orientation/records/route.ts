@@ -1,0 +1,160 @@
+import { NextResponse } from "next/server";
+import { prisma } from "@/lib/db";
+import { auth } from "@/lib/auth";
+import { getStudentOrientationRecord, upsertStudentOrientationRecord } from "@/lib/orientation/service";
+
+export const dynamic = "force-dynamic";
+
+export async function GET(request: Request) {
+  try {
+    const { searchParams } = new URL(request.url);
+    const studentId = searchParams.get("studentId");
+
+    if (!studentId) {
+      return NextResponse.json({ success: false, error: "Thiếu studentId" }, { status: 400 });
+    }
+
+    const record = await getStudentOrientationRecord(studentId);
+    let studentInfo = record?.student || null;
+
+    if (!studentInfo) {
+      studentInfo = await (prisma as any).inputAssessmentStudent.findUnique({
+        where: { id: studentId },
+        select: {
+          id: true,
+          fullName: true,
+          studentCode: true,
+          grade: true,
+          dateOfBirth: true,
+          gender: true,
+          className: true,
+          admissionCriteria: true,
+          targetType: true,
+          surveySystem: true,
+          surveyFormType: true,
+          admissionCampus: true,
+          registeredCampus: true,
+          cityName: true,
+          districtName: true,
+          wardName: true,
+          countryName: true,
+          oldSchoolName: true,
+          oldSchoolType: true,
+          hoSoCtQuocTe: true,
+          hocKy: true,
+          academicRating: true,
+          conductRating: true,
+          kqHocTap: true,
+          kqRenLuyen: true,
+          kqgdTieuHoc: true,
+          mathScore: true,
+          literatureScore: true,
+          writtenEnglishScore: true,
+          oralEnglishScore: true,
+          psychologyScore: true,
+          period: {
+            select: {
+              id: true,
+              code: true,
+              name: true
+            }
+          },
+          batch: {
+            select: {
+              id: true,
+              batchNumber: true,
+              name: true,
+              campus: {
+                select: {
+                  id: true,
+                  campusName: true,
+                  campusCode: true
+                }
+              }
+            }
+          },
+          scores: {
+            include: {
+              subject: true
+            }
+          }
+        }
+      });
+    }
+
+    return NextResponse.json({ success: true, data: record, student: studentInfo });
+  } catch (error: any) {
+    console.error("GET /api/admin/orientation/records error:", error);
+    return NextResponse.json({ success: false, error: error.message }, { status: 500 });
+  }
+}
+
+export async function POST(request: Request) {
+  try {
+    const session = await auth();
+    if (!session) {
+      return NextResponse.json({ success: false, error: "Unauthorized" }, { status: 401 });
+    }
+
+    const body = await request.json();
+    const { studentId, ...data } = body;
+
+    if (!studentId) {
+      return NextResponse.json({ success: false, error: "Thiếu studentId" }, { status: 400 });
+    }
+
+    const user = session.user as any;
+    const record = await upsertStudentOrientationRecord({
+      studentId,
+      ...data,
+      interviewerId: data.interviewerId || user?.id,
+      interviewerName: data.interviewerName || user?.fullName || user?.name
+    });
+
+    // Đồng bộ điểm các môn khảo sát & Quyết định/chỉ đạo của GĐCS vào InputAssessmentStudent
+    try {
+      const studentUpdates: any = {};
+      if (data.writtenEnglishScore !== undefined) {
+        studentUpdates.writtenEnglishScore = data.writtenEnglishScore ? String(data.writtenEnglishScore) : null;
+      }
+      if (data.oralEnglishScore !== undefined) {
+        studentUpdates.oralEnglishScore = data.oralEnglishScore ? String(data.oralEnglishScore) : null;
+      }
+      if (data.mathScore !== undefined) {
+        studentUpdates.mathScore = data.mathScore ? String(data.mathScore) : null;
+      }
+      if (data.literatureScore !== undefined) {
+        studentUpdates.literatureScore = data.literatureScore ? String(data.literatureScore) : null;
+      }
+      if (data.gdcsDecision) {
+        if (data.gdcsDecision === "TIEP_NHAN_CHUAN") {
+          studentUpdates.admissionResult = "Đạt";
+        } else if (data.gdcsDecision === "TIEP_NHAN_DONG_HANH") {
+          studentUpdates.admissionResult = "Đạt có cam kết";
+        } else if (data.gdcsDecision === "TAM_HOAN_DANH_GIA") {
+          studentUpdates.admissionResult = "Chờ duyệt";
+        }
+      }
+      if (data.gdcsGeneralNote !== undefined && data.gdcsGeneralNote !== null) {
+        studentUpdates.directorNote = data.gdcsGeneralNote;
+      }
+      if (data.proposedEduSystem) {
+        studentUpdates.surveyFormType = data.proposedEduSystem;
+      }
+
+      if (Object.keys(studentUpdates).length > 0) {
+        await (prisma as any).inputAssessmentStudent.update({
+          where: { id: studentId },
+          data: studentUpdates
+        });
+      }
+    } catch (syncErr) {
+      console.error("Lỗi đồng bộ sang InputAssessmentStudent:", syncErr);
+    }
+
+    return NextResponse.json({ success: true, data: record });
+  } catch (error: any) {
+    console.error("POST /api/admin/orientation/records error:", error);
+    return NextResponse.json({ success: false, error: error.message }, { status: 500 });
+  }
+}

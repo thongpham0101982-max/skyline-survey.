@@ -72,10 +72,59 @@ export async function getBackupListAction() {
   const backupDir = path.join(process.cwd(), "data-backups");
 
   if (!fs.existsSync(backupDir)) {
-    return [];
+    return {
+      backups: [],
+      storage: {
+        freeBytes: 0,
+        totalBytes: 0,
+        backupDirBytes: 0,
+        redundantBytes: 0,
+        redundantFilesCount: 0,
+        photoVault: null
+      }
+    };
   }
 
+  let freeBytes = 0;
+  let totalBytes = 0;
+  try {
+    const s = fs.statfsSync(backupDir);
+    freeBytes = Number(s.bfree) * Number(s.bsize);
+    totalBytes = Number(s.blocks) * Number(s.bsize);
+  } catch {}
+
   const files = fs.readdirSync(backupDir);
+  let backupDirBytes = 0;
+  let redundantBytes = 0;
+  let redundantFilesCount = 0;
+
+  for (const f of files) {
+    try {
+      const fullPath = path.join(backupDir, f);
+      const stat = fs.statSync(fullPath);
+      backupDirBytes += stat.size;
+
+      // Phát hiện tệp .tmp rác hoặc tệp .db thô đã có .db.gz
+      if (f.startsWith(".tmp_")) {
+        redundantBytes += stat.size;
+        redundantFilesCount++;
+      } else if (f.startsWith("skyline_backup_") && f.endsWith(".db")) {
+        if (fs.existsSync(path.join(backupDir, `${f}.gz`))) {
+          redundantBytes += stat.size;
+          redundantFilesCount++;
+        }
+      }
+    } catch {}
+  }
+
+  let photoVault = null;
+  const vaultMetaPath = path.join(backupDir, "student_photos_vault_meta.json");
+  if (fs.existsSync(vaultMetaPath)) {
+    try {
+      photoVault = JSON.parse(fs.readFileSync(vaultMetaPath, "utf8"));
+    } catch {}
+  }
+
   const metaList = files
     .filter((f: string) => f.startsWith("skyline_backup_") && f.endsWith("_meta.json"))
     .map((f: string) => {
@@ -89,21 +138,112 @@ export async function getBackupListAction() {
     .filter(Boolean)
     .sort((a: any, b: any) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
 
-  return metaList;
+  // Tính thêm dung lượng các bản sao lưu trùng lặp trong cùng 1 ngày
+  const seenDayRows = new Set<string>();
+  for (const item of metaList) {
+    const dayKey = new Date(item.createdAt).toISOString().split("T")[0];
+    const key = `${dayKey}_${item.totalRows || 0}`;
+    if (!seenDayRows.has(key)) {
+      seenDayRows.add(key);
+    } else {
+      redundantBytes += Number(item.gzSizeBytes || 0);
+      redundantFilesCount++;
+    }
+  }
+
+  return {
+    backups: metaList,
+    storage: {
+      freeBytes,
+      totalBytes,
+      backupDirBytes,
+      redundantBytes,
+      redundantFilesCount,
+      photoVault
+    }
+  };
 }
 
-export async function triggerBackupAction() {
+export async function verifyBackupAction(backupId: string) {
   try {
     const path = require("path");
     const scriptPath = path.join(process.cwd(), "scripts", "backup-db.js");
     const dynamicRequire = eval("require");
-    const { runBackup } = dynamicRequire(scriptPath);
-    const result = await runBackup({ triggerType: "MANUAL_WEB_ADMIN", force: true });
+    delete dynamicRequire.cache[dynamicRequire.resolve(scriptPath)];
+    const { verifyBackupFile } = dynamicRequire(scriptPath);
+    const result = await verifyBackupFile(backupId);
+
     revalidatePath("/admin/maintenance");
     return { success: true, result };
   } catch (err: any) {
+    console.error("[verifyBackupAction Error]:", err);
+    return { success: false, error: err.message || "Lỗi khi xác minh tệp sao lưu" };
+  }
+}
+
+export async function triggerBackupAction(options?: { mode?: string; source?: string }) {
+  try {
+    const path = require("path");
+    const scriptPath = path.join(process.cwd(), "scripts", "backup-db.js");
+    const dynamicRequire = eval("require");
+    delete dynamicRequire.cache[dynamicRequire.resolve(scriptPath)];
+    const { runBackup } = dynamicRequire(scriptPath);
+    const result = await runBackup({
+      triggerType: "MANUAL_WEB_ADMIN",
+      force: true,
+      mode: options?.mode || "CORE_LITE",
+      source: options?.source || "AUTO"
+    });
+    const updatedData = await getBackupListAction();
+    revalidatePath("/admin/maintenance");
+    return { success: true, result, backups: updatedData.backups, storage: updatedData.storage };
+  } catch (err: any) {
     console.error("[triggerBackupAction Error]:", err);
     return { success: false, error: err.message || "Lỗi tiến trình sao lưu" };
+  }
+}
+
+export async function optimizeBackupStorageAction() {
+  try {
+    const path = require("path");
+    const scriptPath = path.join(process.cwd(), "scripts", "backup-db.js");
+    const dynamicRequire = eval("require");
+    delete dynamicRequire.cache[dynamicRequire.resolve(scriptPath)];
+    const { cleanupDuplicateAndOrphanFiles } = dynamicRequire(scriptPath);
+    const result = await cleanupDuplicateAndOrphanFiles({ verifyMissing: true });
+    const updatedData = await getBackupListAction();
+    revalidatePath("/admin/maintenance");
+    return {
+      success: true,
+      result,
+      backups: updatedData.backups,
+      storage: updatedData.storage
+    };
+  } catch (err: any) {
+    console.error("[optimizeBackupStorageAction Error]:", err);
+    return { success: false, error: err.message || "Lỗi khi tối ưu hóa dung lượng sao lưu" };
+  }
+}
+
+export async function deleteBackupAction(backupId: string) {
+  try {
+    const path = require("path");
+    const scriptPath = path.join(process.cwd(), "scripts", "backup-db.js");
+    const dynamicRequire = eval("require");
+    delete dynamicRequire.cache[dynamicRequire.resolve(scriptPath)];
+    const { deleteBackupById } = dynamicRequire(scriptPath);
+    const result = deleteBackupById(backupId);
+    const updatedData = await getBackupListAction();
+    revalidatePath("/admin/maintenance");
+    return {
+      success: true,
+      result,
+      backups: updatedData.backups,
+      storage: updatedData.storage
+    };
+  } catch (err: any) {
+    console.error("[deleteBackupAction Error]:", err);
+    return { success: false, error: err.message || "Lỗi khi xóa bản sao lưu" };
   }
 }
 
@@ -193,4 +333,3 @@ export async function syncSurveyStudentTypesAction() {
     return { success: false, error: err.message || "Lỗi khi đồng bộ diện học sinh" };
   }
 }
-

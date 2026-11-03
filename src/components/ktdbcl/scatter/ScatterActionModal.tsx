@@ -19,11 +19,11 @@ export function ScatterActionModal({
   onClose,
   onSuccess
 }: Props) {
-  if (!isOpen || !student) return null
-
   const [content, setContent] = useState("")
-  const [targetScore, setTargetScore] = useState<number>(Math.min(10, Math.round((student.y + 1.5) * 10) / 10))
+  const [targetScore, setTargetScore] = useState<number>(student ? Math.min(10, Math.round((student.y + 1.5) * 10) / 10) : 0)
   const [loading, setLoading] = useState(false)
+
+  if (!isOpen || !student) return null
 
   const handleSubmit = async () => {
     try {

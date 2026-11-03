@@ -38,7 +38,7 @@ export async function POST(req: NextRequest) {
     const strandObj = ACTIVITY_STRANDS.find(s => s.id === strand);
     const strandLabel = strandObj ? strandObj.name : "Hướng vào bản thân";
     const displaySender = senderName || "Tổ CTHS - Ban HĐNGLL";
-    const fromAddr = senderEmail ? `"${displaySender}" <${senderEmail}>` : `"${displaySender}" <bankhaothi@skylineschool.edu.vn>`;
+    const fromAddr = senderEmail ? `"${displaySender}" <${senderEmail}>` : `"${displaySender}" <ktdbcl@skylineschool.edu.vn>`;
     const formattedDate = date ? new Date(date).toLocaleDateString("vi-VN") : "Theo lịch công tác";
     const classNames = assignedClasses.map((c: any) => c.className).join(", ") || "Các lớp phân công";
 
@@ -205,7 +205,7 @@ export async function POST(req: NextRequest) {
                 Đơn vị gửi: <strong style="color: #FFFFFF;">${displaySender}</strong> ${senderEmail ? `(${senderEmail})` : ""}
               </p>
               <p style="margin: 0; font-size: 10px; color: rgba(255, 255, 255, 0.65); line-height: 1.5;">
-                Email hỗ trợ: <a href="mailto:bankhaothi@skylineschool.edu.vn" style="color: #FDE047; text-decoration: none; font-weight: 600;">bankhaothi@skylineschool.edu.vn</a> • Website: <a href="https://skylineschool.edu.vn" target="_blank" style="color: #FDE047; text-decoration: none; font-weight: 600;">skylineschool.edu.vn</a>
+                Email hỗ trợ: <a href="mailto:ktdbcl@skylineschool.edu.vn" style="color: #FDE047; text-decoration: none; font-weight: 600;">ktdbcl@skylineschool.edu.vn</a> • Website: <a href="https://skylineschool.edu.vn" target="_blank" style="color: #FDE047; text-decoration: none; font-weight: 600;">skylineschool.edu.vn</a>
               </p>
               <p style="margin: 6px 0 0 0; font-size: 10px; color: rgba(255, 255, 255, 0.4);">
                 Email này được gửi thử nghiệm từ hệ thống SSM Quản lý Hoạt động Trải nghiệm Sky-Line.

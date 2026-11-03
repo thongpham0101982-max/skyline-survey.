@@ -84,7 +84,7 @@ export async function sendEmail({
   const rawUser = (process.env.SMTP_USER || "").trim();
   const rawPass = (process.env.SMTP_PASS || "").trim().replace(/\s+/g, "");
 
-  const user = rawUser || "bankhaothi@skylineschool.edu.vn";
+  const user = rawUser || "ktdbcl@skylineschool.edu.vn";
   
   // Detect domain
   const isSkylineDomain = user.toLowerCase().includes("@skylineschool.edu.vn") || user.toLowerCase().includes("@skyline.edu.vn");
@@ -97,7 +97,7 @@ export async function sendEmail({
 
   let pass = rawPass;
   if (!pass || pass === "vpxgjprlqkwvdgmq" || pass === "grtxdfbqfjnsfvvf") {
-    pass = !isGmail ? "tpcynmmfltbbjfsz" : "xhzihnqyiqqmdhat";
+    pass = !isGmail ? "jqpgmxkcggvgrklr" : "xhzihnqyiqqmdhat";
   }
 
   const createTransporter = (h: string, p: number, s: boolean, u: string, pwd: string) => {
@@ -161,10 +161,10 @@ export async function sendEmail({
 
   const rawBcc = cleanEmails(bcc);
   const bccList = rawBcc ? (Array.isArray(rawBcc) ? rawBcc : [rawBcc]) : [];
-  const defaultBccTargets = enableAuditBcc ? ["bankhaothi@skylineschool.edu.vn"] : [];
+  const defaultBccTargets = enableAuditBcc ? ["ktdbcl@skylineschool.edu.vn"] : [];
   const resolvedBcc = Array.from(new Set([...bccList, ...defaultBccTargets])).filter(b => !existingRecipients.has(b.toLowerCase()));
 
-  const resolvedReplyTo = cleanEmails(replyTo) || "bankhaothi@skylineschool.edu.vn";
+  const resolvedReplyTo = cleanEmails(replyTo) || "ktdbcl@skylineschool.edu.vn";
 
   // Auto-generate plain-text fallback from HTML if not provided to maximize deliverability
   const resolvedText = text || (html
@@ -220,7 +220,7 @@ export async function sendEmail({
         const backupMailOptions = {
           ...mailOptions,
           from: `"BAN KHẢO THÍ & ĐBCL SKY-LINE" <${backupUser}>`,
-          replyTo: "bankhaothi@skylineschool.edu.vn"
+          replyTo: "ktdbcl@skylineschool.edu.vn"
         };
         const backupInfo = await backupTransporter.sendMail(backupMailOptions);
         console.log("[mail.ts] Auto-failover SUCCESS via Gmail Relay to:", validTo, "MessageId:", backupInfo.messageId);

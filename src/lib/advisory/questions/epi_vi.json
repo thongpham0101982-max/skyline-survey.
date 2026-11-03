@@ -1,0 +1,236 @@
+{
+  "success": true,
+  "testCode": "EPI",
+  "name": "Trắc nghiệm Khí chất Hướng nội - Hướng ngoại (EPI)",
+  "totalQuestions": 57,
+  "questions": [
+    {
+      "id": 1,
+      "text": "Bạn thường mong muốn những điều mới lạ, gây hồi hộp?"
+    },
+    {
+      "id": 2,
+      "text": "Bạn cần những người bạn có thể hiểu, động viên, an ủi mình?"
+    },
+    {
+      "id": 3,
+      "text": "Bạn là người vô tư, không bận tâm đến điều gì?"
+    },
+    {
+      "id": 4,
+      "text": "Bạn cảm thấy khó khăn trong việc từ chối một điều gì đó?"
+    },
+    {
+      "id": 5,
+      "text": "Bạn có suy nghĩ kỹ trước khi quyết định một điều gì đó?"
+    },
+    {
+      "id": 6,
+      "text": "Bạn luôn giữ lời hứa bất kể điều đó có thuận lợi hay không đối với bạn?"
+    },
+    {
+      "id": 7,
+      "text": "Tâm trạng của bạn hay thất thường?"
+    },
+    {
+      "id": 8,
+      "text": "Bạn thường hành động hay phát ngôn rất nhanh không cần suy nghĩ kỹ?"
+    },
+    {
+      "id": 9,
+      "text": "Bạn thường cảm thấy mình bất hạnh mà không rõ nguyên nhân?"
+    },
+    {
+      "id": 10,
+      "text": "Bạn có dễ chấp nhận làm theo những lời thách thức?"
+    },
+    {
+      "id": 11,
+      "text": "Bạn thường cảm thấy rụt rè, ngượng ngùng khi muốn bắt chuyện với một người khác giới không quen?"
+    },
+    {
+      "id": 12,
+      "text": "Đôi lúc bạn không kiềm chế được và nổi nóng?"
+    },
+    {
+      "id": 13,
+      "text": "Bạn thường hành động một cách bồng bột?"
+    },
+    {
+      "id": 14,
+      "text": "Bạn thường day dứt vì đã làm những việc lẽ ra không nên làm hay đã nói những điều không nên nói?"
+    },
+    {
+      "id": 15,
+      "text": "Bạn thường thích đọc sách hơn là gặp gỡ mọi người?"
+    },
+    {
+      "id": 16,
+      "text": "Bạn dễ tự ái, phật ý?"
+    },
+    {
+      "id": 17,
+      "text": "Bạn thích đi chơi với bạn bè thường xuyên?"
+    },
+    {
+      "id": 18,
+      "text": "Đôi lúc bạn có những suy nghĩ mà không muốn cho người khác biết?"
+    },
+    {
+      "id": 19,
+      "text": "Đôi khi bạn cảm thấy mình tràn đầy năng lượng để làm mọi việc nhưng có lúc lại hoàn toàn uể oải?"
+    },
+    {
+      "id": 20,
+      "text": "Bạn thích thà có ít bạn nhưng đều là bạn thân còn hơn có nhiều bạn mà lại không thân?"
+    },
+    {
+      "id": 21,
+      "text": "Bạn hay mơ mộng?"
+    },
+    {
+      "id": 22,
+      "text": "Bạn phản ứng lại ngay khi người ta nói nặng lời với bạn?"
+    },
+    {
+      "id": 23,
+      "text": "Bạn thường day dứt khi mình có lỗi?"
+    },
+    {
+      "id": 24,
+      "text": "Tất cả những thói quen của bạn đều là tốt và cần thiết?"
+    },
+    {
+      "id": 25,
+      "text": "Bạn có khả năng truyền cảm hứng và gây cười trong nhóm bạn bè?"
+    },
+    {
+      "id": 26,
+      "text": "Bạn là một người nhạy cảm?"
+    },
+    {
+      "id": 27,
+      "text": "Người khác có nghĩ bạn là một người hoạt bát, vui vẻ?"
+    },
+    {
+      "id": 28,
+      "text": "Sau khi làm một việc quan trọng, bạn thường có cảm giác rằng lẽ ra có thể làm việc đó tốt hơn?"
+    },
+    {
+      "id": 29,
+      "text": "Bạn thường im lặng khi ở cùng người khác?"
+    },
+    {
+      "id": 30,
+      "text": "Bạn cũng có lúc hay nói xấu người khác?"
+    },
+    {
+      "id": 31,
+      "text": "Bạn thường mất ngủ vì những ý nghĩ khác nhau trong đầu?"
+    },
+    {
+      "id": 32,
+      "text": "Nếu muốn biết điều gì đó bạn thường thích tự tìm hiểu hơn là hỏi người khác?"
+    },
+    {
+      "id": 33,
+      "text": "Bạn thường hay hồi hộp?"
+    },
+    {
+      "id": 34,
+      "text": "Bạn thích công việc đòi hỏi phải tập trung chú ý liên tục?"
+    },
+    {
+      "id": 35,
+      "text": "Cũng có lúc bạn run lên vì vui sướng hay sợ hãi?"
+    },
+    {
+      "id": 36,
+      "text": "Bạn luôn mua vé đầy đủ khi đi tàu, xe mặc dù biết là không ai kiểm tra bao giờ?"
+    },
+    {
+      "id": 37,
+      "text": "Bạn cảm thấy khó chịu khi ở trong một tập thể mà mọi người hay giễu cợt nhau?"
+    },
+    {
+      "id": 38,
+      "text": "Bạn dễ nổi giận?"
+    },
+    {
+      "id": 39,
+      "text": "Bạn thích công việc đòi hỏi hành động nhanh chóng?"
+    },
+    {
+      "id": 40,
+      "text": "Bạn cảm thấy lo lắng trước những việc bất lợi có thể xảy ra?"
+    },
+    {
+      "id": 41,
+      "text": "Bạn đi đứng thong thả, ung dung, chậm rãi?"
+    },
+    {
+      "id": 42,
+      "text": "Đã có lúc bạn trễ hẹn hoặc đi làm muộn?"
+    },
+    {
+      "id": 43,
+      "text": "Bạn thường hay gặp ác mộng?"
+    },
+    {
+      "id": 44,
+      "text": "Bạn thích trò chuyện đến nỗi không bao giờ bỏ qua cơ hội bắt chuyện với cả những người không quen biết?"
+    },
+    {
+      "id": 45,
+      "text": "Bạn hay lo lắng khi có chỗ đau nào đó trên cơ thể?"
+    },
+    {
+      "id": 46,
+      "text": "Bạn cảm thấy không vui khi trong thời gian dài không được giao thiệp rộng rãi với mọi người?"
+    },
+    {
+      "id": 47,
+      "text": "Bạn là người hay căng thẳng, dễ bị kích thích?"
+    },
+    {
+      "id": 48,
+      "text": "Trong số người quen của bạn, có những người bạn hoàn toàn không thích?"
+    },
+    {
+      "id": 49,
+      "text": "Bạn là người rất tự tin?"
+    },
+    {
+      "id": 50,
+      "text": "Bạn dễ phật ý khi có người chỉ ra khuyết điểm của bạn?"
+    },
+    {
+      "id": 51,
+      "text": "Bạn cảm thấy rất khó khăn để khiến bản thân trở nên thực sự thoải mái ở các bữa tiệc hay các cuộc liên hoan?"
+    },
+    {
+      "id": 52,
+      "text": "Bạn cảm thấy khó chịu khi thua kém người khác ở điểm nào đó?"
+    },
+    {
+      "id": 53,
+      "text": "Bạn dễ dàng mang lại không khí vui vẻ cho một bữa tiệc khá tẻ nhạt?"
+    },
+    {
+      "id": 54,
+      "text": "Bạn thường hay nói về những điều mà mình chưa nắm chắc?"
+    },
+    {
+      "id": 55,
+      "text": "Bạn có hay lo lắng cho sức khỏe của bản thân?"
+    },
+    {
+      "id": 56,
+      "text": "Bạn thích trêu đùa người khác?"
+    },
+    {
+      "id": 57,
+      "text": "Bạn có thường xuyên bị mất ngủ?"
+    }
+  ]
+}

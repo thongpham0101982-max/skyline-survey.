@@ -8,6 +8,10 @@ import { LayoutDashboard, ClipboardList, CheckCircle2, Users, Menu } from "lucid
 export function AdminMobileBottomNav() {
   const pathname = usePathname() || ""
 
+  if (pathname.includes("/print")) {
+    return null
+  }
+
   const isDashboard = pathname === "/admin"
   const isSurveys = pathname.includes("/admin/surveys") || pathname.includes("/admin/cau-hinh-khao-sat")
   const isApprovals = pathname.includes("/admin/xet-duyet")

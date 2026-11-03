@@ -48,15 +48,23 @@ export async function GET(req: NextRequest) {
     }
 
     if (q) {
+      // Find any databaseCode matching markFileCode from StudentCodeMapping
+      const matchedMappings = await prisma.studentCodeMapping.findMany({
+        where: { markFileCode: { contains: q } },
+        select: { databaseCode: true }
+      });
+      const extraCodes = matchedMappings.map((m: any) => m.databaseCode).filter(Boolean);
+
       where.OR = [
         { studentName: { contains: q } },
         { studentCode: { contains: q } },
+        ...(extraCodes.length > 0 ? [{ studentCode: { in: extraCodes } }] : []),
         {
           parents: {
             some: {
               parent: {
                 OR: [
-                  { fullName: { contains: q } },
+                  { parentName: { contains: q } },
                   { phone: { contains: q } },
                 ],
               },
@@ -104,11 +112,27 @@ export async function GET(req: NextRequest) {
       }),
     ]);
 
+    // Lookup VnEdu codes (markFileCode) for current page students
+    const studentCodes = students.map((s: any) => s.studentCode).filter(Boolean);
+    const codeMappings = studentCodes.length > 0
+      ? await prisma.studentCodeMapping.findMany({
+          where: { databaseCode: { in: studentCodes } },
+          select: { databaseCode: true, markFileCode: true }
+        })
+      : [];
+    const vneduMap = new Map<string, string>();
+    codeMappings.forEach((m: any) => {
+      if (m.databaseCode && m.markFileCode) {
+        vneduMap.set(m.databaseCode, m.markFileCode);
+      }
+    });
+
     const formatted = students.map((s: any) => {
       const primaryParent = s.parents[0]?.parent;
       return {
         id: s.id,
         studentId: s.studentCode,
+        vneduCode: vneduMap.get(s.studentCode) || null,
         fullName: s.studentName,
         dateOfBirth: s.dateOfBirth,
         gender: s.gender,

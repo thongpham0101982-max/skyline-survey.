@@ -23,7 +23,8 @@ import {
   Layers,
   Star,
   Check,
-  ClipboardList
+  ClipboardList,
+  MessageSquare
 } from "lucide-react";
 import * as XLSX from "xlsx";
 import { IndicatorConfig } from "../client";

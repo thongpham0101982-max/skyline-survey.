@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/db";
 import { getAdminSession } from "@/lib/session";
+import { sendAssignmentNotificationEmails } from "@/lib/special-subjects/assignment-mail";
 
 export async function GET(req: NextRequest) {
   try {
@@ -13,8 +14,13 @@ export async function GET(req: NextRequest) {
     const campusId = searchParams.get("campusId");
     let academicYearId = searchParams.get("academicYearId");
     const subjectId = searchParams.get("subjectId");
+    const subjectCode = searchParams.get("subjectCode");
     const classId = searchParams.get("classId");
     const grade = searchParams.get("grade");
+    const departmentId = searchParams.get("departmentId");
+    const teacherIdParam = searchParams.get("teacherId");
+    const scope = (searchParams.get("scope") || "").toUpperCase();
+    const isPersonalTeacherScope = scope === "TEACHER" || searchParams.get("personal") === "true";
 
     // Dynamic resolution of active academic year if not provided or set to 'ACTIVE' / 'CURRENT'
     if (!academicYearId || academicYearId === "ACTIVE" || academicYearId === "CURRENT") {
@@ -25,25 +31,73 @@ export async function GET(req: NextRequest) {
     }
 
     const where: any = {
-      academicYearId
+      academicYearId,
+      status: "ACTIVE"
     };
 
     if (subjectId && subjectId !== "ALL") where.subjectId = subjectId;
+    if (subjectCode && subjectCode !== "ALL") {
+      where.subject = { code: subjectCode.toUpperCase().trim() };
+    }
     if (classId && classId !== "ALL") where.classId = classId;
+    if (departmentId && departmentId !== "ALL") {
+      where.teacher = { ...(where.teacher || {}), departmentId };
+    }
 
-    // Scoping: If user is teacher without full access, restrict to teacher's assignments
-    if (!session.isFullAccess && !session.isSuperAdmin && !session.isHeadOfAcademic && !session.isGDCS && !session.isTTCM) {
-      if (session.teacherId) {
-        where.teacherId = session.teacherId;
+    // Scoping:
+    // 1. When called from Teacher portal (scope=TEACHER / personal=true), strictly filter by the logged-in teacher's ID
+    //    even if the teacher also holds a management position (QLCM, TTCM, TBP, GĐCS).
+    if (isPersonalTeacherScope) {
+      where.teacherId = session.teacherId || "__NO_TEACHER_PROFILE__";
+      if (campusId && campusId !== "ALL") {
+        where.class = { ...(where.class || {}), campusId };
+      }
+    } else if (teacherIdParam && teacherIdParam !== "ALL") {
+      where.teacherId = teacherIdParam;
+      if (campusId && campusId !== "ALL") {
+        where.class = { ...(where.class || {}), campusId };
+      }
+    } else if (!session.isFullAccess && !session.isSuperAdmin && !session.isHeadOfAcademic && !session.isGDCS && !session.isTTCM) {
+      where.teacherId = session.teacherId || "__NO_TEACHER_PROFILE__";
+      if (campusId && campusId !== "ALL") {
+        where.class = { ...(where.class || {}), campusId };
       }
     } else if (session.isGDCS && session.allowedCampusIds?.length > 0) {
-      where.class = { campusId: { in: session.allowedCampusIds } };
+      if (campusId && campusId !== "ALL" && session.allowedCampusIds.includes(campusId)) {
+        where.class = { campusId };
+      } else {
+        where.class = { campusId: { in: session.allowedCampusIds } };
+      }
     } else if (campusId && campusId !== "ALL") {
       where.class = { campusId };
     }
 
     if (grade && grade !== "ALL") {
       where.class = { ...(where.class || {}), grade };
+    }
+
+    // Also resolve all special subjects assigned to this teacher in the active academic year
+    let assignedSubjects: Array<{ id: string; code: string; name: string }> = [];
+    if (session.teacherId) {
+      const teacherAllSubjectAssigns = await (prisma as any).specialTeachingAssignment.findMany({
+        where: {
+          academicYearId,
+          teacherId: session.teacherId,
+          status: "ACTIVE"
+        },
+        select: {
+          subject: {
+            select: { id: true, code: true, name: true }
+          }
+        }
+      });
+      const subjMap = new Map<string, { id: string; code: string; name: string }>();
+      for (const item of teacherAllSubjectAssigns) {
+        if (item.subject?.code && !subjMap.has(item.subject.code)) {
+          subjMap.set(item.subject.code, item.subject);
+        }
+      }
+      assignedSubjects = Array.from(subjMap.values());
     }
 
     const assignments = await (prisma as any).specialTeachingAssignment.findMany({
@@ -58,7 +112,15 @@ export async function GET(req: NextRequest) {
           select: { id: true, code: true, name: true, color: true }
         },
         teacher: {
-          select: { id: true, teacherCode: true, teacherName: true, email: true, phone: true }
+          select: {
+            id: true,
+            teacherCode: true,
+            teacherName: true,
+            email: true,
+            phone: true,
+            departmentId: true,
+            departmentRel: { select: { id: true, code: true, name: true } }
+          }
         },
         class: {
           select: { 
@@ -104,7 +166,7 @@ export async function GET(req: NextRequest) {
     const unassignedWhere: any = {
       status: "ACTIVE",
       academicYearId,
-      grade: grade && grade !== "ALL" ? grade : { in: ["1", "2", "3", "4", "5"] },
+      grade: grade && grade !== "ALL" ? grade : undefined,
       campusId: campusId && campusId !== "ALL" ? campusId : undefined,
       id: { notIn: Array.from(assignedClassIds) }
     };
@@ -137,6 +199,7 @@ export async function GET(req: NextRequest) {
 
     return NextResponse.json({ 
       assignments: enrichedAssignments,
+      assignedSubjects,
       unassignedClasses,
       academicYearId,
       totalAssigned: enrichedAssignments.length,
@@ -164,7 +227,8 @@ export async function POST(req: NextRequest) {
       campusId, 
       grade, 
       academicYearId, 
-      semester = 1 
+      semester = 1,
+      sendNotificationEmail = false
     } = body;
 
     // Resolve active academic year if not supplied
@@ -187,6 +251,18 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: "Không tìm thấy môn học đặc thù để phân công" }, { status: 400 });
     }
 
+    const targetSubjectRecord = await (prisma as any).specialSubject.findUnique({
+      where: { id: subjectId },
+      select: { code: true }
+    }).catch(() => null);
+    const subjCodeUpper = (targetSubjectRecord?.code || "").toUpperCase();
+    const defaultSubjectGrades =
+      subjCodeUpper === "GDHN"
+        ? ["6", "7", "8", "9", "10", "11", "12"]
+        : subjCodeUpper === "GDGT"
+        ? ["6", "7", "8", "9"]
+        : ["1", "2", "3", "4", "5", "6", "7", "8", "9"];
+
     // =========================================================================
     // MODE 1: AUTO_GVCN - Phân công tự động theo GVCN của lớp
     // =========================================================================
@@ -202,12 +278,12 @@ export async function POST(req: NextRequest) {
           select: { id: true, className: true, homeroomTeacherId: true }
         });
       } else {
-        // Find all primary classes matching campusId / grade filter in current academic year
+        // Find all classes matching campusId / grade filter in current academic year for this subject's grade range
         targetClasses = await prisma.class.findMany({
           where: {
             status: "ACTIVE",
             academicYearId,
-            grade: grade && grade !== "ALL" ? grade : { in: ["1", "2", "3", "4", "5"] },
+            grade: grade && grade !== "ALL" ? grade : { in: defaultSubjectGrades },
             campusId: campusId && campusId !== "ALL" ? campusId : undefined
           },
           select: { id: true, className: true, homeroomTeacherId: true }
@@ -252,9 +328,24 @@ export async function POST(req: NextRequest) {
         assignedResults.push(created);
       }
 
+      let emailNotice = "";
+      if (sendNotificationEmail && assignedResults.length > 0) {
+        try {
+          const mailRes = await sendAssignmentNotificationEmails({
+            assignmentIds: assignedResults.map(a => a.id),
+            semester
+          });
+          if (mailRes.sentCount > 0) {
+            emailNotice = ` và đã gửi email thông báo cho ${mailRes.sentCount} GV`;
+          }
+        } catch (e) {
+          console.error("Auto email notification error:", e);
+        }
+      }
+
       return NextResponse.json({
         success: true,
-        message: `Đã phân công thành công ${assignedResults.length} lớp cho Giáo viên Chủ nhiệm (GVCN)` + 
+        message: `Đã phân công thành công ${assignedResults.length} lớp cho Giáo viên Chủ nhiệm (GVCN)${emailNotice}` + 
                  (skippedClasses.length > 0 ? ` (Bỏ qua ${skippedClasses.length} lớp chưa có GVCN: ${skippedClasses.join(", ")})` : ""),
         assignedCount: assignedResults.length,
         skippedCount: skippedClasses.length
@@ -294,14 +385,81 @@ export async function POST(req: NextRequest) {
       results.push(assignment);
     }
 
+    let emailNotice = "";
+    if (sendNotificationEmail && results.length > 0) {
+      try {
+        const mailRes = await sendAssignmentNotificationEmails({
+          assignmentIds: results.map(a => a.id),
+          semester
+        });
+        if (mailRes.sentCount > 0) {
+          emailNotice = ` và đã gửi email thông báo cho ${mailRes.sentCount} GV`;
+        }
+      } catch (e) {
+        console.error("Auto email notification error:", e);
+      }
+    }
+
     return NextResponse.json({
       success: true,
-      message: `Đã phân công thành công ${results.length} lớp học`,
+      message: `Đã phân công thành công ${results.length} lớp học${emailNotice}`,
       assignedCount: results.length
     });
   } catch (error: any) {
     console.error("[SpecialAssignments POST Error]:", error);
     return NextResponse.json({ error: error.message || "Lỗi máy chủ" }, { status: 500 });
+  }
+}
+
+export async function PUT(req: NextRequest) {
+  try {
+    const session = await getAdminSession();
+    if (!session.isFullAccess && !session.isSuperAdmin && !session.isHeadOfAcademic && !session.isGDCS && !session.isTTCM) {
+      return NextResponse.json({ error: "Forbidden: Bạn không có quyền hiệu chỉnh phân công" }, { status: 403 });
+    }
+
+    const body = await req.json();
+    const { id, teacherId, subjectId, sendNotificationEmail = false } = body;
+    if (!id || !teacherId) {
+      return NextResponse.json({ error: "Thiếu ID phân công hoặc giáo viên phụ trách" }, { status: 400 });
+    }
+
+    const updated = await (prisma as any).specialTeachingAssignment.update({
+      where: { id },
+      data: {
+        teacherId,
+        ...(subjectId ? { subjectId } : {})
+      },
+      include: {
+        teacher: true,
+        subject: true,
+        class: true
+      }
+    });
+
+    let emailNotice = "";
+    if (sendNotificationEmail) {
+      try {
+        const mailRes = await sendAssignmentNotificationEmails({
+          assignmentIds: [id],
+          semester: updated.semester || 1
+        });
+        if (mailRes.sentCount > 0) {
+          emailNotice = " và đã gửi email thông báo cho GV mới";
+        }
+      } catch (e) {
+        console.error("Edit notification email error:", e);
+      }
+    }
+
+    return NextResponse.json({
+      success: true,
+      message: `Đã cập nhật phân công thành công${emailNotice}`,
+      assignment: updated
+    });
+  } catch (error: any) {
+    console.error("[SpecialAssignments PUT Error]:", error);
+    return NextResponse.json({ error: error.message || "Lỗi máy chủ khi hiệu chỉnh phân công" }, { status: 500 });
   }
 }
 
@@ -313,16 +471,38 @@ export async function DELETE(req: NextRequest) {
     }
 
     const { searchParams } = new URL(req.url);
+    let ids: string[] = [];
+
     const id = searchParams.get("id");
-    if (!id) {
-      return NextResponse.json({ error: "Thiếu ID phân công" }, { status: 400 });
+    const idsParam = searchParams.get("ids");
+    if (idsParam) {
+      ids = idsParam.split(",").map(s => s.trim()).filter(Boolean);
+    } else if (id) {
+      ids = [id];
+    } else {
+      try {
+        const body = await req.json();
+        if (body.ids && Array.isArray(body.ids)) {
+          ids = body.ids;
+        } else if (body.id) {
+          ids = [body.id];
+        }
+      } catch {}
     }
 
-    await (prisma as any).specialTeachingAssignment.deleteMany({
-      where: { id }
+    if (ids.length === 0) {
+      return NextResponse.json({ error: "Thiếu ID phân công cần xóa" }, { status: 400 });
+    }
+
+    const deleteResult = await (prisma as any).specialTeachingAssignment.deleteMany({
+      where: { id: { in: ids } }
     });
 
-    return NextResponse.json({ success: true, message: "Đã hủy phân công" });
+    return NextResponse.json({
+      success: true,
+      message: `Đã xóa thành công ${deleteResult.count} phân công`,
+      count: deleteResult.count
+    });
   } catch (error: any) {
     console.error("[SpecialAssignments DELETE Error]:", error);
     return NextResponse.json({ error: error.message || "Lỗi máy chủ" }, { status: 500 });

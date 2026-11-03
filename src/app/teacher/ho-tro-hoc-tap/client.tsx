@@ -1933,7 +1933,36 @@ const [evalSelectedMonth, setEvalSelectedMonth] = useState<string>("Tháng 9")
   return (
     <div className="space-y-6">
       {/* Title Header */}
-      <div className="flex flex-col md:flex-row md:items-center md:justify-between border-b pb-5">
+      <div className="group/card relative overflow-hidden rounded-3xl bg-white border border-slate-200/80 shadow-xs p-5 sm:p-6 flex flex-col md:flex-row md:items-center md:justify-between gap-4" style={{ background: "linear-gradient(135deg, #F0FDFA 0%, #FFFFFF 52%, #E6F7F5 100%)" }}>
+        {/* Đường viền dải nhận diện cơ sở ở đỉnh thẻ */}
+        <div
+          className="absolute top-0 left-0 right-0 h-1.5 z-30"
+          style={{
+            background: "linear-gradient(135deg, #003B3A 0%, #00A19A 55%, #AE882E 100%)"
+          }}
+        />
+        {/* Ảnh minh họa trường học Sky-Line khớp khung phải & mờ dần */}
+        <div
+          className="hidden sm:block absolute top-0 right-0 bottom-0 sm:w-[54%] md:w-[48%] z-0 pointer-events-none select-none overflow-hidden"
+          style={{
+            WebkitMaskImage:
+              "linear-gradient(to right, transparent 0%, rgba(0,0,0,0.08) 12%, rgba(0,0,0,0.4) 32%, rgba(0,0,0,0.78) 60%, rgba(0,0,0,0.95) 85%, rgba(0,0,0,1) 100%)",
+            maskImage:
+              "linear-gradient(to right, transparent 0%, rgba(0,0,0,0.08) 12%, rgba(0,0,0,0.4) 32%, rgba(0,0,0,0.78) 60%, rgba(0,0,0,0.95) 85%, rgba(0,0,0,1) 100%)"
+          }}
+        >
+          <img
+            src="/images/skyline-campus-banner.png"
+            alt="Sky-Line Campus"
+            className="w-full h-full object-cover object-[center_65%] opacity-85"
+          />
+          <div
+            className="absolute inset-x-0 top-0 h-12 pointer-events-none"
+            style={{
+              background: "linear-gradient(to bottom, rgba(255,255,255,0.85) 0%, rgba(255,255,255,0.35) 55%, transparent 100%)"
+            }}
+          />
+        </div>
         <div>
           <h1 className="text-3xl font-extrabold text-slate-900 tracking-tight flex items-center gap-2">
             <FileText className="h-9 w-9 text-indigo-600" />

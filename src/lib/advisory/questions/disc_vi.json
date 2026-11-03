@@ -1,0 +1,1100 @@
+{
+  "success": true,
+  "testCode": "DISC",
+  "name": "Trắc nghiệm Phong cách Hành vi Cá nhân DISC",
+  "totalQuestions": 28,
+  "questions": [
+    {
+      "id": 1,
+      "group_number": 1,
+      "text": "Nhóm 1: Chọn 1 tính cách giống bạn NHẤT và 1 tính cách ÍT GIỐNG BẠN NHẤT",
+      "options": [
+        {
+          "index": 0,
+          "en": "Enthusiastic",
+          "vi": "hăng hái, nhiệt tình, say mê",
+          "full": "Enthusiastic: hăng hái, nhiệt tình, say mê",
+          "most_key": "A",
+          "least_key": "A"
+        },
+        {
+          "index": 1,
+          "en": "Daring",
+          "vi": "táo bạo, cả gan",
+          "full": "Daring: táo bạo, cả gan",
+          "most_key": "O",
+          "least_key": "O"
+        },
+        {
+          "index": 2,
+          "en": "Diplomatic",
+          "vi": "có tài ngoại giao",
+          "full": "Diplomatic: có tài ngoại giao",
+          "most_key": "P",
+          "least_key": "P"
+        },
+        {
+          "index": 3,
+          "en": "Satisfied",
+          "vi": "dễ thỏa mãn",
+          "full": "Satisfied: dễ thỏa mãn",
+          "most_key": "B",
+          "least_key": "B"
+        }
+      ]
+    },
+    {
+      "id": 2,
+      "group_number": 2,
+      "text": "Nhóm 2: Chọn 1 tính cách giống bạn NHẤT và 1 tính cách ÍT GIỐNG BẠN NHẤT",
+      "options": [
+        {
+          "index": 0,
+          "en": "Cautious",
+          "vi": "thận trọng, cẩn trọng",
+          "full": "Cautious: thận trọng, cẩn trọng",
+          "most_key": "P",
+          "least_key": "P"
+        },
+        {
+          "index": 1,
+          "en": "Determined",
+          "vi": "quả quyết, kiên quyết",
+          "full": "Determined: quả quyết, kiên quyết",
+          "most_key": "O",
+          "least_key": "O"
+        },
+        {
+          "index": 2,
+          "en": "Convincing",
+          "vi": "có sức thuyết phục",
+          "full": "Convincing: có sức thuyết phục",
+          "most_key": "A",
+          "least_key": "A"
+        },
+        {
+          "index": 3,
+          "en": "Good natured",
+          "vi": "có tính thiện, bản chất tốt",
+          "full": "Good natured: có tính thiện, bản chất tốt",
+          "most_key": "B",
+          "least_key": "N"
+        }
+      ]
+    },
+    {
+      "id": 3,
+      "group_number": 3,
+      "text": "Nhóm 3: Chọn 1 tính cách giống bạn NHẤT và 1 tính cách ÍT GIỐNG BẠN NHẤT",
+      "options": [
+        {
+          "index": 0,
+          "en": "Friendly",
+          "vi": "thân thiện",
+          "full": "Friendly: thân thiện",
+          "most_key": "A",
+          "least_key": "N"
+        },
+        {
+          "index": 1,
+          "en": "Accurate",
+          "vi": "chính đáng, xác đáng",
+          "full": "Accurate: chính đáng, xác đáng",
+          "most_key": "P",
+          "least_key": "P"
+        },
+        {
+          "index": 2,
+          "en": "Outspoken",
+          "vi": "nói thẳng, trực tính",
+          "full": "Outspoken: nói thẳng, trực tính",
+          "most_key": "O",
+          "least_key": "O"
+        },
+        {
+          "index": 3,
+          "en": "Calm",
+          "vi": "điềm tĩnh",
+          "full": "Calm: điềm tĩnh",
+          "most_key": "N",
+          "least_key": "B"
+        }
+      ]
+    },
+    {
+      "id": 4,
+      "group_number": 4,
+      "text": "Nhóm 4: Chọn 1 tính cách giống bạn NHẤT và 1 tính cách ÍT GIỐNG BẠN NHẤT",
+      "options": [
+        {
+          "index": 0,
+          "en": "Talkative",
+          "vi": "nói nhiều",
+          "full": "Talkative: nói nhiều",
+          "most_key": "A",
+          "least_key": "A"
+        },
+        {
+          "index": 1,
+          "en": "Controlled",
+          "vi": "có kiểm soát, tiết chế",
+          "full": "Controlled: có kiểm soát, tiết chế",
+          "most_key": "P",
+          "least_key": "P"
+        },
+        {
+          "index": 2,
+          "en": "Conventional",
+          "vi": "nói theo thói quen",
+          "full": "Conventional: nói theo thói quen",
+          "most_key": "B",
+          "least_key": "B"
+        },
+        {
+          "index": 3,
+          "en": "Decisive",
+          "vi": "kiên quyết, quả quyết, dứt khoát",
+          "full": "Decisive: kiên quyết, quả quyết, dứt khoát",
+          "most_key": "O",
+          "least_key": "O"
+        }
+      ]
+    },
+    {
+      "id": 5,
+      "group_number": 5,
+      "text": "Nhóm 5: Chọn 1 tính cách giống bạn NHẤT và 1 tính cách ÍT GIỐNG BẠN NHẤT",
+      "options": [
+        {
+          "index": 0,
+          "en": "Adventurous",
+          "vi": "liều lĩnh, thích phiêu lưu, mạo hiểm",
+          "full": "Adventurous: liều lĩnh, thích phiêu lưu, mạo hiểm",
+          "most_key": "O",
+          "least_key": "O"
+        },
+        {
+          "index": 1,
+          "en": "Insightful",
+          "vi": "sâu sắc, sáng suốt",
+          "full": "Insightful: sâu sắc, sáng suốt",
+          "most_key": "P",
+          "least_key": "P"
+        },
+        {
+          "index": 2,
+          "en": "Out-going",
+          "vi": "dễ gần, thoải mái, chan hòa",
+          "full": "Out-going: dễ gần, thoải mái, chan hòa",
+          "most_key": "A",
+          "least_key": "A"
+        },
+        {
+          "index": 3,
+          "en": "Moderate",
+          "vi": "ôn hòa",
+          "full": "Moderate: ôn hòa",
+          "most_key": "B",
+          "least_key": "B"
+        }
+      ]
+    },
+    {
+      "id": 6,
+      "group_number": 6,
+      "text": "Nhóm 6: Chọn 1 tính cách giống bạn NHẤT và 1 tính cách ÍT GIỐNG BẠN NHẤT",
+      "options": [
+        {
+          "index": 0,
+          "en": "Gentle",
+          "vi": "hòa nhã, nhẹ nhàng, lịch sự",
+          "full": "Gentle: hòa nhã, nhẹ nhàng, lịch sự",
+          "most_key": "B",
+          "least_key": "B"
+        },
+        {
+          "index": 1,
+          "en": "Persuasive",
+          "vi": "có tài thuyết phục",
+          "full": "Persuasive: có tài thuyết phục",
+          "most_key": "A",
+          "least_key": "N"
+        },
+        {
+          "index": 2,
+          "en": "Humble",
+          "vi": "khiêm nhường",
+          "full": "Humble: khiêm nhường",
+          "most_key": "N",
+          "least_key": "P"
+        },
+        {
+          "index": 3,
+          "en": "Original",
+          "vi": "độc đáo, lập dị",
+          "full": "Original: độc đáo, lập dị",
+          "most_key": "N",
+          "least_key": "O"
+        }
+      ]
+    },
+    {
+      "id": 7,
+      "group_number": 7,
+      "text": "Nhóm 7: Chọn 1 tính cách giống bạn NHẤT và 1 tính cách ÍT GIỐNG BẠN NHẤT",
+      "options": [
+        {
+          "index": 0,
+          "en": "Expressive",
+          "vi": "diễn cảm",
+          "full": "Expressive: diễn cảm",
+          "most_key": "A",
+          "least_key": "A"
+        },
+        {
+          "index": 1,
+          "en": "Conscientious",
+          "vi": "tận tâm, chu đáo, tỉ mỉ",
+          "full": "Conscientious: tận tâm, chu đáo, tỉ mỉ",
+          "most_key": "P",
+          "least_key": "P"
+        },
+        {
+          "index": 2,
+          "en": "Dominant",
+          "vi": "lấn át, thống trị",
+          "full": "Dominant: lấn át, thống trị",
+          "most_key": "O",
+          "least_key": "O"
+        },
+        {
+          "index": 3,
+          "en": "Responsive",
+          "vi": "đáp ứng nhiệt tình, phản ứng nhanh",
+          "full": "Responsive: đáp ứng nhiệt tình, phản ứng nhanh",
+          "most_key": "N",
+          "least_key": "B"
+        }
+      ]
+    },
+    {
+      "id": 8,
+      "group_number": 8,
+      "text": "Nhóm 8: Chọn 1 tính cách giống bạn NHẤT và 1 tính cách ÍT GIỐNG BẠN NHẤT",
+      "options": [
+        {
+          "index": 0,
+          "en": "Poised",
+          "vi": "đĩnh đạc, tự chủ, bình tĩnh",
+          "full": "Poised: đĩnh đạc, tự chủ, bình tĩnh",
+          "most_key": "A",
+          "least_key": "A"
+        },
+        {
+          "index": 1,
+          "en": "Observant",
+          "vi": "hay quan sát, tinh ý",
+          "full": "Observant: hay quan sát, tinh ý",
+          "most_key": "P",
+          "least_key": "N"
+        },
+        {
+          "index": 2,
+          "en": "Modest",
+          "vi": "khiêm tốn, nhún nhường",
+          "full": "Modest: khiêm tốn, nhún nhường",
+          "most_key": "B",
+          "least_key": "B"
+        },
+        {
+          "index": 3,
+          "en": "Impatient",
+          "vi": "không có kiên nhẫn",
+          "full": "Impatient: không có kiên nhẫn",
+          "most_key": "O",
+          "least_key": "O"
+        }
+      ]
+    },
+    {
+      "id": 9,
+      "group_number": 9,
+      "text": "Nhóm 9: Chọn 1 tính cách giống bạn NHẤT và 1 tính cách ÍT GIỐNG BẠN NHẤT",
+      "options": [
+        {
+          "index": 0,
+          "en": "Tactful",
+          "vi": "khéo ứng xử, lịch thiệp",
+          "full": "Tactful: khéo ứng xử, lịch thiệp",
+          "most_key": "P",
+          "least_key": "P"
+        },
+        {
+          "index": 1,
+          "en": "Agreeable",
+          "vi": "sẵn sàng tán thành, đồng ý",
+          "full": "Agreeable: sẵn sàng tán thành, đồng ý",
+          "most_key": "B",
+          "least_key": "B"
+        },
+        {
+          "index": 2,
+          "en": "Magnetic",
+          "vi": "có sức hấp dẫn, lôi cuốn",
+          "full": "Magnetic: có sức hấp dẫn, lôi cuốn",
+          "most_key": "A",
+          "least_key": "A"
+        },
+        {
+          "index": 3,
+          "en": "Insistent",
+          "vi": "cương quyết",
+          "full": "Insistent: cương quyết",
+          "most_key": "O",
+          "least_key": "O"
+        }
+      ]
+    },
+    {
+      "id": 10,
+      "group_number": 10,
+      "text": "Nhóm 10: Chọn 1 tính cách giống bạn NHẤT và 1 tính cách ÍT GIỐNG BẠN NHẤT",
+      "options": [
+        {
+          "index": 0,
+          "en": "Brave",
+          "vi": "can đảm",
+          "full": "Brave: can đảm",
+          "most_key": "O",
+          "least_key": "O"
+        },
+        {
+          "index": 1,
+          "en": "Inspiring",
+          "vi": "gây cảm hứng",
+          "full": "Inspiring: gây cảm hứng",
+          "most_key": "A",
+          "least_key": "A"
+        },
+        {
+          "index": 2,
+          "en": "Submissive",
+          "vi": "dễ phục tùng",
+          "full": "Submissive: dễ phục tùng",
+          "most_key": "B",
+          "least_key": "B"
+        },
+        {
+          "index": 3,
+          "en": "Timid",
+          "vi": "nhút nhát",
+          "full": "Timid: nhút nhát",
+          "most_key": "N",
+          "least_key": "P"
+        }
+      ]
+    },
+    {
+      "id": 11,
+      "group_number": 11,
+      "text": "Nhóm 11: Chọn 1 tính cách giống bạn NHẤT và 1 tính cách ÍT GIỐNG BẠN NHẤT",
+      "options": [
+        {
+          "index": 0,
+          "en": "Reserved",
+          "vi": "kín đáo, dè dặt",
+          "full": "Reserved: kín đáo, dè dặt",
+          "most_key": "P",
+          "least_key": "P"
+        },
+        {
+          "index": 1,
+          "en": "Obliging",
+          "vi": "sẵn lòng giúp đỡ",
+          "full": "Obliging: sẵn lòng giúp đỡ",
+          "most_key": "B",
+          "least_key": "B"
+        },
+        {
+          "index": 2,
+          "en": "Strong-willed",
+          "vi": "cứng cỏi, kiên quyết",
+          "full": "Strong-willed: cứng cỏi, kiên quyết",
+          "most_key": "O",
+          "least_key": "O"
+        },
+        {
+          "index": 3,
+          "en": "Cheerful",
+          "vi": "vui vẻ, tươi cười",
+          "full": "Cheerful: vui vẻ, tươi cười",
+          "most_key": "A",
+          "least_key": "A"
+        }
+      ]
+    },
+    {
+      "id": 12,
+      "group_number": 12,
+      "text": "Nhóm 12: Chọn 1 tính cách giống bạn NHẤT và 1 tính cách ÍT GIỐNG BẠN NHẤT",
+      "options": [
+        {
+          "index": 0,
+          "en": "Stimulating",
+          "vi": "kích thích, khuyến khích",
+          "full": "Stimulating: kích thích, khuyến khích",
+          "most_key": "A",
+          "least_key": "A"
+        },
+        {
+          "index": 1,
+          "en": "Kind",
+          "vi": "tử tế",
+          "full": "Kind: tử tế",
+          "most_key": "B",
+          "least_key": "B"
+        },
+        {
+          "index": 2,
+          "en": "Perceptive",
+          "vi": "dễ cảm thụ",
+          "full": "Perceptive: dễ cảm thụ",
+          "most_key": "P",
+          "least_key": "P"
+        },
+        {
+          "index": 3,
+          "en": "Independent",
+          "vi": "độc lập",
+          "full": "Independent: độc lập",
+          "most_key": "O",
+          "least_key": "O"
+        }
+      ]
+    },
+    {
+      "id": 13,
+      "group_number": 13,
+      "text": "Nhóm 13: Chọn 1 tính cách giống bạn NHẤT và 1 tính cách ÍT GIỐNG BẠN NHẤT",
+      "options": [
+        {
+          "index": 0,
+          "en": "Competitive",
+          "vi": "cạnh tranh",
+          "full": "Competitive: cạnh tranh",
+          "most_key": "O",
+          "least_key": "O"
+        },
+        {
+          "index": 1,
+          "en": "Considerate",
+          "vi": "ân cần, chu đáo",
+          "full": "Considerate: ân cần, chu đáo",
+          "most_key": "B",
+          "least_key": "B"
+        },
+        {
+          "index": 2,
+          "en": "Joyful",
+          "vi": "mang lại niềm vui",
+          "full": "Joyful: mang lại niềm vui",
+          "most_key": "A",
+          "least_key": "A"
+        },
+        {
+          "index": 3,
+          "en": "Private",
+          "vi": "ẩn dật, cách biệt",
+          "full": "Private: ẩn dật, cách biệt",
+          "most_key": "P",
+          "least_key": "P"
+        }
+      ]
+    },
+    {
+      "id": 14,
+      "group_number": 14,
+      "text": "Nhóm 14: Chọn 1 tính cách giống bạn NHẤT và 1 tính cách ÍT GIỐNG BẠN NHẤT",
+      "options": [
+        {
+          "index": 0,
+          "en": "Fussy",
+          "vi": "nhắng nhít, cầu kỳ, kiểu cách",
+          "full": "Fussy: nhắng nhít, cầu kỳ, kiểu cách",
+          "most_key": "P",
+          "least_key": "P"
+        },
+        {
+          "index": 1,
+          "en": "Obedient",
+          "vi": "vâng lời, dễ bảo",
+          "full": "Obedient: vâng lời, dễ bảo",
+          "most_key": "B",
+          "least_key": "B"
+        },
+        {
+          "index": 2,
+          "en": "Firm",
+          "vi": "kiên quyết",
+          "full": "Firm: kiên quyết",
+          "most_key": "O",
+          "least_key": "O"
+        },
+        {
+          "index": 3,
+          "en": "Playful",
+          "vi": "hay nghịch",
+          "full": "Playful: hay nghịch",
+          "most_key": "A",
+          "least_key": "A"
+        }
+      ]
+    },
+    {
+      "id": 15,
+      "group_number": 15,
+      "text": "Nhóm 15: Chọn 1 tính cách giống bạn NHẤT và 1 tính cách ÍT GIỐNG BẠN NHẤT",
+      "options": [
+        {
+          "index": 0,
+          "en": "Attractive",
+          "vi": "cuốn hút",
+          "full": "Attractive: cuốn hút",
+          "most_key": "A",
+          "least_key": "A"
+        },
+        {
+          "index": 1,
+          "en": "Introspective",
+          "vi": "nội tâm",
+          "full": "Introspective: nội tâm",
+          "most_key": "P",
+          "least_key": "N"
+        },
+        {
+          "index": 2,
+          "en": "Stubborn",
+          "vi": "cứng đầu",
+          "full": "Stubborn: cứng đầu",
+          "most_key": "O",
+          "least_key": "O"
+        },
+        {
+          "index": 3,
+          "en": "Predictable",
+          "vi": "dễ đoán",
+          "full": "Predictable: dễ đoán",
+          "most_key": "B",
+          "least_key": "B"
+        }
+      ]
+    },
+    {
+      "id": 16,
+      "group_number": 16,
+      "text": "Nhóm 16: Chọn 1 tính cách giống bạn NHẤT và 1 tính cách ÍT GIỐNG BẠN NHẤT",
+      "options": [
+        {
+          "index": 0,
+          "en": "Logical",
+          "vi": "suy nghĩ theo logic",
+          "full": "Logical: suy nghĩ theo logic",
+          "most_key": "P",
+          "least_key": "P"
+        },
+        {
+          "index": 1,
+          "en": "Bold",
+          "vi": "táo bạo, dũng cảm",
+          "full": "Bold: táo bạo, dũng cảm",
+          "most_key": "O",
+          "least_key": "O"
+        },
+        {
+          "index": 2,
+          "en": "Loyal",
+          "vi": "trung thành",
+          "full": "Loyal: trung thành",
+          "most_key": "B",
+          "least_key": "B"
+        },
+        {
+          "index": 3,
+          "en": "Charming",
+          "vi": "duyên dáng, quyến rũ",
+          "full": "Charming: duyên dáng, quyến rũ",
+          "most_key": "A",
+          "least_key": "A"
+        }
+      ]
+    },
+    {
+      "id": 17,
+      "group_number": 17,
+      "text": "Nhóm 17: Chọn 1 tính cách giống bạn NHẤT và 1 tính cách ÍT GIỐNG BẠN NHẤT",
+      "options": [
+        {
+          "index": 0,
+          "en": "Sociable",
+          "vi": "dễ gần, chan hòa",
+          "full": "Sociable: dễ gần, chan hòa",
+          "most_key": "A",
+          "least_key": "A"
+        },
+        {
+          "index": 1,
+          "en": "Patient",
+          "vi": "kiên nhẫn",
+          "full": "Patient: kiên nhẫn",
+          "most_key": "B",
+          "least_key": "B"
+        },
+        {
+          "index": 2,
+          "en": "Self-reliant",
+          "vi": "tự lực",
+          "full": "Self-reliant: tự lực",
+          "most_key": "O",
+          "least_key": "O"
+        },
+        {
+          "index": 3,
+          "en": "Soft spoken",
+          "vi": "nói năng nhẹ nhàng",
+          "full": "Soft spoken: nói năng nhẹ nhàng",
+          "most_key": "P",
+          "least_key": "P"
+        }
+      ]
+    },
+    {
+      "id": 18,
+      "group_number": 18,
+      "text": "Nhóm 18: Chọn 1 tính cách giống bạn NHẤT và 1 tính cách ÍT GIỐNG BẠN NHẤT",
+      "options": [
+        {
+          "index": 0,
+          "en": "Willing",
+          "vi": "có thiện ý, hay giúp đỡ",
+          "full": "Willing: có thiện ý, hay giúp đỡ",
+          "most_key": "B",
+          "least_key": "B"
+        },
+        {
+          "index": 1,
+          "en": "Eager",
+          "vi": "hăm hở, nhiệt tình",
+          "full": "Eager: hăm hở, nhiệt tình",
+          "most_key": "O",
+          "least_key": "N"
+        },
+        {
+          "index": 2,
+          "en": "Thorough",
+          "vi": "cẩn thận, tỉ mỉ",
+          "full": "Thorough: cẩn thận, tỉ mỉ",
+          "most_key": "P",
+          "least_key": "P"
+        },
+        {
+          "index": 3,
+          "en": "High-spirited",
+          "vi": "cao thượng",
+          "full": "High-spirited: cao thượng",
+          "most_key": "A",
+          "least_key": "A"
+        }
+      ]
+    },
+    {
+      "id": 19,
+      "group_number": 19,
+      "text": "Nhóm 19: Chọn 1 tính cách giống bạn NHẤT và 1 tính cách ÍT GIỐNG BẠN NHẤT",
+      "options": [
+        {
+          "index": 0,
+          "en": "Aggressive",
+          "vi": "xông xáo, năng nổ",
+          "full": "Aggressive: xông xáo, năng nổ",
+          "most_key": "O",
+          "least_key": "O"
+        },
+        {
+          "index": 1,
+          "en": "Extroverted",
+          "vi": "dễ gần, chan hòa",
+          "full": "Extroverted: dễ gần, chan hòa",
+          "most_key": "A",
+          "least_key": "A"
+        },
+        {
+          "index": 2,
+          "en": "Amiable",
+          "vi": "dễ kết bạn",
+          "full": "Amiable: dễ kết bạn",
+          "most_key": "B",
+          "least_key": "B"
+        },
+        {
+          "index": 3,
+          "en": "Fearful",
+          "vi": "e ngại",
+          "full": "Fearful: e ngại",
+          "most_key": "N",
+          "least_key": "P"
+        }
+      ]
+    },
+    {
+      "id": 20,
+      "group_number": 20,
+      "text": "Nhóm 20: Chọn 1 tính cách giống bạn NHẤT và 1 tính cách ÍT GIỐNG BẠN NHẤT",
+      "options": [
+        {
+          "index": 0,
+          "en": "Confident",
+          "vi": "tự tin",
+          "full": "Confident: tự tin",
+          "most_key": "A",
+          "least_key": "A"
+        },
+        {
+          "index": 1,
+          "en": "Sympathethic",
+          "vi": "dễ cảm thông",
+          "full": "Sympathethic: dễ cảm thông",
+          "most_key": "B",
+          "least_key": "B"
+        },
+        {
+          "index": 2,
+          "en": "Impartial",
+          "vi": "công bằng, không thiên vị",
+          "full": "Impartial: công bằng, không thiên vị",
+          "most_key": "N",
+          "least_key": "P"
+        },
+        {
+          "index": 3,
+          "en": "Assertive",
+          "vi": "quả quyết, quyết đoán",
+          "full": "Assertive: quả quyết, quyết đoán",
+          "most_key": "O",
+          "least_key": "O"
+        }
+      ]
+    },
+    {
+      "id": 21,
+      "group_number": 21,
+      "text": "Nhóm 21: Chọn 1 tính cách giống bạn NHẤT và 1 tính cách ÍT GIỐNG BẠN NHẤT",
+      "options": [
+        {
+          "index": 0,
+          "en": "Well-disciplined",
+          "vi": "có kỉ luật tốt",
+          "full": "Well-disciplined: có kỉ luật tốt",
+          "most_key": "P",
+          "least_key": "P"
+        },
+        {
+          "index": 1,
+          "en": "Generous",
+          "vi": "rộng lượng, hào phóng",
+          "full": "Generous: rộng lượng, hào phóng",
+          "most_key": "B",
+          "least_key": "B"
+        },
+        {
+          "index": 2,
+          "en": "Animated",
+          "vi": "sôi nổi, đầy sinh khí",
+          "full": "Animated: sôi nổi, đầy sinh khí",
+          "most_key": "A",
+          "least_key": "A"
+        },
+        {
+          "index": 3,
+          "en": "Persistent",
+          "vi": "bền bỉ",
+          "full": "Persistent: bền bỉ",
+          "most_key": "O",
+          "least_key": "O"
+        }
+      ]
+    },
+    {
+      "id": 22,
+      "group_number": 22,
+      "text": "Nhóm 22: Chọn 1 tính cách giống bạn NHẤT và 1 tính cách ÍT GIỐNG BẠN NHẤT",
+      "options": [
+        {
+          "index": 0,
+          "en": "Impulsive",
+          "vi": "bốc đồng",
+          "full": "Impulsive: bốc đồng",
+          "most_key": "A",
+          "least_key": "A"
+        },
+        {
+          "index": 1,
+          "en": "Introverted",
+          "vi": "hướng nội",
+          "full": "Introverted: hướng nội",
+          "most_key": "P",
+          "least_key": "P"
+        },
+        {
+          "index": 2,
+          "en": "Forceful",
+          "vi": "mạnh mẽ, sinh động, đầy sức thuyết phục",
+          "full": "Forceful: mạnh mẽ, sinh động, đầy sức thuyết phục",
+          "most_key": "O",
+          "least_key": "O"
+        },
+        {
+          "index": 3,
+          "en": "Easy-going",
+          "vi": "dễ dãi",
+          "full": "Easy-going: dễ dãi",
+          "most_key": "B",
+          "least_key": "B"
+        }
+      ]
+    },
+    {
+      "id": 23,
+      "group_number": 23,
+      "text": "Nhóm 23: Chọn 1 tính cách giống bạn NHẤT và 1 tính cách ÍT GIỐNG BẠN NHẤT",
+      "options": [
+        {
+          "index": 0,
+          "en": "Good mixer",
+          "vi": "giao thiệp tốt",
+          "full": "Good mixer: giao thiệp tốt",
+          "most_key": "A",
+          "least_key": "A"
+        },
+        {
+          "index": 1,
+          "en": "Refined",
+          "vi": "lịch sự, tao nhã",
+          "full": "Refined: lịch sự, tao nhã",
+          "most_key": "P",
+          "least_key": "P"
+        },
+        {
+          "index": 2,
+          "en": "Vigorous",
+          "vi": "mãnh liệt",
+          "full": "Vigorous: mãnh liệt",
+          "most_key": "O",
+          "least_key": "O"
+        },
+        {
+          "index": 3,
+          "en": "Lenient",
+          "vi": "hiền hậu, khoan dung",
+          "full": "Lenient: hiền hậu, khoan dung",
+          "most_key": "B",
+          "least_key": "B"
+        }
+      ]
+    },
+    {
+      "id": 24,
+      "group_number": 24,
+      "text": "Nhóm 24: Chọn 1 tính cách giống bạn NHẤT và 1 tính cách ÍT GIỐNG BẠN NHẤT",
+      "options": [
+        {
+          "index": 0,
+          "en": "Captivating",
+          "vi": "hấp dẫn, quyến rũ",
+          "full": "Captivating: hấp dẫn, quyến rũ",
+          "most_key": "A",
+          "least_key": "A"
+        },
+        {
+          "index": 1,
+          "en": "Contented",
+          "vi": "dễ chấp nhận, dễ hài lòng, thỏa mãn",
+          "full": "Contented: dễ chấp nhận, dễ hài lòng, thỏa mãn",
+          "most_key": "B",
+          "least_key": "B"
+        },
+        {
+          "index": 2,
+          "en": "Demanding",
+          "vi": "đòi hỏi khắt khe",
+          "full": "Demanding: đòi hỏi khắt khe",
+          "most_key": "O",
+          "least_key": "O"
+        },
+        {
+          "index": 3,
+          "en": "Compiant",
+          "vi": "hay phục tùng",
+          "full": "Compiant: hay phục tùng",
+          "most_key": "P",
+          "least_key": "P"
+        }
+      ]
+    },
+    {
+      "id": 25,
+      "group_number": 25,
+      "text": "Nhóm 25: Chọn 1 tính cách giống bạn NHẤT và 1 tính cách ÍT GIỐNG BẠN NHẤT",
+      "options": [
+        {
+          "index": 0,
+          "en": "Argumentative",
+          "vi": "hay tranh cãi",
+          "full": "Argumentative: hay tranh cãi",
+          "most_key": "O",
+          "least_key": "O"
+        },
+        {
+          "index": 1,
+          "en": "Systematic",
+          "vi": "làm việc có phương pháp, có hệ thống",
+          "full": "Systematic: làm việc có phương pháp, có hệ thống",
+          "most_key": "P",
+          "least_key": "P"
+        },
+        {
+          "index": 2,
+          "en": "Cooperative",
+          "vi": "thiên về hướng hợp tác",
+          "full": "Cooperative: thiên về hướng hợp tác",
+          "most_key": "B",
+          "least_key": "B"
+        },
+        {
+          "index": 3,
+          "en": "Light-hearted",
+          "vi": "vô tư lự, thư thái",
+          "full": "Light-hearted: vô tư lự, thư thái",
+          "most_key": "A",
+          "least_key": "A"
+        }
+      ]
+    },
+    {
+      "id": 26,
+      "group_number": 26,
+      "text": "Nhóm 26: Chọn 1 tính cách giống bạn NHẤT và 1 tính cách ÍT GIỐNG BẠN NHẤT",
+      "options": [
+        {
+          "index": 0,
+          "en": "Jovial",
+          "vi": "vui vẻ, vui tính",
+          "full": "Jovial: vui vẻ, vui tính",
+          "most_key": "A",
+          "least_key": "A"
+        },
+        {
+          "index": 1,
+          "en": "Precise",
+          "vi": "đòi hỏi chính xác",
+          "full": "Precise: đòi hỏi chính xác",
+          "most_key": "P",
+          "least_key": "P"
+        },
+        {
+          "index": 2,
+          "en": "Direct",
+          "vi": "thẳng thắn, đích thân làm",
+          "full": "Direct: thẳng thắn, đích thân làm",
+          "most_key": "O",
+          "least_key": "O"
+        },
+        {
+          "index": 3,
+          "en": "Even-tempered",
+          "vi": "điền đạm, bình thản",
+          "full": "Even-tempered: điền đạm, bình thản",
+          "most_key": "B",
+          "least_key": "B"
+        }
+      ]
+    },
+    {
+      "id": 27,
+      "group_number": 27,
+      "text": "Nhóm 27: Chọn 1 tính cách giống bạn NHẤT và 1 tính cách ÍT GIỐNG BẠN NHẤT",
+      "options": [
+        {
+          "index": 0,
+          "en": "Restless",
+          "vi": "luôn không yên, hiếu động",
+          "full": "Restless: luôn không yên, hiếu động",
+          "most_key": "O",
+          "least_key": "O"
+        },
+        {
+          "index": 1,
+          "en": "Neighborly",
+          "vi": "thuận hòa với bạn bè, mọi người",
+          "full": "Neighborly: thuận hòa với bạn bè, mọi người",
+          "most_key": "B",
+          "least_key": "B"
+        },
+        {
+          "index": 2,
+          "en": "Appealing",
+          "vi": "lôi cuốn, quyến rũ",
+          "full": "Appealing: lôi cuốn, quyến rũ",
+          "most_key": "A",
+          "least_key": "A"
+        },
+        {
+          "index": 3,
+          "en": "Careful",
+          "vi": "quan tâm, lo lắng đến người khác",
+          "full": "Careful: quan tâm, lo lắng đến người khác",
+          "most_key": "P",
+          "least_key": "P"
+        }
+      ]
+    },
+    {
+      "id": 28,
+      "group_number": 28,
+      "text": "Nhóm 28: Chọn 1 tính cách giống bạn NHẤT và 1 tính cách ÍT GIỐNG BẠN NHẤT",
+      "options": [
+        {
+          "index": 0,
+          "en": "Respectful",
+          "vi": "luôn tôn trọng người khác",
+          "full": "Respectful: luôn tôn trọng người khác",
+          "most_key": "P",
+          "least_key": "P"
+        },
+        {
+          "index": 1,
+          "en": "Pioneering",
+          "vi": "đảm nhiệm vai trò tiên phong",
+          "full": "Pioneering: đảm nhiệm vai trò tiên phong",
+          "most_key": "O",
+          "least_key": "O"
+        },
+        {
+          "index": 2,
+          "en": "Optimistic",
+          "vi": "luôn lạc quan",
+          "full": "Optimistic: luôn lạc quan",
+          "most_key": "A",
+          "least_key": "A"
+        },
+        {
+          "index": 3,
+          "en": "Helpful",
+          "vi": "hay giúp đỡ",
+          "full": "Helpful: hay giúp đỡ",
+          "most_key": "B",
+          "least_key": "B"
+        }
+      ]
+    }
+  ]
+}

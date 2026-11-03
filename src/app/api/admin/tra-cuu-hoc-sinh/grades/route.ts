@@ -115,18 +115,50 @@ export async function GET(request: NextRequest) {
         };
       });
 
+      const specialEntries = await (prisma as any).specialGradeEntry.findMany({
+        where: { studentId: student.id },
+        include: {
+          assignment: {
+            include: {
+              subject: { select: { id: true, code: true, name: true, color: true, icon: true } }
+            }
+          },
+          lesson: { select: { id: true, lessonName: true, periodIndex: true } }
+        },
+        orderBy: { createdAt: "desc" }
+      });
+
+      const mapping = await prisma.studentCodeMapping.findFirst({
+        where: { databaseCode: student.studentCode },
+        select: { markFileCode: true },
+      });
+
       return NextResponse.json({
         success: true,
         data: {
           student: {
             id: student.id,
             studentId: student.studentCode,
+            vneduCode: mapping?.markFileCode || null,
             fullName: student.studentName,
             className: student.class?.className || "Chưa xếp lớp",
             campusName: student.campus?.campusName || "Sky-Line",
           },
           trajectory,
           subjects: Object.values(subjectMap),
+          specialGrades: (specialEntries || []).map((se: any) => ({
+            id: se.id,
+            subjectCode: se.assignment?.subject?.code,
+            subjectName: se.assignment?.subject?.name,
+            subjectColor: se.assignment?.subject?.color,
+            periodIndex: se.lesson?.periodIndex,
+            lessonName: se.lesson?.lessonName,
+            evalResult: se.evalResult,
+            teacherFeedback: se.teacherFeedback,
+            attendanceStatus: se.attendanceStatus,
+            status: se.status,
+            createdAt: se.createdAt
+          })),
         },
       });
     }
@@ -194,6 +226,18 @@ export async function GET(request: NextRequest) {
         }
       });
 
+      const studentCodes = cls.students.map((s) => s.studentCode);
+      const mappings = await prisma.studentCodeMapping.findMany({
+        where: { databaseCode: { in: studentCodes } },
+        select: { databaseCode: true, markFileCode: true },
+      });
+      const vneduMap = new Map<string, string>();
+      mappings.forEach((m) => {
+        if (m.databaseCode && m.markFileCode && !vneduMap.has(m.databaseCode)) {
+          vneduMap.set(m.databaseCode, m.markFileCode);
+        }
+      });
+
       const matrix = cls.students.map((s) => {
         const pScores = studentGradesMap[s.id] || {};
         const scores: Record<string, number | null> = {};
@@ -205,6 +249,7 @@ export async function GET(request: NextRequest) {
         return {
           id: s.id,
           studentId: s.studentCode,
+          vneduCode: vneduMap.get(s.studentCode) || null,
           fullName: s.studentName,
           gender: s.gender,
           scores,

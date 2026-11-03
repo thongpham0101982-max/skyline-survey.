@@ -352,6 +352,22 @@ export function CatalogAllocateModal({
     }));
   };
 
+  // Set of classIds that have already been deployed / notified with email
+  const previouslyNotifiedClassIds = useMemo(() => {
+    const set = new Set<string>();
+    currentAllocations.forEach((alloc: any) => {
+      if (Array.isArray(alloc.assignedClasses)) {
+        alloc.assignedClasses.forEach((ac: any) => {
+          const cId = ac.classId || ac.id;
+          if (cId && (ac.isEmailSent === true || Boolean(ac.notifiedAt) || alloc.status === 'DA_TRIEN_KHAI')) {
+            set.add(cId);
+          }
+        });
+      }
+    });
+    return set;
+  }, [currentAllocations]);
+
   // Calculate totals
   const totalSelectedClasses = useMemo(() => {
     let count = 0;
@@ -361,27 +377,46 @@ export function CatalogAllocateModal({
     return count;
   }, [selectedCampusIds, campusSelectedClassIds]);
 
-  const totalGVCNs = useMemo(() => {
-    const emailSet = new Set<string>();
+  // Separate newly added classes vs previously notified classes
+  const { newlySelectedClassCount, previouslyNotifiedSelectedCount, newGVCNsCount, totalGVCNs } = useMemo(() => {
+    let newClassCount = 0;
+    let oldClassCount = 0;
+    const allGvcnEmailSet = new Set<string>();
+    const newGvcnEmailSet = new Set<string>();
+
     selectedCampusIds.forEach(cId => {
       const classIds = campusSelectedClassIds[cId] || [];
       const campusAlloc = currentAllocations.find((a: any) => a.campusId === cId);
+
       classIds.forEach(id => {
-        // 1. Check in allClasses
-        const cls = allClasses.find(c => c.id === id);
-        if (cls?.homeroomTeacher?.email && cls.homeroomTeacher.email.includes('@')) {
-          emailSet.add(cls.homeroomTeacher.email.toLowerCase().trim());
-          return;
+        const isAlreadyNotified = previouslyNotifiedClassIds.has(id);
+        if (isAlreadyNotified) {
+          oldClassCount++;
+        } else {
+          newClassCount++;
         }
-        // 2. Fallback to existing assignedClasses in currentAllocations
+
+        // Check teacher email
+        const cls = allClasses.find(c => c.id === id);
         const prevCls = (campusAlloc?.assignedClasses || []).find((ac: any) => (ac.classId || ac.id) === id);
-        if (prevCls?.homeroomTeacherEmail && prevCls.homeroomTeacherEmail.includes('@')) {
-          emailSet.add(prevCls.homeroomTeacherEmail.toLowerCase().trim());
+        const teacherEmail = (cls?.homeroomTeacher?.email || prevCls?.homeroomTeacherEmail || '').toLowerCase().trim();
+
+        if (teacherEmail && teacherEmail.includes('@')) {
+          allGvcnEmailSet.add(teacherEmail);
+          if (!isAlreadyNotified) {
+            newGvcnEmailSet.add(teacherEmail);
+          }
         }
       });
     });
-    return emailSet.size;
-  }, [selectedCampusIds, campusSelectedClassIds, allClasses, currentAllocations]);
+
+    return {
+      newlySelectedClassCount: newClassCount,
+      previouslyNotifiedSelectedCount: oldClassCount,
+      newGVCNsCount: newGvcnEmailSet.size,
+      totalGVCNs: allGvcnEmailSet.size
+    };
+  }, [selectedCampusIds, campusSelectedClassIds, previouslyNotifiedClassIds, allClasses, currentAllocations]);
 
   // Submit allocation
   const handleSubmit = async () => {
@@ -415,6 +450,7 @@ export function CatalogAllocateModal({
         const assignedClasses = selectedClassIds.map(clsId => {
           const cls = allClasses.find(c => c.id === clsId && c.campusId === cId);
           const prevCls = (found?.assignedClasses || []).find((ac: any) => (ac.classId || ac.id) === clsId);
+          const wasNotified = previouslyNotifiedClassIds.has(clsId);
 
           return {
             classId: clsId,
@@ -428,7 +464,9 @@ export function CatalogAllocateModal({
             departmentName: finalDeptName,
             subjectTeacherId: finalTeacherId,
             subjectTeacherName: finalTeacherName,
-            subjectTeacherEmail: finalTeacherEmail
+            subjectTeacherEmail: finalTeacherEmail,
+            isEmailSent: wasNotified || prevCls?.isEmailSent || false,
+            notifiedAt: prevCls?.notifiedAt || (wasNotified ? (found?.deployedAt || new Date().toISOString()) : null)
           };
         }).filter(c => c.className);
 
@@ -485,10 +523,12 @@ export function CatalogAllocateModal({
         throw new Error(data?.error || `Lỗi khi phân bổ kế hoạch (Mã lỗi: ${res.status})`);
       }
 
-      const emailCount = data?.emailNotification?.count;
-      
       if (sendEmailNotification) {
-        toast.success(`Đã phân bổ kế hoạch xuống ${newAllocatedCampuses.length} cơ sở, ${totalSelectedClasses} lớp và gửi email thông báo tới GVCN thành công!`);
+        if (newlySelectedClassCount > 0) {
+          toast.success(`Đã phân bổ kế hoạch: Gửi email thành công đến ${newGVCNsCount} GVCN của ${newlySelectedClassCount} lớp mới! (Đã tự động bỏ qua ${previouslyNotifiedSelectedCount} lớp đã nhận mail trước đó)`);
+        } else {
+          toast.success(`Đã cập nhật phân bổ thành công! (Tất cả ${totalSelectedClasses} lớp đã được gửi email trước đó, không gửi lặp)`);
+        }
       } else {
         toast.success(`Đã lưu phân bổ ${newAllocatedCampuses.length} cơ sở và ${totalSelectedClasses} lớp thành công!`);
       }
@@ -609,6 +649,10 @@ export function CatalogAllocateModal({
                   <p className="text-[11px] text-teal-800 mt-0.5">
                     Hệ thống sẽ gửi bảng chi tiết hoạt động kèm lời nhắc GVCN hoàn tất nhập vai trò của Học sinh cho hồ sơ cuối năm.
                   </p>
+                  <div className="mt-1 flex items-center gap-1.5 text-[10.5px] text-emerald-800 font-semibold bg-emerald-100/70 border border-emerald-300/80 px-2 py-0.5 rounded-md w-fit">
+                    <CheckCircle2 className="w-3 h-3 text-emerald-700 shrink-0" />
+                    <span>Tự động chống gửi trùng: Khi gán thêm lớp, chỉ gửi email đến các lớp mới chọn, không gửi lại cho các lớp đã gửi trước đó.</span>
+                  </div>
                 </div>
               </label>
               <button
@@ -1088,7 +1132,7 @@ export function CatalogAllocateModal({
 
                       {/* CLASS SELECTION (Chọn Lớp) */}
                       <div className="pt-2 border-t border-slate-100">
-                        <div className="flex items-center justify-between mb-2">
+                        <div className="flex items-center justify-between mb-1.5">
                           <label className="text-xs font-bold text-slate-700 flex items-center gap-1.5">
                             <School className="w-3.5 h-3.5 text-[#00A19A]" />
                             <span>3. Chọn Lớp & GVCN nhận thông báo ({selectedClassIds.length}/{filteredClasses.length} lớp đã chọn):</span>
@@ -1112,6 +1156,19 @@ export function CatalogAllocateModal({
                           </div>
                         </div>
 
+                        {/* Legend for notification status */}
+                        <div className="flex flex-wrap items-center gap-2.5 text-[10.5px] mb-2 px-2.5 py-1 rounded-lg bg-slate-50 border border-slate-200/80">
+                          <span className="flex items-center gap-1 font-semibold text-emerald-700">
+                            <span className="w-2 h-2 rounded-full bg-emerald-500"></span>
+                            ✓ Đã gửi mail: Giữ nguyên gán lớp, tự động không gửi lại
+                          </span>
+                          <span className="text-slate-300">•</span>
+                          <span className="flex items-center gap-1 font-semibold text-sky-700">
+                            <span className="w-2 h-2 rounded-full bg-sky-500"></span>
+                            Mới chọn: Sẽ gửi email thông báo kế hoạch tới GVCN
+                          </span>
+                        </div>
+
                         {filteredClasses.length === 0 ? (
                           <div className="p-4 rounded-xl bg-amber-50/70 border border-amber-200 text-xs text-amber-800 text-center">
                             Chưa chọn khối nào hoặc không có lớp phù hợp. Vui lòng bấm chọn ít nhất một Khối ở bước trên.
@@ -1120,6 +1177,7 @@ export function CatalogAllocateModal({
                           <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-2.5 max-h-56 overflow-y-auto pr-1">
                             {filteredClasses.map(cls => {
                               const isClassSelected = selectedClassIds.includes(cls.id);
+                              const isAlreadyNotified = previouslyNotifiedClassIds.has(cls.id);
                               const gvcn = cls.homeroomTeacher;
 
                               return (
@@ -1128,7 +1186,9 @@ export function CatalogAllocateModal({
                                   onClick={() => handleToggleClass(campus.id, cls.id)}
                                   className={`p-2.5 rounded-xl border text-xs cursor-pointer transition-all flex flex-col justify-between ${
                                     isClassSelected
-                                      ? 'border-[#00A19A] bg-teal-50/50 ring-1 ring-[#00A19A]/40 shadow-2xs'
+                                      ? isAlreadyNotified
+                                        ? 'border-emerald-400 bg-emerald-50/40 ring-1 ring-emerald-400/40 shadow-2xs'
+                                        : 'border-[#00A19A] bg-teal-50/60 ring-2 ring-[#00A19A]/40 shadow-2xs'
                                       : 'border-slate-200 hover:border-slate-300 bg-white'
                                   }`}
                                 >
@@ -1142,9 +1202,28 @@ export function CatalogAllocateModal({
                                       />
                                       <span className="font-extrabold text-slate-800 text-xs">{cls.className}</span>
                                     </div>
-                                    <span className="text-[10px] font-bold px-1.5 py-0.5 rounded bg-slate-100 text-slate-600">
-                                      {String(cls.grade).startsWith('Khối') ? cls.grade : `Khối ${cls.grade}`}
-                                    </span>
+                                    <div className="flex items-center gap-1">
+                                      {isClassSelected && isAlreadyNotified && (
+                                        <span className="text-[9px] font-bold px-1.5 py-0.5 rounded bg-emerald-100 text-emerald-800 border border-emerald-300 flex items-center gap-0.5 shrink-0" title="Lớp này đã được gửi email trước đó, sẽ không gửi trùng">
+                                          <Check className="w-2.5 h-2.5 text-emerald-700" />
+                                          Đã gửi mail
+                                        </span>
+                                      )}
+                                      {isClassSelected && !isAlreadyNotified && (
+                                        <span className="text-[9px] font-bold px-1.5 py-0.5 rounded bg-sky-100 text-sky-800 border border-sky-300 flex items-center gap-0.5 shrink-0" title="Lớp mới bổ sung, sẽ gửi email đến GVCN">
+                                          <Mail className="w-2.5 h-2.5 text-sky-600" />
+                                          Mới • Sẽ gửi
+                                        </span>
+                                      )}
+                                      {!isClassSelected && isAlreadyNotified && (
+                                        <span className="text-[9px] font-medium px-1.5 py-0.5 rounded bg-slate-100 text-slate-500 shrink-0">
+                                          Đã gán trước đó
+                                        </span>
+                                      )}
+                                      <span className="text-[10px] font-bold px-1.5 py-0.5 rounded bg-slate-100 text-slate-600">
+                                        {String(cls.grade).startsWith('Khối') ? cls.grade : `Khối ${cls.grade}`}
+                                      </span>
+                                    </div>
                                   </div>
 
                                   {/* GVCN info */}
@@ -1185,12 +1264,32 @@ export function CatalogAllocateModal({
 
         {/* FOOTER */}
         <div className="flex flex-col sm:flex-row items-center justify-between px-6 py-4 border-t border-slate-100 bg-slate-50 gap-3 shrink-0">
-          <div className="text-xs text-slate-600">
-            Tổng cộng: <strong className="text-slate-900">{selectedCampusIds.length} cơ sở</strong> • <strong className="text-[#00A19A]">{totalSelectedClasses} lớp</strong>
+          <div className="text-xs text-slate-600 flex flex-col gap-0.5">
+            <div>
+              Tổng cộng: <strong className="text-slate-900">{selectedCampusIds.length} cơ sở</strong> • <strong className="text-[#00A19A]">{totalSelectedClasses} lớp</strong>
+            </div>
             {sendEmailNotification && (
-              <span className="text-teal-700 font-semibold ml-2">
-                (Sẽ gửi email đến {totalGVCNs} GVCN lớp tiếp nhận)
-              </span>
+              <div className="flex flex-wrap items-center gap-1.5 text-[11px] mt-0.5">
+                {newlySelectedClassCount > 0 ? (
+                  <>
+                    <span className="text-sky-800 font-bold bg-sky-100/90 px-2 py-0.5 rounded-md border border-sky-300 flex items-center gap-1">
+                      <Mail className="w-3 h-3 text-sky-600" />
+                      Sẽ gửi email đến {newGVCNsCount} GVCN ({newlySelectedClassCount} lớp mới)
+                    </span>
+                    {previouslyNotifiedSelectedCount > 0 && (
+                      <span className="text-emerald-800 font-semibold bg-emerald-100/70 px-2 py-0.5 rounded-md border border-emerald-300 flex items-center gap-1">
+                        <CheckCircle2 className="w-3 h-3 text-emerald-600" />
+                        Bỏ qua {previouslyNotifiedSelectedCount} lớp đã gửi mail trước đó (không gửi lại)
+                      </span>
+                    )}
+                  </>
+                ) : (
+                  <span className="text-emerald-800 font-semibold bg-emerald-100/70 px-2 py-0.5 rounded-md border border-emerald-300 flex items-center gap-1">
+                    <CheckCircle2 className="w-3 h-3 text-emerald-600" />
+                    Tất cả {totalSelectedClasses} lớp đã được gửi email trước đó — Không gửi lại trùng lặp
+                  </span>
+                )}
+              </div>
             )}
           </div>
 
@@ -1211,8 +1310,10 @@ export function CatalogAllocateModal({
               <Send className="w-4 h-4" />
               <span>
                 {allocating 
-                  ? 'Đang gửi thông báo...' 
-                  : `Xác nhận & Báo mail (${selectedCampusIds.length} cơ sở, ${totalSelectedClasses} lớp)`
+                  ? 'Đang xử lý phân bổ...' 
+                  : newlySelectedClassCount > 0
+                    ? `Xác nhận & Báo mail (+${newlySelectedClassCount} lớp mới)`
+                    : `Xác nhận & Cập nhật (${selectedCampusIds.length} cơ sở, ${totalSelectedClasses} lớp)`
                 }
               </span>
             </button>

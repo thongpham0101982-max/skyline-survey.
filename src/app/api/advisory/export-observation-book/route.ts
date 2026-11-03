@@ -118,11 +118,11 @@ export async function GET(req: Request) {
     let campusName = ""
     if (targetClass.campus?.campusName || targetClass.campus?.campusCode || (targetClass.campus as any)?.name) {
       const rawCampus = targetClass.campus?.campusName || targetClass.campus?.campusCode || (targetClass.campus as any)?.name || ""
-      if (rawCampus === "CS1") campusName = "Cơ sở 1 (CS1 - Riverside Campus)"
-      else if (rawCampus === "CS2") campusName = "Cơ sở 2 (CS2 - Central Campus)"
-      else if (rawCampus === "CS3") campusName = "Cơ sở 3 (CS3 - International Campus)"
-      else if (rawCampus === "CS4") campusName = "Cơ sở 4 (CS4 - Sky-Line School)"
-      else if (rawCampus === "CS5") campusName = "Cơ sở 5 (CS5 - Sky-Line School)"
+      if (rawCampus === "CS1") campusName = "Cơ sở 1 (CS1 - Sky-Line Riverside)"
+      else if (rawCampus === "CS2") campusName = "Cơ sở 2 (CS2 - Sky-Line Central)"
+      else if (rawCampus === "CS3") campusName = "Cơ sở 3 (CS3 - Sky-Line Global)"
+      else if (rawCampus === "CS4") campusName = "Cơ sở 4 (CS4 - Sky-Line Hill)"
+      else if (rawCampus === "CS5") campusName = "Cơ sở 5 (CS5 - Sky-Line Beach)"
       else campusName = rawCampus.startsWith("Cơ sở") ? rawCampus : "Cơ sở " + rawCampus
     } else {
       const codeMatch = className.match(/CS\d+/i)

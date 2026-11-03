@@ -22,10 +22,26 @@ export interface GradeConfigLike {
  * Helper to get max score of a column (defaults to 10)
  */
 export function getColumnMaxScore(
-  typeCode?: string,
+  typeCode?: string | any,
   maxScores?: any,
   index?: number
 ): number {
+  // If first argument is an object (like activeGradeConfig or a config object)
+  if (typeof typeCode === "object" && typeCode !== null) {
+    const config = typeCode;
+    const idx = typeof maxScores === "number" ? maxScores : (index ?? 0);
+    if (config.parsedMaxScores && config.parsedMaxScores[idx] !== undefined) {
+      const v = Number(config.parsedMaxScores[idx]);
+      if (!isNaN(v) && v > 0) return v;
+    }
+    if (config.columnMaxScores) {
+      const parsed = parseMaxScores(config.columnMaxScores, idx + 1);
+      if (parsed[idx] !== undefined && !isNaN(parsed[idx]) && parsed[idx] > 0) return parsed[idx];
+    }
+    const tCode = config.parsedTypes?.[idx] || (Array.isArray(config.columnTypes) ? config.columnTypes[idx] : undefined);
+    return getColumnMaxScore(tCode, config.columnMaxScores, idx);
+  }
+
   if (maxScores !== undefined && maxScores !== null && index !== undefined) {
     let parsedList: number[] = []
     if (Array.isArray(maxScores)) {
@@ -38,7 +54,7 @@ export function getColumnMaxScore(
       if (!isNaN(val) && val > 0) return val
     }
   }
-  if (!typeCode) return 10
+  if (!typeCode || typeof typeCode !== "string") return 10
   if (typeCode.startsWith("SCORE_MAX_")) {
     const parsed = parseFloat(typeCode.replace("SCORE_MAX_", ""))
     if (!isNaN(parsed) && parsed > 0) return parsed

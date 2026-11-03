@@ -16,6 +16,7 @@ function parseSmartDate(d: any): Date | null {
 }
 
 import { sendEmail } from "@/lib/mail"
+import { getPreschoolDevelopmentSummary, renderPreschoolApprovalEmailHtml } from "@/lib/preschool-approval-service"
 
 function buildPreschoolLetterHtmlServer(student: any, config: any, isCommitmentFlag: boolean = false, isInvitationFlag: boolean = false) {
   const rawGrade = student?.grade || "Nát";
@@ -278,7 +279,7 @@ Trân trọng kính mời Quý phụ huynh và các em học sinh!`;
 
 
 function getTuVanEmail(campusName: string | null | undefined): string {
-  if (!campusName) return "bankhaothi@skylineschool.edu.vn";
+  if (!campusName) return "ktdbcl@skylineschool.edu.vn";
   const campus = campusName.toUpperCase().trim();
   
   if (campus.includes("CS5") || campus.includes("CƠ SỞ 5") || campus.includes("CO SO 5") || campus.includes("GALAXY") || campus.includes("LƯ GIANG") || campus.includes("LU GIANG") || campus.includes("LIÊN CHIỂU") || campus.includes("LIEN CHIEU")) {
@@ -297,7 +298,7 @@ function getTuVanEmail(campusName: string | null | undefined): string {
     return "tuyensinh.cs1@skylineschool.edu.vn";
   }
   
-  return "bankhaothi@skylineschool.edu.vn";
+  return "ktdbcl@skylineschool.edu.vn";
 }
 
 function parseMetricValue(note: string | null | undefined): number | null {
@@ -813,7 +814,7 @@ export async function POST(req) {
                       BAN ĐÀO TẠO & KHẢO THÍ ĐẢM BẢO CHẤT LƯỢNG GIÁO DỤC
                     </p>
                     <p style="margin: 8px 0 0 0; font-size: 11px; color: #94A3B8;">
-                      Email hỗ trợ: <a href="mailto:bankhaothi@skylineschool.edu.vn" style="color: #99F6E4; text-decoration: underline;">bankhaothi@skylineschool.edu.vn</a> &bull; Website: <a href="https://skylineschool.edu.vn" target="_blank" style="color: #99F6E4; text-decoration: none;">skylineschool.edu.vn</a>
+                      Email hỗ trợ: <a href="mailto:ktdbcl@skylineschool.edu.vn" style="color: #99F6E4; text-decoration: underline;">ktdbcl@skylineschool.edu.vn</a> &bull; Website: <a href="https://skylineschool.edu.vn" target="_blank" style="color: #99F6E4; text-decoration: none;">skylineschool.edu.vn</a>
                     </p>
                   </td>
                 </tr>
@@ -830,7 +831,7 @@ export async function POST(req) {
           to: resolvedEmail,
           subject: `[Preschool-Survey] Báo cáo kết quả khảo sát năng lực đầu vào - Bé ${student.fullName} (${student.studentCode})`,
           html: emailHtml,
-          replyTo: "bankhaothi@skylineschool.edu.vn"
+          replyTo: "ktdbcl@skylineschool.edu.vn"
         });
         return NextResponse.json({ success: true, email: resolvedEmail });
       } catch (err) {
@@ -918,6 +919,9 @@ export async function POST(req) {
       const protocol = req.headers.get("x-forwarded-proto") || "https";
       const baseUrl = `${protocol}://${host}`;
 
+      // Pre-fetch developmental assessment summary (scores, criteria, areas, percentages)
+      const devSummary = await getPreschoolDevelopmentSummary(student.id);
+
       // 1. Send personalized emails to dynamic campus BGH & GĐCS users, and create in-app notifications
       for (const u of resolvedUsers) {
         try {
@@ -933,119 +937,21 @@ export async function POST(req) {
 
           // Send Email Alert
           if (u.email && u.email.includes("@")) {
-            const emailBody = `
-              <!DOCTYPE html>
-              <html lang="vi">
-              <head>
-                <meta charset="utf-8">
-                <meta name="viewport" content="width=device-width, initial-scale=1.0">
-                <title>Yêu Cầu Phê Duyệt Khảo Sát Mầm Non</title>
-              </head>
-              <body style="margin: 0; padding: 0; background-color: #F8FAFC; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; -webkit-font-smoothing: antialiased; color: #334155;">
-                <table role="presentation" width="100%" border="0" cellspacing="0" cellpadding="0" style="background-color: #F8FAFC; padding: 30px 10px;">
-                  <tr>
-                    <td align="center">
-                      <table role="presentation" width="600" border="0" cellspacing="0" cellpadding="0" style="max-width: 600px; width: 100%; background-color: #FFFFFF; border-radius: 16px; overflow: hidden; box-shadow: 0 10px 25px rgba(0, 59, 58, 0.08); border: 1px solid #E2E8F0; border-collapse: separate;">
-                        <!-- Header -->
-                        <tr>
-                          <td bgcolor="#003B3A" style="background-color: #003B3A; padding: 32px 28px; text-align: center;">
-                            <div style="display: inline-block; padding: 4px 14px; background-color: rgba(255,255,255,0.12); border-radius: 20px; color: #CCFBF1; font-size: 11px; font-weight: 700; letter-spacing: 1px; text-transform: uppercase; margin-bottom: 12px;">
-                              🏫 HỆ THỐNG GIÁO DỤC SKY-LINE
-                            </div>
-                            <h1 style="margin: 0; color: #FFFFFF; font-size: 20px; font-weight: 800; letter-spacing: 0.3px; text-transform: uppercase; line-height: 1.3;">
-                              YÊU CẦU PHÊ DUYỆT KHẢO SÁT
-                            </h1>
-                            <p style="margin: 8px 0 0 0; color: #99F6E4; font-size: 13px; font-weight: 500;">
-                              Bậc Mầm non • ${campusName}
-                            </p>
-                          </td>
-                        </tr>
-
-                        <!-- Body Content -->
-                        <tr>
-                          <td style="padding: 26px 30px 16px 30px;">
-                            <p style="margin: 0; font-size: 15px; font-weight: 700; color: #003B3A;">Kính gửi Thầy/Cô ${u.fullName},</p>
-                            <p style="margin: 10px 0 0 0; font-size: 14px; color: #475569; line-height: 1.6;">
-                              Học sinh <strong>${student.fullName}</strong> đã hoàn thành các nội dung khảo sát năng lực đầu vào và được giáo viên chuyên môn cập nhật nhận xét đánh giá. Kính chuyển Thầy/Cô thông tin học sinh:
-                            </p>
-                          </td>
-                        </tr>
-
-                        <!-- Student Card -->
-                        <tr>
-                          <td style="padding: 0 30px 20px 30px;">
-                            <table role="presentation" width="100%" border="0" cellspacing="0" cellpadding="0" style="background-color: #F0FDFA; border-radius: 12px; border: 1px solid #99F6E4; padding: 16px 20px; border-collapse: separate;">
-                              <tr>
-                                <td style="padding-bottom: 8px; width: 38%; font-size: 12px; font-weight: 700; color: #00A19A; text-transform: uppercase;">Họ và tên học sinh:</td>
-                                <td style="padding-bottom: 8px; font-size: 14px; font-weight: 800; color: #003B3A;">${student.fullName}</td>
-                              </tr>
-                              <tr>
-                                <td style="padding-bottom: 8px; font-size: 12px; font-weight: 700; color: #00A19A; text-transform: uppercase;">Mã HS khảo sát:</td>
-                                <td style="padding-bottom: 8px; font-size: 14px; font-weight: 700; color: #1E293B;">${student.studentCode}</td>
-                              </tr>
-                              <tr>
-                                <td style="padding-bottom: 8px; font-size: 12px; font-weight: 700; color: #00A19A; text-transform: uppercase;">Lớp / Độ tuổi:</td>
-                                <td style="padding-bottom: 8px; font-size: 14px; font-weight: 600; color: #334155;">${student.grade || "—"}</td>
-                              </tr>
-                              <tr>
-                                <td style="font-size: 12px; font-weight: 700; color: #00A19A; text-transform: uppercase;">Cơ sở tiếp nhận:</td>
-                                <td style="font-size: 14px; font-weight: 700; color: #003B3A;">${campusName}</td>
-                              </tr>
-                            </table>
-                          </td>
-                        </tr>
-
-                        <!-- Urgent Alert Callout -->
-                        <tr>
-                          <td style="padding: 0 30px 24px 30px;">
-                            <div style="background-color: #FEF9C3; border-left: 4px solid #CA8A04; padding: 12px 16px; border-radius: 0 8px 8px 0; font-size: 13px; color: #854D0E; line-height: 1.5;">
-                              📌 <strong>Lưu ý:</strong> Kính đề xuất Ban Giám Hiệu và Giám Đốc Cơ sở tiến hành xem xét phê duyệt trực tuyến để Tuyển sinh có thể xuất báo cáo kết quả gửi phụ huynh.
-                            </div>
-                          </td>
-                        </tr>
-
-                        <!-- Bulletproof Button -->
-                        <tr>
-                          <td align="center" style="padding: 0 30px 32px 30px;">
-                            <table role="presentation" cellspacing="0" cellpadding="0" border="0" align="center" style="margin: 0 auto; border-collapse: separate;">
-                              <tr>
-                                <td align="center" bgcolor="#00A19A" style="background-color: #00A19A; border-radius: 10px;">
-                                  <a href="${baseUrl}/admin/preschool-input-assessments" target="_blank" style="display: inline-block; padding: 14px 32px; font-size: 14px; font-weight: 700; color: #FFFFFF; text-decoration: none; border-radius: 10px; letter-spacing: 0.3px;">
-                                    Đi tới Phê duyệt trên Portal &rarr;
-                                  </a>
-                                </td>
-                              </tr>
-                            </table>
-                          </td>
-                        </tr>
-
-                        <!-- Footer -->
-                        <tr>
-                          <td bgcolor="#003B3A" style="background-color: #003B3A; padding: 22px 28px; text-align: center; border-top: 3px solid #00A19A;">
-                            <p style="margin: 0; font-size: 12px; font-weight: 800; color: #FFFFFF; letter-spacing: 0.5px; text-transform: uppercase;">
-                              HỆ THỐNG GIÁO DỤC SKY-LINE (SKY-LINE EDUCATION SYSTEM)
-                            </p>
-                            <p style="margin: 4px 0 0 0; font-size: 11px; font-weight: 600; color: #99F6E4;">
-                              BAN ĐÀO TẠO & KHẢO THÍ ĐẢM BẢO CHẤT LƯỢNG GIÁO DỤC
-                            </p>
-                            <p style="margin: 8px 0 0 0; font-size: 11px; color: #94A3B8;">
-                              Email hỗ trợ: <a href="mailto:bankhaothi@skylineschool.edu.vn" style="color: #99F6E4; text-decoration: underline;">bankhaothi@skylineschool.edu.vn</a> &bull; Website: <a href="https://skylineschool.edu.vn" target="_blank" style="color: #99F6E4; text-decoration: none;">skylineschool.edu.vn</a>
-                            </p>
-                          </td>
-                        </tr>
-                      </table>
-                    </td>
-                  </tr>
-                </table>
-              </body>
-              </html>
-            `;
+            const emailBody = renderPreschoolApprovalEmailHtml({
+              student,
+              campusName,
+              recipientName: u.fullName,
+              recipientEmail: u.email,
+              isArchiveCopy: false,
+              devSummary,
+              baseUrl
+            });
 
             await sendEmail({
               to: u.email,
               subject: `[Preschool-Approval] Yêu cầu duyệt kết quả khảo sát đầu vào - Bé ${student.fullName} (${campusName})`,
               html: emailBody,
-              replyTo: "bankhaothi@skylineschool.edu.vn"
+              replyTo: "ktdbcl@skylineschool.edu.vn"
             });
             emailSentCount++;
           }
@@ -1054,44 +960,25 @@ export async function POST(req) {
         }
       }
 
-      // 2. Also send a copy to bankhaothi@skylineschool.edu.vn if not already in the resolved list
-      const hasBankKhaoThi = resolvedUsers.some((u) => u.email && u.email.toLowerCase() === "bankhaothi@skylineschool.edu.vn");
+      // 2. Also send a copy to ktdbcl@skylineschool.edu.vn if not already in the resolved list
+      const hasBankKhaoThi = resolvedUsers.some((u) => u.email && u.email.toLowerCase() === "ktdbcl@skylineschool.edu.vn");
       if (!hasBankKhaoThi) {
         try {
-          const emailBody = `
-            <!DOCTYPE html>
-            <html>
-            <head>
-              <meta charset="utf-8">
-            </head>
-            <body style="margin: 0; padding: 20px; font-family: 'Segoe UI', sans-serif; background-color: #f1f5f9; color: #1e293b;">
-              <div style="max-width: 600px; margin: 0 auto; background-color: #ffffff; border-radius: 16px; overflow: hidden; box-shadow: 0 4px 10px rgba(0,0,0,0.05); border: 1px solid #e2e8f0; padding: 25px;">
-                <div style="background: linear-gradient(135deg, #f59e0b 0%, #d97706 100%); padding: 20px; border-radius: 12px; text-align: center; color: #ffffff; margin-bottom: 20px;">
-                   <h2 style="margin: 0; font-size: 18px; text-transform: uppercase;">Yêu Cầu Phê Duyệt Khảo Sát (Bản sao)</h2>
-                   <p style="margin: 4px 0 0 0; font-size: 12px; opacity: 0.9;">Bậc Mầm non - Hệ thống Trường Sky-Line</p>
-                </div>
-                <p style="font-size: 14px; line-height: 1.6;">Kính gửi Ban Khảo Thí và các cán bộ liên quan,</p>
-                <p style="font-size: 14px; line-height: 1.6;">Học sinh <strong>${student.fullName}</strong> (Mã HS: <strong>${student.studentCode}</strong>) thuộc <strong>Cơ sở ${campusName}</strong> đã hoàn thành các bài khảo sát năng lực đầu vào và nhận xét từ giáo viên chuyên môn.</p>
-                <p style="font-size: 14px; line-height: 1.6; color: #d97706; font-weight: bold; background-color: #fffbeb; padding: 10px; border-radius: 8px; border-left: 4px solid #f59e0b;">
-                   ⚠️ Kính đề xuất Ban Giám Hiệu và Giám Đốc Cơ sở tiến hành xem xét phê duyệt trực tuyến để Tuyển sinh có thể xuất báo cáo kết quả gửi phụ huynh.
-                </p>
-                <div style="text-align: center; margin: 25px 0;">
-                  <a href="${baseUrl}/admin/preschool-input-assessments" style="display: inline-block; padding: 12px 28px; border-radius: 10px; font-size: 14px; font-weight: bold; color: #ffffff; background: linear-gradient(135deg, #f59e0b 0%, #d97706 100%); text-decoration: none; box-shadow: 0 4px 6px rgba(245, 158, 11, 0.3);">
-                    Đi tới phê duyệt trên Portal
-                  </a>
-                </div>
-                <hr style="border: 0; border-top: 1px solid #f1f5f9; margin: 20px 0;">
-                <p style="font-size: 11px; color: #64748b; margin: 0; text-align: center;">Email được gửi tự động từ Hệ thống Khảo sát Tuyển sinh Sky-Line.</p>
-              </div>
-            </body>
-            </html>
-          `;
+          const emailBody = renderPreschoolApprovalEmailHtml({
+            student,
+            campusName,
+            recipientName: "Ban Khảo Thí & ĐBCL",
+            recipientEmail: "ktdbcl@skylineschool.edu.vn",
+            isArchiveCopy: true,
+            devSummary,
+            baseUrl
+          });
 
           await sendEmail({
-            to: "bankhaothi@skylineschool.edu.vn",
+            to: "ktdbcl@skylineschool.edu.vn",
             subject: `[Preschool-Approval] Yêu cầu duyệt kết quả khảo sát đầu vào - Bé ${student.fullName} (${campusName})`,
             html: emailBody,
-            replyTo: "bankhaothi@skylineschool.edu.vn"
+            replyTo: "ktdbcl@skylineschool.edu.vn"
           });
           emailSentCount++;
         } catch (err) {
@@ -1144,7 +1031,7 @@ export async function POST(req) {
       // 2. Add Default Ban Khảo thí
       recipients.push({
         name: "Ban Khảo thí Hệ thống",
-        email: "bankhaothi@skylineschool.edu.vn",
+        email: "ktdbcl@skylineschool.edu.vn",
         role: "BGH",
         checked: true
       });
@@ -1428,7 +1315,7 @@ export async function POST(req) {
                       BAN ĐÀO TẠO & KHẢO THÍ ĐẢM BẢO CHẤT LƯỢNG GIÁO DỤC
                     </p>
                     <p style="margin: 8px 0 0 0; font-size: 11px; color: #94A3B8;">
-                      Email hỗ trợ: <a href="mailto:bankhaothi@skylineschool.edu.vn" style="color: #99F6E4; text-decoration: underline;">bankhaothi@skylineschool.edu.vn</a> &bull; Website: <a href="https://skylineschool.edu.vn" target="_blank" style="color: #99F6E4; text-decoration: none;">skylineschool.edu.vn</a>
+                      Email hỗ trợ: <a href="mailto:ktdbcl@skylineschool.edu.vn" style="color: #99F6E4; text-decoration: underline;">ktdbcl@skylineschool.edu.vn</a> &bull; Website: <a href="https://skylineschool.edu.vn" target="_blank" style="color: #99F6E4; text-decoration: none;">skylineschool.edu.vn</a>
                     </p>
                   </td>
                 </tr>
@@ -1506,7 +1393,7 @@ export async function POST(req) {
               subject: `[Preschool-Congrats] Thư chúc mừng nhập học - Học sinh ${student.fullName} (${student.studentCode})`,
               html: congratsTemplate,
               attachments,
-              replyTo: "bankhaothi@skylineschool.edu.vn"
+              replyTo: "ktdbcl@skylineschool.edu.vn"
             });
             sentCount++;
           }
@@ -1576,7 +1463,7 @@ export async function POST(req) {
 
         // 2. Add Default Ban Khảo thí
         if (roles.includes("BGH")) {
-          recipients.push("bankhaothi@skylineschool.edu.vn");
+          recipients.push("ktdbcl@skylineschool.edu.vn");
         }
 
         // 3. Add Tổ / Môn dạy (Teacher department)
@@ -1768,7 +1655,7 @@ export async function POST(req) {
                         BAN ĐÀO TẠO & KHẢO THÍ ĐẢM BẢO CHẤT LƯỢNG GIÁO DỤC
                       </p>
                       <p style="margin: 8px 0 0 0; font-size: 11px; color: #94A3B8;">
-                        Email hỗ trợ: <a href="mailto:bankhaothi@skylineschool.edu.vn" style="color: #99F6E4; text-decoration: underline;">bankhaothi@skylineschool.edu.vn</a> &bull; Website: <a href="https://skylineschool.edu.vn" target="_blank" style="color: #99F6E4; text-decoration: none;">skylineschool.edu.vn</a>
+                        Email hỗ trợ: <a href="mailto:ktdbcl@skylineschool.edu.vn" style="color: #99F6E4; text-decoration: underline;">ktdbcl@skylineschool.edu.vn</a> &bull; Website: <a href="https://skylineschool.edu.vn" target="_blank" style="color: #99F6E4; text-decoration: none;">skylineschool.edu.vn</a>
                       </p>
                     </td>
                   </tr>
@@ -1823,7 +1710,7 @@ export async function POST(req) {
                 subject: `[Preschool-Congrats] Thư chúc mừng nhập học - Học sinh \${student.fullName} (\${student.studentCode})`,
                 html: congratsTemplate,
                 attachments: mailAttachments,
-                replyTo: "bankhaothi@skylineschool.edu.vn"
+                replyTo: "ktdbcl@skylineschool.edu.vn"
               });
               totalSentCount++;
             }

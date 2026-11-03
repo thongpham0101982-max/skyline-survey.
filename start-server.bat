@@ -13,7 +13,7 @@ for /f "tokens=5" %%a in ('netstat -aon ^| findstr ":3000" ^| findstr "LISTENING
 )
 ping 127.0.0.1 -n 3 >nul
 
-:: Khoi chay Node.js 24/7 trong cua so rieng doc lap
-echo Dang khoi chay Skyline Server qua Node.js...
-start "Skyline Server 24/7" /min node server.js
+:: Khoi chay Node.js 24/7 voi dinh muc bo nho toi uu (GC V8 toi uu duoi 2GB RAM)
+echo Dang khoi chay Skyline Server qua Node.js (Toi uu bo nho)...
+start "Skyline Server 24/7" /min node --max-old-space-size=2048 server.js
 exit /b 0

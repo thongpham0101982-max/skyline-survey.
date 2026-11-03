@@ -689,7 +689,7 @@ export interface TLHNAllocationEmailPayload {
   cthsTeacherName?: string;
   senderName?: string;
   senderEmail?: string;
-  customMessage?: string;
+  forceResend?: boolean;
   allocatedCampuses: Array<{
     campusId: string;
     campusCode?: string;
@@ -707,6 +707,8 @@ export interface TLHNAllocationEmailPayload {
       homeroomTeacherId?: string;
       homeroomTeacherName?: string;
       homeroomTeacherEmail?: string;
+      isEmailSent?: boolean;
+      notifiedAt?: string;
     }>;
   }>;
 }
@@ -795,6 +797,12 @@ export async function sendActivityAllocationNotification(payload: TLHNAllocation
     for (const alloc of allocatedCampuses) {
       if (Array.isArray(alloc.assignedClasses) && alloc.assignedClasses.length > 0) {
         for (const cls of alloc.assignedClasses) {
+          // Bỏ qua lớp đã gửi email trước đó để không gửi trùng
+          if ((cls.isEmailSent === true || Boolean(cls.notifiedAt)) && !payload.forceResend) {
+            console.log(`[Allocation Email] Bỏ qua lớp ${cls.className} (${cls.classId}) vì đã gửi email trước đó.`);
+            continue;
+          }
+
           let gvcnEmail = cls.homeroomTeacherEmail;
           let gvcnName = cls.homeroomTeacherName;
 

@@ -3,7 +3,6 @@ import React, { useState, useMemo, useEffect, useCallback, Fragment } from "reac
 import { useRouter, usePathname, useSearchParams } from "next/navigation"
 import { updateTeacherObservationTargets } from "@/app/teacher/du-gio/actions"
 import toast, { Toaster } from "react-hot-toast"
-import * as XLSX from "xlsx"
 import {
   ClipboardList, CheckCircle, CheckCircle2, PieChart, Calendar, Layers,
   ChevronDown, ChevronUp, AlertCircle, Plus, Search, X, Check,
@@ -751,7 +750,7 @@ export function AdminTongHopClient({
   const [selectedGdcsForEmail, setSelectedGdcsForEmail] = useState<any>(null);
   const [gdcsEmailMode, setGdcsEmailMode] = useState<"single" | "batch" | "summary">("single");
   const [gdcsEmailTo, setGdcsEmailTo] = useState("");
-  const [gdcsEmailCc, setGdcsEmailCc] = useState("bankhaothi@skylineschool.edu.vn, bgh@skylineschool.edu.vn");
+  const [gdcsEmailCc, setGdcsEmailCc] = useState("ktdbcl@skylineschool.edu.vn, bgh@skylineschool.edu.vn");
   const [gdcsEmailNotes, setGdcsEmailNotes] = useState("");
   const [sendingGdcsEmail, setSendingGdcsEmail] = useState(false);
 
@@ -1337,9 +1336,10 @@ export function AdminTongHopClient({
     };
   }, [filteredTTCMMatrix]);
 
-  // Export TTCM Matrix to Excel
-  const handleExportTTCMExcel = () => {
+  // Export TTCM Matrix to Excel (Dynamic Import for optimized bundle size)
+  const handleExportTTCMExcel = async () => {
     try {
+      const XLSX = await import("xlsx");
       const wb = XLSX.utils.book_new();
       const activeMonth = ttcmMatrixMonth !== "all" ? ttcmMatrixMonth : selectedMonth;
       const periodText = activeMonth === "all" ? "Toàn bộ năm học" : `Tháng ${activeMonth.split("-")[1]}/${activeMonth.split("-")[0]}`;
@@ -1506,8 +1506,9 @@ export function AdminTongHopClient({
     }
   };
 
-  const handleExportExcel = () => {
+  const handleExportExcel = async () => {
     try {
+      const XLSX = await import("xlsx");
       const activeYearObj = academicYears?.find((y: any) => y.id === filterAcademicYearId) || academicYears?.[0];
       const yearName = activeYearObj?.name || "Năm học hiện tại";
       const periodText = selectedMonth === "all" ? "Tất cả các tháng (Cả năm học)" : `Tháng ${selectedMonth.split("-")[1]}/${selectedMonth.split("-")[0]}`;
@@ -1885,7 +1886,7 @@ export function AdminTongHopClient({
     );
     const dhcmEmails = dhcmTeachers.map((t: any) => t.email).filter((em: any) => em && em.includes("@"));
 
-    setAllDeptsTo(dhcmEmails.length > 0 ? dhcmEmails.join(", ") : "bankhaothi@skylineschool.edu.vn");
+    setAllDeptsTo(dhcmEmails.length > 0 ? dhcmEmails.join(", ") : "ktdbcl@skylineschool.edu.vn");
     setAllDeptsCc(""); // CC is strictly empty by default, not sent to 19 TTCMs
     setAllDeptsMonth(selectedMonth !== "all" ? selectedMonth : (availableMonths[0] || "all"));
     setAllDeptsNotes("");
@@ -2453,7 +2454,7 @@ export function AdminTongHopClient({
     setSelectedGdcsForEmail(gdcs);
     setGdcsEmailMode("single");
     setGdcsEmailTo(gdcs.email || "");
-    setGdcsEmailCc("bankhaothi@skylineschool.edu.vn, bgh@skylineschool.edu.vn");
+    setGdcsEmailCc("ktdbcl@skylineschool.edu.vn, bgh@skylineschool.edu.vn");
     setGdcsEmailNotes(`Kính gửi Thầy/Cô ${gdcs.name} (${gdcs.campus}). Ban Đào tạo & Khảo thí ĐBCL xin gửi thông báo cập nhật tiến độ số tiết dự giờ và tiết dạy trong kỳ.`);
     setIsGdcsEmailModalOpen(true);
   };
@@ -2462,7 +2463,7 @@ export function AdminTongHopClient({
     setSelectedGdcsForEmail(null);
     setGdcsEmailMode("batch");
     setGdcsEmailTo("");
-    setGdcsEmailCc("bankhaothi@skylineschool.edu.vn, bgh@skylineschool.edu.vn");
+    setGdcsEmailCc("ktdbcl@skylineschool.edu.vn, bgh@skylineschool.edu.vn");
     setGdcsEmailNotes("Kính gửi Quý Giám đốc Cơ sở. Ban Đào tạo & Khảo thí ĐBCL xin gửi thông báo đối chiếu tiến độ số tiết dự giờ và tiết dạy định kỳ của Quý Thầy/Cô.");
     setIsGdcsEmailModalOpen(true);
   };
@@ -2471,7 +2472,7 @@ export function AdminTongHopClient({
     setSelectedGdcsForEmail(null);
     setGdcsEmailMode("summary");
     setGdcsEmailTo("bgh@skylineschool.edu.vn");
-    setGdcsEmailCc("bankhaothi@skylineschool.edu.vn");
+    setGdcsEmailCc("ktdbcl@skylineschool.edu.vn");
     setGdcsEmailNotes("Kính gửi Ban Giám Hiệu & Ban Điều Hành Chuyên Môn. Hệ thống xin gửi báo cáo tổng hợp tiến độ thực hiện chỉ tiêu dự giờ của 5 Giám đốc Cơ sở toàn trường.");
     setIsGdcsEmailModalOpen(true);
   };
@@ -6804,7 +6805,7 @@ export function AdminTongHopClient({
                     type="text"
                     value={gdcsEmailCc}
                     onChange={e => setGdcsEmailCc(e.target.value)}
-                    placeholder="VD: bankhaothi@skylineschool.edu.vn..."
+                    placeholder="VD: ktdbcl@skylineschool.edu.vn..."
                     className="w-full text-xs font-medium p-2.5 bg-slate-50 border border-slate-200 rounded-xl text-slate-800 focus:bg-white focus:border-[#48BFE3] outline-none"
                   />
                 </div>

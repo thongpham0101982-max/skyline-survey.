@@ -430,7 +430,10 @@ export function XetDuyetK12Client({ academicYears = [], campuses = [], examBoard
     }
     
     const requiredModule = TAB_PERMISSION_MAP[tabId];
-    const perm = rolePermissions?.find(p => p.module === requiredModule);
+    const perm = rolePermissions?.find(p =>
+      p.module === requiredModule ||
+      (tabId === "reports" && (p.module === "XET_DUYET_K12" || p.module === "XET_DUYET_KET_QUA"))
+    );
     if (perm) {
       return {
         canRead: !!perm.canRead,

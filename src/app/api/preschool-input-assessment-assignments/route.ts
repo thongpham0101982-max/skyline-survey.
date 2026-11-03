@@ -344,7 +344,7 @@ export async function POST(req: NextRequest) {
                           BAN ĐÀO TẠO & KHẢO THÍ ĐẢM BẢO CHẤT LƯỢNG GIÁO DỤC
                         </p>
                         <p style="margin: 0; font-size: 10px; color: rgba(255, 255, 255, 0.65); line-height: 1.5;">
-                          Email hỗ trợ: <a href="mailto:bankhaothi@skylineschool.edu.vn" style="color: #FDE047; text-decoration: none; font-weight: 600;">bankhaothi@skylineschool.edu.vn</a> • Website: <a href="https://skylineschool.edu.vn" target="_blank" style="color: #FDE047; text-decoration: none; font-weight: 600;">skylineschool.edu.vn</a>
+                          Email hỗ trợ: <a href="mailto:ktdbcl@skylineschool.edu.vn" style="color: #FDE047; text-decoration: none; font-weight: 600;">ktdbcl@skylineschool.edu.vn</a> • Website: <a href="https://skylineschool.edu.vn" target="_blank" style="color: #FDE047; text-decoration: none; font-weight: 600;">skylineschool.edu.vn</a>
                         </p>
                         <p style="margin: 6px 0 0 0; font-size: 10px; color: rgba(255, 255, 255, 0.4);">
                           Email gửi tự động từ Hệ thống Khảo sát Tuyển sinh Sky-Line.
@@ -365,7 +365,7 @@ export async function POST(req: NextRequest) {
             to: targetEmail,
             subject: `[Sky-line SMS - Mầm Non] Phân công Khảo sát Năng lực Đầu vào - Bé ${gradeLabel}`,
             html: emailHtml,
-            replyTo: "bankhaothi@skylineschool.edu.vn"
+            replyTo: "ktdbcl@skylineschool.edu.vn"
           });
 
           if (mailRes && mailRes.success) {

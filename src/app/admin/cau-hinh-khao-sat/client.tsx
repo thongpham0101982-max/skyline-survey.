@@ -1,6 +1,5 @@
 "use client"
 
-import { useState } from "react"
 import { useSearchParams, useRouter, usePathname } from "next/navigation"
 import { Baby, ClipboardList, ShieldAlert } from "lucide-react"
 import { InputAssessmentsClient } from "../input-assessments/client"
@@ -22,6 +21,7 @@ interface SurveyConfigClientProps {
   gradesK12: string[]
   configs: any[]
   rolePermissions: any[]
+  destinationSchools?: any[]
 
   // Mầm non
   gradesPreschool: string[]
@@ -53,17 +53,24 @@ export function SurveyConfigClient({
   const pathname = usePathname()
 
   const userRole = (currentUser?.role || "").toUpperCase()
-  const isAdminOrExamBoard = userRole === "ADMIN" || userRole === "KT_DBCL"
+  const isAdminOrExamBoard = userRole === "ADMIN" || userRole === "KT_DBCL" || userRole === "KTDBCL"
   const isGDCSOrGiaoVu = ["GDCS", "GĐCS", "GD_CS", "GĐ_CS", "GIAO_VU_CS"].includes(userRole)
 
   // Kiểm tra quyền truy cập dựa trên permission module code và vai trò
   const hasK12Permission = isAdminOrExamBoard || 
                            isGDCSOrGiaoVu || 
-                           rolePermissions.some((p: any) => p.module === "INPUT_ASSESSMENTS" && p.canRead)
+                           rolePermissions.some((p: any) => p.canRead && (
+                             p.module === "CAU_HINH_KHAO_SAT" ||
+                             p.module === "INPUT_ASSESSMENTS" ||
+                             p.module?.startsWith("INPUT_ASSESSMENTS_")
+                           ))
 
   const hasPreschoolPermission = isAdminOrExamBoard || 
                                  isGDCSOrGiaoVu || 
-                                 rolePermissions.some((p: any) => p.module === "PRESCHOOL_INPUT_ASSESSMENTS" && p.canRead)
+                                 rolePermissions.some((p: any) => p.canRead && (
+                                   p.module === "CAU_HINH_KHAO_SAT" ||
+                                   p.module === "PRESCHOOL_INPUT_ASSESSMENTS"
+                                 ))
 
   // Xác định tab đang hoạt động
   const paramTab = searchParams.get("tab") || initialTab

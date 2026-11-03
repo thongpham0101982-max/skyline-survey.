@@ -1,0 +1,1856 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Tài liệu Đặc tả Toàn diện Tính năng Hệ thống SKY-LINE SSM (SQMS)</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Be+Vietnam+Pro:ital,wght@0,300;0,400;0,500;0,600;0,700;0,800;1,400&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --bg: #f8fafc;
+      --surface: #ffffff;
+      --surface-alt: #f1f5f9;
+      --text: #0f172a;
+      --text-muted: #475569;
+      --border: #e2e8f0;
+      --primary: #0284c7;
+      --primary-dark: #0369a1;
+      --primary-light: #e0f2fe;
+      --indigo: #4f46e5;
+      --indigo-light: #eef2ff;
+      --violet: #2e1065;
+      --amber: #d97706;
+      --amber-light: #fef3c7;
+      --emerald: #059669;
+      --emerald-light: #d1fae5;
+      --rose: #e11d48;
+      --rose-light: #ffe4e6;
+      --cs1: #48BFE3;
+      --cs2: #6C5CE7;
+      --cs3: #2E1065;
+      --cs4: #D97706;
+      --cs5: #475569;
+      --shadow-sm: 0 1px 3px rgba(15, 23, 42, 0.06);
+      --shadow-md: 0 4px 12px rgba(15, 23, 42, 0.08);
+      --shadow-lg: 0 10px 25px rgba(15, 23, 42, 0.1);
+      --radius: 14px;
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    html {
+      scroll-behavior: smooth;
+    }
+
+    body {
+      font-family: 'Be Vietnam Pro', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+      background-color: var(--bg);
+      color: var(--text);
+      line-height: 1.65;
+      font-size: 15px;
+    }
+
+    /* Top Header Bar */
+    .top-bar {
+      position: sticky;
+      top: 0;
+      z-index: 100;
+      background: linear-gradient(135deg, #0f172a 0%, #1e1b4b 60%, #0369a1 100%);
+      color: #fff;
+      padding: 12px 28px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      box-shadow: var(--shadow-md);
+      gap: 16px;
+    }
+
+    .brand {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+
+    .brand-logo {
+      width: 40px;
+      height: 40px;
+      border-radius: 10px;
+      background: linear-gradient(135deg, #38bdf8, #818cf8);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-weight: 800;
+      font-size: 16px;
+      color: #0f172a;
+      box-shadow: 0 2px 8px rgba(56, 189, 248, 0.4);
+    }
+
+    .brand-title {
+      font-size: 16px;
+      font-weight: 700;
+      letter-spacing: -0.01em;
+    }
+
+    .brand-sub {
+      font-size: 12px;
+      color: #bae6fd;
+    }
+
+    .top-actions {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+
+    .search-box {
+      position: relative;
+    }
+
+    .search-box input {
+      background: rgba(255, 255, 255, 0.12);
+      border: 1px solid rgba(255, 255, 255, 0.22);
+      color: #fff;
+      padding: 7px 14px;
+      border-radius: 8px;
+      font-size: 13px;
+      width: 260px;
+      outline: none;
+      font-family: inherit;
+      transition: all 0.2s;
+    }
+
+    .search-box input::placeholder {
+      color: #cbd5e1;
+    }
+
+    .search-box input:focus {
+      background: rgba(255, 255, 255, 0.2);
+      border-color: #38bdf8;
+      width: 310px;
+    }
+
+    .btn-action {
+      background: #38bdf8;
+      color: #0f172a;
+      border: none;
+      padding: 8px 16px;
+      border-radius: 8px;
+      font-size: 13px;
+      font-weight: 700;
+      cursor: pointer;
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      font-family: inherit;
+      transition: all 0.2s;
+    }
+
+    .btn-action:hover {
+      background: #7dd3fc;
+      transform: translateY(-1px);
+    }
+
+    /* Main Layout */
+    .layout {
+      display: grid;
+      grid-template-columns: 290px 1fr;
+      max-width: 1560px;
+      margin: 0 auto;
+      gap: 28px;
+      padding: 24px 28px 64px;
+    }
+
+    /* Sidebar TOC */
+    .sidebar {
+      position: sticky;
+      top: 78px;
+      height: calc(100vh - 96px);
+      overflow-y: auto;
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 18px 14px;
+      box-shadow: var(--shadow-sm);
+    }
+
+    .sidebar-title {
+      font-size: 11px;
+      font-weight: 800;
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+      color: var(--text-muted);
+      padding: 0 10px 10px;
+      border-bottom: 1px solid var(--border);
+      margin-bottom: 10px;
+    }
+
+    .toc-list {
+      list-style: none;
+      display: flex;
+      flex-direction: column;
+      gap: 3px;
+    }
+
+    .toc-list a {
+      display: block;
+      text-decoration: none;
+      color: var(--text-muted);
+      font-size: 13px;
+      font-weight: 500;
+      padding: 7px 10px;
+      border-radius: 8px;
+      transition: all 0.15s;
+    }
+
+    .toc-list a:hover {
+      background: var(--surface-alt);
+      color: var(--primary);
+    }
+
+    .toc-list a.toc-highlight {
+      background: linear-gradient(90deg, #eff6ff 0%, #e0f2fe 100%);
+      color: #0369a1;
+      font-weight: 700;
+      border-left: 3px solid #0284c7;
+    }
+
+    .toc-sub {
+      padding-left: 14px;
+      font-size: 12px !important;
+      color: #64748b !important;
+    }
+
+    /* Main Content */
+    .content {
+      display: flex;
+      flex-direction: column;
+      gap: 28px;
+      min-width: 0;
+    }
+
+    /* Hero Banner */
+    .hero {
+      background: linear-gradient(135deg, #0f172a 0%, #1e1b4b 55%, #0c4a6e 100%);
+      color: #fff;
+      border-radius: 18px;
+      padding: 36px 40px;
+      box-shadow: var(--shadow-lg);
+      position: relative;
+      overflow: hidden;
+    }
+
+    .hero::after {
+      content: "";
+      position: absolute;
+      right: -80px;
+      top: -80px;
+      width: 320px;
+      height: 320px;
+      background: radial-gradient(circle, rgba(56,189,248,0.22) 0%, transparent 70%);
+      pointer-events: none;
+    }
+
+    .hero-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      background: rgba(56, 189, 248, 0.18);
+      border: 1px solid rgba(56, 189, 248, 0.4);
+      color: #7dd3fc;
+      padding: 5px 14px;
+      border-radius: 999px;
+      font-size: 12px;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.06em;
+      margin-bottom: 14px;
+    }
+
+    .hero h1 {
+      font-size: 28px;
+      font-weight: 800;
+      line-height: 1.25;
+      margin-bottom: 12px;
+      letter-spacing: -0.02em;
+    }
+
+    .hero p {
+      color: #cbd5e1;
+      font-size: 15px;
+      max-width: 920px;
+      margin-bottom: 24px;
+    }
+
+    .meta-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(190px, 1fr));
+      gap: 14px;
+      padding-top: 20px;
+      border-top: 1px solid rgba(255, 255, 255, 0.14);
+    }
+
+    .meta-item {
+      background: rgba(255, 255, 255, 0.07);
+      border: 1px solid rgba(255, 255, 255, 0.12);
+      padding: 12px 16px;
+      border-radius: 12px;
+    }
+
+    .meta-label {
+      font-size: 11px;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      color: #94a3b8;
+      margin-bottom: 4px;
+    }
+
+    .meta-value {
+      font-size: 15px;
+      font-weight: 700;
+      color: #f8fafc;
+    }
+
+    /* Section Card */
+    .section-card {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 30px 34px;
+      box-shadow: var(--shadow-sm);
+    }
+
+    .section-card.featured-dashboard {
+      border: 2px solid #0284c7;
+      box-shadow: 0 10px 30px rgba(2, 132, 199, 0.1);
+      background: linear-gradient(180deg, #f0f9ff 0%, #ffffff 160px);
+    }
+
+    .section-header {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      margin-bottom: 20px;
+      padding-bottom: 14px;
+      border-bottom: 2px solid var(--surface-alt);
+    }
+
+    .section-num {
+      background: var(--primary);
+      color: #fff;
+      font-weight: 800;
+      font-size: 14px;
+      padding: 6px 12px;
+      border-radius: 8px;
+      white-space: nowrap;
+    }
+
+    .section-header h2 {
+      font-size: 21px;
+      font-weight: 800;
+      color: var(--text);
+      letter-spacing: -0.01em;
+    }
+
+    h3 {
+      font-size: 17px;
+      font-weight: 700;
+      color: #1e293b;
+      margin: 24px 0 12px;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    h4 {
+      font-size: 15px;
+      font-weight: 700;
+      color: #0369a1;
+      margin: 18px 0 8px;
+    }
+
+    p {
+      margin-bottom: 10px;
+    }
+
+    ul, ol {
+      padding-left: 22px;
+      margin-bottom: 14px;
+    }
+
+    li {
+      margin-bottom: 6px;
+    }
+
+    code {
+      font-family: Consolas, Monaco, 'Courier New', monospace;
+      background: #f1f5f9;
+      color: #0f172a;
+      padding: 2px 6px;
+      border-radius: 5px;
+      font-size: 12.5px;
+      border: 1px solid #e2e8f0;
+    }
+
+    /* Grid Cards */
+    .grid-2 {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(360px, 1fr));
+      gap: 16px;
+      margin: 14px 0;
+    }
+
+    .grid-3 {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+      gap: 16px;
+      margin: 14px 0;
+    }
+
+    .grid-4 {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(230px, 1fr));
+      gap: 14px;
+      margin: 14px 0;
+    }
+
+    .info-card {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 18px;
+      transition: all 0.2s;
+    }
+
+    .info-card:hover {
+      border-color: #93c5fd;
+      box-shadow: var(--shadow-md);
+    }
+
+    .info-card-title {
+      font-weight: 700;
+      font-size: 15px;
+      color: #0f172a;
+      margin-bottom: 6px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 8px;
+    }
+
+    /* KPI Card Mockups */
+    .kpi-card {
+      background: #fff;
+      border: 1px solid #cbd5e1;
+      border-top: 4px solid var(--primary);
+      border-radius: 12px;
+      padding: 16px;
+      box-shadow: var(--shadow-sm);
+    }
+
+    .kpi-card.kpi-indigo { border-top-color: var(--indigo); }
+    .kpi-card.kpi-emerald { border-top-color: var(--emerald); }
+    .kpi-card.kpi-amber { border-top-color: var(--amber); }
+    .kpi-card.kpi-rose { border-top-color: var(--rose); }
+    .kpi-card.kpi-violet { border-top-color: #7c3aed; }
+
+    .kpi-num {
+      font-size: 11px;
+      font-weight: 800;
+      text-transform: uppercase;
+      color: var(--primary);
+      letter-spacing: 0.05em;
+      margin-bottom: 4px;
+    }
+
+    .kpi-title {
+      font-size: 15px;
+      font-weight: 700;
+      color: #0f172a;
+      margin-bottom: 8px;
+    }
+
+    .kpi-desc {
+      font-size: 13px;
+      color: var(--text-muted);
+      margin-bottom: 10px;
+    }
+
+    .drill-badge {
+      display: inline-block;
+      background: #f0f9ff;
+      color: #0369a1;
+      border: 1px solid #bae6fd;
+      font-size: 11.5px;
+      font-weight: 600;
+      padding: 3px 9px;
+      border-radius: 6px;
+    }
+
+    /* Campus Pills */
+    .campus-bar {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 10px;
+      margin: 12px 0;
+    }
+
+    .campus-pill {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      padding: 7px 14px;
+      border-radius: 999px;
+      font-size: 13px;
+      font-weight: 700;
+      color: #fff;
+    }
+
+    /* Alert Severity Cards */
+    .alert-box {
+      border-radius: 12px;
+      padding: 15px 18px;
+      border-left: 5px solid;
+    }
+    .alert-critical {
+      background: #fff1f2;
+      border-left-color: #e11d48;
+      color: #881337;
+    }
+    .alert-warning {
+      background: #fffbeb;
+      border-left-color: #d97706;
+      color: #78350f;
+    }
+    .alert-info {
+      background: #f0f9ff;
+      border-left-color: #0284c7;
+      color: #0c4a6e;
+    }
+
+    /* Tables */
+    .table-wrap {
+      overflow-x: auto;
+      margin: 14px 0;
+      border: 1px solid var(--border);
+      border-radius: 12px;
+    }
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 13.5px;
+      background: var(--surface);
+    }
+
+    th {
+      background: #f1f5f9;
+      color: #0f172a;
+      font-weight: 700;
+      text-align: left;
+      padding: 12px 14px;
+      border-bottom: 2px solid var(--border);
+      white-space: nowrap;
+    }
+
+    td {
+      padding: 11px 14px;
+      border-bottom: 1px solid var(--border);
+      vertical-align: top;
+    }
+
+    tr:last-child td {
+      border-bottom: none;
+    }
+
+    tr:hover td {
+      background: #f8fafc;
+    }
+
+    /* Architecture Flow Diagram */
+    .arch-diagram {
+      background: linear-gradient(135deg, #0f172a 0%, #1e293b 100%);
+      color: #fff;
+      border-radius: 14px;
+      padding: 24px;
+      margin: 18px 0;
+    }
+
+    .arch-Cycle {
+      display: flex;
+      flex-wrap: wrap;
+      align-items: center;
+      justify-content: center;
+      gap: 10px;
+      margin-bottom: 22px;
+      padding-bottom: 18px;
+      border-bottom: 1px solid rgba(255,255,255,0.12);
+    }
+
+    .cycle-step {
+      background: rgba(56, 189, 248, 0.16);
+      border: 1px solid #38bdf8;
+      color: #e0f2fe;
+      padding: 8px 18px;
+      border-radius: 999px;
+      font-weight: 700;
+      font-size: 13.5px;
+    }
+
+    .cycle-arrow {
+      color: #38bdf8;
+      font-weight: 800;
+      font-size: 18px;
+    }
+
+    .arch-tiers {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+      gap: 16px;
+    }
+
+    .arch-tier {
+      background: rgba(255, 255, 255, 0.06);
+      border: 1px solid rgba(255, 255, 255, 0.15);
+      border-radius: 12px;
+      padding: 16px;
+    }
+
+    .arch-tier h5 {
+      color: #38bdf8;
+      font-size: 13px;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      margin-bottom: 10px;
+    }
+
+    .arch-tier ul {
+      list-style: none;
+      padding-left: 0;
+      margin-bottom: 0;
+    }
+
+    .arch-tier li {
+      font-size: 13px;
+      color: #e2e8f0;
+      padding: 5px 0;
+      border-bottom: 1px dashed rgba(255,255,255,0.1);
+    }
+
+    .arch-tier li:last-child {
+      border-bottom: none;
+    }
+
+    /* Module Header Banner */
+    .module-block {
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 20px 24px;
+      margin-bottom: 18px;
+      background: #ffffff;
+      border-left: 5px solid var(--primary);
+    }
+
+    .module-header {
+      display: flex;
+      flex-wrap: wrap;
+      align-items: center;
+      justify-content: space-between;
+      gap: 10px;
+      margin-bottom: 12px;
+      padding-bottom: 10px;
+      border-bottom: 1px solid var(--surface-alt);
+    }
+
+    .module-title {
+      font-size: 17px;
+      font-weight: 800;
+      color: #0f172a;
+    }
+
+    .module-code {
+      background: var(--indigo-light);
+      color: var(--indigo);
+      font-weight: 700;
+      font-size: 12px;
+      padding: 4px 10px;
+      border-radius: 6px;
+      font-family: Consolas, monospace;
+    }
+
+    .route-list {
+      font-size: 12.5px;
+      color: var(--text-muted);
+      margin-bottom: 12px;
+    }
+
+    /* Workflow Steps */
+    .workflow-steps {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(210px, 1fr));
+      gap: 12px;
+      margin: 14px 0;
+    }
+
+    .wf-step {
+      background: #f8fafc;
+      border: 1px solid #cbd5e1;
+      border-radius: 10px;
+      padding: 14px;
+      position: relative;
+    }
+
+    .wf-step-num {
+      display: inline-flex;
+      width: 24px;
+      height: 24px;
+      border-radius: 50%;
+      background: var(--primary);
+      color: #fff;
+      font-size: 12px;
+      font-weight: 800;
+      align-items: center;
+      justify-content: center;
+      margin-bottom: 8px;
+    }
+
+    footer {
+      text-align: center;
+      padding: 28px;
+      color: var(--text-muted);
+      font-size: 13px;
+      border-top: 1px solid var(--border);
+      margin-top: 20px;
+    }
+
+    /* Responsive & Print */
+    @media (max-width: 1024px) {
+      .layout {
+        grid-template-columns: 1fr;
+      }
+      .sidebar {
+        position: static;
+        height: auto;
+      }
+    }
+
+    @media print {
+      body {
+        background: #fff;
+        font-size: 12pt;
+      }
+      .top-bar, .sidebar {
+        display: none !important;
+      }
+      .layout {
+        display: block;
+        padding: 0;
+        max-width: 100%;
+      }
+      .section-card, .module-block, .kpi-card {
+        break-inside: avoid;
+        box-shadow: none !important;
+        margin-bottom: 16px;
+      }
+      .hero {
+        background: #0f172a !important;
+        -webkit-print-color-adjust: exact;
+        print-color-adjust: exact;
+        margin-bottom: 20px;
+      }
+    }
+  </style>
+</head>
+<body>
+
+  <!-- Top Sticky Navigation Bar -->
+  <header class="top-bar">
+    <div class="brand">
+      <div class="brand-logo">SSM</div>
+      <div>
+        <div class="brand-title">SKY-LINE SSM (SQMS) — TÀI LIỆU ĐẶC TẢ CHI TIẾT CHỨC NĂNG</div>
+        <div class="brand-sub">Hệ thống Quản trị Chất lượng Giáo dục &amp; Điều hành Trường học Số • Baseline v2.5</div>
+      </div>
+    </div>
+    <div class="top-actions">
+      <div class="search-box">
+        <input type="text" id="searchInput" placeholder="🔍 Tìm kiếm nhanh phân hệ, KPI, tính năng..." oninput="filterContent(this.value)" />
+      </div>
+      <button class="btn-action" onclick="window.print()">🖨️ In / Xuất PDF (A4)</button>
+    </div>
+  </header>
+
+  <div class="layout">
+    <!-- Left Sticky Table of Contents -->
+    <aside class="sidebar">
+      <div class="sidebar-title">Danh mục Tài liệu Đặc tả</div>
+      <ul class="toc-list">
+        <li><a href="#sec-1">1. Tầm nhìn &amp; Kiến trúc "THE ONE"</a></li>
+        <li><a href="#sec-2">2. Hệ sinh thái 6 Cổng Giao diện</a></li>
+        <li><a href="#sec-3" class="toc-highlight">⭐ 3. TRỌNG TÂM: Hệ sinh thái Dashboard Đa tầng</a></li>
+        <li><a href="#sec-3-1" class="toc-sub">3.1. Kiến trúc &amp; Bộ lọc 5 Chiều</a></li>
+        <li><a href="#sec-3-2" class="toc-sub">3.2. Executive Admin Dashboard (8 KPIs)</a></li>
+        <li><a href="#sec-3-3" class="toc-sub">3.3. 5 Role-Aware Dashboards</a></li>
+        <li><a href="#sec-3-4" class="toc-sub">3.4. 10 Domain Sub-Dashboards</a></li>
+        <li><a href="#sec-3-5" class="toc-sub">3.5. SSM Today Mobile Dashboard</a></li>
+        <li><a href="#sec-4">4. Chi tiết 12 Phân hệ Nghiệp vụ</a></li>
+        <li><a href="#mod-1" class="toc-sub">PH1: Quản trị Hệ thống &amp; RBAC</a></li>
+        <li><a href="#mod-2" class="toc-sub">PH2: Khảo thí &amp; ĐBCL (OMR/LMS/QT)</a></li>
+        <li><a href="#mod-3" class="toc-sub">PH3: Môn học Đặc thù Sky-Line</a></li>
+        <li><a href="#mod-4" class="toc-sub">PH4: Hoạt động Trải nghiệm</a></li>
+        <li><a href="#mod-5" class="toc-sub">PH5: Học liệu Số &amp; Bảng tên QR</a></li>
+        <li><a href="#mod-6" class="toc-sub">PH6: Đào tạo, TKB &amp; Sĩ số</a></li>
+        <li><a href="#mod-7" class="toc-sub">PH7: Cố vấn Học tập, Tâm lý &amp; SGSI</a></li>
+        <li><a href="#mod-8" class="toc-sub">PH8: Hồ sơ Học sinh 360° &amp; Tra cứu</a></li>
+        <li><a href="#mod-9" class="toc-sub">PH9: Mạng lưới Cựu học sinh Alumni</a></li>
+        <li><a href="#mod-10" class="toc-sub">PH10: Khảo sát Đầu vào &amp; Tuyển sinh</a></li>
+        <li><a href="#mod-11" class="toc-sub">PH11: Khảo sát Định kỳ &amp; Đo lường NPS</a></li>
+        <li><a href="#mod-12" class="toc-sub">PH12: Dự giờ, PTCM &amp; AI Growth</a></li>
+        <li><a href="#sec-5">5. Đặc tả Các Cổng Chuyên biệt</a></li>
+        <li><a href="#sec-6">6. Điều hành Việc, Báo cáo Tuần &amp; AI/PWA</a></li>
+        <li><a href="#sec-7">7. Ma trận Phân quyền 15 Vai trò</a></li>
+        <li><a href="#sec-8">8. Luồng Nghiệp vụ Liên Phân hệ</a></li>
+        <li><a href="#sec-9">9. Biểu mẫu Xuất bản &amp; Thông báo</a></li>
+        <li><a href="#sec-10">10. Tổng kết Chỉ số Quy mô Kỹ thuật</a></li>
+      </ul>
+    </aside>
+
+    <!-- Main Specification Content -->
+    <main class="content" id="mainContent">
+
+      <!-- Hero Banner -->
+      <section class="hero">
+        <div class="hero-badge">🚀 Functional Specification Document (FSD) • Phiên bản Baseline v2.5</div>
+        <h1>HỆ THỐNG QUẢN TRỊ CHẤT LƯỢNG GIÁO DỤC &amp; ĐIỀU HÀNH TRƯỜNG HỌC SỐ SKY-LINE SSM (SQMS)</h1>
+        <p>
+          Nền tảng quản trị chất lượng giáo dục, điều hành tác nghiệp thời gian thực và hồ sơ học tập điện tử 360° hợp nhất dành cho Hệ thống Giáo dục Sky-Line — xuyên suốt từ bậc <strong>Mầm non</strong>, <strong>Phổ thông K-12 (Tiểu học – THCS – THPT)</strong> đến mạng lưới <strong>Cựu học sinh (Sky-Line Alumni)</strong> trên toàn bộ 5 cơ sở đào tạo (<code>CS1</code> – <code>CS5</code>).
+        </p>
+        <div class="meta-grid">
+          <div class="meta-item">
+            <div class="meta-label">Hệ sinh thái Dashboard</div>
+            <div class="meta-value">1 Executive + 5 Role + 10 Domain</div>
+          </div>
+          <div class="meta-item">
+            <div class="meta-label">Phân hệ Nghiệp vụ</div>
+            <div class="meta-value">12 Phân hệ (&gt; 80 Modules)</div>
+          </div>
+          <div class="meta-item">
+            <div class="meta-label">Quy mô Trang &amp; API</div>
+            <div class="meta-value">&gt; 115 Pages &amp; &gt; 110 APIs</div>
+          </div>
+          <div class="meta-item">
+            <div class="meta-label">Cơ sở Dữ liệu Hợp nhất</div>
+            <div class="meta-value">&gt; 125 Bảng (Dual-Core DB)</div>
+          </div>
+          <div class="meta-item">
+            <div class="meta-label">Cổng Giao diện &amp; Vai trò</div>
+            <div class="meta-value">6 Portals • 15 Vai trò RBAC</div>
+          </div>
+          <div class="meta-item">
+            <div class="meta-label">Địa chỉ Vận hành Chính thức</div>
+            <div class="meta-value">ssm.skylineschool.edu.vn</div>
+          </div>
+        </div>
+      </section>
+
+      <!-- SECTION 1 -->
+      <section class="section-card searchable-section" id="sec-1">
+        <div class="section-header">
+          <span class="section-num">CHƯƠNG 1</span>
+          <h2>TỔNG QUAN TẦM NHÌN &amp; KIẾN TRÚC HỢP NHẤT ("THE ONE ARCHITECTURE")</h2>
+        </div>
+        <p>
+          <strong>SKY-LINE SSM (School Quality Management System – SQMS)</strong> được thiết kế theo triết lý <strong>"THE ONE ARCHITECTURE"</strong> nhằm xóa bỏ hoàn toàn tình trạng phân mảnh dữ liệu giữa các bộ phận, biến dữ liệu phát sinh hàng ngày thành tri thức điều hành theo thời gian thực:
+        </p>
+        <div class="grid-2">
+          <div class="info-card">
+            <div class="info-card-title">1. ONE Source of Truth per Domain</div>
+            <p>Mỗi phân hệ nghiệp vụ là chủ quản duy nhất của dữ liệu chuyên môn (Khảo thí, Dự giờ, Cố vấn, Hỗ trợ học tập, Hoạt động trải nghiệm); Hồ sơ 360° và Hệ thống Dashboard điều hành tổng hợp dữ liệu trực tiếp theo thời gian thực.</p>
+          </div>
+          <div class="info-card">
+            <div class="info-card-title">2. ONE Lifelong Student Identity</div>
+            <p>Mỗi học sinh sở hữu một mã định danh duy nhất (<code>studentCode</code>) liên thông xuyên suốt từ Mầm non, Tiểu học, THCS, THPT cho đến khi trở thành Cựu học sinh (Alumni), bảo toàn 100% lịch sử qua các năm học.</p>
+          </div>
+          <div class="info-card">
+            <div class="info-card-title">3. ONE Canonical Subject &amp; Competency Mapping</div>
+            <p>Chuẩn hóa danh mục môn học và từ điển năng lực dùng chung trên toàn hệ thống, kết nối đồng bộ điểm số Bộ GD&amp;ĐT (MOET), Chương trình Quốc tế (CTQT) và Mục tiêu học tập SMART.</p>
+          </div>
+          <div class="info-card">
+            <div class="info-card-title">4. ONE Deterministic Analytics &amp; GAP Engine</div>
+            <p>Công thức tính toán khoảng cách mục tiêu <code>GAP = Actual - Target</code>, phổ điểm, độ lệch chuẩn và chỉ số phát triển bền vững <strong>SGSI</strong> hoàn toàn tất định, chính xác tuyệt đối 100% trước khi AI diễn giải sư phạm.</p>
+          </div>
+          <div class="info-card">
+            <div class="info-card-title">5. ONE Dual-Core Database Engine</div>
+            <p>Kết hợp <strong>SQLite 3 On-Premise</strong> (độ trễ truy vấn <code>&lt; 1ms</code>) và <strong>LibSQL Turso Cloud Failover</strong> kèm cơ chế sao lưu lai tự động (<code>Hybrid Backup Engine .db.gz</code>).</p>
+          </div>
+          <div class="info-card">
+            <div class="info-card-title">6. ONE Dual-Run Experience (Desktop &amp; Mobile PWA)</div>
+            <p>Giao diện tự động thích ứng giữa <strong>Web Desktop</strong> (<code>≥ 1200px</code>) phục vụ phân tích Dashboard/bảng biểu chuyên sâu và <strong>SSM PWA Mobile</strong> (<code>&lt; 768px</code>) phục vụ tác nghiệp nhanh 1 chạm.</p>
+          </div>
+          <div class="info-card">
+            <div class="info-card-title">7. ONE Bilingual Interface (VI / EN)</div>
+            <p>Hỗ trợ chuyển đổi song ngữ Tiếng Việt – Tiếng Anh tức thì cho đội ngũ Giáo viên Việt Nam và Giáo viên Nước ngoài (GVNN) trên toàn hệ thống.</p>
+          </div>
+          <div class="info-card">
+            <div class="info-card-title">8. ONE RBAC &amp; SBAC Security Model</div>
+            <p>Phân quyền đa tầng theo Vai trò (Role-Based) kết hợp Phạm vi Cơ sở / Tổ bộ môn / Lớp phụ trách (Scope-Based) và phòng chống truy cập chéo (Anti-IDOR).</p>
+          </div>
+        </div>
+      </section>
+
+      <!-- SECTION 2 -->
+      <section class="section-card searchable-section" id="sec-2">
+        <div class="section-header">
+          <span class="section-num">CHƯƠNG 2</span>
+          <h2>HỆ SINH THÁI 6 CỔNG GIAO DIỆN ĐA ĐỐI TƯỢNG (MULTI-PORTAL)</h2>
+        </div>
+        <div class="table-wrap">
+          <table>
+            <thead>
+              <tr>
+                <th>STT</th>
+                <th>Cổng Giao diện</th>
+                <th>Đường dẫn gốc</th>
+                <th>Đối tượng sử dụng</th>
+                <th>Chức năng trọng tâm</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td><strong>1</strong></td>
+                <td><strong>Admin &amp; Executive Portal</strong></td>
+                <td><code>/admin</code></td>
+                <td>Super Admin, HĐQT, Ban Giám hiệu (BGH), Giám đốc Cơ sở (GĐCS), Ban KT&amp;ĐBCL, QLCM, Giáo vụ, CTHS, Tuyển sinh</td>
+                <td>Trung tâm Điều hành Quản trị (Executive Dashboard), quản trị 12 phân hệ, phê duyệt kết quả, cấu hình hệ thống, giám sát tiến độ &amp; KPI.</td>
+              </tr>
+              <tr>
+                <td><strong>2</strong></td>
+                <td><strong>Teacher Workspace Portal</strong></td>
+                <td><code>/teacher</code></td>
+                <td>Giáo viên Chủ nhiệm (GVCN), Giáo viên Bộ môn (GVBM), GV Mầm non, GV Nước ngoài (GVNN), Tổ trưởng CM (TTCM)</td>
+                <td>Dashboard Giáo viên &amp; TTCM, Sổ giáo viên điện tử, quản lý lớp chủ nhiệm, nhập sổ điểm MOET/CTQT, cố vấn học tập, phụ đạo/bồi dưỡng, dự giờ, khảo thí số.</td>
+              </tr>
+              <tr>
+                <td><strong>3</strong></td>
+                <td><strong>Parent Portal</strong></td>
+                <td><code>/parent</code></td>
+                <td>Phụ huynh học sinh (PHHS)</td>
+                <td>Dashboard Phụ huynh (chuyển đổi đa con), theo dõi điểm số, xem Hồ sơ năng lực 360° của con, trao đổi 2 chiều với GVCN/GVBM, ký cam kết mục tiêu và khảo sát NPS.</td>
+              </tr>
+              <tr>
+                <td><strong>4</strong></td>
+                <td><strong>Student Portal</strong></td>
+                <td><code>/hocsinh/portal</code></td>
+                <td>Học sinh toàn trường</td>
+                <td>Dashboard Học sinh (5 trụ cột năm học), Sổ mục tiêu SMART, tự nhìn nhận (Self-Reflection), xem Bản đồ năng lực Radar, gửi yêu cầu hỗ trợ, nộp ảnh thẻ.</td>
+              </tr>
+              <tr>
+                <td><strong>5</strong></td>
+                <td><strong>Online Exam Portal</strong></td>
+                <td><code>/exam</code></td>
+                <td>Học sinh dự thi trực tuyến</td>
+                <td>Phòng làm bài thi trực tuyến chống gian lận (theo dõi rời màn hình, tự động lưu bài, trộn đề ngẫu nhiên, đếm ngược thời gian thực và chấm điểm tức thì).</td>
+              </tr>
+              <tr>
+                <td><strong>6</strong></td>
+                <td><strong>Alumni &amp; QR Verification Portal</strong></td>
+                <td><code>/alumni/portal</code> &amp; <code>/profile/verify/[code]</code></td>
+                <td>Cựu học sinh, Giáo viên, Phụ huynh</td>
+                <td>Xác thực Hồ sơ Học tập trọn đời qua mã QR trên bảng tên/học bạ; Cựu học sinh tự cập nhật lộ trình Đại học, Học bổng và Nghề nghiệp qua xác thực OTP.</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </section>
+
+      <!-- SECTION 3: EMPHASIZED DASHBOARD ECOSYSTEM -->
+      <section class="section-card featured-dashboard searchable-section" id="sec-3">
+        <div class="section-header">
+          <span class="section-num" style="background:#0369a1;">⭐ CHƯƠNG 3 (TRỌNG TÂM)</span>
+          <h2>TRUNG TÂM ĐIỀU HÀNH THÔNG MINH &amp; HỆ SINH THÁI DASHBOARD ĐA TẦNG</h2>
+        </div>
+
+        <p>
+          Điểm khác biệt cốt lõi của <strong>SKY-LINE SSM</strong> là hệ thống <strong>Dashboard Điều hành Đa tầng (Multi-Tiered Real-time Educational Command Center)</strong> được xây dựng tại <code>dashboardAggregationService.ts</code> và <code>dashboardDataContract.ts</code>. Thay vì chỉ hiển thị các biểu đồ thống kê tĩnh, Dashboard SSM vận hành theo chu trình điều hành khép kín:
+        </p>
+
+        <!-- Visual Architecture Diagram -->
+        <div class="arch-diagram">
+          <div class="arch-Cycle">
+            <span class="cycle-step">1. OBSERVE (Quan sát Thời gian thực)</span>
+            <span class="cycle-arrow">➔</span>
+            <span class="cycle-step">2. UNDERSTAND (Phân tích &amp; So sánh)</span>
+            <span class="cycle-arrow">➔</span>
+            <span class="cycle-step">3. DRILL-DOWN (Đào sâu Hồ sơ gốc)</span>
+            <span class="cycle-arrow">➔</span>
+            <span class="cycle-step">4. ACT (Can thiệp &amp; Giao việc ngay)</span>
+          </div>
+          <div class="arch-tiers">
+            <div class="arch-tier">
+              <h5>Tầng 1: 6 Miền Dữ liệu Gốc (Single Source)</h5>
+              <ul>
+                <li>📊 Sĩ số, Đầu cấp &amp; Lưu chuyển Học sinh</li>
+                <li>📝 Khảo thí Số, Sổ điểm MOET/CTQT &amp; ĐGNL</li>
+                <li>🎯 Cố vấn Học tập, Mục tiêu SMART &amp; SGSI</li>
+                <li>❤️ Phụ đạo Học tập &amp; Tham vấn Tâm lý SOS</li>
+                <li>👁️ Dự giờ, Thao giảng &amp; Đánh giá Tiết dạy</li>
+                <li>⚡ Điều hành Công việc (SLA) &amp; Báo cáo Tuần</li>
+              </ul>
+            </div>
+            <div class="arch-tier">
+              <h5>Tầng 2: Động cơ Tổng hợp &amp; Cảnh báo</h5>
+              <ul>
+                <li>📐 <strong>Master Metric Catalog</strong>: Chuẩn hóa công thức KPI toàn trường</li>
+                <li>🔐 <strong>Scope-Aware Engine</strong>: Tự động lọc theo Cơ sở / Cấp / Khối / Tổ</li>
+                <li>🚨 <strong>Smart Alert Engine</strong>: Quét bất thường 3 mức (Critical / Warning / Info)</li>
+                <li>🔗 <strong>Zero Dead-End Links</strong>: Giữ nguyên ngữ cảnh bộ lọc khi Drill-down</li>
+              </ul>
+            </div>
+            <div class="arch-tier">
+              <h5>Tầng 3: 4 Lớp Giao diện Dashboard</h5>
+              <ul>
+                <li>🏛️ <strong>Executive Admin Dashboard (<code>/admin</code>)</strong>: 8 Core KPIs &amp; 9 Khối Phân tích</li>
+                <li>👥 <strong>5 Role-Aware Dashboards</strong>: BGH, KT&amp;ĐBCL, QLCM, TTCM, Giáo viên</li>
+                <li>📈 <strong>10 Domain Sub-Dashboards</strong>: Chuyên sâu từng phân hệ nghiệp vụ</li>
+                <li>📱 <strong>SSM Today Mobile Dashboard</strong>: 3 giây nắm bắt ngày làm việc</li>
+              </ul>
+            </div>
+          </div>
+        </div>
+
+        <h3 id="sec-3-1">3.1. Triết lý Thiết kế, Thanh Bộ lọc 5 Chiều &amp; Mã màu Nhận diện Cơ sở</h3>
+        <ul>
+          <li><strong>Zero Dead-End Dashboard (Không điểm cụt):</strong> 100% thẻ KPI (<code>KPICard.tsx</code>), biểu đồ (<code>DashboardChartCard.tsx</code>) và dòng cảnh báo (<code>SmartAlertCenter.tsx</code>) đều gắn liên kết <strong>Drill-down trực tiếp</strong> đưa người quản lý đến đúng danh sách học sinh, lớp học hoặc phiếu nghiệp vụ cần xử lý.</li>
+          <li><strong>Thanh Bộ lọc Hợp nhất 5 Chiều (<code>AdminUnifiedFilterBar.tsx</code>):</strong> Lọc đồng bộ toàn bộ Dashboard theo thời gian thực:
+            <code>(1) Năm học</code> × <code>(2) Cơ sở (CS1–CS5 / Toàn hệ thống)</code> × <code>(3) Cấp học (Mầm non, Tiểu học, THCS, THPT)</code> × <code>(4) Khối lớp</code> × <code>(5) Khoảng thời gian</code>, tích hợp công tắc <strong>Auto-Refresh</strong> và nhãn <strong>Data Freshness</strong>.
+          </li>
+          <li><strong>Hệ Màu Nhận diện Thương hiệu theo Cơ sở (Campus Color Coding):</strong></li>
+        </ul>
+        <div class="campus-bar">
+          <span class="campus-pill" style="background:#48BFE3; color:#0f172a;">CS1 • Sky-Line Central (#48BFE3)</span>
+          <span class="campus-pill" style="background:#6C5CE7;">CS2 • Sky-Line Riverside (#6C5CE7)</span>
+          <span class="campus-pill" style="background:#2E1065;">CS3 • Sky-Line Hill (#2E1065)</span>
+          <span class="campus-pill" style="background:#D97706;">CS4 • Sky-Line International (#D97706)</span>
+          <span class="campus-pill" style="background:#475569;">CS5 • Sky-Line Global (#475569)</span>
+        </div>
+
+        <h3 id="sec-3-2">3.2. Executive Admin Dashboard — Trung tâm Chỉ huy Toàn Hệ thống (<code>/admin</code>)</h3>
+        <p>Giao diện điều hành cấp cao tại <code>src/app/admin/page.tsx</code> được bố cục thành <strong>9 Khối Phân tích Chiến lược</strong>:</p>
+
+        <h4>A. Hệ thống 8 Thẻ KPI Điều hành Cốt lõi (8 Core Executive KPI Cards)</h4>
+        <div class="grid-4">
+          <div class="kpi-card">
+            <div class="kpi-num">KPI 01 • SĨ SỐ TOÀN TRƯỜNG</div>
+            <div class="kpi-title">Tổng Sĩ số Học sinh Đang học</div>
+            <div class="kpi-desc">Tách rõ <em>Phổ thông K-12</em> &amp; <em>Mầm non</em>, biến động tăng/giảm ròng (<code>± HS ròng</code>), sĩ số TB/lớp và quy mô học sinh đầu cấp.</div>
+            <span class="drill-badge">🔗 Drill-down: /admin/sy-so</span>
+          </div>
+          <div class="kpi-card kpi-indigo">
+            <div class="kpi-num" style="color:var(--indigo);">KPI 02 • LƯU CHUYỂN &amp; LỚP HỌC</div>
+            <div class="kpi-title">Quy mô Lớp &amp; Biến động Lưu chuyển</div>
+            <div class="kpi-desc">Tổng số lớp đang hoạt động (PT &amp; MN) cùng 3 chỉ số biến động tức thời: <em>Nhập mới, Chuyển đi, Đổi lớp</em>.</div>
+            <span class="drill-badge">🔗 Drill-down: /admin/student-transfers</span>
+          </div>
+          <div class="kpi-card kpi-amber">
+            <div class="kpi-num" style="color:var(--amber);">KPI 03 • TUYỂN SINH &amp; KỲ THI</div>
+            <div class="kpi-title">Khảo thí Đầu vào &amp; Kỳ thi HSG</div>
+            <div class="kpi-desc">Tổng thí sinh dự khảo sát K-12 &amp; Mầm non, tỷ lệ <code>% Đạt/Nhập học</code>, hồ sơ <em>Chờ duyệt</em>, tổng kỳ thi &amp; giải thưởng.</div>
+            <span class="drill-badge">🔗 Drill-down: /admin/xet-duyet-ket-qua</span>
+          </div>
+          <div class="kpi-card kpi-emerald">
+            <div class="kpi-num" style="color:var(--emerald);">KPI 04 • HỌC THUẬT &amp; PHỔ ĐIỂM</div>
+            <div class="kpi-title">Chất lượng Học tập &amp; Phổ điểm</div>
+            <div class="kpi-desc">Điểm TB toàn hệ thống (thang 10), tỷ lệ <code>% Đạt (≥ 5.0)</code>, tỷ lệ <code>% Khá/Giỏi (≥ 8.0)</code>, bản ghi ĐGNL &amp; số HS nhận hỗ trợ.</div>
+            <span class="drill-badge">🔗 Drill-down: /admin/ktdbcl/thong-ke-bao-cao</span>
+          </div>
+          <div class="kpi-card kpi-violet">
+            <div class="kpi-num" style="color:#7c3aed;">KPI 05 • CỐ VẤN HỌC TẬP</div>
+            <div class="kpi-title">Cố vấn Học tập &amp; Mục tiêu SMART</div>
+            <div class="kpi-desc">Tổng số mục tiêu SMART đã thiết lập, số học sinh có mục tiêu, số học sinh đã tư vấn 1-1 và tổng phiên tham vấn.</div>
+            <span class="drill-badge">🔗 Drill-down: /admin/co-van-hoc-tap</span>
+          </div>
+          <div class="kpi-card">
+            <div class="kpi-num">KPI 06 • PHÁT TRIỂN CHUYÊN MÔN</div>
+            <div class="kpi-title">Dự giờ &amp; Đánh giá Tiết dạy</div>
+            <div class="kpi-desc">Tỷ lệ hoàn thành phiếu đánh giá dự giờ (<code>%</code>), tổng số tiết đăng ký mở dự giờ và số giáo viên có định mức.</div>
+            <span class="drill-badge">🔗 Drill-down: /admin/tong-hop-du-gio</span>
+          </div>
+          <div class="kpi-card kpi-rose">
+            <div class="kpi-num" style="color:var(--rose);">KPI 07 • CHĂM SÓC TOÀN DIỆN</div>
+            <div class="kpi-title">Hỗ trợ Học tập &amp; Tâm lý</div>
+            <div class="kpi-desc">Tổng hồ sơ can thiệp đang theo dõi, tách rõ: <em>Phụ đạo học tập, Tư vấn tâm lý, Học sinh cam kết đầu vào</em>.</div>
+            <span class="drill-badge">🔗 Drill-down: /admin/ktdbcl/support</span>
+          </div>
+          <div class="kpi-card kpi-emerald">
+            <div class="kpi-num" style="color:var(--emerald);">KPI 08 • ĐIỀU HÀNH &amp; SLA</div>
+            <div class="kpi-title">Tiến độ Nhiệm vụ Điều hành</div>
+            <div class="kpi-desc">Tỷ lệ <code>% Hoàn thành</code> công việc giao xuống các bộ phận, số việc <em>Đang làm</em> và cảnh báo đỏ số việc <em>Quá hạn SLA</em>.</div>
+            <span class="drill-badge">🔗 Drill-down: /admin/tasks</span>
+          </div>
+        </div>
+
+        <h4>B. Trung tâm Cảnh báo Thông minh (Smart Alert Center — 3 Cấp độ Nghiêm trọng)</h4>
+        <div class="grid-3">
+          <div class="alert-box alert-critical">
+            <strong>🔴 CRITICAL (Khẩn cấp - Đỏ)</strong>
+            <p style="margin-top:6px; font-size:13.5px;">Học sinh có cảnh báo tâm lý Đỏ SOS, học sinh tụt giảm điểm số đột biến (<code>GAP &lt; -1.5</code>), công việc điều hành hoặc sổ điểm quá hạn khóa sổ.</p>
+          </div>
+          <div class="alert-box alert-warning">
+            <strong>🟠 WARNING (Cảnh báo - Vàng cam)</strong>
+            <p style="margin-top:6px; font-size:13.5px;">Hồ sơ khảo sát đầu vào chờ Hội đồng xét duyệt, phiếu dự giờ quá hạn 48h chưa chấm, yêu cầu mở khóa sổ điểm đang chờ phê duyệt.</p>
+          </div>
+          <div class="alert-box alert-info">
+            <strong>🔵 INFO (Thông tin - Xanh dương)</strong>
+            <p style="margin-top:6px; font-size:13.5px;">Biến động sĩ số ròng trong tháng, học sinh mới gửi đề xuất mục tiêu học tập chờ GVCN xác nhận, nhắc lịch nộp báo cáo tuần.</p>
+          </div>
+        </div>
+
+        <h4>C. Tổ hợp 8 Khối Biểu đồ Phân tích Chuyên sâu Đa Chế độ (Interactive Multi-Mode Charts)</h4>
+        <div class="grid-2">
+          <div class="info-card">
+            <div class="info-card-title">1. Xu hướng Biến động Sĩ số 12 Tháng (ComposedChart)</div>
+            <p>Kết hợp biểu đồ cột chồng (<em>Sĩ số Phổ thông K-12</em> + <em>Sĩ số Mầm non</em>) và đường xu hướng (<em>Tổng sĩ số toàn trường</em>) qua từng tháng trong năm học.</p>
+          </div>
+          <div class="info-card">
+            <div class="info-card-title">2. Phân bổ Sĩ số Đa chiều (Chuyển đổi 3 Tab)</div>
+            <p>Chuyển đổi tức thì giữa: <strong>Tab Theo Cơ sở</strong> (BarChart + bảng tỷ trọng <code>%</code> <code>CS1</code>–<code>CS5</code>) • <strong>Tab Theo Cấp học</strong> (Donut PieChart) • <strong>Tab Theo Khối lớp</strong> (có bộ lọc con: Tất cả / K-12 / Mầm non).</p>
+          </div>
+          <div class="info-card">
+            <div class="info-card-title">3. Phễu Khảo thí Đầu vào &amp; Kỳ thi Học thuật</div>
+            <p>Đối sánh số lượng thí sinh K-12 và Mầm non theo trạng thái (<em>Tổng hồ sơ → Đã chấm → Đạt/Nhập học → Chờ duyệt</em>) kèm 4 thẻ thống kê Kỳ thi &amp; Giải thưởng.</p>
+          </div>
+          <div class="info-card">
+            <div class="info-card-title">4. Chất lượng Học tập &amp; Phổ điểm (Chuyển đổi 2 Tab)</div>
+            <p><strong>Tab Theo Môn học</strong> (Cột Điểm TB môn kết hợp đường Tỷ lệ Đạt <code>≥ 5.0</code>) và <strong>Tab Phổ điểm</strong> (Phân phối đầu điểm theo các dải <code>&lt; 5.0</code>, <code>5.0–6.5</code>, <code>6.5–8.0</code>, <code>8.0–9.0</code>, <code>9.0–10</code>).</p>
+          </div>
+          <div class="info-card">
+            <div class="info-card-title">5. Phân tích Cố vấn Học tập &amp; Mục tiêu SMART</div>
+            <p>Biểu đồ thanh ngang phân loại mục tiêu theo cấp học kèm 4 chỉ số thực thi: <em>HS đã nộp phiếu, HS đã tư vấn 1-1, Tổng buổi tư vấn, PHHS đã ký cam kết</em>.</p>
+          </div>
+          <div class="info-card">
+            <div class="info-card-title">6. Phân tích Dự giờ &amp; Xếp loại Tiết dạy (Chuyển đổi 2 Tab)</div>
+            <p><strong>Tab Theo Cấp học</strong> (Số tiết mở – Lượt đăng ký – Phiếu hoàn tất) và <strong>Tab Xếp loại Tiết dạy</strong> (Phân bổ mức Tốt, Khá, Đạt, Cần cố gắng).</p>
+          </div>
+          <div class="info-card">
+            <div class="info-card-title">7. Bảng Điều hành Tiến độ Nhiệm vụ Trực tiếp</div>
+            <p>Thanh tỷ trọng tiến độ công việc đa trạng thái và danh sách cuộn nhanh các nhiệm vụ gần nhất kèm nhãn <em>Quá hạn / Đang xử lý / Hoàn thành</em>.</p>
+          </div>
+          <div class="info-card">
+            <div class="info-card-title">8. Phân tích &amp; Tra cứu Học sinh Đầu cấp (Khối 1, 6, 10)</div>
+            <p>Phân rã nguồn tuyển sinh đầu cấp (<em>Qua KSĐV, Liên thông Mẫu giáo lớn Sky-Line, Tuyển thẳng</em>), luồng chuyển trường (<em>Nội tỉnh, Ngoại tỉnh, Quốc tế</em>) và <strong>Bảng Tra cứu Nhanh HS Đầu cấp ngay trên Dashboard</strong>.</p>
+          </div>
+        </div>
+
+        <h3 id="sec-3-3">3.3. Hệ thống Dashboard Phân quyền theo 5 Vai trò Tác nghiệp (Role-Aware Dashboards)</h3>
+        <div class="table-wrap">
+          <table>
+            <thead>
+              <tr>
+                <th>Vai trò</th>
+                <th>Phạm vi Dữ liệu (Scope)</th>
+                <th>Các Chỉ số &amp; Khối Điều hành Trọng tâm trên Dashboard</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td><strong>1. Giáo viên (<code>TEACHER</code> – GVCN / GVBM)</strong></td>
+                <td>Các lớp giảng dạy &amp; Lớp chủ nhiệm được phân công</td>
+                <td>• Tự động đổi màu nhận diện theo Cơ sở (<code>useCampusTheme</code>) + Banner đếm ngược hạn chót (<code>DeadlineCountdownBanner</code>).<br/>• <strong>4 KPI Cá nhân:</strong> Tiến độ dự giờ cá nhân, Sĩ số lớp chủ nhiệm, HS cần hỗ trợ (GAP âm), Nhiệm vụ được giao.<br/>• <strong>3 Tab Tác nghiệp:</strong> <em>Công tác GVCN</em> — <em>Công tác GVBM</em> — <em>Tiện ích &amp; Phát triển CM</em>.</td>
+              </tr>
+              <tr>
+                <td><strong>2. Tổ trưởng Chuyên môn (<code>TTCM</code>)</strong></td>
+                <td>Toàn bộ giáo viên &amp; môn học thuộc Tổ chuyên môn</td>
+                <td>• <strong>Nút chuyển đổi chế độ 1 chạm:</strong> <em>Chế độ Giáo viên (Cá nhân)</em> ↔ <em>Chế độ Quản lý (Tổ CM)</em>.<br/>• <strong>KPI Cấp Tổ:</strong> Tiến độ dự giờ toàn tổ (<code>%</code>), Độ phủ giáo viên được dự giờ (<code>%</code>), Tỷ lệ đạt chuẩn bộ môn, Số đề thi &amp; phiếu dự giờ chờ duyệt + Ma trận dự giờ TTCM.</td>
+              </tr>
+              <tr>
+                <td><strong>3. Quản lý Chuyên môn / TBP (<code>QLCM</code>)</strong></td>
+                <td>Các Tổ chuyên môn &amp; Khối lớp thuộc cấp học</td>
+                <td>• <strong>Đối sánh Liên Tổ (Cross-Department Benchmark):</strong> So sánh chất lượng điểm số, tiến độ nhập điểm và tỷ lệ hoàn thành dự giờ giữa các tổ bộ môn; giám sát phụ đạo/tâm lý cấp khối.</td>
+              </tr>
+              <tr>
+                <td><strong>4. Giám đốc Cơ sở / BGH (<code>GDCS / BGH</code>)</strong></td>
+                <td>Toàn bộ hoạt động của Cơ sở (<code>CS1</code>–<code>CS5</code>) hoặc Toàn trường</td>
+                <td>• <strong>Executive Dashboard cấp Cơ sở:</strong> Toàn bộ 8 KPI cốt lõi, biến động sĩ số tháng, tỷ lệ chuyển trường, tiến độ SLA công việc các bộ phận và chỉ số hài lòng phụ huynh (NPS) tại cơ sở.</td>
+              </tr>
+              <tr>
+                <td><strong>5. Ban Khảo thí &amp; ĐBCL (<code>KT_DBCL</code>)</strong></td>
+                <td>Toàn bộ 5 Cơ sở trên toàn hệ thống</td>
+                <td>• <strong>Đối chuẩn Liên Cơ sở (Cross-Campus Quality Benchmark):</strong> So sánh phổ điểm, độ lệch chuẩn, kết quả chứng chỉ quốc tế giữa 5 cơ sở; kiểm toán tiến độ nhập sổ điểm toàn trường.</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+
+        <h3 id="sec-3-4">3.4. Hệ thống 10 Dashboard Chuyên sâu theo Phân hệ Nghiệp vụ (Domain Sub-Dashboards)</h3>
+        <div class="grid-2">
+          <div class="info-card">
+            <div class="info-card-title">1. Dashboard Khảo thí Số (OMR &amp; LMS) <code>/admin/ktdbcl/khao-thi-so</code></div>
+            <p>Giám sát kỳ kiểm tra đang mở, tiến độ quét phiếu OMR, đồng bộ Moodle LMS và phân tích độ khó đề thi.</p>
+          </div>
+          <div class="info-card">
+            <div class="info-card-title">2. Dashboard 5 Chuẩn Khảo thí Quốc tế <code>/admin/ktdbcl/international-exams</code></div>
+            <p>Phân tích chuyên sâu Cambridge YLE Shields, KET/PET Scale, IELTS Band, Pearson Edexcel, Cambridge Checkpoint và tỷ lệ đạt chuẩn đầu ra.</p>
+          </div>
+          <div class="info-card">
+            <div class="info-card-title">3. Dashboard Tiến độ Nhập điểm &amp; Phổ điểm <code>/admin/ktdbcl/thong-ke-bao-cao</code></div>
+            <p>Theo dõi thời gian thực <code>%</code> hoàn thành sổ điểm của từng giáo viên, biểu đồ phân tán <code>scatter-plot</code> và tổng hợp phản hồi PHHS.</p>
+          </div>
+          <div class="info-card">
+            <div class="info-card-title">4. Dashboard Phân tích Chất lượng Bộ môn GV <code>/teacher/phan-tich-chat-luong</code></div>
+            <p>4 tab phân tích (So sánh Cơ sở/Khối, Ma trận chất lượng lớp dạy, Đối sánh Tổ bộ môn, Biểu đồ trực quan) kèm <code>StudentTrackingDrawer</code>.</p>
+          </div>
+          <div class="info-card">
+            <div class="info-card-title">5. Dashboard Cố vấn Học tập &amp; SGSI <code>/admin/co-van-hoc-tap</code></div>
+            <p>Giám sát độ phủ mục tiêu SMART, phân bố khoảng cách mục tiêu <code>GAP</code> và bản đồ cảnh báo sớm 3 màu (Xanh – Vàng – Đỏ SOS).</p>
+          </div>
+          <div class="info-card">
+            <div class="info-card-title">6. Dashboard Môn học Đặc thù Sky-Line <code>/admin/special-subjects</code></div>
+            <p>Giám sát tiến độ giảng dạy và kết quả đánh giá 4 môn: Giáo dục Cảm xúc (SEL), Giới tính, Tài chính và Hướng nghiệp.</p>
+          </div>
+          <div class="info-card">
+            <div class="info-card-title">7. Dashboard Hoạt động Trải nghiệm <code>/admin/experiential-activities/reports</code></div>
+            <p>Thống kê tỷ lệ triển khai sự kiện theo 4 mạch GDPT 2018 và mức độ tham gia của học sinh toàn trường.</p>
+          </div>
+          <div class="info-card">
+            <div class="info-card-title">8. Dashboard Cựu học sinh Alumni Analytics <code>/admin/alumni</code></div>
+            <p>Bản đồ phân bố cựu học sinh theo quốc gia du học, top trường đại học, nhóm ngành nghề, học bổng và tỷ lệ xác thực QR.</p>
+          </div>
+          <div class="info-card">
+            <div class="info-card-title">9. Dashboard Phân tích Chỉ số Hài lòng NPS <code>/admin/nps</code></div>
+            <p>Biểu đồ tỷ lệ <em>Promoters – Passives – Detractors</em>, điểm NPS theo từng cơ sở và danh mục dịch vụ nhà trường.</p>
+          </div>
+          <div class="info-card">
+            <div class="info-card-title">10. Dashboard Báo cáo Tuần &amp; SLA Công việc <code>/admin/weekly-reports</code></div>
+            <p>Thống kê tỷ lệ nộp báo cáo tuần đúng hạn trước 14h00 Thứ Năm và tỷ lệ hoàn thành nhiệm vụ (SLA) theo từng phòng ban/tổ.</p>
+          </div>
+        </div>
+
+        <h3 id="sec-3-5">3.5. SSM Today — Mobile PWA Dashboard ("3 Giây Nắm Bắt Ngày Làm Việc")</h3>
+        <p>Được thiết kế chuyên biệt cho màn hình di động tại <code>src/components/pwa/SSMTodayHome.tsx</code>: hiển thị <strong>Vòng tròn Tiến độ Công việc Trong ngày (Circular Progress Ring)</strong>, <strong>Timeline Lịch dạy &amp; Lịch dự giờ hôm nay</strong>, danh sách <strong>Việc khẩn cần xử lý 1 chạm</strong> và tự động gửi thông báo đẩy <strong>Morning Brief lúc 07:00 sáng</strong>.</p>
+      </section>
+
+      <!-- SECTION 4: 12 CORE MODULES -->
+      <section class="section-card searchable-section" id="sec-4">
+        <div class="section-header">
+          <span class="section-num">CHƯƠNG 4</span>
+          <h2>ĐẶC TẢ CHI TIẾT 12 PHÂN HỆ NGHIỆP VỤ CỐT LÕI</h2>
+        </div>
+
+        <!-- Module 1 -->
+        <div class="module-block" id="mod-1">
+          <div class="module-header">
+            <span class="module-title">Phân hệ 1: Quản trị Hệ thống, Phân quyền &amp; Bảo mật</span>
+            <span class="module-code">SYSTEM_ADMIN</span>
+          </div>
+          <div class="route-list">
+            <strong>Đường dẫn:</strong> <code>/admin/roles</code>, <code>/admin/users</code>, <code>/admin/campuses</code>, <code>/admin/parents</code>, <code>/admin/student-portal</code>, <code>/admin/logs</code>, <code>/admin/maintenance</code>
+          </div>
+          <ul>
+            <li><strong>Quản lý Nhóm quyền Động (Dynamic RBAC Matrix):</strong> Thiết lập quyền chi tiết (<code>canRead</code>, <code>canCreate</code>, <code>canUpdate</code>, <code>canDelete</code>) cho từng vai trò trên hơn 80 modules/sub-modules; tự động điều hướng trang chủ (Default Landing Route) theo quyền hạn.</li>
+            <li><strong>Quản lý Tài khoản Nhân sự &amp; Phân quyền Cơ sở:</strong> Quản lý hồ sơ tài khoản cán bộ, giáo viên, nhân viên; gán phạm vi quản lý theo một hoặc nhiều Cơ sở (<code>CS1</code>–<code>CS5</code>); hỗ trợ Google Workspace SSO, khóa/mở tài khoản và thu hồi phiên đăng nhập từ xa.</li>
+            <li><strong>Quản lý Tài khoản Phụ huynh (<code>PARENTS</code>):</strong> Liên kết chính xác một tài khoản phụ huynh với một hoặc nhiều con đang theo học tại các cơ sở khác nhau (<code>ParentStudentLink</code>).</li>
+            <li><strong>Cổng Ảnh Học sinh (<code>STUDENT_PORTAL_CONFIG</code>):</strong> Cấu hình đợt thu thập ảnh thẻ trực tuyến, tải ảnh hàng loạt (Bulk Upload), chuẩn hóa kích thước và đồng bộ xuyên suốt các năm học theo <code>studentCode</code>.</li>
+            <li><strong>Nhật ký Kiểm toán (<code>AUDIT_LOGS</code>) &amp; Bảo trì CSDL (<code>MAINTENANCE</code>):</strong> Ghi vết toàn bộ thao tác nhạy cảm kèm IP và giá trị cũ/mới; <strong>Hybrid Backup Engine</strong> tạo bản sao lưu nén <code>.db.gz</code> tự động và đồng bộ Dual-Core DB giữa SQLite cục bộ và đám mây LibSQL Turso.</li>
+          </ul>
+        </div>
+
+        <!-- Module 2 -->
+        <div class="module-block" id="mod-2">
+          <div class="module-header">
+            <span class="module-title">Phân hệ 2: Khảo thí &amp; Đảm bảo Chất lượng Giáo dục</span>
+            <span class="module-code">KT&amp;ĐBCL (DIGITAL TESTING &amp; QUALITY)</span>
+          </div>
+          <div class="route-list">
+            <strong>Đường dẫn:</strong> <code>/admin/ktdbcl/*</code>, <code>/teacher/khao-thi-so</code>, <code>/teacher/so-diem-nhan-xet</code>, <code>/teacher/so-diem-ctqt</code>, <code>/teacher/phan-tich-chat-luong</code>, <code>/exam</code>
+          </div>
+          <ul>
+            <li><strong>2.1. Khảo thí Số – OMR &amp; LMS (Quy trình 8 bước khép kín):</strong>
+              (1) Tổng quan khảo thí ➔ (2) Quản lý kỳ kiểm tra &amp; thi bù ➔ (3) Phân công ra đề, phản biện, coi thi, chấm thi ➔ (4) Ma trận đặc tả 4 mức độ nhận thức, trộn đề tự động nhiều mã đề &amp; in phiếu OMR chuẩn A4 ➔ (5) Quản lý phòng thi &amp; sơ đồ chỗ ngồi ➔ (6) Chấm phiếu giấy tự động bằng thị giác máy tính (<code>edgeOmrVisionEngine</code> có hàng đợi ngoại tuyến IndexedDB) và đồng bộ điểm bài thi trực tuyến từ <strong>Moodle LMS</strong> (<code>moodleClient</code>) hoặc cổng <code>/exam</code> ➔ (7) Đối soát, hậu kiểm &amp; duyệt bảng điểm ➔ (8) Phân tích độ khó câu hỏi &amp; lưu trữ.</li>
+            <li><strong>2.2. KT&amp;ĐBCL Connect (Helpdesk Nghiệp vụ 2 Chiều):</strong> Giáo viên gửi ticket yêu cầu hỗ trợ (điều chỉnh điểm, sự cố khảo thí) kèm minh chứng; Ban KT&amp;ĐBCL xử lý với sự hỗ trợ của AI gợi ý câu trả lời chuẩn quy chế; ban hành thông báo nghiệp vụ có theo dõi trạng thái "Đã đọc".</li>
+            <li><strong>2.3. Quản lý Kỳ thi Học sinh Giỏi &amp; Thành tích:</strong> Theo dõi các cuộc thi học thuật, năng khiếu, thể thao, STEM/Robotics, KHKT từ cấp Trường đến Quốc tế; tự động đồng bộ giải thưởng vào Bảng Vàng Hồ sơ 360°.</li>
+            <li><strong>2.4. Khảo thí Quốc tế &amp; Quản lý Chứng chỉ (Rule Engine 5 Chuẩn):</strong>
+              <ul>
+                <li><em>Cambridge Young Learners (Starters / Movers / Flyers):</em> Thang Khiên (0–5 khiên/kỹ năng, tổng 0–15 khiên).</li>
+                <li><em>Cambridge Main Suite (KET / PET):</em> Thang Cambridge English Scale, phân hạng Grade A/B/C và quy chiếu CEFR (A2, B1, B2).</li>
+                <li><em>IELTS Academic / General:</em> Thang Band 0.0–9.0 cho 4 kỹ năng và tự động làm tròn điểm Overall chuẩn quốc tế.</li>
+                <li><em>Pearson Edexcel International (iPrimary / iLowerSecondary):</em> Đánh giá Mathematics, Science, English theo mức chuẩn P1–P3, S1–S4.</li>
+                <li><em>Cambridge Checkpoint (Primary &amp; Lower Secondary):</em> Thang 0.0–50.0 (hoặc 0.0–6.0) kèm 6 mức Performance Band.</li>
+                <li>Đối chiếu với <strong>Mục tiêu Chuẩn đầu ra Sky-Line</strong> theo từng khối, lưu trữ chứng chỉ số (Certificates Vault) và xuất Phiếu báo điểm Quốc tế PDF.</li>
+              </ul>
+            </li>
+            <li><strong>2.5. Sổ điểm &amp; Nhận xét Chương trình Bộ GD&amp;ĐT (MOET) &amp; Quốc tế (CTQT):</strong> Tự động tính điểm và xếp loại học lực/rèn luyện chuẩn <strong>Thông tư 27/2020/TT-BGDĐT</strong> (Tiểu học) và <strong>Thông tư 22/2021/TT-BGDĐT</strong> (THCS &amp; THPT); quản lý khóa sổ điểm, phê duyệt yêu cầu mở khóa sổ điểm và luồng phản hồi 3 bên (<em>PHHS ↔ GVCN ↔ GVBM</em>).</li>
+            <li><strong>2.6. Thống kê Báo cáo, Phân tích THKQ, Scatter Plot &amp; Import Đa nguồn:</strong> So sánh Điểm TB (Mean), Độ lệch chuẩn (StdDev), biểu đồ phân tán tương quan giữa các kỳ kiểm tra; import Excel nhiều sheet từ VnEdu/SMAS theo quy trình an toàn <code>Staging → Validate → Commit → Rollback</code>.</li>
+          </ul>
+        </div>
+
+        <!-- Module 3 -->
+        <div class="module-block" id="mod-3">
+          <div class="module-header">
+            <span class="module-title">Phân hệ 3: Quản lý Môn học Đặc thù Sky-Line</span>
+            <span class="module-code">SPECIAL_SUBJECTS</span>
+          </div>
+          <div class="route-list">
+            <strong>Đường dẫn:</strong> <code>/admin/special-subjects</code>, <code>/teacher/special-subjects</code>
+          </div>
+          <ul>
+            <li>Quản lý chuyên sâu <strong>4 chương trình bản sắc Sky-Line</strong>:
+              (1) ❤️ <strong>Giáo dục Cảm xúc Xã hội – CXXH (SEL)</strong> (Khối 1–9),
+              (2) 🛡️ <strong>Giáo dục Giới tính – GDGT</strong> (Khối 6–9),
+              (3) 🪙 <strong>Giáo dục Tài chính – FIN_EDU</strong> (Khối 2–9),
+              (4) 🧭 <strong>Giáo dục Hướng nghiệp – GDHN</strong> (Khối 6–12).</li>
+            <li>Quản lý khung phân phối chương trình (PPCT) theo hệ đào tạo (2S, 3S, Hội nhập), phân công giáo viên kèm email thông báo tự động, Sổ ghi đầu bài (<code>teaching-logs</code>), đánh giá định kỳ và Hồ sơ Hướng nghiệp tích lũy (<code>career-profile</code>).</li>
+          </ul>
+        </div>
+
+        <!-- Module 4 -->
+        <div class="module-block" id="mod-4">
+          <div class="module-header">
+            <span class="module-title">Phân hệ 4: Quản lý Hoạt động Trải nghiệm &amp; Dự án</span>
+            <span class="module-code">EXPERIENTIAL_ACTIVITIES</span>
+          </div>
+          <div class="route-list">
+            <strong>Đường dẫn:</strong> <code>/admin/experiential-activities</code>, <code>/teacher/experiential-activities</code>
+          </div>
+          <ul>
+            <li>Quản lý danh mục hoạt động trải nghiệm chuẩn GDPT 2018 theo <strong>4 Mạch nội dung</strong> (<em>Hướng vào bản thân, Hướng đến xã hội, Hướng đến tự nhiên, Hướng nghiệp</em>) và chủ đề giáo dục từng tháng.</li>
+            <li>Điều phối liên bộ phận (TLHN Dispatch), phân công CTHS &amp; GVCN, đánh giá vai trò tham gia của từng học sinh (<em>Trưởng nhóm, Diễn giả, Thành viên tích cực</em>) và tự động kết xuất <strong>Sổ theo dõi HĐTN của GVCN</strong>, <strong>Báo cáo tháng PDF</strong> và <strong>Sổ Sự kiện Nhà trường (Event Book PDF)</strong>.</li>
+          </ul>
+        </div>
+
+        <!-- Module 5 -->
+        <div class="module-block" id="mod-5">
+          <div class="module-header">
+            <span class="module-title">Phân hệ 5: Học liệu Số &amp; Tiện ích Sư phạm</span>
+            <span class="module-code">LEARNING_RESOURCES</span>
+          </div>
+          <div class="route-list">
+            <strong>Đường dẫn:</strong> <code>/learning-resources/textbooks</code>, <code>/learning-resources/nameplates</code>
+          </div>
+          <ul>
+            <li><strong>Thư viện Sách Giáo khoa &amp; Học liệu Số:</strong> Quản lý tập trung kho SGK điện tử, sách bài tập theo Bộ sách (Kết nối tri thức, Chân trời sáng tạo, Cánh diều, Cambridge...), Khối lớp và Môn học; tích hợp trình đọc trực tuyến có cây mục lục chương/bài và tính năng <strong>Hỏi đáp AI trực tiếp trên nội dung sách</strong> giúp giáo viên soạn bài nhanh chóng.</li>
+            <li><strong>In Bảng tên Họp Phụ huynh Tích hợp Mã QR Định danh:</strong> Tự động dàn trang bảng tên để bàn khổ A4 chuẩn in ấn cho cả lớp chỉ với 1 cú nhấp chuột; mỗi bảng tên gắn <strong>Mã QR Định danh Học sinh (Lifelong QR)</strong> để phụ huynh quét xem ngay Hồ sơ Học tập 360° của con tại buổi họp.</li>
+          </ul>
+        </div>
+
+        <!-- Module 6 -->
+        <div class="module-block" id="mod-6">
+          <div class="module-header">
+            <span class="module-title">Phân hệ 6: Quản lý Đào tạo, Thời khóa biểu &amp; Sĩ số</span>
+            <span class="module-code">TRAINING &amp; ENROLLMENT</span>
+          </div>
+          <div class="route-list">
+            <strong>Đường dẫn:</strong> <code>/admin/academic-years</code>, <code>/departments</code>, <code>/subjects</code>, <code>/classes</code>, <code>/teachers</code>, <code>/teaching-assignments</code>, <code>/thoi-khoa-bieu</code>, <code>/sy-so</code>, <code>/student-transfers</code>, <code>/teacher-transfers</code>
+          </div>
+          <ul>
+            <li><strong>Quản trị Cấu trúc Đào tạo:</strong> Quản lý Niên khóa, Học kỳ, Chủ đề năm học, 5 Trụ cột giá trị cốt lõi, Tổ chuyên môn, Môn học, Hệ đào tạo, Lớp học, Hồ sơ Giáo viên và Phân công giảng dạy (GVCN, GVBM, TTCM).</li>
+            <li><strong>Thời khóa biểu Thông minh Kéo &amp; Thả (<code>TIMETABLE</code>):</strong> Thuật toán xếp TKB tự động (<code>solver.ts</code>) kết hợp giao diện Drag &amp; Drop trực quan, tự động cảnh báo xung đột trùng tiết/trùng phòng và đồng bộ tức thì sang Cổng Giáo viên &amp; SSM Today.</li>
+            <li><strong>Quản lý Biến động Sĩ số Tháng &amp; Lưu chuyển Học sinh:</strong> Quản lý học sinh nhập mới, chuyển đi nội bộ hoặc chuyển trường liên kết với dữ liệu Khảo sát đầu vào và Danh mục Trường liên kết; công cụ kết chuyển nhân sự và lớp học khi bắt đầu năm học mới.</li>
+          </ul>
+        </div>
+
+        <!-- Module 7 -->
+        <div class="module-block" id="mod-7">
+          <div class="module-header">
+            <span class="module-title">Phân hệ 7: Cố vấn Học tập, Tâm lý Học đường &amp; Chỉ số SGSI</span>
+            <span class="module-code">ACADEMIC_ADVISORY &amp; COUNSELING</span>
+          </div>
+          <div class="route-list">
+            <strong>Đường dẫn:</strong> <code>/admin/co-van-hoc-tap</code>, <code>/admin/ktdbcl/support</code>, <code>/teacher/co-van-hoc-tap</code>, <code>/teacher/ho-tro-hoc-tap</code>, <code>/parent/children/advisory</code>, <code>/hocsinh/portal/muc-tieu</code>
+          </div>
+          <ul>
+            <li><strong>Quản trị Mục tiêu Học tập SMART &amp; Phân tích GAP:</strong> Học sinh, GVCN và Phụ huynh thiết lập điểm mục tiêu đầu kỳ; hệ thống tự động tính <code>GAP = Actual - Target</code>, hỗ trợ khóa/mở khóa và phê duyệt điều chỉnh mục tiêu giữa kỳ.</li>
+            <li><strong>Chỉ số Phát triển Bền vững Học sinh Sky-Line (SGSI):</strong> Động cơ tính toán chỉ số tổng hợp 5 trụ cột đánh giá sự phát triển toàn diện về học thuật, hoàn thành mục tiêu, tiến bộ cá nhân, hoạt động trải nghiệm và rèn luyện kỷ luật.</li>
+            <li><strong>Hệ thống Cảnh báo Sớm 3 Màu &amp; Tham vấn Tâm lý Học đường:</strong> Phân loại trạng thái học sinh 🟢 <em>Xanh (Ổn định)</em> – 🟡 <em>Vàng (Cần lưu ý)</em> – 🔴 <em>Đỏ (SOS khẩn cấp)</em>; quản lý Nhật ký tham vấn 1-1, Hồ sơ đánh giá tâm lý tích lũy bảo mật riêng tư (Privacy RBAC) và gửi Email khẩn cấp (<code>UrgentEmailModal</code>).</li>
+            <li><strong>Phụ đạo Văn hóa &amp; Bồi dưỡng Năng khiếu:</strong> Theo dõi danh sách học sinh diện phụ đạo gỡ rào cản, học sinh cam kết đầu vào và học sinh bồi dưỡng HSG kèm Sổ theo dõi tiến độ cải thiện (Excel &amp; PDF).</li>
+          </ul>
+        </div>
+
+        <!-- Module 8 -->
+        <div class="module-block" id="mod-8">
+          <div class="module-header">
+            <span class="module-title">Phân hệ 8: Hồ sơ Học sinh 360° &amp; Trung tâm Tra cứu Đa chiều</span>
+            <span class="module-code">STUDENT_360 &amp; LOOKUP</span>
+          </div>
+          <div class="route-list">
+            <strong>Đường dẫn:</strong> <code>/admin/ho-so-hoc-sinh</code>, <code>/teacher/ho-so-hoc-sinh</code>, <code>/admin/tra-cuu-hoc-sinh/*</code>, <code>/parent/children/profile</code>
+          </div>
+          <ul>
+            <li><strong>Học bạ Điện tử Tích lũy 360° (Cumulative e-Portfolio K-12):</strong> Hợp nhất 7 phần thông tin cốt lõi trên một giao diện:
+              (1) <em>Thông tin Hành chính, Ảnh thẻ &amp; Mã định danh trọn đời</em>,
+              (2) <em>Cố vấn Học tập, Mục tiêu SMART &amp; Tự nhìn nhận</em>,
+              (3) <em>Bản đồ Năng lực Chuyên sâu 360° (Biểu đồ Vector Radar đa giác chỉ rõ Top Strength &amp; Growth Area)</em>,
+              (4) <em>Kết quả Học tập MOET (TT27/TT22), Quốc tế (CTQT) &amp; Khảo sát đầu vào</em>,
+              (5) <em>Bảng Vàng Thành tích, Giải thưởng &amp; Chứng chỉ Quốc tế</em>,
+              (6) <em>Dấu ấn Hoạt động Trải nghiệm 4 Mạch &amp; Dự án</em>,
+              (7) <em>Định hướng Nghề nghiệp, Lời dặn GVCN &amp; Khung Chữ ký Xác thực 3 Bên</em>.</li>
+            <li><strong>Trung tâm Tra cứu Đa chiều (4 Cổng Tra cứu):</strong> Tra cứu Hồ sơ, Tra cứu Kết quả học tập, Tra cứu Xếp loại học tập, Tra cứu Thành tích với bộ lọc 5 tầng tốc độ cao.</li>
+            <li><strong>Xuất bản PDF Chuẩn Quốc tế A4:</strong> Tùy biến ẩn/hiện từng phân mục, dàn trang chống cắt đôi biểu đồ (<code>Page-break Avoidance</code>), hỗ trợ in đơn lẻ hoặc kết xuất PDF hàng loạt cho cả lớp/khối.</li>
+          </ul>
+        </div>
+
+        <!-- Module 9 -->
+        <div class="module-block" id="mod-9">
+          <div class="module-header">
+            <span class="module-title">Phân hệ 9: Quản lý Mạng lưới Cựu học sinh (Sky-Line Alumni)</span>
+            <span class="module-code">SKYLINE_ALUMNI</span>
+          </div>
+          <div class="route-list">
+            <strong>Đường dẫn:</strong> <code>/admin/alumni/*</code>, <code>/alumni/portal</code>
+          </div>
+          <ul>
+            <li><strong>7 Chức năng Quản trị Vòng đời Sau Tốt nghiệp:</strong>
+              (1) <em>Dashboard Tổng quan Alumni</em>,
+              (2) <em>Kế thừa Hồ sơ Học sinh Cuối cấp an toàn (Idempotent Inheritance theo <code>studentCode</code>)</em>,
+              (3) <em>Phát hành &amp; Thu hồi Mã QR Định danh Bảo mật (<code>publicToken</code> UUID v4 không lộ PII)</em>,
+              (4) <em>Cổng Cựu học sinh Tự cập nhật qua OTP 2 lớp &amp; Hàng đợi Kiểm duyệt (<code>PENDING → VERIFIED</code>)</em>,
+              (5) <em>Theo dõi Hành trình Đại học, Thạc sĩ, Tiến sĩ &amp; Sự nghiệp</em>,
+              (6) <em>Báo cáo Phân tích Mạng lưới &amp; Kết nối Mentorship</em>,
+              (7) <em>Cấu hình Danh mục Trường Đại học/Quốc gia &amp; Lưu vết Cam kết Bảo vệ Dữ liệu Cá nhân (<code>AlumniConsentLog</code>)</em>.</li>
+          </ul>
+        </div>
+
+        <!-- Module 10 -->
+        <div class="module-block" id="mod-10">
+          <div class="module-header">
+            <span class="module-title">Phân hệ 10: Khảo sát Năng lực Đầu vào &amp; Tuyển sinh</span>
+            <span class="module-code">ENTRANCE_ASSESSMENT</span>
+          </div>
+          <div class="route-list">
+            <strong>Đường dẫn:</strong> <code>/admin/cau-hinh-khao-sat</code>, <code>/admin/student-info</code>, <code>/admin/phan-cong-khao-sat</code>, <code>/admin/ket-qua-khao-sat</code>, <code>/admin/xet-duyet-ket-qua</code>, <code>/teacher/input-assessments</code>
+          </div>
+          <ul>
+            <li><strong>Đánh giá Toàn diện cả 2 Khối Phổ thông K-12 &amp; Mầm non:</strong>
+              <ul>
+                <li><em>Khối Phổ thông (Lớp 1–12):</em> Đánh giá Tư duy Toán/Logic, Tiếng Việt/Ngữ văn, Tiếng Anh (4 kỹ năng &amp; phỏng vấn 1-1 với GVNN), Kỹ năng Tư duy (<code>ThinkingSkillsForm</code>) và Tâm lý đầu vào (<code>PsychologyAssessmentForm</code>).</li>
+                <li><em>Khối Mầm non (Preschool):</em> Đánh giá chuẩn phát triển trẻ em 5 lĩnh vực (<code>ChildDevStandardForm</code>) và theo dõi giai đoạn học thử (<code>preschool-probationary-assessment</code>).</li>
+              </ul>
+            </li>
+            <li><strong>Quy trình Tuyển sinh Khép kín:</strong> Đăng ký hồ sơ ➔ Xếp lịch khảo sát nhanh ➔ Phân công giáo viên chấm ➔ Hội đồng xét duyệt tích hợp <strong>Trợ lý AI Tư vấn Tuyển sinh</strong> (<em>Đạt chính thức / Đạt có điều kiện / Học thử</em>) ➔ Tự động xuất Phiếu kết quả PDF gửi Email cho Phụ huynh ➔ Chuyển hồ sơ vào lớp chính thức (<code>MoveToBatchModal</code>).</li>
+          </ul>
+        </div>
+
+        <!-- Module 11 -->
+        <div class="module-block" id="mod-11">
+          <div class="module-header">
+            <span class="module-title">Phân hệ 11: Khảo sát Định kỳ, Phản hồi Đa chiều &amp; Đo lường NPS</span>
+            <span class="module-code">SURVEYS &amp; NPS</span>
+          </div>
+          <div class="route-list">
+            <strong>Đường dẫn:</strong> <code>/admin/surveys</code>, <code>/admin/categories</code>, <code>/admin/nps</code>, <code>/admin/reports</code>, <code>/teacher/surveys</code>, <code>/parent/surveys</code>, <code>/hocsinh/hs-khaosat</code>
+          </div>
+          <ul>
+            <li><strong>Thiết kế &amp; Phát hành Khảo sát Đa Đối tượng:</strong> Hỗ trợ câu hỏi thang đo Likert, chấm điểm NPS (0–10), trắc nghiệm và tự luận mở cho Phụ huynh, Học sinh và Giáo viên; tự động lưu nháp khi đang làm khảo sát.</li>
+            <li><strong>Phân tích Chỉ số Net Promoter Score (NPS):</strong> Tự động phân nhóm <strong>Promoters (9–10)</strong>, <strong>Passives (7–8)</strong>, <strong>Detractors (0–6)</strong> và tính điểm NPS theo thời gian thực cho từng Cơ sở, Khối lớp và Dịch vụ nhà trường (Giảng dạy, Bán trú, Cơ sở vật chất, Xe đưa đón...).</li>
+          </ul>
+        </div>
+
+        <!-- Module 12 -->
+        <div class="module-block" id="mod-12">
+          <div class="module-header">
+            <span class="module-title">Phân hệ 12: Dự giờ, Phát triển Chuyên môn &amp; AI Growth</span>
+            <span class="module-code">CLASSROOM_OBSERVATION</span>
+          </div>
+          <div class="route-list">
+            <strong>Đường dẫn:</strong> <code>/admin/du-gio</code>, <code>/admin/du-gio-mam-non</code>, <code>/admin/du-gio-gvnn</code>, <code>/admin/tong-hop-du-gio</code>, <code>/teacher/du-gio*</code>, <code>/teacher/ai-growth</code>
+          </div>
+          <ul>
+            <li><strong>3 Mô hình Dự giờ Chuyên biệt:</strong> (1) <em>Dự giờ Phổ thông K-12</em>, (2) <em>Dự giờ Mầm non</em>, và (3) <em>Dự giờ Giáo viên Nước ngoài (Song ngữ Anh – Việt)</em>.</li>
+            <li><strong>Quản trị Quy trình Dự giờ Toàn diện:</strong> Đăng ký lịch mở tiết thao giảng/dự giờ, theo dõi định mức dự giờ bắt buộc của GV &amp; TTCM (<code>TeacherTargetTracker</code>), chấm phiếu trực tuyến kèm bộ mẫu nhận xét nhanh, xác nhận rút kinh nghiệm của giáo viên đứng lớp và quy trình <strong>Xét duyệt đánh giá lại</strong>.</li>
+            <li><strong>Ma trận Dự giờ TTCM &amp; AI Growth:</strong> Giám sát độ phủ dự giờ chéo trong từng Tổ chuyên môn, tự động gửi Email báo cáo tổng hợp hàng tháng và ứng dụng <strong>AI Growth</strong> phân tích lịch sử nhận xét dự giờ để gợi ý lộ trình tự bồi dưỡng sư phạm.</li>
+          </ul>
+        </div>
+      </section>
+
+      <!-- SECTION 5: SPECIALIZED PORTALS -->
+      <section class="section-card searchable-section" id="sec-5">
+        <div class="section-header">
+          <span class="section-num">CHƯƠNG 5</span>
+          <h2>ĐẶC TẢ CHI TIẾT CÁC CỔNG CHUYÊN BIỆT (PARENT, STUDENT, ONLINE EXAM, ALUMNI &amp; QR)</h2>
+        </div>
+        <div class="grid-2">
+          <div class="info-card">
+            <div class="info-card-title">👨‍👩‍👧‍👦 5.1. Cổng Phụ huynh Học sinh (<code>/parent</code>)</div>
+            <ul>
+              <li><strong>Chuyển đổi Hồ sơ Đa Con (Multi-Child Switcher):</strong> Xem dữ liệu của nhiều con đang học ở các cấp/cơ sở khác nhau chỉ với 1 chạm.</li>
+              <li><strong>Theo dõi Điểm số &amp; Phản hồi 2 Chiều (<code>/parent/children/grades</code>):</strong> Xem bảng điểm MOET/CTQT và gửi ý kiến trao đổi trực tiếp đến GVCN/GVBM.</li>
+              <li><strong>Đồng hành Cố vấn &amp; Ký Cam kết (<code>/parent/children/advisory</code>):</strong> Xem mục tiêu SMART, khoảng cách GAP, nhật ký tư vấn 1-1 và ký cam kết trực tuyến.</li>
+              <li><strong>Xem Hồ sơ 360° &amp; Khảo sát NPS (<code>/parent/children/profile</code>, <code>/parent/surveys</code>).</strong></li>
+            </ul>
+          </div>
+          <div class="info-card">
+            <div class="info-card-title">🎓 5.2. Cổng Học sinh Tự chủ Học tập (<code>/hocsinh/portal</code>)</div>
+            <ul>
+              <li><strong>Dashboard 5 Trụ cột Giá trị Năm học:</strong> Hiển thị tiến độ hoàn thành mục tiêu, biểu đồ Radar năng lực và bảng vàng thành tích cá nhân.</li>
+              <li><strong>Sổ Mục tiêu SMART &amp; Tự Nhìn nhận (<code>/hocsinh/portal/muc-tieu</code>):</strong> Học sinh tự đặt điểm mục tiêu đầu kỳ, lập kế hoạch hành động, viết Self-Reflection cuối kỳ và gửi yêu cầu điều chỉnh mục tiêu giữa kỳ.</li>
+              <li><strong>Cập nhật Ảnh thẻ &amp; Khảo sát Học sinh (<code>/hocsinh/portal/anh-the</code>, <code>/hocsinh/hs-khaosat</code>).</strong></li>
+            </ul>
+          </div>
+          <div class="info-card">
+            <div class="info-card-title">💻 5.3. Cổng Thi Trực tuyến Chống Gian lận (<code>/exam</code>)</div>
+            <ul>
+              <li><strong>Giao diện Làm bài Tập trung:</strong> Nhận diện đề thi đã trộn ngẫu nhiên câu hỏi và thứ tự đáp án cho từng thí sinh.</li>
+              <li><strong>Giám sát Chống Gian lận:</strong> Đếm ngược thời gian đồng bộ máy chủ, tự động lưu bài làm (<code>Auto-save</code>) và ghi nhận cảnh báo khi thí sinh rời màn hình hoặc chuyển tab (<code>Focus/Blur Tracking</code>).</li>
+              <li><strong>Chấm điểm Tức thì:</strong> Chấm tự động 100% trắc nghiệm ngay khi nộp bài và đồng bộ về Phân hệ Khảo thí Số.</li>
+            </ul>
+          </div>
+          <div class="info-card">
+            <div class="info-card-title">📱 5.4. Cổng Xác thực QR &amp; Cổng Alumni (<code>/profile/verify/[code]</code>)</div>
+            <ul>
+              <li><strong>Điều hướng Thông minh khi Quét QR:</strong> Giáo viên đã đăng nhập mở thẳng Hồ sơ 360°; Phụ huynh xác thực nhanh bằng Ngày sinh của con để xem Học bạ 360° bảo mật.</li>
+              <li><strong>Cổng Cựu Học sinh (<code>/alumni/portal</code>):</strong> Xác thực OTP 2 lớp để cập nhật Đại học, Quốc gia du học, Học bổng, Nghề nghiệp và đăng ký cố vấn hướng nghiệp (Mentorship).</li>
+            </ul>
+          </div>
+        </div>
+      </section>
+
+      <!-- SECTION 6: OPERATIONS, AI & PWA -->
+      <section class="section-card searchable-section" id="sec-6">
+        <div class="section-header">
+          <span class="section-num">CHƯƠNG 6</span>
+          <h2>ĐIỀU HÀNH CÔNG VIỆC, BÁO CÁO TUẦN &amp; TRỢ LÝ TRÍ TUỆ NHÂN TẠO (SSM AI &amp; PWA)</h2>
+        </div>
+        <div class="grid-3">
+          <div class="info-card">
+            <div class="info-card-title">📋 6.1. Task Engine &amp; Báo cáo Tuần</div>
+            <ul>
+              <li><strong>Giao việc Đa cấp (<code>/admin/tasks</code>):</strong> Hiển thị theo List, Kanban Board, Timeline; gắn nhãn khẩn cấp, đính kèm minh chứng và tính SLA hoàn thành.</li>
+              <li><strong>Sổ Giáo viên Hợp nhất (<code>/teacher/tasks</code>):</strong> Tự động gom việc từ <strong>7 luồng nghiệp vụ</strong> (Nhập điểm, Dự giờ, Khảo sát, Mở khóa sổ điểm, Chấm KSĐV, Trải nghiệm, Việc được giao).</li>
+              <li><strong>Báo cáo Tuần (<code>/admin/weekly-reports</code>):</strong> Nộp báo cáo trước 14h00 Thứ Năm; BGH duyệt và ghi ý kiến chỉ đạo trực tiếp trên từng hạng mục.</li>
+            </ul>
+          </div>
+          <div class="info-card">
+            <div class="info-card-title">🤖 6.2. Trợ lý AI Doanh nghiệp (SSM AI)</div>
+            <ul>
+              <li><strong>14 Ý định Nghiệp vụ &amp; 16 Công cụ Chuẩn:</strong> Tra cứu quy chế, phân tích điểm lớp, tra cứu HS 360°, kiểm tra GAP, tổng hợp dự giờ...</li>
+              <li><strong>Permission Gateway:</strong> Kiểm soát phân quyền nghiêm ngặt (GV chỉ hỏi được lớp mình dạy; PH chỉ hỏi được con mình).</li>
+              <li><strong>Deterministic Analytics + RAG:</strong> Tính toán toán học chính xác 100% trước khi LLM diễn giải; trích dẫn văn bản quy chế từ Kho tri thức (<code>/admin/ai/knowledge</code>) và lưu vết <code>AIAuditLog</code>.</li>
+            </ul>
+          </div>
+          <div class="info-card">
+            <div class="info-card-title">📲 6.3. Ứng dụng Di động SSM PWA</div>
+            <ul>
+              <li><strong>5 Tab Điều hướng Đáy:</strong> (1) <em>Hôm nay (SSM Today)</em>, (2) <em>Việc của tôi</em>, (3) <em>SSM AI</em>, (4) <em>Thông báo 4 mức màu</em>, (5) <em>Tôi &amp; Bảo mật thiết bị</em>.</li>
+              <li><strong>Nút Tác vụ Nhanh FAB (+):</strong> Chấm nhanh dự giờ, Tra cứu HS 360° &amp; Gọi phụ huynh, Hỏi AI, Tạo nhắc việc.</li>
+              <li><strong>Thu hồi Phiên Đăng nhập Từ xa:</strong> Đăng xuất thiết bị cũ chỉ với 1 chạm khi đổi hoặc mất điện thoại.</li>
+            </ul>
+          </div>
+        </div>
+      </section>
+
+      <!-- SECTION 7: 15 ROLE MATRIX -->
+      <section class="section-card searchable-section" id="sec-7">
+        <div class="section-header">
+          <span class="section-num">CHƯƠNG 7</span>
+          <h2>MA TRẬN PHÂN QUYỀN 15 VAI TRÒ NGƯỜI DÙNG (ACTORS &amp; ROLE MATRIX)</h2>
+        </div>
+        <div class="table-wrap">
+          <table>
+            <thead>
+              <tr>
+                <th>STT</th>
+                <th>Mã Vai trò</th>
+                <th>Tên Vai trò</th>
+                <th>Phạm vi Dữ liệu (Scope)</th>
+                <th>Quyền hạn Chức năng Trọng tâm</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td><strong>1</strong></td>
+                <td><code>SUPER_ADMIN</code></td>
+                <td>Quản trị Hệ thống Tối cao</td>
+                <td>Toàn hệ thống (<code>CS1</code>–<code>CS5</code>)</td>
+                <td>Cấu hình hệ thống, phân quyền RBAC động, quản lý tài khoản, sao lưu/phục hồi CSDL, xem Nhật ký kiểm toán (<code>Audit Logs</code>) và toàn bộ 12 phân hệ.</td>
+              </tr>
+              <tr>
+                <td><strong>2</strong></td>
+                <td><code>HDQT / CEO</code></td>
+                <td>Hội đồng Quản trị &amp; Tổng Giám đốc</td>
+                <td>Toàn hệ thống (<code>CS1</code>–<code>CS5</code>)</td>
+                <td>Xem Executive Dashboard toàn diện, báo cáo đối sánh liên cơ sở, xu hướng sĩ số, chất lượng học thuật, NPS và hiệu suất SLA toàn hệ thống.</td>
+              </tr>
+              <tr>
+                <td><strong>3</strong></td>
+                <td><code>BGH / GDCS</code></td>
+                <td>Ban Giám hiệu &amp; Giám đốc Cơ sở</td>
+                <td>Cơ sở phụ trách / Toàn trường</td>
+                <td>Điều hành hoạt động cơ sở trên Executive Dashboard, phê duyệt kết quả khảo sát đầu vào, giao việc, duyệt báo cáo tuần và giám sát chất lượng cơ sở.</td>
+              </tr>
+              <tr>
+                <td><strong>4</strong></td>
+                <td><code>KT_DBCL</code></td>
+                <td>Ban Khảo thí &amp; Đảm bảo Chất lượng</td>
+                <td>Toàn hệ thống (<code>CS1</code>–<code>CS5</code>)</td>
+                <td>Quản trị Khảo thí số (OMR/LMS), Kỳ thi quốc tế, khóa/mở sổ điểm, import điểm đa nguồn, kiểm toán dữ liệu, quản lý khảo sát NPS và xử lý ticket <em>KT&amp;ĐBCL Connect</em>.</td>
+              </tr>
+              <tr>
+                <td><strong>5</strong></td>
+                <td><code>QLCM / TBP</code></td>
+                <td>Quản lý Chuyên môn / Trưởng Bộ phận</td>
+                <td>Cấp học / Khối phụ trách</td>
+                <td>Giám sát tiến độ chuyên môn liên tổ, phân tích phổ điểm cấp học, theo dõi công tác dự giờ, cố vấn học tập và hỗ trợ học sinh theo khối.</td>
+              </tr>
+              <tr>
+                <td><strong>6</strong></td>
+                <td><code>TTCM</code></td>
+                <td>Tổ trưởng Chuyên môn</td>
+                <td>Tổ bộ môn phụ trách</td>
+                <td>Chuyển đổi linh hoạt <em>Teacher View ↔ Manager View</em>, duyệt đề kiểm tra, theo dõi ma trận dự giờ trong tổ, xét duyệt đánh giá lại tiết dạy và tổng hợp chuyên môn tổ.</td>
+              </tr>
+              <tr>
+                <td><strong>7</strong></td>
+                <td><code>GVCN</code></td>
+                <td>Giáo viên Chủ nhiệm</td>
+                <td>Lớp chủ nhiệm được phân công</td>
+                <td>Quản lý hồ sơ lớp chủ nhiệm, nhập nhận xét TT27/TT22, duyệt mục tiêu SMART, ghi nhật ký cố vấn 1-1, theo dõi phụ đạo/tâm lý, chấm hoạt động trải nghiệm và in bảng tên QR họp PHHS.</td>
+              </tr>
+              <tr>
+                <td><strong>8</strong></td>
+                <td><code>GVBM</code></td>
+                <td>Giáo viên Bộ môn</td>
+                <td>Các lớp &amp; môn giảng dạy</td>
+                <td>Nhập điểm &amp; nhận xét bộ môn, ra đề &amp; chấm bài OMR/LMS, phân tích chất lượng bộ môn, đăng ký mở tiết &amp; chấm dự giờ đồng nghiệp, ghi sổ phụ đạo.</td>
+              </tr>
+              <tr>
+                <td><strong>9</strong></td>
+                <td><code>GV_MAM_NON</code></td>
+                <td>Giáo viên Mầm non</td>
+                <td>Các lớp Mầm non phụ trách</td>
+                <td>Đánh giá khảo sát đầu vào Mầm non (5 lĩnh vực phát triển trẻ), đánh giá trẻ giai đoạn học thử và thực hiện dự giờ chuyên biệt bậc Mầm non.</td>
+              </tr>
+              <tr>
+                <td><strong>10</strong></td>
+                <td><code>GVNN</code></td>
+                <td>Giáo viên Nước ngoài (Expat Teachers)</td>
+                <td>Các lớp Chương trình Quốc tế</td>
+                <td>Sử dụng giao diện tiếng Anh (<code>EN</code>), nhập điểm và nhận xét Chương trình Quốc tế (<code>CTQT</code>), phỏng vấn tiếng Anh đầu vào và thực hiện dự giờ song ngữ (<code>du-gio-gvnn</code>).</td>
+              </tr>
+              <tr>
+                <td><strong>11</strong></td>
+                <td><code>CHUYEN_VIEN_TAM_LY</code></td>
+                <td>Chuyên viên Tâm lý Học đường</td>
+                <td>Cơ sở / Cấp học phụ trách</td>
+                <td>Tiếp nhận cảnh báo Đỏ SOS, lập hồ sơ tham vấn tâm lý bảo mật nhiều lớp, ghi nhật ký can thiệp tâm lý tích lũy và phối hợp với GVCN/PHHS.</td>
+              </tr>
+              <tr>
+                <td><strong>12</strong></td>
+                <td><code>GIAO_VU / CTHS / TS</code></td>
+                <td>Giáo vụ, Công tác HS &amp; Tuyển sinh</td>
+                <td>Cơ sở phụ trách</td>
+                <td>Quản lý hồ sơ thí sinh khảo sát đầu vào, xếp lịch khảo sát, quản lý biến động sĩ số/lưu chuyển học sinh, xếp thời khóa biểu, điều phối hoạt động trải nghiệm và quản lý Alumni.</td>
+              </tr>
+              <tr>
+                <td><strong>13</strong></td>
+                <td><code>PARENT</code></td>
+                <td>Phụ huynh Học sinh</td>
+                <td>Các con ruột đã liên kết</td>
+                <td>Xem bảng điểm, Hồ sơ 360°, trao đổi 2 chiều với giáo viên, ký cam kết mục tiêu học tập cùng con và tham gia khảo sát hài lòng NPS.</td>
+              </tr>
+              <tr>
+                <td><strong>14</strong></td>
+                <td><code>STUDENT</code></td>
+                <td>Học sinh</td>
+                <td>Hồ sơ cá nhân</td>
+                <td>Thiết lập mục tiêu học tập SMART, tự nhìn nhận cuối kỳ, làm bài thi trực tuyến (<code>/exam</code>), xem bản đồ năng lực cá nhân và tham gia khảo sát học sinh.</td>
+              </tr>
+              <tr>
+                <td><strong>15</strong></td>
+                <td><code>ALUMNI</code></td>
+                <td>Cựu Học sinh Sky-Line</td>
+                <td>Hồ sơ Alumni cá nhân</td>
+                <td>Quét mã QR định danh trọn đời, xác thực OTP để cập nhật lộ trình Đại học, Học bổng, Sự nghiệp và đăng ký kết nối Mentorship.</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </section>
+
+      <!-- SECTION 8: END-TO-END WORKFLOWS -->
+      <section class="section-card searchable-section" id="sec-8">
+        <div class="section-header">
+          <span class="section-num">CHƯƠNG 8</span>
+          <h2>CÁC LUỒNG NGHIỆP VỤ LIÊN PHÂN HỆ KHÉP KÍN (END-TO-END WORKFLOWS)</h2>
+        </div>
+
+        <h3>8.1. Luồng 1: Tuyển sinh Đầu vào ➔ Xét duyệt ➔ Chốt Sĩ số ➔ Khởi tạo Hồ sơ 360°</h3>
+        <div class="workflow-steps">
+          <div class="wf-step">
+            <div class="wf-step-num">1</div>
+            <strong>Đăng ký &amp; Xếp lịch KSĐV</strong>
+            <p style="font-size:13px; margin-top:4px;">Tuyển sinh tiếp nhận hồ sơ thí sinh (K-12 / Mầm non), xếp lịch khảo sát nhanh và phân công giáo viên chấm.</p>
+          </div>
+          <div class="wf-step">
+            <div class="wf-step-num">2</div>
+            <strong>Chấm Khảo sát Đa chiều</strong>
+            <p style="font-size:13px; margin-top:4px;">GV chấm Toán/Văn/Anh, Tư duy, Tâm lý (K-12) hoặc 5 lĩnh vực phát triển trẻ (Mầm non) trực tiếp trên hệ thống.</p>
+          </div>
+          <div class="wf-step">
+            <div class="wf-step-num">3</div>
+            <strong>Hội đồng Xét duyệt + AI</strong>
+            <p style="font-size:13px; margin-top:4px;">BGH xét duyệt kết quả (<em>Đạt chính thức / Đạt cam kết / Học thử</em>) cùng gợi ý của AI; tự động gửi Email PDF cho PHHS.</p>
+          </div>
+          <div class="wf-step">
+            <div class="wf-step-num">4</div>
+            <strong>Nhập học &amp; Mở Hồ sơ 360°</strong>
+            <p style="font-size:13px; margin-top:4px;">Chuyển vào lớp chính thức (<code>MoveToBatch</code>), cấp <code>studentCode</code> trọn đời, cộng KPI Sĩ số Đầu cấp &amp; mở Hồ sơ Cam kết nếu có.</p>
+          </div>
+        </div>
+
+        <h3>8.2. Luồng 2: Thiết lập Mục tiêu SMART ➔ Khảo thí &amp; Sổ điểm ➔ Phân tích GAP ➔ Can thiệp Sớm</h3>
+        <div class="workflow-steps">
+          <div class="wf-step">
+            <div class="wf-step-num">1</div>
+            <strong>Cam kết Mục tiêu Đầu kỳ</strong>
+            <p style="font-size:13px; margin-top:4px;">Học sinh đăng ký mục tiêu SMART trên Cổng HS, Phụ huynh ký cam kết trực tuyến, GVCN phê duyệt và khóa <code>Target</code>.</p>
+          </div>
+          <div class="wf-step">
+            <div class="wf-step-num">2</div>
+            <strong>Chấm thi OMR/LMS &amp; Sổ điểm</strong>
+            <p style="font-size:13px; margin-top:4px;">GVBM chấm bài qua Camera OMR / Moodle LMS / <code>/exam</code> và hoàn thành sổ điểm Giữa kỳ, Cuối kỳ (<code>Actual</code>).</p>
+          </div>
+          <div class="wf-step">
+            <div class="wf-step-num">3</div>
+            <strong>Tính toán GAP &amp; SGSI</strong>
+            <p style="font-size:13px; margin-top:4px;">Hệ thống tự động tính <code>GAP = Actual - Target</code>, cập nhật Radar 5 trụ cột SGSI và đẩy cảnh báo lên Smart Alert Center.</p>
+          </div>
+          <div class="wf-step">
+            <div class="wf-step-num">4</div>
+            <strong>Phụ đạo &amp; Tham vấn SOS</strong>
+            <p style="font-size:13px; margin-top:4px;">Học sinh có <code>GAP &lt; -1.5</code> hoặc cảnh báo Vàng/Đỏ được chuyển vào danh sách Phụ đạo hoặc Tham vấn Tâm lý 1-1.</p>
+          </div>
+        </div>
+      </section>
+
+      <!-- SECTION 9: EXPORTS & AUTOMATED NOTIFICATIONS -->
+      <section class="section-card searchable-section" id="sec-9">
+        <div class="section-header">
+          <span class="section-num">CHƯƠNG 9</span>
+          <h2>DANH MỤC BIỂU MẪU XUẤT BẢN (PDF/EXCEL) &amp; HỆ THỐNG THÔNG BÁO TỰ ĐỘNG</h2>
+        </div>
+        <div class="grid-2">
+          <div class="info-card">
+            <div class="info-card-title">🖨️ 9.1. Hệ thống Ấn phẩm PDF &amp; Báo cáo Excel Chuẩn hóa</div>
+            <ol>
+              <li><strong>Học bạ Điện tử &amp; Hồ sơ Học sinh 360° (PDF A4):</strong> Tùy chọn ẩn/hiện từng mục, xuất đơn lẻ hoặc hàng loạt cho cả lớp/khối.</li>
+              <li><strong>Phiếu Thông báo Kết quả Khảo sát Đầu vào (PDF):</strong> Mẫu riêng cho Phổ thông K-12 và Mầm non.</li>
+              <li><strong>Phiếu Báo điểm Quốc tế &amp; Chứng chỉ Quốc tế (Report Card PDF).</strong></li>
+              <li><strong>Phiếu Trả lời Trắc nghiệm OMR &amp; Đề thi Trộn mã (PDF/Word).</strong></li>
+              <li><strong>Bảng tên Để bàn Họp Phụ huynh Tích hợp Mã QR Định danh (PDF A4).</strong></li>
+              <li><strong>Phiếu Đánh giá Tiết dạy &amp; Bảng kê Tổng hợp Dự giờ (PDF &amp; Excel).</strong></li>
+              <li><strong>Sổ Theo dõi Hoạt động Trải nghiệm &amp; Sổ Sự kiện Nhà trường (Event Book PDF).</strong></li>
+              <li><strong>Sổ Theo dõi Phụ đạo / Bồi dưỡng Học sinh &amp; Báo cáo Cố vấn Học tập (Excel &amp; PDF).</strong></li>
+              <li><strong>Báo cáo Excel Đa Phân hệ:</strong> Sĩ số, lưu chuyển, bảng điểm THKQ, khảo sát NPS, danh sách Alumni, tiến độ SLA công việc.</li>
+            </ol>
+          </div>
+          <div class="info-card">
+            <div class="info-card-title">🔔 9.2. Hệ thống Thông báo Đa Kênh Tự động (Notification &amp; Cron)</div>
+            <ul>
+              <li><strong>In-App Notification Hub:</strong> Chuông thông báo thời gian thực phân theo 4 cấp độ màu ưu tiên.</li>
+              <li><strong>Web Push Notification &amp; Morning Brief (07:00 AM):</strong> Tự động đẩy bản tóm tắt lịch dạy, lịch dự giờ và việc khẩn trong ngày đến điện thoại giáo viên.</li>
+              <li><strong>Hệ thống Email HTML Tự động:</strong>
+                <ul>
+                  <li>Email gửi Phiếu kết quả khảo sát đầu vào PDF cho Phụ huynh.</li>
+                  <li>Email giao việc mới, nhắc việc sắp quá hạn và nhắc nộp Báo cáo tuần.</li>
+                  <li>Email thông báo phân công giảng dạy môn đặc thù &amp; điều phối trải nghiệm.</li>
+                  <li>Email cảnh báo khẩn cấp (<code>Urgent Email SOS</code>) trong tư vấn tâm lý.</li>
+                  <li>Email báo cáo tổng hợp dự giờ định kỳ hàng tháng gửi BGH, GĐCS và TTCM.</li>
+                  <li>Email gửi mã xác thực OTP cho Cựu học sinh cập nhật hồ sơ Alumni.</li>
+                </ul>
+              </li>
+            </ul>
+          </div>
+        </div>
+      </section>
+
+      <!-- SECTION 10: SUMMARY SPECS -->
+      <section class="section-card searchable-section" id="sec-10">
+        <div class="section-header">
+          <span class="section-num">CHƯƠNG 10</span>
+          <h2>TỔNG KẾT CÁC CHỈ SỐ QUY MÔ &amp; KIẾN TRÚC KỸ THUẬT</h2>
+        </div>
+        <div class="table-wrap">
+          <table>
+            <thead>
+              <tr>
+                <th>Hạng mục Kỹ thuật &amp; Nghiệp vụ</th>
+                <th>Chỉ số Hiện trạng</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td><strong>Kiến trúc Nền tảng (Tech Stack)</strong></td>
+                <td><strong>Next.js 16 (App Router) • React 19 • TypeScript 5 • TailwindCSS 4 • Drizzle ORM</strong></td>
+              </tr>
+              <tr>
+                <td><strong>Kiến trúc Cơ sở Dữ liệu (Dual-Core DB)</strong></td>
+                <td><strong>SQLite 3 On-Premise (<code>&lt; 1ms</code> latency) + LibSQL Turso Cloud Failover + Hybrid Backup <code>.db.gz</code></strong></td>
+              </tr>
+              <tr>
+                <td><strong>Hệ sinh thái Dashboard Điều hành</strong></td>
+                <td><strong>1 Executive Dashboard Toàn trường + 5 Role-Aware Views + 10 Domain Dashboards + Mobile Today</strong></td>
+              </tr>
+              <tr>
+                <td><strong>Tổng số Phân hệ Nghiệp vụ Cốt lõi</strong></td>
+                <td><strong>12 Phân hệ lớn</strong> (&gt; 80 Modules &amp; Sub-modules)</td>
+              </tr>
+              <tr>
+                <td><strong>Tổng số Vai trò Phân quyền (Actors)</strong></td>
+                <td><strong>15 Vai trò</strong> kết hợp phân quyền Ma trận Động (<code>RBAC</code>) &amp; Phạm vi Cơ sở/Tổ/Lớp (<code>SBAC</code>)</td>
+              </tr>
+              <tr>
+                <td><strong>Tổng số Cổng Giao diện (Portals)</strong></td>
+                <td><strong>6 Cổng chuyên biệt</strong> (Admin, Giáo viên, Phụ huynh, Học sinh, Phòng thi Online <code>/exam</code>, Alumni &amp; QR)</td>
+              </tr>
+              <tr>
+                <td><strong>Tổng số Trang Nghiệp vụ &amp; API Endpoints</strong></td>
+                <td><strong>&gt; 115 Pages</strong> (<code>page.tsx</code>) &amp; <strong>&gt; 110 REST/Server API Routes</strong></td>
+              </tr>
+              <tr>
+                <td><strong>Tổng số Bảng Cơ sở Dữ liệu</strong></td>
+                <td><strong>&gt; 125 Bảng</strong> chuẩn hóa quan hệ &amp; toàn vẹn dữ liệu</td>
+              </tr>
+              <tr>
+                <td><strong>Cấp học &amp; Chương trình Đáp ứng</strong></td>
+                <td><strong>Mầm non, Tiểu học (TT27), THCS &amp; THPT (TT22), Quốc tế (CTQT), Cựu học sinh (Alumni)</strong></td>
+              </tr>
+              <tr>
+                <td><strong>Chuẩn Khảo thí Quốc tế Tích hợp</strong></td>
+                <td><strong>Cambridge YLE, KET/PET, IELTS, Pearson Edexcel, Cambridge Checkpoint, IC3/MOS</strong></td>
+              </tr>
+              <tr>
+                <td><strong>Ngôn ngữ Giao diện &amp; Thiết bị Hỗ trợ</strong></td>
+                <td><strong>Song ngữ Tiếng Việt (VI) &amp; Tiếng Anh (EN) • Web Desktop, Tablet, Mobile PWA (iOS &amp; Android)</strong></td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </section>
+
+      <footer>
+        <strong>HỆ THỐNG GIÁO DỤC SKY-LINE (SKY-LINE EDUCATION SYSTEM)</strong><br/>
+        Tài liệu Đặc tả Chi tiết Chức năng Hệ thống Quản trị Chất lượng Giáo dục SKY-LINE SSM (SQMS) • Phiên bản Baseline v2.5
+      </footer>
+    </main>
+  </div>
+
+  <script>
+    function filterContent(query) {
+      const q = query.trim().toLowerCase();
+      const sections = document.querySelectorAll('.searchable-section, .module-block');
+      sections.forEach(sec => {
+        if (!q) {
+          sec.style.display = '';
+          return;
+        }
+        const text = sec.innerText.toLowerCase();
+        sec.style.display = text.includes(q) ? '' : 'none';
+      });
+    }
+  </script>
+</body>
+</html>

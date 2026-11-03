@@ -1,0 +1,1 @@
+{"version":3,"sources":["../../../../src/app/hocsinh/hs-khaosat/layout.tsx"],"sourcesContent":["export default function HsLayout({ children }: { children: React.ReactNode }) {\r\n  return <>{children}</>\r\n}\r\n"],"names":["HsLayout","children"],"mappings":"0EAAe,SAASA,AAAS,UAAEC,CAAQ,CAAiC,EAC1E,MAAO,CAAA,EAAA,EAAA,GAAA,EAAA,EAAA,QAAA,CAAA,UAAGA,GACZ"}

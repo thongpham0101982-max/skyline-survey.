@@ -58,6 +58,7 @@ import {
 import { calculateCompositeScore, getColumnMaxScore } from "@/lib/grading/formula-calculator"
 import { Button } from "@/components/ui/button"
 import { GvbmResponseModal } from "./components/GvbmResponseModal"
+import GvbmAdvisoryTasksPanel from "@/components/advisory/GvbmAdvisoryTasksPanel"
 
 interface Props {
   academicYears: any[]
@@ -733,14 +734,30 @@ export function DiemNhanXetTeacherClient({
   return (
     <div className="space-y-6">
       {/* Top Header Card */}
-      <div className="bg-gradient-to-r from-[#003B3A] via-[#005B58] to-[#48BFE3] rounded-2xl p-6 text-white shadow-xl">
+      <div className="group/card relative overflow-hidden bg-gradient-to-r from-[#003B3A] via-[#005B58] to-[#48BFE3] rounded-3xl p-6 text-white shadow-xl">
+        {/* Ảnh minh họa trường học Sky-Line khớp khung phải & mờ dần */}
+        <div
+          className="hidden sm:block absolute top-0 right-0 bottom-0 sm:w-[54%] md:w-[48%] z-0 pointer-events-none select-none overflow-hidden"
+          style={{
+            WebkitMaskImage:
+              "linear-gradient(to right, transparent 0%, rgba(0,0,0,0.12) 15%, rgba(0,0,0,0.45) 40%, rgba(0,0,0,0.8) 75%, rgba(0,0,0,0.95) 100%)",
+            maskImage:
+              "linear-gradient(to right, transparent 0%, rgba(0,0,0,0.12) 15%, rgba(0,0,0,0.45) 40%, rgba(0,0,0,0.8) 75%, rgba(0,0,0,0.95) 100%)"
+          }}
+        >
+          <img
+            src="/images/skyline-campus-banner.png"
+            alt="Sky-Line Campus"
+            className="w-full h-full object-cover object-[center_65%] opacity-35 mix-blend-luminosity"
+          />
+        </div>
         <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
           <div>
             <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-white/10 backdrop-blur-md border border-white/20 text-xs font-medium text-teal-200 mb-2">
               <Sparkles className="w-3.5 h-3.5 text-teal-300" />
               Công tác Giáo viên Bộ môn
             </div>
-            <h1 className="text-2xl md:text-3xl font-extrabold tracking-tight">Sổ điểm & Nhận xét</h1>
+            <h1 className="text-2xl md:text-3xl font-extrabold tracking-tight">Sổ điểm & Nhận xét – Chương trình Bộ GD&ĐT</h1>
             <p className="text-teal-100 text-xs md:text-sm mt-1">
               Xin chào <strong className="text-white">{teacherName}</strong>, danh sách môn và lớp giảng dạy tự động bám sát theo <strong className="text-amber-300">Phân công giảng dạy</strong> được giao.
             </p>
@@ -1093,6 +1110,7 @@ export function DiemNhanXetTeacherClient({
         )}
 
         {/* Empty State when teacher has no assignments for this semester/year */}
+        <div className="mb-4"><GvbmAdvisoryTasksPanel mode="GVBM" academicYearId={selectedYearId} compact /></div>
         {hasNoAssignments ? (
           <div className="bg-amber-50/80 border border-amber-200/80 rounded-2xl p-10 text-center space-y-3.5 my-4">
             <div className="w-14 h-14 mx-auto rounded-2xl bg-amber-100 text-amber-700 flex items-center justify-center shadow-xs">

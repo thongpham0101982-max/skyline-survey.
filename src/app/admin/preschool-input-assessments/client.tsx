@@ -3097,12 +3097,13 @@ Trân trọng kính mời Quý phụ huynh và các em học sinh!`;
                                     <td className="px-4 py-3 border-b border-slate-100"><span className="text-sm font-semibold text-slate-700">{baseName}</span></td>
                                     <td className="px-4 py-3 border-b border-slate-100"><span className="text-xs text-slate-500">{campus?.campusName || "Tất cả"}</span></td>
                                     <td className="px-4 py-3 border-b border-slate-100"><span className="text-xs text-slate-500">{b.startDate?.slice(0,10)} → {b.endDate?.slice(0,10)}</span></td>
-                                    <td className="px-4 py-3 border-b border-slate-100"><div className="flex items-center gap-2">
-                                       <button
-                                         onClick={async () => {
-                                           const newStatus = b.status === "ACTIVE" ? "LOCKED" : "ACTIVE";
+                                    <td className="px-4 py-3 border-b border-slate-100 whitespace-nowrap"><div className="flex items-center gap-2">
+                                       <select
+                                         value={b.status || "ACTIVE"}
+                                         onChange={async (e) => {
+                                           const newStatus = e.target.value;
                                            try {
-                                             const res = await fetch(b.isPreschool || true ? "/api/preschool-input-assessments" : "/api/input-assessments", {
+                                             const res = await fetch("/api/preschool-input-assessments", {
                                                method: "PUT",
                                                headers: { "Content-Type": "application/json" },
                                                body: JSON.stringify({ action: "UPDATE_BATCH", id: b.id, data: { status: newStatus } })
@@ -3111,18 +3112,19 @@ Trân trọng kính mời Quý phụ huynh và các em học sinh!`;
                                              else { const d = await res.json(); alert(d.error || "Lỗi cập nhật"); }
                                            } catch(e) { alert("Lỗi mạng"); }
                                          }}
-                                         className={`relative inline-flex h-5 w-9 shrink-0 cursor-pointer items-center justify-center rounded-full transition-colors focus:outline-none focus:ring-2 focus:ring-[#00A19A] focus:ring-offset-2 ${
-                                           b.status === "ACTIVE" ? "bg-emerald-500" : "bg-slate-300"
+                                         className={`raw-select h-8 py-1 px-2.5 rounded-lg text-[11px] leading-normal font-extrabold border cursor-pointer outline-none transition-all ${
+                                           b.status === "ACTIVE"
+                                             ? "bg-emerald-50 text-emerald-700 border-emerald-200 hover:bg-emerald-100"
+                                             : b.status === "COMPLETED"
+                                             ? "bg-sky-50 text-sky-700 border-sky-200 hover:bg-sky-100"
+                                             : "bg-slate-100 text-slate-600 border-slate-200 hover:bg-slate-200"
                                          }`}
-                                         title={b.status === "ACTIVE" ? "Đang mở (Click để Khóa)" : "Đã khóa (Click để Mở)"}
+                                         title="Đổi trạng thái đợt khảo sát (Hoàn thành sẽ ẩn khỏi Nhập thông tin KS & Phân công GV)"
                                        >
-                                         <span className={`pointer-events-none inline-block h-4 w-4 transform rounded-full bg-white shadow ring-0 transition duration-200 ease-in-out ${
-                                           b.status === "ACTIVE" ? "translate-x-4" : "translate-x-0"
-                                         }`} />
-                                       </button>
-                                       <span className={`text-[10px] font-black uppercase tracking-widest ${b.status === "ACTIVE" ? "text-emerald-600" : "text-slate-500"}`}>
-                                         {b.status === "ACTIVE" ? "ON" : "OFF"}
-                                       </span>
+                                         <option value="ACTIVE">Đang mở</option>
+                                         <option value="COMPLETED">✓ Hoàn thành</option>
+                                         <option value="LOCKED">Đã khóa</option>
+                                       </select>
                                      </div></td>
                                                                         <td className="px-4 py-3 border-b border-slate-100">
                                       <div className="flex items-center justify-between gap-2 group/assignee">

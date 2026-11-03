@@ -9,6 +9,7 @@ module.exports = {
       autorestart: true,
       watch: false,
       max_memory_restart: "2000M",
+      node_args: "--max-old-space-size=2048",
       env: {
         PORT: 3000
       }

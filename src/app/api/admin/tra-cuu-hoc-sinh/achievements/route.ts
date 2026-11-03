@@ -39,6 +39,12 @@ export async function GET(req: NextRequest) {
     }
 
     if (search) {
+      const mappedCodes = await prisma.studentCodeMapping.findMany({
+        where: { markFileCode: { contains: search } },
+        select: { databaseCode: true },
+      });
+      const additionalCodes = mappedCodes.map((m) => m.databaseCode).filter(Boolean);
+
       where.OR = [
         { name: { contains: search } },
         {
@@ -48,6 +54,7 @@ export async function GET(req: NextRequest) {
                 OR: [
                   { studentName: { contains: search } },
                   { studentCode: { contains: search } },
+                  ...(additionalCodes.length > 0 ? [{ studentCode: { in: additionalCodes } }] : []),
                 ],
               },
             },
@@ -95,11 +102,41 @@ export async function GET(req: NextRequest) {
       else counts.truong++;
     });
 
+    const allStudentCodes = new Set<string>();
+    achievements.forEach((ach) => {
+      ach.students?.forEach((sa) => {
+        if (sa.student?.studentCode) allStudentCodes.add(sa.student.studentCode);
+      });
+    });
+    const mappings = await prisma.studentCodeMapping.findMany({
+      where: { databaseCode: { in: Array.from(allStudentCodes) } },
+      select: { databaseCode: true, markFileCode: true },
+    });
+    const vneduMap = new Map<string, string>();
+    mappings.forEach((m) => {
+      if (m.databaseCode && m.markFileCode && !vneduMap.has(m.databaseCode)) {
+        vneduMap.set(m.databaseCode, m.markFileCode);
+      }
+    });
+
+    const enrichedAchievements = achievements.map((ach) => ({
+      ...ach,
+      students: ach.students.map((sa) => ({
+        ...sa,
+        student: sa.student
+          ? {
+              ...sa.student,
+              vneduCode: vneduMap.get(sa.student.studentCode) || null,
+            }
+          : sa.student,
+      })),
+    }));
+
     return NextResponse.json({
       success: true,
       data: {
         summary: counts,
-        achievements,
+        achievements: enrichedAchievements,
       },
     });
   } catch (error: any) {

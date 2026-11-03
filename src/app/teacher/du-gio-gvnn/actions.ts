@@ -321,6 +321,10 @@ export async function createForeignObservationWithEvaluation(data: {
     challenges?: string;
     curriculumAdjustments?: string;
     supportNeeded?: string;
+    reflectionQ1?: string;
+    reflectionQ2?: string;
+    reflectionQ3?: string;
+    reflectionQ4?: string;
   };
   summary?: {
     keyStrengths?: string;
@@ -334,6 +338,8 @@ export async function createForeignObservationWithEvaluation(data: {
   };
   overallRating?: string;
   totalScore?: number;
+  avgScore?: number;
+  calculatedAvgScore?: number;
   isDraft?: boolean;
 }) {
   try {
@@ -573,11 +579,19 @@ export async function createForeignObservationWithEvaluation(data: {
       };
     });
 
-    const calculatedAvgScore = typeof data.totalScore === "number" && !isNaN(data.totalScore)
+    const rawProvidedScore = typeof data.totalScore === "number" && !isNaN(data.totalScore)
       ? data.totalScore
-      : totalScoreCount > 0
+      : (typeof data.avgScore === "number" && !isNaN(data.avgScore)
+        ? data.avgScore
+        : (typeof data.calculatedAvgScore === "number" && !isNaN(data.calculatedAvgScore)
+          ? data.calculatedAvgScore
+          : null));
+
+    const calculatedAvgScore: number = rawProvidedScore !== null
+      ? rawProvidedScore
+      : (totalScoreCount > 0
         ? Number((totalScoreSum / totalScoreCount).toFixed(2))
-        : 0;
+        : 0);
 
     const tvRaw = data.teacherVoice || {};
     const normalizedTeacherVoice = {
@@ -691,17 +705,20 @@ export async function createForeignObservationWithEvaluation(data: {
         if (hostEmail) {
           const emailSubject = `[Sky-line SMS - ESL Observation] Lesson Evaluation Completed: ${data.topic || "English Lesson"}`;
           const emailHtml = renderForeignObservationEvaluationForHost({
-            hostTeacherName: hostTeacher.teacherName,
+            hostName: hostTeacher.teacherName,
             observerName: evaluatorName,
             topic: data.topic || "English Lesson",
-            dateStr: dateStr,
-            timeStr: data.period || "Tiết 1",
+            subjectName: data.subjectName || "Tiếng Anh (ESL)",
             className: data.className || "ESL Class",
+            campusName: slotCampusName || "Sky-Line",
+            dateStr: dateStr,
+            period: data.period || "Tiết 1",
             room: data.room || "Phòng học",
-            overallRating: data.overallRating || "Effective Practice",
-            keyStrengths: data.summary?.keyStrengths || undefined,
-            keyChallenges: data.summary?.keyChallenges || undefined,
-            detailUrl: `${SKYLINE_SSM_LOGIN_URL}/teacher/du-gio-gvnn`
+            totalScore: calculatedAvgScore.toString(),
+            rating: data.overallRating || "Effective Practice",
+            strengths: data.summary?.keyStrengths || undefined,
+            challenges: data.summary?.keyChallenges || undefined,
+            directLink: `${SKYLINE_SSM_LOGIN_URL}/teacher/du-gio-gvnn`
           });
 
           await sendEmail({
@@ -729,15 +746,20 @@ export async function createForeignObservationWithEvaluation(data: {
         if (evaluatorEmail && evaluatorEmail !== hostEmail) {
           const observerSubject = `[Sky-line SMS - ESL Observation] Evaluation Confirmation: ${hostTeacher.teacherName} - ${data.topic || "English Lesson"}`;
           const observerHtml = renderForeignObservationEvaluationForObserver({
-            hostTeacherName: hostTeacher.teacherName,
             observerName: evaluatorName,
+            hostName: hostTeacher.teacherName,
             topic: data.topic || "English Lesson",
-            dateStr: dateStr,
-            timeStr: data.period || "Tiết 1",
+            subjectName: data.subjectName || "Tiếng Anh (ESL)",
             className: data.className || "ESL Class",
+            campusName: slotCampusName || "Sky-Line",
+            dateStr: dateStr,
+            period: data.period || "Tiết 1",
             room: data.room || "Phòng học",
-            overallRating: data.overallRating || "Effective Practice",
-            detailUrl: `${SKYLINE_SSM_LOGIN_URL}/teacher/du-gio-gvnn`
+            totalScore: calculatedAvgScore.toString(),
+            rating: data.overallRating || "Effective Practice",
+            strengths: data.summary?.keyStrengths || undefined,
+            challenges: data.summary?.keyChallenges || undefined,
+            directLink: `${SKYLINE_SSM_LOGIN_URL}/teacher/du-gio-gvnn`
           });
 
           await sendEmail({

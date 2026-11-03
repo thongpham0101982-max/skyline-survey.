@@ -5,7 +5,7 @@ import { SyncButton } from "./SyncButton"
 import { BackupSection } from "./BackupSection"
 
 export default async function MaintenancePage() {
-  const [students, parents, users, backups] = await Promise.all([
+  const [students, parents, users, backupData] = await Promise.all([
     prisma.student.count(),
     prisma.parent.count(),
     prisma.user.count(),
@@ -21,7 +21,7 @@ export default async function MaintenancePage() {
   return (
     <div className="max-w-5xl mx-auto space-y-8 animate-in fade-in duration-700 pb-16">
       <div className="flex items-center gap-4 border-b border-slate-200 pb-6">
-         <div className="p-3 bg-indigo-50 text-indigo-600 rounded-2xl">
+         <div className="p-3 bg-[#003B3A]/10 text-[#003B3A] rounded-2xl">
             <ServerCog className="w-8 h-8" />
          </div>
          <div>
@@ -37,7 +37,7 @@ export default async function MaintenancePage() {
       </div>
 
       {/* Phần quản lý sao lưu dữ liệu tự động 23h00 Thứ 6 */}
-      <BackupSection initialBackups={backups} />
+      <BackupSection initialBackups={backupData.backups} storageInfo={backupData.storage} />
 
       {/* Phần đồng bộ tài khoản */}
       <div className="bg-white rounded-[2rem] p-8 border-2 border-amber-100 shadow-sm space-y-6">

@@ -29,7 +29,8 @@ export default function StudentHelpPortalPage() {
   const [form, setForm] = useState({
     category: "HOC_TAP",
     urgency: "MEDIUM",
-    content: ""
+    content: "",
+    shareWithParent: false
   })
   const [toastMessage, setToastMessage] = useState("")
 
@@ -91,13 +92,14 @@ export default function StudentHelpPortalPage() {
           academicYearId,
           category: form.category,
           urgency: form.urgency,
-          content: form.content
+          content: form.content,
+          shareWithParent: form.shareWithParent
         })
       })
 
       if (res.ok) {
         setShowModal(false)
-        setForm({ category: "HOC_TAP", urgency: "MEDIUM", content: "" })
+        setForm({ category: "HOC_TAP", urgency: "MEDIUM", content: "", shareWithParent: false })
         setToastMessage("Đã gửi yêu cầu thành công! Thầy/Cô GVCN sẽ nhận được thông báo ngay.")
         setTimeout(() => setToastMessage(""), 4000)
         loadRequests()
@@ -412,6 +414,34 @@ export default function StudentHelpPortalPage() {
                   placeholder="Ví dụ: Em chưa hiểu rõ phần bài tập môn Toán / Em cảm thấy lo lắng trước kỳ thi / Em cần thầy cô chia sẻ..."
                   className="w-full p-3 rounded-2xl border border-slate-200 text-xs font-semibold focus:outline-none focus:border-rose-500"
                 />
+              </div>
+
+              <div className="p-3 rounded-2xl bg-slate-50 border border-slate-200 space-y-1.5">
+                <div className="flex items-center justify-between gap-2">
+                  <span className="font-extrabold text-slate-800 flex items-center gap-1.5">
+                    <ShieldCheck className="w-4 h-4 text-teal-600" />
+                    <span>4. Chế độ bảo mật thông tin:</span>
+                  </span>
+                  <label className="inline-flex items-center gap-1.5 cursor-pointer font-black text-slate-800">
+                    <input
+                      type="checkbox"
+                      checked={form.shareWithParent}
+                      disabled={form.category === "TAM_LY_BAN_BE"}
+                      onChange={e => setForm({ ...form, shareWithParent: e.target.checked })}
+                      className="w-4 h-4 accent-teal-600 rounded"
+                    />
+                    <span>
+                      {form.category === "TAM_LY_BAN_BE"
+                        ? "🔒 Bảo mật tâm lý (Chỉ CVHT)"
+                        : form.shareWithParent
+                        ? "👨‍👩‍👧 Chia sẻ cùng Phụ huynh"
+                        : "🔒 Bảo mật riêng với CVHT"}
+                    </span>
+                  </label>
+                </div>
+                <p className="text-[10px] text-slate-500">
+                  Hệ thống không tự động chia sẻ nội dung riêng tư của em cho Phụ huynh nếu em không bật tùy chọn trên.
+                </p>
               </div>
             </div>
 

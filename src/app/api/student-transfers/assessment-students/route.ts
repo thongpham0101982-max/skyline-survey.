@@ -9,14 +9,29 @@ export async function GET(request: NextRequest) {
   try {
     const { searchParams } = new URL(request.url);
     const classId = searchParams.get("classId");
+    const campusId = searchParams.get("campusId");
+    const grade = searchParams.get("grade");
 
-    if (!classId) {
-      return NextResponse.json({ error: "classId is required" }, { status: 400 });
+    const where: any = {
+      status: "ACTIVE",
+    };
+
+    if (classId) {
+      where.classId = classId;
+    } else if (campusId) {
+      where.campusId = campusId;
+      if (grade) {
+        where.class = { grade };
+      }
+    } else {
+      return NextResponse.json({ error: "classId or campusId is required" }, { status: 400 });
     }
 
     const students = await prisma.student.findMany({
-      where: { classId },
-      orderBy: { studentName: "asc" },
+      where,
+      orderBy: [
+        { studentName: "asc" }
+      ],
       select: {
         id: true,
         studentCode: true,
@@ -24,6 +39,15 @@ export async function GET(request: NextRequest) {
         dateOfBirth: true,
         gender: true,
         classId: true,
+        campusId: true,
+        class: {
+          select: {
+            id: true,
+            className: true,
+            grade: true,
+            educationSystem: true,
+          }
+        },
       },
     });
 
@@ -32,3 +56,4 @@ export async function GET(request: NextRequest) {
     return NextResponse.json({ error: error.message }, { status: 500 });
   }
 }
+

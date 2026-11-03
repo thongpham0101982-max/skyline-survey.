@@ -5,6 +5,16 @@ import { auth } from "@/lib/auth"
 import { getStudentSession } from "@/lib/student-session"
 import { getDefaultAcademicYear } from "@/lib/academicYear"
 import { createClient } from "@libsql/client/web"
+import {
+  resolveAdvisoryCaller,
+  verifyStudentRelationship,
+  enrichGoalWithPolicies
+} from "@/lib/advisory/rbac-guard"
+import {
+  getPoliciesByStudentIds,
+  upsertRecordPolicy,
+  appendAdvisoryAuditLog
+} from "@/lib/advisory/triparty-sync"
 
 export const dynamic = "force-dynamic"
 
@@ -12,17 +22,20 @@ let rawUrl = (process.env.TURSO_DATABASE_URL || process.env.TURSO_URL || "").tri
 if (!rawUrl || (!rawUrl.startsWith("http://") && !rawUrl.startsWith("https://") && !rawUrl.startsWith("libsql://"))) {
   rawUrl = "https://skyline-survey-thongpham0101982-max.aws-ap-northeast-1.turso.io"
 }
-const TURSO_URL = rawUrl.replace(/^libsql:\/\//, 'https://')
-const TURSO_TOKEN = (process.env.TURSO_AUTH_TOKEN || "eyJhbGciOiJFZERTQSIsInR5cCI6IkpXVCJ9.eyJhIjoicnciLCJleHAiOjE4MDc5NjcwNjEsImlhdCI6MTc3NjQzMTA2MSwiaWQiOiIwMTlkOWEzYS1mMjAxLTczODgtYTY5ZC1jN2MwMTA1NGFmMzQiLCJyaWQiOiIyNDkwM2JhMC02N2Y3LTQ3YzgtYjdiZC1mMWJiZjc3MTA3N2QifQ.fb-srs0AEaF5lVeCM0Xjk06ItbIfuCqEaOWbKxrUv0kzJNcLbZEvwp_Kw4rtScLG8VTZqNUm0buXKjtAE9_ZAw").trim()
+const TURSO_URL = rawUrl.replace(/^libsql:\/\//, "https://")
+const TURSO_TOKEN = (
+  process.env.TURSO_AUTH_TOKEN ||
+  "eyJhbGciOiJFZERTQSIsInR5cCI6IkpXVCJ9.eyJhIjoicnciLCJleHAiOjE4MDc5NjcwNjEsImlhdCI6MTc3NjQzMTA2MSwiaWQiOiIwMTlkOWEzYS1mMjAxLTczODgtYTY5ZC1jN2MwMTA1NGFmMzQiLCJyaWQiOiIyNDkwM2JhMC02N2Y3LTQ3YzgtYjdiZC1mMWJiZjc3MTA3N2QifQ.fb-srs0AEaF5lVeCM0Xjk06ItbIfuCqEaOWbKxrUv0kzJNcLbZEvwp_Kw4rtScLG8VTZqNUm0buXKjtAE9_ZAw"
+).trim()
 
 const libsqlClient = createClient({
   url: TURSO_URL,
-  authToken: TURSO_TOKEN,
+  authToken: TURSO_TOKEN
 })
 
 function jsonResponse(data: any, status = 200) {
   const res = NextResponse.json(data, { status })
-  res.headers.set('Cache-Control', 'no-store, no-cache, must-revalidate, proxy-revalidate')
+  res.headers.set("Cache-Control", "no-store, no-cache, must-revalidate, proxy-revalidate")
   return res
 }
 
@@ -108,18 +121,18 @@ async function ensureTablesExist() {
   ]
   for (const ddl of ddlList) {
     try {
+      await prisma.$executeRawUnsafe(ddl)
+    } catch {}
+    try {
       await libsqlClient.execute(ddl)
-    } catch (e) {
-      console.error("DDL init error:", e)
-    }
+    } catch {}
   }
 }
 
 export async function GET(req: Request) {
   try {
-    const session = await auth()
-    const studentSess = await getStudentSession()
-    if (!session && !studentSess) {
+    const caller = await resolveAdvisoryCaller()
+    if (!caller.authenticated) {
       return jsonResponse({ error: "Chưa đăng nhập" }, 401)
     }
 
@@ -127,10 +140,15 @@ export async function GET(req: Request) {
     const targetClassId = searchParams.get("classId")
     const queryYearId = searchParams.get("academicYearId")
     if (targetClassId) {
-      const targetClass = await prisma.class.findUnique({
-        where: { id: targetClassId },
-        select: { id: true, academicYearId: true }
-      }).catch(() => null)
+      if (caller.actorRole !== "TEACHER" && caller.actorRole !== "ADMIN") {
+        return jsonResponse({ error: "Không có quyền xem thống kê lớp" }, 403)
+      }
+      const targetClass = await prisma.class
+        .findUnique({
+          where: { id: targetClassId },
+          select: { id: true, academicYearId: true }
+        })
+        .catch(() => null)
       const effectiveYearId = queryYearId || targetClass?.academicYearId
 
       const classStudents = await prisma.student.findMany({
@@ -144,37 +162,55 @@ export async function GET(req: Request) {
       const studentIdsInClass = classStudents.map(s => s.id)
       const studentCodesInClass = classStudents.map(s => s.studentCode).filter(Boolean) as string[]
 
-      // Tìm thêm các studentId khác có cùng studentCode (trong trường hợp học sinh có nhiều bản ghi theo các năm)
-      const sameCodeStudents = studentCodesInClass.length > 0 ? await prisma.student.findMany({
-        where: { studentCode: { in: studentCodesInClass } },
-        select: { id: true, studentCode: true }
-      }).catch(() => []) : []
+      const sameCodeStudents =
+        studentCodesInClass.length > 0
+          ? await prisma.student
+              .findMany({
+                where: { studentCode: { in: studentCodesInClass } },
+                select: { id: true, studentCode: true }
+              })
+              .catch(() => [])
+          : []
 
       const allStudentIds = Array.from(new Set([...studentIdsInClass, ...sameCodeStudents.map(s => s.id)]))
 
-      const goalsInClass = await prisma.studentGoal.findMany({
-        where: {
-          studentId: { in: allStudentIds }
-        },
-        select: { studentId: true, academicYearId: true }
-      }).catch(() => [])
+      const goalsInClass = await prisma.studentGoal
+        .findMany({
+          where: { studentId: { in: allStudentIds } },
+          select: {
+            id: true,
+            studentId: true,
+            academicYearId: true,
+            signedByTeacher: true,
+            teacherComment: true,
+            signedByParent: true
+          }
+        })
+        .catch(() => [])
 
       const idToCodeMap = new Map<string, string>()
-      classStudents.forEach(s => { if (s.studentCode) idToCodeMap.set(s.id, s.studentCode) })
-      sameCodeStudents.forEach(s => { if (s.studentCode) idToCodeMap.set(s.id, s.studentCode) })
+      classStudents.forEach(s => {
+        if (s.studentCode) idToCodeMap.set(s.id, s.studentCode)
+      })
+      sameCodeStudents.forEach(s => {
+        if (s.studentCode) idToCodeMap.set(s.id, s.studentCode)
+      })
 
       const submittedStudentCodesSet = new Set<string>()
       const submittedStudentIdsSet = new Set<string>()
+      const confirmedStudentCodesSet = new Set<string>()
 
       for (const g of goalsInClass) {
         if (!effectiveYearId || g.academicYearId === effectiveYearId || studentIdsInClass.includes(g.studentId)) {
           submittedStudentIdsSet.add(g.studentId)
           const code = idToCodeMap.get(g.studentId)
-          if (code) submittedStudentCodesSet.add(code)
+          if (code) {
+            submittedStudentCodesSet.add(code)
+            if (g.signedByTeacher) confirmedStudentCodesSet.add(code)
+          }
         }
       }
 
-      // Đảm bảo tất cả học sinh trong lớp có studentCode đã nộp đều được đánh dấu nộp
       classStudents.forEach(s => {
         if (s.studentCode && submittedStudentCodesSet.has(s.studentCode)) {
           submittedStudentIdsSet.add(s.id)
@@ -183,126 +219,142 @@ export async function GET(req: Request) {
 
       const submittedStudentCodes = Array.from(submittedStudentCodesSet)
       const submittedStudentIds = Array.from(submittedStudentIdsSet)
+      const confirmedStudentCodes = Array.from(confirmedStudentCodesSet)
 
       return jsonResponse({
         classId: targetClassId,
         totalStudents: classStudents.length,
         submittedCount: submittedStudentCodes.length,
+        confirmedCount: confirmedStudentCodes.length,
+        pendingReviewCount: Math.max(0, submittedStudentCodes.length - confirmedStudentCodes.length),
         submittedStudentIds,
-        submittedStudentCodes
+        submittedStudentCodes,
+        confirmedStudentCodes
       })
     }
-    const targetStudentId = searchParams.get("studentId") || studentSess?.studentId
-    const targetStudentCode = searchParams.get("studentCode")
-    let academicYearId = searchParams.get("academicYearId") || ""
+
+    const targetStudentId = searchParams.get("studentId") || caller.studentId
+    const targetStudentCode = searchParams.get("studentCode") || caller.studentCode
+    const academicYearId = searchParams.get("academicYearId") || ""
     const gradeLevel = searchParams.get("gradeLevel") || "K8"
 
     if (!targetStudentId && !targetStudentCode) {
       return jsonResponse({ error: "Thiếu studentId hoặc studentCode" }, 400)
     }
 
-    await ensureTablesExist()
-
-    let targetStudentIds: string[] = []
-    if (targetStudentId) targetStudentIds.push(targetStudentId)
-
-    try {
-      let codeToLookup: string | null = targetStudentCode || null
-      if (!codeToLookup && targetStudentId) {
-        const stObj = await prisma.student.findUnique({
-          where: { id: targetStudentId },
-          select: { studentCode: true }
-        })
-        codeToLookup = stObj?.studentCode ?? null
-      }
-
-      if (codeToLookup) {
-        const sameCodeStudents = await prisma.student.findMany({
-          where: { studentCode: codeToLookup },
-          select: { id: true }
-        })
-        if (sameCodeStudents.length > 0) {
-          targetStudentIds = sameCodeStudents.map(s => s.id)
-        }
-      }
-    } catch (e) {
-      console.error("Lookup student ids error:", e)
+    const rel = await verifyStudentRelationship(caller, (targetStudentId || targetStudentCode) as string)
+    if (!rel.allowed) {
+      return jsonResponse({ error: rel.reason || "Bạn không có quyền truy cập mục tiêu của học sinh này" }, 403)
     }
 
-    const goals = await prisma.studentGoal.findMany({
-      where: { 
-        studentId: { in: targetStudentIds }
-      },
-      include: { actions: true },
-      orderBy: { createdAt: "asc" }
-    }).catch(() => [])
+    await ensureTablesExist()
+    const targetStudentIds = rel.allStudentIds
 
-    const trackingLogs = await prisma.studentGoalTrackingLog.findMany({
-      where: { 
-        studentId: { in: targetStudentIds }
-      },
-      orderBy: { createdAt: "desc" }
-    }).catch(() => [])
+    const rawGoals = await prisma.studentGoal
+      .findMany({
+        where: { studentId: { in: targetStudentIds } },
+        include: { actions: true },
+        orderBy: { createdAt: "asc" }
+      })
+      .catch(() => [])
 
-        function parseGradeGroup(gStr: string): string {
-      const s = String(gStr || "").toUpperCase().replace(/^(KHỐI|KHOI|K)\s*/i, "").trim()
+    const policyMap = await getPoliciesByStudentIds(targetStudentIds)
+    const goals = rawGoals.map(g => enrichGoalWithPolicies(g, policyMap))
+
+    const trackingLogs = await prisma.studentGoalTrackingLog
+      .findMany({
+        where: { studentId: { in: targetStudentIds } },
+        orderBy: { createdAt: "desc" }
+      })
+      .catch(() => [])
+
+    function parseGradeGroup(gStr: string): string {
+      const s = String(gStr || "")
+        .toUpperCase()
+        .replace(/^(KHỐI|KHOI|K)\s*/i, "")
+        .trim()
       const n = parseInt(s, 10)
       if (s === "1" || s === "K1" || n === 1) return "K1"
       if (s === "2" || s === "K2" || n === 2) return "K2"
       if (s === "3" || s === "K3" || n === 3) return "K3"
       if (s === "4" || s === "5" || s === "K4" || s === "K5" || n === 4 || n === 5) return "K4_K5"
       if (s === "6" || s === "7" || s === "8" || s === "K6" || s === "K7" || s === "K8" || (n >= 6 && n <= 8)) return "K6_K8"
-      if (s === "9" || s === "10" || s === "11" || s === "12" || s === "K9" || s === "K10" || s === "K11" || s === "K12" || (n >= 9 && n <= 12)) return "K9_K12"
+      if (s === "9" || s === "10" || s === "11" || s === "12" || s === "K9" || s === "K10" || s === "K11" || s === "K12" || (n >= 9 && n <= 12))
+        return "K9_K12"
       return "K6_K8"
     }
 
     const gradeGroup = parseGradeGroup(gradeLevel)
-    
-    let presets = await prisma.goalPreset.findMany({
-      where: { 
-        gradeGroup,
-        status: "ACTIVE"
-      },
-      orderBy: [{ category: 'asc' }, { sortOrder: 'asc' }]
-    }).catch(() => [])
+
+    let presets = await prisma.goalPreset
+      .findMany({
+        where: { gradeGroup, status: "ACTIVE" },
+        orderBy: [{ category: "asc" }, { sortOrder: "asc" }]
+      })
+      .catch(() => [])
 
     if (presets.length === 0) {
-      presets = await prisma.goalPreset.findMany({
-        where: { status: "ACTIVE" },
-        orderBy: [{ category: 'asc' }, { sortOrder: 'asc' }]
-      }).catch(() => [])
+      presets = await prisma.goalPreset
+        .findMany({
+          where: { status: "ACTIVE" },
+          orderBy: [{ category: "asc" }, { sortOrder: "asc" }]
+        })
+        .catch(() => [])
     }
 
-    let latestAdjustmentRequest = null
+    let latestAdjustmentRequest: any = null
     try {
-      const adjRes = await libsqlClient.execute({
-        sql: `SELECT * FROM "StudentGoalAdjustmentRequest" 
-              WHERE "studentId" = ? 
-              AND ("academicYearId" = ? OR ? = '')
-              ORDER BY "createdAt" DESC LIMIT 1`,
-        args: [targetStudentId || "", academicYearId || "", academicYearId || ""]
-      })
-      if (adjRes.rows && adjRes.rows.length > 0) {
-        latestAdjustmentRequest = adjRes.rows[0]
+      const rows: any[] = await prisma.$queryRawUnsafe(
+        `SELECT * FROM "StudentGoalAdjustmentRequest"
+         WHERE "studentId" = ?
+         AND ("academicYearId" = ? OR ? = '')
+         ORDER BY "createdAt" DESC LIMIT 1`,
+        rel.student.id,
+        academicYearId || "",
+        academicYearId || ""
+      )
+      if (rows && rows.length > 0) {
+        latestAdjustmentRequest = rows[0]
       }
-    } catch (e) {
-      // Bỏ qua nếu chưa có dữ liệu
+    } catch {}
+
+    if (!latestAdjustmentRequest) {
+      try {
+        const adjRes = await libsqlClient.execute({
+          sql: `SELECT * FROM "StudentGoalAdjustmentRequest" 
+                WHERE "studentId" = ? 
+                AND ("academicYearId" = ? OR ? = '')
+                ORDER BY "createdAt" DESC LIMIT 1`,
+          args: [rel.student.id || "", academicYearId || "", academicYearId || ""]
+        })
+        if (adjRes.rows && adjRes.rows.length > 0) {
+          latestAdjustmentRequest = adjRes.rows[0]
+        }
+      } catch {}
     }
 
     const isUnlockedForEdit = Boolean(latestAdjustmentRequest && latestAdjustmentRequest.status === "APPROVED")
 
-    const existingSheet = goals.length > 0 ? {
-      id: goals[0].id,
-      studentCommitment: goals[0].studentCommitment || "",
-      signedByStudent: goals[0].signedByStudent,
-      submittedAt: goals[0].createdAt,
-      goals
-    } : null
+    const existingSheet =
+      goals.length > 0
+        ? {
+            id: goals[0].id,
+            studentCommitment: goals[0].studentCommitment || "",
+            parentMessage: goals.find(g => g.parentMessage)?.parentMessage || "",
+            teacherComment: goals.find(g => g.teacherComment)?.teacherComment || "",
+            signedByStudent: goals.some(g => g.signedByStudent),
+            signedByParent: goals.some(g => g.signedByParent),
+            signedByTeacher: goals.some(g => g.signedByTeacher),
+            advisorReviewStatus: goals[0].advisorReviewStatus || "PENDING_REVIEW",
+            submittedAt: goals[0].createdAt,
+            goals
+          }
+        : null
 
-    return jsonResponse({ 
-      goals, 
-      presets, 
-      existingSheet, 
+    return jsonResponse({
+      goals,
+      presets,
+      existingSheet,
       trackingLogs,
       adjustmentRequest: latestAdjustmentRequest,
       isUnlockedForEdit
@@ -315,9 +367,8 @@ export async function GET(req: Request) {
 
 export async function POST(req: Request) {
   try {
-    const session = await auth()
-    const studentSess = await getStudentSession()
-    if (!session && !studentSess) {
+    const caller = await resolveAdvisoryCaller()
+    if (!caller.authenticated) {
       return jsonResponse({ error: "Chưa đăng nhập" }, 401)
     }
 
@@ -336,17 +387,19 @@ export async function POST(req: Request) {
       signedByTeacher
     } = body
 
-    const targetStudentId = studentId || studentSess?.studentId
+    const targetStudentId = studentId || caller.studentId
 
     if (!targetStudentId) {
       return jsonResponse({ error: "Thiếu thông tin ID Học sinh" }, 400)
     }
 
+    const rel = await verifyStudentRelationship(caller, targetStudentId)
+    if (!rel.allowed) {
+      return jsonResponse({ error: rel.reason || "Không có quyền cập nhật mục tiêu" }, 403)
+    }
+
     let yearId = academicYearId
-    const targetStudent = await prisma.student.findUnique({
-      where: { id: targetStudentId },
-      select: { id: true, academicYearId: true, class: { select: { academicYearId: true } } }
-    }).catch(() => null)
+    const targetStudent = rel.student
 
     if (targetStudent?.academicYearId) {
       yearId = targetStudent.academicYearId
@@ -359,12 +412,50 @@ export async function POST(req: Request) {
 
     await ensureTablesExist()
 
-    await prisma.studentGoal.deleteMany({
-      where: { 
-        studentId: targetStudentId,
-        ...(yearId ? { academicYearId: yearId } : {})
+    // BẢO TOÀN DỮ LIỆU CŨ: Lấy lại chữ ký và lời nhắn của Phụ huynh / GVCN trước khi cập nhật phiếu
+    const previousGoals = await prisma.studentGoal
+      .findMany({
+        where: {
+          studentId: targetStudentId,
+          ...(yearId ? { academicYearId: yearId } : {})
+        },
+        include: { actions: true }
+      })
+      .catch(() => [])
+
+    const preservedParentMessage =
+      parentMessage !== undefined
+        ? parentMessage
+        : previousGoals.find(g => g.parentMessage)?.parentMessage || null
+    const preservedSignedByParent =
+      signedByParent !== undefined
+        ? Boolean(signedByParent)
+        : previousGoals.some(g => g.signedByParent)
+    const preservedTeacherComment =
+      teacherComment !== undefined
+        ? teacherComment
+        : previousGoals.find(g => g.teacherComment)?.teacherComment || null
+    const preservedSignedByTeacher =
+      signedByTeacher !== undefined
+        ? Boolean(signedByTeacher)
+        : previousGoals.some(g => g.signedByTeacher)
+
+    // Lưu trạng thái action cũ theo actionText để không mất tiến độ làm việc của học sinh
+    const prevActionStatusMap = new Map<string, string>()
+    for (const pg of previousGoals) {
+      for (const pa of pg.actions || []) {
+        if (pa.actionText) prevActionStatusMap.set(pa.actionText.trim(), pa.status)
       }
-    }).catch(() => {})
+    }
+
+    await prisma.studentGoal
+      .deleteMany({
+        where: {
+          studentId: targetStudentId,
+          ...(yearId ? { academicYearId: yearId } : {})
+        }
+      })
+      .catch(() => {})
 
     const createdGoals = []
     for (const item of goals) {
@@ -379,42 +470,74 @@ export async function POST(req: Request) {
           presetId: item.presetId || null,
           teacherSupportRequest: item.teacherSupportRequest || null,
           parentSupportRequest: item.parentSupportRequest || null,
-          smartMeasurable: item.subjectTargets ? JSON.stringify(item.subjectTargets) : (item.smartMeasurable || null),
+          smartSpecific: item.smartSpecific || null,
+          smartMeasurable: item.subjectTargets
+            ? JSON.stringify(item.subjectTargets)
+            : item.smartMeasurable || null,
+          smartAchievable: item.smartAchievable || null,
+          smartRelevant: item.smartRelevant || null,
+          smartTimeBound: item.smartTimeBound || null,
           checkpointDate: new Date(),
           achievementLevel: "DANG_TIEN_TRIEN",
           status: "SUBMITTED",
           studentCommitment,
-          parentMessage,
-          teacherComment,
-          signedByStudent: Boolean(signedByStudent),
-          signedByParent: Boolean(signedByParent),
-          signedByTeacher: Boolean(signedByTeacher),
+          parentMessage: preservedParentMessage,
+          teacherComment: preservedTeacherComment,
+          signedByStudent: signedByStudent !== undefined ? Boolean(signedByStudent) : true,
+          signedByParent: preservedSignedByParent,
+          signedByTeacher: preservedSignedByTeacher,
           actions: {
-            create: (item.actions || []).map((act: any) => ({
-              actionText: typeof act === "string" ? act : act.actionText,
-              status: act.status || "PENDING"
-            }))
+            create: (item.actions || []).map((act: any) => {
+              const txt = typeof act === "string" ? act : act.actionText
+              const prevSt = txt ? prevActionStatusMap.get(txt.trim()) : undefined
+              return {
+                actionText: txt || "",
+                status: act.status || prevSt || "PENDING"
+              }
+            })
           }
         },
         include: { actions: true }
       })
       createdGoals.push(created)
 
-      await prisma.studentGoalTrackingLog.create({
-        data: {
-          studentId: targetStudentId,
-          academicYearId: yearId || "",
-          goalId: created.id,
-          category: item.category || "HOC_TAP",
-          targetText: item.targetText || "",
-          checkPoint: "DAU_NAM",
-          progressStatus: "TIEN_TRIEN",
-          teacherNotes: "Đã nộp phiếu đầu năm - Chờ GVCN đánh giá"
-        }
-      }).catch(() => {})
+      await upsertRecordPolicy({
+        entityType: "GOAL",
+        entityId: created.id,
+        studentId: targetStudentId,
+        academicYearId: yearId || "",
+        privacyTier: "SHARED_EDUCATIONAL",
+        shareWithParent: true,
+        advisorReviewStatus: preservedSignedByTeacher ? "CONFIRMED" : "PENDING_REVIEW",
+        advisorReviewNote: preservedTeacherComment,
+        updatedById: caller.userId,
+        updatedByRole: caller.actorRole
+      })
+
+      await prisma.studentGoalTrackingLog
+        .create({
+          data: {
+            studentId: targetStudentId,
+            academicYearId: yearId || "",
+            goalId: created.id,
+            category: item.category || "HOC_TAP",
+            targetText: item.targetText || "",
+            checkPoint: "DAU_NAM",
+            progressStatus: "TIEN_TRIEN",
+            teacherNotes: preservedTeacherComment || "Đã nộp phiếu đầu năm - Chờ GVCN đánh giá"
+          }
+        })
+        .catch(() => {})
     }
 
-    // Đánh dấu yêu cầu mở phiếu điều chỉnh trước đó (nếu có APPROVED) thành COMPLETED
+    try {
+      await prisma.$executeRawUnsafe(
+        `UPDATE "StudentGoalAdjustmentRequest"
+         SET "status" = 'COMPLETED', "updatedAt" = CURRENT_TIMESTAMP
+         WHERE "studentId" = ? AND "status" = 'APPROVED'`,
+        targetStudentId
+      )
+    } catch {}
     try {
       await libsqlClient.execute({
         sql: `UPDATE "StudentGoalAdjustmentRequest" 
@@ -422,9 +545,20 @@ export async function POST(req: Request) {
               WHERE "studentId" = ? AND "status" = 'APPROVED'`,
         args: [targetStudentId]
       })
-    } catch (e) {
-      console.error("Lỗi cập nhật trạng thái COMPLETED cho request:", e)
-    }
+    } catch {}
+
+    await appendAdvisoryAuditLog({
+      studentId: targetStudentId,
+      actorId: caller.userId,
+      actorRole: caller.actorRole,
+      actorName: caller.actorName,
+      entityType: "GOAL",
+      entityId: createdGoals[0]?.id || targetStudentId,
+      action: previousGoals.length > 0 ? "UPDATE_GOALS" : "CREATE_GOALS",
+      privacyTier: "SHARED_EDUCATIONAL",
+      summary: `Cập nhật ${createdGoals.length} mục tiêu SMART cá nhân`,
+      changes: { count: createdGoals.length, gradeLevel, semester }
+    })
 
     return jsonResponse({ success: true, goals: createdGoals })
   } catch (error: any) {
@@ -433,40 +567,171 @@ export async function POST(req: Request) {
   }
 }
 
-
 export async function PATCH(req: Request) {
   try {
-    const session = await auth()
-    const parentSess = null
-    const studentSess = await getStudentSession()
-
-    if (!session && !parentSess && !studentSess) {
+    const caller = await resolveAdvisoryCaller()
+    if (!caller.authenticated) {
       return jsonResponse({ error: "Chưa đăng nhập" }, 401)
     }
 
     const body = await req.json()
-    const { studentId, parentMessage, signedByParent } = body
+    const {
+      studentId,
+      goalId,
+      actionId,
+      actionStatus,
+      evidenceNotes,
+      parentMessage,
+      signedByParent,
+      teacherComment,
+      signedByTeacher,
+      advisorReviewStatus
+    } = body
 
-    if (!studentId) {
+    const targetStudentId = studentId || caller.studentId
+    if (!targetStudentId) {
       return jsonResponse({ error: "Thiếu studentId" }, 400)
     }
 
-    const stObj = await prisma.student.findUnique({
-      where: { id: studentId },
-      select: { studentCode: true }
-    })
-
-    let targetStudentIds = [studentId]
-    if (stObj?.studentCode) {
-      const sameCodeStudents = await prisma.student.findMany({
-        where: { studentCode: stObj.studentCode },
-        select: { id: true }
-      })
-      if (sameCodeStudents.length > 0) {
-        targetStudentIds = sameCodeStudents.map(s => s.id)
-      }
+    const rel = await verifyStudentRelationship(caller, targetStudentId)
+    if (!rel.allowed) {
+      return jsonResponse({ error: rel.reason || "Không có quyền thao tác trên học sinh này" }, 403)
     }
 
+    const targetStudentIds = rel.allStudentIds
+
+    // MODE 1: Học sinh / GV cập nhật trạng thái thực hiện hành động & minh chứng (Student Action & Evidence)
+    if (actionId) {
+      const normalizedStatus =
+        actionStatus === "DONE" || actionStatus === "COMPLETED"
+          ? "DONE"
+          : actionStatus === "DOING" || actionStatus === "IN_PROGRESS"
+          ? "DOING"
+          : "PENDING"
+
+      await prisma.studentGoalAction
+        .update({
+          where: { id: actionId },
+          data: { status: normalizedStatus }
+        })
+        .catch(() => null)
+
+      await upsertRecordPolicy({
+        entityType: "GOAL_ACTION",
+        entityId: actionId,
+        studentId: rel.student.id,
+        academicYearId: rel.student.academicYearId || "",
+        privacyTier: "SHARED_EDUCATIONAL",
+        shareWithParent: true,
+        evidenceNotes: evidenceNotes ?? null,
+        updatedById: caller.userId,
+        updatedByRole: caller.actorRole
+      })
+
+      await appendAdvisoryAuditLog({
+        studentId: rel.student.id,
+        actorId: caller.userId,
+        actorRole: caller.actorRole,
+        actorName: caller.actorName,
+        entityType: "GOAL_ACTION",
+        entityId: actionId,
+        action: "UPDATE_GOAL_ACTION",
+        privacyTier: "SHARED_EDUCATIONAL",
+        summary: `Cập nhật tiến độ hành động mục tiêu (${normalizedStatus})`,
+        changes: { actionId, status: normalizedStatus, evidenceNotes }
+      })
+
+      return jsonResponse({
+        success: true,
+        message: "Đã cập nhật tiến độ hành động và minh chứng thành công!"
+      })
+    }
+
+    // MODE 2: Giáo viên / CVHT xác nhận hoặc đề nghị điều chỉnh mục tiêu (Advisor Review)
+    if (
+      (caller.actorRole === "TEACHER" || caller.actorRole === "ADMIN") &&
+      (teacherComment !== undefined || signedByTeacher !== undefined || advisorReviewStatus !== undefined)
+    ) {
+      const isConfirmed =
+        advisorReviewStatus === "CONFIRMED" || Boolean(signedByTeacher && advisorReviewStatus !== "NEEDS_ADJUSTMENT")
+      const resolvedStatus =
+        advisorReviewStatus || (isConfirmed ? "CONFIRMED" : "NEEDS_ADJUSTMENT")
+
+      const goalWhere = goalId
+        ? { id: goalId }
+        : { studentId: { in: targetStudentIds } }
+
+      const targetGoals = await prisma.studentGoal.findMany({ where: goalWhere })
+
+      if (targetGoals.length > 0) {
+        await prisma.studentGoal.updateMany({
+          where: goalWhere,
+          data: {
+            ...(teacherComment !== undefined ? { teacherComment } : {}),
+            signedByTeacher: isConfirmed,
+            status: isConfirmed ? "IN_PROGRESS" : "ADJUSTED"
+          }
+        })
+
+        for (const g of targetGoals) {
+          await upsertRecordPolicy({
+            entityType: "GOAL",
+            entityId: g.id,
+            studentId: g.studentId,
+            academicYearId: g.academicYearId,
+            privacyTier: "SHARED_EDUCATIONAL",
+            shareWithParent: true,
+            advisorReviewStatus: resolvedStatus,
+            advisorReviewNote: teacherComment ?? g.teacherComment ?? null,
+            updatedById: caller.userId,
+            updatedByRole: caller.actorRole
+          })
+        }
+      }
+
+      // Nếu CVHT đề nghị điều chỉnh (NEEDS_ADJUSTMENT), tự động mở khóa phiếu để học sinh sửa
+      if (resolvedStatus === "NEEDS_ADJUSTMENT") {
+        const reqId = `adj_${Date.now()}_${Math.random().toString(36).slice(2, 6)}`
+        try {
+          await prisma.$executeRawUnsafe(
+            `INSERT INTO "StudentGoalAdjustmentRequest" (
+              "id", "studentId", "academicYearId", "reason", "status", "teacherResponse", "reviewedBy", "reviewedAt", "createdAt", "updatedAt"
+            ) VALUES (?, ?, ?, ?, 'APPROVED', ?, ?, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP)`,
+            reqId,
+            rel.student.id,
+            rel.student.academicYearId || "",
+            "CVHT đề nghị điều chỉnh mục tiêu SMART",
+            teacherComment || "Vui lòng điều chỉnh lại mục tiêu theo góp ý của CVHT",
+            caller.actorName
+          )
+        } catch {}
+      }
+
+      await appendAdvisoryAuditLog({
+        studentId: rel.student.id,
+        actorId: caller.userId,
+        actorRole: caller.actorRole,
+        actorName: caller.actorName,
+        entityType: "GOAL",
+        entityId: goalId || rel.student.id,
+        action: isConfirmed ? "ADVISOR_CONFIRM_GOALS" : "ADVISOR_REQUEST_ADJUSTMENT",
+        privacyTier: "SHARED_EDUCATIONAL",
+        summary: isConfirmed
+          ? "CVHT đã xác nhận mục tiêu SMART của học sinh"
+          : "CVHT đề nghị học sinh điều chỉnh mục tiêu SMART",
+        changes: { advisorReviewStatus: resolvedStatus, teacherComment }
+      })
+
+      return jsonResponse({
+        success: true,
+        advisorReviewStatus: resolvedStatus,
+        message: isConfirmed
+          ? "Đã xác nhận mục tiêu học tập cho học sinh thành công!"
+          : "Đã gửi đề nghị điều chỉnh và mở khóa phiếu cho học sinh!"
+      })
+    }
+
+    // MODE 3: Phụ huynh gửi lời nhắn động viên & ký đồng hành (Parent Feedback on Goals)
     const count = await prisma.studentGoal.count({
       where: { studentId: { in: targetStudentIds } }
     })
@@ -474,8 +739,8 @@ export async function PATCH(req: Request) {
     if (count === 0) {
       await prisma.studentGoal.create({
         data: {
-          studentId: studentId,
-          academicYearId: "",
+          studentId: rel.student.id,
+          academicYearId: rel.student.academicYearId || "",
           gradeLevel: "K8",
           semester: "HK1",
           category: "HOC_TAP",
@@ -486,9 +751,7 @@ export async function PATCH(req: Request) {
       })
     } else {
       await prisma.studentGoal.updateMany({
-        where: {
-          studentId: { in: targetStudentIds }
-        },
+        where: { studentId: { in: targetStudentIds } },
         data: {
           parentMessage: parentMessage || "",
           signedByParent: Boolean(signedByParent)
@@ -496,7 +759,23 @@ export async function PATCH(req: Request) {
       })
     }
 
-    return jsonResponse({ success: true, message: "Cập nhật lời dặn và ký cam kết đồng hành Phụ huynh thành công!" })
+    await appendAdvisoryAuditLog({
+      studentId: rel.student.id,
+      actorId: caller.userId,
+      actorRole: caller.actorRole,
+      actorName: caller.actorName,
+      entityType: "GOAL",
+      entityId: rel.student.id,
+      action: "PARENT_SIGN_GOALS",
+      privacyTier: "SHARED_EDUCATIONAL",
+      summary: "Phụ huynh gửi lời nhắn đồng hành và ký xác nhận mục tiêu",
+      changes: { parentMessage, signedByParent: Boolean(signedByParent) }
+    })
+
+    return jsonResponse({
+      success: true,
+      message: "Cập nhật lời dặn và ký cam kết đồng hành Phụ huynh thành công!"
+    })
   } catch (error: any) {
     console.error("PATCH /api/advisory/goals error:", error)
     return jsonResponse({ error: error.message || "Server error" }, 500)

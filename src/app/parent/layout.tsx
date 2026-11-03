@@ -6,7 +6,7 @@ import { auth } from "@/lib/auth"
 import { UserMenu } from "@/components/UserMenu"
 import { AcademicYearSelector } from "@/components/AcademicYearSelector"
 import { LanguageSwitcher } from "@/components/LanguageSwitcher"
-import { SSMAssistantWidget } from "@/components/SSMAssistantWidget"
+
 export default async function ParentLayout({ children }: { children: React.ReactNode }) {
   let session: any = null;
   try {
@@ -49,7 +49,7 @@ export default async function ParentLayout({ children }: { children: React.React
           {children}
         </div>
         <ParentMobileBottomNav />
-        <SSMAssistantWidget role="PARENT" />
+
       </main>
     </div>
   )

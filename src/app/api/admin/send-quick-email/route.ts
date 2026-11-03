@@ -194,7 +194,7 @@ function buildEmailHtml(subject, periodName, batchName, totalStudents, totalPass
               BAN ĐÀO TẠO &amp; KHẢO THÍ ĐẢM BẢO CHẤT LƯỢNG GIÁO DỤC
             </div>
             <div style="color:#5EEAD4; margin-top:6px; font-size:10.5px;">
-              Email hỗ trợ: <a href="mailto:bankhaothi@skylineschool.edu.vn" style="color:#FDE047; text-decoration:none; font-weight:700;">bankhaothi@skylineschool.edu.vn</a> &bull; Website: <a href="https://skylineschool.edu.vn" style="color:#FDE047; text-decoration:none; font-weight:700;">skylineschool.edu.vn</a>
+              Email hỗ trợ: <a href="mailto:ktdbcl@skylineschool.edu.vn" style="color:#FDE047; text-decoration:none; font-weight:700;">ktdbcl@skylineschool.edu.vn</a> &bull; Website: <a href="https://skylineschool.edu.vn" style="color:#FDE047; text-decoration:none; font-weight:700;">skylineschool.edu.vn</a>
             </div>
             <div style="color:#64748B; margin-top:8px; font-size:10px;">
               &copy; ${new Date().getFullYear()} Sky-Line School System. All rights reserved. &bull; Thư thông báo tự động từ Hệ thống Khảo sát Tuyển sinh Sky-Line

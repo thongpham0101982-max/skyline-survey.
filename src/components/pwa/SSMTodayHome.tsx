@@ -175,6 +175,15 @@ export function SSMTodayHome() {
       <div className="bg-gradient-to-b from-[#003B3A] to-[#002B2A] text-white px-4 pt-5 pb-8 rounded-b-3xl shadow-lg relative overflow-hidden">
         {/* Subtle background glow */}
         <div className="absolute top-0 right-0 w-64 h-64 bg-[#00A19A]/15 rounded-full blur-3xl pointer-events-none -mr-20 -mt-20"></div>
+        <div
+          className="absolute top-0 right-0 bottom-0 w-3/5 pointer-events-none select-none overflow-hidden opacity-40"
+          style={{
+            WebkitMaskImage: "linear-gradient(to right, transparent 0%, rgba(0,0,0,0.45) 40%, rgba(0,0,0,1) 100%)",
+            maskImage: "linear-gradient(to right, transparent 0%, rgba(0,0,0,0.45) 40%, rgba(0,0,0,1) 100%)"
+          }}
+        >
+          <img src="/images/skyline-campus-banner.png" alt="Sky-Line Campus" className="w-full h-full object-cover object-center" />
+        </div>
 
         <div className="flex items-center justify-between mb-4 relative z-10">
           <div className="flex items-center gap-2.5">
@@ -438,35 +447,6 @@ export function SSMTodayHome() {
             ))}
           </div>
         )}
-      </div>
-
-      {/* 5. SSM AI WORK ASSISTANT CARD */}
-      <div className="px-4 mt-6">
-        <div className="bg-gradient-to-br from-[#003B3A] via-[#004D4B] to-[#002220] rounded-2xl p-4 text-white shadow-md border border-[#00A19A]/30 relative overflow-hidden">
-          <div className="absolute top-0 right-0 w-32 h-32 bg-[#5EEAD4]/10 rounded-full blur-2xl pointer-events-none"></div>
-
-          <div className="flex items-center gap-2 mb-2 relative z-10">
-            <div className="w-6 h-6 rounded-lg bg-[#00A19A]/30 text-[#5EEAD4] flex items-center justify-center border border-[#00A19A]/40">
-              <Sparkles className="w-3.5 h-3.5" />
-            </div>
-            <span className="text-xs font-bold text-[#5EEAD4] tracking-wide uppercase">
-              SSM AI Assistant
-            </span>
-          </div>
-
-          <p className="text-sm font-semibold text-white/90 leading-snug mb-3 relative z-10">
-            &ldquo;{data?.aiPromptSuggestion || "Hôm nay tôi cần ưu tiên làm gì trước?"}&rdquo;
-          </p>
-
-          <Link
-            href="/teacher/ai"
-            className="w-full h-11 rounded-xl bg-[#00A19A] hover:bg-[#008B85] active:bg-[#00736E] text-white font-bold text-xs flex items-center justify-center gap-2 transition-all shadow-[0_4px_12px_rgba(0,161,154,0.3)] active:scale-[0.98] relative z-10 cursor-pointer"
-          >
-            <Sparkles className="w-3.5 h-3.5" />
-            <span>Hỏi SSM AI ngay</span>
-            <ArrowRight className="w-3.5 h-3.5 ml-1" />
-          </Link>
-        </div>
       </div>
 
       {/* 6. QUICK ACTIONS GRID */}

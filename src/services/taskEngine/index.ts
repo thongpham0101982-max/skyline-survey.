@@ -1997,6 +1997,92 @@ export async function aggregateTeacherTasks(
           },
         })
       }
+
+      // 9.6. Liên thông Nhiệm vụ Phối hợp Tư vấn GVBM ⇄ GVCN (SubjectTeacherAdvisoryTask)
+      try {
+        const gvbmAdvisoryRows = await prisma.$queryRawUnsafe<any[]>(
+          `SELECT t.*, s."studentName", s."studentCode", c."className"
+           FROM "SubjectTeacherAdvisoryTask" t
+           LEFT JOIN "Student" s ON s."id" = t."studentId"
+           LEFT JOIN "Class" c ON c."id" = t."classId"
+           WHERE (t."assignedToTeacherId" = ? OR t."assignedByTeacherId" = ?)
+           ORDER BY t."updatedAt" DESC
+           LIMIT 30`,
+          teacherId,
+          teacherId
+        ).catch(() => [])
+
+        for (const t of gvbmAdvisoryRows || []) {
+          const isAssignedToMe = t.assignedToTeacherId === teacherId
+          const isAssignedByMe = t.assignedByTeacherId === teacherId
+          const dueDateObj = t.dueDate ? new Date(t.dueDate) : null
+          const isPastDue = Boolean(dueDateObj && !isNaN(dueDateObj.getTime()) && dueDateObj < todayStart)
+
+          // Trường hợp 1: GVBM nhận nhiệm vụ tư vấn học sinh từ CVHT
+          if (isAssignedToMe) {
+            const isDone = t.status !== "ASSIGNED"
+            if (isDone && !options?.includeCompleted && options?.status !== "COMPLETED") {
+              continue
+            }
+            addTask({
+              taskId: `covan-gvbm-assign-${t.id}`,
+              taskType: "SUBJECT_UNDER_BENCHMARK_SUPPORT",
+              sourceModule: "CO_VAN",
+              sourceId: t.id,
+              title: `[Tư vấn GVBM] Hỗ trợ môn ${t.subjectName} cho HS ${t.studentName || "Học sinh"} (${t.className || ""})`,
+              description: `${t.consultationPrompt || ""} • Mục tiêu: ${t.supportGoal || "Cải thiện kết quả môn học"}`,
+              priority: isPastDue ? "URGENT" : "HIGH",
+              status: isDone ? "COMPLETED" : isPastDue ? "OVERDUE" : "NEW",
+              deadline: dueDateObj ? dueDateObj.toLocaleDateString("vi-VN") : "Trong tuần",
+              deadlineDate: dueDateObj?.toISOString() || weekEnd.toISOString(),
+              assignedUserId: userId,
+              deepLink: `/teacher/so-diem-nhan-xet?classId=${t.classId || ""}&studentId=${t.studentId || ""}`,
+              createdAt: t.createdAt ? new Date(t.createdAt).toISOString() : now.toISOString(),
+              completedAt: t.gvbmRespondedAt ? new Date(t.gvbmRespondedAt).toISOString() : null,
+              metadata: {
+                moduleLabel: "Phối hợp Cố vấn • GVBM",
+                badgeColor: "purple",
+                classId: t.classId,
+                className: t.className,
+                subjectName: t.subjectName,
+                studentId: t.studentId,
+                studentName: t.studentName
+              }
+            })
+          }
+
+          // Trường hợp 2: GVBM đã hoàn thành tư vấn -> Đồng bộ nhiệm vụ rà soát & công bố về Sổ Giáo viên của GVCN
+          if (isAssignedByMe && t.status === "RESPONDED") {
+            addTask({
+              taskId: `covan-gvbm-review-${t.id}`,
+              taskType: "ADVISORY_AT_RISK_FOLLOWUP",
+              sourceModule: "CO_VAN",
+              sourceId: t.id,
+              title: `[GVBM đã phản hồi] Duyệt & công bố tư vấn môn ${t.subjectName} của HS ${t.studentName || "Học sinh"}`,
+              description: `GVBM ${t.assignedToTeacherName || t.subjectName} đã gửi nhận định chuyên môn và giải pháp: "${String(t.gvbmProposedSolutions || t.gvbmProfessionalAssessment || "").slice(0, 95)}".`,
+              priority: "HIGH",
+              status: "WAITING",
+              deadline: "Hôm nay",
+              deadlineDate: todayEnd.toISOString(),
+              assignedUserId: userId,
+              deepLink: `/teacher/co-van-hoc-tap?classId=${t.classId || ""}&studentId=${t.studentId || ""}&tab=journey`,
+              createdAt: t.gvbmRespondedAt ? new Date(t.gvbmRespondedAt).toISOString() : now.toISOString(),
+              metadata: {
+                moduleLabel: "Lộ trình Cố vấn • Duyệt GVBM",
+                badgeColor: "teal",
+                classId: t.classId,
+                className: t.className,
+                subjectName: t.subjectName,
+                studentId: t.studentId,
+                studentName: t.studentName,
+                approvalStatus: "PENDING_APPROVAL"
+              }
+            })
+          }
+        }
+      } catch (gvbmErr) {
+        console.warn("[TaskEngine] GVBM Advisory sync warning:", gvbmErr)
+      }
     }
   } catch (err) {
     console.warn("[TaskEngine] Module 9 (CO_VAN) warning:", err)

@@ -1,4 +1,4 @@
-﻿"use client"
+"use client"
 
 import React, { useState } from "react"
 import Link from "next/link"
@@ -6,7 +6,6 @@ import { usePathname } from "next/navigation"
 import {
   Home,
   CheckSquare,
-  Sparkles,
   Bell,
   User,
   KeyRound,
@@ -24,6 +23,9 @@ interface PwaBottomNavProps {
 
 export function PwaBottomNav({ role = "TEACHER" }: PwaBottomNavProps) {
   const pathname = usePathname() || ""
+  if (pathname.includes("/print")) {
+    return null
+  }
   const [isPasswordModalOpen, setIsPasswordModalOpen] = useState(false)
   const [isDeviceModalOpen, setIsDeviceModalOpen] = useState(false)
   const [isProfileSheetOpen, setIsProfileSheetOpen] = useState(false)
@@ -52,12 +54,10 @@ export function PwaBottomNav({ role = "TEACHER" }: PwaBottomNavProps) {
 
   const isHome = pathname === "/teacher" || pathname === "/admin"
   const isTasks = pathname.includes("/tasks") || pathname.includes("tab=tasks")
-  const isAi = pathname.includes("/teacher/ai") || pathname.includes("/admin/ai")
   const isNews = pathname.includes("notifications") || pathname.includes("ban-tin-thong-bao") || pathname.includes("feedback") || pathname.includes("thong-bao")
 
   const homeHref = role === "ADMIN" ? "/admin" : "/teacher"
   const tasksHref = role === "ADMIN" ? "/admin/tasks" : "/teacher/tasks"
-  const aiHref = role === "ADMIN" ? "/admin/ai" : "/teacher/ai"
   const newsHref = role === "ADMIN" ? "/admin/logs" : "/teacher/notifications"
 
   return (
@@ -70,12 +70,12 @@ export function PwaBottomNav({ role = "TEACHER" }: PwaBottomNavProps) {
         <Link
           href={homeHref}
           className={`flex flex-col items-center justify-center min-w-[56px] min-h-[44px] rounded-xl transition-all cursor-pointer ${
-            isHome && !isTasks && !isAi
+            isHome && !isTasks
               ? "text-[#00A19A] font-bold"
               : "text-slate-500 hover:text-[#00A19A] font-medium"
           }`}
         >
-          <div className={`p-1 rounded-lg ${isHome && !isTasks && !isAi ? "bg-[#00A19A]/10" : ""}`}>
+          <div className={`p-1 rounded-lg ${isHome && !isTasks ? "bg-[#00A19A]/10" : ""}`}>
             <Home className="w-5 h-5" />
           </div>
           <span className="text-[10px] mt-0.5 leading-none">Hôm nay</span>
@@ -96,28 +96,7 @@ export function PwaBottomNav({ role = "TEACHER" }: PwaBottomNavProps) {
           <span className="text-[10px] mt-0.5 leading-none">Việc</span>
         </Link>
 
-        {/* Tab 3: SSM AI (Highlighted Brand Action) */}
-        <Link
-          href={aiHref}
-          className={`flex flex-col items-center justify-center min-w-[56px] min-h-[44px] rounded-xl transition-all cursor-pointer ${
-            isAi
-              ? "text-[#00A19A] font-bold"
-              : "text-slate-500 hover:text-[#00A19A] font-medium"
-          }`}
-        >
-          <div
-            className={`p-1.5 rounded-xl ${
-              isAi
-                ? "bg-[#00A19A] text-white shadow-[0_2px_10px_rgba(0,161,154,0.4)]"
-                : "bg-[#003B3A]/10 text-[#003B3A]"
-            }`}
-          >
-            <Sparkles className="w-4 h-4" />
-          </div>
-          <span className="text-[10px] mt-0.5 leading-none font-bold">SSM AI</span>
-        </Link>
-
-        {/* Tab 4: Tin */}
+        {/* Tab 3: Tin */}
         <Link
           href={newsHref}
           className={`flex flex-col items-center justify-center min-w-[56px] min-h-[44px] rounded-xl transition-all cursor-pointer ${
@@ -137,7 +116,7 @@ export function PwaBottomNav({ role = "TEACHER" }: PwaBottomNavProps) {
           <span className="text-[10px] mt-0.5 leading-none">Thông báo</span>
         </Link>
 
-        {/* Tab 5: Tôi */}
+        {/* Tab 4: Tôi */}
         <button
           onClick={() => setIsProfileSheetOpen(true)}
           className="flex flex-col items-center justify-center min-w-[56px] min-h-[44px] rounded-xl text-slate-500 hover:text-[#00A19A] font-medium transition-all cursor-pointer"

@@ -1,18 +1,27 @@
 import { NextResponse } from "next/server"
 import { prisma } from "@/lib/db"
-import { auth } from "@/lib/auth"
+import {
+  resolveAdvisoryCaller,
+  verifyStudentRelationship
+} from "@/lib/advisory/rbac-guard"
+import { appendAdvisoryAuditLog } from "@/lib/advisory/triparty-sync"
 
 export const dynamic = "force-dynamic"
 
 function jsonResponse(data: any, status = 200) {
   const res = NextResponse.json(data, { status })
-  res.headers.set('Cache-Control', 'no-store, no-cache, must-revalidate, proxy-revalidate')
+  res.headers.set("Cache-Control", "no-store, no-cache, must-revalidate, proxy-revalidate")
   return res
 }
 
 export async function GET(req: Request) {
+  const caller = await resolveAdvisoryCaller()
+  if (!caller.authenticated) {
+    return jsonResponse({ error: "Unauthorized" }, 401)
+  }
+
   const { searchParams } = new URL(req.url)
-  const studentId = searchParams.get("studentId")
+  const studentId = searchParams.get("studentId") || caller.studentId
   const academicYearId = searchParams.get("academicYearId")
   const checkPoint = searchParams.get("checkPoint")
 
@@ -21,9 +30,14 @@ export async function GET(req: Request) {
   }
 
   try {
+    const rel = await verifyStudentRelationship(caller, studentId)
+    if (!rel.allowed) {
+      return jsonResponse({ error: rel.reason || "Forbidden" }, 403)
+    }
+
     const logs = await prisma.studentGoalTrackingLog.findMany({
       where: {
-        studentId,
+        studentId: { in: rel.allStudentIds },
         ...(academicYearId ? { academicYearId } : {}),
         ...(checkPoint ? { checkPoint } : {})
       },
@@ -38,8 +52,10 @@ export async function GET(req: Request) {
 }
 
 export async function POST(req: Request) {
-  const session = await auth()
-  if (!session) return jsonResponse({ error: "Unauthorized" }, 401)
+  const caller = await resolveAdvisoryCaller()
+  if (!caller.authenticated || (caller.actorRole !== "TEACHER" && caller.actorRole !== "ADMIN")) {
+    return jsonResponse({ error: "Unauthorized" }, 401)
+  }
 
   try {
     const body = await req.json()
@@ -49,14 +65,21 @@ export async function POST(req: Request) {
       return jsonResponse({ error: "Invalid payload" }, 400)
     }
 
+    const rel = await verifyStudentRelationship(caller, studentId)
+    if (!rel.allowed) {
+      return jsonResponse({ error: rel.reason || "Forbidden" }, 403)
+    }
+
     if (studentId && checkPoint) {
-      await prisma.studentGoalTrackingLog.deleteMany({
-        where: {
-          studentId,
-          checkPoint,
-          ...(academicYearId ? { academicYearId } : {})
-        }
-      }).catch(() => {})
+      await prisma.studentGoalTrackingLog
+        .deleteMany({
+          where: {
+            studentId,
+            checkPoint,
+            ...(academicYearId ? { academicYearId } : {})
+          }
+        })
+        .catch(() => {})
     }
 
     const createdRecords = []
@@ -72,11 +95,24 @@ export async function POST(req: Request) {
           checkPoint: checkPoint || item.checkPoint || "GIUA_KY_1",
           progressStatus: item.progressStatus || "TIEN_TRIEN",
           teacherNotes: item.teacherNotes || null,
-          evaluatedById: (session.user as any)?.id || null
+          evaluatedById: caller.userId || null
         }
       })
       createdRecords.push(record)
     }
+
+    await appendAdvisoryAuditLog({
+      studentId,
+      actorId: caller.userId,
+      actorRole: caller.actorRole,
+      actorName: caller.actorName,
+      entityType: "TRACKING_LOG",
+      entityId: `${studentId}_${checkPoint || "GIUA_KY_1"}`,
+      action: "UPDATE_GOAL_TRACKING",
+      privacyTier: "SHARED_EDUCATIONAL",
+      summary: `CVHT cập nhật Check-in tiến độ mốc ${checkPoint || "GIUA_KY_1"}`,
+      changes: { checkPoint, count: createdRecords.length }
+    })
 
     return jsonResponse({ success: true, count: createdRecords.length })
   } catch (error: any) {

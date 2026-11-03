@@ -444,8 +444,37 @@ export default function TeacherStudentProfilePage() {
       />
 
       {/* 1. Header Banner & Quick Student Navigator */}
-      <div className="bg-white border border-slate-200/80 shadow-xs rounded-2xl p-4 sm:p-5 space-y-4">
-        <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4">
+      <div className="group/card bg-white border border-slate-200/80 shadow-xs rounded-3xl p-4 sm:p-6 space-y-4 relative overflow-hidden" style={{ background: "linear-gradient(135deg, #F0FDFA 0%, #FFFFFF 52%, #E6F7F5 100%)" }}>
+        {/* Đường viền dải nhận diện cơ sở ở đỉnh thẻ */}
+        <div
+          className="absolute top-0 left-0 right-0 h-1.5 z-30"
+          style={{
+            background: "linear-gradient(135deg, #003B3A 0%, #00A19A 55%, #AE882E 100%)"
+          }}
+        />
+        {/* Ảnh minh họa trường học Sky-Line khớp khung phải & mờ dần */}
+        <div
+          className="hidden sm:block absolute top-0 right-0 bottom-0 sm:w-[54%] md:w-[48%] z-0 pointer-events-none select-none overflow-hidden"
+          style={{
+            WebkitMaskImage:
+              "linear-gradient(to right, transparent 0%, rgba(0,0,0,0.08) 12%, rgba(0,0,0,0.4) 32%, rgba(0,0,0,0.78) 60%, rgba(0,0,0,0.95) 85%, rgba(0,0,0,1) 100%)",
+            maskImage:
+              "linear-gradient(to right, transparent 0%, rgba(0,0,0,0.08) 12%, rgba(0,0,0,0.4) 32%, rgba(0,0,0,0.78) 60%, rgba(0,0,0,0.95) 85%, rgba(0,0,0,1) 100%)"
+          }}
+        >
+          <img
+            src="/images/skyline-campus-banner.png"
+            alt="Sky-Line Campus"
+            className="w-full h-full object-cover object-[center_65%] opacity-85"
+          />
+          <div
+            className="absolute inset-x-0 top-0 h-12 pointer-events-none"
+            style={{
+              background: "linear-gradient(to bottom, rgba(255,255,255,0.85) 0%, rgba(255,255,255,0.35) 55%, transparent 100%)"
+            }}
+          />
+        </div>
+        <div className="relative z-10 flex flex-col lg:flex-row lg:items-center justify-between gap-4">
           <div>
             <h1 className="text-xl font-black text-slate-900 tracking-tight flex items-center gap-2">
               <User className="w-5 h-5 text-[#00A19A]" />

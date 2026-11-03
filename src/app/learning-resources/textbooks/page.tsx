@@ -6,8 +6,8 @@ import { TextbookLibraryClient } from "./client";
 export const dynamic = "force-dynamic";
 
 export const metadata = {
-  title: "Thư viện Sách giáo khoa số | SSM Sky-Line",
-  description: "Kho Sách giáo khoa số chuẩn dùng chung trên hệ thống SSM Sky-Line"
+  title: "Thư viện Sách giáo khoa số | SSQM SkyLineSchool",
+  description: "Kho Sách giáo khoa số chuẩn dùng chung trên hệ thống SSQM SkyLineSchool"
 };
 
 export default async function TextbooksPage() {

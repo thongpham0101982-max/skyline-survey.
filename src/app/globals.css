@@ -1,5 +1,6 @@
 @import url('https://fonts.googleapis.com/css2?family=Open+Sans:ital,wght@0,300;0,400;0,500;0,600;0,700;0,800;1,300;1,400;1,600;1,700;1,800&family=Be+Vietnam+Pro:ital,wght@0,400;0,500;0,600;0,700;1,400&display=swap');
-@import "tailwindcss";
+@import "tailwindcss" source(none);
+@source "../";
 @import "tw-animate-css";
 @import "shadcn/tailwind.css";
 
@@ -561,25 +562,27 @@
 }
 
 
-/* 15. Premium Form Input Global Styles using :where() for zero specificity */
-:where(
-  input[type="text"]:not(.raw-input),
-  input[type="date"]:not(.raw-input),
-  input[type="number"]:not(.raw-input),
-  input[type="email"]:not(.raw-input),
-  input[type="password"]:not(.raw-input),
-  select:not(.raw-select),
-  textarea:not(.raw-textarea)
-) {
-  background-color: #ffffff;
-  border: 1px solid #e2e8f0;
-  border-radius: 14px;
-  padding: 0.75rem 1rem;
-  font-weight: 500;
-  outline: none;
-  font-size: 0.75rem;
-  color: #1e293b;
-  transition: all 0.2s ease-in-out;
+/* 15. Premium Form Input Global Styles using :where() in @layer base so Tailwind utilities can override */
+@layer base {
+  :where(
+    input[type="text"]:not(.raw-input),
+    input[type="date"]:not(.raw-input),
+    input[type="number"]:not(.raw-input),
+    input[type="email"]:not(.raw-input),
+    input[type="password"]:not(.raw-input),
+    select:not(.raw-select),
+    textarea:not(.raw-textarea)
+  ) {
+    background-color: #ffffff;
+    border: 1px solid #e2e8f0;
+    border-radius: 14px;
+    padding: 0.5rem 0.75rem;
+    font-weight: 500;
+    outline: none;
+    font-size: 0.75rem;
+    color: #1e293b;
+    transition: all 0.2s ease-in-out;
+  }
 }
 
 :where(
@@ -1385,5 +1388,73 @@ input:focus-visible {
 @media (max-width: 767px) {
   body:has(.pwa-today-view) .teacher-layout-header {
     display: none !important;
+  }
+}
+
+
+/* =========================================================================
+   UNIFIED SKY-LINE CAMPUS TOP BANNER SYSTEM (TOÀN HỆ THỐNG SSM)
+   Đồng bộ hình ảnh trường học khớp khung phải & mờ dần sang trái
+   ========================================================================= */
+.teacher-page-header,
+.admin-page-header,
+main > :is(.space-y-4, .space-y-5, .space-y-6, .space-y-8) > div:first-child:is(.rounded-2xl, .rounded-3xl):has(h1):not(.group\/card):not(.no-campus-banner),
+main > div > :is(.space-y-4, .space-y-5, .space-y-6, .space-y-8) > div:first-child:is(.rounded-2xl, .rounded-3xl):has(h1):not(.group\/card):not(.no-campus-banner) {
+  position: relative;
+  overflow: hidden;
+}
+
+@media (min-width: 640px) {
+  .teacher-page-header::after,
+  .admin-page-header::after,
+  main > :is(.space-y-4, .space-y-5, .space-y-6, .space-y-8) > div:first-child:is(.rounded-2xl, .rounded-3xl):has(h1):not(.group\/card):not(.no-campus-banner)::after,
+  main > div > :is(.space-y-4, .space-y-5, .space-y-6, .space-y-8) > div:first-child:is(.rounded-2xl, .rounded-3xl):has(h1):not(.group\/card):not(.no-campus-banner)::after {
+    content: "";
+    position: absolute;
+    top: 0;
+    right: 0;
+    bottom: 0;
+    width: 46%;
+    background-image: url("/images/skyline-campus-banner.png");
+    background-size: cover;
+    background-position: center 65%;
+    background-repeat: no-repeat;
+    opacity: 0.34;
+    pointer-events: none;
+    z-index: 0;
+    -webkit-mask-image: linear-gradient(
+      to right,
+      transparent 0%,
+      rgba(0, 0, 0, 0.12) 15%,
+      rgba(0, 0, 0, 0.48) 42%,
+      rgba(0, 0, 0, 0.85) 75%,
+      rgba(0, 0, 0, 1) 100%
+    );
+    mask-image: linear-gradient(
+      to right,
+      transparent 0%,
+      rgba(0, 0, 0, 0.12) 15%,
+      rgba(0, 0, 0, 0.48) 42%,
+      rgba(0, 0, 0, 0.85) 75%,
+      rgba(0, 0, 0, 1) 100%
+    );
+  }
+
+  .teacher-page-header > :not(.absolute):not(.fixed),
+  .admin-page-header > :not(.absolute):not(.fixed),
+  main > :is(.space-y-4, .space-y-5, .space-y-6, .space-y-8) > div:first-child:is(.rounded-2xl, .rounded-3xl):has(h1):not(.group\/card):not(.no-campus-banner) > :not(.absolute):not(.fixed),
+  main > div > :is(.space-y-4, .space-y-5, .space-y-6, .space-y-8) > div:first-child:is(.rounded-2xl, .rounded-3xl):has(h1):not(.group\/card):not(.no-campus-banner) > :not(.absolute):not(.fixed) {
+    position: relative;
+    z-index: 1;
+  }
+}
+
+
+/* Fix vertical text clipping inside compact height <select> elements */
+@layer base {
+  :where(select:is(.h-6, .h-7, .h-8, .h-9, .h-10)) {
+    padding-top: 0;
+    padding-bottom: 0;
+    line-height: 1.25;
   }
 }

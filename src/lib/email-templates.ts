@@ -305,7 +305,7 @@ export function renderSkylineEmail(options: SkylineEmailOptions): string {
                 BAN ĐÀO TẠO & KHẢO THÍ ĐẢM BẢO CHẤT LƯỢNG GIÁO DỤC
               </div>
               <div style="margin-top: 6px; color: rgba(255, 255, 255, 0.75); font-size: 10.5px;">
-                Email hỗ trợ: <a href="mailto:bankhaothi@skylineschool.edu.vn" style="color: #FDE047; text-decoration: none; font-weight: 600;">bankhaothi@skylineschool.edu.vn</a> • Website: <a href="https://skylineschool.edu.vn" target="_blank" style="color: #FDE047; text-decoration: none; font-weight: 600;">skylineschool.edu.vn</a>
+                Email hỗ trợ: <a href="mailto:ktdbcl@skylineschool.edu.vn" style="color: #FDE047; text-decoration: none; font-weight: 600;">ktdbcl@skylineschool.edu.vn</a> • Website: <a href="https://skylineschool.edu.vn" target="_blank" style="color: #FDE047; text-decoration: none; font-weight: 600;">skylineschool.edu.vn</a>
               </div>
               <div style="margin-top: 6px; font-size: 10px; color: rgba(255, 255, 255, 0.4);">
                 © ${currentYear} Sky-Line Education System. All rights reserved.

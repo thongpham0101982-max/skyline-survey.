@@ -1,4 +1,4 @@
-﻿import { auth } from '@/lib/auth'
+import { auth } from '@/lib/auth'
 import { NextResponse } from 'next/server'
 
 export default auth((req) => {
@@ -6,11 +6,14 @@ export default auth((req) => {
   
     if (
     pathname.toLowerCase().includes('hocsinh') ||
+    pathname.startsWith('/alumni') ||
     pathname === '/offline' ||
     pathname === '/sw.js' ||
     pathname === '/manifest.webmanifest' ||
     pathname === '/manifest.json' ||
-    pathname.startsWith('/icons/')
+    pathname.startsWith('/icons/') ||
+    pathname.startsWith('/images/') ||
+    pathname.startsWith('/uploads/')
   ) {
     return NextResponse.next()
   }
@@ -22,10 +25,19 @@ export default auth((req) => {
   if (isOnApiAuthRoute) return NextResponse.next()
   
   if (!isLoggedIn && !isOnLogin) {
-    return NextResponse.redirect(new URL('/login', req.nextUrl))
+    const loginUrl = new URL('/login', req.nextUrl)
+    if (pathname.startsWith('/profile/verify/')) {
+      loginUrl.searchParams.set('callbackUrl', pathname + req.nextUrl.search)
+      loginUrl.searchParams.set('role', 'PARENT')
+    }
+    return NextResponse.redirect(loginUrl)
   }
   
   if (isLoggedIn && isOnLogin) {
+    const cb = req.nextUrl.searchParams.get('callbackUrl')
+    if (cb && cb.startsWith('/') && !cb.startsWith('//')) {
+      return NextResponse.redirect(new URL(cb, req.nextUrl))
+    }
     const role = (req.auth?.user as any)?.role || 'PARENT'
     if (role === 'PARENT') return NextResponse.redirect(new URL('/parent', req.nextUrl))
     if (['TEACHER', 'GV_MN'].includes(role)) return NextResponse.redirect(new URL('/teacher', req.nextUrl))
@@ -61,6 +73,5 @@ export default auth((req) => {
 })
 
 export const config = {
-  matcher: ['/((?!api|hocsinh|offline|sw\.js|manifest\.webmanifest|manifest\.json|icons|_next/static|_next/image|favicon.ico|logo.png|logo-skyline.png|vercel.svg|next.svg).*)'],
+  matcher: ['/((?!api|hocsinh|alumni|offline|sw\.js|manifest\.webmanifest|manifest\.json|icons|images|uploads|_next/static|_next/image|favicon.ico|logo.png|logo-skyline.png|vercel.svg|next.svg).*)'],
 }
-

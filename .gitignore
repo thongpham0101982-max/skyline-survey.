@@ -48,7 +48,10 @@ next-env.d.ts
 scratch_*
 scratch/
 
-*.db
+*.db*
+*.sqlite*
+*.db-shm
+*.db-wal
 /data-backups/
 err.txt
 out.txt

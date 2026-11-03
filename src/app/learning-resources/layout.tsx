@@ -6,7 +6,6 @@ import { UserMenu } from "@/components/UserMenu";
 import { AcademicYearSelector } from "@/components/AcademicYearSelector";
 import { LanguageSwitcher } from "@/components/LanguageSwitcher";
 import { MobileMenuTrigger } from "@/components/MobileMenuTrigger";
-import { SSMAssistantWidget } from "@/components/SSMAssistantWidget";
 import { prisma } from "@/lib/db";
 import { getRoleReadableModules } from "@/lib/permissions";
 
@@ -87,8 +86,6 @@ export default async function LearningResourcesLayout({
           <div className="max-w-7xl mx-auto">{children}</div>
         </main>
       </div>
-
-      <SSMAssistantWidget />
     </div>
   );
 }

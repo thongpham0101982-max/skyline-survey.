@@ -7,6 +7,7 @@ import {
   Sparkles, ArrowRight, MessageSquare, ShieldCheck, RefreshCw, ChevronRight, HelpCircle,
   Table, LayoutGrid, Edit3, Save, X, Feather, Star, Heart, Smile
 } from "lucide-react"
+import TriPartyWorkflowBanner from "@/components/advisory/TriPartyWorkflowBanner"
 
 export default function StudentConsultationDiaryPage() {
   const [studentId, setStudentId] = useState("")
@@ -32,6 +33,7 @@ export default function StudentConsultationDiaryPage() {
   const [selfRating, setSelfRating] = useState(5)
   const [standaloneText, setStandaloneText] = useState("")
   const [standaloneDifficulties, setStandaloneDifficulties] = useState("")
+  const [shareWithParent, setShareWithParent] = useState(false)
   const [savingStandalone, setSavingStandalone] = useState(false)
 
   useEffect(() => {
@@ -142,7 +144,8 @@ export default function StudentConsultationDiaryPage() {
           feeling,
           selfRating,
           reflectionText: standaloneText,
-          difficulties: standaloneDifficulties
+          difficulties: standaloneDifficulties,
+          shareWithParent
         })
       })
 
@@ -157,6 +160,31 @@ export default function StudentConsultationDiaryPage() {
       console.error(e)
     } finally {
       setSavingStandalone(false)
+    }
+  }
+
+  async function handleToggleShareReflection(refItem: any) {
+    try {
+      const nextShare = !refItem.shareWithParent
+      const res = await fetch("/api/advisory/reflections", {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          id: refItem.id,
+          shareWithParent: nextShare
+        })
+      })
+      if (res.ok) {
+        setToastMessage(
+          nextShare
+            ? "Đã bật chia sẻ phiếu tự phản tư này với Ba Mẹ!"
+            : "Đã chuyển phiếu tự phản tư sang chế độ chỉ gửi riêng cho CVHT."
+        )
+        setTimeout(() => setToastMessage(""), 3500)
+        loadStandaloneReflections(studentId)
+      }
+    } catch (e) {
+      console.error(e)
     }
   }
 
@@ -197,6 +225,85 @@ export default function StudentConsultationDiaryPage() {
         <div className="p-4 rounded-2xl bg-emerald-50 border border-emerald-200 text-emerald-900 text-xs font-black flex items-center gap-3 animate-bounce shadow-xs">
           <CheckCircle2 className="w-5 h-5 text-emerald-600 shrink-0" />
           <span>{toastMessage}</span>
+        </div>
+      )}
+
+      {/* Tiến trình 8 bước đồng bộ Cố vấn 3 bên */}
+      {studentId && (
+        <TriPartyWorkflowBanner
+          studentId={studentId}
+          academicYearId={academicYearId}
+          viewerRole="STUDENT"
+          compact
+        />
+      )}
+
+      {/* Tiện ích Khảo sát Holland trong Cố vấn học tập */}
+      <div className="p-4 rounded-2xl bg-gradient-to-r from-[#2E1065] via-[#5B2D8B] to-[#6E3D89] text-white flex flex-col sm:flex-row sm:items-center justify-between gap-3 shadow-md">
+        <div className="flex items-center gap-3">
+          <div className="w-10 h-10 rounded-xl bg-white/15 flex items-center justify-center text-amber-300 shrink-0">
+            <Sparkles className="w-5 h-5" />
+          </div>
+          <div>
+            <div className="flex items-center gap-2">
+              <span className="px-2 py-0.5 rounded-full bg-white/20 text-[10px] font-bold uppercase text-purple-100">
+                SKL_PSYCH v2.6.1 • 108 Câu
+              </span>
+              <h3 className="text-xs sm:text-sm font-extrabold">
+                Khảo Sát Holland – Khám Phá Sở Thích Nghề Nghiệp (RIASEC)
+              </h3>
+            </div>
+            <p className="text-[11px] text-purple-100/90 mt-0.5">
+              Làm bài trắc nghiệm 108 câu Có/Không, nhận mã Holland Top 3, liên kết Mục tiêu Định hướng và đăng ký Tư vấn 1:1 cùng GVCN.
+            </p>
+          </div>
+        </div>
+        <Link
+          href="/hocsinh/portal/khao-sat-holland"
+          className="px-4 py-2 rounded-xl bg-amber-400 hover:bg-amber-300 text-slate-950 text-xs font-extrabold flex items-center gap-1.5 shrink-0 self-start sm:self-auto shadow-xs"
+        >
+          <span>Mở Khảo sát Holland</span>
+          <ArrowRight className="w-3.5 h-3.5" />
+        </Link>
+      </div>
+
+      {/* Lịch hẹn 1:1 & Nhắc việc từ CVHT */}
+      {consultations.length > 0 && (
+        <div className="bg-gradient-to-r from-teal-50 via-emerald-50/70 to-amber-50/60 rounded-3xl p-4 sm:p-5 border border-teal-200 shadow-2xs flex flex-col md:flex-row md:items-center justify-between gap-4">
+          <div className="flex items-start gap-3">
+            <div className="p-2.5 rounded-2xl bg-[#003B3A] text-amber-300 shrink-0">
+              <Calendar className="w-5 h-5" />
+            </div>
+            <div className="space-y-1">
+              <div className="flex flex-wrap items-center gap-2">
+                <span className="text-[10px] font-black uppercase tracking-wider px-2.5 py-0.5 rounded-full bg-teal-900 text-white">
+                  Phiên 1:1 gần nhất: {consultations[0]?.meetingDate ? new Date(consultations[0].meetingDate).toLocaleDateString("vi-VN") : "—"}
+                </span>
+                {consultations[0]?.deadline && (
+                  <span className="text-[10px] font-black uppercase tracking-wider px-2.5 py-0.5 rounded-full bg-amber-200 text-amber-950">
+                    ⏰ Hạn hoàn thành cam kết: {new Date(consultations[0].deadline).toLocaleDateString("vi-VN")}
+                  </span>
+                )}
+              </div>
+              <p className="text-xs font-extrabold text-slate-900">
+                🚀 Cam kết hành động 1:1: "{consultations[0]?.nextActions || "Tiếp tục thực hiện kế hoạch mục tiêu tuần này"}"
+              </p>
+              {consultations[0]?.parentFeedback && (
+                <p className="text-[11px] font-bold text-indigo-800">
+                  👨‍👩‍👧 Lời nhắn đồng hành từ Ba Mẹ: "{consultations[0].parentFeedback}"
+                </p>
+              )}
+            </div>
+          </div>
+          {!consultations[0]?.studentReflection && (
+            <button
+              onClick={() => handleOpenReflectionModal(consultations[0])}
+              className="px-4 py-2.5 rounded-xl bg-amber-400 hover:bg-amber-500 text-slate-950 font-black text-xs flex items-center gap-1.5 shrink-0 shadow-xs transition-all"
+            >
+              <Feather className="w-4 h-4" />
+              <span>Viết phản tư sau buổi 1:1</span>
+            </button>
+          )}
         </div>
       )}
 
@@ -547,18 +654,55 @@ export default function StudentConsultationDiaryPage() {
               </div>
             </div>
 
-            {/* Reflection Text Input */}
-            <div className="space-y-2">
-              <label className="text-xs font-black text-slate-800 uppercase tracking-wider block">
-                3. Điều em đã làm tốt hoặc bài học em rút ra được:
+            {/* Reflection Text & Difficulties Input */}
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <label className="text-xs font-black text-slate-800 uppercase tracking-wider block">
+                  3. Điều em đã làm tốt hoặc bài học em rút ra được (*):
+                </label>
+                <textarea
+                  rows={3}
+                  value={standaloneText}
+                  onChange={(e) => setStandaloneText(e.target.value)}
+                  placeholder="Nhập suy nghĩ, kết quả tự rèn luyện hoặc những điểm em thấy mình có tiến bộ..."
+                  className="w-full p-3 rounded-2xl border border-slate-200 text-xs font-semibold focus:border-teal-500 focus:ring-1 focus:ring-teal-300 bg-white"
+                />
+              </div>
+
+              <div className="space-y-2">
+                <label className="text-xs font-black text-slate-800 uppercase tracking-wider block">
+                  4. Khó khăn / vướng mắc em muốn chia sẻ thêm với CVHT (Tùy chọn):
+                </label>
+                <textarea
+                  rows={3}
+                  value={standaloneDifficulties}
+                  onChange={(e) => setStandaloneDifficulties(e.target.value)}
+                  placeholder="Những môn học, thói quen hoặc vấn đề em đang gặp trở ngại cần Thầy/Cô định hướng..."
+                  className="w-full p-3 rounded-2xl border border-slate-200 text-xs font-semibold focus:border-amber-500 focus:ring-1 focus:ring-amber-300 bg-white"
+                />
+              </div>
+            </div>
+
+            {/* Privacy Scope Selection (3-Tier Privacy Compliance) */}
+            <div className="p-3.5 rounded-2xl bg-slate-50 border border-slate-200 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+              <div className="space-y-0.5">
+                <span className="text-xs font-black text-slate-800 flex items-center gap-1.5">
+                  <ShieldCheck className="w-4 h-4 text-teal-700" />
+                  <span>5. Phạm vi chia sẻ phiếu tự phản tư:</span>
+                </span>
+                <p className="text-[11px] text-slate-500 font-medium">
+                  Mặc định phiếu tự phản tư chỉ chia sẻ riêng với Thầy/Cô CVHT. Em có thể bật nếu muốn chia sẻ cùng Ba Mẹ.
+                </p>
+              </div>
+              <label className="inline-flex items-center gap-2 cursor-pointer text-xs font-black text-slate-800 shrink-0 bg-white px-3.5 py-2 rounded-xl border border-slate-200">
+                <input
+                  type="checkbox"
+                  checked={shareWithParent}
+                  onChange={e => setShareWithParent(e.target.checked)}
+                  className="w-4 h-4 accent-[#003B3A] rounded"
+                />
+                <span>{shareWithParent ? "👨‍👩‍👧 Chia sẻ cùng Ba Mẹ" : "🔒 Chỉ gửi riêng cho CVHT"}</span>
               </label>
-              <textarea
-                rows={3}
-                value={standaloneText}
-                onChange={(e) => setStandaloneText(e.target.value)}
-                placeholder="Nhập suy nghĩ, kết quả tự rèn luyện hoặc những điểm em thấy mình có tiến bộ..."
-                className="w-full p-3 rounded-2xl border border-slate-200 text-xs font-semibold focus:border-teal-500 focus:ring-1 focus:ring-teal-300 bg-white"
-              />
             </div>
 
             <div className="pt-2 flex justify-end">
@@ -576,7 +720,7 @@ export default function StudentConsultationDiaryPage() {
           {/* Past Reflection Log Entries */}
           <div className="bg-white rounded-3xl p-6 sm:p-8 border border-slate-200 shadow-xs space-y-4">
             <h4 className="text-sm font-black text-[#003B3A] uppercase tracking-wider">
-              Lịch Sử Các Bài Tự Phản Chiếu Cá Nhân ({reflections.length})
+              Lịch Sử Các Bài Tự Phản Chiếu Cá Nhân & Phản Hồi Từ CVHT ({reflections.length})
             </h4>
 
             {reflections.length === 0 ? (
@@ -586,22 +730,52 @@ export default function StudentConsultationDiaryPage() {
             ) : (
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 {reflections.map((ref: any, idx: number) => (
-                  <div key={ref.id || idx} className="p-4 rounded-2xl bg-slate-50 border border-slate-200 space-y-2 font-sans">
-                    <div className="flex items-center justify-between">
+                  <div key={ref.id || idx} className="p-4 rounded-2xl bg-slate-50 border border-slate-200 space-y-2.5 font-sans">
+                    <div className="flex flex-wrap items-center justify-between gap-2">
                       <span className="text-[10px] font-black text-slate-400 uppercase">
                         {ref.createdAt ? new Date(ref.createdAt).toLocaleDateString("vi-VN") : "—"}
                       </span>
-                      <span className="px-2.5 py-0.5 rounded-full bg-amber-100 text-amber-900 text-[10px] font-black border border-amber-200">
-                        {ref.feeling === "HAPPY" ? "😄 Vui vẻ" : ref.feeling === "STRESSED" ? "😰 Lo lắng" : "😊 Bình thường"}
-                      </span>
+                      <div className="flex items-center gap-1.5">
+                        <button
+                          type="button"
+                          onClick={() => handleToggleShareReflection(ref)}
+                          title="Nhấn để thay đổi quyền chia sẻ với Ba Mẹ"
+                          className={`px-2.5 py-0.5 rounded-full text-[10px] font-black border transition-all ${
+                            ref.shareWithParent
+                              ? "bg-teal-100 text-teal-900 border-teal-300 hover:bg-teal-200"
+                              : "bg-slate-200 text-slate-700 border-slate-300 hover:bg-slate-300"
+                          }`}
+                        >
+                          {ref.shareWithParent ? "👨‍👩‍👧 Chia sẻ PHHS" : "🔒 Riêng với CVHT"}
+                        </button>
+                        <span className="px-2.5 py-0.5 rounded-full bg-amber-100 text-amber-900 text-[10px] font-black border border-amber-200">
+                          {ref.feeling === "HAPPY" ? "😄 Vui vẻ" : ref.feeling === "STRESSED" ? "😰 Lo lắng" : ref.feeling === "TIRED" ? "😴 Mệt mỏi" : "😊 Bình thường"}
+                        </span>
+                      </div>
                     </div>
 
                     <p className="text-xs font-bold text-slate-900 leading-relaxed bg-white p-3 rounded-xl border border-slate-200/80">
                       "{ref.reflectionText || ref.content}"
                     </p>
 
+                    {ref.difficulties && (
+                      <div className="p-2.5 rounded-xl bg-amber-50 border border-amber-200 text-[11px] font-semibold text-amber-950">
+                        <span className="font-black uppercase text-[10px] text-amber-800 block">⚠️ Khó khăn chia sẻ:</span>
+                        "{ref.difficulties}"
+                      </div>
+                    )}
+
+                    {ref.advisorFeedback && (
+                      <div className="p-3 rounded-xl bg-teal-50 border border-teal-200 text-xs font-bold text-teal-950 space-y-1">
+                        <span className="text-[10px] font-black text-teal-800 uppercase block">
+                          💬 Phản hồi & Khích lệ từ Thầy/Cô CVHT:
+                        </span>
+                        <p>"{ref.advisorFeedback}"</p>
+                      </div>
+                    )}
+
                     <div className="flex items-center justify-between text-[10px] text-amber-600 font-bold pt-1">
-                      <span>Đánh giá rèn luyện:</span>
+                      <span>Tự đánh giá rèn luyện:</span>
                       <div className="flex items-center gap-1">
                         {[...Array(ref.selfRating || 5)].map((_, i) => (
                           <Star key={i} className="w-3.5 h-3.5 text-amber-500 fill-amber-500" />

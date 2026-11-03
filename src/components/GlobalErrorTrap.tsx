@@ -11,6 +11,18 @@ export function GlobalErrorTrap() {
   useEffect(() => {
     if (typeof window === "undefined") return
 
+    // Dọn tham số cache-busting `_v` trên thanh địa chỉ sau khi trang đã nạp thành công
+    const cleanTimer = setTimeout(() => {
+      try {
+        sessionStorage.removeItem("chunk_reload_count")
+        const url = new URL(window.location.href)
+        if (url.searchParams.has("_v")) {
+          url.searchParams.delete("_v")
+          window.history.replaceState({}, "", url.pathname + url.search + url.hash)
+        }
+      } catch (_) {}
+    }, 2000)
+
     let lastAutoReload = 0
 
     const isTransientRouterError = (msg: string = "") => {
@@ -25,6 +37,7 @@ export function GlobalErrorTrap() {
         lower.includes("module factory is not available") ||
         lower.includes("stale browser cache") ||
         lower.includes("instantiated because it was required") ||
+        lower.includes("failed to fetch dynamically imported module") ||
         lower.includes("bad gateway")
       )
     }
@@ -40,19 +53,27 @@ export function GlobalErrorTrap() {
 
     const triggerCleanReload = () => {
       const now = Date.now()
-      if (now - lastAutoReload > 10000) {
+      if (now - lastAutoReload > 5000) {
         lastAutoReload = now
         console.info("[GlobalErrorTrap] Purging stale caches and auto-recovering session...")
-        if ('caches' in window) {
-          caches.keys().then((keys) => Promise.all(keys.map((k) => caches.delete(k)))).finally(() => {
-            setTimeout(() => {
-              window.location.reload()
-            }, 200)
-          })
-        } else {
-          setTimeout(() => {
+        const navigateFresh = () => {
+          try {
+            const url = new URL(window.location.href)
+            url.searchParams.set("_v", String(Date.now()))
+            window.location.replace(url.toString())
+          } catch (_) {
             window.location.reload()
-          }, 200)
+          }
+        }
+        if ("caches" in window) {
+          caches
+            .keys()
+            .then((keys) => Promise.all(keys.map((k) => caches.delete(k))))
+            .finally(() => {
+              setTimeout(navigateFresh, 150)
+            })
+        } else {
+          setTimeout(navigateFresh, 150)
         }
       }
     }
@@ -66,20 +87,18 @@ export function GlobalErrorTrap() {
         console.warn("[GlobalErrorTrap] Handled non-fatal Auth.js session fetch rejection:", msg)
         try {
           const portals = document.querySelectorAll("nextjs-portal")
-          portals.forEach(p => p.remove())
+          portals.forEach((p) => p.remove())
         } catch (_) {}
         return
       }
 
       if (isTransientRouterError(msg)) {
-        // Prevent default browser/Next.js overlay from popping up
         event.preventDefault()
         console.warn("[GlobalErrorTrap] Intercepted transient server/router response error:", msg)
 
-        // Hide Next.js dev overlay if present
         try {
           const portals = document.querySelectorAll("nextjs-portal")
-          portals.forEach(p => p.remove())
+          portals.forEach((p) => p.remove())
         } catch (_) {}
 
         triggerCleanReload()
@@ -94,7 +113,7 @@ export function GlobalErrorTrap() {
         console.warn("[GlobalErrorTrap] Handled non-fatal Auth.js error event:", msg)
         try {
           const portals = document.querySelectorAll("nextjs-portal")
-          portals.forEach(p => p.remove())
+          portals.forEach((p) => p.remove())
         } catch (_) {}
         return
       }
@@ -105,7 +124,7 @@ export function GlobalErrorTrap() {
 
         try {
           const portals = document.querySelectorAll("nextjs-portal")
-          portals.forEach(p => p.remove())
+          portals.forEach((p) => p.remove())
         } catch (_) {}
 
         triggerCleanReload()
@@ -115,10 +134,9 @@ export function GlobalErrorTrap() {
     window.addEventListener("unhandledrejection", handleUnhandledRejection)
     window.addEventListener("error", handleError)
 
-    // MutationObserver to suppress Turbopack stale overlay if it mounts
     const observer = new MutationObserver(() => {
       const portals = document.querySelectorAll("nextjs-portal")
-      portals.forEach(portal => {
+      portals.forEach((portal) => {
         const text = portal.shadowRoot?.textContent || portal.textContent || ""
         if (
           text.includes("unexpected response") ||
@@ -134,10 +152,11 @@ export function GlobalErrorTrap() {
 
     observer.observe(document.body || document.documentElement, {
       childList: true,
-      subtree: true
+      subtree: true,
     })
 
     return () => {
+      clearTimeout(cleanTimer)
       window.removeEventListener("unhandledrejection", handleUnhandledRejection)
       window.removeEventListener("error", handleError)
       observer.disconnect()

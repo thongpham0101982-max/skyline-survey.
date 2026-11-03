@@ -1,10 +1,10 @@
 /**
  * SSM Sky-Line Progressive Web App Service Worker
- * Version: 1.0.0
- * Architecture: Offline Fallback Shell + Stale-While-Revalidate for Static Assets + Network-Only for Sensitive APIs
+ * Version: 1.0.3
+ * Architecture: Offline Fallback Shell + Stale-While-Revalidate for Static Media + Network-Only for Sensitive APIs & Next.js Chunks
  */
 
-const SW_VERSION = 'ssm-pwa-v1.0.2';
+const SW_VERSION = 'ssm-pwa-v1.0.3';
 const STATIC_CACHE_NAME = `ssm-static-${SW_VERSION}`;
 const RUNTIME_CACHE_NAME = `ssm-runtime-${SW_VERSION}`;
 
@@ -30,7 +30,7 @@ self.addEventListener('install', (event) => {
       });
     })
   );
-  // Do NOT force skipWaiting immediately to prevent disrupting user form inputs
+  self.skipWaiting();
 });
 
 // Activate Event: Clean up outdated caches
@@ -81,18 +81,17 @@ function isSensitiveApi(url) {
     pathname.includes('ktdbcl') ||
     pathname.includes('du-gio') ||
     pathname.includes('auth') ||
-    pathname.includes('assistant')
+    pathname.includes('assistant') ||
+    pathname.includes('learning-resources')
   );
 }
 
-// Helper: Check if request is for static cacheable assets
-function isStaticAsset(url) {
+// Helper: Check if request is for static cacheable media assets
+function isStaticMediaAsset(url) {
   const pathname = url.pathname;
   return (
-    pathname.startsWith('/_next/static/') ||
     pathname.startsWith('/icons/') ||
-    pathname.endsWith('.js') ||
-    pathname.endsWith('.css') ||
+    pathname.startsWith('/images/') ||
     pathname.endsWith('.png') ||
     pathname.endsWith('.jpg') ||
     pathname.endsWith('.svg') ||
@@ -111,14 +110,14 @@ self.addEventListener('fetch', (event) => {
     return;
   }
 
-  // 2. Sensitive APIs, Next.js internal RSC requests, Turbopack dev/HMR & Server Actions: Network-Only (NEVER CACHE / NEVER INTERCEPT)
+  // 2. Sensitive APIs, Next.js internal RSC requests, /_next/ chunks/assets & Server Actions: Network-Only (NEVER CACHE IN SW)
   if (
     isSensitiveApi(url) ||
+    url.pathname.startsWith('/_next/') ||
     url.searchParams.has('_rsc') ||
     request.headers.has('RSC') ||
     request.headers.has('next-action') ||
     request.headers.has('next-router-state-tree') ||
-    url.pathname.includes('/_next/data/') ||
     url.pathname.includes('turbopack') ||
     url.pathname.includes('webpack') ||
     url.pathname.includes('.hot-update.')
@@ -129,42 +128,22 @@ self.addEventListener('fetch', (event) => {
   // 3. HTML Navigation requests: Network-First with Offline Fallback
   if (request.mode === 'navigate') {
     event.respondWith(
-      fetch(request)
-        .then((response) => {
-          // If valid response, return
-          return response;
-        })
-        .catch(async () => {
-          // Network failed: Serve pre-cached offline page
-          const cache = await caches.open(STATIC_CACHE_NAME);
-          const cachedOffline = await cache.match('/offline');
-          return cachedOffline || new Response('Mất kết nối mạng. Vui lòng thử lại sau.', {
-            headers: { 'Content-Type': 'text/plain; charset=utf-8' }
-          });
-        })
+      fetch(request).catch(async () => {
+        const cache = await caches.open(STATIC_CACHE_NAME);
+        const cachedOffline = await cache.match('/offline');
+        return (
+          cachedOffline ||
+          new Response('Mất kết nối mạng. Vui lòng thử lại sau.', {
+            headers: { 'Content-Type': 'text/plain; charset=utf-8' },
+          })
+        );
+      })
     );
     return;
   }
 
-  // 4. JavaScript Chunks & Scripts: NETWORK-FIRST (NEVER Stale-While-Revalidate)
-  // Stale-While-Revalidate on JS chunks causes module factory desynchronization ("module factory is not available") & ChunkLoadError!
-  if (url.pathname.startsWith('/_next/static/chunks/') || url.pathname.endsWith('.js')) {
-    event.respondWith(
-      fetch(request)
-        .then((networkResponse) => {
-          if (networkResponse && networkResponse.status === 200) {
-            const clone = networkResponse.clone();
-            caches.open(RUNTIME_CACHE_NAME).then((cache) => cache.put(request, clone));
-          }
-          return networkResponse;
-        })
-        .catch(() => caches.match(request))
-    );
-    return;
-  }
-
-  // 5. Media, Fonts, Images & CSS: Stale-While-Revalidate
-  if (isStaticAsset(url)) {
+  // 4. Media, Fonts & Images: Stale-While-Revalidate
+  if (isStaticMediaAsset(url)) {
     event.respondWith(
       caches.open(RUNTIME_CACHE_NAME).then((cache) => {
         return cache.match(request).then((cachedResponse) => {
@@ -183,11 +162,6 @@ self.addEventListener('fetch', (event) => {
     );
     return;
   }
-
-  // 6. Default: Network with Cache Fallback
-  event.respondWith(
-    fetch(request).catch(() => caches.match(request))
-  );
 });
 
 // Push Event: Web Push Notifications & App Icon Badging
@@ -198,7 +172,6 @@ self.addEventListener('push', (event) => {
     const data = event.data.json();
     let rawTitle = data.title || 'Thông báo mới';
     
-    // Ensure Title is formatted as "SSSQ Thông báo: [tiêu đề]" as required
     let title = rawTitle;
     if (!title.startsWith('SSSQ Thông báo:') && !title.startsWith('SSQM Thông báo:') && !title.startsWith('SSM Thông báo:')) {
       title = `SSSQ Thông báo: ${rawTitle}`;
@@ -222,7 +195,6 @@ self.addEventListener('push', (event) => {
       self.registration.showNotification(title, options)
     ];
 
-    // Display notification counter on App Icon on home screen (W3C Badging API)
     if ('setAppBadge' in self.navigator) {
       const badgeCount = (typeof data.badgeCount === 'number') ? data.badgeCount : 1;
       promises.push(self.navigator.setAppBadge(badgeCount).catch(() => {}));
@@ -238,7 +210,6 @@ self.addEventListener('push', (event) => {
 self.addEventListener('notificationclick', (event) => {
   event.notification.close();
 
-  // Clear badge upon user interaction
   if ('clearAppBadge' in self.navigator) {
     self.navigator.clearAppBadge().catch(() => {});
   }
@@ -247,14 +218,12 @@ self.addEventListener('notificationclick', (event) => {
 
   event.waitUntil(
     self.clients.matchAll({ type: 'window', includeUncontrolled: true }).then((clientList) => {
-      // If a window is already open, focus and navigate it
       for (const client of clientList) {
         if (client.url.includes(self.location.origin) && 'focus' in client) {
           client.navigate(targetUrl);
           return client.focus();
         }
       }
-      // Otherwise open a new window
       if (self.clients.openWindow) {
         return self.clients.openWindow(targetUrl);
       }

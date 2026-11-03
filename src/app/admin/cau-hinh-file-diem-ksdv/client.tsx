@@ -32,10 +32,17 @@ import {
   X,
   Copy,
   ChevronRight,
+  ChevronDown,
+  Table,
   GraduationCap,
   ClipboardCheck,
   CheckSquare,
-  Square
+  Square,
+  HeartHandshake,
+  UserCheck,
+  Users,
+  MessageSquareQuote,
+  ExternalLink
 } from "lucide-react"
 
 import {
@@ -50,6 +57,39 @@ import {
   RoundingRule
 } from "@/lib/grading/formula-calculator"
 
+import {
+  getGradeGroupKey,
+  ORIENTATION_GRADE_GROUPS,
+  getOrientationGradeGroupConfig,
+  GradeGroupKey
+} from "@/lib/orientation/criteria-config"
+
+// Trả về cấu hình mẫu Phiếu định hướng đầu vào chuẩn hóa theo đúng khối lớp (1 trong 5 nhóm khối)
+export const getOrientationPresetByGrade = (gradeStr: string) => {
+  const gKey = getGradeGroupKey(gradeStr)
+  const cfg = ORIENTATION_GRADE_GROUPS[gKey] || ORIENTATION_GRADE_GROUPS.KHOI_1
+  return {
+    columnCount: cfg.criteria.length,
+    columnNames: cfg.criteria.map(c => c.name),
+    columnTypes: cfg.criteria.map(() => "QUALITATIVE_EVAL"),
+    columnMaxScores: cfg.criteria.map(() => 4),
+    hasComposite: true,
+    compositeColumnName: `Đánh giá Tổng thể & Định hướng Tiếp nhận (${cfg.label})`,
+    formulaType: "NONE" as FormulaType,
+    formulaCustom: "",
+    weights: cfg.criteria.map(() => 1),
+    roundingRule: "NONE" as RoundingRule,
+    passScore: null,
+    commitmentThreshold: null,
+    isOrientationSheet: true,
+    gradeGroupKey: gKey,
+    gradeLabel: cfg.label,
+    subLabel: cfg.subLabel,
+    criteria: cfg.criteria,
+    parentPrompts: cfg.parentPrompts
+  }
+}
+
 const COLUMN_TYPES = [
   { code: "SCORE_10", name: "Thang điểm 10 (Số thập phân MOET)" },
   { code: "SCORE_CUSTOM", name: "Thang điểm tùy chọn trong thang 10 (Tối đa 1 - 10đ)" },
@@ -58,8 +98,13 @@ const COLUMN_TYPES = [
   { code: "GRADE_SKL", name: "Mức độ SKL (A - Tốt, B - Khá, C - Đạt, D - Chưa đạt)" },
   { code: "GRADE_INTL", name: "Mức độ Quốc tế (E - Tốt, S - Đạt, N - Cần cải thiện, U - Chưa đạt)" },
   { code: "GRADE_CEFR", name: "Xếp bậc CEFR (A1, A2, B1, B2, C1)" },
+  { code: "QUALITATIVE_EVAL", name: "Định tính nhận diện (Tự tin / Bình thường / Cần hỗ trợ / Lưu ý đặc biệt)" },
   { code: "REMARK", name: "Định dạng Nhận xét bằng lời" }
 ]
+
+const isQualitativeType = (type?: string) => {
+  return type === "GRADE_SKL" || type === "GRADE_INTL" || type === "GRADE_CEFR" || type === "QUALITATIVE_EVAL" || type === "REMARK"
+}
 
 // Gợi ý cấu hình nhanh theo môn chuyên biệt & theo cấp học
 const SUBJECT_PRESETS: Record<string, any> = {
@@ -76,7 +121,7 @@ const SUBJECT_PRESETS: Record<string, any> = {
     weights: [1, 1, 1],
     roundingRule: "ROUND_1",
     passScore: 35.0,
-    commitmentThreshold: 30.0
+    commitmentThreshold: null
   },
   TAv_70_THCS: {
     columnCount: 3,
@@ -90,7 +135,7 @@ const SUBJECT_PRESETS: Record<string, any> = {
     weights: [1, 1, 1],
     roundingRule: "ROUND_1",
     passScore: 35.0,
-    commitmentThreshold: 30.0
+    commitmentThreshold: null
   },
   TAv_70_THPT: {
     columnCount: 3,
@@ -104,7 +149,7 @@ const SUBJECT_PRESETS: Record<string, any> = {
     weights: [1, 1, 1],
     roundingRule: "ROUND_1",
     passScore: 35.0,
-    commitmentThreshold: 30.0
+    commitmentThreshold: null
   },
   // Tiếng Anh viết thang 10 quy đổi
   TAv_10: {
@@ -119,7 +164,7 @@ const SUBJECT_PRESETS: Record<string, any> = {
     weights: [1, 1, 1],
     roundingRule: "ROUND_1",
     passScore: 5.0,
-    commitmentThreshold: 4.5
+    commitmentThreshold: null
   },
 
   // 2. TIẾNG ANH (VẤN ĐÁP) - THANG 30Đ CHUẨN SKY-LINE
@@ -135,7 +180,7 @@ const SUBJECT_PRESETS: Record<string, any> = {
     weights: [1, 1, 1],
     roundingRule: "ROUND_1",
     passScore: 15.0,
-    commitmentThreshold: 12.0
+    commitmentThreshold: null
   },
   TAvd_10: {
     columnCount: 3,
@@ -149,7 +194,7 @@ const SUBJECT_PRESETS: Record<string, any> = {
     weights: [1, 1, 1],
     roundingRule: "ROUND_1",
     passScore: 5.0,
-    commitmentThreshold: 4.5
+    commitmentThreshold: null
   },
 
   // 3. TÂM LÝ - THANG 80Đ (6 NHÓM TIÊU CHÍ BÁM SÁT 100% FORM GIÁO VIÊN)
@@ -306,8 +351,108 @@ const SUBJECT_PRESETS: Record<string, any> = {
     weights: [1, 1, 1],
     roundingRule: "ROUND_1",
     passScore: 35.0,
-    commitmentThreshold: 30.0
+    commitmentThreshold: null
+  },
+
+  // 10. PHIẾU ĐỊNH HƯỚNG ĐẦU VÀO (GỒM 2 TAB LIÊN KẾT: PHỎNG VẤN HS & TRAO ĐỔI PHHS)
+  // Nguyên tắc: Không chấm điểm số thi đua, định tính ghi nhận 4 mức độ nhận diện
+  PHIEU_DINH_HUONG: {
+    columnCount: 4,
+    columnNames: [
+      "Hòa nhập & Giao tiếp tự tin",
+      "Thói quen & Ý thức học tập",
+      "Sở thích & Năng khiếu nổi trội",
+      "Tâm lý & Nhu cầu hỗ trợ sớm"
+    ],
+    columnTypes: ["QUALITATIVE_EVAL", "QUALITATIVE_EVAL", "QUALITATIVE_EVAL", "QUALITATIVE_EVAL"],
+    columnMaxScores: [4, 4, 4, 4],
+    hasComposite: true,
+    compositeColumnName: "Đánh giá Tổng thể & Định hướng Tiếp nhận",
+    formulaType: "NONE",
+    formulaCustom: "",
+    weights: [1, 1, 1, 1],
+    roundingRule: "NONE",
+    passScore: null,
+    commitmentThreshold: null,
+    isOrientationSheet: true
   }
+}
+
+// Phân loại khối lớp
+export const getGradeType = (grade: string): "PRESCHOOL" | "G1" | "PRIMARY" | "SECONDARY_HIGH" => {
+  const g = (grade || "").trim().toLowerCase()
+  if (["mầm", "chồi", "lá", "nhà trẻ", "mầm non", "preschool"].some(k => g.includes(k))) {
+    return "PRESCHOOL"
+  }
+  if (g === "khối 1" || g === "1" || g === "lớp 1" || g === "khoi 1") {
+    return "G1"
+  }
+  const match = g.match(/\d+/)
+  if (match) {
+    const num = parseInt(match[0], 10)
+    if (num >= 2 && num <= 5) return "PRIMARY"
+    if (num >= 6 && num <= 12) return "SECONDARY_HIGH"
+  }
+  return "PRIMARY"
+}
+
+// Kiểm tra môn học có tương ứng/áp dụng cho khối lớp và mốc thời gian hay không
+export const isSubjectApplicable = (subject: any, grade: string, periodId: string = "ALL"): boolean => {
+  const code = (subject?.code || "").toUpperCase()
+  const gradeType = getGradeType(grade)
+
+  // 1. Mầm non (Preschool): Bộ chuẩn 5-6 tuổi, Phiếu định hướng hoặc mã MN*
+  if (gradeType === "PRESCHOOL") {
+    return code === "TCI" || code === "PDHDV" || code === "PDH" || code.startsWith("MN")
+  }
+
+  // 2. Không áp dụng môn Mầm non (TCI) cho các khối phổ thông K12
+  if (code === "TCI" || code.startsWith("MN")) {
+    return false
+  }
+
+  // 3. Phiếu định hướng đầu vào (PDHDV): Áp dụng cho tất cả các khối
+  if (code === "PDHDV" || code === "PDH") {
+    return true
+  }
+
+  // 4. Tâm lý (TLY): Áp dụng cho tất cả các khối từ Khối 1 -> Khối 12
+  if (code === "TLY") {
+    return true
+  }
+
+  // 5. Khối 1:
+  if (gradeType === "G1") {
+    if (code === "NLTD" || code === "TAvd") return true
+    if (periodId === "DAU_NAM") {
+      // Tuyển sinh đầu năm: Chưa học chữ và số -> Không áp dụng Toán, Tiếng Việt, Tiếng Anh viết
+      if (["TOA", "TVI", "TAv"].includes(code)) return false
+    }
+    if (["TOA", "TVI", "TAv"].includes(code)) return true
+    // Khối 1 không có EPT, Ngữ Văn (NVA)
+    if (["EPT", "NVA"].includes(code)) return false
+    return false
+  }
+
+  // 6. Tiểu học (Khối 2 - Khối 5):
+  if (gradeType === "PRIMARY") {
+    // Tiểu học gồm: Toán (TOA), Tiếng Việt (TVI), Tiếng Anh viết (TAv), Tiếng Anh vấn đáp (TAvd), Tâm lý (TLY), PDHDV
+    // Tuyệt đối KHÔNG xuất hiện: NLTD (chỉ khối 1), EPT (chỉ THCS/THPT), NVA (Ngữ văn chỉ THCS/THPT)
+    if (["TOA", "TVI", "TAv", "TAvd"].includes(code)) return true
+    if (["NLTD", "EPT", "NVA"].includes(code)) return false
+    return false
+  }
+
+  // 7. THCS & THPT (Khối 6 - Khối 12):
+  if (gradeType === "SECONDARY_HIGH") {
+    // Gồm: Toán (TOA), Ngữ văn (NVA), Tiếng Việt (TVI), Tiếng Anh viết (TAv), Tiếng Anh vấn đáp (TAvd), EPT, Tâm lý (TLY), PDHDV
+    // Tuyệt đối KHÔNG xuất hiện: NLTD (chỉ khối 1)
+    if (["TOA", "NVA", "TVI", "TAv", "TAvd", "EPT"].includes(code)) return true
+    if (code === "NLTD") return false
+    return false
+  }
+
+  return true
 }
 
 interface Props {
@@ -346,6 +491,50 @@ function CauHinhFileDiemKsdvClientInner({
   const [selectedGrade, setSelectedGrade] = useState("Khối 1")
   const [selectedSubjectId, setSelectedSubjectId] = useState(subjects[0]?.id || "")
 
+  // Danh sách môn khảo sát tương ứng với Khối lớp và Mốc thời gian đang chọn
+  const applicableSubjects = useMemo(() => {
+    return subjects.filter(s => isSubjectApplicable(s, selectedGrade, selectedPeriodId))
+  }, [subjects, selectedGrade, selectedPeriodId])
+
+  // Danh sách các mã Preset áp dụng tương ứng cho Khối lớp đang chọn
+  const applicablePresetCodes = useMemo(() => {
+    const gradeType = getGradeType(selectedGrade)
+    if (gradeType === "PRESCHOOL") {
+      return ["TCI", "PDHDV"]
+    }
+    if (gradeType === "G1") {
+      if (selectedPeriodId === "DAU_NAM") {
+        return ["TAvd", "TLY", "NLTD", "PDHDV"]
+      }
+      if (selectedPeriodId === "HK1" || selectedPeriodId === "HK2") {
+        return ["TOA", "TVI", "TAv", "TAvd", "TLY", "NLTD", "PDHDV"]
+      }
+      return ["TAvd", "TLY", "NLTD", "TOA", "TVI", "TAv", "PDHDV"]
+    }
+    if (gradeType === "PRIMARY") {
+      return ["TOA", "TVI", "TAv", "TAvd", "TLY", "PDHDV"]
+    }
+    return ["TOA", "NVA", "TAv", "TAvd", "EPT", "TLY", "PDHDV"]
+  }, [selectedGrade, selectedPeriodId])
+
+  // Current active subject definition
+  const currentSubject = subjects.find(s => s.id === selectedSubjectId)
+
+  // Kiểm tra xem môn hiện tại có phải Tiếng Anh không (Bỏ trường Ngưỡng cam kết rèn luyện)
+  const isEnglishSubject = useMemo(() => {
+    const code = (currentSubject?.code || "").toLowerCase()
+    const name = (currentSubject?.name || "").toLowerCase()
+    return Boolean(
+      code === "tav" ||
+      code === "tavd" ||
+      code === "ept" ||
+      code.includes("eng") ||
+      code.includes("esl") ||
+      name.includes("tiếng anh") ||
+      name.includes("english")
+    )
+  }, [currentSubject])
+
   // Form states
   const [columnCount, setColumnCount] = useState(3)
   const [columnNames, setColumnNames] = useState<string[]>(["Reading", "Writing", "Language Use"])
@@ -381,14 +570,27 @@ function CauHinhFileDiemKsdvClientInner({
   const [batchSystemId, setBatchSystemId] = useState("ALL")
   const [batchGrade, setBatchGrade] = useState("Khối 1")
   const [batchSelectedSubjectIds, setBatchSelectedSubjectIds] = useState<string[]>([])
-  const [batchSaving, setBatchSaving] = useState(false)
-  const [batchPreset, setBatchPreset] = useState<"CURRENT" | "TAV" | "TAVD" | "TLY" | "NLTD" | "EPT">("CURRENT")
+  const [batchPreset, setBatchPreset] = useState<"CURRENT" | "TAV_70" | "TAV_10" | "TAVD_30" | "TAVD_10" | "TOA" | "TVI" | "TLY" | "NLTD" | "NLTD_SCORE" | "CHILD_DEV_16" | "EPT" | "PHIEU_DINH_HUONG">("CURRENT")
+  const [activeOrientationSimTab, setActiveOrientationSimTab] = useState<"tab1" | "tab2">("tab1")
+  const [simQualitativeAnswers, setSimQualitativeAnswers] = useState<Record<number, string>>({
+    0: "CONFIDENT",
+    1: "NORMAL",
+    2: "CONFIDENT",
+    3: "NORMAL"
+  })
 
-  // List filter states
+  // Clone modal state
+  const [isCloneModalOpen, setIsCloneModalOpen] = useState(false)
+  const [cloneSourceConfigId, setCloneSourceConfigId] = useState("")
+
+  // List filter & view states
   const [listFilterSystemId, setListFilterSystemId] = useState("ALL")
   const [listFilterGrade, setListFilterGrade] = useState("ALL")
   const [listFilterPeriod, setListFilterPeriod] = useState("ALL")
+  const [listFilterSubjectId, setListFilterSubjectId] = useState(subjects[0]?.id || "ALL")
   const [listSearchTerm, setListSearchTerm] = useState("")
+  const [listViewMode, setListViewMode] = useState<"GROUPED" | "FLAT">("GROUPED")
+  const [expandedSubjects, setExpandedSubjects] = useState<Record<string, boolean>>({})
 
   // Fetch configs
   const fetchConfigs = async () => {
@@ -458,6 +660,42 @@ function CauHinhFileDiemKsdvClientInner({
       presetKey = "TOA"
     } else if (subCode === "TVI") {
       presetKey = "TVI"
+    } else if (subCode === "NVA") {
+      presetKey = "TVI"
+    } else if (subCode === "PDH" || subCode === "ORIENTATION" || subCode === "PHIEU_DINH_HUONG" || subCode === "PDHDV") {
+      const preset = getOrientationPresetByGrade(curGrade)
+      const pdhSub = subjects.find(s => s.code === "PDHDV" || s.code === "PDH" || s.code === subCode)
+      if (pdhSub) {
+        setSelectedSubjectId(pdhSub.id)
+        setListFilterSubjectId(pdhSub.id)
+      }
+      setColumnCount(preset.columnCount)
+      setColumnNames(preset.columnNames)
+      setColumnTypes(preset.columnTypes)
+      setColumnMaxScores(preset.columnMaxScores)
+      setHasComposite(preset.hasComposite)
+      setCompositeColumnName(preset.compositeColumnName)
+      setFormulaType(preset.formulaType)
+      setFormulaCustom(preset.formulaCustom)
+      setWeights(preset.weights)
+      setRoundingRule(preset.roundingRule)
+      setPassScore("")
+      setCommitmentThreshold("")
+      showMessage(`Đã áp dụng mẫu chuẩn [Phiếu định hướng đầu vào] cho ${curGrade} (${preset.gradeLabel} - ${preset.subLabel})!`, "ok")
+      return
+    } else if (subCode === "TCI" || subCode === "CHILD_DEV_16") {
+      presetKey = "CHILD_DEV_16"
+    }
+
+    // Tự động tìm và chọn đúng Môn khảo sát tương ứng
+    const subObj = subjects.find(s => 
+      s.code === subCode || 
+      (subCode === "PDHDV" && (s.code === "PDHDV" || s.code === "PDH")) ||
+      (subCode === "TCI" && s.code === "TCI")
+    )
+    if (subObj) {
+      setSelectedSubjectId(subObj.id)
+      setListFilterSubjectId(subObj.id)
     }
 
     const preset = SUBJECT_PRESETS[presetKey] || SUBJECT_PRESETS[subCode]
@@ -473,7 +711,7 @@ function CauHinhFileDiemKsdvClientInner({
       setWeights(preset.weights)
       setRoundingRule(preset.roundingRule)
       setPassScore(preset.passScore != null ? String(preset.passScore) : "35.0")
-      setCommitmentThreshold(preset.commitmentThreshold != null ? String(preset.commitmentThreshold) : "30.0")
+      setCommitmentThreshold(preset.commitmentThreshold != null ? String(preset.commitmentThreshold) : "")
       
       const newSim: Record<number, string> = {}
       preset.columnMaxScores.forEach((m: number, idx: number) => {
@@ -484,18 +722,75 @@ function CauHinhFileDiemKsdvClientInner({
     }
   }
 
+  // Áp dụng Mẫu Phiếu định hướng đầu vào (2 Tab liên kết) theo đúng Khối lớp đang chọn
+  const applyOrientationPreset = () => {
+    const pdhSub = subjects.find(s => s.code === "PDHDV" || s.code === "PDH")
+    if (pdhSub) {
+      setSelectedSubjectId(pdhSub.id)
+      setListFilterSubjectId(pdhSub.id)
+    }
+
+    const preset = getOrientationPresetByGrade(selectedGrade)
+    if (preset) {
+      setColumnCount(preset.columnCount)
+      setColumnNames(preset.columnNames)
+      setColumnTypes(preset.columnTypes)
+      setColumnMaxScores(preset.columnMaxScores)
+      setHasComposite(preset.hasComposite)
+      setCompositeColumnName(preset.compositeColumnName)
+      setFormulaType(preset.formulaType)
+      setFormulaCustom(preset.formulaCustom)
+      setWeights(preset.weights)
+      setRoundingRule(preset.roundingRule)
+      setPassScore("")
+      setCommitmentThreshold("")
+      showMessage(`Đã áp dụng mẫu [Phiếu định hướng đầu vào: Gồm 2 Tab liên kết] chuẩn cho ${selectedGrade} (${preset.gradeLabel} - ${preset.subLabel})!`, "ok")
+    }
+  }
+
   const handleSelectGradeChange = (newGrade: string) => {
     setSelectedGrade(newGrade)
+
+    // Lọc danh sách môn tương ứng với khối lớp mới
+    const validSubs = subjects.filter(s => isSubjectApplicable(s, newGrade, selectedPeriodId))
+    const isCurrentValid = validSubs.some(s => s.id === selectedSubjectId)
+    let effectiveSubId = selectedSubjectId
+
+    if (!isCurrentValid && validSubs.length > 0) {
+      effectiveSubId = validSubs[0].id
+      setSelectedSubjectId(effectiveSubId)
+    }
+
+    // Tự động đồng bộ bộ lọc danh sách bên phải theo môn tương ứng
+    setListFilterSubjectId(effectiveSubId)
+
+    const subObj = subjects.find(s => s.id === effectiveSubId)
+    const isPDH = subObj?.code === "PDHDV" || subObj?.code === "PDH" || subObj?.name?.toLowerCase().includes("định hướng")
+
+    // Đối với môn Phiếu định hướng đầu vào: Luôn ưu tiên nạp cấu hình đúng chính xác của khối đó
+    if (isPDH) {
+      const exactExisting = savedConfigs.find(c => 
+        c.subjectId === effectiveSubId && 
+        c.grade === newGrade &&
+        (c.educationSystemId === selectedSystemId || c.educationSystemId === "ALL")
+      )
+      if (exactExisting) {
+        loadConfigToForm(exactExisting)
+      } else {
+        if (subObj) applyPresetForSubject(subObj.code, newGrade)
+      }
+      return
+    }
+
     // Nếu có config lưu sẵn thì load, ngược lại nếu đang ở môn TAv/TAvd/EPT thì tự sync preset theo khối
     const existing = savedConfigs.find(c => 
-      c.subjectId === selectedSubjectId && 
+      c.subjectId === effectiveSubId && 
       (c.grade === newGrade || c.grade === "ALL") &&
       (c.educationSystemId === selectedSystemId || c.educationSystemId === "ALL")
     )
     if (existing) {
       loadConfigToForm(existing)
     } else {
-      const subObj = subjects.find(s => s.id === selectedSubjectId)
       if (subObj) {
         applyPresetForSubject(subObj.code, newGrade)
       }
@@ -504,6 +799,27 @@ function CauHinhFileDiemKsdvClientInner({
 
   const handleSelectSubjectChange = (subId: string) => {
     setSelectedSubjectId(subId)
+    // Tự động đồng bộ bộ lọc danh sách bên phải để chỉ hiển thị môn khảo sát tương ứng
+    setListFilterSubjectId(subId)
+
+    const subObj = subjects.find(s => s.id === subId)
+    const isPDH = subObj?.code === "PDHDV" || subObj?.code === "PDH" || subObj?.name?.toLowerCase().includes("định hướng")
+
+    // Đối với môn Phiếu định hướng đầu vào: Luôn ưu tiên nạp cấu hình đúng chính xác của khối đang chọn
+    if (isPDH) {
+      const exactExisting = savedConfigs.find(c => 
+        c.subjectId === subId && 
+        c.grade === selectedGrade &&
+        (c.educationSystemId === selectedSystemId || c.educationSystemId === "ALL")
+      )
+      if (exactExisting) {
+        loadConfigToForm(exactExisting)
+      } else {
+        if (subObj) applyPresetForSubject(subObj.code, selectedGrade)
+      }
+      return
+    }
+
     // Kiểm tra xem đã có cấu hình lưu sẵn trong database cho tổ hợp này chưa
     const existing = savedConfigs.find(c => 
       c.subjectId === subId && 
@@ -513,7 +829,6 @@ function CauHinhFileDiemKsdvClientInner({
     if (existing) {
       loadConfigToForm(existing)
     } else {
-      const subObj = subjects.find(s => s.id === subId)
       if (subObj) {
         applyPresetForSubject(subObj.code, selectedGrade)
       }
@@ -539,7 +854,15 @@ function CauHinhFileDiemKsdvClientInner({
       setRoundingRule(cfg.roundingRule || "ROUND_1")
       setHasRemark(cfg.hasRemarkColumn)
       setPassScore(cfg.passScore != null ? String(cfg.passScore) : "5.0")
-      setCommitmentThreshold(cfg.commitmentThreshold != null ? String(cfg.commitmentThreshold) : "4.5")
+      const targetSub = subjects.find(s => s.id === cfg.subjectId)
+      const isSubEnglish = Boolean(targetSub && (
+        ["tav", "tavd", "ept"].includes((targetSub.code || "").toLowerCase()) ||
+        (targetSub.code || "").toLowerCase().includes("eng") ||
+        (targetSub.code || "").toLowerCase().includes("esl") ||
+        (targetSub.name || "").toLowerCase().includes("tiếng anh") ||
+        (targetSub.name || "").toLowerCase().includes("english")
+      ))
+      setCommitmentThreshold(isSubEnglish ? "" : (cfg.commitmentThreshold != null ? String(cfg.commitmentThreshold) : ""))
 
       const newSim: Record<number, string> = {}
       maxScores.forEach((m: number, idx: number) => {
@@ -551,6 +874,7 @@ function CauHinhFileDiemKsdvClientInner({
       setSelectedSystemId(cfg.educationSystemId || "ALL")
       setSelectedPeriodId(cfg.periodId || "ALL")
       setSelectedSubjectId(cfg.subjectId)
+      setListFilterSubjectId(cfg.subjectId)
 
       window.scrollTo({ top: 120, behavior: "smooth" })
       showMessage("Đã nạp thông số cấu hình lên form thiết lập!", "ok")
@@ -584,6 +908,17 @@ function CauHinhFileDiemKsdvClientInner({
     return calculateCompositeScore(scoresArr, configLike)
   }, [hasComposite, simScores, columnCount, formulaType, weights, formulaCustom, roundingRule, columnMaxScores, columnTypes])
 
+  // Tổng điểm tối đa các cột thành phần
+  const totalMaxScore = useMemo(() => {
+    let sum = 0
+    for (let i = 0; i < columnCount; i++) {
+      if (!isQualitativeType(columnTypes[i])) {
+        sum += (columnMaxScores[i] !== undefined ? columnMaxScores[i] : 10)
+      }
+    }
+    return Math.round(sum * 100) / 100
+  }, [columnCount, columnTypes, columnMaxScores])
+
   // Save Config
   const handleSaveConfig = async () => {
     if (!selectedSubjectId) {
@@ -614,7 +949,7 @@ function CauHinhFileDiemKsdvClientInner({
           weights,
           roundingRule,
           passScore: passScore ? parseFloat(passScore) : null,
-          commitmentThreshold: commitmentThreshold ? parseFloat(commitmentThreshold) : null
+          commitmentThreshold: isEnglishSubject ? null : (commitmentThreshold ? parseFloat(commitmentThreshold) : null)
         })
       })
 
@@ -656,8 +991,45 @@ function CauHinhFileDiemKsdvClientInner({
     setBatchPeriodId(selectedPeriodId)
     setBatchSystemId(selectedSystemId)
     setBatchGrade(selectedGrade)
-    setBatchSelectedSubjectIds(subjects.map(s => s.id))
+    const valid = subjects.filter(s => isSubjectApplicable(s, selectedGrade, selectedPeriodId))
+    setBatchSelectedSubjectIds(valid.map(s => s.id))
     setIsBatchOpen(true)
+  }
+
+  // Apply cloned config from another grade
+  const handleApplyClone = () => {
+    const srcCfg = savedConfigs.find(c => c.id === cloneSourceConfigId)
+    if (!srcCfg) return
+
+    try {
+      const names = JSON.parse(srcCfg.columnNames || "[]")
+      const types = JSON.parse(srcCfg.columnTypes || "[]")
+      const maxScores = JSON.parse(srcCfg.columnMaxScores || "[]")
+      const w = JSON.parse(srcCfg.weights || "[]")
+
+      setColumnCount(srcCfg.columnCount || names.length || 1)
+      setColumnNames(names)
+      setColumnTypes(types)
+      setColumnMaxScores(maxScores)
+      setHasComposite(srcCfg.hasCompositeColumn)
+      setCompositeColumnName(srcCfg.compositeColumnName || "Điểm tổng hợp")
+      setFormulaType(srcCfg.formula || "AVERAGE")
+      setFormulaCustom(srcCfg.formulaCustom || "")
+      setWeights(w.length > 0 ? w : names.map(() => 1))
+      setRoundingRule(srcCfg.roundingRule || "ROUND_1")
+      setHasRemark(srcCfg.hasRemarkColumn)
+      setPassScore(srcCfg.passScore != null ? String(srcCfg.passScore) : "5.0")
+      if (!isEnglishSubject) {
+        setCommitmentThreshold(srcCfg.commitmentThreshold != null ? String(srcCfg.commitmentThreshold) : "")
+      } else {
+        setCommitmentThreshold("")
+      }
+
+      setIsCloneModalOpen(false)
+      showMessage(`Đã sao chép cấu hình từ ${srcCfg.grade || "mẫu khác"} sang ${selectedGrade}!`, "ok")
+    } catch (e: any) {
+      showMessage("Lỗi khi sao chép: " + e.message, "err")
+    }
   }
 
   // Save Batch Assign
@@ -723,6 +1095,9 @@ function CauHinhFileDiemKsdvClientInner({
         payload = { ...payload, ...p }
       } else if (batchPreset === "EPT") {
         const p = SUBJECT_PRESETS.EPT
+        payload = { ...payload, ...p }
+      } else if (batchPreset === "PHIEU_DINH_HUONG") {
+        const p = getOrientationPresetByGrade(batchGrade)
         payload = { ...payload, ...p }
       }
 
@@ -808,21 +1183,92 @@ function CauHinhFileDiemKsdvClientInner({
   // Filtered saved configs
   const filteredSavedConfigs = useMemo(() => {
     return savedConfigs.filter(c => {
+      if (listFilterSubjectId !== "ALL" && c.subjectId !== listFilterSubjectId) return false
       if (listFilterSystemId !== "ALL" && c.educationSystemId !== listFilterSystemId && c.educationSystemId !== "ALL") return false
       if (listFilterGrade !== "ALL" && c.grade !== listFilterGrade && c.grade !== "ALL") return false
       if (listFilterPeriod !== "ALL" && c.periodId !== listFilterPeriod && c.periodId !== "ALL") return false
       if (listSearchTerm) {
-        const term = listSearchTerm.toLowerCase()
+        const term = listSearchTerm.toLowerCase().trim()
         const sName = (c.subject?.name || "").toLowerCase()
         const sCode = (c.subject?.code || "").toLowerCase()
-        if (!sName.includes(term) && !sCode.includes(term)) return false
+        const formula = (c.formula || "").toLowerCase()
+        const compName = (c.compositeColumnName || "").toLowerCase()
+        const grade = (c.grade || "").toLowerCase()
+        if (
+          !sName.includes(term) && 
+          !sCode.includes(term) && 
+          !formula.includes(term) && 
+          !compName.includes(term) &&
+          !grade.includes(term)
+        ) return false
       }
       return true
     })
-  }, [savedConfigs, listFilterSystemId, listFilterGrade, listFilterPeriod, listSearchTerm])
+  }, [savedConfigs, listFilterSubjectId, listFilterSystemId, listFilterGrade, listFilterPeriod, listSearchTerm])
 
-  // Current active subject definition
-  const currentSubject = subjects.find(s => s.id === selectedSubjectId)
+  // Thống kê nhanh theo môn để hiển thị thanh Filter Pills
+  const subjectStats = useMemo(() => {
+    const statsMap = new Map<string, { subject: any, count: number }>()
+    savedConfigs.forEach(c => {
+      const sub = c.subject || subjects.find(s => s.id === c.subjectId) || { id: c.subjectId, name: "Môn khác", code: "OTHER" }
+      if (!statsMap.has(sub.id)) {
+        statsMap.set(sub.id, { subject: sub, count: 0 })
+      }
+      statsMap.get(sub.id)!.count++
+    })
+    return Array.from(statsMap.values()).sort((a, b) => {
+      const order = ["TAv", "TAvd", "TOA", "TVI", "EPT", "TLY", "NLTD", "PDH"]
+      const idxA = order.indexOf(a.subject?.code)
+      const idxB = order.indexOf(b.subject?.code)
+      if (idxA !== -1 && idxB !== -1) return idxA - idxB
+      if (idxA !== -1) return -1
+      if (idxB !== -1) return 1
+      return b.count - a.count
+    })
+  }, [savedConfigs, subjects])
+
+  // Nhóm các cấu hình đã lưu theo môn học (Grouped by Subject)
+  const groupedSavedConfigs = useMemo(() => {
+    const map = new Map<string, { subject: any, configs: any[] }>()
+    filteredSavedConfigs.forEach(cfg => {
+      const sub = cfg.subject || subjects.find(s => s.id === cfg.subjectId) || { id: cfg.subjectId, name: "Môn khác", code: "OTHER" }
+      if (!map.has(sub.id)) {
+        map.set(sub.id, { subject: sub, configs: [] })
+      }
+      map.get(sub.id)!.configs.push(cfg)
+    })
+
+    // Sắp xếp các cấu hình trong từng môn theo số thứ tự Khối lớp rồi theo Kỳ
+    map.forEach(group => {
+      group.configs.sort((a, b) => {
+        const numA = parseInt((a.grade || "").replace(/\D/g, "") || "0")
+        const numB = parseInt((b.grade || "").replace(/\D/g, "") || "0")
+        if (numA !== numB) return numA - numB
+        return (a.periodId || "").localeCompare(b.periodId || "")
+      })
+    })
+
+    return Array.from(map.values()).sort((a, b) => {
+      const order = ["TAv", "TAvd", "TOA", "TVI", "EPT", "TLY", "NLTD", "PDH"]
+      const idxA = order.indexOf(a.subject?.code)
+      const idxB = order.indexOf(b.subject?.code)
+      if (idxA !== -1 && idxB !== -1) return idxA - idxB
+      if (idxA !== -1) return -1
+      if (idxB !== -1) return 1
+      return (a.subject?.name || "").localeCompare(b.subject?.name || "", "vi")
+    })
+  }, [filteredSavedConfigs, subjects])
+
+  // Kiểm tra xem cấu hình hiện tại có phải là Phiếu định hướng đầu vào không
+  const isOrientationMode = useMemo(() => {
+    return (
+      compositeColumnName.toLowerCase().includes("định hướng") ||
+      currentSubject?.code === "PDH" ||
+      currentSubject?.code === "ORIENTATION" ||
+      currentSubject?.name?.toLowerCase().includes("định hướng") ||
+      columnTypes.some(t => t === "QUALITATIVE_EVAL")
+    )
+  }, [compositeColumnName, currentSubject, columnTypes])
 
   return (
     <div className="space-y-6">
@@ -886,9 +1332,18 @@ function CauHinhFileDiemKsdvClientInner({
               onChange={(e) => {
                 const newP = e.target.value
                 setSelectedPeriodId(newP)
+
+                const validSubs = subjects.filter(s => isSubjectApplicable(s, selectedGrade, newP))
+                let effectiveSubId = selectedSubjectId
+                if (!validSubs.some(s => s.id === selectedSubjectId) && validSubs.length > 0) {
+                  effectiveSubId = validSubs[0].id
+                  setSelectedSubjectId(effectiveSubId)
+                  setListFilterSubjectId(effectiveSubId)
+                }
+
                 // Tìm config phù hợp theo mốc thời gian mới
                 const existing = savedConfigs.find(c =>
-                  c.subjectId === selectedSubjectId &&
+                  c.subjectId === effectiveSubId &&
                   (c.grade === selectedGrade || c.grade === "ALL") &&
                   (c.periodId === newP || c.periodId === "ALL") &&
                   (c.educationSystemId === selectedSystemId || c.educationSystemId === "ALL")
@@ -900,18 +1355,9 @@ function CauHinhFileDiemKsdvClientInner({
               className="h-10 px-3 bg-slate-50 border border-slate-200 text-slate-800 text-xs font-bold rounded-xl outline-none focus:border-teal-500"
             >
               <option value="ALL">-- Tất cả mốc thời gian --</option>
-              <optgroup label="Mốc Tuyển sinh & Học kỳ">
-                <option value="DAU_NAM">Đầu năm (Tuyển sinh năm học mới)</option>
-                <option value="HK1">Học kỳ 1 (HK1 - Bổ sung môn)</option>
-                <option value="HK2">Học kỳ 2 (HK2 - Bổ sung môn)</option>
-              </optgroup>
-              {periods.length > 0 && (
-                <optgroup label="Các đợt khảo sát chi tiết">
-                  {periods.map(p => (
-                    <option key={p.id} value={p.id}>{p.name} ({p.code})</option>
-                  ))}
-                </optgroup>
-              )}
+              <option value="DAU_NAM">Đầu năm (Tuyển sinh năm học mới)</option>
+              <option value="HK1">Học kỳ 1 (HK1 - Bổ sung môn)</option>
+              <option value="HK2">Học kỳ 2 (HK2 - Bổ sung môn)</option>
             </select>
           </div>
 
@@ -956,31 +1402,24 @@ function CauHinhFileDiemKsdvClientInner({
             <select
               value={selectedSubjectId}
               onChange={(e) => handleSelectSubjectChange(e.target.value)}
-              className="h-10 px-3 bg-slate-50 border border-teal-500/40 text-teal-900 text-xs font-bold rounded-xl outline-none focus:border-teal-500 shadow-xs"
+              className="h-10 px-3 bg-slate-50 border border-teal-500/40 text-teal-900 text-xs font-bold rounded-xl outline-none focus:border-teal-500 shadow-xs cursor-pointer"
             >
-              {subjects
-                .filter(s => {
-                  const isPreschool = ["Mầm", "Chồi", "Lá", "Nhà trẻ", "Mầm non"].some(k => selectedGrade.includes(k))
-                  if (isPreschool) return s.code === "TCI" || s.code.startsWith("MN")
-                  return s.code !== "TCI" // Ẩn môn mầm non khi chọn các khối phổ thông K12
-                })
-                .map(s => {
-                  let badgeSuffix = ""
-                  const isG1 = selectedGrade === "Khối 1" || selectedGrade === "1"
-                  if (isG1) {
-                    if (selectedPeriodId === "DAU_NAM" || selectedPeriodId === "ALL") {
-                      if (["TAvd", "TLY", "NLTD"].includes(s.code)) badgeSuffix = " • [Tuyển sinh đầu năm]"
-                      else if (["TOA", "TVI", "TAv"].includes(s.code)) badgeSuffix = " • [⚠️ Chỉ áp dụng từ HK1/HK2]"
-                    } else if (selectedPeriodId === "HK1" || selectedPeriodId === "HK2") {
-                      if (["TOA", "TVI", "TAv"].includes(s.code)) badgeSuffix = " • [⭐ Bổ sung HK1/HK2]"
-                    }
+              {applicableSubjects.map(s => {
+                let badgeSuffix = ""
+                const isG1 = selectedGrade === "Khối 1" || selectedGrade === "1"
+                if (isG1) {
+                  if (selectedPeriodId === "DAU_NAM") {
+                    if (["TAvd", "TLY", "NLTD"].includes(s.code)) badgeSuffix = " • [Tuyển sinh đầu năm]"
+                  } else if (selectedPeriodId === "HK1" || selectedPeriodId === "HK2") {
+                    if (["TOA", "TVI", "TAv"].includes(s.code)) badgeSuffix = " • [⭐ Bổ sung HK1/HK2]"
                   }
-                  return (
-                    <option key={s.id} value={s.id}>
-                      {s.name} ({s.code}){badgeSuffix} {s.subjectType && !badgeSuffix ? `• ${s.subjectType}` : ""}
-                    </option>
-                  )
-                })}
+                }
+                return (
+                  <option key={s.id} value={s.id}>
+                    {s.name} ({s.code}){badgeSuffix} {s.subjectType && !badgeSuffix ? `• ${s.subjectType}` : ""}
+                  </option>
+                )
+              })}
             </select>
           </div>
         </div>
@@ -989,26 +1428,55 @@ function CauHinhFileDiemKsdvClientInner({
           {/* Quick Preset Buttons */}
           <div className="hidden xl:flex items-center gap-1.5 p-1 bg-slate-100 rounded-xl">
             <span className="text-[10px] font-black text-slate-400 uppercase px-2">Preset:</span>
-            {(selectedGrade === "Khối 1" || selectedGrade === "1"
-              ? (selectedPeriodId === "HK1" || selectedPeriodId === "HK2"
-                  ? ["TOA", "TVI", "TAv", "TAvd", "TLY", "NLTD"]
-                  : ["TAvd", "TLY", "NLTD"])
-              : ["TAv", "TAvd", "TOA", "TVI", "TLY", "NLTD", "EPT"]
-            ).map(code => (
-              <button
-                key={code}
-                type="button"
-                onClick={() => applyPresetForSubject(code)}
-                className={`px-2.5 py-1 text-[11px] font-black rounded-lg transition-all border ${
-                  ["TOA", "TVI", "TAv"].includes(code) && (selectedGrade === "Khối 1" && (selectedPeriodId === "HK1" || selectedPeriodId === "HK2"))
-                    ? "bg-emerald-50 text-emerald-700 border-emerald-300 hover:bg-emerald-100"
-                    : "bg-white text-slate-700 hover:text-teal-600 hover:shadow-xs border-slate-200/80"
-                }`}
-              >
-                {code === "TOA" ? "Toán" : code === "TVI" ? "Tiếng Việt" : code}
-              </button>
-            ))}
+            {applicablePresetCodes.map(code => {
+              const isCurrentPreset =
+                currentSubject?.code === code ||
+                (code === "PDHDV" && (currentSubject?.code === "PDHDV" || currentSubject?.code === "PDH"))
+              const isExtraHK1 =
+                ["TOA", "TVI", "TAv"].includes(code) &&
+                (selectedGrade === "Khối 1" && (selectedPeriodId === "HK1" || selectedPeriodId === "HK2"))
+              return (
+                <button
+                  key={code}
+                  type="button"
+                  onClick={() => applyPresetForSubject(code)}
+                  className={`px-2.5 py-1 text-[11px] font-black rounded-lg transition-all border ${
+                    isCurrentPreset
+                      ? "bg-teal-600 text-white border-teal-600 shadow-xs"
+                      : isExtraHK1
+                      ? "bg-emerald-50 text-emerald-700 border-emerald-300 hover:bg-emerald-100"
+                      : "bg-white text-slate-700 hover:text-teal-600 hover:shadow-xs border-slate-200/80"
+                  }`}
+                >
+                  {code === "TOA"
+                    ? "Toán"
+                    : code === "TVI"
+                    ? "Tiếng Việt"
+                    : code === "NVA"
+                    ? "Ngữ Văn"
+                    : code === "PDHDV"
+                    ? "Định hướng"
+                    : code}
+                </button>
+              )
+            })}
           </div>
+
+          <button
+            type="button"
+            onClick={() => {
+              const available = savedConfigs.filter(c => c.subjectId === selectedSubjectId && c.grade !== selectedGrade)
+              if (available.length > 0) {
+                setCloneSourceConfigId(available[0].id)
+              }
+              setIsCloneModalOpen(true)
+            }}
+            className="flex items-center gap-1.5 px-3.5 py-2.5 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-xl text-xs font-bold transition-all border border-slate-200 shadow-xs"
+            title="Sao chép cấu hình cột điểm từ khối khác sang khối hiện tại"
+          >
+            <Copy className="w-3.5 h-3.5 text-teal-600" />
+            <span className="hidden sm:inline">Sao chép từ khối khác</span>
+          </button>
 
           <button
             type="button"
@@ -1147,7 +1615,7 @@ function CauHinhFileDiemKsdvClientInner({
                 setFormulaType(p.formulaType)
                 setWeights(p.weights)
                 setPassScore("35.0")
-                setCommitmentThreshold("30.0")
+                setCommitmentThreshold("")
                 showMessage("Đã áp dụng mẫu Tiếng Anh viết Tiểu học (Khối 2-5): Thang 70đ!", "ok")
               }}
               className="px-3 py-1.5 bg-white hover:bg-sky-100 text-sky-800 border border-sky-200 rounded-xl text-xs font-bold transition-all shadow-xs"
@@ -1167,7 +1635,7 @@ function CauHinhFileDiemKsdvClientInner({
                 setFormulaType(p.formulaType)
                 setWeights(p.weights)
                 setPassScore("35.0")
-                setCommitmentThreshold("30.0")
+                setCommitmentThreshold("")
                 showMessage("Đã áp dụng mẫu Tiếng Anh viết THCS (Khối 6-9): Thang 70đ!", "ok")
               }}
               className="px-3 py-1.5 bg-white hover:bg-sky-100 text-sky-800 border border-sky-200 rounded-xl text-xs font-bold transition-all shadow-xs"
@@ -1187,7 +1655,7 @@ function CauHinhFileDiemKsdvClientInner({
                 setFormulaType(p.formulaType)
                 setWeights(p.weights)
                 setPassScore("35.0")
-                setCommitmentThreshold("30.0")
+                setCommitmentThreshold("")
                 showMessage("Đã áp dụng mẫu Tiếng Anh viết THPT (Khối 10-12): Thang 70đ!", "ok")
               }}
               className="px-3 py-1.5 bg-white hover:bg-sky-100 text-sky-800 border border-sky-200 rounded-xl text-xs font-bold transition-all shadow-xs"
@@ -1207,7 +1675,7 @@ function CauHinhFileDiemKsdvClientInner({
                 setFormulaType(p.formulaType)
                 setWeights(p.weights)
                 setPassScore("5.0")
-                setCommitmentThreshold("4.5")
+                setCommitmentThreshold("")
                 showMessage("Đã áp dụng mẫu Tiếng Anh viết: Thang 10đ quy đổi!", "ok")
               }}
               className="px-3 py-1.5 bg-white hover:bg-slate-100 text-slate-700 border border-slate-200 rounded-xl text-xs font-bold transition-all shadow-xs"
@@ -1241,7 +1709,7 @@ function CauHinhFileDiemKsdvClientInner({
                 setFormulaType(p.formulaType)
                 setWeights(p.weights)
                 setPassScore("15.0")
-                setCommitmentThreshold("12.0")
+                setCommitmentThreshold("")
                 showMessage("Đã áp dụng mẫu Tiếng Anh vấn đáp chuẩn Sky-Line: Thang 30đ!", "ok")
               }}
               className="px-3.5 py-1.5 bg-teal-600 text-white rounded-xl text-xs font-bold hover:bg-teal-700 transition-all shadow-xs"
@@ -1261,7 +1729,7 @@ function CauHinhFileDiemKsdvClientInner({
                 setFormulaType(p.formulaType)
                 setWeights(p.weights)
                 setPassScore("5.0")
-                setCommitmentThreshold("4.5")
+                setCommitmentThreshold("")
                 showMessage("Đã áp dụng mẫu Tiếng Anh vấn đáp: Thang 10đ quy đổi!", "ok")
               }}
               className="px-3.5 py-1.5 bg-white text-slate-700 border border-slate-200 rounded-xl text-xs font-bold hover:bg-slate-50 transition-all shadow-xs"
@@ -1271,6 +1739,73 @@ function CauHinhFileDiemKsdvClientInner({
           </div>
         </div>
       )}
+
+      {/* BANNER ĐẶC BIỆT: PHIẾU ĐỊNH HƯỚNG ĐẦU VÀO (CHỈ HIỂN THỊ KHI CHỌN MÔN ĐỊNH HƯỚNG) */}
+      {(currentSubject?.code === "PDHDV" || currentSubject?.code === "PDH" || currentSubject?.name?.toLowerCase().includes("định hướng")) && (() => {
+        const curPreset = getOrientationPresetByGrade(selectedGrade)
+        return (
+          <div className="relative overflow-hidden rounded-3xl bg-gradient-to-r from-slate-900 via-indigo-950 to-slate-900 text-white p-5 md:p-6 border border-indigo-700/50 shadow-xl shadow-indigo-950/20 animate-in fade-in duration-300">
+            <div className="absolute -right-8 -top-8 w-40 h-40 bg-indigo-500/10 rounded-full blur-2xl pointer-events-none" />
+            <div className="relative z-10 flex flex-col lg:flex-row items-start lg:items-center justify-between gap-5">
+              <div className="flex items-start gap-4">
+                <div className="w-12 h-12 rounded-2xl bg-indigo-500/20 border border-indigo-400/30 flex items-center justify-center text-indigo-300 flex-shrink-0 mt-0.5">
+                  <HeartHandshake className="w-6 h-6 text-indigo-300 animate-pulse" />
+                </div>
+                <div className="space-y-1.5">
+                  <div className="flex flex-wrap items-center gap-2.5">
+                    <span className="px-2.5 py-0.5 rounded-full bg-indigo-500/30 text-indigo-200 text-[10px] font-black uppercase tracking-wider border border-indigo-400/30">
+                      Cấu phần đặc biệt KSĐV
+                    </span>
+                    <span className="px-2.5 py-0.5 rounded-full bg-teal-500/30 text-teal-200 text-[10px] font-black tracking-wide border border-teal-400/30">
+                      Chuẩn hóa cho: {selectedGrade} ({curPreset.gradeLabel})
+                    </span>
+                    <h3 className="text-base font-black text-white tracking-tight">
+                      Phiếu Định Hướng Đầu Vào (Gồm 2 Tab Liên Kết)
+                    </h3>
+                  </div>
+                  <p className="text-xs text-indigo-200/90 leading-relaxed max-w-3xl">
+                    Tích hợp hai cấu phần đồng bộ: <strong>Tab 1 – Phỏng vấn học sinh</strong> (bộ 4 tiêu chí chuẩn cho <strong>{selectedGrade}: {curPreset.subLabel}</strong>, nhận diện định tính 4 mức độ, quan sát giáo viên) 
+                    và <strong>Tab 2 – Trao đổi PHHS</strong> (04 nhóm: nguyện vọng & kỳ vọng, đặc điểm cá nhân & thói quen, nhu cầu hỗ trợ, phối hợp giáo dục).
+                  </p>
+                  <div className="flex flex-wrap items-center gap-2 pt-1 text-[11px] text-indigo-300/80">
+                    <span className="flex items-center gap-1 font-semibold">
+                      <CheckCircle2 className="w-3.5 h-3.5 text-emerald-400" /> Tự động lấy đúng bộ tiêu chí theo khối
+                    </span>
+                    <span>•</span>
+                    <span className="flex items-center gap-1 font-semibold">
+                      <CheckCircle2 className="w-3.5 h-3.5 text-emerald-400" /> Không chấm điểm áp lực
+                    </span>
+                    <span>•</span>
+                    <span className="flex items-center gap-1 font-semibold">
+                      <CheckCircle2 className="w-3.5 h-3.5 text-emerald-400" /> Nhận diện nhu cầu hỗ trợ sớm
+                    </span>
+                  </div>
+                </div>
+              </div>
+
+              <div className="flex flex-wrap sm:flex-nowrap items-center gap-3 w-full lg:w-auto flex-shrink-0">
+                <button
+                  type="button"
+                  onClick={applyOrientationPreset}
+                  className="flex-1 sm:flex-none flex items-center justify-center gap-2 px-4 py-2.5 bg-gradient-to-r from-indigo-500 to-purple-600 hover:from-indigo-600 hover:to-purple-700 text-white rounded-xl text-xs font-black uppercase tracking-wider transition-all shadow-lg shadow-indigo-600/30 hover:scale-[1.02] active:scale-[0.98]"
+                >
+                  <Sparkles className="w-4 h-4 text-amber-300" />
+                  <span>Áp dụng mẫu {selectedGrade}</span>
+                </button>
+
+                <Link
+                  href="/admin/input-assessments?tab=categories&sub=orientation"
+                  target="_blank"
+                  className="flex-1 sm:flex-none flex items-center justify-center gap-1.5 px-4 py-2.5 bg-white/10 hover:bg-white/15 text-indigo-200 hover:text-white border border-indigo-400/30 rounded-xl text-xs font-bold transition-all"
+                >
+                  <span>Ngân hàng câu hỏi</span>
+                  <ExternalLink className="w-3.5 h-3.5" />
+                </Link>
+              </div>
+            </div>
+          </div>
+        )
+      })()}
 
       {/* MAIN TWO-COLUMN WORKSPACE */}
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
@@ -1312,13 +1847,13 @@ function CauHinhFileDiemKsdvClientInner({
             </div>
           </div>
 
-          {/* DANH SÁCH CÁC CỘT ĐIỂM THÀNH PHẦN */}
-          <div className="space-y-4">
-            <div className="flex items-center justify-between">
-              <label className="text-xs font-black text-slate-700 uppercase tracking-wider flex items-center gap-2">
+          {/* DANH SÁCH CÁC CỘT ĐIỂM THÀNH PHẦN (DẠNG BẢNG GỌN) */}
+          <div className="space-y-3">
+            <div className="flex items-center justify-between pb-1">
+              <label className="text-xs font-black text-slate-800 uppercase tracking-wider flex items-center gap-2">
                 <span>1. Chi tiết các Cột điểm thành phần</span>
-                <span className="text-[10px] text-teal-600 font-bold lowercase bg-teal-50 px-2 py-0.5 rounded-full border border-teal-200">
-                  ({columnCount} cột)
+                <span className="text-[10px] text-teal-700 font-bold lowercase bg-teal-50 px-2 py-0.5 rounded-full border border-teal-200">
+                  {columnCount} cột
                 </span>
               </label>
 
@@ -1326,116 +1861,184 @@ function CauHinhFileDiemKsdvClientInner({
                 <button
                   type="button"
                   onClick={() => setColumnCount(prev => Math.max(1, prev - 1))}
-                  className="px-2.5 py-1 text-xs font-bold text-slate-600 bg-slate-100 rounded-lg hover:bg-slate-200"
+                  className="px-2.5 py-1 text-xs font-bold text-slate-600 bg-slate-100 hover:bg-slate-200 rounded-lg transition-all"
                 >
                   - Bớt cột
                 </button>
                 <button
                   type="button"
                   onClick={() => setColumnCount(prev => Math.min(8, prev + 1))}
-                  className="px-2.5 py-1 text-xs font-bold text-teal-700 bg-teal-50 rounded-lg hover:bg-teal-100"
+                  className="px-2.5 py-1 text-xs font-bold text-teal-700 bg-teal-50 hover:bg-teal-100 rounded-lg transition-all"
                 >
                   + Thêm cột
                 </button>
               </div>
             </div>
 
-            <div className="space-y-3">
-              {Array.from({ length: columnCount }).map((_, idx) => (
-                <div 
-                  key={idx} 
-                  className="p-3.5 bg-slate-50/70 border border-slate-200 rounded-2xl flex flex-col md:flex-row items-stretch md:items-center gap-3 hover:border-teal-300 transition-all"
-                >
-                  <div className="flex items-center gap-2 md:w-16 flex-shrink-0">
-                    <span className="w-6 h-6 rounded-lg bg-teal-600 text-white text-[11px] font-black flex items-center justify-center">
-                      {idx + 1}
-                    </span>
-                    <span className="text-xs font-black text-slate-600">Cột {idx + 1}</span>
-                  </div>
-
-                  {/* Tên cột */}
-                  <div className="flex-1">
-                    <input
-                      type="text"
-                      value={columnNames[idx] || ""}
-                      onChange={(e) => {
-                        const val = e.target.value
-                        setColumnNames(prev => {
-                          const n = [...prev]
-                          n[idx] = val
-                          return n
-                        })
-                      }}
-                      placeholder={`Tên cột ${idx + 1}`}
-                      className="w-full h-9 px-3 bg-white border border-slate-200 rounded-xl text-xs font-bold text-slate-800 focus:border-teal-500 outline-none"
-                    />
-                  </div>
-
-                  {/* Thang điểm */}
-                  <div className="md:w-56 flex-shrink-0">
-                    <select
-                      value={columnTypes[idx] || "SCORE_10"}
-                      onChange={(e) => {
-                        const val = e.target.value
-                        setColumnTypes(prev => {
-                          const n = [...prev]
-                          n[idx] = val
-                          return n
-                        })
-                      }}
-                      className="w-full h-9 px-2 bg-white border border-slate-200 rounded-xl text-xs font-semibold text-slate-800 focus:border-teal-500 outline-none"
-                    >
-                      {COLUMN_TYPES.map(t => (
-                        <option key={t.code} value={t.code}>{t.name}</option>
-                      ))}
-                    </select>
-                  </div>
-
-                  {/* Điểm tối đa nếu là SCORE_CUSTOM hoặc SCORE_CUSTOM_100 */}
-                  {(columnTypes[idx]?.includes("CUSTOM") || columnTypes[idx] === "SCORE_100") && (
-                    <div className="flex items-center gap-1.5 md:w-28 flex-shrink-0">
-                      <span className="text-[10px] font-bold text-slate-400">Max:</span>
-                      <input
-                        type="number"
-                        min="1"
-                        max="100"
-                        value={columnMaxScores[idx] || 10}
-                        onChange={(e) => {
-                          const val = parseFloat(e.target.value) || 10
-                          setColumnMaxScores(prev => {
-                            const n = [...prev]
-                            n[idx] = val
-                            return n
-                          })
-                        }}
-                        className="w-full h-9 px-2 bg-white border border-slate-200 rounded-xl text-xs font-black text-center text-teal-700 outline-none"
-                      />
-                    </div>
-                  )}
-
-                  {/* Trọng số nếu là WEIGHTED */}
-                  {formulaType === "WEIGHTED" && (
-                    <div className="flex items-center gap-1.5 md:w-24 flex-shrink-0">
-                      <span className="text-[10px] font-bold text-slate-400">Hệ số:</span>
-                      <input
-                        type="number"
-                        min="0.1"
-                        step="0.5"
-                        value={weights[idx] || 1}
-                        onChange={(e) => {
-                          const val = parseFloat(e.target.value) || 1
-                          setWeights(prev => {
-                            const n = [...prev]
-                            n[idx] = val
-                            return n
-                          })
-                        }}
-                        className="w-full h-9 px-2 bg-white border border-slate-200 rounded-xl text-xs font-black text-center text-amber-600 outline-none"
-                      />
-                    </div>
-                  )}
-                </div>
-              ))}
+            <div className="border border-slate-200 rounded-2xl overflow-hidden shadow-xs bg-white">
+              <div className="overflow-x-auto">
+                <table className="w-full text-left text-xs table-fixed min-w-[580px]">
+                  <colgroup>
+                    <col className="w-12 sm:w-14" />
+                    <col className="w-auto" />
+                    <col className="w-48 sm:w-56 md:w-60" />
+                    <col className="w-24 sm:w-28" />
+                    {formulaType === "WEIGHTED" && (
+                      <col className="w-20 sm:w-24" />
+                    )}
+                    <col className="w-10" />
+                  </colgroup>
+                  <thead>
+                    <tr className="bg-slate-50/80 border-b border-slate-200 text-[11px] font-bold text-slate-500 uppercase tracking-wider">
+                      <th className="py-2.5 px-2 text-center">STT</th>
+                      <th className="py-2.5 px-3">Tên cột điểm thành phần</th>
+                      <th className="py-2.5 px-3">Loại thang điểm</th>
+                      <th className="py-2.5 px-2 text-center">Điểm tối đa</th>
+                      {formulaType === "WEIGHTED" && (
+                        <th className="py-2.5 px-2 text-center text-amber-700">Hệ số</th>
+                      )}
+                      <th className="py-2.5 px-2 text-center"></th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-slate-100">
+                    {Array.from({ length: columnCount }).map((_, idx) => (
+                      <tr key={idx} className="hover:bg-teal-50/20 transition-colors">
+                        <td className="py-2.5 px-2 text-center">
+                          <span className="w-6 h-6 rounded-lg bg-teal-50 border border-teal-200 text-teal-700 text-[11px] font-black inline-flex items-center justify-center">
+                            {idx + 1}
+                          </span>
+                        </td>
+                        <td className="py-2.5 px-3">
+                          <input
+                            type="text"
+                            value={columnNames[idx] || ""}
+                            onChange={(e) => {
+                              const val = e.target.value
+                              setColumnNames(prev => {
+                                const n = [...prev]
+                                n[idx] = val
+                                return n
+                              })
+                            }}
+                            placeholder={`Tên cột điểm ${idx + 1}...`}
+                            className="w-full h-8.5 px-3 bg-slate-50 hover:bg-white focus:bg-white border border-slate-200 focus:border-teal-500 rounded-xl text-xs font-bold text-slate-800 outline-none transition-all placeholder:text-slate-400 placeholder:font-normal"
+                          />
+                        </td>
+                        <td className="py-2.5 px-3">
+                          <select
+                            value={columnTypes[idx] || "SCORE_10"}
+                            onChange={(e) => {
+                              const val = e.target.value
+                              setColumnTypes(prev => {
+                                const n = [...prev]
+                                n[idx] = val
+                                return n
+                              })
+                            }}
+                            className="w-full h-8.5 px-2.5 bg-slate-50 hover:bg-white focus:bg-white border border-slate-200 focus:border-teal-500 rounded-xl text-xs font-semibold text-slate-700 outline-none transition-all cursor-pointer truncate shadow-2xs"
+                          >
+                            {COLUMN_TYPES.map(t => (
+                              <option key={t.code} value={t.code}>{t.name}</option>
+                            ))}
+                          </select>
+                        </td>
+                        <td className="py-2.5 px-2 text-center">
+                          {isQualitativeType(columnTypes[idx]) ? (
+                            <span className="inline-flex items-center px-2 py-0.5 rounded-md text-[10.5px] font-bold bg-slate-100 text-slate-500 border border-slate-200/60">
+                              {columnTypes[idx] === "REMARK" ? "Lời phê" : "Định tính"}
+                            </span>
+                          ) : (
+                            <div className="inline-flex items-center justify-center gap-1">
+                              <input
+                                type="number"
+                                min="1"
+                                max="1000"
+                                step="any"
+                                value={columnMaxScores[idx] !== undefined ? columnMaxScores[idx] : 10}
+                                onChange={(e) => {
+                                  const val = parseFloat(e.target.value) || 0
+                                  setColumnMaxScores(prev => {
+                                    const n = [...prev]
+                                    n[idx] = val
+                                    return n
+                                  })
+                                }}
+                                className="w-14 h-8 px-1 text-center bg-slate-50 hover:bg-white focus:bg-white border border-slate-200 focus:border-teal-500 rounded-lg text-xs font-black text-teal-800 outline-none transition-all shadow-2xs"
+                              />
+                              <span className="text-[10px] font-bold text-slate-400">đ</span>
+                            </div>
+                          )}
+                        </td>
+                        {formulaType === "WEIGHTED" && (
+                          <td className="py-2.5 px-2 text-center">
+                            <input
+                              type="number"
+                              min="0.1"
+                              step="0.5"
+                              value={weights[idx] || 1}
+                              onChange={(e) => {
+                                const val = parseFloat(e.target.value) || 1
+                                setWeights(prev => {
+                                  const n = [...prev]
+                                  n[idx] = val
+                                  return n
+                                })
+                              }}
+                              className="w-14 h-8 px-1 text-center bg-amber-50 hover:bg-white focus:bg-white border border-amber-300 focus:border-amber-500 rounded-lg text-xs font-black text-amber-800 outline-none transition-all mx-auto shadow-2xs"
+                            />
+                          </td>
+                        )}
+                        <td className="py-2.5 px-2 text-center">
+                          {columnCount > 1 && (
+                            <button
+                              type="button"
+                              onClick={() => {
+                                setColumnCount(prev => prev - 1)
+                                setColumnNames(prev => prev.filter((_, i) => i !== idx))
+                                setColumnTypes(prev => prev.filter((_, i) => i !== idx))
+                                setColumnMaxScores(prev => prev.filter((_, i) => i !== idx))
+                                setWeights(prev => prev.filter((_, i) => i !== idx))
+                              }}
+                              title="Xóa cột này"
+                              className="p-1 text-slate-300 hover:text-rose-600 hover:bg-rose-50 rounded-lg transition-all"
+                            >
+                              <Trash2 className="w-3.5 h-3.5" />
+                            </button>
+                          )}
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                  <tfoot>
+                    <tr className="bg-slate-50/60 border-t border-slate-200/80 text-xs">
+                      <td colSpan={2} className="py-2.5 px-3">
+                        <button
+                          type="button"
+                          onClick={() => setColumnCount(prev => Math.min(8, prev + 1))}
+                          className="inline-flex items-center gap-1.5 text-xs font-bold text-teal-700 hover:text-teal-800 transition-colors"
+                        >
+                          <Plus className="w-3.5 h-3.5" />
+                          <span>Thêm cột điểm mới</span>
+                        </button>
+                      </td>
+                      <td className="py-2.5 px-3 text-right text-[11px] font-bold text-slate-400">
+                        Tổng điểm tối đa:
+                      </td>
+                      <td className="py-2.5 px-2 text-center">
+                        <span className="text-xs font-black text-teal-700 bg-teal-50 px-2 py-0.5 rounded-md border border-teal-200">
+                          {totalMaxScore}đ
+                        </span>
+                      </td>
+                      {formulaType === "WEIGHTED" && (
+                        <td className="py-2.5 px-2 text-center text-[10.5px] font-bold text-amber-700">
+                          ∑ = {weights.slice(0, columnCount).reduce((a, b) => a + (b || 1), 0)}
+                        </td>
+                      )}
+                      <td></td>
+                    </tr>
+                  </tfoot>
+                </table>
+              </div>
             </div>
           </div>
 
@@ -1541,7 +2144,9 @@ function CauHinhFileDiemKsdvClientInner({
             <div className="flex items-center justify-between">
               <label className="text-xs font-black text-slate-800 uppercase tracking-wider flex items-center gap-2">
                 <Award className="w-4 h-4 text-teal-600" />
-                <span>3. Cột Nhận Xét & Tiêu Chí Đạt / Cam Kết</span>
+                <span>
+                  {isEnglishSubject ? "3. Cột Nhận Xét & Tiêu Chí Đạt Chuẩn" : "3. Cột Nhận Xét & Tiêu Chí Đạt / Cam Kết"}
+                </span>
               </label>
 
               <label className="flex items-center gap-2 cursor-pointer">
@@ -1555,7 +2160,7 @@ function CauHinhFileDiemKsdvClientInner({
               </label>
             </div>
 
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4 pt-2 border-t border-slate-200/60">
+            <div className={`grid ${isEnglishSubject ? "grid-cols-1" : "grid-cols-1 md:grid-cols-2"} gap-4 pt-2 border-t border-slate-200/60`}>
               <div>
                 <label className="block text-[11px] font-black text-emerald-700 uppercase mb-1">
                   Ngưỡng điểm Đạt chuẩn (Pass score)
@@ -1570,24 +2175,225 @@ function CauHinhFileDiemKsdvClientInner({
                 />
               </div>
 
-              <div>
-                <label className="block text-[11px] font-black text-amber-700 uppercase mb-1">
-                  Ngưỡng điểm Cam kết rèn luyện
-                </label>
-                <input
-                  type="number"
-                  step="0.1"
-                  value={commitmentThreshold}
-                  onChange={(e) => setCommitmentThreshold(e.target.value)}
-                  placeholder="4.5"
-                  className="w-full h-10 px-3 bg-white border border-slate-200 rounded-xl text-xs font-black text-amber-700 outline-none focus:border-amber-500"
-                />
-              </div>
+              {!isEnglishSubject && (
+                <div>
+                  <label className="block text-[11px] font-black text-amber-700 uppercase mb-1">
+                    Ngưỡng điểm Cam kết rèn luyện
+                  </label>
+                  <input
+                    type="number"
+                    step="0.1"
+                    value={commitmentThreshold}
+                    onChange={(e) => setCommitmentThreshold(e.target.value)}
+                    placeholder="4.5"
+                    className="w-full h-10 px-3 bg-white border border-slate-200 rounded-xl text-xs font-black text-amber-700 outline-none focus:border-amber-500"
+                  />
+                </div>
+              )}
             </div>
           </div>
 
-          {/* LIVE SIMULATOR (MÔ PHỎNG TÍNH ĐIỂM TRỰC TIẾP) */}
-          {hasComposite && (
+          {/* LIVE SIMULATOR (MÔ PHỎNG TRỰC TIẾP) */}
+          {hasComposite && isOrientationMode ? (
+            <div className="p-5 bg-gradient-to-br from-indigo-50/90 via-purple-50/70 to-slate-50 border-2 border-indigo-200 rounded-3xl space-y-4 shadow-sm animate-in fade-in">
+              <div className="flex flex-wrap items-center justify-between gap-3 pb-3 border-b border-indigo-100">
+                <div className="flex items-center gap-2.5">
+                  <div className="w-8 h-8 rounded-xl bg-indigo-600 text-white flex items-center justify-center shadow-xs">
+                    <HeartHandshake className="w-4 h-4" />
+                  </div>
+                  <div>
+                    <span className="text-xs font-black text-indigo-950 uppercase tracking-wide block">
+                      Mô phỏng Phiếu Định Hướng Đầu Vào (2 Tab Liên Kết)
+                    </span>
+                    <span className="text-[11px] font-semibold text-indigo-600">
+                      Nguyên tắc: Đánh giá định tính phi điểm số • Thấu hiểu & Đồng hành
+                    </span>
+                  </div>
+                </div>
+
+                {/* Sub-tabs toggle */}
+                <div className="inline-flex p-1 bg-white border border-indigo-200 rounded-2xl shadow-xs">
+                  <button
+                    type="button"
+                    onClick={() => setActiveOrientationSimTab("tab1")}
+                    className={`flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-black transition-all ${
+                      activeOrientationSimTab === "tab1"
+                        ? "bg-indigo-600 text-white shadow-xs"
+                        : "text-slate-600 hover:text-indigo-600 hover:bg-indigo-50"
+                    }`}
+                  >
+                    <UserCheck className="w-3.5 h-3.5" />
+                    <span>Tab 1: Phỏng vấn HS</span>
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setActiveOrientationSimTab("tab2")}
+                    className={`flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-black transition-all ${
+                      activeOrientationSimTab === "tab2"
+                        ? "bg-purple-600 text-white shadow-xs"
+                        : "text-slate-600 hover:text-purple-600 hover:bg-purple-50"
+                    }`}
+                  >
+                    <Users className="w-3.5 h-3.5" />
+                    <span>Tab 2: Trao đổi PHHS</span>
+                  </button>
+                </div>
+              </div>
+
+              {(() => {
+                const simOrientationCfg = getOrientationPresetByGrade(selectedGrade)
+                return activeOrientationSimTab === "tab1" ? (
+                  /* TAB 1 SIMULATION: PHỎNG VẤN HỌC SINH (THEO KHỐI) */
+                  <div className="space-y-3.5">
+                    <div className="flex items-center justify-between text-xs font-bold text-indigo-900">
+                      <span className="flex items-center gap-1.5">
+                        <MessageSquareQuote className="w-4 h-4 text-indigo-600" />
+                        Ghi nhận Định tính theo 4 Mức độ cho <strong>{selectedGrade}</strong> ({simOrientationCfg.gradeLabel}: {simOrientationCfg.subLabel}):
+                      </span>
+                      <span className="text-[10px] text-indigo-600 font-bold bg-white px-2 py-0.5 rounded-full border border-indigo-200">
+                        {columnCount} tiêu chí chuẩn
+                      </span>
+                    </div>
+
+                    <div className="space-y-2.5">
+                      {Array.from({ length: columnCount }).map((_, idx) => {
+                        const curVal = simQualitativeAnswers[idx] || "NORMAL"
+                        const criterionName = columnNames[idx] || simOrientationCfg.criteria[idx]?.name || `Tiêu chí ${idx + 1}`
+                        const critObj = simOrientationCfg.criteria[idx]
+                        return (
+                          <div key={idx} className="bg-white p-3 rounded-2xl border border-indigo-100 shadow-xs space-y-2">
+                            <div className="flex items-center justify-between">
+                              <span className="text-xs font-black text-slate-800 flex items-center gap-1.5">
+                                <span className="w-5 h-5 rounded-md bg-indigo-50 text-indigo-700 text-[10px] font-black inline-flex items-center justify-center border border-indigo-200">
+                                  {idx + 1}
+                                </span>
+                                {criterionName}
+                              </span>
+                              <span className="text-[10px] font-bold text-indigo-600 bg-indigo-50/70 px-2 py-0.5 rounded-md border border-indigo-100">
+                                {critObj?.categoryLabel || `Tiêu chí ${idx + 1}`}
+                              </span>
+                            </div>
+
+                            {critObj?.guideline && (
+                              <p className="text-[11px] text-slate-500 italic bg-slate-50 p-2 rounded-xl border border-slate-100">
+                                💡 <strong>Gợi ý quan sát:</strong> {critObj.guideline}
+                              </p>
+                            )}
+                            
+                            {/* 4 Mức độ nhận diện định tính */}
+                            <div className="grid grid-cols-2 sm:grid-cols-4 gap-1.5">
+                              {[
+                                { code: "CONFIDENT", label: "Tự tin / Tích cực", color: "bg-emerald-50 text-emerald-800 border-emerald-300 hover:bg-emerald-100", activeColor: "bg-emerald-600 text-white border-emerald-600 shadow-xs" },
+                                { code: "NORMAL", label: "Bình thường / Ổn định", color: "bg-sky-50 text-sky-800 border-sky-300 hover:bg-sky-100", activeColor: "bg-sky-600 text-white border-sky-600 shadow-xs" },
+                                { code: "NEED_SUPPORT", label: "Cần hỗ trợ ban đầu", color: "bg-amber-50 text-amber-800 border-amber-300 hover:bg-amber-100", activeColor: "bg-amber-600 text-white border-amber-600 shadow-xs" },
+                                { code: "SPECIAL_ATTENTION", label: "Lưu ý đặc biệt", color: "bg-rose-50 text-rose-800 border-rose-300 hover:bg-rose-100", activeColor: "bg-rose-600 text-white border-rose-600 shadow-xs" }
+                              ].map(opt => (
+                                <button
+                                  key={opt.code}
+                                  type="button"
+                                  onClick={() => setSimQualitativeAnswers(prev => ({ ...prev, [idx]: opt.code }))}
+                                  className={`px-2 py-1.5 rounded-xl border text-[11px] font-bold transition-all text-center ${
+                                    curVal === opt.code ? opt.activeColor : opt.color
+                                  }`}
+                                >
+                                  {opt.label}
+                                </button>
+                              ))}
+                            </div>
+                          </div>
+                        )
+                      })}
+                    </div>
+
+                    <div className="bg-white p-3 rounded-2xl border border-indigo-100 space-y-1.5">
+                      <label className="text-[11px] font-black text-indigo-900 uppercase tracking-wider flex items-center gap-1.5">
+                        <Edit2 className="w-3 h-3 text-indigo-600" />
+                        Ghi nhận quan sát & Nhận xét của Giáo viên tiếp nhận ({selectedGrade}):
+                      </label>
+                      <p className="text-xs text-slate-700 italic bg-indigo-50/40 p-2.5 rounded-xl border border-indigo-100/60 leading-relaxed font-medium">
+                        {selectedGrade.includes("6")
+                          ? `"Học sinh có ý thức tự học tốt, cởi mở khi làm quen môi trường THCS mới. Đã biết cách lập thời gian biểu và chủ động trao đổi với thầy cô bộ môn. Sẵn sàng hòa nhập tốt lớp 6."`
+                          : selectedGrade.includes("10") || selectedGrade.includes("11") || selectedGrade.includes("12")
+                            ? `"Học sinh có tư duy phản biện mạch lạc, mục tiêu học tập rõ ràng, có định hướng chọn tổ hợp môn và kỹ năng nghiên cứu độc lập. Bản lĩnh và khả năng thích ứng cao."`
+                            : `"Học sinh giao tiếp lễ phép, phản xạ nhanh nhẹn, hòa nhập nhanh với không gian lớp học. Khả năng tự phục vụ tốt, sẵn sàng cho năm học mới."`
+                        }
+                      </p>
+                    </div>
+                  </div>
+                ) : (
+                  /* TAB 2 SIMULATION: TRAO ĐỔI PHHS (04 NHÓM CHUẨN HÓA THEO KHỐI) */
+                  <div className="space-y-3.5 animate-in fade-in">
+                    <div className="flex items-center justify-between text-xs font-bold text-purple-900">
+                      <span className="flex items-center gap-1.5">
+                        <Users className="w-4 h-4 text-purple-600" />
+                        04 Nhóm Trao đổi PHHS chuẩn hóa cho <strong>{selectedGrade}</strong>:
+                      </span>
+                      <span className="text-[10px] text-purple-600 font-bold bg-white px-2 py-0.5 rounded-full border border-purple-200">
+                        {simOrientationCfg.parentPrompts.groupLabel}
+                      </span>
+                    </div>
+
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                      <div className="bg-white p-3 rounded-2xl border border-purple-100 space-y-1">
+                        <span className="text-[11px] font-black text-purple-900 uppercase">
+                          {simOrientationCfg.parentPrompts.group1_expectations.title}
+                        </span>
+                        <p className="text-xs text-slate-700 bg-purple-50/40 p-2.5 rounded-xl border border-purple-100/60 font-medium">
+                          {simOrientationCfg.parentPrompts.group1_expectations.placeholder}
+                        </p>
+                      </div>
+
+                      <div className="bg-white p-3 rounded-2xl border border-purple-100 space-y-1">
+                        <span className="text-[11px] font-black text-purple-900 uppercase">
+                          {simOrientationCfg.parentPrompts.group2_personality.title}
+                        </span>
+                        <p className="text-xs text-slate-700 bg-purple-50/40 p-2.5 rounded-xl border border-purple-100/60 font-medium">
+                          {simOrientationCfg.parentPrompts.group2_personality.placeholder}
+                        </p>
+                      </div>
+
+                      <div className="bg-white p-3 rounded-2xl border border-purple-100 space-y-1">
+                        <span className="text-[11px] font-black text-purple-900 uppercase">
+                          {simOrientationCfg.parentPrompts.group3_support.title}
+                        </span>
+                        <p className="text-xs text-slate-700 bg-purple-50/40 p-2.5 rounded-xl border border-purple-100/60 font-medium">
+                          {simOrientationCfg.parentPrompts.group3_support.placeholder}
+                        </p>
+                      </div>
+
+                      <div className="bg-white p-3 rounded-2xl border border-purple-100 space-y-1">
+                        <span className="text-[11px] font-black text-purple-900 uppercase">
+                          {simOrientationCfg.parentPrompts.group4_cooperation.title}
+                        </span>
+                        <p className="text-xs text-slate-700 bg-purple-50/40 p-2.5 rounded-xl border border-purple-100/60 font-medium">
+                          {simOrientationCfg.parentPrompts.group4_cooperation.placeholder}
+                        </p>
+                      </div>
+                    </div>
+                  </div>
+                )
+              })()}
+
+              {/* FOOTER ĐỊNH HƯỚNG TỔNG THỂ */}
+              <div className="p-3 bg-white rounded-2xl border border-indigo-200/80 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
+                <div className="space-y-0.5">
+                  <span className="text-[10px] font-black text-indigo-600 uppercase tracking-widest block">
+                    Định hướng Tiếp nhận & Phân loại hỗ trợ:
+                  </span>
+                  <span className="text-xs font-black text-slate-800">
+                    {compositeColumnName || "Đánh giá Tổng thể & Định hướng Tiếp nhận"}
+                  </span>
+                </div>
+
+                <div className="flex items-center gap-2">
+                  <span className="px-3 py-1 bg-emerald-100 text-emerald-800 border border-emerald-300 rounded-full text-xs font-black uppercase tracking-wider flex items-center gap-1.5 shadow-xs">
+                    <CheckCircle2 className="w-3.5 h-3.5 text-emerald-600" />
+                    Sẵn sàng tiếp nhận • Hòa nhập tốt
+                  </span>
+                </div>
+              </div>
+            </div>
+          ) : hasComposite ? (
             <div className="p-4 bg-teal-50/60 border border-teal-200 rounded-2xl space-y-3">
               <div className="flex items-center justify-between">
                 <div className="flex items-center gap-2">
@@ -1630,20 +2436,34 @@ function CauHinhFileDiemKsdvClientInner({
                     {simulatedResult != null ? simulatedResult : "--"}
                   </span>
                   {simulatedResult != null && (
-                    <span className={`px-2.5 py-0.5 rounded-full text-[10px] font-black uppercase ${
-                      simulatedResult >= parseFloat(passScore || "5")
-                        ? "bg-emerald-100 text-emerald-800 border border-emerald-300"
-                        : simulatedResult >= parseFloat(commitmentThreshold || "4.5")
-                          ? "bg-amber-100 text-amber-800 border border-amber-300"
+                    isEnglishSubject ? (
+                      <span className={`px-2.5 py-0.5 rounded-full text-[10px] font-black uppercase ${
+                        simulatedResult >= parseFloat(passScore || "5")
+                          ? "bg-emerald-100 text-emerald-800 border border-emerald-300"
                           : "bg-rose-100 text-rose-800 border border-rose-300"
-                    }`}>
-                      {simulatedResult >= parseFloat(passScore || "5") ? "Đạt chuẩn" : "Diện Cam kết"}
-                    </span>
+                      }`}>
+                        {simulatedResult >= parseFloat(passScore || "5") ? "Đạt chuẩn" : "Chưa đạt"}
+                      </span>
+                    ) : (
+                      <span className={`px-2.5 py-0.5 rounded-full text-[10px] font-black uppercase ${
+                        simulatedResult >= parseFloat(passScore || "5")
+                          ? "bg-emerald-100 text-emerald-800 border border-emerald-300"
+                          : simulatedResult >= parseFloat(commitmentThreshold || "4.5")
+                            ? "bg-amber-100 text-amber-800 border border-amber-300"
+                            : "bg-rose-100 text-rose-800 border border-rose-300"
+                      }`}>
+                        {simulatedResult >= parseFloat(passScore || "5")
+                          ? "Đạt chuẩn"
+                          : simulatedResult >= parseFloat(commitmentThreshold || "4.5")
+                            ? "Diện Cam kết"
+                            : "Chưa đạt"}
+                      </span>
+                    )
                   )}
                 </div>
               </div>
             </div>
-          )}
+          ) : null}
 
           {/* ACTION BUTTONS */}
           <div className="flex items-center justify-end gap-3 pt-3">
@@ -1669,64 +2489,164 @@ function CauHinhFileDiemKsdvClientInner({
         </div>
 
         {/* RIGHT COLUMN: DANH SÁCH CẤU HÌNH MẪU ĐÃ LƯU (5 CỘT) */}
-        <div className="lg:col-span-5 bg-white rounded-3xl p-6 border border-slate-200 shadow-sm space-y-4">
-          <div className="flex items-center justify-between pb-3 border-b border-slate-100">
+        <div className="lg:col-span-5 bg-white rounded-3xl p-5 border border-slate-200 shadow-sm space-y-3.5">
+          {/* HEADER & VIEW SWITCHER */}
+          <div className="flex flex-wrap items-center justify-between gap-2 pb-3 border-b border-slate-100">
             <div className="flex items-center gap-2.5">
               <div className="w-8 h-8 rounded-xl bg-teal-500/10 flex items-center justify-center text-teal-600">
                 <BookOpen className="w-4 h-4" />
               </div>
               <div>
                 <h3 className="text-sm font-black text-slate-800">
-                  Danh sách Cấu hình Mẫu đã lưu
+                  Cấu hình Mẫu đã lưu
                 </h3>
                 <span className="text-[11px] font-bold text-teal-600">
-                  {filteredSavedConfigs.length} / {savedConfigs.length} cấu hình
+                  {filteredSavedConfigs.length} / {savedConfigs.length} mẫu
                 </span>
               </div>
             </div>
 
-            <button
-              type="button"
-              onClick={fetchConfigs}
-              disabled={loadingConfigs}
-              title="Tải lại danh sách"
-              className="p-2 text-slate-400 hover:text-teal-600 hover:bg-teal-50 rounded-xl transition-all"
-            >
-              <RefreshCw className={`w-4 h-4 ${loadingConfigs ? "animate-spin text-teal-600" : ""}`} />
-            </button>
+            <div className="flex items-center gap-1.5">
+              {/* Segmented View Mode Toggle */}
+              <div className="flex items-center p-0.5 bg-slate-100 rounded-xl border border-slate-200/70 text-xs">
+                <button
+                  type="button"
+                  onClick={() => setListViewMode("GROUPED")}
+                  title="Xem nhóm theo Môn học"
+                  className={`flex items-center gap-1 px-2.5 py-1 rounded-lg transition-all ${
+                    listViewMode === "GROUPED"
+                      ? "bg-white text-teal-900 font-black shadow-xs"
+                      : "text-slate-500 hover:text-slate-800 font-bold"
+                  }`}
+                >
+                  <Layers className="w-3.5 h-3.5" />
+                  <span className="text-[11px]">Nhóm môn</span>
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setListViewMode("FLAT")}
+                  title="Xem danh sách bảng thu gọn"
+                  className={`flex items-center gap-1 px-2.5 py-1 rounded-lg transition-all ${
+                    listViewMode === "FLAT"
+                      ? "bg-white text-teal-900 font-black shadow-xs"
+                      : "text-slate-500 hover:text-slate-800 font-bold"
+                  }`}
+                >
+                  <Table className="w-3.5 h-3.5" />
+                  <span className="text-[11px]">Bảng gọn</span>
+                </button>
+              </div>
+
+              {/* Refresh Button */}
+              <button
+                type="button"
+                onClick={fetchConfigs}
+                disabled={loadingConfigs}
+                title="Tải lại danh sách"
+                className="p-1.5 text-slate-400 hover:text-teal-600 hover:bg-teal-50 rounded-xl transition-all"
+              >
+                <RefreshCw className={`w-4 h-4 ${loadingConfigs ? "animate-spin text-teal-600" : ""}`} />
+              </button>
+            </div>
           </div>
 
-          {/* BỘ LỌC DANH SÁCH */}
+          {/* QUICK SUBJECT PILLS */}
+          {applicableSubjects.length > 0 && (
+            <div className="flex items-center gap-1.5 overflow-x-auto pb-1 pt-0.5 custom-scrollbar">
+              <button
+                type="button"
+                onClick={() => setListFilterSubjectId("ALL")}
+                className={`px-2.5 py-1 rounded-xl text-[11px] font-black shrink-0 transition-all ${
+                  listFilterSubjectId === "ALL"
+                    ? "bg-teal-600 text-white shadow-xs"
+                    : "bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold"
+                }`}
+              >
+                Tất cả ({savedConfigs.length})
+              </button>
+              {applicableSubjects.map(s => {
+                const count = savedConfigs.filter(c => c.subjectId === s.id).length
+                const isSelected = listFilterSubjectId === s.id
+                return (
+                  <button
+                    key={s.id}
+                    type="button"
+                    onClick={() => {
+                      if (listFilterSubjectId === s.id) {
+                        setListFilterSubjectId("ALL")
+                      } else {
+                        handleSelectSubjectChange(s.id)
+                      }
+                    }}
+                    className={`px-2.5 py-1 rounded-xl text-[11px] shrink-0 transition-all flex items-center gap-1.5 ${
+                      isSelected
+                        ? "bg-teal-600 text-white font-black shadow-xs"
+                        : "bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold"
+                    }`}
+                  >
+                    <span>{s.code || s.name}</span>
+                    <span className={`px-1.5 py-0.2 rounded-full text-[9px] font-black ${
+                      isSelected ? "bg-white/25 text-white" : "bg-white text-slate-500 border border-slate-200"
+                    }`}>
+                      {count}
+                    </span>
+                  </button>
+                )
+              })}
+            </div>
+          )}
+
+          {/* SEARCH & COMPACT MULTI-SELECT FILTERS */}
           <div className="space-y-2">
             <div className="relative">
-              <Search className="w-3.5 h-3.5 absolute left-3 top-3 text-slate-400" />
+              <Search className="w-3.5 h-3.5 absolute left-3 top-2.5 text-slate-400" />
               <input
                 type="text"
                 value={listSearchTerm}
                 onChange={(e) => setListSearchTerm(e.target.value)}
-                placeholder="Tìm môn học (TAv, Tâm lý, EPT...)"
-                className="w-full h-9 pl-9 pr-3 bg-slate-50 border border-slate-200 rounded-xl text-xs font-semibold text-slate-800 outline-none focus:border-teal-500"
+                placeholder="Tìm môn học, mã, công thức..."
+                className="w-full h-8.5 pl-8 pr-7 bg-slate-50 border border-slate-200 rounded-xl text-xs font-semibold text-slate-800 outline-none focus:border-teal-500 focus:bg-white transition-all"
               />
+              {listSearchTerm && (
+                <button
+                  type="button"
+                  onClick={() => setListSearchTerm("")}
+                  className="absolute right-2 top-2 p-0.5 text-slate-400 hover:text-slate-600"
+                >
+                  <X className="w-3.5 h-3.5" />
+                </button>
+              )}
             </div>
 
-            <div className="grid grid-cols-2 gap-2">
+            <div className="grid grid-cols-3 gap-1.5">
               <select
                 value={listFilterGrade}
                 onChange={(e) => setListFilterGrade(e.target.value)}
-                className="h-8 px-2 bg-slate-50 border border-slate-200 rounded-lg text-[11px] font-bold text-slate-700 outline-none"
+                className="h-7.5 px-2 bg-slate-50 border border-slate-200 rounded-lg text-[10px] font-bold text-slate-700 outline-none truncate"
               >
-                <option value="ALL">-- Tất cả khối --</option>
+                <option value="ALL">Tất cả khối</option>
                 {grades.map(g => (
                   <option key={g} value={g}>{g}</option>
                 ))}
               </select>
 
               <select
+                value={listFilterPeriod}
+                onChange={(e) => setListFilterPeriod(e.target.value)}
+                className="h-7.5 px-2 bg-slate-50 border border-slate-200 rounded-lg text-[10px] font-bold text-slate-700 outline-none truncate"
+              >
+                <option value="ALL">Tất cả kỳ</option>
+                <option value="DAU_NAM">Đầu năm</option>
+                <option value="HK1">Học kỳ 1</option>
+                <option value="HK2">Học kỳ 2</option>
+              </select>
+
+              <select
                 value={listFilterSystemId}
                 onChange={(e) => setListFilterSystemId(e.target.value)}
-                className="h-8 px-2 bg-slate-50 border border-slate-200 rounded-lg text-[11px] font-bold text-slate-700 outline-none"
+                className="h-7.5 px-2 bg-slate-50 border border-slate-200 rounded-lg text-[10px] font-bold text-slate-700 outline-none truncate"
               >
-                <option value="ALL">-- Tất cả hệ học --</option>
+                <option value="ALL">Tất cả hệ</option>
                 {(() => {
                   const uniqueSystemsMap = new Map()
                   eduSystems.forEach(s => {
@@ -1738,127 +2658,346 @@ function CauHinhFileDiemKsdvClientInner({
                 })()}
               </select>
             </div>
+
+            {/* Active filter count & reset button */}
+            {(listFilterSubjectId !== "ALL" || listFilterGrade !== "ALL" || listFilterPeriod !== "ALL" || listFilterSystemId !== "ALL" || listSearchTerm) && (
+              <div className="flex items-center justify-between px-1 text-[10px] text-teal-800 font-bold">
+                <span>Đang lọc: {filteredSavedConfigs.length} kết quả</span>
+                <button
+                  type="button"
+                  onClick={() => {
+                    setListFilterSubjectId("ALL")
+                    setListFilterGrade("ALL")
+                    setListFilterPeriod("ALL")
+                    setListFilterSystemId("ALL")
+                    setListSearchTerm("")
+                  }}
+                  className="text-rose-600 hover:underline flex items-center gap-0.5"
+                >
+                  <X className="w-3 h-3" />
+                  <span>Xóa bộ lọc</span>
+                </button>
+              </div>
+            )}
           </div>
 
-          {/* LIST CARDS */}
-          <div className="space-y-3 max-h-[640px] overflow-y-auto pr-1 custom-scrollbar">
+          {/* LIST CONTENT */}
+          <div className="max-h-[620px] overflow-y-auto pr-1 space-y-2.5 custom-scrollbar">
             {loadingConfigs ? (
               <div className="py-12 text-center text-xs font-bold text-slate-400">
                 <RefreshCw className="w-6 h-6 animate-spin mx-auto mb-2 text-teal-600" />
                 Đang tải cấu hình mẫu...
               </div>
             ) : filteredSavedConfigs.length === 0 ? (
-              <div className="py-12 text-center border-2 border-dashed border-slate-200 rounded-2xl p-6">
-                <AlertCircle className="w-8 h-8 text-slate-300 mx-auto mb-2" />
-                <p className="text-xs font-bold text-slate-500">Không tìm thấy cấu hình phù hợp</p>
-                <p className="text-[11px] text-slate-400 mt-1">Hãy thiết lập và bấm Lưu cấu hình mẫu bên trái</p>
-              </div>
-            ) : (
-              filteredSavedConfigs.map(cfg => {
-                let colNamesList: string[] = []
-                try {
-                  colNamesList = JSON.parse(cfg.columnNames || "[]")
-                } catch (_) {}
-
-                const isCurrentActive = 
-                  cfg.subjectId === selectedSubjectId && 
-                  (cfg.grade === selectedGrade || cfg.grade === "ALL")
-
-                return (
-                  <div
-                    key={cfg.id}
-                    className={`p-4 rounded-2xl border transition-all ${
-                      isCurrentActive
-                        ? "bg-teal-50/50 border-teal-400 shadow-sm ring-1 ring-teal-400/30"
-                        : "bg-white border-slate-200 hover:border-slate-300 hover:shadow-xs"
-                    }`}
+              <div className="py-8 px-4 text-center border-2 border-dashed border-teal-200 bg-teal-50/20 rounded-2xl space-y-3">
+                <div className="w-10 h-10 rounded-xl bg-teal-100/70 text-teal-700 flex items-center justify-center mx-auto">
+                  <BookOpen className="w-5 h-5" />
+                </div>
+                <div>
+                  <h4 className="text-xs font-black text-teal-950 uppercase tracking-wide">
+                    Chưa có cấu hình mẫu cho môn {currentSubject?.name || "này"}
+                  </h4>
+                  <p className="text-[11px] text-slate-600 mt-1 max-w-[280px] mx-auto leading-relaxed font-medium">
+                    Bạn đang thiết lập cấu hình môn này ở bảng bên trái. Sau khi hoàn tất các cột điểm, hãy bấm nút <strong>"Lưu Cấu Hình Mẫu"</strong> bên dưới để lưu vào danh sách.
+                  </p>
+                </div>
+                {listFilterSubjectId !== "ALL" && (
+                  <button
+                    type="button"
+                    onClick={() => setListFilterSubjectId("ALL")}
+                    className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-white border border-slate-200 hover:border-teal-500 text-teal-800 rounded-xl text-[11px] font-bold transition-all shadow-xs"
                   >
-                    <div className="flex items-start justify-between gap-2">
-                      <div>
-                        <div className="flex items-center gap-2">
-                          <h4 className="text-xs font-black text-slate-900">
-                            {cfg.subject?.name || "Môn Khảo sát"}
-                          </h4>
-                          <span className="px-2 py-0.5 rounded-md text-[10px] font-black bg-slate-100 text-slate-600 uppercase">
-                            {cfg.subject?.code || "KSDV"}
+                    <span>Xem tất cả môn khác ({savedConfigs.length} mẫu)</span>
+                  </button>
+                )}
+              </div>
+            ) : listViewMode === "GROUPED" ? (
+              /* VIEW 1: GROUPED BY SUBJECT ACCORDIONS */
+              <div className="space-y-2">
+                <div className="flex items-center justify-between px-1 text-[10px] text-slate-400 font-bold">
+                  <span>{groupedSavedConfigs.length} nhóm môn</span>
+                  <div className="flex items-center gap-2">
+                    <button
+                      type="button"
+                      onClick={() => {
+                        const next: Record<string, boolean> = {}
+                        groupedSavedConfigs.forEach(g => { if (g.subject?.id) next[g.subject.id] = true })
+                        setExpandedSubjects(next)
+                      }}
+                      className="hover:text-teal-700"
+                    >
+                      Mở tất cả
+                    </button>
+                    <span>•</span>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        const next: Record<string, boolean> = {}
+                        groupedSavedConfigs.forEach(g => { if (g.subject?.id) next[g.subject.id] = false })
+                        setExpandedSubjects(next)
+                      }}
+                      className="hover:text-teal-700"
+                    >
+                      Thu gọn
+                    </button>
+                  </div>
+                </div>
+
+                {groupedSavedConfigs.map(group => {
+                  const subId = group.subject?.id || "UNKNOWN"
+                  const isExpanded = expandedSubjects[subId] !== undefined ? expandedSubjects[subId] : true
+                  const isSubjectActive = selectedSubjectId === subId
+
+                  // Unique grades summary
+                  const gradeNames = Array.from(new Set(group.configs.map(c => c.grade))).filter(Boolean)
+                  const gradeSummary = gradeNames.length > 3
+                    ? `${gradeNames[0]} → ${gradeNames[gradeNames.length - 1]}`
+                    : gradeNames.join(", ")
+
+                  return (
+                    <div
+                      key={subId}
+                      className={`rounded-2xl border transition-all overflow-hidden ${
+                        isSubjectActive
+                          ? "border-teal-300 shadow-xs ring-1 ring-teal-200/50"
+                          : "border-slate-200 bg-white"
+                      }`}
+                    >
+                      {/* ACCORDION HEADER */}
+                      <div
+                        onClick={() => {
+                          setExpandedSubjects(prev => ({
+                            ...prev,
+                            [subId]: !(prev[subId] !== undefined ? prev[subId] : true)
+                          }))
+                        }}
+                        className={`px-3 py-2 flex items-center justify-between gap-2 cursor-pointer transition-all select-none ${
+                          isSubjectActive
+                            ? "bg-teal-50/80 hover:bg-teal-50"
+                            : "bg-slate-50/70 hover:bg-slate-100/80"
+                        }`}
+                      >
+                        <div className="flex items-center gap-2 min-w-0">
+                          <span className="px-1.5 py-0.5 rounded-md text-[10px] font-black uppercase tracking-wide shrink-0 bg-white border border-slate-200 text-slate-700">
+                            {group.subject?.code || "KSDV"}
+                          </span>
+                          <span className="text-xs font-black text-slate-800 truncate">
+                            {group.subject?.name || "Môn Khảo sát"}
+                          </span>
+                          <span className="text-[10px] font-bold text-teal-700 bg-teal-100/70 px-1.5 py-0.2 rounded-full shrink-0">
+                            {group.configs.length}
                           </span>
                         </div>
-                        <div className="flex flex-wrap items-center gap-1.5 mt-1.5">
-                          <span className="px-2 py-0.5 rounded-full text-[10px] font-black bg-teal-100 text-teal-800">
-                            {cfg.grade || "Toàn khối"}
+
+                        <div className="flex items-center gap-2 shrink-0">
+                          <span className="text-[10px] font-semibold text-slate-400 hidden sm:inline">
+                            {gradeSummary}
                           </span>
-                          <span className={`px-2 py-0.5 rounded-full text-[10px] font-black ${
-                            cfg.periodId === "DAU_NAM" ? "bg-amber-100 text-amber-800" :
-                            cfg.periodId === "HK1" ? "bg-blue-100 text-blue-800" :
-                            cfg.periodId === "HK2" ? "bg-indigo-100 text-indigo-800" :
-                            "bg-slate-100 text-slate-700"
+                          <div className={`p-0.5 rounded-md text-slate-400 transition-transform duration-200 ${
+                            isExpanded ? "rotate-180" : ""
                           }`}>
-                            {cfg.periodId === "DAU_NAM" ? "Đầu năm" :
-                             cfg.periodId === "HK1" ? "Học kỳ 1" :
-                             cfg.periodId === "HK2" ? "Học kỳ 2" :
-                             cfg.periodId === "ALL" ? "Cả năm / Chung" :
-                             (periods.find(p => p.id === cfg.periodId)?.name || cfg.periodId)}
-                          </span>
-                          <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-slate-100 text-slate-600">
-                            {cfg.educationSystemId === "ALL" ? "Mẫu chung" : (eduSystems.find(s => s.id === cfg.educationSystemId)?.name || cfg.educationSystemId)}
-                          </span>
-                          <span className="text-[10px] font-bold text-slate-400">
-                            • {cfg.columnCount} cột điểm
-                          </span>
+                            <ChevronDown className="w-3.5 h-3.5" />
+                          </div>
                         </div>
                       </div>
 
-                      <div className="flex items-center gap-1">
+                      {/* ACCORDION ITEMS LIST */}
+                      {isExpanded && (
+                        <div className="p-1.5 space-y-1 bg-white border-t border-slate-100">
+                          {group.configs.map(cfg => {
+                            const isCurrentActive = 
+                              cfg.subjectId === selectedSubjectId && 
+                              (cfg.grade === selectedGrade || cfg.grade === "ALL")
+
+                            let colNamesList: string[] = []
+                            try {
+                              colNamesList = JSON.parse(cfg.columnNames || "[]")
+                            } catch (_) {}
+
+                            const periodLabel = cfg.periodId === "DAU_NAM" ? "Đầu năm" :
+                              cfg.periodId === "HK1" ? "HK 1" :
+                              cfg.periodId === "HK2" ? "HK 2" :
+                              cfg.periodId === "ALL" ? "Chung" :
+                              (periods.find(p => p.id === cfg.periodId)?.name || cfg.periodId)
+
+                            const periodColor = cfg.periodId === "DAU_NAM" ? "bg-amber-50 text-amber-800 border-amber-200" :
+                              cfg.periodId === "HK1" ? "bg-sky-50 text-sky-800 border-sky-200" :
+                              cfg.periodId === "HK2" ? "bg-indigo-50 text-indigo-800 border-indigo-200" :
+                              "bg-slate-50 text-slate-600 border-slate-200"
+
+                            return (
+                              <div
+                                key={cfg.id}
+                                onClick={() => loadConfigToForm(cfg)}
+                                className={`px-2.5 py-1.5 rounded-xl border transition-all cursor-pointer flex items-center justify-between gap-2 ${
+                                  isCurrentActive
+                                    ? "bg-teal-50/90 border-teal-400 ring-1 ring-teal-400/40 shadow-xs"
+                                    : "bg-white hover:bg-slate-50 border-slate-100 hover:border-slate-200"
+                                }`}
+                                title={`Cột điểm: ${colNamesList.join(" • ")}\nNhấp để nạp lên form chỉnh sửa`}
+                              >
+                                {/* Left: Grade & Period */}
+                                <div className="flex items-center gap-1.5 min-w-[115px] shrink-0">
+                                  <span className={`px-1.5 py-0.5 rounded-md font-black text-[10px] ${
+                                    isCurrentActive ? "bg-teal-700 text-white" : "bg-slate-100 text-slate-800"
+                                  }`}>
+                                    {cfg.grade || "Toàn khối"}
+                                  </span>
+                                  <span className={`px-1.5 py-0.5 rounded-md text-[9px] font-bold border ${periodColor}`}>
+                                    {periodLabel}
+                                  </span>
+                                </div>
+
+                                {/* Middle: Columns, Formula & Benchmark */}
+                                <div className="flex items-center gap-1.5 text-[10px] text-slate-600 flex-1 min-w-0">
+                                  <span className="font-bold text-slate-500 whitespace-nowrap">
+                                    {cfg.columnCount} cột
+                                  </span>
+                                  <span className="text-slate-300">•</span>
+                                  <span className="font-extrabold text-teal-800 uppercase tracking-tight whitespace-nowrap">
+                                    {cfg.formula || "AVG"}
+                                  </span>
+                                  {cfg.passScore != null && (
+                                    <>
+                                      <span className="text-slate-300">•</span>
+                                      <span className="text-emerald-700 font-black whitespace-nowrap">
+                                        🎯 {cfg.passScore}đ
+                                      </span>
+                                    </>
+                                  )}
+                                </div>
+
+                                {/* Right: Action buttons */}
+                                <div className="flex items-center gap-0.5 shrink-0" onClick={e => e.stopPropagation()}>
+                                  <button
+                                    type="button"
+                                    onClick={() => handleExportBlankExcel(cfg)}
+                                    title="Tải File Excel Mẫu"
+                                    className="p-1 text-slate-400 hover:text-emerald-600 hover:bg-emerald-50 rounded-lg transition-all"
+                                  >
+                                    <Download className="w-3.5 h-3.5" />
+                                  </button>
+                                  <button
+                                    type="button"
+                                    onClick={() => loadConfigToForm(cfg)}
+                                    title="Nạp cấu hình lên form để sửa"
+                                    className="p-1 text-slate-400 hover:text-teal-600 hover:bg-teal-50 rounded-lg transition-all"
+                                  >
+                                    <Edit2 className="w-3.5 h-3.5" />
+                                  </button>
+                                  <button
+                                    type="button"
+                                    onClick={() => handleDeleteConfig(cfg.id, cfg.subject?.name || "")}
+                                    title="Xóa cấu hình"
+                                    className="p-1 text-slate-400 hover:text-rose-600 hover:bg-rose-50 rounded-lg transition-all"
+                                  >
+                                    <Trash2 className="w-3.5 h-3.5" />
+                                  </button>
+                                </div>
+                              </div>
+                            )
+                          })}
+                        </div>
+                      )}
+                    </div>
+                  )
+                })}
+              </div>
+            ) : (
+              /* VIEW 2: FLAT COMPACT TABLE VIEW */
+              <div className="space-y-1.5">
+                {filteredSavedConfigs.map(cfg => {
+                  const isCurrentActive = 
+                    cfg.subjectId === selectedSubjectId && 
+                    (cfg.grade === selectedGrade || cfg.grade === "ALL")
+
+                  let colNamesList: string[] = []
+                  try {
+                    colNamesList = JSON.parse(cfg.columnNames || "[]")
+                  } catch (_) {}
+
+                  const periodLabel = cfg.periodId === "DAU_NAM" ? "Đầu năm" :
+                    cfg.periodId === "HK1" ? "HK 1" :
+                    cfg.periodId === "HK2" ? "HK 2" :
+                    cfg.periodId === "ALL" ? "Chung" :
+                    (periods.find(p => p.id === cfg.periodId)?.name || cfg.periodId)
+
+                  const periodColor = cfg.periodId === "DAU_NAM" ? "bg-amber-50 text-amber-800 border-amber-200" :
+                    cfg.periodId === "HK1" ? "bg-sky-50 text-sky-800 border-sky-200" :
+                    cfg.periodId === "HK2" ? "bg-indigo-50 text-indigo-800 border-indigo-200" :
+                    "bg-slate-50 text-slate-600 border-slate-200"
+
+                  return (
+                    <div
+                      key={cfg.id}
+                      onClick={() => loadConfigToForm(cfg)}
+                      className={`px-2.5 py-1.5 rounded-xl border transition-all cursor-pointer flex items-center justify-between gap-2 ${
+                        isCurrentActive
+                          ? "bg-teal-50/90 border-teal-400 ring-2 ring-teal-400/30 shadow-xs"
+                          : "bg-white hover:bg-slate-50 border-slate-150 hover:border-slate-300"
+                      }`}
+                      title={`Cột điểm: ${colNamesList.join(" • ")}\nNhấp để nạp lên form chỉnh sửa`}
+                    >
+                      {/* Left: Subject code & Name */}
+                      <div className="flex items-center gap-1.5 min-w-[125px] shrink-0">
+                        <span className="px-1.5 py-0.5 rounded text-[9.5px] font-black uppercase bg-slate-100 text-slate-700 border border-slate-200">
+                          {cfg.subject?.code || "KSDV"}
+                        </span>
+                        <span className="text-xs font-black text-slate-800 truncate max-w-[80px]">
+                          {cfg.subject?.name || "Môn học"}
+                        </span>
+                      </div>
+
+                      {/* Middle: Grade & Period & Specs */}
+                      <div className="flex items-center gap-1.5 flex-1 min-w-0 text-[10px]">
+                        <span className="px-1.5 py-0.5 rounded font-black bg-slate-100 text-slate-800">
+                          {cfg.grade || "ALL"}
+                        </span>
+                        <span className={`px-1 py-0.5 rounded text-[9px] font-bold border ${periodColor}`}>
+                          {periodLabel}
+                        </span>
+                        <span className="text-slate-300">•</span>
+                        <span className="font-extrabold text-teal-800 uppercase whitespace-nowrap">
+                          {cfg.formula || "AVG"}
+                        </span>
+                        {cfg.passScore != null && (
+                          <span className="text-emerald-700 font-black whitespace-nowrap hidden sm:inline">
+                            • 🎯{cfg.passScore}đ
+                          </span>
+                        )}
+                      </div>
+
+                      {/* Right: Actions */}
+                      <div className="flex items-center gap-0.5 shrink-0" onClick={e => e.stopPropagation()}>
                         <button
                           type="button"
                           onClick={() => handleExportBlankExcel(cfg)}
                           title="Tải File Excel Mẫu"
-                          className="p-1.5 text-slate-400 hover:text-emerald-600 hover:bg-emerald-50 rounded-lg transition-all"
+                          className="p-1 text-slate-400 hover:text-emerald-600 hover:bg-emerald-50 rounded-lg transition-all"
                         >
-                          <Download className="w-4 h-4" />
+                          <Download className="w-3.5 h-3.5" />
                         </button>
                         <button
                           type="button"
                           onClick={() => loadConfigToForm(cfg)}
                           title="Nạp cấu hình lên form để sửa"
-                          className="p-1.5 text-slate-400 hover:text-teal-600 hover:bg-teal-50 rounded-lg transition-all"
+                          className="p-1 text-slate-400 hover:text-teal-600 hover:bg-teal-50 rounded-lg transition-all"
                         >
-                          <Edit2 className="w-4 h-4" />
+                          <Edit2 className="w-3.5 h-3.5" />
                         </button>
                         <button
                           type="button"
                           onClick={() => handleDeleteConfig(cfg.id, cfg.subject?.name || "")}
                           title="Xóa cấu hình"
-                          className="p-1.5 text-slate-400 hover:text-rose-600 hover:bg-rose-50 rounded-lg transition-all"
+                          className="p-1 text-slate-400 hover:text-rose-600 hover:bg-rose-50 rounded-lg transition-all"
                         >
-                          <Trash2 className="w-4 h-4" />
+                          <Trash2 className="w-3.5 h-3.5" />
                         </button>
                       </div>
                     </div>
-
-                    {/* Columns Tags */}
-                    <div className="mt-2.5 flex flex-wrap gap-1">
-                      {colNamesList.map((cName, cIdx) => (
-                        <span
-                          key={cIdx}
-                          className="px-2 py-0.5 bg-slate-100 rounded text-[10px] font-medium text-slate-600 truncate max-w-[140px]"
-                          title={cName}
-                        >
-                          {cName}
-                        </span>
-                      ))}
-                    </div>
-
-                    {/* Formula and Benchmark info */}
-                    <div className="mt-2.5 pt-2 border-t border-slate-100 flex items-center justify-between text-[10px] font-bold text-slate-500">
-                      <span>Công thức: <strong className="text-teal-700">{cfg.formula || "AVERAGE"}</strong></span>
-                      {cfg.passScore && (
-                        <span>Chuẩn đạt: <strong className="text-emerald-700">{cfg.passScore}đ</strong></span>
-                      )}
-                    </div>
-                  </div>
-                )
-              })
+                  )
+                })}
+              </div>
             )}
           </div>
         </div>
@@ -1897,7 +3036,12 @@ function CauHinhFileDiemKsdvClientInner({
                   <label className="block text-[11px] font-black text-slate-500 uppercase mb-1">Khối áp dụng</label>
                   <select
                     value={batchGrade}
-                    onChange={(e) => setBatchGrade(e.target.value)}
+                    onChange={(e) => {
+                      const newG = e.target.value
+                      setBatchGrade(newG)
+                      const valid = subjects.filter(s => isSubjectApplicable(s, newG, batchPeriodId))
+                      setBatchSelectedSubjectIds(valid.map(s => s.id))
+                    }}
                     className="w-full h-10 px-3 bg-slate-50 border border-slate-200 rounded-xl text-xs font-bold text-slate-800 outline-none"
                   >
                     {grades.map(g => (
@@ -1946,6 +3090,7 @@ function CauHinhFileDiemKsdvClientInner({
                   <option value="NLTD_SCORE">Năng lực tư duy thang 10đ (Logic 4đ, Toán 3đ, Ngôn ngữ 3đ)</option>
                   <option value="CHILD_DEV_16">Bộ chuẩn phát triển trẻ 5-6 tuổi (16 chỉ số QĐ 4222)</option>
                   <option value="EPT">EPT Chuẩn hóa Xếp lớp (4 kỹ năng x 25đ - Tổng 100đ)</option>
+                  <option value="PHIEU_DINH_HUONG">🌟 Phiếu định hướng đầu vào (Bộ 2 Tab: Phỏng vấn HS & Trao đổi PHHS - Đánh giá định tính phi điểm số)</option>
                 </select>
               </div>
 
@@ -1983,7 +3128,10 @@ function CauHinhFileDiemKsdvClientInner({
                     )}
                     <button
                       type="button"
-                      onClick={() => setBatchSelectedSubjectIds(subjects.map(s => s.id))}
+                      onClick={() => {
+                        const valid = subjects.filter(s => isSubjectApplicable(s, batchGrade, batchPeriodId))
+                        setBatchSelectedSubjectIds(valid.map(s => s.id))
+                      }}
                       className="text-[11px] font-bold text-teal-600 hover:underline"
                     >
                       Tất cả
@@ -2001,11 +3149,7 @@ function CauHinhFileDiemKsdvClientInner({
 
                 <div className="grid grid-cols-2 gap-2 max-h-48 overflow-y-auto p-2 bg-slate-50 border border-slate-200 rounded-xl custom-scrollbar">
                   {subjects
-                    .filter(s => {
-                      const isPreschool = ["Mầm", "Chồi", "Lá", "Nhà trẻ", "Mầm non"].some(k => batchGrade.includes(k))
-                      if (isPreschool) return s.code === "TCI" || s.code.startsWith("MN")
-                      return s.code !== "TCI" // Ẩn môn mầm non khi chọn các khối phổ thông K12
-                    })
+                    .filter(s => isSubjectApplicable(s, batchGrade, batchPeriodId))
                     .map(s => {
                       const isChecked = batchSelectedSubjectIds.includes(s.id)
                       return (
@@ -2052,6 +3196,111 @@ function CauHinhFileDiemKsdvClientInner({
                 {batchSaving ? <RefreshCw className="w-4 h-4 animate-spin" /> : <Save className="w-4 h-4" />}
                 <span>Áp dụng Hàng Loạt</span>
               </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* MODAL SAO CHÉP CẤU HÌNH TỪ KHỐI KHÁC */}
+      {isCloneModalOpen && (
+        <div className="fixed inset-0 z-[300] flex items-center justify-center p-4 bg-slate-900/50 backdrop-blur-sm animate-in fade-in duration-200">
+          <div className="bg-white rounded-3xl p-6 md:p-7 max-w-lg w-full shadow-2xl border border-slate-100 space-y-5 animate-in zoom-in-95 duration-200">
+            <div className="flex items-center justify-between pb-3 border-b border-slate-100">
+              <div className="flex items-center gap-3">
+                <div className="w-10 h-10 rounded-2xl bg-teal-500/10 flex items-center justify-center text-teal-600">
+                  <Copy className="w-5 h-5" />
+                </div>
+                <div>
+                  <h3 className="text-base font-black text-slate-800">
+                    Sao Chép Cấu Hình Từ Khối Khác
+                  </h3>
+                  <p className="text-xs text-slate-400 font-semibold">
+                    Đang thiết lập cho: <strong className="text-teal-700">{currentSubject?.name}</strong> • <strong className="text-teal-700">{selectedGrade}</strong>
+                  </p>
+                </div>
+              </div>
+              <button
+                type="button"
+                onClick={() => setIsCloneModalOpen(false)}
+                className="p-2 text-slate-400 hover:text-slate-600 rounded-xl"
+              >
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+
+            <div className="space-y-4">
+              <div className="space-y-1.5">
+                <label className="block text-xs font-black text-slate-700 uppercase">
+                  Chọn mẫu nguồn đã cấu hình sẵn để sao chép:
+                </label>
+                {savedConfigs.filter(c => c.subjectId === selectedSubjectId && c.grade !== selectedGrade).length === 0 ? (
+                  <div className="p-4 bg-amber-50 border border-amber-200 rounded-2xl text-xs text-amber-800 font-medium">
+                    ⚠️ Môn <strong>{currentSubject?.name}</strong> hiện chưa có cấu hình mẫu ở các khối lớp khác để sao chép. Bạn có thể chọn áp dụng từ một trong các Preset chuẩn bên trên.
+                  </div>
+                ) : (
+                  <div className="space-y-2 max-h-60 overflow-y-auto pr-1 custom-scrollbar">
+                    {savedConfigs
+                      .filter(c => c.subjectId === selectedSubjectId && c.grade !== selectedGrade)
+                      .map(cfg => {
+                        let cNames: string[] = []
+                        try { cNames = JSON.parse(cfg.columnNames || "[]") } catch (_) {}
+                        const isChosen = cloneSourceConfigId === cfg.id
+                        return (
+                          <div
+                            key={cfg.id}
+                            onClick={() => setCloneSourceConfigId(cfg.id)}
+                            className={`p-3 rounded-2xl border cursor-pointer transition-all flex items-center justify-between gap-3 ${
+                              isChosen
+                                ? "bg-teal-50 border-teal-500 ring-2 ring-teal-400/20 shadow-xs"
+                                : "bg-slate-50 border-slate-200 hover:bg-white hover:border-slate-300"
+                            }`}
+                          >
+                            <div className="space-y-0.5">
+                              <div className="flex items-center gap-2">
+                                <span className="px-2 py-0.5 rounded-lg bg-teal-600 text-white text-[10px] font-black">
+                                  {cfg.grade || "Toàn khối"}
+                                </span>
+                                <span className="text-xs font-black text-slate-800">
+                                  {cfg.columnCount} cột điểm
+                                </span>
+                                <span className="text-[10px] font-bold text-slate-400 uppercase">
+                                  • {cfg.formula || "AVG"}
+                                </span>
+                              </div>
+                              <p className="text-[11px] text-slate-500 line-clamp-1">
+                                {cNames.join(" • ")}
+                              </p>
+                            </div>
+                            <div className={`w-5 h-5 rounded-full border-2 flex items-center justify-center shrink-0 ${
+                              isChosen ? "border-teal-600 bg-teal-600 text-white" : "border-slate-300 bg-white"
+                            }`}>
+                              {isChosen && <div className="w-2 h-2 rounded-full bg-white" />}
+                            </div>
+                          </div>
+                        )
+                      })}
+                  </div>
+                )}
+              </div>
+
+              <div className="flex items-center justify-end gap-3 pt-3 border-t border-slate-100">
+                <button
+                  type="button"
+                  onClick={() => setIsCloneModalOpen(false)}
+                  className="px-4 py-2.5 rounded-xl border border-slate-200 text-slate-600 text-xs font-bold hover:bg-slate-50"
+                >
+                  Hủy bỏ
+                </button>
+                <button
+                  type="button"
+                  disabled={!cloneSourceConfigId}
+                  onClick={handleApplyClone}
+                  className="px-5 py-2.5 rounded-xl bg-teal-600 hover:bg-teal-700 text-white text-xs font-black shadow-md shadow-teal-600/20 disabled:opacity-50 transition-all flex items-center gap-2"
+                >
+                  <Copy className="w-4 h-4" />
+                  <span>Sao chép sang {selectedGrade}</span>
+                </button>
+              </div>
             </div>
           </div>
         </div>

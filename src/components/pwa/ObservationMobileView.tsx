@@ -25,7 +25,11 @@ import {
   Check,
   RotateCcw,
   GraduationCap,
-  Globe
+  Globe,
+  Zap,
+  UserCheck,
+  ShieldCheck,
+  Filter
 } from "lucide-react"
 import { PwaBottomNav } from "@/components/pwa/PwaBottomNav"
 
@@ -58,6 +62,13 @@ export interface ObservationSlotItem {
 interface ObservationMobileViewProps {
   initialSlots?: any[]
   currentTeacher?: any
+  canCreateSurprise?: boolean
+  canAssignObservation?: boolean
+  managementScope?: string
+  onOpenSurprise?: () => void
+  onOpenAssigned?: () => void
+  onOpenCreateSlot?: () => void
+  refreshSlots?: () => Promise<void> | void
 }
 
 // ==========================================
@@ -161,12 +172,52 @@ function detectEvaluationType(slot: ObservationSlotItem | null): "K12" | "MAM_NO
   return "K12"
 }
 
-export function ObservationMobileView({ initialSlots, currentTeacher }: ObservationMobileViewProps) {
+export function ObservationMobileView({
+  initialSlots,
+  currentTeacher,
+  canCreateSurprise,
+  canAssignObservation,
+  managementScope,
+  onOpenSurprise,
+  onOpenAssigned,
+  onOpenCreateSlot,
+  refreshSlots
+}: ObservationMobileViewProps) {
   const [activeTab, setActiveTab] = useState<"MY_SLOTS" | "QUICK_EVAL" | "BROWSE">("MY_SLOTS")
+  const [filterOrigin, setFilterOrigin] = useState<"ALL" | "SURPRISE" | "ASSIGNED" | "PLAN">("ALL")
+  const [showQuickActionMenu, setShowQuickActionMenu] = useState(false)
   const [mySlots, setMySlots] = useState<ObservationSlotItem[]>([])
   const [availableSlots, setAvailableSlots] = useState<ObservationSlotItem[]>([])
   const [loading, setLoading] = useState(true)
   const [refreshing, setRefreshing] = useState(false)
+
+  // Role detection for QLCM, TTCM, BGH, GĐCS, ĐHCM, TBP, Admin
+  const isManager = useMemo(() => {
+    if (canCreateSurprise || canAssignObservation) return true
+    if (managementScope && managementScope !== "NONE") return true
+    const role = (currentTeacher?.user?.role || "").toUpperCase()
+    const pos = (currentTeacher?.position || "").toUpperCase()
+    const mgmtRoles = [
+      "ADMIN", "SUPER_ADMIN", "BAN_DHCM", "QLCM", "BGH", "BGH_MN",
+      "GDCS", "GĐCS", "TTCM", "TPCM", "TBP", "TRUONG_BO_PHAN"
+    ]
+    return mgmtRoles.some(r => role.includes(r) || pos.includes(r))
+  }, [canCreateSurprise, canAssignObservation, managementScope, currentTeacher])
+
+  const managerTitle = useMemo(() => {
+    if (managementScope === "BAN_DHCM") return "Ban ĐHCM / BGH / QLCM"
+    if (managementScope === "GDCS") return "Giám Đốc Cơ Sở"
+    if (managementScope === "TTCM") return "Tổ Trưởng Chuyên Môn"
+    if (managementScope === "TBP") return "Trưởng Bộ Phận"
+    const role = (currentTeacher?.user?.role || "").toUpperCase()
+    const pos = (currentTeacher?.position || "").toUpperCase()
+    if (role.includes("QLCM") || pos.includes("QLCM")) return "Quản Lý Chuyên Môn"
+    if (role.includes("BGH") || pos.includes("BGH")) return "Ban Giám Hiệu"
+    if (role.includes("GDCS") || pos.includes("GDCS") || pos.includes("GĐCS")) return "Giám Đốc Cơ Sở"
+    if (role.includes("TTCM") || pos.includes("TTCM") || pos.includes("TỔ TRƯỞNG")) return "Tổ Trưởng Chuyên Môn"
+    if (role.includes("DHCM") || pos.includes("ĐHCM")) return "Ban Điều Hành CM"
+    return "Cán Bộ Quản Lý"
+  }, [managementScope, currentTeacher])
 
   // Evaluation Sheet state
   const [evaluatingSlot, setEvaluatingSlot] = useState<ObservationSlotItem | null>(null)
@@ -235,6 +286,9 @@ export function ObservationMobileView({ initialSlots, currentTeacher }: Observat
   const loadData = useCallback(async (isManual = false) => {
     if (isManual) setRefreshing(true)
     try {
+      if (typeof refreshSlots === "function" && isManual) {
+        await refreshSlots()
+      }
       const res = await fetch("/api/pwa/observations")
       if (res.ok) {
         const json = await res.json()
@@ -254,6 +308,14 @@ export function ObservationMobileView({ initialSlots, currentTeacher }: Observat
     } finally {
       setLoading(false)
       if (isManual) setTimeout(() => setRefreshing(false), 300)
+    }
+  }, [initialSlots, currentTeacher?.id, parseRawSlots, refreshSlots])
+
+  useEffect(() => {
+    if (initialSlots && initialSlots.length > 0) {
+      const parsed = parseRawSlots(initialSlots, currentTeacher?.id)
+      setMySlots(parsed.my)
+      setAvailableSlots(parsed.avail)
     }
   }, [initialSlots, currentTeacher?.id, parseRawSlots])
 
@@ -460,6 +522,33 @@ export function ObservationMobileView({ initialSlots, currentTeacher }: Observat
 
   const needsEvalSlots = mySlots.filter(s => s.roleType === "OBSERVING" && !s.hasEvaluated)
 
+  // Origin Filter helper
+  const applyOriginFilter = useCallback((list: ObservationSlotItem[]) => {
+    if (filterOrigin === "ALL") return list
+    return list.filter(s => {
+      const isSurp = s.requestOrigin === "SURPRISE" || (s.topic && s.topic.toLowerCase().includes("đột xuất"))
+      const isAssign = s.requestOrigin === "ASSIGNED" || (s.topic && s.topic.toLowerCase().includes("chỉ định"))
+      if (filterOrigin === "SURPRISE") return isSurp
+      if (filterOrigin === "ASSIGNED") return isAssign
+      if (filterOrigin === "PLAN") return !isSurp && !isAssign
+      return true
+    })
+  }, [filterOrigin])
+
+  const displayedMySlots = useMemo(() => applyOriginFilter(mySlots), [applyOriginFilter, mySlots])
+  const displayedAvailableSlots = useMemo(() => applyOriginFilter(availableSlots), [applyOriginFilter, availableSlots])
+  const displayedNeedsEvalSlots = useMemo(() => applyOriginFilter(needsEvalSlots), [applyOriginFilter, needsEvalSlots])
+
+  const surpriseCount = useMemo(() => {
+    const list = activeTab === "MY_SLOTS" ? mySlots : activeTab === "BROWSE" ? availableSlots : needsEvalSlots
+    return list.filter(s => s.requestOrigin === "SURPRISE" || (s.topic && s.topic.toLowerCase().includes("đột xuất"))).length
+  }, [activeTab, mySlots, availableSlots, needsEvalSlots])
+
+  const assignedCount = useMemo(() => {
+    const list = activeTab === "MY_SLOTS" ? mySlots : activeTab === "BROWSE" ? availableSlots : needsEvalSlots
+    return list.filter(s => s.requestOrigin === "ASSIGNED" || (s.topic && s.topic.toLowerCase().includes("chỉ định"))).length
+  }, [activeTab, mySlots, availableSlots, needsEvalSlots])
+
   return (
     <div className="min-h-screen bg-[#F6F8F7] pb-24 font-sans text-slate-800">
       {/* 1. TOP APP BAR */}
@@ -531,31 +620,197 @@ export function ObservationMobileView({ initialSlots, currentTeacher }: Observat
 
       {/* 2. MAIN CONTENT LIST */}
       <div className="p-4 space-y-3.5 max-w-lg mx-auto">
+        {/* ======================================================== */}
+        {/* MANAGEMENT CONSOLE FOR QLCM, TTCM, BGH, GĐCS, ĐHCM */}
+        {/* ======================================================== */}
+        {isManager && (
+          <div className="bg-gradient-to-br from-[#003B3A] via-[#004B46] to-[#01524C] rounded-2xl p-4 text-white shadow-md border border-teal-500/30 space-y-3">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-2">
+                <div className="w-7 h-7 rounded-lg bg-amber-400/20 text-amber-300 flex items-center justify-center border border-amber-400/30">
+                  <Sparkles className="w-4 h-4" />
+                </div>
+                <div>
+                  <h3 className="text-xs font-black tracking-wide uppercase text-teal-200">
+                    Tác Vụ Điều Hành Chuyên Môn
+                  </h3>
+                  <p className="text-[10px] text-teal-100/80 font-medium">
+                    {managerTitle}
+                  </p>
+                </div>
+              </div>
+              <span className="px-2 py-0.5 rounded-full text-[10px] font-black bg-white/10 text-white border border-white/20">
+                {managementScope === "BAN_DHCM" ? "Toàn trường" : managementScope === "GDCS" ? "Cơ sở" : managementScope === "TTCM" ? "Tổ CM" : "Quản lý"}
+              </span>
+            </div>
+
+            {/* Quick Action Buttons: Dự Giờ Đột Xuất & Chỉ Định Dự Giờ */}
+            <div className="grid grid-cols-2 gap-2.5 pt-0.5">
+              {/* Button 1: Dự Giờ Đột Xuất */}
+              <button
+                type="button"
+                onClick={onOpenSurprise}
+                className="flex flex-col items-start justify-between p-3 rounded-xl bg-gradient-to-br from-amber-500 to-amber-600 hover:from-amber-600 hover:to-amber-700 active:scale-[0.98] text-white shadow-md shadow-amber-500/20 border border-amber-300/30 transition-all text-left cursor-pointer group"
+              >
+                <div className="flex items-center justify-between w-full mb-1.5">
+                  <div className="w-8 h-8 rounded-lg bg-black/20 flex items-center justify-center text-amber-100 group-hover:scale-110 transition-transform">
+                    <Zap className="w-4 h-4 fill-amber-300 text-amber-300" />
+                  </div>
+                  <span className="text-[9px] font-black uppercase px-1.5 py-0.5 rounded bg-black/25 text-amber-200">
+                    Trực tiếp
+                  </span>
+                </div>
+                <div>
+                  <span className="text-xs font-black block leading-tight">Dự giờ đột xuất</span>
+                  <span className="text-[10px] text-amber-100/80 font-medium block mt-0.5">Biên bản & chấm điểm</span>
+                </div>
+              </button>
+
+              {/* Button 2: Chỉ Định Dự Giờ */}
+              <button
+                type="button"
+                onClick={onOpenAssigned}
+                className="flex flex-col items-start justify-between p-3 rounded-xl bg-gradient-to-br from-purple-600 to-indigo-700 hover:from-purple-700 hover:to-indigo-800 active:scale-[0.98] text-white shadow-md shadow-purple-600/20 border border-purple-300/30 transition-all text-left cursor-pointer group"
+              >
+                <div className="flex items-center justify-between w-full mb-1.5">
+                  <div className="w-8 h-8 rounded-lg bg-black/20 flex items-center justify-center text-purple-100 group-hover:scale-110 transition-transform">
+                    <UserCheck className="w-4 h-4 text-purple-200" />
+                  </div>
+                  <span className="text-[9px] font-black uppercase px-1.5 py-0.5 rounded bg-black/25 text-purple-200">
+                    Phân công
+                  </span>
+                </div>
+                <div>
+                  <span className="text-xs font-black block leading-tight">Chỉ định dự giờ</span>
+                  <span className="text-[10px] text-purple-100/80 font-medium block mt-0.5">Chỉ định GV được dự</span>
+                </div>
+              </button>
+            </div>
+
+            {/* Quick Register Slot Button */}
+            {onOpenCreateSlot && (
+              <button
+                type="button"
+                onClick={onOpenCreateSlot}
+                className="w-full py-2 px-3 rounded-xl bg-white/10 hover:bg-white/15 active:bg-white/20 border border-white/15 text-white text-[11px] font-bold flex items-center justify-center gap-1.5 transition-colors cursor-pointer"
+              >
+                <Plus className="w-3.5 h-3.5 text-teal-300" />
+                <span>Đăng ký tiết dạy mới / Mở lịch dự</span>
+              </button>
+            )}
+          </div>
+        )}
+
+        {/* Origin Filter Chips */}
+        <div className="flex items-center gap-1.5 overflow-x-auto pb-1 scrollbar-none">
+          <button
+            type="button"
+            onClick={() => setFilterOrigin("ALL")}
+            className={`px-3 py-1.5 rounded-full text-xs font-bold transition-all shrink-0 cursor-pointer ${
+              filterOrigin === "ALL"
+                ? "bg-slate-900 text-white shadow-xs"
+                : "bg-white text-slate-600 hover:bg-slate-100 border border-slate-200"
+            }`}
+          >
+            Tất cả
+          </button>
+
+          <button
+            type="button"
+            onClick={() => setFilterOrigin("SURPRISE")}
+            className={`px-3 py-1.5 rounded-full text-xs font-bold transition-all shrink-0 flex items-center gap-1 cursor-pointer ${
+              filterOrigin === "SURPRISE"
+                ? "bg-amber-600 text-white shadow-xs"
+                : "bg-amber-50 text-amber-800 hover:bg-amber-100 border border-amber-200"
+            }`}
+          >
+            <Zap className="w-3 h-3 fill-current text-amber-400" />
+            <span>Đột xuất</span>
+            {surpriseCount > 0 && (
+              <span className={`ml-0.5 px-1.5 py-0.2 rounded-full text-[10px] font-black ${
+                filterOrigin === "SURPRISE" ? "bg-white text-amber-700" : "bg-amber-200 text-amber-900"
+              }`}>
+                {surpriseCount}
+              </span>
+            )}
+          </button>
+
+          <button
+            type="button"
+            onClick={() => setFilterOrigin("ASSIGNED")}
+            className={`px-3 py-1.5 rounded-full text-xs font-bold transition-all shrink-0 flex items-center gap-1 cursor-pointer ${
+              filterOrigin === "ASSIGNED"
+                ? "bg-purple-700 text-white shadow-xs"
+                : "bg-purple-50 text-purple-800 hover:bg-purple-100 border border-purple-200"
+            }`}
+          >
+            <UserCheck className="w-3 h-3 text-purple-400" />
+            <span>Chỉ định</span>
+            {assignedCount > 0 && (
+              <span className={`ml-0.5 px-1.5 py-0.2 rounded-full text-[10px] font-black ${
+                filterOrigin === "ASSIGNED" ? "bg-white text-purple-800" : "bg-purple-200 text-purple-900"
+              }`}>
+                {assignedCount}
+              </span>
+            )}
+          </button>
+
+          <button
+            type="button"
+            onClick={() => setFilterOrigin("PLAN")}
+            className={`px-3 py-1.5 rounded-full text-xs font-bold transition-all shrink-0 cursor-pointer ${
+              filterOrigin === "PLAN"
+                ? "bg-[#00A19A] text-white shadow-xs"
+                : "bg-white text-slate-600 hover:bg-slate-100 border border-slate-200"
+            }`}
+          >
+            Theo kế hoạch
+          </button>
+        </div>
+
         {loading ? (
           <div className="py-16 text-center text-slate-400">
             <RefreshCw className="w-6 h-6 animate-spin mx-auto mb-2 text-[#00A19A]" />
             <p className="text-xs font-medium">Đang tải danh sách tiết dự giờ...</p>
           </div>
         ) : activeTab === "MY_SLOTS" ? (
-          mySlots.length === 0 ? (
+          displayedMySlots.length === 0 ? (
             <div className="bg-white rounded-2xl p-8 text-center border border-slate-200 shadow-2xs">
               <Eye className="w-10 h-10 text-slate-300 mx-auto mb-3" />
               <h4 className="text-sm font-bold text-slate-700">Chưa có lịch dự giờ</h4>
               <p className="text-xs text-slate-400 mt-1">
-                Chuyển qua tab "Đăng ký dự" để tìm tiết thao giảng phù hợp.
+                {filterOrigin !== "ALL"
+                  ? "Không có tiết nào khớp với bộ lọc đã chọn."
+                  : "Chuyển qua tab \"Đăng ký dự\" để tìm tiết thao giảng phù hợp."}
               </p>
             </div>
           ) : (
-            mySlots.map(slot => (
+            displayedMySlots.map(slot => (
               <div
                 key={slot.id}
                 className="bg-white rounded-2xl p-4 border border-slate-200/90 shadow-2xs space-y-3 transition-all hover:border-[#00A19A]/40"
               >
                 <div className="flex items-start justify-between gap-2">
                   <div>
-                    <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-slate-100 text-slate-600 border border-slate-200 inline-block mb-1">
-                      {slot.roleType === "TEACHING" ? "👤 Tiết dạy của tôi" : "👁️ Tôi đi dự giờ"}
-                    </span>
+                    <div className="flex flex-wrap items-center gap-1.5 mb-1">
+                      <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-slate-100 text-slate-600 border border-slate-200 inline-block">
+                        {slot.roleType === "TEACHING" ? "👤 Tiết dạy của tôi" : "👁️ Tôi đi dự giờ"}
+                      </span>
+
+                      {/* Origin badges */}
+                      {slot.requestOrigin === "SURPRISE" || (slot.topic && slot.topic.toLowerCase().includes("đột xuất")) ? (
+                        <span className="text-[10px] font-black px-2 py-0.5 rounded-full bg-amber-100 text-amber-900 border border-amber-300 flex items-center gap-1">
+                          <Zap className="w-3 h-3 fill-amber-500 text-amber-500" />
+                          <span>Đột xuất</span>
+                        </span>
+                      ) : slot.requestOrigin === "ASSIGNED" || (slot.topic && slot.topic.toLowerCase().includes("chỉ định")) ? (
+                        <span className="text-[10px] font-black px-2 py-0.5 rounded-full bg-purple-100 text-purple-900 border border-purple-300 flex items-center gap-1">
+                          <UserCheck className="w-3 h-3 text-purple-700" />
+                          <span>Chỉ định</span>
+                        </span>
+                      ) : null}
+                    </div>
+
                     <h3 className="text-sm font-black text-slate-900 leading-snug">
                       {slot.subjectName} · {slot.className}
                     </h3>
@@ -611,22 +866,37 @@ export function ObservationMobileView({ initialSlots, currentTeacher }: Observat
             ))
           )
         ) : activeTab === "QUICK_EVAL" ? (
-          needsEvalSlots.length === 0 ? (
+          displayedNeedsEvalSlots.length === 0 ? (
             <div className="bg-white rounded-2xl p-8 text-center border border-slate-200 shadow-2xs">
               <CheckCircle2 className="w-10 h-10 text-emerald-500 mx-auto mb-3" />
               <h4 className="text-sm font-bold text-slate-700">Đã hoàn thành đánh giá!</h4>
               <p className="text-xs text-slate-400 mt-1">
-                Bạn không còn tiết dự giờ nào đang chờ gửi phiếu đánh giá.
+                {filterOrigin !== "ALL"
+                  ? "Không có tiết nào khớp với bộ lọc đã chọn."
+                  : "Bạn không còn tiết dự giờ nào đang chờ gửi phiếu đánh giá."}
               </p>
             </div>
           ) : (
-            needsEvalSlots.map(slot => (
+            displayedNeedsEvalSlots.map(slot => (
               <div
                 key={slot.id}
                 className="bg-white rounded-2xl p-4 border border-amber-200 shadow-2xs space-y-3"
               >
                 <div className="flex items-start justify-between">
                   <div>
+                    <div className="flex flex-wrap items-center gap-1 mb-1">
+                      {slot.requestOrigin === "SURPRISE" || (slot.topic && slot.topic.toLowerCase().includes("đột xuất")) ? (
+                        <span className="text-[10px] font-black px-2 py-0.5 rounded-full bg-amber-100 text-amber-900 border border-amber-300 flex items-center gap-1">
+                          <Zap className="w-3 h-3 fill-amber-500 text-amber-500" />
+                          <span>Đột xuất</span>
+                        </span>
+                      ) : slot.requestOrigin === "ASSIGNED" || (slot.topic && slot.topic.toLowerCase().includes("chỉ định")) ? (
+                        <span className="text-[10px] font-black px-2 py-0.5 rounded-full bg-purple-100 text-purple-900 border border-purple-300 flex items-center gap-1">
+                          <UserCheck className="w-3 h-3 text-purple-700" />
+                          <span>Chỉ định</span>
+                        </span>
+                      ) : null}
+                    </div>
                     <h3 className="text-sm font-black text-slate-900">
                       {slot.subjectName} · {slot.className}
                     </h3>
@@ -654,22 +924,37 @@ export function ObservationMobileView({ initialSlots, currentTeacher }: Observat
             ))
           )
         ) : (
-          availableSlots.length === 0 ? (
+          displayedAvailableSlots.length === 0 ? (
             <div className="bg-white rounded-2xl p-8 text-center border border-slate-200 shadow-2xs">
               <Clock3 className="w-10 h-10 text-slate-300 mx-auto mb-3" />
               <h4 className="text-sm font-bold text-slate-700">Chưa có tiết mở đăng ký</h4>
               <p className="text-xs text-slate-400 mt-1">
-                Các tiết dự giờ mở đăng ký của đồng nghiệp sẽ hiển thị tại đây.
+                {filterOrigin !== "ALL"
+                  ? "Không có tiết nào khớp với bộ lọc đã chọn."
+                  : "Các tiết dự giờ mở đăng ký của đồng nghiệp sẽ hiển thị tại đây."}
               </p>
             </div>
           ) : (
-            availableSlots.map(slot => (
+            displayedAvailableSlots.map(slot => (
               <div
                 key={slot.id}
                 className="bg-white rounded-2xl p-4 border border-slate-200/90 shadow-2xs space-y-3"
               >
                 <div className="flex items-start justify-between gap-2">
                   <div>
+                    <div className="flex flex-wrap items-center gap-1 mb-1">
+                      {slot.requestOrigin === "SURPRISE" || (slot.topic && slot.topic.toLowerCase().includes("đột xuất")) ? (
+                        <span className="text-[10px] font-black px-2 py-0.5 rounded-full bg-amber-100 text-amber-900 border border-amber-300 flex items-center gap-1">
+                          <Zap className="w-3 h-3 fill-amber-500 text-amber-500" />
+                          <span>Đột xuất</span>
+                        </span>
+                      ) : slot.requestOrigin === "ASSIGNED" || (slot.topic && slot.topic.toLowerCase().includes("chỉ định")) ? (
+                        <span className="text-[10px] font-black px-2 py-0.5 rounded-full bg-purple-100 text-purple-900 border border-purple-300 flex items-center gap-1">
+                          <UserCheck className="w-3 h-3 text-purple-700" />
+                          <span>Chỉ định</span>
+                        </span>
+                      ) : null}
+                    </div>
                     <h3 className="text-sm font-black text-slate-900">
                       {slot.subjectName} · {slot.className}
                     </h3>
@@ -1028,7 +1313,95 @@ export function ObservationMobileView({ initialSlots, currentTeacher }: Observat
         </div>
       )}
 
-      {/* 4. BOTTOM NAVIGATION */}
+      {/* 4. FLOATING SPEED DIAL FOR MANAGERS */}
+      {isManager && (
+        <div className="fixed bottom-20 right-4 z-40 flex flex-col items-end gap-2">
+          {showQuickActionMenu && (
+            <div className="bg-white/95 backdrop-blur-md rounded-2xl p-2.5 shadow-2xl border border-slate-200 flex flex-col gap-2 min-w-[200px] animate-in slide-in-from-bottom-3 duration-200">
+              <span className="text-[10px] font-black uppercase text-slate-400 px-2 pt-1 tracking-wider">
+                Tác vụ nhanh
+              </span>
+              <button
+                type="button"
+                onClick={() => {
+                  setShowQuickActionMenu(false)
+                  onOpenSurprise?.()
+                }}
+                className="flex items-center gap-2.5 p-2 rounded-xl bg-amber-50 hover:bg-amber-100 text-amber-900 font-bold text-xs transition-colors cursor-pointer text-left border border-amber-200"
+              >
+                <div className="w-7 h-7 rounded-lg bg-amber-500 text-white flex items-center justify-center shrink-0">
+                  <Zap className="w-3.5 h-3.5 fill-current" />
+                </div>
+                <div>
+                  <span className="block leading-tight">Dự giờ đột xuất</span>
+                  <span className="text-[10px] text-amber-700/80 font-normal">Chấm điểm & biên bản</span>
+                </div>
+              </button>
+
+              <button
+                type="button"
+                onClick={() => {
+                  setShowQuickActionMenu(false)
+                  onOpenAssigned?.()
+                }}
+                className="flex items-center gap-2.5 p-2 rounded-xl bg-purple-50 hover:bg-purple-100 text-purple-900 font-bold text-xs transition-colors cursor-pointer text-left border border-purple-200"
+              >
+                <div className="w-7 h-7 rounded-lg bg-purple-600 text-white flex items-center justify-center shrink-0">
+                  <UserCheck className="w-3.5 h-3.5" />
+                </div>
+                <div>
+                  <span className="block leading-tight">Chỉ định dự giờ</span>
+                  <span className="text-[10px] text-purple-700/80 font-normal">Phân công người dự</span>
+                </div>
+              </button>
+
+              {onOpenCreateSlot && (
+                <button
+                  type="button"
+                  onClick={() => {
+                    setShowQuickActionMenu(false)
+                    onOpenCreateSlot?.()
+                  }}
+                  className="flex items-center gap-2.5 p-2 rounded-xl bg-teal-50 hover:bg-teal-100 text-teal-900 font-bold text-xs transition-colors cursor-pointer text-left border border-teal-200"
+                >
+                  <div className="w-7 h-7 rounded-lg bg-[#00A19A] text-white flex items-center justify-center shrink-0">
+                    <Plus className="w-3.5 h-3.5" />
+                  </div>
+                  <div>
+                    <span className="block leading-tight">Tạo tiết dạy mới</span>
+                    <span className="text-[10px] text-teal-700/80 font-normal">Mở đăng ký dự giờ</span>
+                  </div>
+                </button>
+              )}
+            </div>
+          )}
+
+          <button
+            type="button"
+            onClick={() => setShowQuickActionMenu(prev => !prev)}
+            className={`h-12 px-4 rounded-2xl flex items-center gap-2 shadow-xl border font-black text-xs transition-all cursor-pointer ${
+              showQuickActionMenu
+                ? "bg-slate-900 text-white border-slate-700 shadow-slate-900/30 scale-95"
+                : "bg-gradient-to-r from-amber-500 to-[#00A19A] text-white border-white/20 shadow-teal-900/30 hover:scale-105 active:scale-95"
+            }`}
+            title="Mở menu quản lý nhanh"
+          >
+            {showQuickActionMenu ? (
+              <>
+                <X className="w-4 h-4" />
+                <span>Đóng</span>
+              </>
+            ) : (
+              <>
+                <Zap className="w-4 h-4 fill-amber-300 text-amber-300 animate-pulse" />
+                <span>Tác vụ QL</span>
+              </>
+            )}
+          </button>
+        </div>
+      )}
+
+      {/* 5. BOTTOM NAVIGATION */}
       <PwaBottomNav role={currentTeacher?.user?.role || "TEACHER"} />
     </div>
   )

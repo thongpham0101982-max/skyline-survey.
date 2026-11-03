@@ -55,6 +55,7 @@ interface ClassItem {
 interface StudentOption {
   id: string;
   studentId: string;
+  vneduCode?: string | null;
   fullName: string;
   className: string;
 }
@@ -77,6 +78,7 @@ interface SubjectItem {
 interface ClassMatrixRow {
   id: string;
   studentId: string;
+  vneduCode?: string | null;
   fullName: string;
   gender: string | null;
   scores: Record<string, number | null>;
@@ -139,6 +141,7 @@ export default function KetQuaClient() {
           const items = (json.students || []).map((s: any) => ({
             id: s.id,
             studentId: s.studentId,
+            vneduCode: s.vneduCode,
             fullName: s.fullName,
             className: s.className,
           }));
@@ -208,6 +211,7 @@ export default function KetQuaClient() {
       const obj: any = {
         "STT": idx + 1,
         "Mã học sinh": row.studentId,
+        "Mã VnEdu (phụ)": row.vneduCode || "",
         "Họ và tên": row.fullName,
         "Giới tính": row.gender || "",
       };
@@ -331,7 +335,7 @@ export default function KetQuaClient() {
                 ) : (
                   studentOptions.map((stu) => (
                     <option key={stu.id} value={stu.id}>
-                      {stu.studentId} - {stu.fullName}
+                      {stu.studentId}{stu.vneduCode ? ` [VnEdu: ${stu.vneduCode}]` : ""} - {stu.fullName}
                     </option>
                   ))
                 )}
@@ -366,6 +370,14 @@ export default function KetQuaClient() {
                     <h2 className="text-xl font-extrabold tracking-tight">{studentData.fullName}</h2>
                     <div className="text-xs text-teal-100 flex flex-wrap items-center gap-3 mt-1 font-medium">
                       <span>Mã HS: <strong className="font-mono text-white">{studentData.studentId}</strong></span>
+                      {studentData.vneduCode && (
+                        <>
+                          <span>•</span>
+                          <span className="bg-amber-400/20 text-amber-200 border border-amber-300/30 px-1.5 py-0.5 rounded text-[11px] font-mono">
+                            Mã VnEdu: {studentData.vneduCode}
+                          </span>
+                        </>
+                      )}
                       <span>•</span>
                       <span>Lớp: <strong className="text-white">{studentData.className}</strong></span>
                       <span>•</span>
@@ -629,8 +641,18 @@ export default function KetQuaClient() {
                             <td className="py-3 px-4 text-center text-xs text-slate-400 font-mono">
                               {idx + 1}
                             </td>
-                            <td className="py-3 px-4 font-mono font-bold text-xs text-[#003B3A]">
-                              {row.studentId}
+                            <td className="py-3 px-4">
+                              <div className="font-mono font-bold text-xs text-[#003B3A]">
+                                {row.studentId}
+                              </div>
+                              {row.vneduCode && (
+                                <div className="text-[11px] font-mono text-slate-500 font-medium mt-1 flex items-center gap-1">
+                                  <span className="text-[9px] uppercase px-1.5 py-0.5 rounded bg-amber-50 border border-amber-200 text-amber-700 font-semibold tracking-wider">
+                                    VnEdu
+                                  </span>
+                                  <span className="text-slate-600">{row.vneduCode}</span>
+                                </div>
+                              )}
                             </td>
                             <td className="py-3 px-4 font-semibold text-slate-800">
                               <span

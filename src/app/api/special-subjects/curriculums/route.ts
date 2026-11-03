@@ -51,7 +51,15 @@ export async function GET(req: NextRequest) {
               where: grade && grade !== "ALL" ? { grade } : undefined,
               orderBy: [{ grade: "asc" }, { periodIndex: "asc" }],
               include: {
-                topic: { select: { id: true, name: true, code: true } }
+                topic: { select: { id: true, name: true, code: true } },
+                criteria: {
+                  orderBy: { sortOrder: "asc" },
+                  include: {
+                    rubricLevels: {
+                      orderBy: { sortOrder: "asc" }
+                    }
+                  }
+                }
               }
             }
           }

@@ -27,6 +27,11 @@ export function LoginClient() {
       if (saved === 'vi' || saved === 'en') {
         setLang(saved)
       }
+      const params = new URLSearchParams(window.location.search)
+      const qRole = params.get('role')?.toUpperCase()
+      if (qRole === 'PARENT' || qRole === 'STUDENT' || qRole === 'STAFF') {
+        setRole(qRole)
+      }
     }
 
     const handleLangEvent = (e: any) => {
@@ -122,6 +127,13 @@ export function LoginClient() {
             fetch('/api/user-permissions').then(r => r.json()).catch(() => null)
           ]);
           const userRole = (sessRes?.user?.role || '').toUpperCase().trim();
+
+          const params = typeof window !== 'undefined' ? new URLSearchParams(window.location.search) : null;
+          const callbackUrl = params?.get('callbackUrl');
+          if (callbackUrl && callbackUrl.startsWith('/') && !callbackUrl.startsWith('//')) {
+            window.location.href = callbackUrl;
+            return;
+          }
 
           if (userRole === 'PARENT') {
             window.location.href = '/parent'

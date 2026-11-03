@@ -292,7 +292,23 @@ export default function TeacherTimetableLookupClient({ initialData, mySlots = []
   return (
     <div className="space-y-4 max-w-7xl mx-auto pb-10 font-sans text-slate-800">
       {/* Compact Header Banner */}
-      <div className="bg-gradient-to-r from-[#003B3A] via-[#004D4A] to-[#48BFE3] rounded-2xl p-4 sm:p-5 text-white shadow-lg relative overflow-hidden">
+      <div className="group/card bg-gradient-to-r from-[#003B3A] via-[#004D4A] to-[#48BFE3] rounded-3xl p-4 sm:p-5 text-white shadow-lg relative overflow-hidden">
+        {/* Ảnh minh họa trường học Sky-Line khớp khung phải & mờ dần */}
+        <div
+          className="hidden sm:block absolute top-0 right-0 bottom-0 sm:w-[54%] md:w-[48%] z-0 pointer-events-none select-none overflow-hidden"
+          style={{
+            WebkitMaskImage:
+              "linear-gradient(to right, transparent 0%, rgba(0,0,0,0.12) 15%, rgba(0,0,0,0.45) 40%, rgba(0,0,0,0.8) 75%, rgba(0,0,0,0.95) 100%)",
+            maskImage:
+              "linear-gradient(to right, transparent 0%, rgba(0,0,0,0.12) 15%, rgba(0,0,0,0.45) 40%, rgba(0,0,0,0.8) 75%, rgba(0,0,0,0.95) 100%)"
+          }}
+        >
+          <img
+            src="/images/skyline-campus-banner.png"
+            alt="Sky-Line Campus"
+            className="w-full h-full object-cover object-[center_65%] opacity-35 mix-blend-luminosity"
+          />
+        </div>
         <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4 relative z-10">
           <div className="flex items-center gap-3">
             <div className="w-10 h-10 rounded-xl bg-white/15 border border-white/20 flex items-center justify-center text-teal-200 shrink-0 shadow-sm">

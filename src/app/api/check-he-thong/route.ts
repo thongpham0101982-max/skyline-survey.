@@ -16,6 +16,9 @@ export async function GET(req: NextRequest) {
     const action = searchParams.get("action")
     const academicYearId = searchParams.get("academicYearId") || undefined
     const campusId = searchParams.get("campusId") || undefined
+    const level = searchParams.get("level") || undefined
+    const grade = searchParams.get("grade") || undefined
+    const timeRange = searchParams.get("timeRange") || undefined
 
     let effectiveCampusIds = allowedCampusIds
     if (campusId && campusId !== "ALL") {
@@ -25,7 +28,11 @@ export async function GET(req: NextRequest) {
     }
 
     if (action === "getMetrics") {
-      const metrics = await getAdminMetrics(academicYearId, effectiveCampusIds)
+      const metrics = await getAdminMetrics(academicYearId, effectiveCampusIds, {
+        level,
+        grade,
+        timeRange
+      })
       return NextResponse.json(metrics)
     }
 

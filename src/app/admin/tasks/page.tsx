@@ -96,14 +96,16 @@ export default async function TasksPage() {
     }
   }
 
-  const [tasks, years, initialDbCategories, initialTaskGroups, allStaffUsers] = await Promise.all([
+  const [tasks, years, initialDbCategories, initialTaskGroups, allStaffUsers, activeDepartment] = await Promise.all([
     prisma.workTask.findMany({
       where: whereClause,
       orderBy: { createdAt: "desc" },
       include: {
         assignedBy: { select: { id: true, fullName: true, email: true } },
         assignedToUser: { select: { id: true, fullName: true, email: true } },
-        academicYear: { select: { id: true, name: true } }
+        academicYear: { select: { id: true, name: true } },
+        taskGroup: { select: { id: true, name: true, leaderUserId: true } },
+        comments: { select: { id: true, commentType: true, actionStatus: true } }
       }
     }),
     prisma.academicYear.findMany({
@@ -120,6 +122,16 @@ export default async function TasksPage() {
       where: { role: { not: "PARENT" }, status: "ACTIVE" },
       select: { id: true, fullName: true, email: true, role: true },
       orderBy: { fullName: "asc" }
+    }),
+    prisma.department.findFirst({
+      where: {
+        OR: [
+          { code: "KT&ĐBCL" },
+          { name: "KT&ĐBCL" },
+          { code: "KT_DBCL" }
+        ]
+      },
+      select: { taskConfig: true }
     })
   ])
 
@@ -151,7 +163,7 @@ export default async function TasksPage() {
       { name: "Khảo thí Tổng hợp", department: "KT&ĐBCL" },
       { name: "Khảo thí TA&CTQT", department: "KT&ĐBCL" },
       { name: "ĐBCL Học sinh", department: "KT&ĐBCL" },
-      { name: "ĐBCL", department: "KT&ĐBCL" }
+      { name: "ĐBCL Giáo viên", department: "KT&ĐBCL" }
     ];
     try {
       for (const g of defaultGroups) {
@@ -161,6 +173,13 @@ export default async function TasksPage() {
     } catch (err) {
       console.error("Auto-seeding TaskGroup failed:", err);
     }
+  }
+
+  let deptSettings = null;
+  if (activeDepartment && activeDepartment.taskConfig) {
+    try {
+      deptSettings = JSON.parse(activeDepartment.taskConfig);
+    } catch {}
   }
 
   return (
@@ -175,6 +194,7 @@ export default async function TasksPage() {
         currentRole={role}
         currentUserId={userId}
         operationalScope={JSON.parse(JSON.stringify(opScope))}
+        initialDepartmentSettings={deptSettings}
       />
     </Suspense>
   )

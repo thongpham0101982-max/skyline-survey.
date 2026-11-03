@@ -22,7 +22,7 @@ export async function GET(req: NextRequest) {
       academicYearId = activeYear?.id || "cmnseevbh0000wjbmoigji2zd";
     }
 
-    const [teachers, classesRaw, subjects, academicYears] = await Promise.all([
+    const [teachers, departments, classesRaw, subjects, academicYears, campusesRaw] = await Promise.all([
       prisma.teacher.findMany({
         where: {
           status: "ACTIVE",
@@ -35,16 +35,22 @@ export async function GET(req: NextRequest) {
           email: true,
           phone: true,
           campusId: true,
+          departmentId: true,
+          departmentRel: { select: { id: true, code: true, name: true } },
           campus: { select: { campusCode: true, campusName: true } }
         },
         orderBy: { teacherName: "asc" }
+      }),
+      prisma.department.findMany({
+        where: { status: "ACTIVE" },
+        select: { id: true, code: true, name: true, blockCM: true },
+        orderBy: { name: "asc" }
       }),
       prisma.class.findMany({
         where: {
           status: "ACTIVE",
           academicYearId,
-          campusId: campusId && campusId !== "ALL" ? campusId : undefined,
-          grade: { in: ["1", "2", "3", "4", "5"] }
+          campusId: campusId && campusId !== "ALL" ? campusId : undefined
         },
         select: {
           id: true,
@@ -64,6 +70,11 @@ export async function GET(req: NextRequest) {
       prisma.academicYear.findMany({
         orderBy: { startDate: "desc" },
         select: { id: true, name: true, status: true }
+      }),
+      prisma.campus.findMany({
+        where: { status: "ACTIVE" },
+        select: { id: true, campusCode: true, campusName: true, address: true },
+        orderBy: { campusCode: "asc" }
       })
     ]);
 
@@ -77,7 +88,9 @@ export async function GET(req: NextRequest) {
         teacherName: true,
         email: true,
         phone: true,
-        campusId: true
+        campusId: true,
+        departmentId: true,
+        departmentRel: { select: { id: true, code: true, name: true } }
       }
     });
     const gvcnMap = new Map(gvcnTeachers.map(t => [t.id, t]));
@@ -87,11 +100,21 @@ export async function GET(req: NextRequest) {
       homeroomTeacher: c.homeroomTeacherId ? gvcnMap.get(c.homeroomTeacherId) || null : null
     }));
 
+    const campuses = [
+      { code: "ALL", name: "Tất cả cơ sở" },
+      ...campusesRaw.map(c => ({
+        code: c.id,
+        name: `${c.campusCode} - ${c.address ? c.address.trim() : c.campusName}`
+      }))
+    ];
+
     return NextResponse.json({
       teachers,
+      departments,
       classes,
       subjects,
       academicYears,
+      campuses,
       activeAcademicYear: activeYear || { id: academicYearId, name: "2026-2027" }
     });
   } catch (error: any) {

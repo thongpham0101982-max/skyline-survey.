@@ -200,7 +200,7 @@ async function seedInitialKnowledgeAndAnnouncements(client, name) {
         title: 'Hướng dẫn chuẩn bị hồ sơ khảo thí và nộp đề thi học kỳ',
         category: 'KHAO_THI',
         question: 'Thời hạn nộp ma trận, bản đặc tả và đề thi kiểm tra cuối kỳ về Ban KT&ĐBCL?',
-        answer: 'Tổ trưởng chuyên môn tập hợp và gửi bộ đề thi (gồm Đề chính thức, Đề dự bị, Ma trận, Bản đặc tả và Đáp án chi tiết) trước ngày thi tối thiểu 10 ngày làm việc qua hệ thống SSM hoặc email Ban KT&ĐBCL bankhaothi@skylineschool.edu.vn.',
+        answer: 'Tổ trưởng chuyên môn tập hợp và gửi bộ đề thi (gồm Đề chính thức, Đề dự bị, Ma trận, Bản đặc tả và Đáp án chi tiết) trước ngày thi tối thiểu 10 ngày làm việc qua hệ thống SSM hoặc email Ban KT&ĐBCL ktdbcl@skylineschool.edu.vn.',
         keywords: 'đề thi, ma trận đề, bản đặc tả, hạn nộp đề, đề thi học kỳ'
       },
       {

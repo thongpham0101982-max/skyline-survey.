@@ -3,10 +3,10 @@ import Link from 'next/link'
 import { Layers, ClipboardList, UserCheck, Award, GitCommit, Trophy, FileSpreadsheet, BookOpen } from 'lucide-react'
 
 interface ExamTabsProps {
-  activeTab: 'categories' | 'rounds' | 'achievements' | 'exams' | 'students' | 'results' | 'reports' | 'profiles'
+  activeTab?: 'categories' | 'rounds' | 'achievements' | 'exams' | 'students' | 'results' | 'reports' | 'profiles'
 }
 
-export function ExamTabs({ activeTab }: ExamTabsProps) {
+export function ExamTabs({ activeTab = 'categories' }: ExamTabsProps) {
   const isConfigTab = activeTab === 'categories' || activeTab === 'rounds' || activeTab === 'achievements'
 
   const mainTabs = [
@@ -77,3 +77,5 @@ export function ExamTabs({ activeTab }: ExamTabsProps) {
     </div>
   )
 }
+
+export default ExamTabs

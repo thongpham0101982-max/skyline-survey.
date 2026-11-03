@@ -1,0 +1,1623 @@
+{
+  "subjectCode": "GDGT",
+  "subjectName": "Giáo dục giới tính",
+  "academicYearId": "cmnseevbh0000wjbmoigji2zd",
+  "grades": {
+    "6": {
+      "grade": "6",
+      "topicsCount": 1,
+      "lessonsCount": 10,
+      "criteriaCount": 40,
+      "topics": [
+        {
+          "topicCode": "GDGT6S.01",
+          "topicName": "6 - THẤU HIỂU CƠ THỂ - TỰ BẢO VỆ\r\nTự nhận thức sự thay đổi sinh lý dậy thì & ranh giới an toàn cá nhân\r\n\r\nMục tiêu: Giúp học sinh nhận diện sự thay đổi sinh lý đầu đời, chăm sóc cơ thể đúng cách và thiết lập ranh giới an toàn.",
+          "lessons": [
+            {
+              "lessonIndex": 1,
+              "lessonCode": "GDGT6S.01.0001",
+              "lessonName": "Tôi đã lớn rồi!\r\n Hành trình dậy thì",
+              "criteria": [
+                {
+                  "criterionIndex": 1,
+                  "sourceCode": "GDGT6S.01.0001.01",
+                  "description": "Khởi động - Trò chơi 'Đúng hay Sai?': Vận động nhẹ nhàng, phá vỡ rào cản ngại ngùng ban đầu và kích hoạt tư duy về dậy thì.",
+                  "programLevel": "Mức 1",
+                  "guideDoc": "DOC_GDGT_TL",
+                  "competencyGroup": "Biết"
+                },
+                {
+                  "criterionIndex": 2,
+                  "sourceCode": "GDGT6S.01.0001.02",
+                  "description": "Khám phá - Cơ thể đang lớn lên: Thảo luận nhóm về sự phát triển chiều cao, bã nhờn, mụn và mùi cơ thể tuổi dậy thì.",
+                  "programLevel": "Mức 2",
+                  "guideDoc": "DOC_GDGT_TAPHUAN",
+                  "competencyGroup": "Hiểu"
+                },
+                {
+                  "criterionIndex": 3,
+                  "sourceCode": "GDGT6S.01.0001.03",
+                  "description": "Thực hành - Xử lý tình huống thực tế: Giải quyết các tình huống trêu chọc ngoại hình, dậy thì sớm hoặc mọc mụn để bảo vệ giá trị bản thân.",
+                  "programLevel": "Mức 3",
+                  "guideDoc": "DOC_GDGT_DECUONG",
+                  "competencyGroup": "Vận dụng"
+                },
+                {
+                  "criterionIndex": 4,
+                  "sourceCode": "GDGT6S.01.0001.04",
+                  "description": "Tổng kết - Củng cố và ghi nhớ: Điền phiếu học tập \"Tôi đã lớn rồi\", thực hành, tự lượng giá sau bài học.",
+                  "programLevel": "Mức 3",
+                  "guideDoc": null,
+                  "competencyGroup": "Vận dụng"
+                }
+              ]
+            },
+            {
+              "lessonIndex": 2,
+              "lessonCode": "GDGT6S.01.0002",
+              "lessonName": "Bí mật tuổi dậy thì: Kinh nguyệt và mộng tinh",
+              "criteria": [
+                {
+                  "criterionIndex": 1,
+                  "sourceCode": "GDGT6S.01.0002.05",
+                  "description": "Khởi động - Chiếc hộp bí mật: Viết và thu thập ẩn danh các câu hỏi thắc mắc, ngại ngùng nhất về biến đổi cơ thể dậy thì.",
+                  "programLevel": "Mức 1",
+                  "guideDoc": null,
+                  "competencyGroup": "Biết"
+                },
+                {
+                  "criterionIndex": 2,
+                  "sourceCode": "GDGT6S.01.0002.06",
+                  "description": "Khám phá - Bản tin cơ thể chéo: Học song song kiến thức kinh nguyệt (nữ) và mộng tinh (nam) để thấu hiểu, dỡ bỏ kỳ thị sinh lý học.",
+                  "programLevel": "Mức 2",
+                  "guideDoc": null,
+                  "competencyGroup": "Hiểu"
+                },
+                {
+                  "criterionIndex": 3,
+                  "sourceCode": "GDGT6S.01.0002.07",
+                  "description": "Thực hành - Đội cứu hộ khẩn cấp: Thảo luận nhóm lập phương án giải cứu bản thân hoặc bạn bè trước sự cố sinh lý bất ngờ tại trường.",
+                  "programLevel": "Mức 3",
+                  "guideDoc": null,
+                  "competencyGroup": "Vận dụng"
+                },
+                {
+                  "criterionIndex": 4,
+                  "sourceCode": "GDGT6S.01.0002.08",
+                  "description": "Tổng kết - Thẻ bài thấu cảm: Ký cam kết bảo vệ thể diện của bạn bè, xóa bỏ trò trêu chọc ác ý liên quan đến biến đổi sinh lý dậy thì.",
+                  "programLevel": "Mức 3",
+                  "guideDoc": null,
+                  "competencyGroup": "Vận dụng"
+                }
+              ]
+            },
+            {
+              "lessonIndex": 3,
+              "lessonCode": "GDGT6S.01.0003",
+              "lessonName": "Chăm sóc cơ thể tuổi mới lớn",
+              "criteria": [
+                {
+                  "criterionIndex": 1,
+                  "sourceCode": "GDGT6S.01.0003.09",
+                  "description": "Khởi động - Trò chơi \"Chiếc túi thần kỳ\": Nhận diện trực quan và gọi tên các vật dụng chăm sóc vệ sinh cá nhân thiết yếu.",
+                  "programLevel": "Mức 1",
+                  "guideDoc": null,
+                  "competencyGroup": "Biết"
+                },
+                {
+                  "criterionIndex": 2,
+                  "sourceCode": "GDGT6S.01.0003.10",
+                  "description": "Khám phá - Talkshow tuổi teen: Giải mã cơ chế da tiết dầu nhờn, mùi cơ thể, nguyên tắc chọn đồ lót chuẩn y khoa và dinh dưỡng lành mạnh.",
+                  "programLevel": "Mức 2",
+                  "guideDoc": null,
+                  "competencyGroup": "Hiểu"
+                },
+                {
+                  "criterionIndex": 3,
+                  "sourceCode": "GDGT6S.01.0003.11",
+                  "description": "Thực hành - Gỡ rối hộp thư ẩn danh: Đóng vai chuyên gia viết thư tư vấn giúp bạn giải quyết mùi cơ thể hoặc nặn mụn sai cách.",
+                  "programLevel": "Mức 3",
+                  "guideDoc": null,
+                  "competencyGroup": "Vận dụng"
+                },
+                {
+                  "criterionIndex": 4,
+                  "sourceCode": "GDGT6S.01.0003.12",
+                  "description": "Tổng kết - Thử thách 21 ngày: Tự chọn và cam kết thực hiện 01 thói quen vệ sinh lành mạnh liên tục trong 21 ngày.",
+                  "programLevel": "Mức 3",
+                  "guideDoc": null,
+                  "competencyGroup": "Vận dụng"
+                }
+              ]
+            },
+            {
+              "lessonIndex": 4,
+              "lessonCode": "GDGT6S.01.0004",
+              "lessonName": "Cảm xúc tuổi mới lớn",
+              "criteria": [
+                {
+                  "criterionIndex": 1,
+                  "sourceCode": "GDGT6S.01.0004.13",
+                  "description": "Khởi động - Trạm thời tiết cảm xúc: Tạo dáng cơ thể biểu đạt thời tiết tương ứng với tâm trạng hiện tại một cách an toàn.",
+                  "programLevel": "Mức 1",
+                  "guideDoc": null,
+                  "competencyGroup": "Biết"
+                },
+                {
+                  "criterionIndex": 2,
+                  "sourceCode": "GDGT6S.01.0004.14",
+                  "description": "Khám phá - Bức tường ẩn danh: Viết ẩn danh cảm xúc bối rối/tiêu cực dán lên bảng, phân tích cơ chế nội tiết tố và quá trình hoàn thiện não bộ.",
+                  "programLevel": "Mức 2",
+                  "guideDoc": null,
+                  "competencyGroup": "Hiểu"
+                },
+                {
+                  "criterionIndex": 3,
+                  "sourceCode": "GDGT6S.01.0004.15",
+                  "description": "Thực hành - Bộ sơ cứu tâm lý: Thảo luận nhóm, lập danh sách hành động xoa dịu cảm xúc cho các ca khủng hoảng (giận dữ, tủi thân, áp lực bài vở).",
+                  "programLevel": "Mức 3",
+                  "guideDoc": null,
+                  "competencyGroup": "Vận dụng"
+                },
+                {
+                  "criterionIndex": 4,
+                  "sourceCode": "GDGT6S.01.0004.16",
+                  "description": "Tổng kết - Chiếc lọ bình yên: Thực hành kỹ thuật hít thở sâu làm chủ cảm xúc và viết câu thần chú bình yên tự động viên bản thân.",
+                  "programLevel": "Mức 3",
+                  "guideDoc": null,
+                  "competencyGroup": "Vận dụng"
+                }
+              ]
+            },
+            {
+              "lessonIndex": 5,
+              "lessonCode": "GDGT6S.01.0005",
+              "lessonName": "Cơ thể của em - Ranh giới cá nhân",
+              "criteria": [
+                {
+                  "criterionIndex": 1,
+                  "sourceCode": "GDGT6S.01.0005.17",
+                  "description": "Khởi động - Trò chơi bong bóng an toàn: Trải nghiệm di chuyển vật lý để tự nhận thức ranh giới không gian cá nhân vô hình.",
+                  "programLevel": "Mức 1",
+                  "guideDoc": null,
+                  "competencyGroup": "Biết"
+                },
+                {
+                  "criterionIndex": 2,
+                  "sourceCode": "GDGT6S.01.0005.18",
+                  "description": "Khám phá - Mười quy tắc bảo vệ cơ thể: Vấn đáp khoa học, nhận diện vùng cấm (quy tắc đồ bơi) và xác lập chủ quyền thân thể.",
+                  "programLevel": "Mức 2",
+                  "guideDoc": null,
+                  "competencyGroup": "Hiểu"
+                },
+                {
+                  "criterionIndex": 3,
+                  "sourceCode": "GDGT6S.01.0005.19",
+                  "description": "Thực hành - Xây dựng bức tường từ chối: Thảo luận kịch bản từ chối đụng chạm từ người thân quen, bạn bè trêu chọc quá trớn hoặc gạ gẫm qua mạng.",
+                  "programLevel": "Mức 3",
+                  "guideDoc": null,
+                  "competencyGroup": "Vận dụng"
+                },
+                {
+                  "criterionIndex": 4,
+                  "sourceCode": "GDGT6S.01.0005.20",
+                  "description": "Tổng kết - Huy hiệu vệ sĩ cơ thể: Ghi các cam kết bảo vệ thân thể và tôn trọng ranh giới của bạn bè vào phiếu huy hiệu.",
+                  "programLevel": "Mức 3",
+                  "guideDoc": null,
+                  "competencyGroup": "Vận dụng"
+                }
+              ]
+            },
+            {
+              "lessonIndex": 6,
+              "lessonCode": "GDGT6S.01.0006",
+              "lessonName": "Nhận diện hành vi xâm hại",
+              "criteria": [
+                {
+                  "criterionIndex": 1,
+                  "sourceCode": "GDGT6S.01.0006.21",
+                  "description": "Khởi động - Tiếng vỗ tay cảnh báo: Lắng nghe truyện kể, vỗ tay phát hiện hành vi dụ dỗ, đe dọa nấp dưới vỏ bọc lòng tốt.",
+                  "programLevel": "Mức 1",
+                  "guideDoc": null,
+                  "competencyGroup": "Biết"
+                },
+                {
+                  "criterionIndex": 2,
+                  "sourceCode": "GDGT6S.01.0006.22",
+                  "description": "Khám phá - Kính lúp phân tích: Phân biệt hành vi quan tâm chân thành và hành vi xâm hại.",
+                  "programLevel": "Mức 2",
+                  "guideDoc": null,
+                  "competencyGroup": "Hiểu"
+                },
+                {
+                  "criterionIndex": 3,
+                  "sourceCode": "GDGT6S.01.0006.23",
+                  "description": "Thực hành - Sân khấu đóng băng: Viết kịch bản thoát hiểm khẩn cấp tại nhà người quen, trên xe buýt hoặc khi bị dụ dỗ gửi ảnh qua mạng.",
+                  "programLevel": "Mức 3",
+                  "guideDoc": null,
+                  "competencyGroup": "Vận dụng"
+                },
+                {
+                  "criterionIndex": 4,
+                  "sourceCode": "GDGT6S.01.0006.24",
+                  "description": "Tổng kết - Chiếc ô an toàn: Vẽ chiếc ô an toàn dán nhãn những người bảo vệ tin cậy nhất và lưu số tổng đài bảo vệ trẻ em 111.",
+                  "programLevel": "Mức 3",
+                  "guideDoc": null,
+                  "competencyGroup": "Vận dụng"
+                }
+              ]
+            },
+            {
+              "lessonIndex": 7,
+              "lessonCode": "GDGT6S.01.0007",
+              "lessonName": "Kỹ năng nói “Không” và tìm kiếm sự trợ giúp",
+              "criteria": [
+                {
+                  "criterionIndex": 1,
+                  "sourceCode": "GDGT6S.01.0007.25",
+                  "description": "Khởi động - Phản xạ ánh sáng đỏ: Tập phản xạ giơ tay chữ X và hô to từ chối dứt khoát trước các tình huống dụ dỗ, đe dọa ranh giới.",
+                  "programLevel": "Mức 1",
+                  "guideDoc": null,
+                  "competencyGroup": "Biết"
+                },
+                {
+                  "criterionIndex": 2,
+                  "sourceCode": "GDGT6S.01.0007.26",
+                  "description": "Khám phá - Quy tắc 3T sinh tồn: Phân tích quy trình 3 bước sinh tồn: Từ chối dứt khoát; thoát hiểm thông minh và tìm trợ giúp đến cùng.",
+                  "programLevel": "Mức 2",
+                  "guideDoc": null,
+                  "competencyGroup": "Hiểu"
+                },
+                {
+                  "criterionIndex": 3,
+                  "sourceCode": "GDGT6S.01.0007.27",
+                  "description": "Thực hành - Sàn đấu lá chắn ngôn từ: Đóng vai đối kháng trực tiếp, dùng ánh mắt và ngôn từ đanh thép để từ chối các cạm bẫy thực tế.",
+                  "programLevel": "Mức 3",
+                  "guideDoc": null,
+                  "competencyGroup": "Vận dụng"
+                },
+                {
+                  "criterionIndex": 4,
+                  "sourceCode": "GDGT6S.01.0007.28",
+                  "description": "Tổng kết - Bàn tay tin cậy: Vẽ bàn tay, điền tên 5 đầu mối hỗ trợ an toàn tương ứng với 5 ngón tay để cầu cứu khi gặp nguy hiểm.",
+                  "programLevel": "Mức 3",
+                  "guideDoc": null,
+                  "competencyGroup": "Vận dụng"
+                }
+              ]
+            },
+            {
+              "lessonIndex": 8,
+              "lessonCode": "GDGT6S.01.0008",
+              "lessonName": "Tình bạn khác giới và sự tôn trọng",
+              "criteria": [
+                {
+                  "criterionIndex": 1,
+                  "sourceCode": "GDGT6S.01.0008.29",
+                  "description": "Khởi động - Thử thách đọc vị: Phỏng đoán chéo nhu cầu cảm xúc của nam và nữ khi gặp chuyện buồn để thấu cảm sự khác biệt giới.",
+                  "programLevel": "Mức 1",
+                  "guideDoc": null,
+                  "competencyGroup": "Biết"
+                },
+                {
+                  "criterionIndex": 2,
+                  "sourceCode": "GDGT6S.01.0008.30",
+                  "description": "Khám phá - Cẩm nang hai hành tinh: Thảo luận về khác biệt ngôn ngữ đùa giỡn, ranh giới cơ thể vô hình và áp lực gán ghép đôi từ tập thể.",
+                  "programLevel": "Mức 2",
+                  "guideDoc": null,
+                  "competencyGroup": "Hiểu"
+                },
+                {
+                  "criterionIndex": 3,
+                  "sourceCode": "GDGT6S.01.0008.31",
+                  "description": "Thực hành - Đài phát thanh thấu hiểu: Đóng vai chuyên gia gỡ rối các bức thư về gán ghép học đường, đùa giỡn thô bạo hoặc hiểu lầm sự quan tâm.",
+                  "programLevel": "Mức 3",
+                  "guideDoc": null,
+                  "competencyGroup": "Vận dụng"
+                },
+                {
+                  "criterionIndex": 4,
+                  "sourceCode": "GDGT6S.01.0008.32",
+                  "description": "Tổng kết - Bản giao kèo tình bạn: Tự tay điền các cam kết ứng xử văn minh, lịch sự và ký tên bảo chứng cho tình bạn trong sáng.",
+                  "programLevel": "Mức 3",
+                  "guideDoc": null,
+                  "competencyGroup": "Vận dụng"
+                }
+              ]
+            },
+            {
+              "lessonIndex": 9,
+              "lessonCode": "GDGT6S.01.0009",
+              "lessonName": "An toàn không gian mạng và hình ảnh cá nhân",
+              "criteria": [
+                {
+                  "criterionIndex": 1,
+                  "sourceCode": "GDGT6S.01.0009.33",
+                  "description": "Khởi động - Mớ bòng bong thông tin: Chơi trò ném cuộn len để minh họa tốc độ lan truyền chóng mặt và tính vĩnh viễn của dữ liệu trên mạng.",
+                  "programLevel": "Mức 1",
+                  "guideDoc": null,
+                  "competencyGroup": "Biết"
+                },
+                {
+                  "criterionIndex": 2,
+                  "sourceCode": "GDGT6S.01.0009.34",
+                  "description": "Khám phá - Nhận diện ba quái vật mạng: Nhận biết thủ đoạn của kẻ đánh cắp thông tin, kẻ giả danh lừa đảo và kẻ dụ dỗ tống tiền bằng ảnh nhạy cảm.",
+                  "programLevel": "Mức 2",
+                  "guideDoc": null,
+                  "competencyGroup": "Hiểu"
+                },
+                {
+                  "criterionIndex": 3,
+                  "sourceCode": "GDGT6S.01.0009.35",
+                  "description": "Thực hành - Lập trình lá chắn tự động: Thảo luận nhóm, lập trình 3 bước tự vệ trực tuyến: Chụp màn hình, chặn liên lạc, báo người lớn.",
+                  "programLevel": "Mức 3",
+                  "guideDoc": null,
+                  "competencyGroup": "Vận dụng"
+                },
+                {
+                  "criterionIndex": 4,
+                  "sourceCode": "GDGT6S.01.0009.36",
+                  "description": "Tổng kết - Sổ tay an ninh mạng: Điền các nguyên tắc cam kết bảo vệ thông tin riêng tư và thiết lập bộ lọc công dân số thông minh.",
+                  "programLevel": "Mức 3",
+                  "guideDoc": null,
+                  "competencyGroup": "Vận dụng"
+                }
+              ]
+            },
+            {
+              "lessonIndex": 10,
+              "lessonCode": "GDGT6S.01.0010",
+              "lessonName": "Tọa đàm “Lắng nghe cơ thể mình”",
+              "criteria": [
+                {
+                  "criterionIndex": 1,
+                  "sourceCode": "GDGT6S.01.0010.37",
+                  "description": "Khởi động - Cây băn khoăn: Viết ẩn danh những nỗi lo lo âu về ngoại hình, tính cách dạo gần đây và dán lên cây băn khoăn lớp học.",
+                  "programLevel": "Mức 1",
+                  "guideDoc": null,
+                  "competencyGroup": "Biết"
+                },
+                {
+                  "criterionIndex": 2,
+                  "sourceCode": "GDGT6S.01.0010.38",
+                  "description": "Khám phá - Trường quay giải mã: Tọa đàm tương tác, giải mã khoa học về mụn, cảm xúc thất thường, vỡ giọng và kinh nguyệt không đều.",
+                  "programLevel": "Mức 2",
+                  "guideDoc": null,
+                  "competencyGroup": "Hiểu"
+                },
+                {
+                  "criterionIndex": 3,
+                  "sourceCode": "GDGT6S.01.0010.39",
+                  "description": "Thực hành - Lật ngược vấn đề: Thực hành chuyển đổi những lời than vãn tự ti ngoại hình thành những lời khẳng định tích cực, yêu thương bản thân.",
+                  "programLevel": "Mức 3",
+                  "guideDoc": null,
+                  "competencyGroup": "Vận dụng"
+                },
+                {
+                  "criterionIndex": 4,
+                  "sourceCode": "GDGT6S.01.0010.40",
+                  "description": "Tổng kết - Bức thư gửi chính tôi: Viết bức thư nhắn nhủ, biết ơn cơ thể đã đồng hành cùng em lớn lên khỏe mạnh mỗi ngày.",
+                  "programLevel": "Mức 3",
+                  "guideDoc": null,
+                  "competencyGroup": "Vận dụng"
+                }
+              ]
+            }
+          ]
+        }
+      ]
+    },
+    "7": {
+      "grade": "7",
+      "topicsCount": 1,
+      "lessonsCount": 10,
+      "criteriaCount": 40,
+      "topics": [
+        {
+          "topicCode": "GDGT7S.01",
+          "topicName": "7 - TÔN TRỌNG SỰ KHÁC BIỆT, LÀM CHỦ MỐI QUAN HỆ\r\nMở rộng ra mối quan hệ bạn bè, đa dạng giới, body shaming & rung động đầu đời.\r\n\r\nMục tiêu: Phát triển kỹ năng ứng xử xã hội, tôn trọng sự đa dạng giới, ngoại hình, nhận diện rung động đầu đời và xây dựng mối quan hệ lành mạnh.",
+          "lessons": [
+            {
+              "lessonIndex": 1,
+              "lessonCode": "GDGT7S.01.0001",
+              "lessonName": "Giới tính, giới và sự đa dạng",
+              "criteria": [
+                {
+                  "criterionIndex": 1,
+                  "sourceCode": "GDGT7S.01.0001.01",
+                  "description": "Khởi động - Bản thiết kế từ hành tinh khác: Kích hoạt tư duy, giúp học sinh nhận diện bản thân đang nhìn nhận các đặc điểm nam/nữ theo bản chất tự nhiên hay theo định kiến xã hội một cách tự nhiên, không phán xét đúng sai.",
+                  "programLevel": "Mức 1",
+                  "guideDoc": "DOC_GDGT_TL",
+                  "competencyGroup": "Biết"
+                },
+                {
+                  "criterionIndex": 2,
+                  "sourceCode": "GDGT7S.01.0001.02",
+                  "description": "Khám phá - Giải mã Giới tính & Giới: Phân biệt chuẩn xác Giới tính sinh học (Sex) và Giới (Gender).",
+                  "programLevel": "Mức 2",
+                  "guideDoc": "DOC_GDGT_TAPHUAN",
+                  "competencyGroup": "Hiểu"
+                },
+                {
+                  "criterionIndex": 3,
+                  "sourceCode": "GDGT7S.01.0001.03",
+                  "description": "Thực hành - Tòa án bóc nhãn mác: Giao tình huống, thảo luận nhóm phân tích kịch bản và đưa giải pháp xử lý tình huống bóc nhãn, bảo vệ sự tự tin cá nhân.",
+                  "programLevel": "Mức 3",
+                  "guideDoc": "DOC_GDGT_DECUONG",
+                  "competencyGroup": "Vận dụng"
+                },
+                {
+                  "criterionIndex": 4,
+                  "sourceCode": "GDGT7S.01.0001.04",
+                  "description": "Tổng kết - Tuyên ngôn kính vạn hoa: Ký tuyên ngôn cam kết tôn trọng sở thích đa dạng, không dán nhãn mác định kiến lên bạn bè.",
+                  "programLevel": "Mức 3",
+                  "guideDoc": null,
+                  "competencyGroup": "Vận dụng"
+                }
+              ]
+            },
+            {
+              "lessonIndex": 2,
+              "lessonCode": "GDGT7S.01.0002",
+              "lessonName": "Nói \"KHÔNG\" với Body Shaming",
+              "criteria": [
+                {
+                  "criterionIndex": 1,
+                  "sourceCode": "GDGT7S.01.0002.05",
+                  "description": "Khởi động - Phòng tranh đa sắc: Quan sát vẻ đẹp đa sắc tộc trên thế giới để hiểu chuẩn mực cái đẹp thay đổi liên tục và mang tính tương đối và phân biệt ranh giới sức khỏe với miệt thị.",
+                  "programLevel": "Mức 1",
+                  "guideDoc": null,
+                  "competencyGroup": "Biết"
+                },
+                {
+                  "criterionIndex": 2,
+                  "sourceCode": "GDGT7S.01.0002.06",
+                  "description": "Khám phá - Mũi tên tẩm độc: Trực quan hóa tác hại của lời chê bai ngoại hình bằng mũi tên giấy đâm vào hình nhân, phân tích hậu quả tâm lý.",
+                  "programLevel": "Mức 2",
+                  "guideDoc": null,
+                  "competencyGroup": "Hiểu"
+                },
+                {
+                  "criterionIndex": 3,
+                  "sourceCode": "GDGT7S.01.0002.07",
+                  "description": "Thực hành - Lá chắn ngôn từ: Giao tình huống, thảo luận, thực hành đưa giải pháp xử lý tình huống bảo vệ được bản thân và bạn bè trước miệt thị ngoại hình.",
+                  "programLevel": "Mức 3",
+                  "guideDoc": null,
+                  "competencyGroup": "Vận dụng"
+                },
+                {
+                  "criterionIndex": 4,
+                  "sourceCode": "GDGT7S.01.0002.08",
+                  "description": "Tổng kết - Tuyên ngôn vẻ đẹp cá nhân: Tự ghi nhận và cam kết trân trọng những nét đẹp tự nhiên, độc bản trên cơ thể mình.",
+                  "programLevel": "Mức 3",
+                  "guideDoc": null,
+                  "competencyGroup": "Vận dụng"
+                }
+              ]
+            },
+            {
+              "lessonIndex": 3,
+              "lessonCode": "GDGT7S.01.0003",
+              "lessonName": "Áp lực từ bạn bè",
+              "criteria": [
+                {
+                  "criterionIndex": 1,
+                  "sourceCode": "GDGT7S.01.0003.09",
+                  "description": "Khởi động - Thí nghiệm bầy cừu: Trải nghiệm thực tế trò chơi tâm lý số đông để thấy sức ép khủng khiếp của áp lực đám đông.",
+                  "programLevel": "Mức 1",
+                  "guideDoc": null,
+                  "competencyGroup": "Biết"
+                },
+                {
+                  "criterionIndex": 2,
+                  "sourceCode": "GDGT7S.01.0003.10",
+                  "description": "Khám phá - Cỗ máy nam châm: Phân tích bản chất của áp lực bạn bè, chỉ ra những dấu hiệu khích tướng, dọa nạt thường thấy và nhận diện được ranh giới giữa việc được hòa nhập và việc bị đánh mất bản thân.",
+                  "programLevel": "Mức 2",
+                  "guideDoc": null,
+                  "competencyGroup": "Hiểu"
+                },
+                {
+                  "criterionIndex": 3,
+                  "sourceCode": "GDGT7S.01.0003.11",
+                  "description": "Thực hành - Lá chắn vô hình: Đưa ra kịch bản cám dỗ, điều phối các nhóm xây dựng lời thoại phản kháng, đóng vai, thực hành sử dụng lý trí để từ chối khéo léo nhưng cực kỳ dứt khoát, rèn luyện sự tự tin và kỹ năng giao tiếp thực chiến để thoát khỏi sự dồn ép.",
+                  "programLevel": "Mức 3",
+                  "guideDoc": null,
+                  "competencyGroup": "Vận dụng"
+                },
+                {
+                  "criterionIndex": 4,
+                  "sourceCode": "GDGT7S.01.0003.12",
+                  "description": "Tổng kết - Mỏ neo tự chủ: Viết bản tuyên ngôn sức mạnh cá nhân xác định mỏ neo bảo vệ nguyên tắc sống trước làn sóng tập thể.",
+                  "programLevel": "Mức 3",
+                  "guideDoc": null,
+                  "competencyGroup": "Vận dụng"
+                }
+              ]
+            },
+            {
+              "lessonIndex": 4,
+              "lessonCode": "GDGT7S.01.0004",
+              "lessonName": "Giao tiếp và thấu cảm",
+              "criteria": [
+                {
+                  "criterionIndex": 1,
+                  "sourceCode": "GDGT7S.01.0004.13",
+                  "description": "Khởi động - Bức tường câm lặng: Diễn kịch ngắn về sự vô tâm dửng dưng trong giao tiếp để thấu hiểu cảm xúc hụt hẫng của nạn nhân.",
+                  "programLevel": "Mức 1",
+                  "guideDoc": null,
+                  "competencyGroup": "Biết"
+                },
+                {
+                  "criterionIndex": 2,
+                  "sourceCode": "GDGT7S.01.0004.14",
+                  "description": "Khám phá - Chìa khóa mở cửa trái tim: Phân biệt sự thương hại và sự thấu cảm, học kỹ năng lắng nghe bằng tai, mắt và trái tim.",
+                  "programLevel": "Mức 2",
+                  "guideDoc": null,
+                  "competencyGroup": "Hiểu"
+                },
+                {
+                  "criterionIndex": 3,
+                  "sourceCode": "GDGT7S.01.0004.15",
+                  "description": "Thực hành - Trạm phát sóng thấu cảm: Phân tích lỗi giao tiếp bốc đồng và sửa lại lời thoại an ủi nâng đỡ bạn bè qua các tình huống.",
+                  "programLevel": "Mức 3",
+                  "guideDoc": null,
+                  "competencyGroup": "Vận dụng"
+                },
+                {
+                  "criterionIndex": 4,
+                  "sourceCode": "GDGT7S.01.0004.16",
+                  "description": "Tổng kết - Sổ tay giao tiếp tử tế: Cam kết thực hành lắng nghe chủ động, sử dụng từ ngữ tử tế xoa dịu tổn thương cho bạn bè.",
+                  "programLevel": "Mức 3",
+                  "guideDoc": null,
+                  "competencyGroup": "Vận dụng"
+                }
+              ]
+            },
+            {
+              "lessonIndex": 5,
+              "lessonCode": "GDGT7S.01.0005",
+              "lessonName": "Giải quyết xung đột văn minh",
+              "criteria": [
+                {
+                  "criterionIndex": 1,
+                  "sourceCode": "GDGT7S.01.0005.17",
+                  "description": "Khởi động - Thí nghiệm quả bóng bay: Minh họa sự khác biệt giữa nổ tung và xì hơi từ từ.",
+                  "programLevel": "Mức 1",
+                  "guideDoc": null,
+                  "competencyGroup": "Biết"
+                },
+                {
+                  "criterionIndex": 2,
+                  "sourceCode": "GDGT7S.01.0005.18",
+                  "description": "Khám phá - Bộ lọc thông điệp chữ Tôi: Hướng dẫn công thức giao tiếp, phân tích sự khác biệt giữa việc tấn công người khác và việc bày tỏ cảm xúc, thực hành viết lại các câu nói cãi vã thành những câu nói tập trung vào giải pháp.",
+                  "programLevel": "Mức 2",
+                  "guideDoc": null,
+                  "competencyGroup": "Hiểu"
+                },
+                {
+                  "criterionIndex": 3,
+                  "sourceCode": "GDGT7S.01.0005.19",
+                  "description": "Thực hành - Bàn tròn hòa giải: Sắm vai giải quyết các xung\r\nđột học đường, vận dụng ngôn từ hạ nhiệt và tìm ra điểm chung để giải quyết xích mích.",
+                  "programLevel": "Mức 3",
+                  "guideDoc": null,
+                  "competencyGroup": "Vận dụng"
+                },
+                {
+                  "criterionIndex": 4,
+                  "sourceCode": "GDGT7S.01.0005.20",
+                  "description": "Tổng kết - Nút tạm dừng ma thuật: Cam kết làm chủ cảm xúc, áp dụng kỹ thuật 10 giây dừng lại hít thở sâu làm chủ cơn nóng giận trước khi phát ngôn.",
+                  "programLevel": "Mức 3",
+                  "guideDoc": null,
+                  "competencyGroup": "Vận dụng"
+                }
+              ]
+            },
+            {
+              "lessonIndex": 6,
+              "lessonCode": "GDGT7S.01.0006",
+              "lessonName": "Rung động đầu đời",
+              "criteria": [
+                {
+                  "criterionIndex": 1,
+                  "sourceCode": "GDGT7S.01.0006.21",
+                  "description": "Khởi động - Trạm phát sóng nhịp tim: Sử dụng thẻ \"Bình thường\" và \"Rung động\" để nhận diện đâu là tình bạn, đâu là sự rung động.",
+                  "programLevel": "Mức 1",
+                  "guideDoc": null,
+                  "competencyGroup": "Biết"
+                },
+                {
+                  "criterionIndex": 2,
+                  "sourceCode": "GDGT7S.01.0006.22",
+                  "description": "Khám phá - Ba lăng kính tình cảm: Phân tích rạch ròi 3 trạng thái: ngưỡng mộ thần tượng, cảm mến tuổi học trò và tình yêu trưởng thành gắn liền trách nhiệm.",
+                  "programLevel": "Mức 2",
+                  "guideDoc": null,
+                  "competencyGroup": "Hiểu"
+                },
+                {
+                  "criterionIndex": 3,
+                  "sourceCode": "GDGT7S.01.0006.23",
+                  "description": "Thực hành - Gỡ rối tơ lòng: Đóng vai chuyên gia tâm lý thảo luận và đưa ra lời khuyên để bảo vệ tình bạn trong sáng.",
+                  "programLevel": "Mức 3",
+                  "guideDoc": null,
+                  "competencyGroup": "Vận dụng"
+                },
+                {
+                  "criterionIndex": 4,
+                  "sourceCode": "GDGT7S.01.0006.24",
+                  "description": "Tổng kết - La bàn cảm xúc: Điền bản định hướng giữ gìn sự trong sáng, bảo vệ ranh giới cá nhân, tôn trọng người khác, biến rung động thành động lực học tập..",
+                  "programLevel": "Mức 3",
+                  "guideDoc": null,
+                  "competencyGroup": "Vận dụng"
+                }
+              ]
+            },
+            {
+              "lessonIndex": 7,
+              "lessonCode": "GDGT7S.01.0007",
+              "lessonName": "Mối quan hệ lành mạnh và bạo lực hẹn hò",
+              "criteria": [
+                {
+                  "criterionIndex": 1,
+                  "sourceCode": "GDGT7S.01.0007.25",
+                  "description": "Khởi động - Máy quét tín hiệu: Sử dụng biển \"Lành mạnh\"/\"Độc hại\" phân biệt nhanh sự quan tâm và kiểm soát. Khởi động nhận thức, phát hiện ra những hành vi xấu thường bị nhầm lẫn là tình cảm.",
+                  "programLevel": "Mức 1",
+                  "guideDoc": null,
+                  "competencyGroup": "Biết"
+                },
+                {
+                  "criterionIndex": 2,
+                  "sourceCode": "GDGT7S.01.0007.26",
+                  "description": "Khám phá - Bóc trần vỏ bọc: Nhận diện bạo lực tinh thần\r\n(cô lập bạn bè), bạo lực ngôn từ (sỉ nhục) và bạo lực mạng (ép gửi ảnh, rình rập định vị).",
+                  "programLevel": "Mức 2",
+                  "guideDoc": null,
+                  "competencyGroup": "Hiểu"
+                },
+                {
+                  "criterionIndex": 3,
+                  "sourceCode": "GDGT7S.01.0007.27",
+                  "description": "Thực hành - Tổng đài hỗ trợ: Thảo luận nhóm, lập kịch bản thoát khỏi mối quan hệ độc hại và cách tìm người giúp đỡ.",
+                  "programLevel": "Mức 3",
+                  "guideDoc": null,
+                  "competencyGroup": "Vận dụng"
+                },
+                {
+                  "criterionIndex": 4,
+                  "sourceCode": "GDGT7S.01.0007.28",
+                  "description": "Tổng kết - Thước đo an toàn: Thiết lập thước đo an toàn cho bản thân, nhận diện các dấu hiệu không an toàn để bảo vệ bản thân.",
+                  "programLevel": "Mức 3",
+                  "guideDoc": null,
+                  "competencyGroup": "Vận dụng"
+                }
+              ]
+            },
+            {
+              "lessonIndex": 8,
+              "lessonCode": "GDGT7S.01.0008",
+              "lessonName": "Người lớn đáng tin cậy",
+              "criteria": [
+                {
+                  "criterionIndex": 1,
+                  "sourceCode": "GDGT7S.01.0008.29",
+                  "description": "Khởi động - Tia chớp cứu hộ: Phản xạ nhanh 3 giây chọn người lớn đầu tiên mình nghĩ đến khi cần nhờ sự giúp đỡ.",
+                  "programLevel": "Mức 1",
+                  "guideDoc": null,
+                  "competencyGroup": "Biết"
+                },
+                {
+                  "criterionIndex": 2,
+                  "sourceCode": "GDGT7S.01.0008.30",
+                  "description": "Khám phá - Bộ lọc người bảo vệ: Phân tích các tiêu chí của một người lớn an toàn (lắng nghe, bảo mật, có năng lực giải quyết văn minh).",
+                  "programLevel": "Mức 2",
+                  "guideDoc": null,
+                  "competencyGroup": "Hiểu"
+                },
+                {
+                  "criterionIndex": 3,
+                  "sourceCode": "GDGT7S.01.0008.31",
+                  "description": "Thực hành - Bản đồ nhiệt giải cứu: Thực hành công thức mở lời rõ ràng và dứt khoát, rèn luyện kỹ năng giao tiếp vượt qua sự xấu hổ khi cầu cứu.",
+                  "programLevel": "Mức 3",
+                  "guideDoc": null,
+                  "competencyGroup": "Vận dụng"
+                },
+                {
+                  "criterionIndex": 4,
+                  "sourceCode": "GDGT7S.01.0008.32",
+                  "description": "Tổng kết - Vòng tròn an toàn của tôi: Xây dựng được một danh sách những người bảo vệ của riêng mình để sẵn sàng sử dụng khi cần thiết.",
+                  "programLevel": "Mức 3",
+                  "guideDoc": null,
+                  "competencyGroup": "Vận dụng"
+                }
+              ]
+            },
+            {
+              "lessonIndex": 9,
+              "lessonCode": "GDGT7S.01.0009",
+              "lessonName": "Dự án “Tình bạn đẹp - Trường học an toàn”",
+              "criteria": [
+                {
+                  "criterionIndex": 1,
+                  "sourceCode": "GDGT7S.01.0009.33",
+                  "description": "Khởi động - Phóng viên hiện trường: Phỏng vấn nhanh học sinh định nghĩa về trường học an toàn ( không body shaming, không bạo lực mạng...).",
+                  "programLevel": "Mức 1",
+                  "guideDoc": null,
+                  "competencyGroup": "Biết"
+                },
+                {
+                  "criterionIndex": 2,
+                  "sourceCode": "GDGT7S.01.0009.34",
+                  "description": "Khám phá - Thư mời thầu dự án: Trình bày yêu cầu của dự án, các chủ đề gợi ý và thời hạn nộp sản phẩm để trưng bày ở tiết 10. (poster, truyện tranh, tiểu phẩm...).",
+                  "programLevel": "Mức 2",
+                  "guideDoc": null,
+                  "competencyGroup": "Hiểu"
+                },
+                {
+                  "criterionIndex": 3,
+                  "sourceCode": "GDGT7S.01.0009.35",
+                  "description": "Thực hành - Bản thiết kế truyền thông: Vẽ sơ đồ tư duy phân công nhiệm vụ nhóm dựa trên thế mạnh từng thành viên (vẽ, viết, tô màu, thuyết trình).",
+                  "programLevel": "Mức 3",
+                  "guideDoc": null,
+                  "competencyGroup": "Vận dụng"
+                },
+                {
+                  "criterionIndex": 4,
+                  "sourceCode": "GDGT7S.01.0009.36",
+                  "description": "Tổng kết - Lời hứa hợp tác: Các thành viên ký tên cam kết vào hồ sơ dự án, bắt tay thể hiện tinh thần đồng lòng hoàn thành sản phẩm.",
+                  "programLevel": "Mức 3",
+                  "guideDoc": null,
+                  "competencyGroup": "Vận dụng"
+                }
+              ]
+            },
+            {
+              "lessonIndex": 10,
+              "lessonCode": "GDGT7S.01.0010",
+              "lessonName": "Diễn đàn “Tình bạn hay tình yêu?”",
+              "criteria": [
+                {
+                  "criterionIndex": 1,
+                  "sourceCode": "GDGT7S.01.0010.37",
+                  "description": "Khởi động - Chín mảnh ghép hành trang: Xâu chuỗi 9 từ khóa cốt lõi của toàn chương trình lớp 7. Nhớ lại kiến thức, giải mã từ khóa và liên kết chúng thành một chuỗi kỹ năng bảo vệ.",
+                  "programLevel": "Mức 1",
+                  "guideDoc": null,
+                  "competencyGroup": "Biết"
+                },
+                {
+                  "criterionIndex": 2,
+                  "sourceCode": "GDGT7S.01.0010.38",
+                  "description": "Khám phá - Diễn đàn ranh giới: Diễn đàn tranh biện dùng kiến thức về bình đẳng và sự kiểm soát để bảo vệ quan điểm của mình. Nhận thức rõ những ngộ nhận về tình cảm ở lứa tuổi vị thành niên.",
+                  "programLevel": "Mức 2",
+                  "guideDoc": null,
+                  "competencyGroup": "Hiểu"
+                },
+                {
+                  "criterionIndex": 3,
+                  "sourceCode": "GDGT7S.01.0010.39",
+                  "description": "Thực hành - Giải phẫu tình huống tổng hợp: Thực hành xử lý tình huống đa rủi ro kết hợp.",
+                  "programLevel": "Mức 3",
+                  "guideDoc": null,
+                  "competencyGroup": "Vận dụng"
+                },
+                {
+                  "criterionIndex": 4,
+                  "sourceCode": "GDGT7S.01.0010.40",
+                  "description": "Tổng kết - Tấm vé thông hành: Điền các cam kết bảo vệ ranh giới cơ thể, bảo vệ tương lai vào phiếu học tập cá nhân và lưu giữ.",
+                  "programLevel": "Mức 3",
+                  "guideDoc": null,
+                  "competencyGroup": "Vận dụng"
+                }
+              ]
+            }
+          ]
+        }
+      ]
+    },
+    "8": {
+      "grade": "8",
+      "topicsCount": 1,
+      "lessonsCount": 10,
+      "criteriaCount": 40,
+      "topics": [
+        {
+          "topicCode": "GDGT8S.01",
+          "topicName": "8 -  SỨC KHỎE SINH SẢN VÀ KỸ NĂNG TỰ CHỦ\r\nChuyên đề y sinh học về SKSS, quản lý cảm xúc, từ chối & thương lượng\r\n\r\nMục tiêu: Trang bị kiến thức y sinh học chuyên sâu về SKSS vị thành niên, nâng cao năng lực tự chủ, thương lượng và từ chối hành vi nguy cơ.",
+          "lessons": [
+            {
+              "lessonIndex": 1,
+              "lessonCode": "GDGT8S.01.0001",
+              "lessonName": "Làm chủ bản thân tuổi vị thành niên",
+              "criteria": [
+                {
+                  "criterionIndex": 1,
+                  "sourceCode": "GDGT8S.01.0001.01",
+                  "description": "Khởi động - Trò chơi phản xạ hay lý trí: Giơ tay chọn phương án theo trực giác, giải thích ngắn trước 4 tình huống.",
+                  "programLevel": "Mức 1",
+                  "guideDoc": "DOC_GDGT_TL",
+                  "competencyGroup": "Biết"
+                },
+                {
+                  "criterionIndex": 2,
+                  "sourceCode": "GDGT8S.01.0001.02",
+                  "description": "Khám phá - Giải mã não bộ: Điều phối thảo luận 6 câu hỏi cốt lõi. Thảo luận nhanh, phản biện và tiếp nhận kiến thức khoa học thần kinh. Hiểu cơ chế vỏ não trước trán, tính dẻo não bộ và ranh giới.",
+                  "programLevel": "Mức 2",
+                  "guideDoc": "DOC_GDGT_TAPHUAN",
+                  "competencyGroup": "Hiểu"
+                },
+                {
+                  "criterionIndex": 3,
+                  "sourceCode": "GDGT8S.01.0001.03",
+                  "description": "Thực hành - Giải mã ranh giới giới tính: Thảo luận nhóm, sắm vai hoặc phân tích kịch bản xử lý tự chủ thông qua tình huống kèm bộ câu hỏi định hướng.",
+                  "programLevel": "Mức 3",
+                  "guideDoc": "DOC_GDGT_DECUONG",
+                  "competencyGroup": "Vận dụng"
+                },
+                {
+                  "criterionIndex": 4,
+                  "sourceCode": "GDGT8S.01.0001.04",
+                  "description": "Tổng kết - Cam kết 7 ngày tự chủ: Điền phiếu cam kết cá nhân rèn luyện khả năng kiểm soát bốc đồng và tự đánh giá thang điểm.",
+                  "programLevel": "Mức 3",
+                  "guideDoc": null,
+                  "competencyGroup": "Vận dụng"
+                }
+              ]
+            },
+            {
+              "lessonIndex": 2,
+              "lessonCode": "GDGT8S.01.0002",
+              "lessonName": "Tình cảm tuổi học trò",
+              "criteria": [
+                {
+                  "criterionIndex": 1,
+                  "sourceCode": "GDGT8S.01.0002.05",
+                  "description": "Khởi động - Rung động hay quá đà: Tạo sự tập trung, hứng thú đầu giờ. Phổ biến luật giơ thẻ màu (Xanh/Đỏ). Lần lượt biểu quyết nhanh thông qua tình huống. Nhận diện sơ khởi mang tính phản biện về ranh giới cá nhân.",
+                  "programLevel": "Mức 1",
+                  "guideDoc": null,
+                  "competencyGroup": "Biết"
+                },
+                {
+                  "criterionIndex": 2,
+                  "sourceCode": "GDGT8S.01.0002.06",
+                  "description": "Khám phá - Rung động tuổi dậy thì và ranh giới của bạn là gì?: Thảo luận cặp đôi về cách phân biệt tình bạn - rung động. Điều phối kỹ thuật Think-Pair-Share, phân biệt bản chất giữa tình bạn thuần túy và rung động đầu đời. Sự thấu hiểu về tầm quan trọng của các loại ranh giới cá nhân.",
+                  "programLevel": "Mức 2",
+                  "guideDoc": null,
+                  "competencyGroup": "Hiểu"
+                },
+                {
+                  "criterionIndex": 3,
+                  "sourceCode": "GDGT8S.01.0002.07",
+                  "description": "Thực hành: Công cụ từ chối bằng \"Thông điệp Tôi\": Đóng vai xử lý tình huống, rèn luyện kỹ năng thực tế về cách từ chối và thiết lập ranh giới thông qua việc đóng vai.",
+                  "programLevel": "Mức 3",
+                  "guideDoc": null,
+                  "competencyGroup": "Vận dụng"
+                },
+                {
+                  "criterionIndex": 4,
+                  "sourceCode": "GDGT8S.01.0002.08",
+                  "description": "Tổng kết - Bản đồ mối quan hệ: Tự lập bản đồ mối quan hệ, xác định vòng tròn bạn bè an toàn và ghi nhớ ranh giới không thể thỏa hiệp.",
+                  "programLevel": "Mức 3",
+                  "guideDoc": null,
+                  "competencyGroup": "Vận dụng"
+                }
+              ]
+            },
+            {
+              "lessonIndex": 3,
+              "lessonCode": "GDGT8S.01.0003",
+              "lessonName": "Sức khỏe sinh sản tuổi vị thành niên",
+              "criteria": [
+                {
+                  "criterionIndex": 1,
+                  "sourceCode": "GDGT8S.01.0003.09",
+                  "description": "Khởi động - Sự thật hay tin đồn: Dùng thẻ màu kiểm chứng định kiến.",
+                  "programLevel": "Mức 1",
+                  "guideDoc": null,
+                  "competencyGroup": "Biết"
+                },
+                {
+                  "criterionIndex": 2,
+                  "sourceCode": "GDGT8S.01.0003.10",
+                  "description": "Khám phá - Bản đồ cơ thể dậy thì: Thiết kế bản đồ thay đổi sinh lý nam/nữ, chốt nguyên tắc chăm sóc da mụn, mồ hôi và vệ sinh vùng nhạy cảm đúng y khoa.",
+                  "programLevel": "Mức 2",
+                  "guideDoc": null,
+                  "competencyGroup": "Hiểu"
+                },
+                {
+                  "criterionIndex": 3,
+                  "sourceCode": "GDGT8S.01.0003.11",
+                  "description": "Thực hành - Lối sống lành mạnh: Đóng vai hội đồng y khoa điều chỉnh lối sống sai lầm của nhân vật trong tình huống và lập bản đồ điều trị 5 bước.",
+                  "programLevel": "Mức 3",
+                  "guideDoc": null,
+                  "competencyGroup": "Vận dụng"
+                },
+                {
+                  "criterionIndex": 4,
+                  "sourceCode": "GDGT8S.01.0003.12",
+                  "description": "Tổng kết - Thông điệp: Hướng dẫn viết câu khẳng định tích cực gửi lời biết ơn, trân trọng đến cơ thể đang lớn lên khỏe mạnh mỗi ngày.",
+                  "programLevel": "Mức 3",
+                  "guideDoc": null,
+                  "competencyGroup": "Vận dụng"
+                }
+              ]
+            },
+            {
+              "lessonIndex": 4,
+              "lessonCode": "GDGT8S.01.0004",
+              "lessonName": "Nhận diện tình huống nguy cơ",
+              "criteria": [
+                {
+                  "criterionIndex": 1,
+                  "sourceCode": "GDGT8S.01.0004.13",
+                  "description": "Khởi động - Radar cảnh báo: Phát hiện điểm nguy hại ẩn trong ly nước bỏ quên, tin nhắn dụ dỗ, áp lực đồng trang lứa, không gian kín.",
+                  "programLevel": "Mức 1",
+                  "guideDoc": null,
+                  "competencyGroup": "Biết"
+                },
+                {
+                  "criterionIndex": 2,
+                  "sourceCode": "GDGT8S.01.0004.14",
+                  "description": "Khám phá - Giải phẫu cái bẫy: Phân tích 4 bước thao túng tâm lý của tội phạm: Chọn mục tiêu, tạo lòng tin, thử nghiệm ranh giới, cô lập và khống chế.",
+                  "programLevel": "Mức 2",
+                  "guideDoc": null,
+                  "competencyGroup": "Hiểu"
+                },
+                {
+                  "criterionIndex": 3,
+                  "sourceCode": "GDGT8S.01.0004.15",
+                  "description": "Thực hành - Kịch bản rẽ nhánh: Chơi trò chơi quyết định ngã rẽ, rèn luyện phản xạ ra quyết định nhanh dưới áp lực và biết cách chọn phương án ưu tiên bảo vệ tính mạng.",
+                  "programLevel": "Mức 3",
+                  "guideDoc": null,
+                  "competencyGroup": "Vận dụng"
+                },
+                {
+                  "criterionIndex": 4,
+                  "sourceCode": "GDGT8S.01.0004.16",
+                  "description": "Tổng kết - Thẻ định danh an toàn: Điền thẻ ID sinh tồn cá nhân, thiết lập mật mã khẩn cấp (từ khóa an toàn) để báo động ngầm với gia đình.",
+                  "programLevel": "Mức 3",
+                  "guideDoc": null,
+                  "competencyGroup": "Vận dụng"
+                }
+              ]
+            },
+            {
+              "lessonIndex": 5,
+              "lessonCode": "GDGT8S.01.0005",
+              "lessonName": "Kỹ năng từ chối và kiên định bảo vệ ranh giới",
+              "criteria": [
+                {
+                  "criterionIndex": 1,
+                  "sourceCode": "GDGT8S.01.0005.17",
+                  "description": "Khởi động - Thử thách 'Đừng nói không': Trải nghiệm bế tắc khi từ chối yêu cầu vô lý nhưng cấm dùng từ 'không'.",
+                  "programLevel": "Mức 1",
+                  "guideDoc": null,
+                  "competencyGroup": "Biết"
+                },
+                {
+                  "criterionIndex": 2,
+                  "sourceCode": "GDGT8S.01.0005.18",
+                  "description": "Khám phá - Bóng bàn ngôn ngữ: Dạy công thức 3 bước chuẩn mực: Ghi nhận cảm xúc -> Từ chối nguyên tắc -> Đề xuất phương án thay thế lịch sự.",
+                  "programLevel": "Mức 2",
+                  "guideDoc": null,
+                  "competencyGroup": "Hiểu"
+                },
+                {
+                  "criterionIndex": 3,
+                  "sourceCode": "GDGT8S.01.0005.19",
+                  "description": "Thực hành - Đấu trường kiên định: Đưa học sinh vào các tình huống giằng co thực tế, rèn luyện phản xạ đối phó với nghệ thuật thao túng cảm xúc (dọa dỗi, kích bác, lôi nợ ân tình).",
+                  "programLevel": "Mức 3",
+                  "guideDoc": null,
+                  "competencyGroup": "Vận dụng"
+                },
+                {
+                  "criterionIndex": 4,
+                  "sourceCode": "GDGT8S.01.0005.20",
+                  "description": "Tổng kết - Tuyên ngôn ranh giới: Tự tay điền cam kết với chính bản thân về các giá trị cá nhân, tài khoản mạng và ranh giới không thể thỏa hiệp.",
+                  "programLevel": "Mức 3",
+                  "guideDoc": null,
+                  "competencyGroup": "Vận dụng"
+                }
+              ]
+            },
+            {
+              "lessonIndex": 6,
+              "lessonCode": "GDGT8S.01.0006",
+              "lessonName": "Khi cần giúp đỡ - tìm kiếm hỗ trợ",
+              "criteria": [
+                {
+                  "criterionIndex": 1,
+                  "sourceCode": "GDGT8S.01.0006.21",
+                  "description": "Khởi động - Chiếc hộp im lặng: Viết áp lực ẩn danh, bỏ vào hộp và chia sẻ cảm xúc về việc giữ im lặng. Giải tỏa rào cản nhận thức ban đầu; khơi gợi nhu cầu chia sẻ.",
+                  "programLevel": "Mức 1",
+                  "guideDoc": null,
+                  "competencyGroup": "Biết"
+                },
+                {
+                  "criterionIndex": 2,
+                  "sourceCode": "GDGT8S.01.0006.22",
+                  "description": "Khám phá - Trạm tiếp sức: Điều phối trò chơi ghép thẻ. Hiểu rõ cấu trúc, chức năng của mạng lưới hỗ trợ 4 tầng.",
+                  "programLevel": "Mức 2",
+                  "guideDoc": null,
+                  "competencyGroup": "Hiểu"
+                },
+                {
+                  "criterionIndex": 3,
+                  "sourceCode": "GDGT8S.01.0006.23",
+                  "description": "Thực hành - Hội đồng chuyên gia nhỏ tuổi: Phát thẻ tình huống, điều phối thảo luận nhóm. Giảng dạy sâu về quy tắc \"Mức độ năng lượng\" và kỹ thuật \"Mẩu giấy mật\".",
+                  "programLevel": "Mức 3",
+                  "guideDoc": null,
+                  "competencyGroup": "Vận dụng"
+                },
+                {
+                  "criterionIndex": 4,
+                  "sourceCode": "GDGT8S.01.0006.24",
+                  "description": "Tổng kết - Kích hoạt đồng minh: Đưa thử thách phản xạ nhanh và thu nhận thẻ cam kết hành động.",
+                  "programLevel": "Mức 3",
+                  "guideDoc": null,
+                  "competencyGroup": "Vận dụng"
+                }
+              ]
+            },
+            {
+              "lessonIndex": 7,
+              "lessonCode": "GDGT8S.01.0007",
+              "lessonName": "Tranh biện: Giới hạn trong tình cảm tuổi học trò",
+              "criteria": [
+                {
+                  "criterionIndex": 1,
+                  "sourceCode": "GDGT8S.01.0007.25",
+                  "description": "Khởi động - Đèn giao thông tình cảm: Dùng thẻ màu đánh giá các hành vi hẹn hò ở vùng an toàn (Xanh), vùng xám cẩn trọng (Vàng), nguy cơ cao (Đỏ).",
+                  "programLevel": "Mức 1",
+                  "guideDoc": null,
+                  "competencyGroup": "Biết"
+                },
+                {
+                  "criterionIndex": 2,
+                  "sourceCode": "GDGT8S.01.0007.26",
+                  "description": "Khám phá - Sàn đấu tranh biện: Thảo luận nhóm theo phe được chỉ định; đại diện lên bục lập luận đối kháng bẻ gãy logic đối phương. Rèn luyện kỹ năng nhận diện ngụy biện và thao túng tâm lý; bản lĩnh bảo vệ ranh giới cá nhân.",
+                  "programLevel": "Mức 2",
+                  "guideDoc": null,
+                  "competencyGroup": "Hiểu"
+                },
+                {
+                  "criterionIndex": 3,
+                  "sourceCode": "GDGT8S.01.0007.27",
+                  "description": "Thực hành - Phân tích hệ quả rẽ nhánh: Vẽ sơ đồ cây dự đoán hệ quả ngắn hạn (1 ngày) và dài hạn (1 năm) của quyết định nhượng bộ hay kiên quyết từ chối.",
+                  "programLevel": "Mức 3",
+                  "guideDoc": null,
+                  "competencyGroup": "Vận dụng"
+                },
+                {
+                  "criterionIndex": 4,
+                  "sourceCode": "GDGT8S.01.0007.28",
+                  "description": "Tổng kết - Bộ lọc quyết định: Điền phiếu học tập chứa 3 câu hỏi thép về an toàn, tôn trọng và trách nhiệm để trì hoãn bốc đồng bộc phát.",
+                  "programLevel": "Mức 3",
+                  "guideDoc": null,
+                  "competencyGroup": "Vận dụng"
+                }
+              ]
+            },
+            {
+              "lessonIndex": 8,
+              "lessonCode": "GDGT8S.01.0008",
+              "lessonName": "Hiểu đúng về sức khỏe sinh sản",
+              "criteria": [
+                {
+                  "criterionIndex": 1,
+                  "sourceCode": "GDGT8S.01.0008.29",
+                  "description": "Khởi động - Trận chiến bóng tuyết: Viết thắc mắc ẩn danh ra giấy, vo viên ném tuyết xáo trộn để giải phóng ngại ngùng, dỡ bỏ thắc mắc.",
+                  "programLevel": "Mức 1",
+                  "guideDoc": null,
+                  "competencyGroup": "Biết"
+                },
+                {
+                  "criterionIndex": 2,
+                  "sourceCode": "GDGT8S.01.0008.30",
+                  "description": "Khám phá - Góc nhìn hiển vi khoa học: Giải mã y học về điều kiện cần/đủ thụ thai, bản chất sinh lý thủ dâm và sự tàn phá não bộ của web đen.",
+                  "programLevel": "Mức 2",
+                  "guideDoc": null,
+                  "competencyGroup": "Hiểu"
+                },
+                {
+                  "criterionIndex": 3,
+                  "sourceCode": "GDGT8S.01.0008.31",
+                  "description": "Thực hành - Tòa soạn báo tuổi teen: Đóng vai ban biên tập viết bài đính chính tin đồn ngồi ghế dính bầu, ám ảnh cơ thể phi thực tế trên mạng.",
+                  "programLevel": "Mức 3",
+                  "guideDoc": null,
+                  "competencyGroup": "Vận dụng"
+                },
+                {
+                  "criterionIndex": 4,
+                  "sourceCode": "GDGT8S.01.0008.32",
+                  "description": "Tổng kết - Cẩm nang bỏ túi: Tự điền các thuật ngữ khoa học đã học vào cẩm nang bỏ túi để làm màng lọc thông tin giới tính an toàn.",
+                  "programLevel": "Mức 3",
+                  "guideDoc": null,
+                  "competencyGroup": "Vận dụng"
+                }
+              ]
+            },
+            {
+              "lessonIndex": 9,
+              "lessonCode": "GDGT8S.01.0009",
+              "lessonName": "Bảo vệ sức khỏe sinh sản",
+              "criteria": [
+                {
+                  "criterionIndex": 1,
+                  "sourceCode": "GDGT8S.01.0009.33",
+                  "description": "Khởi động - Tiếp sóng khoa học: Kết nối logic lý thuyết thụ tinh ở bài 8 sang sự nhạy cảm, dễ tổn thương của cơ quan sinh sản tuổi dậy thì.",
+                  "programLevel": "Mức 1",
+                  "guideDoc": null,
+                  "competencyGroup": "Biết"
+                },
+                {
+                  "criterionIndex": 2,
+                  "sourceCode": "GDGT8S.01.0009.34",
+                  "description": "Khám phá - Phòng tư vấn kín: Tách nhóm nam/nữ, thảo luận y khoa chuyên sâu bệnh lây truyền (lậu, giang mai, HIV, sùi mào gà, HPV).",
+                  "programLevel": "Mức 2",
+                  "guideDoc": null,
+                  "competencyGroup": "Hiểu"
+                },
+                {
+                  "criterionIndex": 3,
+                  "sourceCode": "GDGT8S.01.0009.35",
+                  "description": "Thực hành - Xử lý cạm bẫy đặc thù: Đưa ra các tình huống áp lực phổ biến nhất của nam (thể hiện bản lĩnh) và nữ (sợ mất tình cảm) để giải quyết.",
+                  "programLevel": "Mức 3",
+                  "guideDoc": null,
+                  "competencyGroup": "Vận dụng"
+                },
+                {
+                  "criterionIndex": 4,
+                  "sourceCode": "GDGT8S.01.0009.36",
+                  "description": "Tổng kết - Lá chắn kép: Gộp lớp, điền cam kết bảo vệ sức khỏe sinh sản lâu dài, trì hoãn quan hệ sớm và tôn trọng giới hạn bạn khác giới.",
+                  "programLevel": "Mức 3",
+                  "guideDoc": null,
+                  "competencyGroup": "Vận dụng"
+                }
+              ]
+            },
+            {
+              "lessonIndex": 10,
+              "lessonCode": "GDGT8S.01.0010",
+              "lessonName": "Hành trang trưởng thành",
+              "criteria": [
+                {
+                  "criterionIndex": 1,
+                  "sourceCode": "GDGT8S.01.0010.37",
+                  "description": "Khởi động - Chiếc vali sinh tồn: Đọc tên các khái niệm, kỹ năng và định kiến. Yêu cầu học sinh quyết định mang theo hay vứt bỏ. Xây dựng tâm thế chủ động loại bỏ rác tinh thần trước khi bước sang chặn đường mới.",
+                  "programLevel": "Mức 1",
+                  "guideDoc": null,
+                  "competencyGroup": "Biết"
+                },
+                {
+                  "criterionIndex": 2,
+                  "sourceCode": "GDGT8S.01.0010.38",
+                  "description": "Khám phá - Mười mật mã mở khóa tương lai: Giải mã và chốt lại các nguyên tắc từ ranh giới cơ thể, bình đẳng, trì hoãn cám dỗ, lên tiếng cầu cứu...",
+                  "programLevel": "Mức 2",
+                  "guideDoc": null,
+                  "competencyGroup": "Hiểu"
+                },
+                {
+                  "criterionIndex": 3,
+                  "sourceCode": "GDGT8S.01.0010.39",
+                  "description": "Thực hành - Phòng mô phỏng đa rủi ro: Giao các tình huống phức tạp có nhiều cái bẫy đan xen. Hướng dẫn phân tích bóc tách. Thảo luận nhóm, xử lý các khủng hoảng đa tầng trong thực tế.",
+                  "programLevel": "Mức 3",
+                  "guideDoc": null,
+                  "competencyGroup": "Vận dụng"
+                },
+                {
+                  "criterionIndex": 4,
+                  "sourceCode": "GDGT8S.01.0010.40",
+                  "description": "Tổng kết - Tấm vé thông hành tuổi 15: Thiết kế tấm vé máy bay lên chuyến tàu \"Trưởng thành\", cam kết mang theo tự tôn, dũng cảm và kỷ luật sống văn minh. Truyền đạt thông điệp khép lại chương trình giáo dục giới tính.",
+                  "programLevel": "Mức 3",
+                  "guideDoc": null,
+                  "competencyGroup": "Vận dụng"
+                }
+              ]
+            }
+          ]
+        }
+      ]
+    },
+    "9": {
+      "grade": "9",
+      "topicsCount": 1,
+      "lessonsCount": 10,
+      "criteriaCount": 40,
+      "topics": [
+        {
+          "topicCode": "GDGT9S.01",
+          "topicName": "9 -  HÀNH TRANG TƯƠNG LAI\r\nQuyền cơ thể nâng cao, sự đồng thuận, trách nhiệm tình cảm & nhận thức Pháp luật\r\n\r\nMục tiêu: Làm chủ sự đồng thuận, đưa ra quyết định có trách nhiệm trong tình cảm/SKSS, hiểu biết pháp luật và sẵn sàng bước vào giai đoạn trưởng thành.",
+          "lessons": [
+            {
+              "lessonIndex": 1,
+              "lessonCode": "GDGT9S.01.0001",
+              "lessonName": "Trưởng thành về thể chất và cảm xúc",
+              "criteria": [
+                {
+                  "criterionIndex": 1,
+                  "sourceCode": "GDGT9S.01.0001.01",
+                  "description": "Khởi động - Mảnh ghép trưởng thành: Chạy đua dán thẻ phân loại hành vi vào đúng 4 cột trụ: Thể chất, Cảm xúc, Suy nghĩ, Trách nhiệm cá nhân.",
+                  "programLevel": "Mức 1",
+                  "guideDoc": "DOC_GDGT_TL",
+                  "competencyGroup": "Biết"
+                },
+                {
+                  "criterionIndex": 2,
+                  "sourceCode": "GDGT9S.01.0001.02",
+                  "description": "Khám phá - Trạm kiểm duyệt sự thật: Tranh biện 10 câu hỏi phản xạ tư duy, bóc tách tính bốc đồng hờn dỗi và đổ lỗi hoàn cảnh.",
+                  "programLevel": "Mức 2",
+                  "guideDoc": "DOC_GDGT_TAPHUAN",
+                  "competencyGroup": "Hiểu"
+                },
+                {
+                  "criterionIndex": 3,
+                  "sourceCode": "GDGT9S.01.0001.03",
+                  "description": "Thực hành - Phòng cấp cứu cảm xúc: Chuyển hóa lý thuyết thành kỹ năng xử lý khủng hoảng, đóng vai \"Ban tư vấn tâm lý\" để phân tích hành vi bốc đồng và đề xuất phác đồ điều chỉnh ứng xử.",
+                  "programLevel": "Mức 3",
+                  "guideDoc": "DOC_GDGT_DECUONG",
+                  "competencyGroup": "Vận dụng"
+                },
+                {
+                  "criterionIndex": 4,
+                  "sourceCode": "GDGT9S.01.0001.04",
+                  "description": "Tổng kết - Bản tuyên ngôn tuổi 15: Cam kết tự chịu trách nhiệm 100% với hành vi, tự rèn luyện nhân cách độc lập sẵn sàng bước vào cấp ba.",
+                  "programLevel": "Mức 3",
+                  "guideDoc": null,
+                  "competencyGroup": "Vận dụng"
+                }
+              ]
+            },
+            {
+              "lessonIndex": 2,
+              "lessonCode": "GDGT9S.01.0002",
+              "lessonName": "Quyền cơ thể và ranh giới trong mối quan hệ",
+              "criteria": [
+                {
+                  "criterionIndex": 1,
+                  "sourceCode": "GDGT9S.01.0002.05",
+                  "description": "Khởi động - Vòng tròn khoảng cách: Thí nghiệm đo đạc khoảng cách vật lý thoải mái của các cặp học sinh, thấy rõ ranh giới an toàn của mỗi người là khác nhau.",
+                  "programLevel": "Mức 1",
+                  "guideDoc": null,
+                  "competencyGroup": "Biết"
+                },
+                {
+                  "criterionIndex": 2,
+                  "sourceCode": "GDGT9S.01.0002.06",
+                  "description": "Khám phá - Bộ luật tự chủ cơ thể: Phân tích 3 cấp độ ranh giới và chuẩn hóa 5 nguyên tắc đồng thuận FRIES. Phản biện các quan điểm thao túng, ghi nhớ khung nhận thức chuẩn.",
+                  "programLevel": "Mức 2",
+                  "guideDoc": null,
+                  "competencyGroup": "Hiểu"
+                },
+                {
+                  "criterionIndex": 3,
+                  "sourceCode": "GDGT9S.01.0002.07",
+                  "description": "Thực hành - Đạo diễn kịch bản đảo ngược: Viết lại lời thoại cho kịch bản lỗi. Thảo luận, gạch bỏ hành vi độc hại, sửa lại kịch bản thể hiện sự tôn trọng.",
+                  "programLevel": "Mức 3",
+                  "guideDoc": null,
+                  "competencyGroup": "Vận dụng"
+                },
+                {
+                  "criterionIndex": 4,
+                  "sourceCode": "GDGT9S.01.0002.08",
+                  "description": "Tổng kết - Hợp đồng ranh giới cá nhân: Ký kết khế ước ranh giới bảo vệ chủ quyền thân thể, ranh giới dữ liệu và tôn trọng ranh giới của đối phương.",
+                  "programLevel": "Mức 3",
+                  "guideDoc": null,
+                  "competencyGroup": "Vận dụng"
+                }
+              ]
+            },
+            {
+              "lessonIndex": 3,
+              "lessonCode": "GDGT9S.01.0003",
+              "lessonName": "Bình đẳng giới trong các mối quan hệ",
+              "criteria": [
+                {
+                  "criterionIndex": 1,
+                  "sourceCode": "GDGT9S.01.0003.09",
+                  "description": "Khởi động - Ai làm việc này?: Biểu quyết phân loại hành vi để nhận diện sự tồn tại của định kiến giới đang đóng khung nam/nữ.",
+                  "programLevel": "Mức 1",
+                  "guideDoc": null,
+                  "competencyGroup": "Biết"
+                },
+                {
+                  "criterionIndex": 2,
+                  "sourceCode": "GDGT9S.01.0003.10",
+                  "description": "Khám phá - Triển lãm bóng ma kiểm soát: Tham quan triển lãm tin nhắn; giải mã sự khác biệt giữa quan tâm và kiểm soát. Dán nhãn đánh giá \"Yêu thương\" hay \"Độc hại\", nhận diện sự kìm kẹp, thao túng núp bóng tình cảm.",
+                  "programLevel": "Mức 2",
+                  "guideDoc": null,
+                  "competencyGroup": "Hiểu"
+                },
+                {
+                  "criterionIndex": 3,
+                  "sourceCode": "GDGT9S.01.0003.11",
+                  "description": "Thực hành - Dịch thuật ngôn ngữ bình đẳng: Chia nhóm, phát \"Từ điển ngôn ngữ lỗi\" (bao gồm giao tiếp mạng). Thảo luận nhóm, viết lại các câu thoại thành phiên bản văn minh, tôn trọng.",
+                  "programLevel": "Mức 3",
+                  "guideDoc": null,
+                  "competencyGroup": "Vận dụng"
+                },
+                {
+                  "criterionIndex": 4,
+                  "sourceCode": "GDGT9S.01.0003.12",
+                  "description": "Tổng kết - Thước đo cân bằng: Sử dụng thước đo tích hợp tự đánh giá sức khỏe tình cảm, phát hiện sớm các dấu hiệu nguy hại.",
+                  "programLevel": "Mức 3",
+                  "guideDoc": null,
+                  "competencyGroup": "Vận dụng"
+                }
+              ]
+            },
+            {
+              "lessonIndex": 4,
+              "lessonCode": "GDGT9S.01.0004",
+              "lessonName": "Đồng thuận và sự tôn trọng",
+              "criteria": [
+                {
+                  "criterionIndex": 1,
+                  "sourceCode": "GDGT9S.01.0004.13",
+                  "description": "Khởi động - Thử thách mượn đồ: Tương tác mượn đồ dùng cá nhân của học sinh với các kịch bản dồn ép, mặc định quá khứ để minh họa sự vô lý. Quan sát hiện tượng, phản ứng, nhận thức trực quan, tự nhiên về bản chất tự nguyện của sự đồng thuận.",
+                  "programLevel": "Mức 1",
+                  "guideDoc": null,
+                  "competencyGroup": "Biết"
+                },
+                {
+                  "criterionIndex": 2,
+                  "sourceCode": "GDGT9S.01.0004.14",
+                  "description": "Khám phá - Phòng phân tích tín hiệu: Cung cấp 5 nguyên tắc FRIES. Đưa ra các câu nói lấp lửng để phân tích tính đồng thuận. Bóc tách ý nghĩa thực sự của sự im lặng, gượng ép và ngôn ngữ cơ thể phòng thủ.",
+                  "programLevel": "Mức 2",
+                  "guideDoc": null,
+                  "competencyGroup": "Hiểu"
+                },
+                {
+                  "criterionIndex": 3,
+                  "sourceCode": "GDGT9S.01.0004.15",
+                  "description": "Thực hành - Trọng tài băng hình: Nghe kịch bản, phát hiện lỗi sai, đóng vai trọng tài và hướng dẫn sửa lỗi.",
+                  "programLevel": "Mức 3",
+                  "guideDoc": null,
+                  "competencyGroup": "Vận dụng"
+                },
+                {
+                  "criterionIndex": 4,
+                  "sourceCode": "GDGT9S.01.0004.16",
+                  "description": "Tổng kết - Kim chỉ nam giao tiếp: Điền cẩm nang từ vựng thực tế để biết cách mở lời hỏi đồng thuận và cách mỉm cười chấp nhận lời từ chối của bạn.",
+                  "programLevel": "Mức 3",
+                  "guideDoc": null,
+                  "competencyGroup": "Vận dụng"
+                }
+              ]
+            },
+            {
+              "lessonIndex": 5,
+              "lessonCode": "GDGT9S.01.0005",
+              "lessonName": "Phòng chống xâm hại, quấy rối và bạo lực",
+              "criteria": [
+                {
+                  "criterionIndex": 1,
+                  "sourceCode": "GDGT9S.01.0005.17",
+                  "description": "Khởi động - Thử thách góc khuất: Chọn kẻ nguy hiểm trong 4 chân dung, lật tẩy điểm mù quấy rối xâm hại đa số đến từ người quen, có vỏ bọc lịch sự.",
+                  "programLevel": "Mức 1",
+                  "guideDoc": null,
+                  "competencyGroup": "Biết"
+                },
+                {
+                  "criterionIndex": 2,
+                  "sourceCode": "GDGT9S.01.0005.18",
+                  "description": "Khám phá - Lật tẩy mặt nạ: Biện luận phá vỡ ngụy biện quấy rối bằng ánh nhìn/lời nói bẩn, tuyệt đối không đổ lỗi cho nạn nhân.",
+                  "programLevel": "Mức 2",
+                  "guideDoc": null,
+                  "competencyGroup": "Hiểu"
+                },
+                {
+                  "criterionIndex": 3,
+                  "sourceCode": "GDGT9S.01.0005.19",
+                  "description": "Thực hành - Diễn tập lá chắn sống: Hướng dẫn kỹ thuật phản kháng 3 bước (Nhận diện - Chuyển hướng - Cầu cứu). Thảo luận nhóm, viết kịch bản ứng phó khẩn cấp và đề xuất lối thoát an toàn nhất cho các tình huống.",
+                  "programLevel": "Mức 3",
+                  "guideDoc": null,
+                  "competencyGroup": "Vận dụng"
+                },
+                {
+                  "criterionIndex": 4,
+                  "sourceCode": "GDGT9S.01.0005.20",
+                  "description": "Tổng kết - Sổ tay vệ sĩ cá nhân: Cô đọng các kỹ năng thành một cẩm nang mang tính khẩu hiệu. Học sinh tự cá nhân hóa bài học, khẳng định sự mạnh mẽ và tinh thần tự vệ của bản thân.",
+                  "programLevel": "Mức 3",
+                  "guideDoc": null,
+                  "competencyGroup": "Vận dụng"
+                }
+              ]
+            },
+            {
+              "lessonIndex": 6,
+              "lessonCode": "GDGT9S.01.0006",
+              "lessonName": "An toàn số và bảo vệ danh tính cá nhân",
+              "criteria": [
+                {
+                  "criterionIndex": 1,
+                  "sourceCode": "GDGT9S.01.0006.21",
+                  "description": "Khởi động - Thám tử mạng: Chiếu một bức ảnh tưởng như vô hại, yêu cầu học sinh tìm ra các thông tin cá nhân bị lộ. Quan sát kỹ, chỉ ra các lỗi bảo mật trong bức ảnh. Nhận thức sự bất cẩn trong thói quen sống ảo hàng ngày.",
+                  "programLevel": "Mức 1",
+                  "guideDoc": null,
+                  "competencyGroup": "Biết"
+                },
+                {
+                  "criterionIndex": 2,
+                  "sourceCode": "GDGT9S.01.0006.22",
+                  "description": "Khám phá - Phòng phân tích mã độc: Nhận diện cơ chế thao túng của 3 mã độc mạng: chăn dắt tình cảm (grooming), tống tiền bằng ảnh nhạy cảm, bôi nhọ ẩn danh.",
+                  "programLevel": "Mức 2",
+                  "guideDoc": null,
+                  "competencyGroup": "Hiểu"
+                },
+                {
+                  "criterionIndex": 3,
+                  "sourceCode": "GDGT9S.01.0006.23",
+                  "description": "Thực hành - Kích hoạt tường lửa: Giao các tình huống bị kẻ xấu nhắn tin đe dọa hoặc gạ gẫm. Hướng dẫn quy trình xử lý. Đóng vai, soạn các câu trả lời cắt đứt liên lạc và lưu bằng chứng. Luyện kỹ năng phản kháng tức thời và xử lý khủng hoảng truyền thông cá nhân.",
+                  "programLevel": "Mức 3",
+                  "guideDoc": null,
+                  "competencyGroup": "Vận dụng"
+                },
+                {
+                  "criterionIndex": 4,
+                  "sourceCode": "GDGT9S.01.0006.24",
+                  "description": "Tổng kết - Hợp đồng an ninh mạng: Cam kết bảo mật dấu vết kỹ thuật số cá nhân, không chia sẻ phát tán rác mạng bôi nhọ người khác.",
+                  "programLevel": "Mức 3",
+                  "guideDoc": null,
+                  "competencyGroup": "Vận dụng"
+                }
+              ]
+            },
+            {
+              "lessonIndex": 7,
+              "lessonCode": "GDGT9S.01.0007",
+              "lessonName": "Tình cảm tuổi vị thành niên và lựa chọn có trách nhiệm",
+              "criteria": [
+                {
+                  "criterionIndex": 1,
+                  "sourceCode": "GDGT9S.01.0007.25",
+                  "description": "Khởi động - Chiếc bình năng lượng: Thí nghiệm rót nước từ bình lớn vào các cốc để nhận diện sự cạn kiệt học tập, gia đình khi dốc hết 100% cho vấn đề tình cảm.",
+                  "programLevel": "Mức 1",
+                  "guideDoc": null,
+                  "competencyGroup": "Biết"
+                },
+                {
+                  "criterionIndex": 2,
+                  "sourceCode": "GDGT9S.01.0007.26",
+                  "description": "Khám phá - Sàn giao dịch rủi ro: Đưa ra các thương vụ mạo hiểm trong tình cảm; dẫn dắt học sinh phân tích cái được ngắn hạn và khoản nợ dài hạn. Bóc tách bài toán \"được-mất\" dưới góc độ nhà đầu tư; kích hoạt vỏ não tiền trán làm việc. Đánh giá rủi ro khách quan (thể chất, danh dự, pháp lý), dập tắt sự lãng mạn mù quáng.",
+                  "programLevel": "Mức 2",
+                  "guideDoc": null,
+                  "competencyGroup": "Hiểu"
+                },
+                {
+                  "criterionIndex": 3,
+                  "sourceCode": "GDGT9S.01.0007.27",
+                  "description": "Thực hành - Kỹ thuật phanh khẩn cấp: Hướng dẫn cơ chế thần kinh và 3 bước bóp phanh; đưa kịch bản tình huống mất kiểm soát. Thảo luận nhóm, áp dụng 3 bước phanh khẩn cấp để đưa ra lời thoại/hành động dừng xe an toàn.",
+                  "programLevel": "Mức 3",
+                  "guideDoc": null,
+                  "competencyGroup": "Vận dụng"
+                },
+                {
+                  "criterionIndex": 4,
+                  "sourceCode": "GDGT9S.01.0007.28",
+                  "description": "Tổng kết - Hòa ước cân bằng: Cam kết thiết lập thời gian tắt máy ngủ sớm, ranh giới hẹn hò không gian kín và thứ tự ưu tiên cho tương lai cấp ba.",
+                  "programLevel": "Mức 3",
+                  "guideDoc": null,
+                  "competencyGroup": "Vận dụng"
+                }
+              ]
+            },
+            {
+              "lessonIndex": 8,
+              "lessonCode": "GDGT9S.01.0008",
+              "lessonName": "Sức khỏe sinh sản và quyết định có trách nhiệm",
+              "criteria": [
+                {
+                  "criterionIndex": 1,
+                  "sourceCode": "GDGT9S.01.0008.29",
+                  "description": "Khởi động - Bức thư từ tương lai: Lắng nghe phong thư tuổi 25 gieo dắt cảm xúc về hậu quả nạo phá thai chui tuổi 15, bệnh lây truyền suốt đời và vinh quang tự chủ.",
+                  "programLevel": "Mức 1",
+                  "guideDoc": null,
+                  "competencyGroup": "Biết"
+                },
+                {
+                  "criterionIndex": 2,
+                  "sourceCode": "GDGT9S.01.0008.30",
+                  "description": "Khám phá - Giải mã ma trận rủi ro: Thiết lập ma trận rủi ro gánh chịu mang thai/bệnh sớm theo 4 hướng: Thể chất, Tâm lý, Kinh tế, và Xã hội tương lai học đường.",
+                  "programLevel": "Mức 2",
+                  "guideDoc": null,
+                  "competencyGroup": "Hiểu"
+                },
+                {
+                  "criterionIndex": 3,
+                  "sourceCode": "GDGT9S.01.0008.31",
+                  "description": "Thực hành - Phòng khám tuổi teen: Kê đơn thuốc nhận thức đập tan ngộ nhận quan hệ bên ngoài không dính bầu, ép dâng hiến chứng minh tình yêu và tự phá thai chui.",
+                  "programLevel": "Mức 3",
+                  "guideDoc": null,
+                  "competencyGroup": "Vận dụng"
+                },
+                {
+                  "criterionIndex": 4,
+                  "sourceCode": "GDGT9S.01.0008.32",
+                  "description": "Tổng kết - Tấm khiên kiên định: Điền phiếu cam kết trì hoãn quan hệ tình dục sớm, bảo vệ tương lai học tập và xác lập chủ quyền cơ thể bất khả xâm phạm.",
+                  "programLevel": "Mức 3",
+                  "guideDoc": null,
+                  "competencyGroup": "Vận dụng"
+                }
+              ]
+            },
+            {
+              "lessonIndex": 9,
+              "lessonCode": "GDGT9S.01.0009",
+              "lessonName": "Pháp luật, quyền và trách nhiệm của vị thành niên",
+              "criteria": [
+                {
+                  "criterionIndex": 1,
+                  "sourceCode": "GDGT9S.01.0009.33",
+                  "description": "Khởi động - Quyền hay đặc quyền?: Đưa ra các đặc quyền và quyền lợi cơ bản, yêu cầu học sinh phân loại đúng tính chất. Di chuyển lên bảng để dán thẻ hoặc biểu quyết tại chỗ để phân biệt các khái niệm. Nhận thức rõ những gì pháp luật bảo hộ và những gì phải nỗ lực mới có được.",
+                  "programLevel": "Mức 1",
+                  "guideDoc": null,
+                  "competencyGroup": "Biết"
+                },
+                {
+                  "criterionIndex": 2,
+                  "sourceCode": "GDGT9S.01.0009.34",
+                  "description": "Khám phá - Hồ sơ pháp lý tuổi teen: Trình bày các kiến thức cốt lõi về luật pháp liên quan đến thân thể và danh dự thông qua phân tích tình huống thực tế. Ghi chép các điểm cốt lõi của luật, đối chiếu hành vi thực tế với quy định của pháp luật.",
+                  "programLevel": "Mức 2",
+                  "guideDoc": null,
+                  "competencyGroup": "Hiểu"
+                },
+                {
+                  "criterionIndex": 3,
+                  "sourceCode": "GDGT9S.01.0009.35",
+                  "description": "Thực hành - Trạm gỡ rối pháp lý: Thảo luận nhóm, xác định hành vi vi phạm, đề xuất các bước hành động cầu cứu hợp pháp và an toàn thông qua các tình huống.",
+                  "programLevel": "Mức 3",
+                  "guideDoc": null,
+                  "competencyGroup": "Vận dụng"
+                },
+                {
+                  "criterionIndex": 4,
+                  "sourceCode": "GDGT9S.01.0009.36",
+                  "description": "Tổng kết - Hộ chiếu công dân học đường: Điền cuốn sổ gập hộ chiếu công dân học đường cam kết thượng tôn pháp luật và nghĩa vụ tôn trọng người xung quanh.",
+                  "programLevel": "Mức 3",
+                  "guideDoc": null,
+                  "competencyGroup": "Vận dụng"
+                }
+              ]
+            },
+            {
+              "lessonIndex": 10,
+              "lessonCode": "GDGT9S.01.0010",
+              "lessonName": "Hành trang trưởng thành",
+              "criteria": [
+                {
+                  "criterionIndex": 1,
+                  "sourceCode": "GDGT9S.01.0010.37",
+                  "description": "Khởi động - Chiếc vali sinh tồn: Đọc tên các khái niệm, kỹ năng và định kiến. Yêu cầu học sinh quyết định mang theo hay vứt bỏ. Xây dựng tâm thế chủ động loại bỏ rác tinh thần trước khi bước sang chặn đường mới.",
+                  "programLevel": "Mức 1",
+                  "guideDoc": null,
+                  "competencyGroup": "Biết"
+                },
+                {
+                  "criterionIndex": 2,
+                  "sourceCode": "GDGT9S.01.0010.38",
+                  "description": "Khám phá - Mật mã mở khóa tương lai: Giải mã và chốt lại các nguyên tắc từ ranh giới cơ thể, bình đẳng, trì hoãn cám dỗ, lên tiếng cầu cứu...",
+                  "programLevel": "Mức 2",
+                  "guideDoc": null,
+                  "competencyGroup": "Hiểu"
+                },
+                {
+                  "criterionIndex": 3,
+                  "sourceCode": "GDGT9S.01.0010.39",
+                  "description": "Thực hành - Phòng mô phỏng đa rủi ro: Giao các tình huống phức tạp có nhiều cái bẫy đan xen. Hướng dẫn phân tích bóc tách. Thảo luận nhóm, xử lý các khủng hoảng đa tầng trong thực tế.",
+                  "programLevel": "Mức 3",
+                  "guideDoc": null,
+                  "competencyGroup": "Vận dụng"
+                },
+                {
+                  "criterionIndex": 4,
+                  "sourceCode": "GDGT9S.01.0010.40",
+                  "description": "Tổng kết - Tấm vé thông hành tuổi 15: Thiết kế tấm vé máy bay lên chuyến tàu \"Trưởng thành\", cam kết mang theo tự tôn, dũng cảm và kỷ luật sống văn minh. Truyền đạt thông điệp khép lại chương trình giáo dục giới tính.",
+                  "programLevel": "Mức 3",
+                  "guideDoc": null,
+                  "competencyGroup": "Vận dụng"
+                }
+              ]
+            }
+          ]
+        }
+      ]
+    }
+  }
+}

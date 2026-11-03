@@ -301,67 +301,80 @@ export const isCthsDepartment = (deptNameOrCode: string) => {
 };
 
 export function getSlotCategoryInfo(slot: any): { key: "MAM_NON" | "GVNN_ESL" | "CTHS_WORK" | "K12", label: string, shortCode: string, badgeClass: string } {
+  const defaultK12 = {
+    key: "K12" as const,
+    label: "Khối Phổ thông",
+    shortCode: "Khối Phổ thông",
+    badgeClass: "bg-emerald-100 text-emerald-900 border-emerald-300 ring-1 ring-emerald-400/30"
+  };
+
   if (!slot) {
-    return { key: "K12", label: "Khối Phổ thông", shortCode: "Khối Phổ thông", badgeClass: "bg-emerald-100 text-emerald-900 border-emerald-300 ring-1 ring-emerald-400/30" };
+    return defaultK12;
   }
 
-  const subj = (slot?.subjectName || "").toLowerCase();
-  const top = (slot?.topic || "").toLowerCase();
-  const desc = (slot?.description || "").toLowerCase();
-  const teacherName = (slot?.teacher?.teacherName || "").trim();
+  try {
+    const subj = (slot?.subjectName || "").toLowerCase();
+    const top = (slot?.topic || "").toLowerCase();
+    const desc = (slot?.description || "").toLowerCase();
+    const teacherName = (slot?.teacher?.teacherName || "").trim();
 
-  // Inspect evaluation if present
-  const reg = (slot?.registrations || [])[0];
-  const evalComment = reg?.evaluation?.generalComment || "";
-  const isWalkthroughEval = evalComment.includes('"criterionScores"') || evalComment.includes('"teacherVoice"') || evalComment.includes('"targetSkills"');
+    // Inspect evaluation if present
+    const reg = (slot?.registrations || [])[0];
+    const evalComment = reg?.evaluation?.generalComment || "";
+    const isWalkthroughEval = evalComment.includes('"criterionScores"') || evalComment.includes('"teacherVoice"') || evalComment.includes('"targetSkills"');
 
-  // 1. Check CTHS Work Log first
-  const isCthsLog = evalComment.includes('"CTHS_WORK_LOG"') ||
-    slot?.requestOrigin === "CTHS_WORK_LOG" ||
-    desc.includes("làm việc tại cơ sở") ||
-    desc.includes("công tác học sinh") ||
-    desc.includes("tổ cths") ||
-    isCthsDepartment(slot?.teacher?.departmentRel?.name || slot?.teacher?.departmentRel?.code || "") ||
-    (slot?.targetDeptId && isCthsDepartment(slot?.targetDeptId)) ||
-    (slot?.subjectName && isCthsDepartment(slot?.subjectName));
+    // 1. Check CTHS Work Log first
+    const isCthsLog = evalComment.includes('"CTHS_WORK_LOG"') ||
+      slot?.requestOrigin === "CTHS_WORK_LOG" ||
+      desc.includes("làm việc tại cơ sở") ||
+      desc.includes("công tác học sinh") ||
+      desc.includes("tổ cths") ||
+      isCthsDepartment(slot?.teacher?.departmentRel?.name || slot?.teacher?.departmentRel?.code || "") ||
+      (slot?.targetDeptId && isCthsDepartment(slot?.targetDeptId)) ||
+      (slot?.subjectName && isCthsDepartment(slot?.subjectName));
 
-  if (isCthsLog) {
-    return { key: "CTHS_WORK", label: "Công tác học sinh (CTHS)", shortCode: "Tổ CTHS", badgeClass: "bg-teal-100 text-teal-900 border-teal-300 ring-1 ring-teal-400/30" };
+    if (isCthsLog) {
+      return { key: "CTHS_WORK", label: "Công tác học sinh (CTHS)", shortCode: "Tổ CTHS", badgeClass: "bg-teal-100 text-teal-900 border-teal-300 ring-1 ring-teal-400/30" };
+    }
+
+    // 2. Check Foreign Walkthrough / GVNN
+    const isForeignEsl = slot?.requestOrigin === "FOREIGN_WALKTHROUGH" ||
+      isWalkthroughEval ||
+      desc.includes("dự giờ gvnn") ||
+      desc.includes("du gio gvnn") ||
+      (desc.includes("gvnn") && (desc.includes("tiếng anh") || desc.includes("foreign") || desc.includes("esl"))) ||
+      top.includes("walkthrough") ||
+      (top.includes("gvnn") && top.includes("esl")) ||
+      (slot?.teacher?.position === "GVNN");
+
+    if (isForeignEsl) {
+      return { key: "GVNN_ESL", label: "Giáo viên nước ngoài", shortCode: "GV nước ngoài", badgeClass: "bg-sky-100 text-sky-900 border-sky-300 ring-1 ring-sky-400/30" };
+    }
+
+    // 3. Next check Preschool
+    const isMN = slot?.level === "Mầm non" ||
+      (slot?.grade || "").toLowerCase().includes("mầm non") ||
+      (slot?.grade || "").toLowerCase().includes("mẫu giáo") ||
+      (slot?.grade || "").toLowerCase().includes("nhà trẻ") ||
+      (slot?.teacher?.departmentRel?.blockCM || "").normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase().includes("mam non") ||
+      (slot?.teacher?.departmentRel?.name || "").normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase().includes("mam non") ||
+      (typeof slot?.className === "string" && (
+        slot.className.includes("READY FOR SKY-LINE") ||
+        slot.className.includes("WINGS") ||
+        slot.className.includes("NEWTON") ||
+        slot.className.includes("MONTESSORI")
+      ));
+
+    if (isMN) {
+      return { key: "MAM_NON", label: "Khối Mầm non", shortCode: "Khối Mầm non", badgeClass: "bg-amber-100 text-amber-900 border-amber-300 ring-1 ring-amber-400/30" };
+    }
+
+    // 4. Default to K-12 General Education
+    return defaultK12;
+  } catch (err) {
+    console.error("Error evaluating slot category:", err);
+    return defaultK12;
   }
-
-  // 2. Check Foreign Walkthrough / GVNN
-  const isForeignEsl = slot?.requestOrigin === "FOREIGN_WALKTHROUGH" ||
-    isWalkthroughEval ||
-    desc.includes("dự giờ gvnn") ||
-    desc.includes("du gio gvnn") ||
-    (desc.includes("gvnn") && (desc.includes("tiếng anh") || desc.includes("foreign") || desc.includes("esl"))) ||
-    top.includes("walkthrough") ||
-    (top.includes("gvnn") && top.includes("esl")) ||
-    (slot?.teacher?.position === "GVNN");
-
-  if (isForeignEsl) {
-    return { key: "GVNN_ESL", label: "Giáo viên nước ngoài", shortCode: "GV nước ngoài", badgeClass: "bg-sky-100 text-sky-900 border-sky-300 ring-1 ring-sky-400/30" };
-  }
-
-  // 3. Next check Preschool
-  const isMN = slot?.level === "Mầm non" ||
-    (slot?.grade || "").toLowerCase().includes("mầm non") ||
-    (slot?.grade || "").toLowerCase().includes("mẫu giáo") ||
-    (slot?.grade || "").toLowerCase().includes("nhà trẻ") ||
-    (slot?.teacher?.departmentRel?.blockCM || "").normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase().includes("mam non") ||
-    (slot?.teacher?.departmentRel?.name || "").normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase().includes("mam non") ||
-    (typeof slot?.className === "string" && (
-      slot.className.includes("READY FOR SKY-LINE") ||
-      slot.className.includes("WINGS") ||
-      slot.className.includes("NEWTON") ||
-      slot.className.includes("MONTESSORI")
-    ));
-
-  if (isMN) {
-    return { key: "MAM_NON", label: "Khối Mầm non", shortCode: "Khối Mầm non", badgeClass: "bg-amber-100 text-amber-900 border-amber-300 ring-1 ring-amber-400/30" };
-  }
-
-  // 4. Default to K-12 General Education
 }
 
 export function isMatchPreschoolGrade(classGrade: string, targetGrade: string): boolean {
@@ -1216,7 +1229,10 @@ export function ObservationClient(props: ObservationClientProps) {
         if (!isClassInCampus(c, reqCampusId)) return false;
       }
 
-      if (cleanDbLevel && cleanDbLevel !== "pho thong k-12") {
+      if (cleanDbLevel === "pho thong k-12") {
+        const cLevelClean = normalizeLevel(c.level || "");
+        if (cLevelClean === "mam non") return false;
+      } else if (cleanDbLevel) {
         const cLevelClean = normalizeLevel(c.level || "");
         if (cLevelClean !== cleanDbLevel) return false;
       }
@@ -1394,23 +1410,29 @@ export function ObservationClient(props: ObservationClientProps) {
           // If action is register, open the registration modal or notify status
           if (actionParam === "register") {
             const todayStr = new Date().toISOString().split("T")[0];
-            const isExpired = targetSlot.status === "EXPIRED" || (targetSlot.date && targetSlot.date.split("T")[0] < todayStr);
+            const slotDateStr = typeof targetSlot.date === "string"
+              ? (targetSlot.date.includes("T") ? targetSlot.date.split("T")[0] : targetSlot.date)
+              : targetSlot.date instanceof Date
+                ? targetSlot.date.toISOString().split("T")[0]
+                : "";
+            const isExpired = targetSlot.status === "EXPIRED" || (slotDateStr !== "" && slotDateStr < todayStr);
             const myReg = targetSlot.registrations?.find((r: any) => r.teacherId === currentTeacher?.id);
             const observerCount = targetSlot.registrations?.length || 0;
+            const teacherName = targetSlot.teacher?.teacherName || "Giáo viên";
 
             if (myReg) {
               setToast({
-                message: `Bạn đã đăng ký tham dự tiết dạy của Thầy/Cô ${targetSlot.teacher?.teacherName} (${myReg.isApproved ? "Đã được xác nhận" : "Đang chờ duyệt"}).`,
+                message: `Bạn đã đăng ký tham dự tiết dạy của Thầy/Cô ${teacherName} (${myReg.isApproved ? "Đã được xác nhận" : "Đang chờ duyệt"}).`,
                 type: "info"
               });
             } else if (isExpired) {
               setToast({
-                message: `Tiết dạy của Thầy/Cô ${targetSlot.teacher?.teacherName} đã diễn ra hoặc hết hạn đăng ký.`,
+                message: `Tiết dạy của Thầy/Cô ${teacherName} đã diễn ra hoặc hết hạn đăng ký.`,
                 type: "error"
               });
             } else if (observerCount >= (targetSlot.maxSeats || 4)) {
               setToast({
-                message: `Tiết dạy của Thầy/Cô ${targetSlot.teacher?.teacherName} đã đủ ${targetSlot.maxSeats || 4} giáo viên đăng ký.`,
+                message: `Tiết dạy của Thầy/Cô ${teacherName} đã đủ ${targetSlot.maxSeats || 4} giáo viên đăng ký.`,
                 type: "error"
               });
             } else {
@@ -1425,6 +1447,11 @@ export function ObservationClient(props: ObservationClientProps) {
           setHighlightedSlotId(null);
         }, 7000);
         return () => clearTimeout(timer);
+      } else if (slotIdParam) {
+        setToast({
+          message: "Không tìm thấy thông tin tiết dạy này hoặc tiết dạy đã được điều chỉnh.",
+          type: "info"
+        });
       }
     }
   }, [searchParams, slots, currentTeacher]);
@@ -1479,7 +1506,7 @@ export function ObservationClient(props: ObservationClientProps) {
     setNewClassId(slot.classId || "other");
     setNewClassNameText(slot.className || "");
     setNewTopic(slot.topic || "");
-    if (slot.level === "Mầm non") {
+    if (slot.level === "Mầm non" && (slot.subjectName || "").includes(" | ")) {
       const parts = (slot.subjectName || "").split(" | ");
       setNewChuDe(parts[0] || "");
       setNewHoatDong(parts[1] || "");
@@ -1589,7 +1616,10 @@ export function ObservationClient(props: ObservationClientProps) {
         if (!isClassInCampus(c, effectiveCampusId)) return false;
       }
 
-      if (cleanDbLevel && cleanDbLevel !== "pho thong k-12") {
+      if (cleanDbLevel === "pho thong k-12") {
+        const cLevelClean = normalizeLevel(c.level || "");
+        if (cLevelClean === "mam non") return false;
+      } else if (cleanDbLevel) {
         const cLevelClean = normalizeLevel(c.level || "");
         if (cLevelClean !== cleanDbLevel) return false;
       }
@@ -2392,15 +2422,16 @@ export function ObservationClient(props: ObservationClientProps) {
 
   const filteredClassesForSurprise = useMemo(() => {
     if (!activeYearClasses || activeYearClasses.length === 0) return [];
-    const cleanDbLevel = surpriseLevel && surpriseLevel !== "all" ? normalizeLevel(surpriseLevel) : "";
+    const effectiveLevel = surpriseLevel || (isMamNonTeacher ? "Mầm non" : "Phổ thông K-12");
+    const cleanDbLevel = effectiveLevel && effectiveLevel !== "all" ? normalizeLevel(effectiveLevel) : "";
     return activeYearClasses.filter((c: any) => {
       const cLvl = normalizeLevel(c.level || "");
-      if (isMamNonTeacher && cLvl !== "mam non") return false;
-      if (!isMamNonTeacher && surpriseLevel !== "Mầm non" && cLvl === "mam non") return false;
       if (surpriseCampusId && surpriseCampusId !== "all") {
         if (!isClassInCampus(c, surpriseCampusId)) return false;
       }
-      if (cleanDbLevel && cleanDbLevel !== "pho thong k-12") {
+      if (cleanDbLevel === "pho thong k-12") {
+        if (cLvl === "mam non") return false;
+      } else if (cleanDbLevel) {
         if (cLvl !== cleanDbLevel) return false;
       }
       return true;
@@ -3184,7 +3215,7 @@ export function ObservationClient(props: ObservationClientProps) {
       showToast("Không thể chọn ngày thuộc các tháng trước. Vui lòng chọn ngày trong tháng hiện tại hoặc các tháng sau!", "error");
       return;
     }
-    const isMN = isMamNonTeacher || newLevel === "Mầm non";
+    const isMN = isMamNonTeacher;
     if (isMN) {
       if (!newGrade || !newChuDe.trim() || !newHoatDong.trim() || !newDeTai.trim() || !newDate || !newStartTime || !newEndTime || !newCampusId) {
         showToast("Vui lòng điền đầy đủ các thông tin bắt buộc (*)", "error"); return
@@ -4111,7 +4142,26 @@ export function ObservationClient(props: ObservationClientProps) {
     <>
       {/* MOBILE PWA VIEW (< 768px): GIAO DIỆN CHUYÊN BIỆT CHO SMARTPHONE */}
       <div className="md:hidden w-full">
-        <ObservationMobileView initialSlots={props.initialSlots} currentTeacher={props.currentTeacher} />
+        <ObservationMobileView
+          initialSlots={slots}
+          currentTeacher={currentTeacher}
+          canCreateSurprise={canCreateSurprise}
+          canAssignObservation={canAssignObservation}
+          managementScope={managementScope}
+          onOpenSurprise={() => {
+            setCreationMode("SURPRISE");
+            setShowCreateModal(true);
+          }}
+          onOpenAssigned={() => {
+            setCreationMode("ASSIGNED");
+            setShowCreateModal(true);
+          }}
+          onOpenCreateSlot={() => {
+            setCreationMode("TEACHER_OPEN");
+            setShowCreateModal(true);
+          }}
+          refreshSlots={refreshSlots}
+        />
       </div>
 
       {/* DESKTOP VIEW (>= 768px): GIỮ NGUYÊN 100% GIAO DIỆN DESKTOP */}
@@ -4138,6 +4188,22 @@ export function ObservationClient(props: ObservationClientProps) {
         style={{ background: campusTheme.headerGradient }}
       >
         <div className="absolute top-0 right-0 w-80 h-80 bg-white/10 rounded-full blur-3xl pointer-events-none -mr-16 -mt-16" />
+        {/* Ảnh minh họa trường học Sky-Line khớp khung phải & mờ dần */}
+        <div
+          className="hidden sm:block absolute top-0 right-0 bottom-0 sm:w-[54%] md:w-[48%] z-0 pointer-events-none select-none overflow-hidden"
+          style={{
+            WebkitMaskImage:
+              "linear-gradient(to right, transparent 0%, rgba(0,0,0,0.12) 15%, rgba(0,0,0,0.45) 40%, rgba(0,0,0,0.8) 75%, rgba(0,0,0,0.95) 100%)",
+            maskImage:
+              "linear-gradient(to right, transparent 0%, rgba(0,0,0,0.12) 15%, rgba(0,0,0,0.45) 40%, rgba(0,0,0,0.8) 75%, rgba(0,0,0,0.95) 100%)"
+          }}
+        >
+          <img
+            src="/images/skyline-campus-banner.png"
+            alt="Sky-Line Campus"
+            className="w-full h-full object-cover object-[center_65%] opacity-35 mix-blend-luminosity"
+          />
+        </div>
         <div className="relative z-10 flex flex-col xl:flex-row xl:items-center justify-between gap-4">
           
           <div className="flex flex-col sm:flex-row sm:items-center gap-4">
@@ -5669,7 +5735,7 @@ export function ObservationClient(props: ObservationClientProps) {
 
                       {/* Cột 2: TIẾT DẠY & MÔN HỌC */}
                       <td className="py-3.5 px-4 align-top">
-                        {slot.level === "Mầm non" ? (() => {
+                        {(slot.level === "Mầm non" && (slot.subjectName || "").includes(" | ")) ? (() => {
                           const parts = (slot.subjectName || "").split(" | ");
                           const chuDe = parts[0] || "";
                           const hoatDong = parts[1] || "";
@@ -5702,6 +5768,11 @@ export function ObservationClient(props: ObservationClientProps) {
                         })() : (
                           <div className="flex flex-col gap-1 min-w-[180px]">
                             <div className="flex items-center gap-1.5 flex-wrap">
+                              {slot.level === "Mầm non" && (
+                                <span className="px-1.5 py-0.5 text-[9px] font-black uppercase rounded bg-amber-100 text-amber-900 border border-amber-200">
+                                  Mầm non
+                                </span>
+                              )}
                               <p 
                                 className="font-extrabold text-[#003B3A] text-xs leading-snug cursor-pointer hover:text-[#00A19A] hover:underline transition-colors" 
                                 onClick={() => setDrawerSlot(slot)} 
@@ -6560,9 +6631,9 @@ export function ObservationClient(props: ObservationClientProps) {
 
                           {/* Giáo án */}
                           <td className="p-3.5 text-center">
-                            {slot.lessonPlanUrl ? (
+                            {(slot.lessonPlanData || slot.lessonPlanUrl) ? (
                               <a
-                                href={slot.lessonPlanUrl}
+                                href={slot.lessonPlanData || slot.lessonPlanUrl}
                                 target="_blank"
                                 rel="noreferrer"
                                 className="inline-flex items-center gap-1 px-2.5 py-1 rounded-xl bg-teal-50 text-teal-800 hover:bg-teal-100 border border-teal-200 text-xs font-bold transition-colors"
@@ -7254,7 +7325,13 @@ export function ObservationClient(props: ObservationClientProps) {
                 <div className="bg-slate-50 p-3 rounded-xl border border-slate-200 flex flex-col">
                   <span className="text-[10px] font-black text-slate-400 uppercase">Thời gian</span>
                   <span className="text-xs font-bold text-slate-800 mt-0.5">
-                    {registerDetailSlot.startTime} • {new Date(registerDetailSlot.date).toLocaleDateString("vi-VN", { day: "2-digit", month: "2-digit" })}
+                    {registerDetailSlot.startTime || ""} • {registerDetailSlot.date ? (
+                      typeof registerDetailSlot.date === "string"
+                        ? (registerDetailSlot.date.includes("T") ? new Date(registerDetailSlot.date).toLocaleDateString("vi-VN", { day: "2-digit", month: "2-digit" }) : registerDetailSlot.date)
+                        : registerDetailSlot.date instanceof Date
+                          ? registerDetailSlot.date.toLocaleDateString("vi-VN", { day: "2-digit", month: "2-digit" })
+                          : ""
+                    ) : ""}
                   </span>
                 </div>
                 
@@ -8917,8 +8994,12 @@ export function ObservationClient(props: ObservationClientProps) {
         />
       )}
 
+        </div>
+      </div>
+
       {/* ======================================================== */}
       {/* MODAL 4: TẠO TIẾT DẠY / XIN DỰ GIỜ / DỰ GIỜ ĐỘT XUẤT */}
+      {/* (Được đặt ngoài hidden md:block để mở được trên cả Mobile và Desktop) */}
       {/* ======================================================== */}
       <CreateObservationModal
         isOpen={showCreateModal}
@@ -9148,9 +9229,6 @@ export function ObservationClient(props: ObservationClientProps) {
         currentObserverType={currentTeacher?.observerType}
         isSubmitting={isSubmittingExperience}
       />
-
-        </div>
-      </div>
     </>
   );
 }

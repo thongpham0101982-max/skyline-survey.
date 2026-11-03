@@ -2,270 +2,41 @@
 // @ts-nocheck
 
 import React, { useState, useEffect } from "react"
-import { ClipboardCheck, Sparkles, Save, Info, BrainCircuit, User, MessageSquare, AlertCircle, ChevronRight, CheckCircle2 } from "lucide-react"
+import { 
+    ClipboardCheck, 
+    Sparkles, 
+    Save, 
+    Info, 
+    BrainCircuit, 
+    User, 
+    MessageSquare, 
+    AlertCircle, 
+    ChevronRight, 
+    CheckCircle2,
+    Mail,
+    Send,
+    Building2,
+    Check,
+    X,
+    ShieldAlert,
+    Award
+} from "lucide-react"
 
-interface Question {
-    text: string
-    options: string[]
-}
+import { 
+    questionsData, 
+    defaultQuestions, 
+    scaleOptions, 
+    Question, 
+    Section, 
+    QuestionsData,
+    grade1Questions,
+    grades2to5Questions,
+    grades6to9Questions,
+    grades10to12Questions
+} from "@/lib/orientation/psychologyQuestions"
 
-interface Section {
-    title: string
-    questions: Question[]
-}
+export { questionsData, defaultQuestions }
 
-interface QuestionsData {
-    [key: string]: Section[]
-}
-
-
-const scaleOptions = ["0", "1", "2", "3", "4"]
-
-const grades2to5Questions = [
-    {
-        title: "I. Cảm xúc & điều hòa cảm xúc (4 mục)",
-        questions: [
-            { text: "1. Khi bị điểm kém hoặc bị giáo viên nhắc nhở, con thường phản ứng như thế nào?", options: scaleOptions },
-            { text: "2. Khi con và bạn có chuyện không vui (tranh giành đồ chơi, xích mích), con thường xử lý như thế nào?", options: scaleOptions },
-            { text: "3. Khi bị từ chối hoặc không được chọn trong trò chơi, con cảm thấy thế nào?", options: scaleOptions },
-            { text: "4. Trước giờ kiểm tra hoặc khi gặp một việc khó khăn, cảm xúc của con thường thế nào?", options: scaleOptions }
-        ]
-    },
-    {
-        title: "II. Hành vi & tự kiểm soát (3 mục)",
-        questions: [
-            { text: "5. Khi cô dặn phải ngồi yên hoặc chờ đến lượt, con làm thế nào?", options: scaleOptions },
-            { text: "6. Trong lớp, khi nhiều điều khiển con chú ý, con thường phản ứng thế nào?", options: scaleOptions },
-            { text: "7. Khi con cảm thấy bực hoặc tức giận, con thường làm gì để bình tĩnh lại?", options: scaleOptions }
-        ]
-    },
-    {
-        title: "III. Giao tiếp & tương tác xã hội (3 mục)",
-        questions: [
-            { text: "8. Khi gặp bạn mới, con làm gì để làm quen?", options: scaleOptions },
-            { text: "9. Khi chơi cùng bạn, con thường chia sẻ hoặc hợp tác như thế nào?", options: scaleOptions },
-            { text: "10. Khi con bị bạn trêu chọc hoặc bị hiểu lầm, con sẽ làm gì?", options: scaleOptions }
-        ]
-    },
-    {
-        title: "IV. Chú ý & kỹ năng học tập nền (4 mục)",
-        questions: [
-            { text: "11. Khi cô hướng dẫn nhiều bước, con thường ghi nhớ và làm như thế nào?", options: scaleOptions },
-            { text: "12. Khi nghe cô kể chuyện hoặc giảng bài, con nhớ lại điều gì sau đó?", options: scaleOptions },
-            { text: "13. Khi làm bài tập, con bắt đầu và hoàn thành như thế nào?", options: scaleOptions },
-            { text: "14. Khi trong lớp có tiếng ồn hoặc người khác làm việc, con phản ứng thế nào?", options: scaleOptions }
-        ]
-    },
-    {
-        title: "V. Ngôn ngữ - tư duy - giải quyết vấn đề (3 mục)",
-        questions: [
-            { text: "15. Khi nhìn thấy các đồ vật học tập, con nghĩ mỗi món dùng để làm gì?", options: scaleOptions },
-            { text: "16. Khi gặp tình huống thực tế (ví dụ: làm rơi đồ, bị bạn hiểu lầm), con thường làm gì?", options: scaleOptions },
-            { text: "17. Khi xảy ra việc bất ngờ, con nghĩ ra cách giải quyết như thế nào?", options: scaleOptions }
-        ]
-    },
-    {
-        title: "VI. Động lực học tập & thái độ trường học (3 mục)",
-        questions: [
-            { text: "18. Khi đến trường, điều gì khiến con cảm thấy vui nhất?", options: scaleOptions },
-            { text: "19. Khi cô giao bài, con thường bắt đầu như thế nào?", options: scaleOptions },
-            { text: "20. Khi con gặp bài khó, con làm gì để vượt qua?", options: scaleOptions }
-        ]
-    }
-]
-
-
-const grade1Questions = [
-    {
-        title: "I. Cảm xúc & điều hòa cảm xúc (4 mục)",
-        questions: [
-            { text: "1. Khi thua trong trò chơi, con phản ứng thế nào?", options: scaleOptions },
-            { text: "2. Khi rời cha mẹ vào lớp, con có dễ thích nghi không?", options: scaleOptions },
-            { text: "3. Khi bị cô nhắc nhở, con phản ứng thế nào?", options: scaleOptions },
-            { text: "4. Khi bạn trêu chọc, con phản ứng thế nào?", options: scaleOptions }
-        ]
-    },
-    {
-        title: "II. Hành vi & tự kiểm soát (3 mục)",
-        questions: [
-            { text: "5. Khi thầy/cô nói 'Ngồi yên nào', con có làm theo không?", options: scaleOptions },
-            { text: "6. Con có hay chen ngang hoặc nói leo khi thầy/cô đang nói không?", options: scaleOptions },
-            { text: "7. Con có thể ngồi tập trung làm một việc trong bao lâu?", options: scaleOptions }
-        ]
-    },
-    {
-        title: "III. Giao tiếp & tương tác xã hội (3 mục)",
-        questions: [
-            { text: "8. Khi gặp bạn mới, con có dễ bắt chuyện không?", options: scaleOptions },
-            { text: "9. Con có biết chia sẻ đồ chơi, hợp tác trong trò chơi không?", options: scaleOptions },
-            { text: "10. Khi bị bạn làm sai hoặc trêu chọc, con phản ứng thế nào?", options: scaleOptions }
-        ]
-    },
-    {
-        title: "IV. Chú ý & kỹ năng học tập nền (4 mục)",
-        questions: [
-            { text: "11. Khi nghe hướng dẫn gồm 2 việc ('Lấy bút và ngồi xuống'), con làm được không?", options: scaleOptions },
-            { text: "12. Khi nghe kể chuyện ngắn, con nhớ lại chi tiết được không?", options: scaleOptions },
-            { text: "13. Khi làm bài, con có làm vội, chưa nghe xong đã làm không?", options: scaleOptions },
-            { text: "14. Khi làm việc, con có bị sao nhãng bởi tiếng động hoặc bạn khác không?", options: scaleOptions }
-        ]
-    },
-    {
-        title: "V. Ngôn ngữ & tư duy (3 mục)",
-        questions: [
-            { text: "15. Khi được hỏi 'Cái nào dùng để viết: kéo hay bút?', con trả lời...", options: scaleOptions },
-            { text: "16. Khi hỏi 'Con mèo khác con chó ở điểm nào?', con trả lời...", options: scaleOptions },
-            { text: "17. Giáo viên đặt tình huống giả định, con có xử lý được không? (Ví dụ: Khi đi ra ngoài mà trời mưa/ nắng thì mình cần làm gì để khỏi bị nắng nóng/bị ướt? Khi bị bạn giật đồ chơi hoặc xô ngã thì con làm gì?).", options: scaleOptions }
-        ]
-    },
-    {
-        title: "VI. Thái độ & động lực học tập (3 mục)",
-        questions: [
-            { text: "18. Con có thích đến trường không?", options: scaleOptions },
-            { text: "19. Khi thầy/cô giao bài, con phản ứng thế nào?", options: scaleOptions },
-            { text: "20. Khi gặp bài khó, con xử lý thế nào?", options: scaleOptions }
-        ]
-    }
-]
-
-
-const grades6to9Questions = [
-    {
-        title: "I. Cảm xúc & điều hòa cảm xúc (4 mục)",
-        questions: [
-            { text: "1. Khi gặp áp lực học tập (thi, kiểm tra), em cảm thấy thế nào?", options: scaleOptions },
-            { text: "2. Khi bị cô/thầy phê bình trước lớp, em phản ứng ra sao?", options: scaleOptions },
-            { text: "3. Gần đây, có khi nào em cảm thấy buồn chán hoặc không muốn làm gì mà không rõ lý do không? Hãy kể cô/thầy nghe.", options: scaleOptions },
-            { text: "4. Khi em tức giận hoặc thất vọng, em thường làm gì để bình tĩnh lại?", options: scaleOptions }
-        ]
-    },
-    {
-        title: "II. Hành vi – kiểm soát bản thân (3 mục)",
-        questions: [
-            { text: "5. Khi không có cô/thầy trong lớp, em thường cư xử như thế nào với các bạn?", options: scaleOptions },
-            { text: "6. Khi có xung đột hay bất đồng với người khác, em thường làm gì đầu tiên?", options: scaleOptions },
-            { text: "7. Khi có bài tập hoặc việc được giao mà em không thích, em thường phản ứng như thế nào?", options: scaleOptions }
-        ]
-    },
-    {
-        title: "III. Quan hệ xã hội & tương tác nhóm (3 mục)",
-        questions: [
-            { text: "8. Trong lớp, em cảm thấy các bạn đối xử với nhau như thế nào? Mọi người có thân thiện không?", options: scaleOptions },
-            { text: "9. Khi em và bạn có hiểu lầm, em thường làm gì để giải quyết vấn đề đó?", options: scaleOptions },
-            { text: "10. Gần đây em có cảm thấy căng thẳng, bực mình hoặc hay xung đột với bạn bè, thầy cô hay cha mẹ không? Em thường phản ứng thế nào?", options: scaleOptions }
-        ]
-    },
-    {
-        title: "IV. Học tập & chú ý (4 mục)",
-        questions: [
-            { text: "11. Khi học bài hoặc nghe giảng, em có dễ tập trung không? Điều gì khiến em dễ mất tập trung?", options: scaleOptions },
-            { text: "12. Khi gặp một bài tập khó, em thường làm gì? Em mặc kệ hay tự tìm hiểu, nhờ sự giúp đỡ của người khác?", options: scaleOptions },
-            { text: "13. Em có thường xuyên hoàn thành bài tập đúng thời hạn không? Nguyên nhân nào khiến em không nộp bài đúng thời hạn?", options: scaleOptions },
-            { text: "14. Trong giờ học, có khi nào em thấy mình hay mơ màng hoặc làm việc riêng không? Khi đó, em nghĩ gì?", options: scaleOptions }
-        ]
-    },
-    {
-        title: "V. Tự nhận thức & hình ảnh bản thân (3 mục)",
-        questions: [
-            { text: "15. Em cảm thấy thế nào về bản thân mình trong học tập cũng như trong cuộc sống hằng ngày?", options: scaleOptions },
-            { text: "16. Khi nhìn thấy bạn học giỏi hơn, đẹp hơn hoặc chơi thể thao giỏi hơn, em thường nghĩ gì về bản thân?", options: scaleOptions },
-            { text: "17. Khi mắc lỗi, em có dám nhận và sửa lỗi, hay thường che giấu hoặc né tránh?", options: scaleOptions }
-        ]
-    },
-    {
-        title: "VI. Động lực & định hướng học tập (3 mục)",
-        questions: [
-            { text: "18. Em có đặt ra mục tiêu cho việc học hoặc tương lai của mình không? Mục tiêu đó là gì?", options: scaleOptions },
-            { text: "19. Khi gặp khó khăn trong học tập, em thường làm gì? Có cố gắng tiếp tục hay dễ bỏ cuộc?", options: scaleOptions },
-            { text: "20. Mỗi sáng đến trường, em cảm thấy thế nào? Có điều gì khiến em vui hay không thích đến lớp?", options: scaleOptions }
-        ]
-    }
-]
-
-
-const grades10to12Questions = [
-    {
-        title: "I. Cảm xúc & điều hòa cảm xúc (4 mục)",
-        questions: [
-            { text: "1. Khi đối diện với kỳ thi hoặc áp lực học tập, em cảm thấy thế nào?", options: scaleOptions },
-            { text: "2. Khi gặp thất bại (thi điểm thấp, không đạt kỳ vọng), em phản ứng thế nào?", options: scaleOptions },
-            { text: "3. Có khi nào em cảm thấy buồn, trống rỗng hoặc không còn hứng thú với mọi thứ xung quanh không? Khi đó, em thường làm gì?", options: scaleOptions },
-            { text: "4. Khi em tức giận hoặc căng thẳng, em thường làm gì để giúp mình bình tĩnh trở lại?", options: scaleOptions }
-        ]
-    },
-    {
-        title: "II. Hành vi – kiểm soát bản thân (3 mục)",
-        questions: [
-            { text: "5. Em thường duy trì thói quen học tập và sinh hoạt hằng ngày như thế nào? Có điều gì khiến em dễ bị xáo trộn không?", options: scaleOptions },
-            { text: "6. Khi cảm thấy bực tức hoặc bị hiểu lầm, em thường phản ứng ra sao? Có khi nào em nổi nóng, cãi lại hoặc bỏ đi không?", options: scaleOptions },
-            { text: "7. Khi em mắc lỗi, em thường làm gì? Em có dám nhận trách nhiệm và tìm cách sửa lỗi không?", options: scaleOptions }
-        ]
-    },
-    {
-        title: "III. Quan hệ xã hội & tương tác nhóm (3 mục)",
-        questions: [
-            { text: "8. Trong lớp và ở nhà, em cảm thấy mọi người – bạn bè, thầy cô, cha mẹ – có lắng nghe và tôn trọng ý kiến của em không?", options: scaleOptions },
-            { text: "9. Khi có mâu thuẫn hoặc bất đồng, em thường chọn cách nào để giải quyết? (Nói chuyện, im lặng, tránh né, hay phản ứng mạnh?)", options: scaleOptions },
-            { text: "10. Có khi nào em cảm thấy bị hiểu lầm, bị cô lập hoặc không thuộc về nhóm nào ở trường không? Em làm gì trong những tình huống đó?", options: scaleOptions }
-        ]
-    },
-    {
-        title: "IV. Học tập & khả năng tự định hướng (4 mục)",
-        questions: [
-            { text: "11. Em có xác định được mục tiêu học tập hoặc hướng phát triển cho bản thân trong giai đoạn này không? Mục tiêu và hướng phát triển đó là gì?", options: scaleOptions },
-            { text: "12. Khi cảm thấy mệt mỏi hoặc chán học, em thường làm gì để lấy lại động lực?", options: scaleOptions },
-            { text: "13. Khi gặp bài khó hoặc vấn đề trong học tập, em thường giải quyết bằng cách nào? (Tự tìm hiểu, hỏi người khác hay bỏ qua?)", options: scaleOptions },
-            { text: "14. Một ngày của em thường được sắp xếp ra sao giữa học, nghỉ ngơi và giải trí? Em có cảm thấy cân bằng không?", options: scaleOptions }
-        ]
-    },
-    {
-        title: "V. Tự nhận thức & hình ảnh bản thân (3 mục)",
-        questions: [
-            { text: "15. Em cảm thấy thế nào về bản thân mình – về năng lực, tính cách, và ngoại hình?", options: scaleOptions },
-            { text: "16. Khi nhìn thấy người khác giỏi hơn, thành công hơn, em thường nghĩ gì về bản thân mình?", options: scaleOptions },
-            { text: "17. Em có hiểu rõ điểm mạnh và điểm yếu của mình không? Em thường làm gì để cải thiện hoặc phát huy chúng?", options: scaleOptions }
-        ]
-    },
-    {
-        title: "VI. Động lực & định hướng tương lai (3 mục)",
-        questions: [
-            { text: "18. Em có định hướng rõ ràng cho bản thân sau khi tốt nghiệp THPT không? Em muốn làm gì hoặc học ngành gì?", options: scaleOptions },
-            { text: "19. Theo em, việc học hiện tại có ý nghĩa như thế nào đối với mục tiêu tương lai của em?", options: scaleOptions },
-            { text: "20. Khi gặp khó khăn trong cuộc sống hoặc học tập, điều gì giúp em có động lực để tiếp tục cố gắng?", options: scaleOptions }
-        ]
-    }
-]
-
-const questionsData: QuestionsData = {
-    "1": grade1Questions,
-
-    "10": grades10to12Questions,
-    "11": grades10to12Questions,
-    "12": grades10to12Questions,
-
-    "6": grades6to9Questions,
-    "7": grades6to9Questions,
-    "8": grades6to9Questions,
-    "9": grades6to9Questions,
-
-    "2": grades2to5Questions,
-    "3": grades2to5Questions,
-    "4": grades2to5Questions,
-    "5": grades2to5Questions
-}
-
-const defaultQuestions = [
-    {
-        title: "TỔNG QUAN TÂM LÝ & HÀNH VI (Dành cho mọi khối lớp)",
-        questions: [
-            { text: "Tinh thần thái độ khi bắt đầu khảo sát.", options: ["Rụt rè", "Bình thường", "Rất hào hứng"] },
-            { text: "Mức độ tập trung trong suốt quá trình.", options: ["Dễ sao nhãng", "Tập trung trung bình", "Rất tập trung"] },
-            { text: "Khả năng tương tác với giáo viên khảo sát.", options: ["Hạn chế", "Tạm được", "Linh hoạt, cởi mở"] },
-            { text: "Sự tự lập khi thực hiện nhiệm vụ.", options: ["Cần nhắc nhở nhiều", "Cần nhắc nhở ít", "Hoàn toàn tự lập"] },
-            { text: "Khả năng kiểm soát cảm xúc khi gặp thử thách.", options: ["Dễ nản chí", "Cần động viên", "Kiên trì nỗ lực"] }
-        ]
-    }
-]
 
 export default function PsychologyAssessmentForm({ student, onSave, isLocked }: any) {
     
@@ -287,6 +58,62 @@ export default function PsychologyAssessmentForm({ student, onSave, isLocked }: 
     const [historyList, setHistoryList] = useState<any[]>([])
     const [loadingHistory, setLoadingHistory] = useState(false)
     const [expandedHistoryId, setExpandedHistoryId] = useState<string | null>(null)
+
+    // Trạng thái Báo Cáo & Gửi Email cho GĐCS
+    const [isReportModalOpen, setIsReportModalOpen] = useState(false)
+    const [gdcsList, setGdcsList] = useState<any[]>([])
+    const [selectedGdcsEmail, setSelectedGdcsEmail] = useState("")
+    const [selectedGdcsName, setSelectedGdcsName] = useState("")
+    const [selectedCampusCode, setSelectedCampusCode] = useState("")
+    const [messageToGdcs, setMessageToGdcs] = useState("")
+    const [sendingReport, setSendingReport] = useState(false)
+    const [reportSentInfo, setReportSentInfo] = useState<any>(null)
+
+    // Tải danh sách GĐCS và kiểm tra lịch sử đã gửi email GĐCS
+    useEffect(() => {
+        const fetchGdcsInfo = async () => {
+            try {
+                const sId = student?.id || ""
+                const url = sId 
+                    ? `/api/admin/orientation/psychology-referral?studentId=${sId}`
+                    : `/api/admin/orientation/psychology-referral?action=getGdcsList`
+                
+                const res = await fetch(url)
+                if (res.ok) {
+                    const data = await res.json()
+                    const list = data.gdcsList || []
+                    setGdcsList(list)
+
+                    // Kiểm tra xem đã từng gửi báo cáo GĐCS chưa
+                    if (data.psychologyData?.reportedToGdcs) {
+                        setReportSentInfo(data.psychologyData.reportedToGdcs)
+                        if (data.psychologyData.reportedToGdcs.messageToGdcs) {
+                            setMessageToGdcs(data.psychologyData.reportedToGdcs.messageToGdcs)
+                        }
+                    }
+
+                    // Tự động chọn GĐCS tương ứng với cơ sở của học sinh
+                    const stCampus = String(student?.admissionCampus || student?.campusCode || student?.registeredCampus || "").toUpperCase()
+                    let matched = list.find((g: any) => {
+                        const cCode = String(g.campusCode || "").toUpperCase()
+                        const cName = String(g.campusName || "").toUpperCase()
+                        return stCampus.includes(cCode) || (cCode === "CS5" && stCampus.includes("HỘI AN")) || (cCode === "CS1" && stCampus.includes("RIVERSIDE")) || (cCode === "CS2" && stCampus.includes("CENTRAL")) || (cCode === "CS3" && stCampus.includes("INTERNATIONAL")) || (cCode === "CS4" && stCampus.includes("BEACH"))
+                    })
+                    if (!matched && list.length > 0) matched = list[0]
+
+                    if (matched) {
+                        setSelectedCampusCode(matched.campusCode)
+                        setSelectedGdcsName(matched.managerName || matched.gdcsName || "")
+                        setSelectedGdcsEmail(matched.managerEmail || matched.gdcsEmail || "")
+                    }
+                }
+            } catch (err) {
+                console.error("Lỗi khi tải danh sách GĐCS:", err)
+            }
+        }
+
+        fetchGdcsInfo()
+    }, [student])
 
     useEffect(() => {
         if (!student?.studentCode) return
@@ -366,6 +193,62 @@ export default function PsychologyAssessmentForm({ student, onSave, isLocked }: 
             setIsSaving(false)
         }
     }
+
+    const handleSendEmailToGdcs = async () => {
+        if (!selectedGdcsEmail) {
+            alert("Vui lòng chọn Giám Đốc Cơ Sở để gửi email báo cáo.");
+            return;
+        }
+        setSendingReport(true);
+        try {
+            // 1. Lưu kết quả vào form trước
+            const sectionScores = sections.map((_, i) => calculateSectionScore(i));
+            const finalScores = [...sectionScores, totalScore, ...scores];
+            const finalComments = [conclusion, recommendation, ...notes];
+            await onSave(student, finalScores, finalComments);
+
+            // 2. Gửi API báo cáo GĐCS & gửi Email
+            const res = await fetch("/api/admin/orientation/psychology-referral", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({
+                    action: "reportToGdcs",
+                    studentId: student?.id,
+                    gdcsName: selectedGdcsName,
+                    gdcsEmail: selectedGdcsEmail,
+                    campusCode: selectedCampusCode,
+                    scores: scores,
+                    sectionScores: sectionScores,
+                    totalScore: totalScore,
+                    evaluation: evaluation || {},
+                    conclusion: conclusion,
+                    recommendation: recommendation,
+                    notes: notes,
+                    messageToGdcs: messageToGdcs
+                })
+            });
+
+            const data = await res.json();
+            if (data.success) {
+                const newSentInfo = {
+                    gdcsName: selectedGdcsName,
+                    gdcsEmail: selectedGdcsEmail,
+                    campusCode: selectedCampusCode,
+                    reportedAt: new Date().toISOString(),
+                    messageToGdcs: messageToGdcs
+                };
+                setReportSentInfo(newSentInfo);
+                setIsReportModalOpen(false);
+                alert(`Đã gửi Email báo cáo kết quả Tâm lý đến GĐCS ${selectedGdcsName} (${selectedGdcsEmail}) thành công và đồng bộ lên Phiếu Định Hướng!`);
+            } else {
+                alert("Lỗi khi gửi báo cáo: " + (data.error || "Không xác định"));
+            }
+        } catch (e: any) {
+            alert("Lỗi khi gửi email: " + e.message);
+        } finally {
+            setSendingReport(false);
+        }
+    };
 
     const currentQuestions = sections[activeSection].questions
     let currentOffset = 0
@@ -705,31 +588,191 @@ export default function PsychologyAssessmentForm({ student, onSave, isLocked }: 
                 </div>
 
                 {/* Footer Actions */}
-                <div className="bg-white rounded-2xl p-4 shadow-sm border-2 border-emerald-100 flex flex-col sm:flex-row justify-between items-center gap-4 sticky bottom-4 z-10">
-                    <div className="flex items-center gap-2 text-slate-500 text-xs font-medium">
-                        <AlertCircle size={14} className="text-indigo-500" />
-                        Lưu ý kiểm tra kỹ trước khi Xác nhận
+                <div className="bg-white rounded-2xl p-4 shadow-sm border-2 border-emerald-100 flex flex-col md:flex-row justify-between items-center gap-4 sticky bottom-4 z-10">
+                    <div className="flex flex-wrap items-center gap-3">
+                        <div className="flex items-center gap-2 text-slate-500 text-xs font-medium">
+                            <AlertCircle size={14} className="text-indigo-500" />
+                            Lưu ý kiểm tra kỹ trước khi Xác nhận
+                        </div>
+                        {reportSentInfo && (
+                            <div className="flex items-center gap-1.5 px-3 py-1 bg-emerald-50 border border-emerald-200 rounded-xl text-emerald-800 text-[11px] font-bold">
+                                <CheckCircle2 size={13} className="text-emerald-600" />
+                                <span>Đã gửi Email GĐCS: <strong>{reportSentInfo.gdcsName}</strong> ({reportSentInfo.reportedAt ? new Date(reportSentInfo.reportedAt).toLocaleDateString("vi-VN") : ""})</span>
+                            </div>
+                        )}
                     </div>
                     
-                    {progress === 100 && !isLocked && (
-                        <div className="hidden md:flex text-emerald-600 text-xs font-bold items-center gap-1.5 text-xs font-semibold">
-                            <CheckCircle2 size={14} /> Hoàn tất đánh giá
-                        </div>
-                    )}
+                    <div className="flex items-center gap-2.5 w-full md:w-auto">
+                        {/* NÚT GỬI EMAIL BÁO CÁO GĐCS */}
+                        <button
+                            type="button"
+                            onClick={() => setIsReportModalOpen(true)}
+                            disabled={isSaving || sendingReport}
+                            className="flex-1 md:flex-initial flex items-center justify-center gap-2 px-4 py-2.5 bg-gradient-to-r from-teal-600 to-indigo-600 hover:from-teal-700 hover:to-indigo-700 text-white font-bold text-xs rounded-xl shadow-md shadow-indigo-600/20 transition-all cursor-pointer disabled:opacity-50"
+                            title="Chọn Giám Đốc Cơ Sở để gửi Email chi tiết kết quả đánh giá tâm lý"
+                        >
+                            <Mail size={15} />
+                            <span>{reportSentInfo ? "Gửi Lại Email Cho GĐCS" : "Gửi Email Cho GĐCS"}</span>
+                        </button>
 
-                    <button
-                        onClick={handleSave}
-                        disabled={isSaving || isLocked}
-                        className="w-full sm:w-auto flex items-center justify-center gap-2 hover:bg-indigo-700 text-white font-bold text-sm shadow-md transition-all disabled:opacity-50 disabled:cursor-not-allowed text-xs font-semibold"
-                    >
-                        {isSaving ? (
-                            <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin"></div>
-                        ) : (
-                            <Save size={16} />
-                        )}
-                        {isLocked ? "Form đã khóa" : "Lưu Kết Quả"}
-                    </button>
+                        {/* NÚT LƯU KẾT QUẢ */}
+                        <button
+                            type="button"
+                            onClick={handleSave}
+                            disabled={isSaving || isLocked}
+                            className="flex-1 md:flex-initial flex items-center justify-center gap-2 px-5 py-2.5 bg-indigo-600 hover:bg-indigo-700 text-white font-bold text-xs rounded-xl shadow-md transition-all disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer"
+                        >
+                            {isSaving ? (
+                                <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin"></div>
+                            ) : (
+                                <Save size={15} />
+                            )}
+                            {isLocked ? "Form đã khóa" : "Lưu Kết Quả"}
+                        </button>
+                    </div>
                 </div>
+
+                {/* MODAL GỬI EMAIL BÁO CÁO KẾT QUẢ TÂM LÝ CHO GĐCS */}
+                {isReportModalOpen && (
+                    <div className="fixed inset-0 z-50 bg-slate-900/60 backdrop-blur-xs flex items-center justify-center p-4 overflow-y-auto animate-in fade-in duration-200">
+                        <div className="bg-white rounded-3xl shadow-2xl border border-slate-200 max-w-2xl w-full p-6 space-y-5 my-8">
+                            <div className="flex items-center justify-between pb-3 border-b border-slate-100">
+                                <div className="flex items-center gap-2.5">
+                                    <div className="w-10 h-10 rounded-2xl bg-indigo-50 border border-indigo-200 flex items-center justify-center text-indigo-600">
+                                        <Mail size={20} />
+                                    </div>
+                                    <div>
+                                        <h3 className="text-base font-black text-slate-800">
+                                            Gửi Email Báo Cáo Cho Giám Đốc Cơ Sở (GĐCS)
+                                        </h3>
+                                        <p className="text-xs text-slate-500 font-medium">
+                                            Chọn GĐCS phụ trách cơ sở để gửi chi tiết kết quả đánh giá tâm lý
+                                        </p>
+                                    </div>
+                                </div>
+                                <button
+                                    type="button"
+                                    onClick={() => setIsReportModalOpen(false)}
+                                    className="p-2 text-slate-400 hover:text-slate-700 hover:bg-slate-100 rounded-xl transition-all cursor-pointer"
+                                >
+                                    <X size={18} />
+                                </button>
+                            </div>
+
+                            {/* CHỌN GĐCS */}
+                            <div className="space-y-1.5">
+                                <label className="text-xs font-bold text-slate-700 block">
+                                    1. Chọn Giám Đốc Cơ Sở (GĐCS) Tiếp Nhận Báo Cáo <span className="text-rose-500">*</span>:
+                                </label>
+                                <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                                    {gdcsList.map((g: any) => {
+                                        const isSelected = selectedGdcsEmail === (g.managerEmail || g.gdcsEmail);
+                                        return (
+                                            <button
+                                                key={g.campusCode || g.id}
+                                                type="button"
+                                                onClick={() => {
+                                                    setSelectedCampusCode(g.campusCode);
+                                                    setSelectedGdcsName(g.managerName || g.gdcsName || "");
+                                                    setSelectedGdcsEmail(g.managerEmail || g.gdcsEmail || "");
+                                                }}
+                                                className={`p-3 rounded-2xl border text-left transition-all cursor-pointer ${
+                                                    isSelected
+                                                        ? "bg-indigo-50/80 border-indigo-500 ring-2 ring-indigo-500/20 shadow-xs"
+                                                        : "bg-slate-50/50 border-slate-200 hover:bg-slate-100/70"
+                                                }`}
+                                            >
+                                                <div className="flex items-center justify-between mb-1">
+                                                    <span className="text-[10px] font-black text-indigo-700 bg-indigo-100/70 px-2 py-0.5 rounded-md uppercase">
+                                                        {g.campusCode} - {g.campusName?.replace("Sky-Line", "").trim() || g.campusCode}
+                                                    </span>
+                                                    {isSelected && <Check size={14} className="text-indigo-600" />}
+                                                </div>
+                                                <div className="text-xs font-bold text-slate-900">{g.managerName || g.gdcsName}</div>
+                                                <div className="text-[11px] text-slate-500 truncate">{g.managerEmail || g.gdcsEmail}</div>
+                                            </button>
+                                        );
+                                    })}
+                                </div>
+                            </div>
+
+                            {/* TÓM TẮT KẾT QUẢ ĐÍNH KÈM */}
+                            <div className="p-4 rounded-2xl bg-slate-50 border border-slate-200 space-y-2.5 text-xs">
+                                <div className="flex items-center justify-between">
+                                    <span className="font-bold text-slate-700 uppercase text-[11px] flex items-center gap-1.5">
+                                        <Award size={14} className="text-indigo-600" />
+                                        2. Tóm tắt kết quả đính kèm trong Email:
+                                    </span>
+                                    <span className="text-indigo-700 font-extrabold text-sm">{totalScore} Điểm</span>
+                                </div>
+                                <div className="grid grid-cols-2 sm:grid-cols-3 gap-2 text-[11px]">
+                                    <div className="p-2 bg-white rounded-xl border border-slate-200">
+                                        <span className="text-slate-400 block text-[10px]">Học sinh:</span>
+                                        <strong className="text-slate-800">{student?.fullName} (Khối {rawGrade})</strong>
+                                    </div>
+                                    <div className="p-2 bg-white rounded-xl border border-slate-200">
+                                        <span className="text-slate-400 block text-[10px]">Mức độ nhận diện:</span>
+                                        <strong className="text-indigo-700">{evaluation?.level || "Đang đánh giá"}</strong>
+                                    </div>
+                                    <div className="p-2 bg-white rounded-xl border border-slate-200 col-span-2 sm:col-span-1">
+                                        <span className="text-slate-400 block text-[10px]">Gợi ý can thiệp:</span>
+                                        <strong className="text-slate-800 truncate block">{evaluation?.suggestion || "Ổn định"}</strong>
+                                    </div>
+                                </div>
+                                {conclusion && (
+                                    <div className="p-2.5 bg-white rounded-xl border border-slate-200 text-[11px]">
+                                        <span className="text-slate-400 block text-[10px] font-semibold">Kết luận chuyên môn:</span>
+                                        <p className="text-slate-700 italic mt-0.5 line-clamp-2">&quot;{conclusion}&quot;</p>
+                                    </div>
+                                )}
+                            </div>
+
+                            {/* TIN NHẮN / ĐỀ XUẤT CỦA GV TÂM LÝ GỬI GĐCS */}
+                            <div className="space-y-1.5">
+                                <label className="text-xs font-bold text-slate-700 block">
+                                    3. Ghi chú & Đề xuất phương án gửi Giám Đốc Cơ Sở (Nội dung email):
+                                </label>
+                                <textarea
+                                    rows={3}
+                                    value={messageToGdcs}
+                                    onChange={(e) => setMessageToGdcs(e.target.value)}
+                                    placeholder="Ví dụ: Đề xuất GĐCS xem xét phương án Ủy quyền GV đồng hành trong 4 tuần đầu, hoặc hẹn gặp trực tiếp phụ huynh để làm rõ kế hoạch can thiệp..."
+                                    className="w-full p-3 bg-slate-50 border border-slate-200 rounded-xl text-xs font-medium text-slate-800 outline-none focus:border-indigo-500 focus:bg-white resize-none"
+                                />
+                            </div>
+
+                            {/* MODAL ACTIONS */}
+                            <div className="flex items-center justify-end gap-3 pt-3 border-t border-slate-100">
+                                <button
+                                    type="button"
+                                    onClick={() => setIsReportModalOpen(false)}
+                                    disabled={sendingReport}
+                                    className="px-4 py-2 border border-slate-200 text-slate-600 rounded-xl text-xs font-bold hover:bg-slate-50 cursor-pointer"
+                                >
+                                    Hủy bỏ
+                                </button>
+                                <button
+                                    type="button"
+                                    onClick={handleSendEmailToGdcs}
+                                    disabled={sendingReport || !selectedGdcsEmail}
+                                    className="flex items-center gap-2 px-6 py-2.5 bg-gradient-to-r from-teal-600 to-indigo-600 hover:from-teal-700 hover:to-indigo-700 text-white rounded-xl text-xs font-bold shadow-lg shadow-indigo-600/25 transition-all disabled:opacity-50 cursor-pointer"
+                                >
+                                    {sendingReport ? (
+                                        <>
+                                            <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin"></div>
+                                            <span>Đang gửi email đến GĐCS...</span>
+                                        </>
+                                    ) : (
+                                        <>
+                                            <Send size={15} />
+                                            <span>Xác Nhận & Gửi Email Đến GĐCS</span>
+                                        </>
+                                    )}
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                )}
             </div>
         </div>
     )

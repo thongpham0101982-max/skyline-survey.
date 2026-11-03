@@ -34,7 +34,7 @@ export default function TeacherSpecialGradebookPage() {
     async function loadAssignments() {
       try {
         setLoading(true);
-        const res = await fetch("/api/special-subjects/assignments");
+        const res = await fetch("/api/special-subjects/assignments?scope=TEACHER");
         const json = await res.json();
         if (res.ok) {
           const list = json.assignments || [];
@@ -244,8 +244,8 @@ export default function TeacherSpecialGradebookPage() {
               }}
               className="text-xs font-bold border border-slate-200 rounded-xl px-3 py-2 bg-slate-50 focus:bg-white focus:outline-none focus:ring-2 focus:ring-teal-500"
             >
-              {assignments.map(a => (
-                <option key={a.id} value={a.id}>
+              {assignments.map((a, aIdx) => (
+                <option key={a.id ? `${a.id}-${aIdx}` : `assign-${aIdx}`} value={a.id}>
                   {a.class?.className} ({a.class?.campus?.campusCode}) — {a.subject?.name}
                 </option>
               ))}
@@ -261,8 +261,8 @@ export default function TeacherSpecialGradebookPage() {
               onChange={(e) => setSelectedLessonId(e.target.value)}
               className="text-xs font-bold border border-slate-200 rounded-xl px-3 py-2 bg-slate-50 focus:bg-white focus:outline-none focus:ring-2 focus:ring-teal-500 max-w-sm truncate"
             >
-              {(gradebookData?.lessons || []).map((l: any) => (
-                <option key={l.id} value={l.id}>
+              {(gradebookData?.lessons || []).map((l: any, lIdx: number) => (
+                <option key={l.id ? `${l.id}-${lIdx}` : `lesson-${lIdx}`} value={l.id}>
                   Tiết {l.periodIndex}: {l.lessonName}
                 </option>
               ))}
@@ -343,7 +343,7 @@ export default function TeacherSpecialGradebookPage() {
                 const res = entry.evalResult;
 
                 return (
-                  <tr key={st.id} className="hover:bg-slate-50/60 transition-colors">
+                  <tr key={st.id ? `${st.id}-${idx}` : `st-${st.studentCode || idx}`} className="hover:bg-slate-50/60 transition-colors">
                     <td className="py-3 px-3 text-center font-bold text-slate-400">
                       {idx + 1}
                     </td>

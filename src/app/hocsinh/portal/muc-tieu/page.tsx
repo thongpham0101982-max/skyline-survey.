@@ -15,6 +15,8 @@ import { GoalUnlockWizard } from "@/components/advisory/GoalUnlockWizard"
 import { GoalUnlockCard } from "@/components/advisory/GoalUnlockCard"
 import { AcademicComparisonWidget } from "@/components/advisory/AcademicComparisonWidget"
 import { getGradeCategoryWeights, matchCategoryKey } from "@/lib/advisory/advisoryWeights"
+import TriPartyWorkflowBanner from "@/components/advisory/TriPartyWorkflowBanner"
+import StudentActionEvidencePanel from "@/components/advisory/StudentActionEvidencePanel"
 
 export default function StudentGoalPortalPage() {
   const [studentId, setStudentId] = useState("")
@@ -38,6 +40,8 @@ export default function StudentGoalPortalPage() {
   const [presets, setPresets] = useState<any[]>([])
   const [submittedAt, setSubmittedAt] = useState<string | null>(null)
   const [trackingLogs, setTrackingLogs] = useState<any[]>([])
+  const [rawGoalsList, setRawGoalsList] = useState<any[]>([])
+  const [existingSheetData, setExistingSheetData] = useState<any>(null)
   
   // Unlock Sprint States (Stage 2)
   const [goalSheetId, setGoalSheetId] = useState("")
@@ -129,6 +133,8 @@ export default function StudentGoalPortalPage() {
         }
 
         if (data.existingSheet) {
+          setExistingSheetData(data.existingSheet)
+          setRawGoalsList(data.existingSheet.goals || data.goals || [])
           setGoalSheetId(data.existingSheet.id)
           setStudentCommitment(data.existingSheet.studentCommitment || "")
           setFingerprintStamped(!!data.existingSheet.signedByStudent)
@@ -215,7 +221,7 @@ export default function StudentGoalPortalPage() {
     }
   }
 
-  async function fetchAdjustmentRequest(sId: string) {
+  async function fetchAdjustmentRequest(sId: string, ayIdParam?: string) {
     if (!sId) return
     try {
       const res = await fetch(`/api/advisory/goals/adjustment-request?studentId=${sId}&academicYearId=${academicYearId}&_t=${Date.now()}`, { cache: "no-store" })
@@ -289,7 +295,7 @@ export default function StudentGoalPortalPage() {
     }
   }
 
-  async function fetchUnlockData(sId: string) {
+  async function fetchUnlockData(sId: string, ayIdParam?: string) {
     if (!sId) return
     try {
       const res = await fetch(`/api/advisory/goals/unlock?studentId=${sId}&academicYearId=${academicYearId}&_t=${Date.now()}`, { cache: "no-store" })
@@ -545,6 +551,12 @@ export default function StudentGoalPortalPage() {
         </div>
       )}
 
+      {/* BẢNG ĐỒNG BỘ CHU TRÌNH CỐ VẤN 3 BÊN (8 BƯỚC) */}
+      <TriPartyWorkflowBanner
+        goals={rawGoalsList}
+        viewerRole="STUDENT"
+      />
+
       {/* 3-STAGE PROGRESS STEPPER */}
       <div className="bg-white rounded-2xl p-2 border border-slate-200 shadow-xs flex flex-wrap items-center gap-2">
         <button
@@ -582,7 +594,7 @@ export default function StudentGoalPortalPage() {
           }`}>
             2
           </div>
-          <span>2. Mở Khóa Mục Tiêu {isHighSchool ? "(K9–12)" : ""}</span>
+          <span>2. Nhật Ký Hành Động 7 Ngày & Mở Khóa Mục Tiêu</span>
           {unlockData && unlockData.status === "IN_PROGRESS" && (
             <span className="px-1.5 py-0.5 rounded bg-amber-500 text-[10px] text-white font-bold">
               Đang Sprint 7 ngày
@@ -1162,26 +1174,23 @@ export default function StudentGoalPortalPage() {
       )}
 
       {/* ========================================================================= */}
-      {/* STAGE 2: MỞ KHÓA MỤC TIÊU (KHỐI 9–12 SPRINT 7 NGÀY) */}
+      {/* STAGE 2: NHẬT KÝ HÀNH ĐỘNG 7 NGÀY & MỞ KHÓA MỤC TIÊU */}
       {/* ========================================================================= */}
       {activeStage === 2 && (
         <div className="space-y-6">
+          <StudentActionEvidencePanel
+            studentId={studentId}
+            academicYearId={academicYearId}
+            goals={rawGoalsList}
+            existingSheet={existingSheetData}
+            onUpdated={() => fetchGoalsForStudent(studentId, gradeLevel, academicYearId)}
+          />
+
           {!isHighSchool ? (
-            <div className="bg-white rounded-3xl p-8 border-2 border-slate-200 text-center space-y-3">
-              <div className="w-12 h-12 rounded-2xl bg-amber-100 text-amber-800 flex items-center justify-center mx-auto">
-                <Info className="w-6 h-6" />
-              </div>
-              <h3 className="font-black text-base text-slate-900">Giai Đoạn 2 Dành Riêng Cho Học Sinh Khối 9 – 12</h3>
-              <p className="text-xs text-slate-600 max-w-lg mx-auto">
-                Quy trình "Mở khóa mục tiêu" và Sprint hành động 7 ngày hiện áp dụng cho cấp THPT (Khối 9, 10, 11, 12).
-                Học sinh các khối khác tiếp tục theo dõi tiến trình tại Giai đoạn 1 và Giai đoạn 3.
+            <div className="bg-white rounded-3xl p-6 border border-slate-200 text-center space-y-2">
+              <p className="text-xs font-bold text-slate-600">
+                ✓ Em có thể cập nhật trực tiếp Nhật ký hành động 7 ngày & Minh chứng ở bảng trên.
               </p>
-              <button
-                onClick={() => setActiveStage(1)}
-                className="px-4 py-2 bg-[#003B3A] text-white font-bold text-xs rounded-xl"
-              >
-                Quay lại Giai đoạn 1
-              </button>
             </div>
           ) : !unlockData || showWizard ? (
             <GoalUnlockWizard

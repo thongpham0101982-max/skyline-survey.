@@ -48,14 +48,20 @@ export const LOGIN_TRANSLATIONS = {
       understood: "Đã hiểu & Đóng"
     },
     featureDrawer: {
-      button: "Khám phá phân hệ SQMS",
+      button: "Khám phá 12 phân hệ SSM / SQMS",
       modules: [
-        { index: "01", title: "Khảo sát năng lực đầu vào", description: "Tổ chức khảo sát, nhập kết quả, phân tích năng lực, hỗ trợ tuyển sinh và xếp lớp." },
-        { index: "02", title: "Quản lý dự giờ giáo viên", description: "Đăng ký tiết dạy, phân công dự giờ, đánh giá, phê duyệt và theo dõi năng lực chuyên môn." },
-        { index: "03", title: "Thành tích và kỳ thi học sinh", description: "Quản lý kỳ thi, cuộc thi, giải thưởng, huy chương, xếp hạng và lịch sử thành tích." },
-        { index: "04", title: "Hỗ trợ học tập và tâm lý", description: "Theo dõi học sinh cần hỗ trợ, kế hoạch phụ đạo, cam kết học tập và tư vấn tâm lý." },
-        { index: "05", title: "Hướng nghiệp & tài chính", description: "Quản lý hoạt động hướng nghiệp, định hướng nghề nghiệp và thông tin tài chính theo phân quyền." },
-        { index: "06", title: "Kết quả học tập & dự án", description: "Tổng hợp kết quả môn học, hoạt động trải nghiệm, câu lạc bộ và mức độ tham gia." }
+        { index: "01", title: "Khảo thí Số & Đảm bảo Chất lượng", description: "Khảo thí số OMR & LMS, sổ điểm MOET (TT27/TT22) & CTQT, chứng chỉ quốc tế (IELTS, Cambridge, Edexcel) và phân tích phổ điểm." },
+        { index: "02", title: "Hồ sơ Học sinh 360° & Tra cứu", description: "Học bạ điện tử tích lũy xuyên suốt K-12, Bản đồ năng lực Radar 360°, bảng vàng thành tích và xuất in PDF chuẩn A4." },
+        { index: "03", title: "Cố vấn Học tập, Tâm lý & SGSI", description: "Sổ mục tiêu SMART, phân tích khoảng cách mục tiêu (GAP), chỉ số phát triển SGSI, cảnh báo sớm 3 màu và phụ đạo/bồi dưỡng." },
+        { index: "04", title: "Dự giờ & Phát triển Chuyên môn", description: "Quản lý dự giờ K-12, Mầm non, Giáo viên nước ngoài (Song ngữ), ma trận dự giờ TTCM và trợ lý AI Growth đổi mới tiết dạy." },
+        { index: "05", title: "Môn học Đặc thù Sky-Line", description: "Quản lý chương trình và đánh giá chuyên biệt 4 môn: GD Cảm xúc (CXXH), GD Giới tính, GD Tài chính và GD Hướng nghiệp." },
+        { index: "06", title: "Hoạt động Trải nghiệm & Dự án", description: "Triển khai và đánh giá hoạt động trải nghiệm theo 4 mạch GDPT 2018, chủ đề tháng và kết xuất sổ sự kiện PDF." },
+        { index: "07", title: "Khảo sát Đầu vào & Tuyển sinh", description: "Tổ chức khảo sát đầu vào Phổ thông K-12 & Mầm non, đánh giá 5 lĩnh vực phát triển, xét duyệt AI và gửi kết quả tự động." },
+        { index: "08", title: "Quản lý Đào tạo & Thời khóa biểu", description: "Quản lý lớp học, phân công giảng dạy, xếp Thời khóa biểu Kéo & Thả thông minh, theo dõi sỹ số tháng và học sinh lưu chuyển." },
+        { index: "09", title: "Học liệu Số & Bảng tên QR", description: "Thư viện Sách giáo khoa điện tử tích hợp hỏi đáp AI trên nội dung sách và tiện ích in bảng tên họp PHHS kèm mã QR định danh." },
+        { index: "10", title: "Mạng lưới Cựu học sinh (Alumni)", description: "Kế thừa hồ sơ tốt nghiệp, cấp mã QR định danh bảo mật, cổng tự cập nhật OTP và theo dõi hành trình Đại học & Sự nghiệp." },
+        { index: "11", title: "Khảo sát Định kỳ & Đo lường NPS", description: "Khảo sát đa chiều Phụ huynh – Học sinh – Giáo viên, phân tích chỉ số hài lòng NPS và theo dõi xử lý phản hồi 2 chiều." },
+        { index: "12", title: "Điều hành Công việc, AI & PWA", description: "Giao việc Kanban/Timeline, báo cáo tuần, Sổ giáo viên tự động gom việc, trợ lý SSM AI (RAG) và ứng dụng di động PWA." }
       ]
     },
     footerVersion: "SQMS Portal v2.5",
@@ -108,14 +114,20 @@ export const LOGIN_TRANSLATIONS = {
       understood: "Got it & Close"
     },
     featureDrawer: {
-      button: "Explore SQMS Modules",
+      button: "Explore 12 SSM / SQMS Modules",
       modules: [
-        { index: "01", title: "Input Competency Assessment", description: "Administer entrance tests, record scores, assess competencies, and support admission placement." },
-        { index: "02", title: "Teacher Observation & Walkthroughs", description: "Schedule observation slots, assign observers, evaluate rubrics, approve, and track pedagogical growth." },
-        { index: "03", title: "Student Competitions & Honors", description: "Manage academic competitions, honors, awards, medals, leaderboards, and historical achievements." },
-        { index: "04", title: "Academic Support & Counseling", description: "Track students needing support, remedial tutoring plans, academic contracts, and psychological advisory." },
-        { index: "05", title: "Career Guidance & Finance", description: "Manage career guidance programs, future vocational orientation, and role-based financial views." },
-        { index: "06", title: "Academic Performance & Projects", description: "Synthesize course grades, experiential learning activities, student clubs, and participation rates." }
+        { index: "01", title: "Digital Testing & Quality Assurance", description: "OMR & LMS digital testing, MOET & International gradebooks, global certificates (IELTS, Cambridge, Edexcel), and analytics." },
+        { index: "02", title: "Student 360° Portfolio & Lookup", description: "Cumulative K-12 e-Portfolio, 360° Competency Radar charts, honor rolls, and international-standard A4 PDF publishing." },
+        { index: "03", title: "Academic Advisory, Counseling & SGSI", description: "SMART goals, deterministic GAP analysis, SGSI sustainability index, 3-tier early warning, and tutoring/gifted support." },
+        { index: "04", title: "Classroom Observation & AI Growth", description: "K-12, Preschool, and Foreign Teacher bilingual observations, HOD matrix, and AI Growth pedagogical coaching." },
+        { index: "05", title: "Sky-Line Special Subjects", description: "Curriculum & assessment for Emotion Education (SEL), Sex Education, Financial Literacy, and Career Guidance." },
+        { index: "06", title: "Experiential Learning & Projects", description: "Manage experiential activities across 4 core streams, monthly themes, student participation, and PDF event books." },
+        { index: "07", title: "Entrance Assessment & Admissions", description: "K-12 & Preschool diagnostic assessments, 5-domain child development tracking, AI admission review, and automated emails." },
+        { index: "08", title: "Academic Management & Timetable", description: "Class & teacher management, intelligent Drag & Drop Timetable solver, monthly enrollment, and student transfers." },
+        { index: "09", title: "Digital Textbooks & QR Nameplates", description: "E-Textbook library with interactive AI Q&A and instant A4 Parent Meeting nameplates with lifelong QR verification." },
+        { index: "10", title: "Sky-Line Alumni Network", description: "Graduation profile inheritance, secure QR tokens, OTP self-service portal, and global university & career tracking." },
+        { index: "11", title: "Periodic Surveys & NPS Analytics", description: "Multi-stakeholder surveys for Parents, Students, and Staff with real-time Net Promoter Score (NPS) and feedback tracking." },
+        { index: "12", title: "Task Operations, SSM AI & PWA", description: "Kanban/Timeline task management, weekly reports, unified teacher task engine, RAG AI Assistant, and Mobile PWA." }
       ]
     },
     footerVersion: "SQMS Portal v2.5",

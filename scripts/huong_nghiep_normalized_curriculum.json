@@ -1,0 +1,2819 @@
+{
+  "subjectCode": "GDHN",
+  "subjectName": "Giáo dục hướng nghiệp",
+  "academicYearId": "cmnseevbh0000wjbmoigji2zd",
+  "grades": {
+    "6": {
+      "grade": "6",
+      "topicsCount": 1,
+      "lessonsCount": 10,
+      "criteriaCount": 40,
+      "topics": [
+        {
+          "topicCode": "HN6S.01",
+          "topicName": "Tôi là một điều kỳ diệu",
+          "lessons": [
+            {
+              "lessonIndex": 1,
+              "lessonCode": "HN6S.01.0001",
+              "lessonName": "Điều tôi thích",
+              "criteria": [
+                {
+                  "criterionIndex": 1,
+                  "sourceCode": "HN6S.01.0001.01",
+                  "description": "Nhận diện sở thích cá nhân và ý nghĩa của sở thích.",
+                  "programLevel": "Mức 1",
+                  "guideDoc": null,
+                  "competencyGroup": "Tiêu chí 1"
+                },
+                {
+                  "criterionIndex": 2,
+                  "sourceCode": "HN6S.01.0001.02",
+                  "description": "Ghi được ≥5 sở thích",
+                  "programLevel": "Mức 2",
+                  "guideDoc": null,
+                  "competencyGroup": "Tiêu chí 2"
+                },
+                {
+                  "criterionIndex": 3,
+                  "sourceCode": "HN6S.01.0001.03",
+                  "description": "Phân loại đúng nhóm sở thích",
+                  "programLevel": "Mức 3",
+                  "guideDoc": null,
+                  "competencyGroup": "Tiêu chí 3"
+                },
+                {
+                  "criterionIndex": 4,
+                  "sourceCode": "HN6S.01.0001.04",
+                  "description": "Nêu được ý nghĩa sở thích với bản thân.",
+                  "programLevel": "Mức 3",
+                  "guideDoc": null,
+                  "competencyGroup": "Tiêu chí 3"
+                }
+              ]
+            },
+            {
+              "lessonIndex": 2,
+              "lessonCode": "HN6S.01.0002",
+              "lessonName": "Điều tôi làm tốt",
+              "criteria": [
+                {
+                  "criterionIndex": 1,
+                  "sourceCode": "HN6S.01.0002.05",
+                  "description": "Nhận diện điểm mạnh bản thân và tôn trọng khác biệt.",
+                  "programLevel": "Mức 1",
+                  "guideDoc": null,
+                  "competencyGroup": "Tiêu chí 1"
+                },
+                {
+                  "criterionIndex": 2,
+                  "sourceCode": "HN6S.01.0002.06",
+                  "description": "Ghi được ≥3 điểm mạnh",
+                  "programLevel": "Mức 2",
+                  "guideDoc": null,
+                  "competencyGroup": "Tiêu chí 2"
+                },
+                {
+                  "criterionIndex": 3,
+                  "sourceCode": "HN6S.01.0002.07",
+                  "description": "Đối chiếu với nhận xét của bạn",
+                  "programLevel": "Mức 3",
+                  "guideDoc": null,
+                  "competencyGroup": "Tiêu chí 3"
+                },
+                {
+                  "criterionIndex": 4,
+                  "sourceCode": "HN6S.01.0002.08",
+                  "description": "Phát biểu thái độ tôn trọng khác biệt.",
+                  "programLevel": "Mức 3",
+                  "guideDoc": null,
+                  "competencyGroup": "Tiêu chí 3"
+                }
+              ]
+            },
+            {
+              "lessonIndex": 3,
+              "lessonCode": "HN6S.01.0003",
+              "lessonName": "Tính cách của tôi",
+              "criteria": [
+                {
+                  "criterionIndex": 1,
+                  "sourceCode": "HN6S.01.0003.09",
+                  "description": "Nhận diện tính cách bằng công cụ Four Colors có căn cứ.",
+                  "programLevel": "Mức 1",
+                  "guideDoc": null,
+                  "competencyGroup": "Tiêu chí 1"
+                },
+                {
+                  "criterionIndex": 2,
+                  "sourceCode": "HN6S.01.0003.10",
+                  "description": "Chọn được màu tính cách và nêu ≥2 đặc điểm",
+                  "programLevel": "Mức 2",
+                  "guideDoc": null,
+                  "competencyGroup": "Tiêu chí 2"
+                },
+                {
+                  "criterionIndex": 3,
+                  "sourceCode": "HN6S.01.0003.11",
+                  "description": "Điền đủ thẻ cá tính",
+                  "programLevel": "Mức 3",
+                  "guideDoc": null,
+                  "competencyGroup": "Tiêu chí 3"
+                },
+                {
+                  "criterionIndex": 4,
+                  "sourceCode": "HN6S.01.0003.12",
+                  "description": "Nêu câu chấp nhận khác biệt.",
+                  "programLevel": "Mức 3",
+                  "guideDoc": null,
+                  "competencyGroup": "Tiêu chí 3"
+                }
+              ]
+            },
+            {
+              "lessonIndex": 4,
+              "lessonCode": "HN6S.01.0004",
+              "lessonName": "Nghề nghiệp quanh ta",
+              "criteria": [
+                {
+                  "criterionIndex": 1,
+                  "sourceCode": "HN6S.01.0004.13",
+                  "description": "Khám phá các nhóm nghề cơ bản trong cuộc sống.",
+                  "programLevel": "Mức 1",
+                  "guideDoc": null,
+                  "competencyGroup": "Tiêu chí 1"
+                },
+                {
+                  "criterionIndex": 2,
+                  "sourceCode": "HN6S.01.0004.14",
+                  "description": "Kể tên ≥5 nghề qua tranh",
+                  "programLevel": "Mức 2",
+                  "guideDoc": null,
+                  "competencyGroup": "Tiêu chí 2"
+                },
+                {
+                  "criterionIndex": 3,
+                  "sourceCode": "HN6S.01.0004.15",
+                  "description": "Phân loại ≥4 thẻ nghề đúng nhóm",
+                  "programLevel": "Mức 3",
+                  "guideDoc": null,
+                  "competencyGroup": "Tiêu chí 3"
+                },
+                {
+                  "criterionIndex": 4,
+                  "sourceCode": "HN6S.01.0004.16",
+                  "description": "Ghi 3 nghề gặp hàng ngày.",
+                  "programLevel": "Mức 3",
+                  "guideDoc": null,
+                  "competencyGroup": "Tiêu chí 3"
+                }
+              ]
+            },
+            {
+              "lessonIndex": 5,
+              "lessonCode": "HN6S.01.0005",
+              "lessonName": "Nghề nào làm gì?",
+              "criteria": [
+                {
+                  "criterionIndex": 1,
+                  "sourceCode": "HN6S.01.0005.17",
+                  "description": "Khám phá nội dung công việc và đóng góp của một số nghề.",
+                  "programLevel": "Mức 1",
+                  "guideDoc": null,
+                  "competencyGroup": "Tiêu chí 1"
+                },
+                {
+                  "criterionIndex": 2,
+                  "sourceCode": "HN6S.01.0005.18",
+                  "description": "Điền đủ phiếu mô tả ≥3 mục",
+                  "programLevel": "Mức 2",
+                  "guideDoc": null,
+                  "competencyGroup": "Tiêu chí 2"
+                },
+                {
+                  "criterionIndex": 3,
+                  "sourceCode": "HN6S.01.0005.19",
+                  "description": "Ghi ≥2 sản phẩm nghề tạo ra",
+                  "programLevel": "Mức 3",
+                  "guideDoc": null,
+                  "competencyGroup": "Tiêu chí 3"
+                },
+                {
+                  "criterionIndex": 4,
+                  "sourceCode": "HN6S.01.0005.20",
+                  "description": "Trình bày nghề trong 2–3 câu.",
+                  "programLevel": "Mức 3",
+                  "guideDoc": null,
+                  "competencyGroup": "Tiêu chí 3"
+                }
+              ]
+            },
+            {
+              "lessonIndex": 6,
+              "lessonCode": "HN6S.01.0006",
+              "lessonName": "Nghề và cuộc sống",
+              "criteria": [
+                {
+                  "criterionIndex": 1,
+                  "sourceCode": "HN6S.01.0006.21",
+                  "description": "Nhận diện đóng góp của nghề và tôn trọng lao động.",
+                  "programLevel": "Mức 1",
+                  "guideDoc": null,
+                  "competencyGroup": "Tiêu chí 1"
+                },
+                {
+                  "criterionIndex": 2,
+                  "sourceCode": "HN6S.01.0006.22",
+                  "description": "Nêu ≥3 hậu quả nếu một nhóm nghề ngừng",
+                  "programLevel": "Mức 2",
+                  "guideDoc": null,
+                  "competencyGroup": "Tiêu chí 2"
+                },
+                {
+                  "criterionIndex": 3,
+                  "sourceCode": "HN6S.01.0006.23",
+                  "description": "Liệt kê ≥5 nghề trong ngày",
+                  "programLevel": "Mức 3",
+                  "guideDoc": null,
+                  "competencyGroup": "Tiêu chí 3"
+                },
+                {
+                  "criterionIndex": 4,
+                  "sourceCode": "HN6S.01.0006.24",
+                  "description": "Phát biểu câu tôn trọng nghề.",
+                  "programLevel": "Mức 3",
+                  "guideDoc": null,
+                  "competencyGroup": "Tiêu chí 3"
+                }
+              ]
+            },
+            {
+              "lessonIndex": 7,
+              "lessonCode": "HN6S.01.0007",
+              "lessonName": "Nghề của người thân",
+              "criteria": [
+                {
+                  "criterionIndex": 1,
+                  "sourceCode": "HN6S.01.0007.25",
+                  "description": "Khám phá và trân trọng nghề nghiệp của người thân.",
+                  "programLevel": "Mức 1",
+                  "guideDoc": null,
+                  "competencyGroup": "Tiêu chí 1"
+                },
+                {
+                  "criterionIndex": 2,
+                  "sourceCode": "HN6S.01.0007.26",
+                  "description": "Điền đủ ≥3 mục phiếu",
+                  "programLevel": "Mức 2",
+                  "guideDoc": null,
+                  "competencyGroup": "Tiêu chí 2"
+                },
+                {
+                  "criterionIndex": 3,
+                  "sourceCode": "HN6S.01.0007.27",
+                  "description": "Kể lại 2–3 công việc chính của người thân",
+                  "programLevel": "Mức 3",
+                  "guideDoc": null,
+                  "competencyGroup": "Tiêu chí 3"
+                },
+                {
+                  "criterionIndex": 4,
+                  "sourceCode": "HN6S.01.0007.28",
+                  "description": "Ghi ≥1 điều ấn tượng.",
+                  "programLevel": "Mức 3",
+                  "guideDoc": null,
+                  "competencyGroup": "Tiêu chí 3"
+                }
+              ]
+            },
+            {
+              "lessonIndex": 8,
+              "lessonCode": "HN6S.01.0008",
+              "lessonName": "Câu chuyện nghề nghiệp",
+              "criteria": [
+                {
+                  "criterionIndex": 1,
+                  "sourceCode": "HN6S.01.0008.29",
+                  "description": "Khám phá đóng góp của người lao động qua câu chuyện thực tế.",
+                  "programLevel": "Mức 1",
+                  "guideDoc": null,
+                  "competencyGroup": "Tiêu chí 1"
+                },
+                {
+                  "criterionIndex": 2,
+                  "sourceCode": "HN6S.01.0008.30",
+                  "description": "Nêu được 2–3 thông tin từ clip/podcast",
+                  "programLevel": "Mức 2",
+                  "guideDoc": null,
+                  "competencyGroup": "Tiêu chí 2"
+                },
+                {
+                  "criterionIndex": 3,
+                  "sourceCode": "HN6S.01.0008.31",
+                  "description": "Ghi ≥1 điều bất ngờ",
+                  "programLevel": "Mức 3",
+                  "guideDoc": null,
+                  "competencyGroup": "Tiêu chí 3"
+                },
+                {
+                  "criterionIndex": 4,
+                  "sourceCode": "HN6S.01.0008.32",
+                  "description": "Viết 1 điều học được và 1 cam kết.",
+                  "programLevel": "Mức 3",
+                  "guideDoc": null,
+                  "competencyGroup": "Tiêu chí 3"
+                }
+              ]
+            },
+            {
+              "lessonIndex": 9,
+              "lessonCode": "HN6S.01.0009",
+              "lessonName": "Tôi thích nghề nào?",
+              "criteria": [
+                {
+                  "criterionIndex": 1,
+                  "sourceCode": "HN6S.01.0009.33",
+                  "description": "Kết nối sở thích, điểm mạnh với một nghề cụ thể.",
+                  "programLevel": "Mức 1",
+                  "guideDoc": null,
+                  "competencyGroup": "Tiêu chí 1"
+                },
+                {
+                  "criterionIndex": 2,
+                  "sourceCode": "HN6S.01.0009.34",
+                  "description": "Nhắc lại ≥2 sở thích và 2 điểm mạnh",
+                  "programLevel": "Mức 2",
+                  "guideDoc": null,
+                  "competencyGroup": "Tiêu chí 2"
+                },
+                {
+                  "criterionIndex": 3,
+                  "sourceCode": "HN6S.01.0009.35",
+                  "description": "Điền đủ 3 mục phiếu kết nối",
+                  "programLevel": "Mức 3",
+                  "guideDoc": null,
+                  "competencyGroup": "Tiêu chí 3"
+                },
+                {
+                  "criterionIndex": 4,
+                  "sourceCode": "HN6S.01.0009.36",
+                  "description": "Ghi ≥2 câu hỏi về nghề.",
+                  "programLevel": "Mức 3",
+                  "guideDoc": null,
+                  "competencyGroup": "Tiêu chí 3"
+                }
+              ]
+            },
+            {
+              "lessonIndex": 10,
+              "lessonCode": "HN6S.01.0010",
+              "lessonName": "Tôi – hôm nay và tương lai",
+              "criteria": [
+                {
+                  "criterionIndex": 1,
+                  "sourceCode": "HN6S.01.0010.37",
+                  "description": "Tổng kết hành trình năm học và chuẩn bị cho lớp 7.",
+                  "programLevel": "Mức 1",
+                  "guideDoc": null,
+                  "competencyGroup": "Tiêu chí 1"
+                },
+                {
+                  "criterionIndex": 2,
+                  "sourceCode": "HN6S.01.0010.38",
+                  "description": "Nhắc lại ≥3 nội dung đã học",
+                  "programLevel": "Mức 2",
+                  "guideDoc": null,
+                  "competencyGroup": "Tiêu chí 2"
+                },
+                {
+                  "criterionIndex": 3,
+                  "sourceCode": "HN6S.01.0010.39",
+                  "description": "Điền đủ 3 mục nhật ký",
+                  "programLevel": "Mức 3",
+                  "guideDoc": null,
+                  "competencyGroup": "Tiêu chí 3"
+                },
+                {
+                  "criterionIndex": 4,
+                  "sourceCode": "HN6S.01.0010.40",
+                  "description": "Viết 2–3 câu gửi bản thân.",
+                  "programLevel": "Mức 3",
+                  "guideDoc": null,
+                  "competencyGroup": "Tiêu chí 3"
+                }
+              ]
+            }
+          ]
+        }
+      ]
+    },
+    "7": {
+      "grade": "7",
+      "topicsCount": 1,
+      "lessonsCount": 10,
+      "criteriaCount": 40,
+      "topics": [
+        {
+          "topicCode": "HN7S.01",
+          "topicName": "Nghề – Câu chuyện tương lai",
+          "lessons": [
+            {
+              "lessonIndex": 1,
+              "lessonCode": "HN7S.01.0001",
+              "lessonName": "Tính cách và màu sắc",
+              "criteria": [
+                {
+                  "criterionIndex": 1,
+                  "sourceCode": "HN7S.01.0001.01",
+                  "description": "Kết nối tính cách với định hướng nghề nghiệp.",
+                  "programLevel": "Mức 1",
+                  "guideDoc": null,
+                  "competencyGroup": "Tiêu chí 1"
+                },
+                {
+                  "criterionIndex": 2,
+                  "sourceCode": "HN7S.01.0001.02",
+                  "description": "Chọn được màu và giải thích theo bảng chuẩn hóa",
+                  "programLevel": "Mức 2",
+                  "guideDoc": null,
+                  "competencyGroup": "Tiêu chí 2"
+                },
+                {
+                  "criterionIndex": 3,
+                  "sourceCode": "HN7S.01.0001.03",
+                  "description": "Nêu ≥2 điểm mạnh và 1 hạn chế nhóm",
+                  "programLevel": "Mức 3",
+                  "guideDoc": null,
+                  "competencyGroup": "Tiêu chí 3"
+                },
+                {
+                  "criterionIndex": 4,
+                  "sourceCode": "HN7S.01.0001.04",
+                  "description": "Kể ≥2 nghề phù hợp.",
+                  "programLevel": "Mức 3",
+                  "guideDoc": null,
+                  "competencyGroup": "Tiêu chí 3"
+                }
+              ]
+            },
+            {
+              "lessonIndex": 2,
+              "lessonCode": "HN7S.01.0002",
+              "lessonName": "Tôi trong mắt bạn bè",
+              "criteria": [
+                {
+                  "criterionIndex": 1,
+                  "sourceCode": "HN7S.01.0002.05",
+                  "description": "Đối chiếu tự nhận thức với nhận xét của bạn bè.",
+                  "programLevel": "Mức 1",
+                  "guideDoc": null,
+                  "competencyGroup": "Tiêu chí 1"
+                },
+                {
+                  "criterionIndex": 2,
+                  "sourceCode": "HN7S.01.0002.06",
+                  "description": "Tự ghi ≥3 điểm mạnh",
+                  "programLevel": "Mức 2",
+                  "guideDoc": null,
+                  "competencyGroup": "Tiêu chí 2"
+                },
+                {
+                  "criterionIndex": 3,
+                  "sourceCode": "HN7S.01.0002.07",
+                  "description": "Đối chiếu với nhận xét bạn",
+                  "programLevel": "Mức 3",
+                  "guideDoc": null,
+                  "competencyGroup": "Tiêu chí 3"
+                },
+                {
+                  "criterionIndex": 4,
+                  "sourceCode": "HN7S.01.0002.08",
+                  "description": "Hoàn thiện thẻ điểm mạnh cá nhân.",
+                  "programLevel": "Mức 3",
+                  "guideDoc": null,
+                  "competencyGroup": "Tiêu chí 3"
+                }
+              ]
+            },
+            {
+              "lessonIndex": 3,
+              "lessonCode": "HN7S.01.0003",
+              "lessonName": "Môn học yêu thích và nghề nghiệp",
+              "criteria": [
+                {
+                  "criterionIndex": 1,
+                  "sourceCode": "HN7S.01.0003.09",
+                  "description": "Kết nối môn học, kỹ năng và nghề nghiệp.",
+                  "programLevel": "Mức 1",
+                  "guideDoc": null,
+                  "competencyGroup": "Tiêu chí 1"
+                },
+                {
+                  "criterionIndex": 2,
+                  "sourceCode": "HN7S.01.0003.10",
+                  "description": "Ghi tên 3 môn và lý do",
+                  "programLevel": "Mức 2",
+                  "guideDoc": null,
+                  "competencyGroup": "Tiêu chí 2"
+                },
+                {
+                  "criterionIndex": 3,
+                  "sourceCode": "HN7S.01.0003.11",
+                  "description": "Chỉ ra 1–2 kỹ năng mỗi môn",
+                  "programLevel": "Mức 3",
+                  "guideDoc": null,
+                  "competencyGroup": "Tiêu chí 3"
+                },
+                {
+                  "criterionIndex": 4,
+                  "sourceCode": "HN7S.01.0003.12",
+                  "description": "Ghép đúng ≥3 thẻ kỹ năng với nghề.",
+                  "programLevel": "Mức 3",
+                  "guideDoc": null,
+                  "competencyGroup": "Tiêu chí 3"
+                }
+              ]
+            },
+            {
+              "lessonIndex": 4,
+              "lessonCode": "HN7S.01.0004",
+              "lessonName": "Kỹ năng của tôi – Nghề của tương lai",
+              "criteria": [
+                {
+                  "criterionIndex": 1,
+                  "sourceCode": "HN7S.01.0004.13",
+                  "description": "Nhận diện kỹ năng hiện có và giá trị kỹ năng chuyển đổi.",
+                  "programLevel": "Mức 1",
+                  "guideDoc": null,
+                  "competencyGroup": "Tiêu chí 1"
+                },
+                {
+                  "criterionIndex": 2,
+                  "sourceCode": "HN7S.01.0004.14",
+                  "description": "Ghi chú ≥4 kỹ năng",
+                  "programLevel": "Mức 2",
+                  "guideDoc": null,
+                  "competencyGroup": "Tiêu chí 2"
+                },
+                {
+                  "criterionIndex": 3,
+                  "sourceCode": "HN7S.01.0004.15",
+                  "description": "Nêu 1 kỹ năng dùng cho ≥3 nghề",
+                  "programLevel": "Mức 3",
+                  "guideDoc": null,
+                  "competencyGroup": "Tiêu chí 3"
+                },
+                {
+                  "criterionIndex": 4,
+                  "sourceCode": "HN7S.01.0004.16",
+                  "description": "Đặt được 1 mục tiêu rèn luyện.",
+                  "programLevel": "Mức 3",
+                  "guideDoc": null,
+                  "competencyGroup": "Tiêu chí 3"
+                }
+              ]
+            },
+            {
+              "lessonIndex": 5,
+              "lessonCode": "HN7S.01.0005",
+              "lessonName": "Nghề nghiệp đang thay đổi",
+              "criteria": [
+                {
+                  "criterionIndex": 1,
+                  "sourceCode": "HN7S.01.0005.17",
+                  "description": "Nhận thức sự thay đổi nghề nghiệp theo xã hội và công nghệ.",
+                  "programLevel": "Mức 1",
+                  "guideDoc": null,
+                  "competencyGroup": "Tiêu chí 1"
+                },
+                {
+                  "criterionIndex": 2,
+                  "sourceCode": "HN7S.01.0005.18",
+                  "description": "Kể ≥2 nghề cũ và ≥2 nghề mới",
+                  "programLevel": "Mức 2",
+                  "guideDoc": null,
+                  "competencyGroup": "Tiêu chí 2"
+                },
+                {
+                  "criterionIndex": 3,
+                  "sourceCode": "HN7S.01.0005.19",
+                  "description": "Nêu ≥2 nguyên nhân cốt lõi",
+                  "programLevel": "Mức 3",
+                  "guideDoc": null,
+                  "competencyGroup": "Tiêu chí 3"
+                },
+                {
+                  "criterionIndex": 4,
+                  "sourceCode": "HN7S.01.0005.20",
+                  "description": "Trình bày nghề tương lai trong 3 phút.",
+                  "programLevel": "Mức 3",
+                  "guideDoc": null,
+                  "competencyGroup": "Tiêu chí 3"
+                }
+              ]
+            },
+            {
+              "lessonIndex": 6,
+              "lessonCode": "HN7S.01.0006",
+              "lessonName": "Công nghệ và thế giới nghề nghiệp",
+              "criteria": [
+                {
+                  "criterionIndex": 1,
+                  "sourceCode": "HN7S.01.0006.21",
+                  "description": "Phân tích tác động của công nghệ và giá trị con người trong lao động.",
+                  "programLevel": "Mức 1",
+                  "guideDoc": null,
+                  "competencyGroup": "Tiêu chí 1"
+                },
+                {
+                  "criterionIndex": 2,
+                  "sourceCode": "HN7S.01.0006.22",
+                  "description": "Đóng góp ≥1 luận điểm cho nhóm",
+                  "programLevel": "Mức 2",
+                  "guideDoc": null,
+                  "competencyGroup": "Tiêu chí 2"
+                },
+                {
+                  "criterionIndex": 3,
+                  "sourceCode": "HN7S.01.0006.23",
+                  "description": "Liệt kê 3 phẩm chất đặc thù con người",
+                  "programLevel": "Mức 3",
+                  "guideDoc": null,
+                  "competencyGroup": "Tiêu chí 3"
+                },
+                {
+                  "criterionIndex": 4,
+                  "sourceCode": "HN7S.01.0006.24",
+                  "description": "Phát biểu 1 quan điểm có lý giải.",
+                  "programLevel": "Mức 3",
+                  "guideDoc": null,
+                  "competencyGroup": "Tiêu chí 3"
+                }
+              ]
+            },
+            {
+              "lessonIndex": 7,
+              "lessonCode": "HN7S.01.0007",
+              "lessonName": "Nghề em muốn tìm hiểu",
+              "criteria": [
+                {
+                  "criterionIndex": 1,
+                  "sourceCode": "HN7S.01.0007.25",
+                  "description": "Thực hành tìm hiểu chủ động một nghề quan tâm.",
+                  "programLevel": "Mức 1",
+                  "guideDoc": null,
+                  "competencyGroup": "Tiêu chí 1"
+                },
+                {
+                  "criterionIndex": 2,
+                  "sourceCode": "HN7S.01.0007.26",
+                  "description": "Chọn được 1 nghề và lý do",
+                  "programLevel": "Mức 2",
+                  "guideDoc": null,
+                  "competencyGroup": "Tiêu chí 2"
+                },
+                {
+                  "criterionIndex": 3,
+                  "sourceCode": "HN7S.01.0007.27",
+                  "description": "Điền ≥2 ý mỗi cột K và W",
+                  "programLevel": "Mức 3",
+                  "guideDoc": null,
+                  "competencyGroup": "Tiêu chí 3"
+                },
+                {
+                  "criterionIndex": 4,
+                  "sourceCode": "HN7S.01.0007.28",
+                  "description": "Soạn ≥3 câu hỏi phỏng vấn.",
+                  "programLevel": "Mức 3",
+                  "guideDoc": null,
+                  "competencyGroup": "Tiêu chí 3"
+                }
+              ]
+            },
+            {
+              "lessonIndex": 8,
+              "lessonCode": "HN7S.01.0008",
+              "lessonName": "Phỏng vấn nghề nghiệp nhỏ",
+              "criteria": [
+                {
+                  "criterionIndex": 1,
+                  "sourceCode": "HN7S.01.0008.29",
+                  "description": "Tổng hợp và báo cáo thông tin nghề từ thực tế.",
+                  "programLevel": "Mức 1",
+                  "guideDoc": null,
+                  "competencyGroup": "Tiêu chí 1"
+                },
+                {
+                  "criterionIndex": 2,
+                  "sourceCode": "HN7S.01.0008.30",
+                  "description": "Trình bày ≥4 thông tin về nghề",
+                  "programLevel": "Mức 2",
+                  "guideDoc": null,
+                  "competencyGroup": "Tiêu chí 2"
+                },
+                {
+                  "criterionIndex": 3,
+                  "sourceCode": "HN7S.01.0008.31",
+                  "description": "Nêu ≥1 điểm khác biệt tưởng tượng – thực tế",
+                  "programLevel": "Mức 3",
+                  "guideDoc": null,
+                  "competencyGroup": "Tiêu chí 3"
+                },
+                {
+                  "criterionIndex": 4,
+                  "sourceCode": "HN7S.01.0008.32",
+                  "description": "Điền ≥3 ý cột L.",
+                  "programLevel": "Mức 3",
+                  "guideDoc": null,
+                  "competencyGroup": "Tiêu chí 3"
+                }
+              ]
+            },
+            {
+              "lessonIndex": 9,
+              "lessonCode": "HN7S.01.0009",
+              "lessonName": "Câu chuyện của người đi trước",
+              "criteria": [
+                {
+                  "criterionIndex": 1,
+                  "sourceCode": "HN7S.01.0009.33",
+                  "description": "Học hỏi từ hành trình nghề nghiệp thực tế.",
+                  "programLevel": "Mức 1",
+                  "guideDoc": null,
+                  "competencyGroup": "Tiêu chí 1"
+                },
+                {
+                  "criterionIndex": 2,
+                  "sourceCode": "HN7S.01.0009.34",
+                  "description": "Liệt kê ≥3 phẩm chất nhân vật",
+                  "programLevel": "Mức 2",
+                  "guideDoc": null,
+                  "competencyGroup": "Tiêu chí 2"
+                },
+                {
+                  "criterionIndex": 3,
+                  "sourceCode": "HN7S.01.0009.35",
+                  "description": "Nắm bắt nội dung câu chuyện",
+                  "programLevel": "Mức 3",
+                  "guideDoc": null,
+                  "competencyGroup": "Tiêu chí 3"
+                },
+                {
+                  "criterionIndex": 4,
+                  "sourceCode": "HN7S.01.0009.36",
+                  "description": "Viết 1 thông điệp cam kết.",
+                  "programLevel": "Mức 3",
+                  "guideDoc": null,
+                  "competencyGroup": "Tiêu chí 3"
+                }
+              ]
+            },
+            {
+              "lessonIndex": 10,
+              "lessonCode": "HN7S.01.0010",
+              "lessonName": "Nhìn lại và tiến về phía trước",
+              "criteria": [
+                {
+                  "criterionIndex": 1,
+                  "sourceCode": "HN7S.01.0010.37",
+                  "description": "Tổng kết năm học và định hướng cho lớp 8.",
+                  "programLevel": "Mức 1",
+                  "guideDoc": null,
+                  "competencyGroup": "Tiêu chí 1"
+                },
+                {
+                  "criterionIndex": 2,
+                  "sourceCode": "HN7S.01.0010.38",
+                  "description": "Trưng bày đủ sản phẩm",
+                  "programLevel": "Mức 2",
+                  "guideDoc": null,
+                  "competencyGroup": "Tiêu chí 2"
+                },
+                {
+                  "criterionIndex": 3,
+                  "sourceCode": "HN7S.01.0010.39",
+                  "description": "Nêu 1 thay đổi lớn nhất trong suy nghĩ về nghề",
+                  "programLevel": "Mức 3",
+                  "guideDoc": null,
+                  "competencyGroup": "Tiêu chí 3"
+                },
+                {
+                  "criterionIndex": 4,
+                  "sourceCode": "HN7S.01.0010.40",
+                  "description": "Viết thư với ≥2 mục tiêu lớp 8.",
+                  "programLevel": "Mức 3",
+                  "guideDoc": null,
+                  "competencyGroup": "Tiêu chí 3"
+                }
+              ]
+            }
+          ]
+        }
+      ]
+    },
+    "8": {
+      "grade": "8",
+      "topicsCount": 1,
+      "lessonsCount": 10,
+      "criteriaCount": 38,
+      "topics": [
+        {
+          "topicCode": "HN8S.01",
+          "topicName": "Tôi muốn trở thành ai?",
+          "lessons": [
+            {
+              "lessonIndex": 1,
+              "lessonCode": "HN8S.01.0001",
+              "lessonName": "Nghề nghiệp trong mắt tôi",
+              "criteria": [
+                {
+                  "criterionIndex": 1,
+                  "sourceCode": "HN8S.01.0001.01",
+                  "description": "Nhận diện khoảng cách giữa hình dung và thực tế nghề nghiệp.",
+                  "programLevel": "Mức 1",
+                  "guideDoc": null,
+                  "competencyGroup": "Tiêu chí 1"
+                },
+                {
+                  "criterionIndex": 2,
+                  "sourceCode": "HN8S.01.0001.02",
+                  "description": "Liệt kê ≥3 nghề và mô tả hình dung ban đầu",
+                  "programLevel": "Mức 2",
+                  "guideDoc": null,
+                  "competencyGroup": "Tiêu chí 2"
+                },
+                {
+                  "criterionIndex": 3,
+                  "sourceCode": "HN8S.01.0001.03",
+                  "description": "Chỉ ra ≥1 điểm khác biệt",
+                  "programLevel": "Mức 3",
+                  "guideDoc": null,
+                  "competencyGroup": "Tiêu chí 3"
+                },
+                {
+                  "criterionIndex": 4,
+                  "sourceCode": "HN8S.01.0001.04",
+                  "description": "Nêu 1 điều chưa biết.",
+                  "programLevel": "Mức 3",
+                  "guideDoc": null,
+                  "competencyGroup": "Tiêu chí 3"
+                }
+              ]
+            },
+            {
+              "lessonIndex": 2,
+              "lessonCode": "HN8S.01.0002",
+              "lessonName": "Nghề nghiệp cần gì ở người làm việc?",
+              "criteria": [
+                {
+                  "criterionIndex": 1,
+                  "sourceCode": "HN8S.01.0002.05",
+                  "description": "So sánh yêu cầu nghề nghiệp với đặc điểm bản thân.",
+                  "programLevel": "Mức 1",
+                  "guideDoc": null,
+                  "competencyGroup": "Tiêu chí 1"
+                },
+                {
+                  "criterionIndex": 2,
+                  "sourceCode": "HN8S.01.0002.06",
+                  "description": "Ghi ≥3 phẩm chất/năng lực từ câu chuyện",
+                  "programLevel": "Mức 2",
+                  "guideDoc": null,
+                  "competencyGroup": "Tiêu chí 2"
+                },
+                {
+                  "criterionIndex": 3,
+                  "sourceCode": "HN8S.01.0002.07",
+                  "description": "Lập bảng đối chiếu nghề – yêu cầu – bản thân",
+                  "programLevel": "Mức 3",
+                  "guideDoc": null,
+                  "competencyGroup": "Tiêu chí 3"
+                },
+                {
+                  "criterionIndex": 4,
+                  "sourceCode": "HN8S.01.0002.08",
+                  "description": "Trình bày được kết quả.",
+                  "programLevel": "Mức 3",
+                  "guideDoc": null,
+                  "competencyGroup": "Tiêu chí 3"
+                }
+              ]
+            },
+            {
+              "lessonIndex": 3,
+              "lessonCode": "HN8S.01.0003",
+              "lessonName": "Tôi là kiểu người nào? Làm quen với mô hình Holland",
+              "criteria": [
+                {
+                  "criterionIndex": 1,
+                  "sourceCode": "HN8S.01.0003.09",
+                  "description": "Khám phá mô hình Holland qua trải nghiệm thực tế.",
+                  "programLevel": "Mức 1",
+                  "guideDoc": null,
+                  "competencyGroup": "Tiêu chí 1"
+                },
+                {
+                  "criterionIndex": 2,
+                  "sourceCode": "HN8S.01.0003.10",
+                  "description": "Ghi chú đặc điểm cả 6 nhóm",
+                  "programLevel": "Mức 2",
+                  "guideDoc": null,
+                  "competencyGroup": "Tiêu chí 2"
+                },
+                {
+                  "criterionIndex": 3,
+                  "sourceCode": "HN8S.01.0003.11",
+                  "description": "Chọn 1–2 nhóm và giải thích lý do.",
+                  "programLevel": "Mức 3",
+                  "guideDoc": null,
+                  "competencyGroup": "Tiêu chí 3"
+                }
+              ]
+            },
+            {
+              "lessonIndex": 4,
+              "lessonCode": "HN8S.01.0004",
+              "lessonName": "Kết nối Holland với nghề nghiệp",
+              "criteria": [
+                {
+                  "criterionIndex": 1,
+                  "sourceCode": "HN8S.01.0004.12",
+                  "description": "Kết nối nhóm tính cách Holland với nghề thực tế.",
+                  "programLevel": "Mức 1",
+                  "guideDoc": null,
+                  "competencyGroup": "Tiêu chí 1"
+                },
+                {
+                  "criterionIndex": 2,
+                  "sourceCode": "HN8S.01.0004.13",
+                  "description": "Ghép đúng ≥4/6 nhóm với nghề",
+                  "programLevel": "Mức 2",
+                  "guideDoc": null,
+                  "competencyGroup": "Tiêu chí 2"
+                },
+                {
+                  "criterionIndex": 3,
+                  "sourceCode": "HN8S.01.0004.14",
+                  "description": "Liệt kê 2–3 nghề nhóm Holland của mình",
+                  "programLevel": "Mức 3",
+                  "guideDoc": null,
+                  "competencyGroup": "Tiêu chí 3"
+                },
+                {
+                  "criterionIndex": 4,
+                  "sourceCode": "HN8S.01.0004.15",
+                  "description": "Viết phản hồi có lý giải.",
+                  "programLevel": "Mức 3",
+                  "guideDoc": null,
+                  "competencyGroup": "Tiêu chí 3"
+                }
+              ]
+            },
+            {
+              "lessonIndex": 5,
+              "lessonCode": "HN8S.01.0005",
+              "lessonName": "Gia đình mong gì – Tôi muốn gì?",
+              "criteria": [
+                {
+                  "criterionIndex": 1,
+                  "sourceCode": "HN8S.01.0005.16",
+                  "description": "Nhận diện kỳ vọng gia đình và mong muốn bản thân.",
+                  "programLevel": "Mức 1",
+                  "guideDoc": null,
+                  "competencyGroup": "Tiêu chí 1"
+                },
+                {
+                  "criterionIndex": 2,
+                  "sourceCode": "HN8S.01.0005.17",
+                  "description": "Ghi được kỳ vọng và lý do sơ bộ",
+                  "programLevel": "Mức 2",
+                  "guideDoc": null,
+                  "competencyGroup": "Tiêu chí 2"
+                },
+                {
+                  "criterionIndex": 3,
+                  "sourceCode": "HN8S.01.0005.18",
+                  "description": "Nêu ≥2 lý do phổ biến sau kỳ vọng",
+                  "programLevel": "Mức 3",
+                  "guideDoc": null,
+                  "competencyGroup": "Tiêu chí 3"
+                },
+                {
+                  "criterionIndex": 4,
+                  "sourceCode": "HN8S.01.0005.19",
+                  "description": "Viết mong muốn và cảm xúc cá nhân.",
+                  "programLevel": "Mức 3",
+                  "guideDoc": null,
+                  "competencyGroup": "Tiêu chí 3"
+                }
+              ]
+            },
+            {
+              "lessonIndex": 6,
+              "lessonCode": "HN8S.01.0006",
+              "lessonName": "Lắng nghe và trao đổi trong gia đình về nghề nghiệp",
+              "criteria": [
+                {
+                  "criterionIndex": 1,
+                  "sourceCode": "HN8S.01.0006.20",
+                  "description": "Thực hành kỹ năng trao đổi với gia đình về định hướng nghề.",
+                  "programLevel": "Mức 1",
+                  "guideDoc": null,
+                  "competencyGroup": "Tiêu chí 1"
+                },
+                {
+                  "criterionIndex": 2,
+                  "sourceCode": "HN8S.01.0006.21",
+                  "description": "Đề xuất ≥1 phương án xử lý mâu thuẫn",
+                  "programLevel": "Mức 2",
+                  "guideDoc": null,
+                  "competencyGroup": "Tiêu chí 2"
+                },
+                {
+                  "criterionIndex": 3,
+                  "sourceCode": "HN8S.01.0006.22",
+                  "description": "Thực hành kỹ năng lắng nghe",
+                  "programLevel": "Mức 3",
+                  "guideDoc": null,
+                  "competencyGroup": "Tiêu chí 3"
+                },
+                {
+                  "criterionIndex": 4,
+                  "sourceCode": "HN8S.01.0006.23",
+                  "description": "Viết đoạn chia sẻ rõ ràng.",
+                  "programLevel": "Mức 3",
+                  "guideDoc": null,
+                  "competencyGroup": "Tiêu chí 3"
+                }
+              ]
+            },
+            {
+              "lessonIndex": 7,
+              "lessonCode": "HN8S.01.0007",
+              "lessonName": "Điểm mạnh của tôi là gì?",
+              "criteria": [
+                {
+                  "criterionIndex": 1,
+                  "sourceCode": "HN8S.01.0007.24",
+                  "description": "Kết nối điểm mạnh bản thân với yêu cầu nghề nghiệp cụ thể.",
+                  "programLevel": "Mức 1",
+                  "guideDoc": null,
+                  "competencyGroup": "Tiêu chí 1"
+                },
+                {
+                  "criterionIndex": 2,
+                  "sourceCode": "HN8S.01.0007.25",
+                  "description": "Hoàn thiện sơ đồ tổng hợp",
+                  "programLevel": "Mức 2",
+                  "guideDoc": null,
+                  "competencyGroup": "Tiêu chí 2"
+                },
+                {
+                  "criterionIndex": 3,
+                  "sourceCode": "HN8S.01.0007.26",
+                  "description": "Liệt kê ≥3 điểm mạnh gắn với nghề",
+                  "programLevel": "Mức 3",
+                  "guideDoc": null,
+                  "competencyGroup": "Tiêu chí 3"
+                },
+                {
+                  "criterionIndex": 4,
+                  "sourceCode": "HN8S.01.0007.27",
+                  "description": "Chỉ ra ≥1 nghề phù hợp và lý do.",
+                  "programLevel": "Mức 3",
+                  "guideDoc": null,
+                  "competencyGroup": "Tiêu chí 3"
+                }
+              ]
+            },
+            {
+              "lessonIndex": 8,
+              "lessonCode": "HN8S.01.0008",
+              "lessonName": "Điều tôi cần cải thiện",
+              "criteria": [
+                {
+                  "criterionIndex": 1,
+                  "sourceCode": "HN8S.01.0008.28",
+                  "description": "Nhìn nhận hạn chế bản thân theo hướng tích cực.",
+                  "programLevel": "Mức 1",
+                  "guideDoc": null,
+                  "competencyGroup": "Tiêu chí 1"
+                },
+                {
+                  "criterionIndex": 2,
+                  "sourceCode": "HN8S.01.0008.29",
+                  "description": "Ghi ≥2 hạn chế khách quan",
+                  "programLevel": "Mức 2",
+                  "guideDoc": null,
+                  "competencyGroup": "Tiêu chí 2"
+                },
+                {
+                  "criterionIndex": 3,
+                  "sourceCode": "HN8S.01.0008.30",
+                  "description": "Nêu ≥1 ví dụ vượt qua hạn chế",
+                  "programLevel": "Mức 3",
+                  "guideDoc": null,
+                  "competencyGroup": "Tiêu chí 3"
+                },
+                {
+                  "criterionIndex": 4,
+                  "sourceCode": "HN8S.01.0008.31",
+                  "description": "Viết 1 điều cải thiện và bước hành động.",
+                  "programLevel": "Mức 3",
+                  "guideDoc": null,
+                  "competencyGroup": "Tiêu chí 3"
+                }
+              ]
+            },
+            {
+              "lessonIndex": 9,
+              "lessonCode": "HN8S.01.0009",
+              "lessonName": "Nghề nghiệp nào phù hợp với tôi?",
+              "criteria": [
+                {
+                  "criterionIndex": 1,
+                  "sourceCode": "HN8S.01.0009.32",
+                  "description": "Tổng hợp thông tin bản thân để xác định nghề phù hợp.",
+                  "programLevel": "Mức 1",
+                  "guideDoc": null,
+                  "competencyGroup": "Tiêu chí 1"
+                },
+                {
+                  "criterionIndex": 2,
+                  "sourceCode": "HN8S.01.0009.33",
+                  "description": "Lập phiếu tổng hợp đầy đủ",
+                  "programLevel": "Mức 2",
+                  "guideDoc": null,
+                  "competencyGroup": "Tiêu chí 2"
+                },
+                {
+                  "criterionIndex": 3,
+                  "sourceCode": "HN8S.01.0009.34",
+                  "description": "Chọn 1–2 nghề và ≥2 lý do dựa trên thông tin bản thân.",
+                  "programLevel": "Mức 3",
+                  "guideDoc": null,
+                  "competencyGroup": "Tiêu chí 3"
+                }
+              ]
+            },
+            {
+              "lessonIndex": 10,
+              "lessonCode": "HN8S.01.0010",
+              "lessonName": "Tổng kết và hướng tới lớp 9",
+              "criteria": [
+                {
+                  "criterionIndex": 1,
+                  "sourceCode": "HN8S.01.0010.35",
+                  "description": "Hệ thống hóa hành trình năm học và chuẩn bị cho lớp 9.",
+                  "programLevel": "Mức 1",
+                  "guideDoc": null,
+                  "competencyGroup": "Tiêu chí 1"
+                },
+                {
+                  "criterionIndex": 2,
+                  "sourceCode": "HN8S.01.0010.36",
+                  "description": "Hoàn thiện hồ sơ đủ các mục",
+                  "programLevel": "Mức 2",
+                  "guideDoc": null,
+                  "competencyGroup": "Tiêu chí 2"
+                },
+                {
+                  "criterionIndex": 3,
+                  "sourceCode": "HN8S.01.0010.37",
+                  "description": "Viết 3–5 câu suy ngẫm",
+                  "programLevel": "Mức 3",
+                  "guideDoc": null,
+                  "competencyGroup": "Tiêu chí 3"
+                },
+                {
+                  "criterionIndex": 4,
+                  "sourceCode": "HN8S.01.0010.38",
+                  "description": "Đặt ≥1 câu hỏi cho lớp 9.",
+                  "programLevel": "Mức 3",
+                  "guideDoc": null,
+                  "competencyGroup": "Tiêu chí 3"
+                }
+              ]
+            }
+          ]
+        }
+      ]
+    },
+    "9": {
+      "grade": "9",
+      "topicsCount": 1,
+      "lessonsCount": 10,
+      "criteriaCount": 40,
+      "topics": [
+        {
+          "topicCode": "HN9S.01",
+          "topicName": "Ngưỡng cửa tương lai",
+          "lessons": [
+            {
+              "lessonIndex": 1,
+              "lessonCode": "HN9S.01.0001",
+              "lessonName": "Tôi là ai? Nhìn lại bản thân trước ngưỡng cửa",
+              "criteria": [
+                {
+                  "criterionIndex": 1,
+                  "sourceCode": "HN9S.01.0001.01",
+                  "description": "Cập nhật và hệ thống hóa hiểu biết về bản thân sau THCS.",
+                  "programLevel": "Mức 1",
+                  "guideDoc": null,
+                  "competencyGroup": "Tiêu chí 1"
+                },
+                {
+                  "criterionIndex": 2,
+                  "sourceCode": "HN9S.01.0001.02",
+                  "description": "Chỉ ra ≥2 điểm thay đổi và ≥2 điểm còn đúng",
+                  "programLevel": "Mức 2",
+                  "guideDoc": null,
+                  "competencyGroup": "Tiêu chí 2"
+                },
+                {
+                  "criterionIndex": 3,
+                  "sourceCode": "HN9S.01.0001.03",
+                  "description": "Hoàn thành bảng tự đánh giá",
+                  "programLevel": "Mức 3",
+                  "guideDoc": null,
+                  "competencyGroup": "Tiêu chí 3"
+                },
+                {
+                  "criterionIndex": 4,
+                  "sourceCode": "HN9S.01.0001.04",
+                  "description": "Xếp hạng giá trị ưu tiên.",
+                  "programLevel": "Mức 3",
+                  "guideDoc": null,
+                  "competencyGroup": "Tiêu chí 3"
+                }
+              ]
+            },
+            {
+              "lessonIndex": 2,
+              "lessonCode": "HN9S.01.0002",
+              "lessonName": "Bản thân và nhóm nghề nghiệp phù hợp",
+              "criteria": [
+                {
+                  "criterionIndex": 1,
+                  "sourceCode": "HN9S.01.0002.05",
+                  "description": "Kết nối nhóm Holland với nghề nghiệp thực tế.",
+                  "programLevel": "Mức 1",
+                  "guideDoc": null,
+                  "competencyGroup": "Tiêu chí 1"
+                },
+                {
+                  "criterionIndex": 2,
+                  "sourceCode": "HN9S.01.0002.06",
+                  "description": "Xác nhận nhóm Holland và nêu ≥3 đặc điểm phù hợp",
+                  "programLevel": "Mức 2",
+                  "guideDoc": null,
+                  "competencyGroup": "Tiêu chí 2"
+                },
+                {
+                  "criterionIndex": 3,
+                  "sourceCode": "HN9S.01.0002.07",
+                  "description": "Ghi thông tin ≥3 nghề",
+                  "programLevel": "Mức 3",
+                  "guideDoc": null,
+                  "competencyGroup": "Tiêu chí 3"
+                },
+                {
+                  "criterionIndex": 4,
+                  "sourceCode": "HN9S.01.0002.08",
+                  "description": "Chọn 1–2 nghề và ≥2 lý do.",
+                  "programLevel": "Mức 3",
+                  "guideDoc": null,
+                  "competencyGroup": "Tiêu chí 3"
+                }
+              ]
+            },
+            {
+              "lessonIndex": 3,
+              "lessonCode": "HN9S.01.0003",
+              "lessonName": "Các hướng đi sau THCS – Bức tranh tổng quan",
+              "criteria": [
+                {
+                  "criterionIndex": 1,
+                  "sourceCode": "HN9S.01.0003.09",
+                  "description": "So sánh 4 hướng đi sau THCS một cách toàn diện.",
+                  "programLevel": "Mức 1",
+                  "guideDoc": null,
+                  "competencyGroup": "Tiêu chí 1"
+                },
+                {
+                  "criterionIndex": 2,
+                  "sourceCode": "HN9S.01.0003.10",
+                  "description": "Ghi đặc điểm cả 4 hướng đi",
+                  "programLevel": "Mức 2",
+                  "guideDoc": null,
+                  "competencyGroup": "Tiêu chí 2"
+                },
+                {
+                  "criterionIndex": 3,
+                  "sourceCode": "HN9S.01.0003.11",
+                  "description": "Lập bảng so sánh đủ 3 tiêu chí",
+                  "programLevel": "Mức 3",
+                  "guideDoc": null,
+                  "competencyGroup": "Tiêu chí 3"
+                },
+                {
+                  "criterionIndex": 4,
+                  "sourceCode": "HN9S.01.0003.12",
+                  "description": "Đặt ≥2 câu hỏi cụ thể.",
+                  "programLevel": "Mức 3",
+                  "guideDoc": null,
+                  "competencyGroup": "Tiêu chí 3"
+                }
+              ]
+            },
+            {
+              "lessonIndex": 4,
+              "lessonCode": "HN9S.01.0004",
+              "lessonName": "Tìm hiểu sâu hơn về từng hướng đi",
+              "criteria": [
+                {
+                  "criterionIndex": 1,
+                  "sourceCode": "HN9S.01.0004.13",
+                  "description": "Khám phá chuyên sâu một hướng đi sau THCS quan tâm.",
+                  "programLevel": "Mức 1",
+                  "guideDoc": null,
+                  "competencyGroup": "Tiêu chí 1"
+                },
+                {
+                  "criterionIndex": 2,
+                  "sourceCode": "HN9S.01.0004.14",
+                  "description": "Bổ sung ≥2 thông tin mới",
+                  "programLevel": "Mức 2",
+                  "guideDoc": null,
+                  "competencyGroup": "Tiêu chí 2"
+                },
+                {
+                  "criterionIndex": 3,
+                  "sourceCode": "HN9S.01.0004.15",
+                  "description": "Hoàn thiện phiếu tìm hiểu",
+                  "programLevel": "Mức 3",
+                  "guideDoc": null,
+                  "competencyGroup": "Tiêu chí 3"
+                },
+                {
+                  "criterionIndex": 4,
+                  "sourceCode": "HN9S.01.0004.16",
+                  "description": "Ghi ≥1 thông tin mới từ nhóm khác.",
+                  "programLevel": "Mức 3",
+                  "guideDoc": null,
+                  "competencyGroup": "Tiêu chí 3"
+                }
+              ]
+            },
+            {
+              "lessonIndex": 5,
+              "lessonCode": "HN9S.01.0005",
+              "lessonName": "Những yếu tố nào ảnh hưởng đến lựa chọn của tôi?",
+              "criteria": [
+                {
+                  "criterionIndex": 1,
+                  "sourceCode": "HN9S.01.0005.17",
+                  "description": "Phân tích các yếu tố ảnh hưởng đến lựa chọn hướng đi.",
+                  "programLevel": "Mức 1",
+                  "guideDoc": null,
+                  "competencyGroup": "Tiêu chí 1"
+                },
+                {
+                  "criterionIndex": 2,
+                  "sourceCode": "HN9S.01.0005.18",
+                  "description": "Vẽ sơ đồ đủ 4 yếu tố",
+                  "programLevel": "Mức 2",
+                  "guideDoc": null,
+                  "competencyGroup": "Tiêu chí 2"
+                },
+                {
+                  "criterionIndex": 3,
+                  "sourceCode": "HN9S.01.0005.19",
+                  "description": "Xếp hạng và giải thích yếu tố ưu tiên",
+                  "programLevel": "Mức 3",
+                  "guideDoc": null,
+                  "competencyGroup": "Tiêu chí 3"
+                },
+                {
+                  "criterionIndex": 4,
+                  "sourceCode": "HN9S.01.0005.20",
+                  "description": "Đề xuất ≥1 hướng xử lý mâu thuẫn.",
+                  "programLevel": "Mức 3",
+                  "guideDoc": null,
+                  "competencyGroup": "Tiêu chí 3"
+                }
+              ]
+            },
+            {
+              "lessonIndex": 6,
+              "lessonCode": "HN9S.01.0006",
+              "lessonName": "Ra quyết định có cơ sở",
+              "criteria": [
+                {
+                  "criterionIndex": 1,
+                  "sourceCode": "HN9S.01.0006.21",
+                  "description": "Thực hành quy trình ra quyết định 4 bước.",
+                  "programLevel": "Mức 1",
+                  "guideDoc": null,
+                  "competencyGroup": "Tiêu chí 1"
+                },
+                {
+                  "criterionIndex": 2,
+                  "sourceCode": "HN9S.01.0006.22",
+                  "description": "Ghi chú đủ 4 bước và ví dụ",
+                  "programLevel": "Mức 2",
+                  "guideDoc": null,
+                  "competencyGroup": "Tiêu chí 2"
+                },
+                {
+                  "criterionIndex": 3,
+                  "sourceCode": "HN9S.01.0006.23",
+                  "description": "Hoàn thành phân tích tình huống theo quy trình",
+                  "programLevel": "Mức 3",
+                  "guideDoc": null,
+                  "competencyGroup": "Tiêu chí 3"
+                },
+                {
+                  "criterionIndex": 4,
+                  "sourceCode": "HN9S.01.0006.24",
+                  "description": "Tự đánh giá mức sẵn sàng.",
+                  "programLevel": "Mức 3",
+                  "guideDoc": null,
+                  "competencyGroup": "Tiêu chí 3"
+                }
+              ]
+            },
+            {
+              "lessonIndex": 7,
+              "lessonCode": "HN9S.01.0007",
+              "lessonName": "Xây dựng định hướng học tập bước đầu",
+              "criteria": [
+                {
+                  "criterionIndex": 1,
+                  "sourceCode": "HN9S.01.0007.25",
+                  "description": "Lập kế hoạch định hướng học tập ngắn hạn và dài hạn.",
+                  "programLevel": "Mức 1",
+                  "guideDoc": null,
+                  "competencyGroup": "Tiêu chí 1"
+                },
+                {
+                  "criterionIndex": 2,
+                  "sourceCode": "HN9S.01.0007.26",
+                  "description": "Hoàn thiện bảng tổng hợp đủ 4 mục",
+                  "programLevel": "Mức 2",
+                  "guideDoc": null,
+                  "competencyGroup": "Tiêu chí 2"
+                },
+                {
+                  "criterionIndex": 3,
+                  "sourceCode": "HN9S.01.0007.27",
+                  "description": "Phác thảo định hướng ngắn và dài hạn",
+                  "programLevel": "Mức 3",
+                  "guideDoc": null,
+                  "competencyGroup": "Tiêu chí 3"
+                },
+                {
+                  "criterionIndex": 4,
+                  "sourceCode": "HN9S.01.0007.28",
+                  "description": "Ghi ≥2 nhu cầu hỗ trợ.",
+                  "programLevel": "Mức 3",
+                  "guideDoc": null,
+                  "competencyGroup": "Tiêu chí 3"
+                }
+              ]
+            },
+            {
+              "lessonIndex": 8,
+              "lessonCode": "HN9S.01.0008",
+              "lessonName": "Kỹ năng tìm kiếm và đánh giá thông tin hướng nghiệp",
+              "criteria": [
+                {
+                  "criterionIndex": 1,
+                  "sourceCode": "HN9S.01.0008.29",
+                  "description": "Thực hành tìm kiếm và đánh giá thông tin hướng nghiệp tin cậy.",
+                  "programLevel": "Mức 1",
+                  "guideDoc": null,
+                  "competencyGroup": "Tiêu chí 1"
+                },
+                {
+                  "criterionIndex": 2,
+                  "sourceCode": "HN9S.01.0008.30",
+                  "description": "Phân loại ≥4 nguồn thông tin có lý giải",
+                  "programLevel": "Mức 2",
+                  "guideDoc": null,
+                  "competencyGroup": "Tiêu chí 2"
+                },
+                {
+                  "criterionIndex": 3,
+                  "sourceCode": "HN9S.01.0008.31",
+                  "description": "Hoàn thành phiếu thông tin đủ câu hỏi",
+                  "programLevel": "Mức 3",
+                  "guideDoc": null,
+                  "competencyGroup": "Tiêu chí 3"
+                },
+                {
+                  "criterionIndex": 4,
+                  "sourceCode": "HN9S.01.0008.32",
+                  "description": "Đặt ≥1 câu hỏi về nguồn.",
+                  "programLevel": "Mức 3",
+                  "guideDoc": null,
+                  "competencyGroup": "Tiêu chí 3"
+                }
+              ]
+            },
+            {
+              "lessonIndex": 9,
+              "lessonCode": "HN9S.01.0009",
+              "lessonName": "Trò chuyện về định hướng – Giữa tôi và gia đình",
+              "criteria": [
+                {
+                  "criterionIndex": 1,
+                  "sourceCode": "HN9S.01.0009.33",
+                  "description": "Thực hành kỹ năng trao đổi định hướng với gia đình.",
+                  "programLevel": "Mức 1",
+                  "guideDoc": null,
+                  "competencyGroup": "Tiêu chí 1"
+                },
+                {
+                  "criterionIndex": 2,
+                  "sourceCode": "HN9S.01.0009.34",
+                  "description": "Nêu ≥1 kỳ vọng/lo lắng cụ thể của gia đình",
+                  "programLevel": "Mức 2",
+                  "guideDoc": null,
+                  "competencyGroup": "Tiêu chí 2"
+                },
+                {
+                  "criterionIndex": 3,
+                  "sourceCode": "HN9S.01.0009.35",
+                  "description": "Thực hành trao đổi theo hướng dẫn",
+                  "programLevel": "Mức 3",
+                  "guideDoc": null,
+                  "competencyGroup": "Tiêu chí 3"
+                },
+                {
+                  "criterionIndex": 4,
+                  "sourceCode": "HN9S.01.0009.36",
+                  "description": "Viết được 3–5 câu trình bày.",
+                  "programLevel": "Mức 3",
+                  "guideDoc": null,
+                  "competencyGroup": "Tiêu chí 3"
+                }
+              ]
+            },
+            {
+              "lessonIndex": 10,
+              "lessonCode": "HN9S.01.0010",
+              "lessonName": "Tổng kết THCS và chuẩn bị bước vào THPT",
+              "criteria": [
+                {
+                  "criterionIndex": 1,
+                  "sourceCode": "HN9S.01.0010.37",
+                  "description": "Hệ thống hóa hành trình hướng nghiệp THCS.",
+                  "programLevel": "Mức 1",
+                  "guideDoc": null,
+                  "competencyGroup": "Tiêu chí 1"
+                },
+                {
+                  "criterionIndex": 2,
+                  "sourceCode": "HN9S.01.0010.38",
+                  "description": "Hoàn thiện hồ sơ đủ 5 mục",
+                  "programLevel": "Mức 2",
+                  "guideDoc": null,
+                  "competencyGroup": "Tiêu chí 2"
+                },
+                {
+                  "criterionIndex": 3,
+                  "sourceCode": "HN9S.01.0010.39",
+                  "description": "Viết 3–5 câu suy ngẫm rõ ràng",
+                  "programLevel": "Mức 3",
+                  "guideDoc": null,
+                  "competencyGroup": "Tiêu chí 3"
+                },
+                {
+                  "criterionIndex": 4,
+                  "sourceCode": "HN9S.01.0010.40",
+                  "description": "Đặt ≥1 câu hỏi cho chương trình lớp 10.",
+                  "programLevel": "Mức 3",
+                  "guideDoc": null,
+                  "competencyGroup": "Tiêu chí 3"
+                }
+              ]
+            }
+          ]
+        }
+      ]
+    },
+    "10": {
+      "grade": "10",
+      "topicsCount": 1,
+      "lessonsCount": 10,
+      "criteriaCount": 40,
+      "topics": [
+        {
+          "topicCode": "HN10S.01",
+          "topicName": "Tự tìm nghề của mình",
+          "lessons": [
+            {
+              "lessonIndex": 1,
+              "lessonCode": "HN10S.01.0001",
+              "lessonName": "Tôi là ai sau một năm? Nhìn lại và cập nhật hành trình bản thân",
+              "criteria": [
+                {
+                  "criterionIndex": 1,
+                  "sourceCode": "HN10S.01.0001.01",
+                  "description": "Cập nhật bức tranh tự nhận thức bản thân ở đầu THPT.",
+                  "programLevel": "Mức 1",
+                  "guideDoc": null,
+                  "competencyGroup": "Tiêu chí 1"
+                },
+                {
+                  "criterionIndex": 2,
+                  "sourceCode": "HN10S.01.0001.02",
+                  "description": "Liệt kê ≥3 điểm thay đổi so với lớp 9",
+                  "programLevel": "Mức 2",
+                  "guideDoc": null,
+                  "competencyGroup": "Tiêu chí 2"
+                },
+                {
+                  "criterionIndex": 3,
+                  "sourceCode": "HN10S.01.0001.03",
+                  "description": "Hoàn thiện bảng tự đánh giá 4 tiêu chí",
+                  "programLevel": "Mức 3",
+                  "guideDoc": null,
+                  "competencyGroup": "Tiêu chí 3"
+                },
+                {
+                  "criterionIndex": 4,
+                  "sourceCode": "HN10S.01.0001.04",
+                  "description": "Đặt ≥1 câu hỏi phản tư sâu.",
+                  "programLevel": "Mức 3",
+                  "guideDoc": null,
+                  "competencyGroup": "Tiêu chí 3"
+                }
+              ]
+            },
+            {
+              "lessonIndex": 2,
+              "lessonCode": "HN10S.01.0002",
+              "lessonName": "Năng lực của tôi – Tôi giỏi gì và tôi muốn giỏi gì?",
+              "criteria": [
+                {
+                  "criterionIndex": 1,
+                  "sourceCode": "HN10S.01.0002.05",
+                  "description": "Phân biệt năng lực hiện có và năng lực cần phát triển.",
+                  "programLevel": "Mức 1",
+                  "guideDoc": null,
+                  "competencyGroup": "Tiêu chí 1"
+                },
+                {
+                  "criterionIndex": 2,
+                  "sourceCode": "HN10S.01.0002.06",
+                  "description": "Liệt kê ≥5 kỹ năng vào đúng hai cột",
+                  "programLevel": "Mức 2",
+                  "guideDoc": null,
+                  "competencyGroup": "Tiêu chí 2"
+                },
+                {
+                  "criterionIndex": 3,
+                  "sourceCode": "HN10S.01.0002.07",
+                  "description": "Xác định 1–2 nhóm nghề Holland phù hợp",
+                  "programLevel": "Mức 3",
+                  "guideDoc": null,
+                  "competencyGroup": "Tiêu chí 3"
+                },
+                {
+                  "criterionIndex": 4,
+                  "sourceCode": "HN10S.01.0002.08",
+                  "description": "Nêu ≥2 năng lực cần bổ sung.",
+                  "programLevel": "Mức 3",
+                  "guideDoc": null,
+                  "competencyGroup": "Tiêu chí 3"
+                }
+              ]
+            },
+            {
+              "lessonIndex": 3,
+              "lessonCode": "HN10S.01.0003",
+              "lessonName": "Tổ hợp môn học – Lựa chọn có ý nghĩa gì với tương lai?",
+              "criteria": [
+                {
+                  "criterionIndex": 1,
+                  "sourceCode": "HN10S.01.0003.09",
+                  "description": "Kết nối tổ hợp môn học với ngành học và nghề nghiệp.",
+                  "programLevel": "Mức 1",
+                  "guideDoc": null,
+                  "competencyGroup": "Tiêu chí 1"
+                },
+                {
+                  "criterionIndex": 2,
+                  "sourceCode": "HN10S.01.0003.10",
+                  "description": "Xác định đúng tổ hợp môn",
+                  "programLevel": "Mức 2",
+                  "guideDoc": null,
+                  "competencyGroup": "Tiêu chí 2"
+                },
+                {
+                  "criterionIndex": 3,
+                  "sourceCode": "HN10S.01.0003.11",
+                  "description": "Liệt kê ≥3 ngành tương ứng",
+                  "programLevel": "Mức 3",
+                  "guideDoc": null,
+                  "competencyGroup": "Tiêu chí 3"
+                },
+                {
+                  "criterionIndex": 4,
+                  "sourceCode": "HN10S.01.0003.12",
+                  "description": "Viết đoạn phản hồi rõ lý do.",
+                  "programLevel": "Mức 3",
+                  "guideDoc": null,
+                  "competencyGroup": "Tiêu chí 3"
+                }
+              ]
+            },
+            {
+              "lessonIndex": 4,
+              "lessonCode": "HN10S.01.0004",
+              "lessonName": "Ngành học và nghề nghiệp – Không phải lúc nào cũng giống nhau",
+              "criteria": [
+                {
+                  "criterionIndex": 1,
+                  "sourceCode": "HN10S.01.0004.13",
+                  "description": "Phân tích sự khác biệt giữa ngành học và nghề nghiệp.",
+                  "programLevel": "Mức 1",
+                  "guideDoc": null,
+                  "competencyGroup": "Tiêu chí 1"
+                },
+                {
+                  "criterionIndex": 2,
+                  "sourceCode": "HN10S.01.0004.14",
+                  "description": "Phân tích đúng ≥2 ví dụ ngành – nghề",
+                  "programLevel": "Mức 2",
+                  "guideDoc": null,
+                  "competencyGroup": "Tiêu chí 2"
+                },
+                {
+                  "criterionIndex": 3,
+                  "sourceCode": "HN10S.01.0004.15",
+                  "description": "Ghi ≥3 nghề liên quan mỗi ngành",
+                  "programLevel": "Mức 3",
+                  "guideDoc": null,
+                  "competencyGroup": "Tiêu chí 3"
+                },
+                {
+                  "criterionIndex": 4,
+                  "sourceCode": "HN10S.01.0004.16",
+                  "description": "Xếp hạng yếu tố ảnh hưởng hàng đầu.",
+                  "programLevel": "Mức 3",
+                  "guideDoc": null,
+                  "competencyGroup": "Tiêu chí 3"
+                }
+              ]
+            },
+            {
+              "lessonIndex": 5,
+              "lessonCode": "HN10S.01.0005",
+              "lessonName": "Tìm thông tin nghề nghiệp – Tôi tìm ở đâu và tìm gì?",
+              "criteria": [
+                {
+                  "criterionIndex": 1,
+                  "sourceCode": "HN10S.01.0005.17",
+                  "description": "Thực hành tìm kiếm thông tin nghề nghiệp từ nguồn tin cậy.",
+                  "programLevel": "Mức 1",
+                  "guideDoc": null,
+                  "competencyGroup": "Tiêu chí 1"
+                },
+                {
+                  "criterionIndex": 2,
+                  "sourceCode": "HN10S.01.0005.18",
+                  "description": "Phân loại đúng ≥4/5 nguồn thông tin",
+                  "programLevel": "Mức 2",
+                  "guideDoc": null,
+                  "competencyGroup": "Tiêu chí 2"
+                },
+                {
+                  "criterionIndex": 3,
+                  "sourceCode": "HN10S.01.0005.19",
+                  "description": "Hoàn thành phiếu với ≥5 thông tin về ngành",
+                  "programLevel": "Mức 3",
+                  "guideDoc": null,
+                  "competencyGroup": "Tiêu chí 3"
+                },
+                {
+                  "criterionIndex": 4,
+                  "sourceCode": "HN10S.01.0005.20",
+                  "description": "Đặt ≥2 câu hỏi cụ thể.",
+                  "programLevel": "Mức 3",
+                  "guideDoc": null,
+                  "competencyGroup": "Tiêu chí 3"
+                }
+              ]
+            },
+            {
+              "lessonIndex": 6,
+              "lessonCode": "HN10S.01.0006",
+              "lessonName": "Nghề nghiệp trong thực tế – Học từ câu chuyện thật",
+              "criteria": [
+                {
+                  "criterionIndex": 1,
+                  "sourceCode": "HN10S.01.0006.21",
+                  "description": "Khám phá nghề nghiệp qua nhân vật thực tế tự chọn.",
+                  "programLevel": "Mức 1",
+                  "guideDoc": null,
+                  "competencyGroup": "Tiêu chí 1"
+                },
+                {
+                  "criterionIndex": 2,
+                  "sourceCode": "HN10S.01.0006.22",
+                  "description": "Ghi đủ 4 tiêu chí theo nhân vật chọn",
+                  "programLevel": "Mức 2",
+                  "guideDoc": null,
+                  "competencyGroup": "Tiêu chí 2"
+                },
+                {
+                  "criterionIndex": 3,
+                  "sourceCode": "HN10S.01.0006.23",
+                  "description": "Xây dựng sơ đồ chân dung ≥4 yếu tố",
+                  "programLevel": "Mức 3",
+                  "guideDoc": null,
+                  "competencyGroup": "Tiêu chí 3"
+                },
+                {
+                  "criterionIndex": 4,
+                  "sourceCode": "HN10S.01.0006.24",
+                  "description": "Nêu ≥2 điểm tương đồng và cần phát triển.",
+                  "programLevel": "Mức 3",
+                  "guideDoc": null,
+                  "competencyGroup": "Tiêu chí 3"
+                }
+              ]
+            },
+            {
+              "lessonIndex": 7,
+              "lessonCode": "HN10S.01.0007",
+              "lessonName": "Kỹ năng phỏng vấn nghề nghiệp – Hỏi đúng để hiểu đúng",
+              "criteria": [
+                {
+                  "criterionIndex": 1,
+                  "sourceCode": "HN10S.01.0007.25",
+                  "description": "Thực hành kỹ năng phỏng vấn thông tin nghề nghiệp.",
+                  "programLevel": "Mức 1",
+                  "guideDoc": null,
+                  "competencyGroup": "Tiêu chí 1"
+                },
+                {
+                  "criterionIndex": 2,
+                  "sourceCode": "HN10S.01.0007.26",
+                  "description": "Đóng góp ≥2 câu cho danh sách lớp",
+                  "programLevel": "Mức 2",
+                  "guideDoc": null,
+                  "competencyGroup": "Tiêu chí 2"
+                },
+                {
+                  "criterionIndex": 3,
+                  "sourceCode": "HN10S.01.0007.27",
+                  "description": "Xây dựng bộ 8–10 câu đa dạng",
+                  "programLevel": "Mức 3",
+                  "guideDoc": null,
+                  "competencyGroup": "Tiêu chí 3"
+                },
+                {
+                  "criterionIndex": 4,
+                  "sourceCode": "HN10S.01.0007.28",
+                  "description": "Hoàn thành biên bản phỏng vấn ≥5 thông tin.",
+                  "programLevel": "Mức 3",
+                  "guideDoc": null,
+                  "competencyGroup": "Tiêu chí 3"
+                }
+              ]
+            },
+            {
+              "lessonIndex": 8,
+              "lessonCode": "HN10S.01.0008",
+              "lessonName": "Học tập có mục đích – Tôi học vì điều gì?",
+              "criteria": [
+                {
+                  "criterionIndex": 1,
+                  "sourceCode": "HN10S.01.0008.29",
+                  "description": "Lập kế hoạch mục tiêu học tập gắn với định hướng nghề.",
+                  "programLevel": "Mức 1",
+                  "guideDoc": null,
+                  "competencyGroup": "Tiêu chí 1"
+                },
+                {
+                  "criterionIndex": 2,
+                  "sourceCode": "HN10S.01.0008.30",
+                  "description": "Kết nối đủ 3 môn có lý giải",
+                  "programLevel": "Mức 2",
+                  "guideDoc": null,
+                  "competencyGroup": "Tiêu chí 2"
+                },
+                {
+                  "criterionIndex": 3,
+                  "sourceCode": "HN10S.01.0008.31",
+                  "description": "Nhận diện ≥2 điểm mạnh và 2 cần cải thiện",
+                  "programLevel": "Mức 3",
+                  "guideDoc": null,
+                  "competencyGroup": "Tiêu chí 3"
+                },
+                {
+                  "criterionIndex": 4,
+                  "sourceCode": "HN10S.01.0008.32",
+                  "description": "Đặt 2–3 mục tiêu đủ cụ thể.",
+                  "programLevel": "Mức 3",
+                  "guideDoc": null,
+                  "competencyGroup": "Tiêu chí 3"
+                }
+              ]
+            },
+            {
+              "lessonIndex": 9,
+              "lessonCode": "HN10S.01.0009",
+              "lessonName": "Kế hoạch học tập ngắn hạn – Từ mục tiêu đến hành động",
+              "criteria": [
+                {
+                  "criterionIndex": 1,
+                  "sourceCode": "HN10S.01.0009.33",
+                  "description": "Lập kế hoạch học tập ngắn hạn khả thi.",
+                  "programLevel": "Mức 1",
+                  "guideDoc": null,
+                  "competencyGroup": "Tiêu chí 1"
+                },
+                {
+                  "criterionIndex": 2,
+                  "sourceCode": "HN10S.01.0009.34",
+                  "description": "Xác định ≥3 yếu tố của kế hoạch tốt",
+                  "programLevel": "Mức 2",
+                  "guideDoc": null,
+                  "competencyGroup": "Tiêu chí 2"
+                },
+                {
+                  "criterionIndex": 3,
+                  "sourceCode": "HN10S.01.0009.35",
+                  "description": "Hoàn thành bản nháp đủ 4 yếu tố cho ≥2 mục tiêu",
+                  "programLevel": "Mức 3",
+                  "guideDoc": null,
+                  "competencyGroup": "Tiêu chí 3"
+                },
+                {
+                  "criterionIndex": 4,
+                  "sourceCode": "HN10S.01.0009.36",
+                  "description": "Đưa ≥1 góp ý cho bạn.",
+                  "programLevel": "Mức 3",
+                  "guideDoc": null,
+                  "competencyGroup": "Tiêu chí 3"
+                }
+              ]
+            },
+            {
+              "lessonIndex": 10,
+              "lessonCode": "HN10S.01.0010",
+              "lessonName": "Tổng kết hành trình – Tôi đã khám phá được gì?",
+              "criteria": [
+                {
+                  "criterionIndex": 1,
+                  "sourceCode": "HN10S.01.0010.37",
+                  "description": "Tổng kết hành trình năm lớp 10 và định hướng cho lớp 11.",
+                  "programLevel": "Mức 1",
+                  "guideDoc": null,
+                  "competencyGroup": "Tiêu chí 1"
+                },
+                {
+                  "criterionIndex": 2,
+                  "sourceCode": "HN10S.01.0010.38",
+                  "description": "Chọn và lý giải 3 điều ấn tượng nhất",
+                  "programLevel": "Mức 2",
+                  "guideDoc": null,
+                  "competencyGroup": "Tiêu chí 2"
+                },
+                {
+                  "criterionIndex": 3,
+                  "sourceCode": "HN10S.01.0010.39",
+                  "description": "Điền phiếu định hướng đủ 1 ngành và lý do",
+                  "programLevel": "Mức 3",
+                  "guideDoc": null,
+                  "competencyGroup": "Tiêu chí 3"
+                },
+                {
+                  "criterionIndex": 4,
+                  "sourceCode": "HN10S.01.0010.40",
+                  "description": "Trình bày cam kết hành động.",
+                  "programLevel": "Mức 3",
+                  "guideDoc": null,
+                  "competencyGroup": "Tiêu chí 3"
+                }
+              ]
+            }
+          ]
+        }
+      ]
+    },
+    "11": {
+      "grade": "11",
+      "topicsCount": 1,
+      "lessonsCount": 10,
+      "criteriaCount": 40,
+      "topics": [
+        {
+          "topicCode": "HN11S.01",
+          "topicName": "Chinh phục đại học",
+          "lessons": [
+            {
+              "lessonIndex": 1,
+              "lessonCode": "HN11S.01.0001",
+              "lessonName": "Tôi muốn gì sau khi tốt nghiệp? Xác định mục tiêu ưu tiên",
+              "criteria": [
+                {
+                  "criterionIndex": 1,
+                  "sourceCode": "HN11S.01.0001.01",
+                  "description": "Xác định mục tiêu ưu tiên cho giai đoạn lớp 11–12.",
+                  "programLevel": "Mức 1",
+                  "guideDoc": null,
+                  "competencyGroup": "Tiêu chí 1"
+                },
+                {
+                  "criterionIndex": 2,
+                  "sourceCode": "HN11S.01.0001.02",
+                  "description": "Ghi nhận ≥2 điểm thay đổi so với lớp 10",
+                  "programLevel": "Mức 2",
+                  "guideDoc": null,
+                  "competencyGroup": "Tiêu chí 2"
+                },
+                {
+                  "criterionIndex": 3,
+                  "sourceCode": "HN11S.01.0001.03",
+                  "description": "Xếp hạng ≥3 lộ trình và lý do",
+                  "programLevel": "Mức 3",
+                  "guideDoc": null,
+                  "competencyGroup": "Tiêu chí 3"
+                },
+                {
+                  "criterionIndex": 4,
+                  "sourceCode": "HN11S.01.0001.04",
+                  "description": "Viết đoạn mục tiêu đủ cấu trúc.",
+                  "programLevel": "Mức 3",
+                  "guideDoc": null,
+                  "competencyGroup": "Tiêu chí 3"
+                }
+              ]
+            },
+            {
+              "lessonIndex": 2,
+              "lessonCode": "HN11S.01.0002",
+              "lessonName": "Điểm mạnh của tôi hôm nay – Tôi đang ở đâu so với mục tiêu?",
+              "criteria": [
+                {
+                  "criterionIndex": 1,
+                  "sourceCode": "HN11S.01.0002.05",
+                  "description": "Phân tích khoảng cách năng lực so với mục tiêu ngành/trường.",
+                  "programLevel": "Mức 1",
+                  "guideDoc": null,
+                  "competencyGroup": "Tiêu chí 1"
+                },
+                {
+                  "criterionIndex": 2,
+                  "sourceCode": "HN11S.01.0002.06",
+                  "description": "Điền đủ phiếu tự đánh giá 4 tiêu chí",
+                  "programLevel": "Mức 2",
+                  "guideDoc": null,
+                  "competencyGroup": "Tiêu chí 2"
+                },
+                {
+                  "criterionIndex": 3,
+                  "sourceCode": "HN11S.01.0002.07",
+                  "description": "Lập bảng phân tích ≥3 điểm mạnh và 2 cần phát triển",
+                  "programLevel": "Mức 3",
+                  "guideDoc": null,
+                  "competencyGroup": "Tiêu chí 3"
+                },
+                {
+                  "criterionIndex": 4,
+                  "sourceCode": "HN11S.01.0002.08",
+                  "description": "Ghi ≥2 gợi ý hành động.",
+                  "programLevel": "Mức 3",
+                  "guideDoc": null,
+                  "competencyGroup": "Tiêu chí 3"
+                }
+              ]
+            },
+            {
+              "lessonIndex": 3,
+              "lessonCode": "HN11S.01.0003",
+              "lessonName": "Yêu cầu đầu vào của các nhóm ngành – Tôi cần biết điều gì?",
+              "criteria": [
+                {
+                  "criterionIndex": 1,
+                  "sourceCode": "HN11S.01.0003.09",
+                  "description": "Khám phá yêu cầu đầu vào của các nhóm ngành quan tâm.",
+                  "programLevel": "Mức 1",
+                  "guideDoc": null,
+                  "competencyGroup": "Tiêu chí 1"
+                },
+                {
+                  "criterionIndex": 2,
+                  "sourceCode": "HN11S.01.0003.10",
+                  "description": "Ghi ≥3 yêu cầu của nhóm ngành quan tâm",
+                  "programLevel": "Mức 2",
+                  "guideDoc": null,
+                  "competencyGroup": "Tiêu chí 2"
+                },
+                {
+                  "criterionIndex": 3,
+                  "sourceCode": "HN11S.01.0003.11",
+                  "description": "Hoàn thành bảng so sánh ≥4 tiêu chí mỗi ngành",
+                  "programLevel": "Mức 3",
+                  "guideDoc": null,
+                  "competencyGroup": "Tiêu chí 3"
+                },
+                {
+                  "criterionIndex": 4,
+                  "sourceCode": "HN11S.01.0003.12",
+                  "description": "Tự đánh giá mức đáp ứng.",
+                  "programLevel": "Mức 3",
+                  "guideDoc": null,
+                  "competencyGroup": "Tiêu chí 3"
+                }
+              ]
+            },
+            {
+              "lessonIndex": 4,
+              "lessonCode": "HN11S.01.0004",
+              "lessonName": "Các lộ trình sau THPT – Trong nước, du học và những con đường khác",
+              "criteria": [
+                {
+                  "criterionIndex": 1,
+                  "sourceCode": "HN11S.01.0004.13",
+                  "description": "So sánh các lộ trình sau THPT một cách đa chiều.",
+                  "programLevel": "Mức 1",
+                  "guideDoc": null,
+                  "competencyGroup": "Tiêu chí 1"
+                },
+                {
+                  "criterionIndex": 2,
+                  "sourceCode": "HN11S.01.0004.14",
+                  "description": "Nêu ≥2 ưu điểm và 1 thách thức mỗi lộ trình",
+                  "programLevel": "Mức 2",
+                  "guideDoc": null,
+                  "competencyGroup": "Tiêu chí 2"
+                },
+                {
+                  "criterionIndex": 3,
+                  "sourceCode": "HN11S.01.0004.15",
+                  "description": "Hoàn thành phiếu tóm tắt ≥4 thông tin",
+                  "programLevel": "Mức 3",
+                  "guideDoc": null,
+                  "competencyGroup": "Tiêu chí 3"
+                },
+                {
+                  "criterionIndex": 4,
+                  "sourceCode": "HN11S.01.0004.16",
+                  "description": "Đặt ≥2 câu hỏi có chiều sâu.",
+                  "programLevel": "Mức 3",
+                  "guideDoc": null,
+                  "competencyGroup": "Tiêu chí 3"
+                }
+              ]
+            },
+            {
+              "lessonIndex": 5,
+              "lessonCode": "HN11S.01.0005",
+              "lessonName": "Kết quả học tập – Vì sao điểm số quan trọng nhưng không phải tất cả?",
+              "criteria": [
+                {
+                  "criterionIndex": 1,
+                  "sourceCode": "HN11S.01.0005.17",
+                  "description": "Đánh giá vai trò điểm số và yếu tố phi điểm số trong xét tuyển.",
+                  "programLevel": "Mức 1",
+                  "guideDoc": null,
+                  "competencyGroup": "Tiêu chí 1"
+                },
+                {
+                  "criterionIndex": 2,
+                  "sourceCode": "HN11S.01.0005.18",
+                  "description": "Điền phiếu kiểm kê 2 cột đầy đủ",
+                  "programLevel": "Mức 2",
+                  "guideDoc": null,
+                  "competencyGroup": "Tiêu chí 2"
+                },
+                {
+                  "criterionIndex": 3,
+                  "sourceCode": "HN11S.01.0005.19",
+                  "description": "Xây dựng sơ đồ ≥4 cách dùng điểm số trong tuyển sinh",
+                  "programLevel": "Mức 3",
+                  "guideDoc": null,
+                  "competencyGroup": "Tiêu chí 3"
+                },
+                {
+                  "criterionIndex": 4,
+                  "sourceCode": "HN11S.01.0005.20",
+                  "description": "Liệt kê ≥4 yếu tố phi điểm số.",
+                  "programLevel": "Mức 3",
+                  "guideDoc": null,
+                  "competencyGroup": "Tiêu chí 3"
+                }
+              ]
+            },
+            {
+              "lessonIndex": 6,
+              "lessonCode": "HN11S.01.0006",
+              "lessonName": "Hoạt động trải nghiệm và kỹ năng cá nhân – Tôi đang xây dựng gì cho mình?",
+              "criteria": [
+                {
+                  "criterionIndex": 1,
+                  "sourceCode": "HN11S.01.0006.21",
+                  "description": "Đánh giá chất lượng hoạt động trải nghiệm đã tham gia.",
+                  "programLevel": "Mức 1",
+                  "guideDoc": null,
+                  "competencyGroup": "Tiêu chí 1"
+                },
+                {
+                  "criterionIndex": 2,
+                  "sourceCode": "HN11S.01.0006.22",
+                  "description": "Phân loại ≥5 hoạt động đúng 3 nhóm",
+                  "programLevel": "Mức 2",
+                  "guideDoc": null,
+                  "competencyGroup": "Tiêu chí 2"
+                },
+                {
+                  "criterionIndex": 3,
+                  "sourceCode": "HN11S.01.0006.23",
+                  "description": "Mô tả đủ 3 tiêu chí cho ≥2 hoạt động nổi bật",
+                  "programLevel": "Mức 3",
+                  "guideDoc": null,
+                  "competencyGroup": "Tiêu chí 3"
+                },
+                {
+                  "criterionIndex": 4,
+                  "sourceCode": "HN11S.01.0006.24",
+                  "description": "Đề xuất 2–3 hoạt động bổ sung.",
+                  "programLevel": "Mức 3",
+                  "guideDoc": null,
+                  "competencyGroup": "Tiêu chí 3"
+                }
+              ]
+            },
+            {
+              "lessonIndex": 7,
+              "lessonCode": "HN11S.01.0007",
+              "lessonName": "Kế hoạch hành động lớp 11–12 – Từ định hướng đến lộ trình cụ thể",
+              "criteria": [
+                {
+                  "criterionIndex": 1,
+                  "sourceCode": "HN11S.01.0007.25",
+                  "description": "Lập kế hoạch hành động cụ thể cho giai đoạn lớp 11–12.",
+                  "programLevel": "Mức 1",
+                  "guideDoc": null,
+                  "competencyGroup": "Tiêu chí 1"
+                },
+                {
+                  "criterionIndex": 2,
+                  "sourceCode": "HN11S.01.0007.26",
+                  "description": "Xác định ≥3 yếu tố kế hoạch hiệu quả",
+                  "programLevel": "Mức 2",
+                  "guideDoc": null,
+                  "competencyGroup": "Tiêu chí 2"
+                },
+                {
+                  "criterionIndex": 3,
+                  "sourceCode": "HN11S.01.0007.27",
+                  "description": "Hoàn thành bản nháp đủ 4 yếu tố và ≥3 hành động",
+                  "programLevel": "Mức 3",
+                  "guideDoc": null,
+                  "competencyGroup": "Tiêu chí 3"
+                },
+                {
+                  "criterionIndex": 4,
+                  "sourceCode": "HN11S.01.0007.28",
+                  "description": "Đưa ≥1 góp ý có giá trị.",
+                  "programLevel": "Mức 3",
+                  "guideDoc": null,
+                  "competencyGroup": "Tiêu chí 3"
+                }
+              ]
+            },
+            {
+              "lessonIndex": 8,
+              "lessonCode": "HN11S.01.0008",
+              "lessonName": "Quản lý thời gian và áp lực – Học hiệu quả trong giai đoạn nước rút",
+              "criteria": [
+                {
+                  "criterionIndex": 1,
+                  "sourceCode": "HN11S.01.0008.29",
+                  "description": "Thực hành phân bổ thời gian cân bằng và quản lý áp lực.",
+                  "programLevel": "Mức 1",
+                  "guideDoc": null,
+                  "competencyGroup": "Tiêu chí 1"
+                },
+                {
+                  "criterionIndex": 2,
+                  "sourceCode": "HN11S.01.0008.30",
+                  "description": "Liệt kê ≥3 nguồn áp lực và phân biệt áp lực kiểm soát được",
+                  "programLevel": "Mức 2",
+                  "guideDoc": null,
+                  "competencyGroup": "Tiêu chí 2"
+                },
+                {
+                  "criterionIndex": 3,
+                  "sourceCode": "HN11S.01.0008.31",
+                  "description": "Hoàn thành thời khóa biểu thực tế",
+                  "programLevel": "Mức 3",
+                  "guideDoc": null,
+                  "competencyGroup": "Tiêu chí 3"
+                },
+                {
+                  "criterionIndex": 4,
+                  "sourceCode": "HN11S.01.0008.32",
+                  "description": "Viết 3–5 nguyên tắc học tập.",
+                  "programLevel": "Mức 3",
+                  "guideDoc": null,
+                  "competencyGroup": "Tiêu chí 3"
+                }
+              ]
+            },
+            {
+              "lessonIndex": 9,
+              "lessonCode": "HN11S.01.0009",
+              "lessonName": "Xây dựng mạng lưới hỗ trợ – Tôi không đi một mình",
+              "criteria": [
+                {
+                  "criterionIndex": 1,
+                  "sourceCode": "HN11S.01.0009.33",
+                  "description": "Xây dựng mạng lưới hỗ trợ hướng nghiệp cá nhân.",
+                  "programLevel": "Mức 1",
+                  "guideDoc": null,
+                  "competencyGroup": "Tiêu chí 1"
+                },
+                {
+                  "criterionIndex": 2,
+                  "sourceCode": "HN11S.01.0009.34",
+                  "description": "Xác định ≥5 người trong mạng lưới và vai trò",
+                  "programLevel": "Mức 2",
+                  "guideDoc": null,
+                  "competencyGroup": "Tiêu chí 2"
+                },
+                {
+                  "criterionIndex": 3,
+                  "sourceCode": "HN11S.01.0009.35",
+                  "description": "Viết tin nhắn/email đúng cấu trúc",
+                  "programLevel": "Mức 3",
+                  "guideDoc": null,
+                  "competencyGroup": "Tiêu chí 3"
+                },
+                {
+                  "criterionIndex": 4,
+                  "sourceCode": "HN11S.01.0009.36",
+                  "description": "Lập kế hoạch kết nối đủ 3 yếu tố.",
+                  "programLevel": "Mức 3",
+                  "guideDoc": null,
+                  "competencyGroup": "Tiêu chí 3"
+                }
+              ]
+            },
+            {
+              "lessonIndex": 10,
+              "lessonCode": "HN11S.01.0010",
+              "lessonName": "Tổng kết lớp 11 – Tôi đã chuẩn bị được gì?",
+              "criteria": [
+                {
+                  "criterionIndex": 1,
+                  "sourceCode": "HN11S.01.0010.37",
+                  "description": "Tổng kết hành trình lớp 11 và xác định việc ưu tiên cho lớp 12.",
+                  "programLevel": "Mức 1",
+                  "guideDoc": null,
+                  "competencyGroup": "Tiêu chí 1"
+                },
+                {
+                  "criterionIndex": 2,
+                  "sourceCode": "HN11S.01.0010.38",
+                  "description": "Xác định ≥2 hành động đã thực hiện và 1 chưa làm được",
+                  "programLevel": "Mức 2",
+                  "guideDoc": null,
+                  "competencyGroup": "Tiêu chí 2"
+                },
+                {
+                  "criterionIndex": 3,
+                  "sourceCode": "HN11S.01.0010.39",
+                  "description": "Điền phiếu chuẩn bị đủ 3 mục",
+                  "programLevel": "Mức 3",
+                  "guideDoc": null,
+                  "competencyGroup": "Tiêu chí 3"
+                },
+                {
+                  "criterionIndex": 4,
+                  "sourceCode": "HN11S.01.0010.40",
+                  "description": "Trình bày 1 điều tự hào và 1 cam kết.",
+                  "programLevel": "Mức 3",
+                  "guideDoc": null,
+                  "competencyGroup": "Tiêu chí 3"
+                }
+              ]
+            }
+          ]
+        }
+      ]
+    },
+    "12": {
+      "grade": "12",
+      "topicsCount": 1,
+      "lessonsCount": 10,
+      "criteriaCount": 40,
+      "topics": [
+        {
+          "topicCode": "HN12S.01",
+          "topicName": "Sẵn sàng cho tương lai",
+          "lessons": [
+            {
+              "lessonIndex": 1,
+              "lessonCode": "HN12S.01.0001",
+              "lessonName": "Tôi đã ở đâu, tôi muốn đến đâu?",
+              "criteria": [
+                {
+                  "criterionIndex": 1,
+                  "sourceCode": "HN12S.01.0001.01",
+                  "description": "Rà soát định hướng từ lớp 11 và điều chỉnh phù hợp thực tế.",
+                  "programLevel": "Mức 1",
+                  "guideDoc": null,
+                  "competencyGroup": "Tiêu chí 1"
+                },
+                {
+                  "criterionIndex": 2,
+                  "sourceCode": "HN12S.01.0001.02",
+                  "description": "Liệt kê ≥2 điểm thay đổi so với KH lớp 11",
+                  "programLevel": "Mức 2",
+                  "guideDoc": null,
+                  "competencyGroup": "Tiêu chí 2"
+                },
+                {
+                  "criterionIndex": 3,
+                  "sourceCode": "HN12S.01.0001.03",
+                  "description": "Viết bản đồ mục tiêu ≥1 lộ trình cụ thể",
+                  "programLevel": "Mức 3",
+                  "guideDoc": null,
+                  "competencyGroup": "Tiêu chí 3"
+                },
+                {
+                  "criterionIndex": 4,
+                  "sourceCode": "HN12S.01.0001.04",
+                  "description": "Trình bày lý do thay đổi rõ ràng.",
+                  "programLevel": "Mức 3",
+                  "guideDoc": null,
+                  "competencyGroup": "Tiêu chí 3"
+                }
+              ]
+            },
+            {
+              "lessonIndex": 2,
+              "lessonCode": "HN12S.01.0002",
+              "lessonName": "Điểm mạnh của tôi trong bức tranh tương lai",
+              "criteria": [
+                {
+                  "criterionIndex": 1,
+                  "sourceCode": "HN12S.01.0002.05",
+                  "description": "Kết nối điểm mạnh cá nhân với ngành học và lộ trình sau THPT.",
+                  "programLevel": "Mức 1",
+                  "guideDoc": null,
+                  "competencyGroup": "Tiêu chí 1"
+                },
+                {
+                  "criterionIndex": 2,
+                  "sourceCode": "HN12S.01.0002.06",
+                  "description": "Liệt kê ≥5 điểm mạnh nổi bật có dẫn chứng",
+                  "programLevel": "Mức 2",
+                  "guideDoc": null,
+                  "competencyGroup": "Tiêu chí 2"
+                },
+                {
+                  "criterionIndex": 3,
+                  "sourceCode": "HN12S.01.0002.07",
+                  "description": "Chỉ ra ≥2 điểm phù hợp giữa điểm mạnh và ngành học",
+                  "programLevel": "Mức 3",
+                  "guideDoc": null,
+                  "competencyGroup": "Tiêu chí 3"
+                },
+                {
+                  "criterionIndex": 4,
+                  "sourceCode": "HN12S.01.0002.08",
+                  "description": "Trình bày ≥1 lợi thế nổi bật.",
+                  "programLevel": "Mức 3",
+                  "guideDoc": null,
+                  "competencyGroup": "Tiêu chí 3"
+                }
+              ]
+            },
+            {
+              "lessonIndex": 3,
+              "lessonCode": "HN12S.01.0003",
+              "lessonName": "Những yếu tố nào ảnh hưởng đến lựa chọn của tôi?",
+              "criteria": [
+                {
+                  "criterionIndex": 1,
+                  "sourceCode": "HN12S.01.0003.09",
+                  "description": "Phân tích các yếu tố ảnh hưởng đến quyết định trong bối cảnh thực.",
+                  "programLevel": "Mức 1",
+                  "guideDoc": null,
+                  "competencyGroup": "Tiêu chí 1"
+                },
+                {
+                  "criterionIndex": 2,
+                  "sourceCode": "HN12S.01.0003.10",
+                  "description": "Liệt kê ≥4 yếu tố và phân loại đúng nội tâm/ngoại cảnh",
+                  "programLevel": "Mức 2",
+                  "guideDoc": null,
+                  "competencyGroup": "Tiêu chí 2"
+                },
+                {
+                  "criterionIndex": 3,
+                  "sourceCode": "HN12S.01.0003.11",
+                  "description": "Đánh giá ≥1 áp lực môi trường",
+                  "programLevel": "Mức 3",
+                  "guideDoc": null,
+                  "competencyGroup": "Tiêu chí 3"
+                },
+                {
+                  "criterionIndex": 4,
+                  "sourceCode": "HN12S.01.0003.12",
+                  "description": "Trình bày thứ tự ưu tiên có lý giải.",
+                  "programLevel": "Mức 3",
+                  "guideDoc": null,
+                  "competencyGroup": "Tiêu chí 3"
+                }
+              ]
+            },
+            {
+              "lessonIndex": 4,
+              "lessonCode": "HN12S.01.0004",
+              "lessonName": "Hiểu về trường và ngành: Cơ sở để lựa chọn",
+              "criteria": [
+                {
+                  "criterionIndex": 1,
+                  "sourceCode": "HN12S.01.0004.13",
+                  "description": "Đánh giá các phương án trường/ngành theo tiêu chí có cơ sở.",
+                  "programLevel": "Mức 1",
+                  "guideDoc": null,
+                  "competencyGroup": "Tiêu chí 1"
+                },
+                {
+                  "criterionIndex": 2,
+                  "sourceCode": "HN12S.01.0004.14",
+                  "description": "Liệt kê ≥5 tiêu chí có trọng số",
+                  "programLevel": "Mức 2",
+                  "guideDoc": null,
+                  "competencyGroup": "Tiêu chí 2"
+                },
+                {
+                  "criterionIndex": 3,
+                  "sourceCode": "HN12S.01.0004.15",
+                  "description": "Hoàn thành bảng so sánh đủ ưu/nhược",
+                  "programLevel": "Mức 3",
+                  "guideDoc": null,
+                  "competencyGroup": "Tiêu chí 3"
+                },
+                {
+                  "criterionIndex": 4,
+                  "sourceCode": "HN12S.01.0004.16",
+                  "description": "Xác định ≥2 khoảng cách và cách thu hẹp.",
+                  "programLevel": "Mức 3",
+                  "guideDoc": null,
+                  "competencyGroup": "Tiêu chí 3"
+                }
+              ]
+            },
+            {
+              "lessonIndex": 5,
+              "lessonCode": "HN12S.01.0005",
+              "lessonName": "Ra quyết định có trách nhiệm",
+              "criteria": [
+                {
+                  "criterionIndex": 1,
+                  "sourceCode": "HN12S.01.0005.17",
+                  "description": "Áp dụng quy trình ra quyết định 5 bước vào tình huống thực.",
+                  "programLevel": "Mức 1",
+                  "guideDoc": null,
+                  "competencyGroup": "Tiêu chí 1"
+                },
+                {
+                  "criterionIndex": 2,
+                  "sourceCode": "HN12S.01.0005.18",
+                  "description": "Mô tả đúng và đủ 5 bước",
+                  "programLevel": "Mức 2",
+                  "guideDoc": null,
+                  "competencyGroup": "Tiêu chí 2"
+                },
+                {
+                  "criterionIndex": 3,
+                  "sourceCode": "HN12S.01.0005.19",
+                  "description": "Hoàn thành phân tích cả 2 tình huống theo mô hình",
+                  "programLevel": "Mức 3",
+                  "guideDoc": null,
+                  "competencyGroup": "Tiêu chí 3"
+                },
+                {
+                  "criterionIndex": 4,
+                  "sourceCode": "HN12S.01.0005.20",
+                  "description": "Chỉ ra ≥1 điểm cần cải thiện.",
+                  "programLevel": "Mức 3",
+                  "guideDoc": null,
+                  "competencyGroup": "Tiêu chí 3"
+                }
+              ]
+            },
+            {
+              "lessonIndex": 6,
+              "lessonCode": "HN12S.01.0006",
+              "lessonName": "Quản lý cảm xúc trong giai đoạn chuyển tiếp",
+              "criteria": [
+                {
+                  "criterionIndex": 1,
+                  "sourceCode": "HN12S.01.0006.21",
+                  "description": "Thực hành quản lý cảm xúc trong giai đoạn chuyển tiếp.",
+                  "programLevel": "Mức 1",
+                  "guideDoc": null,
+                  "competencyGroup": "Tiêu chí 1"
+                },
+                {
+                  "criterionIndex": 2,
+                  "sourceCode": "HN12S.01.0006.22",
+                  "description": "Gọi tên ≥3 cảm xúc và chỉ ra nguyên nhân",
+                  "programLevel": "Mức 2",
+                  "guideDoc": null,
+                  "competencyGroup": "Tiêu chí 2"
+                },
+                {
+                  "criterionIndex": 3,
+                  "sourceCode": "HN12S.01.0006.23",
+                  "description": "Thực hành ≥1 kỹ năng điều tiết",
+                  "programLevel": "Mức 3",
+                  "guideDoc": null,
+                  "competencyGroup": "Tiêu chí 3"
+                },
+                {
+                  "criterionIndex": 4,
+                  "sourceCode": "HN12S.01.0006.24",
+                  "description": "Xây dựng sơ đồ hỗ trợ ≥3 nguồn lực.",
+                  "programLevel": "Mức 3",
+                  "guideDoc": null,
+                  "competencyGroup": "Tiêu chí 3"
+                }
+              ]
+            },
+            {
+              "lessonIndex": 7,
+              "lessonCode": "HN12S.01.0007",
+              "lessonName": "Thích ứng với thay đổi và sự không chắc chắn",
+              "criteria": [
+                {
+                  "criterionIndex": 1,
+                  "sourceCode": "HN12S.01.0007.25",
+                  "description": "Hình thành tư duy linh hoạt trước sự không chắc chắn.",
+                  "programLevel": "Mức 1",
+                  "guideDoc": null,
+                  "competencyGroup": "Tiêu chí 1"
+                },
+                {
+                  "criterionIndex": 2,
+                  "sourceCode": "HN12S.01.0007.26",
+                  "description": "Chỉ ra ≥2 điểm khác biệt giữa hai loại tư duy",
+                  "programLevel": "Mức 2",
+                  "guideDoc": null,
+                  "competencyGroup": "Tiêu chí 2"
+                },
+                {
+                  "criterionIndex": 3,
+                  "sourceCode": "HN12S.01.0007.27",
+                  "description": "Trình bày phương án xử lý hợp lý",
+                  "programLevel": "Mức 3",
+                  "guideDoc": null,
+                  "competencyGroup": "Tiêu chí 3"
+                },
+                {
+                  "criterionIndex": 4,
+                  "sourceCode": "HN12S.01.0007.28",
+                  "description": "Viết thư cam kết thích ứng cụ thể.",
+                  "programLevel": "Mức 3",
+                  "guideDoc": null,
+                  "competencyGroup": "Tiêu chí 3"
+                }
+              ]
+            },
+            {
+              "lessonIndex": 8,
+              "lessonCode": "HN12S.01.0008",
+              "lessonName": "Chuẩn bị cho môi trường học tập mới",
+              "criteria": [
+                {
+                  "criterionIndex": 1,
+                  "sourceCode": "HN12S.01.0008.29",
+                  "description": "Chuẩn bị kỹ năng sẵn sàng cho môi trường học tập sau THPT.",
+                  "programLevel": "Mức 1",
+                  "guideDoc": null,
+                  "competencyGroup": "Tiêu chí 1"
+                },
+                {
+                  "criterionIndex": 2,
+                  "sourceCode": "HN12S.01.0008.30",
+                  "description": "Liệt kê ≥4 điểm khác biệt hai môi trường",
+                  "programLevel": "Mức 2",
+                  "guideDoc": null,
+                  "competencyGroup": "Tiêu chí 2"
+                },
+                {
+                  "criterionIndex": 3,
+                  "sourceCode": "HN12S.01.0008.31",
+                  "description": "Tự đánh giá ≥4 tiêu chí kỹ năng",
+                  "programLevel": "Mức 3",
+                  "guideDoc": null,
+                  "competencyGroup": "Tiêu chí 3"
+                },
+                {
+                  "criterionIndex": 4,
+                  "sourceCode": "HN12S.01.0008.32",
+                  "description": "Lập kế hoạch ≥2 hành động có mốc thời gian.",
+                  "programLevel": "Mức 3",
+                  "guideDoc": null,
+                  "competencyGroup": "Tiêu chí 3"
+                }
+              ]
+            },
+            {
+              "lessonIndex": 9,
+              "lessonCode": "HN12S.01.0009",
+              "lessonName": "Cuộc sống tự lập và trách nhiệm cá nhân",
+              "criteria": [
+                {
+                  "criterionIndex": 1,
+                  "sourceCode": "HN12S.01.0009.33",
+                  "description": "Nhận thức trách nhiệm cá nhân trong cuộc sống tự lập.",
+                  "programLevel": "Mức 1",
+                  "guideDoc": null,
+                  "competencyGroup": "Tiêu chí 1"
+                },
+                {
+                  "criterionIndex": 2,
+                  "sourceCode": "HN12S.01.0009.34",
+                  "description": "Liệt kê ≥5 chiều cạnh cuộc sống tự lập",
+                  "programLevel": "Mức 2",
+                  "guideDoc": null,
+                  "competencyGroup": "Tiêu chí 2"
+                },
+                {
+                  "criterionIndex": 3,
+                  "sourceCode": "HN12S.01.0009.35",
+                  "description": "Đề xuất phương án hợp lý cho ≥2 tình huống",
+                  "programLevel": "Mức 3",
+                  "guideDoc": null,
+                  "competencyGroup": "Tiêu chí 3"
+                },
+                {
+                  "criterionIndex": 4,
+                  "sourceCode": "HN12S.01.0009.36",
+                  "description": "Viết tuyên ngôn ≥3 giá trị cá nhân.",
+                  "programLevel": "Mức 3",
+                  "guideDoc": null,
+                  "competencyGroup": "Tiêu chí 3"
+                }
+              ]
+            },
+            {
+              "lessonIndex": 10,
+              "lessonCode": "HN12S.01.0010",
+              "lessonName": "Nhìn về phía trước: Kết thúc một chặng, bắt đầu một hành trình",
+              "criteria": [
+                {
+                  "criterionIndex": 1,
+                  "sourceCode": "HN12S.01.0010.37",
+                  "description": "Tổng kết hành trình hướng nghiệp 7 năm.",
+                  "programLevel": "Mức 1",
+                  "guideDoc": null,
+                  "competencyGroup": "Tiêu chí 1"
+                },
+                {
+                  "criterionIndex": 2,
+                  "sourceCode": "HN12S.01.0010.38",
+                  "description": "Xây dựng dòng thời gian ≥5 mốc",
+                  "programLevel": "Mức 2",
+                  "guideDoc": null,
+                  "competencyGroup": "Tiêu chí 2"
+                },
+                {
+                  "criterionIndex": 3,
+                  "sourceCode": "HN12S.01.0010.39",
+                  "description": "Viết thư cụ thể và tích cực về tương lai",
+                  "programLevel": "Mức 3",
+                  "guideDoc": null,
+                  "competencyGroup": "Tiêu chí 3"
+                },
+                {
+                  "criterionIndex": 4,
+                  "sourceCode": "HN12S.01.0010.40",
+                  "description": "Trình bày hành trình 7 năm trong 3 phút.",
+                  "programLevel": "Mức 3",
+                  "guideDoc": null,
+                  "competencyGroup": "Tiêu chí 3"
+                }
+              ]
+            }
+          ]
+        }
+      ]
+    }
+  }
+}

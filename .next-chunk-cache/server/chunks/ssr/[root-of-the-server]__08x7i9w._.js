@@ -1,0 +1,3 @@
+module.exports=[193695,(a,b,c)=>{b.exports=a.x("next/dist/shared/lib/no-fallback-error.external.js",()=>require("next/dist/shared/lib/no-fallback-error.external.js"))},110585,a=>{a.v("/_next/static/media/favicon.17~x4kjq3smzb.ico"+(globalThis.NEXT_CLIENT_ASSET_SUFFIX||""))},68611,a=>{"use strict";let b={src:a.i(110585).default,width:48,height:48};a.s(["default",0,b])},989961,a=>a.a(async(b,c)=>{try{a.i(907997),a.i(109307);a.i(570396);a.i(673727);let b=Error("Cannot find module './client'");throw b.code="MODULE_NOT_FOUND",b}catch(a){c(a)}},!1),457777,a=>{a.n(a.i(989961))}];
+
+//# sourceMappingURL=%5Broot-of-the-server%5D__08x7i9w._.js.map

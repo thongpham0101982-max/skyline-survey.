@@ -272,7 +272,7 @@ export function GoalUnlockWizard({ goals, stage1Goals, studentId, academicYearId
     <div className="bg-white rounded-3xl border border-slate-200 shadow-xl overflow-hidden animate-in fade-in-50 duration-300">
       
       {/* Wizard Header Stepper */}
-      <div className="bg-gradient-to-r from-[#003B3A] via-[#004D4A] to-teal-800 p-6 text-white">
+      <div className="bg-slate-900 border-b border-slate-800 p-5 text-white">
         <div className="flex items-center justify-between gap-3 mb-4">
           <div className="flex items-center gap-2">
             <div className="w-8 h-8 rounded-xl bg-white/20 flex items-center justify-center font-black text-sm text-teal-200">

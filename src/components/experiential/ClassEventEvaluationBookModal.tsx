@@ -249,207 +249,26 @@ export default function ClassEventEvaluationBookModal({
 
   // Xử lý xuất nội dung Sổ ra PDF / In ấn chuẩn khổ A4 dọc
   // ĐẢM BẢO 100%: Chỉ xuất duy nhất nội dung Sổ A4 (Phần I, II, III), tuyệt đối KHÔNG xuất nguyên trang web / modal / thanh cuộn
-  const handlePrintOrExportPDF = async (isPdfFileDownload = false) => {
-    const printElement = document.getElementById("class-evaluation-book-pdf-content");
-    if (!printElement) {
-      toast.error("Không tìm thấy nội dung để xuất Sổ");
-      return;
-    }
-
-    const safeClassName = (activeClass?.className || "Lop").replace(/[^a-zA-Z0-9_-]/g, "_");
-    const safeActName = (activity?.name || "HoatDong").replace(/[^a-zA-Z0-9_\u00C0-\u024F]/g, "_").substring(0, 30);
-    const pdfTitle = `So_Danh_Gia_Su_Kien_${safeClassName}_${safeActName}_A4`;
-
-    // NẾU NGƯỜI DÙNG BẤM TẢI FILE PDF TRỰC TIẾP
-    if (isPdfFileDownload) {
-      setIsExportingPDF(true);
-      const toastId = toast.loading("Đang xuất file PDF A4...");
-      try {
-        const html2pdfModule: any = await import("html2pdf.js");
-        const html2pdf = html2pdfModule.default || html2pdfModule;
-
-        const clone = printElement.cloneNode(true) as HTMLElement;
-        clone.style.width = "190mm";
-        clone.style.maxWidth = "190mm";
-        clone.style.margin = "0";
-        clone.style.padding = "0";
-        clone.style.background = "#ffffff";
-
-        const opt: any = {
-          margin: [12, 10, 12, 10], // mm [trên, trái, dưới, phải]
-          filename: `${pdfTitle}.pdf`,
-          image: { type: "jpeg", quality: 0.98 },
-          html2canvas: {
-            scale: 2,
-            useCORS: true,
-            logging: false,
-            letterRendering: true,
-            windowWidth: 794,
-            width: 718
-          },
-          jsPDF: {
-            unit: "mm",
-            format: "a4",
-            orientation: "portrait",
-            compress: true
-          },
-          pagebreak: {
-            mode: ["avoid-all", "css", "legacy"],
-            before: ".a4-page-break-before",
-            avoid: ["tr", ".a4-avoid-break", ".a4-signature-section"]
-          }
-        };
-
-        await html2pdf().set(opt).from(clone).save();
-        toast.success(`Đã tải xuống file: ${pdfTitle}.pdf`, { id: toastId });
-        setIsExportingPDF(false);
-        return;
-      } catch (err) {
-        console.warn("Lỗi tải PDF trực tiếp, chuyển sang giao diện xuất sạch A4:", err);
-        toast.dismiss(toastId);
-      }
-      setIsExportingPDF(false);
-    }
-
-    // XUẤT NỘI DUNG SẠCH QUA IFRAME CHUYÊN DỤNG (CHỈ XUẤT NỘI DUNG SỔ, KHÔNG XUẤT NGUYÊN TRANG)
+  // Xử lý xuất nội dung Sổ ra PDF tương tự như Xuất Phiếu Dự Giờ (Mở route chuyên dụng server-rendered HTML)
+  const handlePrintOrExportPDF = (isPdfFileDownload = false) => {
     try {
-      // 1. Dọn dẹp iframe & direct-print-root cũ
-      const oldIframe = document.getElementById("skyline-book-print-frame");
-      if (oldIframe && oldIframe.parentNode) oldIframe.parentNode.removeChild(oldIframe);
-
-      const oldDirect = document.getElementById("direct-print-root");
-      if (oldDirect && oldDirect.parentNode) oldDirect.parentNode.removeChild(oldDirect);
-
-      // 2. Tạo direct-print-root gắn trực tiếp vào body (phòng ngừa Ctrl+P)
-      const directRoot = document.createElement("div");
-      directRoot.id = "direct-print-root";
-      directRoot.innerHTML = printElement.innerHTML;
-      document.body.appendChild(directRoot);
-
-      // 3. Tạo iframe ẩn kích thước A4 để chỉ in duy nhất nội dung Sổ
-      const iframe = document.createElement("iframe");
-      iframe.id = "skyline-book-print-frame";
-      iframe.style.position = "fixed";
-      iframe.style.left = "-99999px";
-      iframe.style.top = "0";
-      iframe.style.width = "210mm";
-      iframe.style.height = "297mm";
-      iframe.style.border = "none";
-      iframe.style.opacity = "0";
-      iframe.style.pointerEvents = "none";
-      iframe.style.zIndex = "-9999";
-      document.body.appendChild(iframe);
-
-      const iframeDoc = iframe.contentWindow?.document;
-      if (!iframeDoc) {
-        const originalTitle = document.title;
-        document.title = pdfTitle;
-        window.print();
-        setTimeout(() => {
-          document.title = originalTitle;
-          if (document.body.contains(directRoot)) directRoot.remove();
-        }, 1200);
+      const classIdParam = selectedClassId || (activeClass?.id || activeClass?.classId || "");
+      const actionParam = isPdfFileDownload ? "download=true" : "autoPrint=true";
+      const exportUrl = `/api/admin/experiential-activities/export-event-book-pdf?activityId=${encodeURIComponent(activity.id)}&classId=${encodeURIComponent(classIdParam)}&scope=${printScope}&${actionParam}`;
+      
+      // Mở cửa sổ/tab mới giống hệt chức năng Xuất Phiếu Dự Giờ
+      const printWindow = window.open(exportUrl, "_blank");
+      if (!printWindow) {
+        toast.error("Trình duyệt đang chặn mở cửa sổ mới. Vui lòng cho phép pop-up để xuất PDF!");
         return;
       }
-
-      // 4. Sao chép toàn bộ font & CSS từ trang chính sang iframe
-      const styles = Array.from(document.querySelectorAll("link[rel='stylesheet'], style"))
-        .map(node => node.outerHTML)
-        .join("\n");
-
-      iframeDoc.open();
-      iframeDoc.write(`
-        <!DOCTYPE html>
-        <html lang="vi">
-          <head>
-            <meta charset="utf-8">
-            <title>${pdfTitle}</title>
-            ${styles}
-            <style>
-              @page {
-                size: A4 portrait !important;
-                margin: 12mm 10mm 12mm 10mm !important;
-              }
-              * {
-                box-sizing: border-box !important;
-              }
-              html, body {
-                width: 100% !important;
-                height: auto !important;
-                min-height: 0 !important;
-                margin: 0 !important;
-                padding: 0 !important;
-                background: #ffffff !important;
-                color: #0f172a !important;
-                font-family: 'Times New Roman', Times, serif !important;
-                -webkit-print-color-adjust: exact !important;
-                print-color-adjust: exact !important;
-                overflow: visible !important;
-              }
-              .print-container {
-                width: 100% !important;
-                max-width: 190mm !important;
-                margin: 0 auto !important;
-                padding: 0 !important;
-                background: #ffffff !important;
-              }
-              .a4-page-break-before {
-                break-before: page !important;
-                page-break-before: always !important;
-                display: block !important;
-                height: 0 !important;
-              }
-              .a4-avoid-break,
-              .a4-signature-section,
-              tr, table {
-                break-inside: avoid !important;
-                page-break-inside: avoid !important;
-              }
-              thead {
-                display: table-header-group !important;
-              }
-              tfoot {
-                display: table-footer-group !important;
-              }
-              .no-print {
-                display: none !important;
-              }
-            </style>
-          </head>
-          <body>
-            <div class="print-container">
-              ${printElement.innerHTML}
-            </div>
-          </body>
-        </html>
-      `);
-      iframeDoc.close();
-
-      setTimeout(() => {
-        try {
-          iframe.contentWindow?.focus();
-          iframe.contentWindow?.print();
-        } catch (e) {
-          console.error("Lỗi print iframe, fallback:", e);
-          const originalTitle = document.title;
-          document.title = pdfTitle;
-          window.print();
-          setTimeout(() => {
-            document.title = originalTitle;
-          }, 1000);
-        } finally {
-          setTimeout(() => {
-            if (document.body.contains(iframe)) document.body.removeChild(iframe);
-            if (document.body.contains(directRoot)) directRoot.remove();
-          }, 2000);
-        }
-      }, 400);
-
-    } catch (e) {
-      console.error("Lỗi mở in iframe:", e);
-      window.print();
+      toast.success(isPdfFileDownload ? "Đang chuẩn bị tải file PDF chuẩn A4..." : "Đang mở trang xuất Sổ PDF chuẩn A4...");
+    } catch (e: any) {
+      console.error("Lỗi mở trang xuất Sổ PDF:", e);
+      toast.error("Không thể mở trang xuất Sổ: " + (e?.message || "Lỗi không xác định"));
     }
   };
+
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-2 sm:p-4 bg-slate-900/70 backdrop-blur-xs animate-fade-in overflow-y-auto">
@@ -510,28 +329,26 @@ export default function ClassEventEvaluationBookModal({
               </button>
             </div>
 
-            {/* Print button */}
-            {/* Print / Save PDF via iframe button */}
-            <button
-              type="button"
-              onClick={() => handlePrintOrExportPDF(false)}
-              className="px-3.5 py-1.5 bg-white/10 hover:bg-white/20 text-white font-bold text-xs rounded-xl border border-white/20 shadow-xs transition-colors flex items-center gap-1.5 cursor-pointer"
-              title="Xuất Sổ A4 sạch (Lưu PDF hoặc In - không dính giao diện web)"
-            >
-              <Printer className="w-3.5 h-3.5 text-teal-200" />
-              <span className="hidden sm:inline">Xuất Sổ PDF / In</span>
-            </button>
-
-            {/* Download PDF button */}
+            {/* Nút Tải File PDF Trực Tiếp */}
             <button
               type="button"
               onClick={() => handlePrintOrExportPDF(true)}
-              disabled={isExportingPDF}
-              className="px-3.5 py-1.5 bg-gradient-to-r from-amber-400 to-amber-500 hover:brightness-105 text-amber-950 font-black text-xs rounded-xl shadow-md transition-all flex items-center gap-1.5 cursor-pointer disabled:opacity-50"
+              className="px-3.5 py-1.5 bg-gradient-to-r from-amber-400 to-amber-500 hover:brightness-105 text-amber-950 font-black text-xs rounded-xl shadow-md transition-all flex items-center gap-1.5 cursor-pointer active:scale-95"
               title="Tải trực tiếp file PDF về máy tính"
             >
-              <Download className={`w-3.5 h-3.5 ${isExportingPDF ? "animate-bounce" : ""}`} />
-              <span>{isExportingPDF ? "Đang xuất..." : "Tải PDF Trực Tiếp"}</span>
+              <Download className="w-3.5 h-3.5" />
+              <span className="hidden sm:inline">Tải File PDF</span>
+            </button>
+
+            {/* Nút Xuất Sổ PDF theo chuẩn Phiếu Dự Giờ */}
+            <button
+              type="button"
+              onClick={() => handlePrintOrExportPDF(false)}
+              className="px-4 py-1.5 bg-gradient-to-r from-emerald-500 to-teal-500 hover:from-emerald-400 hover:to-teal-400 text-slate-950 font-black text-xs rounded-xl shadow-md transition-all flex items-center gap-1.5 cursor-pointer hover:shadow-lg active:scale-95"
+              title="Mở tab xuất Sổ PDF chuẩn A4 tương tự như Xuất Phiếu Dự Giờ (Hộp thoại In / Lưu PDF)"
+            >
+              <Printer className="w-3.5 h-3.5 text-slate-950" />
+              <span>Xuất Sổ PDF (A4)</span>
             </button>
 
             {/* Close button */}
@@ -1050,14 +867,14 @@ export default function ClassEventEvaluationBookModal({
                   <table className="w-full table-fixed border-collapse border border-slate-500 text-[10.5px] leading-tight">
                     <thead>
                       <tr className="bg-slate-200/90 text-center font-bold text-slate-900">
-                        <th className="border border-slate-400 p-1 text-center" style={{ width: "8mm" }}>STT</th>
-                        <th className="border border-slate-400 p-1 text-center" style={{ width: "18mm" }}>Mã HS</th>
-                        <th className="border border-slate-400 p-1 text-left pl-2" style={{ width: "40mm" }}>Họ và tên học sinh</th>
-                        <th className="border border-slate-400 p-1 text-center" style={{ width: "16mm" }}>Tham gia</th>
-                        <th className="border border-slate-400 p-1 text-left pl-1.5" style={{ width: "28mm" }}>Vai trò (6 Vai trò)</th>
-                        <th className="border border-slate-400 p-1 text-center" style={{ width: "18mm" }}>Xếp loại</th>
-                        <th className="border border-slate-400 p-1 text-center" style={{ width: "12mm" }}>% Điểm</th>
-                        <th className="border border-slate-400 p-1 text-left pl-2" style={{ width: "50mm" }}>Nhận xét chi tiết của GVCN</th>
+                        <th className="border border-slate-400 p-1 text-center" style={{ width: "5%" }}>STT</th>
+                        <th className="border border-slate-400 p-1 text-center" style={{ width: "12%" }}>Mã HS</th>
+                        <th className="border border-slate-400 p-1 text-left pl-2" style={{ width: "23%" }}>Họ và tên học sinh</th>
+                        <th className="border border-slate-400 p-1 text-center" style={{ width: "10%" }}>Tham gia</th>
+                        <th className="border border-slate-400 p-1 text-left pl-1.5" style={{ width: "16%" }}>Vai trò (6 Vai trò)</th>
+                        <th className="border border-slate-400 p-1 text-center" style={{ width: "11%" }}>Xếp loại</th>
+                        <th className="border border-slate-400 p-1 text-center" style={{ width: "8%" }}>% Điểm</th>
+                        <th className="border border-slate-400 p-1 text-left pl-2" style={{ width: "15%" }}>Nhận xét chi tiết của GVCN</th>
                       </tr>
                     </thead>
                     <tbody>

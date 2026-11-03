@@ -18,6 +18,7 @@ import StudentProfileCoverA4 from "@/components/student/StudentProfileCoverA4"
 import StudentProfileSectionConfigModal from "@/components/student/StudentProfileSectionConfigModal"
 import StudentProfileInlineSectionToggles from "@/components/student/StudentProfileInlineSectionToggles"
 import { StudentSpecialSubjectsSection } from "@/components/student/StudentSpecialSubjectsSection"
+import StudentInternationalExamsSection from "@/components/student/StudentInternationalExamsSection"
 import { resolveStudentSectionVisibility } from "@/lib/studentProfileSectionConfig"
 
 function normalizeClassKey(name: string): string {
@@ -2056,6 +2057,14 @@ export function StudentProfilesAdminClient({
                                         </div>
                                       )}
                                     </div>
+                                     )}
+
+                                     {/* SECTION IV-B: HỘ CHIẾU KHẢO THÍ QUỐC TẾ & CHỨNG CHỈ */}
+                                     {sectionVisibility.internationalCertificates !== false && (
+                                       <StudentInternationalExamsSection
+                                         studentId={selectedStudent?.id || selectedStudentId}
+                                         studentCode={selectedStudent?.studentCode}
+                                       />
                                      )}
 
                                      {/* SECTION V: THÀNH TÍCH & KHEN THƯỞNG CỦA HỌC SINH */}

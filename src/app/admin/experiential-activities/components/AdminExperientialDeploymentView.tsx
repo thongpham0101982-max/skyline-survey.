@@ -18,6 +18,7 @@ import { formatTimeFrameAndSemester } from "@/lib/experiential/timeframe-helper"
 import { ActivityProgressModal } from "@/app/teacher/experiential-activities/components/ActivityProgressModal";
 import { TeacherProfessionalConfigModal } from "@/app/teacher/experiential-activities/components/TeacherProfessionalConfigModal";
 import ClassEventEvaluationBookModal from "@/components/experiential/ClassEventEvaluationBookModal";
+import GvcnTrackingExportModal from "@/components/experiential/GvcnTrackingExportModal";
 import { ExperientialTabs } from "@/components/ExperientialTabs";
 
 function formatGradesDisplay(grades: any): { label: string; fullText: string; isAll: boolean; count: number } {
@@ -121,6 +122,8 @@ export default function ExperientialActivitiesList() {
   const [configModalActivity, setConfigModalActivity] = useState<any>(null);
   const [isEvaluationBookOpen, setIsEvaluationBookOpen] = useState(false);
   const [evaluationBookActivity, setEvaluationBookActivity] = useState<any>(null);
+  const [isGvcnTrackingModalOpen, setIsGvcnTrackingModalOpen] = useState(false);
+  const [showExportMenu, setShowExportMenu] = useState(false);
 
   // Load Initial Academic Years & Campuses
   useEffect(() => {
@@ -312,6 +315,15 @@ export default function ExperientialActivitiesList() {
     } catch (err) { toast.error("Lỗi khi xuất file Excel"); }
   };
 
+  const handleExportGvcnTrackingExcel = () => {
+    let url = `/api/admin/experiential-activities/export-gvcn-tracking?format=xlsx`;
+    if (selectedYearId) url += `&academicYearId=${selectedYearId}`;
+    if (selectedCampusId !== 'ALL') url += `&campusId=${selectedCampusId}`;
+    toast.success("Đang tạo và tải file Excel theo dõi kế hoạch theo GVCN (3 Sheet)...");
+    window.open(url, "_blank");
+    setShowExportMenu(false);
+  };
+
   // Helper Badge Formatters
   const getStatusBadge = (status: string, act?: any) => {
     let effectiveStatus = status;
@@ -460,15 +472,151 @@ export default function ExperientialActivitiesList() {
 
         {/* Global Action Toolbar */}
         <div className="flex items-center gap-2 flex-wrap">
+          {/* Nút Theo dõi theo GVCN (Đáp ứng yêu cầu đôn đốc đánh giá) */}
           <button
             type="button"
-            onClick={handleExportExcel}
-            className="flex items-center gap-1.5 px-3 py-2 rounded-xl text-xs font-bold text-slate-700 bg-white border border-slate-200 hover:bg-slate-50 shadow-2xs transition-all cursor-pointer"
-            title="Xuất bảng dữ liệu triển khai ra file Excel"
+            onClick={() => setIsGvcnTrackingModalOpen(true)}
+            className="flex items-center gap-1.5 px-3.5 py-2 rounded-xl text-xs font-bold text-teal-900 bg-teal-50 border border-teal-300/80 hover:bg-teal-100 shadow-2xs transition-all cursor-pointer"
+            title="Xem bảng theo dõi tiến độ gán kế hoạch theo từng GVCN và danh sách học sinh chưa đánh giá"
           >
-            <Download className="w-3.5 h-3.5 text-slate-600" />
-            <span>Xuất Excel</span>
+            <Users className="w-3.5 h-3.5 text-[#00A19A]" />
+            <span>Theo dõi theo GVCN</span>
           </button>
+
+          {/* Nút Xuất Excel thông minh có Menu dropdown */}
+          <div className="relative">
+            <button
+              type="button"
+              onClick={() => setShowExportMenu(!showExportMenu)}
+              className="flex items-center gap-1.5 px-3.5 py-2 rounded-xl text-xs font-bold text-slate-700 bg-white border border-slate-200 hover:bg-slate-50 shadow-2xs transition-all cursor-pointer"
+              title="Tùy chọn xuất báo cáo Excel"
+            >
+              <FileSpreadsheet className="w-3.5 h-3.5 text-emerald-600" />
+              <span>Xuất Excel</span>
+              <ChevronDown className="w-3.5 h-3.5 text-slate-400" />
+            </button>
+
+            {showExportMenu && (
+              <>
+                <div 
+                  className="fixed inset-0 z-40" 
+                  onClick={() => setShowExportMenu(false)}
+                />
+                <div className="absolute right-0 mt-1.5 w-72 bg-white rounded-2xl shadow-xl border border-slate-200 p-1.5 z-50 animate-fade-in text-xs">
+                  <div className="px-3 py-1.5 text-[10px] font-black uppercase tracking-wider text-slate-400 border-b border-slate-100 mb-1">
+                    Lựa chọn loại file xuất Excel
+                  </div>
+
+                  <button
+                    type="button"
+                    onClick={handleExportGvcnTrackingExcel}
+                    className="w-full text-left p-2.5 rounded-xl hover:bg-teal-50 transition-colors flex items-start gap-2.5 cursor-pointer text-slate-800 hover:text-[#003B3A]"
+                  >
+                    <div className="w-7 h-7 rounded-lg bg-teal-100 text-[#00A19A] flex items-center justify-center shrink-0 mt-0.5">
+                      <Users className="w-4 h-4" />
+                    </div>
+                    <div>
+                      <div className="font-bold flex items-center gap-1">
+                        <span>Theo dõi Kế hoạch theo GVCN</span>
+                        <span className="px-1.5 py-0.5 bg-amber-100 text-amber-800 rounded font-black text-[9px]">3 Sheet</span>
+                      </div>
+                      <p className="text-[11px] text-slate-500 mt-0.5 leading-tight">
+                        Mỗi GVCN được gán bao nhiêu KH, tiến độ đánh giá HS và danh sách HS chưa đánh giá
+                      </p>
+                    </div>
+                  </button>
+
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setShowExportMenu(false);
+                      const curYear = academicYears.find(y => y.id === selectedYearId);
+                      const yr = curYear?.title || curYear?.name || "2026-2027";
+                      window.open(`/api/admin/experiential-activities/export-gvcn-pdf?academicYear=${encodeURIComponent(yr)}`, "_blank");
+                    }}
+                    className="w-full text-left p-2.5 rounded-xl hover:bg-emerald-50 transition-colors flex items-start gap-2.5 cursor-pointer text-slate-800 hover:text-emerald-900"
+                  >
+                    <div className="w-7 h-7 rounded-lg bg-emerald-100 text-emerald-700 flex items-center justify-center shrink-0 mt-0.5">
+                      <Printer className="w-4 h-4" />
+                    </div>
+                    <div>
+                      <div className="font-bold flex items-center gap-1">
+                        <span>Xuất PDF Theo Dõi Theo GVCN</span>
+                        <span className="px-1.5 py-0.5 bg-emerald-100 text-emerald-800 rounded font-black text-[9px]">A4 Dọc</span>
+                      </div>
+                      <p className="text-[11px] text-slate-500 mt-0.5 leading-tight">
+                        Mở bản in PDF chuẩn A4 từng GVCN (kế hoạch gán, tiến độ và HS chưa đánh giá)
+                      </p>
+                    </div>
+                  </button>
+
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setShowExportMenu(false);
+                      const curYear = academicYears.find(y => y.id === selectedYearId);
+                      const yr = curYear?.title || curYear?.name || "2026-2027";
+                      window.open(`/api/admin/experiential-activities/export-monthly-pdf?academicYear=${encodeURIComponent(yr)}`, "_blank");
+                    }}
+                    className="w-full text-left p-2.5 rounded-xl hover:bg-indigo-50 transition-colors flex items-start gap-2.5 cursor-pointer text-slate-800 hover:text-indigo-900"
+                  >
+                    <div className="w-7 h-7 rounded-lg bg-indigo-100 text-indigo-700 flex items-center justify-center shrink-0 mt-0.5">
+                      <Calendar className="w-4 h-4" />
+                    </div>
+                    <div>
+                      <div className="font-bold flex items-center gap-1">
+                        <span>Xuất PDF Báo Cáo Theo Tháng</span>
+                        <span className="px-1.5 py-0.5 bg-indigo-100 text-indigo-800 rounded font-black text-[9px]">A4 Dọc</span>
+                      </div>
+                      <p className="text-[11px] text-slate-500 mt-0.5 leading-tight">
+                        Hoạt động theo tháng gắn theo lớp, GVCN phụ trách và tình trạng đánh giá
+                      </p>
+                    </div>
+                  </button>
+
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setShowExportMenu(false);
+                      setIsGvcnTrackingModalOpen(true);
+                    }}
+                    className="w-full text-left p-2.5 rounded-xl hover:bg-slate-50 transition-colors flex items-start gap-2.5 cursor-pointer text-slate-700"
+                  >
+                    <div className="w-7 h-7 rounded-lg bg-indigo-50 text-indigo-600 flex items-center justify-center shrink-0 mt-0.5">
+                      <Eye className="w-4 h-4" />
+                    </div>
+                    <div>
+                      <div className="font-bold">Xem trước bảng theo dõi GVCN</div>
+                      <p className="text-[11px] text-slate-500 mt-0.5 leading-tight">
+                        Tra cứu trực tiếp trên màn hình trước khi xuất file
+                      </p>
+                    </div>
+                  </button>
+
+                  <div className="border-t border-slate-100 my-1" />
+
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setShowExportMenu(false);
+                      handleExportExcel();
+                    }}
+                    className="w-full text-left p-2.5 rounded-xl hover:bg-slate-50 transition-colors flex items-start gap-2.5 cursor-pointer text-slate-700"
+                  >
+                    <div className="w-7 h-7 rounded-lg bg-slate-100 text-slate-600 flex items-center justify-center shrink-0 mt-0.5">
+                      <Layers className="w-4 h-4" />
+                    </div>
+                    <div>
+                      <div className="font-bold">Danh sách Hoạt động Triển khai</div>
+                      <p className="text-[11px] text-slate-500 mt-0.5 leading-tight">
+                        Xuất bảng danh mục các hoạt động đang hiển thị
+                      </p>
+                    </div>
+                  </button>
+                </div>
+              </>
+            )}
+          </div>
 
           <button
             type="button"
@@ -1341,6 +1489,16 @@ export default function ExperientialActivitiesList() {
           activity={evaluationBookActivity}
           currentClassId={evaluationBookActivity.myAssignedClass?.classId}
           classes={evaluationBookActivity.assignedClasses || []}
+        />
+      )}
+
+      {/* GVCN TRACKING & EXPORT MODAL */}
+      {isGvcnTrackingModalOpen && (
+        <GvcnTrackingExportModal
+          isOpen={isGvcnTrackingModalOpen}
+          onClose={() => setIsGvcnTrackingModalOpen(false)}
+          academicYearId={selectedYearId}
+          campusId={selectedCampusId}
         />
       )}
     </div>

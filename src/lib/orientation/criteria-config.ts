@@ -1,38 +1,98 @@
 /**
  * CẤU HÌNH TIÊU CHÍ PHỎNG VẤN ĐỊNH HƯỚNG ĐẦU VÀO - SSM SKY-LINE
- * Phiên bản: 2026.2 (Chuẩn hóa 8 Tiêu chí / Câu hỏi Phỏng vấn Học sinh cho mỗi nhóm khối)
+ * Phiên bản: 2026.3 - Chuẩn hóa Biểu mẫu Phân hóa theo từng Khối lớp (Khối 1 đến 12)
  * 
- * Quản lý tập trung 05 nhóm khối:
- * - Khối 1 (Chuyển tiếp mầm non & Làm quen lớp 1) - 8 Câu hỏi chuẩn
- * - Khối 2–5 (Tiểu học: Nề nếp tự học & Phát triển toàn diện) - 8 Câu hỏi chuẩn
- * - Khối 6 (Chuyển tiếp THCS: Môi trường mới & Tự học) - 8 Câu hỏi chuẩn
- * - Khối 7–9 (THCS: Trách nhiệm, Sở trường & Kỹ năng) - 8 Câu hỏi chuẩn
- * - Khối 10–12 (THPT: Tư duy phản biện & Định hướng nghề nghiệp) - 8 Câu hỏi chuẩn
+ * Cấu trúc 02 Biểu mẫu chuẩn hóa:
+ * A. PHỎNG VẤN ĐỊNH HƯỚNG HỌC SINH (10 Nhóm nội dung):
+ *    1. Sở thích và thế mạnh
+ *    2. Thái độ và động lực học tập
+ *    3. Khả năng giải quyết vấn đề
+ *    4. Tính chủ động
+ *    5. Kỹ năng xã hội và khả năng thích nghi
+ *    6. Nhận thức bản thân
+ *    7. Kỳ vọng cá nhân tại Sky-Line
+ *    8. Năng lực học tập tự nhận định
+ *    9. Kỹ năng giao tiếp
+ *    10. Thông tin bổ sung
+ * 
+ * B. TRAO ĐỔI ĐỊNH HƯỚNG VỚI PHỤ HUYNH (05 Nhóm nội dung):
+ *    1. Hiểu học sinh qua góc nhìn phụ huynh
+ *    2. Quá trình và năng lực học tập
+ *    3. Thói quen học tập tại nhà
+ *    4. Cách phụ huynh đồng hành với việc học
+ *    5. Động lực, kỳ vọng và mục tiêu giáo dục
+ * 
+ * Chuẩn hóa 04 mức mô tả quan sát định tính (không chấm điểm số):
+ * - Thể hiện rõ (CONFIDENT / THE_HIEN_RO)
+ * - Đang hình thành (NORMAL / DANG_HINH_THANH)
+ * - Cần tìm hiểu thêm (NEED_SUPPORT / CAN_TIM_HIEU_THEM)
+ * - Chưa đủ thông tin (SPECIAL_ATTENTION / CHUA_DU_THONG_TIN)
+ * 
+ * Phân định nguồn minh chứng:
+ * - Học sinh tự chia sẻ (STUDENT_SHARED)
+ * - Phụ huynh cung cấp (PARENT_PROVIDED - tham khảo, chưa kiểm chứng)
+ * - Giáo viên trực tiếp quan sát (TEACHER_OBSERVED)
+ * - Giáo viên nhận định hoặc đề xuất (TEACHER_ASSESSED)
  */
 
-export const ORIENTATION_CRITERIA_VERSION = "2026.2";
+export const ORIENTATION_CRITERIA_VERSION = "2026.3";
 
-export type GradeGroupKey = "KHOI_1" | "KHOI_2_5" | "KHOI_6" | "KHOI_7_9" | "KHOI_10_12";
+export type GradeGroupKey =
+  | "KHOI_1"
+  | "KHOI_2"
+  | "KHOI_3"
+  | "KHOI_4"
+  | "KHOI_5"
+  | "KHOI_6"
+  | "KHOI_7"
+  | "KHOI_8"
+  | "KHOI_9"
+  | "KHOI_10"
+  | "KHOI_11"
+  | "KHOI_12"
+  // Tương thích ngược với các phiên bản cũ:
+  | "KHOI_2_5"
+  | "KHOI_7_9"
+  | "KHOI_10_12";
 
 export type RatingCode = "CONFIDENT" | "NORMAL" | "NEED_SUPPORT" | "SPECIAL_ATTENTION";
 
+export type EvidenceSource = "STUDENT_SHARED" | "PARENT_PROVIDED" | "TEACHER_OBSERVED" | "TEACHER_ASSESSED";
+
 export interface OrientationCriterion {
   id: string;
+  code: string;
   name: string;
   category: string;
   categoryLabel: string;
+  focus: string;
   guideline: string;
   suggestedQuestions: string[];
   mandatoryCommentRatings: RatingCode[];
   sortOrder: number;
 }
 
+export interface ParentOrientationGroup {
+  id: string;
+  code: string;
+  category: string;
+  categoryLabel: string;
+  title: string;
+  focus: string;
+  suggestedQuestions: string[];
+  placeholder: string;
+  sortOrder: number;
+}
+
 export interface OrientationGradeGroupConfig {
   key: GradeGroupKey;
+  gradeNumber: number;
   label: string;
   subLabel: string;
+  focus: string;
   gradeList: string[];
   criteria: OrientationCriterion[];
+  parentGroups: ParentOrientationGroup[];
   parentPrompts: {
     groupLabel: string;
     group1_expectations: { title: string; hints: string[]; placeholder: string };
@@ -42,828 +102,2615 @@ export interface OrientationGradeGroupConfig {
   };
 }
 
+export interface OrientationSummaryStructure {
+  strongPoints: string;          // 1. Điểm mạnh nổi bật của học sinh
+  interestsMotivation: string;   // 2. Sở thích và động lực học tập
+  adaptabilityAutonomy: string;  // 3. Khả năng thích nghi và tự lập
+  difficultiesNeeds: string;     // 4. Khó khăn, nhu cầu cần quan tâm
+  studentExpectations: string;   // 5. Kỳ vọng của học sinh
+  parentExpectations: string;    // 6. Kỳ vọng của phụ huynh
+  alignmentDifferences: string;  // 7. Những điểm tương đồng hoặc khác biệt giữa hai nguồn thông tin
+  initialRecommendations: string;// 8. Đề xuất hỗ trợ và định hướng giáo dục ban đầu
+  verificationItems: string;     // 9. Nội dung cần xác minh hoặc trao đổi chuyên môn
+}
+
+export const ORIENTATION_EVIDENCE_SOURCES: Record<EvidenceSource, { code: EvidenceSource; label: string; subText: string; isVerified: boolean }> = {
+  STUDENT_SHARED: {
+    code: "STUDENT_SHARED",
+    label: "Học sinh tự chia sẻ",
+    subText: "Lời nói, cảm nghĩ và chia sẻ trực tiếp của học sinh trong buổi phỏng vấn",
+    isVerified: true
+  },
+  PARENT_PROVIDED: {
+    code: "PARENT_PROVIDED",
+    label: "Phụ huynh cung cấp",
+    subText: "Thông tin gia đình cung cấp (nguồn tham khảo, chưa tự động xem là đã kiểm chứng)",
+    isVerified: false
+  },
+  TEACHER_OBSERVED: {
+    code: "TEACHER_OBSERVED",
+    label: "Giáo viên trực tiếp quan sát",
+    subText: "Hành vi, thái độ, phản xạ thực tế quan sát được trong suốt quá trình khảo sát",
+    isVerified: true
+  },
+  TEACHER_ASSESSED: {
+    code: "TEACHER_ASSESSED",
+    label: "Giáo viên nhận định / Đề xuất",
+    subText: "Đánh giá chuyên môn sư phạm và khuyến nghị giải pháp đồng hành ban đầu",
+    isVerified: true
+  }
+};
+
 export const ORIENTATION_GRADE_GROUPS: Record<GradeGroupKey, OrientationGradeGroupConfig> = {
-  // 1. KHỐI 1 (8 CÂU HỎI CHUẨN)
+  // 1. KHỐI 1 - Sẵn sàng vào lớp 1, tự phục vụ, giao tiếp, thích nghi
   KHOI_1: {
     key: "KHOI_1",
+    gradeNumber: 1,
     label: "Khối 1",
-    subLabel: "Chuyển tiếp Mầm non & Làm quen Lớp 1 (8 Câu hỏi chuẩn)",
-    gradeList: ["1", "Khối 1", "Lớp 1", "K1"],
+    subLabel: "Sẵn sàng vào lớp 1, tự phục vụ, giao tiếp, thích nghi",
+    focus: "Sẵn sàng vào lớp 1, tự phục vụ, giao tiếp, thích nghi",
+    gradeList: ["1","Khối 1","Lớp 1","K1"],
     criteria: [
       {
         id: "k1_c1",
-        name: "1. Giao tiếp & Tự giới thiệu",
-        category: "GIAO_TIEP_TU_GIOI_THIEU",
-        categoryLabel: "Giao tiếp & Tự giới thiệu",
-        guideline: "Quan sát phản xạ chào hỏi, ánh mắt tiếp xúc, sự tự tin hay e dè khi giao tiếp với người lạ và cô giáo.",
-        suggestedQuestions: [
-          "Con tên là gì? Hôm nay ai đưa con đến trường Sky-Line?",
-          "Con nhìn thấy trường và lớp học có gì đẹp, có bạn nào con muốn làm quen không?",
-          "Con có thích giới thiệu về bản thân hoặc gia đình mình với cô không?"
-        ],
+        code: "K1-A01",
+        name: "Sở thích vui chơi, năng khiếu và hoạt động yêu thích",
+        category: "SO_THICH_THE_MANH",
+        categoryLabel: "1. Sở thích và thế mạnh",
+        focus: "Tìm hiểu hứng thú cá nhân, năng khiếu nổi bật (vẽ tranh, ca hát, xếp hình lego, vận động thể chất) và điều làm học sinh vui vẻ, hào hứng nhất.",
+        guideline: "Quan sát sự hào hứng khi chia sẻ, mức độ tự nhiên và niềm say mê với hoạt động thế mạnh.",
+        suggestedQuestions: ["Ở nhà hoặc trường mầm non, con thích chơi trò gì hoặc làm việc gì nhất?","Con có sở thích đặc biệt nào như vẽ tranh, múa hát, lắp ráp đồ chơi hay vận động không?","Khi được làm điều mình thích, con cảm thấy như thế nào?"],
         mandatoryCommentRatings: ["NEED_SUPPORT", "SPECIAL_ATTENTION"],
         sortOrder: 1
       },
       {
         id: "k1_c2",
-        name: "2. Kỹ năng tự phục vụ & Nề nếp",
-        category: "TU_PHUC_VU_NE_NEP",
-        categoryLabel: "Tự phục vụ & Nề nếp",
-        guideline: "Đánh giá mức độ tự lập trong sinh hoạt cá nhân, kỹ năng tự phục vụ cơ bản phù hợp lứa tuổi 5-6 tuổi.",
-        suggestedQuestions: [
-          "Ở nhà hay ở trường mầm non, con tự đi giày dép, rửa tay và dọn dẹp đồ chơi như thế nào?",
-          "Con có tự xúc cơm ăn và cất đồ dùng của mình vào ba lô được không?",
-          "Khi cần đi vệ sinh hoặc muốn uống nước, con sẽ nói với cô thế nào?"
-        ],
+        code: "K1-A02",
+        name: "Tâm thế làm quen với việc học và sự tò mò khám phá",
+        category: "THAI_DO_DONG_LUC",
+        categoryLabel: "2. Thái độ và động lực học tập",
+        focus: "Tìm hiểu thái độ hào hứng với sách tranh, chữ cái, con số và tâm thế sẵn sàng bước vào lớp 1.",
+        guideline: "Quan sát ánh mắt chú ý, mức độ tò mò khi nhìn sách vở, tranh ảnh minh họa.",
+        suggestedQuestions: ["Con có thích xem sách tranh, tô màu và làm quen với các chữ cái, con số không?","Con có hào hứng khi nghe người lớn kể chuyện hoặc hỏi vì sao mọi vật lại như vậy không?","Con cảm thấy thế nào khi sắp được trở thành học sinh lớp 1 của trường Sky-Line?"],
         mandatoryCommentRatings: ["NEED_SUPPORT", "SPECIAL_ATTENTION"],
         sortOrder: 2
       },
       {
         id: "k1_c3",
-        name: "3. Hứng thú học tập & Khám phá",
-        category: "HUNG_THU_HOC_TAP",
-        categoryLabel: "Hứng thú Học tập & Khám phá",
-        guideline: "Quan sát tính tò mò, hứng thú với học liệu (tranh ảnh, sách truyện, đồ chơi tư duy) và sự chú ý.",
-        suggestedQuestions: [
-          "Con thích nhất trò chơi, bức tranh hay hoạt động nào?",
-          "Con có thích nghe cô kể chuyện, đọc thơ hoặc tô màu, nhận biết chữ cái không?",
-          "Con có tò mò muốn biết cách các bạn nhỏ lớp 1 tập đọc và làm toán không?"
-        ],
+        code: "K1-A03",
+        name: "Phản xạ trước thử thách nhỏ và xử lý tình huống đơn giản",
+        category: "GIAI_QUYET_VAN_DE",
+        categoryLabel: "3. Khả năng giải quyết vấn đề",
+        focus: "Đánh giá cách trẻ ứng phó khi gặp đồ vật bị hỏng, làm rơi đồ chơi hoặc gặp khó khăn khi làm bài.",
+        guideline: "Quan sát phản xạ: bình tĩnh thử lại, tìm kiếm sự trợ giúp hay cáu gắt, từ bỏ.",
+        suggestedQuestions: ["Khi con đang ghép đồ chơi mà bị thiếu mảnh hoặc rơi rớt, con sẽ làm gì?","Nếu con muốn với lấy một món đồ trên cao mà không tới, con sẽ nhờ ai giúp đỡ?","Khi gặp một hình vẽ khó tô, con sẽ cố gắng tô tiếp hay nhờ người lớn vẽ hộ?"],
         mandatoryCommentRatings: ["NEED_SUPPORT", "SPECIAL_ATTENTION"],
         sortOrder: 3
       },
       {
         id: "k1_c4",
-        name: "4. Tư duy trực quan & Chú ý tập trung",
-        category: "TU_DUY_TRUC_QUAN_CHU_Y",
-        categoryLabel: "Tư duy Trực quan & Chú ý",
-        guideline: "Đánh giá khả năng tập trung lắng nghe hướng dẫn ngắn, phân biệt hình khối, màu sắc và logic tranh ảnh đơn giản.",
-        suggestedQuestions: [
-          "Con nhìn vào bức tranh này và tìm giúp cô xem có bao nhiêu bạn nhỏ đang chơi đùa nhé?",
-          "Theo con, đồ vật nào dưới đây không cùng nhóm với các đồ vật còn lại?",
-          "Khi cô hướng dẫn một trò chơi mới, con có thể lắng nghe từ đầu đến cuối không?"
-        ],
+        code: "K1-A04",
+        name: "Kỹ năng tự phục vụ cơ bản và chủ động trong sinh hoạt",
+        category: "TINH_CHU_DONG",
+        categoryLabel: "4. Tính chủ động",
+        focus: "Tìm hiểu khả năng tự mang giày dép, dọn đồ chơi, cất ba lô, tự xúc cơm và đi vệ sinh.",
+        guideline: "Đánh giá mức độ tự lập trong nề nếp sinh hoạt phù hợp với học sinh chuẩn bị vào lớp 1.",
+        suggestedQuestions: ["Ở nhà, con có tự đi giày dép, mặc quần áo và cất gọn đồ chơi vào giỏ sau khi chơi xong không?","Khi ăn cơm, con tự xúc ăn hay cần bố mẹ nhắc nhở và xúc cho?","Khi đến giờ đi ngủ hoặc thức dậy, con có tự giác làm vệ sinh cá nhân không?"],
         mandatoryCommentRatings: ["NEED_SUPPORT", "SPECIAL_ATTENTION"],
         sortOrder: 4
       },
       {
         id: "k1_c5",
-        name: "5. Vận động tinh & Khéo léo bàn tay",
-        category: "VAN_DONG_TINH_KHEO_LEO",
-        categoryLabel: "Vận động Tinh & Khéo léo",
-        guideline: "Quan sát tư thế cầm bút, độ linh hoạt của các ngón tay khi tô màu, gấp giấy hoặc cầm nắm học cụ.",
-        suggestedQuestions: [
-          "Con cầm bút vẽ thử một nét thẳng và một vòng tròn giúp cô xem nào?",
-          "Con có thích các trò chơi xâu hạt, ghép lego hay gấp giấy không?",
-          "Ở nhà con có thường xuyên tự cầm thìa, kéo đồ chơi hay cài cúc áo không?"
-        ],
+        code: "K1-A05",
+        name: "Khả năng hòa nhập môi trường mới và làm quen bạn bè",
+        category: "KY_NANG_XA_HOI_THICH_NGHI",
+        categoryLabel: "5. Kỹ năng xã hội và khả năng thích nghi",
+        focus: "Đánh giá phản ứng khi đến môi trường lạ, sự sẵn sàng chơi cùng bạn và tách khỏi phụ huynh.",
+        guideline: "Quan sát độ tự tin, khả năng hòa nhập, cử chỉ thân thiện và cách ứng xử với các bạn cùng trang lứa.",
+        suggestedQuestions: ["Hôm nay đến trường Sky-Line gặp nhiều bạn mới, con có thấy vui và muốn kết bạn không?","Nếu bạn khác muốn cùng chơi đồ chơi với con, con có sẵn sàng chia sẻ không?","Khi tạm xa bố mẹ để vào lớp học với cô giáo, con cảm thấy như thế nào?"],
         mandatoryCommentRatings: ["NEED_SUPPORT", "SPECIAL_ATTENTION"],
         sortOrder: 5
       },
       {
         id: "k1_c6",
-        name: "6. Hợp tác & Tương tác bạn bè",
-        category: "HOP_TAC_BAN_BE",
-        categoryLabel: "Hợp tác & Tương tác Bạn bè",
-        guideline: "Đánh giá tinh thần chia sẻ đồ chơi, sự thân thiện và cách ứng xử khi chơi cùng các bạn mới.",
-        suggestedQuestions: [
-          "Nếu có bạn muốn mượn hộp màu hoặc đồ chơi của con, con sẽ làm thế nào?",
-          "Khi vào lớp học mới có nhiều bạn lạ, con có vui vẻ chơi chung không?",
-          "Con thích chơi trò chơi một mình hay chơi cùng một nhóm bạn hơn?"
-        ],
+        code: "K1-A06",
+        name: "Hiểu biết về bản thân, sở thích và điều làm mình khó chịu",
+        category: "NHAN_THUC_BAN_THAN",
+        categoryLabel: "6. Nhận thức bản thân",
+        focus: "Trẻ có thể gọi tên thông tin cá nhân cơ bản (tên, tuổi, sở thích, điều sợ hãi hoặc không thích).",
+        guideline: "Lắng nghe cách trẻ tự mô tả về mình, nhận thức về cảm xúc cá nhân.",
+        suggestedQuestions: ["Con có thể kể cho cô nghe con tên là gì, năm nay mấy tuổi và điều con thích nhất không?","Điều gì thường làm cho con cảm thấy buồn hoặc lo lắng nhất?","Khi con cảm thấy không vui, con thường làm gì để cảm thấy vui trở lại?"],
         mandatoryCommentRatings: ["NEED_SUPPORT", "SPECIAL_ATTENTION"],
         sortOrder: 6
       },
       {
         id: "k1_c7",
-        name: "7. Cảm xúc & Khả năng thích nghi",
-        category: "CAM_XUC_THICH_NGHI",
-        categoryLabel: "Cảm xúc & Khả năng Thích nghi",
-        guideline: "Nhận diện phản ứng tâm lý khi tách khỏi phụ huynh, khả năng bộc lộ và điều hòa cảm xúc ban đầu.",
-        suggestedQuestions: [
-          "Khi xa ba mẹ vào phòng học mới, con cảm thấy thế nào?",
-          "Nếu có điều gì làm con lo lắng hoặc buồn, con sẽ nói với ai?",
-          "Hôm nay đến trường Sky-Line con thấy vui nhất ở điểm nào?"
-        ],
+        code: "K1-A07",
+        name: "Mong muốn và hình dung của học sinh về trường Sky-Line",
+        category: "KY_VONG_SKYLINE",
+        categoryLabel: "7. Kỳ vọng cá nhân tại Sky-Line",
+        focus: "Trẻ mong muốn làm gì, học gì và chơi gì khi chính thức trở thành học sinh Sky-Line.",
+        guideline: "Đánh giá sự hào hứng và tâm lý tích cực hướng về trường lớp mới.",
+        suggestedQuestions: ["Con thích nhất góc nào ở trường Sky-Line hôm nay (sân bóng, khu vui chơi, phòng thư viện, hồ bơi)?","Vào lớp 1 tại Sky-Line, con muốn học thêm điều gì mới lạ nhất?","Con muốn được làm quen với bao nhiêu bạn mới trong lớp mình?"],
         mandatoryCommentRatings: ["NEED_SUPPORT", "SPECIAL_ATTENTION"],
         sortOrder: 7
       },
       {
         id: "k1_c8",
-        name: "8. Tâm thế & Kỳ vọng vào Lớp 1",
-        category: "TAM_THE_LOP_1",
-        categoryLabel: "Tâm thế & Kỳ vọng Lớp 1",
-        guideline: "Đánh giá mức độ hào hứng, sẵn sàng tâm lý bước vào môi trường tiểu học chính khóa tại Sky-Line.",
-        suggestedQuestions: [
-          "Con có mong muốn được mang ba lô mới và mặc đồng phục đẹp đi học lớp 1 không?",
-          "Con muốn học được điều gì mới nhất khi vào lớp 1 (đọc truyện, làm toán, nói tiếng Anh)?",
-          "Ai ở nhà hay động viên và khen ngợi con khi con làm được việc tốt?"
-        ],
+        code: "K1-A08",
+        name: "Tự cảm nhận về khả năng làm quen chữ cái, đếm số và khéo tay",
+        category: "NANG_LUC_TU_NHAN_DINH",
+        categoryLabel: "8. Năng lực học tập tự nhận định",
+        focus: "Cách trẻ tự cảm nhận việc mình cầm bút, tô vẽ hình, đếm đồ vật hay ghi nhớ tên đồ vật.",
+        guideline: "Quan sát trẻ tự hào về thành quả của mình hay cảm thấy việc cầm bút là khó khăn.",
+        suggestedQuestions: ["Con thấy việc cầm bút vẽ tranh hay tập viết nét thẳng nét cong có dễ dàng với con không?","Con đã biết đếm từ 1 đến bao nhiêu và nhận biết được những chữ cái nào rồi?","Trong các trò chơi khéo tay, con tự tin nhất với trò chơi nào?"],
         mandatoryCommentRatings: ["NEED_SUPPORT", "SPECIAL_ATTENTION"],
         sortOrder: 8
+      },
+      {
+        id: "k1_c9",
+        code: "K1-A09",
+        name: "Khả năng diễn đạt bằng lời nói, lắng nghe và biểu đạt nhu cầu",
+        category: "KY_NANG_GIAO_TIEP",
+        categoryLabel: "9. Kỹ năng giao tiếp",
+        focus: "Quan sát khả năng phát âm rõ ràng, dùng câu hoàn chỉnh để diễn đạt mong muốn với cô giáo.",
+        guideline: "Đánh giá vốn từ, khả năng nghe hiểu hiệu lệnh ngắn và sự lễ phép trong chào hỏi.",
+        suggestedQuestions: ["Khi con cần đi vệ sinh hoặc muốn uống nước trong lớp, con sẽ nói với cô giáo như thế nào?","Khi gặp thầy cô giáo hoặc người lớn tuổi, con thường chào hỏi ra sao?","Con có thể kể lại cho cô nghe một câu chuyện ngắn hoặc một kỷ niệm vui gần đây không?"],
+        mandatoryCommentRatings: ["NEED_SUPPORT", "SPECIAL_ATTENTION"],
+        sortOrder: 9
+      },
+      {
+        id: "k1_c10",
+        code: "K1-A010",
+        name: "Đặc điểm sức khỏe, thói quen ăn uống, ngủ trưa và lưu ý đặc biệt",
+        category: "THONG_TIN_BO_SUNG",
+        categoryLabel: "10. Thông tin bổ sung",
+        focus: "Ghi nhận các đặc điểm cá biệt về dinh dưỡng, dị ứng, giấc ngủ hoặc nhạy cảm giác quan.",
+        guideline: "Ghi chú ngắn gọn, chính xác các thói quen cần giáo viên chủ nhiệm hỗ trợ ban đầu.",
+        suggestedQuestions: ["Ở trường mầm non, con có ngủ trưa ngoan không và có món ăn nào con không ăn được không?","Con có cần cô giáo nhắc nhở hay ôm động viên khi chuẩn bị ngủ trưa không?","Có điều gì đặc biệt về con mà con muốn cô giáo biết trước khi con vào lớp 1 không?"],
+        mandatoryCommentRatings: ["NEED_SUPPORT", "SPECIAL_ATTENTION"],
+        sortOrder: 10
+      }
+    ],
+    parentGroups: [
+      {
+        id: "k1_p1",
+        code: "K1-B01",
+        category: "HIEU_HS_GOC_NHIN_PH",
+        categoryLabel: "1. Hiểu học sinh qua góc nhìn phụ huynh",
+        title: "Đặc điểm tính cách, tâm lý và thế mạnh nổi bật của học sinh",
+        focus: "Nắm bắt tính cách cốt lõi (hướng nội/hướng ngoại, nhạy cảm hay tự tin), sở trường và đam mê của trẻ từ gia đình.",
+        suggestedQuestions: ["Xin phụ huynh chia sẻ đôi nét về tính cách nổi bật nhất của con ở nhà?","Con có điểm mạnh hay năng khiếu đặc biệt nào mà gia đình nhận thấy con bộc lộ sớm?","Những tình huống nào ở nhà thường khiến con dễ xúc động hoặc bướng bỉnh nhất?"],
+        placeholder: "Ví dụ: Con tính tình vui vẻ, tình cảm, rất thích quan sát tranh ảnh và lắp lego; khi không vừa ý đôi khi hay dỗi nhưng dỗ ngọt là nghe lời...",
+        sortOrder: 1
+      },
+      {
+        id: "k1_p2",
+        code: "K1-B02",
+        category: "QUA_TRINH_NANG_LUC_HT",
+        categoryLabel: "2. Quá trình và năng lực học tập",
+        title: "Quá trình làm quen chữ cái, con số và phản xạ học tập tại mầm non",
+        focus: "Đánh giá mức độ làm quen học liệu, khả năng chú ý và tiền năng học tập của trẻ.",
+        suggestedQuestions: ["Tại trường mầm non và ở nhà, con đã tiếp cận với chữ cái, con số và tiếng Anh như thế nào?","Khả năng tập trung lắng nghe truyện kể hoặc làm một hoạt động liên tục của con kéo dài khoảng bao lâu?","Con có biểu hiện hứng thú đặc biệt với việc học hỏi điều mới hay e dè trước kiến thức mới?"],
+        placeholder: "Ví dụ: Con đã nhận biết bảng chữ cái tiếng Việt cơ bản, đếm số đến 20, thích nghe nhạc tiếng Anh thiếu nhi, khả năng tập trung tô màu tốt khoảng 20-30 phút...",
+        sortOrder: 2
+      },
+      {
+        id: "k1_p3",
+        code: "K1-B03",
+        category: "THOI_QUEN_HT_TAI_NHA",
+        categoryLabel: "3. Thói quen học tập tại nhà",
+        title: "Nề nếp sinh hoạt, tự phục vụ và thói quen xem thiết bị điện tử",
+        focus: "Tìm hiểu nề nếp sinh hoạt thường nhật, thời gian dùng màn hình điện tử và tính tự giác sinh hoạt.",
+        suggestedQuestions: ["Ở nhà con có thói quen xem tivi, iPad hay điện thoại không? Thời lượng mỗi ngày khoảng bao nhiêu?","Con đã tự giác thực hiện những việc tự phục vụ nào (đánh răng, dọn đồ chơi, cất ba lô)?","Nề nếp giờ giấc ăn uống, đi ngủ buổi tối và thức dậy buổi sáng của con như thế nào?"],
+        placeholder: "Ví dụ: Con chỉ xem tivi vào cuối tuần 30-45 phút; đã tự đánh răng và cất giày dép đúng nơi quy định; ngủ lúc 21h30 và thức dậy 6h30 sáng...",
+        sortOrder: 3
+      },
+      {
+        id: "k1_p4",
+        code: "K1-B04",
+        category: "DONG_HANH_CUA_PH",
+        categoryLabel: "4. Cách phụ huynh đồng hành với việc học",
+        title: "Thời gian dành cho con và phương pháp giáo dục của gia đình",
+        focus: "Khả năng đồng hành hàng ngày của cha mẹ, sự thống nhất trong quan điểm nuôi dạy con.",
+        suggestedQuestions: ["Bố mẹ thường dành thời gian chơi cùng con hoặc đọc sách với con vào những khoảng thời gian nào trong ngày?","Khi con mắc lỗi hoặc không vâng lời, phương pháp gia đình thường áp dụng để hướng dẫn con là gì?","Gia đình có kế hoạch phối hợp như thế nào cùng giáo viên chủ nhiệm trong học kỳ đầu tiên?"],
+        placeholder: "Ví dụ: Bố mẹ dành 30 phút mỗi tối đọc truyện và trò chuyện cùng con; phương pháp giáo dục là nhẹ nhàng giải thích, kiên nhẫn lắng nghe con...",
+        sortOrder: 4
+      },
+      {
+        id: "k1_p5",
+        code: "K1-B05",
+        category: "DONG_LUC_KY_VONG_GD",
+        categoryLabel: "5. Động lực, kỳ vọng và mục tiêu giáo dục",
+        title: "Lý do lựa chọn Sky-Line và kỳ vọng phát triển toàn diện của con",
+        focus: "Xác định mục tiêu giáo dục dài hạn của phụ huynh và kỳ vọng cụ thể vào môi trường Sky-Line.",
+        suggestedQuestions: ["Điều gì khiến gia đình tin tưởng lựa chọn Hệ thống Giáo dục Sky-Line cho con bắt đầu bước vào lớp 1?","Kỳ vọng lớn nhất của gia đình đối với sự trưởng thành của con sau năm học lớp 1 là gì (tự tin, tự lập, ngôn ngữ, tư duy)?","Gia đình có mong muốn hay lưu ý đặc biệt nào gửi gắm đến Ban Giám hiệu và đội ngũ giáo viên?"],
+        placeholder: "Ví dụ: Gia đình tin tưởng triết lý giáo dục nhân văn và chương trình song ngữ của Sky-Line; kỳ vọng con tự tin, hạnh phúc khi đến trường, hòa đồng và rèn luyện nề nếp tốt...",
+        sortOrder: 5
       }
     ],
     parentPrompts: {
-      groupLabel: "Khối 1 (Chuyển tiếp mầm non & Làm quen lớp 1)",
+      groupLabel: "Khối 1 (Sẵn sàng vào lớp 1, tự phục vụ, giao tiếp, thích nghi)",
       group1_expectations: {
         title: "1. Nguyện vọng & Kỳ vọng của PHHS đối với sự phát triển của học sinh",
-        hints: [
-          "Gia đình kỳ vọng con phát triển những kỹ năng, phẩm chất nào nhất khi vào lớp 1 (sự tự tin, tính tự lập, khả năng ngôn ngữ hay tư duy sáng tạo)?",
-          "Kỳ vọng của bố mẹ về sự đồng hành và phương pháp giáo dục của Sky-Line dành cho con?"
-        ],
-        placeholder: "Ví dụ: Mong muốn con rèn tính tự lập, tự tin giao tiếp, yêu thích việc đến trường, tiếp cận tiếng Anh tự nhiên..."
+        hints: ["Điều gì khiến gia đình tin tưởng lựa chọn Hệ thống Giáo dục Sky-Line cho con bắt đầu bước vào lớp 1?","Kỳ vọng lớn nhất của gia đình đối với sự trưởng thành của con sau năm học lớp 1 là gì (tự tin, tự lập, ngôn ngữ, tư duy)?","Gia đình có mong muốn hay lưu ý đặc biệt nào gửi gắm đến Ban Giám hiệu và đội ngũ giáo viên?"],
+        placeholder: "Ví dụ: Gia đình tin tưởng triết lý giáo dục nhân văn và chương trình song ngữ của Sky-Line; kỳ vọng con tự tin, hạnh phúc khi đến trường, hòa đồng và rèn luyện nề nếp tốt..."
       },
       group2_personality: {
-        title: "2. Đặc điểm cá nhân, sở thích và thói quen của học sinh",
-        hints: [
-          "Ở nhà con có sở thích gì (vẽ tranh, xếp lego, vận động, nghe kể chuyện)?",
-          "Thói quen sinh hoạt, nề nếp ăn ngủ và cách con biểu đạt cảm xúc khi gặp điều mới lạ hoặc người lạ?"
-        ],
-        placeholder: "Ví dụ: Con thích xếp hình và vẽ tranh; tính cách nhanh nhẹn, hòa đồng, đôi lúc còn rụt rè trước đám đông..."
+        title: "2. Đặc điểm cá nhân, tính cách và thói quen của học sinh",
+        hints: ["Xin phụ huynh chia sẻ đôi nét về tính cách nổi bật nhất của con ở nhà?","Con có điểm mạnh hay năng khiếu đặc biệt nào mà gia đình nhận thấy con bộc lộ sớm?","Những tình huống nào ở nhà thường khiến con dễ xúc động hoặc bướng bỉnh nhất?"],
+        placeholder: "Ví dụ: Con tính tình vui vẻ, tình cảm, rất thích quan sát tranh ảnh và lắp lego; khi không vừa ý đôi khi hay dỗi nhưng dỗ ngọt là nghe lời..."
       },
       group3_support: {
-        title: "3. Nhu cầu hỗ trợ và đề xuất từ PHHS",
-        hints: [
-          "Gia đình có đề xuất gì để nhà trường hỗ trợ con thích nghi tốt nhất trong tuần đầu (động viên khi xa bố mẹ, kết nối bạn bè)?",
-          "Các nhu cầu dịch vụ học đường (xe đưa đón, chăm sóc bán trú, câu lạc bộ sau giờ học)?"
-        ],
-        placeholder: "Ví dụ: Đề xuất cô giáo quan sát động viên con trong tuần đầu; đăng ký tuyến xe đưa đón tại nhà..."
+        title: "3. Nhu cầu hỗ trợ, bồi dưỡng và đề xuất từ PHHS",
+        hints: ["Tại trường mầm non và ở nhà, con đã tiếp cận với chữ cái, con số và tiếng Anh như thế nào?","Khả năng tập trung lắng nghe truyện kể hoặc làm một hoạt động liên tục của con kéo dài khoảng bao lâu?","Con có biểu hiện hứng thú đặc biệt với việc học hỏi điều mới hay e dè trước kiến thức mới?"],
+        placeholder: "Ví dụ: Con đã nhận biết bảng chữ cái tiếng Việt cơ bản, đếm số đến 20, thích nghe nhạc tiếng Anh thiếu nhi, khả năng tập trung tô màu tốt khoảng 20-30 phút..."
       },
       group4_cooperation: {
-        title: "4. Nội dung phối hợp giáo dục giữa gia đình và nhà trường",
-        hints: [
-          "Thời gian gia đình có thể cùng con đọc sách hoặc trò chuyện mỗi tối?",
-          "Cam kết cùng GVCN rèn luyện thói quen tự phục vụ tại nhà và theo dõi thông tin học tập qua kênh liên lạc của trường."
-        ],
-        placeholder: "Ví dụ: Bố mẹ dành 30 phút mỗi tối đồng hành cùng con; cam kết phối hợp chặt chẽ với GVCN để rèn nếp tự lập..."
+        title: "4. Cơ chế phối hợp và đồng hành giữa gia đình và nhà trường",
+        hints: ["Bố mẹ thường dành thời gian chơi cùng con hoặc đọc sách với con vào những khoảng thời gian nào trong ngày?","Khi con mắc lỗi hoặc không vâng lời, phương pháp gia đình thường áp dụng để hướng dẫn con là gì?","Gia đình có kế hoạch phối hợp như thế nào cùng giáo viên chủ nhiệm trong học kỳ đầu tiên?"],
+        placeholder: "Ví dụ: Bố mẹ dành 30 phút mỗi tối đọc truyện và trò chuyện cùng con; phương pháp giáo dục là nhẹ nhàng giải thích, kiên nhẫn lắng nghe con..."
       }
     }
   },
-
-  // 2. KHỐI 2–5 (8 CÂU HỎI CHUẨN)
-  KHOI_2_5: {
-    key: "KHOI_2_5",
-    label: "Khối 2–5",
-    subLabel: "Tiểu học: Nề nếp Tự học & Phát triển Toàn diện (8 Câu hỏi chuẩn)",
-    gradeList: ["2", "3", "4", "5", "Khối 2", "Khối 3", "Khối 4", "Khối 5"],
+  // 2. KHỐI 2 - Đọc, viết, toán, nề nếp và tự giác
+  KHOI_2: {
+    key: "KHOI_2",
+    gradeNumber: 2,
+    label: "Khối 2",
+    subLabel: "Đọc, viết, toán, nề nếp và tự giác trong học tập",
+    focus: "Đọc, viết, toán, nề nếp và tự giác",
+    gradeList: ["2","Khối 2","Lớp 2","K2"],
     criteria: [
       {
-        id: "k25_c1",
-        name: "1. Giao tiếp & Thể hiện bản thân",
-        category: "GIAO_TIEP_THE_HIEN",
-        categoryLabel: "Giao tiếp & Thể hiện bản thân",
-        guideline: "Đánh giá kỹ năng diễn đạt lưu loát, tự tin, mạch lạc, phong thái tự nhiên khi chia sẻ quan điểm.",
-        suggestedQuestions: [
-          "Con hãy giới thiệu ngắn về bản thân và điều con tự hào nhất về mình nhé?",
-          "Ở lớp học trước đây, con có hay giơ tay phát biểu ý kiến xây dựng bài không?",
-          "Khi cần chia sẻ một câu chuyện vui hoặc kỷ niệm đáng nhớ, con thường kể về điều gì?"
-        ],
+        id: "k2_c1",
+        code: "K2-A01",
+        name: "Môn học yêu thích, năng khiếu và hoạt động ngoài giờ",
+        category: "SO_THICH_THE_MANH",
+        categoryLabel: "1. Sở thích và thế mạnh",
+        focus: "Tìm hiểu môn học con thấy thích thú nhất (Toán, Tiếng Việt, Tiếng Anh, Mỹ thuật, Thể thao) và tài lẻ nổi bật.",
+        guideline: "Quan sát năng lượng tích cực khi học sinh nhắc đến môn học sở trường và các trò chơi yêu thích.",
+        suggestedQuestions: ["Ở trường, con cảm thấy hào hứng nhất khi được học môn nào và tham gia hoạt động gì?","Con có năng khiếu hay sở trường nào mà thầy cô và bạn bè hay khen ngợi không?","Sau giờ học, con thích dành thời gian để làm những hoạt động gì nhất?"],
         mandatoryCommentRatings: ["NEED_SUPPORT", "SPECIAL_ATTENTION"],
         sortOrder: 1
       },
       {
-        id: "k25_c2",
-        name: "2. Thói quen & Ý thức tự học",
-        category: "THOI_QUEN_Y_THUC",
-        categoryLabel: "Thói quen & Ý thức Tự học",
-        guideline: "Đánh giá tính tự giác, nề nếp ngồi học ở nhà, sự chủ động hoàn thành bài tập mà không cần nhắc nhở.",
-        suggestedQuestions: [
-          "Mỗi tối con tự giác ngồi vào bàn học hay cần ba mẹ nhắc nhở?",
-          "Con thường dành bao nhiêu thời gian cho việc tự học và ôn bài mỗi ngày?",
-          "Con có thói quen đọc sách hàng ngày không? Con thích đọc loại sách nào nhất?"
-        ],
+        id: "k2_c2",
+        code: "K2-A02",
+        name: "Thái độ làm bài tập, tính kiên nhẫn khi gặp bài khó",
+        category: "THAI_DO_DONG_LUC",
+        categoryLabel: "2. Thái độ và động lực học tập",
+        focus: "Đánh giá động lực học tập nội tại: tự giác mở sách vở hay phải đợi phụ huynh/giáo viên thúc giục.",
+        guideline: "Nhận biết mức độ kiên trì và phản ứng tâm lý khi bài làm có điểm chưa đúng.",
+        suggestedQuestions: ["Mỗi buổi tối, con tự giác ngồi vào bàn học hay cần bố mẹ nhắc nhở?","Khi gặp một bài toán có lời văn khó hoặc một từ tiếng Anh chưa hiểu, con sẽ làm gì?","Khi được cô giáo khen hoặc nhận điểm tốt, con cảm thấy như thế nào?"],
         mandatoryCommentRatings: ["NEED_SUPPORT", "SPECIAL_ATTENTION"],
         sortOrder: 2
       },
       {
-        id: "k25_c3",
-        name: "3. Hứng thú học tập & Môn học yêu thích",
-        category: "HUNG_THU_MON_HOC",
-        categoryLabel: "Hứng thú & Môn học yêu thích",
-        guideline: "Nhận diện môn học học sinh say mê, động lực tiếp thu kiến thức và thái độ đối với các môn học thuật.",
-        suggestedQuestions: [
-          "Con say mê môn học nào nhất (Toán, Tiếng Việt, Tiếng Anh, Khoa học...) và vì sao con thích?",
-          "Có môn học nào con cảm thấy hơi khó hoặc muốn được thầy cô giúp đỡ nhiều hơn không?",
-          "Con thấy việc học tiếng Anh với giáo viên nước ngoài có thú vị không?"
-        ],
+        id: "k2_c3",
+        code: "K2-A03",
+        name: "Kỹ năng suy luận đơn giản và xử lý khúc mắc với bạn bè",
+        category: "GIAI_QUYET_VAN_DE",
+        categoryLabel: "3. Khả năng giải quyết vấn đề",
+        focus: "Khả năng tư duy logic qua bài toán thực tế và cách giải quyết mâu thuẫn nhỏ trên lớp.",
+        guideline: "Đánh giá cách xử lý tình huống: tự hòa giải, mách cô giáo hay thu mình lại.",
+        suggestedQuestions: ["Nếu trong giờ ra chơi con và một bạn cùng muốn chơi một món đồ chơi, con sẽ giải quyết ra sao?","Nếu con lỡ quên đem theo hộp bút chì màu đến lớp, con sẽ làm thế nào để hoàn thành bài vẽ?","Khi một bài làm bị sai, con có muốn tìm ra nguyên nhân vì sao sai không?"],
         mandatoryCommentRatings: ["NEED_SUPPORT", "SPECIAL_ATTENTION"],
         sortOrder: 3
       },
       {
-        id: "k25_c4",
-        name: "4. Tư duy & Giải quyết vấn đề",
-        category: "TU_DUY_GIAI_QUYET_VD",
-        categoryLabel: "Tư duy & Giải quyết Vấn đề",
-        guideline: "Quan sát phản xạ tư duy logic, sự kiên trì khi đối diện thử thách học thuật khó và tính tìm tòi.",
-        suggestedQuestions: [
-          "Khi gặp một bài toán hoặc câu hỏi khó, con thường suy nghĩ tìm cách giải hay nhờ trợ giúp ngay?",
-          "Nếu con thử một cách làm mà chưa đúng, con sẽ làm gì tiếp theo?",
-          "Con thích tự mình khám phá ra câu trả lời hay muốn được chỉ bảo từng bước?"
-        ],
+        id: "k2_c4",
+        code: "K2-A04",
+        name: "Tự sắp xếp góc học tập, đồ dùng học tập và chuẩn bị sách vở",
+        category: "TINH_CHU_DONG",
+        categoryLabel: "4. Tính chủ động",
+        focus: "Mức độ tự chuẩn bị sách vở theo thời khóa biểu ngày hôm sau và giữ gìn tập vở cẩn thận.",
+        guideline: "Quan sát thói quen ngăn nắp và tính độc lập trong nhiệm vụ học tập hàng ngày.",
+        suggestedQuestions: ["Con có tự mình soạn sách vở theo thời khóa biểu trước khi đi ngủ không?","Góc học tập ở nhà của con có được sắp xếp ngăn nắp và do chính con dọn dẹp không?","Khi giáo viên dặn dò nhiệm vụ về nhà, con ghi nhớ hoặc ghi vào sổ như thế nào?"],
         mandatoryCommentRatings: ["NEED_SUPPORT", "SPECIAL_ATTENTION"],
         sortOrder: 4
       },
       {
-        id: "k25_c5",
-        name: "5. Hợp tác & Kỹ năng làm việc nhóm",
-        category: "HOP_TAC_NHOM",
-        categoryLabel: "Hợp tác & Làm việc nhóm",
-        guideline: "Đánh giá tinh thần chia sẻ, kỹ năng lắng nghe bạn bè, thái độ hòa đồng và cách giải quyết bất đồng.",
-        suggestedQuestions: [
-          "Ở lớp cũ con có nhiều bạn thân không? Giờ ra chơi con hay chơi trò gì cùng các bạn?",
-          "Khi có bạn mượn đồ hoặc xảy ra tranh luận, con thường trao đổi với bạn thế nào?",
-          "Con đã từng làm việc nhóm chưa? Con thấy làm việc chung với các bạn có vui không?"
-        ],
+        id: "k2_c5",
+        code: "K2-A05",
+        name: "Kỹ năng làm việc nhóm, chia sẻ và thích ứng nề nếp mới",
+        category: "KY_NANG_XA_HOI_THICH_NGHI",
+        categoryLabel: "5. Kỹ năng xã hội và khả năng thích nghi",
+        focus: "Đánh giá khả năng hợp tác đôi bạn cùng tiến, lắng nghe bạn phát biểu và tôn trọng quy định lớp.",
+        guideline: "Xem xét khả năng hòa nhập, cử chỉ tôn trọng nội quy và tinh thần đồng đội.",
+        suggestedQuestions: ["Khi cô giáo yêu cầu thảo luận nhóm đôi hoặc nhóm 4, con thường đóng góp ý kiến như thế nào?","Con có dễ dàng kết thân với những bạn mới vào lớp không?","Nếu lớp có một bạn đang buồn hoặc chưa có bạn chơi cùng, con sẽ làm gì?"],
         mandatoryCommentRatings: ["NEED_SUPPORT", "SPECIAL_ATTENTION"],
         sortOrder: 5
       },
       {
-        id: "k25_c6",
-        name: "6. Sở thích, Năng khiếu & Thể chất",
-        category: "SO_THICH_NANG_KHIEU",
-        categoryLabel: "Sở thích, Năng khiếu & Thể chất",
-        guideline: "Nhận diện năng khiếu tiềm năng (thể thao, hội họa, âm nhạc, cờ vua, lập trình...) để định hướng bồi dưỡng.",
-        suggestedQuestions: [
-          "Ngoài giờ học, con có đam mê môn thể thao, nghệ thuật, âm nhạc hay vẽ tranh nào không?",
-          "Con có từng tham gia cuộc thi hay biểu diễn văn nghệ, thể thao nào chưa?",
-          "Con có mong muốn tham gia câu lạc bộ nào tại Sky-Line không?"
-        ],
+        id: "k2_c6",
+        code: "K2-A06",
+        name: "Nhận biết điểm tiến bộ và điểm cần cố gắng hơn của bản thân",
+        category: "NHAN_THUC_BAN_THAN",
+        categoryLabel: "6. Nhận thức bản thân",
+        focus: "Học sinh lớp 2 bắt đầu có ý thức tự nhận xét: mình viết chữ đẹp chưa, tính toán nhanh chưa.",
+        guideline: "Lắng nghe sự thành thật và khách quan khi học sinh tự đánh giá bản thân.",
+        suggestedQuestions: ["So với năm học lớp 1, con thấy năm nay mình đã tiến bộ nhất ở điểm nào?","Con thấy việc đọc diễn cảm, viết chữ sạch đẹp hay tính toán cộng trừ là điều con cần rèn thêm?","Khi có bạn làm tốt hơn mình, con có muốn học hỏi cách làm của bạn không?"],
         mandatoryCommentRatings: ["NEED_SUPPORT", "SPECIAL_ATTENTION"],
         sortOrder: 6
       },
       {
-        id: "k25_c7",
-        name: "7. Tự quản lý & Nề nếp sinh hoạt",
-        category: "TU_QUAN_LY_NE_NEP",
-        categoryLabel: "Tự quản lý & Nề nếp",
-        guideline: "Đánh giá mức độ tự lập trong sắp xếp cặp sách, giữ gìn đồ dùng học tập và quản lý thời gian sinh hoạt cá nhân.",
-        suggestedQuestions: [
-          "Con tự chuẩn bị sách vở, cặp sách và đồ dùng cá nhân mỗi tối như thế nào?",
-          "Con có thói quen cất dọn bàn học gọn gàng sau khi học xong không?",
-          "Con quản lý thời gian xem tivi hoặc sử dụng thiết bị điện tử ở nhà ra sao?"
-        ],
+        id: "k2_c7",
+        code: "K2-A07",
+        name: "Mục tiêu học tập và hoạt động ngoại khóa mong muốn tại Sky-Line",
+        category: "KY_VONG_SKYLINE",
+        categoryLabel: "7. Kỳ vọng cá nhân tại Sky-Line",
+        focus: "Kỳ vọng về câu lạc bộ (bóng đá, bơi lội, STEM, âm nhạc) và những người bạn mới.",
+        guideline: "Đánh giá niềm tin và sự hào hứng của học sinh đối với môi trường giáo dục Sky-Line.",
+        suggestedQuestions: ["Tại trường Sky-Line, con muốn tham gia câu lạc bộ nào nhất sau giờ học chính khóa?","Con mong muốn thầy cô Sky-Line sẽ giúp con điều gì trong năm học này?","Con có mục tiêu gì cho năm học lớp 2 này (đạt danh hiệu, nói tiếng Anh tốt hơn, bơi lội giỏi)?"],
         mandatoryCommentRatings: ["NEED_SUPPORT", "SPECIAL_ATTENTION"],
         sortOrder: 7
       },
       {
-        id: "k25_c8",
-        name: "8. Cảm xúc, Thích nghi & Mục tiêu mới",
-        category: "CAM_XUC_MUC_TIEU",
-        categoryLabel: "Cảm xúc, Thích nghi & Mục tiêu",
-        guideline: "Nhận diện tâm lý khi chuyển trường, khả năng hòa nhập môi trường mới và mục tiêu học tập tại Sky-Line.",
-        suggestedQuestions: [
-          "Khi chuyển sang học tại Sky-Line, con cảm thấy hào hứng hay băn khoăn điều gì nhất?",
-          "Khi gặp chuyện buồn hoặc không như ý, con thường tâm sự với ai?",
-          "Mục tiêu lớn nhất con muốn đạt được trong năm học này là gì?"
-        ],
+        id: "k2_c8",
+        code: "K2-A08",
+        name: "Tự đánh giá kỹ năng Đọc hiểu - Viết chính tả - Tính toán",
+        category: "NANG_LUC_TU_NHAN_DINH",
+        categoryLabel: "8. Năng lực học tập tự nhận định",
+        focus: "Khả năng tự tin khi đọc một đoạn văn bản, tốc độ chép bài và tính toán cộng trừ có nhớ trong phạm vi 100.",
+        guideline: "Nhận định mức độ tự tin với năng lực đọc, viết, tính toán nền tảng của lớp 2.",
+        suggestedQuestions: ["Con thấy mình đọc truyện tranh hay sách có trôi chảy không? Có từ nào con hay đọc vấp không?","Khi viết chính tả hoặc làm bài toán cộng trừ, con thường mất khoảng bao lâu để hoàn thành?","Con tự chấm bài làm của mình ở mức độ nào (rất tốt, khá, hay cần rèn thêm)?"],
         mandatoryCommentRatings: ["NEED_SUPPORT", "SPECIAL_ATTENTION"],
         sortOrder: 8
+      },
+      {
+        id: "k2_c9",
+        code: "K2-A09",
+        name: "Kỹ năng phát biểu trước lớp, đối thoại tự tin và lễ phép",
+        category: "KY_NANG_GIAO_TIEP",
+        categoryLabel: "9. Kỹ năng giao tiếp",
+        focus: "Khả năng nói trọn câu, diễn đạt mạch lạc suy nghĩ của mình trước giáo viên và bạn bè.",
+        guideline: "Quan sát cử chỉ, âm lượng giọng nói và sự tự tin trong giao tiếp trực tiếp.",
+        suggestedQuestions: ["Khi cô giáo đặt câu hỏi trên lớp, con có hay giơ tay phát biểu không?","Khi con có ý kiến khác với các bạn trong nhóm, con sẽ nói thế nào để các bạn hiểu?","Khi gặp khó khăn trong việc hiểu bài, con có mạnh dạn hỏi lại thầy cô ngay không?"],
+        mandatoryCommentRatings: ["NEED_SUPPORT", "SPECIAL_ATTENTION"],
+        sortOrder: 9
+      },
+      {
+        id: "k2_c10",
+        code: "K2-A010",
+        name: "Lưu ý về thể chất, tâm lý và nhu cầu hỗ trợ cá nhân hóa",
+        category: "THONG_TIN_BO_SUNG",
+        categoryLabel: "10. Thông tin bổ sung",
+        focus: "Tình trạng thị lực (cận thị), thói quen ăn uống, sức khỏe vận động và nhu cầu chăm sóc riêng.",
+        guideline: "Ghi nhận thông tin thực tế giúp giáo viên chăm sóc chu đáo trong sinh hoạt bán trú.",
+        suggestedQuestions: ["Mắt của con nhìn lên bảng có rõ không? Con có cần ngồi bàn đầu không?","Con có bị dị ứng thức ăn hoặc có thói quen sinh hoạt nào đặc biệt không?","Có điều gì con muốn thầy cô hỗ trợ riêng để con cảm thấy thoải mái nhất mỗi ngày đến trường không?"],
+        mandatoryCommentRatings: ["NEED_SUPPORT", "SPECIAL_ATTENTION"],
+        sortOrder: 10
+      }
+    ],
+    parentGroups: [
+      {
+        id: "k2_p1",
+        code: "K2-B01",
+        category: "HIEU_HS_GOC_NHIN_PH",
+        categoryLabel: "1. Hiểu học sinh qua góc nhìn phụ huynh",
+        title: "Đặc điểm tính cách, chuyển biến tâm lý và năng khiếu của học sinh lớp 2",
+        focus: "Đánh giá sự thay đổi tâm lý từ lớp 1 sang lớp 2, sự tự tin và các năng khiếu bộc lộ rõ nét.",
+        suggestedQuestions: ["So với giai đoạn lớp 1, gia đình thấy con có những thay đổi đáng chú ý nào về tính cách và giao tiếp?","Những thế mạnh hoặc đam mê nổi bật nhất của con hiện nay là gì?","Trong sinh hoạt hàng ngày, điều gì con làm khiến bố mẹ yên tâm nhất?"],
+        placeholder: "Ví dụ: Con hoạt bát hơn, tự tin giao tiếp, rất thích đọc truyện tranh khoa học và chơi thể thao; tính cách có phần độc lập hơn...",
+        sortOrder: 1
+      },
+      {
+        id: "k2_p2",
+        code: "K2-B02",
+        category: "QUA_TRINH_NANG_LUC_HT",
+        categoryLabel: "2. Quá trình và năng lực học tập",
+        title: "Đánh giá quá trình học tập lớp 1: Kỹ năng đọc, viết, toán và tiếng Anh",
+        focus: "Kết quả đánh giá học kỳ lớp 1, các mặt thuận lợi và khó khăn khi tiếp cận kiến thức mới.",
+        suggestedQuestions: ["Gia đình nhận xét như thế nào về kỹ năng đọc hiểu, viết chữ và làm toán của con trong năm lớp 1?","Khả năng tiếp thu ngoại ngữ và phản xạ tiếng Anh của con ở mức độ nào?","Môn học hoặc nội dung nào con cần có thêm sự kèm cặp và củng cố thêm từ giáo viên?"],
+        placeholder: "Ví dụ: Con đọc trôi chảy, tính toán nhanh, môn Toán tiếp thu tốt; phần viết chính tả đôi khi còn ẩu, cần rèn thêm nếp giữ vở sạch chữ đẹp...",
+        sortOrder: 2
+      },
+      {
+        id: "k2_p3",
+        code: "K2-B03",
+        category: "THOI_QUEN_HT_TAI_NHA",
+        categoryLabel: "3. Thói quen học tập tại nhà",
+        title: "Nề nếp tự giác học tập, thời gian tự học và quản lý thiết bị công nghệ",
+        focus: "Thời gian biểu học tại nhà, mức độ tự giác mở sách vở và kiểm soát thời gian màn hình.",
+        suggestedQuestions: ["Con có duy trì được thói quen học bài đúng giờ mỗi tối không? Con tự làm hay cần bố mẹ ngồi cạnh?","Gia đình quản lý việc sử dụng tivi, điện thoại, máy tính của con như thế nào?","Con có thói quen đọc sách hàng ngày trước khi ngủ không?"],
+        placeholder: "Ví dụ: Con có góc học tập riêng, tự giác làm bài từ 19h30 đến 20h30; bố mẹ chỉ hỗ trợ khi có bài khó; gia đình quy định nghiêm ngặt chỉ xem iPad 30 phút cuối tuần...",
+        sortOrder: 3
+      },
+      {
+        id: "k2_p4",
+        code: "K2-B04",
+        category: "DONG_HANH_CUA_PH",
+        categoryLabel: "4. Cách phụ huynh đồng hành với việc học",
+        title: "Phương thức hỗ trợ học tập và phối hợp cùng nhà trường",
+        focus: "Sự phân công trong gia đình để kèm cặp con, kênh tương tác với giáo viên chủ nhiệm.",
+        suggestedQuestions: ["Gia đình thường kiểm tra sổ báo bài hoặc ứng dụng liên lạc của nhà trường với tần suất như thế nào?","Khi con có biểu hiện lơ đễnh hoặc điểm số chưa như ý, bố mẹ thường trò chuyện và định hướng cho con ra sao?","Gia đình mong muốn phối hợp với giáo viên chủ nhiệm như thế nào để rèn luyện nề nếp cho con?"],
+        placeholder: "Ví dụ: Bố mẹ kiểm tra sổ liên lạc hàng ngày, phối hợp chặt chẽ với cô giáo khi con có biểu hiện thiếu tập trung; luôn động viên tích cực...",
+        sortOrder: 4
+      },
+      {
+        id: "k2_p5",
+        code: "K2-B05",
+        category: "DONG_LUC_KY_VONG_GD",
+        categoryLabel: "5. Động lực, kỳ vọng và mục tiêu giáo dục",
+        title: "Kỳ vọng phát triển toàn diện và mục tiêu trọng tâm trong năm học lớp 2",
+        focus: "Kỳ vọng về sự tự lập, khả năng ngôn ngữ song ngữ và sự tự tin của học sinh tại Sky-Line.",
+        suggestedQuestions: ["Gia đình đặt ra mục tiêu trọng tâm nào cho con trong năm học lớp 2 tại Sky-Line?","Gia đình kỳ vọng môi trường Sky-Line sẽ mang lại giá trị khác biệt gì cho sự phát triển của con?","Những mong muốn đặc biệt của gia đình gửi gắm đến Ban Giám hiệu cơ sở?"],
+        placeholder: "Ví dụ: Kỳ vọng con rèn luyện được tính tự lập, tự giác học tập, nâng cao phản xạ tiếng Anh tự nhiên và tham gia các hoạt động thể thao ngoại khóa năng động...",
+        sortOrder: 5
       }
     ],
     parentPrompts: {
-      groupLabel: "Khối 2–5 (Tiểu học: Nề nếp tự học & Phát triển toàn diện)",
+      groupLabel: "Khối 2 (Đọc, viết, toán, nề nếp và tự giác)",
       group1_expectations: {
         title: "1. Nguyện vọng & Kỳ vọng của PHHS đối với sự phát triển của học sinh",
-        hints: [
-          "Mục tiêu trọng tâm gia đình hướng đến cho con trong cấp Tiểu học (song ngữ, năng khiếu, kỹ năng tự chủ, phương pháp học tập)?",
-          "Kỳ vọng của bố mẹ về sự tiến bộ học tập và sự tự tin của con?"
-        ],
-        placeholder: "Ví dụ: Gia đình kỳ vọng con phát triển tốt năng lực tiếng Anh, có phương pháp tự học chủ động và kỹ năng làm việc nhóm..."
+        hints: ["Gia đình đặt ra mục tiêu trọng tâm nào cho con trong năm học lớp 2 tại Sky-Line?","Gia đình kỳ vọng môi trường Sky-Line sẽ mang lại giá trị khác biệt gì cho sự phát triển của con?","Những mong muốn đặc biệt của gia đình gửi gắm đến Ban Giám hiệu cơ sở?"],
+        placeholder: "Ví dụ: Kỳ vọng con rèn luyện được tính tự lập, tự giác học tập, nâng cao phản xạ tiếng Anh tự nhiên và tham gia các hoạt động thể thao ngoại khóa năng động..."
       },
       group2_personality: {
-        title: "2. Đặc điểm cá nhân, sở thích và thói quen của học sinh",
-        hints: [
-          "Thói quen tự học và hoàn thành bài tập của con tại nhà?",
-          "Các năng khiếu, môn học hoặc hoạt động con đặc biệt say mê (thể thao, âm nhạc, khoa học, đọc sách)?"
-        ],
-        placeholder: "Ví dụ: Con có thói quen đọc sách mỗi tối, yêu thích môn Toán và bơi lội; khả năng tự giác hoàn thành bài tập tốt..."
+        title: "2. Đặc điểm cá nhân, tính cách và thói quen của học sinh",
+        hints: ["So với giai đoạn lớp 1, gia đình thấy con có những thay đổi đáng chú ý nào về tính cách và giao tiếp?","Những thế mạnh hoặc đam mê nổi bật nhất của con hiện nay là gì?","Trong sinh hoạt hàng ngày, điều gì con làm khiến bố mẹ yên tâm nhất?"],
+        placeholder: "Ví dụ: Con hoạt bát hơn, tự tin giao tiếp, rất thích đọc truyện tranh khoa học và chơi thể thao; tính cách có phần độc lập hơn..."
       },
       group3_support: {
-        title: "3. Nhu cầu hỗ trợ và đề xuất từ PHHS",
-        hints: [
-          "Gia đình mong muốn nhà trường hỗ trợ con phát triển thêm năng lực nào (bồi dưỡng năng khiếu, rèn sự tập trung, kỹ năng thuyết trình)?",
-          "Đề xuất về chế độ rèn luyện, câu lạc bộ ngoại khóa hoặc chăm sóc học đường?"
-        ],
-        placeholder: "Ví dụ: Mong muốn nhà trường tạo điều kiện cho con tham gia CLB bóng rổ và đội tuyển tiếng Anh; hỗ trợ rèn thêm sự tập trung..."
+        title: "3. Nhu cầu hỗ trợ, bồi dưỡng và đề xuất từ PHHS",
+        hints: ["Gia đình nhận xét như thế nào về kỹ năng đọc hiểu, viết chữ và làm toán của con trong năm lớp 1?","Khả năng tiếp thu ngoại ngữ và phản xạ tiếng Anh của con ở mức độ nào?","Môn học hoặc nội dung nào con cần có thêm sự kèm cặp và củng cố thêm từ giáo viên?"],
+        placeholder: "Ví dụ: Con đọc trôi chảy, tính toán nhanh, môn Toán tiếp thu tốt; phần viết chính tả đôi khi còn ẩu, cần rèn thêm nếp giữ vở sạch chữ đẹp..."
       },
       group4_cooperation: {
-        title: "4. Nội dung phối hợp giáo dục giữa gia đình và nhà trường",
-        hints: [
-          "Sự phối hợp theo dõi sổ liên lạc điện tử / ứng dụng Sky-Line và phản hồi định kỳ với GVCN.",
-          "Cân bằng thời gian sinh hoạt, rèn luyện thể chất và quản lý sử dụng thiết bị điện tử tại nhà."
-        ],
-        placeholder: "Ví dụ: Gia đình duy trì thói quen trò chuyện với con sau giờ học; thống nhất thời gian biểu và cam kết hạn chế thiết bị điện tử..."
+        title: "4. Cơ chế phối hợp và đồng hành giữa gia đình và nhà trường",
+        hints: ["Gia đình thường kiểm tra sổ báo bài hoặc ứng dụng liên lạc của nhà trường với tần suất như thế nào?","Khi con có biểu hiện lơ đễnh hoặc điểm số chưa như ý, bố mẹ thường trò chuyện và định hướng cho con ra sao?","Gia đình mong muốn phối hợp với giáo viên chủ nhiệm như thế nào để rèn luyện nề nếp cho con?"],
+        placeholder: "Ví dụ: Bố mẹ kiểm tra sổ liên lạc hàng ngày, phối hợp chặt chẽ với cô giáo khi con có biểu hiện thiếu tập trung; luôn động viên tích cực..."
       }
     }
   },
-
-  // 3. KHỐI 6 (8 CÂU HỎI CHUẨN)
+  // 3. KHỐI 3 - Tự học, khám phá, hợp tác
+  KHOI_3: {
+    key: "KHOI_3",
+    gradeNumber: 3,
+    label: "Khối 3",
+    subLabel: "Tự học, khám phá, hợp tác nhóm và tư duy sáng tạo",
+    focus: "Tự học, khám phá, hợp tác",
+    gradeList: ["3","Khối 3","Lớp 3","K3"],
+    criteria: [
+      {
+        id: "k3_c1",
+        code: "K3-A01",
+        name: "Sở thích, đam mê và lĩnh vực thế mạnh nổi bật (Khối 3)",
+        category: "SO_THICH_THE_MANH",
+        categoryLabel: "1. Sở thích và thế mạnh",
+        focus: "Khám phá đam mê, lĩnh vực chuyên môn hoặc năng khiếu sở trường phù hợp trọng tâm: Tự học, khám phá, hợp tác.",
+        guideline: "Đánh giá mức độ am hiểu, chiều sâu đam mê và thời gian học sinh đầu tư cho thế mạnh cá nhân.",
+        suggestedQuestions: ["Trong các môn học và hoạt động hiện tại, con yêu thích và tự tin nhất ở lĩnh vực nào?","Con đã từng đạt giải thưởng, dự án cá nhân hoặc thành tích nào đáng tự hào trong thế mạnh này chưa?","Thế mạnh này giúp ích gì cho con trong việc học tập và kết nối bạn bè?"],
+        mandatoryCommentRatings: ["NEED_SUPPORT", "SPECIAL_ATTENTION"],
+        sortOrder: 1
+      },
+      {
+        id: "k3_c2",
+        code: "K3-A02",
+        name: "Động lực học tập nội tại và thái độ với mục tiêu học đường (Khối 3)",
+        category: "THAI_DO_DONG_LUC",
+        categoryLabel: "2. Thái độ và động lực học tập",
+        focus: "Đánh giá mức độ tự giác, mục tiêu học tập rõ ràng theo trọng tâm: Tự học, khám phá, hợp tác.",
+        guideline: "Phân biệt học tập vì đam mê, sự tò mò hay vì nghĩa vụ, áp lực từ gia đình.",
+        suggestedQuestions: ["Điều gì là động lực lớn nhất thúc đẩy con nỗ lực học tập mỗi ngày?","Khi gặp phải một chuyên đề hoặc bài tập rất khó, con duy trì quyết tâm như thế nào?","Con có thói quen tự tìm kiếm thêm tài liệu, sách báo hoặc khóa học trực tuyến để mở rộng kiến thức không?"],
+        mandatoryCommentRatings: ["NEED_SUPPORT", "SPECIAL_ATTENTION"],
+        sortOrder: 2
+      },
+      {
+        id: "k3_c3",
+        code: "K3-A03",
+        name: "Tư duy logic, giải quyết khúc mắc và vượt khó (Khối 3)",
+        category: "GIAI_QUYET_VAN_DE",
+        categoryLabel: "3. Khả năng giải quyết vấn đề",
+        focus: "Khả năng phân tích nguyên nhân, đề xuất phương án và xử lý tình huống thực tế.",
+        guideline: "Quan sát phản xạ tư duy phản biện, cách lập luận và tinh thần không lùi bước trước khó khăn.",
+        suggestedQuestions: ["Khi đối diện với một vấn đề phức tạp hoặc xung đột ý kiến với bạn bè, con giải quyết ra sao?","Hãy kể về một tình huống con tự mình tìm ra cách giải quyết khó khăn mà không cần người lớn can thiệp?","Con học được bài học kinh nghiệm gì từ những thất bại hoặc kết quả chưa đạt mong muốn trước đây?"],
+        mandatoryCommentRatings: ["NEED_SUPPORT", "SPECIAL_ATTENTION"],
+        sortOrder: 3
+      },
+      {
+        id: "k3_c4",
+        code: "K3-A04",
+        name: "Kỹ năng tự chủ, quản lý thời gian và trách nhiệm cá nhân (Khối 3)",
+        category: "TINH_CHU_DONG",
+        categoryLabel: "4. Tính chủ động",
+        focus: "Mức độ chủ động xây dựng kế hoạch, sắp xếp thứ tự ưu tiên và tự chịu trách nhiệm.",
+        guideline: "Đánh giá tính độc lập, khả năng tổ chức công việc và việc giữ đúng cam kết.",
+        suggestedQuestions: ["Con tự quản lý thời gian học tập, giải trí và sinh hoạt cá nhân như thế nào trong ngày?","Khi được giao một nhiệm vụ hoặc dự án nhóm, con chủ động nhận phần việc nào?","Nếu bị chậm tiến độ hoặc quên nhiệm vụ, con nhận trách nhiệm và khắc phục như thế nào?"],
+        mandatoryCommentRatings: ["NEED_SUPPORT", "SPECIAL_ATTENTION"],
+        sortOrder: 4
+      },
+      {
+        id: "k3_c5",
+        code: "K3-A05",
+        name: "Kỹ năng hợp tác, lãnh đạo nhóm và thích ứng môi trường mới (Khối 3)",
+        category: "KY_NANG_XA_HOI_THICH_NGHI",
+        categoryLabel: "5. Kỹ năng xã hội và khả năng thích nghi",
+        focus: "Khả năng tương tác xã hội, tinh thần đồng đội và mức độ linh hoạt trước thay đổi.",
+        guideline: "Quan sát sự cởi mở, lắng nghe tích cực và vai trò thể hiện trong tập thể.",
+        suggestedQuestions: ["Con thích nghi như thế nào khi bước vào một môi trường mới với nhiều giáo viên và bạn học mới?","Trong hoạt động nhóm, con thường đóng vai trò người kết nối, lãnh đạo hay hỗ trợ thực thi?","Làm thế nào để con duy trì mối quan hệ bạn bè lành mạnh và tích cực tại trường học?"],
+        mandatoryCommentRatings: ["NEED_SUPPORT", "SPECIAL_ATTENTION"],
+        sortOrder: 5
+      },
+      {
+        id: "k3_c6",
+        code: "K3-A06",
+        name: "Tự nhận thức giá trị cá nhân, điểm mạnh và điểm cần cải thiện (Khối 3)",
+        category: "NHAN_THUC_BAN_THAN",
+        categoryLabel: "6. Nhận thức bản thân",
+        focus: "Mức độ hiểu rõ bản thân: tính cách, giá trị cốt lõi, thói quen tốt và thói quen chưa tốt.",
+        guideline: "Lắng nghe sự khiêm tốn, tính chân thật và khao khát hoàn thiện nhân cách bản thân.",
+        suggestedQuestions: ["Nếu dùng 3 từ để miêu tả chính xác nhất về bản thân con, con sẽ chọn những từ nào?","Điểm yếu hoặc hạn chế lớn nhất mà con đang nỗ lực rèn luyện để vượt qua là gì?","Những điều gì hoặc môi trường nào giúp con phát huy tối đa năng lực tốt nhất của mình?"],
+        mandatoryCommentRatings: ["NEED_SUPPORT", "SPECIAL_ATTENTION"],
+        sortOrder: 6
+      },
+      {
+        id: "k3_c7",
+        code: "K3-A07",
+        name: "Mục tiêu, nguyện vọng và kế hoạch đóng góp tại Sky-Line (Khối 3)",
+        category: "KY_VONG_SKYLINE",
+        categoryLabel: "7. Kỳ vọng cá nhân tại Sky-Line",
+        focus: "Hình dung của học sinh về cơ hội học tập, câu lạc bộ, dự án cộng đồng tại Sky-Line.",
+        guideline: "Đánh giá mức độ đồng điệu giữa giá trị của học sinh với triết lý giáo dục Sky-Line.",
+        suggestedQuestions: ["Con kỳ vọng điều gì nhất từ thầy cô và môi trường học tập tại Sky-Line?","Con mong muốn tham gia những dự án học tập, câu lạc bộ hay hoạt động cộng đồng nào tại trường?","Con dự định sẽ để lại dấu ấn hoặc đóng góp gì cho tập thể lớp và trường Sky-Line?"],
+        mandatoryCommentRatings: ["NEED_SUPPORT", "SPECIAL_ATTENTION"],
+        sortOrder: 7
+      },
+      {
+        id: "k3_c8",
+        code: "K3-A08",
+        name: "Tự đánh giá năng lực học thuật, ngoại ngữ và tư duy nghiên cứu (Khối 3)",
+        category: "NANG_LUC_TU_NHAN_DINH",
+        categoryLabel: "8. Năng lực học tập tự nhận định",
+        focus: "Khả năng tự định vị trình độ các môn văn hóa, năng lực ngoại ngữ (IELTS/giao tiếp) và tự học.",
+        guideline: "Đánh giá sự tự tin nhưng thực tế, có dẫn chứng cụ thể về điểm số hoặc sản phẩm học tập.",
+        suggestedQuestions: ["Con tự đánh giá năng lực của mình ở các môn khoa học và xã hội hiện tại đang ở mức độ nào?","Khả năng sử dụng ngoại ngữ (tiếng Anh) trong học thuật và giao tiếp của con đáp ứng ra sao?","Con có phương pháp tự học đặc biệt nào giúp con ghi nhớ và hiểu sâu kiến thức không?"],
+        mandatoryCommentRatings: ["NEED_SUPPORT", "SPECIAL_ATTENTION"],
+        sortOrder: 8
+      },
+      {
+        id: "k3_c9",
+        code: "K3-A09",
+        name: "Kỹ năng thuyết trình, phản biện văn minh và truyền cảm hứng (Khối 3)",
+        category: "KY_NANG_GIAO_TIEP",
+        categoryLabel: "9. Kỹ năng giao tiếp",
+        focus: "Khả năng diễn giải ý tưởng thuyết phục, phong thái tự tin và kỹ năng lắng nghe thấu cảm.",
+        guideline: "Quan sát ngôn ngữ cơ thể, ánh mắt, cách dùng từ ngữ và khả năng đối đáp thông minh.",
+        suggestedQuestions: ["Con có cảm thấy tự tin khi thuyết trình một đề tài trước cả lớp hoặc hội trường không?","Khi người khác có quan điểm trái ngược với con, con phản hồi và trao đổi lại như thế nào?","Con làm thế nào để truyền tải thông điệp một cách rõ ràng và thu hút người nghe?"],
+        mandatoryCommentRatings: ["NEED_SUPPORT", "SPECIAL_ATTENTION"],
+        sortOrder: 9
+      },
+      {
+        id: "k3_c10",
+        code: "K3-A010",
+        name: "Định hướng cá nhân hóa, nhu cầu cố vấn chuyên sâu và lưu ý đặc thù (Khối 3)",
+        category: "THONG_TIN_BO_SUNG",
+        categoryLabel: "10. Thông tin bổ sung",
+        focus: "Nguyện vọng về cố vấn học tập, định hướng nghề nghiệp, thi chứng chỉ hoặc nhu cầu hỗ trợ tâm lý.",
+        guideline: "Ghi nhận nhu cầu chuyên sâu để nhà trường phân bổ giáo viên cố vấn phù hợp.",
+        suggestedQuestions: ["Con có kế hoạch thi các chứng chỉ quốc tế, tham gia kỳ thi học sinh giỏi hay nghiên cứu khoa học không?","Con có cần nhà trường hoặc cố vấn học tập hỗ trợ riêng về lộ trình định hướng nào không?","Có bất kỳ chia sẻ hoặc mong muốn nào khác mà con muốn gửi gắm tới thầy cô không?"],
+        mandatoryCommentRatings: ["NEED_SUPPORT", "SPECIAL_ATTENTION"],
+        sortOrder: 10
+      }
+    ],
+    parentGroups: [
+      {
+        id: "k3_p1",
+        code: "K3-B01",
+        category: "HIEU_HS_GOC_NHIN_PH",
+        categoryLabel: "1. Hiểu học sinh qua góc nhìn phụ huynh",
+        title: "Đặc điểm tính cách, tâm lý lứa tuổi và thế mạnh của học sinh (Khối 3)",
+        focus: "Đánh giá sự trưởng thành tâm lý, thế mạnh cốt lõi và nét tính cách nổi bật theo lứa tuổi.",
+        suggestedQuestions: ["Xin gia đình chia sẻ về những nét tính cách nổi trội và sự thay đổi tâm lý của con thời gian gần đây?","Con thể hiện niềm say mê và năng khiếu vượt trội nhất trong lĩnh vực nào?","Khi con gặp áp lực học tập hoặc khúc mắc tâm lý, biểu hiện ở nhà của con như thế nào?"],
+        placeholder: "Ví dụ: Con có tư duy độc lập, giàu cảm xúc, có năng khiếu tự học tốt; đôi lúc có áp lực về điểm số nhưng biết lắng nghe lời khuyên của gia đình...",
+        sortOrder: 1
+      },
+      {
+        id: "k3_p2",
+        code: "K3-B02",
+        category: "QUA_TRINH_NANG_LUC_HT",
+        categoryLabel: "2. Quá trình và năng lực học tập",
+        title: "Đánh giá học lực, năng khiếu ngoại ngữ và phong cách học tập (Khối 3)",
+        focus: "Lịch sử học tập, thế mạnh môn học, kết quả các kỳ thi và phong cách tiếp thu tri thức.",
+        suggestedQuestions: ["Gia đình nhận định thế nào về năng lực học thuật và nền tảng kiến thức hiện tại của con?","Khả năng ngoại ngữ (tiếng Anh) và năng lực tự học nghiên cứu của con được phát huy ra sao?","Môn học hoặc kỹ năng nào con cần được nhà trường bồi dưỡng và hỗ trợ nâng cao thêm?"],
+        placeholder: "Ví dụ: Học lực các năm trước đạt loại Giỏi/Tốt, tư duy Toán và tiếng Anh khá tốt; mong muốn trường rèn luyện thêm kỹ năng làm việc nhóm và thuyết trình...",
+        sortOrder: 2
+      },
+      {
+        id: "k3_p3",
+        code: "K3-B03",
+        category: "THOI_QUEN_HT_TAI_NHA",
+        categoryLabel: "3. Thói quen học tập tại nhà",
+        title: "Mức độ tự giác, phương pháp tự học và sử dụng công nghệ (Khối 3)",
+        focus: "Nề nếp tự học tại nhà, khả năng tự tra cứu tài liệu và quản lý thời gian sử dụng internet/mạng xã hội.",
+        suggestedQuestions: ["Con có kế hoạch tự học rõ ràng mỗi ngày không? Mức độ tự giác đạt bao nhiêu %?","Gia đình định hướng và kiểm soát việc sử dụng điện thoại thông minh, máy tính và mạng xã hội của con như thế nào?","Con có thói quen đọc sách chuyên môn, báo chí hoặc tra cứu tài liệu học thuật trực tuyến không?"],
+        placeholder: "Ví dụ: Con tự giác ngồi vào bàn học đúng giờ, tự lập thời gian biểu; gia đình quy định sử dụng điện thoại có kiểm soát mục đích phục vụ học tập...",
+        sortOrder: 3
+      },
+      {
+        id: "k3_p4",
+        code: "K3-B04",
+        category: "DONG_HANH_CUA_PH",
+        categoryLabel: "4. Cách phụ huynh đồng hành với việc học",
+        title: "Phương pháp đồng hành, tôn trọng chính kiến và phối hợp với nhà trường (Khối 3)",
+        focus: "Cách cha mẹ làm bạn cùng con ở lứa tuổi phát triển, tôn trọng quyết định và hỗ trợ hướng nghiệp.",
+        suggestedQuestions: ["Bố mẹ thường trò chuyện và thấu hiểu nguyện vọng của con thông qua những dịp nào?","Khi có sự bất đồng ý kiến về chọn môn học hoặc định hướng, gia đình giải quyết như thế nào?","Gia đình sẵn sàng phối hợp cùng Ban Cố vấn và Giáo viên chủ nhiệm theo cơ chế như thế nào?"],
+        placeholder: "Ví dụ: Gia đình luôn tôn trọng ý kiến cá nhân của con, đóng vai trò người đồng hành định hướng; cam kết phối hợp thường xuyên với nhà trường...",
+        sortOrder: 4
+      },
+      {
+        id: "k3_p5",
+        code: "K3-B05",
+        category: "DONG_LUC_KY_VONG_GD",
+        categoryLabel: "5. Động lực, kỳ vọng và mục tiêu giáo dục",
+        title: "Kỳ vọng đầu ra, định hướng nghề nghiệp và mục tiêu giáo dục dài hạn (Khối 3)",
+        focus: "Mục tiêu chuyển tiếp (cấp học tiếp theo, đại học, du học) và kỳ vọng giá trị nhân cách tại Sky-Line.",
+        suggestedQuestions: ["Gia đình kỳ vọng con sẽ phát triển những phẩm chất và năng lực cốt lõi nào khi học tại Sky-Line?","Định hướng tương lai dài hạn (chọn ngành nghề, đại học trong nước hay du học quốc tế) của gia đình dành cho con là gì?","Gia đình mong muốn nhà trường xây dựng lộ trình đồng hành cụ thể nào để hiện thực hóa mục tiêu trên?"],
+        placeholder: "Ví dụ: Kỳ vọng con phát triển toàn diện tư duy phản biện, ngoại ngữ xuất sắc, tự tin hội nhập quốc tế và đạt mục tiêu tuyển sinh đại học hàng đầu...",
+        sortOrder: 5
+      }
+    ],
+    parentPrompts: {
+      groupLabel: "Khối 3 (Tự học, khám phá, hợp tác)",
+      group1_expectations: {
+        title: "1. Nguyện vọng & Kỳ vọng của PHHS đối với sự phát triển của học sinh",
+        hints: ["Gia đình kỳ vọng con sẽ phát triển những phẩm chất và năng lực cốt lõi nào khi học tại Sky-Line?","Định hướng tương lai dài hạn (chọn ngành nghề, đại học trong nước hay du học quốc tế) của gia đình dành cho con là gì?","Gia đình mong muốn nhà trường xây dựng lộ trình đồng hành cụ thể nào để hiện thực hóa mục tiêu trên?"],
+        placeholder: "Ví dụ: Kỳ vọng con phát triển toàn diện tư duy phản biện, ngoại ngữ xuất sắc, tự tin hội nhập quốc tế và đạt mục tiêu tuyển sinh đại học hàng đầu..."
+      },
+      group2_personality: {
+        title: "2. Đặc điểm cá nhân, tính cách và thói quen của học sinh",
+        hints: ["Xin gia đình chia sẻ về những nét tính cách nổi trội và sự thay đổi tâm lý của con thời gian gần đây?","Con thể hiện niềm say mê và năng khiếu vượt trội nhất trong lĩnh vực nào?","Khi con gặp áp lực học tập hoặc khúc mắc tâm lý, biểu hiện ở nhà của con như thế nào?"],
+        placeholder: "Ví dụ: Con có tư duy độc lập, giàu cảm xúc, có năng khiếu tự học tốt; đôi lúc có áp lực về điểm số nhưng biết lắng nghe lời khuyên của gia đình..."
+      },
+      group3_support: {
+        title: "3. Nhu cầu hỗ trợ, bồi dưỡng và đề xuất từ PHHS",
+        hints: ["Gia đình nhận định thế nào về năng lực học thuật và nền tảng kiến thức hiện tại của con?","Khả năng ngoại ngữ (tiếng Anh) và năng lực tự học nghiên cứu của con được phát huy ra sao?","Môn học hoặc kỹ năng nào con cần được nhà trường bồi dưỡng và hỗ trợ nâng cao thêm?"],
+        placeholder: "Ví dụ: Học lực các năm trước đạt loại Giỏi/Tốt, tư duy Toán và tiếng Anh khá tốt; mong muốn trường rèn luyện thêm kỹ năng làm việc nhóm và thuyết trình..."
+      },
+      group4_cooperation: {
+        title: "4. Cơ chế phối hợp và đồng hành giữa gia đình và nhà trường",
+        hints: ["Bố mẹ thường trò chuyện và thấu hiểu nguyện vọng của con thông qua những dịp nào?","Khi có sự bất đồng ý kiến về chọn môn học hoặc định hướng, gia đình giải quyết như thế nào?","Gia đình sẵn sàng phối hợp cùng Ban Cố vấn và Giáo viên chủ nhiệm theo cơ chế như thế nào?"],
+        placeholder: "Ví dụ: Gia đình luôn tôn trọng ý kiến cá nhân của con, đóng vai trò người đồng hành định hướng; cam kết phối hợp thường xuyên với nhà trường..."
+      }
+    }
+  },
+  // 4. KHỐI 4 - Trách nhiệm, quản lý thời gian, tư duy độc lập
+  KHOI_4: {
+    key: "KHOI_4",
+    gradeNumber: 4,
+    label: "Khối 4",
+    subLabel: "Trách nhiệm, quản lý thời gian, tư duy độc lập và giải quyết vấn đề",
+    focus: "Trách nhiệm, quản lý thời gian, tư duy độc lập",
+    gradeList: ["4","Khối 4","Lớp 4","K4"],
+    criteria: [
+      {
+        id: "k4_c1",
+        code: "K4-A01",
+        name: "Sở thích, đam mê và lĩnh vực thế mạnh nổi bật (Khối 4)",
+        category: "SO_THICH_THE_MANH",
+        categoryLabel: "1. Sở thích và thế mạnh",
+        focus: "Khám phá đam mê, lĩnh vực chuyên môn hoặc năng khiếu sở trường phù hợp trọng tâm: Trách nhiệm, quản lý thời gian, tư duy độc lập.",
+        guideline: "Đánh giá mức độ am hiểu, chiều sâu đam mê và thời gian học sinh đầu tư cho thế mạnh cá nhân.",
+        suggestedQuestions: ["Trong các môn học và hoạt động hiện tại, con yêu thích và tự tin nhất ở lĩnh vực nào?","Con đã từng đạt giải thưởng, dự án cá nhân hoặc thành tích nào đáng tự hào trong thế mạnh này chưa?","Thế mạnh này giúp ích gì cho con trong việc học tập và kết nối bạn bè?"],
+        mandatoryCommentRatings: ["NEED_SUPPORT", "SPECIAL_ATTENTION"],
+        sortOrder: 1
+      },
+      {
+        id: "k4_c2",
+        code: "K4-A02",
+        name: "Động lực học tập nội tại và thái độ với mục tiêu học đường (Khối 4)",
+        category: "THAI_DO_DONG_LUC",
+        categoryLabel: "2. Thái độ và động lực học tập",
+        focus: "Đánh giá mức độ tự giác, mục tiêu học tập rõ ràng theo trọng tâm: Trách nhiệm, quản lý thời gian, tư duy độc lập.",
+        guideline: "Phân biệt học tập vì đam mê, sự tò mò hay vì nghĩa vụ, áp lực từ gia đình.",
+        suggestedQuestions: ["Điều gì là động lực lớn nhất thúc đẩy con nỗ lực học tập mỗi ngày?","Khi gặp phải một chuyên đề hoặc bài tập rất khó, con duy trì quyết tâm như thế nào?","Con có thói quen tự tìm kiếm thêm tài liệu, sách báo hoặc khóa học trực tuyến để mở rộng kiến thức không?"],
+        mandatoryCommentRatings: ["NEED_SUPPORT", "SPECIAL_ATTENTION"],
+        sortOrder: 2
+      },
+      {
+        id: "k4_c3",
+        code: "K4-A03",
+        name: "Tư duy logic, giải quyết khúc mắc và vượt khó (Khối 4)",
+        category: "GIAI_QUYET_VAN_DE",
+        categoryLabel: "3. Khả năng giải quyết vấn đề",
+        focus: "Khả năng phân tích nguyên nhân, đề xuất phương án và xử lý tình huống thực tế.",
+        guideline: "Quan sát phản xạ tư duy phản biện, cách lập luận và tinh thần không lùi bước trước khó khăn.",
+        suggestedQuestions: ["Khi đối diện với một vấn đề phức tạp hoặc xung đột ý kiến với bạn bè, con giải quyết ra sao?","Hãy kể về một tình huống con tự mình tìm ra cách giải quyết khó khăn mà không cần người lớn can thiệp?","Con học được bài học kinh nghiệm gì từ những thất bại hoặc kết quả chưa đạt mong muốn trước đây?"],
+        mandatoryCommentRatings: ["NEED_SUPPORT", "SPECIAL_ATTENTION"],
+        sortOrder: 3
+      },
+      {
+        id: "k4_c4",
+        code: "K4-A04",
+        name: "Kỹ năng tự chủ, quản lý thời gian và trách nhiệm cá nhân (Khối 4)",
+        category: "TINH_CHU_DONG",
+        categoryLabel: "4. Tính chủ động",
+        focus: "Mức độ chủ động xây dựng kế hoạch, sắp xếp thứ tự ưu tiên và tự chịu trách nhiệm.",
+        guideline: "Đánh giá tính độc lập, khả năng tổ chức công việc và việc giữ đúng cam kết.",
+        suggestedQuestions: ["Con tự quản lý thời gian học tập, giải trí và sinh hoạt cá nhân như thế nào trong ngày?","Khi được giao một nhiệm vụ hoặc dự án nhóm, con chủ động nhận phần việc nào?","Nếu bị chậm tiến độ hoặc quên nhiệm vụ, con nhận trách nhiệm và khắc phục như thế nào?"],
+        mandatoryCommentRatings: ["NEED_SUPPORT", "SPECIAL_ATTENTION"],
+        sortOrder: 4
+      },
+      {
+        id: "k4_c5",
+        code: "K4-A05",
+        name: "Kỹ năng hợp tác, lãnh đạo nhóm và thích ứng môi trường mới (Khối 4)",
+        category: "KY_NANG_XA_HOI_THICH_NGHI",
+        categoryLabel: "5. Kỹ năng xã hội và khả năng thích nghi",
+        focus: "Khả năng tương tác xã hội, tinh thần đồng đội và mức độ linh hoạt trước thay đổi.",
+        guideline: "Quan sát sự cởi mở, lắng nghe tích cực và vai trò thể hiện trong tập thể.",
+        suggestedQuestions: ["Con thích nghi như thế nào khi bước vào một môi trường mới với nhiều giáo viên và bạn học mới?","Trong hoạt động nhóm, con thường đóng vai trò người kết nối, lãnh đạo hay hỗ trợ thực thi?","Làm thế nào để con duy trì mối quan hệ bạn bè lành mạnh và tích cực tại trường học?"],
+        mandatoryCommentRatings: ["NEED_SUPPORT", "SPECIAL_ATTENTION"],
+        sortOrder: 5
+      },
+      {
+        id: "k4_c6",
+        code: "K4-A06",
+        name: "Tự nhận thức giá trị cá nhân, điểm mạnh và điểm cần cải thiện (Khối 4)",
+        category: "NHAN_THUC_BAN_THAN",
+        categoryLabel: "6. Nhận thức bản thân",
+        focus: "Mức độ hiểu rõ bản thân: tính cách, giá trị cốt lõi, thói quen tốt và thói quen chưa tốt.",
+        guideline: "Lắng nghe sự khiêm tốn, tính chân thật và khao khát hoàn thiện nhân cách bản thân.",
+        suggestedQuestions: ["Nếu dùng 3 từ để miêu tả chính xác nhất về bản thân con, con sẽ chọn những từ nào?","Điểm yếu hoặc hạn chế lớn nhất mà con đang nỗ lực rèn luyện để vượt qua là gì?","Những điều gì hoặc môi trường nào giúp con phát huy tối đa năng lực tốt nhất của mình?"],
+        mandatoryCommentRatings: ["NEED_SUPPORT", "SPECIAL_ATTENTION"],
+        sortOrder: 6
+      },
+      {
+        id: "k4_c7",
+        code: "K4-A07",
+        name: "Mục tiêu, nguyện vọng và kế hoạch đóng góp tại Sky-Line (Khối 4)",
+        category: "KY_VONG_SKYLINE",
+        categoryLabel: "7. Kỳ vọng cá nhân tại Sky-Line",
+        focus: "Hình dung của học sinh về cơ hội học tập, câu lạc bộ, dự án cộng đồng tại Sky-Line.",
+        guideline: "Đánh giá mức độ đồng điệu giữa giá trị của học sinh với triết lý giáo dục Sky-Line.",
+        suggestedQuestions: ["Con kỳ vọng điều gì nhất từ thầy cô và môi trường học tập tại Sky-Line?","Con mong muốn tham gia những dự án học tập, câu lạc bộ hay hoạt động cộng đồng nào tại trường?","Con dự định sẽ để lại dấu ấn hoặc đóng góp gì cho tập thể lớp và trường Sky-Line?"],
+        mandatoryCommentRatings: ["NEED_SUPPORT", "SPECIAL_ATTENTION"],
+        sortOrder: 7
+      },
+      {
+        id: "k4_c8",
+        code: "K4-A08",
+        name: "Tự đánh giá năng lực học thuật, ngoại ngữ và tư duy nghiên cứu (Khối 4)",
+        category: "NANG_LUC_TU_NHAN_DINH",
+        categoryLabel: "8. Năng lực học tập tự nhận định",
+        focus: "Khả năng tự định vị trình độ các môn văn hóa, năng lực ngoại ngữ (IELTS/giao tiếp) và tự học.",
+        guideline: "Đánh giá sự tự tin nhưng thực tế, có dẫn chứng cụ thể về điểm số hoặc sản phẩm học tập.",
+        suggestedQuestions: ["Con tự đánh giá năng lực của mình ở các môn khoa học và xã hội hiện tại đang ở mức độ nào?","Khả năng sử dụng ngoại ngữ (tiếng Anh) trong học thuật và giao tiếp của con đáp ứng ra sao?","Con có phương pháp tự học đặc biệt nào giúp con ghi nhớ và hiểu sâu kiến thức không?"],
+        mandatoryCommentRatings: ["NEED_SUPPORT", "SPECIAL_ATTENTION"],
+        sortOrder: 8
+      },
+      {
+        id: "k4_c9",
+        code: "K4-A09",
+        name: "Kỹ năng thuyết trình, phản biện văn minh và truyền cảm hứng (Khối 4)",
+        category: "KY_NANG_GIAO_TIEP",
+        categoryLabel: "9. Kỹ năng giao tiếp",
+        focus: "Khả năng diễn giải ý tưởng thuyết phục, phong thái tự tin và kỹ năng lắng nghe thấu cảm.",
+        guideline: "Quan sát ngôn ngữ cơ thể, ánh mắt, cách dùng từ ngữ và khả năng đối đáp thông minh.",
+        suggestedQuestions: ["Con có cảm thấy tự tin khi thuyết trình một đề tài trước cả lớp hoặc hội trường không?","Khi người khác có quan điểm trái ngược với con, con phản hồi và trao đổi lại như thế nào?","Con làm thế nào để truyền tải thông điệp một cách rõ ràng và thu hút người nghe?"],
+        mandatoryCommentRatings: ["NEED_SUPPORT", "SPECIAL_ATTENTION"],
+        sortOrder: 9
+      },
+      {
+        id: "k4_c10",
+        code: "K4-A010",
+        name: "Định hướng cá nhân hóa, nhu cầu cố vấn chuyên sâu và lưu ý đặc thù (Khối 4)",
+        category: "THONG_TIN_BO_SUNG",
+        categoryLabel: "10. Thông tin bổ sung",
+        focus: "Nguyện vọng về cố vấn học tập, định hướng nghề nghiệp, thi chứng chỉ hoặc nhu cầu hỗ trợ tâm lý.",
+        guideline: "Ghi nhận nhu cầu chuyên sâu để nhà trường phân bổ giáo viên cố vấn phù hợp.",
+        suggestedQuestions: ["Con có kế hoạch thi các chứng chỉ quốc tế, tham gia kỳ thi học sinh giỏi hay nghiên cứu khoa học không?","Con có cần nhà trường hoặc cố vấn học tập hỗ trợ riêng về lộ trình định hướng nào không?","Có bất kỳ chia sẻ hoặc mong muốn nào khác mà con muốn gửi gắm tới thầy cô không?"],
+        mandatoryCommentRatings: ["NEED_SUPPORT", "SPECIAL_ATTENTION"],
+        sortOrder: 10
+      }
+    ],
+    parentGroups: [
+      {
+        id: "k4_p1",
+        code: "K4-B01",
+        category: "HIEU_HS_GOC_NHIN_PH",
+        categoryLabel: "1. Hiểu học sinh qua góc nhìn phụ huynh",
+        title: "Đặc điểm tính cách, tâm lý lứa tuổi và thế mạnh của học sinh (Khối 4)",
+        focus: "Đánh giá sự trưởng thành tâm lý, thế mạnh cốt lõi và nét tính cách nổi bật theo lứa tuổi.",
+        suggestedQuestions: ["Xin gia đình chia sẻ về những nét tính cách nổi trội và sự thay đổi tâm lý của con thời gian gần đây?","Con thể hiện niềm say mê và năng khiếu vượt trội nhất trong lĩnh vực nào?","Khi con gặp áp lực học tập hoặc khúc mắc tâm lý, biểu hiện ở nhà của con như thế nào?"],
+        placeholder: "Ví dụ: Con có tư duy độc lập, giàu cảm xúc, có năng khiếu tự học tốt; đôi lúc có áp lực về điểm số nhưng biết lắng nghe lời khuyên của gia đình...",
+        sortOrder: 1
+      },
+      {
+        id: "k4_p2",
+        code: "K4-B02",
+        category: "QUA_TRINH_NANG_LUC_HT",
+        categoryLabel: "2. Quá trình và năng lực học tập",
+        title: "Đánh giá học lực, năng khiếu ngoại ngữ và phong cách học tập (Khối 4)",
+        focus: "Lịch sử học tập, thế mạnh môn học, kết quả các kỳ thi và phong cách tiếp thu tri thức.",
+        suggestedQuestions: ["Gia đình nhận định thế nào về năng lực học thuật và nền tảng kiến thức hiện tại của con?","Khả năng ngoại ngữ (tiếng Anh) và năng lực tự học nghiên cứu của con được phát huy ra sao?","Môn học hoặc kỹ năng nào con cần được nhà trường bồi dưỡng và hỗ trợ nâng cao thêm?"],
+        placeholder: "Ví dụ: Học lực các năm trước đạt loại Giỏi/Tốt, tư duy Toán và tiếng Anh khá tốt; mong muốn trường rèn luyện thêm kỹ năng làm việc nhóm và thuyết trình...",
+        sortOrder: 2
+      },
+      {
+        id: "k4_p3",
+        code: "K4-B03",
+        category: "THOI_QUEN_HT_TAI_NHA",
+        categoryLabel: "3. Thói quen học tập tại nhà",
+        title: "Mức độ tự giác, phương pháp tự học và sử dụng công nghệ (Khối 4)",
+        focus: "Nề nếp tự học tại nhà, khả năng tự tra cứu tài liệu và quản lý thời gian sử dụng internet/mạng xã hội.",
+        suggestedQuestions: ["Con có kế hoạch tự học rõ ràng mỗi ngày không? Mức độ tự giác đạt bao nhiêu %?","Gia đình định hướng và kiểm soát việc sử dụng điện thoại thông minh, máy tính và mạng xã hội của con như thế nào?","Con có thói quen đọc sách chuyên môn, báo chí hoặc tra cứu tài liệu học thuật trực tuyến không?"],
+        placeholder: "Ví dụ: Con tự giác ngồi vào bàn học đúng giờ, tự lập thời gian biểu; gia đình quy định sử dụng điện thoại có kiểm soát mục đích phục vụ học tập...",
+        sortOrder: 3
+      },
+      {
+        id: "k4_p4",
+        code: "K4-B04",
+        category: "DONG_HANH_CUA_PH",
+        categoryLabel: "4. Cách phụ huynh đồng hành với việc học",
+        title: "Phương pháp đồng hành, tôn trọng chính kiến và phối hợp với nhà trường (Khối 4)",
+        focus: "Cách cha mẹ làm bạn cùng con ở lứa tuổi phát triển, tôn trọng quyết định và hỗ trợ hướng nghiệp.",
+        suggestedQuestions: ["Bố mẹ thường trò chuyện và thấu hiểu nguyện vọng của con thông qua những dịp nào?","Khi có sự bất đồng ý kiến về chọn môn học hoặc định hướng, gia đình giải quyết như thế nào?","Gia đình sẵn sàng phối hợp cùng Ban Cố vấn và Giáo viên chủ nhiệm theo cơ chế như thế nào?"],
+        placeholder: "Ví dụ: Gia đình luôn tôn trọng ý kiến cá nhân của con, đóng vai trò người đồng hành định hướng; cam kết phối hợp thường xuyên với nhà trường...",
+        sortOrder: 4
+      },
+      {
+        id: "k4_p5",
+        code: "K4-B05",
+        category: "DONG_LUC_KY_VONG_GD",
+        categoryLabel: "5. Động lực, kỳ vọng và mục tiêu giáo dục",
+        title: "Kỳ vọng đầu ra, định hướng nghề nghiệp và mục tiêu giáo dục dài hạn (Khối 4)",
+        focus: "Mục tiêu chuyển tiếp (cấp học tiếp theo, đại học, du học) và kỳ vọng giá trị nhân cách tại Sky-Line.",
+        suggestedQuestions: ["Gia đình kỳ vọng con sẽ phát triển những phẩm chất và năng lực cốt lõi nào khi học tại Sky-Line?","Định hướng tương lai dài hạn (chọn ngành nghề, đại học trong nước hay du học quốc tế) của gia đình dành cho con là gì?","Gia đình mong muốn nhà trường xây dựng lộ trình đồng hành cụ thể nào để hiện thực hóa mục tiêu trên?"],
+        placeholder: "Ví dụ: Kỳ vọng con phát triển toàn diện tư duy phản biện, ngoại ngữ xuất sắc, tự tin hội nhập quốc tế và đạt mục tiêu tuyển sinh đại học hàng đầu...",
+        sortOrder: 5
+      }
+    ],
+    parentPrompts: {
+      groupLabel: "Khối 4 (Trách nhiệm, quản lý thời gian, tư duy độc lập)",
+      group1_expectations: {
+        title: "1. Nguyện vọng & Kỳ vọng của PHHS đối với sự phát triển của học sinh",
+        hints: ["Gia đình kỳ vọng con sẽ phát triển những phẩm chất và năng lực cốt lõi nào khi học tại Sky-Line?","Định hướng tương lai dài hạn (chọn ngành nghề, đại học trong nước hay du học quốc tế) của gia đình dành cho con là gì?","Gia đình mong muốn nhà trường xây dựng lộ trình đồng hành cụ thể nào để hiện thực hóa mục tiêu trên?"],
+        placeholder: "Ví dụ: Kỳ vọng con phát triển toàn diện tư duy phản biện, ngoại ngữ xuất sắc, tự tin hội nhập quốc tế và đạt mục tiêu tuyển sinh đại học hàng đầu..."
+      },
+      group2_personality: {
+        title: "2. Đặc điểm cá nhân, tính cách và thói quen của học sinh",
+        hints: ["Xin gia đình chia sẻ về những nét tính cách nổi trội và sự thay đổi tâm lý của con thời gian gần đây?","Con thể hiện niềm say mê và năng khiếu vượt trội nhất trong lĩnh vực nào?","Khi con gặp áp lực học tập hoặc khúc mắc tâm lý, biểu hiện ở nhà của con như thế nào?"],
+        placeholder: "Ví dụ: Con có tư duy độc lập, giàu cảm xúc, có năng khiếu tự học tốt; đôi lúc có áp lực về điểm số nhưng biết lắng nghe lời khuyên của gia đình..."
+      },
+      group3_support: {
+        title: "3. Nhu cầu hỗ trợ, bồi dưỡng và đề xuất từ PHHS",
+        hints: ["Gia đình nhận định thế nào về năng lực học thuật và nền tảng kiến thức hiện tại của con?","Khả năng ngoại ngữ (tiếng Anh) và năng lực tự học nghiên cứu của con được phát huy ra sao?","Môn học hoặc kỹ năng nào con cần được nhà trường bồi dưỡng và hỗ trợ nâng cao thêm?"],
+        placeholder: "Ví dụ: Học lực các năm trước đạt loại Giỏi/Tốt, tư duy Toán và tiếng Anh khá tốt; mong muốn trường rèn luyện thêm kỹ năng làm việc nhóm và thuyết trình..."
+      },
+      group4_cooperation: {
+        title: "4. Cơ chế phối hợp và đồng hành giữa gia đình và nhà trường",
+        hints: ["Bố mẹ thường trò chuyện và thấu hiểu nguyện vọng của con thông qua những dịp nào?","Khi có sự bất đồng ý kiến về chọn môn học hoặc định hướng, gia đình giải quyết như thế nào?","Gia đình sẵn sàng phối hợp cùng Ban Cố vấn và Giáo viên chủ nhiệm theo cơ chế như thế nào?"],
+        placeholder: "Ví dụ: Gia đình luôn tôn trọng ý kiến cá nhân của con, đóng vai trò người đồng hành định hướng; cam kết phối hợp thường xuyên với nhà trường..."
+      }
+    }
+  },
+  // 5. KHỐI 5 - Nền tảng học tập, chuẩn bị chuyển cấp THCS
+  KHOI_5: {
+    key: "KHOI_5",
+    gradeNumber: 5,
+    label: "Khối 5",
+    subLabel: "Nền tảng học tập vững chắc, chuẩn bị tâm thế chuyển cấp THCS",
+    focus: "Nền tảng học tập, chuẩn bị chuyển cấp THCS",
+    gradeList: ["5","Khối 5","Lớp 5","K5"],
+    criteria: [
+      {
+        id: "k5_c1",
+        code: "K5-A01",
+        name: "Sở thích, đam mê và lĩnh vực thế mạnh nổi bật (Khối 5)",
+        category: "SO_THICH_THE_MANH",
+        categoryLabel: "1. Sở thích và thế mạnh",
+        focus: "Khám phá đam mê, lĩnh vực chuyên môn hoặc năng khiếu sở trường phù hợp trọng tâm: Nền tảng học tập, chuẩn bị chuyển cấp THCS.",
+        guideline: "Đánh giá mức độ am hiểu, chiều sâu đam mê và thời gian học sinh đầu tư cho thế mạnh cá nhân.",
+        suggestedQuestions: ["Trong các môn học và hoạt động hiện tại, con yêu thích và tự tin nhất ở lĩnh vực nào?","Con đã từng đạt giải thưởng, dự án cá nhân hoặc thành tích nào đáng tự hào trong thế mạnh này chưa?","Thế mạnh này giúp ích gì cho con trong việc học tập và kết nối bạn bè?"],
+        mandatoryCommentRatings: ["NEED_SUPPORT", "SPECIAL_ATTENTION"],
+        sortOrder: 1
+      },
+      {
+        id: "k5_c2",
+        code: "K5-A02",
+        name: "Động lực học tập nội tại và thái độ với mục tiêu học đường (Khối 5)",
+        category: "THAI_DO_DONG_LUC",
+        categoryLabel: "2. Thái độ và động lực học tập",
+        focus: "Đánh giá mức độ tự giác, mục tiêu học tập rõ ràng theo trọng tâm: Nền tảng học tập, chuẩn bị chuyển cấp THCS.",
+        guideline: "Phân biệt học tập vì đam mê, sự tò mò hay vì nghĩa vụ, áp lực từ gia đình.",
+        suggestedQuestions: ["Điều gì là động lực lớn nhất thúc đẩy con nỗ lực học tập mỗi ngày?","Khi gặp phải một chuyên đề hoặc bài tập rất khó, con duy trì quyết tâm như thế nào?","Con có thói quen tự tìm kiếm thêm tài liệu, sách báo hoặc khóa học trực tuyến để mở rộng kiến thức không?"],
+        mandatoryCommentRatings: ["NEED_SUPPORT", "SPECIAL_ATTENTION"],
+        sortOrder: 2
+      },
+      {
+        id: "k5_c3",
+        code: "K5-A03",
+        name: "Tư duy logic, giải quyết khúc mắc và vượt khó (Khối 5)",
+        category: "GIAI_QUYET_VAN_DE",
+        categoryLabel: "3. Khả năng giải quyết vấn đề",
+        focus: "Khả năng phân tích nguyên nhân, đề xuất phương án và xử lý tình huống thực tế.",
+        guideline: "Quan sát phản xạ tư duy phản biện, cách lập luận và tinh thần không lùi bước trước khó khăn.",
+        suggestedQuestions: ["Khi đối diện với một vấn đề phức tạp hoặc xung đột ý kiến với bạn bè, con giải quyết ra sao?","Hãy kể về một tình huống con tự mình tìm ra cách giải quyết khó khăn mà không cần người lớn can thiệp?","Con học được bài học kinh nghiệm gì từ những thất bại hoặc kết quả chưa đạt mong muốn trước đây?"],
+        mandatoryCommentRatings: ["NEED_SUPPORT", "SPECIAL_ATTENTION"],
+        sortOrder: 3
+      },
+      {
+        id: "k5_c4",
+        code: "K5-A04",
+        name: "Kỹ năng tự chủ, quản lý thời gian và trách nhiệm cá nhân (Khối 5)",
+        category: "TINH_CHU_DONG",
+        categoryLabel: "4. Tính chủ động",
+        focus: "Mức độ chủ động xây dựng kế hoạch, sắp xếp thứ tự ưu tiên và tự chịu trách nhiệm.",
+        guideline: "Đánh giá tính độc lập, khả năng tổ chức công việc và việc giữ đúng cam kết.",
+        suggestedQuestions: ["Con tự quản lý thời gian học tập, giải trí và sinh hoạt cá nhân như thế nào trong ngày?","Khi được giao một nhiệm vụ hoặc dự án nhóm, con chủ động nhận phần việc nào?","Nếu bị chậm tiến độ hoặc quên nhiệm vụ, con nhận trách nhiệm và khắc phục như thế nào?"],
+        mandatoryCommentRatings: ["NEED_SUPPORT", "SPECIAL_ATTENTION"],
+        sortOrder: 4
+      },
+      {
+        id: "k5_c5",
+        code: "K5-A05",
+        name: "Kỹ năng hợp tác, lãnh đạo nhóm và thích ứng môi trường mới (Khối 5)",
+        category: "KY_NANG_XA_HOI_THICH_NGHI",
+        categoryLabel: "5. Kỹ năng xã hội và khả năng thích nghi",
+        focus: "Khả năng tương tác xã hội, tinh thần đồng đội và mức độ linh hoạt trước thay đổi.",
+        guideline: "Quan sát sự cởi mở, lắng nghe tích cực và vai trò thể hiện trong tập thể.",
+        suggestedQuestions: ["Con thích nghi như thế nào khi bước vào một môi trường mới với nhiều giáo viên và bạn học mới?","Trong hoạt động nhóm, con thường đóng vai trò người kết nối, lãnh đạo hay hỗ trợ thực thi?","Làm thế nào để con duy trì mối quan hệ bạn bè lành mạnh và tích cực tại trường học?"],
+        mandatoryCommentRatings: ["NEED_SUPPORT", "SPECIAL_ATTENTION"],
+        sortOrder: 5
+      },
+      {
+        id: "k5_c6",
+        code: "K5-A06",
+        name: "Tự nhận thức giá trị cá nhân, điểm mạnh và điểm cần cải thiện (Khối 5)",
+        category: "NHAN_THUC_BAN_THAN",
+        categoryLabel: "6. Nhận thức bản thân",
+        focus: "Mức độ hiểu rõ bản thân: tính cách, giá trị cốt lõi, thói quen tốt và thói quen chưa tốt.",
+        guideline: "Lắng nghe sự khiêm tốn, tính chân thật và khao khát hoàn thiện nhân cách bản thân.",
+        suggestedQuestions: ["Nếu dùng 3 từ để miêu tả chính xác nhất về bản thân con, con sẽ chọn những từ nào?","Điểm yếu hoặc hạn chế lớn nhất mà con đang nỗ lực rèn luyện để vượt qua là gì?","Những điều gì hoặc môi trường nào giúp con phát huy tối đa năng lực tốt nhất của mình?"],
+        mandatoryCommentRatings: ["NEED_SUPPORT", "SPECIAL_ATTENTION"],
+        sortOrder: 6
+      },
+      {
+        id: "k5_c7",
+        code: "K5-A07",
+        name: "Mục tiêu, nguyện vọng và kế hoạch đóng góp tại Sky-Line (Khối 5)",
+        category: "KY_VONG_SKYLINE",
+        categoryLabel: "7. Kỳ vọng cá nhân tại Sky-Line",
+        focus: "Hình dung của học sinh về cơ hội học tập, câu lạc bộ, dự án cộng đồng tại Sky-Line.",
+        guideline: "Đánh giá mức độ đồng điệu giữa giá trị của học sinh với triết lý giáo dục Sky-Line.",
+        suggestedQuestions: ["Con kỳ vọng điều gì nhất từ thầy cô và môi trường học tập tại Sky-Line?","Con mong muốn tham gia những dự án học tập, câu lạc bộ hay hoạt động cộng đồng nào tại trường?","Con dự định sẽ để lại dấu ấn hoặc đóng góp gì cho tập thể lớp và trường Sky-Line?"],
+        mandatoryCommentRatings: ["NEED_SUPPORT", "SPECIAL_ATTENTION"],
+        sortOrder: 7
+      },
+      {
+        id: "k5_c8",
+        code: "K5-A08",
+        name: "Tự đánh giá năng lực học thuật, ngoại ngữ và tư duy nghiên cứu (Khối 5)",
+        category: "NANG_LUC_TU_NHAN_DINH",
+        categoryLabel: "8. Năng lực học tập tự nhận định",
+        focus: "Khả năng tự định vị trình độ các môn văn hóa, năng lực ngoại ngữ (IELTS/giao tiếp) và tự học.",
+        guideline: "Đánh giá sự tự tin nhưng thực tế, có dẫn chứng cụ thể về điểm số hoặc sản phẩm học tập.",
+        suggestedQuestions: ["Con tự đánh giá năng lực của mình ở các môn khoa học và xã hội hiện tại đang ở mức độ nào?","Khả năng sử dụng ngoại ngữ (tiếng Anh) trong học thuật và giao tiếp của con đáp ứng ra sao?","Con có phương pháp tự học đặc biệt nào giúp con ghi nhớ và hiểu sâu kiến thức không?"],
+        mandatoryCommentRatings: ["NEED_SUPPORT", "SPECIAL_ATTENTION"],
+        sortOrder: 8
+      },
+      {
+        id: "k5_c9",
+        code: "K5-A09",
+        name: "Kỹ năng thuyết trình, phản biện văn minh và truyền cảm hứng (Khối 5)",
+        category: "KY_NANG_GIAO_TIEP",
+        categoryLabel: "9. Kỹ năng giao tiếp",
+        focus: "Khả năng diễn giải ý tưởng thuyết phục, phong thái tự tin và kỹ năng lắng nghe thấu cảm.",
+        guideline: "Quan sát ngôn ngữ cơ thể, ánh mắt, cách dùng từ ngữ và khả năng đối đáp thông minh.",
+        suggestedQuestions: ["Con có cảm thấy tự tin khi thuyết trình một đề tài trước cả lớp hoặc hội trường không?","Khi người khác có quan điểm trái ngược với con, con phản hồi và trao đổi lại như thế nào?","Con làm thế nào để truyền tải thông điệp một cách rõ ràng và thu hút người nghe?"],
+        mandatoryCommentRatings: ["NEED_SUPPORT", "SPECIAL_ATTENTION"],
+        sortOrder: 9
+      },
+      {
+        id: "k5_c10",
+        code: "K5-A010",
+        name: "Định hướng cá nhân hóa, nhu cầu cố vấn chuyên sâu và lưu ý đặc thù (Khối 5)",
+        category: "THONG_TIN_BO_SUNG",
+        categoryLabel: "10. Thông tin bổ sung",
+        focus: "Nguyện vọng về cố vấn học tập, định hướng nghề nghiệp, thi chứng chỉ hoặc nhu cầu hỗ trợ tâm lý.",
+        guideline: "Ghi nhận nhu cầu chuyên sâu để nhà trường phân bổ giáo viên cố vấn phù hợp.",
+        suggestedQuestions: ["Con có kế hoạch thi các chứng chỉ quốc tế, tham gia kỳ thi học sinh giỏi hay nghiên cứu khoa học không?","Con có cần nhà trường hoặc cố vấn học tập hỗ trợ riêng về lộ trình định hướng nào không?","Có bất kỳ chia sẻ hoặc mong muốn nào khác mà con muốn gửi gắm tới thầy cô không?"],
+        mandatoryCommentRatings: ["NEED_SUPPORT", "SPECIAL_ATTENTION"],
+        sortOrder: 10
+      }
+    ],
+    parentGroups: [
+      {
+        id: "k5_p1",
+        code: "K5-B01",
+        category: "HIEU_HS_GOC_NHIN_PH",
+        categoryLabel: "1. Hiểu học sinh qua góc nhìn phụ huynh",
+        title: "Đặc điểm tính cách, tâm lý lứa tuổi và thế mạnh của học sinh (Khối 5)",
+        focus: "Đánh giá sự trưởng thành tâm lý, thế mạnh cốt lõi và nét tính cách nổi bật theo lứa tuổi.",
+        suggestedQuestions: ["Xin gia đình chia sẻ về những nét tính cách nổi trội và sự thay đổi tâm lý của con thời gian gần đây?","Con thể hiện niềm say mê và năng khiếu vượt trội nhất trong lĩnh vực nào?","Khi con gặp áp lực học tập hoặc khúc mắc tâm lý, biểu hiện ở nhà của con như thế nào?"],
+        placeholder: "Ví dụ: Con có tư duy độc lập, giàu cảm xúc, có năng khiếu tự học tốt; đôi lúc có áp lực về điểm số nhưng biết lắng nghe lời khuyên của gia đình...",
+        sortOrder: 1
+      },
+      {
+        id: "k5_p2",
+        code: "K5-B02",
+        category: "QUA_TRINH_NANG_LUC_HT",
+        categoryLabel: "2. Quá trình và năng lực học tập",
+        title: "Đánh giá học lực, năng khiếu ngoại ngữ và phong cách học tập (Khối 5)",
+        focus: "Lịch sử học tập, thế mạnh môn học, kết quả các kỳ thi và phong cách tiếp thu tri thức.",
+        suggestedQuestions: ["Gia đình nhận định thế nào về năng lực học thuật và nền tảng kiến thức hiện tại của con?","Khả năng ngoại ngữ (tiếng Anh) và năng lực tự học nghiên cứu của con được phát huy ra sao?","Môn học hoặc kỹ năng nào con cần được nhà trường bồi dưỡng và hỗ trợ nâng cao thêm?"],
+        placeholder: "Ví dụ: Học lực các năm trước đạt loại Giỏi/Tốt, tư duy Toán và tiếng Anh khá tốt; mong muốn trường rèn luyện thêm kỹ năng làm việc nhóm và thuyết trình...",
+        sortOrder: 2
+      },
+      {
+        id: "k5_p3",
+        code: "K5-B03",
+        category: "THOI_QUEN_HT_TAI_NHA",
+        categoryLabel: "3. Thói quen học tập tại nhà",
+        title: "Mức độ tự giác, phương pháp tự học và sử dụng công nghệ (Khối 5)",
+        focus: "Nề nếp tự học tại nhà, khả năng tự tra cứu tài liệu và quản lý thời gian sử dụng internet/mạng xã hội.",
+        suggestedQuestions: ["Con có kế hoạch tự học rõ ràng mỗi ngày không? Mức độ tự giác đạt bao nhiêu %?","Gia đình định hướng và kiểm soát việc sử dụng điện thoại thông minh, máy tính và mạng xã hội của con như thế nào?","Con có thói quen đọc sách chuyên môn, báo chí hoặc tra cứu tài liệu học thuật trực tuyến không?"],
+        placeholder: "Ví dụ: Con tự giác ngồi vào bàn học đúng giờ, tự lập thời gian biểu; gia đình quy định sử dụng điện thoại có kiểm soát mục đích phục vụ học tập...",
+        sortOrder: 3
+      },
+      {
+        id: "k5_p4",
+        code: "K5-B04",
+        category: "DONG_HANH_CUA_PH",
+        categoryLabel: "4. Cách phụ huynh đồng hành với việc học",
+        title: "Phương pháp đồng hành, tôn trọng chính kiến và phối hợp với nhà trường (Khối 5)",
+        focus: "Cách cha mẹ làm bạn cùng con ở lứa tuổi phát triển, tôn trọng quyết định và hỗ trợ hướng nghiệp.",
+        suggestedQuestions: ["Bố mẹ thường trò chuyện và thấu hiểu nguyện vọng của con thông qua những dịp nào?","Khi có sự bất đồng ý kiến về chọn môn học hoặc định hướng, gia đình giải quyết như thế nào?","Gia đình sẵn sàng phối hợp cùng Ban Cố vấn và Giáo viên chủ nhiệm theo cơ chế như thế nào?"],
+        placeholder: "Ví dụ: Gia đình luôn tôn trọng ý kiến cá nhân của con, đóng vai trò người đồng hành định hướng; cam kết phối hợp thường xuyên với nhà trường...",
+        sortOrder: 4
+      },
+      {
+        id: "k5_p5",
+        code: "K5-B05",
+        category: "DONG_LUC_KY_VONG_GD",
+        categoryLabel: "5. Động lực, kỳ vọng và mục tiêu giáo dục",
+        title: "Kỳ vọng đầu ra, định hướng nghề nghiệp và mục tiêu giáo dục dài hạn (Khối 5)",
+        focus: "Mục tiêu chuyển tiếp (cấp học tiếp theo, đại học, du học) và kỳ vọng giá trị nhân cách tại Sky-Line.",
+        suggestedQuestions: ["Gia đình kỳ vọng con sẽ phát triển những phẩm chất và năng lực cốt lõi nào khi học tại Sky-Line?","Định hướng tương lai dài hạn (chọn ngành nghề, đại học trong nước hay du học quốc tế) của gia đình dành cho con là gì?","Gia đình mong muốn nhà trường xây dựng lộ trình đồng hành cụ thể nào để hiện thực hóa mục tiêu trên?"],
+        placeholder: "Ví dụ: Kỳ vọng con phát triển toàn diện tư duy phản biện, ngoại ngữ xuất sắc, tự tin hội nhập quốc tế và đạt mục tiêu tuyển sinh đại học hàng đầu...",
+        sortOrder: 5
+      }
+    ],
+    parentPrompts: {
+      groupLabel: "Khối 5 (Nền tảng học tập, chuẩn bị chuyển cấp THCS)",
+      group1_expectations: {
+        title: "1. Nguyện vọng & Kỳ vọng của PHHS đối với sự phát triển của học sinh",
+        hints: ["Gia đình kỳ vọng con sẽ phát triển những phẩm chất và năng lực cốt lõi nào khi học tại Sky-Line?","Định hướng tương lai dài hạn (chọn ngành nghề, đại học trong nước hay du học quốc tế) của gia đình dành cho con là gì?","Gia đình mong muốn nhà trường xây dựng lộ trình đồng hành cụ thể nào để hiện thực hóa mục tiêu trên?"],
+        placeholder: "Ví dụ: Kỳ vọng con phát triển toàn diện tư duy phản biện, ngoại ngữ xuất sắc, tự tin hội nhập quốc tế và đạt mục tiêu tuyển sinh đại học hàng đầu..."
+      },
+      group2_personality: {
+        title: "2. Đặc điểm cá nhân, tính cách và thói quen của học sinh",
+        hints: ["Xin gia đình chia sẻ về những nét tính cách nổi trội và sự thay đổi tâm lý của con thời gian gần đây?","Con thể hiện niềm say mê và năng khiếu vượt trội nhất trong lĩnh vực nào?","Khi con gặp áp lực học tập hoặc khúc mắc tâm lý, biểu hiện ở nhà của con như thế nào?"],
+        placeholder: "Ví dụ: Con có tư duy độc lập, giàu cảm xúc, có năng khiếu tự học tốt; đôi lúc có áp lực về điểm số nhưng biết lắng nghe lời khuyên của gia đình..."
+      },
+      group3_support: {
+        title: "3. Nhu cầu hỗ trợ, bồi dưỡng và đề xuất từ PHHS",
+        hints: ["Gia đình nhận định thế nào về năng lực học thuật và nền tảng kiến thức hiện tại của con?","Khả năng ngoại ngữ (tiếng Anh) và năng lực tự học nghiên cứu của con được phát huy ra sao?","Môn học hoặc kỹ năng nào con cần được nhà trường bồi dưỡng và hỗ trợ nâng cao thêm?"],
+        placeholder: "Ví dụ: Học lực các năm trước đạt loại Giỏi/Tốt, tư duy Toán và tiếng Anh khá tốt; mong muốn trường rèn luyện thêm kỹ năng làm việc nhóm và thuyết trình..."
+      },
+      group4_cooperation: {
+        title: "4. Cơ chế phối hợp và đồng hành giữa gia đình và nhà trường",
+        hints: ["Bố mẹ thường trò chuyện và thấu hiểu nguyện vọng của con thông qua những dịp nào?","Khi có sự bất đồng ý kiến về chọn môn học hoặc định hướng, gia đình giải quyết như thế nào?","Gia đình sẵn sàng phối hợp cùng Ban Cố vấn và Giáo viên chủ nhiệm theo cơ chế như thế nào?"],
+        placeholder: "Ví dụ: Gia đình luôn tôn trọng ý kiến cá nhân của con, đóng vai trò người đồng hành định hướng; cam kết phối hợp thường xuyên với nhà trường..."
+      }
+    }
+  },
+  // 6. KHỐI 6 - Thích nghi THCS, nhiều môn học, nhiều giáo viên
   KHOI_6: {
     key: "KHOI_6",
+    gradeNumber: 6,
     label: "Khối 6",
-    subLabel: "Chuyển tiếp THCS: Hòa nhập Môi trường Mới & Tự học (8 Câu hỏi chuẩn)",
-    gradeList: ["6", "Khối 6", "Lớp 6", "K6"],
+    subLabel: "Thích nghi THCS, phương pháp học đa môn, nhiều giáo viên bộ môn",
+    focus: "Thích nghi THCS, nhiều môn học, nhiều giáo viên",
+    gradeList: ["6","Khối 6","Lớp 6","K6"],
     criteria: [
       {
         id: "k6_c1",
-        name: "1. Giao tiếp & Hòa nhập môi trường mới",
-        category: "HOA_NHAP_MOI_TRUONG",
-        categoryLabel: "Giao tiếp & Hòa nhập Môi trường mới",
-        guideline: "Quan sát sự cởi mở, kỹ năng kết nối xã hội và khả năng chủ động hòa nhập lứa tuổi chuyển cấp Tiểu học lên THCS.",
-        suggestedQuestions: [
-          "Bước vào lớp 6 với nhiều môn học và thầy cô bộ môn mới, con cảm thấy hào hứng hay lo lắng điều gì nhất?",
-          "Con thường bắt đầu làm quen với bạn bè mới như thế nào trong những ngày đầu nhập học?",
-          "Con có sẵn sàng tham gia các hoạt động ngoại khóa để mở rộng vòng kết nối bạn bè không?"
-        ],
+        code: "K6-A01",
+        name: "Sở thích, đam mê và lĩnh vực thế mạnh nổi bật (Khối 6)",
+        category: "SO_THICH_THE_MANH",
+        categoryLabel: "1. Sở thích và thế mạnh",
+        focus: "Khám phá đam mê, lĩnh vực chuyên môn hoặc năng khiếu sở trường phù hợp trọng tâm: Thích nghi THCS, nhiều môn học, nhiều giáo viên.",
+        guideline: "Đánh giá mức độ am hiểu, chiều sâu đam mê và thời gian học sinh đầu tư cho thế mạnh cá nhân.",
+        suggestedQuestions: ["Trong các môn học và hoạt động hiện tại, con yêu thích và tự tin nhất ở lĩnh vực nào?","Con đã từng đạt giải thưởng, dự án cá nhân hoặc thành tích nào đáng tự hào trong thế mạnh này chưa?","Thế mạnh này giúp ích gì cho con trong việc học tập và kết nối bạn bè?"],
         mandatoryCommentRatings: ["NEED_SUPPORT", "SPECIAL_ATTENTION"],
         sortOrder: 1
       },
       {
         id: "k6_c2",
-        name: "2. Phương pháp tự học & Quản lý thời gian",
-        category: "TU_HOC_THOI_GIAN",
-        categoryLabel: "Tự học & Quản lý Thời gian",
-        guideline: "Đánh giá kỹ năng lập kế hoạch học tập cá nhân, nhận thức về việc tăng khối lượng học tập và tính độc lập tự học.",
-        suggestedQuestions: [
-          "Lên lớp 6 số môn học và bài tập sẽ tăng lên, con dự định sắp xếp thời gian tự học ở nhà và chuẩn bị bài thế nào?",
-          "Con đã biết cách sử dụng thời khóa biểu, sổ tay ghi chú để quản lý công việc học tập chưa?",
-          "Khi có nhiều hạn nộp bài tập cùng lúc, con xử lý ưu tiên như thế nào?"
-        ],
+        code: "K6-A02",
+        name: "Động lực học tập nội tại và thái độ với mục tiêu học đường (Khối 6)",
+        category: "THAI_DO_DONG_LUC",
+        categoryLabel: "2. Thái độ và động lực học tập",
+        focus: "Đánh giá mức độ tự giác, mục tiêu học tập rõ ràng theo trọng tâm: Thích nghi THCS, nhiều môn học, nhiều giáo viên.",
+        guideline: "Phân biệt học tập vì đam mê, sự tò mò hay vì nghĩa vụ, áp lực từ gia đình.",
+        suggestedQuestions: ["Điều gì là động lực lớn nhất thúc đẩy con nỗ lực học tập mỗi ngày?","Khi gặp phải một chuyên đề hoặc bài tập rất khó, con duy trì quyết tâm như thế nào?","Con có thói quen tự tìm kiếm thêm tài liệu, sách báo hoặc khóa học trực tuyến để mở rộng kiến thức không?"],
         mandatoryCommentRatings: ["NEED_SUPPORT", "SPECIAL_ATTENTION"],
         sortOrder: 2
       },
       {
         id: "k6_c3",
-        name: "3. Nhận thức chuyển cấp THCS",
-        category: "NHAN_THUC_CHUYEN_CAP",
-        categoryLabel: "Nhận thức Chuyển cấp",
-        guideline: "Nhận diện mức độ trưởng thành về tâm lý, ý thức trách nhiệm đối với cấp học mới và sự sẵn sàng cho thử thách.",
-        suggestedQuestions: [
-          "Theo con, học sinh lớp 6 THCS khác học sinh Tiểu học ở những điểm quan trọng nào?",
-          "Con mong muốn bản thân thay đổi hoặc tiến bộ hơn ở điểm nào khi bước vào cấp học mới?",
-          "Mục tiêu năm học đầu tiên tại THCS Sky-Line của con là gì?"
-        ],
+        code: "K6-A03",
+        name: "Tư duy logic, giải quyết khúc mắc và vượt khó (Khối 6)",
+        category: "GIAI_QUYET_VAN_DE",
+        categoryLabel: "3. Khả năng giải quyết vấn đề",
+        focus: "Khả năng phân tích nguyên nhân, đề xuất phương án và xử lý tình huống thực tế.",
+        guideline: "Quan sát phản xạ tư duy phản biện, cách lập luận và tinh thần không lùi bước trước khó khăn.",
+        suggestedQuestions: ["Khi đối diện với một vấn đề phức tạp hoặc xung đột ý kiến với bạn bè, con giải quyết ra sao?","Hãy kể về một tình huống con tự mình tìm ra cách giải quyết khó khăn mà không cần người lớn can thiệp?","Con học được bài học kinh nghiệm gì từ những thất bại hoặc kết quả chưa đạt mong muốn trước đây?"],
         mandatoryCommentRatings: ["NEED_SUPPORT", "SPECIAL_ATTENTION"],
         sortOrder: 3
       },
       {
         id: "k6_c4",
-        name: "4. Thích ứng phương pháp học đa môn",
-        category: "THICH_UNG_DA_MON",
-        categoryLabel: "Thích ứng Học tập Đa môn",
-        guideline: "Đánh giá khả năng thích ứng với việc mỗi môn có một giáo viên khác nhau, phương pháp ghi chép và tiếp nhận bài giảng.",
-        suggestedQuestions: [
-          "Ở THCS mỗi môn sẽ có một thầy cô bộ môn riêng, con dự định thích ứng với các cách dạy khác nhau ra sao?",
-          "Con ghi chép bài vở và ôn tập kiến thức các môn Khoa học tự nhiên hay Lịch sử - Địa lý thế nào?",
-          "Nếu có bài giảng con chưa hiểu ngay trên lớp, con sẽ làm gì để nắm chắc kiến thức?"
-        ],
+        code: "K6-A04",
+        name: "Kỹ năng tự chủ, quản lý thời gian và trách nhiệm cá nhân (Khối 6)",
+        category: "TINH_CHU_DONG",
+        categoryLabel: "4. Tính chủ động",
+        focus: "Mức độ chủ động xây dựng kế hoạch, sắp xếp thứ tự ưu tiên và tự chịu trách nhiệm.",
+        guideline: "Đánh giá tính độc lập, khả năng tổ chức công việc và việc giữ đúng cam kết.",
+        suggestedQuestions: ["Con tự quản lý thời gian học tập, giải trí và sinh hoạt cá nhân như thế nào trong ngày?","Khi được giao một nhiệm vụ hoặc dự án nhóm, con chủ động nhận phần việc nào?","Nếu bị chậm tiến độ hoặc quên nhiệm vụ, con nhận trách nhiệm và khắc phục như thế nào?"],
         mandatoryCommentRatings: ["NEED_SUPPORT", "SPECIAL_ATTENTION"],
         sortOrder: 4
       },
       {
         id: "k6_c5",
-        name: "5. Hợp tác & Xử lý bất đồng bạn bè",
-        category: "HOP_TAC_XU_LY_BAT_DONG",
-        categoryLabel: "Hợp tác & Xử lý Bất đồng",
-        guideline: "Đánh giá kỹ năng làm việc nhóm, cách ứng xử văn minh và khả năng giải quyết mâu thuẫn lứa tuổi đầu cấp 2.",
-        suggestedQuestions: [
-          "Khi làm việc nhóm mà có bạn không hoàn thành phần việc, con sẽ trao đổi với bạn thế nào?",
-          "Nếu có xích mích hoặc hiểu lầm với bạn bè trong lớp, con thường giải quyết ra sao?",
-          "Làm thế nào để xây dựng một tập thể lớp đoàn kết và tôn trọng lẫn nhau theo suy nghĩ của con?"
-        ],
+        code: "K6-A05",
+        name: "Kỹ năng hợp tác, lãnh đạo nhóm và thích ứng môi trường mới (Khối 6)",
+        category: "KY_NANG_XA_HOI_THICH_NGHI",
+        categoryLabel: "5. Kỹ năng xã hội và khả năng thích nghi",
+        focus: "Khả năng tương tác xã hội, tinh thần đồng đội và mức độ linh hoạt trước thay đổi.",
+        guideline: "Quan sát sự cởi mở, lắng nghe tích cực và vai trò thể hiện trong tập thể.",
+        suggestedQuestions: ["Con thích nghi như thế nào khi bước vào một môi trường mới với nhiều giáo viên và bạn học mới?","Trong hoạt động nhóm, con thường đóng vai trò người kết nối, lãnh đạo hay hỗ trợ thực thi?","Làm thế nào để con duy trì mối quan hệ bạn bè lành mạnh và tích cực tại trường học?"],
         mandatoryCommentRatings: ["NEED_SUPPORT", "SPECIAL_ATTENTION"],
         sortOrder: 5
       },
       {
         id: "k6_c6",
-        name: "6. Sở thích, Hoạt động ngoại khóa & CLB",
-        category: "SO_THICH_CLB_TRAI_NGHIEM",
-        categoryLabel: "Sở thích & Hoạt động Ngoại khóa",
-        guideline: "Khám phá đam mê ngoại khóa, thể thao, nghệ thuật và nhu cầu phát triển toàn diện bản thân tại Sky-Line.",
-        suggestedQuestions: [
-          "Con yêu thích môn thể thao, nghệ thuật hoặc hoạt động khoa học nào nhất?",
-          "Con có mong muốn tham gia câu lạc bộ nào tại Sky-Line (Tranh biện, STEM, Thể thao, Tình nguyện)?",
-          "Con đã từng tham gia chuyến đi trải nghiệm thực tế nào đáng nhớ nhất chưa?"
-        ],
+        code: "K6-A06",
+        name: "Tự nhận thức giá trị cá nhân, điểm mạnh và điểm cần cải thiện (Khối 6)",
+        category: "NHAN_THUC_BAN_THAN",
+        categoryLabel: "6. Nhận thức bản thân",
+        focus: "Mức độ hiểu rõ bản thân: tính cách, giá trị cốt lõi, thói quen tốt và thói quen chưa tốt.",
+        guideline: "Lắng nghe sự khiêm tốn, tính chân thật và khao khát hoàn thiện nhân cách bản thân.",
+        suggestedQuestions: ["Nếu dùng 3 từ để miêu tả chính xác nhất về bản thân con, con sẽ chọn những từ nào?","Điểm yếu hoặc hạn chế lớn nhất mà con đang nỗ lực rèn luyện để vượt qua là gì?","Những điều gì hoặc môi trường nào giúp con phát huy tối đa năng lực tốt nhất của mình?"],
         mandatoryCommentRatings: ["NEED_SUPPORT", "SPECIAL_ATTENTION"],
         sortOrder: 6
       },
       {
         id: "k6_c7",
-        name: "7. Cảm xúc & Cơ chế tìm kiếm hỗ trợ",
-        category: "CAM_XUC_HO_TRO",
-        categoryLabel: "Cảm xúc & Cơ chế Tìm kiếm Hỗ trợ",
-        guideline: "Nắm bắt sức khỏe cảm xúc, khả năng bộc lộ nhu cầu trợ giúp để thiết lập mạng lưới hỗ trợ sớm từ GVCN và Cố vấn.",
-        suggestedQuestions: [
-          "Khi gặp khó khăn về bài vở hoặc cảm xúc không vui, con thường chia sẻ với ai trước tiên?",
-          "Con mong muốn thầy cô Sky-Line đồng hành và hỗ trợ con điều gì nhất trong học kỳ đầu tiên?",
-          "Nếu có những điều chưa rõ về nội quy trường mới, con có thoải mái hỏi thầy cô không?"
-        ],
+        code: "K6-A07",
+        name: "Mục tiêu, nguyện vọng và kế hoạch đóng góp tại Sky-Line (Khối 6)",
+        category: "KY_VONG_SKYLINE",
+        categoryLabel: "7. Kỳ vọng cá nhân tại Sky-Line",
+        focus: "Hình dung của học sinh về cơ hội học tập, câu lạc bộ, dự án cộng đồng tại Sky-Line.",
+        guideline: "Đánh giá mức độ đồng điệu giữa giá trị của học sinh với triết lý giáo dục Sky-Line.",
+        suggestedQuestions: ["Con kỳ vọng điều gì nhất từ thầy cô và môi trường học tập tại Sky-Line?","Con mong muốn tham gia những dự án học tập, câu lạc bộ hay hoạt động cộng đồng nào tại trường?","Con dự định sẽ để lại dấu ấn hoặc đóng góp gì cho tập thể lớp và trường Sky-Line?"],
         mandatoryCommentRatings: ["NEED_SUPPORT", "SPECIAL_ATTENTION"],
         sortOrder: 7
       },
       {
         id: "k6_c8",
-        name: "8. Mục tiêu & Kỳ vọng tại Sky-Line",
-        category: "MUC_TIEU_SKYLINE_THCS",
-        categoryLabel: "Mục tiêu & Kỳ vọng tại Sky-Line",
-        guideline: "Đánh giá sự tự giác, động lực học tập và các mục tiêu cụ thể mà học sinh muốn chinh phục ở cấp THCS.",
-        suggestedQuestions: [
-          "Mục tiêu lớn nhất con đặt ra cho mình trong năm học lớp 6 này là gì?",
-          "Con muốn nâng cao năng lực nào nhất (tiếng Anh, kỹ năng thuyết trình, kết quả thi đua)?",
-          "Điều gì ở trường Sky-Line làm con cảm thấy ấn tượng và hào hứng nhất?"
-        ],
+        code: "K6-A08",
+        name: "Tự đánh giá năng lực học thuật, ngoại ngữ và tư duy nghiên cứu (Khối 6)",
+        category: "NANG_LUC_TU_NHAN_DINH",
+        categoryLabel: "8. Năng lực học tập tự nhận định",
+        focus: "Khả năng tự định vị trình độ các môn văn hóa, năng lực ngoại ngữ (IELTS/giao tiếp) và tự học.",
+        guideline: "Đánh giá sự tự tin nhưng thực tế, có dẫn chứng cụ thể về điểm số hoặc sản phẩm học tập.",
+        suggestedQuestions: ["Con tự đánh giá năng lực của mình ở các môn khoa học và xã hội hiện tại đang ở mức độ nào?","Khả năng sử dụng ngoại ngữ (tiếng Anh) trong học thuật và giao tiếp của con đáp ứng ra sao?","Con có phương pháp tự học đặc biệt nào giúp con ghi nhớ và hiểu sâu kiến thức không?"],
         mandatoryCommentRatings: ["NEED_SUPPORT", "SPECIAL_ATTENTION"],
         sortOrder: 8
+      },
+      {
+        id: "k6_c9",
+        code: "K6-A09",
+        name: "Kỹ năng thuyết trình, phản biện văn minh và truyền cảm hứng (Khối 6)",
+        category: "KY_NANG_GIAO_TIEP",
+        categoryLabel: "9. Kỹ năng giao tiếp",
+        focus: "Khả năng diễn giải ý tưởng thuyết phục, phong thái tự tin và kỹ năng lắng nghe thấu cảm.",
+        guideline: "Quan sát ngôn ngữ cơ thể, ánh mắt, cách dùng từ ngữ và khả năng đối đáp thông minh.",
+        suggestedQuestions: ["Con có cảm thấy tự tin khi thuyết trình một đề tài trước cả lớp hoặc hội trường không?","Khi người khác có quan điểm trái ngược với con, con phản hồi và trao đổi lại như thế nào?","Con làm thế nào để truyền tải thông điệp một cách rõ ràng và thu hút người nghe?"],
+        mandatoryCommentRatings: ["NEED_SUPPORT", "SPECIAL_ATTENTION"],
+        sortOrder: 9
+      },
+      {
+        id: "k6_c10",
+        code: "K6-A010",
+        name: "Định hướng cá nhân hóa, nhu cầu cố vấn chuyên sâu và lưu ý đặc thù (Khối 6)",
+        category: "THONG_TIN_BO_SUNG",
+        categoryLabel: "10. Thông tin bổ sung",
+        focus: "Nguyện vọng về cố vấn học tập, định hướng nghề nghiệp, thi chứng chỉ hoặc nhu cầu hỗ trợ tâm lý.",
+        guideline: "Ghi nhận nhu cầu chuyên sâu để nhà trường phân bổ giáo viên cố vấn phù hợp.",
+        suggestedQuestions: ["Con có kế hoạch thi các chứng chỉ quốc tế, tham gia kỳ thi học sinh giỏi hay nghiên cứu khoa học không?","Con có cần nhà trường hoặc cố vấn học tập hỗ trợ riêng về lộ trình định hướng nào không?","Có bất kỳ chia sẻ hoặc mong muốn nào khác mà con muốn gửi gắm tới thầy cô không?"],
+        mandatoryCommentRatings: ["NEED_SUPPORT", "SPECIAL_ATTENTION"],
+        sortOrder: 10
+      }
+    ],
+    parentGroups: [
+      {
+        id: "k6_p1",
+        code: "K6-B01",
+        category: "HIEU_HS_GOC_NHIN_PH",
+        categoryLabel: "1. Hiểu học sinh qua góc nhìn phụ huynh",
+        title: "Đặc điểm tính cách, tâm lý lứa tuổi và thế mạnh của học sinh (Khối 6)",
+        focus: "Đánh giá sự trưởng thành tâm lý, thế mạnh cốt lõi và nét tính cách nổi bật theo lứa tuổi.",
+        suggestedQuestions: ["Xin gia đình chia sẻ về những nét tính cách nổi trội và sự thay đổi tâm lý của con thời gian gần đây?","Con thể hiện niềm say mê và năng khiếu vượt trội nhất trong lĩnh vực nào?","Khi con gặp áp lực học tập hoặc khúc mắc tâm lý, biểu hiện ở nhà của con như thế nào?"],
+        placeholder: "Ví dụ: Con có tư duy độc lập, giàu cảm xúc, có năng khiếu tự học tốt; đôi lúc có áp lực về điểm số nhưng biết lắng nghe lời khuyên của gia đình...",
+        sortOrder: 1
+      },
+      {
+        id: "k6_p2",
+        code: "K6-B02",
+        category: "QUA_TRINH_NANG_LUC_HT",
+        categoryLabel: "2. Quá trình và năng lực học tập",
+        title: "Đánh giá học lực, năng khiếu ngoại ngữ và phong cách học tập (Khối 6)",
+        focus: "Lịch sử học tập, thế mạnh môn học, kết quả các kỳ thi và phong cách tiếp thu tri thức.",
+        suggestedQuestions: ["Gia đình nhận định thế nào về năng lực học thuật và nền tảng kiến thức hiện tại của con?","Khả năng ngoại ngữ (tiếng Anh) và năng lực tự học nghiên cứu của con được phát huy ra sao?","Môn học hoặc kỹ năng nào con cần được nhà trường bồi dưỡng và hỗ trợ nâng cao thêm?"],
+        placeholder: "Ví dụ: Học lực các năm trước đạt loại Giỏi/Tốt, tư duy Toán và tiếng Anh khá tốt; mong muốn trường rèn luyện thêm kỹ năng làm việc nhóm và thuyết trình...",
+        sortOrder: 2
+      },
+      {
+        id: "k6_p3",
+        code: "K6-B03",
+        category: "THOI_QUEN_HT_TAI_NHA",
+        categoryLabel: "3. Thói quen học tập tại nhà",
+        title: "Mức độ tự giác, phương pháp tự học và sử dụng công nghệ (Khối 6)",
+        focus: "Nề nếp tự học tại nhà, khả năng tự tra cứu tài liệu và quản lý thời gian sử dụng internet/mạng xã hội.",
+        suggestedQuestions: ["Con có kế hoạch tự học rõ ràng mỗi ngày không? Mức độ tự giác đạt bao nhiêu %?","Gia đình định hướng và kiểm soát việc sử dụng điện thoại thông minh, máy tính và mạng xã hội của con như thế nào?","Con có thói quen đọc sách chuyên môn, báo chí hoặc tra cứu tài liệu học thuật trực tuyến không?"],
+        placeholder: "Ví dụ: Con tự giác ngồi vào bàn học đúng giờ, tự lập thời gian biểu; gia đình quy định sử dụng điện thoại có kiểm soát mục đích phục vụ học tập...",
+        sortOrder: 3
+      },
+      {
+        id: "k6_p4",
+        code: "K6-B04",
+        category: "DONG_HANH_CUA_PH",
+        categoryLabel: "4. Cách phụ huynh đồng hành với việc học",
+        title: "Phương pháp đồng hành, tôn trọng chính kiến và phối hợp với nhà trường (Khối 6)",
+        focus: "Cách cha mẹ làm bạn cùng con ở lứa tuổi phát triển, tôn trọng quyết định và hỗ trợ hướng nghiệp.",
+        suggestedQuestions: ["Bố mẹ thường trò chuyện và thấu hiểu nguyện vọng của con thông qua những dịp nào?","Khi có sự bất đồng ý kiến về chọn môn học hoặc định hướng, gia đình giải quyết như thế nào?","Gia đình sẵn sàng phối hợp cùng Ban Cố vấn và Giáo viên chủ nhiệm theo cơ chế như thế nào?"],
+        placeholder: "Ví dụ: Gia đình luôn tôn trọng ý kiến cá nhân của con, đóng vai trò người đồng hành định hướng; cam kết phối hợp thường xuyên với nhà trường...",
+        sortOrder: 4
+      },
+      {
+        id: "k6_p5",
+        code: "K6-B05",
+        category: "DONG_LUC_KY_VONG_GD",
+        categoryLabel: "5. Động lực, kỳ vọng và mục tiêu giáo dục",
+        title: "Kỳ vọng đầu ra, định hướng nghề nghiệp và mục tiêu giáo dục dài hạn (Khối 6)",
+        focus: "Mục tiêu chuyển tiếp (cấp học tiếp theo, đại học, du học) và kỳ vọng giá trị nhân cách tại Sky-Line.",
+        suggestedQuestions: ["Gia đình kỳ vọng con sẽ phát triển những phẩm chất và năng lực cốt lõi nào khi học tại Sky-Line?","Định hướng tương lai dài hạn (chọn ngành nghề, đại học trong nước hay du học quốc tế) của gia đình dành cho con là gì?","Gia đình mong muốn nhà trường xây dựng lộ trình đồng hành cụ thể nào để hiện thực hóa mục tiêu trên?"],
+        placeholder: "Ví dụ: Kỳ vọng con phát triển toàn diện tư duy phản biện, ngoại ngữ xuất sắc, tự tin hội nhập quốc tế và đạt mục tiêu tuyển sinh đại học hàng đầu...",
+        sortOrder: 5
       }
     ],
     parentPrompts: {
-      groupLabel: "Khối 6 (Chuyển cấp THCS & Thích nghi môi trường mới)",
+      groupLabel: "Khối 6 (Thích nghi THCS, nhiều môn học, nhiều giáo viên)",
       group1_expectations: {
-        title: "1. Nguyện vọng & Kỳ vọng của PHHS khi con chuyển cấp lên Lớp 6 THCS",
-        hints: [
-          "Kỳ vọng của gia đình về sự chuyển tiếp từ Tiểu học lên THCS (phương pháp tự học, khả năng thích ứng nhiều môn, ngoại ngữ)?",
-          "Mục tiêu giáo dục trọng tâm mà gia đình mong muốn nhà trường đồng hành cùng con?"
-        ],
-        placeholder: "Ví dụ: Mong muốn con thích nghi nhanh với phương pháp học THCS, tự chủ thời gian, phát triển tốt tiếng Anh học thuật..."
+        title: "1. Nguyện vọng & Kỳ vọng của PHHS đối với sự phát triển của học sinh",
+        hints: ["Gia đình kỳ vọng con sẽ phát triển những phẩm chất và năng lực cốt lõi nào khi học tại Sky-Line?","Định hướng tương lai dài hạn (chọn ngành nghề, đại học trong nước hay du học quốc tế) của gia đình dành cho con là gì?","Gia đình mong muốn nhà trường xây dựng lộ trình đồng hành cụ thể nào để hiện thực hóa mục tiêu trên?"],
+        placeholder: "Ví dụ: Kỳ vọng con phát triển toàn diện tư duy phản biện, ngoại ngữ xuất sắc, tự tin hội nhập quốc tế và đạt mục tiêu tuyển sinh đại học hàng đầu..."
       },
       group2_personality: {
-        title: "2. Đặc điểm tâm sinh lý, sở thích và thói quen bước vào tuổi dậy thì",
-        hints: [
-          "Những thay đổi tâm lý hoặc tính cách gần đây của con mà gia đình nhận thấy?",
-          "Thói quen sử dụng điện thoại/máy tính và sự tương tác giữa con với các thành viên trong gia đình?"
-        ],
-        placeholder: "Ví dụ: Con bắt đầu muốn có không gian riêng, cá tính độc lập hơn, thích tìm hiểu công nghệ và chơi thể thao..."
+        title: "2. Đặc điểm cá nhân, tính cách và thói quen của học sinh",
+        hints: ["Xin gia đình chia sẻ về những nét tính cách nổi trội và sự thay đổi tâm lý của con thời gian gần đây?","Con thể hiện niềm say mê và năng khiếu vượt trội nhất trong lĩnh vực nào?","Khi con gặp áp lực học tập hoặc khúc mắc tâm lý, biểu hiện ở nhà của con như thế nào?"],
+        placeholder: "Ví dụ: Con có tư duy độc lập, giàu cảm xúc, có năng khiếu tự học tốt; đôi lúc có áp lực về điểm số nhưng biết lắng nghe lời khuyên của gia đình..."
       },
       group3_support: {
-        title: "3. Nhu cầu hỗ trợ chuyển cấp từ phía Nhà trường",
-        hints: [
-          "Gia đình đề xuất thầy cô hỗ trợ con hòa nhập như thế nào trong tháng đầu tiên?",
-          "Có những lưu ý đặc biệt nào về phương pháp tiếp cận hoặc tâm lý của con không?"
-        ],
-        placeholder: "Ví dụ: Đề nghị GVCN và Ban Cố vấn theo dõi sát giai đoạn đầu để con không bị bỡ ngỡ với các môn học mới..."
+        title: "3. Nhu cầu hỗ trợ, bồi dưỡng và đề xuất từ PHHS",
+        hints: ["Gia đình nhận định thế nào về năng lực học thuật và nền tảng kiến thức hiện tại của con?","Khả năng ngoại ngữ (tiếng Anh) và năng lực tự học nghiên cứu của con được phát huy ra sao?","Môn học hoặc kỹ năng nào con cần được nhà trường bồi dưỡng và hỗ trợ nâng cao thêm?"],
+        placeholder: "Ví dụ: Học lực các năm trước đạt loại Giỏi/Tốt, tư duy Toán và tiếng Anh khá tốt; mong muốn trường rèn luyện thêm kỹ năng làm việc nhóm và thuyết trình..."
       },
       group4_cooperation: {
-        title: "4. Phối hợp giữa Gia đình & Nhà trường trong quản lý học tập THCS",
-        hints: [
-          "Hình thức và tần suất phối hợp trao đổi thông tin với GVCN mà gia đình mong muốn?",
-          "Sự đồng hành của phụ huynh trong việc rèn luyện tính tự giác và kiểm soát thiết bị số tại nhà."
-        ],
-        placeholder: "Ví dụ: Gia đình cam kết theo dõi sát sao tiến độ học tập qua cổng SSM, phối hợp cùng nhà trường hướng dẫn con sử dụng internet an toàn..."
+        title: "4. Cơ chế phối hợp và đồng hành giữa gia đình và nhà trường",
+        hints: ["Bố mẹ thường trò chuyện và thấu hiểu nguyện vọng của con thông qua những dịp nào?","Khi có sự bất đồng ý kiến về chọn môn học hoặc định hướng, gia đình giải quyết như thế nào?","Gia đình sẵn sàng phối hợp cùng Ban Cố vấn và Giáo viên chủ nhiệm theo cơ chế như thế nào?"],
+        placeholder: "Ví dụ: Gia đình luôn tôn trọng ý kiến cá nhân của con, đóng vai trò người đồng hành định hướng; cam kết phối hợp thường xuyên với nhà trường..."
       }
     }
   },
-
-  // 4. KHỐI 7–9 (8 CÂU HỎI CHUẨN)
-  KHOI_7_9: {
-    key: "KHOI_7_9",
-    label: "Khối 7–9",
-    subLabel: "THCS: Tự học, Trách nhiệm & Định hướng Phát triển (8 Câu hỏi chuẩn)",
-    gradeList: ["7", "8", "9", "Khối 7", "Khối 8", "Khối 9"],
+  // 7. KHỐI 7 - Động lực, thói quen học tập, quản lý bản thân
+  KHOI_7: {
+    key: "KHOI_7",
+    gradeNumber: 7,
+    label: "Khối 7",
+    subLabel: "Động lực học tập nội tại, thói quen tự giác, quản lý cảm xúc bản thân",
+    focus: "Động lực, thói quen học tập, quản lý bản thân",
+    gradeList: ["7","Khối 7","Lớp 7","K7"],
     criteria: [
       {
-        id: "k79_c1",
-        name: "1. Giao tiếp, Lắng nghe & Tranh luận",
-        category: "GIAO_TIEP_TRANH_LUAN",
-        categoryLabel: "Giao tiếp, Lắng nghe & Tranh luận",
-        guideline: "Đánh giá kỹ năng diễn đạt logic, lắng nghe tích cực, phong thái giao tiếp học thuật và sự tôn trọng người khác.",
-        suggestedQuestions: [
-          "Khi trình bày một quan điểm cá nhân trước đám đông hoặc lớp học, con cảm thấy tự tin ở mức nào?",
-          "Làm thế nào để con thể hiện sự lắng nghe và tôn trọng ý kiến khác biệt của bạn bè trong thảo luận?",
-          "Con đã từng tham gia một buổi tranh biện hoặc thuyết trình chuyên đề nào chưa?"
-        ],
+        id: "k7_c1",
+        code: "K7-A01",
+        name: "Sở thích, đam mê và lĩnh vực thế mạnh nổi bật (Khối 7)",
+        category: "SO_THICH_THE_MANH",
+        categoryLabel: "1. Sở thích và thế mạnh",
+        focus: "Khám phá đam mê, lĩnh vực chuyên môn hoặc năng khiếu sở trường phù hợp trọng tâm: Động lực, thói quen học tập, quản lý bản thân.",
+        guideline: "Đánh giá mức độ am hiểu, chiều sâu đam mê và thời gian học sinh đầu tư cho thế mạnh cá nhân.",
+        suggestedQuestions: ["Trong các môn học và hoạt động hiện tại, con yêu thích và tự tin nhất ở lĩnh vực nào?","Con đã từng đạt giải thưởng, dự án cá nhân hoặc thành tích nào đáng tự hào trong thế mạnh này chưa?","Thế mạnh này giúp ích gì cho con trong việc học tập và kết nối bạn bè?"],
         mandatoryCommentRatings: ["NEED_SUPPORT", "SPECIAL_ATTENTION"],
         sortOrder: 1
       },
       {
-        id: "k79_c2",
-        name: "2. Tính tự chủ & Kỷ luật tự học",
-        category: "TU_CHU_KY_LUAT",
-        categoryLabel: "Tính tự chủ & Kỷ luật Tự học",
-        guideline: "Đánh giá khả năng tự nghiên cứu, kiểm soát việc sử dụng điện thoại/máy tính, không để phân tâm khi học tập.",
-        suggestedQuestions: [
-          "Con quản lý việc sử dụng thiết bị điện tử (máy tính, điện thoại) và tự học thế nào để không bị phân tâm?",
-          "Khi kết quả học tập chưa như kỳ vọng, con nhìn nhận trách nhiệm của mình ra sao và tìm cách cải thiện thế nào?",
-          "Con đã từng tự mình nghiên cứu một chủ đề học tập mà không cần ai giao bài chưa?"
-        ],
+        id: "k7_c2",
+        code: "K7-A02",
+        name: "Động lực học tập nội tại và thái độ với mục tiêu học đường (Khối 7)",
+        category: "THAI_DO_DONG_LUC",
+        categoryLabel: "2. Thái độ và động lực học tập",
+        focus: "Đánh giá mức độ tự giác, mục tiêu học tập rõ ràng theo trọng tâm: Động lực, thói quen học tập, quản lý bản thân.",
+        guideline: "Phân biệt học tập vì đam mê, sự tò mò hay vì nghĩa vụ, áp lực từ gia đình.",
+        suggestedQuestions: ["Điều gì là động lực lớn nhất thúc đẩy con nỗ lực học tập mỗi ngày?","Khi gặp phải một chuyên đề hoặc bài tập rất khó, con duy trì quyết tâm như thế nào?","Con có thói quen tự tìm kiếm thêm tài liệu, sách báo hoặc khóa học trực tuyến để mở rộng kiến thức không?"],
         mandatoryCommentRatings: ["NEED_SUPPORT", "SPECIAL_ATTENTION"],
         sortOrder: 2
       },
       {
-        id: "k79_c3",
-        name: "3. Phương pháp tư duy & Sức bật thử thách",
-        category: "TU_DUY_SUC_BAT",
-        categoryLabel: "Tư duy & Sức bật trước Thử thách",
-        guideline: "Đánh giá khả năng phân tích logic, sự kiên trì, bản lĩnh vượt khó và thái độ học hỏi từ sai lầm (growth mindset).",
-        suggestedQuestions: [
-          "Khi gặp một đề bài hoặc thử thách học thuật phức tạp, con tiếp cận và bẻ nhỏ vấn đề ra sao?",
-          "Áp lực học tập lớn nhất con từng trải qua là gì, và con đã nỗ lực vượt qua như thế nào?",
-          "Con nhìn nhận những lời phê bình hoặc điểm số chưa tốt từ thầy cô như một cơ hội hay một gánh nặng?"
-        ],
+        id: "k7_c3",
+        code: "K7-A03",
+        name: "Tư duy logic, giải quyết khúc mắc và vượt khó (Khối 7)",
+        category: "GIAI_QUYET_VAN_DE",
+        categoryLabel: "3. Khả năng giải quyết vấn đề",
+        focus: "Khả năng phân tích nguyên nhân, đề xuất phương án và xử lý tình huống thực tế.",
+        guideline: "Quan sát phản xạ tư duy phản biện, cách lập luận và tinh thần không lùi bước trước khó khăn.",
+        suggestedQuestions: ["Khi đối diện với một vấn đề phức tạp hoặc xung đột ý kiến với bạn bè, con giải quyết ra sao?","Hãy kể về một tình huống con tự mình tìm ra cách giải quyết khó khăn mà không cần người lớn can thiệp?","Con học được bài học kinh nghiệm gì từ những thất bại hoặc kết quả chưa đạt mong muốn trước đây?"],
         mandatoryCommentRatings: ["NEED_SUPPORT", "SPECIAL_ATTENTION"],
         sortOrder: 3
       },
       {
-        id: "k79_c4",
-        name: "4. Hợp tác, Dự án & Năng lực dẫn dắt",
-        category: "HOP_TAC_DAN_DAT",
-        categoryLabel: "Hợp tác & Năng lực Dẫn dắt",
-        guideline: "Đánh giá tinh thần đồng đội, vai trò điều phối trong các dự án học tập và tinh thần trách nhiệm tập thể.",
-        suggestedQuestions: [
-          "Trong các dự án học tập hoặc làm việc nhóm, con thường đảm nhận vai trò gì (trưởng nhóm, tìm tài liệu, thuyết trình)?",
-          "Khi nhóm xảy ra bất đồng quan điểm, con thường làm gì để cùng nhau hoàn thành nhiệm vụ?",
-          "Làm thế nào để con hỗ trợ một thành viên trong nhóm đang gặp khó khăn?"
-        ],
+        id: "k7_c4",
+        code: "K7-A04",
+        name: "Kỹ năng tự chủ, quản lý thời gian và trách nhiệm cá nhân (Khối 7)",
+        category: "TINH_CHU_DONG",
+        categoryLabel: "4. Tính chủ động",
+        focus: "Mức độ chủ động xây dựng kế hoạch, sắp xếp thứ tự ưu tiên và tự chịu trách nhiệm.",
+        guideline: "Đánh giá tính độc lập, khả năng tổ chức công việc và việc giữ đúng cam kết.",
+        suggestedQuestions: ["Con tự quản lý thời gian học tập, giải trí và sinh hoạt cá nhân như thế nào trong ngày?","Khi được giao một nhiệm vụ hoặc dự án nhóm, con chủ động nhận phần việc nào?","Nếu bị chậm tiến độ hoặc quên nhiệm vụ, con nhận trách nhiệm và khắc phục như thế nào?"],
         mandatoryCommentRatings: ["NEED_SUPPORT", "SPECIAL_ATTENTION"],
         sortOrder: 4
       },
       {
-        id: "k79_c5",
-        name: "5. Sở trường học thuật & Năng khiếu",
-        category: "SO_TRUONG_HOC_THUAT",
-        categoryLabel: "Sở trường Học thuật & Năng khiếu",
-        guideline: "Nhận diện năng lực chuyên biệt (KHTN, KHXH, Tiếng Anh/IELTS, Công nghệ, Nghệ thuật...) để định hướng bồi dưỡng.",
-        suggestedQuestions: [
-          "Con thấy mình có thế mạnh nổi bật nhất ở lĩnh vực nào (Khoa học tự nhiên, Ngôn ngữ/Tiếng Anh, Nghệ thuật, Tranh biện)?",
-          "Con đã đặt mục tiêu gì cho việc học ngoại ngữ và các chứng chỉ quốc tế (như IELTS hay Cambridge)?",
-          "Con dự định tham gia CLB hoặc dự án ngoại khóa nào của Sky-Line để phát huy sở trường?"
-        ],
+        id: "k7_c5",
+        code: "K7-A05",
+        name: "Kỹ năng hợp tác, lãnh đạo nhóm và thích ứng môi trường mới (Khối 7)",
+        category: "KY_NANG_XA_HOI_THICH_NGHI",
+        categoryLabel: "5. Kỹ năng xã hội và khả năng thích nghi",
+        focus: "Khả năng tương tác xã hội, tinh thần đồng đội và mức độ linh hoạt trước thay đổi.",
+        guideline: "Quan sát sự cởi mở, lắng nghe tích cực và vai trò thể hiện trong tập thể.",
+        suggestedQuestions: ["Con thích nghi như thế nào khi bước vào một môi trường mới với nhiều giáo viên và bạn học mới?","Trong hoạt động nhóm, con thường đóng vai trò người kết nối, lãnh đạo hay hỗ trợ thực thi?","Làm thế nào để con duy trì mối quan hệ bạn bè lành mạnh và tích cực tại trường học?"],
         mandatoryCommentRatings: ["NEED_SUPPORT", "SPECIAL_ATTENTION"],
         sortOrder: 5
       },
       {
-        id: "k79_c6",
-        name: "6. Cân bằng học tập, Thể chất & Đời sống số",
-        category: "CAN_BANG_DOI_SONG_SO",
-        categoryLabel: "Cân bằng Thể chất & Đời sống số",
-        guideline: "Đánh giá thói quen rèn luyện thể thao, hoạt động giải trí lành mạnh và kỹ năng sử dụng mạng xã hội văn minh.",
-        suggestedQuestions: [
-          "Mỗi tuần con dành bao nhiêu thời gian cho việc tập luyện thể thao và các hoạt động ngoài trời?",
-          "Con có quy tắc riêng nào cho bản thân khi sử dụng mạng xã hội hoặc chơi game không?",
-          "Cách con tái tạo năng lượng tích cực sau những giờ học căng thẳng là gì?"
-        ],
+        id: "k7_c6",
+        code: "K7-A06",
+        name: "Tự nhận thức giá trị cá nhân, điểm mạnh và điểm cần cải thiện (Khối 7)",
+        category: "NHAN_THUC_BAN_THAN",
+        categoryLabel: "6. Nhận thức bản thân",
+        focus: "Mức độ hiểu rõ bản thân: tính cách, giá trị cốt lõi, thói quen tốt và thói quen chưa tốt.",
+        guideline: "Lắng nghe sự khiêm tốn, tính chân thật và khao khát hoàn thiện nhân cách bản thân.",
+        suggestedQuestions: ["Nếu dùng 3 từ để miêu tả chính xác nhất về bản thân con, con sẽ chọn những từ nào?","Điểm yếu hoặc hạn chế lớn nhất mà con đang nỗ lực rèn luyện để vượt qua là gì?","Những điều gì hoặc môi trường nào giúp con phát huy tối đa năng lực tốt nhất của mình?"],
         mandatoryCommentRatings: ["NEED_SUPPORT", "SPECIAL_ATTENTION"],
         sortOrder: 6
       },
       {
-        id: "k79_c7",
-        name: "7. Trí tuệ cảm xúc (EQ) & Mối quan hệ xã hội",
-        category: "EQ_QUAN_HE_XA_HOI",
-        categoryLabel: "Trí tuệ Cảm xúc & Quan hệ Xã hội",
-        guideline: "Đánh giá trí tuệ cảm xúc, sức bật tâm lý và sự ứng xử văn minh trước áp lực đồng trang lứa (peer pressure).",
-        suggestedQuestions: [
-          "Khi cảm thấy mệt mỏi hoặc có mâu thuẫn với bạn bè, thói quen tích cực nào giúp con lấy lại cân bằng?",
-          "Khi bạn bè có những rủ rê hoặc hành vi chưa đúng đắn, con từ chối và giữ lập trường thế nào?",
-          "Điều gì giúp con luôn giữ được thái độ lạc quan trước những thử thách mới?"
-        ],
+        id: "k7_c7",
+        code: "K7-A07",
+        name: "Mục tiêu, nguyện vọng và kế hoạch đóng góp tại Sky-Line (Khối 7)",
+        category: "KY_VONG_SKYLINE",
+        categoryLabel: "7. Kỳ vọng cá nhân tại Sky-Line",
+        focus: "Hình dung của học sinh về cơ hội học tập, câu lạc bộ, dự án cộng đồng tại Sky-Line.",
+        guideline: "Đánh giá mức độ đồng điệu giữa giá trị của học sinh với triết lý giáo dục Sky-Line.",
+        suggestedQuestions: ["Con kỳ vọng điều gì nhất từ thầy cô và môi trường học tập tại Sky-Line?","Con mong muốn tham gia những dự án học tập, câu lạc bộ hay hoạt động cộng đồng nào tại trường?","Con dự định sẽ để lại dấu ấn hoặc đóng góp gì cho tập thể lớp và trường Sky-Line?"],
         mandatoryCommentRatings: ["NEED_SUPPORT", "SPECIAL_ATTENTION"],
         sortOrder: 7
       },
       {
-        id: "k79_c8",
-        name: "8. Định hướng học thuật & Mục tiêu Lớp 10",
-        category: "DINH_HUONG_MUC_TIEU_10",
-        categoryLabel: "Định hướng Học thuật & Mục tiêu Lớp 10",
-        guideline: "Đánh giá mức độ nhận thức về lộ trình thi vào lớp 10, định hướng môn chuyên sâu và mục tiêu cá nhân tại Sky-Line.",
-        suggestedQuestions: [
-          "Con đã từng nghĩ đến định hướng khối học hoặc tổ hợp môn mà con muốn học chuyên sâu ở cấp THPT chưa?",
-          "Mục tiêu GPA và các thành tích học thuật con muốn chinh phục trong năm học này là gì?",
-          "Con mong muốn thầy cô và nhà trường Sky-Line hỗ trợ con chuẩn bị hành trang gì tốt nhất cho tương lai?"
-        ],
+        id: "k7_c8",
+        code: "K7-A08",
+        name: "Tự đánh giá năng lực học thuật, ngoại ngữ và tư duy nghiên cứu (Khối 7)",
+        category: "NANG_LUC_TU_NHAN_DINH",
+        categoryLabel: "8. Năng lực học tập tự nhận định",
+        focus: "Khả năng tự định vị trình độ các môn văn hóa, năng lực ngoại ngữ (IELTS/giao tiếp) và tự học.",
+        guideline: "Đánh giá sự tự tin nhưng thực tế, có dẫn chứng cụ thể về điểm số hoặc sản phẩm học tập.",
+        suggestedQuestions: ["Con tự đánh giá năng lực của mình ở các môn khoa học và xã hội hiện tại đang ở mức độ nào?","Khả năng sử dụng ngoại ngữ (tiếng Anh) trong học thuật và giao tiếp của con đáp ứng ra sao?","Con có phương pháp tự học đặc biệt nào giúp con ghi nhớ và hiểu sâu kiến thức không?"],
         mandatoryCommentRatings: ["NEED_SUPPORT", "SPECIAL_ATTENTION"],
         sortOrder: 8
+      },
+      {
+        id: "k7_c9",
+        code: "K7-A09",
+        name: "Kỹ năng thuyết trình, phản biện văn minh và truyền cảm hứng (Khối 7)",
+        category: "KY_NANG_GIAO_TIEP",
+        categoryLabel: "9. Kỹ năng giao tiếp",
+        focus: "Khả năng diễn giải ý tưởng thuyết phục, phong thái tự tin và kỹ năng lắng nghe thấu cảm.",
+        guideline: "Quan sát ngôn ngữ cơ thể, ánh mắt, cách dùng từ ngữ và khả năng đối đáp thông minh.",
+        suggestedQuestions: ["Con có cảm thấy tự tin khi thuyết trình một đề tài trước cả lớp hoặc hội trường không?","Khi người khác có quan điểm trái ngược với con, con phản hồi và trao đổi lại như thế nào?","Con làm thế nào để truyền tải thông điệp một cách rõ ràng và thu hút người nghe?"],
+        mandatoryCommentRatings: ["NEED_SUPPORT", "SPECIAL_ATTENTION"],
+        sortOrder: 9
+      },
+      {
+        id: "k7_c10",
+        code: "K7-A010",
+        name: "Định hướng cá nhân hóa, nhu cầu cố vấn chuyên sâu và lưu ý đặc thù (Khối 7)",
+        category: "THONG_TIN_BO_SUNG",
+        categoryLabel: "10. Thông tin bổ sung",
+        focus: "Nguyện vọng về cố vấn học tập, định hướng nghề nghiệp, thi chứng chỉ hoặc nhu cầu hỗ trợ tâm lý.",
+        guideline: "Ghi nhận nhu cầu chuyên sâu để nhà trường phân bổ giáo viên cố vấn phù hợp.",
+        suggestedQuestions: ["Con có kế hoạch thi các chứng chỉ quốc tế, tham gia kỳ thi học sinh giỏi hay nghiên cứu khoa học không?","Con có cần nhà trường hoặc cố vấn học tập hỗ trợ riêng về lộ trình định hướng nào không?","Có bất kỳ chia sẻ hoặc mong muốn nào khác mà con muốn gửi gắm tới thầy cô không?"],
+        mandatoryCommentRatings: ["NEED_SUPPORT", "SPECIAL_ATTENTION"],
+        sortOrder: 10
+      }
+    ],
+    parentGroups: [
+      {
+        id: "k7_p1",
+        code: "K7-B01",
+        category: "HIEU_HS_GOC_NHIN_PH",
+        categoryLabel: "1. Hiểu học sinh qua góc nhìn phụ huynh",
+        title: "Đặc điểm tính cách, tâm lý lứa tuổi và thế mạnh của học sinh (Khối 7)",
+        focus: "Đánh giá sự trưởng thành tâm lý, thế mạnh cốt lõi và nét tính cách nổi bật theo lứa tuổi.",
+        suggestedQuestions: ["Xin gia đình chia sẻ về những nét tính cách nổi trội và sự thay đổi tâm lý của con thời gian gần đây?","Con thể hiện niềm say mê và năng khiếu vượt trội nhất trong lĩnh vực nào?","Khi con gặp áp lực học tập hoặc khúc mắc tâm lý, biểu hiện ở nhà của con như thế nào?"],
+        placeholder: "Ví dụ: Con có tư duy độc lập, giàu cảm xúc, có năng khiếu tự học tốt; đôi lúc có áp lực về điểm số nhưng biết lắng nghe lời khuyên của gia đình...",
+        sortOrder: 1
+      },
+      {
+        id: "k7_p2",
+        code: "K7-B02",
+        category: "QUA_TRINH_NANG_LUC_HT",
+        categoryLabel: "2. Quá trình và năng lực học tập",
+        title: "Đánh giá học lực, năng khiếu ngoại ngữ và phong cách học tập (Khối 7)",
+        focus: "Lịch sử học tập, thế mạnh môn học, kết quả các kỳ thi và phong cách tiếp thu tri thức.",
+        suggestedQuestions: ["Gia đình nhận định thế nào về năng lực học thuật và nền tảng kiến thức hiện tại của con?","Khả năng ngoại ngữ (tiếng Anh) và năng lực tự học nghiên cứu của con được phát huy ra sao?","Môn học hoặc kỹ năng nào con cần được nhà trường bồi dưỡng và hỗ trợ nâng cao thêm?"],
+        placeholder: "Ví dụ: Học lực các năm trước đạt loại Giỏi/Tốt, tư duy Toán và tiếng Anh khá tốt; mong muốn trường rèn luyện thêm kỹ năng làm việc nhóm và thuyết trình...",
+        sortOrder: 2
+      },
+      {
+        id: "k7_p3",
+        code: "K7-B03",
+        category: "THOI_QUEN_HT_TAI_NHA",
+        categoryLabel: "3. Thói quen học tập tại nhà",
+        title: "Mức độ tự giác, phương pháp tự học và sử dụng công nghệ (Khối 7)",
+        focus: "Nề nếp tự học tại nhà, khả năng tự tra cứu tài liệu và quản lý thời gian sử dụng internet/mạng xã hội.",
+        suggestedQuestions: ["Con có kế hoạch tự học rõ ràng mỗi ngày không? Mức độ tự giác đạt bao nhiêu %?","Gia đình định hướng và kiểm soát việc sử dụng điện thoại thông minh, máy tính và mạng xã hội của con như thế nào?","Con có thói quen đọc sách chuyên môn, báo chí hoặc tra cứu tài liệu học thuật trực tuyến không?"],
+        placeholder: "Ví dụ: Con tự giác ngồi vào bàn học đúng giờ, tự lập thời gian biểu; gia đình quy định sử dụng điện thoại có kiểm soát mục đích phục vụ học tập...",
+        sortOrder: 3
+      },
+      {
+        id: "k7_p4",
+        code: "K7-B04",
+        category: "DONG_HANH_CUA_PH",
+        categoryLabel: "4. Cách phụ huynh đồng hành với việc học",
+        title: "Phương pháp đồng hành, tôn trọng chính kiến và phối hợp với nhà trường (Khối 7)",
+        focus: "Cách cha mẹ làm bạn cùng con ở lứa tuổi phát triển, tôn trọng quyết định và hỗ trợ hướng nghiệp.",
+        suggestedQuestions: ["Bố mẹ thường trò chuyện và thấu hiểu nguyện vọng của con thông qua những dịp nào?","Khi có sự bất đồng ý kiến về chọn môn học hoặc định hướng, gia đình giải quyết như thế nào?","Gia đình sẵn sàng phối hợp cùng Ban Cố vấn và Giáo viên chủ nhiệm theo cơ chế như thế nào?"],
+        placeholder: "Ví dụ: Gia đình luôn tôn trọng ý kiến cá nhân của con, đóng vai trò người đồng hành định hướng; cam kết phối hợp thường xuyên với nhà trường...",
+        sortOrder: 4
+      },
+      {
+        id: "k7_p5",
+        code: "K7-B05",
+        category: "DONG_LUC_KY_VONG_GD",
+        categoryLabel: "5. Động lực, kỳ vọng và mục tiêu giáo dục",
+        title: "Kỳ vọng đầu ra, định hướng nghề nghiệp và mục tiêu giáo dục dài hạn (Khối 7)",
+        focus: "Mục tiêu chuyển tiếp (cấp học tiếp theo, đại học, du học) và kỳ vọng giá trị nhân cách tại Sky-Line.",
+        suggestedQuestions: ["Gia đình kỳ vọng con sẽ phát triển những phẩm chất và năng lực cốt lõi nào khi học tại Sky-Line?","Định hướng tương lai dài hạn (chọn ngành nghề, đại học trong nước hay du học quốc tế) của gia đình dành cho con là gì?","Gia đình mong muốn nhà trường xây dựng lộ trình đồng hành cụ thể nào để hiện thực hóa mục tiêu trên?"],
+        placeholder: "Ví dụ: Kỳ vọng con phát triển toàn diện tư duy phản biện, ngoại ngữ xuất sắc, tự tin hội nhập quốc tế và đạt mục tiêu tuyển sinh đại học hàng đầu...",
+        sortOrder: 5
       }
     ],
     parentPrompts: {
-      groupLabel: "Khối 7–9 (THCS: Phát triển năng lực & Sở trường)",
+      groupLabel: "Khối 7 (Động lực, thói quen học tập, quản lý bản thân)",
       group1_expectations: {
-        title: "1. Nguyện vọng & Định hướng học thuật của Gia đình cho giai đoạn THCS",
-        hints: [
-          "Định hướng trọng tâm cho con (nâng cao GPA, đội tuyển học sinh giỏi, chứng chỉ Tiếng Anh IELTS, chuẩn bị thi vào lớp 10)?",
-          "Kỳ vọng của gia đình đối với sự trưởng thành về nhân cách và kỹ năng sống của con?"
-        ],
-        placeholder: "Ví dụ: Gia đình định hướng con tập trung bồi dưỡng tiếng Anh đạt IELTS 6.0+, rèn luyện tư duy phản biện và khả năng thuyết trình..."
+        title: "1. Nguyện vọng & Kỳ vọng của PHHS đối với sự phát triển của học sinh",
+        hints: ["Gia đình kỳ vọng con sẽ phát triển những phẩm chất và năng lực cốt lõi nào khi học tại Sky-Line?","Định hướng tương lai dài hạn (chọn ngành nghề, đại học trong nước hay du học quốc tế) của gia đình dành cho con là gì?","Gia đình mong muốn nhà trường xây dựng lộ trình đồng hành cụ thể nào để hiện thực hóa mục tiêu trên?"],
+        placeholder: "Ví dụ: Kỳ vọng con phát triển toàn diện tư duy phản biện, ngoại ngữ xuất sắc, tự tin hội nhập quốc tế và đạt mục tiêu tuyển sinh đại học hàng đầu..."
       },
       group2_personality: {
-        title: "2. Đặc điểm tâm lý tuổi dậy thì, sở thích & thói quen sinh hoạt",
-        hints: [
-          "Mức độ cởi mở của con khi trò chuyện với cha mẹ về trường lớp và bạn bè?",
-          "Các mối quan tâm đặc biệt, thói quen sử dụng mạng xã hội và khả năng tự kiểm soát của con?"
-        ],
-        placeholder: "Ví dụ: Con có cá tính mạnh mẽ, ham học hỏi nhưng đôi lúc dễ nóng tính; thích chơi thể thao và tham gia các hoạt động thiện nguyện..."
+        title: "2. Đặc điểm cá nhân, tính cách và thói quen của học sinh",
+        hints: ["Xin gia đình chia sẻ về những nét tính cách nổi trội và sự thay đổi tâm lý của con thời gian gần đây?","Con thể hiện niềm say mê và năng khiếu vượt trội nhất trong lĩnh vực nào?","Khi con gặp áp lực học tập hoặc khúc mắc tâm lý, biểu hiện ở nhà của con như thế nào?"],
+        placeholder: "Ví dụ: Con có tư duy độc lập, giàu cảm xúc, có năng khiếu tự học tốt; đôi lúc có áp lực về điểm số nhưng biết lắng nghe lời khuyên của gia đình..."
       },
       group3_support: {
-        title: "3. Nhu cầu hỗ trợ học thuật & tâm lý từ Nhà trường",
-        hints: [
-          "Mong muốn nhà trường hỗ trợ con phát triển thêm năng lực nào (lãnh đạo, CLB, tư vấn tâm lý học đường)?",
-          "Những điều lưu ý để thầy cô tạo động lực tốt nhất cho con?"
-        ],
-        placeholder: "Ví dụ: Mong muốn thầy cô khích lệ con tự tin phát biểu, tạo cơ hội tham gia ban tổ chức sự kiện hoặc CLB Tranh biện..."
+        title: "3. Nhu cầu hỗ trợ, bồi dưỡng và đề xuất từ PHHS",
+        hints: ["Gia đình nhận định thế nào về năng lực học thuật và nền tảng kiến thức hiện tại của con?","Khả năng ngoại ngữ (tiếng Anh) và năng lực tự học nghiên cứu của con được phát huy ra sao?","Môn học hoặc kỹ năng nào con cần được nhà trường bồi dưỡng và hỗ trợ nâng cao thêm?"],
+        placeholder: "Ví dụ: Học lực các năm trước đạt loại Giỏi/Tốt, tư duy Toán và tiếng Anh khá tốt; mong muốn trường rèn luyện thêm kỹ năng làm việc nhóm và thuyết trình..."
       },
       group4_cooperation: {
-        title: "4. Cơ chế phối hợp giáo dục giữa Gia đình & Nhà trường",
-        hints: [
-          "Sự thống nhất giữa gia đình và nhà trường trong việc định hướng giá trị sống và quản lý hành vi.",
-          "Cam kết đồng hành cùng nhà trường trong các chương trình trải nghiệm và hướng nghiệp sớm."
-        ],
-        placeholder: "Ví dụ: Gia đình luôn sẵn sàng lắng nghe và phối hợp cùng GVCN; cam kết tạo môi trường gia đình ấm áp, văn minh để con phát triển..."
+        title: "4. Cơ chế phối hợp và đồng hành giữa gia đình và nhà trường",
+        hints: ["Bố mẹ thường trò chuyện và thấu hiểu nguyện vọng của con thông qua những dịp nào?","Khi có sự bất đồng ý kiến về chọn môn học hoặc định hướng, gia đình giải quyết như thế nào?","Gia đình sẵn sàng phối hợp cùng Ban Cố vấn và Giáo viên chủ nhiệm theo cơ chế như thế nào?"],
+        placeholder: "Ví dụ: Gia đình luôn tôn trọng ý kiến cá nhân của con, đóng vai trò người đồng hành định hướng; cam kết phối hợp thường xuyên với nhà trường..."
       }
     }
   },
-
-  // 5. KHỐI 10–12 (8 CÂU HỎI CHUẨN)
-  KHOI_10_12: {
-    key: "KHOI_10_12",
-    label: "Khối 10–12",
-    subLabel: "THPT: Tư duy Phản biện & Định hướng Môn học - Nghề nghiệp (8 Câu hỏi chuẩn)",
-    gradeList: ["10", "11", "12", "Khối 10", "Khối 11", "Khối 12"],
+  // 8. KHỐI 8 - Tư duy độc lập, quản lý cảm xúc, giải quyết vấn đề
+  KHOI_8: {
+    key: "KHOI_8",
+    gradeNumber: 8,
+    label: "Khối 8",
+    subLabel: "Tư duy độc lập, phản biện, quản lý cảm xúc và giải quyết xung đột",
+    focus: "Tư duy độc lập, quản lý cảm xúc, giải quyết vấn đề",
+    gradeList: ["8","Khối 8","Lớp 8","K8"],
     criteria: [
       {
-        id: "k1012_c1",
-        name: "1. Giao tiếp học thuật & Tư duy phản biện",
-        category: "GIAO_TIEP_PHAN_BIEN",
-        categoryLabel: "Giao tiếp & Tư duy Phản biện",
-        guideline: "Đánh giá năng lực tư duy phản biện, logic lập luận và phong thái giao tiếp học thuật tự tin, văn minh.",
-        suggestedQuestions: [
-          "Khi đối diện với một vấn đề xã hội hoặc một quan điểm trái ngược với suy nghĩ của con, con tiếp cận và đánh giá như thế nào?",
-          "Con trình bày và bảo vệ quan điểm của mình ra sao trên tinh thần tôn trọng sự khác biệt?",
-          "Con đã từng tham gia tranh biện hoặc viết bài luận thể hiện quan điểm cá nhân chưa?"
-        ],
+        id: "k8_c1",
+        code: "K8-A01",
+        name: "Sở thích, đam mê và lĩnh vực thế mạnh nổi bật (Khối 8)",
+        category: "SO_THICH_THE_MANH",
+        categoryLabel: "1. Sở thích và thế mạnh",
+        focus: "Khám phá đam mê, lĩnh vực chuyên môn hoặc năng khiếu sở trường phù hợp trọng tâm: Tư duy độc lập, quản lý cảm xúc, giải quyết vấn đề.",
+        guideline: "Đánh giá mức độ am hiểu, chiều sâu đam mê và thời gian học sinh đầu tư cho thế mạnh cá nhân.",
+        suggestedQuestions: ["Trong các môn học và hoạt động hiện tại, con yêu thích và tự tin nhất ở lĩnh vực nào?","Con đã từng đạt giải thưởng, dự án cá nhân hoặc thành tích nào đáng tự hào trong thế mạnh này chưa?","Thế mạnh này giúp ích gì cho con trong việc học tập và kết nối bạn bè?"],
         mandatoryCommentRatings: ["NEED_SUPPORT", "SPECIAL_ATTENTION"],
         sortOrder: 1
       },
       {
-        id: "k1012_c2",
-        name: "2. Tự chủ học tập & Quản trị mục tiêu SMART",
-        category: "TU_HOC_MUC_TIEU_SMART",
-        categoryLabel: "Tự học & Quản trị Mục tiêu SMART",
-        guideline: "Đánh giá kỹ năng quản trị mục tiêu cá nhân theo chuẩn SMART, phương pháp tự nghiên cứu và tính kiên định.",
-        suggestedQuestions: [
-          "Mục tiêu học thuật trọng tâm của con trong 3 năm THPT là gì (GPA, IELTS/SAT, nghiên cứu khoa học, học bổng)?",
-          "Con xây dựng lộ trình và tự kỷ luật bản thân thế nào để hiện thực hóa mục tiêu đã đặt ra?",
-          "Khi kế hoạch cá nhân bị chậm trễ, con khắc phục và lấy lại nhịp độ thế nào?"
-        ],
+        id: "k8_c2",
+        code: "K8-A02",
+        name: "Động lực học tập nội tại và thái độ với mục tiêu học đường (Khối 8)",
+        category: "THAI_DO_DONG_LUC",
+        categoryLabel: "2. Thái độ và động lực học tập",
+        focus: "Đánh giá mức độ tự giác, mục tiêu học tập rõ ràng theo trọng tâm: Tư duy độc lập, quản lý cảm xúc, giải quyết vấn đề.",
+        guideline: "Phân biệt học tập vì đam mê, sự tò mò hay vì nghĩa vụ, áp lực từ gia đình.",
+        suggestedQuestions: ["Điều gì là động lực lớn nhất thúc đẩy con nỗ lực học tập mỗi ngày?","Khi gặp phải một chuyên đề hoặc bài tập rất khó, con duy trì quyết tâm như thế nào?","Con có thói quen tự tìm kiếm thêm tài liệu, sách báo hoặc khóa học trực tuyến để mở rộng kiến thức không?"],
         mandatoryCommentRatings: ["NEED_SUPPORT", "SPECIAL_ATTENTION"],
         sortOrder: 2
       },
       {
-        id: "k1012_c3",
-        name: "3. Định hướng tổ hợp môn học & Khối ngành",
-        category: "TO_HOP_MON_KHOI_NGANH",
-        categoryLabel: "Định hướng Tổ hợp Môn & Khối ngành",
-        guideline: "Đánh giá sự am hiểu về chương trình GDPT mới, mức độ chín chắn trong việc chọn tổ hợp môn và định hướng tương lai.",
-        suggestedQuestions: [
-          "Con lựa chọn tổ hợp môn học nào (KHTN hay KHXH) và vì sao con chọn định hướng đó?",
-          "Con thấy năng lực bản thân phù hợp nhất với nhóm ngành nghề nào trong tương lai?",
-          "Con đã tìm hiểu về các phương thức xét tuyển đại học của ngành nghề con quan tâm chưa?"
-        ],
+        id: "k8_c3",
+        code: "K8-A03",
+        name: "Tư duy logic, giải quyết khúc mắc và vượt khó (Khối 8)",
+        category: "GIAI_QUYET_VAN_DE",
+        categoryLabel: "3. Khả năng giải quyết vấn đề",
+        focus: "Khả năng phân tích nguyên nhân, đề xuất phương án và xử lý tình huống thực tế.",
+        guideline: "Quan sát phản xạ tư duy phản biện, cách lập luận và tinh thần không lùi bước trước khó khăn.",
+        suggestedQuestions: ["Khi đối diện với một vấn đề phức tạp hoặc xung đột ý kiến với bạn bè, con giải quyết ra sao?","Hãy kể về một tình huống con tự mình tìm ra cách giải quyết khó khăn mà không cần người lớn can thiệp?","Con học được bài học kinh nghiệm gì từ những thất bại hoặc kết quả chưa đạt mong muốn trước đây?"],
         mandatoryCommentRatings: ["NEED_SUPPORT", "SPECIAL_ATTENTION"],
         sortOrder: 3
       },
       {
-        id: "k1012_c4",
-        name: "4. Kế hoạch Đại học, Nghề nghiệp & Du học",
-        category: "DAI_HOC_NGHE_NGHIEP_DU_HOC",
-        categoryLabel: "Kế hoạch Đại học & Du học",
-        guideline: "Khám phá mục tiêu sau tốt nghiệp THPT: Đại học trong nước (Top đầu), Du học học bổng hay Chương trình quốc tế.",
-        suggestedQuestions: [
-          "Kế hoạch sau khi tốt nghiệp THPT của con là gì (học đại học trong nước, du học hay tham gia chương trình liên kết quốc tế)?",
-          "Con đã chuẩn bị những gì cho bộ hồ sơ tuyển sinh đại học / học bổng du học của mình (chứng chỉ, bài luận, hoạt động ngoại khóa)?",
-          "Con mong muốn Sky-Line mang đến cho con những cơ hội hướng nghiệp hoặc dự án thực tế nào?"
-        ],
+        id: "k8_c4",
+        code: "K8-A04",
+        name: "Kỹ năng tự chủ, quản lý thời gian và trách nhiệm cá nhân (Khối 8)",
+        category: "TINH_CHU_DONG",
+        categoryLabel: "4. Tính chủ động",
+        focus: "Mức độ chủ động xây dựng kế hoạch, sắp xếp thứ tự ưu tiên và tự chịu trách nhiệm.",
+        guideline: "Đánh giá tính độc lập, khả năng tổ chức công việc và việc giữ đúng cam kết.",
+        suggestedQuestions: ["Con tự quản lý thời gian học tập, giải trí và sinh hoạt cá nhân như thế nào trong ngày?","Khi được giao một nhiệm vụ hoặc dự án nhóm, con chủ động nhận phần việc nào?","Nếu bị chậm tiến độ hoặc quên nhiệm vụ, con nhận trách nhiệm và khắc phục như thế nào?"],
         mandatoryCommentRatings: ["NEED_SUPPORT", "SPECIAL_ATTENTION"],
         sortOrder: 4
       },
       {
-        id: "k1012_c5",
-        name: "5. Làm việc dự án, Đổi mới & Kỹ năng lãnh đạo",
-        category: "DU_AN_LANH_DAO",
-        categoryLabel: "Làm việc Dự án & Lãnh đạo",
-        guideline: "Đánh giá kinh nghiệm tổ chức sự kiện, điều phối dự án, tư duy đổi mới sáng tạo và tinh thần trách nhiệm thủ lĩnh.",
-        suggestedQuestions: [
-          "Con đã từng tham gia tổ chức sự kiện, dự án cộng đồng hay làm trưởng nhóm học tập chưa?",
-          "Khi các thành viên trong nhóm gặp khó khăn hoặc thiếu động lực, con giải quyết ra sao?",
-          "Theo con, tố chất quan trọng nhất của một người lãnh đạo trẻ là gì?"
-        ],
+        id: "k8_c5",
+        code: "K8-A05",
+        name: "Kỹ năng hợp tác, lãnh đạo nhóm và thích ứng môi trường mới (Khối 8)",
+        category: "KY_NANG_XA_HOI_THICH_NGHI",
+        categoryLabel: "5. Kỹ năng xã hội và khả năng thích nghi",
+        focus: "Khả năng tương tác xã hội, tinh thần đồng đội và mức độ linh hoạt trước thay đổi.",
+        guideline: "Quan sát sự cởi mở, lắng nghe tích cực và vai trò thể hiện trong tập thể.",
+        suggestedQuestions: ["Con thích nghi như thế nào khi bước vào một môi trường mới với nhiều giáo viên và bạn học mới?","Trong hoạt động nhóm, con thường đóng vai trò người kết nối, lãnh đạo hay hỗ trợ thực thi?","Làm thế nào để con duy trì mối quan hệ bạn bè lành mạnh và tích cực tại trường học?"],
         mandatoryCommentRatings: ["NEED_SUPPORT", "SPECIAL_ATTENTION"],
         sortOrder: 5
       },
       {
-        id: "k1012_c6",
-        name: "6. Ngoại ngữ học thuật & Ứng dụng công nghệ/AI",
-        category: "NGOAI_NGU_CONG_NGHE_AI",
-        categoryLabel: "Ngoại ngữ & Ứng dụng Công nghệ/AI",
-        guideline: "Đánh giá năng lực tiếng Anh học thuật (IELTS/SAT), kỹ năng số và nhận thức sử dụng công nghệ, AI có trách nhiệm.",
-        suggestedQuestions: [
-          "Trình độ tiếng Anh hiện tại của con ra sao và con sử dụng tiếng Anh như thế nào trong học tập và nghiên cứu?",
-          "Con sử dụng các công cụ công nghệ và trí tuệ nhân tạo (AI) như thế nào để phục vụ việc học tập?",
-          "Con nhìn nhận thế nào về đạo đức học thuật và tính trung thực khi sử dụng công nghệ số?"
-        ],
+        id: "k8_c6",
+        code: "K8-A06",
+        name: "Tự nhận thức giá trị cá nhân, điểm mạnh và điểm cần cải thiện (Khối 8)",
+        category: "NHAN_THUC_BAN_THAN",
+        categoryLabel: "6. Nhận thức bản thân",
+        focus: "Mức độ hiểu rõ bản thân: tính cách, giá trị cốt lõi, thói quen tốt và thói quen chưa tốt.",
+        guideline: "Lắng nghe sự khiêm tốn, tính chân thật và khao khát hoàn thiện nhân cách bản thân.",
+        suggestedQuestions: ["Nếu dùng 3 từ để miêu tả chính xác nhất về bản thân con, con sẽ chọn những từ nào?","Điểm yếu hoặc hạn chế lớn nhất mà con đang nỗ lực rèn luyện để vượt qua là gì?","Những điều gì hoặc môi trường nào giúp con phát huy tối đa năng lực tốt nhất của mình?"],
         mandatoryCommentRatings: ["NEED_SUPPORT", "SPECIAL_ATTENTION"],
         sortOrder: 6
       },
       {
-        id: "k1012_c7",
-        name: "7. Quản trị căng thẳng & Bản lĩnh tâm lý",
-        category: "QUAN_TRI_CANG_THANG",
-        categoryLabel: "Quản trị Căng thẳng & Bản lĩnh",
-        guideline: "Đánh giá khả năng quản lý áp lực học tập THPT, sức bật tâm lý và sự lành mạnh trong các mối quan hệ xã hội.",
-        suggestedQuestions: [
-          "Trước áp lực học tập và các kỳ thi quan trọng ở bậc THPT, con có phương pháp giải tỏa căng thẳng thế nào?",
-          "Khi đứng trước một quyết định khó khăn, con thường dựa vào đâu để đưa ra lựa chọn?",
-          "Ai là người con tin tưởng nhất để chia sẻ khi đối diện với những biến cố trong cuộc sống?"
-        ],
+        id: "k8_c7",
+        code: "K8-A07",
+        name: "Mục tiêu, nguyện vọng và kế hoạch đóng góp tại Sky-Line (Khối 8)",
+        category: "KY_VONG_SKYLINE",
+        categoryLabel: "7. Kỳ vọng cá nhân tại Sky-Line",
+        focus: "Hình dung của học sinh về cơ hội học tập, câu lạc bộ, dự án cộng đồng tại Sky-Line.",
+        guideline: "Đánh giá mức độ đồng điệu giữa giá trị của học sinh với triết lý giáo dục Sky-Line.",
+        suggestedQuestions: ["Con kỳ vọng điều gì nhất từ thầy cô và môi trường học tập tại Sky-Line?","Con mong muốn tham gia những dự án học tập, câu lạc bộ hay hoạt động cộng đồng nào tại trường?","Con dự định sẽ để lại dấu ấn hoặc đóng góp gì cho tập thể lớp và trường Sky-Line?"],
         mandatoryCommentRatings: ["NEED_SUPPORT", "SPECIAL_ATTENTION"],
         sortOrder: 7
       },
       {
-        id: "k1012_c8",
-        name: "8. Động lực nội tại & Trách nhiệm cộng đồng",
-        category: "DONG_LUC_CONG_DONG",
-        categoryLabel: "Động lực Nội tại & Trách nhiệm Cộng đồng",
-        guideline: "Nhận diện giá trị sống cốt lõi, động lực học tập suốt đời và tinh thần đóng góp, phụng sự cộng đồng của học sinh.",
-        suggestedQuestions: [
-          "Động lực nội tại lớn nhất thúc đẩy con nỗ lực và học hỏi mỗi ngày là gì?",
-          "Giá trị sống hoặc phẩm chất nào mà con trân trọng nhất và muốn trau dồi trong những năm tháng tại Sky-Line?",
-          "Con mong muốn tạo ra những tác động tích cực nào cho tập thể và cộng đồng xung quanh con?"
-        ],
+        id: "k8_c8",
+        code: "K8-A08",
+        name: "Tự đánh giá năng lực học thuật, ngoại ngữ và tư duy nghiên cứu (Khối 8)",
+        category: "NANG_LUC_TU_NHAN_DINH",
+        categoryLabel: "8. Năng lực học tập tự nhận định",
+        focus: "Khả năng tự định vị trình độ các môn văn hóa, năng lực ngoại ngữ (IELTS/giao tiếp) và tự học.",
+        guideline: "Đánh giá sự tự tin nhưng thực tế, có dẫn chứng cụ thể về điểm số hoặc sản phẩm học tập.",
+        suggestedQuestions: ["Con tự đánh giá năng lực của mình ở các môn khoa học và xã hội hiện tại đang ở mức độ nào?","Khả năng sử dụng ngoại ngữ (tiếng Anh) trong học thuật và giao tiếp của con đáp ứng ra sao?","Con có phương pháp tự học đặc biệt nào giúp con ghi nhớ và hiểu sâu kiến thức không?"],
         mandatoryCommentRatings: ["NEED_SUPPORT", "SPECIAL_ATTENTION"],
         sortOrder: 8
+      },
+      {
+        id: "k8_c9",
+        code: "K8-A09",
+        name: "Kỹ năng thuyết trình, phản biện văn minh và truyền cảm hứng (Khối 8)",
+        category: "KY_NANG_GIAO_TIEP",
+        categoryLabel: "9. Kỹ năng giao tiếp",
+        focus: "Khả năng diễn giải ý tưởng thuyết phục, phong thái tự tin và kỹ năng lắng nghe thấu cảm.",
+        guideline: "Quan sát ngôn ngữ cơ thể, ánh mắt, cách dùng từ ngữ và khả năng đối đáp thông minh.",
+        suggestedQuestions: ["Con có cảm thấy tự tin khi thuyết trình một đề tài trước cả lớp hoặc hội trường không?","Khi người khác có quan điểm trái ngược với con, con phản hồi và trao đổi lại như thế nào?","Con làm thế nào để truyền tải thông điệp một cách rõ ràng và thu hút người nghe?"],
+        mandatoryCommentRatings: ["NEED_SUPPORT", "SPECIAL_ATTENTION"],
+        sortOrder: 9
+      },
+      {
+        id: "k8_c10",
+        code: "K8-A010",
+        name: "Định hướng cá nhân hóa, nhu cầu cố vấn chuyên sâu và lưu ý đặc thù (Khối 8)",
+        category: "THONG_TIN_BO_SUNG",
+        categoryLabel: "10. Thông tin bổ sung",
+        focus: "Nguyện vọng về cố vấn học tập, định hướng nghề nghiệp, thi chứng chỉ hoặc nhu cầu hỗ trợ tâm lý.",
+        guideline: "Ghi nhận nhu cầu chuyên sâu để nhà trường phân bổ giáo viên cố vấn phù hợp.",
+        suggestedQuestions: ["Con có kế hoạch thi các chứng chỉ quốc tế, tham gia kỳ thi học sinh giỏi hay nghiên cứu khoa học không?","Con có cần nhà trường hoặc cố vấn học tập hỗ trợ riêng về lộ trình định hướng nào không?","Có bất kỳ chia sẻ hoặc mong muốn nào khác mà con muốn gửi gắm tới thầy cô không?"],
+        mandatoryCommentRatings: ["NEED_SUPPORT", "SPECIAL_ATTENTION"],
+        sortOrder: 10
+      }
+    ],
+    parentGroups: [
+      {
+        id: "k8_p1",
+        code: "K8-B01",
+        category: "HIEU_HS_GOC_NHIN_PH",
+        categoryLabel: "1. Hiểu học sinh qua góc nhìn phụ huynh",
+        title: "Đặc điểm tính cách, tâm lý lứa tuổi và thế mạnh của học sinh (Khối 8)",
+        focus: "Đánh giá sự trưởng thành tâm lý, thế mạnh cốt lõi và nét tính cách nổi bật theo lứa tuổi.",
+        suggestedQuestions: ["Xin gia đình chia sẻ về những nét tính cách nổi trội và sự thay đổi tâm lý của con thời gian gần đây?","Con thể hiện niềm say mê và năng khiếu vượt trội nhất trong lĩnh vực nào?","Khi con gặp áp lực học tập hoặc khúc mắc tâm lý, biểu hiện ở nhà của con như thế nào?"],
+        placeholder: "Ví dụ: Con có tư duy độc lập, giàu cảm xúc, có năng khiếu tự học tốt; đôi lúc có áp lực về điểm số nhưng biết lắng nghe lời khuyên của gia đình...",
+        sortOrder: 1
+      },
+      {
+        id: "k8_p2",
+        code: "K8-B02",
+        category: "QUA_TRINH_NANG_LUC_HT",
+        categoryLabel: "2. Quá trình và năng lực học tập",
+        title: "Đánh giá học lực, năng khiếu ngoại ngữ và phong cách học tập (Khối 8)",
+        focus: "Lịch sử học tập, thế mạnh môn học, kết quả các kỳ thi và phong cách tiếp thu tri thức.",
+        suggestedQuestions: ["Gia đình nhận định thế nào về năng lực học thuật và nền tảng kiến thức hiện tại của con?","Khả năng ngoại ngữ (tiếng Anh) và năng lực tự học nghiên cứu của con được phát huy ra sao?","Môn học hoặc kỹ năng nào con cần được nhà trường bồi dưỡng và hỗ trợ nâng cao thêm?"],
+        placeholder: "Ví dụ: Học lực các năm trước đạt loại Giỏi/Tốt, tư duy Toán và tiếng Anh khá tốt; mong muốn trường rèn luyện thêm kỹ năng làm việc nhóm và thuyết trình...",
+        sortOrder: 2
+      },
+      {
+        id: "k8_p3",
+        code: "K8-B03",
+        category: "THOI_QUEN_HT_TAI_NHA",
+        categoryLabel: "3. Thói quen học tập tại nhà",
+        title: "Mức độ tự giác, phương pháp tự học và sử dụng công nghệ (Khối 8)",
+        focus: "Nề nếp tự học tại nhà, khả năng tự tra cứu tài liệu và quản lý thời gian sử dụng internet/mạng xã hội.",
+        suggestedQuestions: ["Con có kế hoạch tự học rõ ràng mỗi ngày không? Mức độ tự giác đạt bao nhiêu %?","Gia đình định hướng và kiểm soát việc sử dụng điện thoại thông minh, máy tính và mạng xã hội của con như thế nào?","Con có thói quen đọc sách chuyên môn, báo chí hoặc tra cứu tài liệu học thuật trực tuyến không?"],
+        placeholder: "Ví dụ: Con tự giác ngồi vào bàn học đúng giờ, tự lập thời gian biểu; gia đình quy định sử dụng điện thoại có kiểm soát mục đích phục vụ học tập...",
+        sortOrder: 3
+      },
+      {
+        id: "k8_p4",
+        code: "K8-B04",
+        category: "DONG_HANH_CUA_PH",
+        categoryLabel: "4. Cách phụ huynh đồng hành với việc học",
+        title: "Phương pháp đồng hành, tôn trọng chính kiến và phối hợp với nhà trường (Khối 8)",
+        focus: "Cách cha mẹ làm bạn cùng con ở lứa tuổi phát triển, tôn trọng quyết định và hỗ trợ hướng nghiệp.",
+        suggestedQuestions: ["Bố mẹ thường trò chuyện và thấu hiểu nguyện vọng của con thông qua những dịp nào?","Khi có sự bất đồng ý kiến về chọn môn học hoặc định hướng, gia đình giải quyết như thế nào?","Gia đình sẵn sàng phối hợp cùng Ban Cố vấn và Giáo viên chủ nhiệm theo cơ chế như thế nào?"],
+        placeholder: "Ví dụ: Gia đình luôn tôn trọng ý kiến cá nhân của con, đóng vai trò người đồng hành định hướng; cam kết phối hợp thường xuyên với nhà trường...",
+        sortOrder: 4
+      },
+      {
+        id: "k8_p5",
+        code: "K8-B05",
+        category: "DONG_LUC_KY_VONG_GD",
+        categoryLabel: "5. Động lực, kỳ vọng và mục tiêu giáo dục",
+        title: "Kỳ vọng đầu ra, định hướng nghề nghiệp và mục tiêu giáo dục dài hạn (Khối 8)",
+        focus: "Mục tiêu chuyển tiếp (cấp học tiếp theo, đại học, du học) và kỳ vọng giá trị nhân cách tại Sky-Line.",
+        suggestedQuestions: ["Gia đình kỳ vọng con sẽ phát triển những phẩm chất và năng lực cốt lõi nào khi học tại Sky-Line?","Định hướng tương lai dài hạn (chọn ngành nghề, đại học trong nước hay du học quốc tế) của gia đình dành cho con là gì?","Gia đình mong muốn nhà trường xây dựng lộ trình đồng hành cụ thể nào để hiện thực hóa mục tiêu trên?"],
+        placeholder: "Ví dụ: Kỳ vọng con phát triển toàn diện tư duy phản biện, ngoại ngữ xuất sắc, tự tin hội nhập quốc tế và đạt mục tiêu tuyển sinh đại học hàng đầu...",
+        sortOrder: 5
       }
     ],
     parentPrompts: {
-      groupLabel: "Khối 10–12 (THPT: Định hướng nghề nghiệp & Du học)",
+      groupLabel: "Khối 8 (Tư duy độc lập, quản lý cảm xúc, giải quyết vấn đề)",
       group1_expectations: {
-        title: "1. Nguyện vọng & Định hướng Tương lai của Gia đình cho học sinh",
-        hints: [
-          "Định hướng sau tốt nghiệp THPT: Đại học trong nước (Top đầu), Du học học bổng hay Chương trình Quốc tế?",
-          "Kỳ vọng về chứng chỉ quốc tế (IELTS, SAT, AP) và định hướng ngành nghề cụ thể?"
-        ],
-        placeholder: "Ví dụ: Gia đình định hướng con theo ngành Công nghệ Thông tin, đặt mục tiêu đạt IELTS 7.0+ và xin học bổng du học..."
+        title: "1. Nguyện vọng & Kỳ vọng của PHHS đối với sự phát triển của học sinh",
+        hints: ["Gia đình kỳ vọng con sẽ phát triển những phẩm chất và năng lực cốt lõi nào khi học tại Sky-Line?","Định hướng tương lai dài hạn (chọn ngành nghề, đại học trong nước hay du học quốc tế) của gia đình dành cho con là gì?","Gia đình mong muốn nhà trường xây dựng lộ trình đồng hành cụ thể nào để hiện thực hóa mục tiêu trên?"],
+        placeholder: "Ví dụ: Kỳ vọng con phát triển toàn diện tư duy phản biện, ngoại ngữ xuất sắc, tự tin hội nhập quốc tế và đạt mục tiêu tuyển sinh đại học hàng đầu..."
       },
       group2_personality: {
-        title: "2. Năng lực tự lập, sở trường và đam mê của học sinh",
-        hints: [
-          "Mức độ tự chủ trong học tập và sinh hoạt cá nhân của con?",
-          "Lĩnh vực chuyên môn, năng khiếu hoặc hoạt động xã hội con đặc biệt đam mê và dành nhiều thời gian?"
-        ],
-        placeholder: "Ví dụ: Con có tính tự lập cao, có tư duy phản biện tốt, yêu thích nghiên cứu khoa học và tham gia các dự án cộng đồng..."
+        title: "2. Đặc điểm cá nhân, tính cách và thói quen của học sinh",
+        hints: ["Xin gia đình chia sẻ về những nét tính cách nổi trội và sự thay đổi tâm lý của con thời gian gần đây?","Con thể hiện niềm say mê và năng khiếu vượt trội nhất trong lĩnh vực nào?","Khi con gặp áp lực học tập hoặc khúc mắc tâm lý, biểu hiện ở nhà của con như thế nào?"],
+        placeholder: "Ví dụ: Con có tư duy độc lập, giàu cảm xúc, có năng khiếu tự học tốt; đôi lúc có áp lực về điểm số nhưng biết lắng nghe lời khuyên của gia đình..."
       },
       group3_support: {
-        title: "3. Nhu cầu hỗ trợ chuyên sâu & Hướng nghiệp từ Nhà trường",
-        hints: [
-          "Gia đình đề xuất nhà trường tư vấn lộ trình học thuật, chọn môn thi, chuẩn bị hồ sơ du học như thế nào?",
-          "Nhu cầu tham gia các chương trình thực tập hướng nghiệp, ngày hội du học hoặc kết nối chuyên gia?"
-        ],
-        placeholder: "Ví dụ: Mong muốn Ban Cố vấn hỗ trợ tư vấn chọn tổ hợp môn thi đại học từ lớp 10, kết nối các hội thảo du học và hướng dẫn viết luận..."
+        title: "3. Nhu cầu hỗ trợ, bồi dưỡng và đề xuất từ PHHS",
+        hints: ["Gia đình nhận định thế nào về năng lực học thuật và nền tảng kiến thức hiện tại của con?","Khả năng ngoại ngữ (tiếng Anh) và năng lực tự học nghiên cứu của con được phát huy ra sao?","Môn học hoặc kỹ năng nào con cần được nhà trường bồi dưỡng và hỗ trợ nâng cao thêm?"],
+        placeholder: "Ví dụ: Học lực các năm trước đạt loại Giỏi/Tốt, tư duy Toán và tiếng Anh khá tốt; mong muốn trường rèn luyện thêm kỹ năng làm việc nhóm và thuyết trình..."
       },
       group4_cooperation: {
-        title: "4. Cơ chế đồng hành chiến lược giữa Gia đình & Nhà trường",
-        hints: [
-          "Sự đồng thuận giữa gia đình và học sinh về định hướng tương lai.",
-          "Cam kết đồng hành cùng nhà trường trong việc tạo điều kiện cho con tham gia các kỳ thi quốc tế và hoạt động ngoại khóa."
-        ],
-        placeholder: "Ví dụ: Gia đình tôn trọng và đồng hành cùng nguyện vọng nghề nghiệp của con; cam kết phối hợp chặt chẽ với nhà trường..."
+        title: "4. Cơ chế phối hợp và đồng hành giữa gia đình và nhà trường",
+        hints: ["Bố mẹ thường trò chuyện và thấu hiểu nguyện vọng của con thông qua những dịp nào?","Khi có sự bất đồng ý kiến về chọn môn học hoặc định hướng, gia đình giải quyết như thế nào?","Gia đình sẵn sàng phối hợp cùng Ban Cố vấn và Giáo viên chủ nhiệm theo cơ chế như thế nào?"],
+        placeholder: "Ví dụ: Gia đình luôn tôn trọng ý kiến cá nhân của con, đóng vai trò người đồng hành định hướng; cam kết phối hợp thường xuyên với nhà trường..."
       }
     }
-  }
+  },
+  // 9. KHỐI 9 - Mục tiêu chuyển cấp THPT, phương pháp ôn tập
+  KHOI_9: {
+    key: "KHOI_9",
+    gradeNumber: 9,
+    label: "Khối 9",
+    subLabel: "Xác định mục tiêu chuyển cấp THPT, phương pháp ôn tập thi cử hiệu quả",
+    focus: "Mục tiêu chuyển cấp THPT, phương pháp ôn tập",
+    gradeList: ["9","Khối 9","Lớp 9","K9"],
+    criteria: [
+      {
+        id: "k9_c1",
+        code: "K9-A01",
+        name: "Sở thích, đam mê và lĩnh vực thế mạnh nổi bật (Khối 9)",
+        category: "SO_THICH_THE_MANH",
+        categoryLabel: "1. Sở thích và thế mạnh",
+        focus: "Khám phá đam mê, lĩnh vực chuyên môn hoặc năng khiếu sở trường phù hợp trọng tâm: Mục tiêu chuyển cấp THPT, phương pháp ôn tập.",
+        guideline: "Đánh giá mức độ am hiểu, chiều sâu đam mê và thời gian học sinh đầu tư cho thế mạnh cá nhân.",
+        suggestedQuestions: ["Trong các môn học và hoạt động hiện tại, con yêu thích và tự tin nhất ở lĩnh vực nào?","Con đã từng đạt giải thưởng, dự án cá nhân hoặc thành tích nào đáng tự hào trong thế mạnh này chưa?","Thế mạnh này giúp ích gì cho con trong việc học tập và kết nối bạn bè?"],
+        mandatoryCommentRatings: ["NEED_SUPPORT", "SPECIAL_ATTENTION"],
+        sortOrder: 1
+      },
+      {
+        id: "k9_c2",
+        code: "K9-A02",
+        name: "Động lực học tập nội tại và thái độ với mục tiêu học đường (Khối 9)",
+        category: "THAI_DO_DONG_LUC",
+        categoryLabel: "2. Thái độ và động lực học tập",
+        focus: "Đánh giá mức độ tự giác, mục tiêu học tập rõ ràng theo trọng tâm: Mục tiêu chuyển cấp THPT, phương pháp ôn tập.",
+        guideline: "Phân biệt học tập vì đam mê, sự tò mò hay vì nghĩa vụ, áp lực từ gia đình.",
+        suggestedQuestions: ["Điều gì là động lực lớn nhất thúc đẩy con nỗ lực học tập mỗi ngày?","Khi gặp phải một chuyên đề hoặc bài tập rất khó, con duy trì quyết tâm như thế nào?","Con có thói quen tự tìm kiếm thêm tài liệu, sách báo hoặc khóa học trực tuyến để mở rộng kiến thức không?"],
+        mandatoryCommentRatings: ["NEED_SUPPORT", "SPECIAL_ATTENTION"],
+        sortOrder: 2
+      },
+      {
+        id: "k9_c3",
+        code: "K9-A03",
+        name: "Tư duy logic, giải quyết khúc mắc và vượt khó (Khối 9)",
+        category: "GIAI_QUYET_VAN_DE",
+        categoryLabel: "3. Khả năng giải quyết vấn đề",
+        focus: "Khả năng phân tích nguyên nhân, đề xuất phương án và xử lý tình huống thực tế.",
+        guideline: "Quan sát phản xạ tư duy phản biện, cách lập luận và tinh thần không lùi bước trước khó khăn.",
+        suggestedQuestions: ["Khi đối diện với một vấn đề phức tạp hoặc xung đột ý kiến với bạn bè, con giải quyết ra sao?","Hãy kể về một tình huống con tự mình tìm ra cách giải quyết khó khăn mà không cần người lớn can thiệp?","Con học được bài học kinh nghiệm gì từ những thất bại hoặc kết quả chưa đạt mong muốn trước đây?"],
+        mandatoryCommentRatings: ["NEED_SUPPORT", "SPECIAL_ATTENTION"],
+        sortOrder: 3
+      },
+      {
+        id: "k9_c4",
+        code: "K9-A04",
+        name: "Kỹ năng tự chủ, quản lý thời gian và trách nhiệm cá nhân (Khối 9)",
+        category: "TINH_CHU_DONG",
+        categoryLabel: "4. Tính chủ động",
+        focus: "Mức độ chủ động xây dựng kế hoạch, sắp xếp thứ tự ưu tiên và tự chịu trách nhiệm.",
+        guideline: "Đánh giá tính độc lập, khả năng tổ chức công việc và việc giữ đúng cam kết.",
+        suggestedQuestions: ["Con tự quản lý thời gian học tập, giải trí và sinh hoạt cá nhân như thế nào trong ngày?","Khi được giao một nhiệm vụ hoặc dự án nhóm, con chủ động nhận phần việc nào?","Nếu bị chậm tiến độ hoặc quên nhiệm vụ, con nhận trách nhiệm và khắc phục như thế nào?"],
+        mandatoryCommentRatings: ["NEED_SUPPORT", "SPECIAL_ATTENTION"],
+        sortOrder: 4
+      },
+      {
+        id: "k9_c5",
+        code: "K9-A05",
+        name: "Kỹ năng hợp tác, lãnh đạo nhóm và thích ứng môi trường mới (Khối 9)",
+        category: "KY_NANG_XA_HOI_THICH_NGHI",
+        categoryLabel: "5. Kỹ năng xã hội và khả năng thích nghi",
+        focus: "Khả năng tương tác xã hội, tinh thần đồng đội và mức độ linh hoạt trước thay đổi.",
+        guideline: "Quan sát sự cởi mở, lắng nghe tích cực và vai trò thể hiện trong tập thể.",
+        suggestedQuestions: ["Con thích nghi như thế nào khi bước vào một môi trường mới với nhiều giáo viên và bạn học mới?","Trong hoạt động nhóm, con thường đóng vai trò người kết nối, lãnh đạo hay hỗ trợ thực thi?","Làm thế nào để con duy trì mối quan hệ bạn bè lành mạnh và tích cực tại trường học?"],
+        mandatoryCommentRatings: ["NEED_SUPPORT", "SPECIAL_ATTENTION"],
+        sortOrder: 5
+      },
+      {
+        id: "k9_c6",
+        code: "K9-A06",
+        name: "Tự nhận thức giá trị cá nhân, điểm mạnh và điểm cần cải thiện (Khối 9)",
+        category: "NHAN_THUC_BAN_THAN",
+        categoryLabel: "6. Nhận thức bản thân",
+        focus: "Mức độ hiểu rõ bản thân: tính cách, giá trị cốt lõi, thói quen tốt và thói quen chưa tốt.",
+        guideline: "Lắng nghe sự khiêm tốn, tính chân thật và khao khát hoàn thiện nhân cách bản thân.",
+        suggestedQuestions: ["Nếu dùng 3 từ để miêu tả chính xác nhất về bản thân con, con sẽ chọn những từ nào?","Điểm yếu hoặc hạn chế lớn nhất mà con đang nỗ lực rèn luyện để vượt qua là gì?","Những điều gì hoặc môi trường nào giúp con phát huy tối đa năng lực tốt nhất của mình?"],
+        mandatoryCommentRatings: ["NEED_SUPPORT", "SPECIAL_ATTENTION"],
+        sortOrder: 6
+      },
+      {
+        id: "k9_c7",
+        code: "K9-A07",
+        name: "Mục tiêu, nguyện vọng và kế hoạch đóng góp tại Sky-Line (Khối 9)",
+        category: "KY_VONG_SKYLINE",
+        categoryLabel: "7. Kỳ vọng cá nhân tại Sky-Line",
+        focus: "Hình dung của học sinh về cơ hội học tập, câu lạc bộ, dự án cộng đồng tại Sky-Line.",
+        guideline: "Đánh giá mức độ đồng điệu giữa giá trị của học sinh với triết lý giáo dục Sky-Line.",
+        suggestedQuestions: ["Con kỳ vọng điều gì nhất từ thầy cô và môi trường học tập tại Sky-Line?","Con mong muốn tham gia những dự án học tập, câu lạc bộ hay hoạt động cộng đồng nào tại trường?","Con dự định sẽ để lại dấu ấn hoặc đóng góp gì cho tập thể lớp và trường Sky-Line?"],
+        mandatoryCommentRatings: ["NEED_SUPPORT", "SPECIAL_ATTENTION"],
+        sortOrder: 7
+      },
+      {
+        id: "k9_c8",
+        code: "K9-A08",
+        name: "Tự đánh giá năng lực học thuật, ngoại ngữ và tư duy nghiên cứu (Khối 9)",
+        category: "NANG_LUC_TU_NHAN_DINH",
+        categoryLabel: "8. Năng lực học tập tự nhận định",
+        focus: "Khả năng tự định vị trình độ các môn văn hóa, năng lực ngoại ngữ (IELTS/giao tiếp) và tự học.",
+        guideline: "Đánh giá sự tự tin nhưng thực tế, có dẫn chứng cụ thể về điểm số hoặc sản phẩm học tập.",
+        suggestedQuestions: ["Con tự đánh giá năng lực của mình ở các môn khoa học và xã hội hiện tại đang ở mức độ nào?","Khả năng sử dụng ngoại ngữ (tiếng Anh) trong học thuật và giao tiếp của con đáp ứng ra sao?","Con có phương pháp tự học đặc biệt nào giúp con ghi nhớ và hiểu sâu kiến thức không?"],
+        mandatoryCommentRatings: ["NEED_SUPPORT", "SPECIAL_ATTENTION"],
+        sortOrder: 8
+      },
+      {
+        id: "k9_c9",
+        code: "K9-A09",
+        name: "Kỹ năng thuyết trình, phản biện văn minh và truyền cảm hứng (Khối 9)",
+        category: "KY_NANG_GIAO_TIEP",
+        categoryLabel: "9. Kỹ năng giao tiếp",
+        focus: "Khả năng diễn giải ý tưởng thuyết phục, phong thái tự tin và kỹ năng lắng nghe thấu cảm.",
+        guideline: "Quan sát ngôn ngữ cơ thể, ánh mắt, cách dùng từ ngữ và khả năng đối đáp thông minh.",
+        suggestedQuestions: ["Con có cảm thấy tự tin khi thuyết trình một đề tài trước cả lớp hoặc hội trường không?","Khi người khác có quan điểm trái ngược với con, con phản hồi và trao đổi lại như thế nào?","Con làm thế nào để truyền tải thông điệp một cách rõ ràng và thu hút người nghe?"],
+        mandatoryCommentRatings: ["NEED_SUPPORT", "SPECIAL_ATTENTION"],
+        sortOrder: 9
+      },
+      {
+        id: "k9_c10",
+        code: "K9-A010",
+        name: "Định hướng cá nhân hóa, nhu cầu cố vấn chuyên sâu và lưu ý đặc thù (Khối 9)",
+        category: "THONG_TIN_BO_SUNG",
+        categoryLabel: "10. Thông tin bổ sung",
+        focus: "Nguyện vọng về cố vấn học tập, định hướng nghề nghiệp, thi chứng chỉ hoặc nhu cầu hỗ trợ tâm lý.",
+        guideline: "Ghi nhận nhu cầu chuyên sâu để nhà trường phân bổ giáo viên cố vấn phù hợp.",
+        suggestedQuestions: ["Con có kế hoạch thi các chứng chỉ quốc tế, tham gia kỳ thi học sinh giỏi hay nghiên cứu khoa học không?","Con có cần nhà trường hoặc cố vấn học tập hỗ trợ riêng về lộ trình định hướng nào không?","Có bất kỳ chia sẻ hoặc mong muốn nào khác mà con muốn gửi gắm tới thầy cô không?"],
+        mandatoryCommentRatings: ["NEED_SUPPORT", "SPECIAL_ATTENTION"],
+        sortOrder: 10
+      }
+    ],
+    parentGroups: [
+      {
+        id: "k9_p1",
+        code: "K9-B01",
+        category: "HIEU_HS_GOC_NHIN_PH",
+        categoryLabel: "1. Hiểu học sinh qua góc nhìn phụ huynh",
+        title: "Đặc điểm tính cách, tâm lý lứa tuổi và thế mạnh của học sinh (Khối 9)",
+        focus: "Đánh giá sự trưởng thành tâm lý, thế mạnh cốt lõi và nét tính cách nổi bật theo lứa tuổi.",
+        suggestedQuestions: ["Xin gia đình chia sẻ về những nét tính cách nổi trội và sự thay đổi tâm lý của con thời gian gần đây?","Con thể hiện niềm say mê và năng khiếu vượt trội nhất trong lĩnh vực nào?","Khi con gặp áp lực học tập hoặc khúc mắc tâm lý, biểu hiện ở nhà của con như thế nào?"],
+        placeholder: "Ví dụ: Con có tư duy độc lập, giàu cảm xúc, có năng khiếu tự học tốt; đôi lúc có áp lực về điểm số nhưng biết lắng nghe lời khuyên của gia đình...",
+        sortOrder: 1
+      },
+      {
+        id: "k9_p2",
+        code: "K9-B02",
+        category: "QUA_TRINH_NANG_LUC_HT",
+        categoryLabel: "2. Quá trình và năng lực học tập",
+        title: "Đánh giá học lực, năng khiếu ngoại ngữ và phong cách học tập (Khối 9)",
+        focus: "Lịch sử học tập, thế mạnh môn học, kết quả các kỳ thi và phong cách tiếp thu tri thức.",
+        suggestedQuestions: ["Gia đình nhận định thế nào về năng lực học thuật và nền tảng kiến thức hiện tại của con?","Khả năng ngoại ngữ (tiếng Anh) và năng lực tự học nghiên cứu của con được phát huy ra sao?","Môn học hoặc kỹ năng nào con cần được nhà trường bồi dưỡng và hỗ trợ nâng cao thêm?"],
+        placeholder: "Ví dụ: Học lực các năm trước đạt loại Giỏi/Tốt, tư duy Toán và tiếng Anh khá tốt; mong muốn trường rèn luyện thêm kỹ năng làm việc nhóm và thuyết trình...",
+        sortOrder: 2
+      },
+      {
+        id: "k9_p3",
+        code: "K9-B03",
+        category: "THOI_QUEN_HT_TAI_NHA",
+        categoryLabel: "3. Thói quen học tập tại nhà",
+        title: "Mức độ tự giác, phương pháp tự học và sử dụng công nghệ (Khối 9)",
+        focus: "Nề nếp tự học tại nhà, khả năng tự tra cứu tài liệu và quản lý thời gian sử dụng internet/mạng xã hội.",
+        suggestedQuestions: ["Con có kế hoạch tự học rõ ràng mỗi ngày không? Mức độ tự giác đạt bao nhiêu %?","Gia đình định hướng và kiểm soát việc sử dụng điện thoại thông minh, máy tính và mạng xã hội của con như thế nào?","Con có thói quen đọc sách chuyên môn, báo chí hoặc tra cứu tài liệu học thuật trực tuyến không?"],
+        placeholder: "Ví dụ: Con tự giác ngồi vào bàn học đúng giờ, tự lập thời gian biểu; gia đình quy định sử dụng điện thoại có kiểm soát mục đích phục vụ học tập...",
+        sortOrder: 3
+      },
+      {
+        id: "k9_p4",
+        code: "K9-B04",
+        category: "DONG_HANH_CUA_PH",
+        categoryLabel: "4. Cách phụ huynh đồng hành với việc học",
+        title: "Phương pháp đồng hành, tôn trọng chính kiến và phối hợp với nhà trường (Khối 9)",
+        focus: "Cách cha mẹ làm bạn cùng con ở lứa tuổi phát triển, tôn trọng quyết định và hỗ trợ hướng nghiệp.",
+        suggestedQuestions: ["Bố mẹ thường trò chuyện và thấu hiểu nguyện vọng của con thông qua những dịp nào?","Khi có sự bất đồng ý kiến về chọn môn học hoặc định hướng, gia đình giải quyết như thế nào?","Gia đình sẵn sàng phối hợp cùng Ban Cố vấn và Giáo viên chủ nhiệm theo cơ chế như thế nào?"],
+        placeholder: "Ví dụ: Gia đình luôn tôn trọng ý kiến cá nhân của con, đóng vai trò người đồng hành định hướng; cam kết phối hợp thường xuyên với nhà trường...",
+        sortOrder: 4
+      },
+      {
+        id: "k9_p5",
+        code: "K9-B05",
+        category: "DONG_LUC_KY_VONG_GD",
+        categoryLabel: "5. Động lực, kỳ vọng và mục tiêu giáo dục",
+        title: "Kỳ vọng đầu ra, định hướng nghề nghiệp và mục tiêu giáo dục dài hạn (Khối 9)",
+        focus: "Mục tiêu chuyển tiếp (cấp học tiếp theo, đại học, du học) và kỳ vọng giá trị nhân cách tại Sky-Line.",
+        suggestedQuestions: ["Gia đình kỳ vọng con sẽ phát triển những phẩm chất và năng lực cốt lõi nào khi học tại Sky-Line?","Định hướng tương lai dài hạn (chọn ngành nghề, đại học trong nước hay du học quốc tế) của gia đình dành cho con là gì?","Gia đình mong muốn nhà trường xây dựng lộ trình đồng hành cụ thể nào để hiện thực hóa mục tiêu trên?"],
+        placeholder: "Ví dụ: Kỳ vọng con phát triển toàn diện tư duy phản biện, ngoại ngữ xuất sắc, tự tin hội nhập quốc tế và đạt mục tiêu tuyển sinh đại học hàng đầu...",
+        sortOrder: 5
+      }
+    ],
+    parentPrompts: {
+      groupLabel: "Khối 9 (Mục tiêu chuyển cấp THPT, phương pháp ôn tập)",
+      group1_expectations: {
+        title: "1. Nguyện vọng & Kỳ vọng của PHHS đối với sự phát triển của học sinh",
+        hints: ["Gia đình kỳ vọng con sẽ phát triển những phẩm chất và năng lực cốt lõi nào khi học tại Sky-Line?","Định hướng tương lai dài hạn (chọn ngành nghề, đại học trong nước hay du học quốc tế) của gia đình dành cho con là gì?","Gia đình mong muốn nhà trường xây dựng lộ trình đồng hành cụ thể nào để hiện thực hóa mục tiêu trên?"],
+        placeholder: "Ví dụ: Kỳ vọng con phát triển toàn diện tư duy phản biện, ngoại ngữ xuất sắc, tự tin hội nhập quốc tế và đạt mục tiêu tuyển sinh đại học hàng đầu..."
+      },
+      group2_personality: {
+        title: "2. Đặc điểm cá nhân, tính cách và thói quen của học sinh",
+        hints: ["Xin gia đình chia sẻ về những nét tính cách nổi trội và sự thay đổi tâm lý của con thời gian gần đây?","Con thể hiện niềm say mê và năng khiếu vượt trội nhất trong lĩnh vực nào?","Khi con gặp áp lực học tập hoặc khúc mắc tâm lý, biểu hiện ở nhà của con như thế nào?"],
+        placeholder: "Ví dụ: Con có tư duy độc lập, giàu cảm xúc, có năng khiếu tự học tốt; đôi lúc có áp lực về điểm số nhưng biết lắng nghe lời khuyên của gia đình..."
+      },
+      group3_support: {
+        title: "3. Nhu cầu hỗ trợ, bồi dưỡng và đề xuất từ PHHS",
+        hints: ["Gia đình nhận định thế nào về năng lực học thuật và nền tảng kiến thức hiện tại của con?","Khả năng ngoại ngữ (tiếng Anh) và năng lực tự học nghiên cứu của con được phát huy ra sao?","Môn học hoặc kỹ năng nào con cần được nhà trường bồi dưỡng và hỗ trợ nâng cao thêm?"],
+        placeholder: "Ví dụ: Học lực các năm trước đạt loại Giỏi/Tốt, tư duy Toán và tiếng Anh khá tốt; mong muốn trường rèn luyện thêm kỹ năng làm việc nhóm và thuyết trình..."
+      },
+      group4_cooperation: {
+        title: "4. Cơ chế phối hợp và đồng hành giữa gia đình và nhà trường",
+        hints: ["Bố mẹ thường trò chuyện và thấu hiểu nguyện vọng của con thông qua những dịp nào?","Khi có sự bất đồng ý kiến về chọn môn học hoặc định hướng, gia đình giải quyết như thế nào?","Gia đình sẵn sàng phối hợp cùng Ban Cố vấn và Giáo viên chủ nhiệm theo cơ chế như thế nào?"],
+        placeholder: "Ví dụ: Gia đình luôn tôn trọng ý kiến cá nhân của con, đóng vai trò người đồng hành định hướng; cam kết phối hợp thường xuyên với nhà trường..."
+      }
+    }
+  },
+  // 10. KHỐI 10 - Thích nghi THPT, lựa chọn môn học, định hướng cá nhân
+  KHOI_10: {
+    key: "KHOI_10",
+    gradeNumber: 10,
+    label: "Khối 10",
+    subLabel: "Thích nghi môi trường THPT, lựa chọn tổ hợp môn học, định hướng cá nhân",
+    focus: "Thích nghi THPT, lựa chọn môn học, định hướng cá nhân",
+    gradeList: ["10","Khối 10","Lớp 10","K10"],
+    criteria: [
+      {
+        id: "k10_c1",
+        code: "K10-A01",
+        name: "Sở thích, đam mê và lĩnh vực thế mạnh nổi bật (Khối 10)",
+        category: "SO_THICH_THE_MANH",
+        categoryLabel: "1. Sở thích và thế mạnh",
+        focus: "Khám phá đam mê, lĩnh vực chuyên môn hoặc năng khiếu sở trường phù hợp trọng tâm: Thích nghi THPT, lựa chọn môn học, định hướng cá nhân.",
+        guideline: "Đánh giá mức độ am hiểu, chiều sâu đam mê và thời gian học sinh đầu tư cho thế mạnh cá nhân.",
+        suggestedQuestions: ["Trong các môn học và hoạt động hiện tại, con yêu thích và tự tin nhất ở lĩnh vực nào?","Con đã từng đạt giải thưởng, dự án cá nhân hoặc thành tích nào đáng tự hào trong thế mạnh này chưa?","Thế mạnh này giúp ích gì cho con trong việc học tập và kết nối bạn bè?"],
+        mandatoryCommentRatings: ["NEED_SUPPORT", "SPECIAL_ATTENTION"],
+        sortOrder: 1
+      },
+      {
+        id: "k10_c2",
+        code: "K10-A02",
+        name: "Động lực học tập nội tại và thái độ với mục tiêu học đường (Khối 10)",
+        category: "THAI_DO_DONG_LUC",
+        categoryLabel: "2. Thái độ và động lực học tập",
+        focus: "Đánh giá mức độ tự giác, mục tiêu học tập rõ ràng theo trọng tâm: Thích nghi THPT, lựa chọn môn học, định hướng cá nhân.",
+        guideline: "Phân biệt học tập vì đam mê, sự tò mò hay vì nghĩa vụ, áp lực từ gia đình.",
+        suggestedQuestions: ["Điều gì là động lực lớn nhất thúc đẩy con nỗ lực học tập mỗi ngày?","Khi gặp phải một chuyên đề hoặc bài tập rất khó, con duy trì quyết tâm như thế nào?","Con có thói quen tự tìm kiếm thêm tài liệu, sách báo hoặc khóa học trực tuyến để mở rộng kiến thức không?"],
+        mandatoryCommentRatings: ["NEED_SUPPORT", "SPECIAL_ATTENTION"],
+        sortOrder: 2
+      },
+      {
+        id: "k10_c3",
+        code: "K10-A03",
+        name: "Tư duy logic, giải quyết khúc mắc và vượt khó (Khối 10)",
+        category: "GIAI_QUYET_VAN_DE",
+        categoryLabel: "3. Khả năng giải quyết vấn đề",
+        focus: "Khả năng phân tích nguyên nhân, đề xuất phương án và xử lý tình huống thực tế.",
+        guideline: "Quan sát phản xạ tư duy phản biện, cách lập luận và tinh thần không lùi bước trước khó khăn.",
+        suggestedQuestions: ["Khi đối diện với một vấn đề phức tạp hoặc xung đột ý kiến với bạn bè, con giải quyết ra sao?","Hãy kể về một tình huống con tự mình tìm ra cách giải quyết khó khăn mà không cần người lớn can thiệp?","Con học được bài học kinh nghiệm gì từ những thất bại hoặc kết quả chưa đạt mong muốn trước đây?"],
+        mandatoryCommentRatings: ["NEED_SUPPORT", "SPECIAL_ATTENTION"],
+        sortOrder: 3
+      },
+      {
+        id: "k10_c4",
+        code: "K10-A04",
+        name: "Kỹ năng tự chủ, quản lý thời gian và trách nhiệm cá nhân (Khối 10)",
+        category: "TINH_CHU_DONG",
+        categoryLabel: "4. Tính chủ động",
+        focus: "Mức độ chủ động xây dựng kế hoạch, sắp xếp thứ tự ưu tiên và tự chịu trách nhiệm.",
+        guideline: "Đánh giá tính độc lập, khả năng tổ chức công việc và việc giữ đúng cam kết.",
+        suggestedQuestions: ["Con tự quản lý thời gian học tập, giải trí và sinh hoạt cá nhân như thế nào trong ngày?","Khi được giao một nhiệm vụ hoặc dự án nhóm, con chủ động nhận phần việc nào?","Nếu bị chậm tiến độ hoặc quên nhiệm vụ, con nhận trách nhiệm và khắc phục như thế nào?"],
+        mandatoryCommentRatings: ["NEED_SUPPORT", "SPECIAL_ATTENTION"],
+        sortOrder: 4
+      },
+      {
+        id: "k10_c5",
+        code: "K10-A05",
+        name: "Kỹ năng hợp tác, lãnh đạo nhóm và thích ứng môi trường mới (Khối 10)",
+        category: "KY_NANG_XA_HOI_THICH_NGHI",
+        categoryLabel: "5. Kỹ năng xã hội và khả năng thích nghi",
+        focus: "Khả năng tương tác xã hội, tinh thần đồng đội và mức độ linh hoạt trước thay đổi.",
+        guideline: "Quan sát sự cởi mở, lắng nghe tích cực và vai trò thể hiện trong tập thể.",
+        suggestedQuestions: ["Con thích nghi như thế nào khi bước vào một môi trường mới với nhiều giáo viên và bạn học mới?","Trong hoạt động nhóm, con thường đóng vai trò người kết nối, lãnh đạo hay hỗ trợ thực thi?","Làm thế nào để con duy trì mối quan hệ bạn bè lành mạnh và tích cực tại trường học?"],
+        mandatoryCommentRatings: ["NEED_SUPPORT", "SPECIAL_ATTENTION"],
+        sortOrder: 5
+      },
+      {
+        id: "k10_c6",
+        code: "K10-A06",
+        name: "Tự nhận thức giá trị cá nhân, điểm mạnh và điểm cần cải thiện (Khối 10)",
+        category: "NHAN_THUC_BAN_THAN",
+        categoryLabel: "6. Nhận thức bản thân",
+        focus: "Mức độ hiểu rõ bản thân: tính cách, giá trị cốt lõi, thói quen tốt và thói quen chưa tốt.",
+        guideline: "Lắng nghe sự khiêm tốn, tính chân thật và khao khát hoàn thiện nhân cách bản thân.",
+        suggestedQuestions: ["Nếu dùng 3 từ để miêu tả chính xác nhất về bản thân con, con sẽ chọn những từ nào?","Điểm yếu hoặc hạn chế lớn nhất mà con đang nỗ lực rèn luyện để vượt qua là gì?","Những điều gì hoặc môi trường nào giúp con phát huy tối đa năng lực tốt nhất của mình?"],
+        mandatoryCommentRatings: ["NEED_SUPPORT", "SPECIAL_ATTENTION"],
+        sortOrder: 6
+      },
+      {
+        id: "k10_c7",
+        code: "K10-A07",
+        name: "Mục tiêu, nguyện vọng và kế hoạch đóng góp tại Sky-Line (Khối 10)",
+        category: "KY_VONG_SKYLINE",
+        categoryLabel: "7. Kỳ vọng cá nhân tại Sky-Line",
+        focus: "Hình dung của học sinh về cơ hội học tập, câu lạc bộ, dự án cộng đồng tại Sky-Line.",
+        guideline: "Đánh giá mức độ đồng điệu giữa giá trị của học sinh với triết lý giáo dục Sky-Line.",
+        suggestedQuestions: ["Con kỳ vọng điều gì nhất từ thầy cô và môi trường học tập tại Sky-Line?","Con mong muốn tham gia những dự án học tập, câu lạc bộ hay hoạt động cộng đồng nào tại trường?","Con dự định sẽ để lại dấu ấn hoặc đóng góp gì cho tập thể lớp và trường Sky-Line?"],
+        mandatoryCommentRatings: ["NEED_SUPPORT", "SPECIAL_ATTENTION"],
+        sortOrder: 7
+      },
+      {
+        id: "k10_c8",
+        code: "K10-A08",
+        name: "Tự đánh giá năng lực học thuật, ngoại ngữ và tư duy nghiên cứu (Khối 10)",
+        category: "NANG_LUC_TU_NHAN_DINH",
+        categoryLabel: "8. Năng lực học tập tự nhận định",
+        focus: "Khả năng tự định vị trình độ các môn văn hóa, năng lực ngoại ngữ (IELTS/giao tiếp) và tự học.",
+        guideline: "Đánh giá sự tự tin nhưng thực tế, có dẫn chứng cụ thể về điểm số hoặc sản phẩm học tập.",
+        suggestedQuestions: ["Con tự đánh giá năng lực của mình ở các môn khoa học và xã hội hiện tại đang ở mức độ nào?","Khả năng sử dụng ngoại ngữ (tiếng Anh) trong học thuật và giao tiếp của con đáp ứng ra sao?","Con có phương pháp tự học đặc biệt nào giúp con ghi nhớ và hiểu sâu kiến thức không?"],
+        mandatoryCommentRatings: ["NEED_SUPPORT", "SPECIAL_ATTENTION"],
+        sortOrder: 8
+      },
+      {
+        id: "k10_c9",
+        code: "K10-A09",
+        name: "Kỹ năng thuyết trình, phản biện văn minh và truyền cảm hứng (Khối 10)",
+        category: "KY_NANG_GIAO_TIEP",
+        categoryLabel: "9. Kỹ năng giao tiếp",
+        focus: "Khả năng diễn giải ý tưởng thuyết phục, phong thái tự tin và kỹ năng lắng nghe thấu cảm.",
+        guideline: "Quan sát ngôn ngữ cơ thể, ánh mắt, cách dùng từ ngữ và khả năng đối đáp thông minh.",
+        suggestedQuestions: ["Con có cảm thấy tự tin khi thuyết trình một đề tài trước cả lớp hoặc hội trường không?","Khi người khác có quan điểm trái ngược với con, con phản hồi và trao đổi lại như thế nào?","Con làm thế nào để truyền tải thông điệp một cách rõ ràng và thu hút người nghe?"],
+        mandatoryCommentRatings: ["NEED_SUPPORT", "SPECIAL_ATTENTION"],
+        sortOrder: 9
+      },
+      {
+        id: "k10_c10",
+        code: "K10-A010",
+        name: "Định hướng cá nhân hóa, nhu cầu cố vấn chuyên sâu và lưu ý đặc thù (Khối 10)",
+        category: "THONG_TIN_BO_SUNG",
+        categoryLabel: "10. Thông tin bổ sung",
+        focus: "Nguyện vọng về cố vấn học tập, định hướng nghề nghiệp, thi chứng chỉ hoặc nhu cầu hỗ trợ tâm lý.",
+        guideline: "Ghi nhận nhu cầu chuyên sâu để nhà trường phân bổ giáo viên cố vấn phù hợp.",
+        suggestedQuestions: ["Con có kế hoạch thi các chứng chỉ quốc tế, tham gia kỳ thi học sinh giỏi hay nghiên cứu khoa học không?","Con có cần nhà trường hoặc cố vấn học tập hỗ trợ riêng về lộ trình định hướng nào không?","Có bất kỳ chia sẻ hoặc mong muốn nào khác mà con muốn gửi gắm tới thầy cô không?"],
+        mandatoryCommentRatings: ["NEED_SUPPORT", "SPECIAL_ATTENTION"],
+        sortOrder: 10
+      }
+    ],
+    parentGroups: [
+      {
+        id: "k10_p1",
+        code: "K10-B01",
+        category: "HIEU_HS_GOC_NHIN_PH",
+        categoryLabel: "1. Hiểu học sinh qua góc nhìn phụ huynh",
+        title: "Đặc điểm tính cách, tâm lý lứa tuổi và thế mạnh của học sinh (Khối 10)",
+        focus: "Đánh giá sự trưởng thành tâm lý, thế mạnh cốt lõi và nét tính cách nổi bật theo lứa tuổi.",
+        suggestedQuestions: ["Xin gia đình chia sẻ về những nét tính cách nổi trội và sự thay đổi tâm lý của con thời gian gần đây?","Con thể hiện niềm say mê và năng khiếu vượt trội nhất trong lĩnh vực nào?","Khi con gặp áp lực học tập hoặc khúc mắc tâm lý, biểu hiện ở nhà của con như thế nào?"],
+        placeholder: "Ví dụ: Con có tư duy độc lập, giàu cảm xúc, có năng khiếu tự học tốt; đôi lúc có áp lực về điểm số nhưng biết lắng nghe lời khuyên của gia đình...",
+        sortOrder: 1
+      },
+      {
+        id: "k10_p2",
+        code: "K10-B02",
+        category: "QUA_TRINH_NANG_LUC_HT",
+        categoryLabel: "2. Quá trình và năng lực học tập",
+        title: "Đánh giá học lực, năng khiếu ngoại ngữ và phong cách học tập (Khối 10)",
+        focus: "Lịch sử học tập, thế mạnh môn học, kết quả các kỳ thi và phong cách tiếp thu tri thức.",
+        suggestedQuestions: ["Gia đình nhận định thế nào về năng lực học thuật và nền tảng kiến thức hiện tại của con?","Khả năng ngoại ngữ (tiếng Anh) và năng lực tự học nghiên cứu của con được phát huy ra sao?","Môn học hoặc kỹ năng nào con cần được nhà trường bồi dưỡng và hỗ trợ nâng cao thêm?"],
+        placeholder: "Ví dụ: Học lực các năm trước đạt loại Giỏi/Tốt, tư duy Toán và tiếng Anh khá tốt; mong muốn trường rèn luyện thêm kỹ năng làm việc nhóm và thuyết trình...",
+        sortOrder: 2
+      },
+      {
+        id: "k10_p3",
+        code: "K10-B03",
+        category: "THOI_QUEN_HT_TAI_NHA",
+        categoryLabel: "3. Thói quen học tập tại nhà",
+        title: "Mức độ tự giác, phương pháp tự học và sử dụng công nghệ (Khối 10)",
+        focus: "Nề nếp tự học tại nhà, khả năng tự tra cứu tài liệu và quản lý thời gian sử dụng internet/mạng xã hội.",
+        suggestedQuestions: ["Con có kế hoạch tự học rõ ràng mỗi ngày không? Mức độ tự giác đạt bao nhiêu %?","Gia đình định hướng và kiểm soát việc sử dụng điện thoại thông minh, máy tính và mạng xã hội của con như thế nào?","Con có thói quen đọc sách chuyên môn, báo chí hoặc tra cứu tài liệu học thuật trực tuyến không?"],
+        placeholder: "Ví dụ: Con tự giác ngồi vào bàn học đúng giờ, tự lập thời gian biểu; gia đình quy định sử dụng điện thoại có kiểm soát mục đích phục vụ học tập...",
+        sortOrder: 3
+      },
+      {
+        id: "k10_p4",
+        code: "K10-B04",
+        category: "DONG_HANH_CUA_PH",
+        categoryLabel: "4. Cách phụ huynh đồng hành với việc học",
+        title: "Phương pháp đồng hành, tôn trọng chính kiến và phối hợp với nhà trường (Khối 10)",
+        focus: "Cách cha mẹ làm bạn cùng con ở lứa tuổi phát triển, tôn trọng quyết định và hỗ trợ hướng nghiệp.",
+        suggestedQuestions: ["Bố mẹ thường trò chuyện và thấu hiểu nguyện vọng của con thông qua những dịp nào?","Khi có sự bất đồng ý kiến về chọn môn học hoặc định hướng, gia đình giải quyết như thế nào?","Gia đình sẵn sàng phối hợp cùng Ban Cố vấn và Giáo viên chủ nhiệm theo cơ chế như thế nào?"],
+        placeholder: "Ví dụ: Gia đình luôn tôn trọng ý kiến cá nhân của con, đóng vai trò người đồng hành định hướng; cam kết phối hợp thường xuyên với nhà trường...",
+        sortOrder: 4
+      },
+      {
+        id: "k10_p5",
+        code: "K10-B05",
+        category: "DONG_LUC_KY_VONG_GD",
+        categoryLabel: "5. Động lực, kỳ vọng và mục tiêu giáo dục",
+        title: "Kỳ vọng đầu ra, định hướng nghề nghiệp và mục tiêu giáo dục dài hạn (Khối 10)",
+        focus: "Mục tiêu chuyển tiếp (cấp học tiếp theo, đại học, du học) và kỳ vọng giá trị nhân cách tại Sky-Line.",
+        suggestedQuestions: ["Gia đình kỳ vọng con sẽ phát triển những phẩm chất và năng lực cốt lõi nào khi học tại Sky-Line?","Định hướng tương lai dài hạn (chọn ngành nghề, đại học trong nước hay du học quốc tế) của gia đình dành cho con là gì?","Gia đình mong muốn nhà trường xây dựng lộ trình đồng hành cụ thể nào để hiện thực hóa mục tiêu trên?"],
+        placeholder: "Ví dụ: Kỳ vọng con phát triển toàn diện tư duy phản biện, ngoại ngữ xuất sắc, tự tin hội nhập quốc tế và đạt mục tiêu tuyển sinh đại học hàng đầu...",
+        sortOrder: 5
+      }
+    ],
+    parentPrompts: {
+      groupLabel: "Khối 10 (Thích nghi THPT, lựa chọn môn học, định hướng cá nhân)",
+      group1_expectations: {
+        title: "1. Nguyện vọng & Kỳ vọng của PHHS đối với sự phát triển của học sinh",
+        hints: ["Gia đình kỳ vọng con sẽ phát triển những phẩm chất và năng lực cốt lõi nào khi học tại Sky-Line?","Định hướng tương lai dài hạn (chọn ngành nghề, đại học trong nước hay du học quốc tế) của gia đình dành cho con là gì?","Gia đình mong muốn nhà trường xây dựng lộ trình đồng hành cụ thể nào để hiện thực hóa mục tiêu trên?"],
+        placeholder: "Ví dụ: Kỳ vọng con phát triển toàn diện tư duy phản biện, ngoại ngữ xuất sắc, tự tin hội nhập quốc tế và đạt mục tiêu tuyển sinh đại học hàng đầu..."
+      },
+      group2_personality: {
+        title: "2. Đặc điểm cá nhân, tính cách và thói quen của học sinh",
+        hints: ["Xin gia đình chia sẻ về những nét tính cách nổi trội và sự thay đổi tâm lý của con thời gian gần đây?","Con thể hiện niềm say mê và năng khiếu vượt trội nhất trong lĩnh vực nào?","Khi con gặp áp lực học tập hoặc khúc mắc tâm lý, biểu hiện ở nhà của con như thế nào?"],
+        placeholder: "Ví dụ: Con có tư duy độc lập, giàu cảm xúc, có năng khiếu tự học tốt; đôi lúc có áp lực về điểm số nhưng biết lắng nghe lời khuyên của gia đình..."
+      },
+      group3_support: {
+        title: "3. Nhu cầu hỗ trợ, bồi dưỡng và đề xuất từ PHHS",
+        hints: ["Gia đình nhận định thế nào về năng lực học thuật và nền tảng kiến thức hiện tại của con?","Khả năng ngoại ngữ (tiếng Anh) và năng lực tự học nghiên cứu của con được phát huy ra sao?","Môn học hoặc kỹ năng nào con cần được nhà trường bồi dưỡng và hỗ trợ nâng cao thêm?"],
+        placeholder: "Ví dụ: Học lực các năm trước đạt loại Giỏi/Tốt, tư duy Toán và tiếng Anh khá tốt; mong muốn trường rèn luyện thêm kỹ năng làm việc nhóm và thuyết trình..."
+      },
+      group4_cooperation: {
+        title: "4. Cơ chế phối hợp và đồng hành giữa gia đình và nhà trường",
+        hints: ["Bố mẹ thường trò chuyện và thấu hiểu nguyện vọng của con thông qua những dịp nào?","Khi có sự bất đồng ý kiến về chọn môn học hoặc định hướng, gia đình giải quyết như thế nào?","Gia đình sẵn sàng phối hợp cùng Ban Cố vấn và Giáo viên chủ nhiệm theo cơ chế như thế nào?"],
+        placeholder: "Ví dụ: Gia đình luôn tôn trọng ý kiến cá nhân của con, đóng vai trò người đồng hành định hướng; cam kết phối hợp thường xuyên với nhà trường..."
+      }
+    }
+  },
+  // 11. KHỐI 11 - Hướng nghiệp, ngoại ngữ, kế hoạch đại học
+  KHOI_11: {
+    key: "KHOI_11",
+    gradeNumber: 11,
+    label: "Khối 11",
+    subLabel: "Định hướng nghề nghiệp, phát triển ngoại ngữ học thuật, kế hoạch tuyển sinh đại học",
+    focus: "Hướng nghiệp, ngoại ngữ, kế hoạch đại học",
+    gradeList: ["11","Khối 11","Lớp 11","K11"],
+    criteria: [
+      {
+        id: "k11_c1",
+        code: "K11-A01",
+        name: "Sở thích, đam mê và lĩnh vực thế mạnh nổi bật (Khối 11)",
+        category: "SO_THICH_THE_MANH",
+        categoryLabel: "1. Sở thích và thế mạnh",
+        focus: "Khám phá đam mê, lĩnh vực chuyên môn hoặc năng khiếu sở trường phù hợp trọng tâm: Hướng nghiệp, ngoại ngữ, kế hoạch đại học.",
+        guideline: "Đánh giá mức độ am hiểu, chiều sâu đam mê và thời gian học sinh đầu tư cho thế mạnh cá nhân.",
+        suggestedQuestions: ["Trong các môn học và hoạt động hiện tại, con yêu thích và tự tin nhất ở lĩnh vực nào?","Con đã từng đạt giải thưởng, dự án cá nhân hoặc thành tích nào đáng tự hào trong thế mạnh này chưa?","Thế mạnh này giúp ích gì cho con trong việc học tập và kết nối bạn bè?"],
+        mandatoryCommentRatings: ["NEED_SUPPORT", "SPECIAL_ATTENTION"],
+        sortOrder: 1
+      },
+      {
+        id: "k11_c2",
+        code: "K11-A02",
+        name: "Động lực học tập nội tại và thái độ với mục tiêu học đường (Khối 11)",
+        category: "THAI_DO_DONG_LUC",
+        categoryLabel: "2. Thái độ và động lực học tập",
+        focus: "Đánh giá mức độ tự giác, mục tiêu học tập rõ ràng theo trọng tâm: Hướng nghiệp, ngoại ngữ, kế hoạch đại học.",
+        guideline: "Phân biệt học tập vì đam mê, sự tò mò hay vì nghĩa vụ, áp lực từ gia đình.",
+        suggestedQuestions: ["Điều gì là động lực lớn nhất thúc đẩy con nỗ lực học tập mỗi ngày?","Khi gặp phải một chuyên đề hoặc bài tập rất khó, con duy trì quyết tâm như thế nào?","Con có thói quen tự tìm kiếm thêm tài liệu, sách báo hoặc khóa học trực tuyến để mở rộng kiến thức không?"],
+        mandatoryCommentRatings: ["NEED_SUPPORT", "SPECIAL_ATTENTION"],
+        sortOrder: 2
+      },
+      {
+        id: "k11_c3",
+        code: "K11-A03",
+        name: "Tư duy logic, giải quyết khúc mắc và vượt khó (Khối 11)",
+        category: "GIAI_QUYET_VAN_DE",
+        categoryLabel: "3. Khả năng giải quyết vấn đề",
+        focus: "Khả năng phân tích nguyên nhân, đề xuất phương án và xử lý tình huống thực tế.",
+        guideline: "Quan sát phản xạ tư duy phản biện, cách lập luận và tinh thần không lùi bước trước khó khăn.",
+        suggestedQuestions: ["Khi đối diện với một vấn đề phức tạp hoặc xung đột ý kiến với bạn bè, con giải quyết ra sao?","Hãy kể về một tình huống con tự mình tìm ra cách giải quyết khó khăn mà không cần người lớn can thiệp?","Con học được bài học kinh nghiệm gì từ những thất bại hoặc kết quả chưa đạt mong muốn trước đây?"],
+        mandatoryCommentRatings: ["NEED_SUPPORT", "SPECIAL_ATTENTION"],
+        sortOrder: 3
+      },
+      {
+        id: "k11_c4",
+        code: "K11-A04",
+        name: "Kỹ năng tự chủ, quản lý thời gian và trách nhiệm cá nhân (Khối 11)",
+        category: "TINH_CHU_DONG",
+        categoryLabel: "4. Tính chủ động",
+        focus: "Mức độ chủ động xây dựng kế hoạch, sắp xếp thứ tự ưu tiên và tự chịu trách nhiệm.",
+        guideline: "Đánh giá tính độc lập, khả năng tổ chức công việc và việc giữ đúng cam kết.",
+        suggestedQuestions: ["Con tự quản lý thời gian học tập, giải trí và sinh hoạt cá nhân như thế nào trong ngày?","Khi được giao một nhiệm vụ hoặc dự án nhóm, con chủ động nhận phần việc nào?","Nếu bị chậm tiến độ hoặc quên nhiệm vụ, con nhận trách nhiệm và khắc phục như thế nào?"],
+        mandatoryCommentRatings: ["NEED_SUPPORT", "SPECIAL_ATTENTION"],
+        sortOrder: 4
+      },
+      {
+        id: "k11_c5",
+        code: "K11-A05",
+        name: "Kỹ năng hợp tác, lãnh đạo nhóm và thích ứng môi trường mới (Khối 11)",
+        category: "KY_NANG_XA_HOI_THICH_NGHI",
+        categoryLabel: "5. Kỹ năng xã hội và khả năng thích nghi",
+        focus: "Khả năng tương tác xã hội, tinh thần đồng đội và mức độ linh hoạt trước thay đổi.",
+        guideline: "Quan sát sự cởi mở, lắng nghe tích cực và vai trò thể hiện trong tập thể.",
+        suggestedQuestions: ["Con thích nghi như thế nào khi bước vào một môi trường mới với nhiều giáo viên và bạn học mới?","Trong hoạt động nhóm, con thường đóng vai trò người kết nối, lãnh đạo hay hỗ trợ thực thi?","Làm thế nào để con duy trì mối quan hệ bạn bè lành mạnh và tích cực tại trường học?"],
+        mandatoryCommentRatings: ["NEED_SUPPORT", "SPECIAL_ATTENTION"],
+        sortOrder: 5
+      },
+      {
+        id: "k11_c6",
+        code: "K11-A06",
+        name: "Tự nhận thức giá trị cá nhân, điểm mạnh và điểm cần cải thiện (Khối 11)",
+        category: "NHAN_THUC_BAN_THAN",
+        categoryLabel: "6. Nhận thức bản thân",
+        focus: "Mức độ hiểu rõ bản thân: tính cách, giá trị cốt lõi, thói quen tốt và thói quen chưa tốt.",
+        guideline: "Lắng nghe sự khiêm tốn, tính chân thật và khao khát hoàn thiện nhân cách bản thân.",
+        suggestedQuestions: ["Nếu dùng 3 từ để miêu tả chính xác nhất về bản thân con, con sẽ chọn những từ nào?","Điểm yếu hoặc hạn chế lớn nhất mà con đang nỗ lực rèn luyện để vượt qua là gì?","Những điều gì hoặc môi trường nào giúp con phát huy tối đa năng lực tốt nhất của mình?"],
+        mandatoryCommentRatings: ["NEED_SUPPORT", "SPECIAL_ATTENTION"],
+        sortOrder: 6
+      },
+      {
+        id: "k11_c7",
+        code: "K11-A07",
+        name: "Mục tiêu, nguyện vọng và kế hoạch đóng góp tại Sky-Line (Khối 11)",
+        category: "KY_VONG_SKYLINE",
+        categoryLabel: "7. Kỳ vọng cá nhân tại Sky-Line",
+        focus: "Hình dung của học sinh về cơ hội học tập, câu lạc bộ, dự án cộng đồng tại Sky-Line.",
+        guideline: "Đánh giá mức độ đồng điệu giữa giá trị của học sinh với triết lý giáo dục Sky-Line.",
+        suggestedQuestions: ["Con kỳ vọng điều gì nhất từ thầy cô và môi trường học tập tại Sky-Line?","Con mong muốn tham gia những dự án học tập, câu lạc bộ hay hoạt động cộng đồng nào tại trường?","Con dự định sẽ để lại dấu ấn hoặc đóng góp gì cho tập thể lớp và trường Sky-Line?"],
+        mandatoryCommentRatings: ["NEED_SUPPORT", "SPECIAL_ATTENTION"],
+        sortOrder: 7
+      },
+      {
+        id: "k11_c8",
+        code: "K11-A08",
+        name: "Tự đánh giá năng lực học thuật, ngoại ngữ và tư duy nghiên cứu (Khối 11)",
+        category: "NANG_LUC_TU_NHAN_DINH",
+        categoryLabel: "8. Năng lực học tập tự nhận định",
+        focus: "Khả năng tự định vị trình độ các môn văn hóa, năng lực ngoại ngữ (IELTS/giao tiếp) và tự học.",
+        guideline: "Đánh giá sự tự tin nhưng thực tế, có dẫn chứng cụ thể về điểm số hoặc sản phẩm học tập.",
+        suggestedQuestions: ["Con tự đánh giá năng lực của mình ở các môn khoa học và xã hội hiện tại đang ở mức độ nào?","Khả năng sử dụng ngoại ngữ (tiếng Anh) trong học thuật và giao tiếp của con đáp ứng ra sao?","Con có phương pháp tự học đặc biệt nào giúp con ghi nhớ và hiểu sâu kiến thức không?"],
+        mandatoryCommentRatings: ["NEED_SUPPORT", "SPECIAL_ATTENTION"],
+        sortOrder: 8
+      },
+      {
+        id: "k11_c9",
+        code: "K11-A09",
+        name: "Kỹ năng thuyết trình, phản biện văn minh và truyền cảm hứng (Khối 11)",
+        category: "KY_NANG_GIAO_TIEP",
+        categoryLabel: "9. Kỹ năng giao tiếp",
+        focus: "Khả năng diễn giải ý tưởng thuyết phục, phong thái tự tin và kỹ năng lắng nghe thấu cảm.",
+        guideline: "Quan sát ngôn ngữ cơ thể, ánh mắt, cách dùng từ ngữ và khả năng đối đáp thông minh.",
+        suggestedQuestions: ["Con có cảm thấy tự tin khi thuyết trình một đề tài trước cả lớp hoặc hội trường không?","Khi người khác có quan điểm trái ngược với con, con phản hồi và trao đổi lại như thế nào?","Con làm thế nào để truyền tải thông điệp một cách rõ ràng và thu hút người nghe?"],
+        mandatoryCommentRatings: ["NEED_SUPPORT", "SPECIAL_ATTENTION"],
+        sortOrder: 9
+      },
+      {
+        id: "k11_c10",
+        code: "K11-A010",
+        name: "Định hướng cá nhân hóa, nhu cầu cố vấn chuyên sâu và lưu ý đặc thù (Khối 11)",
+        category: "THONG_TIN_BO_SUNG",
+        categoryLabel: "10. Thông tin bổ sung",
+        focus: "Nguyện vọng về cố vấn học tập, định hướng nghề nghiệp, thi chứng chỉ hoặc nhu cầu hỗ trợ tâm lý.",
+        guideline: "Ghi nhận nhu cầu chuyên sâu để nhà trường phân bổ giáo viên cố vấn phù hợp.",
+        suggestedQuestions: ["Con có kế hoạch thi các chứng chỉ quốc tế, tham gia kỳ thi học sinh giỏi hay nghiên cứu khoa học không?","Con có cần nhà trường hoặc cố vấn học tập hỗ trợ riêng về lộ trình định hướng nào không?","Có bất kỳ chia sẻ hoặc mong muốn nào khác mà con muốn gửi gắm tới thầy cô không?"],
+        mandatoryCommentRatings: ["NEED_SUPPORT", "SPECIAL_ATTENTION"],
+        sortOrder: 10
+      }
+    ],
+    parentGroups: [
+      {
+        id: "k11_p1",
+        code: "K11-B01",
+        category: "HIEU_HS_GOC_NHIN_PH",
+        categoryLabel: "1. Hiểu học sinh qua góc nhìn phụ huynh",
+        title: "Đặc điểm tính cách, tâm lý lứa tuổi và thế mạnh của học sinh (Khối 11)",
+        focus: "Đánh giá sự trưởng thành tâm lý, thế mạnh cốt lõi và nét tính cách nổi bật theo lứa tuổi.",
+        suggestedQuestions: ["Xin gia đình chia sẻ về những nét tính cách nổi trội và sự thay đổi tâm lý của con thời gian gần đây?","Con thể hiện niềm say mê và năng khiếu vượt trội nhất trong lĩnh vực nào?","Khi con gặp áp lực học tập hoặc khúc mắc tâm lý, biểu hiện ở nhà của con như thế nào?"],
+        placeholder: "Ví dụ: Con có tư duy độc lập, giàu cảm xúc, có năng khiếu tự học tốt; đôi lúc có áp lực về điểm số nhưng biết lắng nghe lời khuyên của gia đình...",
+        sortOrder: 1
+      },
+      {
+        id: "k11_p2",
+        code: "K11-B02",
+        category: "QUA_TRINH_NANG_LUC_HT",
+        categoryLabel: "2. Quá trình và năng lực học tập",
+        title: "Đánh giá học lực, năng khiếu ngoại ngữ và phong cách học tập (Khối 11)",
+        focus: "Lịch sử học tập, thế mạnh môn học, kết quả các kỳ thi và phong cách tiếp thu tri thức.",
+        suggestedQuestions: ["Gia đình nhận định thế nào về năng lực học thuật và nền tảng kiến thức hiện tại của con?","Khả năng ngoại ngữ (tiếng Anh) và năng lực tự học nghiên cứu của con được phát huy ra sao?","Môn học hoặc kỹ năng nào con cần được nhà trường bồi dưỡng và hỗ trợ nâng cao thêm?"],
+        placeholder: "Ví dụ: Học lực các năm trước đạt loại Giỏi/Tốt, tư duy Toán và tiếng Anh khá tốt; mong muốn trường rèn luyện thêm kỹ năng làm việc nhóm và thuyết trình...",
+        sortOrder: 2
+      },
+      {
+        id: "k11_p3",
+        code: "K11-B03",
+        category: "THOI_QUEN_HT_TAI_NHA",
+        categoryLabel: "3. Thói quen học tập tại nhà",
+        title: "Mức độ tự giác, phương pháp tự học và sử dụng công nghệ (Khối 11)",
+        focus: "Nề nếp tự học tại nhà, khả năng tự tra cứu tài liệu và quản lý thời gian sử dụng internet/mạng xã hội.",
+        suggestedQuestions: ["Con có kế hoạch tự học rõ ràng mỗi ngày không? Mức độ tự giác đạt bao nhiêu %?","Gia đình định hướng và kiểm soát việc sử dụng điện thoại thông minh, máy tính và mạng xã hội của con như thế nào?","Con có thói quen đọc sách chuyên môn, báo chí hoặc tra cứu tài liệu học thuật trực tuyến không?"],
+        placeholder: "Ví dụ: Con tự giác ngồi vào bàn học đúng giờ, tự lập thời gian biểu; gia đình quy định sử dụng điện thoại có kiểm soát mục đích phục vụ học tập...",
+        sortOrder: 3
+      },
+      {
+        id: "k11_p4",
+        code: "K11-B04",
+        category: "DONG_HANH_CUA_PH",
+        categoryLabel: "4. Cách phụ huynh đồng hành với việc học",
+        title: "Phương pháp đồng hành, tôn trọng chính kiến và phối hợp với nhà trường (Khối 11)",
+        focus: "Cách cha mẹ làm bạn cùng con ở lứa tuổi phát triển, tôn trọng quyết định và hỗ trợ hướng nghiệp.",
+        suggestedQuestions: ["Bố mẹ thường trò chuyện và thấu hiểu nguyện vọng của con thông qua những dịp nào?","Khi có sự bất đồng ý kiến về chọn môn học hoặc định hướng, gia đình giải quyết như thế nào?","Gia đình sẵn sàng phối hợp cùng Ban Cố vấn và Giáo viên chủ nhiệm theo cơ chế như thế nào?"],
+        placeholder: "Ví dụ: Gia đình luôn tôn trọng ý kiến cá nhân của con, đóng vai trò người đồng hành định hướng; cam kết phối hợp thường xuyên với nhà trường...",
+        sortOrder: 4
+      },
+      {
+        id: "k11_p5",
+        code: "K11-B05",
+        category: "DONG_LUC_KY_VONG_GD",
+        categoryLabel: "5. Động lực, kỳ vọng và mục tiêu giáo dục",
+        title: "Kỳ vọng đầu ra, định hướng nghề nghiệp và mục tiêu giáo dục dài hạn (Khối 11)",
+        focus: "Mục tiêu chuyển tiếp (cấp học tiếp theo, đại học, du học) và kỳ vọng giá trị nhân cách tại Sky-Line.",
+        suggestedQuestions: ["Gia đình kỳ vọng con sẽ phát triển những phẩm chất và năng lực cốt lõi nào khi học tại Sky-Line?","Định hướng tương lai dài hạn (chọn ngành nghề, đại học trong nước hay du học quốc tế) của gia đình dành cho con là gì?","Gia đình mong muốn nhà trường xây dựng lộ trình đồng hành cụ thể nào để hiện thực hóa mục tiêu trên?"],
+        placeholder: "Ví dụ: Kỳ vọng con phát triển toàn diện tư duy phản biện, ngoại ngữ xuất sắc, tự tin hội nhập quốc tế và đạt mục tiêu tuyển sinh đại học hàng đầu...",
+        sortOrder: 5
+      }
+    ],
+    parentPrompts: {
+      groupLabel: "Khối 11 (Hướng nghiệp, ngoại ngữ, kế hoạch đại học)",
+      group1_expectations: {
+        title: "1. Nguyện vọng & Kỳ vọng của PHHS đối với sự phát triển của học sinh",
+        hints: ["Gia đình kỳ vọng con sẽ phát triển những phẩm chất và năng lực cốt lõi nào khi học tại Sky-Line?","Định hướng tương lai dài hạn (chọn ngành nghề, đại học trong nước hay du học quốc tế) của gia đình dành cho con là gì?","Gia đình mong muốn nhà trường xây dựng lộ trình đồng hành cụ thể nào để hiện thực hóa mục tiêu trên?"],
+        placeholder: "Ví dụ: Kỳ vọng con phát triển toàn diện tư duy phản biện, ngoại ngữ xuất sắc, tự tin hội nhập quốc tế và đạt mục tiêu tuyển sinh đại học hàng đầu..."
+      },
+      group2_personality: {
+        title: "2. Đặc điểm cá nhân, tính cách và thói quen của học sinh",
+        hints: ["Xin gia đình chia sẻ về những nét tính cách nổi trội và sự thay đổi tâm lý của con thời gian gần đây?","Con thể hiện niềm say mê và năng khiếu vượt trội nhất trong lĩnh vực nào?","Khi con gặp áp lực học tập hoặc khúc mắc tâm lý, biểu hiện ở nhà của con như thế nào?"],
+        placeholder: "Ví dụ: Con có tư duy độc lập, giàu cảm xúc, có năng khiếu tự học tốt; đôi lúc có áp lực về điểm số nhưng biết lắng nghe lời khuyên của gia đình..."
+      },
+      group3_support: {
+        title: "3. Nhu cầu hỗ trợ, bồi dưỡng và đề xuất từ PHHS",
+        hints: ["Gia đình nhận định thế nào về năng lực học thuật và nền tảng kiến thức hiện tại của con?","Khả năng ngoại ngữ (tiếng Anh) và năng lực tự học nghiên cứu của con được phát huy ra sao?","Môn học hoặc kỹ năng nào con cần được nhà trường bồi dưỡng và hỗ trợ nâng cao thêm?"],
+        placeholder: "Ví dụ: Học lực các năm trước đạt loại Giỏi/Tốt, tư duy Toán và tiếng Anh khá tốt; mong muốn trường rèn luyện thêm kỹ năng làm việc nhóm và thuyết trình..."
+      },
+      group4_cooperation: {
+        title: "4. Cơ chế phối hợp và đồng hành giữa gia đình và nhà trường",
+        hints: ["Bố mẹ thường trò chuyện và thấu hiểu nguyện vọng của con thông qua những dịp nào?","Khi có sự bất đồng ý kiến về chọn môn học hoặc định hướng, gia đình giải quyết như thế nào?","Gia đình sẵn sàng phối hợp cùng Ban Cố vấn và Giáo viên chủ nhiệm theo cơ chế như thế nào?"],
+        placeholder: "Ví dụ: Gia đình luôn tôn trọng ý kiến cá nhân của con, đóng vai trò người đồng hành định hướng; cam kết phối hợp thường xuyên với nhà trường..."
+      }
+    }
+  },
+  // 12. KHỐI 12 - Tốt nghiệp THPT, xét tuyển, du học, định hướng nghề nghiệp
+  KHOI_12: {
+    key: "KHOI_12",
+    gradeNumber: 12,
+    label: "Khối 12",
+    subLabel: "Mục tiêu tốt nghiệp THPT, chiến lược xét tuyển đại học / du học, vững vàng nghề nghiệp",
+    focus: "Tốt nghiệp THPT, xét tuyển, du học, định hướng nghề nghiệp",
+    gradeList: ["12","Khối 12","Lớp 12","K12"],
+    criteria: [
+      {
+        id: "k12_c1",
+        code: "K12-A01",
+        name: "Sở thích, đam mê và lĩnh vực thế mạnh nổi bật (Khối 12)",
+        category: "SO_THICH_THE_MANH",
+        categoryLabel: "1. Sở thích và thế mạnh",
+        focus: "Khám phá đam mê, lĩnh vực chuyên môn hoặc năng khiếu sở trường phù hợp trọng tâm: Tốt nghiệp THPT, xét tuyển, du học, định hướng nghề nghiệp.",
+        guideline: "Đánh giá mức độ am hiểu, chiều sâu đam mê và thời gian học sinh đầu tư cho thế mạnh cá nhân.",
+        suggestedQuestions: ["Trong các môn học và hoạt động hiện tại, con yêu thích và tự tin nhất ở lĩnh vực nào?","Con đã từng đạt giải thưởng, dự án cá nhân hoặc thành tích nào đáng tự hào trong thế mạnh này chưa?","Thế mạnh này giúp ích gì cho con trong việc học tập và kết nối bạn bè?"],
+        mandatoryCommentRatings: ["NEED_SUPPORT", "SPECIAL_ATTENTION"],
+        sortOrder: 1
+      },
+      {
+        id: "k12_c2",
+        code: "K12-A02",
+        name: "Động lực học tập nội tại và thái độ với mục tiêu học đường (Khối 12)",
+        category: "THAI_DO_DONG_LUC",
+        categoryLabel: "2. Thái độ và động lực học tập",
+        focus: "Đánh giá mức độ tự giác, mục tiêu học tập rõ ràng theo trọng tâm: Tốt nghiệp THPT, xét tuyển, du học, định hướng nghề nghiệp.",
+        guideline: "Phân biệt học tập vì đam mê, sự tò mò hay vì nghĩa vụ, áp lực từ gia đình.",
+        suggestedQuestions: ["Điều gì là động lực lớn nhất thúc đẩy con nỗ lực học tập mỗi ngày?","Khi gặp phải một chuyên đề hoặc bài tập rất khó, con duy trì quyết tâm như thế nào?","Con có thói quen tự tìm kiếm thêm tài liệu, sách báo hoặc khóa học trực tuyến để mở rộng kiến thức không?"],
+        mandatoryCommentRatings: ["NEED_SUPPORT", "SPECIAL_ATTENTION"],
+        sortOrder: 2
+      },
+      {
+        id: "k12_c3",
+        code: "K12-A03",
+        name: "Tư duy logic, giải quyết khúc mắc và vượt khó (Khối 12)",
+        category: "GIAI_QUYET_VAN_DE",
+        categoryLabel: "3. Khả năng giải quyết vấn đề",
+        focus: "Khả năng phân tích nguyên nhân, đề xuất phương án và xử lý tình huống thực tế.",
+        guideline: "Quan sát phản xạ tư duy phản biện, cách lập luận và tinh thần không lùi bước trước khó khăn.",
+        suggestedQuestions: ["Khi đối diện với một vấn đề phức tạp hoặc xung đột ý kiến với bạn bè, con giải quyết ra sao?","Hãy kể về một tình huống con tự mình tìm ra cách giải quyết khó khăn mà không cần người lớn can thiệp?","Con học được bài học kinh nghiệm gì từ những thất bại hoặc kết quả chưa đạt mong muốn trước đây?"],
+        mandatoryCommentRatings: ["NEED_SUPPORT", "SPECIAL_ATTENTION"],
+        sortOrder: 3
+      },
+      {
+        id: "k12_c4",
+        code: "K12-A04",
+        name: "Kỹ năng tự chủ, quản lý thời gian và trách nhiệm cá nhân (Khối 12)",
+        category: "TINH_CHU_DONG",
+        categoryLabel: "4. Tính chủ động",
+        focus: "Mức độ chủ động xây dựng kế hoạch, sắp xếp thứ tự ưu tiên và tự chịu trách nhiệm.",
+        guideline: "Đánh giá tính độc lập, khả năng tổ chức công việc và việc giữ đúng cam kết.",
+        suggestedQuestions: ["Con tự quản lý thời gian học tập, giải trí và sinh hoạt cá nhân như thế nào trong ngày?","Khi được giao một nhiệm vụ hoặc dự án nhóm, con chủ động nhận phần việc nào?","Nếu bị chậm tiến độ hoặc quên nhiệm vụ, con nhận trách nhiệm và khắc phục như thế nào?"],
+        mandatoryCommentRatings: ["NEED_SUPPORT", "SPECIAL_ATTENTION"],
+        sortOrder: 4
+      },
+      {
+        id: "k12_c5",
+        code: "K12-A05",
+        name: "Kỹ năng hợp tác, lãnh đạo nhóm và thích ứng môi trường mới (Khối 12)",
+        category: "KY_NANG_XA_HOI_THICH_NGHI",
+        categoryLabel: "5. Kỹ năng xã hội và khả năng thích nghi",
+        focus: "Khả năng tương tác xã hội, tinh thần đồng đội và mức độ linh hoạt trước thay đổi.",
+        guideline: "Quan sát sự cởi mở, lắng nghe tích cực và vai trò thể hiện trong tập thể.",
+        suggestedQuestions: ["Con thích nghi như thế nào khi bước vào một môi trường mới với nhiều giáo viên và bạn học mới?","Trong hoạt động nhóm, con thường đóng vai trò người kết nối, lãnh đạo hay hỗ trợ thực thi?","Làm thế nào để con duy trì mối quan hệ bạn bè lành mạnh và tích cực tại trường học?"],
+        mandatoryCommentRatings: ["NEED_SUPPORT", "SPECIAL_ATTENTION"],
+        sortOrder: 5
+      },
+      {
+        id: "k12_c6",
+        code: "K12-A06",
+        name: "Tự nhận thức giá trị cá nhân, điểm mạnh và điểm cần cải thiện (Khối 12)",
+        category: "NHAN_THUC_BAN_THAN",
+        categoryLabel: "6. Nhận thức bản thân",
+        focus: "Mức độ hiểu rõ bản thân: tính cách, giá trị cốt lõi, thói quen tốt và thói quen chưa tốt.",
+        guideline: "Lắng nghe sự khiêm tốn, tính chân thật và khao khát hoàn thiện nhân cách bản thân.",
+        suggestedQuestions: ["Nếu dùng 3 từ để miêu tả chính xác nhất về bản thân con, con sẽ chọn những từ nào?","Điểm yếu hoặc hạn chế lớn nhất mà con đang nỗ lực rèn luyện để vượt qua là gì?","Những điều gì hoặc môi trường nào giúp con phát huy tối đa năng lực tốt nhất của mình?"],
+        mandatoryCommentRatings: ["NEED_SUPPORT", "SPECIAL_ATTENTION"],
+        sortOrder: 6
+      },
+      {
+        id: "k12_c7",
+        code: "K12-A07",
+        name: "Mục tiêu, nguyện vọng và kế hoạch đóng góp tại Sky-Line (Khối 12)",
+        category: "KY_VONG_SKYLINE",
+        categoryLabel: "7. Kỳ vọng cá nhân tại Sky-Line",
+        focus: "Hình dung của học sinh về cơ hội học tập, câu lạc bộ, dự án cộng đồng tại Sky-Line.",
+        guideline: "Đánh giá mức độ đồng điệu giữa giá trị của học sinh với triết lý giáo dục Sky-Line.",
+        suggestedQuestions: ["Con kỳ vọng điều gì nhất từ thầy cô và môi trường học tập tại Sky-Line?","Con mong muốn tham gia những dự án học tập, câu lạc bộ hay hoạt động cộng đồng nào tại trường?","Con dự định sẽ để lại dấu ấn hoặc đóng góp gì cho tập thể lớp và trường Sky-Line?"],
+        mandatoryCommentRatings: ["NEED_SUPPORT", "SPECIAL_ATTENTION"],
+        sortOrder: 7
+      },
+      {
+        id: "k12_c8",
+        code: "K12-A08",
+        name: "Tự đánh giá năng lực học thuật, ngoại ngữ và tư duy nghiên cứu (Khối 12)",
+        category: "NANG_LUC_TU_NHAN_DINH",
+        categoryLabel: "8. Năng lực học tập tự nhận định",
+        focus: "Khả năng tự định vị trình độ các môn văn hóa, năng lực ngoại ngữ (IELTS/giao tiếp) và tự học.",
+        guideline: "Đánh giá sự tự tin nhưng thực tế, có dẫn chứng cụ thể về điểm số hoặc sản phẩm học tập.",
+        suggestedQuestions: ["Con tự đánh giá năng lực của mình ở các môn khoa học và xã hội hiện tại đang ở mức độ nào?","Khả năng sử dụng ngoại ngữ (tiếng Anh) trong học thuật và giao tiếp của con đáp ứng ra sao?","Con có phương pháp tự học đặc biệt nào giúp con ghi nhớ và hiểu sâu kiến thức không?"],
+        mandatoryCommentRatings: ["NEED_SUPPORT", "SPECIAL_ATTENTION"],
+        sortOrder: 8
+      },
+      {
+        id: "k12_c9",
+        code: "K12-A09",
+        name: "Kỹ năng thuyết trình, phản biện văn minh và truyền cảm hứng (Khối 12)",
+        category: "KY_NANG_GIAO_TIEP",
+        categoryLabel: "9. Kỹ năng giao tiếp",
+        focus: "Khả năng diễn giải ý tưởng thuyết phục, phong thái tự tin và kỹ năng lắng nghe thấu cảm.",
+        guideline: "Quan sát ngôn ngữ cơ thể, ánh mắt, cách dùng từ ngữ và khả năng đối đáp thông minh.",
+        suggestedQuestions: ["Con có cảm thấy tự tin khi thuyết trình một đề tài trước cả lớp hoặc hội trường không?","Khi người khác có quan điểm trái ngược với con, con phản hồi và trao đổi lại như thế nào?","Con làm thế nào để truyền tải thông điệp một cách rõ ràng và thu hút người nghe?"],
+        mandatoryCommentRatings: ["NEED_SUPPORT", "SPECIAL_ATTENTION"],
+        sortOrder: 9
+      },
+      {
+        id: "k12_c10",
+        code: "K12-A010",
+        name: "Định hướng cá nhân hóa, nhu cầu cố vấn chuyên sâu và lưu ý đặc thù (Khối 12)",
+        category: "THONG_TIN_BO_SUNG",
+        categoryLabel: "10. Thông tin bổ sung",
+        focus: "Nguyện vọng về cố vấn học tập, định hướng nghề nghiệp, thi chứng chỉ hoặc nhu cầu hỗ trợ tâm lý.",
+        guideline: "Ghi nhận nhu cầu chuyên sâu để nhà trường phân bổ giáo viên cố vấn phù hợp.",
+        suggestedQuestions: ["Con có kế hoạch thi các chứng chỉ quốc tế, tham gia kỳ thi học sinh giỏi hay nghiên cứu khoa học không?","Con có cần nhà trường hoặc cố vấn học tập hỗ trợ riêng về lộ trình định hướng nào không?","Có bất kỳ chia sẻ hoặc mong muốn nào khác mà con muốn gửi gắm tới thầy cô không?"],
+        mandatoryCommentRatings: ["NEED_SUPPORT", "SPECIAL_ATTENTION"],
+        sortOrder: 10
+      }
+    ],
+    parentGroups: [
+      {
+        id: "k12_p1",
+        code: "K12-B01",
+        category: "HIEU_HS_GOC_NHIN_PH",
+        categoryLabel: "1. Hiểu học sinh qua góc nhìn phụ huynh",
+        title: "Đặc điểm tính cách, tâm lý lứa tuổi và thế mạnh của học sinh (Khối 12)",
+        focus: "Đánh giá sự trưởng thành tâm lý, thế mạnh cốt lõi và nét tính cách nổi bật theo lứa tuổi.",
+        suggestedQuestions: ["Xin gia đình chia sẻ về những nét tính cách nổi trội và sự thay đổi tâm lý của con thời gian gần đây?","Con thể hiện niềm say mê và năng khiếu vượt trội nhất trong lĩnh vực nào?","Khi con gặp áp lực học tập hoặc khúc mắc tâm lý, biểu hiện ở nhà của con như thế nào?"],
+        placeholder: "Ví dụ: Con có tư duy độc lập, giàu cảm xúc, có năng khiếu tự học tốt; đôi lúc có áp lực về điểm số nhưng biết lắng nghe lời khuyên của gia đình...",
+        sortOrder: 1
+      },
+      {
+        id: "k12_p2",
+        code: "K12-B02",
+        category: "QUA_TRINH_NANG_LUC_HT",
+        categoryLabel: "2. Quá trình và năng lực học tập",
+        title: "Đánh giá học lực, năng khiếu ngoại ngữ và phong cách học tập (Khối 12)",
+        focus: "Lịch sử học tập, thế mạnh môn học, kết quả các kỳ thi và phong cách tiếp thu tri thức.",
+        suggestedQuestions: ["Gia đình nhận định thế nào về năng lực học thuật và nền tảng kiến thức hiện tại của con?","Khả năng ngoại ngữ (tiếng Anh) và năng lực tự học nghiên cứu của con được phát huy ra sao?","Môn học hoặc kỹ năng nào con cần được nhà trường bồi dưỡng và hỗ trợ nâng cao thêm?"],
+        placeholder: "Ví dụ: Học lực các năm trước đạt loại Giỏi/Tốt, tư duy Toán và tiếng Anh khá tốt; mong muốn trường rèn luyện thêm kỹ năng làm việc nhóm và thuyết trình...",
+        sortOrder: 2
+      },
+      {
+        id: "k12_p3",
+        code: "K12-B03",
+        category: "THOI_QUEN_HT_TAI_NHA",
+        categoryLabel: "3. Thói quen học tập tại nhà",
+        title: "Mức độ tự giác, phương pháp tự học và sử dụng công nghệ (Khối 12)",
+        focus: "Nề nếp tự học tại nhà, khả năng tự tra cứu tài liệu và quản lý thời gian sử dụng internet/mạng xã hội.",
+        suggestedQuestions: ["Con có kế hoạch tự học rõ ràng mỗi ngày không? Mức độ tự giác đạt bao nhiêu %?","Gia đình định hướng và kiểm soát việc sử dụng điện thoại thông minh, máy tính và mạng xã hội của con như thế nào?","Con có thói quen đọc sách chuyên môn, báo chí hoặc tra cứu tài liệu học thuật trực tuyến không?"],
+        placeholder: "Ví dụ: Con tự giác ngồi vào bàn học đúng giờ, tự lập thời gian biểu; gia đình quy định sử dụng điện thoại có kiểm soát mục đích phục vụ học tập...",
+        sortOrder: 3
+      },
+      {
+        id: "k12_p4",
+        code: "K12-B04",
+        category: "DONG_HANH_CUA_PH",
+        categoryLabel: "4. Cách phụ huynh đồng hành với việc học",
+        title: "Phương pháp đồng hành, tôn trọng chính kiến và phối hợp với nhà trường (Khối 12)",
+        focus: "Cách cha mẹ làm bạn cùng con ở lứa tuổi phát triển, tôn trọng quyết định và hỗ trợ hướng nghiệp.",
+        suggestedQuestions: ["Bố mẹ thường trò chuyện và thấu hiểu nguyện vọng của con thông qua những dịp nào?","Khi có sự bất đồng ý kiến về chọn môn học hoặc định hướng, gia đình giải quyết như thế nào?","Gia đình sẵn sàng phối hợp cùng Ban Cố vấn và Giáo viên chủ nhiệm theo cơ chế như thế nào?"],
+        placeholder: "Ví dụ: Gia đình luôn tôn trọng ý kiến cá nhân của con, đóng vai trò người đồng hành định hướng; cam kết phối hợp thường xuyên với nhà trường...",
+        sortOrder: 4
+      },
+      {
+        id: "k12_p5",
+        code: "K12-B05",
+        category: "DONG_LUC_KY_VONG_GD",
+        categoryLabel: "5. Động lực, kỳ vọng và mục tiêu giáo dục",
+        title: "Kỳ vọng đầu ra, định hướng nghề nghiệp và mục tiêu giáo dục dài hạn (Khối 12)",
+        focus: "Mục tiêu chuyển tiếp (cấp học tiếp theo, đại học, du học) và kỳ vọng giá trị nhân cách tại Sky-Line.",
+        suggestedQuestions: ["Gia đình kỳ vọng con sẽ phát triển những phẩm chất và năng lực cốt lõi nào khi học tại Sky-Line?","Định hướng tương lai dài hạn (chọn ngành nghề, đại học trong nước hay du học quốc tế) của gia đình dành cho con là gì?","Gia đình mong muốn nhà trường xây dựng lộ trình đồng hành cụ thể nào để hiện thực hóa mục tiêu trên?"],
+        placeholder: "Ví dụ: Kỳ vọng con phát triển toàn diện tư duy phản biện, ngoại ngữ xuất sắc, tự tin hội nhập quốc tế và đạt mục tiêu tuyển sinh đại học hàng đầu...",
+        sortOrder: 5
+      }
+    ],
+    parentPrompts: {
+      groupLabel: "Khối 12 (Tốt nghiệp THPT, xét tuyển, du học, định hướng nghề nghiệp)",
+      group1_expectations: {
+        title: "1. Nguyện vọng & Kỳ vọng của PHHS đối với sự phát triển của học sinh",
+        hints: ["Gia đình kỳ vọng con sẽ phát triển những phẩm chất và năng lực cốt lõi nào khi học tại Sky-Line?","Định hướng tương lai dài hạn (chọn ngành nghề, đại học trong nước hay du học quốc tế) của gia đình dành cho con là gì?","Gia đình mong muốn nhà trường xây dựng lộ trình đồng hành cụ thể nào để hiện thực hóa mục tiêu trên?"],
+        placeholder: "Ví dụ: Kỳ vọng con phát triển toàn diện tư duy phản biện, ngoại ngữ xuất sắc, tự tin hội nhập quốc tế và đạt mục tiêu tuyển sinh đại học hàng đầu..."
+      },
+      group2_personality: {
+        title: "2. Đặc điểm cá nhân, tính cách và thói quen của học sinh",
+        hints: ["Xin gia đình chia sẻ về những nét tính cách nổi trội và sự thay đổi tâm lý của con thời gian gần đây?","Con thể hiện niềm say mê và năng khiếu vượt trội nhất trong lĩnh vực nào?","Khi con gặp áp lực học tập hoặc khúc mắc tâm lý, biểu hiện ở nhà của con như thế nào?"],
+        placeholder: "Ví dụ: Con có tư duy độc lập, giàu cảm xúc, có năng khiếu tự học tốt; đôi lúc có áp lực về điểm số nhưng biết lắng nghe lời khuyên của gia đình..."
+      },
+      group3_support: {
+        title: "3. Nhu cầu hỗ trợ, bồi dưỡng và đề xuất từ PHHS",
+        hints: ["Gia đình nhận định thế nào về năng lực học thuật và nền tảng kiến thức hiện tại của con?","Khả năng ngoại ngữ (tiếng Anh) và năng lực tự học nghiên cứu của con được phát huy ra sao?","Môn học hoặc kỹ năng nào con cần được nhà trường bồi dưỡng và hỗ trợ nâng cao thêm?"],
+        placeholder: "Ví dụ: Học lực các năm trước đạt loại Giỏi/Tốt, tư duy Toán và tiếng Anh khá tốt; mong muốn trường rèn luyện thêm kỹ năng làm việc nhóm và thuyết trình..."
+      },
+      group4_cooperation: {
+        title: "4. Cơ chế phối hợp và đồng hành giữa gia đình và nhà trường",
+        hints: ["Bố mẹ thường trò chuyện và thấu hiểu nguyện vọng của con thông qua những dịp nào?","Khi có sự bất đồng ý kiến về chọn môn học hoặc định hướng, gia đình giải quyết như thế nào?","Gia đình sẵn sàng phối hợp cùng Ban Cố vấn và Giáo viên chủ nhiệm theo cơ chế như thế nào?"],
+        placeholder: "Ví dụ: Gia đình luôn tôn trọng ý kiến cá nhân của con, đóng vai trò người đồng hành định hướng; cam kết phối hợp thường xuyên với nhà trường..."
+      }
+    }
+  },
+  // Alias tương thích ngược
+  get KHOI_2_5() { return this.KHOI_2; },
+  get KHOI_7_9() { return this.KHOI_8; },
+  get KHOI_10_12() { return this.KHOI_11; }
 };
 
 /**
  * Lấy cấu hình nhóm khối dựa trên khối lớp (grade) của học sinh
+ * Hỗ trợ nhận diện chính xác từng khối từ 1 đến 12
  */
 export function getGradeGroupKey(grade?: string | number | null): GradeGroupKey {
   if (!grade) return "KHOI_1";
   const str = String(grade).trim().toLowerCase();
 
-  // Khối 1
-  if (str === "1" || str.includes("khối 1") || str.includes("lớp 1") || str === "k1") {
-    return "KHOI_1";
+  // Nhận diện từng khối chính xác
+  if (str === "1" || str === "k1" || str === "lớp 1" || str === "khối 1" || str.includes("khối 1") || str.includes("lớp 1")) {
+    if (!str.includes("10") && !str.includes("11") && !str.includes("12")) return "KHOI_1";
   }
+  if (str === "2" || str === "k2" || str === "lớp 2" || str === "khối 2" || str.includes("khối 2") || str.includes("lớp 2")) return "KHOI_2";
+  if (str === "3" || str === "k3" || str === "lớp 3" || str === "khối 3" || str.includes("khối 3") || str.includes("lớp 3")) return "KHOI_3";
+  if (str === "4" || str === "k4" || str === "lớp 4" || str === "khối 4" || str.includes("khối 4") || str.includes("lớp 4")) return "KHOI_4";
+  if (str === "5" || str === "k5" || str === "lớp 5" || str === "khối 5" || str.includes("khối 5") || str.includes("lớp 5")) return "KHOI_5";
+  if (str === "6" || str === "k6" || str === "lớp 6" || str === "khối 6" || str.includes("khối 6") || str.includes("lớp 6")) return "KHOI_6";
+  if (str === "7" || str === "k7" || str === "lớp 7" || str === "khối 7" || str.includes("khối 7") || str.includes("lớp 7")) return "KHOI_7";
+  if (str === "8" || str === "k8" || str === "lớp 8" || str === "khối 8" || str.includes("khối 8") || str.includes("lớp 8")) return "KHOI_8";
+  if (str === "9" || str === "k9" || str === "lớp 9" || str === "khối 9" || str.includes("khối 9") || str.includes("lớp 9")) return "KHOI_9";
+  if (str === "10" || str === "k10" || str === "lớp 10" || str === "khối 10" || str.includes("khối 10") || str.includes("lớp 10")) return "KHOI_10";
+  if (str === "11" || str === "k11" || str === "lớp 11" || str === "khối 11" || str.includes("khối 11") || str.includes("lớp 11")) return "KHOI_11";
+  if (str === "12" || str === "k12" || str === "lớp 12" || str === "khối 12" || str.includes("khối 12") || str.includes("lớp 12")) return "KHOI_12";
 
-  // Khối 2 - 5
-  if (
-    str === "2" || str === "3" || str === "4" || str === "5" ||
-    str.includes("khối 2") || str.includes("khối 3") || str.includes("khối 4") || str.includes("khối 5") ||
-    str.includes("lớp 2") || str.includes("lớp 3") || str.includes("lớp 4") || str.includes("lớp 5") ||
-    str === "k2" || str === "k3" || str === "k4" || str === "k5"
-  ) {
-    return "KHOI_2_5";
-  }
-
-  // Khối 6
-  if (str === "6" || str.includes("khối 6") || str.includes("lớp 6") || str === "k6") {
-    return "KHOI_6";
-  }
-
-  // Khối 7, 8, 9
-  if (str.includes("7") || str.includes("8") || str.includes("9")) {
-    return "KHOI_7_9";
-  }
-
-  // Khối 10, 11, 12
-  if (str.includes("10") || str.includes("11") || str.includes("12")) {
-    return "KHOI_10_12";
+  // Thử parse số nguyên
+  const match = str.match(/\d+/);
+  if (match) {
+    const num = parseInt(match[0], 10);
+    if (num >= 1 && num <= 12) {
+      return ("KHOI_" + num) as GradeGroupKey;
+    }
   }
 
   return "KHOI_1";
@@ -878,7 +2725,7 @@ export function getOrientationGradeGroupConfig(grade?: string | number | null): 
 }
 
 /**
- * Bảng 04 mức đánh giá chuẩn hóa cho phiếu định hướng
+ * Bảng 04 mức mô tả quan sát chuẩn hóa cho phiếu định hướng (không chấm điểm số)
  */
 export const ORIENTATION_RATING_OPTIONS: Record<
   RatingCode,
@@ -895,28 +2742,28 @@ export const ORIENTATION_RATING_OPTIONS: Record<
 > = {
   CONFIDENT: {
     code: "CONFIDENT",
-    label: "Tự tin / Tích cực",
-    subText: "Thể hiện vượt trội, chủ động",
+    label: "Thể hiện rõ",
+    subText: "Thể hiện nổi bật, tự tin, chủ động và vững vàng",
     colorClass: "teal",
-    badgeClass: "bg-teal-100 text-teal-800 border-teal-300",
+    badgeClass: "bg-teal-100 text-teal-800 border-teal-300 font-semibold",
     bgClass: "bg-teal-50/70",
     borderClass: "border-teal-400",
     textClass: "text-teal-800"
   },
   NORMAL: {
     code: "NORMAL",
-    label: "Bình thường / Ổn định",
-    subText: "Đạt chuẩn phát triển lứa tuổi",
+    label: "Đang hình thành",
+    subText: "Đạt chuẩn phát triển lứa tuổi, đang dần hoàn thiện nề nếp",
     colorClass: "blue",
-    badgeClass: "bg-blue-100 text-blue-800 border-blue-300",
+    badgeClass: "bg-blue-100 text-blue-800 border-blue-300 font-semibold",
     bgClass: "bg-blue-50/70",
     borderClass: "border-blue-400",
     textClass: "text-blue-800"
   },
   NEED_SUPPORT: {
     code: "NEED_SUPPORT",
-    label: "Cần hỗ trợ ban đầu",
-    subText: "Cần GVCN/Bộ môn đồng hành",
+    label: "Cần tìm hiểu thêm",
+    subText: "Cần GVCN/Bộ môn quan sát sâu & hỗ trợ đồng hành ban đầu",
     colorClass: "amber",
     badgeClass: "bg-amber-100 text-amber-800 border-amber-300 font-bold",
     bgClass: "bg-amber-50/70",
@@ -925,13 +2772,13 @@ export const ORIENTATION_RATING_OPTIONS: Record<
   },
   SPECIAL_ATTENTION: {
     code: "SPECIAL_ATTENTION",
-    label: "Lưu ý thêm",
-    subText: "Cần theo dõi sâu / xác minh thêm",
-    colorClass: "rose",
-    badgeClass: "bg-rose-100 text-rose-800 border-rose-300 font-bold",
-    bgClass: "bg-rose-50/70",
-    borderClass: "border-rose-400",
-    textClass: "text-rose-800"
+    label: "Chưa đủ thông tin",
+    subText: "Cần thêm thời gian tương tác hoặc xác minh chuyên môn bổ sung",
+    colorClass: "purple",
+    badgeClass: "bg-purple-100 text-purple-800 border-purple-300 font-bold",
+    bgClass: "bg-purple-50/70",
+    borderClass: "border-purple-400",
+    textClass: "text-purple-800"
   }
 };
 

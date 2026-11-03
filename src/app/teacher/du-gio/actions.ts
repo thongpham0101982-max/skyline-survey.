@@ -967,62 +967,63 @@ export async function createObservationSlot(data: {
       yearId = matchingYear?.id || activeYear?.id || null
     }
 
-    const newSlot = await prisma.$transaction(async (tx) => {
-      const count = await tx.observationSlot.count({
-        where: {
-          teacherId: currentTeacher.id,
-          date: {
-            gte: startOfMonth,
-            lt: endOfMonth
-          },
-          status: "ACTIVE"
-        }
-      })
+    const resolvedCampus = await resolveActualSlotCampus({
+      classId: data.classId,
+      className: data.className,
+      campusId: data.campusId,
+      campusName: data.campusName,
+      fallbackTeacher: currentTeacher
+    });
 
-      if (count >= 2) {
-        throw new Error(`Thầy/Cô đã đạt giới hạn tạo tối đa 2 tiết dạy trong tháng ${slotDate.getMonth() + 1}/${slotDate.getFullYear()}.`)
+    const count = await prisma.observationSlot.count({
+      where: {
+        teacherId: currentTeacher.id,
+        date: {
+          gte: startOfMonth,
+          lt: endOfMonth
+        },
+        status: "ACTIVE"
       }
+    });
 
-      const resolvedCampus = await resolveActualSlotCampus({
-        classId: data.classId,
-        className: data.className,
-        campusId: data.campusId,
-        campusName: data.campusName,
-        fallbackTeacher: currentTeacher
-      });
+    if (count >= 2) {
+      return {
+        success: false,
+        error: `Thầy/Cô đã đạt giới hạn tạo tối đa 2 tiết dạy trong tháng ${slotDate.getMonth() + 1}/${slotDate.getFullYear()}.`
+      };
+    }
 
-      return await tx.observationSlot.create({
-        data: {
-          teacherId: currentTeacher.id,
-          subjectId: data.subjectId || null,
-          subjectName: data.subjectName,
-          level: data.level,
-          grade: data.grade,
-          topic: data.topic,
-          date: slotDate,
-          startTime: data.startTime,
-          endTime: data.endTime,
-          isDoublePeriod: data.isDoublePeriod,
-          room: data.room || null,
-          description: data.description || null,
-          visibilityType: data.visibilityType,
-          targetDeptId: data.targetDeptId || currentTeacher.departmentId || null,
-          maxSeats: 4,
-          status: "ACTIVE",
-          campusId: resolvedCampus.campusId,
-          campusName: resolvedCampus.campusName,
-          classId: data.classId || null,
-          className: data.className || null,
-          lessonPlanName: data.lessonPlanName || null,
-          lessonPlanData: data.lessonPlanData || null,
-          academicYearId: yearId,
-          textbookId: data.textbookId || null,
-          chapterId: data.chapterId || null,
-          lessonId: data.lessonId || null,
-          lessonPageNumber: data.lessonPageNumber ? Number(data.lessonPageNumber) : null
-        }
-      })
-    })
+    const newSlot = await prisma.observationSlot.create({
+      data: {
+        teacherId: currentTeacher.id,
+        subjectId: data.subjectId || null,
+        subjectName: data.subjectName,
+        level: data.level,
+        grade: data.grade,
+        topic: data.topic,
+        date: slotDate,
+        startTime: data.startTime,
+        endTime: data.endTime,
+        isDoublePeriod: data.isDoublePeriod,
+        room: data.room || null,
+        description: data.description || null,
+        visibilityType: data.visibilityType,
+        targetDeptId: data.targetDeptId || currentTeacher.departmentId || null,
+        maxSeats: 4,
+        status: "ACTIVE",
+        campusId: resolvedCampus.campusId,
+        campusName: resolvedCampus.campusName,
+        classId: data.classId || null,
+        className: data.className || null,
+        lessonPlanName: data.lessonPlanName || null,
+        lessonPlanData: data.lessonPlanData || null,
+        academicYearId: yearId,
+        textbookId: (data as any).textbookId || null,
+        chapterId: (data as any).chapterId || null,
+        lessonId: (data as any).lessonId || null,
+        lessonPageNumber: (data as any).lessonPageNumber ? Number((data as any).lessonPageNumber) : null
+      }
+    });
 
     revalidatePath("/teacher/du-gio"); revalidatePath("/teacher/du-gio-mam-non"); revalidatePath("/admin/du-gio-mam-non")
     revalidatePath("/admin/du-gio")
@@ -1086,7 +1087,7 @@ export async function createObservationSlot(data: {
           });
         }
 
-        // Email Notification from bankhaothi@skylineschool.edu.vn to resolved teacher emails in TCM
+        // Email Notification from ktdbcl@skylineschool.edu.vn to resolved teacher emails in TCM
         const creatorEmail = getTeacherResolvedEmail(currentTeacher);
         const deptName = currentTeacher.departmentRel?.name ||
           (currentTeacher.departmentAssignments && currentTeacher.departmentAssignments[0]?.department?.name) ||
@@ -3098,10 +3099,19 @@ async function ensureDbColumns() {
     await prisma.$executeRawUnsafe(`ALTER TABLE "ObservationSlot" ADD COLUMN "lastRemindedAt" DATETIME;`);
   } catch (e) {}
   try {
+    await prisma.$executeRawUnsafe(`ALTER TABLE "ObservationSlot" ADD COLUMN "textbookId" TEXT;`);
+    await prisma.$executeRawUnsafe(`ALTER TABLE "ObservationSlot" ADD COLUMN "chapterId" TEXT;`);
+    await prisma.$executeRawUnsafe(`ALTER TABLE "ObservationSlot" ADD COLUMN "lessonId" TEXT;`);
+    await prisma.$executeRawUnsafe(`ALTER TABLE "ObservationSlot" ADD COLUMN "lessonPageNumber" INTEGER;`);
+  } catch (e) {}
+  try {
     await prisma.$executeRawUnsafe(`ALTER TABLE "ObservationSlot" ADD COLUMN "requestOrigin" TEXT DEFAULT 'TEACHER_OPEN';`);
   } catch (e) {}
   try {
     await prisma.$executeRawUnsafe(`ALTER TABLE "ObservationSlot" ADD COLUMN "rejectionReason" TEXT;`);
+  } catch (e) {}
+  try {
+    await prisma.$executeRawUnsafe(`ALTER TABLE "Student" ADD COLUMN "englishName" TEXT;`);
   } catch (e) {}
   try {
     await prisma.$executeRawUnsafe(`ALTER TABLE "ObservationEvaluation" ADD COLUMN "reEvaluationStatus" TEXT;`);
@@ -4526,9 +4536,6 @@ export async function createSurpriseObservation(data: {
     const session = await auth()
     if (!session || !session.user) return { success: false, error: "Unauthorized" }
 
-    const roleCode = (session.user as any)?.role || "TEACHER"
-    const isAdminOrLeader = ["ADMIN", "ADMINISTRATOR", "KT_DBCL", "GDCS", "GĐCS", "GD_CS", "GĐ_CS", "BAN_DHCM", "DHCM", "BGH", "BGH_MN", "BGHMN", "BGMMN", "QLCM", "QUAN_LY_CM", "GIAO_VU_CS"].includes(roleCode)
-
     let currentTeacher = await prisma.teacher.findUnique({
       where: { userId: session.user.id },
       include: {
@@ -4541,6 +4548,37 @@ export async function createSurpriseObservation(data: {
         user: true
       }
     })
+
+    const roleCode = String((session.user as any)?.role || currentTeacher?.user?.role || "TEACHER").toUpperCase().trim()
+
+    // Thu thập toàn bộ chức vụ / vị trí của người đánh giá
+    const allPositions: string[] = []
+    if (currentTeacher?.position) allPositions.push(String(currentTeacher.position).toUpperCase().trim())
+    if (currentTeacher?.positions) {
+      try {
+        const parsed = typeof currentTeacher.positions === "string" ? JSON.parse(currentTeacher.positions) : currentTeacher.positions
+        if (Array.isArray(parsed)) parsed.forEach((p: string) => allPositions.push(String(p).toUpperCase().trim()))
+      } catch {}
+    }
+    currentTeacher?.departmentAssignments?.forEach((da: any) => {
+      if (da.position) allPositions.push(String(da.position).toUpperCase().trim())
+    })
+    currentTeacher?.divisionAssignments?.forEach((da: any) => {
+      if (da.position) allPositions.push(String(da.position).toUpperCase().trim())
+    })
+
+    const isBanDHCM = ["BAN_DHCM", "TB_DHCM", "TRUONG_BAN_DHCM", "PHO_BAN_DHCM", "ADMIN", "SUPER_ADMIN", "ADMINISTRATOR", "KT_DBCL"].includes(roleCode) ||
+      allPositions.some(p => ["BAN_DHCM", "TB_DHCM", "BAN ĐHCM", "TRƯỞNG BAN ĐHCM", "PHÓ BAN ĐHCM", "KT_DBCL", "ADMIN"].some(k => p.includes(k)));
+
+    const isBGH = ["BGH", "BGH_MN", "BGHMN", "BGMMN", "BGH MẦM NON", "BAN GIÁM HIỆU"].some(k => roleCode.includes(k) || allPositions.some(p => p.includes(k)));
+    const isGDCS = ["GDCS", "GĐCS", "GD_CS", "GĐ_CS", "GIAM_DOC_CO_SO", "GIÁM ĐỐC CƠ SỞ", "PGDCS", "PGĐCS"].some(k => roleCode.includes(k) || allPositions.some(p => p.includes(k)));
+    const isQLCM = isBanDHCM || ["QLCM", "QUAN_LY_CM", "QUẢN LÝ CM", "QUẢN LÝ CHUYÊN MÔN"].some(k => roleCode.includes(k) || allPositions.some(p => p.includes(k)));
+    const isTBP = ["TBP", "TRUONG_BO_PHAN", "TRƯỞNG BỘ PHẬN", "PHÓ BỘ PHẬN", "TB_DHCM"].some(k => roleCode.includes(k) || allPositions.some(p => p.includes(k))) || (currentTeacher?.divisionAssignments?.length || 0) > 0;
+    const isTTCM = ["TTCM", "TO_TRUONG", "TỔ TRƯỞNG", "TỔ TRƯỞNG CM", "TO_PHO", "TỔ PHÓ", "TPCM", "TPTCM"].some(k => roleCode.includes(k) || allPositions.some(p => p.includes(k)));
+    const isBGHMN = ["BGH_MN", "BGHMN", "BGMMN", "BGH MẦM NON"].some(k => roleCode.includes(k) || allPositions.some(p => p.includes(k)));
+
+    const isAdminOrLeader = ["ADMIN", "ADMINISTRATOR", "KT_DBCL", "GDCS", "GĐCS", "GD_CS", "GĐ_CS", "BAN_DHCM", "DHCM", "BGH", "BGH_MN", "BGHMN", "BGMMN", "QLCM", "QUAN_LY_CM", "GIAO_VU_CS"].includes(roleCode) ||
+      isBanDHCM || isBGH || isGDCS || isQLCM;
 
     if (!currentTeacher && !isAdminOrLeader) {
       return { success: false, error: "Không tìm thấy hồ sơ giáo viên." }
@@ -4562,21 +4600,6 @@ export async function createSurpriseObservation(data: {
     if (!currentTeacher) {
       return { success: false, error: "Không tìm thấy người đánh giá hợp lệ." }
     }
-
-    const isTTCM = currentTeacher?.position === "TTCM" ||
-                   ["TTCM", "Tổ trưởng", "TO_TRUONG", "Tổ trưởng CM"].includes(currentTeacher?.position || "") ||
-                   currentTeacher?.departmentAssignments?.some((da: any) => ["TTCM", "Tổ trưởng", "TO_TRUONG", "Tổ trưởng CM"].includes(da.position));
-
-    const isTBP = ["TBP", "TB_DHCM", "BAN_DHCM"].includes(currentTeacher?.position || "") ||
-                  ["TBP", "TB_DHCM", "BAN_DHCM"].includes(roleCode) ||
-                  (currentTeacher?.divisionAssignments?.length || 0) > 0;
-
-    const isQLCM = ["QLCM", "Quản lý CM", "QUAN_LY_CM"].includes(currentTeacher?.position || "") ||
-                   ["QLCM", "Quản lý CM", "QUAN_LY_CM"].includes(roleCode) ||
-                   currentTeacher?.departmentAssignments?.some((da: any) => ["QLCM", "Quản lý CM", "QUAN_LY_CM"].includes(da.position));
-
-    const isBGHMN = ["BGH_MN", "BGHMN", "BGMMN", "BGH Mầm non"].includes(currentTeacher?.position || "") ||
-                    ["BGH_MN", "BGHMN", "BGMMN", "BGH Mầm non"].includes(roleCode);
 
     const isCthsRequest = (data as any)?.isCthsLog || (data as any)?.requestOrigin === "CAMPUS_SCHEDULE" || (data as any)?.requestOrigin === "CTHS_WORK_LOG" || (data as any)?.level === "Công tác Học sinh";
 
@@ -4623,13 +4646,13 @@ export async function createSurpriseObservation(data: {
       }
     }
 
-    // 2. Kiểm tra phạm vi nếu là TTCM / QLCM (chỉ được dự giờ GV thuộc Tổ chuyên môn của mình)
-    if (!isCthsRequest && !isAdminOrLeader && (isTTCM || isQLCM) && !isTBP) {
+    // 2. Kiểm tra phạm vi nếu là TTCM (chỉ được dự giờ GV thuộc Tổ chuyên môn của mình)
+    if (!isCthsRequest && !isAdminOrLeader && isTTCM && !isTBP && !isQLCM) {
       const ttcmDeptIds = new Set<string>()
       if (currentTeacher.departmentId) ttcmDeptIds.add(currentTeacher.departmentId)
       if (currentTeacher.departmentAssignments) {
         currentTeacher.departmentAssignments.forEach((da: any) => {
-          if (["TTCM", "Tổ trưởng", "TO_TRUONG", "Tổ trưởng CM", "Tổ phó", "TO_PHO", "TPCM", "TPTCM", "QLCM", "QUAN_LY_CM", "Quản lý CM"].some(k => (da.position || "").toUpperCase().includes(k.toUpperCase())) && da.departmentId) {
+          if (["TTCM", "Tổ trưởng", "TO_TRUONG", "Tổ trưởng CM", "Tổ phó", "TO_PHO", "TPCM", "TPTCM"].some(k => (da.position || "").toUpperCase().includes(k.toUpperCase())) && da.departmentId) {
             ttcmDeptIds.add(da.departmentId)
           }
         })
@@ -4645,7 +4668,7 @@ export async function createSurpriseObservation(data: {
 
       const hasCommonDept = Array.from(ttcmDeptIds).some(id => hostDeptIds.has(id))
       if (!hasCommonDept) {
-        return { success: false, error: "Tổ trưởng / Quản lý chuyên môn (QLCM) chỉ có quyền thực hiện dự giờ đột xuất cho Giáo viên thuộc Tổ chuyên môn của mình." }
+        return { success: false, error: "Tổ trưởng chuyên môn (TTCM) chỉ có quyền thực hiện dự giờ đột xuất cho Giáo viên thuộc Tổ chuyên môn của mình." }
       }
     }
 
@@ -6384,7 +6407,7 @@ function renderAssignedObservationEmailHtml(params: {
                 BAN ĐÀO TẠO & KHẢO THÍ ĐẢM BẢO CHẤT LƯỢNG GIÁO DỤC
               </p>
               <p style="margin: 8px 0 0 0; font-size: 11px; color: #94A3B8;">
-                Email hỗ trợ: <a href="mailto:bankhaothi@skylineschool.edu.vn" style="color: #99F6E4; text-decoration: underline;">bankhaothi@skylineschool.edu.vn</a> &bull; Website: <a href="https://skylineschool.edu.vn" target="_blank" style="color: #99F6E4; text-decoration: none;">skylineschool.edu.vn</a>
+                Email hỗ trợ: <a href="mailto:ktdbcl@skylineschool.edu.vn" style="color: #99F6E4; text-decoration: underline;">ktdbcl@skylineschool.edu.vn</a> &bull; Website: <a href="https://skylineschool.edu.vn" target="_blank" style="color: #99F6E4; text-decoration: none;">skylineschool.edu.vn</a>
               </p>
             </td>
           </tr>
@@ -6502,12 +6525,12 @@ export async function createAssignedObservation(data: {
     }
 
     // 3. Phân quyền phạm vi (IDOR check)
-    // TTCM / QLCM: Chỉ được chỉ định GV trong Tổ chuyên môn của mình
-    if (!isSuperOrBanDHCM && !isBGH && !isGDCS && (isTTCM || isQLCM) && currentTeacher) {
+    // TTCM: Chỉ được chỉ định GV trong Tổ chuyên môn của mình
+    if (!isSuperOrBanDHCM && !isBGH && !isGDCS && !isQLCM && isTTCM && currentTeacher) {
       const myDeptIds = new Set<string>();
       if (currentTeacher.departmentId) myDeptIds.add(currentTeacher.departmentId);
       currentTeacher.departmentAssignments?.forEach((da: any) => {
-        if (["TTCM", "Tổ trưởng", "TO_TRUONG", "Tổ trưởng CM", "Tổ phó", "TO_PHO", "TPCM", "QLCM", "QUAN_LY_CM"].some(k => (da.position || "").toUpperCase().includes(k.toUpperCase())) && da.departmentId) {
+        if (["TTCM", "Tổ trưởng", "TO_TRUONG", "Tổ trưởng CM", "Tổ phó", "TO_PHO", "TPCM"].some(k => (da.position || "").toUpperCase().includes(k.toUpperCase())) && da.departmentId) {
           myDeptIds.add(da.departmentId);
         }
       });
@@ -6520,7 +6543,7 @@ export async function createAssignedObservation(data: {
 
       const hasCommonDept = Array.from(myDeptIds).some(id => hostDeptIds.has(id));
       if (!hasCommonDept) {
-        return { success: false, error: "Tổ trưởng / Quản lý chuyên môn chỉ có quyền chỉ định Giáo viên thuộc Tổ chuyên môn phụ trách." };
+        return { success: false, error: "Tổ trưởng chuyên môn chỉ có quyền chỉ định Giáo viên thuộc Tổ chuyên môn phụ trách." };
       }
     }
 

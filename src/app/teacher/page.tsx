@@ -232,7 +232,7 @@ export default function TeacherDashboard() {
       id: "gvcn-remedial",
       groupId: "GVCN",
       groupName: "Công tác GVCN",
-      title: "Phụ đạo & Bồi dưỡng",
+      title: "Phụ đạo – Bồi dưỡng",
       desc: "Lập danh sách học sinh cần phụ đạo văn hóa, hỗ trợ tâm lý và theo dõi tiến độ.",
       href: "/teacher/ho-tro-hoc-tap",
       icon: Heart,
@@ -241,25 +241,14 @@ export default function TeacherDashboard() {
       metricValue: finalMetrics.remedialStudentsCount
     },
     {
-      id: "gvcn-orientation",
-      groupId: "GVCN",
-      groupName: "Công tác GVCN",
-      title: "Sổ theo dõi Hướng nghiệp",
-      desc: "Cập nhật định hướng nghề nghiệp, kết quả trắc nghiệm tính cách và tư vấn phân ban.",
-      href: "/teacher/orientation",
-      icon: Target,
-      badgeText: "Hướng nghiệp",
-      badgeVariant: "secondary"
-    },
-    {
       id: "gvbm-grading",
       groupId: "GVBM",
       groupName: "Chuyên môn GVBM",
-      title: "Sổ điểm & Nhận xét",
-      desc: "Nhập điểm kiểm tra thường xuyên, giữa kỳ, cuối kỳ và viết nhận xét quá trình.",
+      title: "Sổ điểm – CT Bộ",
+      desc: "Quản lý điểm và nhận xét theo chương trình Bộ GD&ĐT (thường xuyên, giữa kỳ, cuối kỳ).",
       href: "/teacher/so-diem-nhan-xet",
       icon: ClipboardCheck,
-      badgeText: "Sổ điểm",
+      badgeText: "CT Bộ",
       badgeVariant: "success"
     },
     {
@@ -289,8 +278,8 @@ export default function TeacherDashboard() {
       id: "gvbm-experiential",
       groupId: "GVBM",
       groupName: "Chuyên môn GVBM",
-      title: "Hoạt động trải nghiệm",
-      desc: "Quản lý bài thu hoạch ngoại khóa, dự án thực tế và chấm điểm năng lực.",
+      title: "Sổ Hoạt động trải nghiệm",
+      desc: "Theo dõi, đánh giá hoạt động trải nghiệm và bài thu hoạch của học sinh.",
       href: "/teacher/experiential-activities",
       icon: GraduationCap,
       badgeText: "Trải nghiệm",
@@ -312,7 +301,7 @@ export default function TeacherDashboard() {
       id: "util-schedule",
       groupId: "UTILITIES",
       groupName: "Lịch & Tiện ích",
-      title: "Thời khóa biểu giảng dạy",
+      title: "Thời khóa biểu",
       desc: "Xem lịch dạy theo tuần, vị trí phòng học, thời gian biểu từng tiết học trong ngày.",
       href: "/teacher/thoi-khoa-bieu",
       icon: CalendarDays,
@@ -460,8 +449,8 @@ export default function TeacherDashboard() {
     }
     return [
       { id: "ALL" as const, label: `Tất cả (${actionItems.length})` },
-      { id: "GVCN" as const, label: "Công tác GVCN (4)" },
-      { id: "GVBM" as const, label: "Chuyên môn GVBM (4)" },
+      { id: "GVCN" as const, label: "Công tác GVCN (3)" },
+      { id: "GVBM" as const, label: "Chuyên môn GVBM (5)" },
       { id: "UTILITIES" as const, label: "Lịch & Tiện ích (2)" }
     ]
   }, [viewMode, managerActionItems.length, actionItems.length])

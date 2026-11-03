@@ -1,0 +1,872 @@
+{
+  "success": true,
+  "testCode": "HOLLAND",
+  "name": "Trắc nghiệm Sở thích Nghề nghiệp RIASEC (Holland Code)",
+  "totalQuestions": 108,
+  "questions": [
+    {
+      "id": 1,
+      "category": "R",
+      "groupName": "Kỹ thuật (Realistic)",
+      "prefix": "Tôi là người",
+      "subText": "yêu thích vận động",
+      "text": "Tôi là người: yêu thích vận động"
+    },
+    {
+      "id": 2,
+      "category": "R",
+      "groupName": "Kỹ thuật (Realistic)",
+      "prefix": "Tôi là người",
+      "subText": "thẳng thắn",
+      "text": "Tôi là người: thẳng thắn"
+    },
+    {
+      "id": 3,
+      "category": "R",
+      "groupName": "Kỹ thuật (Realistic)",
+      "prefix": "Tôi là người",
+      "subText": "thích làm việc với máy móc, dụng cụ",
+      "text": "Tôi là người: thích làm việc với máy móc, dụng cụ"
+    },
+    {
+      "id": 4,
+      "category": "R",
+      "groupName": "Kỹ thuật (Realistic)",
+      "prefix": "Tôi là người",
+      "subText": "thích sự cụ thể, rõ ràng",
+      "text": "Tôi là người: thích sự cụ thể, rõ ràng"
+    },
+    {
+      "id": 5,
+      "category": "R",
+      "groupName": "Kỹ thuật (Realistic)",
+      "prefix": "Tôi là người",
+      "subText": "khép kín",
+      "text": "Tôi là người: khép kín"
+    },
+    {
+      "id": 6,
+      "category": "R",
+      "groupName": "Kỹ thuật (Realistic)",
+      "prefix": "Tôi là người",
+      "subText": "thích làm việc ngoài trời",
+      "text": "Tôi là người: thích làm việc ngoài trời"
+    },
+    {
+      "id": 7,
+      "category": "R",
+      "groupName": "Kỹ thuật (Realistic)",
+      "prefix": "Tôi có thể",
+      "subText": "sửa chữa các thiết bị điện/ ô tô, xe máy, xe đạp, …",
+      "text": "Tôi có thể: sửa chữa các thiết bị điện/ ô tô, xe máy, xe đạp, …"
+    },
+    {
+      "id": 8,
+      "category": "R",
+      "groupName": "Kỹ thuật (Realistic)",
+      "prefix": "Tôi có thể",
+      "subText": "chơi 1 môn thể thao",
+      "text": "Tôi có thể: chơi 1 môn thể thao"
+    },
+    {
+      "id": 9,
+      "category": "R",
+      "groupName": "Kỹ thuật (Realistic)",
+      "prefix": "Tôi có thể",
+      "subText": "đọc bản vẽ/ bản thiết kế",
+      "text": "Tôi có thể: đọc bản vẽ/ bản thiết kế"
+    },
+    {
+      "id": 10,
+      "category": "R",
+      "groupName": "Kỹ thuật (Realistic)",
+      "prefix": "Tôi có thể",
+      "subText": "sử dụng/ vận hành/ bảo trì máy móc, thiết bị",
+      "text": "Tôi có thể: sử dụng/ vận hành/ bảo trì máy móc, thiết bị"
+    },
+    {
+      "id": 11,
+      "category": "R",
+      "groupName": "Kỹ thuật (Realistic)",
+      "prefix": "Tôi có thể",
+      "subText": "sử dụng công cụ để tạo kiểu tóc mới cho mình",
+      "text": "Tôi có thể: sử dụng công cụ để tạo kiểu tóc mới cho mình"
+    },
+    {
+      "id": 12,
+      "category": "R",
+      "groupName": "Kỹ thuật (Realistic)",
+      "prefix": "Tôi có thể",
+      "subText": "tự may áo/váy/đầm cho mình",
+      "text": "Tôi có thể: tự may áo/váy/đầm cho mình"
+    },
+    {
+      "id": 13,
+      "category": "R",
+      "groupName": "Kỹ thuật (Realistic)",
+      "prefix": "Tôi thích",
+      "subText": "làm vườn/ trồng cây xanh, hoa kiểng",
+      "text": "Tôi thích: làm vườn/ trồng cây xanh, hoa kiểng"
+    },
+    {
+      "id": 14,
+      "category": "R",
+      "groupName": "Kỹ thuật (Realistic)",
+      "prefix": "Tôi thích",
+      "subText": "xây dựng/ lắp ráp mô hình",
+      "text": "Tôi thích: xây dựng/ lắp ráp mô hình"
+    },
+    {
+      "id": 15,
+      "category": "R",
+      "groupName": "Kỹ thuật (Realistic)",
+      "prefix": "Tôi thích",
+      "subText": "vận động tay chân và sử dụng tay chân để làm việc",
+      "text": "Tôi thích: vận động tay chân và sử dụng tay chân để làm việc"
+    },
+    {
+      "id": 16,
+      "category": "R",
+      "groupName": "Kỹ thuật (Realistic)",
+      "prefix": "Tôi thích",
+      "subText": "tự ráp đồ nội thất (bàn/ghế/tủ)/ tự đóng bàn, ghế, tủ,…",
+      "text": "Tôi thích: tự ráp đồ nội thất (bàn/ghế/tủ)/ tự đóng bàn, ghế, tủ,…"
+    },
+    {
+      "id": 17,
+      "category": "R",
+      "groupName": "Kỹ thuật (Realistic)",
+      "prefix": "Tôi thích",
+      "subText": "nấu ăn/ làm bánh",
+      "text": "Tôi thích: nấu ăn/ làm bánh"
+    },
+    {
+      "id": 18,
+      "category": "R",
+      "groupName": "Kỹ thuật (Realistic)",
+      "prefix": "Tôi thích",
+      "subText": "tham dự khoá học kỹ thuật (điện, sữa chữa máy móc…)",
+      "text": "Tôi thích: tham dự khoá học kỹ thuật (điện, sữa chữa máy móc…)"
+    },
+    {
+      "id": 19,
+      "category": "I",
+      "groupName": "Nghiên cứu (Investigative)",
+      "prefix": "Tôi là người",
+      "subText": "hiểu biết rộng",
+      "text": "Tôi là người: hiểu biết rộng"
+    },
+    {
+      "id": 20,
+      "category": "I",
+      "groupName": "Nghiên cứu (Investigative)",
+      "prefix": "Tôi là người",
+      "subText": "thích làm việc một mình",
+      "text": "Tôi là người: thích làm việc một mình"
+    },
+    {
+      "id": 21,
+      "category": "I",
+      "groupName": "Nghiên cứu (Investigative)",
+      "prefix": "Tôi là người",
+      "subText": "khả năng phân tích cao",
+      "text": "Tôi là người: khả năng phân tích cao"
+    },
+    {
+      "id": 22,
+      "category": "I",
+      "groupName": "Nghiên cứu (Investigative)",
+      "prefix": "Tôi là người",
+      "subText": "suy nghĩ logic",
+      "text": "Tôi là người: suy nghĩ logic"
+    },
+    {
+      "id": 23,
+      "category": "I",
+      "groupName": "Nghiên cứu (Investigative)",
+      "prefix": "Tôi là người",
+      "subText": "thích khoa học",
+      "text": "Tôi là người: thích khoa học"
+    },
+    {
+      "id": 24,
+      "category": "I",
+      "groupName": "Nghiên cứu (Investigative)",
+      "prefix": "Tôi là người",
+      "subText": "có khả năng quan sát tốt",
+      "text": "Tôi là người: có khả năng quan sát tốt"
+    },
+    {
+      "id": 25,
+      "category": "I",
+      "groupName": "Nghiên cứu (Investigative)",
+      "prefix": "Tôi có thể",
+      "subText": "suy nghĩ trừu tượng",
+      "text": "Tôi có thể: suy nghĩ trừu tượng"
+    },
+    {
+      "id": 26,
+      "category": "I",
+      "groupName": "Nghiên cứu (Investigative)",
+      "prefix": "Tôi có thể",
+      "subText": "giải các bài toán khó, phức tạp",
+      "text": "Tôi có thể: giải các bài toán khó, phức tạp"
+    },
+    {
+      "id": 27,
+      "category": "I",
+      "groupName": "Nghiên cứu (Investigative)",
+      "prefix": "Tôi có thể",
+      "subText": "tiếp thu nhanh các lý thuyết khoa học",
+      "text": "Tôi có thể: tiếp thu nhanh các lý thuyết khoa học"
+    },
+    {
+      "id": 28,
+      "category": "I",
+      "groupName": "Nghiên cứu (Investigative)",
+      "prefix": "Tôi có thể",
+      "subText": "giải thích các công thức toán học",
+      "text": "Tôi có thể: giải thích các công thức toán học"
+    },
+    {
+      "id": 29,
+      "category": "I",
+      "groupName": "Nghiên cứu (Investigative)",
+      "prefix": "Tôi có thể",
+      "subText": "phân tích dữ liệu",
+      "text": "Tôi có thể: phân tích dữ liệu"
+    },
+    {
+      "id": 30,
+      "category": "I",
+      "groupName": "Nghiên cứu (Investigative)",
+      "prefix": "Tôi có thể",
+      "subText": "tiến hành những thí nghiệm khoa học",
+      "text": "Tôi có thể: tiến hành những thí nghiệm khoa học"
+    },
+    {
+      "id": 31,
+      "category": "I",
+      "groupName": "Nghiên cứu (Investigative)",
+      "prefix": "Tôi thích",
+      "subText": "đặt câu hỏi",
+      "text": "Tôi thích: đặt câu hỏi"
+    },
+    {
+      "id": 32,
+      "category": "I",
+      "groupName": "Nghiên cứu (Investigative)",
+      "prefix": "Tôi thích",
+      "subText": "tìm hiểu nhiều ý kiến khác nhau về 1 vấn đề cụ thể  nào đó",
+      "text": "Tôi thích: tìm hiểu nhiều ý kiến khác nhau về 1 vấn đề cụ thể  nào đó"
+    },
+    {
+      "id": 33,
+      "category": "I",
+      "groupName": "Nghiên cứu (Investigative)",
+      "prefix": "Tôi thích",
+      "subText": "sử dụng máy vi tính",
+      "text": "Tôi thích: sử dụng máy vi tính"
+    },
+    {
+      "id": 34,
+      "category": "I",
+      "groupName": "Nghiên cứu (Investigative)",
+      "prefix": "Tôi thích",
+      "subText": "đọc sách/ báo chuyên ngành/ kỹ thuật",
+      "text": "Tôi thích: đọc sách/ báo chuyên ngành/ kỹ thuật"
+    },
+    {
+      "id": 35,
+      "category": "I",
+      "groupName": "Nghiên cứu (Investigative)",
+      "prefix": "Tôi thích",
+      "subText": "thiết lập đề tài nghiên cứu, làm khảo sát và kiểm tra kết quả",
+      "text": "Tôi thích: thiết lập đề tài nghiên cứu, làm khảo sát và kiểm tra kết quả"
+    },
+    {
+      "id": 36,
+      "category": "I",
+      "groupName": "Nghiên cứu (Investigative)",
+      "prefix": "Tôi thích",
+      "subText": "tham quan bảo tàng khoa học, phòng thí nghiệm, cơ sở khoa học",
+      "text": "Tôi thích: tham quan bảo tàng khoa học, phòng thí nghiệm, cơ sở khoa học"
+    },
+    {
+      "id": 37,
+      "category": "A",
+      "groupName": "Nghệ thuật (Artistic)",
+      "prefix": "Tôi là người",
+      "subText": "Rất sáng tạo",
+      "text": "Tôi là người: Rất sáng tạo"
+    },
+    {
+      "id": 38,
+      "category": "A",
+      "groupName": "Nghệ thuật (Artistic)",
+      "prefix": "Tôi là người",
+      "subText": "Giàu trí tưởng tượng",
+      "text": "Tôi là người: Giàu trí tưởng tượng"
+    },
+    {
+      "id": 39,
+      "category": "A",
+      "groupName": "Nghệ thuật (Artistic)",
+      "prefix": "Tôi là người",
+      "subText": "Thích cải tiến, đổi mới",
+      "text": "Tôi là người: Thích cải tiến, đổi mới"
+    },
+    {
+      "id": 40,
+      "category": "A",
+      "groupName": "Nghệ thuật (Artistic)",
+      "prefix": "Tôi là người",
+      "subText": "Độc đáo, khác lạ",
+      "text": "Tôi là người: Độc đáo, khác lạ"
+    },
+    {
+      "id": 41,
+      "category": "A",
+      "groupName": "Nghệ thuật (Artistic)",
+      "prefix": "Tôi là người",
+      "subText": "Dễ xúc động",
+      "text": "Tôi là người: Dễ xúc động"
+    },
+    {
+      "id": 42,
+      "category": "A",
+      "groupName": "Nghệ thuật (Artistic)",
+      "prefix": "Tôi là người",
+      "subText": "Rất nhạy cảm",
+      "text": "Tôi là người: Rất nhạy cảm"
+    },
+    {
+      "id": 43,
+      "category": "A",
+      "groupName": "Nghệ thuật (Artistic)",
+      "prefix": "Tôi có thể",
+      "subText": "phác thảo, vẽ, tô tranh",
+      "text": "Tôi có thể: phác thảo, vẽ, tô tranh"
+    },
+    {
+      "id": 44,
+      "category": "A",
+      "groupName": "Nghệ thuật (Artistic)",
+      "prefix": "Tôi có thể",
+      "subText": "chơi 1 nhac cụ",
+      "text": "Tôi có thể: chơi 1 nhac cụ"
+    },
+    {
+      "id": 45,
+      "category": "A",
+      "groupName": "Nghệ thuật (Artistic)",
+      "prefix": "Tôi có thể",
+      "subText": "viết truyện/ thơ/ sáng tác nhạc",
+      "text": "Tôi có thể: viết truyện/ thơ/ sáng tác nhạc"
+    },
+    {
+      "id": 46,
+      "category": "A",
+      "groupName": "Nghệ thuật (Artistic)",
+      "prefix": "Tôi có thể",
+      "subText": "hát/ diễn xuất/ nhảy/ khiêu vũ",
+      "text": "Tôi có thể: hát/ diễn xuất/ nhảy/ khiêu vũ"
+    },
+    {
+      "id": 47,
+      "category": "A",
+      "groupName": "Nghệ thuật (Artistic)",
+      "prefix": "Tôi có thể",
+      "subText": "tự thiết kế quần áo cho mình, bạn bè và người thân/ thiết kế nội thất cho nhà mình",
+      "text": "Tôi có thể: tự thiết kế quần áo cho mình, bạn bè và người thân/ thiết kế nội thất cho nhà mình"
+    },
+    {
+      "id": 48,
+      "category": "A",
+      "groupName": "Nghệ thuật (Artistic)",
+      "prefix": "Tôi có thể",
+      "subText": "chụp hình với những góc ảnh đẹp",
+      "text": "Tôi có thể: chụp hình với những góc ảnh đẹp"
+    },
+    {
+      "id": 49,
+      "category": "A",
+      "groupName": "Nghệ thuật (Artistic)",
+      "prefix": "Tôi thích",
+      "subText": "tham gia khóa học thiết kế",
+      "text": "Tôi thích: tham gia khóa học thiết kế"
+    },
+    {
+      "id": 50,
+      "category": "A",
+      "groupName": "Nghệ thuật (Artistic)",
+      "prefix": "Tôi thích",
+      "subText": "học hát/ nhạc/ nhảy/ khiêu vũ/ diễn xuất",
+      "text": "Tôi thích: học hát/ nhạc/ nhảy/ khiêu vũ/ diễn xuất"
+    },
+    {
+      "id": 51,
+      "category": "A",
+      "groupName": "Nghệ thuật (Artistic)",
+      "prefix": "Tôi thích",
+      "subText": "làm đồ thủ công, tự làm quà cho bạn bè và người thân",
+      "text": "Tôi thích: làm đồ thủ công, tự làm quà cho bạn bè và người thân"
+    },
+    {
+      "id": 52,
+      "category": "A",
+      "groupName": "Nghệ thuật (Artistic)",
+      "prefix": "Tôi thích",
+      "subText": "đọc truyện viễn tưởng/ kịch/ thơ ca",
+      "text": "Tôi thích: đọc truyện viễn tưởng/ kịch/ thơ ca"
+    },
+    {
+      "id": 53,
+      "category": "A",
+      "groupName": "Nghệ thuật (Artistic)",
+      "prefix": "Tôi thích",
+      "subText": "thể hiện mình một cách sáng tạo/ mặc những thời trang lạ và thú vị",
+      "text": "Tôi thích: thể hiện mình một cách sáng tạo/ mặc những thời trang lạ và thú vị"
+    },
+    {
+      "id": 54,
+      "category": "A",
+      "groupName": "Nghệ thuật (Artistic)",
+      "prefix": "Tôi thích",
+      "subText": "xem hòa nhạc/ xem kịch/ triển lãm nghệ thuật",
+      "text": "Tôi thích: xem hòa nhạc/ xem kịch/ triển lãm nghệ thuật"
+    },
+    {
+      "id": 55,
+      "category": "S",
+      "groupName": "Xã hội (Social)",
+      "prefix": "Tôi là người",
+      "subText": "rất thân thiện, hòa đồng",
+      "text": "Tôi là người: rất thân thiện, hòa đồng"
+    },
+    {
+      "id": 56,
+      "category": "S",
+      "groupName": "Xã hội (Social)",
+      "prefix": "Tôi là người",
+      "subText": "dễ thấu hiểu người khác",
+      "text": "Tôi là người: dễ thấu hiểu người khác"
+    },
+    {
+      "id": 57,
+      "category": "S",
+      "groupName": "Xã hội (Social)",
+      "prefix": "Tôi là người",
+      "subText": "hào phóng",
+      "text": "Tôi là người: hào phóng"
+    },
+    {
+      "id": 58,
+      "category": "S",
+      "groupName": "Xã hội (Social)",
+      "prefix": "Tôi là người",
+      "subText": "hay giúp đỡ người khác",
+      "text": "Tôi là người: hay giúp đỡ người khác"
+    },
+    {
+      "id": 59,
+      "category": "S",
+      "groupName": "Xã hội (Social)",
+      "prefix": "Tôi là người",
+      "subText": "có tinh thần đồng đội, tinh thần hợp tác",
+      "text": "Tôi là người: có tinh thần đồng đội, tinh thần hợp tác"
+    },
+    {
+      "id": 60,
+      "category": "S",
+      "groupName": "Xã hội (Social)",
+      "prefix": "Tôi là người",
+      "subText": "dễ tha thứ",
+      "text": "Tôi là người: dễ tha thứ"
+    },
+    {
+      "id": 61,
+      "category": "S",
+      "groupName": "Xã hội (Social)",
+      "prefix": "Tôi có thể",
+      "subText": "chỉ dẫn hoặc dạy người khác",
+      "text": "Tôi có thể: chỉ dẫn hoặc dạy người khác"
+    },
+    {
+      "id": 62,
+      "category": "S",
+      "groupName": "Xã hội (Social)",
+      "prefix": "Tôi có thể",
+      "subText": "điều hành các cuộc thảo luận",
+      "text": "Tôi có thể: điều hành các cuộc thảo luận"
+    },
+    {
+      "id": 63,
+      "category": "S",
+      "groupName": "Xã hội (Social)",
+      "prefix": "Tôi có thể",
+      "subText": "hòa giải mâu thuẫn/ tranh chấp",
+      "text": "Tôi có thể: hòa giải mâu thuẫn/ tranh chấp"
+    },
+    {
+      "id": 64,
+      "category": "S",
+      "groupName": "Xã hội (Social)",
+      "prefix": "Tôi có thể",
+      "subText": "diễn đạt suy nghĩ và cảm xúc rất rõ ràng",
+      "text": "Tôi có thể: diễn đạt suy nghĩ và cảm xúc rất rõ ràng"
+    },
+    {
+      "id": 65,
+      "category": "S",
+      "groupName": "Xã hội (Social)",
+      "prefix": "Tôi có thể",
+      "subText": "hợp tác tốt với những người khác",
+      "text": "Tôi có thể: hợp tác tốt với những người khác"
+    },
+    {
+      "id": 66,
+      "category": "S",
+      "groupName": "Xã hội (Social)",
+      "prefix": "Tôi có thể",
+      "subText": "chơi môn thể thao có tính đồng đội",
+      "text": "Tôi có thể: chơi môn thể thao có tính đồng đội"
+    },
+    {
+      "id": 67,
+      "category": "S",
+      "groupName": "Xã hội (Social)",
+      "prefix": "Tôi thích",
+      "subText": "làm việc nhóm",
+      "text": "Tôi thích: làm việc nhóm"
+    },
+    {
+      "id": 68,
+      "category": "S",
+      "groupName": "Xã hội (Social)",
+      "prefix": "Tôi thích",
+      "subText": "tham gia hoạt động tình nguyện với các nhóm hoạt động xã hội tại trường, nhà thờ, chùa, phường, xóm hay cộng đồng",
+      "text": "Tôi thích: tham gia hoạt động tình nguyện với các nhóm hoạt động xã hội tại trường, nhà thờ, chùa, phường, xóm hay cộng đồng"
+    },
+    {
+      "id": 69,
+      "category": "S",
+      "groupName": "Xã hội (Social)",
+      "prefix": "Tôi thích",
+      "subText": "gặp gỡ và làm quen bạn mới",
+      "text": "Tôi thích: gặp gỡ và làm quen bạn mới"
+    },
+    {
+      "id": 70,
+      "category": "S",
+      "groupName": "Xã hội (Social)",
+      "prefix": "Tôi thích",
+      "subText": "lắng nghe và tư vấn cho người khác",
+      "text": "Tôi thích: lắng nghe và tư vấn cho người khác"
+    },
+    {
+      "id": 71,
+      "category": "S",
+      "groupName": "Xã hội (Social)",
+      "prefix": "Tôi thích",
+      "subText": "đóng góp trong các cuộc thảo luận",
+      "text": "Tôi thích: đóng góp trong các cuộc thảo luận"
+    },
+    {
+      "id": 72,
+      "category": "S",
+      "groupName": "Xã hội (Social)",
+      "prefix": "Tôi thích",
+      "subText": "tham gia các hội thảo về phát triển cộng đồng và giải quyết các vấn đề xã hội",
+      "text": "Tôi thích: tham gia các hội thảo về phát triển cộng đồng và giải quyết các vấn đề xã hội"
+    },
+    {
+      "id": 73,
+      "category": "E",
+      "groupName": "Quản lý (Enterprising)",
+      "prefix": "Tôi là người",
+      "subText": "thích phiêu lưu",
+      "text": "Tôi là người: thích phiêu lưu"
+    },
+    {
+      "id": 74,
+      "category": "E",
+      "groupName": "Quản lý (Enterprising)",
+      "prefix": "Tôi là người",
+      "subText": "quyết đoán",
+      "text": "Tôi là người: quyết đoán"
+    },
+    {
+      "id": 75,
+      "category": "E",
+      "groupName": "Quản lý (Enterprising)",
+      "prefix": "Tôi là người",
+      "subText": "thuộc dạng nổi tiếng ở trường",
+      "text": "Tôi là người: thuộc dạng nổi tiếng ở trường"
+    },
+    {
+      "id": 76,
+      "category": "E",
+      "groupName": "Quản lý (Enterprising)",
+      "prefix": "Tôi là người",
+      "subText": "có sức thuyết phục",
+      "text": "Tôi là người: có sức thuyết phục"
+    },
+    {
+      "id": 77,
+      "category": "E",
+      "groupName": "Quản lý (Enterprising)",
+      "prefix": "Tôi là người",
+      "subText": "có nhiều hoài bão/ tham vọng",
+      "text": "Tôi là người: có nhiều hoài bão/ tham vọng"
+    },
+    {
+      "id": 78,
+      "category": "E",
+      "groupName": "Quản lý (Enterprising)",
+      "prefix": "Tôi là người",
+      "subText": "thích giao du, thích kết bạn",
+      "text": "Tôi là người: thích giao du, thích kết bạn"
+    },
+    {
+      "id": 79,
+      "category": "E",
+      "groupName": "Quản lý (Enterprising)",
+      "prefix": "Tôi có thể",
+      "subText": "khởi đầu/ đề xuất dự án, hoạt động mới",
+      "text": "Tôi có thể: khởi đầu/ đề xuất dự án, hoạt động mới"
+    },
+    {
+      "id": 80,
+      "category": "E",
+      "groupName": "Quản lý (Enterprising)",
+      "prefix": "Tôi có thể",
+      "subText": "thuyết phục người khác làm việc theo ý của tôi",
+      "text": "Tôi có thể: thuyết phục người khác làm việc theo ý của tôi"
+    },
+    {
+      "id": 81,
+      "category": "E",
+      "groupName": "Quản lý (Enterprising)",
+      "prefix": "Tôi có thể",
+      "subText": "lãnh đạo một nhóm",
+      "text": "Tôi có thể: lãnh đạo một nhóm"
+    },
+    {
+      "id": 82,
+      "category": "E",
+      "groupName": "Quản lý (Enterprising)",
+      "prefix": "Tôi có thể",
+      "subText": "bán hàng hoặc quảng bá ý tưởng",
+      "text": "Tôi có thể: bán hàng hoặc quảng bá ý tưởng"
+    },
+    {
+      "id": 83,
+      "category": "E",
+      "groupName": "Quản lý (Enterprising)",
+      "prefix": "Tôi có thể",
+      "subText": "lên kế hoạch/ chiến lược để đạt được mục tiêu",
+      "text": "Tôi có thể: lên kế hoạch/ chiến lược để đạt được mục tiêu"
+    },
+    {
+      "id": 84,
+      "category": "E",
+      "groupName": "Quản lý (Enterprising)",
+      "prefix": "Tôi có thể",
+      "subText": "điều hành hoạt động kinh doanh của gia đình",
+      "text": "Tôi có thể: điều hành hoạt động kinh doanh của gia đình"
+    },
+    {
+      "id": 85,
+      "category": "E",
+      "groupName": "Quản lý (Enterprising)",
+      "prefix": "Tôi thích",
+      "subText": "có quyền lực, địa vị/ được bầu cử vào những vị trí quan trọng",
+      "text": "Tôi thích: có quyền lực, địa vị/ được bầu cử vào những vị trí quan trọng"
+    },
+    {
+      "id": 86,
+      "category": "E",
+      "groupName": "Quản lý (Enterprising)",
+      "prefix": "Tôi thích",
+      "subText": "đưa ra quyết định có ảnh hưởng đến những người khác",
+      "text": "Tôi thích: đưa ra quyết định có ảnh hưởng đến những người khác"
+    },
+    {
+      "id": 87,
+      "category": "E",
+      "groupName": "Quản lý (Enterprising)",
+      "prefix": "Tôi thích",
+      "subText": "giành chiến thắng một giải thưởng lãnh đạo hoặc bán hàng",
+      "text": "Tôi thích: giành chiến thắng một giải thưởng lãnh đạo hoặc bán hàng"
+    },
+    {
+      "id": 88,
+      "category": "E",
+      "groupName": "Quản lý (Enterprising)",
+      "prefix": "Tôi thích",
+      "subText": "gặp gỡ những người quan trọng",
+      "text": "Tôi thích: gặp gỡ những người quan trọng"
+    },
+    {
+      "id": 89,
+      "category": "E",
+      "groupName": "Quản lý (Enterprising)",
+      "prefix": "Tôi thích",
+      "subText": "tham gia khóa học về kinh doanh/ marketing…",
+      "text": "Tôi thích: tham gia khóa học về kinh doanh/ marketing…"
+    },
+    {
+      "id": 90,
+      "category": "E",
+      "groupName": "Quản lý (Enterprising)",
+      "prefix": "Tôi thích",
+      "subText": "đọc tạp chí kinh doanh",
+      "text": "Tôi thích: đọc tạp chí kinh doanh"
+    },
+    {
+      "id": 91,
+      "category": "C",
+      "groupName": "Nghiệp vụ (Conventional)",
+      "prefix": "Tôi là người",
+      "subText": "gọn gàng, ngăn nắp",
+      "text": "Tôi là người: gọn gàng, ngăn nắp"
+    },
+    {
+      "id": 92,
+      "category": "C",
+      "groupName": "Nghiệp vụ (Conventional)",
+      "prefix": "Tôi là người",
+      "subText": "làm việc nguyên tắc, có trình tự, có kế hoạch",
+      "text": "Tôi là người: làm việc nguyên tắc, có trình tự, có kế hoạch"
+    },
+    {
+      "id": 93,
+      "category": "C",
+      "groupName": "Nghiệp vụ (Conventional)",
+      "prefix": "Tôi là người",
+      "subText": "chính xác",
+      "text": "Tôi là người: chính xác"
+    },
+    {
+      "id": 94,
+      "category": "C",
+      "groupName": "Nghiệp vụ (Conventional)",
+      "prefix": "Tôi là người",
+      "subText": "thích làm việc với dữ liệu, con số, văn bản",
+      "text": "Tôi là người: thích làm việc với dữ liệu, con số, văn bản"
+    },
+    {
+      "id": 95,
+      "category": "C",
+      "groupName": "Nghiệp vụ (Conventional)",
+      "prefix": "Tôi là người",
+      "subText": "tuân thủ nguyên tắc",
+      "text": "Tôi là người: tuân thủ nguyên tắc"
+    },
+    {
+      "id": 96,
+      "category": "C",
+      "groupName": "Nghiệp vụ (Conventional)",
+      "prefix": "Tôi là người",
+      "subText": "chu đáo, tỉ mỉ",
+      "text": "Tôi là người: chu đáo, tỉ mỉ"
+    },
+    {
+      "id": 97,
+      "category": "C",
+      "groupName": "Nghiệp vụ (Conventional)",
+      "prefix": "Tôi có thể",
+      "subText": "làm việc tốt trong khuôn khổ, theo quy định",
+      "text": "Tôi có thể: làm việc tốt trong khuôn khổ, theo quy định"
+    },
+    {
+      "id": 98,
+      "category": "C",
+      "groupName": "Nghiệp vụ (Conventional)",
+      "prefix": "Tôi có thể",
+      "subText": "giải quyết công việc giấy tờ một cách nhanh chóng, hiệu quả và ngăn nắp",
+      "text": "Tôi có thể: giải quyết công việc giấy tờ một cách nhanh chóng, hiệu quả và ngăn nắp"
+    },
+    {
+      "id": 99,
+      "category": "C",
+      "groupName": "Nghiệp vụ (Conventional)",
+      "prefix": "Tôi có thể",
+      "subText": "thực hiện các công việc đòi hỏi chú ý đến các chi tiết (sửa lỗi các văn bản, sắp xếp, dàn dựng chương trình cho sự kiện, …)",
+      "text": "Tôi có thể: thực hiện các công việc đòi hỏi chú ý đến các chi tiết (sửa lỗi các văn bản, sắp xếp, dàn dựng chương trình cho sự kiện, …)"
+    },
+    {
+      "id": 100,
+      "category": "C",
+      "groupName": "Nghiệp vụ (Conventional)",
+      "prefix": "Tôi có thể",
+      "subText": "tổ chức, dàn dựng chương trình cho các hoạt động, sự kiện (tổ chức đêm ca nhạc, tổ chức buổi dã ngoại cho cả lớp, câu lạc bộ)",
+      "text": "Tôi có thể: tổ chức, dàn dựng chương trình cho các hoạt động, sự kiện (tổ chức đêm ca nhạc, tổ chức buổi dã ngoại cho cả lớp, câu lạc bộ)"
+    },
+    {
+      "id": 101,
+      "category": "C",
+      "groupName": "Nghiệp vụ (Conventional)",
+      "prefix": "Tôi có thể",
+      "subText": "gõ nhanh hoặc viết tốc ký",
+      "text": "Tôi có thể: gõ nhanh hoặc viết tốc ký"
+    },
+    {
+      "id": 102,
+      "category": "C",
+      "groupName": "Nghiệp vụ (Conventional)",
+      "prefix": "Tôi có thể",
+      "subText": "lưu trữ dữ liệu, hồ sơ chính xác",
+      "text": "Tôi có thể: lưu trữ dữ liệu, hồ sơ chính xác"
+    },
+    {
+      "id": 103,
+      "category": "C",
+      "groupName": "Nghiệp vụ (Conventional)",
+      "prefix": "Tôi thích",
+      "subText": "sử dụng các thiết bị xử lý dữ liệu (vd: máy tính,…)",
+      "text": "Tôi thích: sử dụng các thiết bị xử lý dữ liệu (vd: máy tính,…)"
+    },
+    {
+      "id": 104,
+      "category": "C",
+      "groupName": "Nghiệp vụ (Conventional)",
+      "prefix": "Tôi thích",
+      "subText": "sưu tầm đồ kỉ niệm",
+      "text": "Tôi thích: sưu tầm đồ kỉ niệm"
+    },
+    {
+      "id": 105,
+      "category": "C",
+      "groupName": "Nghiệp vụ (Conventional)",
+      "prefix": "Tôi thích",
+      "subText": "học, tìm hiểu các thủ tục, quy định, luật lệ (vd: nội quy, quy định, luật …)",
+      "text": "Tôi thích: học, tìm hiểu các thủ tục, quy định, luật lệ (vd: nội quy, quy định, luật …)"
+    },
+    {
+      "id": 106,
+      "category": "C",
+      "groupName": "Nghiệp vụ (Conventional)",
+      "prefix": "Tôi thích",
+      "subText": "sắp xếp nhà cửa hoặc nơi làm việc",
+      "text": "Tôi thích: sắp xếp nhà cửa hoặc nơi làm việc"
+    },
+    {
+      "id": 107,
+      "category": "C",
+      "groupName": "Nghiệp vụ (Conventional)",
+      "prefix": "Tôi thích",
+      "subText": "chơi trò tìm sự khác biệt giữa hai hình ảnh",
+      "text": "Tôi thích: chơi trò tìm sự khác biệt giữa hai hình ảnh"
+    },
+    {
+      "id": 108,
+      "category": "C",
+      "groupName": "Nghiệp vụ (Conventional)",
+      "prefix": "Tôi thích",
+      "subText": "làm việc dựa trên hướng dẫn cụ thể",
+      "text": "Tôi thích: làm việc dựa trên hướng dẫn cụ thể"
+    }
+  ]
+}

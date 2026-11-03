@@ -718,7 +718,7 @@ export function ReportsClient({
     setRcBackground(mBg || globalData.background || campusData.background || "");
     setRcFooter(mFooter || globalData.footer || campusData.footer || "");
     setRcContent(globalData.content || campusData.content || defaultText);
-    setRcTitle(globalData.title || campusData.title || (rcReportType === "thu_moi" ? "THƯ MỜI" : rcReportType === "cam_ket_hoc_tap" ? "BẢN CAM KẾT HỌC TẬP" : "THƯ CHÚC MỪNG"));
+    setRcTitle(globalData.title || campusData.title || (rcReportType === "thu_moi" ? "THƯ MỜI" : rcReportType === "cam_ket_hoc_tap" ? "BẢN CAM KẾT HỌC TẬP" : rcReportType === "bao_cao_dinh_huong" ? "BÁO CÁO NHẬN DIỆN VÀ ĐỊNH HƯỚNG ĐẦU VÀO HỌC SINH" : "THƯ CHÚC MỪNG"));
     
     const savedSignature = localStorage.getItem('report_config_signature_' + rcCampusId) || campusData.signature || mSig || "";
     const savedDirector = localStorage.getItem('report_config_director_' + rcCampusId) || campusData.directorName || campusObj?.manager?.fullName || getCampusDefaultManager(campusObj?.campusName || "");
@@ -1065,7 +1065,7 @@ export function ReportsClient({
   const campusEmails = useMemo(() => {
     if (!selectedCampusObj) {
       return {
-        tuyensinh: "bankhaothi@skylineschool.edu.vn",
+        tuyensinh: "ktdbcl@skylineschool.edu.vn",
         giaovu: "giaovu.cs3@skylineschool.edu.vn",
         gdcs: "gdcs.cs3@skylineschool.edu.vn",
         bghmn: "bghmn.cs3@skylineschool.edu.vn"
@@ -1725,7 +1725,7 @@ export function ReportsClient({
     setRecipientEmail(defaultTo);
     
     // CC: Khảo thí
-    const defaultCc = "bankhaothi@skylineschool.edu.vn";
+    const defaultCc = "ktdbcl@skylineschool.edu.vn";
     setCcEmail(defaultCc);
 
     setAttachLetters(true);
@@ -2489,6 +2489,7 @@ export function ReportsClient({
 
                   <option value="thu_chuc_mung">Thư chúc mừng</option>
                   {selectedLevel !== "preschool" && <option value="cam_ket_hoc_tap">Cam kết học tập</option>}
+                  <option value="bao_cao_dinh_huong">🌟 Báo cáo nhận diện & định hướng đầu vào (Phiếu 2 Tab)</option>
                 </select>
               </Field>
 
@@ -3969,7 +3970,7 @@ export function ReportsClient({
                   { label: `GĐCS (${campusLabel})`, email: campusEmails.gdcs },
                   ...(selectedLevel === "preschool" ? [{ label: `BGH MN (${campusLabel})`, email: campusEmails.bghmn }] : []),
                   { label: `Tư vấn (${campusLabel})`, email: campusEmails.tuyensinh },
-                  { label: "Khảo thí", email: "bankhaothi@skylineschool.edu.vn" },
+                  { label: "Khảo thí", email: "ktdbcl@skylineschool.edu.vn" },
                 ].map(p => {
                   const isActive = recipientEmail.includes(p.email);
                   return (
@@ -4002,7 +4003,7 @@ export function ReportsClient({
               <div className="flex flex-wrap gap-1 mt-2">
                 <span className="text-[10px] text-slate-400 font-bold uppercase mr-1 mt-1">Gợi ý CC:</span>
                 {[
-                  { label: "Khảo thí", email: "bankhaothi@skylineschool.edu.vn" },
+                  { label: "Khảo thí", email: "ktdbcl@skylineschool.edu.vn" },
                   { label: `Giáo vụ (${campusLabel})`, email: campusEmails.giaovu },
                   { label: `GĐCS (${campusLabel})`, email: campusEmails.gdcs },
                   ...(selectedLevel === "preschool" ? [{ label: `BGH MN (${campusLabel})`, email: campusEmails.bghmn }] : []),

@@ -27,9 +27,17 @@ export async function GET(request: NextRequest) {
     }
 
     if (q) {
+      // Find possible student codes from StudentCodeMapping (e.g. searching by vnEdu markFileCode)
+      const mappedCodes = await prisma.studentCodeMapping.findMany({
+        where: { markFileCode: { contains: q } },
+        select: { databaseCode: true },
+      });
+      const additionalCodes = mappedCodes.map((m) => m.databaseCode).filter(Boolean);
+
       studentWhere.OR = [
         { studentName: { contains: q } },
         { studentCode: { contains: q } },
+        ...(additionalCodes.length > 0 ? [{ studentCode: { in: additionalCodes } }] : []),
       ];
     }
 
@@ -57,6 +65,18 @@ export async function GET(request: NextRequest) {
       DAT: 0,
       CHUA_DAT: 0,
     };
+
+    const studentCodes = students.map((s) => s.studentCode);
+    const mappings = await prisma.studentCodeMapping.findMany({
+      where: { databaseCode: { in: studentCodes } },
+      select: { databaseCode: true, markFileCode: true },
+    });
+    const vneduMap = new Map<string, string>();
+    mappings.forEach((m) => {
+      if (m.databaseCode && m.markFileCode && !vneduMap.has(m.databaseCode)) {
+        vneduMap.set(m.databaseCode, m.markFileCode);
+      }
+    });
 
     const results = students.map((stu) => {
       const summary = stu.termSummaries[0];
@@ -90,6 +110,7 @@ export async function GET(request: NextRequest) {
       return {
         id: stu.id,
         studentId: stu.studentCode,
+        vneduCode: vneduMap.get(stu.studentCode) || null,
         fullName: stu.studentName,
         gender: stu.gender,
         className: stu.class?.className || "---",

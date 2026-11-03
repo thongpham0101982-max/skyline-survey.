@@ -11,7 +11,11 @@ const modules = [
   "SPEC_SUB_CATALOGS",
   "SPEC_SUB_CURRICULUMS",
   "SPEC_SUB_ASSIGNMENTS",
-  "SPEC_SUB_GRADEBOOK"
+  "SPEC_SUB_GRADEBOOK",
+  "SPEC_SUB_CXXH",
+  "SPEC_SUB_EVAL",
+  "SPEC_SUB_CAREER",
+  "SPEC_SUB_GDGT"
 ];
 
 async function grantPermissions(client, name) {

@@ -1,0 +1,1338 @@
+{
+  "success": true,
+  "testCode": "MBTI",
+  "name": "Trắc nghiệm 16 Nhóm Tính cách MBTI",
+  "totalQuestions": 70,
+  "questions": [
+    {
+      "id": 1,
+      "dimension": "EI",
+      "dimensionLabel": "Hướng ngoại (E) - Hướng nội (I)",
+      "prompt": "Tại một buổi tiệc, bạn sẽ:",
+      "text": "Tại một buổi tiệc, bạn sẽ:",
+      "options": [
+        {
+          "label": "A. Giao tiếp với nhiều người, kể cả người lạ",
+          "value": "A",
+          "trait": "E"
+        },
+        {
+          "label": "B. Chỉ giao tiếp với với một số ít người mà bạn đã quen",
+          "value": "B",
+          "trait": "I"
+        }
+      ]
+    },
+    {
+      "id": 2,
+      "dimension": "SN",
+      "dimensionLabel": "Giác quan (S) - Trực giác (N)",
+      "prompt": "Bạn thấy mình là người nghiêng về kiểu nào nhiều hơn?",
+      "text": "Bạn thấy mình là người nghiêng về kiểu nào nhiều hơn?",
+      "options": [
+        {
+          "label": "A. Thực tế",
+          "value": "A",
+          "trait": "S"
+        },
+        {
+          "label": "B. Sáng tạo",
+          "value": "B",
+          "trait": "N"
+        }
+      ]
+    },
+    {
+      "id": 3,
+      "dimension": "SN",
+      "dimensionLabel": "Giác quan (S) - Trực giác (N)",
+      "prompt": "Bạn nghĩ tình huống nào tồi tể hơn?",
+      "text": "Bạn nghĩ tình huống nào tồi tể hơn?",
+      "options": [
+        {
+          "label": "A. Đầu óc của bạn cứ “bay bổng trên mây",
+          "value": "A",
+          "trait": "S"
+        },
+        {
+          "label": "B. Cuộc sống của bạn thật nhàm chán và không bao giờ thay đổi",
+          "value": "B",
+          "trait": "N"
+        }
+      ]
+    },
+    {
+      "id": 4,
+      "dimension": "TF",
+      "dimensionLabel": "Lý trí (T) - Cảm xúc (F)",
+      "prompt": "Bạn sẽ bị ấn tượng hơn với",
+      "text": "Bạn sẽ bị ấn tượng hơn với",
+      "options": [
+        {
+          "label": "A. Các nguyên tắc",
+          "value": "A",
+          "trait": "T"
+        },
+        {
+          "label": "B. Những cảm xúc",
+          "value": "B",
+          "trait": "F"
+        }
+      ]
+    },
+    {
+      "id": 5,
+      "dimension": "TF",
+      "dimensionLabel": "Lý trí (T) - Cảm xúc (F)",
+      "prompt": "Khi quyết định việc gì đó, bạn thường hay dựa vào:",
+      "text": "Khi quyết định việc gì đó, bạn thường hay dựa vào:",
+      "options": [
+        {
+          "label": "A. Sự thuyết phục",
+          "value": "A",
+          "trait": "T"
+        },
+        {
+          "label": "B. Sự đồng cảm",
+          "value": "B",
+          "trait": "F"
+        }
+      ]
+    },
+    {
+      "id": 6,
+      "dimension": "JP",
+      "dimensionLabel": "Nguyên tắc (J) - Linh hoạt (P)",
+      "prompt": "Bạn thích làm việc theo kiểu nào nhiều hơn?",
+      "text": "Bạn thích làm việc theo kiểu nào nhiều hơn?",
+      "options": [
+        {
+          "label": "A. Theo đúng thời hạn",
+          "value": "A",
+          "trait": "J"
+        },
+        {
+          "label": "B. Tùy hứng",
+          "value": "B",
+          "trait": "P"
+        }
+      ]
+    },
+    {
+      "id": 7,
+      "dimension": "JP",
+      "dimensionLabel": "Nguyên tắc (J) - Linh hoạt (P)",
+      "prompt": "Bạn có khuynh hướng đưa ra các lựa chọn",
+      "text": "Bạn có khuynh hướng đưa ra các lựa chọn",
+      "options": [
+        {
+          "label": "A. Rất cẩn thận",
+          "value": "A",
+          "trait": "J"
+        },
+        {
+          "label": "B. Phần nào theo cảm nhận",
+          "value": "B",
+          "trait": "P"
+        }
+      ]
+    },
+    {
+      "id": 8,
+      "dimension": "EI",
+      "dimensionLabel": "Hướng ngoại (E) - Hướng nội (I)",
+      "prompt": "Tại các bữa tiệc, bạn thường:",
+      "text": "Tại các bữa tiệc, bạn thường:",
+      "options": [
+        {
+          "label": "A. Ở lại tới cùng và cảm thấy càng lúc càng hào hứng",
+          "value": "A",
+          "trait": "E"
+        },
+        {
+          "label": "B. Ra về sớm vì cảm thấy mệt mỏi dần",
+          "value": "B",
+          "trait": "I"
+        }
+      ]
+    },
+    {
+      "id": 9,
+      "dimension": "SN",
+      "dimensionLabel": "Giác quan (S) - Trực giác (N)",
+      "prompt": "Kiểu người nào sẽ thu hút bạn hơn?",
+      "text": "Kiểu người nào sẽ thu hút bạn hơn?",
+      "options": [
+        {
+          "label": "A. Người thực tế và có lý lẽ",
+          "value": "A",
+          "trait": "S"
+        },
+        {
+          "label": "B. Người giàu trí tưởng tượng",
+          "value": "B",
+          "trait": "N"
+        }
+      ]
+    },
+    {
+      "id": 10,
+      "dimension": "SN",
+      "dimensionLabel": "Giác quan (S) - Trực giác (N)",
+      "prompt": "Điều nào khiến bạn thấy thích thú hơn?",
+      "text": "Điều nào khiến bạn thấy thích thú hơn?",
+      "options": [
+        {
+          "label": "A. Những điều thực tế",
+          "value": "A",
+          "trait": "S"
+        },
+        {
+          "label": "B. Những ý tưởng khả thi",
+          "value": "B",
+          "trait": "N"
+        }
+      ]
+    },
+    {
+      "id": 11,
+      "dimension": "TF",
+      "dimensionLabel": "Lý trí (T) - Cảm xúc (F)",
+      "prompt": "Khi đánh giá hoặc phán xét người khác, bạn thường hay dựa vào điềugì?",
+      "text": "Khi đánh giá hoặc phán xét người khác, bạn thường hay dựa vào điềugì?",
+      "options": [
+        {
+          "label": "A. Luật lệ và nguyên tắc",
+          "value": "A",
+          "trait": "T"
+        },
+        {
+          "label": "B. Hoàn cảnh",
+          "value": "B",
+          "trait": "F"
+        }
+      ]
+    },
+    {
+      "id": 12,
+      "dimension": "TF",
+      "dimensionLabel": "Lý trí (T) - Cảm xúc (F)",
+      "prompt": "Khi tiếp cận, tiếp xúc người khác, bạn nghiêng về hướng nào hơn?",
+      "text": "Khi tiếp cận, tiếp xúc người khác, bạn nghiêng về hướng nào hơn?",
+      "options": [
+        {
+          "label": "A. Tiếp cận theo hướng khách quan",
+          "value": "A",
+          "trait": "T"
+        },
+        {
+          "label": "B. Tiếp cận theo hướng sử dụng trải nghiệm cá nhân",
+          "value": "B",
+          "trait": "F"
+        }
+      ]
+    },
+    {
+      "id": 13,
+      "dimension": "JP",
+      "dimensionLabel": "Nguyên tắc (J) - Linh hoạt (P)",
+      "prompt": "Phong cách của bạn nghiêng về hướng nào hơn?",
+      "text": "Phong cách của bạn nghiêng về hướng nào hơn?",
+      "options": [
+        {
+          "label": "A. Đúng giờ, nghiêm túc",
+          "value": "A",
+          "trait": "J"
+        },
+        {
+          "label": "B. Nhàn nhã, thoải mái",
+          "value": "B",
+          "trait": "P"
+        }
+      ]
+    },
+    {
+      "id": 14,
+      "dimension": "JP",
+      "dimensionLabel": "Nguyên tắc (J) - Linh hoạt (P)",
+      "prompt": "Bạn cảm thấy không thoải mái khi có những việc:",
+      "text": "Bạn cảm thấy không thoải mái khi có những việc:",
+      "options": [
+        {
+          "label": "A. Chưa hoàn thiện",
+          "value": "A",
+          "trait": "J"
+        },
+        {
+          "label": "B. Đã quá hoàn thiện",
+          "value": "B",
+          "trait": "P"
+        }
+      ]
+    },
+    {
+      "id": 15,
+      "dimension": "EI",
+      "dimensionLabel": "Hướng ngoại (E) - Hướng nội (I)",
+      "prompt": "Trong các mối quan hệ xã hội, bạn thường",
+      "text": "Trong các mối quan hệ xã hội, bạn thường",
+      "options": [
+        {
+          "label": "A. Luôn nắm bắt kịp thời thông tin về các vấn đề của mọi người",
+          "value": "A",
+          "trait": "E"
+        },
+        {
+          "label": "B. Thường biết thông tin sau những người khác",
+          "value": "B",
+          "trait": "I"
+        }
+      ]
+    },
+    {
+      "id": 16,
+      "dimension": "SN",
+      "dimensionLabel": "Giác quan (S) - Trực giác (N)",
+      "prompt": "Với các công việc thông thường, bạn nghiêng về cách:",
+      "text": "Với các công việc thông thường, bạn nghiêng về cách:",
+      "options": [
+        {
+          "label": "A. Làm theo cách thông thường",
+          "value": "A",
+          "trait": "S"
+        },
+        {
+          "label": "B. Làm theo cách của riêng mình",
+          "value": "B",
+          "trait": "N"
+        }
+      ]
+    },
+    {
+      "id": 17,
+      "dimension": "SN",
+      "dimensionLabel": "Giác quan (S) - Trực giác (N)",
+      "prompt": "Các nhà văn nên:",
+      "text": "Các nhà văn nên:",
+      "options": [
+        {
+          "label": "A. Viết những gì họ nghĩ và chân thật với những gì mình viết",
+          "value": "A",
+          "trait": "S"
+        },
+        {
+          "label": "B. Diễn đạt sự việc bằng cách so sánh hay liên tưởng",
+          "value": "B",
+          "trait": "N"
+        }
+      ]
+    },
+    {
+      "id": 18,
+      "dimension": "TF",
+      "dimensionLabel": "Lý trí (T) - Cảm xúc (F)",
+      "prompt": "Điều gì lôi cuốn bạn hơn?",
+      "text": "Điều gì lôi cuốn bạn hơn?",
+      "options": [
+        {
+          "label": "A. Tính nhất quán của tư duy, suy nghĩ",
+          "value": "A",
+          "trait": "T"
+        },
+        {
+          "label": "B. Sự hòa hợp trong các mối quan hệ của con người",
+          "value": "B",
+          "trait": "F"
+        }
+      ]
+    },
+    {
+      "id": 19,
+      "dimension": "TF",
+      "dimensionLabel": "Lý trí (T) - Cảm xúc (F)",
+      "prompt": "Bạn cảm thấy thoải mái hơn khi đưa ra:",
+      "text": "Bạn cảm thấy thoải mái hơn khi đưa ra:",
+      "options": [
+        {
+          "label": "A. Những đánh giá, nhận xét một cách logic",
+          "value": "A",
+          "trait": "T"
+        },
+        {
+          "label": "B. Những đánh giá, nhận xét một cách có ý nghĩa",
+          "value": "B",
+          "trait": "F"
+        }
+      ]
+    },
+    {
+      "id": 20,
+      "dimension": "JP",
+      "dimensionLabel": "Nguyên tắc (J) - Linh hoạt (P)",
+      "prompt": "Bạn thích những điều:",
+      "text": "Bạn thích những điều:",
+      "options": [
+        {
+          "label": "A. Đã được sắp xếp, quyết định trước",
+          "value": "A",
+          "trait": "J"
+        },
+        {
+          "label": "B. Chưa xác định, chưa được quyết định",
+          "value": "B",
+          "trait": "P"
+        }
+      ]
+    },
+    {
+      "id": 21,
+      "dimension": "JP",
+      "dimensionLabel": "Nguyên tắc (J) - Linh hoạt (P)",
+      "prompt": "Bạn tự thấy mình:",
+      "text": "Bạn tự thấy mình:",
+      "options": [
+        {
+          "label": "A. Nghiêm túc, quyết đoán",
+          "value": "A",
+          "trait": "J"
+        },
+        {
+          "label": "B. Dễ gần, thoải mái",
+          "value": "B",
+          "trait": "P"
+        }
+      ]
+    },
+    {
+      "id": 22,
+      "dimension": "EI",
+      "dimensionLabel": "Hướng ngoại (E) - Hướng nội (I)",
+      "prompt": "Khi nói chuyện điện thoại, bạn:",
+      "text": "Khi nói chuyện điện thoại, bạn:",
+      "options": [
+        {
+          "label": "A. Cứ gọi bình thường",
+          "value": "A",
+          "trait": "E"
+        },
+        {
+          "label": "B. Chuẩn bị trước những điều sẽ nói",
+          "value": "B",
+          "trait": "I"
+        }
+      ]
+    },
+    {
+      "id": 23,
+      "dimension": "SN",
+      "dimensionLabel": "Giác quan (S) - Trực giác (N)",
+      "prompt": "Những sự kiện trong thực tế",
+      "text": "Những sự kiện trong thực tế",
+      "options": [
+        {
+          "label": "A. Bản thân nó giải thích cho chính nó”",
+          "value": "A",
+          "trait": "S"
+        },
+        {
+          "label": "B. Nó là bằng chứng giải thích cho các quy tắc, quy luật",
+          "value": "B",
+          "trait": "N"
+        }
+      ]
+    },
+    {
+      "id": 24,
+      "dimension": "SN",
+      "dimensionLabel": "Giác quan (S) - Trực giác (N)",
+      "prompt": "Những người có tầm nhìn xa/người lo x",
+      "text": "Những người có tầm nhìn xa/người lo x",
+      "options": [
+        {
+          "label": "A. a. Thường gây khó chịu cho người khác",
+          "value": "A",
+          "trait": "S"
+        },
+        {
+          "label": "B. Khá thú vị",
+          "value": "B",
+          "trait": "N"
+        }
+      ]
+    },
+    {
+      "id": 25,
+      "dimension": "TF",
+      "dimensionLabel": "Lý trí (T) - Cảm xúc (F)",
+      "prompt": "Bạn thường là người",
+      "text": "Bạn thường là người",
+      "options": [
+        {
+          "label": "A. Cái đầu lạnh",
+          "value": "A",
+          "trait": "T"
+        },
+        {
+          "label": "B. Trái tim nóng",
+          "value": "B",
+          "trait": "F"
+        }
+      ]
+    },
+    {
+      "id": 26,
+      "dimension": "TF",
+      "dimensionLabel": "Lý trí (T) - Cảm xúc (F)",
+      "prompt": "Điều nào thì tồi tệ hơn?",
+      "text": "Điều nào thì tồi tệ hơn?",
+      "options": [
+        {
+          "label": "A. Không công bằng",
+          "value": "A",
+          "trait": "T"
+        },
+        {
+          "label": "B. Tàn nhẫn",
+          "value": "B",
+          "trait": "F"
+        }
+      ]
+    },
+    {
+      "id": 27,
+      "dimension": "JP",
+      "dimensionLabel": "Nguyên tắc (J) - Linh hoạt (P)",
+      "prompt": "Các sự kiện nên xảy ra theo hướng:",
+      "text": "Các sự kiện nên xảy ra theo hướng:",
+      "options": [
+        {
+          "label": "A. Được lựa chọn và cân nhắc kỹ lưỡng",
+          "value": "A",
+          "trait": "J"
+        },
+        {
+          "label": "B. Ngẫu nhiên và tự nhiên",
+          "value": "B",
+          "trait": "P"
+        }
+      ]
+    },
+    {
+      "id": 28,
+      "dimension": "JP",
+      "dimensionLabel": "Nguyên tắc (J) - Linh hoạt (P)",
+      "prompt": "Bạn cảm thấy thoải mái hơn khi",
+      "text": "Bạn cảm thấy thoải mái hơn khi",
+      "options": [
+        {
+          "label": "A. Đã mua một thứ gì đó",
+          "value": "A",
+          "trait": "J"
+        },
+        {
+          "label": "B. Đang lựa chọn để mua",
+          "value": "B",
+          "trait": "P"
+        }
+      ]
+    },
+    {
+      "id": 29,
+      "dimension": "EI",
+      "dimensionLabel": "Hướng ngoại (E) - Hướng nội (I)",
+      "prompt": "Trong công ty, bạn là người:",
+      "text": "Trong công ty, bạn là người:",
+      "options": [
+        {
+          "label": "A. Khởi xướng các câu chuyện",
+          "value": "A",
+          "trait": "E"
+        },
+        {
+          "label": "B. Đợi người khác bắt chuyện với mình",
+          "value": "B",
+          "trait": "I"
+        }
+      ]
+    },
+    {
+      "id": 30,
+      "dimension": "SN",
+      "dimensionLabel": "Giác quan (S) - Trực giác (N)",
+      "prompt": "Đối với những quy ước, quy tắc thông thường trong xã hội, bạn :",
+      "text": "Đối với những quy ước, quy tắc thông thường trong xã hội, bạn :",
+      "options": [
+        {
+          "label": "A. Ít khi nghi ngờ những điều này",
+          "value": "A",
+          "trait": "S"
+        },
+        {
+          "label": "B. Thường xem xét lại tính đúng đắn của những điều đó",
+          "value": "B",
+          "trait": "N"
+        }
+      ]
+    },
+    {
+      "id": 31,
+      "dimension": "SN",
+      "dimensionLabel": "Giác quan (S) - Trực giác (N)",
+      "prompt": "Trẻ em thường:",
+      "text": "Trẻ em thường:",
+      "options": [
+        {
+          "label": "A. Chưa cố gắng đủ",
+          "value": "A",
+          "trait": "S"
+        },
+        {
+          "label": "B. Chưa vui chơi đủ",
+          "value": "B",
+          "trait": "N"
+        }
+      ]
+    },
+    {
+      "id": 32,
+      "dimension": "TF",
+      "dimensionLabel": "Lý trí (T) - Cảm xúc (F)",
+      "prompt": "Khi đưa ra các quyết định, bạn sẽ thấy thoải mái hơn với",
+      "text": "Khi đưa ra các quyết định, bạn sẽ thấy thoải mái hơn với",
+      "options": [
+        {
+          "label": "A. Các tiêu chuẩn",
+          "value": "A",
+          "trait": "T"
+        },
+        {
+          "label": "B. Cảm xúc, cảm nhận",
+          "value": "B",
+          "trait": "F"
+        }
+      ]
+    },
+    {
+      "id": 33,
+      "dimension": "TF",
+      "dimensionLabel": "Lý trí (T) - Cảm xúc (F)",
+      "prompt": "Bạn nghiêng về tính cách nào hơn ?",
+      "text": "Bạn nghiêng về tính cách nào hơn ?",
+      "options": [
+        {
+          "label": "A. Cứng rắn",
+          "value": "A",
+          "trait": "T"
+        },
+        {
+          "label": "B. Nhẹ nhàng",
+          "value": "B",
+          "trait": "F"
+        }
+      ]
+    },
+    {
+      "id": 34,
+      "dimension": "JP",
+      "dimensionLabel": "Nguyên tắc (J) - Linh hoạt (P)",
+      "prompt": "Theo bạn, khả năng nào đáng khâm phục hơn ?",
+      "text": "Theo bạn, khả năng nào đáng khâm phục hơn ?",
+      "options": [
+        {
+          "label": "A. Khả năng tổ chức và làm việc có phương pháp",
+          "value": "A",
+          "trait": "J"
+        },
+        {
+          "label": "B. Khả năng thích ứng và xoay xở trước mọi tình huống",
+          "value": "B",
+          "trait": "P"
+        }
+      ]
+    },
+    {
+      "id": 35,
+      "dimension": "JP",
+      "dimensionLabel": "Nguyên tắc (J) - Linh hoạt (P)",
+      "prompt": "Bạn đề cao tố chất nào hơn?",
+      "text": "Bạn đề cao tố chất nào hơn?",
+      "options": [
+        {
+          "label": "A. Sự chắc chắn",
+          "value": "A",
+          "trait": "J"
+        },
+        {
+          "label": "B. Sự cởi mở",
+          "value": "B",
+          "trait": "P"
+        }
+      ]
+    },
+    {
+      "id": 36,
+      "dimension": "EI",
+      "dimensionLabel": "Hướng ngoại (E) - Hướng nội (I)",
+      "prompt": "Khi phải tương tác với người khác ở các tình huống và vấn đề mới lạ,không thường gặp, bạn thường:",
+      "text": "Khi phải tương tác với người khác ở các tình huống và vấn đề mới lạ,không thường gặp, bạn thường:",
+      "options": [
+        {
+          "label": "A. Thấy phấn chấn và hào hứng",
+          "value": "A",
+          "trait": "E"
+        },
+        {
+          "label": "B. Cảm thấy mệt mỏi",
+          "value": "B",
+          "trait": "I"
+        }
+      ]
+    },
+    {
+      "id": 37,
+      "dimension": "SN",
+      "dimensionLabel": "Giác quan (S) - Trực giác (N)",
+      "prompt": "Thường thì bạn là:",
+      "text": "Thường thì bạn là:",
+      "options": [
+        {
+          "label": "A. Người thực tế",
+          "value": "A",
+          "trait": "S"
+        },
+        {
+          "label": "B. Người có khả năng tưởng tượng phong phú",
+          "value": "B",
+          "trait": "N"
+        }
+      ]
+    },
+    {
+      "id": 38,
+      "dimension": "SN",
+      "dimensionLabel": "Giác quan (S) - Trực giác (N)",
+      "prompt": "Bạn thường có xu hướng:",
+      "text": "Bạn thường có xu hướng:",
+      "options": [
+        {
+          "label": "A. Xem người khác có thể làm được việc gì hữu ích",
+          "value": "A",
+          "trait": "S"
+        },
+        {
+          "label": "B. Xem người khác sẽ nghĩ và cảm nhận như thế nào",
+          "value": "B",
+          "trait": "N"
+        }
+      ]
+    },
+    {
+      "id": 39,
+      "dimension": "TF",
+      "dimensionLabel": "Lý trí (T) - Cảm xúc (F)",
+      "prompt": "Bạn cảm thấy thoải mái hơn khi:",
+      "text": "Bạn cảm thấy thoải mái hơn khi:",
+      "options": [
+        {
+          "label": "A. Thảo luận một vân đề kĩ lưỡng, triệt để",
+          "value": "A",
+          "trait": "T"
+        },
+        {
+          "label": "B. Đạt được thỏa thuận, sự nhất trí về vấn đề",
+          "value": "B",
+          "trait": "F"
+        }
+      ]
+    },
+    {
+      "id": 40,
+      "dimension": "TF",
+      "dimensionLabel": "Lý trí (T) - Cảm xúc (F)",
+      "prompt": "Cái đầu hay trái tim chi phối bạn nhiều hơn",
+      "text": "Cái đầu hay trái tim chi phối bạn nhiều hơn",
+      "options": [
+        {
+          "label": "A. Cái đầu",
+          "value": "A",
+          "trait": "T"
+        },
+        {
+          "label": "B. Trái tim",
+          "value": "B",
+          "trait": "F"
+        }
+      ]
+    },
+    {
+      "id": 41,
+      "dimension": "JP",
+      "dimensionLabel": "Nguyên tắc (J) - Linh hoạt (P)",
+      "prompt": "Bạn cảm thấy thoải mái hơn khi làm các công việc theo dạng",
+      "text": "Bạn cảm thấy thoải mái hơn khi làm các công việc theo dạng",
+      "options": [
+        {
+          "label": "A. Được giao trọn gói, làm xong hết rồi bàn giao",
+          "value": "A",
+          "trait": "J"
+        },
+        {
+          "label": "B. Công việc làm hàng ngày, theo lịch",
+          "value": "B",
+          "trait": "P"
+        }
+      ]
+    },
+    {
+      "id": 42,
+      "dimension": "JP",
+      "dimensionLabel": "Nguyên tắc (J) - Linh hoạt (P)",
+      "prompt": "Bạn có xu hướng tìm kiếm những điều:",
+      "text": "Bạn có xu hướng tìm kiếm những điều:",
+      "options": [
+        {
+          "label": "A. Theo trật tự, thứ tự",
+          "value": "A",
+          "trait": "J"
+        },
+        {
+          "label": "B. Ngẫu nhiên",
+          "value": "B",
+          "trait": "P"
+        }
+      ]
+    },
+    {
+      "id": 43,
+      "dimension": "EI",
+      "dimensionLabel": "Hướng ngoại (E) - Hướng nội (I)",
+      "prompt": "Bạn thích kiểu nào hơn?",
+      "text": "Bạn thích kiểu nào hơn?",
+      "options": [
+        {
+          "label": "A. Nhiều bạn bè ở mức độ xã giao",
+          "value": "A",
+          "trait": "E"
+        },
+        {
+          "label": "B. Một vài người bạn thân",
+          "value": "B",
+          "trait": "I"
+        }
+      ]
+    },
+    {
+      "id": 44,
+      "dimension": "SN",
+      "dimensionLabel": "Giác quan (S) - Trực giác (N)",
+      "prompt": "Bạn thường dựa vào:",
+      "text": "Bạn thường dựa vào:",
+      "options": [
+        {
+          "label": "A. Sự kiện, thông tin thực tế",
+          "value": "A",
+          "trait": "S"
+        },
+        {
+          "label": "B. Nguyên lý, nguyên tắc",
+          "value": "B",
+          "trait": "N"
+        }
+      ]
+    },
+    {
+      "id": 45,
+      "dimension": "SN",
+      "dimensionLabel": "Giác quan (S) - Trực giác (N)",
+      "prompt": "Bạn hứng thú với việc gì hơn?",
+      "text": "Bạn hứng thú với việc gì hơn?",
+      "options": [
+        {
+          "label": "A. Sản xuất và phân phối",
+          "value": "A",
+          "trait": "S"
+        },
+        {
+          "label": "B. Thiết kế và nghiên cứu",
+          "value": "B",
+          "trait": "N"
+        }
+      ]
+    },
+    {
+      "id": 46,
+      "dimension": "TF",
+      "dimensionLabel": "Lý trí (T) - Cảm xúc (F)",
+      "prompt": "Lời khen nào giá trị hơn?",
+      "text": "Lời khen nào giá trị hơn?",
+      "options": [
+        {
+          "label": "A. “Đó là một người có suy nghĩ rất logic”",
+          "value": "A",
+          "trait": "T"
+        },
+        {
+          "label": "B. “Đó là một người rất tình cảm, tinh tế”",
+          "value": "B",
+          "trait": "F"
+        }
+      ]
+    },
+    {
+      "id": 47,
+      "dimension": "TF",
+      "dimensionLabel": "Lý trí (T) - Cảm xúc (F)",
+      "prompt": "Bạn thích mình có tố chất nào hơn?",
+      "text": "Bạn thích mình có tố chất nào hơn?",
+      "options": [
+        {
+          "label": "A. Kiên định, vững vàng",
+          "value": "A",
+          "trait": "T"
+        },
+        {
+          "label": "B. Toàn tâm, cống hiến",
+          "value": "B",
+          "trait": "F"
+        }
+      ]
+    },
+    {
+      "id": 48,
+      "dimension": "JP",
+      "dimensionLabel": "Nguyên tắc (J) - Linh hoạt (P)",
+      "prompt": "Bạn thường thích điều nào hơn?",
+      "text": "Bạn thường thích điều nào hơn?",
+      "options": [
+        {
+          "label": "A. Một tuyên bố cuối cùng, không thay đổi",
+          "value": "A",
+          "trait": "J"
+        },
+        {
+          "label": "B. Một tuyên bố dự kiến, ban đầu",
+          "value": "B",
+          "trait": "P"
+        }
+      ]
+    },
+    {
+      "id": 49,
+      "dimension": "JP",
+      "dimensionLabel": "Nguyên tắc (J) - Linh hoạt (P)",
+      "prompt": "Bạn thấy thoải mái hơn vào lúc:",
+      "text": "Bạn thấy thoải mái hơn vào lúc:",
+      "options": [
+        {
+          "label": "A. Trước khi đưa ra quyết định",
+          "value": "A",
+          "trait": "J"
+        },
+        {
+          "label": "B. Sau khi đưa ra quyết định",
+          "value": "B",
+          "trait": "P"
+        }
+      ]
+    },
+    {
+      "id": 50,
+      "dimension": "EI",
+      "dimensionLabel": "Hướng ngoại (E) - Hướng nội (I)",
+      "prompt": "Bạn có thấy mình:",
+      "text": "Bạn có thấy mình:",
+      "options": [
+        {
+          "label": "A. Dễ dàng bắt chuyện và kéo dài cuộc trò chuyện với người mới gặp",
+          "value": "A",
+          "trait": "E"
+        },
+        {
+          "label": "B. Khó mà trò chuyện nhiều với những người mới quen",
+          "value": "B",
+          "trait": "I"
+        }
+      ]
+    },
+    {
+      "id": 51,
+      "dimension": "SN",
+      "dimensionLabel": "Giác quan (S) - Trực giác (N)",
+      "prompt": "Bạn có xu hướng tin tưởng vào:",
+      "text": "Bạn có xu hướng tin tưởng vào:",
+      "options": [
+        {
+          "label": "A. Kinh nghiệm của mình",
+          "value": "A",
+          "trait": "S"
+        },
+        {
+          "label": "B. Linh cảm của mình",
+          "value": "B",
+          "trait": "N"
+        }
+      ]
+    },
+    {
+      "id": 52,
+      "dimension": "SN",
+      "dimensionLabel": "Giác quan (S) - Trực giác (N)",
+      "prompt": "Bạn cho rằng mình thuộc tuýp người nào hơn?",
+      "text": "Bạn cho rằng mình thuộc tuýp người nào hơn?",
+      "options": [
+        {
+          "label": "A. Người thực tế",
+          "value": "A",
+          "trait": "S"
+        },
+        {
+          "label": "B. Người khôn khéo",
+          "value": "B",
+          "trait": "N"
+        }
+      ]
+    },
+    {
+      "id": 53,
+      "dimension": "TF",
+      "dimensionLabel": "Lý trí (T) - Cảm xúc (F)",
+      "prompt": "Theo bạn ai là người đáng được khen ngợi hơn?",
+      "text": "Theo bạn ai là người đáng được khen ngợi hơn?",
+      "options": [
+        {
+          "label": "A. Một người giàu lý trí",
+          "value": "A",
+          "trait": "T"
+        },
+        {
+          "label": "B. Một người giàu cảm xúc",
+          "value": "B",
+          "trait": "F"
+        }
+      ]
+    },
+    {
+      "id": 54,
+      "dimension": "TF",
+      "dimensionLabel": "Lý trí (T) - Cảm xúc (F)",
+      "prompt": "Bạn có xu hướng hành xử:",
+      "text": "Bạn có xu hướng hành xử:",
+      "options": [
+        {
+          "label": "A. Công bằng, vô tư",
+          "value": "A",
+          "trait": "T"
+        },
+        {
+          "label": "B. Thông cảm, đồng cảm",
+          "value": "B",
+          "trait": "F"
+        }
+      ]
+    },
+    {
+      "id": 55,
+      "dimension": "JP",
+      "dimensionLabel": "Nguyên tắc (J) - Linh hoạt (P)",
+      "prompt": "Bạn thích:",
+      "text": "Bạn thích:",
+      "options": [
+        {
+          "label": "A. Đảm bảo rằng mọi việc được chuẩn bị, thu xếp sẵn sàng",
+          "value": "A",
+          "trait": "J"
+        },
+        {
+          "label": "B. Để mọi việc diễn ra tự nhiên",
+          "value": "B",
+          "trait": "P"
+        }
+      ]
+    },
+    {
+      "id": 56,
+      "dimension": "JP",
+      "dimensionLabel": "Nguyên tắc (J) - Linh hoạt (P)",
+      "prompt": "Trong các mối quan hệ thì mọi việc:",
+      "text": "Trong các mối quan hệ thì mọi việc:",
+      "options": [
+        {
+          "label": "A. Có thể thảo luận để giải quyết được",
+          "value": "A",
+          "trait": "J"
+        },
+        {
+          "label": "B. Diễn ra ngẫu nhiên và tùy theo điều kiện hoàn cảnh",
+          "value": "B",
+          "trait": "P"
+        }
+      ]
+    },
+    {
+      "id": 57,
+      "dimension": "EI",
+      "dimensionLabel": "Hướng ngoại (E) - Hướng nội (I)",
+      "prompt": "Khi chuông điện thoại reo, bạn sẽ:",
+      "text": "Khi chuông điện thoại reo, bạn sẽ:",
+      "options": [
+        {
+          "label": "A. Là người đầu tiên nhấc máy",
+          "value": "A",
+          "trait": "E"
+        },
+        {
+          "label": "B. Hi vọng có người khác sẽ nhấc máy",
+          "value": "B",
+          "trait": "I"
+        }
+      ]
+    },
+    {
+      "id": 58,
+      "dimension": "SN",
+      "dimensionLabel": "Giác quan (S) - Trực giác (N)",
+      "prompt": "Bạn đánh giá cao điều gì trong mình hơn:",
+      "text": "Bạn đánh giá cao điều gì trong mình hơn:",
+      "options": [
+        {
+          "label": "A. Nhận thức tốt về các yếu tố thực tế",
+          "value": "A",
+          "trait": "S"
+        },
+        {
+          "label": "B. Có trí tưởng tượng phong phú, rực rỡ",
+          "value": "B",
+          "trait": "N"
+        }
+      ]
+    },
+    {
+      "id": 59,
+      "dimension": "SN",
+      "dimensionLabel": "Giác quan (S) - Trực giác (N)",
+      "prompt": "Bạn sẽ chú tâm hơn đến:",
+      "text": "Bạn sẽ chú tâm hơn đến:",
+      "options": [
+        {
+          "label": "A. Các nguyên tắc, nguyên lý cơ bản",
+          "value": "A",
+          "trait": "S"
+        },
+        {
+          "label": "B. Các ngụ ý, hàm ý, ẩn ý",
+          "value": "B",
+          "trait": "N"
+        }
+      ]
+    },
+    {
+      "id": 60,
+      "dimension": "TF",
+      "dimensionLabel": "Lý trí (T) - Cảm xúc (F)",
+      "prompt": "Điều gì có vẻ sẽ là một lỗi lớn hơn?",
+      "text": "Điều gì có vẻ sẽ là một lỗi lớn hơn?",
+      "options": [
+        {
+          "label": "A. Quá nồng nhiệt, thiết tha",
+          "value": "A",
+          "trait": "T"
+        },
+        {
+          "label": "B. Quá khách quan, thờ ơ",
+          "value": "B",
+          "trait": "F"
+        }
+      ]
+    },
+    {
+      "id": 61,
+      "dimension": "TF",
+      "dimensionLabel": "Lý trí (T) - Cảm xúc (F)",
+      "prompt": "Về cơ bản, bạn sẽ đánh giá mình là người thế nào?",
+      "text": "Về cơ bản, bạn sẽ đánh giá mình là người thế nào?",
+      "options": [
+        {
+          "label": "A. Thiết thực, ít bị chi phối bởi tình cảm",
+          "value": "A",
+          "trait": "T"
+        },
+        {
+          "label": "B. Từ tâm, đa cảm",
+          "value": "B",
+          "trait": "F"
+        }
+      ]
+    },
+    {
+      "id": 62,
+      "dimension": "JP",
+      "dimensionLabel": "Nguyên tắc (J) - Linh hoạt (P)",
+      "prompt": "Tình huống nào sẽ lôi cuốn bạn hơn?",
+      "text": "Tình huống nào sẽ lôi cuốn bạn hơn?",
+      "options": [
+        {
+          "label": "A. Tình huống rõ ràng, có kế hoạch",
+          "value": "A",
+          "trait": "J"
+        },
+        {
+          "label": "B. Tình huống không xác định, không có kế hoạch",
+          "value": "B",
+          "trait": "P"
+        }
+      ]
+    },
+    {
+      "id": 63,
+      "dimension": "JP",
+      "dimensionLabel": "Nguyên tắc (J) - Linh hoạt (P)",
+      "prompt": "Bạn là người có xu hướng nào hơn?",
+      "text": "Bạn là người có xu hướng nào hơn?",
+      "options": [
+        {
+          "label": "A. Theo thói quen",
+          "value": "A",
+          "trait": "J"
+        },
+        {
+          "label": "B. Hay thay đổi",
+          "value": "B",
+          "trait": "P"
+        }
+      ]
+    },
+    {
+      "id": 64,
+      "dimension": "EI",
+      "dimensionLabel": "Hướng ngoại (E) - Hướng nội (I)",
+      "prompt": "Bạn có xu hướng nào hơn?",
+      "text": "Bạn có xu hướng nào hơn?",
+      "options": [
+        {
+          "label": "A. Là người dễ tiếp cận",
+          "value": "A",
+          "trait": "E"
+        },
+        {
+          "label": "B. Ở mức độ nào đó là người kín đáo",
+          "value": "B",
+          "trait": "I"
+        }
+      ]
+    },
+    {
+      "id": 65,
+      "dimension": "SN",
+      "dimensionLabel": "Giác quan (S) - Trực giác (N)",
+      "prompt": "Khi viết, bạn thích:",
+      "text": "Khi viết, bạn thích:",
+      "options": [
+        {
+          "label": "A. Viết theo hướng văn chương hơn",
+          "value": "A",
+          "trait": "S"
+        },
+        {
+          "label": "B. Viết theo số liệu, dữ liệu hơn",
+          "value": "B",
+          "trait": "N"
+        }
+      ]
+    },
+    {
+      "id": 66,
+      "dimension": "SN",
+      "dimensionLabel": "Giác quan (S) - Trực giác (N)",
+      "prompt": "Đối với bạn, điều gì khó thực hiện hơn?",
+      "text": "Đối với bạn, điều gì khó thực hiện hơn?",
+      "options": [
+        {
+          "label": "A. Hiểu và chia sẻ với người khác",
+          "value": "A",
+          "trait": "S"
+        },
+        {
+          "label": "B. Điều khiển người khác",
+          "value": "B",
+          "trait": "N"
+        }
+      ]
+    },
+    {
+      "id": 67,
+      "dimension": "TF",
+      "dimensionLabel": "Lý trí (T) - Cảm xúc (F)",
+      "prompt": "Bạn mong ước mình sẽ có thêm nhiều điều gì?",
+      "text": "Bạn mong ước mình sẽ có thêm nhiều điều gì?",
+      "options": [
+        {
+          "label": "A. Lí trí và khả năng nhận xét rõ ràng",
+          "value": "A",
+          "trait": "T"
+        },
+        {
+          "label": "B. Tình thương, lòng trắc ẩn sâu sắc",
+          "value": "B",
+          "trait": "F"
+        }
+      ]
+    },
+    {
+      "id": 68,
+      "dimension": "TF",
+      "dimensionLabel": "Lý trí (T) - Cảm xúc (F)",
+      "prompt": "Điều gì sẽ là lỗi lớn hơn?",
+      "text": "Điều gì sẽ là lỗi lớn hơn?",
+      "options": [
+        {
+          "label": "A. Hành động bừa bãi, không cân nhắc",
+          "value": "A",
+          "trait": "T"
+        },
+        {
+          "label": "B. Hành động chỉ trích, phê phán",
+          "value": "B",
+          "trait": "F"
+        }
+      ]
+    },
+    {
+      "id": 69,
+      "dimension": "JP",
+      "dimensionLabel": "Nguyên tắc (J) - Linh hoạt (P)",
+      "prompt": "Bạn sẽ thích sự kiện nào hơn?",
+      "text": "Bạn sẽ thích sự kiện nào hơn?",
+      "options": [
+        {
+          "label": "A. Sự kiện có lên kế hoạch trước",
+          "value": "A",
+          "trait": "J"
+        },
+        {
+          "label": "B. Sự kiện không có kế hoạch trước",
+          "value": "B",
+          "trait": "P"
+        }
+      ]
+    },
+    {
+      "id": 70,
+      "dimension": "JP",
+      "dimensionLabel": "Nguyên tắc (J) - Linh hoạt (P)",
+      "prompt": "Bạn thường có hành động:",
+      "text": "Bạn thường có hành động:",
+      "options": [
+        {
+          "label": "A. Cân nhắc thận trọng",
+          "value": "A",
+          "trait": "J"
+        },
+        {
+          "label": "B. Tự nhiên, tự phát",
+          "value": "B",
+          "trait": "P"
+        }
+      ]
+    }
+  ]
+}

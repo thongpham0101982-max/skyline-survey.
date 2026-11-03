@@ -33,8 +33,8 @@ export default async function TeachingAssignmentsPage() {
     )
   }
 
-  // 2-3. Parallelize fetching academic years and personal assignments
-  const [academicYears, myAssignments] = await Promise.all([
+  // 2-3. Parallelize fetching academic years and personal assignments (both MOET and Special Subjects)
+  const [academicYears, rawMyAssignments, rawMySpecialAssignments] = await Promise.all([
     prisma.academicYear.findMany({
       orderBy: { startDate: "desc" }
     }),
@@ -52,8 +52,48 @@ export default async function TeachingAssignmentsPage() {
         { semester: 'asc' },
         { class: { className: 'asc' } }
       ]
-    })
+    }),
+    (prisma as any).specialTeachingAssignment.findMany({
+      where: {
+        teacherId: teacher.id,
+        status: "ACTIVE"
+      },
+      include: {
+        class: true,
+        subject: true,
+        academicYear: true
+      },
+      orderBy: [
+        { semester: 'asc' },
+        { class: { className: 'asc' } }
+      ]
+    }).catch(() => [])
   ])
+
+  const normalizedSpecialMy = (rawMySpecialAssignments || []).map((sa: any) => ({
+    id: sa.id,
+    teacherId: sa.teacherId,
+    classId: sa.classId,
+    className: sa.class?.className || "",
+    subjectId: sa.subjectId,
+    subjectName: sa.subject?.name || "",
+    academicYearId: sa.academicYearId,
+    semester: sa.semester || 1,
+    isSpecialSubject: true,
+    class: {
+      className: sa.class?.className || "",
+      classCode: sa.class?.classCode || ""
+    },
+    subject: {
+      subjectName: sa.subject?.name || "",
+      subjectCode: sa.subject?.code || ""
+    },
+    academicYear: {
+      name: sa.academicYear?.name || ""
+    }
+  }))
+
+  const myAssignments = [...rawMyAssignments, ...normalizedSpecialMy]
 
   // 4. Get other teachers in the same department and their assignments
   let departmentTeachers: any[] = []
@@ -63,7 +103,7 @@ export default async function TeachingAssignmentsPage() {
   }
 
   if (assignedDeptIds.length > 0) {
-    departmentTeachers = await prisma.teacher.findMany({
+    const rawDeptTeachers = await prisma.teacher.findMany({
       where: {
         OR: [
           { departmentId: { in: assignedDeptIds } },
@@ -90,6 +130,47 @@ export default async function TeachingAssignmentsPage() {
         }
       },
       orderBy: { teacherName: 'asc' }
+    })
+
+    const deptTeacherIds = rawDeptTeachers.map((t: any) => t.id)
+    const rawDeptSpecials = deptTeacherIds.length > 0
+      ? await (prisma as any).specialTeachingAssignment.findMany({
+          where: {
+            teacherId: { in: deptTeacherIds },
+            status: "ACTIVE"
+          },
+          include: {
+            class: true,
+            subject: true,
+            academicYear: true
+          }
+        }).catch(() => [])
+      : []
+
+    departmentTeachers = rawDeptTeachers.map((dt: any) => {
+      const deptSpecial = (rawDeptSpecials || [])
+        .filter((sa: any) => sa.teacherId === dt.id)
+        .map((sa: any) => ({
+          id: sa.id,
+          classId: sa.classId,
+          subjectId: sa.subjectId,
+          academicYearId: sa.academicYearId,
+          semester: sa.semester || 1,
+          isSpecialSubject: true,
+          class: {
+            className: sa.class?.className || ""
+          },
+          subject: {
+            subjectName: sa.subject?.name || ""
+          },
+          academicYear: {
+            name: sa.academicYear?.name || ""
+          }
+        }))
+      return {
+        ...dt,
+        TeachingAssignment: [...(dt.TeachingAssignment || []), ...deptSpecial]
+      }
     })
   }
 

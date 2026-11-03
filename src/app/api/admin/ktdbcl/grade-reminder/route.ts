@@ -110,7 +110,7 @@ Trân trọng cảm ơn sự phối hợp của Thầy/Cô!`
             subject: emailSubject,
             html: htmlContent,
             text: finalMessage,
-            from: "Ban Khảo thí & ĐBCL Sky-Line <bankhaothi@skylineschool.edu.vn>"
+            from: "Ban Khảo thí & ĐBCL Sky-Line <ktdbcl@skylineschool.edu.vn>"
           });
 
           if (emailRes.success) {

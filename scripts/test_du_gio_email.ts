@@ -38,7 +38,7 @@ async function main() {
     to: targetEmail,
     subject: emailSubject,
     html: emailHtml,
-    replyTo: "bankhaothi@skylineschool.edu.vn"
+    replyTo: "ktdbcl@skylineschool.edu.vn"
   });
 
   console.log("[Test Result]:", result);

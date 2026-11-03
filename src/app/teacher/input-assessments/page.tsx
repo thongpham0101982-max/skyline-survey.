@@ -4,6 +4,7 @@ import { redirect } from "next/navigation"
 import TeacherAssessmentsClient from "./client"
 import { prisma } from "@/lib/db"
 import { isRedirectError } from "next/dist/client/components/redirect"
+import { Suspense } from "react"
 
 export default async function TeacherAssessmentsPage() {
   const session = await auth()
@@ -12,8 +13,14 @@ export default async function TeacherAssessmentsPage() {
     redirect("/login")
   }
   
-  const role = session.user.role;
-  const isAuthorizedRole = role === "TEACHER" || role === "GV_MN" || role === "ADMIN" || role === "Teacher" || role === "Admin" || ["GĐ_CS", "GIAO_VU", "GDCS", "GIAO_VU_CS", "GĐCS", "BGH_MN", "BGH MN", "BGH_MAM_NON", "BGH"].includes(role);
+  const role = (session.user.role || "").toUpperCase();
+  const isAuthorizedRole = [
+    "TEACHER", "GV_MN", "ADMIN", "SUPERADMIN", "SUPER_ADMIN",
+    "KHAO_THI", "KT_DBCL", "KTDBCL", "ĐBCL", "DBCL",
+    "GĐ_CS", "GIAO_VU", "GDCS", "GIAO_VU_CS", "GĐCS",
+    "BGH_MN", "BGH MN", "BGH_MAM_NON", "BGH", "BGH_CS",
+    "TBP", "CM", "TO_TRUONG"
+  ].includes(role);
   
   if (!isAuthorizedRole) {
     try {
@@ -27,5 +34,9 @@ export default async function TeacherAssessmentsPage() {
     }
   }
 
-  return <TeacherAssessmentsClient user={session.user} />
+  return (
+    <Suspense fallback={<div className="flex items-center justify-center min-h-[60vh] text-teal-600 font-bold">Đang tải dữ liệu khảo sát...</div>}>
+      <TeacherAssessmentsClient user={session.user} />
+    </Suspense>
+  )
 }

@@ -20,10 +20,62 @@ export interface MoetRecord {
   achievements?: string; // Thành tích học sinh (nếu có): giải thưởng, chứng chỉ...
   subjects: SubjectScoreItem[];
   combination?: {
-    name: string; // "KHTN" | "KHXH" | "Tổ hợp tự chọn"
-    score?: string;
+    name: string; // "Tổ hợp Khoa học Tự nhiên" | "Tổ hợp Khoa học Xã hội" | "Tổ hợp Công nghệ - Tin học" | "Tổ hợp tự chọn khác"
+    score?: string; // Điểm trung bình tự động tính
     level?: string;
+    subjects?: SubjectScoreItem[]; // Các môn thành phần của tổ hợp
   };
+}
+
+export interface CombinationPreset {
+  id: string;
+  name: string;
+  label: string;
+  defaultSubjects: string[];
+}
+
+export const THPT_COMBINATION_PRESETS: CombinationPreset[] = [
+  {
+    id: "KHTN",
+    name: "Tổ hợp Khoa học Tự nhiên",
+    label: "Tổ hợp Khoa học Tự nhiên (Vật lí, Hóa học, Sinh học)",
+    defaultSubjects: ["Vật lí", "Hóa học", "Sinh học"]
+  },
+  {
+    id: "KHXH",
+    name: "Tổ hợp Khoa học Xã hội",
+    label: "Tổ hợp Khoa học Xã hội (Lịch sử, Địa lí, GDKT&PL)",
+    defaultSubjects: ["Lịch sử", "Địa lí", "GDKT & PL"]
+  },
+  {
+    id: "CN_TH",
+    name: "Tổ hợp Công nghệ - Tin học",
+    label: "Tổ hợp Công nghệ - Tin học (Tin học, Công nghệ)",
+    defaultSubjects: ["Tin học", "Công nghệ"]
+  },
+  {
+    id: "TU_CHON",
+    name: "Tổ hợp tự chọn khác",
+    label: "Tổ hợp tự chọn khác",
+    defaultSubjects: ["Môn lựa chọn 1", "Môn lựa chọn 2"]
+  }
+];
+
+export function calculateCombinationAverage(subs?: SubjectScoreItem[]): string {
+  if (!subs || subs.length === 0) return "";
+  const validScores: number[] = [];
+  subs.forEach(s => {
+    if (!s.score) return;
+    const num = parseFloat(s.score.toString().replace(",", ".").trim());
+    if (!isNaN(num) && num >= 0 && num <= 10) {
+      validScores.push(num);
+    }
+  });
+  if (validScores.length === 0) return "";
+  const sum = validScores.reduce((a, b) => a + b, 0);
+  const avg = sum / validScores.length;
+  const rounded = Math.round(avg * 10) / 10;
+  return rounded.toFixed(1);
 }
 
 export interface BilingualRecord {
@@ -58,6 +110,7 @@ export interface FileAttachment {
 
 export interface EntranceAcademicRecord {
   programType: ProgramType;
+  transcriptPeriod?: "HK1" | "HK2" | "CA_NAM" | string; // Bảng điểm / Học bạ: "HK1" | "HK2" | "Cả năm"
   overallRating?: string;
   achievements?: string; // Thành tích học sinh (nếu có): giải thưởng, chứng chỉ, năng khiếu...
   moet?: MoetRecord;
@@ -65,6 +118,7 @@ export interface EntranceAcademicRecord {
   foreign?: ForeignRecord;
   homeschool?: HomeschoolRecord;
   attachments?: FileAttachment[];
+  grade1IntakeMode?: "DAU_NAM" | "HK2"; // "DAU_NAM": Khảo sát đầu năm/đầu cấp (chưa có học bạ), "HK2": Khảo sát HK2 (yêu cầu bổ sung điểm)
   summaryText: string;
   isDraft?: boolean;
   updatedAt?: string;
@@ -78,9 +132,9 @@ export function getDefaultMoetSubjects(gradeStr?: string): SubjectScoreItem[] {
   if (!isNaN(g) && g >= 1 && g <= 5) {
     // Tiểu học: Toán, Tiếng Việt, Tiếng Anh
     return [
-      { id: "toan", name: "Toán", level: "T", score: "" },
-      { id: "tieng_viet", name: "Tiếng Việt", level: "T", score: "" },
-      { id: "tieng_anh", name: "Tiếng Anh", level: "T", score: "" }
+      { id: "toan", name: "Toán", score: "" },
+      { id: "tieng_viet", name: "Tiếng Việt", score: "" },
+      { id: "tieng_anh", name: "Tiếng Anh", score: "" }
     ];
   } else if (!isNaN(g) && g >= 6 && g <= 9) {
     // THCS: Toán, Ngữ Văn, Tiếng Anh
@@ -122,7 +176,14 @@ export function generateSummaryText(record: Partial<EntranceAcademicRecord>): st
         if (subParts.length > 0) parts.push(subParts.join(" | "));
       }
       if (moet?.combination?.name && moet.combination.score) {
-        parts.push(`${moet.combination.name}: ${moet.combination.score}`);
+        const subParts = (moet.combination.subjects || [])
+          .filter(s => s.name && s.score)
+          .map(s => `${s.name}: ${s.score}`);
+        if (subParts.length > 0) {
+          parts.push(`${moet.combination.name}: ${moet.combination.score} (${subParts.join(", ")})`);
+        } else {
+          parts.push(`${moet.combination.name}: ${moet.combination.score}`);
+        }
       }
       base = parts.length > 0 ? parts.join(" • ") : (moet?.overallRating || "Bộ GD&ĐT");
       break;
@@ -202,6 +263,7 @@ export function parseEntranceRecord(rawString?: string | null, gradeStr?: string
 
   const defaultRecord: EntranceAcademicRecord = {
     programType: "BO_GD_DT",
+    transcriptPeriod: "CA_NAM",
     overallRating: isPrimary ? "Hoàn thành tốt" : "Tốt",
     moet: {
       gradeLevel: gradeStr || "1",
@@ -217,29 +279,18 @@ export function parseEntranceRecord(rawString?: string | null, gradeStr?: string
         { id: "vn_van", name: "Ngữ Văn / Tiếng Việt", score: "" },
         { id: "vn_anh", name: "Tiếng Anh", score: "" }
       ],
-      internationalSubjects: [
-        { id: "intl_esl", name: "English / ESL", score: "" },
-        { id: "intl_math", name: "Mathematics", score: "" },
-        { id: "intl_sci", name: "Science", score: "" }
-      ]
+      internationalSubjects: []
     },
     foreign: {
       country: "",
       gradeCompleted: "",
       status: "COMPLETED",
       gpaOrHonors: "",
-      subjects: [
-        { id: "f_la", name: "Language Arts", score: "" },
-        { id: "f_math", name: "Mathematics", score: "" },
-        { id: "f_sci", name: "Science", score: "" }
-      ]
+      subjects: []
     },
     homeschool: {
       learningMode: "INDEPENDENT",
-      subjects: [
-        { id: "hs_toan", name: "Toán học", score: "" },
-        { id: "hs_ngonngu", name: "Ngôn ngữ & Đọc viết", score: "" }
-      ],
+      subjects: [],
       overallEvaluation: ""
     },
     attachments: [],
@@ -311,6 +362,7 @@ export interface ExtractedAcademicDetails {
   programLabel: string;
   programType: ProgramType;
   programBadgeCls: string;
+  transcriptPeriod: string; // "HK1" | "HK2" | "Cả năm" | "Không áp dụng"
   overallRating: string;
   conductRating?: string;
   achievements?: string;
@@ -318,10 +370,28 @@ export interface ExtractedAcademicDetails {
   literature: string;
   english: string;
   otherSubjects: string;
+  otherSubjectList: Array<{ name: string; score: string }>;
   attachments: FileAttachment[];
+  isGrade1DauNam?: boolean;
 }
 
-export function extractAcademicDetails(record: EntranceAcademicRecord, gradeStr?: string): ExtractedAcademicDetails {
+export function extractAcademicDetails(
+  record: EntranceAcademicRecord, 
+  gradeStr?: string, 
+  hocKyStr?: string,
+  extraContext?: {
+    isForeign?: boolean;
+    isHomeschool?: boolean;
+    rawSchoolName?: string;
+    rawKqgd?: string;
+  }
+): ExtractedAcademicDetails {
+  const isForeign = record.programType === "NUOC_NGOAI" || !!extraContext?.isForeign;
+  const isHomeschool = record.programType === "HOMESCHOOLING" || !!extraContext?.isHomeschool;
+  const effectiveProgramType: ProgramType = isHomeschool 
+    ? "HOMESCHOOLING" 
+    : (isForeign ? "NUOC_NGOAI" : record.programType);
+
   const programBadgeMap: Record<ProgramType, { label: string; cls: string }> = {
     BO_GD_DT: { label: "Bộ GD&ĐT", cls: "bg-blue-50 text-blue-700 border-blue-200/80" },
     SONG_NGU: { label: "Song ngữ", cls: "bg-purple-50 text-purple-700 border-purple-200/80" },
@@ -329,11 +399,17 @@ export function extractAcademicDetails(record: EntranceAcademicRecord, gradeStr?
     HOMESCHOOLING: { label: "Homeschooling", cls: "bg-emerald-50 text-emerald-700 border-emerald-200/80" }
   };
 
-  const badge = programBadgeMap[record.programType] || programBadgeMap.BO_GD_DT;
+  const badge = programBadgeMap[effectiveProgramType] || programBadgeMap.BO_GD_DT;
 
   let overallRating = record.moet?.overallRating || record.bilingual?.moetRating || record.foreign?.gpaOrHonors || record.homeschool?.overallEvaluation || record.overallRating || "—";
   let conductRating = record.moet?.conductRating || "";
   let achievements = record.achievements || record.moet?.achievements || "";
+
+  // Xác định trường hợp Khối 1: Đầu năm / HK1 (Chưa có học bạ lớp 1) vs HK2 (Yêu cầu bổ sung các môn)
+  const numericGrade = parseInt(gradeStr || "1", 10);
+  const isGrade1 = numericGrade === 1;
+  const isHk2 = (hocKyStr && (hocKyStr.toLowerCase().includes("hk2") || hocKyStr.toLowerCase().includes("2") || hocKyStr.toLowerCase().includes("học kỳ 2") || hocKyStr.toLowerCase().includes("hoc ky 2"))) || record.grade1IntakeMode === "HK2";
+  const isGrade1DauNam = isGrade1 && !isHk2;
 
   // Thu thập danh sách môn học
   let allSubjects: SubjectScoreItem[] = [];
@@ -357,9 +433,10 @@ export function extractAcademicDetails(record: EntranceAcademicRecord, gradeStr?
 
   const formatSubVal = (item?: SubjectScoreItem) => {
     if (!item) return "—";
-    if (item.level && item.score) return `${item.level} (${item.score})`;
-    if (item.level) return item.level;
-    if (item.score) return item.score;
+    // Ưu tiên hiển thị ĐTB / Điểm số
+    if (item.score && item.score.trim()) return item.score.trim();
+    // Nếu chỉ có level hợp lệ và không phải dummy T
+    if (item.level && item.level !== "T") return item.level;
     return "—";
   };
 
@@ -367,33 +444,115 @@ export function extractAcademicDetails(record: EntranceAcademicRecord, gradeStr?
   const litItem = findSub(["tiếng việt", "tieng viet", "tieng_viet", "văn", "van", "ngữ văn", "ngu van", "ngu_van", "literature"]);
   const engItem = findSub(["tiếng anh", "tieng anh", "tieng_anh", "anh", "english"]);
 
-  const math = formatSubVal(mathItem);
-  const literature = formatSubVal(litItem);
-  const english = formatSubVal(engItem);
+  let math = formatSubVal(mathItem);
+  let literature = formatSubVal(litItem);
+  let english = formatSubVal(engItem);
 
-  // Thu thập các môn còn lại / tổ hợp
+  // Thu thập các môn còn lại do người dùng bấm "+ Thêm môn học" (chỉ lấy môn có điểm thực tế và không phải môn placeholder)
   const matchedNames = new Set([mathItem?.name, litItem?.name, engItem?.name].filter(Boolean));
-  const otherItems = allSubjects.filter(s => !matchedNames.has(s.name) && (s.score || s.level));
+  const otherItems = (isForeign || isHomeschool)
+    ? []
+    : allSubjects.filter(s => {
+        if (!s.name?.trim() || matchedNames.has(s.name)) return false;
+        const low = s.name.toLowerCase();
+        if (low.includes("science") || low.includes("language arts") || low.includes("đọc viết") || low.includes("ngôn ngữ") || low.includes("esl") || low === "mathematics") return false;
+        return (s.score && s.score.trim()) || (s.level && s.level.trim() && s.level !== "T");
+      });
 
+  const otherSubjectList: Array<{ name: string; score: string }> = [];
   const otherParts: string[] = [];
+
   if (record.moet?.combination?.name && (record.moet.combination.score || record.moet.combination.level)) {
     const combVal = record.moet.combination.score || record.moet.combination.level;
-    otherParts.push(`${record.moet.combination.name}: ${combVal}`);
+    const subParts = (record.moet.combination.subjects || [])
+      .filter(s => s.name && s.score)
+      .map(s => `${s.name}: ${s.score}`);
+    if (subParts.length > 0) {
+      otherParts.push(`${record.moet.combination.name} (ĐTB: ${combVal} | ${subParts.join(", ")})`);
+    } else {
+      otherParts.push(`${record.moet.combination.name}: ${combVal}`);
+    }
   }
+
   otherItems.forEach(s => {
-    const val = s.level && s.score ? `${s.level} (${s.score})` : (s.score || s.level || "");
-    otherParts.push(`${s.name}: ${val}`);
+    const sName = (s.name || "").trim();
+    if (!sName) return;
+    const val = (s.score && s.score.trim()) || (s.level && s.level !== "T" ? s.level : "");
+    if (val) {
+      otherParts.push(`${sName}: ${val}`);
+    }
+    otherSubjectList.push({
+      name: sName,
+      score: val || "—"
+    });
   });
+
   if (record.foreign?.gradeCompleted) {
     otherParts.push(`Đã hoàn thành Lớp ${record.foreign.gradeCompleted}`);
   }
 
-  const otherSubjects = otherParts.length > 0 ? otherParts.join(" • ") : "—";
+  let otherSubjects = otherParts.length > 0 ? otherParts.join(" • ") : "—";
+
+  // QUY TẮC MIỄN & ÁP DỤNG:
+  // 1. Hồ sơ Nước ngoài hoặc Homeschooling:
+  // Miễn các môn: KQ Xếp loại, KQ Rèn luyện, Điểm Môn Toán, Điểm Môn Ngữ Văn/Tiếng Việt, Điểm Tiếng Anh, Các môn khác -> "Không áp dụng"
+  if (isForeign || isHomeschool) {
+    overallRating = "Không áp dụng";
+    conductRating = "Không áp dụng";
+    math = "Không áp dụng";
+    literature = "Không áp dụng";
+    english = "Không áp dụng";
+    otherSubjects = "Không áp dụng";
+    otherSubjectList.forEach(item => {
+      item.score = "Không áp dụng";
+    });
+  } else if (isGrade1DauNam) {
+    // 2. Khối 1 Khảo sát đầu năm / HK1 (Chưa có hồ sơ học bạ lớp 1):
+    // Không áp dụng: KQ Xếp loại, KQ Rèn luyện, Điểm Môn Toán, Điểm Môn Ngữ Văn/Tiếng Việt, Điểm Tiếng Anh, Các môn khác
+    overallRating = "Không áp dụng";
+    conductRating = "Không áp dụng";
+    math = "Không áp dụng";
+    literature = "Không áp dụng";
+    english = "Không áp dụng";
+    otherSubjects = "Không áp dụng";
+    otherSubjectList.forEach(item => {
+      item.score = "Không áp dụng";
+    });
+  } else if (isGrade1 && isHk2) {
+    // 3. Khối 1 khảo sát HK2: Yêu cầu bổ sung các môn nếu chưa có
+    if (math === "—") math = "Yêu cầu bổ sung";
+    if (literature === "—") literature = "Yêu cầu bổ sung";
+    if (english === "—") english = "Yêu cầu bổ sung";
+    if (otherSubjects === "—") otherSubjects = "Yêu cầu bổ sung";
+    otherSubjectList.forEach(item => {
+      if (item.score === "—") item.score = "Yêu cầu bổ sung";
+    });
+  }
+
+  // Xác định Bảng điểm / Học bạ (HK1, HK2, Cả năm)
+  let transcriptPeriod = "Cả năm";
+  if (isForeign || isHomeschool || isGrade1DauNam) {
+    transcriptPeriod = "Không áp dụng";
+  } else if (record.transcriptPeriod) {
+    const rawP = record.transcriptPeriod.toString().toUpperCase().trim();
+    if (rawP.includes("HK1") || rawP === "1") transcriptPeriod = "HK1";
+    else if (rawP.includes("HK2") || rawP === "2") transcriptPeriod = "HK2";
+    else if (rawP.includes("CA_NAM") || rawP.includes("CẢ NĂM") || rawP.includes("CANAM")) transcriptPeriod = "Cả năm";
+    else transcriptPeriod = record.transcriptPeriod;
+  } else {
+    // Tự động suy đoán hợp lý nếu chưa thiết lập
+    if (isHk2 || record.grade1IntakeMode === "HK2") {
+      transcriptPeriod = "HK1";
+    } else {
+      transcriptPeriod = "Cả năm";
+    }
+  }
 
   return {
     programLabel: badge.label,
-    programType: record.programType,
+    programType: effectiveProgramType,
     programBadgeCls: badge.cls,
+    transcriptPeriod,
     overallRating,
     conductRating,
     achievements,
@@ -401,6 +560,8 @@ export function extractAcademicDetails(record: EntranceAcademicRecord, gradeStr?
     literature,
     english,
     otherSubjects,
-    attachments: record.attachments || []
+    otherSubjectList,
+    attachments: record.attachments || [],
+    isGrade1DauNam
   };
 }

@@ -318,7 +318,7 @@ export async function POST(req: Request) {
               BAN ĐÀO TẠO &amp; KHẢO THÍ ĐẢM BẢO CHẤT LƯỢNG GIÁO DỤC
             </div>
             <div style="color:#5EEAD4; margin-top:6px; font-size:10.5px;">
-              Email hỗ trợ: <a href="mailto:bankhaothi@skylineschool.edu.vn" style="color:#FDE047; text-decoration:none; font-weight:700;">bankhaothi@skylineschool.edu.vn</a> &bull; Website: <a href="https://skylineschool.edu.vn" style="color:#FDE047; text-decoration:none; font-weight:700;">skylineschool.edu.vn</a>
+              Email hỗ trợ: <a href="mailto:ktdbcl@skylineschool.edu.vn" style="color:#FDE047; text-decoration:none; font-weight:700;">ktdbcl@skylineschool.edu.vn</a> &bull; Website: <a href="https://skylineschool.edu.vn" style="color:#FDE047; text-decoration:none; font-weight:700;">skylineschool.edu.vn</a>
             </div>
             <div style="color:#64748B; margin-top:8px; font-size:10px;">
               &copy; ${new Date().getFullYear()} Sky-Line School System. All rights reserved. &bull; Thư yêu cầu phê duyệt tự động từ Hệ thống Khảo sát Tuyển sinh Sky-Line
@@ -429,7 +429,7 @@ export async function POST(req: Request) {
           to: currentGdcsEmail,
           subject: `[Sky-line SMS] Yêu cầu xét duyệt Đợt khảo sát: ${batchName} (${periodName})`,
           html: currentHtml,
-          replyTo: "bankhaothi@skylineschool.edu.vn"
+          replyTo: "ktdbcl@skylineschool.edu.vn"
         });
 
         sentSummary[currentGdcsEmail] = (sentSummary[currentGdcsEmail] || 0) + totalGroup;
@@ -444,7 +444,7 @@ export async function POST(req: Request) {
       to: gdcsEmail,
       subject: `[Sky-line SMS] Yêu cầu xét duyệt Đợt khảo sát: ${batchName} (${periodName})`,
       html: emailHtml,
-      replyTo: "bankhaothi@skylineschool.edu.vn"
+      replyTo: "ktdbcl@skylineschool.edu.vn"
     });
 
     return NextResponse.json({ success: true });

@@ -26,6 +26,18 @@ export async function savePermissions(roleCode: string, permissions: any[]) {
   try {
     // Drop all old and set new to avoid duplicate keys
     await prisma.permission.deleteMany({ where: { roleCode } })
+
+    // Also ensure roleCode variations (e.g. "BGH MN" vs "BGH_MN") are synced ONLY if the alternate role actually exists in the database
+    const altRoleCode = roleCode.includes(" ") ? roleCode.replace(/\s+/g, "_") : roleCode.includes("_") ? roleCode.replace(/_/g, " ") : null;
+    let altRoleExists = false;
+    if (altRoleCode && altRoleCode !== roleCode) {
+      const altRole = await prisma.role.findUnique({ where: { code: altRoleCode } });
+      if (altRole) {
+        altRoleExists = true;
+        await prisma.permission.deleteMany({ where: { roleCode: altRoleCode } });
+      }
+    }
+
     if (permissions.length > 0) {
       // Defensive: Filter out any permissions without a valid module code before saving
       const validPermissions = permissions.filter(p => !!p.module);
@@ -91,10 +103,8 @@ export async function savePermissions(roleCode: string, permissions: any[]) {
         }
       })));
 
-      // Also ensure roleCode variations (e.g. "BGH MN" vs "BGH_MN") are synced if roleCode has spaces/underscores
-      const altRoleCode = roleCode.includes(" ") ? roleCode.replace(/\s+/g, "_") : roleCode.includes("_") ? roleCode.replace(/_/g, " ") : null;
-      if (altRoleCode && altRoleCode !== roleCode) {
-        await prisma.permission.deleteMany({ where: { roleCode: altRoleCode } });
+      // Sync to alternate role code only if it exists in the database
+      if (altRoleExists && altRoleCode) {
         await Promise.all(Array.from(mergedPermissionsMap.values()).map(p => prisma.permission.create({
           data: {
             roleCode: altRoleCode,

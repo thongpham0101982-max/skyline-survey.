@@ -235,6 +235,10 @@ export function GradeAnalyticsTab({
       })
 
       const res = await fetch(`/api/admin/ktdbcl/grade-analytics?${params.toString()}`)
+      if (!res.ok) {
+        console.error("Lỗi HTTP API grade-analytics:", res.status)
+        return
+      }
       const json = await res.json()
       if (json.success) {
         setData(json)

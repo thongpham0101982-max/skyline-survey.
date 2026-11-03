@@ -6446,7 +6446,7 @@ const [customCommitmentSubjects, setCustomCommitmentSubjects] = useState<string[
                       <select
                         value={batchCampusFilter}
                         onChange={e => setBatchCampusFilter(e.target.value)}
-                        className="h-9 bg-slate-50 border border-slate-200 rounded-xl px-3 text-xs font-bold text-slate-700 outline-none focus:border-[#00A19A] cursor-pointer"
+                        className="raw-select h-9 py-1 bg-slate-50 border border-slate-200 rounded-xl px-3 text-xs font-bold text-slate-700 outline-none focus:border-[#00A19A] cursor-pointer"
                       >
                         <option value="all">Tất cả Cơ sở</option>
                         {campuses.map(c => (
@@ -6462,7 +6462,7 @@ const [customCommitmentSubjects, setCustomCommitmentSubjects] = useState<string[
                       <select
                         value={batchStatusFilter}
                         onChange={e => setBatchStatusFilter(e.target.value)}
-                        className="h-9 bg-slate-50 border border-slate-200 rounded-xl px-3 text-xs font-bold text-slate-700 outline-none focus:border-[#00A19A] cursor-pointer"
+                        className="raw-select h-9 py-1 bg-slate-50 border border-slate-200 rounded-xl px-3 text-xs font-bold text-slate-700 outline-none focus:border-[#00A19A] cursor-pointer"
                       >
                         <option value="all">Tất cả ({kslBatchesAll.length})</option>
                         <option value="ACTIVE">Đang mở ({activeKslBatchesCount})</option>
@@ -6579,14 +6579,14 @@ const [customCommitmentSubjects, setCustomCommitmentSubjects] = useState<string[
                                 title="Chọn tất cả đợt đang hiển thị"
                               />
                             </th>
-                            <th className="px-3 py-3 text-[10px] font-black uppercase tracking-wider">Đợt #</th>
+                            <th className="px-3 py-3 text-[10px] font-black uppercase tracking-wider whitespace-nowrap">Đợt #</th>
                             <th className="px-4 py-3 text-[10px] font-black uppercase tracking-wider">Học sinh / Nội dung Đợt Khảo sát lẻ</th>
-                            <th className="px-4 py-3 text-[10px] font-black uppercase tracking-wider">Cơ sở</th>
-                            <th className="px-4 py-3 text-[10px] font-black uppercase tracking-wider">Ngày KS</th>
-                            <th className="px-4 py-3 text-[10px] font-black uppercase tracking-wider text-center">Sĩ số &amp; Hồ sơ</th>
-                            <th className="px-4 py-3 text-[10px] font-black uppercase tracking-wider">Trạng thái</th>
-                            <th className="px-4 py-3 text-[10px] font-black uppercase tracking-wider">Phụ trách</th>
-                            <th className="px-4 py-3 text-[10px] font-black uppercase tracking-wider text-right pr-5">Thao tác nhanh</th>
+                            <th className="px-4 py-3 text-[10px] font-black uppercase tracking-wider whitespace-nowrap">Cơ sở</th>
+                            <th className="px-4 py-3 text-[10px] font-black uppercase tracking-wider whitespace-nowrap">Ngày KS</th>
+                            <th className="px-4 py-3 text-[10px] font-black uppercase tracking-wider text-center whitespace-nowrap">Sĩ số &amp; Hồ sơ</th>
+                            <th className="px-4 py-3 text-[10px] font-black uppercase tracking-wider whitespace-nowrap">Trạng thái</th>
+                            <th className="px-4 py-3 text-[10px] font-black uppercase tracking-wider whitespace-nowrap">Phụ trách</th>
+                            <th className="px-4 py-3 text-[10px] font-black uppercase tracking-wider text-right pr-5 whitespace-nowrap">Thao tác nhanh</th>
                           </tr>
                         </thead>
                         <tbody className="divide-y divide-slate-100 text-xs">
@@ -6669,13 +6669,13 @@ const [customCommitmentSubjects, setCustomCommitmentSubjects] = useState<string[
                                     <span>{stCount} HS</span>
                                   </button>
                                 </td>
-                                <td className="px-4 py-3">
+                                <td className="px-4 py-3 whitespace-nowrap">
                                   <div className="flex items-center gap-1.5">
                                     <select
                                       value={b.status === "COMPLETED" ? "COMPLETED" : b.status === "ACTIVE" ? "ACTIVE" : "LOCKED"}
                                       onChange={e => updateSingleBatchStatus(b.id, e.target.value)}
                                       disabled={cannotUpdate}
-                                      className={`h-7 px-2.5 rounded-lg text-[11px] font-black border outline-none cursor-pointer transition-all ${
+                                      className={`raw-select h-8 py-1 px-2.5 rounded-lg text-xs font-bold leading-normal border outline-none cursor-pointer transition-all ${
                                         b.status === "ACTIVE"
                                           ? "bg-emerald-50 text-emerald-700 border-emerald-200 hover:border-emerald-400"
                                           : b.status === "COMPLETED"
@@ -6684,15 +6684,15 @@ const [customCommitmentSubjects, setCustomCommitmentSubjects] = useState<string[
                                       }`}
                                       title="Đổi trạng thái đợt khảo sát (Hoàn thành sẽ ẩn khỏi Nhập thông tin & Phân công GV)"
                                     >
-                                      <option value="ACTIVE">🟢 Đang mở</option>
-                                      <option value="COMPLETED">☑️ Hoàn thành</option>
-                                      <option value="LOCKED">🔒 Đã khóa</option>
+                                      <option value="ACTIVE">Đang mở</option>
+                                      <option value="COMPLETED">✓ Hoàn thành</option>
+                                      <option value="LOCKED">Đã khóa</option>
                                     </select>
                                     {b.status === "ACTIVE" && !cannotUpdate && (
                                       <button
                                         type="button"
                                         onClick={() => updateSingleBatchStatus(b.id, "COMPLETED")}
-                                        className="px-2 py-1 rounded-lg bg-sky-50 hover:bg-sky-600 text-sky-700 hover:text-white border border-sky-200 text-[10px] font-black transition-all cursor-pointer whitespace-nowrap"
+                                        className="h-8 px-2.5 rounded-lg bg-sky-50 hover:bg-sky-600 text-sky-700 hover:text-white border border-sky-200 text-[11px] font-bold transition-all cursor-pointer whitespace-nowrap"
                                         title="Đánh dấu Hoàn thành đợt này (Ẩn khỏi Nhập thông tin khảo sát & Phân công GV)"
                                       >
                                         ✓ Hoàn thành
@@ -6700,11 +6700,11 @@ const [customCommitmentSubjects, setCustomCommitmentSubjects] = useState<string[
                                     )}
                                   </div>
                                 </td>
-                                <td className="px-4 py-3">
+                                <td className="px-4 py-3 whitespace-nowrap">
                                   <span className="text-xs font-semibold text-slate-600">{assigneeName}</span>
                                 </td>
-                                <td className="px-4 py-3 text-right pr-5">
-                                  <div className="flex items-center justify-end gap-1">
+                                <td className="px-4 py-3 text-right pr-5 whitespace-nowrap">
+                                  <div className="flex items-center justify-end gap-1.5">
                                     {!isCompleted ? (
                                       <>
                                         <button
@@ -6718,18 +6718,18 @@ const [customCommitmentSubjects, setCustomCommitmentSubjects] = useState<string[
                                             });
                                           }}
                                           disabled={cannotCreate}
-                                          className="px-2.5 py-1 bg-emerald-50 hover:bg-emerald-600 text-emerald-700 hover:text-white border border-emerald-200 rounded-lg text-[11px] font-bold transition-all cursor-pointer flex items-center gap-1"
+                                          className="h-8 px-2.5 bg-emerald-50 hover:bg-emerald-600 text-emerald-700 hover:text-white border border-emerald-200 rounded-lg text-[11px] font-bold transition-all cursor-pointer inline-flex items-center gap-1 whitespace-nowrap shrink-0"
                                           title="Thêm học sinh mới vào đợt khảo sát lẻ này"
                                         >
-                                          <UserPlus className="w-3 h-3" />
+                                          <UserPlus className="w-3.5 h-3.5 shrink-0" />
                                           <span>+ HS</span>
                                         </button>
                                         <a
-                                          href={`/admin/phan-cong-khao-sat?tab=k12`}
-                                          className="px-2.5 py-1 bg-teal-50 hover:bg-[#00736E] text-[#005854] hover:text-white border border-teal-200 rounded-lg text-[11px] font-bold transition-all cursor-pointer flex items-center gap-1"
-                                          title="Chuyển sang Phân công Giáo viên chấm khảo sát"
+                                          href={`/admin/phan-cong-khao-sat?tab=k12&periodId=${kslPeriod.id}&batchId=${b.id}`}
+                                          className="h-8 px-2.5 bg-teal-50 hover:bg-[#00736E] text-[#005854] hover:text-white border border-teal-200 rounded-lg text-[11px] font-bold transition-all cursor-pointer inline-flex items-center gap-1 whitespace-nowrap shrink-0"
+                                          title="Chuyển sang Phân công Giáo viên chấm khảo sát cho đợt này"
                                         >
-                                          <UserCheck className="w-3 h-3" />
+                                          <UserCheck className="w-3.5 h-3.5 shrink-0" />
                                           <span>Phân công</span>
                                         </a>
                                       </>
@@ -7435,13 +7435,13 @@ const [customCommitmentSubjects, setCustomCommitmentSubjects] = useState<string[
                                           <span>{stCount} HS</span>
                                         </button>
                                       </td>
-                                     <td className="px-4 py-3 border-b border-slate-100">
+                                     <td className="px-4 py-3 border-b border-slate-100 whitespace-nowrap">
                                        <div className="flex items-center gap-1.5">
                                          <select
                                            value={b.status === "COMPLETED" ? "COMPLETED" : b.status === "ACTIVE" ? "ACTIVE" : "LOCKED"}
                                            onChange={e => updateSingleBatchStatus(b.id, e.target.value, Boolean((b as any).isPreschool))}
                                            disabled={cannotUpdate}
-                                           className={`h-7 px-2.5 rounded-lg text-[11px] font-black border outline-none cursor-pointer transition-all ${
+                                           className={`raw-select h-8 py-1 px-2.5 rounded-lg text-xs font-bold leading-normal border outline-none cursor-pointer transition-all ${
                                              b.status === "ACTIVE"
                                                ? "bg-emerald-50 text-emerald-700 border-emerald-200 hover:border-emerald-400"
                                                : b.status === "COMPLETED"
@@ -7450,15 +7450,15 @@ const [customCommitmentSubjects, setCustomCommitmentSubjects] = useState<string[
                                            }`}
                                            title="Đổi trạng thái đợt khảo sát (Hoàn thành sẽ ẩn khỏi Nhập thông tin & Phân công GV)"
                                          >
-                                           <option value="ACTIVE">🟢 Đang mở</option>
-                                           <option value="COMPLETED">☑️ Hoàn thành</option>
-                                           <option value="LOCKED">🔒 Đã khóa</option>
+                                           <option value="ACTIVE">Đang mở</option>
+                                           <option value="COMPLETED">✓ Hoàn thành</option>
+                                           <option value="LOCKED">Đã khóa</option>
                                          </select>
                                          {b.status === "ACTIVE" && !cannotUpdate && (
                                            <button
                                              type="button"
                                              onClick={() => updateSingleBatchStatus(b.id, "COMPLETED", Boolean((b as any).isPreschool))}
-                                             className="px-2 py-1 rounded-lg bg-sky-50 hover:bg-sky-600 text-sky-700 hover:text-white border border-sky-200 text-[10px] font-black transition-all cursor-pointer whitespace-nowrap"
+                                             className="h-8 px-2.5 rounded-lg bg-sky-50 hover:bg-sky-600 text-sky-700 hover:text-white border border-sky-200 text-[11px] font-bold transition-all cursor-pointer whitespace-nowrap"
                                              title="Đánh dấu Hoàn thành đợt này (Ẩn khỏi Nhập thông tin khảo sát & Phân công GV)"
                                            >
                                              ✓ Hoàn thành

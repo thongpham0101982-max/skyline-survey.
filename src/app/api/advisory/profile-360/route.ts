@@ -2,6 +2,18 @@ import { NextResponse } from "next/server"
 import { prisma } from "@/lib/db"
 import { auth } from "@/lib/auth"
 import { buildStudentSpecialSubjectsPortfolio } from "@/lib/specialSubjectsPortfolio"
+import {
+  resolveAdvisoryCaller,
+  verifyStudentRelationship,
+  sanitizeConsultationForViewer,
+  sanitizeHelpRequestForViewer,
+  sanitizeReflectionForViewer,
+  enrichGoalWithPolicies
+} from "@/lib/advisory/rbac-guard"
+import {
+  getPoliciesByStudentIds,
+  computeWorkflowProgress
+} from "@/lib/advisory/triparty-sync"
 
 export const dynamic = "force-dynamic"
 
@@ -27,11 +39,11 @@ function safeDateToISO(dateVal: any): string {
 }
 
 export async function GET(req: Request) {
-  const session = await auth()
-  if (!session) return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
+  const caller = await resolveAdvisoryCaller()
+  if (!caller.authenticated) return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
 
   const { searchParams } = new URL(req.url)
-  const studentId = searchParams.get("studentId")
+  const studentId = searchParams.get("studentId") || caller.studentId
   const academicYearId = searchParams.get("academicYearId")
 
   if (!studentId) {
@@ -144,58 +156,13 @@ export async function GET(req: Request) {
       return NextResponse.json({ error: "Student not found" }, { status: 404 })
     }
 
-    // Kiểm tra phân quyền truy cập hồ sơ học sinh (Chống IDOR)
-    const userRole = (session?.user as any)?.role || ""
-    const currentUserId = (session?.user as any)?.id || ""
-    const allowedCampusIds = (session?.user as any)?.campusIds || []
-    const isFullAdmin = ["ADMIN", "ADMINISTRATOR", "KT_DBCL", "KTDBCL"].includes(userRole)
-
-    let canAccess = isFullAdmin
-
-    if (!canAccess && ["GDCS", "GD_CS", "GIAO_VU_CS", "GIAO_VU"].includes(userRole)) {
-      if (allowedCampusIds.length === 0 || allowedCampusIds.includes(student.campusId)) {
-        canAccess = true
-      }
-    }
-
-    if (!canAccess && userRole === "PARENT") {
-      const isMyChild = await prisma.parentStudentLink.findFirst({
-        where: {
-          parent: { userId: currentUserId },
-          OR: [
-            { studentId: student.id },
-            ...(student.studentCode ? [{ student: { studentCode: student.studentCode } }] : [])
-          ]
-        }
-      })
-      if (isMyChild) canAccess = true
-    }
-
-    if (!canAccess && (userRole === "TEACHER" || userRole === "GV_MN")) {
-      const teacher = await prisma.teacher.findUnique({ where: { userId: currentUserId } })
-      if (teacher) {
-        const hrIds = (student.class?.homeroomTeacherId || "")
-          .split(",")
-          .map((s: string) => s.trim())
-          .filter(Boolean)
-        const isHomeroom = hrIds.includes(teacher.id) || hrIds.includes(teacher.userId || "")
-        const isClassTeacher = await prisma.teacherClassAssignment.findFirst({
-          where: { teacherId: teacher.id, classId: student.classId }
-        })
-        const isSubjectTeacher = await prisma.teachingAssignment.findFirst({
-          where: { teacherId: teacher.id, classId: student.classId }
-        })
-        const isSupport = await prisma.learningSupportAssignment.findFirst({
-          where: { teacherId: teacher.id, target: { studentId: student.id } }
-        })
-        if (isHomeroom || isClassTeacher || isSubjectTeacher || isSupport) {
-          canAccess = true
-        }
-      }
-    }
-
-    if (!canAccess) {
-      return NextResponse.json({ error: "Bạn không có quyền xem hồ sơ của học sinh này." }, { status: 403 })
+    // Kiểm tra phân quyền truy cập hồ sơ học sinh (Chống IDOR + RBAC 3 bên)
+    const rel = await verifyStudentRelationship(caller, student.id)
+    if (!rel.allowed) {
+      return NextResponse.json(
+        { error: rel.reason || "Bạn không có quyền xem hồ sơ của học sinh này." },
+        { status: 403 }
+      )
     }
 
     // 1. Resolve GVCN (Giáo viên chủ nhiệm lớp) từ hồ sơ lớp của học sinh
@@ -895,8 +862,67 @@ export async function GET(req: Request) {
       orderBy: { transferDate: "desc" }
     }).catch(() => [])
 
-    const currentStatusColor = student.advisoryStatuses?.[0]?.statusColor || "GREEN"
-    const currentStatusReason = student.advisoryStatuses?.[0]?.reasonDetail || "Ổn định"
+    // 8. Áp dụng Phân quyền 3 Tầng (Shared Educational / Private Advisory / Restricted Safeguarding)
+    const policyMap = await getPoliciesByStudentIds(allStudentIdsForCode)
+
+    const enrichedGoals = (student.goals || []).map((g: any) =>
+      enrichGoalWithPolicies(g, policyMap)
+    )
+
+    const sanitizedConsultations = (student.consultationLogs || [])
+      .map((c: any) => {
+        const pol = policyMap.get(`CONSULTATION:${c.id}`) || null
+        return sanitizeConsultationForViewer(c, pol, caller.actorRole)
+      })
+      .filter(Boolean)
+
+    const sanitizedReflections = (student.reflections || [])
+      .map((r: any) => {
+        const pol = policyMap.get(`REFLECTION:${r.id}`) || null
+        return sanitizeReflectionForViewer(r, pol, caller.actorRole)
+      })
+      .filter(Boolean)
+
+    const sanitizedHelpRequests = (student.helpRequests || [])
+      .map((hr: any) => {
+        const pol = policyMap.get(`HELP_REQUEST:${hr.id}`) || null
+        return sanitizeHelpRequestForViewer(hr, pol, caller.actorRole)
+      })
+      .filter(Boolean)
+
+    // Không tiết lộ chi tiết lý do cảnh báo tâm lý nội bộ cho PHHS
+    const rawStatusObj = student.advisoryStatuses?.[0]
+    const currentStatusColor = rawStatusObj?.statusColor || "GREEN"
+    const isSensitiveStatusReason =
+      caller.actorRole === "PARENT" &&
+      String(rawStatusObj?.reasonCategory || "").toUpperCase().includes("TAM_LY")
+    const currentStatusReason = isSensitiveStatusReason
+      ? "Cần phối hợp theo dõi và động viên thêm"
+      : rawStatusObj?.reasonDetail || "Ổn định"
+
+    student.goals = enrichedGoals
+    student.consultationLogs = sanitizedConsultations
+    student.reflections = sanitizedReflections
+    student.helpRequests = sanitizedHelpRequests
+
+    let parentExchanges: any[] = []
+    try {
+      const ph = allStudentIdsForCode.map(() => "?").join(",")
+      parentExchanges = await prisma.$queryRawUnsafe(
+        `SELECT * FROM "ParentAdvisorExchange" WHERE "studentId" IN (${ph}) ORDER BY "createdAt" DESC`,
+        ...allStudentIdsForCode
+      )
+    } catch {}
+
+    const workflowProgress = computeWorkflowProgress({
+      goals: enrichedGoals,
+      consultations: sanitizedConsultations,
+      reflections: sanitizedReflections,
+      actionItems: [],
+      termEvaluations: student.termEvaluations || [],
+      parentExchanges
+    })
+
     const primaryOrientation = student.careerOrientations?.[0] || null
     const primaryCommitment = student.learningCommitments?.[0] || null
 
@@ -906,15 +932,17 @@ export async function GET(req: Request) {
       homeroomTeacher: resolvedHomeroomTeacherInfo,
       currentStatusColor,
       currentStatusReason,
-      goals: student.goals || [],
+      goals: enrichedGoals,
       goalTrackings: student.goalTrackings || [],
       termEvaluations: student.termEvaluations || [],
       inputAssessment: entranceSurvey,
       entranceSurvey,
       experientialActivities,
-      consultationLogs: student.consultationLogs || [],
-      reflections: student.reflections || [],
-      helpRequests: student.helpRequests || [],
+      consultationLogs: sanitizedConsultations,
+      reflections: sanitizedReflections,
+      helpRequests: sanitizedHelpRequests,
+      parentExchanges,
+      workflowProgress,
       achievements: [...mappedIntlAchievements, ...(student.achievements || [])],
       intlExamResults,
       orientation: primaryOrientation,

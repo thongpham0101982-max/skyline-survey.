@@ -36,6 +36,7 @@ interface ClassItem {
 interface RankedStudent {
   id: string;
   studentId: string;
+  vneduCode?: string | null;
   fullName: string;
   gender: string | null;
   className: string;
@@ -166,6 +167,7 @@ export default function XepLoaiClient() {
     const dataToExport = displayedStudents.map((s, idx) => ({
       "STT": idx + 1,
       "Mã học sinh": s.studentId,
+      "Mã VnEdu (phụ)": s.vneduCode || "",
       "Họ và tên": s.fullName,
       "Lớp": s.className,
       "Cơ sở": s.campusName,
@@ -481,8 +483,18 @@ export default function XepLoaiClient() {
                       <td className="py-3 px-4 text-center text-xs text-slate-400 font-mono">
                         {(page - 1) * pageSize + idx + 1}
                       </td>
-                      <td className="py-3 px-4 font-mono font-bold text-xs text-[#003B3A]">
-                        {s.studentId}
+                      <td className="py-3 px-4">
+                        <div className="font-mono font-bold text-xs text-[#003B3A]">
+                          {s.studentId}
+                        </div>
+                        {s.vneduCode && (
+                          <div className="text-[11px] font-mono text-slate-500 font-medium mt-1 flex items-center gap-1">
+                            <span className="text-[9px] uppercase px-1.5 py-0.5 rounded bg-amber-50 border border-amber-200 text-amber-700 font-semibold tracking-wider">
+                              VnEdu
+                            </span>
+                            <span className="text-slate-600">{s.vneduCode}</span>
+                          </div>
+                        )}
                       </td>
                       <td className="py-3 px-4 font-semibold text-slate-800">
                         {s.fullName}

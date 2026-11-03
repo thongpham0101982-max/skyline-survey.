@@ -7,6 +7,7 @@ import { redirect } from "next/navigation"
 import { getObservationData, getObservationSlots } from "./actions"
 import { ObservationClient } from "./client"
 import { isAssignedSlotCreator } from "./utils"
+import { prisma } from "@/lib/db"
 
 export default async function ObservationPage(props: {
   searchParams: Promise<{ [key: string]: string | undefined }>
@@ -55,7 +56,54 @@ export default async function ObservationPage(props: {
   }
 
   const currentTeacherId = refDataResult.currentTeacher?.id;
-  const loadedSlots = slotsResult.success ? (slotsResult.slots || []) : [];
+  let loadedSlots = slotsResult.success ? (slotsResult.slots || []) : [];
+
+  if (searchParams.slotId && !loadedSlots.some((s: any) => s.id === searchParams.slotId)) {
+    try {
+      const extraSlot = await prisma.observationSlot.findUnique({
+        where: { id: searchParams.slotId },
+        include: {
+          teacher: {
+            select: {
+              id: true,
+              teacherName: true,
+              teacherCode: true,
+              email: true,
+              departmentId: true,
+              departmentRel: true,
+              departmentAssignments: { include: { department: true } },
+              campusId: true,
+              campus: { select: { campusName: true } }
+            }
+          },
+          registrations: {
+            include: {
+              teacher: {
+                select: {
+                  id: true,
+                  teacherName: true,
+                  teacherCode: true,
+                  departmentId: true,
+                  campusId: true,
+                  campus: { select: { campusName: true, campusCode: true } },
+                  position: true,
+                  departmentAssignments: { select: { departmentId: true, position: true } },
+                  email: true
+                }
+              },
+              evaluation: true
+            }
+          }
+        }
+      });
+      if (extraSlot) {
+        loadedSlots = [extraSlot, ...loadedSlots];
+      }
+    } catch (e) {
+      console.error("Failed to load extra slot for deep-link:", e);
+    }
+  }
+
   const myPersonalSlots = currentTeacherId
     ? loadedSlots.filter((s: any) => 
         s.teacherId === currentTeacherId || 

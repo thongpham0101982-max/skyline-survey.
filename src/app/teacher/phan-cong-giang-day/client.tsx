@@ -58,6 +58,7 @@ interface Assignment {
   subjectName: string
   academicYearId: string
   semester: number
+  isSpecialSubject?: boolean
   class: {
     className: string
     classCode: string
@@ -208,6 +209,7 @@ export function TeachingAssignmentClient({
       subjectId: string
       subjectName: string
       subjectCode: string
+      isSpecialSubject?: boolean
       classes: Array<{ id: string, className: string, classCode: string, semester: number, academicYearName: string }>
       semesters: Set<number>
     }> = {}
@@ -219,6 +221,7 @@ export function TeachingAssignmentClient({
           subjectId: a.subjectId,
           subjectName: a.subject.subjectName,
           subjectCode: a.subject.subjectCode,
+          isSpecialSubject: a.isSpecialSubject,
           classes: [],
           semesters: new Set<number>()
         }
@@ -262,7 +265,36 @@ export function TeachingAssignmentClient({
   return (
     <div className="space-y-6 pb-12 teacher-fade-in">
       {/* Header bar */}
-      <div className="bg-white border border-slate-200 shadow-sm rounded-2xl px-6 py-4 flex flex-col md:flex-row md:items-center justify-between gap-4">
+      <div className="group/card relative overflow-hidden bg-white border border-slate-200/80 shadow-xs rounded-3xl px-6 py-5 flex flex-col md:flex-row md:items-center justify-between gap-4" style={{ background: "linear-gradient(135deg, #F0FDFA 0%, #FFFFFF 52%, #E6F7F5 100%)" }}>
+        {/* Đường viền dải nhận diện cơ sở ở đỉnh thẻ */}
+        <div
+          className="absolute top-0 left-0 right-0 h-1.5 z-30"
+          style={{
+            background: "linear-gradient(135deg, #003B3A 0%, #00A19A 55%, #AE882E 100%)"
+          }}
+        />
+        {/* Ảnh minh họa trường học Sky-Line khớp khung phải & mờ dần */}
+        <div
+          className="hidden sm:block absolute top-0 right-0 bottom-0 sm:w-[54%] md:w-[48%] z-0 pointer-events-none select-none overflow-hidden"
+          style={{
+            WebkitMaskImage:
+              "linear-gradient(to right, transparent 0%, rgba(0,0,0,0.08) 12%, rgba(0,0,0,0.4) 32%, rgba(0,0,0,0.78) 60%, rgba(0,0,0,0.95) 85%, rgba(0,0,0,1) 100%)",
+            maskImage:
+              "linear-gradient(to right, transparent 0%, rgba(0,0,0,0.08) 12%, rgba(0,0,0,0.4) 32%, rgba(0,0,0,0.78) 60%, rgba(0,0,0,0.95) 85%, rgba(0,0,0,1) 100%)"
+          }}
+        >
+          <img
+            src="/images/skyline-campus-banner.png"
+            alt="Sky-Line Campus"
+            className="w-full h-full object-cover object-[center_65%] opacity-85"
+          />
+          <div
+            className="absolute inset-x-0 top-0 h-12 pointer-events-none"
+            style={{
+              background: "linear-gradient(to bottom, rgba(255,255,255,0.85) 0%, rgba(255,255,255,0.35) 55%, transparent 100%)"
+            }}
+          />
+        </div>
         <div className="flex items-center gap-3.5 min-w-0">
           <div className="w-10 h-10 bg-gradient-to-tr from-[#48BFE3] to-[#0EA5E9] rounded-xl flex items-center justify-center flex-shrink-0 shadow-md shadow-teal-500/10">
             <GraduationCap className="w-5 h-5 text-white" />
@@ -496,6 +528,11 @@ export function TeachingAssignmentClient({
                         <span className="px-2 py-0.5 rounded-md bg-teal-50 text-teal-700 border border-teal-200 text-[10px] font-extrabold">
                           {group.subjectCode}
                         </span>
+                        {group.isSpecialSubject && (
+                          <span className="px-2 py-0.5 rounded-md bg-amber-50 text-amber-700 border border-amber-200 text-[10px] font-extrabold">
+                            Môn đặc thù
+                          </span>
+                        )}
                       </div>
                       <p className="text-xs text-slate-400 font-semibold mt-0.5">
                         Tổng số: <span className="font-extrabold text-slate-800">{group.classes.length} lớp học</span>
@@ -516,13 +553,23 @@ export function TeachingAssignmentClient({
                     <span className="px-2.5 py-1 rounded-lg bg-emerald-50 text-emerald-700 border border-emerald-200 text-[10px] font-extrabold flex items-center gap-1">
                       <UserCheck className="w-3 h-3" /> Đang phụ trách
                     </span>
-                    <Link
-                      href={`/teacher/phan-tich-chat-luong?subjectId=${group.subjectId}`}
-                      className="px-2.5 py-1 rounded-lg bg-sky-50 text-sky-700 hover:bg-sky-100 border border-sky-200 text-[10px] font-extrabold flex items-center gap-1 transition-colors shadow-2xs"
-                      title="Xem phân tích chất lượng & đối sánh môn học"
-                    >
-                      <BarChart3 className="w-3 h-3 text-sky-600" /> Phân tích chất lượng
-                    </Link>
+                    {group.isSpecialSubject ? (
+                      <Link
+                        href={`/teacher/special-subjects/eval?subject=${group.subjectCode}`}
+                        className="px-2.5 py-1 rounded-lg bg-amber-50 text-amber-700 hover:bg-amber-100 border border-amber-200 text-[10px] font-extrabold flex items-center gap-1 transition-colors shadow-2xs"
+                        title="Mở sổ đánh giá môn học đặc thù"
+                      >
+                        <ClipboardList className="w-3 h-3 text-amber-600" /> Sổ đánh giá môn đặc thù
+                      </Link>
+                    ) : (
+                      <Link
+                        href={`/teacher/phan-tich-chat-luong?subjectId=${group.subjectId}`}
+                        className="px-2.5 py-1 rounded-lg bg-sky-50 text-sky-700 hover:bg-sky-100 border border-sky-200 text-[10px] font-extrabold flex items-center gap-1 transition-colors shadow-2xs"
+                        title="Xem phân tích chất lượng & đối sánh môn học"
+                      >
+                        <BarChart3 className="w-3 h-3 text-sky-600" /> Phân tích chất lượng
+                      </Link>
+                    )}
                   </div>
                 </div>
 

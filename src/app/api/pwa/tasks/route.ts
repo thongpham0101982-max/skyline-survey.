@@ -1,7 +1,7 @@
-﻿import { NextResponse } from "next/server"
+import { NextResponse } from "next/server"
 import { auth } from "@/lib/auth"
-import { aggregateUserTasks } from "@/services/taskEngine"
-import { SourceModule } from "@/services/taskEngine/types"
+import { aggregateTeacherTasks, resolveTeacherAssignmentProfile } from "@/services/taskEngine"
+import { SourceModule, TaskStatus } from "@/services/taskEngine/types"
 import { prisma } from "@/lib/db"
 
 export const dynamic = "force-dynamic"
@@ -14,50 +14,57 @@ export async function GET(req: Request) {
     }
 
     const userId = session.user.id
-    const userRole = (session.user as any)?.role || "TEACHER"
-
     const url = new URL(req.url)
-    const filter = (url.searchParams.get("filter") || "ALL").toUpperCase()
-    const moduleFilter = url.searchParams.get("module") as SourceModule | null
-    const search = (url.searchParams.get("search") || "").toLowerCase().trim()
 
-    const { tasks, counts } = await aggregateUserTasks(userId, userRole)
+    const filter = (url.searchParams.get("filter") || url.searchParams.get("status") || "ALL").toUpperCase()
+    const moduleFilter = (url.searchParams.get("module") || "ALL") as SourceModule | "ALL"
+    const campusId = url.searchParams.get("campusId") || "ALL"
+    const classId = url.searchParams.get("classId") || "ALL"
+    const subjectId = url.searchParams.get("subjectId") || "ALL"
+    const timeRange = (url.searchParams.get("timeRange") || "ALL") as "TODAY" | "THIS_WEEK" | "THIS_MONTH" | "ALL"
+    const search = (url.searchParams.get("search") || "").trim()
 
-    let filtered = tasks
+    const [profile, { tasks, counts }] = await Promise.all([
+      resolveTeacherAssignmentProfile(userId),
+      aggregateTeacherTasks(userId, {
+        campusId,
+        classId,
+        subjectId,
+        module: moduleFilter,
+        status: filter as TaskStatus | "ALL" | "TODAY" | "OVERDUE" | "WAITING" | "COMPLETED",
+        timeRange,
+        search,
+        includeCompleted: filter === "COMPLETED",
+      }),
+    ])
 
-    // 1. Filter by Status/Time
-    if (filter === "TODAY") {
-      filtered = filtered.filter(t => t.deadline === "Hôm nay" || t.priority === "URGENT")
-    } else if (filter === "OVERDUE") {
-      filtered = filtered.filter(t => t.status === "OVERDUE" || t.priority === "URGENT")
-    } else if (filter === "COMPLETED") {
-      filtered = filtered.filter(t => t.status === "COMPLETED")
-    }
-
-    // 2. Filter by Module
-    if (moduleFilter && moduleFilter !== ("ALL" as any)) {
-      filtered = filtered.filter(t => t.sourceModule === moduleFilter)
-    }
-
-    // 3. Filter by Search Query
-    if (search) {
-      filtered = filtered.filter(t =>
-        t.title.toLowerCase().includes(search) ||
-        (t.description && t.description.toLowerCase().includes(search)) ||
-        (t.metadata?.studentName && t.metadata.studentName.toLowerCase().includes(search)) ||
-        (t.metadata?.className && t.metadata.className.toLowerCase().includes(search))
-      )
-    }
-
-    return NextResponse.json({
-      success: true,
-      tasks: filtered,
-      counts
-    }, {
-      headers: {
-        "Cache-Control": "private, no-cache, no-store, must-revalidate"
+    return NextResponse.json(
+      {
+        success: true,
+        updatedAt: new Date().toISOString(),
+        tasks,
+        counts,
+        filterOptions: profile
+          ? {
+              campuses: profile.campuses,
+              classes: [
+                ...profile.homeroomClasses.map((c) => ({ id: c.id, name: `${c.className} (Chủ nhiệm)` })),
+                ...profile.teachingAssignments.map((a) => ({ id: a.classId, name: `${a.className} (${a.subjectName})` })),
+              ].filter((v, idx, arr) => arr.findIndex((x) => x.id === v.id) === idx),
+              subjects: [
+                ...profile.teachingAssignments.map((a) => ({ id: a.subjectId, name: a.subjectName })),
+                ...profile.ctqtAssignments.map((c) => ({ id: c.subjectId, name: `${c.subjectName} (CTQT)` })),
+                ...profile.specialAssignments.map((s) => ({ id: s.subjectCode, name: s.subjectName })),
+              ].filter((v, idx, arr) => arr.findIndex((x) => x.id === v.id) === idx),
+            }
+          : { campuses: [], classes: [], subjects: [] },
+      },
+      {
+        headers: {
+          "Cache-Control": "private, no-cache, no-store, must-revalidate",
+        },
       }
-    })
+    )
   } catch (error) {
     console.error("[API /api/pwa/tasks GET Error]:", error)
     return NextResponse.json({ success: false, error: "Internal server error" }, { status: 500 })
@@ -78,15 +85,14 @@ export async function PATCH(req: Request) {
       return NextResponse.json({ error: "Missing taskId" }, { status: 400 })
     }
 
-    // If it's a WorkTask, update in DB
-    if (taskId.startsWith("work-task-")) {
-      const realId = taskId.replace("work-task-", "")
+    if (taskId.startsWith("work-")) {
+      const realId = taskId.replace(/^work-(task-)?/, "")
       await prisma.workTask.updateMany({
-        where: { id: realId, assignedToUserId: session.user.id },
+        where: { id: realId, assigneeId: session.user.id },
         data: {
-          progress: action === "COMPLETE" ? "COMPLETED" : "IN_PROGRESS",
-          acceptanceStatus: action === "COMPLETE" ? "ACCEPTED" : "WAITING_CONFIRMATION"
-        }
+          status: action === "COMPLETE" ? "COMPLETED" : "IN_PROGRESS",
+          completedAt: action === "COMPLETE" ? new Date() : null,
+        },
       })
       return NextResponse.json({ success: true, message: "Đã cập nhật trạng thái nhiệm vụ" })
     }

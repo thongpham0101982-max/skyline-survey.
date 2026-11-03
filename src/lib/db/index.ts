@@ -37,10 +37,10 @@ const LOCAL_URL = cleanEnv(process.env.LOCAL_DATABASE_URL) || `file:${defaultLoc
 
 // Configured engine: 'AUTO' (default), 'LOCAL', or 'CLOUD'
 const isVercel = Boolean(process.env.VERCEL || process.env.NEXT_PUBLIC_VERCEL_ENV)
-const configuredEngine = (cleanEnv(process.env.DEFAULT_DB_ENGINE) || 'AUTO').toUpperCase().trim()
+const configuredEngine = (cleanEnv(process.env.DEFAULT_DB_ENGINE) || 'LOCAL').toUpperCase().trim()
 
-// Global engine state: Force CLOUD on Vercel as local SQLite is unavailable
-let currentEngine: 'CLOUD' | 'LOCAL' = (isVercel || configuredEngine !== 'LOCAL') ? 'CLOUD' : 'LOCAL'
+// Global engine state: Force CLOUD on Vercel as local SQLite is unavailable. On-premise defaults to LOCAL for maximum sub-millisecond performance.
+let currentEngine: 'CLOUD' | 'LOCAL' = isVercel ? 'CLOUD' : (configuredEngine === 'CLOUD' ? 'CLOUD' : 'LOCAL')
 
 // Helper: detect if an error indicates Turso plan block, quota exceeded, or network unavailable
 export function isBlockedOrUnavailable(err: any): boolean {
@@ -71,7 +71,13 @@ function getCloudPrisma(): PrismaClient {
       authToken: TURSO_TOKEN,
     })
     const adapter = new PrismaLibSQL(libsql)
-    cloudPrismaInstance = new PrismaClient({ adapter })
+    cloudPrismaInstance = new PrismaClient({
+      adapter,
+      transactionOptions: {
+        maxWait: 15000,
+        timeout: 60000
+      }
+    })
   }
   return cloudPrismaInstance
 }
@@ -82,7 +88,13 @@ function getLocalPrisma(): PrismaClient {
       url: LOCAL_URL,
     })
     const adapter = new PrismaLibSQL(libsql)
-    localPrismaInstance = new PrismaClient({ adapter })
+    localPrismaInstance = new PrismaClient({
+      adapter,
+      transactionOptions: {
+        maxWait: 15000,
+        timeout: 60000
+      }
+    })
   }
   return localPrismaInstance
 }
@@ -91,7 +103,7 @@ let lastCloudFailoverTime = 0
 const CLOUD_RECOVERY_COOLDOWN_MS = 60 * 1000 // 60s cooldown
 
 function getActivePrisma(): PrismaClient {
-  if (currentEngine === 'LOCAL' && configuredEngine !== 'LOCAL') {
+  if (currentEngine === 'LOCAL' && configuredEngine === 'CLOUD') {
     if (Date.now() - lastCloudFailoverTime > CLOUD_RECOVERY_COOLDOWN_MS) {
       currentEngine = 'CLOUD'
       console.log('[SmartPrisma] Cooldown elapsed. Automatically trying Turso CLOUD engine...')
@@ -175,7 +187,8 @@ declare global {
   var prismaGlobal: undefined | PrismaClient
 }
 
-const prisma = globalThis.prismaGlobal ?? createSmartPrisma()
+const createPrismaClient = createSmartPrisma
+const prisma = globalThis.prismaGlobal ?? createPrismaClient()
 
 export { prisma }
 

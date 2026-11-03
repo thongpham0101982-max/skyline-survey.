@@ -30,6 +30,16 @@ export interface AIAdmissionSummaryResult {
   noiDungCanXacMinh: string;
   khuyenNghiXepLop?: string;
   heHocDeXuat?: string;
+  // 9 Nhóm tổng hợp nhận diện chuẩn hóa theo yêu cầu SSM Sky-Line:
+  strongPoints?: string;          // 1. Điểm mạnh nổi bật của học sinh
+  interestsMotivation?: string;   // 2. Sở thích và động lực học tập
+  adaptabilityAutonomy?: string;  // 3. Khả năng thích nghi và tự lập
+  difficultiesNeeds?: string;     // 4. Khó khăn, nhu cầu cần quan tâm
+  studentExpectations?: string;   // 5. Kỳ vọng của học sinh
+  parentExpectations?: string;    // 6. Kỳ vọng của phụ huynh
+  alignmentDifferences?: string;  // 7. Những điểm tương đồng hoặc khác biệt giữa hai nguồn thông tin
+  initialRecommendations?: string;// 8. Đề xuất hỗ trợ và định hướng giáo dục ban đầu
+  verificationItems?: string;     // 9. Nội dung cần xác minh hoặc trao đổi chuyên môn
   source: "GEMINI_AI" | "RULES_ENGINE_FALLBACK";
   message?: string;
 }
@@ -309,7 +319,7 @@ ${Object.entries(criteriaAnswers)
 5. TUYỆT ĐỐI KHÔNG TỰ Ý QUYẾT ĐỊNH ĐẠT HOẶC KHÔNG ĐẠT (quyền quyết định thuộc về Hội đồng Tuyển sinh).
 6. Văn phong sư phạm chuẩn mực, xây dựng, khách quan, không phán xét tiêu cực hay gán nhãn tính cách.
 
-[YÊU CẦU ĐẦU RA JSON BẮT BUỘC]
+[YÊU CẦU ĐẦU RA JSON BẮT BUỘC ĐẦY ĐỦ 9 NỘI DUNG TỔNG HỢP NHẬN DIỆN]
 {
   "diemManhNoiBat": "Đoạn văn điểm mạnh có căn cứ thực tế từ phỏng vấn, điểm số hoặc học bạ...",
   "noiDungCanPhatTrien": "Đoạn văn nội dung cần rèn luyện thêm dựa trên các tiêu chí Need support/Note...",
@@ -317,22 +327,40 @@ ${Object.entries(criteriaAnswers)
   "deXuatHoTroBanDau": "Đoạn văn đề xuất biện pháp hỗ trợ phối hợp giữa GVCN và Gia đình trong 4 tuần đầu...",
   "noiDungCanXacMinh": "Các thông tin còn để trống, chưa rõ ràng cần tuyển sinh/chuyên môn xác minh thêm...",
   "khuyenNghiXepLop": "Đề xuất môi trường lớp học/hệ học tham khảo...",
-  "heHocDeXuat": "Hệ Chất lượng cao / Song ngữ / Quốc tế..."
+  "heHocDeXuat": "Hệ Chất lượng cao / Song ngữ / Quốc tế...",
+  "strongPoints": "1. Điểm mạnh nổi bật của học sinh...",
+  "interestsMotivation": "2. Sở thích và động lực học tập...",
+  "adaptabilityAutonomy": "3. Khả năng thích nghi và tự lập...",
+  "difficultiesNeeds": "4. Khó khăn, nhu cầu cần quan tâm...",
+  "studentExpectations": "5. Kỳ vọng của học sinh tại Sky-Line...",
+  "parentExpectations": "6. Kỳ vọng của phụ huynh đối với học sinh và nhà trường...",
+  "alignmentDifferences": "7. Những điểm tương đồng hoặc khác biệt giữa chia sẻ của học sinh và phụ huynh...",
+  "initialRecommendations": "8. Đề xuất hỗ trợ và định hướng giáo dục ban đầu...",
+  "verificationItems": "9. Nội dung cần xác minh hoặc trao đổi chuyên môn thêm..."
 }`;
 
       const res = await model.generateContent(prompt);
       const text = res.response.text();
       const parsed = JSON.parse(text);
-      if (parsed?.diemManhNoiBat) {
+      if (parsed?.diemManhNoiBat || parsed?.strongPoints) {
         return {
           success: true,
-          diemManhNoiBat: parsed.diemManhNoiBat,
-          noiDungCanPhatTrien: parsed.noiDungCanPhatTrien || "",
-          khaNangThichNghi: parsed.khaNangThichNghi || "",
-          deXuatHoTroBanDau: parsed.deXuatHoTroBanDau || "",
-          noiDungCanXacMinh: parsed.noiDungCanXacMinh || "",
+          diemManhNoiBat: parsed.diemManhNoiBat || parsed.strongPoints || "",
+          noiDungCanPhatTrien: parsed.noiDungCanPhatTrien || parsed.difficultiesNeeds || "",
+          khaNangThichNghi: parsed.khaNangThichNghi || parsed.adaptabilityAutonomy || "",
+          deXuatHoTroBanDau: parsed.deXuatHoTroBanDau || parsed.initialRecommendations || "",
+          noiDungCanXacMinh: parsed.noiDungCanXacMinh || parsed.verificationItems || "",
           khuyenNghiXepLop: parsed.khuyenNghiXepLop || "",
           heHocDeXuat: parsed.heHocDeXuat || "",
+          strongPoints: parsed.strongPoints || parsed.diemManhNoiBat || "",
+          interestsMotivation: parsed.interestsMotivation || "",
+          adaptabilityAutonomy: parsed.adaptabilityAutonomy || parsed.khaNangThichNghi || "",
+          difficultiesNeeds: parsed.difficultiesNeeds || parsed.noiDungCanPhatTrien || "",
+          studentExpectations: parsed.studentExpectations || "",
+          parentExpectations: parsed.parentExpectations || "",
+          alignmentDifferences: parsed.alignmentDifferences || "",
+          initialRecommendations: parsed.initialRecommendations || parsed.deXuatHoTroBanDau || "",
+          verificationItems: parsed.verificationItems || parsed.noiDungCanXacMinh || "",
           source: "GEMINI_AI"
         };
       }
@@ -504,6 +532,15 @@ function generateFallbackSynthesis(
     noiDungCanXacMinh,
     khuyenNghiXepLop: `Phù hợp xếp vào khối ${grade}`,
     heHocDeXuat: student?.surveySystem || "Hệ Chất lượng cao",
+    strongPoints: diemManhNoiBat,
+    interestsMotivation: `${name} thể hiện sự quan tâm tích cực và có hứng thú với việc tham gia các hoạt động học tập, trải nghiệm tại Sky-Line.`,
+    adaptabilityAutonomy: khaNangThichNghi,
+    difficultiesNeeds: noiDungCanPhatTrien,
+    studentExpectations: `Học sinh mong muốn được học tập trong môi trường thân thiện, có nhiều bạn bè mới và tham gia các hoạt động phát triển năng khiếu.`,
+    parentExpectations: parentData?.parentExpectations || `Gia đình mong muốn con được phát triển toàn diện cả về kiến thức văn hóa, kỹ năng sống và sự tự tin.`,
+    alignmentDifferences: `Gia đình và học sinh có sự đồng thuận cao về việc lựa chọn môi trường giáo dục Sky-Line; cần phối hợp sâu sát giữa GVCN và phụ huynh trong học kỳ đầu.`,
+    initialRecommendations: deXuatHoTroBanDau,
+    verificationItems: noiDungCanXacMinh,
     source: "RULES_ENGINE_FALLBACK"
   };
 }

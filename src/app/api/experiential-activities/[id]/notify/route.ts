@@ -69,7 +69,7 @@ export async function POST(
       }
 
       const displaySender = senderName || extraData.emailSettings?.senderName || "Tổ CTHS - Ban HĐNGLL";
-      const fromAddr = senderEmail ? `"${displaySender}" <${senderEmail}>` : `"${displaySender}" <bankhaothi@skylineschool.edu.vn>`;
+      const fromAddr = senderEmail ? `"${displaySender}" <${senderEmail}>` : `"${displaySender}" <ktdbcl@skylineschool.edu.vn>`;
       
       const appUrl = process.env.NEXTAUTH_URL || "https://skyline-survey.vercel.app";
       const activityUrl = `${appUrl}/teacher/experiential-activities/${id}`;

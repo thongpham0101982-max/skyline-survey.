@@ -61,11 +61,21 @@ async function createAcademicYear(formData: FormData) {
         theme: theme || null,
         pillars: defaultPillars,
         yearThemes: initialThemes
-      }
+      } as any
     })
-  } catch(e) {
-    console.error("Error creating academic year:", e)
-    throw e
+  } catch(e: any) {
+    console.warn("Prisma create failed, trying raw insert fallback:", e?.message || e)
+    const newId = 'ay_' + Date.now()
+    await prisma.$executeRawUnsafe(
+      `INSERT INTO AcademicYear (id, name, startDate, endDate, status, isOff, theme, pillars, yearThemes) VALUES (?, ?, ?, ?, 'ACTIVE', 0, ?, ?, ?)`,
+      newId,
+      name,
+      startDate.toISOString(),
+      endDate.toISOString(),
+      theme || null,
+      defaultPillars,
+      initialThemes
+    )
   }
   revalidatePath("/admin/academic-years")
 }
@@ -84,7 +94,28 @@ async function updateAcademicYear(data: any) {
   if (data.theme !== undefined) payload.theme = data.theme
   if (data.pillars !== undefined) payload.pillars = typeof data.pillars === 'string' ? data.pillars : JSON.stringify(data.pillars)
   if (data.yearThemes !== undefined) payload.yearThemes = typeof data.yearThemes === 'string' ? data.yearThemes : JSON.stringify(data.yearThemes)
-  await prisma.academicYear.update({ where: { id: data.id }, data: payload })
+
+  try {
+    await prisma.academicYear.update({ where: { id: data.id }, data: payload })
+  } catch (err: any) {
+    console.warn("Prisma updateAcademicYear failed, applying raw SQL update fallback:", err?.message || err)
+    const updates: string[] = []
+    const params: any[] = []
+    if (payload.name) { updates.push('name = ?'); params.push(payload.name); }
+    if (payload.startDate) { updates.push('startDate = ?'); params.push(payload.startDate instanceof Date ? payload.startDate.toISOString() : payload.startDate); }
+    if (payload.endDate) { updates.push('endDate = ?'); params.push(payload.endDate instanceof Date ? payload.endDate.toISOString() : payload.endDate); }
+    if (payload.status) { updates.push('status = ?'); params.push(payload.status); }
+    if (payload.theme !== undefined) { updates.push('theme = ?'); params.push(payload.theme); }
+    if (payload.pillars !== undefined) { updates.push('pillars = ?'); params.push(payload.pillars); }
+    if (payload.yearThemes !== undefined) { updates.push('yearThemes = ?'); params.push(payload.yearThemes); }
+    if (updates.length > 0) {
+      params.push(data.id);
+      await prisma.$executeRawUnsafe(
+        `UPDATE AcademicYear SET ${updates.join(', ')} WHERE id = ?`,
+        ...params
+      );
+    }
+  }
   revalidatePath("/admin/academic-years")
   revalidatePath("/hocsinh/portal")
 }
@@ -136,7 +167,7 @@ async function deleteAcademicYear(id: string) {
       if (prePeriodIds.length > 0) {
         await (tx as any).preschoolInputAssessmentTeacherAssignment.deleteMany({ where: { periodId: { in: prePeriodIds } } });
         
-        const preStudentIds = (await (tx as any).preschoolInputAssessmentStudent.findMany({ where: { periodId: { in: prePeriodIds } }, select: { id: true } })).map(s => s.id);
+        const preStudentIds = (await (tx as any).preschoolInputAssessmentStudent.findMany({ where: { periodId: { in: prePeriodIds } }, select: { id: true } })).map((s: any) => s.id);
         if (preStudentIds.length > 0) {
           await (tx as any).preschoolDevScore.deleteMany({ where: { studentId: { in: preStudentIds } } });
           await (tx as any).preschoolInputAssessmentStudent.deleteMany({ where: { id: { in: preStudentIds } } });
@@ -193,7 +224,7 @@ async function deleteAcademicYear(id: string) {
   revalidatePath("/admin/academic-years")
 }
 
-async function setActiveYear(id) {
+async function setActiveYear(id: string) {
   "use server"
   await prisma.academicYear.updateMany({ data: { status: "INACTIVE" } })
   await prisma.academicYear.update({ where: { id }, data: { status: "ACTIVE", isOff: false } })
@@ -202,7 +233,7 @@ async function setActiveYear(id) {
   revalidatePath("/admin/parents")
 }
 
-async function toggleYearOffStatus(id, isOff) {
+async function toggleYearOffStatus(id: string, isOff: boolean) {
   "use server"
   if (isOff) {
     const activeYear = await prisma.academicYear.findFirst({ where: { id, status: "ACTIVE" } })
@@ -232,7 +263,11 @@ export default async function AcademicYearsPage() {
     }
   })
 
+  const rawThemeData = ((await prisma.$queryRawUnsafe(`SELECT id, theme, pillars, yearThemes FROM AcademicYear`).catch(() => [])) as any[]) || [];
+  const rawThemeMap = new Map<string, any>(rawThemeData.map(r => [r.id, r]));
+
   const yearsWithCounts = await Promise.all(years.map(async (y) => {
+    const raw = rawThemeMap.get(y.id);
     const classes = await prisma.class.findMany({
       where: { academicYearId: y.id },
       select: { id: true, homeroomTeacherId: true }
@@ -266,6 +301,9 @@ export default async function AcademicYearsPage() {
     
     return {
       ...y,
+      theme: (y as any).theme ?? raw?.theme ?? null,
+      pillars: (y as any).pillars ?? raw?.pillars ?? null,
+      yearThemes: (y as any).yearThemes ?? raw?.yearThemes ?? null,
       teacherCount: teacherIds.size,
       parentCount: 0
     }

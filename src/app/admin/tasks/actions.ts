@@ -100,7 +100,10 @@ export async function createTask(data: any) {
           month: data.month ? parseInt(data.month) : null,
           academicYearId: data.academicYearId || null,
           isImportant: data.isImportant || false,
-          collaborators: collaboratorStr
+          collaborators: collaboratorStr,
+          taskGroupId: data.taskGroupId || null,
+          department: data.department || (data.assignedToRole === "KT_DBCL" ? "KT&ĐBCL" : data.assignedToRole) || "KT&ĐBCL",
+          priority: data.priority || (data.isImportant ? "HIGH" : "MEDIUM")
         }
       })
       if (!primaryTask) primaryTask = task
@@ -254,7 +257,7 @@ export async function createTask(data: any) {
                               BAN ĐÀO TẠO & KHẢO THÍ ĐẢM BẢO CHẤT LƯỢNG GIÁO DỤC
                             </p>
                             <p style="margin: 8px 0 0 0; font-size: 11px; color: #94A3B8;">
-                              Email hỗ trợ: <a href="mailto:bankhaothi@skylineschool.edu.vn" style="color: #99F6E4; text-decoration: underline;">bankhaothi@skylineschool.edu.vn</a> &bull; Website: <a href="https://skylineschool.edu.vn" target="_blank" style="color: #99F6E4; text-decoration: none;">skylineschool.edu.vn</a>
+                              Email hỗ trợ: <a href="mailto:ktdbcl@skylineschool.edu.vn" style="color: #99F6E4; text-decoration: underline;">ktdbcl@skylineschool.edu.vn</a> &bull; Website: <a href="https://skylineschool.edu.vn" target="_blank" style="color: #99F6E4; text-decoration: none;">skylineschool.edu.vn</a>
                             </p>
                           </td>
                         </tr>
@@ -423,7 +426,7 @@ export async function confirmTaskAssignment(taskId: string) {
                             BAN ĐÀO TẠO & KHẢO THÍ ĐẢM BẢO CHẤT LƯỢNG GIÁO DỤC
                           </p>
                           <p style="margin: 8px 0 0 0; font-size: 11px; color: #94A3B8;">
-                            Email hỗ trợ: <a href="mailto:bankhaothi@skylineschool.edu.vn" style="color: #99F6E4; text-decoration: underline;">bankhaothi@skylineschool.edu.vn</a> &bull; Website: <a href="https://skylineschool.edu.vn" target="_blank" style="color: #99F6E4; text-decoration: none;">skylineschool.edu.vn</a>
+                            Email hỗ trợ: <a href="mailto:ktdbcl@skylineschool.edu.vn" style="color: #99F6E4; text-decoration: underline;">ktdbcl@skylineschool.edu.vn</a> &bull; Website: <a href="https://skylineschool.edu.vn" target="_blank" style="color: #99F6E4; text-decoration: none;">skylineschool.edu.vn</a>
                           </p>
                         </td>
                       </tr>
@@ -580,7 +583,7 @@ export async function rejectTaskAssignment(taskId: string, reason: string) {
                             BAN ĐÀO TẠO & KHẢO THÍ ĐẢM BẢO CHẤT LƯỢNG GIÁO DỤC
                           </p>
                           <p style="margin: 8px 0 0 0; font-size: 11px; color: #94A3B8;">
-                            Email hỗ trợ: <a href="mailto:bankhaothi@skylineschool.edu.vn" style="color: #99F6E4; text-decoration: underline;">bankhaothi@skylineschool.edu.vn</a> &bull; Website: <a href="https://skylineschool.edu.vn" target="_blank" style="color: #99F6E4; text-decoration: none;">skylineschool.edu.vn</a>
+                            Email hỗ trợ: <a href="mailto:ktdbcl@skylineschool.edu.vn" style="color: #99F6E4; text-decoration: underline;">ktdbcl@skylineschool.edu.vn</a> &bull; Website: <a href="https://skylineschool.edu.vn" target="_blank" style="color: #99F6E4; text-decoration: none;">skylineschool.edu.vn</a>
                           </p>
                         </td>
                       </tr>
@@ -613,21 +616,26 @@ export async function updateTask(id: string, data: any) {
   try {
     const collaboratorStr = data.collaborators ? (typeof data.collaborators === 'string' ? data.collaborators : JSON.stringify(data.collaborators)) : null
 
+    const updateData: any = {
+      category: data.category,
+      title: data.title,
+      description: data.description || "",
+      assignedToRole: data.assignedToRole,
+      assignedToUserId: data.assignedToUserId || null,
+      startDate: new Date(data.startDate),
+      endDate: new Date(data.endDate),
+      month: data.month ? parseInt(data.month) : null,
+      academicYearId: data.academicYearId || null,
+      isImportant: data.isImportant || false,
+      collaborators: collaboratorStr
+    }
+    if (data.taskGroupId !== undefined) updateData.taskGroupId = data.taskGroupId || null
+    if (data.department !== undefined) updateData.department = data.department || "KT&ĐBCL"
+    if (data.priority !== undefined) updateData.priority = data.priority || "MEDIUM"
+
     await prisma.workTask.update({
       where: { id },
-      data: {
-        category: data.category,
-        title: data.title,
-        description: data.description || "",
-        assignedToRole: data.assignedToRole,
-        assignedToUserId: data.assignedToUserId || null,
-        startDate: new Date(data.startDate),
-        endDate: new Date(data.endDate),
-        month: data.month ? parseInt(data.month) : null,
-        academicYearId: data.academicYearId || null,
-        isImportant: data.isImportant || false,
-        collaborators: collaboratorStr
-      }
+      data: updateData
     })
     revalidatePath("/admin/tasks")
     return { success: true }
@@ -656,12 +664,17 @@ export async function updateTaskProgress(id: string, progress: string) {
       return { success: false, error: "Bạn không có quyền cập nhật tiến độ công việc này" }
     }
 
+    const updateData: any = { 
+      progress,
+      updatedAt: new Date()
+    }
+    if (progress === "COMPLETED" && !task.completedAt) {
+      updateData.completedAt = new Date()
+    }
+
     await prisma.workTask.update({ 
       where: { id }, 
-      data: { 
-        progress,
-        updatedAt: new Date()
-      } 
+      data: updateData
     })
     revalidatePath("/admin/tasks")
     return { success: true }
@@ -867,7 +880,7 @@ export async function remindTask(id: string) {
                             BAN ĐÀO TẠO & KHẢO THÍ ĐẢM BẢO CHẤT LƯỢNG GIÁO DỤC
                           </p>
                           <p style="margin: 8px 0 0 0; font-size: 11px; color: #94A3B8;">
-                            Email hỗ trợ: <a href="mailto:bankhaothi@skylineschool.edu.vn" style="color: #99F6E4; text-decoration: underline;">bankhaothi@skylineschool.edu.vn</a> &bull; Website: <a href="https://skylineschool.edu.vn" target="_blank" style="color: #99F6E4; text-decoration: none;">skylineschool.edu.vn</a>
+                            Email hỗ trợ: <a href="mailto:ktdbcl@skylineschool.edu.vn" style="color: #99F6E4; text-decoration: underline;">ktdbcl@skylineschool.edu.vn</a> &bull; Website: <a href="https://skylineschool.edu.vn" target="_blank" style="color: #99F6E4; text-decoration: none;">skylineschool.edu.vn</a>
                           </p>
                         </td>
                       </tr>
@@ -1059,7 +1072,7 @@ export async function checkAndNotifyUpcomingTasks() {
                                   BAN ĐÀO TẠO & KHẢO THÍ ĐẢM BẢO CHẤT LƯỢNG GIÁO DỤC
                                 </p>
                                 <p style="margin: 8px 0 0 0; font-size: 11px; color: #94A3B8;">
-                                  Email hỗ trợ: <a href="mailto:bankhaothi@skylineschool.edu.vn" style="color: #99F6E4; text-decoration: underline;">bankhaothi@skylineschool.edu.vn</a> &bull; Website: <a href="https://skylineschool.edu.vn" target="_blank" style="color: #99F6E4; text-decoration: none;">skylineschool.edu.vn</a>
+                                  Email hỗ trợ: <a href="mailto:ktdbcl@skylineschool.edu.vn" style="color: #99F6E4; text-decoration: underline;">ktdbcl@skylineschool.edu.vn</a> &bull; Website: <a href="https://skylineschool.edu.vn" target="_blank" style="color: #99F6E4; text-decoration: none;">skylineschool.edu.vn</a>
                                 </p>
                               </td>
                             </tr>
@@ -1414,5 +1427,179 @@ export async function assignStaffToTaskGroup(groupId: string, memberUserIds: str
     return { success: true }
   } catch (e: any) {
     return { success: false, error: e.message }
+  }
+}
+
+export async function setTaskGroupLeader(groupId: string, leaderUserId: string | null) {
+  try {
+    const session = await auth()
+    const opScope = await getOperationalScope()
+    if (!session?.user || (!opScope.isManager && (session.user as any).role !== "ADMIN")) {
+      return { success: false, error: "Quyền truy cập bị từ chối" }
+    }
+    await prisma.taskGroup.update({
+      where: { id: groupId },
+      data: {
+        leaderUserId: leaderUserId || null
+      }
+    })
+    revalidatePath("/admin/tasks")
+    return { success: true }
+  } catch (e: any) {
+    return { success: false, error: e.message }
+  }
+}
+
+export async function getDepartmentSettings(departmentCode: string = "KT&ĐBCL") {
+  try {
+    const dept = await prisma.department.findFirst({
+      where: {
+        OR: [
+          { code: departmentCode },
+          { name: departmentCode }
+        ]
+      },
+      select: { taskConfig: true, code: true, name: true }
+    })
+
+    const defaultConfig = {
+      topology: "3_LEVEL", // "3_LEVEL" (Ban - Nhóm - Cá nhân) or "2_LEVEL" (Ban - Cá nhân)
+      hasTeams: true,
+      requireAcceptance: true,
+      requireLeaderApproval: false,
+      enableActionItems: true,
+      enableKpiWeights: true,
+      enableKanban: true,
+      enableTimeline: true,
+      syncWeeklyReports: true,
+      permissions: {
+        leader: {
+          canViewAllBan: false,
+          canViewOtherTeams: true,
+          canAssignAcrossTeams: false,
+          canApproveTeamTasks: true,
+          canManageBlockers: true,
+          canExportReports: true
+        },
+        member: {
+          canSelfAssign: false,
+          canViewOtherTeams: false,
+          canCreateActionItems: true
+        }
+      }
+    }
+
+    if (dept && dept.taskConfig) {
+      try {
+        const parsed = JSON.parse(dept.taskConfig)
+        return { success: true, settings: { ...defaultConfig, ...parsed }, department: dept }
+      } catch (e) {
+        return { success: true, settings: defaultConfig, department: dept }
+      }
+    }
+
+    return { success: true, settings: defaultConfig, department: dept }
+  } catch (e: any) {
+    return { success: false, error: e.message, settings: null }
+  }
+}
+
+export async function saveDepartmentSettings(departmentCode: string = "KT&ĐBCL", settings: any) {
+  try {
+    const session = await auth()
+    const opScope = await getOperationalScope()
+    if (!session?.user || (!opScope.isManager && (session.user as any).role !== "ADMIN")) {
+      return { success: false, error: "Quyền truy cập bị từ chối" }
+    }
+
+    const dept = await prisma.department.findFirst({
+      where: {
+        OR: [
+          { code: departmentCode },
+          { name: departmentCode }
+        ]
+      }
+    })
+
+    if (!dept) {
+      return { success: false, error: "Không tìm thấy Ban/Bộ phận" }
+    }
+
+    await prisma.department.update({
+      where: { id: dept.id },
+      data: {
+        taskConfig: JSON.stringify(settings)
+      }
+    })
+
+    revalidatePath("/admin/tasks")
+    return { success: true }
+  } catch (e: any) {
+    return { success: false, error: e.message }
+  }
+}
+
+export async function exportTasksData(department: string = "KT&ĐBCL", academicYearId?: string) {
+  try {
+    const whereClause: any = {}
+    if (department && department !== "ALL") {
+      whereClause.OR = [
+        { department },
+        { assignedToRole: department }
+      ]
+    }
+    if (academicYearId && academicYearId !== "ALL") {
+      whereClause.academicYearId = academicYearId
+    }
+
+    const tasks = await prisma.workTask.findMany({
+      where: whereClause,
+      include: {
+        assignedToUser: { select: { fullName: true, email: true } },
+        assignedBy: { select: { fullName: true } },
+        taskGroup: { select: { name: true } },
+        comments: { select: { id: true, commentType: true, content: true, actionStatus: true } }
+      },
+      orderBy: { createdAt: "desc" }
+    })
+
+    const PROGRESS_MAP: Record<string, string> = {
+      "PENDING": "Chưa thực hiện",
+      "IN_PROGRESS": "Đang thực hiện",
+      "COMPLETED": "Hoàn thành",
+      "OVERDUE": "Trễ hạn"
+    }
+
+    const ACCEPTANCE_MAP: Record<string, string> = {
+      "WAITING_CONFIRMATION": "Chờ xác nhận",
+      "ACCEPTED": "Đã nhận việc",
+      "REJECTED": "Từ chối/Phản hồi lại"
+    }
+
+    const rows = tasks.map((t, index) => {
+      const blockers = t.comments.filter(c => c.commentType === "BLOCKER")
+      const unresolvedBlockers = blockers.filter(b => b.actionStatus !== "RESOLVED")
+
+      return {
+        "STT": index + 1,
+        "Nhóm Chuyên Môn": t.taskGroup?.name || "Toàn Ban",
+        "Danh Mục": t.category,
+        "Tiêu Đề Công Việc": t.title,
+        "Mô Tả": t.description || "",
+        "Mức Độ Ưu Tiên": t.priority === "URGENT" ? "Khẩn cấp" : t.priority === "HIGH" ? "Cao" : "Bình thường",
+        "Người Phụ Trách": t.assignedToUser?.fullName || t.assignedToRole,
+        "Người Giao Việc": t.assignedBy?.fullName || "Ban Điều Hành",
+        "Người Phối Hợp": t.collaborators || "",
+        "Ngày Bắt Đầu": new Date(t.startDate).toLocaleDateString("vi-VN"),
+        "Hạn Chót": new Date(t.endDate).toLocaleDateString("vi-VN"),
+        "Tiến Độ": PROGRESS_MAP[t.progress] || t.progress,
+        "Xác Nhận Nhận Việc": ACCEPTANCE_MAP[t.acceptanceStatus] || t.acceptanceStatus,
+        "Vướng Mắc Tồn Đọng": unresolvedBlockers.length > 0 ? `${unresolvedBlockers.length} vướng mắc chưa giải quyết` : "Không có"
+      }
+    })
+
+    return { success: true, rows }
+  } catch (e: any) {
+    return { success: false, rows: [], error: e.message }
   }
 }

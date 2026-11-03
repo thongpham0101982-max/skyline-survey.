@@ -1,0 +1,9 @@
+{
+  "batchCode": "IMP_NL_MTF8P4G4",
+  "archivedAt": "2026-10-20T08:57:11.989Z",
+  "totalRows": 91978,
+  "archiveFilename": "staging_competency_assessment_IMP_NL_MTF8P4G4.json.gz",
+  "archiveSizeBytes": 4553908,
+  "sha256": "bc68d2bd9b63f293835637a0683d28bd8012527e4f294fdb7448aaadb993d4dd",
+  "note": "Staging rows safely archived after successful commit to StudentCompetencyAssessment."
+}

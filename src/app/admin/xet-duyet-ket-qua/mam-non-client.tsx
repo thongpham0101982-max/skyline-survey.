@@ -540,7 +540,7 @@ export function XetDuyetMamNonClient({ academicYears, campuses, giaoVuCSUsers, g
     const activePeriodName = periods.find((p: any) => p.id === cPeriodId)?.name || "Kỳ khảo sát";
 
     setRecipientEmail([campusEmails.giaovu, campusEmails.gdcs, campusEmails.bghmn, campusEmails.tuyensinh].filter(Boolean).join(", "));
-    setCcEmail("bankhaothi@skylineschool.edu.vn");
+    setCcEmail("ktdbcl@skylineschool.edu.vn");
     setEmailSubject("[Thư chúc mừng] Kết quả Khảo sát đầu vào Mầm non - Kỳ: " + activePeriodName + " - Đợt: " + activeBatchName);
     setEmailStudents(eligible);
     setEmailResult(null);
@@ -747,7 +747,7 @@ export function XetDuyetMamNonClient({ academicYears, campuses, giaoVuCSUsers, g
     };
     
     const initialEmailsSet = new Set();
-    const userEmail = currentUser?.email || "bankhaothi@skylineschool.edu.vn";
+    const userEmail = currentUser?.email || "ktdbcl@skylineschool.edu.vn";
     userEmail.split(',').map(e => e.trim()).filter(Boolean).forEach(e => initialEmailsSet.add(e));
     
     targetCampuses.forEach(cs => {
@@ -1828,7 +1828,7 @@ export function XetDuyetMamNonClient({ academicYears, campuses, giaoVuCSUsers, g
   const campusEmails = useMemo(() => {
     if (!selectedCampusObj) {
       return {
-        tuyensinh: "bankhaothi@skylineschool.edu.vn",
+        tuyensinh: "ktdbcl@skylineschool.edu.vn",
         giaovu: "giaovu.cs3@skylineschool.edu.vn",
         gdcs: "gdcs.cs3@skylineschool.edu.vn",
         bghmn: "bghmn.cs3@skylineschool.edu.vn"
@@ -7025,7 +7025,7 @@ Trân trọng kính mời Quý phụ huynh và các em học sinh!`;
                       { label: "GĐCS (" + campusLabel + ")", email: campusEmails.gdcs },
                       { label: "BGH MN (" + campusLabel + ")", email: campusEmails.bghmn },
                       { label: "Tư vấn (" + campusLabel + ")", email: campusEmails.tuyensinh },
-                      { label: "Khảo thí", email: "bankhaothi@skylineschool.edu.vn" },
+                      { label: "Khảo thí", email: "ktdbcl@skylineschool.edu.vn" },
                     ].map(p => {
                       const isActive = recipientEmail.includes(p.email);
                       return (
@@ -7058,7 +7058,7 @@ Trân trọng kính mời Quý phụ huynh và các em học sinh!`;
                   <div className="flex flex-wrap gap-1 mt-2">
                     <span className="text-[10px] text-slate-400 font-bold uppercase mr-1 mt-1">Gợi ý CC:</span>
                     {[
-                      { label: "Khảo thí", email: "bankhaothi@skylineschool.edu.vn" },
+                      { label: "Khảo thí", email: "ktdbcl@skylineschool.edu.vn" },
                       { label: "Giáo vụ (" + campusLabel + ")", email: campusEmails.giaovu },
                       { label: "GĐCS (" + campusLabel + ")", email: campusEmails.gdcs },
                       { label: "BGH MN (" + campusLabel + ")", email: campusEmails.bghmn },

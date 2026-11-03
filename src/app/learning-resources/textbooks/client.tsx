@@ -216,6 +216,13 @@ export function TextbookLibraryClient({
 
         {/* Action Button */}
         <div className="flex items-center gap-2">
+          <a
+            href="/learning-resources/nameplates"
+            className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-xl text-xs font-bold bg-purple-50 text-purple-800 border border-purple-200 hover:bg-purple-100 transition-all shadow-2xs"
+          >
+            <Sparkles className="w-3.5 h-3.5 text-purple-600" />
+            In bảng tên Họp PHHS
+          </a>
           {isAdmin && (
             <Button
               onClick={() => setUploadModalOpen(true)}

@@ -85,6 +85,7 @@ function ThongKeBaoCaoInner({ academicYears, activeYearId, classes, subjects, ca
     if (!selectedYearId) return
     try {
       const res = await fetch(`/api/admin/ktdbcl/gradebook-unlock-requests?academicYearId=${selectedYearId}&status=PENDING`)
+      if (!res.ok) return
       const data = await res.json()
       if (data.success) {
         setPendingUnlockCount(data.pendingCount || 0)
@@ -100,7 +101,8 @@ function ThongKeBaoCaoInner({ academicYears, activeYearId, classes, subjects, ca
   const fetchConfigs = async () => {
     if (!selectedYearId) return
     try {
-      const res = await fetch(`/api/admin/ktdbcl/subject-grade-config?academicYearId=${selectedYearId}`)
+      const res = await fetch(`/api/admin/ktdbcl/grade-configs?academicYearId=${selectedYearId}`)
+      if (!res.ok) return
       const data = await res.json()
       if (data.success) {
         setSavedConfigs(data.configs || [])

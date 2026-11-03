@@ -78,8 +78,6 @@ export default function DeadlineCountdownBanner({
     return () => clearInterval(timer);
   }, [deadlineDate]);
 
-  if (!deadlineDate) return null;
-
   // Determine urgency tier
   // > 48h: Safe (Emerald)
   // 24h - 48h: Warning (Amber)
@@ -127,6 +125,8 @@ export default function DeadlineCountdownBanner({
       filterBtn: "bg-emerald-100 hover:bg-emerald-200 text-emerald-800 border-emerald-300"
     };
   }, [timeLeft.isExpired, hoursLeft]);
+
+  if (!deadlineDate) return null;
 
   return (
     <div

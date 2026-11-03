@@ -3,7 +3,7 @@
 import React, { useState } from "react"
 import Link from "next/link"
 import { usePathname } from "next/navigation"
-import { Home, ClipboardList, Compass, GraduationCap, KeyRound, Award, MessageSquare, QrCode } from "lucide-react"
+import { Home, ClipboardList, Compass, GraduationCap, KeyRound, Award, MessageSquare, QrCode, Bell } from "lucide-react"
 import { ChangePasswordModal } from "@/components/ChangePasswordModal"
 
 export function ParentMobileBottomNav() {
@@ -11,6 +11,7 @@ export function ParentMobileBottomNav() {
   const [isPasswordModalOpen, setIsPasswordModalOpen] = useState(false)
 
   const isHome = pathname === "/parent"
+  const isNotifications = pathname.includes("/parent/thong-bao")
   const isMeetings = pathname.includes("/parent/hop-phu-huynh")
   const isSurveys = pathname.includes("/parent/surveys")
   const isAdvisory = pathname.includes("/parent/children/advisory")
@@ -31,6 +32,18 @@ export function ParentMobileBottomNav() {
             <Home className="w-4 h-4" />
           </div>
           <span>Tổng quan</span>
+        </Link>
+
+        <Link
+          href="/parent/thong-bao"
+          className={`flex flex-col items-center gap-1 text-[10px] transition-colors ${
+            isNotifications ? "text-[#5B2D8B] font-bold" : "text-slate-500 hover:text-[#5B2D8B] font-medium"
+          }`}
+        >
+          <div className={`p-1.5 rounded-xl transition-all ${isNotifications ? "bg-purple-100 text-[#5B2D8B] shadow-xs" : ""}`}>
+            <Bell className="w-4 h-4" />
+          </div>
+          <span>Thông báo</span>
         </Link>
 
         <Link

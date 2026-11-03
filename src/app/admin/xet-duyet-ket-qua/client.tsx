@@ -52,11 +52,19 @@ export function XetDuyetKetQuaClient({
   const isGdcsRole = ["GDCS", "GĐCS", "GD_CS", "GĐ_CS", "GIAO_VU_CS"].includes(userRole)
   
   // Kiểm tra quyền truy cập chi tiết
-  const hasK12 = isAdmin || rolePermissions.some(p => p.canRead && (p.module === "INPUT_ASSESSMENTS_REPORTS" || p.module === "XET_DUYET_KET_QUA"))
+  const hasK12 = isAdmin || isGdcsRole || rolePermissions.some(p => p.canRead && (
+    p.module === "INPUT_ASSESSMENTS_REPORTS" ||
+    p.module === "XET_DUYET_K12" ||
+    p.module === "XET_DUYET_KET_QUA"
+  ))
   const hasPreschool = isAdmin || 
                         isBghPreschoolRole ||
                         isGdcsRole ||
-                        rolePermissions.some(p => p.canRead && (p.module === "XET_DUYET_MAM_NON" || p.module === "XET_DUYET_KET_QUA" || p.module === "PRESCHOOL_INPUT_ASSESSMENTS"))
+                        rolePermissions.some(p => p.canRead && (
+                          p.module === "XET_DUYET_MAM_NON" ||
+                          p.module === "XET_DUYET_KET_QUA" ||
+                          p.module === "PRESCHOOL_INPUT_ASSESSMENTS"
+                        ))
 
   const defaultTab = tabParam === "preschool" && hasPreschool
     ? "preschool"
@@ -96,9 +104,9 @@ export function XetDuyetKetQuaClient({
   }
 
   return (
-    <div className="space-y-6 max-w-[1440px] mx-auto">
+    <div className="space-y-3.5 max-w-[1440px] mx-auto">
       {/* UNIFIED PAGE HEADER */}
-      <div className="bg-white border border-slate-200 shadow-sm rounded-2xl px-6 py-4 flex flex-col md:flex-row md:items-center justify-between gap-4 no-print">
+      <div className="bg-white border border-slate-200 shadow-2xs rounded-2xl px-5 py-3 flex flex-col md:flex-row md:items-center justify-between gap-3 no-print">
         <div className="space-y-0.5">
           <h1 className="text-base font-black text-slate-800 tracking-tight">
             {activeTab === "k12" ? "Xét duyệt K-12" : "Xét duyệt Mầm non"}
@@ -112,28 +120,28 @@ export function XetDuyetKetQuaClient({
 
         {/* Tab Selector */}
         {hasK12 && hasPreschool && (
-          <div className="flex p-1 bg-slate-100 rounded-xl gap-1 shrink-0">
+          <div className="flex p-1 bg-slate-100/90 rounded-xl gap-1 shrink-0 border border-slate-200/60 shadow-2xs">
             <button
               onClick={() => handleTabChange("k12")}
-              className={`flex items-center gap-2 px-5 py-2.5 rounded-lg text-xs font-bold transition-all duration-200 cursor-pointer ${
+              className={`flex items-center gap-1.5 px-4 py-2 rounded-lg text-xs font-bold transition-all duration-200 cursor-pointer ${
                 activeTab === "k12"
-                  ? "bg-[#48BFE3] text-white shadow-md shadow-teal-500/10"
-                  : "text-slate-600 hover:text-slate-800 hover:bg-slate-200/40"
+                  ? "bg-[#007A87] text-white shadow-xs"
+                  : "text-slate-600 hover:text-slate-800 hover:bg-slate-200/50"
               }`}
             >
               <GraduationCap className="w-4 h-4" />
-              Xét duyệt K-12
+              <span>Xét duyệt K-12</span>
             </button>
             <button
               onClick={() => handleTabChange("preschool")}
-              className={`flex items-center gap-2 px-5 py-2.5 rounded-lg text-xs font-bold transition-all duration-200 cursor-pointer ${
+              className={`flex items-center gap-1.5 px-4 py-2 rounded-lg text-xs font-bold transition-all duration-200 cursor-pointer ${
                 activeTab === "preschool"
-                  ? "bg-[#48BFE3] text-white shadow-md shadow-teal-500/10"
-                  : "text-slate-600 hover:text-slate-800 hover:bg-slate-200/40"
+                  ? "bg-[#007A87] text-white shadow-xs"
+                  : "text-slate-600 hover:text-slate-800 hover:bg-slate-200/50"
               }`}
             >
               <Baby className="w-4 h-4" />
-              Xét duyệt Mầm non
+              <span>Xét duyệt Mầm non</span>
             </button>
           </div>
         )}

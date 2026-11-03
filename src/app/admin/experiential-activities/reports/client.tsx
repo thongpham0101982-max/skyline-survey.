@@ -9,7 +9,7 @@ import {
   Building2, GraduationCap, Download, CheckCircle2, 
   Clock, AlertCircle, Sparkles, Filter, ChevronRight, Activity,
   Search, Eye, BookOpen, UserCheck, CheckCircle, AlertTriangle,
-  RotateCcw, X
+  RotateCcw, X, Printer
 } from 'lucide-react';
 import toast from 'react-hot-toast';
 import * as XLSX from 'xlsx';
@@ -178,6 +178,36 @@ export function ExperientialReportsClient(props?: { academicYears?: any[]; activ
     }
   };
 
+  const handleExportGvcnTracking = () => {
+    let url = `/api/admin/experiential-activities/export-gvcn-tracking?format=xlsx`;
+    if (selectedYearId) url += `&academicYearId=${selectedYearId}`;
+    if (selectedCampusId !== 'ALL') url += `&campusId=${selectedCampusId}`;
+    toast.success('Đang tạo và tải file Excel theo dõi kế hoạch theo GVCN (3 Sheet)...');
+    window.open(url, '_blank');
+  };
+
+  const handleExportGvcnPdf = () => {
+    const curYear = academicYears.find((y: any) => y.id === selectedYearId);
+    const yr = curYear?.title || curYear?.name || "2026-2027";
+    let url = `/api/admin/experiential-activities/export-gvcn-pdf?academicYear=${encodeURIComponent(yr)}`;
+    if (selectedCampusId && selectedCampusId !== 'ALL') url += `&campusId=${encodeURIComponent(selectedCampusId)}`;
+    if (selectedGrade && selectedGrade !== 'ALL') url += `&grade=${encodeURIComponent(selectedGrade)}`;
+    if (selectedClassId && selectedClassId !== 'ALL') url += `&classId=${encodeURIComponent(selectedClassId)}`;
+    window.open(url, '_blank');
+  };
+
+  const handleExportMonthlyPdf = (overrideMonth?: string) => {
+    const curYear = academicYears.find((y: any) => y.id === selectedYearId);
+    const yr = curYear?.title || curYear?.name || "2026-2027";
+    const targetMonth = overrideMonth !== undefined ? overrideMonth : selectedMonth;
+    let url = `/api/admin/experiential-activities/export-monthly-pdf?academicYear=${encodeURIComponent(yr)}`;
+    if (targetMonth && targetMonth !== 'ALL') url += `&month=${encodeURIComponent(targetMonth)}`;
+    if (selectedCampusId && selectedCampusId !== 'ALL') url += `&campusId=${encodeURIComponent(selectedCampusId)}`;
+    if (selectedGrade && selectedGrade !== 'ALL') url += `&grade=${encodeURIComponent(selectedGrade)}`;
+    if (selectedEvalStatus && selectedEvalStatus !== 'ALL') url += `&evalStatus=${encodeURIComponent(selectedEvalStatus)}`;
+    window.open(url, '_blank');
+  };
+
   const kpis = stats?.kpis || { 
     totalActivities: 0, 
     totalClassesAssigned: 0, 
@@ -270,10 +300,37 @@ export function ExperientialReportsClient(props?: { academicYears?: any[]; activ
               </div>
             </div>
 
-            <div className="flex items-center gap-2.5">
+            <div className="flex items-center gap-2.5 flex-wrap">
+              <button
+                onClick={() => handleExportMonthlyPdf()}
+                className="px-4 py-3 bg-indigo-50 hover:bg-indigo-100 border border-indigo-300 text-indigo-950 text-xs font-black rounded-2xl shadow-2xs transition-all flex items-center gap-2 cursor-pointer"
+                title="Xuất file PDF báo cáo các hoạt động trong tháng gắn theo lớp, GVCN phụ trách và tình trạng đánh giá (khổ A4)"
+              >
+                <Calendar className="w-4 h-4 text-indigo-600" />
+                <span>Xuất PDF {selectedMonth !== 'ALL' ? `Tháng ${selectedMonth}` : 'Theo Tháng'} (A4)</span>
+              </button>
+
+              <button
+                onClick={handleExportGvcnPdf}
+                className="px-4 py-3 bg-emerald-50 hover:bg-emerald-100 border border-emerald-300 text-emerald-950 text-xs font-black rounded-2xl shadow-2xs transition-all flex items-center gap-2 cursor-pointer"
+                title="Xuất file PDF bản theo dõi kế hoạch gán theo từng GVCN chuẩn A4 dọc (gồm tiến độ và danh sách học sinh chưa đánh giá)"
+              >
+                <Printer className="w-4 h-4 text-emerald-600" />
+                <span>Xuất PDF Theo GV (A4)</span>
+              </button>
+
+              <button
+                onClick={handleExportGvcnTracking}
+                className="px-4 py-3 bg-teal-50 hover:bg-teal-100 border border-teal-300 text-teal-900 text-xs font-black rounded-2xl shadow-2xs transition-all flex items-center gap-2 cursor-pointer"
+                title="Xuất file Excel theo dõi chi tiết từng GVCN: Số KH gán, tiến độ đánh giá HS và danh sách HS chưa đánh giá (3 Sheet)"
+              >
+                <Users className="w-4 h-4 text-[#00A19A]" />
+                <span>Theo Dõi Theo GVCN (Excel 3 Sheet)</span>
+              </button>
+
               <button
                 onClick={handleExportExcel}
-                className="px-5 py-3 bg-[#003B3A] hover:bg-[#002B2A] text-white text-xs font-black rounded-2xl shadow-md shadow-[#003B3A]/20 transition-all flex items-center gap-2"
+                className="px-5 py-3 bg-[#003B3A] hover:bg-[#002B2A] text-white text-xs font-black rounded-2xl shadow-md shadow-[#003B3A]/20 transition-all flex items-center gap-2 cursor-pointer"
               >
                 <Download className="w-4 h-4 text-emerald-300" />
                 <span>Xuất Excel Đầy Đủ</span>

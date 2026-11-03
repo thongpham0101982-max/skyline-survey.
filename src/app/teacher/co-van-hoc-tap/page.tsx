@@ -2,6 +2,13 @@
 
 import StudentSnapshotPopover from "@/components/advisory/StudentSnapshotPopover";
 import { AcademicComparisonWidget } from "@/components/advisory/AcademicComparisonWidget";
+import MultiLevelAdvisoryDashboard from "@/components/advisory/MultiLevelAdvisoryDashboard";
+import AiAdvisorModal, { AiModalMode } from "@/components/advisory/AiAdvisorModal";
+import TriPartyWorkflowBanner from "@/components/advisory/TriPartyWorkflowBanner";
+import TeacherTriPartyHub from "@/components/advisory/TeacherTriPartyHub";
+import SklPsychStatsDashboard from "@/components/advisory/SklPsychStatsDashboard";
+import AdvisoryJourneyTab, { TeacherStudentJourneyBar } from "@/components/advisory/AdvisoryJourneyTab";
+import type { TeacherAdvisoryTab } from "@/lib/advisory/advisory-journey-engine";
 
 export const dynamic = "force-dynamic"
 
@@ -41,7 +48,47 @@ export default function TeacherAdvisoryPage() {
   const [students, setStudents] = useState<any[]>([]); const [submittedStudentCodes, setSubmittedStudentCodes] = useState<string[]>([]); const [submissionFilter, setSubmissionFilter] = useState<"ALL" | "SUBMITTED" | "NOT_SUBMITTED">("ALL")
   const [selectedStudentId, setSelectedStudentId] = useState("")
   
-  const [activeTab, setActiveTab] = useState<"consultations" | "sos" | "tracking" | "rubric_eval" | "unlocks" | "requests">("tracking")
+  // AI Advisor Modal States
+  const [showAiModal, setShowAiModal] = useState(false)
+  const [aiModalMode, setAiModalMode] = useState<AiModalMode>("PROGRESS_ANALYSIS")
+  const [aiModalStudentId, setAiModalStudentId] = useState("")
+
+  const [activeTab, setActiveTab] = useState<"dashboard" | "journey" | "consultations" | "sos" | "tracking" | "rubric_eval" | "unlocks" | "requests" | "skl_psych">("dashboard")
+
+  useEffect(() => {
+    if (typeof window !== "undefined") {
+      const params = new URLSearchParams(window.location.search)
+      const tabParam = params.get("tab")
+      const stParam = params.get("studentId")
+      if (stParam) setSelectedStudentId(stParam)
+      if (tabParam === "journey" || tabParam === "tracking" || tabParam === "consultations" || tabParam === "rubric_eval" || tabParam === "unlocks" || tabParam === "sos" || tabParam === "requests" || tabParam === "skl_psych") {
+        setActiveTab(tabParam)
+      }
+    }
+  }, [])
+
+  const handleNavigateToJourneyAction = (studentId: string, targetTab: TeacherAdvisoryTab, actionMode?: string) => {
+    if (studentId) {
+      setSelectedStudentId(studentId)
+    }
+    setActiveTab(targetTab)
+    if (targetTab === "unlocks") {
+      loadClassUnlocks()
+    } else if (targetTab === "rubric_eval") {
+      loadClassTermEvaluations()
+    } else if (targetTab === "requests") {
+      loadClassAdjustmentRequests()
+    }
+    if (actionMode === "OPEN_CONSULTATION_MODAL" && studentId) {
+      setEditingConsultationId(null)
+      setConsultationForm((prev: any) => ({
+        ...prev,
+        studentId,
+        meetingDate: new Date().toISOString().split("T")[0]
+      }))
+      setShowConsultationModal(true)
+    }
+  }
   
   // 5. Goal Adjustment Requests State (Yêu cầu mở phiếu điều chỉnh)
   const [adjustmentRequests, setAdjustmentRequests] = useState<any[]>([])
@@ -100,14 +147,17 @@ export default function TeacherAdvisoryPage() {
   // 3. Consultation Log Modal States (Matching Excel)
   const [showConsultationModal, setShowConsultationModal] = useState(false)
   const [editingConsultationId, setEditingConsultationId] = useState<string | null>(null)
-  const [consultationForm, setConsultationForm] = useState({
+  const [consultationForm, setConsultationForm] = useState<any>({
     meetingDate: new Date().toISOString().split("T")[0],
     studentId: "",
     content: "",
     difficulties: "",
     nextActions: "",
     deadline: "",
-    notes: ""
+    notes: "",
+    privateAdvisorNotes: "",
+    shareWithParent: true,
+    sessionStatus: "COMPLETED"
   })
   const [consultationStudentGoals, setConsultationStudentGoals] = useState<any[]>([])
   const [loadingStudentGoals, setLoadingStudentGoals] = useState(false)
@@ -829,7 +879,11 @@ export default function TeacherAdvisoryPage() {
           difficulties: consultationForm.difficulties,
           nextActions: consultationForm.nextActions,
           deadline: consultationForm.deadline || undefined,
-          notes: consultationForm.notes
+          notes: consultationForm.notes,
+          parentSharedSummary: consultationForm.notes,
+          privateAdvisorNotes: consultationForm.privateAdvisorNotes || "",
+          shareWithParent: consultationForm.shareWithParent !== false,
+          sessionStatus: consultationForm.sessionStatus || "COMPLETED"
         })
       })
 
@@ -881,7 +935,10 @@ export default function TeacherAdvisoryPage() {
       difficulties: log.difficulties || "",
       nextActions: log.nextActions || "",
       deadline: log.deadline ? new Date(log.deadline).toISOString().split("T")[0] : "",
-      notes: log.notes || ""
+      notes: log.notes || "",
+      privateAdvisorNotes: log.privateAdvisorNotes || "",
+      shareWithParent: log.shareWithParent !== false,
+      sessionStatus: log.sessionStatus || "COMPLETED"
     })
     setShowConsultationModal(true)
   }
@@ -935,7 +992,23 @@ export default function TeacherAdvisoryPage() {
     <div className="max-w-7xl mx-auto p-4 sm:p-6 space-y-6 font-sans text-slate-800 pb-20">
       
       {/* Top Banner Header */}
-      <div className="bg-gradient-to-r from-[#003B3A] via-[#004D4A] to-[#48BFE3] rounded-3xl p-6 text-white shadow-xl space-y-3">
+      <div className="group/card relative overflow-hidden bg-gradient-to-r from-[#003B3A] via-[#004D4A] to-[#48BFE3] rounded-3xl p-6 text-white shadow-xl space-y-3">
+        {/* Ảnh minh họa trường học Sky-Line khớp khung phải & mờ dần */}
+        <div
+          className="hidden sm:block absolute top-0 right-0 bottom-0 sm:w-[54%] md:w-[48%] z-0 pointer-events-none select-none overflow-hidden"
+          style={{
+            WebkitMaskImage:
+              "linear-gradient(to right, transparent 0%, rgba(0,0,0,0.12) 15%, rgba(0,0,0,0.45) 40%, rgba(0,0,0,0.8) 75%, rgba(0,0,0,0.95) 100%)",
+            maskImage:
+              "linear-gradient(to right, transparent 0%, rgba(0,0,0,0.12) 15%, rgba(0,0,0,0.45) 40%, rgba(0,0,0,0.8) 75%, rgba(0,0,0,0.95) 100%)"
+          }}
+        >
+          <img
+            src="/images/skyline-campus-banner.png"
+            alt="Sky-Line Campus"
+            className="w-full h-full object-cover object-[center_65%] opacity-35 mix-blend-luminosity"
+          />
+        </div>
         <div className="flex flex-wrap items-center justify-between gap-3">
           <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full text-xs font-black bg-white/15 uppercase tracking-wider text-teal-200">
             <Compass className="w-4 h-4 text-teal-300" />
@@ -992,7 +1065,118 @@ export default function TeacherAdvisoryPage() {
         )}
 
         {/* Feature Navigation Tabs */}
-        <div className="flex flex-wrap items-center gap-2 pt-2 border-t border-white/15">
+        <div className="flex flex-wrap items-center gap-2 pt-2.5 border-t border-white/15">
+          <button
+            onClick={() => setActiveTab("dashboard")}
+            className={
+              activeTab === "dashboard" || activeTab === "journey"
+                ? "px-3.5 py-2 rounded-xl text-xs font-black flex items-center gap-2 transition-all bg-white text-[#003B3A] shadow-md cursor-pointer"
+                : "px-3.5 py-2 rounded-xl text-xs font-black flex items-center gap-2 transition-all bg-white/15 text-white hover:bg-white/25 cursor-pointer"
+            }
+          >
+            <Compass className="w-4 h-4 text-teal-600" />
+            <span>Tổng Quan Lớp & Việc Cần Làm</span>
+          </button>
+
+          <button
+            onClick={() => setActiveTab("skl_psych")}
+            className={
+              activeTab === "skl_psych"
+                ? "px-3.5 py-2 rounded-xl text-xs font-black flex items-center gap-2 transition-all bg-white text-[#5B2D8B] shadow-md cursor-pointer"
+                : "px-3.5 py-2 rounded-xl text-xs font-black flex items-center gap-2 transition-all bg-white/15 text-white hover:bg-white/25 cursor-pointer"
+            }
+          >
+            <Sparkles className="w-4 h-4 text-amber-300" />
+            <span>B1–B2 • Khám Phá & Hướng Nghiệp</span>
+          </button>
+
+          <button
+            onClick={() => setActiveTab("tracking")}
+            className={
+              activeTab === "tracking" || activeTab === "unlocks" || activeTab === "requests"
+                ? "px-3.5 py-2 rounded-xl text-xs font-black flex items-center gap-2 transition-all bg-white text-[#003B3A] shadow-md cursor-pointer"
+                : "px-3.5 py-2 rounded-xl text-xs font-black flex items-center gap-2 transition-all bg-white/15 text-white hover:bg-white/25 cursor-pointer"
+            }
+          >
+            <Target className="w-4 h-4 text-teal-500" />
+            <span>B3–B4 • Mục Tiêu SMART & Kế Hoạch</span>
+            {pendingAdjustmentCount > 0 && (
+              <span className="px-1.5 py-0.5 rounded-full bg-rose-500 text-white text-[10px] font-black">
+                {pendingAdjustmentCount}
+              </span>
+            )}
+          </button>
+
+          <button
+            onClick={() => setActiveTab("consultations")}
+            className={
+              activeTab === "consultations" || activeTab === "sos"
+                ? "px-3.5 py-2 rounded-xl text-xs font-black flex items-center gap-2 transition-all bg-white text-[#003B3A] shadow-md cursor-pointer"
+                : "px-3.5 py-2 rounded-xl text-xs font-black flex items-center gap-2 transition-all bg-white/15 text-white hover:bg-white/25 cursor-pointer"
+            }
+          >
+            <MessageSquare className="w-4 h-4 text-blue-500" />
+            <span>B5–B6 • Tư Vấn 1:1 & Phối Hợp</span>
+            {classConsultationStats.totalStudents > 0 && (
+              <span
+                className={`px-2 py-0.5 rounded-full text-[10px] font-black ${
+                  classConsultationStats.unconsultedCount === 0
+                    ? "bg-emerald-400 text-emerald-950"
+                    : activeTab === "consultations" || activeTab === "sos"
+                    ? "bg-teal-100 text-teal-900 border border-teal-200"
+                    : "bg-white/20 text-teal-200"
+                }`}
+              >
+                {classConsultationStats.consultedCount}/{classConsultationStats.totalStudents} HS
+              </span>
+            )}
+            {helpRequests.length > 0 && (
+              <span className="px-1.5 py-0.5 rounded-full bg-rose-500 text-white text-[10px] font-black">
+                SOS:{helpRequests.length}
+              </span>
+            )}
+          </button>
+
+          <button
+            onClick={() => {
+              setActiveTab("rubric_eval")
+              loadClassTermEvaluations()
+            }}
+            className={
+              activeTab === "rubric_eval"
+                ? "px-3.5 py-2 rounded-xl text-xs font-black flex items-center gap-2 transition-all bg-white text-[#003B3A] shadow-md cursor-pointer"
+                : "px-3.5 py-2 rounded-xl text-xs font-black flex items-center gap-2 transition-all bg-white/15 text-white hover:bg-white/25 cursor-pointer"
+            }
+          >
+            <Award className="w-4 h-4 text-amber-500" />
+            <span>B7–B8 • Đánh Giá Rubric & Công Bố</span>
+          </button>
+        </div>
+        <div className="hidden">
+          <button
+            onClick={() => setActiveTab("dashboard")}
+            className={
+              activeTab === "dashboard"
+                ? "px-4 py-2 rounded-xl text-xs font-black flex items-center gap-2 transition-all bg-white text-[#003B3A] shadow-md"
+                : "px-4 py-2 rounded-xl text-xs font-black flex items-center gap-2 transition-all bg-white/15 text-white hover:bg-white/25"
+            }
+          >
+            <Compass className="w-4 h-4 text-teal-600" />
+            <span>0. Tổng Quan & Đo Lường Đa Cấp</span>
+          </button>
+
+          <button
+            onClick={() => setActiveTab("journey")}
+            className={
+              activeTab === "journey"
+                ? "px-4 py-2 rounded-xl text-xs font-black flex items-center gap-2 transition-all bg-white text-[#003B3A] shadow-md ring-2 ring-teal-300"
+                : "px-4 py-2 rounded-xl text-xs font-black flex items-center gap-2 transition-all bg-teal-500/30 text-white border border-teal-300/40 hover:bg-teal-500/40"
+            }
+          >
+            <Layers className="w-4 h-4 text-teal-500" />
+            <span>Lộ Trình Cố Vấn (8 Giai Đoạn)</span>
+          </button>
+
           <button
             onClick={() => setActiveTab("tracking")}
             className={
@@ -1089,6 +1273,25 @@ export default function TeacherAdvisoryPage() {
               </span>
             )}
           </button>
+
+          <button
+            onClick={() => setActiveTab("skl_psych")}
+            className={
+              activeTab === "skl_psych"
+                ? "px-4 py-2 rounded-xl text-xs font-black flex items-center gap-2 transition-all bg-[#5B2D8B] text-white border border-purple-300/60 shadow-md"
+                : "px-4 py-2 rounded-xl text-xs font-black flex items-center gap-2 transition-all bg-white/15 text-white hover:bg-white/25"
+            }
+          >
+            <Sparkles className="w-4 h-4 text-amber-300" />
+            <span>7. Hướng Nghiệp • SKL_PSYCH (5 Bộ Công Cụ)</span>
+          </button>
+          <button className="hidden">
+            {pendingAdjustmentCount > 0 && (
+              <span className="px-1.5 py-0.5 rounded-full bg-rose-500 text-white text-[10px] font-black animate-pulse">
+                {pendingAdjustmentCount}
+              </span>
+            )}
+          </button>
         </div>
       </div>
 
@@ -1099,6 +1302,245 @@ export default function TeacherAdvisoryPage() {
         </div>
       )}
 
+      {/* TRUNG TÂM ĐIỀU PHỐI CỐ VẤN 3 BÊN (GV ⇄ HS ⇄ PHHS) */}
+      {/* THANH LỘ TRÌNH CỐ VẤN 8 BƯỚC TƯƠNG TÁC TRỰC TIẾP (PHHS STYLE) + SLIM NEXT BEST ACTION */}
+      {selectedClassId && activeTab !== "journey" && (
+        <TeacherStudentJourneyBar
+          academicYearId={academicYearId}
+          selectedClassId={selectedClassId}
+          selectedStudentId={selectedStudentId}
+          onNavigateAction={(stId, targetTab, actionMode) => {
+            handleNavigateToJourneyAction(stId, targetTab, actionMode)
+          }}
+          onOpenAiAdvisor={(stId) => {
+            setAiModalStudentId(stId)
+            setAiModalMode("PROGRESS_ANALYSIS")
+            setShowAiModal(true)
+          }}
+          onOpenFullJourney={() => setActiveTab("journey")}
+        />
+      )}
+
+      {/* SUB-NAVIGATION BAR THEO GIAI ĐOẠN LỘ TRÌNH */}
+      {(activeTab === "dashboard" || activeTab === "journey") && (
+        <div className="bg-white rounded-2xl p-2 border border-slate-200/90 shadow-2xs flex flex-wrap items-center justify-between gap-2">
+          <div className="flex flex-wrap items-center gap-1.5">
+            <button
+              type="button"
+              onClick={() => setActiveTab("dashboard")}
+              className={`px-3.5 py-1.5 rounded-xl text-xs font-black transition cursor-pointer flex items-center gap-1.5 ${
+                activeTab === "dashboard"
+                  ? "bg-[#003B3A] text-white shadow-2xs"
+                  : "text-slate-600 hover:bg-slate-100"
+              }`}
+            >
+              <Compass className="w-3.5 h-3.5" />
+              <span>Tổng quan Lớp & Cảnh báo sớm</span>
+            </button>
+            <button
+              type="button"
+              onClick={() => setActiveTab("journey")}
+              className={`px-3.5 py-1.5 rounded-xl text-xs font-black transition cursor-pointer flex items-center gap-1.5 ${
+                activeTab === "journey"
+                  ? "bg-[#003B3A] text-white shadow-2xs"
+                  : "text-slate-600 hover:bg-slate-100"
+              }`}
+            >
+              <Layers className="w-3.5 h-3.5" />
+              <span>Bảng Việc cần làm & Điều phối 8 Bước cả lớp</span>
+            </button>
+          </div>
+          {selectedStudentId && (
+            <button
+              type="button"
+              onClick={() =>
+                window.open(
+                  `/teacher/ho-so-hoc-sinh?studentId=${selectedStudentId}&academicYearId=${academicYearId}`,
+                  "_blank"
+                )
+              }
+              className="px-3 py-1.5 rounded-xl bg-teal-50 hover:bg-teal-100 text-teal-800 border border-teal-200 text-xs font-bold flex items-center gap-1.5 cursor-pointer"
+            >
+              <Eye className="w-3.5 h-3.5" />
+              <span>Mở Hồ sơ 360° (Bước 1)</span>
+            </button>
+          )}
+        </div>
+      )}
+
+      {(activeTab === "tracking" || activeTab === "unlocks" || activeTab === "requests") && (
+        <div className="bg-white rounded-2xl p-2 border border-slate-200/90 shadow-2xs flex flex-wrap items-center gap-1.5">
+          <button
+            type="button"
+            onClick={() => setActiveTab("tracking")}
+            className={`px-3.5 py-1.5 rounded-xl text-xs font-black transition cursor-pointer flex items-center gap-1.5 ${
+              activeTab === "tracking"
+                ? "bg-[#003B3A] text-white shadow-2xs"
+                : "text-slate-600 hover:bg-slate-100"
+            }`}
+          >
+            <TrendingUp className="w-3.5 h-3.5" />
+            <span>Bước 3: Phiếu Mục tiêu SMART & 4 Mốc kiểm tra</span>
+          </button>
+          <button
+            type="button"
+            onClick={() => {
+              setActiveTab("unlocks")
+              loadClassUnlocks()
+            }}
+            className={`px-3.5 py-1.5 rounded-xl text-xs font-black transition cursor-pointer flex items-center gap-1.5 ${
+              activeTab === "unlocks"
+                ? "bg-[#003B3A] text-white shadow-2xs"
+                : "text-slate-600 hover:bg-slate-100"
+            }`}
+          >
+            <Key className="w-3.5 h-3.5 text-amber-500" />
+            <span>Bước 4: Kế hoạch Hành động 7 ngày & Mở khóa (K9–12)</span>
+          </button>
+          <button
+            type="button"
+            onClick={() => {
+              setActiveTab("requests")
+              loadClassAdjustmentRequests()
+            }}
+            className={`px-3.5 py-1.5 rounded-xl text-xs font-black transition cursor-pointer flex items-center gap-1.5 ${
+              activeTab === "requests"
+                ? "bg-[#003B3A] text-white shadow-2xs"
+                : "text-slate-600 hover:bg-slate-100"
+            }`}
+          >
+            <Edit3 className="w-3.5 h-3.5 text-teal-600" />
+            <span>Bước 6: Yêu cầu Mở phiếu điều chỉnh ({pendingAdjustmentCount})</span>
+          </button>
+        </div>
+      )}
+
+      {(activeTab === "consultations" || activeTab === "sos") && (
+        <div className="bg-white rounded-2xl p-2 border border-slate-200/90 shadow-2xs flex flex-wrap items-center gap-1.5">
+          <button
+            type="button"
+            onClick={() => setActiveTab("consultations")}
+            className={`px-3.5 py-1.5 rounded-xl text-xs font-black transition cursor-pointer flex items-center gap-1.5 ${
+              activeTab === "consultations"
+                ? "bg-[#003B3A] text-white shadow-2xs"
+                : "text-slate-600 hover:bg-slate-100"
+            }`}
+          >
+            <MessageSquare className="w-3.5 h-3.5" />
+            <span>
+              Bước 5: Nhật ký Tư vấn 1:1 & Phối hợp 3 Bên ({classConsultationStats.consultedCount}/{classConsultationStats.totalStudents} HS)
+            </span>
+          </button>
+          <button
+            type="button"
+            onClick={() => setActiveTab("sos")}
+            className={`px-3.5 py-1.5 rounded-xl text-xs font-black transition cursor-pointer flex items-center gap-1.5 ${
+              activeTab === "sos"
+                ? "bg-rose-600 text-white shadow-2xs"
+                : "text-slate-600 hover:bg-slate-100"
+            }`}
+          >
+            <Heart className="w-3.5 h-3.5 text-rose-500 fill-rose-500" />
+            <span>Bước 6: Yêu cầu SOS & Hỗ trợ khẩn ({helpRequests.length})</span>
+          </button>
+        </div>
+      )}
+
+      {/* TRUNG TÂM ĐIỀU PHỐI CỐ VẤN 3 BÊN (CHỈ HIỂN THỊ TRONG B5–B6 TƯ VẤN & PHỐI HỢP) */}
+      {false && selectedStudentId && activeTab === "consultations" && (
+        <div className="space-y-4">
+          <TeacherTriPartyHub
+            studentId={selectedStudentId}
+            studentName={activeStudent?.studentName}
+            studentCode={activeStudent?.studentCode}
+            classId={selectedClassId}
+            academicYearId={academicYearId}
+            onRefreshParent={() => {
+              loadStudentTracking()
+              loadClassSubmissionStatus()
+            }}
+          />
+        </div>
+      )}
+
+      {false && selectedStudentId && activeTab !== "dashboard" && activeTab !== "journey" && activeTab !== "skl_psych" && (
+        <div className="space-y-4">
+          <TriPartyWorkflowBanner
+            goals={singleStudentTrackingRows}
+            consultations={consultations.filter((c: any) => c.studentId === selectedStudentId)}
+            termEvaluations={classTermEvaluations.filter((e: any) => e.studentId === selectedStudentId)}
+            viewerRole="TEACHER"
+          />
+          <TeacherTriPartyHub
+            studentId={selectedStudentId}
+            studentName={activeStudent?.studentName}
+            studentCode={activeStudent?.studentCode}
+            classId={selectedClassId}
+            academicYearId={academicYearId}
+            onRefreshParent={() => {
+              loadStudentTracking()
+              loadClassSubmissionStatus()
+            }}
+          />
+        </div>
+      )}
+
+      {/* ----------------- TAB 7: THỐNG KÊ HƯỚNG NGHIỆP • SKL_PSYCH (THEO LỚP GVCN PHÂN CÔNG) ----------------- */}
+      {activeTab === "skl_psych" && (
+        <SklPsychStatsDashboard
+          role="TEACHER"
+          academicYearId={academicYearId}
+          defaultClassId={selectedClassId || "ALL"}
+          classesList={classes.map((c: any) => ({
+            id: c.id,
+            className: c.className || c.name || "Lớp",
+            gradeLevel: c.grade
+          }))}
+        />
+      )}
+
+      {/* ----------------- TAB LỘ TRÌNH CỐ VẤN & ĐỒNG HÀNH HỌC SINH (8 GIAI ĐOẠN) ----------------- */}
+      {activeTab === "journey" && (
+        <AdvisoryJourneyTab
+          role="TEACHER"
+          academicYearId={academicYearId}
+          selectedClassId={selectedClassId}
+          classesList={classes.map((c: any) => ({
+            id: c.id,
+            className: c.className || c.name || "Lớp",
+            gradeLevel: c.grade
+          }))}
+          selectedStudentId={selectedStudentId}
+          onNavigateToStudentAction={handleNavigateToJourneyAction}
+          onOpenAiAdvisor={(stId, mode) => {
+            setAiModalStudentId(stId)
+            setAiModalMode((mode as AiModalMode) || "PROGRESS_ANALYSIS")
+            setShowAiModal(true)
+          }}
+        />
+      )}
+
+      {/* ----------------- TAB 0: TỔNG QUAN & ĐO LƯỜNG ĐA CẤP ----------------- */}
+      {activeTab === "dashboard" && (
+        <MultiLevelAdvisoryDashboard
+          hideJourneyCard={true}
+          selectedStudentId={selectedStudentId}
+          onNavigateJourneyAction={handleNavigateToJourneyAction}
+          onOpenAiAdvisor={(stId) => {
+            setAiModalStudentId(stId)
+            setAiModalMode("PROGRESS_ANALYSIS")
+            setShowAiModal(true)
+          }}
+          onOpenFullJourneyTab={() => setActiveTab("journey")}
+          academicYearId={academicYearId}
+          selectedClassId={selectedClassId}
+          classes={classes}
+          onOpenProfile360={(stId) => {
+            window.open(`/teacher/ho-so-hoc-sinh?studentId=${stId}&academicYearId=${academicYearId}`, "_blank")
+          }}
+        />
+      )}
+
       {/* ----------------- TAB 1: THEO DÕI MỤC TIÊU HIỂN THỊ THEO TỪNG HỌC SINH ----------------- */}
       {activeTab === "tracking" && (
         <div className="bg-white rounded-3xl p-6 border border-slate-200 shadow-xs space-y-6">
@@ -1107,7 +1549,7 @@ export default function TeacherAdvisoryPage() {
           <div className="bg-white rounded-3xl p-5 border-2 border-slate-200 shadow-sm space-y-4">
             
             {/* Executive Class Statistics Bar */}
-            <div className="bg-gradient-to-r from-[#003B3A] via-[#004D4A] to-[#48BFE3] rounded-2xl p-4 text-white shadow-md flex flex-col md:flex-row md:items-center justify-between gap-4">
+            <div className="bg-slate-50/90 border border-slate-200/80 rounded-2xl p-3.5 text-slate-800 flex flex-col md:flex-row md:items-center justify-between gap-3">
               <div className="flex items-center gap-3">
               <a
                 href={`/api/advisory/export-observation-book?classId=${selectedClassId}`}
@@ -1117,28 +1559,28 @@ export default function TeacherAdvisoryPage() {
               >
                 <span>📖</span> Xuất Sổ Quan Sát GVCN (PDF)
               </a>
-                <div className="w-12 h-12 rounded-xl bg-white/15 backdrop-blur-md flex items-center justify-center font-black text-lg text-teal-200 shrink-0">
+                <div className="w-10 h-10 rounded-xl bg-teal-50 border border-teal-200 flex items-center justify-center font-black text-base text-teal-700 shrink-0">
                   📊
                 </div>
                 <div>
-                  <h3 className="font-black text-sm text-white">
+                  <h3 className="font-black text-sm text-slate-800">
                     Thống Kê Tiến Độ Nộp Phiếu Mục Tiêu: {selectedClass?.className}
                   </h3>
-                  <p className="text-xs text-teal-100 font-medium mt-0.5">
-                    Tổng số: <strong>{students.length} học sinh</strong> • Đã nộp: <strong className="text-emerald-300">{submittedCount} HS</strong> ({submissionPercent}%)
+                  <p className="text-xs text-slate-500 font-medium mt-0.5">
+                    Tổng số: <strong>{students.length} học sinh</strong> • Đã nộp: <strong className="text-emerald-700">{submittedCount} HS</strong> ({submissionPercent}%)
                   </p>
                 </div>
               </div>
 
               {/* Stat badges */}
               <div className="flex items-center gap-2">
-                <div className="bg-white/15 backdrop-blur-md px-3.5 py-2 rounded-xl border border-white/20 text-center min-w-28">
-                  <span className="text-[10px] font-black uppercase text-teal-200 block">Đã Nộp Phiếu</span>
-                  <span className="text-sm font-black text-emerald-300">{submittedCount} / {students.length} HS</span>
+                <div className="bg-emerald-50/90 px-3 py-1.5 rounded-xl border border-emerald-200 text-center min-w-24">
+                  <span className="text-[10px] font-black uppercase text-emerald-700 block">Đã Nộp Phiếu</span>
+                  <span className="text-xs font-black text-emerald-800">{submittedCount} / {students.length} HS</span>
                 </div>
-                <div className="bg-white/15 backdrop-blur-md px-3.5 py-2 rounded-xl border border-white/20 text-center min-w-28">
-                  <span className="text-[10px] font-black uppercase text-amber-200 block">Chưa Nộp</span>
-                  <span className="text-sm font-black text-amber-300">{notSubmittedCount} HS</span>
+                <div className="bg-emerald-50/90 px-3 py-1.5 rounded-xl border border-emerald-200 text-center min-w-24">
+                  <span className="text-[10px] font-black uppercase text-amber-700 block">Chưa Nộp</span>
+                  <span className="text-xs font-black text-amber-800">{notSubmittedCount} HS</span>
                 </div>
               </div>
             </div>
@@ -1251,6 +1693,21 @@ export default function TeacherAdvisoryPage() {
 
 
 
+          {selectedStudentId && (
+            <TeacherTriPartyHub
+              stageMode="B3_B4"
+              studentId={selectedStudentId}
+              studentName={activeStudent?.studentName}
+              studentCode={activeStudent?.studentCode}
+              classId={selectedClassId}
+              academicYearId={academicYearId}
+              onRefreshParent={() => {
+                loadStudentTracking()
+                loadClassSubmissionStatus()
+              }}
+            />
+          )}
+
           <div className="flex flex-wrap items-center justify-between gap-3 border-b border-slate-100 pb-4 pt-2">
             <div>
               <h3 className="text-base font-black text-[#003B3A] flex items-center gap-2">
@@ -1285,6 +1742,26 @@ export default function TeacherAdvisoryPage() {
                   </button>
                 ))}
               </div>
+
+              {/* AI Gợi ý mục tiêu SMART */}
+              <button
+                type="button"
+                onClick={() => {
+                  const targetId = selectedStudentId || activeStudent?.id
+                  if (!targetId) {
+                    alert("Vui lòng chọn một học sinh trong danh sách để AI gợi ý mục tiêu SMART.")
+                    return
+                  }
+                  setAiModalStudentId(targetId)
+                  setAiModalMode("SMART_GOALS")
+                  setShowAiModal(true)
+                }}
+                className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-gradient-to-r from-teal-600 to-emerald-600 hover:from-teal-700 hover:to-emerald-700 text-white text-xs font-black shadow-xs transition-all cursor-pointer"
+                title="Sky-Line AI Advisor: Gợi ý mục tiêu SMART phù hợp xuất phát điểm"
+              >
+                <Sparkles className="w-3.5 h-3.5 text-amber-300 animate-pulse" />
+                <span>AI Gợi ý mục tiêu SMART</span>
+              </button>
             </div>
           </div>
 
@@ -2107,7 +2584,7 @@ export default function TeacherAdvisoryPage() {
             </div>
 
             {/* 1. KPI BANNER ĐO LƯỜNG KẾT QUẢ THEO DÕI THEO TRỌNG SỐ */}
-            <div className="bg-gradient-to-r from-[#003B3A] via-[#004D4A] to-teal-900 rounded-3xl p-6 text-white shadow-lg space-y-4">
+            <div className="bg-slate-900 rounded-2xl p-5 text-white shadow-sm space-y-4 border border-slate-800">
               <div className="flex flex-wrap items-center justify-between gap-4 border-b border-white/15 pb-4">
                 <div>
                   <div className="flex items-center gap-2">
@@ -2386,6 +2863,26 @@ export default function TeacherAdvisoryPage() {
                   <span className="px-3 py-1 rounded-xl bg-teal-100 text-teal-900 font-black text-xs border border-teal-300">
                     {evalTerm === "HK1" ? "Học kỳ I" : "Học kỳ II"}
                   </span>
+
+                  {/* AI Nhận xét tiến bộ */}
+                  <button
+                    type="button"
+                    onClick={() => {
+                      const targetId = selectedStudentId || activeStudent?.id
+                      if (!targetId) {
+                        alert("Vui lòng chọn học sinh để AI nhận xét tiến bộ.")
+                        return
+                      }
+                      setAiModalStudentId(targetId)
+                      setAiModalMode("TERM_EVALUATION")
+                      setShowAiModal(true)
+                    }}
+                    className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-gradient-to-r from-teal-600 to-emerald-600 hover:from-teal-700 hover:to-emerald-700 text-white text-xs font-black shadow-xs transition-all cursor-pointer ml-1.5"
+                    title="Sky-Line AI Advisor: Dự thảo nhận xét tiến bộ học kỳ theo rubric"
+                  >
+                    <Sparkles className="w-3.5 h-3.5 text-amber-300 animate-pulse" />
+                    <span>AI Nhận xét tiến bộ</span>
+                  </button>
                 </div>
               </div>
 
@@ -3246,6 +3743,21 @@ export default function TeacherAdvisoryPage() {
             </div>
           )}
         </div>
+      )}
+
+      {selectedStudentId && activeTab === "consultations" && (
+        <TeacherTriPartyHub
+          stageMode="B5_B6"
+          studentId={selectedStudentId}
+          studentName={activeStudent?.studentName}
+          studentCode={activeStudent?.studentCode}
+          classId={selectedClassId}
+          academicYearId={academicYearId}
+          onRefreshParent={() => {
+            loadStudentTracking()
+            loadClassSubmissionStatus()
+          }}
+        />
       )}
 
       {/* ----------------- TAB 4: YÊU CẦU HỖ TRỢ KHẨN CẤP TỪ HỌC SINH (SOS) ----------------- */}
@@ -4281,8 +4793,26 @@ export default function TeacherAdvisoryPage() {
                 </div>
 
                 {/* Nội dung trao đổi */}
-                <div className="sm:col-span-2">
-                  <label className="block mb-1 font-bold text-slate-800">💬 Nội dung trao đổi (*):</label>
+                <div className="sm:col-span-2 space-y-1.5">
+                  <div className="flex items-center justify-between">
+                    <label className="block font-bold text-slate-800">💬 Nội dung trao đổi (*):</label>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        if (!consultationForm.studentId) {
+                          alert("Vui lòng chọn học sinh trước khi gọi gợi ý AI.")
+                          return
+                        }
+                        setAiModalStudentId(consultationForm.studentId)
+                        setAiModalMode("CONSULTATION_TOPICS")
+                        setShowAiModal(true)
+                      }}
+                      className="px-2.5 py-1 rounded-lg bg-gradient-to-r from-teal-600 to-indigo-600 hover:from-teal-700 hover:to-indigo-700 text-white text-[11px] font-black shadow-2xs transition-all cursor-pointer flex items-center gap-1.5"
+                    >
+                      <Sparkles className="w-3 h-3 text-amber-300 animate-pulse" />
+                      <span>AI Gợi ý nội dung trao đổi</span>
+                    </button>
+                  </div>
                   <textarea
                     rows={2}
                     value={consultationForm.content}
@@ -4327,15 +4857,39 @@ export default function TeacherAdvisoryPage() {
                   />
                 </div>
 
-                {/* Ghi chú */}
+                {/* Ghi chú chia sẻ Phụ huynh & Ghi chú chuyên môn riêng của CVHT */}
                 <div>
-                  <label className="block mb-1 font-bold text-slate-800">📝 Ghi chú:</label>
+                  <div className="flex items-center justify-between mb-1">
+                    <label className="font-bold text-slate-800">👨‍👩‍👧 Lời dặn gửi Phụ huynh:</label>
+                    <label className="inline-flex items-center gap-1 text-[11px] font-black text-teal-800 cursor-pointer">
+                      <input
+                        type="checkbox"
+                        checked={consultationForm.shareWithParent !== false}
+                        onChange={(e) => setConsultationForm({ ...consultationForm, shareWithParent: e.target.checked })}
+                        className="w-3.5 h-3.5 accent-teal-700 rounded"
+                      />
+                      <span>{consultationForm.shareWithParent !== false ? "Được phép chia sẻ PHHS" : "Không chia sẻ PHHS"}</span>
+                    </label>
+                  </div>
                   <input
                     type="text"
                     value={consultationForm.notes}
                     onChange={(e) => setConsultationForm({ ...consultationForm, notes: e.target.value })}
-                    placeholder="Nhập ghi chú bổ sung..."
+                    placeholder="Nhập nội dung khuyến nghị phối hợp gửi tới PHHS..."
                     className="w-full p-2.5 rounded-xl border border-slate-200 font-medium text-xs focus:border-teal-500 outline-none transition-colors"
+                  />
+                </div>
+
+                <div className="sm:col-span-2 p-3 rounded-2xl bg-amber-50/70 border border-amber-200 space-y-1.5">
+                  <label className="block font-black text-amber-950 text-xs">
+                    🔒 Ghi chú chuyên môn riêng của CVHT (Private Advisory Notes — Tuyệt đối không gửi PHHS & HS):
+                  </label>
+                  <textarea
+                    rows={2}
+                    value={consultationForm.privateAdvisorNotes || ""}
+                    onChange={(e) => setConsultationForm({ ...consultationForm, privateAdvisorNotes: e.target.value })}
+                    placeholder="Ghi chú nội bộ dành riêng cho Cố vấn học tập (đánh giá sâu, lưu ý tâm lý/gia đình)..."
+                    className="w-full p-2.5 rounded-xl bg-white border border-amber-200 font-medium text-xs focus:border-amber-500 outline-none transition-colors"
                   />
                 </div>
 
@@ -4456,6 +5010,49 @@ export default function TeacherAdvisoryPage() {
             </div>
           </div>
         </div>
+      )}
+
+      {/* ----------------- SKY-LINE AI ADVISOR MODAL ----------------- */}
+      {showAiModal && aiModalStudentId && (
+        <AiAdvisorModal
+          isOpen={showAiModal}
+          onClose={() => setShowAiModal(false)}
+          studentId={aiModalStudentId}
+          academicYearId={academicYearId}
+          studentName={students.find(s => s.id === aiModalStudentId)?.studentName}
+          initialMode={aiModalMode}
+          onApplyQuestion={(q) => {
+            setConsultationForm(prev => ({
+              ...prev,
+              content: prev.content ? `${prev.content}\n- ${q}` : `- ${q}`
+            }))
+            setShowAiModal(false)
+            setShowConsultationModal(true)
+          }}
+          onApplyAction={(actText, deadlineDays) => {
+            const dl = new Date()
+            dl.setDate(dl.getDate() + (deadlineDays || 7))
+            setConsultationForm(prev => ({
+              ...prev,
+              nextActions: prev.nextActions ? `${prev.nextActions}\n- ${actText}` : `- ${actText}`,
+              deadline: dl.toISOString().split("T")[0]
+            }))
+            setShowAiModal(false)
+            setShowConsultationModal(true)
+          }}
+          onApplyRubricComment={(comment, scores) => {
+            setRubricForm(prev => ({
+              ...prev,
+              recommendations: comment,
+              ...(scores ? {
+                goalCompletionLevel: scores.goalCompletionLevel || prev.goalCompletionLevel,
+                initiativeLevel: scores.initiativeLevel || prev.initiativeLevel,
+                participationAttitude: scores.participationAttitude || prev.participationAttitude
+              } : {})
+            }))
+            setShowAiModal(false)
+          }}
+        />
       )}
     </div>
   )
