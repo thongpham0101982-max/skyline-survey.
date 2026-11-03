@@ -2132,7 +2132,7 @@ export function StudentInfoClient({
   }, [importPeriodId, activeImportBatches]);
 
   return (
-    <div className="space-y-8">
+    <div className="space-y-4">
       
       {/* Toast Notification */}
       {notification && (
@@ -2147,26 +2147,26 @@ export function StudentInfoClient({
       )}
 
       {/* Sky-Line Official Brand Header Banner */}
-      <div className="bg-gradient-to-r from-[#003B3A] via-[#005854] to-[#00736E] rounded-3xl p-6 sm:p-7 text-white shadow-xl relative overflow-hidden">
+      <div className="bg-gradient-to-r from-[#003B3A] via-[#005854] to-[#00736E] rounded-3xl p-5 sm:p-6 text-white shadow-lg relative overflow-hidden">
         {/* Subtle decorative background watermark */}
         <div className="absolute right-0 top-0 bottom-0 w-80 opacity-10 pointer-events-none flex items-center justify-end pr-8">
           <GraduationCap className="w-64 h-64 text-white -mr-10 -mt-10" />
         </div>
         
-        <div className="relative z-10 flex flex-col lg:flex-row lg:items-center justify-between gap-6">
+        <div className="relative z-10 flex flex-col lg:flex-row lg:items-center justify-between gap-4">
           <div>
-            <div className="flex flex-wrap items-center gap-2 mb-2">
-              <span className="text-[10.5px] font-black uppercase tracking-widest bg-white/15 text-teal-200 px-3 py-1 rounded-full border border-white/20 backdrop-blur-md">
+            <div className="flex flex-wrap items-center gap-2 mb-1.5">
+              <span className="text-[10px] font-black uppercase tracking-widest bg-white/15 text-teal-200 px-2.5 py-0.5 rounded-full border border-white/20 backdrop-blur-md">
                 Sky-Line Education System • Khảo sát đầu vào
               </span>
               <span className="text-xs font-semibold text-teal-100/90">
                 Năm học: <strong className="text-white">{activeYearName || "Hiện tại"}</strong>
               </span>
             </div>
-            <h1 className="text-2xl sm:text-3xl font-black text-white tracking-tight">
+            <h1 className="text-xl sm:text-2xl font-black text-white tracking-tight">
               {pageMode === "ket-qua" ? "Kết quả khảo sát" : "Danh sách Khảo sát"}
             </h1>
-            <p className="text-white/80 text-xs sm:text-sm font-medium mt-1.5 max-w-2xl leading-relaxed">
+            <p className="text-white/80 text-xs font-medium mt-1 max-w-2xl leading-relaxed">
               {pageMode === "ket-qua"
                 ? "Quản lý kết quả khảo sát, danh sách khảo sát lại và xét duyệt nhập học cho học sinh Phổ thông & Mầm non chuẩn quy trình chất lượng Sky-Line."
                 : "Quản lý tạo đợt khảo sát, tiếp nhận hồ sơ học sinh đăng ký dự tuyển, nguyện vọng và thành tích học sinh Phổ thông & Mầm non chuẩn quy trình chất lượng Sky-Line."}
@@ -2174,12 +2174,12 @@ export function StudentInfoClient({
           </div>
 
           {/* Mode Switcher Segmented Control */}
-          <div className="bg-black/25 backdrop-blur-md p-1.5 rounded-2xl border border-white/15 flex items-center gap-1.5 self-start lg:self-auto shrink-0 shadow-inner">
+          <div className="bg-black/25 backdrop-blur-md p-1.5 rounded-2xl border border-white/15 flex flex-wrap items-center gap-1.5 self-start lg:self-auto shrink-0 shadow-inner">
             <button
               onClick={() => handleTabChange("general")}
-              className={`flex items-center gap-2.5 px-5 py-3 rounded-xl text-xs font-black transition-all cursor-pointer ${
+              className={`flex items-center gap-2 px-4 py-2.5 rounded-xl text-xs font-black transition-all cursor-pointer ${
                 activeTab === "general"
-                  ? "bg-white text-[#003B3A] shadow-lg shadow-black/20 scale-[1.02]"
+                  ? "bg-white text-[#003B3A] shadow-lg shadow-black/20"
                   : "text-white/80 hover:text-white hover:bg-white/10"
               }`}
             >
@@ -2194,9 +2194,9 @@ export function StudentInfoClient({
 
             <button
               onClick={() => handleTabChange("preschool")}
-              className={`flex items-center gap-2.5 px-5 py-3 rounded-xl text-xs font-black transition-all cursor-pointer ${
+              className={`flex items-center gap-2 px-4 py-2.5 rounded-xl text-xs font-black transition-all cursor-pointer ${
                 activeTab === "preschool"
-                  ? "bg-[#00A19A] text-white shadow-lg shadow-[#00A19A]/30 scale-[1.02]"
+                  ? "bg-[#00A19A] text-white shadow-lg shadow-[#00A19A]/30"
                   : "text-white/80 hover:text-white hover:bg-white/10"
               }`}
             >
@@ -2211,9 +2211,9 @@ export function StudentInfoClient({
 
             <button
               onClick={() => handleTabChange("transfer")}
-              className={`flex items-center gap-2.5 px-5 py-3 rounded-xl text-xs font-black transition-all cursor-pointer ${
+              className={`flex items-center gap-2 px-4 py-2.5 rounded-xl text-xs font-black transition-all cursor-pointer ${
                 activeTab === "transfer"
-                  ? "bg-gradient-to-r from-amber-500 to-orange-500 text-white shadow-lg shadow-amber-500/30 scale-[1.02]"
+                  ? "bg-gradient-to-r from-amber-500 to-orange-500 text-white shadow-lg shadow-amber-500/30"
                   : "text-white/80 hover:text-white hover:bg-white/10"
               }`}
             >
@@ -2227,69 +2227,79 @@ export function StudentInfoClient({
             </button>
           </div>
         </div>
-      </div>
 
-      {/* Workflow Navigation Sub-tabs & Action Toolbar */}
-      <div className="bg-white rounded-2xl border border-slate-200/80 p-2.5 shadow-xs flex flex-wrap items-center justify-between gap-3">
-        <div className="flex flex-wrap items-center gap-1.5 sm:gap-2">
-          {pageMode === "ket-qua" ? (
-            <>
-              <button
-                onClick={() => handleSubTabChange("info")}
-                className={`flex items-center gap-2 px-4 py-2.5 rounded-xl text-xs font-bold transition-all cursor-pointer ${
-                  subTab === "info"
-                    ? "bg-[#00A19A] text-white shadow-sm shadow-[#00A19A]/20"
-                    : "text-slate-650 hover:text-[#00A19A] hover:bg-teal-50/50"
-                }`}
-              >
-                <RefreshCw className="w-4 h-4" />
-                <span>1. TT Khảo sát lại</span>
-                {retestStats.total > 0 && (
-                  <span className={`px-1.5 py-0.5 rounded-full text-[10px] font-black ${
-                    subTab === "info" ? "bg-white/20 text-white" : "bg-rose-100 text-rose-600"
-                  }`}>
-                    {retestStats.total}
-                  </span>
-                )}
-              </button>
-              <button
-                onClick={() => handleSubTabChange("result")}
-                className={`flex items-center gap-2 px-4 py-2.5 rounded-xl text-xs font-bold transition-all cursor-pointer ${
-                  subTab === "result"
-                    ? "bg-[#00A19A] text-white shadow-sm shadow-[#00A19A]/20"
-                    : "text-slate-650 hover:text-[#00A19A] hover:bg-teal-50/50"
-                }`}
-              >
-                <CheckCircle2 className="w-4 h-4" />
-                <span>2. Kết quả & Nhập học</span>
-              </button>
-            </>
-          ) : (
-            <>
+        {/* Integrated Workflow Sub-tabs inside Banner for danh-sach mode */}
+        {pageMode !== "ket-qua" && (
+          <div className="relative z-10 mt-4 pt-3.5 border-t border-white/15 flex flex-wrap items-center justify-between gap-3">
+            <div className="flex flex-wrap items-center gap-1.5 bg-black/20 p-1 rounded-xl border border-white/10">
               <button
                 onClick={() => handleSubTabChange("periods")}
-                className={`flex items-center gap-2 px-4 py-2.5 rounded-xl text-xs font-bold transition-all cursor-pointer ${
+                className={`flex items-center gap-2 px-4 py-2 rounded-lg text-xs font-bold transition-all cursor-pointer ${
                   subTab === "periods"
-                    ? "bg-[#00A19A] text-white shadow-sm shadow-[#00A19A]/20"
-                    : "text-slate-650 hover:text-[#00A19A] hover:bg-teal-50/50"
+                    ? "bg-[#00A19A] text-white shadow-sm"
+                    : "text-white/80 hover:text-white hover:bg-white/10"
                 }`}
               >
-                <Clock className="w-4 h-4" />
+                <Clock className="w-3.5 h-3.5" />
                 <span>1. Tạo đợt khảo sát</span>
               </button>
               <button
                 onClick={() => handleSubTabChange("students")}
-                className={`flex items-center gap-2 px-4 py-2.5 rounded-xl text-xs font-bold transition-all cursor-pointer ${
+                className={`flex items-center gap-2 px-4 py-2 rounded-lg text-xs font-bold transition-all cursor-pointer ${
                   subTab === "students"
-                    ? "bg-[#00A19A] text-white shadow-sm shadow-[#00A19A]/20"
-                    : "text-slate-650 hover:text-[#00A19A] hover:bg-teal-50/50"
+                    ? "bg-[#00A19A] text-white shadow-sm"
+                    : "text-white/80 hover:text-white hover:bg-white/10"
                 }`}
               >
-                <Users className="w-4 h-4" />
+                <Users className="w-3.5 h-3.5" />
                 <span>2. Danh sách khảo sát</span>
               </button>
-            </>
-          )}
+            </div>
+            <div className="hidden md:flex items-center gap-2 text-[11px] text-teal-100/80 font-medium">
+              <span className="w-1.5 h-1.5 rounded-full bg-teal-300"></span>
+              <span>
+                {subTab === "periods"
+                  ? "Bước 1: Thiết lập kỳ/đợt khảo sát hoặc xếp ca khảo sát nhanh"
+                  : "Bước 2: Tiếp nhận, rà soát hồ sơ đăng ký & kết quả học bạ đầu vào"}
+              </span>
+            </div>
+          </div>
+        )}
+      </div>
+
+      {/* Workflow Navigation Sub-tabs & Action Toolbar (Only shown separately in ket-qua mode) */}
+      {pageMode === "ket-qua" && (
+      <div className="bg-white rounded-2xl border border-slate-200/80 p-2.5 shadow-xs flex flex-wrap items-center justify-between gap-3">
+        <div className="flex flex-wrap items-center gap-1.5 sm:gap-2">
+          <button
+            onClick={() => handleSubTabChange("info")}
+            className={`flex items-center gap-2 px-4 py-2.5 rounded-xl text-xs font-bold transition-all cursor-pointer ${
+              subTab === "info"
+                ? "bg-[#00A19A] text-white shadow-sm shadow-[#00A19A]/20"
+                : "text-slate-650 hover:text-[#00A19A] hover:bg-teal-50/50"
+            }`}
+          >
+            <RefreshCw className="w-4 h-4" />
+            <span>1. TT Khảo sát lại</span>
+            {retestStats.total > 0 && (
+              <span className={`px-1.5 py-0.5 rounded-full text-[10px] font-black ${
+                subTab === "info" ? "bg-white/20 text-white" : "bg-rose-100 text-rose-600"
+              }`}>
+                {retestStats.total}
+              </span>
+            )}
+          </button>
+          <button
+            onClick={() => handleSubTabChange("result")}
+            className={`flex items-center gap-2 px-4 py-2.5 rounded-xl text-xs font-bold transition-all cursor-pointer ${
+              subTab === "result"
+                ? "bg-[#00A19A] text-white shadow-sm shadow-[#00A19A]/20"
+                : "text-slate-650 hover:text-[#00A19A] hover:bg-teal-50/50"
+            }`}
+          >
+            <CheckCircle2 className="w-4 h-4" />
+            <span>2. Kết quả & Nhập học</span>
+          </button>
         </div>
 
         {/* Action Buttons for info and result tabs */}
@@ -2349,6 +2359,7 @@ export function StudentInfoClient({
           )}
         </div>
       </div>
+      )}
 
       {/* Statistics Cards for Retest Tab */}
       {subTab === "info" && (
