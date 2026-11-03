@@ -74,9 +74,9 @@ describe("Luồng Điều hành & Tiến độ Khảo sát Đầu vào 8 Công �
     vi.clearAllMocks();
   });
 
-  describe("1. Cấu hình chuẩn 8 công đoạn & Phân quyền vai trò chịu trách nhiệm", () => {
-    it("Định nghĩa đầy đủ 8 công đoạn liên thông với vai trò, nút xác nhận và liên kết màn hình xử lý", () => {
-      expect(ENTRANCE_WORKFLOW_STAGES).toHaveLength(8);
+  describe("1. Cấu hình chuẩn 7 công đoạn & Phân quyền vai trò chịu trách nhiệm", () => {
+    it("Định nghĩa đầy đủ 7 công đoạn liên thông với vai trò, nút xác nhận và liên kết màn hình xử lý", () => {
+      expect(ENTRANCE_WORKFLOW_STAGES).toHaveLength(7);
       expect(ENTRANCE_WORKFLOW_STAGES.map((s) => s.code)).toEqual([
         "STAGE_1_BATCH",
         "STAGE_2_ROSTER",
@@ -85,7 +85,6 @@ describe("Luồng Điều hành & Tiến độ Khảo sát Đầu vào 8 Công �
         "STAGE_5_ORIENTATION",
         "STAGE_6_APPROVAL",
         "STAGE_7_HANDOVER",
-        "STAGE_8_NOTIFICATION",
       ]);
 
       for (const stage of ENTRANCE_WORKFLOW_STAGES) {
@@ -110,10 +109,6 @@ describe("Luồng Điều hành & Tiến độ Khảo sát Đầu vào 8 Công �
       // Giám đốc Cơ sở (GDCS) được thẩm định & phê duyệt Bước 6 và bàn giao Bước 7
       expect(canUserConfirmStage("GDCS", 6)).toBe(true);
       expect(canUserConfirmStage("GDCS", 7)).toBe(true);
-
-      // Tư vấn tuyển sinh được xác nhận Bước 8 (Gửi thông báo/thư chúc mừng cho PHHS)
-      expect(canUserConfirmStage("TU_VAN", 8)).toBe(true);
-      expect(canUserConfirmStage("TU_VAN", 6)).toBe(false);
     });
   });
 
@@ -210,25 +205,15 @@ describe("Luồng Điều hành & Tiến độ Khảo sát Đầu vào 8 Công �
       expect(row.canIssueCongratulation).toBe(true);
     });
 
-    it("Tách biệt trạng thái Tư vấn đã gửi (SENT) với PHHS đã nhận/đọc (READ/CONFIRMED)", () => {
-      const confirmationsSentOnly = new Map<string, any>([
+    it("Khi hoàn thành Bước 7 (Bàn giao kết quả, văn bản cho Tư vấn) -> Ghi nhận hoàn tất quy trình 7 bước", () => {
+      const confirmationsHandover = new Map<string, any>([
         [
           "STUDENT_stu_3_7",
           { stageNumber: 7, status: "COMPLETED", confirmedByName: "Giáo vụ CS1" },
         ],
-        [
-          "STUDENT_stu_3_8",
-          {
-            stageNumber: 8,
-            status: "COMPLETED",
-            deliveryStatus: "SENT",
-            confirmedByName: "Tư vấn CS1",
-            confirmedAt: "2026-03-05T10:00:00.000Z",
-          },
-        ],
       ]);
 
-      const rowSent = evaluateStudent8Stages({
+      const rowHandover = evaluateStudent8Stages({
         student: {
           id: "stu_3",
           studentCode: "KS26-003",
@@ -245,52 +230,13 @@ describe("Luồng Điều hành & Tiến độ Khảo sát Đầu vào 8 Công �
         matchedAssignments: [{ id: "a_1", userId: "gv_1", subjectId: "sub_1" }],
         orientationRecord: { id: "ori_3", status: "COMPLETED", studentStrengths: "Tốt" },
         preschoolDevScoresCount: 0,
-        confirmationsMap: confirmationsSentOnly,
+        confirmationsMap: confirmationsHandover,
         studentCodeCountMap: new Map([["KS26-003", 1]]),
       });
 
-      expect(rowSent.stages[7].status).toBe("COMPLETED");
-      expect(rowSent.deliveryStatus).toBe("SENT");
-      expect(rowSent.isNotificationSent).toBe(true);
-      expect(rowSent.isParentRead).toBe(false);
-      expect(rowSent.completionMilestone).toBe("NOTIFICATION_COMPLETED");
-
-      // Khi cập nhật trạng thái PHHS đã đọc/xác nhận (READ)
-      const confirmationsRead = new Map<string, any>([
-        [
-          "STUDENT_stu_3_8",
-          {
-            stageNumber: 8,
-            status: "COMPLETED",
-            deliveryStatus: "READ",
-            parentReadAt: "2026-03-05T14:00:00.000Z",
-          },
-        ],
-      ]);
-
-      const rowRead = evaluateStudent8Stages({
-        student: {
-          id: "stu_3",
-          studentCode: "KS26-003",
-          fullName: "Lê Hoàng Nam",
-          grade: "2",
-          admissionResult: "Đạt",
-          mathScore: "8.0",
-        },
-        isPreschool: false,
-        period: { id: "p_1", name: "Kỳ KSĐV", startDate: "2026-03-01" },
-        batch: { id: "b_1", name: "Đợt 1" },
-        campusName: "Cơ sở 1",
-        campusCode: "CS1",
-        matchedAssignments: [{ id: "a_1", userId: "gv_1", subjectId: "sub_1" }],
-        orientationRecord: { id: "ori_3", status: "COMPLETED", studentStrengths: "Tốt" },
-        preschoolDevScoresCount: 0,
-        confirmationsMap: confirmationsRead,
-        studentCodeCountMap: new Map([["KS26-003", 1]]),
-      });
-
-      expect(rowRead.deliveryStatus).toBe("READ");
-      expect(rowRead.isParentRead).toBe(true);
+      expect(rowHandover.stages).toHaveLength(7);
+      expect(rowHandover.stages[6].status).toBe("COMPLETED");
+      expect(rowHandover.completionMilestone).toBe("NOTIFICATION_COMPLETED");
     });
   });
 
@@ -302,9 +248,9 @@ describe("Luồng Điều hành & Tiến độ Khảo sát Đầu vào 8 Công �
       expect(canIssueCongratulationLetter("Đạt có cam kết", "COMPLETED")).toBe(true);
 
       const ruleValidation = validateWorkflowActionRules({
-        stageNumber: 8,
+        stageNumber: 7,
         action: "CONFIRM",
-        userRole: "TU_VAN",
+        userRole: "GIAO_VU",
         admissionResult: "Không đạt",
         stage6Status: "COMPLETED",
         documentTypes: ["CONGRATULATION_LETTER"],

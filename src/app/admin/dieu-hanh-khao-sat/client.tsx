@@ -477,12 +477,10 @@ export function EntranceOperationsDashboardClient({
         "B5. Định hướng": ENTRANCE_STAGE_STATUS_META[s.stages[4]?.status]?.label || "",
         "B6. Thẩm định & Duyệt": ENTRANCE_STAGE_STATUS_META[s.stages[5]?.status]?.label || "",
         "B7. Bàn giao Tư vấn": ENTRANCE_STAGE_STATUS_META[s.stages[6]?.status]?.label || "",
-        "B8. Gửi PHHS": ENTRANCE_STAGE_STATUS_META[s.stages[7]?.status]?.label || "",
         "Hoàn thành Công việc CM": s.isWorkCompleted ? "Đã hoàn thành" : "Chưa xong",
         "Hoàn thành Xét duyệt": s.isApprovalCompleted ? "Đã phê duyệt" : "Chờ duyệt",
         "Kết luận Tuyển sinh": s.admissionResult || "Chưa kết luận",
-        "Trạng thái Gửi PHHS": DELIVERY_STATUS_META[s.deliveryStatus]?.label || "",
-        "PHHS Đã nhận/đọc": s.isParentRead ? "Đã nhận/đọc" : "Chưa đọc",
+        "Bàn giao Tư vấn": s.stages[6]?.status === "COMPLETED" ? "Đã bàn giao" : "Chưa bàn giao",
         "Ngoại lệ / Đặc biệt": EXCEPTION_TYPE_META[s.exceptionType]?.label || "Tiêu chuẩn",
         "Cảnh báo hạn": s.deadlineAlert.label,
         "Tiến độ tổng (%)": `${s.overallProgressPct}%`,
@@ -567,10 +565,10 @@ export function EntranceOperationsDashboardClient({
               <span>Trung tâm Điều hành Tuyển sinh & Khảo thí Sky-Line</span>
             </div>
             <h1 className="text-xl sm:text-2xl font-black tracking-tight text-white">
-              Điều hành & Tiến độ Khảo sát Đầu vào (Liên thông 8 Công đoạn)
+              Điều hành & Tiến độ Khảo sát Đầu vào
             </h1>
             <p className="text-xs sm:text-sm text-teal-100/90 max-w-3xl">
-              Giám sát thời gian thực toàn trình từ Tạo đợt → Nhập danh sách → Phân công GV → Đánh giá → Định hướng → Thẩm định xét duyệt → Bàn giao Tư vấn → Thông báo PHHS & Theo dõi PHHS nhận/đọc.
+              Giám sát thời gian thực toàn trình từ Tạo đợt → Nhập danh sách → Phân công GV → Đánh giá → Định hướng → Thẩm định xét duyệt → Bàn giao kết quả, văn bản cho Tư vấn.
             </p>
           </div>
 
@@ -716,7 +714,7 @@ export function EntranceOperationsDashboardClient({
           </div>
         </div>
 
-        {/* Card 4: Mốc 3 - Hoàn thành Thông báo PHHS (Tách Đã gửi vs Đã đọc) */}
+        {/* Card 4: Mốc 3 - Hoàn thành Bàn giao Tư vấn (Bước 7) */}
         <div
           onClick={() =>
             setMilestoneFilter(
@@ -734,14 +732,14 @@ export function EntranceOperationsDashboardClient({
           <div className="flex items-start justify-between">
             <div>
               <p className="text-[11px] font-extrabold uppercase tracking-wider text-sky-700">
-                3. Hoàn thành Thông báo PHHS
+                3. Hoàn thành Bàn giao Tư vấn
               </p>
               <div className="mt-1 flex items-baseline gap-2">
                 <span className="text-2xl font-black text-sky-700">
-                  {kpis.notificationSentCount}/{kpis.totalStudents}
+                  {kpis.handoverCompletedCount}/{kpis.totalStudents}
                 </span>
                 <span className="text-xs font-extrabold text-sky-600">
-                  ({kpis.notificationSentPct}% đã gửi)
+                  ({kpis.totalStudents > 0 ? Math.round((kpis.handoverCompletedCount / kpis.totalStudents) * 100) : 0}% đã bàn giao)
                 </span>
               </div>
             </div>
@@ -751,10 +749,7 @@ export function EntranceOperationsDashboardClient({
           </div>
           <div className="mt-3 pt-2 border-t border-slate-100 flex items-center justify-between text-[11px]">
             <span className="text-slate-600 font-semibold">
-              Bàn giao TV: <strong>{kpis.handoverCompletedCount}</strong>
-            </span>
-            <span className="px-2 py-0.5 rounded-full bg-emerald-50 text-emerald-700 font-bold border border-emerald-200">
-              PHHS đã nhận/đọc: {kpis.parentReadCount} ({kpis.parentReadPct}%)
+              Đã bàn giao hồ sơ & văn bản cho Tư vấn
             </span>
           </div>
         </div>
@@ -824,13 +819,13 @@ export function EntranceOperationsDashboardClient({
         </div>
       </div>
 
-      {/* ─── KHU VỰC 2: THANH PIPELINE LIÊN THÔNG 8 CÔNG ĐOẠN & BIỂU ĐỒ TIẾN ĐỘ ─── */}
+      {/* ─── KHU VỰC 2: THANH PIPELINE LIÊN THÔNG 7 CÔNG ĐOẠN & BIỂU ĐỒ TIẾN ĐỘ ─── */}
       <div className="bg-white rounded-2xl border border-slate-200/90 p-5 shadow-xs space-y-5">
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
           <div>
             <h2 className="text-sm sm:text-base font-black text-[#003B3A] flex items-center gap-2">
               <Layers className="w-4 h-4 text-[#00A19A]" />
-              <span>Chuỗi 8 Công đoạn Khảo sát Đầu vào & Liên kết Xử lý Trực tiếp</span>
+              <span>Chuỗi 7 Công đoạn Khảo sát Đầu vào & Liên kết Xử lý Trực tiếp</span>
             </h2>
             <p className="text-xs text-slate-500 mt-0.5">
               Bấm vào từng công đoạn để lọc hồ sơ hoặc bấm biểu tượng mũi tên để chuyển thẳng tới màn hình nghiệp vụ tương ứng.
@@ -860,8 +855,8 @@ export function EntranceOperationsDashboardClient({
           </div>
         </div>
 
-        {/* 8-Stage Interactive Cards */}
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 xl:grid-cols-8 gap-2.5">
+        {/* 7-Stage Interactive Cards */}
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 xl:grid-cols-7 gap-2.5">
           {stageChartData.map((stg: any) => {
             const isSelected = stageNumberFilter === stg.stageNumber;
             const targetHref =
@@ -1277,8 +1272,7 @@ export function EntranceOperationsDashboardClient({
               { id: "ALL", label: "Tất cả" },
               { id: "WORK_COMPLETED", label: "✓ Xong Công việc CM" },
               { id: "APPROVAL_COMPLETED", label: "✓ Xong Xét duyệt" },
-              { id: "NOTIFICATION_SENT", label: "✓ Tư vấn đã gửi" },
-              { id: "PARENT_READ", label: "✓ PHHS đã đọc" },
+              { id: "NOTIFICATION_SENT", label: "✓ Đã bàn giao Tư vấn" },
               { id: "EXCEPTION", label: "★ Miễn/KS lại/Ngoại lệ" },
             ].map((item) => (
               <button
@@ -1488,60 +1482,6 @@ export function EntranceOperationsDashboardClient({
                     >
                       B7. Bàn giao Tư vấn
                     </button>
-                  )}
-                  {canUserConfirmStage(
-                    currentUser.role,
-                    8,
-                    currentUser.isSuperAdmin
-                  ) && (
-                    <>
-                      <button
-                        onClick={() => {
-                          const first = studentRows.find((s) =>
-                            selectedStudentIds.includes(s.id)
-                          );
-                          if (!first) return;
-                          openActionModal({
-                            title: `Tư vấn xác nhận đã gửi thông báo PHHS (${selectedStudentIds.length} HS)`,
-                            targetScope: "STUDENT",
-                            action: "UPDATE_DELIVERY",
-                            stageNumber: 8,
-                            periodId: first.periodId,
-                            batchId: first.batchId,
-                            isPreschool: first.isPreschool,
-                            studentIds: selectedStudentIds,
-                            studentSummary: `${selectedStudentIds.length} học sinh đã chọn`,
-                            defaultDeliveryStatus: "SENT",
-                          });
-                        }}
-                        className="px-3 py-1.5 rounded-xl bg-[#00A19A] hover:bg-[#008f89] text-xs font-bold text-white cursor-pointer"
-                      >
-                        B8. Xác nhận Đã gửi PHHS
-                      </button>
-                      <button
-                        onClick={() => {
-                          const first = studentRows.find((s) =>
-                            selectedStudentIds.includes(s.id)
-                          );
-                          if (!first) return;
-                          openActionModal({
-                            title: `Cập nhật PHHS đã nhận/đọc thông báo (${selectedStudentIds.length} HS)`,
-                            targetScope: "STUDENT",
-                            action: "UPDATE_DELIVERY",
-                            stageNumber: 8,
-                            periodId: first.periodId,
-                            batchId: first.batchId,
-                            isPreschool: first.isPreschool,
-                            studentIds: selectedStudentIds,
-                            studentSummary: `${selectedStudentIds.length} học sinh đã chọn`,
-                            defaultDeliveryStatus: "READ",
-                          });
-                        }}
-                        className="px-3 py-1.5 rounded-xl bg-emerald-700 hover:bg-emerald-600 text-xs font-bold text-white cursor-pointer"
-                      >
-                        ✓ PHHS Đã nhận/đọc
-                      </button>
-                    </>
                   )}
                   <button
                     onClick={() => setSelectedStudentIds([])}
@@ -1768,7 +1708,7 @@ export function EntranceOperationsDashboardClient({
                             );
                           })}
 
-                          {/* Cột Phân biệt 3 Mốc & Trạng thái Gửi vs PHHS Nhận/Đọc */}
+                          {/* Cột Phân biệt 3 Mốc: Công việc CM / Xét duyệt / Bàn giao Tư vấn */}
                           <td className="p-3 border-l border-slate-100 space-y-1">
                             <div className="flex items-center gap-1.5 text-[10.5px]">
                               <span
@@ -1795,9 +1735,15 @@ export function EntranceOperationsDashboardClient({
                             </div>
                             <div className="flex items-center gap-1 flex-wrap">
                               <span
-                                className={`px-2 py-0.5 rounded-full text-[10px] font-bold border ${delivMeta.badgeClass}`}
+                                className={`px-2 py-0.5 rounded-full text-[10px] font-bold border ${
+                                  stu.stages[6]?.status === "COMPLETED"
+                                    ? "bg-sky-50 text-sky-700 border-sky-200"
+                                    : "bg-slate-100 text-slate-600 border-slate-200"
+                                }`}
                               >
-                                {delivMeta.label}
+                                {stu.stages[6]?.status === "COMPLETED"
+                                  ? "Đã bàn giao Tư vấn"
+                                  : "Chưa bàn giao Tư vấn"}
                               </span>
                             </div>
                           </td>
@@ -1991,8 +1937,7 @@ export function EntranceOperationsDashboardClient({
                               {b.totalStudents}
                             </div>
                             <div className="text-sky-700 font-bold">
-                              Đã gửi: {b.notificationSentCount} (Đọc:{" "}
-                              {b.parentReadCount})
+                              Bàn giao TV: {b.stageSummaries.find((s) => s.stageNumber === 7)?.completedCount || 0}/{b.totalStudents}
                             </div>
                           </td>
                           <td className="p-3 text-center space-y-1.5">
@@ -2447,10 +2392,12 @@ export function EntranceOperationsDashboardClient({
                 </div>
                 <div className="p-3 rounded-2xl bg-sky-50/70 border border-sky-200">
                   <div className="text-[10px] font-black uppercase text-sky-700">
-                    3. Mốc Thông báo PHHS
+                    3. Mốc Bàn giao Tư vấn
                   </div>
                   <div className="text-xs font-extrabold text-slate-800 mt-1">
-                    {DELIVERY_STATUS_META[detailStudent.deliveryStatus].label}
+                    {detailStudent.stages[6]?.status === "COMPLETED"
+                      ? "✓ Đã bàn giao hồ sơ & văn bản cho Tư vấn"
+                      : "Chưa bàn giao Tư vấn"}
                   </div>
                 </div>
               </div>
@@ -2756,40 +2703,6 @@ export function EntranceOperationsDashboardClient({
                     </div>
                   </div>
                 )}
-
-              {/* Công đoạn 8: Tách trạng thái Đã gửi vs PHHS đã nhận/đọc */}
-              {(confirmModal.stageNumber === 8 ||
-                confirmModal.action === "UPDATE_DELIVERY") && (
-                <div>
-                  <label className="block font-extrabold uppercase text-slate-500 mb-1.5">
-                    Trạng thái gửi thông báo & PHHS phản hồi
-                  </label>
-                  <select
-                    value={modalForm.deliveryStatus}
-                    onChange={(e) =>
-                      setModalForm((f) => ({
-                        ...f,
-                        deliveryStatus: e.target
-                          .value as NotificationDeliveryStatus,
-                      }))
-                    }
-                    className="w-full rounded-xl border border-slate-200 px-3.5 py-2.5 font-bold text-slate-800 outline-none focus:border-[#00A19A]"
-                  >
-                    <option value="SENT">
-                      1. Tư vấn đã gửi thông báo/thư chúc mừng (SENT)
-                    </option>
-                    <option value="DELIVERED">
-                      2. Đã chuyển thành công tới PHHS (DELIVERED)
-                    </option>
-                    <option value="READ">
-                      3. PHHS đã nhận / đã đọc thông báo (READ)
-                    </option>
-                    <option value="CONFIRMED">
-                      4. PHHS đã xác nhận phản hồi nhập học (CONFIRMED)
-                    </option>
-                  </select>
-                </div>
-              )}
 
               {/* Thiết lập Ngoại lệ */}
               {confirmModal.action === "SET_EXCEPTION" && (

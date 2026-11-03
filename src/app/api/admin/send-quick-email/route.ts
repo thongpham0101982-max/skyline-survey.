@@ -73,13 +73,13 @@ export async function POST(req: Request) {
         return NextResponse.json({ success: false, sent: false, error: mailRes.error || "SMTP error", html: emailHtml });
       }
 
-      // Đồng bộ Tiến độ Công đoạn 8 (Gửi thông báo, thư chúc mừng/thư mời)
+      // Đồng bộ Tiến độ Công đoạn 7 (Bàn giao kết quả, văn bản cho Tư vấn)
       try {
         const user = session.user as any;
         const actor = {
           id: user?.id || "tuvan_sender",
           fullName: user?.fullName || user?.name || "Cán bộ Tư vấn / Giáo vụ",
-          role: user?.role || "TU_VAN",
+          role: user?.role || "GIAO_VU",
           isSuperAdmin: Boolean(user?.isSuperAdmin),
         };
         for (const s of students) {
@@ -90,16 +90,16 @@ export async function POST(req: Request) {
             periodId: s.periodId || "PERIOD_QUICK_EMAIL",
             batchId: s.batchId || null,
             studentIds: [String(s.id)],
-            stageNumber: 8,
+            stageNumber: 7,
             status: "COMPLETED",
             deliveryStatus: "SENT",
             documentTypes: showAttachments && isApprovedPassResult(s.admissionResult) ? ["CONGRATULATION_LETTER"] : ["RESULT_NOTICE"],
-            note: `Đã gửi email thông báo/báo cáo kết quả tới ${to}`,
+            note: `Đã gửi email bàn giao báo cáo kết quả tới ${to}`,
             actor,
           });
         }
       } catch (wfErr) {
-        console.warn("Workflow stage 8 sync warning:", wfErr);
+        console.warn("Workflow stage 7 sync warning:", wfErr);
       }
 
       return NextResponse.json({ success: true, sent: true, messageId: mailRes.messageId });

@@ -786,10 +786,11 @@ export function evaluateStudent8Stages(params: {
   }
 
   const isNotificationSent =
-    stage8Status === "COMPLETED" &&
-    ["SENT", "DELIVERED", "READ", "CONFIRMED"].includes(deliveryStatus);
+    stage7Status === "COMPLETED" ||
+    (stage8Status === "COMPLETED" &&
+      ["SENT", "DELIVERED", "READ", "CONFIRMED"].includes(deliveryStatus));
   const isParentRead = ["READ", "CONFIRMED"].includes(deliveryStatus);
-  const isNotificationCompleted = isNotificationSent;
+  const isNotificationCompleted = stage7Status === "COMPLETED" || isNotificationSent;
 
   // Xác định mốc hoàn thành tổng thể (Phân biệt hoàn thành công việc, hoàn thành xét duyệt và hoàn thành thông báo)
   let completionMilestone: CompletionMilestone = "PENDING_WORK";
@@ -938,29 +939,6 @@ export function evaluateStudent8Stages(params: {
       confirmedByRole: conf7?.confirmedByRole || null,
       confirmedAt: conf7?.confirmedAt || null,
       note: conf7?.note || null,
-    },
-    {
-      stageNumber: 8,
-      code: "STAGE_8_NOTIFICATION",
-      shortName: "8. Gửi PHHS",
-      name: "Tư vấn gửi thông báo, thư chúc mừng/thư mời & xác nhận",
-      status: stage8Status,
-      responsibleLabel: "Tư vấn Tuyển sinh",
-      detailText:
-        deliveryStatus === "CONFIRMED"
-          ? "Đã gửi • PHHS đã xác nhận"
-          : deliveryStatus === "READ"
-          ? "Đã gửi • PHHS đã nhận/đọc"
-          : deliveryStatus === "SENT" || deliveryStatus === "DELIVERED"
-          ? "Tư vấn đã gửi (Chờ PHHS đọc)"
-          : stage8Status === "IN_PROGRESS"
-          ? "Chờ Tư vấn gửi PHHS"
-          : "Chưa bàn giao",
-      actionHref: `/admin/input-assessments/reports?${baseQuery}`,
-      confirmedByName: conf8?.confirmedByName || null,
-      confirmedByRole: conf8?.confirmedByRole || null,
-      confirmedAt: conf8?.confirmedAt || null,
-      note: conf8?.note || null,
     },
   ];
 
@@ -1847,45 +1825,47 @@ export async function getEntranceProgressDashboardData(filters: {
       });
     }
 
-    // Tư vấn Tuyển sinh phụ trách Gửi thông báo PHHS (Công đoạn 8)
-    const stg8 = bRow.stageSummaries.find((s) => s.stageNumber === 8);
-    if (stg8 && bRow.approvalCompletedCount > 0) {
-      const tvKey = `TUVAN_${bRow.id}_8`;
+    // Bàn giao kết quả, văn bản cho Tư vấn (Công đoạn 7)
+    const stg7 = bRow.stageSummaries.find((s) => s.stageNumber === 7);
+    if (stg7 && bRow.approvalCompletedCount > 0) {
+      const tvKey = `HANDOVER_${bRow.id}_7`;
       assigneeMap.set(tvKey, {
         assigneeKey: tvKey,
-        userId: "tu_van",
-        fullName: stg8.confirmedByName || `Tư vấn Tuyển sinh (${bRow.campusName})`,
-        role: "TU_VAN",
-        roleLabel: "Tư vấn Tuyển sinh",
+        userId: "giao_vu_ban_giao",
+        fullName: stg7.confirmedByName || `Giáo vụ / Ban KT&ĐBCL (${bRow.campusName})`,
+        role: "GIAO_VU",
+        roleLabel: "Ban KT&ĐBCL / Giáo vụ",
         campusName: bRow.campusName,
-        stageNumber: 8,
-        stageName: "8. Tư vấn gửi thông báo, thư chúc mừng/thư mời",
+        stageNumber: 7,
+        stageName: "7. Bàn giao kết quả, văn bản cho Tư vấn",
         periodId: bRow.periodId,
         periodName: bRow.periodName,
         batchId: bRow.id,
         batchName: bRow.batchName,
         isPreschool: bRow.isPreschool,
-        scopeDescription: `Gửi thông báo & thư chúc mừng đợt ${bRow.batchName} (${bRow.parentReadCount}/${bRow.notificationSentCount} PHHS đã đọc)`,
+        scopeDescription: `Chuẩn bị văn bản & bàn giao hồ sơ đợt ${bRow.batchName} cho Tư vấn`,
         totalStudents: bRow.approvalCompletedCount,
-        completedStudents: bRow.notificationSentCount,
-        inProgressStudents: Math.max(0, bRow.approvalCompletedCount - bRow.notificationSentCount),
-        needsAdjustmentStudents: stg8.needsAdjustmentCount,
+        completedStudents: stg7.completedCount,
+        inProgressStudents: Math.max(0, bRow.approvalCompletedCount - stg7.completedCount),
+        needsAdjustmentStudents: stg7.needsAdjustmentCount,
         notStartedStudents: 0,
         completionPct:
           bRow.approvalCompletedCount > 0
-            ? Math.round((bRow.notificationSentCount / bRow.approvalCompletedCount) * 100)
+            ? Math.round((stg7.completedCount / bRow.approvalCompletedCount) * 100)
             : 0,
         isConfirmedComplete:
           bRow.approvalCompletedCount > 0 &&
-          bRow.notificationSentCount >= bRow.approvalCompletedCount,
-        confirmedAt: stg8.confirmedAt || null,
+          stg7.completedCount >= bRow.approvalCompletedCount,
+        confirmedAt: stg7.confirmedAt || null,
         deadlineAlert: computeDeadlineAlert(
           bRow.startDate,
           bRow.endDate,
-          bRow.notificationSentCount >= bRow.approvalCompletedCount,
+          stg7.completedCount >= bRow.approvalCompletedCount,
           now
         ),
-        actionHref: `/admin/input-assessments/reports?periodId=${bRow.periodId}&batchId=${bRow.id}`,
+        actionHref: bRow.isPreschool
+          ? `/admin/xet-duyet-ket-qua?tab=preschool&periodId=${bRow.periodId}&batchId=${bRow.id}`
+          : `/admin/xet-duyet-ket-qua?tab=k12&periodId=${bRow.periodId}&batchId=${bRow.id}`,
       });
     }
   }
@@ -1901,41 +1881,13 @@ export async function getEntranceProgressDashboardData(filters: {
   // 8. Xây dựng Danh sách Hồ sơ đang tồn đọng (BacklogItems)
   const backlogItems: BacklogItem[] = [];
   for (const s of filteredStudentRows) {
-    if (s.isNotificationCompleted && s.isParentRead) continue;
+    if (s.stages[6]?.status === "COMPLETED") continue;
 
     // Xác định bước đang nghẽn (bottleneck)
     const bottleneckStage =
       s.stages.find((st) => st.status === "NEEDS_ADJUSTMENT") ||
       s.stages.find((st) => st.status === "IN_PROGRESS") ||
       s.stages.find((st) => st.status === "NOT_STARTED");
-
-    if (!bottleneckStage && s.isNotificationSent && !s.isParentRead) {
-      // Đã gửi nhưng PHHS chưa nhận/đọc
-      backlogItems.push({
-        id: `backlog_${s.id}_read`,
-        studentId: s.id,
-        studentCode: s.studentCode,
-        fullName: s.fullName,
-        isPreschool: s.isPreschool,
-        grade: s.grade,
-        educationSystem: s.educationSystem,
-        campusName: s.campusName,
-        periodId: s.periodId,
-        periodName: s.periodName,
-        batchId: s.batchId,
-        batchName: s.batchName,
-        bottleneckStageNumber: 8,
-        bottleneckStageName: "8. Theo dõi PHHS nhận/đọc",
-        stageStatus: "IN_PROGRESS",
-        reason: "Tư vấn đã gửi thông báo nhưng PHHS chưa xác nhận nhận/đọc",
-        responsibleRoleLabel: "Tư vấn Tuyển sinh",
-        assigneeNames: `Tư vấn ${s.campusName}`,
-        deadlineAlert: s.deadlineAlert,
-        exceptionType: s.exceptionType,
-        actionHref: s.stages[7]?.actionHref || "/admin/input-assessments/reports",
-      });
-      continue;
-    }
 
     if (!bottleneckStage) continue;
 
