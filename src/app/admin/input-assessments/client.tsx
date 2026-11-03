@@ -625,6 +625,9 @@ export function InputAssessmentsClient({
   const [selectedIds, setSelectedIds] = useState<string[]>([]);
   const [isMoveBatchModalOpen, setIsMoveBatchModalOpen] = useState(false);
   const [tab, setTab] = useState(() => {
+    if (forcedTab) return forcedTab;
+    if (mode === "config") return "categories";
+
     const userRole = (currentUser?.role || "").toUpperCase();
     const isGDCS = ["GDCS", "GĐ_CS", "GIAO_VU_CS", "GĐCS"].includes(userRole);
     
@@ -634,14 +637,14 @@ export function InputAssessmentsClient({
     const hasStudents = userRole === "ADMIN" || userRole === "KT_DBCL" || (rolePermissions && rolePermissions.some(p => p.module === "INPUT_ASSESSMENTS_STUDENTS" && p.canRead)) || isGDCS;
     if (hasStudents) return "students";
     
-    const allTabs = ["periods", "categories", "subjects", "mapping", "students", "assignments", "reports"].filter(
+    const allTabs = ["categories", "subjects", "mapping", "periods", "students", "assignments", "reports"].filter(
       t => !(mode === "input" && ["categories", "subjects", "mapping"].includes(t))
     );
     for (const t of allTabs) {
       const p = getTabPermissions(t);
       if (p.canRead) return t;
     }
-    return "students";
+    return "categories";
   });
 
   const tabPerms = getTabPermissions(tab);
@@ -750,17 +753,22 @@ export function InputAssessmentsClient({
     status: "ACTIVE"
   })
 
-  // URL sync for sub=orientation
+  // URL sync for sub=orientation / sub=regulation
   useEffect(() => {
     if (typeof window !== "undefined") {
       const params = new URLSearchParams(window.location.search)
       const urlTab = params.get("tab")
-      const urlSub = params.get("sub")
-      if (urlTab === "categories") {
+      const urlSubTab = params.get("subTab")
+      const urlSub = params.get("sub") || params.get("catTab")
+      if (urlTab === "categories" || urlSubTab === "categories" || urlSub === "regulation" || urlSub === "orientation") {
         setTab("categories")
         if (urlSub === "orientation") {
           setCatSubTab("orientation")
+        } else if (urlSub === "regulation") {
+          setCatSubTab("regulation")
         }
+      } else if (urlSubTab && ["categories", "subjects", "mapping", "periods", "students"].includes(urlSubTab)) {
+        setTab(urlSubTab)
       }
     }
   }, [])
@@ -5842,10 +5850,10 @@ const [customCommitmentSubjects, setCustomCommitmentSubjects] = useState<string[
       <div className="bg-white border border-slate-200 shadow-sm rounded-xl px-1 py-1">
         <div className="flex flex-wrap gap-0.5">
           {[
-            { id:"periods",              label:"T\u1ea1o \u0111\u1ee3t kh\u1ea3o s\u00e1t",      tip:"K\u1ef3 & \u0110\u1ee3t kh\u1ea3o s\u00e1t",        icon:Clock },
-            { id:"categories",           label:"Danh m\u1ee5c",   tip:"Danh m\u1ee5c",            icon:Settings },
+            { id:"categories",           label:"Danh m\u1ee5c",   tip:"Danh m\u1ee5c & Nh\u1eadp Quy ch\u1ebf Tuy\u1ec3n sinh",            icon:Settings },
             { id:"subjects",             label:"M\u00f4n KS",     tip:"M\u00f4n kh\u1ea3o s\u00e1t",        icon:BookOpen },
             { id:"mapping",              label:"C\u1ea5u h\u00ecnh",   tip:"C\u1ea5u h\u00ecnh theo Kh\u1ed1i",  icon:Layers },
+            { id:"periods",              label:"T\u1ea1o \u0111\u1ee3t kh\u1ea3o s\u00e1t",      tip:"K\u1ef3 & \u0110\u1ee3t kh\u1ea3o s\u00e1t",        icon:Clock },
             { id:"students",             label:"Danh s\u00e1ch Kh\u1ea3o s\u00e1t",   tip:"DS HS kh\u1ea3o s\u00e1t",      icon:Users },
 
           ].filter(t => !(mode === "input" && ["categories", "subjects", "mapping"].includes(t.id))).map(t => {
@@ -9977,13 +9985,13 @@ const [customCommitmentSubjects, setCustomCommitmentSubjects] = useState<string[
             </div>
           )}
 
-          {/* SUB-TABS NAVIGATION: Danh mục chung vs Ngân hàng Câu hỏi định hướng */}
+          {/* SUB-TABS NAVIGATION: Danh mục chung vs Nhập Quy chế Tuyển sinh vs Ngân hàng Câu hỏi định hướng */}
           <div className="flex flex-wrap items-center justify-between gap-3 bg-white p-2.5 rounded-3xl border border-slate-200 shadow-xs">
-            <div className="flex items-center gap-2">
+            <div className="flex flex-wrap items-center gap-2">
               <button
                 type="button"
                 onClick={() => setCatSubTab("general")}
-                className={`flex items-center gap-2 px-5 py-2.5 rounded-2xl text-xs font-black transition-all ${
+                className={`flex items-center gap-2 px-5 py-2.5 rounded-2xl text-xs font-black transition-all cursor-pointer ${
                   catSubTab === "general"
                     ? "bg-[#00A19A] text-white shadow-md shadow-[#00A19A]/20"
                     : "text-slate-600 hover:text-slate-900 hover:bg-slate-100"
@@ -10000,8 +10008,26 @@ const [customCommitmentSubjects, setCustomCommitmentSubjects] = useState<string[
 
               <button
                 type="button"
+                onClick={() => setCatSubTab("regulation")}
+                className={`flex items-center gap-2 px-5 py-2.5 rounded-2xl text-xs font-black transition-all cursor-pointer ${
+                  catSubTab === "regulation"
+                    ? "bg-gradient-to-r from-[#003B3A] via-[#005854] to-[#00736E] text-white shadow-md shadow-teal-900/20"
+                    : "text-slate-600 hover:text-[#005854] hover:bg-teal-50"
+                }`}
+              >
+                <BookOpen className="w-4 h-4" />
+                <span>Nhập Quy chế Tuyển sinh</span>
+                <span className={`px-2 py-0.5 rounded-full text-[10px] font-bold ${
+                  catSubTab === "regulation" ? "bg-white/20 text-white" : "bg-teal-100 text-[#005854]"
+                }`}>
+                  {parseAdmissionRegulationConfig(configs).rules.length} nhóm
+                </span>
+              </button>
+
+              <button
+                type="button"
                 onClick={() => setCatSubTab("orientation")}
-                className={`flex items-center gap-2 px-5 py-2.5 rounded-2xl text-xs font-black transition-all ${
+                className={`flex items-center gap-2 px-5 py-2.5 rounded-2xl text-xs font-black transition-all cursor-pointer ${
                   catSubTab === "orientation"
                     ? "bg-gradient-to-r from-indigo-600 to-purple-600 text-white shadow-md shadow-indigo-600/20"
                     : "text-slate-600 hover:text-indigo-600 hover:bg-indigo-50"
@@ -10015,23 +10041,14 @@ const [customCommitmentSubjects, setCustomCommitmentSubjects] = useState<string[
                   {orientationQuestions.length} câu hỏi
                 </span>
               </button>
-
-              <button
-                type="button"
-                onClick={() => setCatSubTab("regulation")}
-                className={`flex items-center gap-2 px-5 py-2.5 rounded-2xl text-xs font-black transition-all ${
-                  catSubTab === "regulation"
-                    ? "bg-gradient-to-r from-[#003B3A] via-[#005854] to-[#00736E] text-white shadow-md shadow-teal-900/20"
-                    : "text-slate-600 hover:text-[#005854] hover:bg-teal-50"
-                }`}
-              >
-                <BookOpen className="w-4 h-4" />
-                <span>Nhập Quy chế Tuyển sinh & Phân luồng KS</span>
-              </button>
             </div>
 
             <div className="text-xs text-slate-400 font-semibold px-3">
-              {catSubTab === "orientation" ? "Phiếu định hướng 2 Tab • Đánh giá định tính phi điểm số" : "Cấu hình chuẩn hệ thống khảo sát"}
+              {catSubTab === "orientation"
+                ? "Phiếu định hướng 2 Tab • Đánh giá định tính phi điểm số"
+                : catSubTab === "regulation"
+                ? "Quy chế xét tuyển học bạ, miễn môn & phân luồng khảo sát K-12"
+                : "Cấu hình chuẩn hệ thống khảo sát"}
             </div>
           </div>
 
@@ -10087,8 +10104,8 @@ const [customCommitmentSubjects, setCustomCommitmentSubjects] = useState<string[
             <div className="animate-in fade-in duration-300">
               <AdmissionRegulationManager
                 initialConfig={parseAdmissionRegulationConfig(configs)}
-                availableSubjects={subjects}
-                availableSystems={eduSystems}
+                availableSubjects={subjectsList}
+                availableSystems={currentEduSystems.length > 0 ? currentEduSystems : eduSystems}
                 readOnly={isReadOnly}
                 onConfigSaved={() => {
                   fetchConfigs()
