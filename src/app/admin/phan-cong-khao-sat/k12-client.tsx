@@ -3,8 +3,10 @@ import { useState, useEffect, useCallback, useMemo } from "react"
 import {
   UserCheck, GraduationCap, BookOpen, Layers, Search, Trash2,
   Mail, Edit2, Loader2, Filter, Calendar, UserPlus, CheckCircle2,
-  AlertCircle, X, Plus, RefreshCw, Users, ExternalLink, ArrowUpRight, Sparkles, Check, RotateCcw
+  AlertCircle, X, Plus, RefreshCw, Users, ExternalLink, ArrowUpRight, Sparkles, Check, RotateCcw,
+  Award, ShieldCheck, Zap, FileCheck2, School
 } from "lucide-react"
+import { analyzeStudentAcademicAndRegulation, matchRecommendedSubjectIds } from "@/lib/admissionRegulationEngine"
 
 // ─── Helpers ───
 function getInitials(name?: string) {
@@ -208,6 +210,13 @@ export function PhanCongK12Client({
           grouped[g].push(s)
         })
         setStudentStats(grouped)
+        // Tự động mở bảng thông tin KQHT nếu đợt có từ 1 đến 3 khối để người phân công thấy ngay hồ sơ học sinh
+        const gradeKeys = Object.keys(grouped)
+        if (gradeKeys.length > 0 && gradeKeys.length <= 3) {
+          const autoExp: Record<string, boolean> = {}
+          gradeKeys.forEach(k => { autoExp[k] = true })
+          setExpandedGrades(autoExp)
+        }
       } else {
         setStudentStats({})
       }
@@ -526,6 +535,41 @@ export function PhanCongK12Client({
     return activeGrades.filter(g => (studentStats[g]?.length || 0) > 0)
   }, [activeGrades, studentStats])
 
+  // Tự động nạp phạm vi Môn • Khối • Hệ dựa trên Kết quả học tập & Quy chế tuyển sinh của 1 hoặc nhiều học sinh
+  const applyRegulationScopeForStudents = (targetStudents: any[], label: string) => {
+    if (!targetStudents || targetStudents.length === 0) return
+    const allRecSubjectNames = new Set<string>()
+    const allGrades = new Set<string>()
+    const allSystems = new Set<string>()
+
+    targetStudents.forEach(st => {
+      const insight = analyzeStudentAcademicAndRegulation(st)
+      insight.recommendedSubjectNames.forEach(n => allRecSubjectNames.add(n))
+      if (st.grade) allGrades.add(String(st.grade).replace(/\D/g, "") || String(st.grade))
+      const sys = String(st.surveySystem || "").toUpperCase().trim()
+      if (sys) {
+        currentEduSystems.forEach((es: any) => {
+          const code = String(es.code || "").toUpperCase()
+          if (sys.includes(code) || code.includes(sys)) {
+            allSystems.add(es.code)
+          }
+        })
+      }
+    })
+
+    const matchedSubIds = matchRecommendedSubjectIds(Array.from(allRecSubjectNames), initialSubjects)
+    if (matchedSubIds.length > 0) setAsSelSubjects(matchedSubIds)
+    if (allGrades.size > 0) setAsSelGrades(Array.from(allGrades))
+    if (allSystems.size > 0) {
+      setAsSelSystems(Array.from(allSystems))
+    } else if (currentEduSystems.length > 0 && asSelSystems.length === 0) {
+      const hns = currentEduSystems.find((es: any) => String(es.code).toUpperCase() === "HNS")
+      setAsSelSystems([hns ? hns.code : currentEduSystems[0].code])
+    }
+
+    notify(`Đã nạp phạm vi theo Quy chế cho ${label}: ${matchedSubIds.length} môn khảo sát, ${allGrades.size} khối, ${allSystems.size || 1} hệ!`)
+  }
+
   const totalCombinations = asSelSubjects.length * asSelGrades.length * asSelSystems.length
 
   // ─── RENDER ───
@@ -720,37 +764,193 @@ export function PhanCongK12Client({
                     })}
                   </div>
 
-                  {/* Hiển thị danh sách nếu có khối được bấm mở */}
+                  {/* Hiển thị danh sách KQHT Học sinh & Đối chiếu Quy chế Tuyển sinh nếu có khối được bấm mở */}
                   {Object.entries(studentStats).filter(([grade]) => expandedGrades[grade]).map(([grade, studentsList]) => (
-                    <div key={grade} className="p-3 bg-white border border-teal-200/80 rounded-xl space-y-2 shadow-2xs animate-in fade-in duration-200">
-                      <div className="flex items-center justify-between text-xs font-bold text-[#003B3A] pb-1.5 border-b border-slate-100">
-                        <div className="flex items-center gap-2">
-                          <span>Danh sách Học sinh Khối {grade} ({studentsList.length} HS)</span>
+                    <div key={grade} className="p-3.5 bg-white border border-teal-200/90 rounded-2xl space-y-3 shadow-xs animate-in fade-in duration-200">
+                      <div className="flex flex-wrap items-center justify-between gap-2 text-xs font-bold text-[#003B3A] pb-2 border-b border-slate-100">
+                        <div className="flex flex-wrap items-center gap-2">
+                          <span className="inline-flex items-center gap-1.5 text-xs sm:text-sm font-black text-[#003B3A]">
+                            <FileCheck2 className="w-4 h-4 text-[#00736E]" />
+                            Hồ sơ Kết quả Học tập & Quy chế Tuyển sinh — Khối {grade} ({studentsList.length} HS)
+                          </span>
+                          <button
+                            type="button"
+                            onClick={() => applyRegulationScopeForStudents(studentsList, `Khối ${grade} (${studentsList.length} HS)`)}
+                            className="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg bg-gradient-to-r from-[#005854] to-[#00736E] hover:from-[#003B3A] hover:to-[#005854] text-white text-[11px] font-bold shadow-2xs transition-all cursor-pointer"
+                            title="Tự động nạp danh sách Môn khảo sát, Khối và Hệ theo Quy chế Tuyển sinh của các học sinh Khối này"
+                          >
+                            <Zap className="w-3 h-3 text-teal-200" />
+                            <span>Nạp Môn • Khối • Hệ theo Quy chế</span>
+                          </button>
                           {!asSelGrades.includes(String(grade)) && (
                             <button
                               type="button"
                               onClick={() => setAsSelGrades(p => [...p, String(grade)])}
-                              className="px-2 py-0.5 rounded-md bg-teal-50 text-[#00736E] border border-teal-200 text-[10px] font-bold hover:bg-teal-100 cursor-pointer"
+                              className="px-2.5 py-1 rounded-lg bg-teal-50 text-[#00736E] border border-teal-200 text-[11px] font-bold hover:bg-teal-100 cursor-pointer"
                             >
-                              + Chọn Khối {grade} vào phạm vi
+                              + Chỉ chọn Khối {grade}
                             </button>
                           )}
                         </div>
                         <button
                           type="button"
                           onClick={() => setExpandedGrades(prev => ({ ...prev, [grade]: false }))}
-                          className="text-slate-400 hover:text-slate-700 text-[11px] font-semibold cursor-pointer"
+                          className="text-slate-400 hover:text-slate-700 text-[11px] font-semibold cursor-pointer px-2 py-0.5 rounded hover:bg-slate-100"
                         >
-                          Đóng ✕
+                          Thu gọn ✕
                         </button>
                       </div>
-                      <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-1.5 max-h-40 overflow-y-auto pr-1 text-xs">
-                        {studentsList.map((st: any) => (
-                          <div key={st.id} className="flex justify-between items-center py-1.5 px-2.5 bg-slate-50/70 hover:bg-teal-50/50 border border-slate-200/60 rounded-lg">
-                            <span className="text-slate-800 font-medium truncate mr-2" title={st.fullName}>{st.fullName}</span>
-                            <span className="text-[#00736E] font-mono text-[10px] font-semibold shrink-0">{st.studentCode}</span>
-                          </div>
-                        ))}
+
+                      <div className="overflow-x-auto max-h-72 overflow-y-auto rounded-xl border border-slate-200/80 custom-scrollbar">
+                        <table className="w-full text-left border-collapse text-xs">
+                          <thead className="sticky top-0 z-10 bg-slate-50/95 border-b border-slate-200/80 text-[#003B3A]">
+                            <tr>
+                              <th className="px-3 py-2 font-bold text-[10px] uppercase tracking-wider w-8 text-center">#</th>
+                              <th className="px-3 py-2 font-bold text-[10px] uppercase tracking-wider min-w-[170px]">Học sinh & Trường cũ</th>
+                              <th className="px-3 py-2 font-bold text-[10px] uppercase tracking-wider min-w-[125px]">Nguyện vọng ĐK</th>
+                              <th className="px-3 py-2 font-bold text-[10px] uppercase tracking-wider min-w-[250px]">Kết quả Học tập & Điểm trường cũ</th>
+                              <th className="px-3 py-2 font-bold text-[10px] uppercase tracking-wider min-w-[260px]">Đối chiếu Quy chế & Môn cần KS</th>
+                              <th className="px-3 py-2 font-bold text-[10px] uppercase tracking-wider text-right w-32">Thao tác</th>
+                            </tr>
+                          </thead>
+                          <tbody className="divide-y divide-slate-100 bg-white">
+                            {studentsList.map((st: any, sIdx: number) => {
+                              const insight = analyzeStudentAcademicAndRegulation(st)
+                              const sysCode = st.surveySystem || "HNS"
+                              const criteria = st.admissionCriteria || "Khảo sát"
+                              return (
+                                <tr key={st.id || sIdx} className="hover:bg-teal-50/30 transition-colors align-top">
+                                  <td className="px-3 py-2.5 text-center text-slate-400 font-semibold">{sIdx + 1}</td>
+                                  <td className="px-3 py-2.5">
+                                    <div className="font-bold text-slate-800">{st.fullName}</div>
+                                    <div className="flex items-center gap-1.5 mt-0.5">
+                                      <span className="text-[#00736E] font-mono text-[10px] font-bold bg-teal-50 px-1.5 py-0.2 rounded border border-teal-200/60">
+                                        {st.studentCode}
+                                      </span>
+                                      {st.registeredCampus && (
+                                        <span className="text-[10px] font-semibold text-slate-500 bg-slate-100 px-1.5 py-0.2 rounded">
+                                          {st.registeredCampus}
+                                        </span>
+                                      )}
+                                    </div>
+                                    {(st.oldSchoolName || st.cityName) && (
+                                      <div className="text-[11px] text-slate-500 mt-1 flex items-center gap-1 truncate max-w-[210px]" title={`${st.oldSchoolName || ""} ${st.cityName ? `(${st.cityName})` : ""}`}>
+                                        <School className="w-3 h-3 text-slate-400 shrink-0" />
+                                        <span className="truncate">{st.oldSchoolName || st.cityName}</span>
+                                      </div>
+                                    )}
+                                  </td>
+
+                                  <td className="px-3 py-2.5">
+                                    <div className="flex flex-wrap items-center gap-1">
+                                      <span className={`px-2 py-0.5 rounded-md text-[10px] font-bold uppercase border ${getSystemBadgeStyle(sysCode)}`}>
+                                        Hệ {sysCode}
+                                      </span>
+                                      <span className="px-2 py-0.5 rounded-md text-[10px] font-semibold bg-slate-100 text-slate-700 border border-slate-200/70">
+                                        {criteria}
+                                      </span>
+                                    </div>
+                                    <div className="text-[11px] text-slate-400 mt-1">
+                                      Hình thức: <strong className="text-slate-600 font-medium">{st.surveyFormType || "Offline"}</strong>
+                                    </div>
+                                  </td>
+
+                                  <td className="px-3 py-2.5">
+                                    <div className="flex flex-wrap items-center gap-1.5 mb-1">
+                                      <span className="px-2 py-0.5 rounded-md text-[10px] font-bold bg-slate-100 text-slate-700 border border-slate-200">
+                                        {insight.programLabel} • {insight.transcriptPeriodLabel}
+                                      </span>
+                                      <span className={`px-2 py-0.5 rounded-md text-[10px] font-bold border ${
+                                        insight.hasRecordData
+                                          ? "bg-teal-50 text-[#005854] border-teal-200"
+                                          : "bg-amber-50 text-amber-700 border-amber-200"
+                                      }`}>
+                                        KQHT: {insight.academicRating || "Chưa nhập"}
+                                      </span>
+                                      {insight.conductRating && (
+                                        <span className="px-1.5 py-0.5 rounded-md text-[10px] font-medium bg-emerald-50 text-emerald-700 border border-emerald-200">
+                                          RL: {insight.conductRating}
+                                        </span>
+                                      )}
+                                    </div>
+
+                                    {insight.scores.length > 0 ? (
+                                      <div className="flex flex-wrap gap-1 mt-1">
+                                        {insight.scores.map((sc, idx) => (
+                                          <span
+                                            key={idx}
+                                            className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md bg-white border border-slate-200 text-[11px] text-slate-700 shadow-2xs"
+                                          >
+                                            <span className="text-slate-500">{sc.name}:</span>
+                                            <strong className="font-bold text-[#003B3A]">{sc.score}</strong>
+                                          </span>
+                                        ))}
+                                        {insight.combinationSummary && (
+                                          <span className="inline-flex items-center px-2 py-0.5 rounded-md bg-indigo-50 border border-indigo-200 text-[10px] font-bold text-indigo-700">
+                                            {insight.combinationSummary}
+                                          </span>
+                                        )}
+                                      </div>
+                                    ) : (
+                                      <p className="text-[11px] text-slate-400 italic">Chưa cập nhật điểm chi tiết các môn trường cũ</p>
+                                    )}
+
+                                    {insight.achievements && (
+                                      <div className="mt-1 inline-flex items-center gap-1 px-2 py-0.5 rounded-md bg-amber-50/90 border border-amber-200 text-[10px] font-bold text-amber-800">
+                                        <Award className="w-3 h-3 text-amber-600 shrink-0" />
+                                        <span className="truncate max-w-[230px]" title={insight.achievements}>{insight.achievements}</span>
+                                      </div>
+                                    )}
+                                  </td>
+
+                                  <td className="px-3 py-2.5">
+                                    <div className="flex items-center gap-1.5 mb-1">
+                                      <span className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-md text-[10px] font-bold border ${insight.regulationBadgeColor}`}>
+                                        <ShieldCheck className="w-3 h-3 shrink-0" />
+                                        {insight.regulationBadgeLabel}
+                                      </span>
+                                    </div>
+                                    <div className="flex flex-wrap items-center gap-1 mt-1">
+                                      <span className="text-[10px] font-semibold text-slate-500 mr-0.5">Cần KS:</span>
+                                      {insight.recommendedSubjectNames.map((subName, idx) => (
+                                        <span
+                                          key={idx}
+                                          className="px-1.5 py-0.2 rounded bg-[#00736E]/10 text-[#005854] border border-[#00736E]/25 text-[10px] font-bold"
+                                        >
+                                          {subName}
+                                        </span>
+                                      ))}
+                                      {insight.exemptedSubjectNames.map((exName, idx) => (
+                                        <span
+                                          key={idx}
+                                          title="Đủ điều kiện xét học bạ / đề xuất miễn khảo sát môn này"
+                                          className="px-1.5 py-0.2 rounded bg-slate-100 text-slate-400 line-through border border-slate-200 text-[10px] font-medium"
+                                        >
+                                          Miễn: {exName}
+                                        </span>
+                                      ))}
+                                    </div>
+                                    <p className="text-[10px] text-slate-400 mt-1 leading-snug" title={insight.regulationReason}>
+                                      {insight.regulationReason}
+                                    </p>
+                                  </td>
+
+                                  <td className="px-3 py-2.5 text-right">
+                                    <button
+                                      type="button"
+                                      onClick={() => applyRegulationScopeForStudents([st], `HS ${st.fullName}`)}
+                                      className="inline-flex items-center gap-1 px-2.5 py-1.5 rounded-xl bg-teal-50 hover:bg-[#00736E] text-[#005854] hover:text-white border border-teal-200/90 text-[11px] font-bold transition-all cursor-pointer shadow-2xs"
+                                      title="Nạp tự động các môn cần khảo sát, khối và hệ của học sinh này xuống Khung Phạm vi Phân công"
+                                    >
+                                      <Zap className="w-3 h-3 shrink-0" />
+                                      <span>Chọn phạm vi</span>
+                                    </button>
+                                  </td>
+                                </tr>
+                              )
+                            })}
+                          </tbody>
+                        </table>
                       </div>
                     </div>
                   ))}
@@ -1594,24 +1794,57 @@ export function PhanCongK12Client({
                       <th className="px-3.5 py-2.5 font-bold text-[11px] uppercase tracking-wider w-10 text-center">#</th>
                       <th className="px-3.5 py-2.5 font-bold text-[11px] uppercase tracking-wider w-24">Mã HS</th>
                       <th className="px-3.5 py-2.5 font-bold text-[11px] uppercase tracking-wider">Họ và tên</th>
-                      <th className="px-3.5 py-2.5 font-bold text-[11px] uppercase tracking-wider text-center w-24">Khối</th>
-                      <th className="px-3.5 py-2.5 font-bold text-[11px] uppercase tracking-wider text-center w-24">Hệ</th>
+                      <th className="px-3.5 py-2.5 font-bold text-[11px] uppercase tracking-wider text-center w-24">Khối • Hệ</th>
+                      <th className="px-3.5 py-2.5 font-bold text-[11px] uppercase tracking-wider">Kết quả Học tập & Điểm trường cũ</th>
+                      <th className="px-3.5 py-2.5 font-bold text-[11px] uppercase tracking-wider">Đối chiếu Quy chế</th>
                       <th className="px-3.5 py-2.5 font-bold text-[11px] uppercase tracking-wider text-right w-36">Thao tác</th>
                     </tr>
                   </thead>
                   <tbody className="divide-y divide-slate-100">
                     {getAssignedStudentsForGroup(viewingStudentAssignment).map((st: any, sIdx: number) => {
                       const sysCode = st.surveySystem || st.surveyFormType || "Tiêu chuẩn"
+                      const insight = analyzeStudentAcademicAndRegulation(st)
                       const directLink = `/teacher/input-assessments?periodId=${asPeriodId}&batchId=${viewingStudentAssignment.batchId || ""}&grade=${encodeURIComponent(st.grade || "")}&studentCode=${encodeURIComponent(st.studentCode)}&studentId=${st.id}&autoOpen=true`
                       return (
-                        <tr key={st.id || sIdx} className="hover:bg-teal-50/30 transition-colors">
+                        <tr key={st.id || sIdx} className="hover:bg-teal-50/30 transition-colors align-top">
                           <td className="px-3.5 py-2.5 text-center text-slate-400 font-normal">{sIdx + 1}</td>
                           <td className="px-3.5 py-2.5 font-mono text-[#00736E] font-bold">{st.studentCode}</td>
-                          <td className="px-3.5 py-2.5 font-bold text-slate-800">{st.fullName}</td>
-                          <td className="px-3.5 py-2.5 text-center text-slate-600 font-medium">Khối {st.grade || "—"}</td>
+                          <td className="px-3.5 py-2.5">
+                            <div className="font-bold text-slate-800">{st.fullName}</div>
+                            {st.oldSchoolName && (
+                              <div className="text-[10px] text-slate-400 truncate max-w-[160px]" title={st.oldSchoolName}>
+                                {st.oldSchoolName}
+                              </div>
+                            )}
+                          </td>
                           <td className="px-3.5 py-2.5 text-center">
-                            <span className="px-2 py-0.5 rounded-md bg-teal-50 text-[#005854] border border-teal-200/70 text-[10px] font-bold">
+                            <div className="text-slate-700 font-semibold">Khối {st.grade || "—"}</div>
+                            <span className="mt-0.5 inline-block px-2 py-0.2 rounded-md bg-teal-50 text-[#005854] border border-teal-200/70 text-[10px] font-bold">
                               {sysCode}
+                            </span>
+                          </td>
+                          <td className="px-3.5 py-2.5">
+                            <div className="flex flex-wrap items-center gap-1 mb-1">
+                              <span className="px-1.5 py-0.2 rounded bg-slate-100 text-slate-700 text-[10px] font-semibold">
+                                {insight.programLabel}
+                              </span>
+                              <span className="px-1.5 py-0.2 rounded bg-teal-50 text-[#005854] border border-teal-200/60 text-[10px] font-bold">
+                                {insight.academicRating}
+                              </span>
+                            </div>
+                            {insight.scores.length > 0 && (
+                              <div className="flex flex-wrap gap-1">
+                                {insight.scores.map((sc, i) => (
+                                  <span key={i} className="px-1.5 py-0.2 rounded bg-white border border-slate-200 text-[10px] text-slate-700">
+                                    {sc.name}: <strong>{sc.score}</strong>
+                                  </span>
+                                ))}
+                              </div>
+                            )}
+                          </td>
+                          <td className="px-3.5 py-2.5">
+                            <span className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-md text-[10px] font-bold border ${insight.regulationBadgeColor}`}>
+                              {insight.regulationBadgeLabel}
                             </span>
                           </td>
                           <td className="px-3.5 py-2.5 text-right">
