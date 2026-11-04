@@ -4202,14 +4202,16 @@ export function StudentInfoClient({
                                 onChange={(serializedJson) => {
                                   try {
                                     const parsed = JSON.parse(serializedJson);
-                                    let hoSo = formState.hoSoCtQuocTe;
-                                    if (parsed.programType === "BO_GD_DT") hoSo = "CT Việt Nam";
-                                    else if (parsed.programType === "SONG_NGU") hoSo = "Song ngữ / Tích hợp";
-                                    else if (parsed.programType === "NUOC_NGOAI") hoSo = "CT Quốc tế";
-                                    else if (parsed.programType === "HOMESCHOOLING") hoSo = "Home Schooling";
-                                    setFormState({ ...formState, kqHocTap: serializedJson, hoSoCtQuocTe: hoSo });
+                                    setFormState((prev: any) => {
+                                      let hoSo = prev.hoSoCtQuocTe;
+                                      if (parsed.programType === "BO_GD_DT") hoSo = "CT Việt Nam";
+                                      else if (parsed.programType === "SONG_NGU") hoSo = "Song ngữ / Tích hợp";
+                                      else if (parsed.programType === "NUOC_NGOAI") hoSo = "CT Quốc tế";
+                                      else if (parsed.programType === "HOMESCHOOLING") hoSo = "Home Schooling";
+                                      return { ...prev, kqHocTap: serializedJson, hoSoCtQuocTe: hoSo };
+                                    });
                                   } catch (e) {
-                                    setFormState({ ...formState, kqHocTap: serializedJson });
+                                    setFormState((prev: any) => ({ ...prev, kqHocTap: serializedJson }));
                                   }
                                 }}
                               />

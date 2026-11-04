@@ -102,12 +102,10 @@ export function EntranceAcademicRecordInput({
 
   // Cập nhật và kích hoạt onChange
   const updateRecord = (updater: (prev: EntranceAcademicRecord) => EntranceAcademicRecord) => {
-    setRecord(prev => {
-      const next = updater(prev);
-      const serialized = serializeEntranceRecord(next);
-      onChange(serialized);
-      return next;
-    });
+    const next = updater(record);
+    setRecord(next);
+    const serialized = serializeEntranceRecord(next);
+    onChange(serialized);
   };
 
   // Chuyển đổi loại chương trình

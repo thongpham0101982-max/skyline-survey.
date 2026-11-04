@@ -22,7 +22,11 @@ import { getDestinationSchoolsAction } from "@/app/admin/truong-lien-ket/actions
 import { StudentOrientationModal } from "@/components/orientation/StudentOrientationModal";
 import { StudentOrientationReportModal } from "@/components/orientation/StudentOrientationReportModal";
 import { AdmissionRegulationManager } from "@/components/admin/AdmissionRegulationManager";
-import { parseAdmissionRegulationConfig } from "@/lib/admissionRegulationEngine";
+import {
+  parseAdmissionRegulationConfig,
+  isStudentEligibleByRegulation,
+  exportEligibleStudentsRegulationExcel
+} from "@/lib/admissionRegulationEngine";
 
 
 // ========= TYPES =========
@@ -1712,7 +1716,7 @@ export function InputAssessmentsClient({
   const [sEduFilter, setSEduFilter] = useState("")
   const [sCampusFilter, setSCampusFilter] = useState("")
   const [sResultFilter, setSResultFilter] = useState("all")
-  const [sRecordFilter, setSRecordFilter] = useState<"all" | "achievements" | "old_school" | "attachments">("all")
+  const [sRecordFilter, setSRecordFilter] = useState<"all" | "achievements" | "old_school" | "attachments" | "eligible_regulation">("all")
   const [tableViewMode, setTableViewMode] = useState<"inline" | "compact" | "detailed">("inline")
   const [studentModalTab, setStudentModalTab] = useState<"profile" | "academic">("profile")
   const [inlineEdits, setInlineEdits] = useState<Record<string, any>>({})
@@ -5060,12 +5064,16 @@ ${reportForm.directorNote}`;
         body: JSON.stringify({ id: s.id, data: payload })
       });
       if (r.ok) {
+        const updated = await r.json().catch(() => null);
+        if (updated && updated.id) {
+          setStudents(prev => prev.map(st => st.id === s.id ? { ...st, ...updated } : st));
+        }
+        await fetchStudents();
         setInlineEdits(prev => {
           const next = { ...prev };
           delete next[s.id];
           return next;
         });
-        await fetchStudents();
         notify(`Đã lưu dòng: ${payload.fullName}`);
       } else {
         const err = await r.json().catch(() => ({}));
@@ -5097,8 +5105,8 @@ ${reportForm.directorNote}`;
         });
         if (r.ok) okCount++;
       }));
-      setInlineEdits({});
       await fetchStudents();
+      setInlineEdits({});
       notify(`Đã lưu thành công ${okCount}/${ids.length} hồ sơ học sinh!`);
     } catch (e) {
       notify("Lỗi khi lưu hàng loạt", "err");
@@ -5599,10 +5607,11 @@ ${reportForm.directorNote}`;
         if (sRecordFilter === "achievements" && !details.achievements) return false;
         if (sRecordFilter === "old_school" && !s.oldSchoolName && details.math === "—" && details.overallRating === "—") return false;
         if (sRecordFilter === "attachments" && (!details.attachments || details.attachments.length === 0)) return false;
+        if (sRecordFilter === "eligible_regulation" && !isStudentEligibleByRegulation(s, parseAdmissionRegulationConfig(configs))) return false;
       }
       return true;
     });
-  }, [students, sSearch, sGradeFilter, sEduFilter, sCampusFilter, sResultFilter, sRecordFilter, campuses, selPeriod, visiblePeriods, periods, showCompletedBatches, sBatchId]);
+  }, [students, sSearch, sGradeFilter, sEduFilter, sCampusFilter, sResultFilter, sRecordFilter, campuses, selPeriod, visiblePeriods, periods, showCompletedBatches, sBatchId, configs]);
 
   const paginatedFiltStu = useMemo(() => {
     const startIndex = (studentsCurrentPage - 1) * studentsPageSize;
@@ -5616,17 +5625,32 @@ ${reportForm.directorNote}`;
     filtStu.forEach(s => {
       const rec = parseEntranceRecord(s.kqHocTap, s.grade);
       const rawKqgd = (s.kqgdTieuHoc || "").trim();
+      const hasExplicitJsonProgram = Boolean(
+        s.kqHocTap && s.kqHocTap.trim().startsWith("{") && s.kqHocTap.includes('"programType"')
+      );
+      if (!hasExplicitJsonProgram && s.hoSoCtQuocTe) {
+        const hsLower = s.hoSoCtQuocTe.toLowerCase();
+        if (hsLower.includes("song ngữ") || hsLower.includes("tích hợp")) rec.programType = "SONG_NGU";
+        else if (hsLower.includes("quốc tế") || hsLower.includes("nước ngoài")) rec.programType = "NUOC_NGOAI";
+        else if (hsLower.includes("home")) rec.programType = "HOMESCHOOLING";
+        else if (hsLower.includes("việt nam") || hsLower.includes("bộ gd")) rec.programType = "BO_GD_DT";
+      }
+      const hasExplicitProgram = hasExplicitJsonProgram || Boolean(s.hoSoCtQuocTe);
 
       // Bỏ qua diện Nước ngoài & Homeschooling vì diện này được miễn điểm các môn
-      const isForeign = s.targetType?.includes("Nước ngoài")
-        || (s.countryName && s.countryName.toLowerCase() !== "việt nam" && s.countryName.toLowerCase() !== "vietnam")
-        || rec.programType === "NUOC_NGOAI"
-        || (s.oldSchoolType || "").toLowerCase().includes("quốc tế")
-        || rawKqgd.toLowerCase().includes("nước ngoài");
+      const isForeign = hasExplicitProgram
+        ? rec.programType === "NUOC_NGOAI"
+        : (s.targetType?.includes("Nước ngoài")
+          || (s.countryName && s.countryName.toLowerCase() !== "việt nam" && s.countryName.toLowerCase() !== "vietnam")
+          || rec.programType === "NUOC_NGOAI"
+          || (s.oldSchoolType || "").toLowerCase().includes("quốc tế")
+          || rawKqgd.toLowerCase().includes("nước ngoài"));
 
-      const isHomeschool = rec.programType === "HOMESCHOOLING"
-        || (s.oldSchoolName || "").toLowerCase().includes("homeschool")
-        || rawKqgd.toLowerCase().includes("homeschool");
+      const isHomeschool = hasExplicitProgram
+        ? rec.programType === "HOMESCHOOLING"
+        : (rec.programType === "HOMESCHOOLING"
+          || (s.oldSchoolName || "").toLowerCase().includes("homeschool")
+          || rawKqgd.toLowerCase().includes("homeschool"));
 
       if (isForeign || isHomeschool) return;
 
@@ -5669,6 +5693,8 @@ ${reportForm.directorNote}`;
     let withAchievements = 0;
     let withOldSchool = 0;
     let withAttachments = 0;
+    let eligibleByRegulation = 0;
+    const regConfig = parseAdmissionRegulationConfig(configs);
 
     students.forEach((s) => {
       const entranceRec = parseEntranceRecord(s.kqHocTap, s.grade);
@@ -5676,15 +5702,17 @@ ${reportForm.directorNote}`;
       if (details.achievements) withAchievements++;
       if (s.oldSchoolName || details.math !== "—" || details.overallRating !== "—") withOldSchool++;
       if (details.attachments && details.attachments.length > 0) withAttachments++;
+      if (isStudentEligibleByRegulation(s, regConfig)) eligibleByRegulation++;
     });
 
     return {
       total: students.length,
       withAchievements,
       withOldSchool,
-      withAttachments
+      withAttachments,
+      eligibleByRegulation
     };
-  }, [students]);
+  }, [students, configs]);
 
   const studentResultKPIs = useMemo(() => {
     let datCount = 0;
@@ -7919,7 +7947,7 @@ const [customCommitmentSubjects, setCustomCommitmentSubjects] = useState<string[
                 </button>
 
                 {isDataToolsOpen && (
-                  <div className="absolute right-0 mt-1.5 w-52 bg-white border border-slate-200 rounded-2xl shadow-lg py-1.5 z-30 animate-in fade-in zoom-in-95 duration-150">
+                  <div className="absolute right-0 mt-1.5 w-64 bg-white border border-slate-200 rounded-2xl shadow-lg py-1.5 z-30 animate-in fade-in zoom-in-95 duration-150">
                     <button
                       type="button"
                       onClick={() => { setIsDataToolsOpen(false); handleSyncMasterStudentInfo(); }}
@@ -7929,9 +7957,48 @@ const [customCommitmentSubjects, setCustomCommitmentSubjects] = useState<string[
                       <RefreshCw className={`w-3.5 h-3.5 text-teal-600 ${syncingMaster ? 'animate-spin' : ''}`} />
                       <span>Đồng bộ từ HS gốc</span>
                     </button>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setIsDataToolsOpen(false);
+                        const res = exportEligibleStudentsRegulationExcel({
+                          customConfig: parseAdmissionRegulationConfig(configs),
+                          templateOnly: true
+                        });
+                        notify(`Đã tải file mẫu "${res.fileName}"!`);
+                      }}
+                      className="w-full px-3.5 py-2 text-left text-xs font-normal text-slate-700 hover:bg-slate-50 flex items-center gap-2.5 transition-colors cursor-pointer"
+                    >
+                      <Download className="w-3.5 h-3.5 text-emerald-600" />
+                      <span>Tải mẫu DS Đủ ĐK Quy chế (.xlsx)</span>
+                    </button>
                   </div>
                 )}
               </div>
+
+              {/* Nút Xuất / Tải mẫu DS Học sinh đủ điều kiện khảo sát theo quy chế */}
+              <button
+                type="button"
+                onClick={() => {
+                  const regConfig = parseAdmissionRegulationConfig(configs);
+                  const res = exportEligibleStudentsRegulationExcel({
+                    students: filtStu,
+                    customConfig: regConfig,
+                    campuses,
+                    periods
+                  });
+                  if (res.isSample) {
+                    notify(`Đã tải Mẫu danh sách HS đủ điều kiện khảo sát theo quy chế (${res.fileName})!`);
+                  } else {
+                    notify(`Đã xuất ${res.exportedCount} HS đủ điều kiện Xét học bạ / Tuyển thẳng theo quy chế (${res.fileName})!`);
+                  }
+                }}
+                className="h-9 px-3 bg-teal-50/80 text-[#005854] border border-teal-200 hover:bg-teal-100/80 rounded-xl flex items-center gap-1.5 text-xs font-bold shadow-2xs transition-all cursor-pointer"
+                title="Xuất danh sách (hoặc tải mẫu) Học sinh đủ điều kiện Xét học bạ / Tuyển thẳng (được miễn môn văn hóa theo quy chế)"
+              >
+                <FileSpreadsheet className="w-3.5 h-3.5 text-[#00736E]" />
+                <span>Xuất Mẫu / DS Đủ ĐK Quy chế</span>
+              </button>
 
               {/* Nút Tải file mẫu trực tiếp */}
               <button
@@ -8137,6 +8204,14 @@ const [customCommitmentSubjects, setCustomCommitmentSubjects] = useState<string[
                 </button>
                 <button
                   type="button"
+                  onClick={() => setSRecordFilter("eligible_regulation")}
+                  className={`px-2.5 py-1 rounded-lg text-xs font-bold transition-all cursor-pointer ${sRecordFilter === "eligible_regulation" ? "bg-[#00736E] text-white shadow-xs" : "bg-emerald-50 text-emerald-800 border border-emerald-200/80 hover:bg-emerald-100"}`}
+                  title="Chỉ lọc nhóm Học sinh đủ điều kiện Xét học bạ / Tuyển thẳng (được miễn môn văn hóa Toán - Tiếng Việt/Ngữ Văn theo Quy chế)"
+                >
+                  ✅ Đủ ĐK Xét học bạ / Tuyển thẳng (Quy chế): {studentIntakeKPIs.eligibleByRegulation}
+                </button>
+                <button
+                  type="button"
                   onClick={() => setSRecordFilter("achievements")}
                   className={`px-2.5 py-1 rounded-lg text-xs font-bold transition-all cursor-pointer ${sRecordFilter === "achievements" ? "bg-amber-600 text-white shadow-xs" : "bg-amber-50 text-amber-800 border border-amber-200/80 hover:bg-amber-100"}`}
                 >
@@ -8287,7 +8362,7 @@ const [customCommitmentSubjects, setCustomCommitmentSubjects] = useState<string[
                   )}
                   {sRecordFilter !== "all" && (
                     <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md bg-amber-50 text-amber-800 text-[11px] font-medium">
-                      Học bạ/TT: {sRecordFilter === "achievements" ? "Có thành tích" : sRecordFilter === "old_school" ? "Có học bạ trường cũ" : "Có tệp đính kèm"}
+                      Học bạ/TT: {sRecordFilter === "eligible_regulation" ? "Đủ ĐK Xét học bạ / Tuyển thẳng (Miễn môn VH)" : sRecordFilter === "achievements" ? "Có thành tích" : sRecordFilter === "old_school" ? "Có học bạ trường cũ" : "Có tệp đính kèm"}
                       <button type="button" onClick={()=>setSRecordFilter("all")} className="hover:text-amber-950 cursor-pointer">×</button>
                     </span>
                   )}
@@ -8816,24 +8891,44 @@ const [customCommitmentSubjects, setCustomCommitmentSubjects] = useState<string[
                           }
 
                           // Xác định điều kiện Nước ngoài / Homeschooling / Khối 1 đầu năm
-                          const isForeign = parsedLocType === "Nước ngoài"
-                            || (s.targetType || "").toLowerCase().includes("nước ngoài")
-                            || (s.countryName && s.countryName.toLowerCase() !== "việt nam" && s.countryName.toLowerCase() !== "vietnam")
-                            || entranceRec.programType === "NUOC_NGOAI"
-                            || (s.oldSchoolType || "").toLowerCase().includes("quốc tế")
-                            || (rawKqgd || "").toLowerCase().includes("nước ngoài");
-
-                          const isHomeschool = entranceRec.programType === "HOMESCHOOLING"
-                            || (parsedOldSchoolName || "").toLowerCase().includes("homeschool")
-                            || (s.oldSchoolName || "").toLowerCase().includes("homeschool")
-                            || (rawKqgd || "").toLowerCase().includes("homeschool")
-                            || (s.kqHocTap || "").toLowerCase().includes("homeschool");
-
-                          if (isHomeschool && entranceRec.programType !== "HOMESCHOOLING") {
-                            entranceRec.programType = "HOMESCHOOLING";
-                          } else if (isForeign && entranceRec.programType !== "NUOC_NGOAI") {
-                            entranceRec.programType = "NUOC_NGOAI";
+                          // Nếu hồ sơ đã được lưu tường minh programType trong JSON kqHocTap hoặc hoSoCtQuocTe thì tôn trọng tuyệt đối lựa chọn của người dùng
+                          const hasExplicitJsonProgram = Boolean(
+                            s.kqHocTap && s.kqHocTap.trim().startsWith("{") && s.kqHocTap.includes('"programType"')
+                          );
+                          if (!hasExplicitJsonProgram && s.hoSoCtQuocTe) {
+                            const hsLower = s.hoSoCtQuocTe.toLowerCase();
+                            if (hsLower.includes("song ngữ") || hsLower.includes("tích hợp")) entranceRec.programType = "SONG_NGU";
+                            else if (hsLower.includes("quốc tế") || hsLower.includes("nước ngoài")) entranceRec.programType = "NUOC_NGOAI";
+                            else if (hsLower.includes("home")) entranceRec.programType = "HOMESCHOOLING";
+                            else if (hsLower.includes("việt nam") || hsLower.includes("bộ gd")) entranceRec.programType = "BO_GD_DT";
                           }
+                          const hasExplicitProgram = hasExplicitJsonProgram || Boolean(s.hoSoCtQuocTe);
+
+                          if (!hasExplicitProgram) {
+                            const inferredHomeschool =
+                              entranceRec.programType === "HOMESCHOOLING"
+                              || (parsedOldSchoolName || "").toLowerCase().includes("homeschool")
+                              || (s.oldSchoolName || "").toLowerCase().includes("homeschool")
+                              || (rawKqgd || "").toLowerCase().includes("homeschool")
+                              || (s.kqHocTap || "").toLowerCase().includes("homeschool");
+
+                            const inferredForeign =
+                              parsedLocType === "Nước ngoài"
+                              || (s.targetType || "").toLowerCase().includes("nước ngoài")
+                              || (s.countryName && s.countryName.toLowerCase() !== "việt nam" && s.countryName.toLowerCase() !== "vietnam")
+                              || entranceRec.programType === "NUOC_NGOAI"
+                              || (s.oldSchoolType || "").toLowerCase().includes("quốc tế")
+                              || (rawKqgd || "").toLowerCase().includes("nước ngoài");
+
+                            if (inferredHomeschool) {
+                              entranceRec.programType = "HOMESCHOOLING";
+                            } else if (inferredForeign) {
+                              entranceRec.programType = "NUOC_NGOAI";
+                            }
+                          }
+
+                          const isHomeschool = entranceRec.programType === "HOMESCHOOLING";
+                          const isForeign = entranceRec.programType === "NUOC_NGOAI";
 
                           const details = extractAcademicDetails(entranceRec, s.grade, s.hocKy || periodObj?.name, {
                             isForeign,
@@ -9344,6 +9439,7 @@ const [customCommitmentSubjects, setCustomCommitmentSubjects] = useState<string[
                                     <select
                                       value={rowDraft.programType}
                                       onChange={e => updateInlineCell(s, parsedRowDefaults, "programType", e.target.value)}
+                                      onKeyDown={e => { if (e.key === "Enter") saveInlineRow(s); }}
                                       className="raw-select py-0 h-7 min-w-[112px] w-full px-1.5 bg-white border border-teal-200 hover:border-teal-300 focus:border-teal-600 rounded-md text-[11px] font-bold text-teal-800 outline-none cursor-pointer"
                                     >
                                       <option value="BO_GD_DT">Bộ GD&ĐT</option>
