@@ -43,6 +43,7 @@ import {
   HelpCircle,
   CheckSquare,
   FileCheck,
+  ClipboardCheck,
   Lightbulb,
   Bot,
   Copy,
@@ -214,8 +215,12 @@ export function StudentOrientationModal({
   const [gdcsParentMeetingLocation, setGdcsParentMeetingLocation] = useState("")
   const [gdcsParentMeetingContent, setGdcsParentMeetingContent] = useState("")
 
-  // Khảo sát tâm lý
+  // GV phụ trách định hướng được phân công tự động
+  const [assignedOrientationTeachers, setAssignedOrientationTeachers] = useState<any[]>([])
+
+  // Khảo sát tâm lý & Form đánh giá tâm lý chuẩn
   const [isPsychModalOpen, setIsPsychModalOpen] = useState(false)
+  const [psychModalTab, setPsychModalTab] = useState<"referral" | "form">("referral")
   const [psychologyReferralStatus, setPsychologyReferralStatus] = useState("NONE")
   const [psychologyReferralReason, setPsychologyReferralReason] = useState("")
   const [departments, setDepartments] = useState<any[]>([])
@@ -229,6 +234,15 @@ export function StudentOrientationModal({
   const [psychQuestions, setPsychQuestions] = useState<any[]>([])
   const [psychologyData, setPsychologyData] = useState<any>(null)
   const [loadingDeptTeachers, setLoadingDeptTeachers] = useState(false)
+
+  // State cho Form Đánh giá Tâm lý (6 nhóm - 20 câu - 80 điểm)
+  const [psychScores, setPsychScores] = useState<number[]>(Array(20).fill(-1))
+  const [psychNotes, setPsychNotes] = useState<string[]>(Array(20).fill(""))
+  const [psychConclusion, setPsychConclusion] = useState("")
+  const [psychRecommendation, setPsychRecommendation] = useState("")
+  const [psychActiveSection, setPsychActiveSection] = useState<number | "ALL">(0)
+  const [savingPsychAssessment, setSavingPsychAssessment] = useState(false)
+  const [psychAssessmentSaved, setPsychAssessmentSaved] = useState(false)
 
   // Khởi tạo và fetch dữ liệu khi mở Modal
   useEffect(() => {
@@ -279,12 +293,19 @@ export function StudentOrientationModal({
 
         // Fetch dữ liệu phiếu của học sinh từ DB
         let record: any = null
+        let autoAssignedTeacherName = ""
         try {
           const rRes = await fetch(`/api/admin/orientation/records?studentId=${student.id}`)
           if (rRes.ok) {
             const rData = await rRes.json()
             record = rData?.success ? rData.data : null
             const sDetail = rData?.student || record?.student || null
+            if (rData?.assignedOrientationTeachers && isMounted) {
+              setAssignedOrientationTeachers(rData.assignedOrientationTeachers)
+            }
+            if (rData?.assignedOrientationTeacher?.teacherName) {
+              autoAssignedTeacherName = rData.assignedOrientationTeacher.teacherName
+            }
             if (sDetail && isMounted) {
               setStudentDetail((prev: any) => ({ ...prev, ...sDetail }))
               if (sDetail.writtenEnglishScore !== undefined && sDetail.writtenEnglishScore !== null) {
@@ -398,8 +419,14 @@ export function StudentOrientationModal({
         })
         setParentAnswers(initialParentAnswers)
 
+        const resolvedTeacherName =
+          record?.interviewerName ||
+          autoAssignedTeacherName ||
+          student?.assignedTeacherName ||
+          ""
+
         if (record) {
-          setInterviewerName(record.interviewerName || "")
+          setInterviewerName(resolvedTeacherName)
           if (record.interviewDate) {
             try {
               const dStr = new Date(record.interviewDate).toISOString().split("T")[0]
@@ -422,13 +449,15 @@ export function StudentOrientationModal({
             })
           }
 
-          // Thẩm định QLCM cơ sở
+          // GV phụ trách định hướng & Thẩm định
           if (parsedInterviewData?.verification) {
             setVerificationStatus(parsedInterviewData.verification.status || "PENDING")
-            setVerifierName(parsedInterviewData.verification.verifiedBy || "")
+            setVerifierName(parsedInterviewData.verification.verifiedBy || resolvedTeacherName)
             setVerifiedAt(parsedInterviewData.verification.verifiedAt || "")
             setVerificationNotes(parsedInterviewData.verification.notes || "")
             setSupportReferralConfirmed(!!parsedInterviewData.verification.supportReferralConfirmed)
+          } else {
+            setVerifierName(resolvedTeacherName)
           }
 
           setParentRepresentativeName(record.parentRepresentativeName || "")
@@ -464,9 +493,12 @@ export function StudentOrientationModal({
               setGdcsGeneralNote(record.admissionConsultantNote)
             }
           }
+        } else if (resolvedTeacherName) {
+          setInterviewerName(resolvedTeacherName)
+          setVerifierName(resolvedTeacherName)
         }
 
-        // Tải thông tin Tổ tâm lý nếu có chỉ định
+        // Tải thông tin Tổ tâm lý & dữ liệu Form Tâm lý nếu có
         try {
           const pRes = await fetch(`/api/admin/orientation/psychology-referral?studentId=${student.id}`)
           if (pRes.ok) {
@@ -477,10 +509,43 @@ export function StudentOrientationModal({
               const teachers = pData.assignedTeachers || pData.tlhnTeachers || []
               setAssignedPsychTeachers(teachers)
               setPsychQuestions(pData.psychologyQuestions || [])
-              setPsychologyReferralStatus(pData.referralStatus || record?.psychologyReferralStatus || "NONE")
+              const refStatus = pData.referralStatus || record?.psychologyReferralStatus || "NONE"
+              setPsychologyReferralStatus(refStatus)
               setPsychologyReferralReason(pData.referralReason || record?.psychologyReferralReason || "")
-              if (pData?.psychologyData && isMounted) {
-                setPsychologyData(pData.psychologyData)
+
+              // Tự động chọn GV Tâm lý đã được gán hoặc GV đầu tiên được phân công trong đợt
+              const currentPsychTeacherId = pData.referralTeacherId || record?.psychologyTeacherId || teachers[0]?.teacherId || ""
+              const currentPsychTeacherObj = teachers.find((t: any) => t.teacherId === currentPsychTeacherId) || teachers[0]
+              if (currentPsychTeacherObj) {
+                setSelectedPsychTeacherId(currentPsychTeacherObj.teacherId || "")
+                setSelectedPsychTeacherName(pData.referralTeacherName || record?.psychologyTeacherName || currentPsychTeacherObj.teacherName || "")
+                setSelectedPsychTeacherEmail(currentPsychTeacherObj.teacherEmail || "")
+              } else if (pData.referralTeacherName || record?.psychologyTeacherName) {
+                setSelectedPsychTeacherName(pData.referralTeacherName || record?.psychologyTeacherName || "")
+              }
+
+              const pDataObj = pData.psychologyData || (record?.psychologyData ? (typeof record.psychologyData === "string" ? JSON.parse(record.psychologyData) : record.psychologyData) : null)
+              if (pDataObj && isMounted) {
+                setPsychologyData(pDataObj)
+                if (Array.isArray(pDataObj.scores) && pDataObj.scores.length > 0) {
+                  const loadedScores = Array(20).fill(-1)
+                  pDataObj.scores.slice(0, 20).forEach((s: any, i: number) => {
+                    loadedScores[i] = Number.isFinite(Number(s)) ? Number(s) : -1
+                  })
+                  setPsychScores(loadedScores)
+                }
+                if (Array.isArray(pDataObj.notes) && pDataObj.notes.length > 0) {
+                  const loadedNotes = Array(20).fill("")
+                  pDataObj.notes.slice(0, 20).forEach((n: any, i: number) => {
+                    loadedNotes[i] = String(n || "")
+                  })
+                  setPsychNotes(loadedNotes)
+                }
+                if (pDataObj.conclusion) setPsychConclusion(pDataObj.conclusion)
+                if (pDataObj.recommendation) setPsychRecommendation(pDataObj.recommendation)
+                setPsychModalTab("form")
+              } else if (refStatus === "REQUESTED") {
+                setPsychModalTab("form")
               }
             }
           }
@@ -843,12 +908,13 @@ export function StudentOrientationModal({
       })
 
       // Lưu trữ cấu trúc phiên bản 2026.3
+      const effectiveTeacherName = verifierName || interviewerName || ""
       const richInterviewPayload = {
         version: ORIENTATION_CRITERIA_VERSION,
         gradeGroup: gradeGroupKey,
         formGrade: student?.grade,
         interviewDate,
-        interviewerName,
+        interviewerName: effectiveTeacherName,
         items: itemsArray,
         criteriaResults: itemsArray,
         parentItems: parentItemsArray,
@@ -856,7 +922,7 @@ export function StudentOrientationModal({
         proposedPlacementRecommendation: summary9.initialRecommendations || proposedClassPlacement,
         verification: {
           status: verificationStatus,
-          verifiedBy: verifierName,
+          verifiedBy: effectiveTeacherName,
           verifiedAt: verifiedAt || (verificationStatus !== "PENDING" ? new Date().toISOString() : null),
           notes: verificationNotes,
           supportReferralConfirmed
@@ -869,7 +935,7 @@ export function StudentOrientationModal({
       const payload = {
         studentId: student.id,
         interviewDate: new Date(interviewDate).toISOString(),
-        interviewerName,
+        interviewerName: effectiveTeacherName,
         adaptationLevel: summary9.adaptabilityAutonomy ? (summary9.adaptabilityAutonomy.includes("tự tin") ? "CONFIDENT" : "NORMAL") : "CONFIDENT",
         interviewData: JSON.stringify(richInterviewPayload),
         studentStrengths: summary9.strongPoints,
@@ -919,9 +985,166 @@ export function StudentOrientationModal({
     }
   }
 
+  // Đổi Tổ chuyên môn để lọc danh sách Giáo viên Tâm lý
+  const handleDepartmentChange = async (deptCode: string) => {
+    setSelectedDeptCode(deptCode)
+    setLoadingDeptTeachers(true)
+    try {
+      const res = await fetch(`/api/admin/orientation/psychology-referral?studentId=${student.id}&departmentCode=${encodeURIComponent(deptCode)}`)
+      if (res.ok) {
+        const data = await res.json()
+        const teachers = data.assignedTeachers || data.tlhnTeachers || []
+        setAssignedPsychTeachers(teachers)
+        if (teachers.length > 0) {
+          setSelectedPsychTeacherId(teachers[0].teacherId || "")
+          setSelectedPsychTeacherName(teachers[0].teacherName || "")
+          setSelectedPsychTeacherEmail(teachers[0].teacherEmail || "")
+        } else {
+          setSelectedPsychTeacherId("")
+          setSelectedPsychTeacherName("")
+          setSelectedPsychTeacherEmail("")
+        }
+      }
+    } catch (e) {
+      console.error("Lỗi khi tải GV theo tổ:", e)
+    } finally {
+      setLoadingDeptTeachers(false)
+    }
+  }
+
+  // Gửi đề xuất & phân công Giáo viên Tâm lý
+  const handleSubmitPsychReferral = async () => {
+    if (!psychologyReferralReason.trim()) {
+      alert("Vui lòng nhập hoặc chọn biểu hiện / lý do cần khảo sát tâm lý.")
+      return
+    }
+    setSubmittingPsych(true)
+    setPsychSubmittedSuccess(false)
+    try {
+      const res = await fetch("/api/admin/orientation/psychology-referral", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          studentId: student.id,
+          reason: psychologyReferralReason.trim(),
+          teacherId: selectedPsychTeacherId,
+          teacherName: selectedPsychTeacherName,
+          teacherEmail: selectedPsychTeacherEmail,
+          notifyEmail: true
+        })
+      })
+      const data = await res.json()
+      if (data.success) {
+        setPsychologyReferralStatus("REQUESTED")
+        setPsychSubmittedSuccess(true)
+        if (onSuccess) onSuccess()
+      } else {
+        alert("Lỗi khi gửi đề xuất: " + (data.error || "Không xác định"))
+      }
+    } catch (e: any) {
+      alert("Lỗi khi gửi đề xuất: " + e.message)
+    } finally {
+      setSubmittingPsych(false)
+    }
+  }
+
+  // Các hàm tính điểm cho Form Đánh giá Tâm lý chuẩn hóa (6 nhóm - 20 câu - 80 điểm)
+  const calculatePsychSectionScore = (sectionIdx: number) => {
+    if (!Array.isArray(psychQuestions) || !psychQuestions[sectionIdx]) return 0
+    let offset = 0
+    for (let i = 0; i < sectionIdx; i++) {
+      offset += (psychQuestions[i]?.questions?.length || 0)
+    }
+    const len = psychQuestions[sectionIdx]?.questions?.length || 0
+    return psychScores
+      .slice(offset, offset + len)
+      .reduce((sum, val) => sum + (val >= 0 ? val : 0), 0)
+  }
+
+  const psychAnsweredCount = psychScores.filter(s => s >= 0).length
+  const psychProgress = Math.round((psychAnsweredCount / 20) * 100)
+  const psychTotalScore = psychScores.reduce((sum, val) => sum + (val >= 0 ? val : 0), 0)
+
+  const getPsychEvaluation = (score: number) => {
+    const rawGrade = String(studentDetail?.grade || student?.grade || "").toLowerCase().replace("khối", "").replace("khoi", "").trim()
+    const isGrades6to12 = ["6", "7", "8", "9", "10", "11", "12"].includes(rawGrade)
+    if (isGrades6to12) {
+      if (score <= 15) return { level: "Bình thường", suggestion: "Ổn định, thích nghi tốt", color: "text-emerald-700", bg: "bg-emerald-50", border: "border-emerald-200" }
+      if (score <= 31) return { level: "Dấu hiệu nhẹ", suggestion: "Theo dõi - hỗ trợ tâm lý học đường", color: "text-teal-700", bg: "bg-teal-50", border: "border-teal-200" }
+      if (score <= 47) return { level: "Dấu hiệu vừa", suggestion: "Quan sát sâu, tư vấn cá nhân", color: "text-amber-700", bg: "bg-amber-50", border: "border-amber-200" }
+      if (score <= 63) return { level: "Nguy cơ cao", suggestion: "Đánh giá chuyên sâu, can thiệp định kỳ", color: "text-orange-700", bg: "bg-orange-50", border: "border-orange-200" }
+      return { level: "Nguy cơ rất cao", suggestion: "Cần can thiệp chuyên môn, phối hợp phụ huynh", color: "text-rose-700", bg: "bg-rose-50", border: "border-rose-200" }
+    }
+    if (score <= 15) return { level: "Bình thường", suggestion: "Có thể theo học bình thường", color: "text-emerald-700", bg: "bg-emerald-50", border: "border-emerald-200" }
+    if (score <= 31) return { level: "Dấu hiệu nhẹ", suggestion: "Theo dõi - hỗ trợ thích nghi", color: "text-teal-700", bg: "bg-teal-50", border: "border-teal-200" }
+    if (score <= 47) return { level: "Dấu hiệu vừa", suggestion: "Quan sát sâu, can thiệp nhẹ nếu cần", color: "text-amber-700", bg: "bg-amber-50", border: "border-amber-200" }
+    if (score <= 63) return { level: "Nguy cơ cao", suggestion: "Cần đánh giá chuyên sâu và can thiệp", color: "text-orange-700", bg: "bg-orange-50", border: "border-orange-200" }
+    return { level: "Nguy cơ rất cao", suggestion: "Cần can thiệp chuyên môn sớm (bảo đảm an toàn và hỗ trợ)", color: "text-rose-700", bg: "bg-rose-50", border: "border-rose-200" }
+  }
+
+  const psychEvaluation = getPsychEvaluation(psychTotalScore)
+
+  // Lưu trực tiếp kết quả khảo sát & đánh giá tâm lý theo Form Tâm lý
+  const handleSavePsychAssessment = async () => {
+    setSavingPsychAssessment(true)
+    setPsychAssessmentSaved(false)
+    try {
+      const normalizedScores = psychScores.map(s => (s >= 0 ? s : 0))
+      const sectionScores = Array.isArray(psychQuestions)
+        ? psychQuestions.map((_, idx) => calculatePsychSectionScore(idx))
+        : []
+      const evalObj = getPsychEvaluation(psychTotalScore)
+
+      const res = await fetch("/api/admin/orientation/psychology-referral", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          action: "savePsychologyAssessment",
+          studentId: student.id,
+          teacherId: selectedPsychTeacherId,
+          teacherName: selectedPsychTeacherName,
+          reason: psychologyReferralReason,
+          scores: normalizedScores,
+          sectionScores,
+          totalScore: psychTotalScore,
+          evaluation: evalObj,
+          conclusion: psychConclusion,
+          recommendation: psychRecommendation,
+          notes: psychNotes
+        })
+      })
+
+      const data = await res.json()
+      if (data.success) {
+        setPsychologyReferralStatus("COMPLETED")
+        setPsychologyData(data.data?.psychologyData || {
+          scores: normalizedScores,
+          sectionScores,
+          totalScore: psychTotalScore,
+          evaluation: evalObj,
+          conclusion: psychConclusion,
+          recommendation: psychRecommendation,
+          notes: psychNotes,
+          assessedBy: selectedPsychTeacherName || data.data?.teacherName || "GV Tâm lý",
+          assessedAtFormatted: new Date().toLocaleString("vi-VN")
+        })
+        setPsychAssessmentSaved(true)
+        setTimeout(() => setPsychAssessmentSaved(false), 3500)
+        if (onSuccess) onSuccess()
+      } else {
+        alert("Lỗi khi lưu đánh giá tâm lý: " + (data.error || "Không xác định"))
+      }
+    } catch (e: any) {
+      alert("Lỗi khi lưu đánh giá tâm lý: " + e.message)
+    } finally {
+      setSavingPsychAssessment(false)
+    }
+  }
+
   // Mở Báo cáo nhận diện A4
   const handleViewReport = () => {
     if (onOpenReport) {
+      const effectiveTeacherName = verifierName || interviewerName || ""
       const itemsArray = questions.map((q: any) => {
         const ans = answers[q.id] || {}
         const comment = (ans.teacherComment || ans.notes || "").trim()
@@ -961,7 +1184,7 @@ export function StudentOrientationModal({
         gradeGroup: gradeGroupKey,
         formGrade: student?.grade,
         interviewDate,
-        interviewerName,
+        interviewerName: effectiveTeacherName,
         items: itemsArray,
         criteriaResults: itemsArray,
         parentItems: parentItemsArray,
@@ -969,7 +1192,7 @@ export function StudentOrientationModal({
         proposedPlacementRecommendation: summary9.initialRecommendations || proposedClassPlacement,
         verification: {
           status: verificationStatus,
-          verifiedBy: verifierName,
+          verifiedBy: effectiveTeacherName,
           verifiedAt: verifiedAt || (verificationStatus !== "PENDING" ? new Date().toISOString() : null),
           notes: verificationNotes,
           supportReferralConfirmed
@@ -979,7 +1202,7 @@ export function StudentOrientationModal({
       const orientationDataPreview = {
         studentId: student.id,
         interviewDate,
-        interviewerName,
+        interviewerName: effectiveTeacherName,
         studentStrengths: summary9.strongPoints,
         studentNeedsSupport: summary9.difficultiesNeeds,
         interviewerGeneralRemark: summary9.initialRecommendations,
@@ -989,7 +1212,11 @@ export function StudentOrientationModal({
         proposedEduSystem,
         proposedClassPlacement,
         admissionConsultantNote: buildGdcsConsultantPayload(),
-        interviewData: JSON.stringify(richInterviewPayload)
+        interviewData: JSON.stringify(richInterviewPayload),
+        psychologyReferralStatus,
+        psychologyReferralReason,
+        psychologyTeacherName: selectedPsychTeacherName,
+        psychologyData
       }
 
       onOpenReport(studentDetail || student, orientationDataPreview)
@@ -1158,7 +1385,7 @@ export function StudentOrientationModal({
           </div>
 
           <div className="flex flex-wrap items-center gap-2">
-            {/* Ngày phỏng vấn & GV phỏng vấn trên thanh Header */}
+            {/* Ngày phỏng vấn trên thanh Header (đã bỏ trường GV theo yêu cầu) */}
             <div className="hidden lg:flex items-center gap-2 bg-[#073330]/80 border border-teal-700/70 rounded-xl px-2.5 py-1 text-[11px]">
               <Calendar className="w-3.5 h-3.5 text-teal-300" />
               <span className="text-teal-100">Ngày PV:</span>
@@ -1167,15 +1394,6 @@ export function StudentOrientationModal({
                 value={interviewDate}
                 onChange={e => { setInterviewDate(e.target.value); markDirty(); }}
                 className="bg-transparent text-white font-bold text-[11px] focus:outline-none cursor-pointer"
-              />
-              <span className="text-teal-600">|</span>
-              <span className="text-teal-100">GV:</span>
-              <input
-                type="text"
-                placeholder="Nhập tên GV..."
-                value={interviewerName}
-                onChange={e => { setInterviewerName(e.target.value); markDirty(); }}
-                className="bg-white/10 hover:bg-white/15 focus:bg-white/20 text-white placeholder:text-teal-200/70 rounded px-2 py-0.5 text-[11px] font-bold focus:outline-none w-32"
               />
             </div>
 
@@ -1208,10 +1426,23 @@ export function StudentOrientationModal({
             <button
               type="button"
               onClick={() => setIsPsychModalOpen(true)}
-              className="flex items-center gap-1 px-2.5 py-1.5 rounded-xl text-[11px] font-bold transition-all cursor-pointer bg-teal-800/90 hover:bg-teal-700 text-teal-50 border border-teal-500/60"
+              className={`flex items-center gap-1.5 px-2.5 py-1.5 rounded-xl text-[11px] font-bold transition-all cursor-pointer border ${
+                psychologyReferralStatus === "COMPLETED" || psychologyData
+                  ? "bg-emerald-700/90 hover:bg-emerald-600 text-white border-emerald-300/60 shadow-2xs"
+                  : psychologyReferralStatus === "REQUESTED"
+                  ? "bg-amber-600/90 hover:bg-amber-600 text-white border-amber-300/60 shadow-2xs"
+                  : "bg-teal-800/90 hover:bg-teal-700 text-teal-50 border-teal-500/60"
+              }`}
+              title="Trường hợp học sinh có vấn đề tâm lý: Chọn GV Tâm lý được phân công & thực hiện khảo sát theo Form Tâm lý"
             >
               <Brain className="w-3.5 h-3.5" />
-              <span>{psychologyReferralStatus === "REQUESTED" ? "Đã Đề Xuất Tâm Lý" : "Khảo sát Tâm lý"}</span>
+              <span>
+                {psychologyReferralStatus === "COMPLETED" || psychologyData
+                  ? `Tâm lý: ${psychologyData?.totalScore ?? psychTotalScore}/80đ`
+                  : psychologyReferralStatus === "REQUESTED"
+                  ? "Đã Đề Xuất Tâm Lý"
+                  : "Khảo sát Tâm lý"}
+              </span>
             </button>
 
             {/* Nút Trợ lý AI */}
@@ -1256,7 +1487,7 @@ export function StudentOrientationModal({
               </span>
             </div>
 
-            {/* Hiển thị Ngày PV & GV phỏng vấn trên màn hình nhỏ */}
+            {/* Hiển thị Ngày PV trên màn hình nhỏ */}
             <div className="flex lg:hidden items-center gap-2 text-[11px]">
               <span className="text-slate-500 font-semibold">Ngày PV:</span>
               <input
@@ -1264,14 +1495,6 @@ export function StudentOrientationModal({
                 value={interviewDate}
                 onChange={e => { setInterviewDate(e.target.value); markDirty(); }}
                 className="bg-white border border-slate-300 rounded px-1.5 py-0.5 text-[11px] font-bold text-slate-800"
-              />
-              <span className="text-slate-500 font-semibold">GV:</span>
-              <input
-                type="text"
-                placeholder="Tên GV..."
-                value={interviewerName}
-                onChange={e => { setInterviewerName(e.target.value); markDirty(); }}
-                className="bg-white border border-slate-300 rounded px-2 py-0.5 text-[11px] font-bold text-slate-800 w-28"
               />
             </div>
           </div>
@@ -1996,9 +2219,146 @@ export function StudentOrientationModal({
                 </div>
               </div>
 
+              {/* KHỐI KHẢO SÁT & ĐÁNH GIÁ TÂM LÝ (NẾU HỌC SINH CÓ VẤN ĐỀ TÂM LÝ) */}
+              <div className={`p-3.5 rounded-xl border shadow-2xs space-y-3 text-xs ${
+                psychologyReferralStatus === "COMPLETED" || psychologyData
+                  ? "bg-teal-50/50 border-teal-300"
+                  : psychologyReferralStatus === "REQUESTED"
+                  ? "bg-amber-50/50 border-amber-300"
+                  : "bg-white border-slate-200"
+              }`}>
+                <div className="flex flex-wrap items-center justify-between gap-2">
+                  <div className="flex items-center gap-2">
+                    <div className="w-7 h-7 rounded-lg bg-[#0b524d] text-white flex items-center justify-center flex-shrink-0">
+                      <Brain className="w-4 h-4" />
+                    </div>
+                    <div>
+                      <div className="flex items-center gap-2">
+                        <h4 className="font-black uppercase text-[#083d39] text-xs">
+                          Khảo Sát &amp; Đánh Giá Tâm Lý Học Đường (Dành Cho HS Có Vấn Đề Tâm Lý)
+                        </h4>
+                        {psychologyReferralStatus === "COMPLETED" || psychologyData ? (
+                          <span className="px-2 py-0.5 rounded-full bg-emerald-100 text-emerald-800 border border-emerald-300 text-[10px] font-black">
+                            ✓ Đã hoàn thành đánh giá Form Tâm lý ({psychologyData?.totalScore ?? psychTotalScore}/80đ)
+                          </span>
+                        ) : psychologyReferralStatus === "REQUESTED" ? (
+                          <span className="px-2 py-0.5 rounded-full bg-amber-100 text-amber-800 border border-amber-300 text-[10px] font-black">
+                            ⏳ Đã phân công GV Tâm lý khảo sát
+                          </span>
+                        ) : (
+                          <span className="px-2 py-0.5 rounded-full bg-slate-100 text-slate-600 border border-slate-200 text-[10px] font-semibold">
+                            Không bắt buộc (Chỉ thực hiện khi HS có biểu hiện tâm lý)
+                          </span>
+                        )}
+                      </div>
+                      <p className="text-[11px] text-slate-600">
+                        {selectedPsychTeacherName
+                          ? `GV Tâm lý được phân công: ${selectedPsychTeacherName}${psychologyReferralReason ? ` • Lý do: ${psychologyReferralReason}` : ""}`
+                          : "Trường hợp HS có vấn đề tâm lý: Chọn danh sách GV Tâm lý được phân công và tiến hành khảo sát kèm kết quả theo đúng Form Tâm lý."}
+                      </p>
+                    </div>
+                  </div>
+
+                  <div className="flex items-center gap-2">
+                    {(psychologyReferralStatus !== "NONE" || psychologyData) && (
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setPsychModalTab("form")
+                          setIsPsychModalOpen(true)
+                        }}
+                        className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-white hover:bg-teal-50 text-[#083d39] border border-teal-300 text-[11px] font-bold cursor-pointer transition-all shadow-2xs"
+                      >
+                        <ClipboardCheck className="w-3.5 h-3.5 text-teal-700" />
+                        <span>Mở Form Đánh Giá Tâm Lý (20 câu)</span>
+                      </button>
+                    )}
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setPsychModalTab(psychologyData || psychologyReferralStatus === "COMPLETED" ? "form" : "referral")
+                        setIsPsychModalOpen(true)
+                      }}
+                      className="flex items-center gap-1.5 px-3.5 py-1.5 rounded-xl bg-[#0b524d] hover:bg-[#083d39] text-white text-[11px] font-black cursor-pointer transition-all shadow-2xs"
+                    >
+                      <Brain className="w-3.5 h-3.5" />
+                      <span>
+                        {psychologyReferralStatus === "COMPLETED" || psychologyData
+                          ? "Xem / Cập Nhật Kết Quả Tâm Lý"
+                          : psychologyReferralStatus === "REQUESTED"
+                          ? "Thực Hiện Khảo Sát Tâm Lý"
+                          : "Khảo Sát Tâm Lý"}
+                      </span>
+                    </button>
+                  </div>
+                </div>
+
+                {/* HIỂN THỊ KẾT QUẢ ĐÁNH GIÁ KÈM THEO ĐÚNG FORM TÂM LÝ NẾU ĐÃ KHẢO SÁT */}
+                {(psychologyData || psychologyReferralStatus === "COMPLETED" || psychologyReferralStatus === "REQUESTED") && (
+                  <div className="pt-2.5 border-t border-teal-200/80 space-y-2.5">
+                    {/* Bảng tóm tắt 6 nhóm tiêu chí của Form Tâm lý */}
+                    <div className="grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-8 gap-2">
+                      {[
+                        { label: "Mục I: Cảm xúc", idx: 0, max: 16 },
+                        { label: "Mục II: Hành vi", idx: 1, max: 12 },
+                        { label: "Mục III: Giao tiếp", idx: 2, max: 12 },
+                        { label: "Mục IV: Chú ý & Học tập", idx: 3, max: 16 },
+                        { label: "Mục V: Tư duy", idx: 4, max: 12 },
+                        { label: "Mục VI: Động lực", idx: 5, max: 12 }
+                      ].map(sec => {
+                        const secVal =
+                          psychologyData?.sectionScores?.[sec.idx] !== undefined
+                            ? Number(psychologyData.sectionScores[sec.idx])
+                            : calculatePsychSectionScore(sec.idx)
+                        return (
+                          <div key={sec.idx} className="p-2 rounded-lg bg-white border border-teal-200/80 text-center">
+                            <span className="text-[10px] font-bold text-slate-500 block truncate">{sec.label}</span>
+                            <span className="text-xs font-black text-[#083d39]">{secVal}</span>
+                            <span className="text-[10px] text-slate-400">/{sec.max}đ</span>
+                          </div>
+                        )
+                      })}
+
+                      <div className="p-2 rounded-lg bg-[#083d39] text-white text-center flex flex-col justify-center">
+                        <span className="text-[9.5px] font-bold text-teal-200 uppercase">Tổng điểm</span>
+                        <span className="text-sm font-black">{psychologyData?.totalScore ?? psychTotalScore}/80</span>
+                      </div>
+
+                      <div className={`p-2 rounded-lg border text-center flex flex-col justify-center ${
+                        (psychologyData?.evaluation || psychEvaluation).bg
+                      } ${(psychologyData?.evaluation || psychEvaluation).border}`}>
+                        <span className="text-[9.5px] font-bold text-slate-500 uppercase">Mức độ</span>
+                        <span className={`text-[11px] font-black ${(psychologyData?.evaluation || psychEvaluation).color}`}>
+                          {(psychologyData?.evaluation || psychEvaluation).level}
+                        </span>
+                      </div>
+                    </div>
+
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-2.5">
+                      <div className="p-2.5 bg-white rounded-lg border border-amber-200">
+                        <span className="text-[10.5px] font-black uppercase text-amber-900 block mb-0.5">
+                          Kết luận sơ bộ (Form Tâm lý):
+                        </span>
+                        <p className="text-slate-800 text-xs">
+                          {psychologyData?.conclusion || psychConclusion || (psychologyData?.evaluation || psychEvaluation).suggestion || "Chưa nhập kết luận sơ bộ"}
+                        </p>
+                      </div>
+                      <div className="p-2.5 bg-white rounded-lg border border-emerald-200">
+                        <span className="text-[10.5px] font-black uppercase text-emerald-900 block mb-0.5">
+                          Khuyến nghị dành cho Phụ huynh &amp; Nhà trường:
+                        </span>
+                        <p className="text-slate-800 text-xs">
+                          {psychologyData?.recommendation || psychRecommendation || "Chưa nhập khuyến nghị hỗ trợ"}
+                        </p>
+                      </div>
+                    </div>
+                  </div>
+                )}
+              </div>
+
               {/* THẨM ĐỊNH QLCM & KẾT LUẬN GĐCS (2 CỘT SONG SONG GỌN GÀNG) */}
               <div className="grid grid-cols-1 lg:grid-cols-2 gap-3">
-                {/* Cột 1: Thẩm định QLCM */}
+                {/* Cột 1: Thẩm định QLCM & GV phụ trách định hướng */}
                 <div className="p-3.5 bg-white rounded-xl border border-teal-200 shadow-2xs space-y-2.5 text-xs">
                   <div className="flex items-center justify-between gap-2 border-b border-teal-100 pb-2">
                     <h4 className="font-black uppercase text-[#083d39] flex items-center gap-1.5">
@@ -2029,14 +2389,41 @@ export function StudentOrientationModal({
 
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
                     <div>
-                      <label className="font-bold text-slate-700 block mb-1 text-[11px]">Cán bộ QLCM thẩm định:</label>
-                      <input
-                        type="text"
-                        value={verifierName}
-                        onChange={e => { setVerifierName(e.target.value); markDirty(); }}
-                        placeholder="Họ tên QLCM..."
-                        className="w-full text-xs p-2 rounded-lg border border-slate-300 focus:border-teal-600 text-slate-900 bg-white"
-                      />
+                      <div className="flex items-center justify-between mb-1">
+                        <label className="font-bold text-slate-700 text-[11px]">GV phụ trách định hướng:</label>
+                        <span className="px-1.5 py-0.5 rounded bg-teal-50 text-[#083d39] border border-teal-200 text-[9.5px] font-bold">
+                          ✓ Tự gán theo phân công
+                        </span>
+                      </div>
+                      {assignedOrientationTeachers.length > 1 ? (
+                        <select
+                          value={verifierName || interviewerName}
+                          onChange={e => {
+                            setVerifierName(e.target.value)
+                            setInterviewerName(e.target.value)
+                            markDirty()
+                          }}
+                          className="w-full text-xs p-2 rounded-lg border border-teal-300 focus:border-teal-600 text-[#083d39] font-bold bg-teal-50/30 cursor-pointer"
+                        >
+                          {assignedOrientationTeachers.map((t: any, idx: number) => (
+                            <option key={t.teacherId || idx} value={t.teacherName}>
+                              {t.teacherName} ({t.subjectName || "Phân công KS"})
+                            </option>
+                          ))}
+                        </select>
+                      ) : (
+                        <input
+                          type="text"
+                          value={verifierName || interviewerName}
+                          onChange={e => {
+                            setVerifierName(e.target.value)
+                            setInterviewerName(e.target.value)
+                            markDirty()
+                          }}
+                          placeholder="Tự động gán theo phân công..."
+                          className="w-full text-xs p-2 rounded-lg border border-teal-300 focus:border-teal-600 text-[#083d39] font-bold bg-teal-50/30"
+                        />
+                      )}
                     </div>
                     <div>
                       <label className="font-bold text-slate-700 block mb-1 text-[11px]">Ý kiến thẩm định chuyên môn:</label>
@@ -2167,6 +2554,442 @@ export function StudentOrientationModal({
         </div>
 
       </div>
+
+      {/* MODAL KHẢO SÁT & ĐÁNH GIÁ TÂM LÝ HỌC ĐƯỜNG (CHỌN GV TÂM LÝ + FORM TÂM LÝ CHUẨN 6 NHÓM / 20 CÂU) */}
+      {isPsychModalOpen && (
+        <div className="fixed inset-0 z-[220] flex items-center justify-center p-2 sm:p-4 bg-slate-900/70 backdrop-blur-xs overflow-y-auto animate-in fade-in duration-200">
+          <div className="bg-white w-full max-w-5xl rounded-2xl shadow-2xl border border-teal-200 flex flex-col max-h-[94vh] overflow-hidden">
+            
+            {/* Header Modal Tâm Lý */}
+            <div className="px-5 py-3 bg-gradient-to-r from-[#083d39] via-[#0b524d] to-[#0f6b64] text-white flex flex-wrap items-center justify-between gap-3 border-b border-teal-800 flex-shrink-0">
+              <div className="flex items-center gap-2.5">
+                <div className="w-9 h-9 rounded-xl bg-white/15 border border-teal-300/40 flex items-center justify-center text-white">
+                  <Brain className="w-5 h-5" />
+                </div>
+                <div>
+                  <div className="flex items-center gap-2">
+                    <h3 className="text-sm sm:text-base font-black uppercase tracking-tight">
+                      Khảo Sát &amp; Đánh Giá Tâm Lý Học Đường
+                    </h3>
+                    <span className="px-2 py-0.5 rounded-full bg-teal-400/25 border border-teal-300/40 text-[10px] font-bold">
+                      {studentDetail?.fullName || student?.fullName} • {groupConfig.label}
+                    </span>
+                  </div>
+                  <p className="text-[11px] text-teal-100/90">
+                    Chọn Giáo viên Tâm lý được phân công &amp; Thực hiện khảo sát kèm kết quả đánh giá theo đúng Form Tâm lý chuẩn
+                  </p>
+                </div>
+              </div>
+
+              <div className="flex items-center gap-2">
+                <div className="flex items-center bg-[#073330]/90 p-1 rounded-xl border border-teal-600/60">
+                  <button
+                    type="button"
+                    onClick={() => setPsychModalTab("referral")}
+                    className={`px-3 py-1 rounded-lg text-[11px] font-bold transition-all cursor-pointer ${
+                      psychModalTab === "referral"
+                        ? "bg-white text-[#083d39] shadow-2xs"
+                        : "text-teal-100 hover:text-white"
+                    }`}
+                  >
+                    1. Phân công GV Tâm lý
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setPsychModalTab("form")}
+                    className={`px-3 py-1 rounded-lg text-[11px] font-bold transition-all cursor-pointer ${
+                      psychModalTab === "form"
+                        ? "bg-white text-[#083d39] shadow-2xs"
+                        : "text-teal-100 hover:text-white"
+                    }`}
+                  >
+                    2. Form Đánh Giá Tâm Lý ({psychAnsweredCount}/20 câu)
+                  </button>
+                </div>
+
+                <button
+                  type="button"
+                  onClick={() => setIsPsychModalOpen(false)}
+                  className="p-1.5 text-teal-200 hover:text-white hover:bg-white/10 rounded-xl transition-all cursor-pointer"
+                >
+                  <X className="w-4 h-4" />
+                </button>
+              </div>
+            </div>
+
+            {/* Thanh Chọn GV Tâm Lý Được Phân Công (Luôn hiển thị ở đầu Modal) */}
+            <div className="px-5 py-2.5 bg-teal-50/70 border-b border-teal-200 flex flex-wrap items-center justify-between gap-3 flex-shrink-0 text-xs">
+              <div className="flex flex-wrap items-center gap-2.5 flex-1">
+                <span className="font-black text-[#083d39] uppercase text-[11px] flex items-center gap-1.5">
+                  <UserCheck className="w-4 h-4 text-teal-700" />
+                  <span>GV Tâm lý được phân công:</span>
+                </span>
+
+                <select
+                  value={selectedDeptCode}
+                  onChange={e => handleDepartmentChange(e.target.value)}
+                  className="px-2.5 py-1.5 bg-white border border-teal-300 rounded-lg text-xs font-bold text-slate-800 focus:outline-none focus:border-teal-600 cursor-pointer"
+                >
+                  <option value="TO_TLHN">Tổ Tâm lý Học đường &amp; Phân công đợt KS</option>
+                  {departments
+                    .filter((d: any) => d.code !== "TO_TLHN")
+                    .map((d: any) => (
+                      <option key={d.id || d.code} value={d.code || d.id}>
+                        {d.name}
+                      </option>
+                    ))}
+                </select>
+
+                <select
+                  value={selectedPsychTeacherId}
+                  onChange={e => {
+                    const tId = e.target.value
+                    setSelectedPsychTeacherId(tId)
+                    const found = assignedPsychTeachers.find((t: any) => t.teacherId === tId)
+                    if (found) {
+                      setSelectedPsychTeacherName(found.teacherName || "")
+                      setSelectedPsychTeacherEmail(found.teacherEmail || "")
+                    }
+                  }}
+                  disabled={loadingDeptTeachers}
+                  className="px-3 py-1.5 bg-white border border-teal-400 rounded-lg text-xs font-black text-[#083d39] focus:outline-none focus:border-teal-700 min-w-[240px] cursor-pointer"
+                >
+                  {assignedPsychTeachers.length === 0 ? (
+                    <option value="">-- Chưa có danh sách GV Tâm lý --</option>
+                  ) : (
+                    assignedPsychTeachers.map((t: any, idx: number) => (
+                      <option key={t.teacherId || idx} value={t.teacherId}>
+                        {t.teacherName} {t.isPeriodAssigned ? "★ (Được phân công đợt KS)" : `(${t.assignmentRole || "Tổ Tâm lý"})`}
+                      </option>
+                    ))
+                  )}
+                </select>
+              </div>
+
+              <div className="flex items-center gap-2">
+                <span className="px-2.5 py-1 rounded-lg bg-white border border-teal-200 text-[11px] font-bold text-[#083d39]">
+                  Tổng điểm: <strong className="text-sm font-black">{psychTotalScore}</strong>/80đ
+                </span>
+                <span className={`px-2.5 py-1 rounded-lg border text-[11px] font-black ${psychEvaluation.bg} ${psychEvaluation.border} ${psychEvaluation.color}`}>
+                  {psychEvaluation.level}
+                </span>
+              </div>
+            </div>
+
+            {/* Body Modal Tâm Lý */}
+            <div className="flex-1 overflow-y-auto p-4 sm:p-5 bg-slate-50/70 space-y-4">
+              {psychModalTab === "referral" ? (
+                <div className="space-y-4">
+                  <div className="p-4 bg-white rounded-xl border border-teal-200 shadow-2xs space-y-3">
+                    <div className="flex items-center justify-between">
+                      <label className="text-xs font-black uppercase text-[#083d39] flex items-center gap-1.5">
+                        <AlertTriangle className="w-4 h-4 text-amber-600" />
+                        <span>Biểu hiện / Vấn đề tâm lý ghi nhận cần khảo sát chuyên sâu:</span>
+                      </label>
+                      <span className="text-[11px] text-slate-500">Chọn nhanh biểu hiện hoặc nhập chi tiết</span>
+                    </div>
+
+                    <div className="flex flex-wrap gap-1.5">
+                      {[
+                        "Rụt rè, lo âu căng thẳng kéo dài khi giao tiếp",
+                        "Khó tập trung chú ý, dễ xao nhãng hoặc tăng động",
+                        "Khó kiểm soát cảm xúc khi gặp tình huống bất ngờ",
+                        "Ngại tương tác xã hội, thu mình hoặc né tránh ánh mắt",
+                        "Phụ huynh chia sẻ học sinh cần hỗ trợ tâm lý học đường",
+                        "Cần đánh giá mức độ sẵn sàng tâm lý & thích nghi môi trường mới"
+                      ].map((tag, i) => {
+                        const isSelected = psychologyReferralReason.includes(tag)
+                        return (
+                          <button
+                            key={i}
+                            type="button"
+                            onClick={() => {
+                              if (isSelected) {
+                                setPsychologyReferralReason(prev => prev.replace(tag, "").replace(/;\s*;/g, ";").replace(/^;\s*|;\s*$/g, "").trim())
+                              } else {
+                                setPsychologyReferralReason(prev => (prev ? `${prev}; ${tag}` : tag))
+                              }
+                            }}
+                            className={`px-2.5 py-1 rounded-lg text-[11px] font-semibold border transition-all cursor-pointer ${
+                              isSelected
+                                ? "bg-[#0b524d] text-white border-[#083d39]"
+                                : "bg-slate-50 hover:bg-teal-50 text-slate-700 border-slate-200"
+                            }`}
+                          >
+                            + {tag}
+                          </button>
+                        )
+                      })}
+                    </div>
+
+                    <textarea
+                      rows={3}
+                      value={psychologyReferralReason}
+                      onChange={e => setPsychologyReferralReason(e.target.value)}
+                      placeholder="Mô tả cụ thể biểu hiện tâm lý, hành vi hoặc lưu ý cần GV Tâm lý khảo sát..."
+                      className="w-full text-xs p-3 rounded-xl border border-slate-300 focus:border-teal-600 focus:outline-none text-slate-900 bg-white"
+                    />
+                  </div>
+
+                  {/* Tóm tắt thông tin định hướng gửi kèm cho GV Tâm lý */}
+                  <div className="p-4 bg-white rounded-xl border border-slate-200 shadow-2xs space-y-2.5 text-xs">
+                    <h4 className="font-black uppercase text-[#083d39] text-xs flex items-center gap-1.5">
+                      <FileText className="w-4 h-4 text-teal-700" />
+                      <span>Thông tin ghi nhận từ Phiếu định hướng chuyển giao cho GV Tâm lý</span>
+                    </h4>
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-3 text-slate-700">
+                      <div className="p-2.5 bg-slate-50 rounded-lg border border-slate-200">
+                        <span className="font-bold text-slate-900 block mb-0.5">Điểm mạnh &amp; Sở thích của HS:</span>
+                        <p className="text-slate-600">{summary9.strongPoints || "Chưa ghi nhận"}</p>
+                      </div>
+                      <div className="p-2.5 bg-slate-50 rounded-lg border border-slate-200">
+                        <span className="font-bold text-slate-900 block mb-0.5">Khó khăn / Nhu cầu cần hỗ trợ:</span>
+                        <p className="text-slate-600">{summary9.difficultiesNeeds || "Chưa ghi nhận"}</p>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              ) : (
+                /* TAB 2: FORM KHẢO SÁT & ĐÁNH GIÁ TÂM LÝ CHUẨN THEO KHỐI (6 NHÓM - 20 CÂU - THANG ĐIỂM 0-4) */
+                <div className="space-y-4">
+                  {/* Thang điểm chuẩn 0 - 4 */}
+                  <div className="p-3 bg-white rounded-xl border border-teal-200 shadow-2xs flex flex-wrap items-center justify-between gap-2 text-[11px]">
+                    <span className="font-black text-[#083d39] uppercase">Thang điểm chuẩn (0 – 4đ / câu):</span>
+                    <div className="flex flex-wrap items-center gap-3 text-slate-700 font-semibold">
+                      <span><strong className="px-1.5 py-0.5 rounded bg-emerald-100 text-emerald-800">0</strong> Không có biểu hiện</span>
+                      <span><strong className="px-1.5 py-0.5 rounded bg-teal-100 text-teal-800">1</strong> Biểu hiện rất nhẹ</span>
+                      <span><strong className="px-1.5 py-0.5 rounded bg-amber-100 text-amber-800">2</strong> Thỉnh thoảng / Nhẹ</span>
+                      <span><strong className="px-1.5 py-0.5 rounded bg-orange-100 text-orange-800">3</strong> Thường xuyên / Rõ</span>
+                      <span><strong className="px-1.5 py-0.5 rounded bg-rose-100 text-rose-800">4</strong> Rất thường xuyên / Ảnh hưởng rõ</span>
+                    </div>
+                  </div>
+
+                  {/* Thanh chọn Nhóm tiêu chí (Mục I -> VI hoặc Xem tất cả) */}
+                  <div className="flex items-center gap-1.5 overflow-x-auto pb-1">
+                    <button
+                      type="button"
+                      onClick={() => setPsychActiveSection("ALL")}
+                      className={`px-3 py-1.5 rounded-xl text-[11px] font-black whitespace-nowrap border transition-all cursor-pointer ${
+                        psychActiveSection === "ALL"
+                          ? "bg-[#0b524d] text-white border-[#083d39]"
+                          : "bg-white text-slate-700 border-slate-200 hover:bg-teal-50"
+                      }`}
+                    >
+                      Tất cả 6 Mục (20 câu)
+                    </button>
+                    {psychQuestions.map((sec: any, sIdx: number) => (
+                      <button
+                        key={sIdx}
+                        type="button"
+                        onClick={() => setPsychActiveSection(sIdx)}
+                        className={`px-3 py-1.5 rounded-xl text-[11px] font-bold whitespace-nowrap border transition-all cursor-pointer flex items-center gap-1.5 ${
+                          psychActiveSection === sIdx
+                            ? "bg-[#0b524d] text-white border-[#083d39]"
+                            : "bg-white text-slate-700 border-slate-200 hover:bg-teal-50"
+                        }`}
+                      >
+                        <span>{sec.title.split("(")[0].trim()}</span>
+                        <span className={`px-1.5 py-0.2 rounded text-[10px] font-black ${
+                          psychActiveSection === sIdx ? "bg-teal-400/30 text-white" : "bg-teal-50 text-[#083d39]"
+                        }`}>
+                          {calculatePsychSectionScore(sIdx)}đ
+                        </span>
+                      </button>
+                    ))}
+                  </div>
+
+                  {/* Danh sách câu hỏi đánh giá tâm lý */}
+                  <div className="space-y-3">
+                    {psychQuestions.map((sec: any, sIdx: number) => {
+                      if (psychActiveSection !== "ALL" && psychActiveSection !== sIdx) return null
+                      let sectionOffset = 0
+                      for (let i = 0; i < sIdx; i++) {
+                        sectionOffset += (psychQuestions[i]?.questions?.length || 0)
+                      }
+                      return (
+                        <div key={sIdx} className="bg-white rounded-xl border border-teal-200 shadow-2xs overflow-hidden">
+                          <div className="px-4 py-2 bg-teal-50/80 border-b border-teal-100 flex items-center justify-between">
+                            <h5 className="font-black text-[#083d39] text-xs">{sec.title}</h5>
+                            <span className="text-[11px] font-black text-teal-800">
+                              Điểm phần này: {calculatePsychSectionScore(sIdx)} / {(sec.questions?.length || 0) * 4}đ
+                            </span>
+                          </div>
+                          <div className="divide-y divide-slate-100">
+                            {(sec.questions || []).map((q: any, qIdx: number) => {
+                              const actualIdx = sectionOffset + qIdx
+                              const currentScore = psychScores[actualIdx]
+                              return (
+                                <div key={qIdx} className="p-3 hover:bg-slate-50/80 transition-colors space-y-2">
+                                  <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-2.5">
+                                    <div className="text-xs font-bold text-slate-800 flex-1">
+                                      {q.text}
+                                    </div>
+                                    <div className="flex items-center gap-1.5 flex-shrink-0">
+                                      {(q.options || ["0", "1", "2", "3", "4"]).map((opt: string, oIdx: number) => {
+                                        const val = (q.options?.length || 5) === 5 ? oIdx : oIdx + 1
+                                        const active = currentScore === val
+                                        return (
+                                          <button
+                                            key={oIdx}
+                                            type="button"
+                                            onClick={() => {
+                                              const next = [...psychScores]
+                                              next[actualIdx] = val
+                                              setPsychScores(next)
+                                            }}
+                                            className={`min-w-[34px] px-2.5 py-1 rounded-lg text-xs font-black border transition-all cursor-pointer ${
+                                              active
+                                                ? "bg-[#0b524d] text-white border-[#083d39] shadow-2xs"
+                                                : "bg-white text-slate-600 border-slate-200 hover:border-teal-400 hover:text-[#083d39]"
+                                            }`}
+                                          >
+                                            {opt}
+                                          </button>
+                                        )
+                                      })}
+                                    </div>
+                                  </div>
+                                  <div className="flex items-center gap-2">
+                                    <span className="text-[11px] font-semibold text-slate-500 whitespace-nowrap">Ghi chú quan sát:</span>
+                                    <input
+                                      type="text"
+                                      value={psychNotes[actualIdx] || ""}
+                                      onChange={e => {
+                                        const nextNotes = [...psychNotes]
+                                        nextNotes[actualIdx] = e.target.value
+                                        setPsychNotes(nextNotes)
+                                      }}
+                                      placeholder="Ghi nhận biểu hiện cụ thể của học sinh ở câu này (nếu có)..."
+                                      className="flex-1 text-xs border-b border-dashed border-slate-300 focus:border-teal-600 bg-transparent py-0.5 px-1 text-slate-800 focus:outline-none"
+                                    />
+                                  </div>
+                                </div>
+                              )
+                            })}
+                          </div>
+                        </div>
+                      )
+                    })}
+                  </div>
+
+                  {/* Tổng hợp Kết luận sơ bộ & Khuyến nghị theo Form Tâm lý */}
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                    <div className="p-3.5 bg-white rounded-xl border border-amber-200 shadow-2xs space-y-1.5">
+                      <label className="text-xs font-black uppercase text-amber-900 block">
+                        C. Kết luận sơ bộ của Giáo viên Tâm lý:
+                      </label>
+                      <textarea
+                        rows={3}
+                        value={psychConclusion}
+                        onChange={e => setPsychConclusion(e.target.value)}
+                        placeholder="Nhận định tổng quát về cảm xúc, hành vi, khả năng tập trung và thích nghi của học sinh..."
+                        className="w-full text-xs p-2.5 rounded-lg border border-amber-200 focus:border-amber-500 focus:outline-none text-slate-900 bg-amber-50/20"
+                      />
+                    </div>
+
+                    <div className="p-3.5 bg-white rounded-xl border border-emerald-200 shadow-2xs space-y-1.5">
+                      <label className="text-xs font-black uppercase text-emerald-900 block">
+                        D. Khuyến nghị dành cho Phụ huynh &amp; Nhà trường:
+                      </label>
+                      <textarea
+                        rows={3}
+                        value={psychRecommendation}
+                        onChange={e => setPsychRecommendation(e.target.value)}
+                        placeholder="Gợi ý biện pháp đồng hành, hỗ trợ tâm lý học đường hoặc phối hợp gia đình..."
+                        className="w-full text-xs p-2.5 rounded-lg border border-emerald-200 focus:border-emerald-600 focus:outline-none text-slate-900 bg-emerald-50/20"
+                      />
+                    </div>
+                  </div>
+                </div>
+              )}
+            </div>
+
+            {/* Footer Modal Tâm Lý */}
+            <div className="px-5 py-3 bg-white border-t border-slate-200 flex flex-wrap items-center justify-between gap-3 flex-shrink-0">
+              <div className="text-xs">
+                {psychSubmittedSuccess && (
+                  <span className="text-emerald-700 font-bold flex items-center gap-1.5">
+                    <CheckCircle2 className="w-4 h-4 text-emerald-600" />
+                    <span>Đã phân công &amp; gửi thông báo cho GV Tâm lý ({selectedPsychTeacherName})!</span>
+                  </span>
+                )}
+                {psychAssessmentSaved && (
+                  <span className="text-emerald-700 font-bold flex items-center gap-1.5">
+                    <CheckCircle2 className="w-4 h-4 text-emerald-600" />
+                    <span>Đã lưu Kết quả Đánh giá Tâm lý kèm vào Phiếu Định Hướng thành công!</span>
+                  </span>
+                )}
+                {!psychSubmittedSuccess && !psychAssessmentSaved && (
+                  <span className="text-slate-500 font-medium">
+                    Kết quả đánh giá theo Form Tâm lý sẽ được đính kèm trực tiếp vào Phiếu Định Hướng &amp; Hồ sơ Tuyển sinh.
+                  </span>
+                )}
+              </div>
+
+              <div className="flex items-center gap-2">
+                <button
+                  type="button"
+                  onClick={() => setIsPsychModalOpen(false)}
+                  className="px-3.5 py-1.5 border border-slate-200 text-slate-600 rounded-xl text-xs font-bold hover:bg-slate-50 transition-all cursor-pointer"
+                >
+                  Đóng
+                </button>
+
+                {psychModalTab === "referral" ? (
+                  <>
+                    <button
+                      type="button"
+                      onClick={() => setPsychModalTab("form")}
+                      className="flex items-center gap-1.5 px-3.5 py-1.5 bg-teal-50 hover:bg-teal-100 text-[#083d39] border border-teal-300 rounded-xl text-xs font-bold transition-all cursor-pointer"
+                    >
+                      <ClipboardCheck className="w-3.5 h-3.5 text-teal-700" />
+                      <span>Mở Form Khảo Sát Tâm Lý Ngay &rarr;</span>
+                    </button>
+                    <button
+                      type="button"
+                      onClick={handleSubmitPsychReferral}
+                      disabled={submittingPsych}
+                      className="flex items-center gap-1.5 px-4 py-1.5 bg-gradient-to-r from-[#0b524d] to-[#0f6b64] hover:from-[#083d39] hover:to-[#0b524d] text-white rounded-xl text-xs font-black shadow-sm transition-all cursor-pointer disabled:opacity-50"
+                    >
+                      {submittingPsych ? (
+                        <>
+                          <RefreshCw className="w-3.5 h-3.5 animate-spin" />
+                          <span>Đang gửi...</span>
+                        </>
+                      ) : (
+                        <>
+                          <Send className="w-3.5 h-3.5" />
+                          <span>Phân Công &amp; Gửi Thông Báo GV Tâm Lý</span>
+                        </>
+                      )}
+                    </button>
+                  </>
+                ) : (
+                  <button
+                    type="button"
+                    onClick={handleSavePsychAssessment}
+                    disabled={savingPsychAssessment}
+                    className="flex items-center gap-1.5 px-4 py-1.5 bg-gradient-to-r from-[#0b524d] to-[#0f6b64] hover:from-[#083d39] hover:to-[#0b524d] text-white rounded-xl text-xs font-black shadow-sm transition-all cursor-pointer disabled:opacity-50"
+                  >
+                    {savingPsychAssessment ? (
+                      <>
+                        <RefreshCw className="w-3.5 h-3.5 animate-spin" />
+                        <span>Đang lưu kết quả...</span>
+                      </>
+                    ) : (
+                      <>
+                        <Save className="w-3.5 h-3.5" />
+                        <span>Lưu Kết Quả Đánh Giá Tâm Lý ({psychTotalScore}/80đ)</span>
+                      </>
+                    )}
+                  </button>
+                )}
+              </div>
+            </div>
+
+          </div>
+        </div>
+      )}
 
       {/* QUICK CONSULTATION MODAL */}
       {isAdvisoryModalOpen && (

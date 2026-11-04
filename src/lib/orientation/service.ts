@@ -275,6 +275,126 @@ export async function upsertStudentOrientationRecord(data: StudentOrientationDat
 }
 
 /**
+ * Lấy Giáo viên phụ trách định hướng được phân công theo đợt / khối của học sinh
+ */
+export async function getAssignedOrientationTeacher(studentId: string, currentUserId?: string) {
+  const pAny = prisma as any;
+  try {
+    const student = await pAny.inputAssessmentStudent.findUnique({
+      where: { id: studentId },
+      select: {
+        id: true,
+        grade: true,
+        periodId: true,
+        batchId: true
+      }
+    });
+
+    if (!student || !student.periodId) return { primary: null, list: [] };
+
+    const rawGrade = String(student.grade || "").toLowerCase().replace("khối", "").replace("khoi", "").trim();
+
+    const where: any = {
+      periodId: student.periodId
+    };
+
+    if (student.batchId) {
+      where.OR = [
+        { batchId: student.batchId },
+        { batchId: null }
+      ];
+    }
+
+    const assignments = await pAny.inputAssessmentTeacherAssignment.findMany({
+      where,
+      include: {
+        user: {
+          include: {
+            teacher: true
+          }
+        },
+        subject: true
+      }
+    });
+
+    if (!assignments || assignments.length === 0) {
+      return { primary: null, list: [] };
+    }
+
+    // Lọc theo khối của học sinh (hoặc phân công chung toàn khối)
+    const gradeMatched = assignments.filter((a: any) => {
+      if (!a.grade) return true;
+      const aGrade = String(a.grade).toLowerCase().replace("khối", "").replace("khoi", "").trim();
+      return aGrade === rawGrade;
+    });
+
+    const pool = gradeMatched.length > 0 ? gradeMatched : assignments;
+
+    // Ưu tiên môn Định hướng / Phỏng vấn / Tư duy
+    const isOrientationSubj = (subj: any) => {
+      const code = String(subj?.code || "").toUpperCase();
+      const name = String(subj?.name || "").toLowerCase();
+      return (
+        ["DH", "PV", "PVDH", "DINH_HUONG", "KSDH", "TDTD"].includes(code) ||
+        name.includes("định hướng") ||
+        name.includes("phỏng vấn") ||
+        name.includes("tư duy")
+      );
+    };
+
+    const isPsychSubj = (subj: any) => {
+      const code = String(subj?.code || "").toUpperCase();
+      const name = String(subj?.name || "").toLowerCase();
+      return code === "TLY" || name.includes("tâm lý");
+    };
+
+    // Ưu tiên phân công đúng đợt (batchId khớp) trước
+    const sortedPool = [...pool].sort((a: any, b: any) => {
+      const aBatchMatch = student.batchId && a.batchId === student.batchId ? 1 : 0;
+      const bBatchMatch = student.batchId && b.batchId === student.batchId ? 1 : 0;
+      if (aBatchMatch !== bBatchMatch) return bBatchMatch - aBatchMatch;
+
+      const aIsOrient = isOrientationSubj(a.subject) ? 1 : 0;
+      const bIsOrient = isOrientationSubj(b.subject) ? 1 : 0;
+      if (aIsOrient !== bIsOrient) return bIsOrient - aIsOrient;
+
+      const aIsCurrent = currentUserId && a.user?.id === currentUserId ? 1 : 0;
+      const bIsCurrent = currentUserId && b.user?.id === currentUserId ? 1 : 0;
+      return bIsCurrent - aIsCurrent;
+    });
+
+    const nonPsychPool = sortedPool.filter((a: any) => !isPsychSubj(a.subject));
+    const effectivePool = nonPsychPool.length > 0 ? nonPsychPool : sortedPool;
+
+    const userMap = new Map();
+    effectivePool.forEach((a: any) => {
+      if (a.user && !userMap.has(a.user.id)) {
+        userMap.set(a.user.id, {
+          teacherId: a.user.id,
+          teacherName: a.user.fullName || a.user.name || a.user.teacher?.teacherName || "GV Định hướng",
+          email: a.user.teacher?.email || a.user.email || "",
+          grade: a.grade || student.grade,
+          subjectName: a.subject?.name || "Định hướng",
+          isOrientationSubject: isOrientationSubj(a.subject),
+          isBatchMatched: Boolean(student.batchId && a.batchId === student.batchId)
+        });
+      }
+    });
+
+    const list = Array.from(userMap.values());
+    const primary =
+      (currentUserId ? list.find((t: any) => t.teacherId === currentUserId) : null) ||
+      list[0] ||
+      null;
+
+    return { primary, list };
+  } catch (error) {
+    console.error("Error fetching assigned orientation teacher:", error);
+    return { primary: null, list: [] };
+  }
+}
+
+/**
  * Lấy danh sách Giáo viên Tâm lý được phân công theo học sinh/khối
  */
 export async function getAssignedPsychologyTeachers(studentId: string) {

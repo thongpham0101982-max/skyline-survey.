@@ -1126,6 +1126,79 @@ export function StudentOrientationReportModal({
                 </div>
               </div>
 
+              {/* SECTION IV-B: KẾT QUẢ KHẢO SÁT & ĐÁNH GIÁ TÂM LÝ HỌC ĐƯỜNG (NẾU CÓ) */}
+              {(() => {
+                const rawPsych = orientationData?.psychologyData
+                let parsedPsych: any = null
+                if (rawPsych) {
+                  try {
+                    parsedPsych = typeof rawPsych === "string" ? JSON.parse(rawPsych) : rawPsych
+                  } catch (e) {}
+                }
+                const hasPsych = parsedPsych || (orientationData?.psychologyReferralStatus && orientationData.psychologyReferralStatus !== "NONE")
+                if (!hasPsych) return null
+
+                const secLabels = [
+                  { label: "Mục I: Cảm xúc", max: 16 },
+                  { label: "Mục II: Hành vi", max: 12 },
+                  { label: "Mục III: Giao tiếp", max: 12 },
+                  { label: "Mục IV: Chú ý & Học tập", max: 16 },
+                  { label: "Mục V: Tư duy", max: 12 },
+                  { label: "Mục VI: Động lực", max: 12 }
+                ]
+
+                return (
+                  <div className="print-section p-2.5 bg-teal-50/40 rounded-xl border border-teal-200 text-xs space-y-2">
+                    <div className="flex flex-wrap items-center justify-between gap-2 border-b border-teal-200 pb-1">
+                      <div className="flex items-center gap-1.5">
+                        <span className="w-2 h-2 rounded-full bg-teal-700" />
+                        <h3 className="text-[10.5px] font-black uppercase text-teal-950 tracking-wider">
+                          Khảo Sát &amp; Kết Quả Đánh Giá Tâm Lý Học Đường (Theo Form Tâm Lý)
+                        </h3>
+                      </div>
+                      <div className="flex items-center gap-2 text-[9.5px]">
+                        <span className="font-bold text-teal-900">
+                          GV Tâm lý phụ trách: {orientationData?.psychologyTeacherName || parsedPsych?.assessedBy || "Tổ Tâm lý Học đường"}
+                        </span>
+                        {parsedPsych?.totalScore !== undefined && (
+                          <span className="px-2 py-0.5 rounded-full bg-teal-800 text-white font-black">
+                            Tổng điểm: {parsedPsych.totalScore}/80đ ({parsedPsych?.evaluation?.level || "Đã đánh giá"})
+                          </span>
+                        )}
+                      </div>
+                    </div>
+
+                    {Array.isArray(parsedPsych?.sectionScores) && parsedPsych.sectionScores.length > 0 && (
+                      <div className="grid grid-cols-6 gap-1.5 text-center">
+                        {secLabels.map((sec, idx) => (
+                          <div key={idx} className="p-1.5 bg-white rounded-lg border border-teal-200/80">
+                            <span className="text-[8.5px] font-bold text-slate-500 block">{sec.label}</span>
+                            <span className="text-[10.5px] font-black text-teal-950">
+                              {parsedPsych.sectionScores[idx] ?? 0}/{sec.max}đ
+                            </span>
+                          </div>
+                        ))}
+                      </div>
+                    )}
+
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 text-[10px]">
+                      <div className="p-2 bg-white rounded-lg border border-amber-200">
+                        <span className="font-black uppercase text-amber-900 text-[9px] block">Kết luận sơ bộ (Form Tâm lý):</span>
+                        <p className="text-slate-800 mt-0.5">
+                          {parsedPsych?.conclusion || orientationData?.psychologyReferralReason || "Đã ghi nhận khảo sát tâm lý học đường."}
+                        </p>
+                      </div>
+                      <div className="p-2 bg-white rounded-lg border border-emerald-200">
+                        <span className="font-black uppercase text-emerald-900 text-[9px] block">Khuyến nghị hỗ trợ tâm lý:</span>
+                        <p className="text-slate-800 mt-0.5">
+                          {parsedPsych?.recommendation || parsedPsych?.evaluation?.suggestion || "Phối hợp GVCN và Gia đình đồng hành hỗ trợ học sinh."}
+                        </p>
+                      </div>
+                    </div>
+                  </div>
+                )
+              })()}
+
               {/* SECTION V: THẨM ĐỊNH QLCM & CHỈ ĐẠO CỦA GIÁM ĐỐC CƠ SỞ (GĐCS) */}
               <div className="print-section p-2.5 bg-teal-50/50 rounded-xl border border-teal-200 text-xs space-y-1.5">
                 <div className="flex flex-wrap items-center justify-between gap-2 border-b border-teal-200 pb-1">
@@ -1157,13 +1230,13 @@ export function StudentOrientationReportModal({
 
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 pt-0.5 text-[10.5px]">
                   <div>
-                    <span className="text-slate-500 text-[9.5px] block font-semibold uppercase">Ý kiến Thẩm định Quản lý Chuyên môn:</span>
+                    <span className="text-slate-500 text-[9.5px] block font-semibold uppercase">GV phụ trách định hướng &amp; Ý kiến Thẩm định QLCM:</span>
                     <p className="text-slate-900 font-medium mt-0.5">
                       {verificationInfo?.notes || "Hồ sơ phỏng vấn định hướng đầy đủ, đúng quy trình."}
                     </p>
-                    {verificationInfo?.verifierName && (
+                    {(verificationInfo?.verifierName || orientationData?.interviewerName) && (
                       <span className="text-[9.5px] text-teal-800 italic block mt-0.5">
-                        Thẩm định bởi: {verificationInfo.verifierName} ({verificationInfo.verifiedAt ? new Date(verificationInfo.verifiedAt).toLocaleDateString("vi-VN") : ""})
+                        GV phụ trách định hướng: {verificationInfo?.verifierName || orientationData?.interviewerName}
                       </span>
                     )}
                   </div>

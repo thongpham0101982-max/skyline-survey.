@@ -1,7 +1,11 @@
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/db";
 import { auth } from "@/lib/auth";
-import { getStudentOrientationRecord, upsertStudentOrientationRecord } from "@/lib/orientation/service";
+import {
+  getStudentOrientationRecord,
+  upsertStudentOrientationRecord,
+  getAssignedOrientationTeacher
+} from "@/lib/orientation/service";
 import { canUserConfirmStage } from "@/lib/entrance-progress/constants";
 import { executeEntranceWorkflowAction } from "@/lib/entrance-progress/entranceProgressEngine";
 
@@ -16,7 +20,11 @@ export async function GET(request: Request) {
       return NextResponse.json({ success: false, error: "Thiếu studentId" }, { status: 400 });
     }
 
+    const session = await auth();
+    const currentUser = session?.user as any;
+
     const record = await getStudentOrientationRecord(studentId);
+    const assignedOrientation = await getAssignedOrientationTeacher(studentId, currentUser?.id);
     let studentInfo = record?.student || null;
 
     if (!studentInfo) {
@@ -119,7 +127,20 @@ export async function GET(request: Request) {
       }
     }
 
-    return NextResponse.json({ success: true, data: record, student: studentInfo });
+    const fallbackTeacherName =
+      assignedOrientation.primary?.teacherName ||
+      record?.interviewerName ||
+      currentUser?.fullName ||
+      currentUser?.name ||
+      "";
+
+    return NextResponse.json({
+      success: true,
+      data: record,
+      student: studentInfo,
+      assignedOrientationTeacher: assignedOrientation.primary || (fallbackTeacherName ? { teacherName: fallbackTeacherName, teacherId: currentUser?.id || "" } : null),
+      assignedOrientationTeachers: assignedOrientation.list || []
+    });
   } catch (error: any) {
     console.error("GET /api/admin/orientation/records error:", error);
     return NextResponse.json({ success: false, error: error.message }, { status: 500 });

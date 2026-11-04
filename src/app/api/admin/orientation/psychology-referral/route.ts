@@ -84,6 +84,38 @@ export async function GET(req: Request) {
 
     // 5. Lấy thông tin bản ghi định hướng hiện tại nếu có
     const orientationRecord = await getStudentOrientationRecord(studentId);
+    let parsedPsychData: any = null;
+    if (orientationRecord?.psychologyData) {
+      try {
+        parsedPsychData = typeof orientationRecord.psychologyData === "string"
+          ? JSON.parse(orientationRecord.psychologyData)
+          : orientationRecord.psychologyData;
+      } catch (e) {}
+    }
+
+    // Fallback: Nếu chưa có psychologyData trên phiếu định hướng nhưng đã có điểm môn TLY trong InputAssessmentScore
+    if (!parsedPsychData && orientationRecord?.student?.scores) {
+      const tlyScoreRec = orientationRecord.student.scores.find(
+        (sc: any) => sc.subject?.code === "TLY" || String(sc.subject?.name || "").toLowerCase().includes("tâm lý")
+      );
+      if (tlyScoreRec) {
+        try {
+          const arrScores = JSON.parse(tlyScoreRec.scores || "[]");
+          const arrComments = JSON.parse(tlyScoreRec.comments || "[]");
+          const raw20 = arrScores.length >= 27 ? arrScores.slice(7, 27).map(Number) : arrScores.slice(0, 20).map(Number);
+          const secScores = arrScores.length >= 7 ? arrScores.slice(0, 6).map(Number) : [];
+          const tot = arrScores.length >= 7 ? Number(arrScores[6]) : raw20.reduce((s: number, v: number) => s + (Number(v) || 0), 0);
+          parsedPsychData = {
+            scores: raw20,
+            sectionScores: secScores,
+            totalScore: tot,
+            conclusion: arrComments[0] || "",
+            recommendation: arrComments[1] || "",
+            notes: arrComments.slice(2, 22)
+          };
+        } catch (e) {}
+      }
+    }
 
     return NextResponse.json({
       success: true,
@@ -93,11 +125,11 @@ export async function GET(req: Request) {
       tlhnTeachers,
       psychologyQuestions: psychQuestions,
       gdcsList,
-      referralStatus: orientationRecord?.psychologyReferralStatus || "NONE",
+      referralStatus: orientationRecord?.psychologyReferralStatus || (parsedPsychData ? "COMPLETED" : "NONE"),
       referralReason: orientationRecord?.psychologyReferralReason || "",
       referralTeacherId: orientationRecord?.psychologyTeacherId || "",
       referralTeacherName: orientationRecord?.psychologyTeacherName || "",
-      psychologyData: orientationRecord?.psychologyData || null,
+      psychologyData: parsedPsychData,
       data: {
         student,
         departments,
@@ -105,8 +137,9 @@ export async function GET(req: Request) {
         tlhnTeachers,
         psychQuestions,
         gdcsList,
+        psychologyData: parsedPsychData,
         currentReferral: {
-          status: orientationRecord?.psychologyReferralStatus || "NONE",
+          status: orientationRecord?.psychologyReferralStatus || (parsedPsychData ? "COMPLETED" : "NONE"),
           reason: orientationRecord?.psychologyReferralReason || "",
           teacherId: orientationRecord?.psychologyTeacherId || "",
           teacherName: orientationRecord?.psychologyTeacherName || ""
@@ -127,6 +160,118 @@ export async function POST(req: Request) {
     }
 
     const body = await req.json();
+
+    // NHÁNH A0: LƯU TRỰC TIẾP KẾT QUẢ ĐÁNH GIÁ TÂM LÝ THEO FORM TÂM LÝ
+    if (body.action === "savePsychologyAssessment") {
+      const {
+        studentId,
+        teacherId,
+        teacherName,
+        reason,
+        scores = [],
+        sectionScores = [],
+        totalScore = 0,
+        evaluation = {},
+        conclusion = "",
+        recommendation = "",
+        notes = []
+      } = body;
+
+      if (!studentId) {
+        return NextResponse.json({ success: false, error: "Thiếu studentId." }, { status: 400 });
+      }
+
+      const assessorName =
+        teacherName ||
+        (session.user as any)?.fullName ||
+        session.user?.name ||
+        "Giáo viên Tâm lý";
+      const assessorId = teacherId || (session.user as any)?.id || null;
+      const nowStr = new Date().toLocaleString("vi-VN", { timeZone: "Asia/Ho_Chi_Minh" });
+
+      const psychDataObj = {
+        scores,
+        sectionScores,
+        totalScore,
+        evaluation,
+        conclusion,
+        recommendation,
+        notes,
+        assessedBy: assessorName,
+        assessedById: assessorId,
+        assessedAt: new Date().toISOString(),
+        assessedAtFormatted: nowStr
+      };
+
+      const updatedRecord = await upsertStudentOrientationRecord({
+        studentId,
+        psychologyReferralStatus: "COMPLETED",
+        psychologyTeacherId: assessorId,
+        psychologyTeacherName: assessorName,
+        psychologyReferralReason:
+          reason || conclusion || evaluation?.suggestion || "Đã hoàn thành đánh giá tâm lý theo Form chuẩn",
+        psychologyData: JSON.stringify(psychDataObj)
+      });
+
+      // Đồng bộ điểm psychologyScore sang InputAssessmentStudent & InputAssessmentScore (môn TLY)
+      try {
+        await (prisma as any).inputAssessmentStudent.update({
+          where: { id: studentId },
+          data: { psychologyScore: String(totalScore) }
+        });
+
+        const tlySubject = await (prisma as any).inputAssessmentSubject.findFirst({
+          where: {
+            OR: [
+              { code: "TLY" },
+              { name: { contains: "Tâm lý" } },
+              { name: { contains: "tâm lý" } }
+            ]
+          }
+        });
+
+        if (tlySubject) {
+          const finalScoresArr = [...sectionScores, totalScore, ...scores];
+          const finalCommentsArr = [conclusion, recommendation, ...notes];
+          const existingScore = await (prisma as any).inputAssessmentScore.findFirst({
+            where: { studentId, subjectId: tlySubject.id }
+          });
+
+          if (existingScore) {
+            await (prisma as any).inputAssessmentScore.update({
+              where: { id: existingScore.id },
+              data: {
+                scores: JSON.stringify(finalScoresArr),
+                comments: JSON.stringify(finalCommentsArr),
+                status: "COMPLETED"
+              }
+            });
+          } else {
+            await (prisma as any).inputAssessmentScore.create({
+              data: {
+                studentId,
+                subjectId: tlySubject.id,
+                scores: JSON.stringify(finalScoresArr),
+                comments: JSON.stringify(finalCommentsArr),
+                status: "COMPLETED"
+              }
+            });
+          }
+        }
+      } catch (syncErr) {
+        console.error("Lỗi đồng bộ điểm Tâm lý:", syncErr);
+      }
+
+      return NextResponse.json({
+        success: true,
+        message: "Đã lưu kết quả khảo sát & đánh giá tâm lý thành công!",
+        data: {
+          record: updatedRecord,
+          psychologyData: psychDataObj,
+          teacherName: assessorName
+        }
+      });
+    }
 
     // NHÁNH A: BÁO CÁO KẾT QUẢ ĐÁNH GIÁ TÂM LÝ ĐẾN GĐCS & GỬI EMAIL
     if (body.action === "reportToGdcs") {
