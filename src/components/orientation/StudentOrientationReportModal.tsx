@@ -109,12 +109,12 @@ export function StudentOrientationReportModal({
   const handlePrintOrExport = (isPdfDownload = false) => {
     try {
       if (isPdfDownload) setExportingPdf(true)
-      const cleanName = (student?.fullName || "HocSinh")
+      const cleanName = (sData?.fullName || student?.fullName || "HocSinh")
         .normalize("NFD")
         .replace(/[\u0300-\u036f]/g, "")
         .replace(/[^a-zA-Z0-9]/g, "_")
-      const studentCode = student?.studentCode || "HS"
-      const gradeStr = student?.grade ? `Khoi_${student.grade}` : "DinhHuong"
+      const studentCode = sData?.studentCode || student?.studentCode || "HS"
+      const gradeStr = (sData?.grade || student?.grade) ? `Khoi_${sData?.grade || student?.grade}` : "DinhHuong"
       const pdfTitle = `BaoCao_DinhHuong_${gradeStr}_${studentCode}_${cleanName}`
 
       const printElement = printRef.current
@@ -130,34 +130,26 @@ export function StudentOrientationReportModal({
       const iframe = document.createElement("iframe")
       iframe.id = "skyline-print-iframe"
       iframe.style.position = "fixed"
-      iframe.style.right = "0"
-      iframe.style.bottom = "0"
-      iframe.style.width = "0"
-      iframe.style.height = "0"
+      iframe.style.left = "-10000px"
+      iframe.style.top = "0"
+      iframe.style.width = "210mm"
+      iframe.style.height = "297mm"
       iframe.style.border = "0"
-      iframe.style.visibility = "hidden"
+      iframe.style.opacity = "0"
+      iframe.style.pointerEvents = "none"
       document.body.appendChild(iframe)
 
       const iframeDoc = iframe.contentWindow?.document || iframe.contentDocument
       if (!iframeDoc) {
-        const directRoot = document.createElement("div")
-        directRoot.id = "print-direct-container"
-        directRoot.className = "print-only-container"
-        directRoot.innerHTML = printElement.innerHTML
-        document.body.appendChild(directRoot)
-
-        const originalTitle = document.title
-        document.title = pdfTitle
+        if (isPdfDownload) setExportingPdf(false)
         window.print()
-        setTimeout(() => {
-          document.title = originalTitle
-          if (document.body.contains(directRoot)) directRoot.remove()
-          if (isPdfDownload) setExportingPdf(false)
-        }, 1200)
         return
       }
 
-      const styles = Array.from(document.querySelectorAll("link[rel='stylesheet'], style"))
+      // Chỉ lấy các stylesheet của hệ thống, loại bỏ các thẻ style global print ẩn body > *
+      const styles = Array.from(
+        document.querySelectorAll("link[rel='stylesheet'], style:not([data-ignore-iframe-print='true'])")
+      )
         .map(node => node.outerHTML)
         .join("\n")
 
@@ -190,8 +182,16 @@ export function StudentOrientationReportModal({
                 -webkit-print-color-adjust: exact !important;
                 print-color-adjust: exact !important;
                 overflow: visible !important;
+                display: block !important;
+                visibility: visible !important;
               }
-              .print-container {
+              body > * {
+                display: block !important;
+                visibility: visible !important;
+              }
+              #print-direct-container, .print-container {
+                display: block !important;
+                visibility: visible !important;
                 width: 100% !important;
                 max-width: 100% !important;
                 margin: 0 auto !important;
@@ -234,7 +234,7 @@ export function StudentOrientationReportModal({
             </style>
           </head>
           <body>
-            <div class="print-container">
+            <div id="print-direct-container" class="print-container">
               ${printElement.innerHTML}
             </div>
           </body>
@@ -242,28 +242,48 @@ export function StudentOrientationReportModal({
       `)
       iframeDoc.close()
 
-      setTimeout(() => {
+      let hasPrinted = false
+      const triggerPrint = () => {
+        if (hasPrinted) return
+        hasPrinted = true
         try {
-          iframe.contentWindow?.focus()
-          iframe.contentWindow?.print()
-        } catch (e) {
-          console.error("Lỗi gọi in iframe, fallback sang in trực tiếp:", e)
           const originalTitle = document.title
           document.title = pdfTitle
-          window.print()
+          iframe.contentWindow?.focus()
+          iframe.contentWindow?.print()
           setTimeout(() => {
             document.title = originalTitle
-          }, 1000)
-        } finally {
-          setTimeout(() => {
-            if (document.body.contains(iframe)) {
-              document.body.removeChild(iframe)
-            }
             if (isPdfDownload) setExportingPdf(false)
-          }, 1800)
+          }, 800)
+        } catch (e) {
+          console.error("Lỗi gọi in iframe:", e)
+          if (isPdfDownload) setExportingPdf(false)
+          window.print()
         }
-      }, 500)
+      }
 
+      // Chờ các link stylesheet trong iframe tải xong (tối đa 700ms) rồi mới mở hộp thoại Print/Save PDF
+      const linkElements = Array.from(iframeDoc.querySelectorAll("link[rel='stylesheet']")) as HTMLLinkElement[]
+      if (linkElements.length === 0) {
+        setTimeout(triggerPrint, 250)
+      } else {
+        let loadedCount = 0
+        const checkDone = () => {
+          loadedCount++
+          if (loadedCount >= linkElements.length) {
+            setTimeout(triggerPrint, 150)
+          }
+        }
+        linkElements.forEach(link => {
+          if (link.sheet) {
+            checkDone()
+          } else {
+            link.addEventListener("load", checkDone, { once: true })
+            link.addEventListener("error", checkDone, { once: true })
+          }
+        })
+        setTimeout(triggerPrint, 700)
+      }
     } catch (err: any) {
       console.error("Lỗi khi mở lệnh in:", err)
       if (isPdfDownload) setExportingPdf(false)
@@ -557,15 +577,11 @@ export function StudentOrientationReportModal({
     <div id="orientation-report-modal-backdrop" className="no-print-backdrop fixed inset-0 z-[260] flex items-center justify-center p-2 sm:p-4 bg-slate-900/60 backdrop-blur-xs overflow-y-auto print:p-0 print:bg-white print:static print:z-auto">
       
       {/* GLOBAL PRINT STYLES FOR DIRECT WINDOW.PRINT() OR CTRL+P */}
-      <style dangerouslySetInnerHTML={{ __html: `
+      <style data-ignore-iframe-print="true" dangerouslySetInnerHTML={{ __html: `
         @media print {
           @page {
             size: A4 portrait;
             margin: 8mm 8mm 8mm 8mm;
-          }
-          *, *:before, *:after {
-            box-sizing: border-box !important;
-            -webkit-box-sizing: border-box !important;
           }
           html, body {
             width: 100% !important;
@@ -579,21 +595,24 @@ export function StudentOrientationReportModal({
             -webkit-print-color-adjust: exact !important;
             print-color-adjust: exact !important;
           }
-          body > *:not(#orientation-report-modal-backdrop):not(#skyline-print-iframe):not(#print-direct-container) {
-            display: none !important;
+          body * {
+            visibility: hidden !important;
+          }
+          #orientation-report-printable,
+          #orientation-report-printable * {
+            visibility: visible !important;
           }
           #orientation-report-modal-backdrop {
-            position: static !important;
-            inset: auto !important;
-            z-index: auto !important;
-            display: block !important;
+            position: absolute !important;
+            left: 0 !important;
+            top: 0 !important;
+            width: 100% !important;
+            height: auto !important;
             padding: 0 !important;
             margin: 0 !important;
             background: #ffffff !important;
             backdrop-filter: none !important;
             overflow: visible !important;
-            height: auto !important;
-            min-height: 0 !important;
           }
           #orientation-report-main-container {
             position: static !important;
@@ -609,6 +628,7 @@ export function StudentOrientationReportModal({
             padding: 0 !important;
           }
           #orientation-report-printable {
+            position: static !important;
             width: 100% !important;
             max-width: 100% !important;
             padding: 0 !important;
@@ -898,14 +918,6 @@ export function StudentOrientationReportModal({
                               <div className="font-bold text-slate-900 leading-snug">
                                 {item.questionText || item.name}
                               </div>
-                              <div className="text-[9px] text-teal-700 font-semibold mt-0.5">
-                                {item.code ? `[${item.code}] ` : ""}{item.categoryLabel || item.category}
-                              </div>
-                              {item.focus && (
-                                <div className="text-[8.5px] text-slate-500 italic mt-0.5 leading-tight">
-                                  {item.focus}
-                                </div>
-                              )}
                             </td>
                             <td className="py-1.5 px-2 text-slate-800 leading-relaxed align-top">
                               {studentNote.trim() ? (
@@ -974,9 +986,6 @@ export function StudentOrientationReportModal({
                             <td className="py-1.5 px-2 align-top">
                               <div className="font-bold text-slate-900 leading-snug">
                                 {pItem.title}
-                              </div>
-                              <div className="text-[9px] text-teal-700 font-semibold mt-0.5">
-                                {pItem.code ? `[${pItem.code}] ` : ""}{pItem.categoryLabel || pItem.category}
                               </div>
                             </td>
                             <td className="py-1.5 px-2 text-slate-800 leading-relaxed align-top">
@@ -1234,9 +1243,9 @@ export function StudentOrientationReportModal({
                     <p className="text-slate-900 font-medium mt-0.5">
                       {verificationInfo?.notes || "Hồ sơ phỏng vấn định hướng đầy đủ, đúng quy trình."}
                     </p>
-                    {(verificationInfo?.verifierName || orientationData?.interviewerName) && (
+                    {(verificationInfo?.verifiedBy || verificationInfo?.verifierName || orientationData?.interviewerName) && (
                       <span className="text-[9.5px] text-teal-800 italic block mt-0.5">
-                        GV phụ trách định hướng: {verificationInfo?.verifierName || orientationData?.interviewerName}
+                        GV phụ trách định hướng: {verificationInfo?.verifiedBy || verificationInfo?.verifierName || orientationData?.interviewerName}
                       </span>
                     )}
                   </div>
@@ -1255,11 +1264,11 @@ export function StudentOrientationReportModal({
                 <div className="grid grid-cols-3 gap-3 text-center">
                   <div className="space-y-10">
                     <span className="text-[9.5px] font-black uppercase text-slate-600 block">
-                      GIÁO VIÊN PHỎNG VẤN
+                      GIÁO VIÊN PHỤ TRÁCH ĐỊNH HƯỚNG
                     </span>
                     <div>
                       <strong className="text-slate-900 text-[11px] block font-bold">
-                        {orientationData?.interviewerName || "Giáo viên thực hiện"}
+                        {orientationData?.interviewerName || verificationInfo?.verifiedBy || "Giáo viên thực hiện"}
                       </strong>
                       <span className="text-[9px] text-slate-400 italic block">Đã hoàn thành phiếu</span>
                     </div>
@@ -1271,7 +1280,7 @@ export function StudentOrientationReportModal({
                     </span>
                     <div>
                       <strong className="text-slate-900 text-[11px] block font-bold">
-                        {verificationInfo?.verifierName || "Ban Chuyên môn Cơ sở"}
+                        {verificationInfo?.verifiedBy || verificationInfo?.verifierName || orientationData?.interviewerName || "Ban Chuyên môn Cơ sở"}
                       </strong>
                       <span className="text-[9px] text-slate-400 italic block">
                         {verificationInfo?.status === "VERIFIED" ? "Đã thẩm định chuyên môn" : "Xác nhận hồ sơ"}
