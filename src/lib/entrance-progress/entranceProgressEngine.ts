@@ -2057,6 +2057,107 @@ export async function getEntranceProgressDashboardData(filters: {
     ).sort(),
   };
 
+  // 10. Tổng hợp Lược sử đã thực hiện (Kết hợp Audit Logs + các công đoạn thực tế đã thực hiện của Học sinh & Đợt)
+  const combinedAuditLogs: any[] = [...(rawAuditLogs || [])];
+  const existingLogKeys = new Set<string>(
+    combinedAuditLogs.map(
+      (l) => `${l.studentId || l.batchId || l.periodId}_${l.stageNumber}_${l.newStatus}`
+    )
+  );
+
+  // Lược sử thực hiện cấp Đợt khảo sát (Bước 1, 2, 3)
+  for (const bRow of batchProgressRows) {
+    for (const stgSum of bRow.stageSummaries) {
+      if (stgSum.stageNumber <= 3 && (stgSum.status === "COMPLETED" || stgSum.completedCount > 0)) {
+        const key = `${bRow.id}_${stgSum.stageNumber}_${stgSum.status}`;
+        if (!existingLogKeys.has(key)) {
+          existingLogKeys.add(key);
+          combinedAuditLogs.push({
+            id: `derived_batch_${bRow.id}_stg_${stgSum.stageNumber}`,
+            academicYearId: activeAcademicYearId,
+            isPreschool: bRow.isPreschool ? 1 : 0,
+            periodId: bRow.periodId,
+            batchId: bRow.id,
+            studentId: null,
+            studentCode: null,
+            studentName: `${bRow.periodName} • ${bRow.batchName} (${bRow.totalStudents} HS)`,
+            stageNumber: stgSum.stageNumber,
+            action: stgSum.confirmedByName ? "XÁC NHẬN" : "THỰC HIỆN",
+            previousStatus: "IN_PROGRESS",
+            newStatus: stgSum.status,
+            actorName: stgSum.confirmedByName || bRow.assignedUserName || "Giáo vụ / Ban KT&ĐBCL",
+            actorRole: stgSum.stageNumber === 1 ? "KTDBCL" : "GIAO_VU",
+            reasonOrNote:
+              stgSum.stageNumber === 1
+                ? `Khởi tạo đợt khảo sát (${bRow.campusName})`
+                : stgSum.stageNumber === 2
+                ? `Đã nhập danh sách ${bRow.totalStudents} học sinh khảo sát`
+                : `Đã phân công giáo viên khảo sát cho ${stgSum.completedCount}/${bRow.totalStudents} học sinh`,
+            createdAt: stgSum.confirmedAt || bRow.startDate || now.toISOString(),
+            isDerived: true,
+          });
+        }
+      }
+    }
+  }
+
+  // Lược sử thực hiện trên từng Học sinh (Bước 2 -> Bước 7)
+  for (const sRow of filteredStudentRows) {
+    for (const stg of sRow.stages) {
+      if (
+        stg.stageNumber >= 2 &&
+        (stg.status === "COMPLETED" ||
+          stg.status === "NEEDS_ADJUSTMENT" ||
+          Boolean(stg.confirmedByName) ||
+          (stg.stageNumber >= 4 && stg.status === "IN_PROGRESS" && sRow.evaluatedSubjectsCount > 0))
+      ) {
+        const key = `${sRow.id}_${stg.stageNumber}_${stg.status}`;
+        if (!existingLogKeys.has(key)) {
+          existingLogKeys.add(key);
+          combinedAuditLogs.push({
+            id: `derived_stu_${sRow.id}_stg_${stg.stageNumber}`,
+            academicYearId: activeAcademicYearId,
+            isPreschool: sRow.isPreschool ? 1 : 0,
+            periodId: sRow.periodId,
+            batchId: sRow.batchId,
+            studentId: sRow.id,
+            studentCode: sRow.studentCode,
+            studentName: sRow.fullName,
+            stageNumber: stg.stageNumber,
+            action: stg.confirmedByName ? "XÁC NHẬN" : "CẬP NHẬT DỮ LIỆU",
+            previousStatus: "IN_PROGRESS",
+            newStatus:
+              stg.stageNumber === 6 && sRow.admissionResult
+                ? `${stg.status} (${sRow.admissionResult})`
+                : stg.status,
+            actorName: stg.confirmedByName || stg.responsibleLabel,
+            actorRole:
+              stg.confirmedByRole ||
+              (stg.stageNumber === 4
+                ? "TEACHER"
+                : stg.stageNumber === 5
+                ? "GV_DINH_HUONG"
+                : stg.stageNumber === 6
+                ? "GDCS"
+                : "GIAO_VU"),
+            reasonOrNote: stg.note
+              ? `${stg.detailText} — Ghi chú: ${stg.note}`
+              : stg.detailText,
+            createdAt: stg.confirmedAt || sRow.batchStartDate || now.toISOString(),
+            isDerived: true,
+          });
+        }
+      }
+    }
+  }
+
+  combinedAuditLogs.sort((a, b) => {
+    const tA = a.createdAt ? new Date(a.createdAt).getTime() : 0;
+    const tB = b.createdAt ? new Date(b.createdAt).getTime() : 0;
+    if (tB !== tA) return tB - tA;
+    return Number(b.stageNumber || 0) - Number(a.stageNumber || 0);
+  });
+
   return {
     kpis,
     stageChartData,
@@ -2064,7 +2165,7 @@ export async function getEntranceProgressDashboardData(filters: {
     studentRows: filteredStudentRows,
     assigneeRows,
     backlogItems,
-    auditLogs: rawAuditLogs,
+    auditLogs: combinedAuditLogs.slice(0, 300),
     filterOptions,
   };
 }

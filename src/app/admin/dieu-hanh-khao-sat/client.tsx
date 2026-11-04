@@ -2548,6 +2548,68 @@ export function EntranceOperationsDashboardClient({
                   );
                 })}
               </div>
+
+              {/* Lược sử đã thực hiện của học sinh trong Modal Chi tiết */}
+              {(() => {
+                const stuLogs = auditLogs.filter(
+                  (l: any) =>
+                    l.studentId === detailStudent.id ||
+                    (!l.studentId &&
+                      l.batchId &&
+                      l.batchId === detailStudent.batchId)
+                );
+                if (stuLogs.length === 0) return null;
+                return (
+                  <div className="rounded-2xl border border-slate-200 bg-slate-50/70 p-4 space-y-2.5">
+                    <div className="flex items-center justify-between">
+                      <h4 className="text-xs font-black uppercase tracking-wider text-[#003B3A] flex items-center gap-1.5">
+                        <History className="w-4 h-4 text-[#00A19A]" />
+                        <span>Lược sử thực hiện & xác nhận của hồ sơ ({stuLogs.length})</span>
+                      </h4>
+                    </div>
+                    <div className="max-h-48 overflow-y-auto space-y-1.5 pr-1">
+                      {stuLogs.map((log: any) => {
+                        const stgDef = getStageDefinition(
+                          Number(log.stageNumber) || 1
+                        );
+                        return (
+                          <div
+                            key={log.id}
+                            className="p-2.5 rounded-xl bg-white border border-slate-200 flex flex-col sm:flex-row sm:items-center justify-between gap-2 text-xs"
+                          >
+                            <div className="space-y-0.5">
+                              <div className="flex items-center gap-1.5 flex-wrap">
+                                <span className="px-1.5 py-0.5 rounded bg-teal-50 text-[#00736E] border border-teal-200 text-[10px] font-extrabold">
+                                  Bước {log.stageNumber}: {stgDef.shortName.replace(/^\d+\.\s*/, "")}
+                                </span>
+                                <span className="font-extrabold text-slate-800">
+                                  {log.actorName}
+                                </span>
+                                <span className="text-[10.5px] font-semibold text-slate-500">
+                                  ({log.actorRole})
+                                </span>
+                                <span className="px-2 py-0.5 rounded-full bg-emerald-50 text-emerald-700 border border-emerald-200 text-[10px] font-bold">
+                                  {log.action} → {log.newStatus}
+                                </span>
+                              </div>
+                              {log.reasonOrNote && (
+                                <div className="text-[11px] text-slate-600">
+                                  {log.reasonOrNote}
+                                </div>
+                              )}
+                            </div>
+                            <div className="text-[11px] font-mono text-slate-500 shrink-0">
+                              {log.createdAt
+                                ? new Date(log.createdAt).toLocaleString("vi-VN")
+                                : "—"}
+                            </div>
+                          </div>
+                        );
+                      })}
+                    </div>
+                  </div>
+                );
+              })()}
             </div>
           </div>
         </div>
@@ -2560,10 +2622,10 @@ export function EntranceOperationsDashboardClient({
           onClick={() => setConfirmModal(null)}
         >
           <div
-            className="bg-white rounded-3xl max-w-lg w-full overflow-hidden shadow-2xl border border-slate-200 animate-in zoom-in-95 duration-200"
+            className="bg-white rounded-3xl max-w-xl w-full max-h-[92vh] overflow-hidden shadow-2xl border border-slate-200 flex flex-col animate-in zoom-in-95 duration-200"
             onClick={(e) => e.stopPropagation()}
           >
-            <div className="bg-[#003B3A] text-white px-6 py-4 flex items-center justify-between">
+            <div className="bg-[#003B3A] text-white px-6 py-4 flex items-center justify-between shrink-0">
               <h3 className="text-sm sm:text-base font-black">
                 {confirmModal.title}
               </h3>
@@ -2575,7 +2637,7 @@ export function EntranceOperationsDashboardClient({
               </button>
             </div>
 
-            <div className="p-6 space-y-4 text-xs">
+            <div className="p-6 space-y-4 text-xs overflow-y-auto flex-1">
               {confirmModal.studentSummary && (
                 <div className="p-3 rounded-xl bg-teal-50/70 border border-teal-200 font-bold text-[#003B3A]">
                   Đối tượng: {confirmModal.studentSummary}
@@ -2758,6 +2820,148 @@ export function EntranceOperationsDashboardClient({
                 </span>
                 <span>Thời gian: Hệ thống tự động ghi nhận</span>
               </div>
+
+              {/* Lược sử đã thực hiện của học sinh / đợt khảo sát */}
+              {(() => {
+                const targetStu =
+                  confirmModal.studentIds?.length === 1
+                    ? studentRows.find((s) => s.id === confirmModal.studentIds[0])
+                    : null;
+
+                const targetAuditLogs = auditLogs.filter((l: any) => {
+                  if (confirmModal.studentIds?.length === 1) {
+                    return l.studentId === confirmModal.studentIds[0];
+                  }
+                  if (confirmModal.batchId) {
+                    return l.batchId === confirmModal.batchId;
+                  }
+                  return l.periodId === confirmModal.periodId;
+                });
+
+                const completedStages = targetStu
+                  ? targetStu.stages.filter(
+                      (st) =>
+                        st.status === "COMPLETED" ||
+                        st.status === "NEEDS_ADJUSTMENT" ||
+                        Boolean(st.confirmedByName) ||
+                        (st.stageNumber >= 4 && st.status === "IN_PROGRESS")
+                    )
+                  : [];
+
+                if (completedStages.length === 0 && targetAuditLogs.length === 0) {
+                  return null;
+                }
+
+                return (
+                  <div className="rounded-2xl border border-teal-200/80 bg-teal-50/30 p-3.5 space-y-2.5">
+                    <div className="flex items-center justify-between">
+                      <span className="text-[11px] font-extrabold uppercase tracking-wider text-[#003B3A] flex items-center gap-1.5">
+                        <History className="w-3.5 h-3.5 text-[#00A19A]" />
+                        <span>Lược sử các công đoạn đã thực hiện</span>
+                      </span>
+                      <span className="text-[10px] font-bold text-[#00736E] bg-teal-100/80 px-2 py-0.5 rounded-full">
+                        {targetStu
+                          ? `Tiến độ: ${targetStu.overallProgressPct}%`
+                          : `${targetAuditLogs.length} bản ghi`}
+                      </span>
+                    </div>
+
+                    {targetStu && completedStages.length > 0 && (
+                      <div className="max-h-40 overflow-y-auto space-y-1.5 pr-1">
+                        {completedStages.map((st) => {
+                          const stMeta = ENTRANCE_STAGE_STATUS_META[st.status];
+                          return (
+                            <div
+                              key={st.stageNumber}
+                              className="p-2 rounded-xl bg-white border border-slate-200/90 flex items-start justify-between gap-2 text-[11px]"
+                            >
+                              <div className="space-y-0.5">
+                                <div className="font-extrabold text-[#003B3A] flex items-center gap-1.5 flex-wrap">
+                                  <span className="px-1.5 py-0.2 rounded bg-[#003B3A] text-white text-[9.5px]">
+                                    B{st.stageNumber}
+                                  </span>
+                                  <span>{st.shortName.replace(/^\d+\.\s*/, "")}</span>
+                                  <span
+                                    className={`px-1.5 py-0.2 rounded-full text-[9.5px] font-bold border ${stMeta.badgeClass}`}
+                                  >
+                                    {stMeta.label}
+                                  </span>
+                                </div>
+                                <div className="text-slate-600 font-medium">
+                                  {st.detailText}
+                                </div>
+                                {(st.confirmedByName || st.note) && (
+                                  <div className="text-[10px] text-slate-500">
+                                    {st.confirmedByName && (
+                                      <span>
+                                        Thực hiện/Xác nhận:{" "}
+                                        <strong className="text-slate-700">
+                                          {st.confirmedByName}
+                                        </strong>
+                                      </span>
+                                    )}
+                                    {st.confirmedAt && (
+                                      <span>
+                                        {" "}
+                                        •{" "}
+                                        {new Date(st.confirmedAt).toLocaleString(
+                                          "vi-VN"
+                                        )}
+                                      </span>
+                                    )}
+                                    {st.note && <span> • Ghi chú: {st.note}</span>}
+                                  </div>
+                                )}
+                              </div>
+                            </div>
+                          );
+                        })}
+                      </div>
+                    )}
+
+                    {targetAuditLogs.filter((l: any) => !l.isDerived).length > 0 && (
+                      <div className="pt-1.5 border-t border-teal-200/60 space-y-1">
+                        <div className="text-[10px] font-extrabold uppercase text-slate-500">
+                          Nhật ký thao tác xác nhận gần nhất:
+                        </div>
+                        <div className="max-h-28 overflow-y-auto space-y-1 pr-1">
+                          {targetAuditLogs
+                            .filter((l: any) => !l.isDerived)
+                            .slice(0, 5)
+                            .map((log: any) => (
+                              <div
+                                key={log.id}
+                                className="text-[10.5px] bg-white/90 px-2.5 py-1.5 rounded-lg border border-slate-200 flex items-center justify-between gap-2"
+                              >
+                                <div>
+                                  <strong className="text-[#003B3A]">
+                                    Bước {log.stageNumber}
+                                  </strong>{" "}
+                                  •{" "}
+                                  <span className="font-bold text-[#00736E]">
+                                    {log.actorName}
+                                  </span>{" "}
+                                  ({log.action} → {log.newStatus})
+                                  {log.reasonOrNote && (
+                                    <span className="text-slate-500">
+                                      {" "}
+                                      — {log.reasonOrNote}
+                                    </span>
+                                  )}
+                                </div>
+                                <span className="text-[10px] font-mono text-slate-400 shrink-0">
+                                  {log.createdAt
+                                    ? new Date(log.createdAt).toLocaleString("vi-VN")
+                                    : ""}
+                                </span>
+                              </div>
+                            ))}
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                );
+              })()}
             </div>
 
             <div className="px-6 py-4 bg-slate-50 border-t border-slate-200 flex items-center justify-end gap-2.5">
