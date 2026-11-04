@@ -1738,11 +1738,40 @@ export function InputAssessmentsClient({
     error?: string;
   } | null>(null);
 
+  const resolveCampusDisplay = useCallback((rawVal?: string | null, fallbackLabel?: string) => {
+    const val = String(rawVal || "").trim();
+    if (val) {
+      const matched = campuses.find(
+        c =>
+          c.id === val ||
+          (c.campusCode && c.campusCode.toUpperCase() === val.toUpperCase()) ||
+          (c.campusName && c.campusName.toLowerCase() === val.toLowerCase())
+      );
+      if (matched) {
+        if (matched.campusCode && matched.campusName && !matched.campusName.includes(matched.campusCode)) {
+          return `${matched.campusCode} - ${matched.campusName}`;
+        }
+        return matched.campusName || matched.campusCode;
+      }
+      if (!/^[a-z0-9]{20,}$/i.test(val)) {
+        return val;
+      }
+    }
+    return fallbackLabel || handoverCampusCode || "CS1";
+  }, [campuses, handoverCampusCode]);
+
   const detectCampusCodeFromContext = useCallback((batchObj?: any, periodObj?: any, sampleStu?: any): "CS1" | "CS2" | "CS3" | "CS4" | "CS5" => {
     if (batchObj?.campusId) {
       const c = campuses.find(x => x.id === batchObj.campusId);
       if (c?.campusCode && ["CS1", "CS2", "CS3", "CS4", "CS5"].includes(c.campusCode)) {
         return c.campusCode as any;
+      }
+    }
+    const stuCampusRaw = sampleStu?.registeredCampus || sampleStu?.admissionCampus;
+    if (stuCampusRaw) {
+      const cStu = campuses.find(x => x.id === stuCampusRaw || x.campusCode === stuCampusRaw || x.campusName === stuCampusRaw);
+      if (cStu?.campusCode && ["CS1", "CS2", "CS3", "CS4", "CS5"].includes(cStu.campusCode)) {
+        return cStu.campusCode as any;
       }
     }
     const rawStr = `${batchObj?.name || ""} ${periodObj?.name || ""} ${sampleStu?.registeredCampus || ""} ${sampleStu?.admissionCampus || ""}`.toUpperCase();
@@ -8461,7 +8490,7 @@ const [customCommitmentSubjects, setCustomCommitmentSubjects] = useState<string[
                         </td>
                         <td className="py-2.5 px-3 text-slate-600">{s.oldSchoolName || "—"}</td>
                         <td className="py-2.5 px-3 text-slate-700 font-semibold">
-                          {s.registeredCampus || s.admissionCampus || handoverCampusCode}
+                          {resolveCampusDisplay(s.registeredCampus || s.admissionCampus, handoverCampusCode)}
                         </td>
                       </tr>
                     ))}
@@ -9834,7 +9863,7 @@ const [customCommitmentSubjects, setCustomCommitmentSubjects] = useState<string[
                                         {s.className || "Chưa rõ lớp"}
                                       </span>
                                       <span className="text-[10px] font-semibold text-amber-800 px-1.5 py-0.2 rounded bg-amber-100/60">
-                                        {s.registeredCampus || s.admissionCampus || "Sky-Line"}
+                                        {registeredCampusObj?.campusName || registeredCampusObj?.campusCode || resolveCampusDisplay(s.registeredCampus || s.admissionCampus, "Sky-Line")}
                                       </span>
                                     </div>
                                   </td>
@@ -18291,7 +18320,7 @@ const [customCommitmentSubjects, setCustomCommitmentSubjects] = useState<string[
                           {s.admissionCriteria || "Khảo sát"} {s.surveySystem ? `(${s.surveySystem})` : ""}
                         </td>
                         <td className="py-2 px-3 text-slate-700 font-semibold">
-                          {s.registeredCampus || s.admissionCampus || handoverCampusCode}
+                          {resolveCampusDisplay(s.registeredCampus || s.admissionCampus, handoverCampusCode)}
                         </td>
                       </tr>
                     ))}

@@ -337,9 +337,50 @@ async function notifyBatchAssignment(batch: any, appUrl?: string, options?: {
     }).catch(() => []);
 
     // 2. Xác định Cơ sở (Campus) từ Đợt khảo sát hoặc từ học sinh trong đợt
+    const allCampuses: Array<{ id: string; campusCode: string; campusName: string }> = await (prisma as any).campus.findMany({
+      select: { id: true, campusCode: true, campusName: true }
+    }).catch(() => []);
+
+    const findCampusRecord = (rawVal?: string | null) => {
+      const val = String(rawVal || "").trim();
+      if (!val) return null;
+      return allCampuses.find(
+        c =>
+          c.id === val ||
+          (c.campusCode && c.campusCode.toUpperCase() === val.toUpperCase()) ||
+          (c.campusName && c.campusName.toLowerCase() === val.toLowerCase())
+      ) || null;
+    };
+
+    const formatCampusLabel = (rawVal?: string | null, fallbackLabel?: string) => {
+      const matched = findCampusRecord(rawVal);
+      if (matched) {
+        if (matched.campusCode && matched.campusName && !matched.campusName.includes(matched.campusCode)) {
+          return `${matched.campusCode} - ${matched.campusName}`;
+        }
+        return matched.campusName || matched.campusCode;
+      }
+      const val = String(rawVal || "").trim();
+      // Nếu giá trị là chuỗi ID kỹ thuật (CUID / UUID) mà không khớp bảng Campus thì dùng fallback
+      if (!val || /^[a-z0-9]{20,}$/i.test(val)) {
+        return fallbackLabel || "—";
+      }
+      return val;
+    };
+
     let campusId = batch?.campusId || null;
-    let campusName = batch?.campus?.campusName || batch?.campus?.campusCode || "";
     let campusCode = batch?.campus?.campusCode || "";
+    let campusName = batch?.campus
+      ? formatCampusLabel(batch.campus.id || batch.campus.campusCode || batch.campus.campusName)
+      : "";
+
+    if (!campusCode && campusId) {
+      const cByBatch = findCampusRecord(campusId);
+      if (cByBatch) {
+        campusCode = cByBatch.campusCode || "";
+        campusName = formatCampusLabel(cByBatch.id);
+      }
+    }
 
     if (!campusCode) {
       const bName = (batch?.name || "").toUpperCase();
@@ -351,28 +392,33 @@ async function notifyBatchAssignment(batch: any, appUrl?: string, options?: {
       }
     }
     if (!campusCode && students.length > 0) {
-      const firstCampus = String(students[0].registeredCampus || students[0].admissionCampus || "").toUpperCase();
-      for (const code of ["CS1", "CS2", "CS3", "CS4", "CS5"]) {
-        if (firstCampus.includes(code)) {
-          campusCode = code;
-          break;
+      const firstRaw = students[0].registeredCampus || students[0].admissionCampus || "";
+      const matchedStuCampus = findCampusRecord(firstRaw);
+      if (matchedStuCampus) {
+        campusId = campusId || matchedStuCampus.id;
+        campusCode = matchedStuCampus.campusCode || "";
+        campusName = formatCampusLabel(matchedStuCampus.id);
+      } else {
+        const firstUpper = String(firstRaw).toUpperCase();
+        for (const code of ["CS1", "CS2", "CS3", "CS4", "CS5"]) {
+          if (firstUpper.includes(code)) {
+            campusCode = code;
+            break;
+          }
         }
-      }
-      if (!campusName && (students[0].registeredCampus || students[0].admissionCampus)) {
-        campusName = students[0].registeredCampus || students[0].admissionCampus;
       }
     }
     if (!campusCode) campusCode = "CS1";
-    if (!campusName) campusName = campusCode;
 
     if (!campusId && campusCode) {
-      const matchedCampus = await (prisma as any).campus.findFirst({
-        where: { campusCode: campusCode }
-      }).catch(() => null);
+      const matchedCampus = findCampusRecord(campusCode);
       if (matchedCampus) {
         campusId = matchedCampus.id;
-        campusName = matchedCampus.campusName || campusName;
+        campusName = formatCampusLabel(matchedCampus.id, campusCode);
       }
+    }
+    if (!campusName || campusName === "—") {
+      campusName = formatCampusLabel(campusCode, campusCode);
     }
 
     // 3. Tìm danh sách tài khoản Giáo vụ Cơ sở để gửi thông báo hệ thống
@@ -526,7 +572,7 @@ async function notifyBatchAssignment(batch: any, appUrl?: string, options?: {
       const gradeStr = st.grade ? `Khối ${String(st.grade).replace(/^Khối\s*/i, "").replace(/^K/i, "")}` : "—";
       const sysStr = st.surveyFormType || st.surveySystem || "—";
       const criteriaStr = [st.admissionCriteria, st.surveySystem && st.surveyFormType && st.surveySystem !== st.surveyFormType ? st.surveySystem : ""].filter(Boolean).join(" • ") || "Khảo sát";
-      const stCampus = st.registeredCampus || st.admissionCampus || campusName || "—";
+      const stCampus = formatCampusLabel(st.registeredCampus || st.admissionCampus, campusName || campusCode || "—");
       const schoolInfo = st.oldSchoolName || (st.hoSoCtQuocTe ? `Chương trình: ${st.hoSoCtQuocTe}` : "—");
 
       return `
@@ -548,7 +594,8 @@ async function notifyBatchAssignment(batch: any, appUrl?: string, options?: {
       `;
     }).join("");
 
-    const emailSubject = options?.customSubject || `[Sky-Line SSM] Bàn giao Danh sách HS Khảo sát (${students.length} HS) - ${batch?.name || surveyContent}`;
+    const rawSubject = options?.customSubject || `Bàn giao Danh sách HS Khảo sát (${students.length} HS) - ${batch?.name || surveyContent}`;
+    const emailSubject = String(rawSubject).replace(/^(\[(?:Sky-Line\s+SSM|SSM\s+Sky-Line|Sky-line\s+SMS)\]\s*)+/i, "").trim();
 
     const emailHtml = `
       <!DOCTYPE html>

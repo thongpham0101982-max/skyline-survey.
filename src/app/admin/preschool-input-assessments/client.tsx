@@ -1363,11 +1363,39 @@ export function PreschoolInputAssessmentsClient({
     error?: string;
   } | null>(null);
 
+  const resolveCampusDisplay = useCallback((rawVal?: string | null, fallbackLabel?: string) => {
+    const val = String(rawVal || "").trim();
+    if (val) {
+      const matched = campuses.find(
+        c =>
+          c.id === val ||
+          (c.campusCode && c.campusCode.toUpperCase() === val.toUpperCase()) ||
+          (c.campusName && c.campusName.toLowerCase() === val.toLowerCase())
+      );
+      if (matched) {
+        if (matched.campusCode && matched.campusName && !matched.campusName.includes(matched.campusCode)) {
+          return `${matched.campusCode} - ${matched.campusName}`;
+        }
+        return matched.campusName || matched.campusCode;
+      }
+      if (!/^[a-z0-9]{20,}$/i.test(val)) {
+        return val;
+      }
+    }
+    return fallbackLabel || handoverCampusCode || "CS3";
+  }, [campuses, handoverCampusCode]);
+
   const detectPreschoolCampusCode = useCallback((batchObj?: any, periodObj?: any, sampleChild?: any): "CS1" | "CS2" | "CS3" | "CS4" | "CS5" => {
     if (batchObj?.campusId) {
       const c = campuses.find(x => x.id === batchObj.campusId);
       if (c?.campusCode && ["CS1", "CS2", "CS3", "CS4", "CS5"].includes(c.campusCode)) {
         return c.campusCode as any;
+      }
+    }
+    if (sampleChild?.admissionCampus) {
+      const cChild = campuses.find(x => x.id === sampleChild.admissionCampus || x.campusCode === sampleChild.admissionCampus || x.campusName === sampleChild.admissionCampus);
+      if (cChild?.campusCode && ["CS1", "CS2", "CS3", "CS4", "CS5"].includes(cChild.campusCode)) {
+        return cChild.campusCode as any;
       }
     }
     const rawStr = `${batchObj?.name || ""} ${periodObj?.name || ""} ${sampleChild?.admissionCampus || ""}`.toUpperCase();
@@ -3973,7 +4001,7 @@ Trân trọng kính mời Quý phụ huynh và các em học sinh!`;
                           <td className="py-2 px-3 text-center text-slate-600">{c.dateOfBirth ? new Date(c.dateOfBirth).toLocaleDateString("vi-VN") : "—"}</td>
                           <td className="py-2 px-3 font-semibold text-teal-800">{c.grade || "—"}</td>
                           <td className="py-2 px-3 text-indigo-700 font-semibold">{c.surveyFormType || "—"}</td>
-                          <td className="py-2 px-3 text-slate-600">{c.admissionCampus || handoverCampusCode}</td>
+                          <td className="py-2 px-3 text-slate-600">{resolveCampusDisplay(c.admissionCampus, handoverCampusCode)}</td>
                         </tr>
                       ))}
                     </tbody>
@@ -8771,7 +8799,7 @@ Trân trọng kính mời Quý phụ huynh và các em học sinh!`;
                         <td className="py-1.5 px-3 text-center text-slate-600">{c.dateOfBirth ? new Date(c.dateOfBirth).toLocaleDateString("vi-VN") : "—"}</td>
                         <td className="py-1.5 px-3 font-semibold text-teal-800">{c.grade || "—"}</td>
                         <td className="py-1.5 px-3 text-indigo-700 font-semibold">{c.surveyFormType || "—"}</td>
-                        <td className="py-1.5 px-3 text-slate-600">{c.admissionCampus || handoverCampusCode}</td>
+                        <td className="py-1.5 px-3 text-slate-600">{resolveCampusDisplay(c.admissionCampus, handoverCampusCode)}</td>
                       </tr>
                     ))}
                   </tbody>
