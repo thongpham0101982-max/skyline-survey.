@@ -449,26 +449,43 @@ export async function getAssignedPsychologyTeachers(studentId: string) {
       }
     });
 
+    // Sort exact batch + grade match first
+    const sortedAssignments = [...assignments].sort((a: any, b: any) => {
+      const aBatchMatch = student.batchId && a.batchId === student.batchId ? 1 : 0;
+      const bBatchMatch = student.batchId && b.batchId === student.batchId ? 1 : 0;
+      if (aBatchMatch !== bBatchMatch) return bBatchMatch - aBatchMatch;
+
+      const aGrade = String(a.grade || "").toLowerCase().replace("khối", "").replace("khoi", "").trim();
+      const bGrade = String(b.grade || "").toLowerCase().replace("khối", "").replace("khoi", "").trim();
+      const aGradeMatch = aGrade === rawGrade ? 1 : 0;
+      const bGradeMatch = bGrade === rawGrade ? 1 : 0;
+      return bGradeMatch - aGradeMatch;
+    });
+
     // Filter by grade if possible, or fallback to all psychology teachers in the period
-    const matched = assignments.filter((a: any) => {
+    const matched = sortedAssignments.filter((a: any) => {
       if (!a.grade) return true;
       const aGrade = String(a.grade).toLowerCase().replace("khối", "").replace("khoi", "").trim();
       return aGrade === rawGrade;
     });
 
-    const targetList = matched.length > 0 ? matched : assignments;
+    const targetList = matched.length > 0 ? matched : sortedAssignments;
 
     // Deduplicate by user
     const userMap = new Map();
     targetList.forEach((a: any) => {
       if (a.user && !userMap.has(a.user.id)) {
+        const aGrade = String(a.grade || "").toLowerCase().replace("khối", "").replace("khoi", "").trim();
         userMap.set(a.user.id, {
           userId: a.user.id,
-          fullName: a.user.fullName || a.user.name,
+          fullName: a.user.fullName || a.user.name || a.user.teacher?.teacherName,
           email: a.user.teacher?.email || a.user.email,
           phone: a.user.teacher?.phone || a.user.phone,
           grade: a.grade,
-          subjectName: a.subject?.name
+          batchId: a.batchId,
+          isBatchAssigned: Boolean(student.batchId && a.batchId === student.batchId),
+          isGradeMatched: !a.grade || aGrade === rawGrade,
+          subjectName: a.subject?.name || "Tâm lý"
         });
       }
     });

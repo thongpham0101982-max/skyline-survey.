@@ -235,7 +235,12 @@ export function StudentOrientationModal({
   const [psychologyData, setPsychologyData] = useState<any>(null)
   const [loadingDeptTeachers, setLoadingDeptTeachers] = useState(false)
 
-  // State cho Form Đánh giá Tâm lý (6 nhóm - 20 câu - 80 điểm)
+  // State cho Form Đánh giá Tâm lý (6 nhóm - 20 câu - 80 điểm) & Nguồn phân công GV Tâm lý
+  const [psychAssignmentSource, setPsychAssignmentSource] = useState<"PERIOD_ASSIGNED" | "ORIENTATION_ASSIGNED" | "UNASSIGNED">("UNASSIGNED")
+  const [savedPsychTeacherId, setSavedPsychTeacherId] = useState("")
+  const [savedPsychTeacherName, setSavedPsychTeacherName] = useState("")
+  const [assigningPsychTeacher, setAssigningPsychTeacher] = useState(false)
+  const [psychAssignToast, setPsychAssignToast] = useState("")
   const [psychScores, setPsychScores] = useState<number[]>(Array(20).fill(-1))
   const [psychNotes, setPsychNotes] = useState<string[]>(Array(20).fill(""))
   const [psychConclusion, setPsychConclusion] = useState("")
@@ -512,16 +517,26 @@ export function StudentOrientationModal({
               const refStatus = pData.referralStatus || record?.psychologyReferralStatus || "NONE"
               setPsychologyReferralStatus(refStatus)
               setPsychologyReferralReason(pData.referralReason || record?.psychologyReferralReason || "")
+              const src = pData.assignmentSource || "UNASSIGNED"
+              setPsychAssignmentSource(src)
 
               // Tự động chọn GV Tâm lý đã được gán hoặc GV đầu tiên được phân công trong đợt
               const currentPsychTeacherId = pData.referralTeacherId || record?.psychologyTeacherId || teachers[0]?.teacherId || ""
               const currentPsychTeacherObj = teachers.find((t: any) => t.teacherId === currentPsychTeacherId) || teachers[0]
               if (currentPsychTeacherObj) {
-                setSelectedPsychTeacherId(currentPsychTeacherObj.teacherId || "")
-                setSelectedPsychTeacherName(pData.referralTeacherName || record?.psychologyTeacherName || currentPsychTeacherObj.teacherName || "")
+                const tId = currentPsychTeacherObj.teacherId || ""
+                const tName = pData.referralTeacherName || record?.psychologyTeacherName || currentPsychTeacherObj.teacherName || ""
+                setSelectedPsychTeacherId(tId)
+                setSelectedPsychTeacherName(tName)
                 setSelectedPsychTeacherEmail(currentPsychTeacherObj.teacherEmail || "")
+                if (src !== "UNASSIGNED") {
+                  setSavedPsychTeacherId(tId)
+                  setSavedPsychTeacherName(tName)
+                }
               } else if (pData.referralTeacherName || record?.psychologyTeacherName) {
-                setSelectedPsychTeacherName(pData.referralTeacherName || record?.psychologyTeacherName || "")
+                const tName = pData.referralTeacherName || record?.psychologyTeacherName || ""
+                setSelectedPsychTeacherName(tName)
+                setSavedPsychTeacherName(tName)
               }
 
               const pDataObj = pData.psychologyData || (record?.psychologyData ? (typeof record.psychologyData === "string" ? JSON.parse(record.psychologyData) : record.psychologyData) : null)
@@ -544,7 +559,7 @@ export function StudentOrientationModal({
                 if (pDataObj.conclusion) setPsychConclusion(pDataObj.conclusion)
                 if (pDataObj.recommendation) setPsychRecommendation(pDataObj.recommendation)
                 setPsychModalTab("form")
-              } else if (refStatus === "REQUESTED") {
+              } else if (refStatus === "REQUESTED" || src !== "UNASSIGNED") {
                 setPsychModalTab("form")
               }
             }
@@ -1012,7 +1027,55 @@ export function StudentOrientationModal({
     }
   }
 
-  // Gửi đề xuất & phân công Giáo viên Tâm lý
+  // Gán nhanh GV Tâm lý khi GV Định hướng chọn từ danh sách & chuyển sang tiến hành đánh giá
+  const handleQuickAssignPsychTeacher = async (targetTeacherId?: string, targetTeacherName?: string, openFormAfter = true) => {
+    const tId = targetTeacherId ?? selectedPsychTeacherId
+    const tName = targetTeacherName ?? selectedPsychTeacherName
+    if (!tId && !tName) return
+
+    setAssigningPsychTeacher(true)
+    setPsychAssignToast("")
+    try {
+      const res = await fetch("/api/admin/orientation/psychology-referral", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          action: "assignPsychTeacher",
+          studentId: student.id,
+          teacherId: tId,
+          teacherName: tName,
+          reason: psychologyReferralReason.trim() || "Phân công khảo sát tâm lý từ Phiếu định hướng"
+        })
+      })
+      const data = await res.json()
+      if (data.success) {
+        const finalId = data.data?.teacherId || tId
+        const finalName = data.data?.teacherName || tName
+        setSavedPsychTeacherId(finalId)
+        setSavedPsychTeacherName(finalName)
+        setSelectedPsychTeacherId(finalId)
+        setSelectedPsychTeacherName(finalName)
+        setPsychAssignmentSource("ORIENTATION_ASSIGNED")
+        if (psychologyReferralStatus === "NONE") {
+          setPsychologyReferralStatus("REQUESTED")
+        }
+        setPsychAssignToast(`✓ Đã gán GV Tâm lý ${finalName} phụ trách đánh giá học sinh này!`)
+        setTimeout(() => setPsychAssignToast(""), 4500)
+        if (openFormAfter) {
+          setPsychModalTab("form")
+        }
+        if (onSuccess) onSuccess()
+      } else {
+        alert("Lỗi khi gán GV Tâm lý: " + (data.error || "Không xác định"))
+      }
+    } catch (e: any) {
+      console.error("Lỗi khi gán GV Tâm lý:", e)
+    } finally {
+      setAssigningPsychTeacher(false)
+    }
+  }
+
+  // Gửi đề xuất & phân công Giáo viên Tâm lý (kèm thông báo Email)
   const handleSubmitPsychReferral = async () => {
     if (!psychologyReferralReason.trim()) {
       alert("Vui lòng nhập hoặc chọn biểu hiện / lý do cần khảo sát tâm lý.")
@@ -1036,7 +1099,13 @@ export function StudentOrientationModal({
       const data = await res.json()
       if (data.success) {
         setPsychologyReferralStatus("REQUESTED")
+        setSavedPsychTeacherId(selectedPsychTeacherId)
+        setSavedPsychTeacherName(selectedPsychTeacherName)
+        if (psychAssignmentSource === "UNASSIGNED") {
+          setPsychAssignmentSource("ORIENTATION_ASSIGNED")
+        }
         setPsychSubmittedSuccess(true)
+        setPsychModalTab("form")
         if (onSuccess) onSuccess()
       } else {
         alert("Lỗi khi gửi đề xuất: " + (data.error || "Không xác định"))
@@ -2233,7 +2302,7 @@ export function StudentOrientationModal({
                       <Brain className="w-4 h-4" />
                     </div>
                     <div>
-                      <div className="flex items-center gap-2">
+                      <div className="flex flex-wrap items-center gap-1.5">
                         <h4 className="font-black uppercase text-[#083d39] text-xs">
                           Khảo Sát &amp; Đánh Giá Tâm Lý Học Đường (Dành Cho HS Có Vấn Đề Tâm Lý)
                         </h4>
@@ -2243,17 +2312,33 @@ export function StudentOrientationModal({
                           </span>
                         ) : psychologyReferralStatus === "REQUESTED" ? (
                           <span className="px-2 py-0.5 rounded-full bg-amber-100 text-amber-800 border border-amber-300 text-[10px] font-black">
-                            ⏳ Đã phân công GV Tâm lý khảo sát
+                            ⏳ Đã gán GV Tâm lý khảo sát
                           </span>
                         ) : (
                           <span className="px-2 py-0.5 rounded-full bg-slate-100 text-slate-600 border border-slate-200 text-[10px] font-semibold">
                             Không bắt buộc (Chỉ thực hiện khi HS có biểu hiện tâm lý)
                           </span>
                         )}
+
+                        {psychAssignmentSource === "PERIOD_ASSIGNED" ? (
+                          <span className="px-2 py-0.5 rounded-full bg-teal-100 text-[#083d39] border border-teal-300 text-[10px] font-bold">
+                            ★ Đã phân công theo đợt KS: {savedPsychTeacherName || selectedPsychTeacherName}
+                          </span>
+                        ) : psychAssignmentSource === "ORIENTATION_ASSIGNED" ? (
+                          <span className="px-2 py-0.5 rounded-full bg-sky-100 text-sky-900 border border-sky-300 text-[10px] font-bold">
+                            ✓ Đã gán từ Phiếu định hướng: {savedPsychTeacherName || selectedPsychTeacherName}
+                          </span>
+                        ) : null}
                       </div>
                       <p className="text-[11px] text-slate-600">
-                        {selectedPsychTeacherName
-                          ? `GV Tâm lý được phân công: ${selectedPsychTeacherName}${psychologyReferralReason ? ` • Lý do: ${psychologyReferralReason}` : ""}`
+                        {savedPsychTeacherName || selectedPsychTeacherName
+                          ? `GV Tâm lý phụ trách: ${savedPsychTeacherName || selectedPsychTeacherName} (${
+                              psychAssignmentSource === "PERIOD_ASSIGNED"
+                                ? "Đã được phân công trong đợt khảo sát"
+                                : psychAssignmentSource === "ORIENTATION_ASSIGNED"
+                                ? "Được GV Định hướng chọn gán"
+                                : "Chọn gán để đánh giá"
+                            })${psychologyReferralReason ? ` • Lý do: ${psychologyReferralReason}` : ""}`
                           : "Trường hợp HS có vấn đề tâm lý: Chọn danh sách GV Tâm lý được phân công và tiến hành khảo sát kèm kết quả theo đúng Form Tâm lý."}
                       </p>
                     </div>
@@ -2618,68 +2703,169 @@ export function StudentOrientationModal({
             </div>
 
             {/* Thanh Chọn GV Tâm Lý Được Phân Công (Luôn hiển thị ở đầu Modal) */}
-            <div className="px-5 py-2.5 bg-teal-50/70 border-b border-teal-200 flex flex-wrap items-center justify-between gap-3 flex-shrink-0 text-xs">
-              <div className="flex flex-wrap items-center gap-2.5 flex-1">
-                <span className="font-black text-[#083d39] uppercase text-[11px] flex items-center gap-1.5">
-                  <UserCheck className="w-4 h-4 text-teal-700" />
-                  <span>GV Tâm lý được phân công:</span>
-                </span>
+            <div className="px-5 py-2.5 bg-teal-50/70 border-b border-teal-200 flex flex-col gap-2 flex-shrink-0 text-xs">
+              <div className="flex flex-wrap items-center justify-between gap-2.5">
+                <div className="flex flex-wrap items-center gap-2 flex-1">
+                  <span className="font-black text-[#083d39] uppercase text-[11px] flex items-center gap-1.5">
+                    <UserCheck className="w-4 h-4 text-teal-700" />
+                    <span>GV Tâm lý được phân công:</span>
+                  </span>
 
-                <select
-                  value={selectedDeptCode}
-                  onChange={e => handleDepartmentChange(e.target.value)}
-                  className="px-2.5 py-1.5 bg-white border border-teal-300 rounded-lg text-xs font-bold text-slate-800 focus:outline-none focus:border-teal-600 cursor-pointer"
-                >
-                  <option value="TO_TLHN">Tổ Tâm lý Học đường &amp; Phân công đợt KS</option>
-                  {departments
-                    .filter((d: any) => d.code !== "TO_TLHN")
-                    .map((d: any) => (
-                      <option key={d.id || d.code} value={d.code || d.id}>
-                        {d.name}
-                      </option>
-                    ))}
-                </select>
+                  <select
+                    value={selectedDeptCode}
+                    onChange={e => handleDepartmentChange(e.target.value)}
+                    className="px-2.5 py-1.5 bg-white border border-teal-300 rounded-lg text-xs font-bold text-slate-800 focus:outline-none focus:border-teal-600 cursor-pointer"
+                  >
+                    <option value="TO_TLHN">Tổ Tâm lý Học đường &amp; Phân công đợt KS</option>
+                    {departments
+                      .filter((d: any) => d.code !== "TO_TLHN")
+                      .map((d: any) => (
+                        <option key={d.id || d.code} value={d.code || d.id}>
+                          {d.name}
+                        </option>
+                      ))}
+                  </select>
 
-                <select
-                  value={selectedPsychTeacherId}
-                  onChange={e => {
-                    const tId = e.target.value
-                    setSelectedPsychTeacherId(tId)
-                    const found = assignedPsychTeachers.find((t: any) => t.teacherId === tId)
-                    if (found) {
-                      setSelectedPsychTeacherName(found.teacherName || "")
-                      setSelectedPsychTeacherEmail(found.teacherEmail || "")
-                    }
-                  }}
-                  disabled={loadingDeptTeachers}
-                  className="px-3 py-1.5 bg-white border border-teal-400 rounded-lg text-xs font-black text-[#083d39] focus:outline-none focus:border-teal-700 min-w-[240px] cursor-pointer"
-                >
-                  {assignedPsychTeachers.length === 0 ? (
-                    <option value="">-- Chưa có danh sách GV Tâm lý --</option>
-                  ) : (
-                    assignedPsychTeachers.map((t: any, idx: number) => (
-                      <option key={t.teacherId || idx} value={t.teacherId}>
-                        {t.teacherName} {t.isPeriodAssigned ? "★ (Được phân công đợt KS)" : `(${t.assignmentRole || "Tổ Tâm lý"})`}
-                      </option>
-                    ))
-                  )}
-                </select>
+                  <select
+                    value={selectedPsychTeacherId}
+                    onChange={e => {
+                      const tId = e.target.value
+                      setSelectedPsychTeacherId(tId)
+                      const found = assignedPsychTeachers.find((t: any) => t.teacherId === tId)
+                      if (found) {
+                        setSelectedPsychTeacherName(found.teacherName || "")
+                        setSelectedPsychTeacherEmail(found.teacherEmail || "")
+                        // Khi chọn GV Tâm lý từ danh sách -> Tự động gán phụ trách và chuyển sang đánh giá
+                        handleQuickAssignPsychTeacher(tId, found.teacherName || "", true)
+                      }
+                    }}
+                    disabled={loadingDeptTeachers || assigningPsychTeacher}
+                    className="px-3 py-1.5 bg-white border border-teal-400 rounded-lg text-xs font-black text-[#083d39] focus:outline-none focus:border-teal-700 min-w-[260px] cursor-pointer"
+                  >
+                    {assignedPsychTeachers.length === 0 ? (
+                      <option value="">-- Chưa có danh sách GV Tâm lý --</option>
+                    ) : (
+                      <>
+                        {assignedPsychTeachers.some((t: any) => t.isPeriodAssigned || t.isStudentAssigned) && (
+                          <optgroup label="★ TRƯỜNG HỢP 1: ĐÃ ĐƯỢC PHÂN CÔNG (ĐỢT KS / HỒ SƠ HS)">
+                            {assignedPsychTeachers
+                              .filter((t: any) => t.isPeriodAssigned || t.isStudentAssigned)
+                              .map((t: any, idx: number) => (
+                                <option key={`assigned-${t.teacherId || idx}`} value={t.teacherId}>
+                                  {t.teacherName} {t.isPeriodAssigned ? "★ (Đã phân công đợt KS)" : "✓ (Đã gán từ Phiếu ĐH)"}
+                                </option>
+                              ))}
+                          </optgroup>
+                        )}
+                        <optgroup label="TRƯỜNG HỢP 2: CHỌN GÁN GV TÂM LÝ (TỔ TÂM LÝ HỌC ĐƯỜNG)">
+                          {assignedPsychTeachers
+                            .filter((t: any) => !t.isPeriodAssigned && !t.isStudentAssigned)
+                            .map((t: any, idx: number) => (
+                              <option key={`dept-${t.teacherId || idx}`} value={t.teacherId}>
+                                {t.teacherName} ({t.assignmentRole || "Tổ Tâm lý Học đường"})
+                              </option>
+                            ))}
+                        </optgroup>
+                      </>
+                    )}
+                  </select>
+
+                  {/* Trạng thái phân công / Nút xác nhận gán nhanh */}
+                  {assigningPsychTeacher ? (
+                    <span className="px-2.5 py-1 rounded-lg bg-teal-100 text-[#083d39] border border-teal-300 text-[11px] font-bold flex items-center gap-1.5">
+                      <RefreshCw className="w-3.5 h-3.5 animate-spin text-teal-700" />
+                      <span>Đang gán GV Tâm lý...</span>
+                    </span>
+                  ) : psychAssignmentSource === "PERIOD_ASSIGNED" && (!savedPsychTeacherId || selectedPsychTeacherId === savedPsychTeacherId) ? (
+                    <span className="px-2.5 py-1 rounded-lg bg-emerald-100 text-emerald-900 border border-emerald-300 text-[11px] font-black flex items-center gap-1">
+                      <CheckCircle2 className="w-3.5 h-3.5 text-emerald-700" />
+                      <span>Đã phân công theo đợt KS</span>
+                    </span>
+                  ) : psychAssignmentSource === "ORIENTATION_ASSIGNED" && selectedPsychTeacherId === savedPsychTeacherId ? (
+                    <span className="px-2.5 py-1 rounded-lg bg-teal-100 text-[#083d39] border border-teal-300 text-[11px] font-black flex items-center gap-1">
+                      <CheckCircle2 className="w-3.5 h-3.5 text-teal-700" />
+                      <span>Đã gán phụ trách &amp; đồng bộ danh sách KS</span>
+                    </span>
+                  ) : selectedPsychTeacherName ? (
+                    <button
+                      type="button"
+                      onClick={() => handleQuickAssignPsychTeacher(selectedPsychTeacherId, selectedPsychTeacherName, true)}
+                      className="px-3 py-1.5 rounded-lg bg-[#0b524d] hover:bg-[#083d39] text-white text-[11px] font-black flex items-center gap-1.5 cursor-pointer shadow-2xs transition-all"
+                    >
+                      <UserCheck className="w-3.5 h-3.5" />
+                      <span>Gán GV Tâm lý này &amp; Đánh giá ngay</span>
+                    </button>
+                  ) : null}
+                </div>
+
+                <div className="flex items-center gap-2">
+                  <span className="px-2.5 py-1 rounded-lg bg-white border border-teal-200 text-[11px] font-bold text-[#083d39]">
+                    Tổng điểm: <strong className="text-sm font-black">{psychTotalScore}</strong>/80đ
+                  </span>
+                  <span className={`px-2.5 py-1 rounded-lg border text-[11px] font-black ${psychEvaluation.bg} ${psychEvaluation.border} ${psychEvaluation.color}`}>
+                    {psychEvaluation.level}
+                  </span>
+                </div>
               </div>
 
-              <div className="flex items-center gap-2">
-                <span className="px-2.5 py-1 rounded-lg bg-white border border-teal-200 text-[11px] font-bold text-[#083d39]">
-                  Tổng điểm: <strong className="text-sm font-black">{psychTotalScore}</strong>/80đ
-                </span>
-                <span className={`px-2.5 py-1 rounded-lg border text-[11px] font-black ${psychEvaluation.bg} ${psychEvaluation.border} ${psychEvaluation.color}`}>
-                  {psychEvaluation.level}
-                </span>
-              </div>
+              {psychAssignToast && (
+                <div className="px-3 py-1.5 rounded-lg bg-emerald-100/90 border border-emerald-300 text-emerald-900 text-[11px] font-bold flex items-center justify-between animate-in fade-in">
+                  <div className="flex items-center gap-1.5">
+                    <CheckCircle2 className="w-3.5 h-3.5 text-emerald-700 flex-shrink-0" />
+                    <span>{psychAssignToast}</span>
+                  </div>
+                  <span className="text-[10px] text-emerald-800">Đã tự động mở danh sách KS môn Tâm lý cho GV</span>
+                </div>
+              )}
             </div>
 
             {/* Body Modal Tâm Lý */}
             <div className="flex-1 overflow-y-auto p-4 sm:p-5 bg-slate-50/70 space-y-4">
               {psychModalTab === "referral" ? (
                 <div className="space-y-4">
+                  {/* Khối kiểm tra 2 trường hợp phân công GV Tâm lý */}
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-3 text-xs">
+                    <div className={`p-3.5 rounded-xl border ${
+                      psychAssignmentSource === "PERIOD_ASSIGNED"
+                        ? "bg-emerald-50/70 border-emerald-300 ring-1 ring-emerald-300"
+                        : "bg-white border-slate-200"
+                    }`}>
+                      <div className="flex items-center justify-between mb-1">
+                        <span className="font-black uppercase text-[#083d39] text-[11px]">
+                          Trường hợp 1: Đã phân công theo đợt Khảo sát
+                        </span>
+                        {psychAssignmentSource === "PERIOD_ASSIGNED" && (
+                          <span className="px-2 py-0.5 rounded-full bg-emerald-200/80 text-emerald-900 text-[10px] font-black">
+                            Đang áp dụng
+                          </span>
+                        )}
+                      </div>
+                      <p className="text-[11px] text-slate-600">
+                        Giáo vụ / KT&amp;ĐBCL đã phân công GV Tâm lý trong đợt khảo sát đầu vào. Hệ thống tự động nhận diện GV phụ trách để thực hiện đánh giá ngay.
+                      </p>
+                    </div>
+
+                    <div className={`p-3.5 rounded-xl border ${
+                      psychAssignmentSource === "ORIENTATION_ASSIGNED"
+                        ? "bg-teal-50/70 border-teal-300 ring-1 ring-teal-300"
+                        : "bg-white border-slate-200"
+                    }`}>
+                      <div className="flex items-center justify-between mb-1">
+                        <span className="font-black uppercase text-[#083d39] text-[11px]">
+                          Trường hợp 2: GV Định hướng chọn gán phát sinh
+                        </span>
+                        {psychAssignmentSource === "ORIENTATION_ASSIGNED" && (
+                          <span className="px-2 py-0.5 rounded-full bg-teal-200/80 text-[#083d39] text-[10px] font-black">
+                            Đã gán: {savedPsychTeacherName || selectedPsychTeacherName}
+                          </span>
+                        )}
+                      </div>
+                      <p className="text-[11px] text-slate-600">
+                        Khi phát hiện HS có biểu hiện tâm lý trong buổi phỏng vấn, GV Định hướng chọn GV Tâm lý ở thanh trên. Hệ thống tự động gán quyền khảo sát môn Tâm lý và gửi thông báo cho GV Tâm lý.
+                      </p>
+                    </div>
+                  </div>
+
                   <div className="p-4 bg-white rounded-xl border border-teal-200 shadow-2xs space-y-3">
                     <div className="flex items-center justify-between">
                       <label className="text-xs font-black uppercase text-[#083d39] flex items-center gap-1.5">
@@ -2754,7 +2940,7 @@ export function StudentOrientationModal({
                 <div className="space-y-4">
                   {/* Thang điểm chuẩn 0 - 4 */}
                   <div className="p-3 bg-white rounded-xl border border-teal-200 shadow-2xs flex flex-wrap items-center justify-between gap-2 text-[11px]">
-                    <span className="font-black text-[#083d39] uppercase">Thang điểm chuẩn (0 – 4đ / câu):</span>
+                    <span className="font-black text-[#083d39] uppercase">Thang điểm chuẩn (0 – 4 điểm / câu):</span>
                     <div className="flex flex-wrap items-center gap-3 text-slate-700 font-semibold">
                       <span><strong className="px-1.5 py-0.5 rounded bg-emerald-100 text-emerald-800">0</strong> Không có biểu hiện</span>
                       <span><strong className="px-1.5 py-0.5 rounded bg-teal-100 text-teal-800">1</strong> Biểu hiện rất nhẹ</span>

@@ -15,6 +15,145 @@ import { questionsData, defaultQuestions } from "@/lib/orientation/psychologyQue
 
 export const dynamic = "force-dynamic";
 
+/**
+ * Đồng bộ việc gán GV Tâm lý từ Phiếu Định Hướng vào bảng phân công khảo sát (InputAssessmentTeacherAssignment)
+ * và tạo Thông báo hệ thống (Notification) để GV Tâm lý thấy ngay học sinh trong danh sách Khảo sát: Tâm lý
+ */
+async function ensurePsychTeacherSurveyAssignment(params: {
+  student: any;
+  teacherId?: string | null;
+  teacherName?: string | null;
+  actorName?: string | null;
+  reason?: string | null;
+  createNotification?: boolean;
+}) {
+  const { student, teacherId, teacherName, actorName, reason, createNotification = true } = params;
+  if (!student?.id || !student?.periodId) return { assignedUserId: teacherId || null, syncedAssignment: false };
+
+  const pAny = prisma as any;
+  let targetUserId: string | null = null;
+  let resolvedTeacherName = teacherName || "Giáo viên Tâm lý";
+  let resolvedEmail = "";
+
+  try {
+    if (teacherId) {
+      const u = await pAny.user.findUnique({
+        where: { id: teacherId },
+        include: { teacher: true }
+      });
+      if (u) {
+        targetUserId = u.id;
+        resolvedTeacherName = u.fullName || u.name || u.teacher?.teacherName || resolvedTeacherName;
+        resolvedEmail = u.teacher?.email || u.email || "";
+      } else {
+        const t = await pAny.teacher.findUnique({
+          where: { id: teacherId },
+          include: { user: true }
+        });
+        if (t) {
+          targetUserId = t.userId || null;
+          resolvedTeacherName = t.teacherName || t.user?.fullName || resolvedTeacherName;
+          resolvedEmail = t.email || t.user?.email || "";
+        }
+      }
+    }
+
+    if (!targetUserId && teacherName) {
+      const uByName = await pAny.user.findFirst({
+        where: {
+          OR: [
+            { fullName: teacherName },
+            { name: teacherName }
+          ]
+        },
+        include: { teacher: true }
+      });
+      if (uByName) {
+        targetUserId = uByName.id;
+        resolvedEmail = uByName.teacher?.email || uByName.email || "";
+      }
+    }
+
+    if (!targetUserId) {
+      return { assignedUserId: teacherId || null, resolvedTeacherName, resolvedEmail, syncedAssignment: false };
+    }
+
+    // Tìm môn Tâm lý (TLY)
+    const tlySubject = await pAny.inputAssessmentSubject.findFirst({
+      where: {
+        OR: [
+          { code: "TLY" },
+          { name: { contains: "Tâm lý" } },
+          { name: { contains: "tâm lý" } }
+        ]
+      }
+    });
+
+    const rawGrade = String(student.grade || "").toLowerCase().replace("khối", "").replace("khoi", "").trim() || "1";
+    const eduSys = student.surveyFormType || student.surveySystem || "HNS";
+
+    let syncedAssignment = false;
+    if (tlySubject) {
+      const existingAss = await pAny.inputAssessmentTeacherAssignment.findFirst({
+        where: {
+          periodId: student.periodId,
+          batchId: student.batchId || null,
+          userId: targetUserId,
+          subjectId: tlySubject.id,
+          grade: rawGrade
+        }
+      });
+
+      if (!existingAss) {
+        await pAny.inputAssessmentTeacherAssignment.create({
+          data: {
+            periodId: student.periodId,
+            batchId: student.batchId || null,
+            userId: targetUserId,
+            subjectId: tlySubject.id,
+            grade: rawGrade,
+            educationSystem: eduSys
+          }
+        });
+      }
+      syncedAssignment = true;
+    }
+
+    // Tạo thông báo trên chuông hệ thống cho GV Tâm lý được gán
+    if (createNotification && targetUserId) {
+      const link = `/teacher/input-assessments?periodId=${student.periodId}&batchId=${student.batchId || ""}&studentCode=${encodeURIComponent(student.studentCode || "")}&autoOpen=true`;
+      await pAny.notification.create({
+        data: {
+          userId: targetUserId,
+          title: `[Phân công Khảo sát Tâm lý] HS ${student.fullName} (Khối ${rawGrade})`,
+          message: `${actorName || "GV Định hướng"} đã gán Thầy/Cô thực hiện khảo sát & đánh giá tâm lý cho học sinh ${student.fullName} (${student.studentCode || ""}).${reason ? ` Lưu ý: ${reason}` : ""}`,
+          link,
+          type: "TASK",
+          category: "ASSESSMENT",
+          priority: "HIGH",
+          sourceModule: "ORIENTATION_PSYCHOLOGY",
+          sourceId: student.id
+        }
+      });
+    }
+
+    return {
+      assignedUserId: targetUserId,
+      resolvedTeacherName,
+      resolvedEmail,
+      syncedAssignment
+    };
+  } catch (err) {
+    console.error("ensurePsychTeacherSurveyAssignment error:", err);
+    return {
+      assignedUserId: targetUserId || teacherId || null,
+      resolvedTeacherName,
+      resolvedEmail,
+      syncedAssignment: false
+    };
+  }
+}
+
 export async function GET(req: Request) {
   try {
     const { searchParams } = new URL(req.url);
@@ -65,17 +204,13 @@ export async function GET(req: Request) {
       teacherName: t.fullName || t.teacherName || "GV Tâm lý",
       teacherEmail: t.email || t.teacherEmail || "",
       teacherPhone: t.phone || t.teacherPhone || "",
-      assignmentRole: t.assignmentRole || "Phân công đợt KS",
+      assignmentRole: t.isBatchAssigned ? "Đã phân công đúng đợt KS" : "Đã phân công kỳ KS",
       grade: t.grade || "",
+      batchId: t.batchId || null,
+      isBatchAssigned: Boolean(t.isBatchAssigned),
       subjectName: t.subjectName || "Tâm lý",
       isPeriodAssigned: true
     }));
-
-    // Hợp nhất danh sách GV: Nếu có phân công đợt thì đưa lên đầu, kết hợp toàn bộ GV Tổ TLHN
-    const assignedTeachers = [
-      ...assignedInPeriod,
-      ...tlhnTeachers.filter((tt: any) => !assignedInPeriod.some((ap: any) => ap.teacherId === tt.teacherId))
-    ];
 
     // 4. Lấy bộ câu hỏi Tâm lý theo khối
     const rawGrade = String(student.grade || "").toLowerCase().replace("khối", "").replace("khoi", "").trim();
@@ -84,6 +219,76 @@ export async function GET(req: Request) {
 
     // 5. Lấy thông tin bản ghi định hướng hiện tại nếu có
     const orientationRecord = await getStudentOrientationRecord(studentId);
+
+    // Kiểm tra GV Tâm lý đã được gán trên Phiếu Định Hướng (nếu có)
+    const recordTeacherId = orientationRecord?.psychologyTeacherId || "";
+    const recordTeacherName = orientationRecord?.psychologyTeacherName || "";
+
+    // Hợp nhất danh sách GV: Đưa GV đã gán trên hồ sơ HS và GV phân công đợt lên đầu, kết hợp toàn bộ GV Tổ TLHN
+    const combinedMap = new Map<string, any>();
+
+    if (recordTeacherId || recordTeacherName) {
+      const matchedFromPeriod = assignedInPeriod.find(
+        (ap: any) => (recordTeacherId && ap.teacherId === recordTeacherId) || (recordTeacherName && ap.teacherName === recordTeacherName)
+      );
+      const matchedFromDept = tlhnTeachers.find(
+        (tt: any) => (recordTeacherId && (tt.teacherId === recordTeacherId || tt.realTeacherId === recordTeacherId)) || (recordTeacherName && tt.teacherName === recordTeacherName)
+      );
+      const key = matchedFromPeriod?.teacherId || matchedFromDept?.teacherId || recordTeacherId || recordTeacherName;
+      combinedMap.set(key, {
+        teacherId: matchedFromPeriod?.teacherId || matchedFromDept?.teacherId || recordTeacherId,
+        teacherName: recordTeacherName || matchedFromPeriod?.teacherName || matchedFromDept?.teacherName || "GV Tâm lý",
+        teacherEmail: matchedFromPeriod?.teacherEmail || matchedFromDept?.teacherEmail || "",
+        teacherPhone: matchedFromPeriod?.teacherPhone || matchedFromDept?.teacherPhone || "",
+        assignmentRole: matchedFromPeriod
+          ? "Đã phân công đợt KS & Gán cho HS"
+          : "Đã gán trực tiếp từ Phiếu định hướng",
+        grade: matchedFromPeriod?.grade || student.grade || "",
+        subjectName: "Tâm lý",
+        isPeriodAssigned: Boolean(matchedFromPeriod),
+        isStudentAssigned: true
+      });
+    }
+
+    assignedInPeriod.forEach((ap: any) => {
+      if (ap.teacherId && !combinedMap.has(ap.teacherId)) {
+        combinedMap.set(ap.teacherId, {
+          ...ap,
+          isStudentAssigned: false
+        });
+      }
+    });
+
+    tlhnTeachers.forEach((tt: any) => {
+      if (tt.teacherId && !combinedMap.has(tt.teacherId)) {
+        combinedMap.set(tt.teacherId, {
+          ...tt,
+          isPeriodAssigned: false,
+          isStudentAssigned: false
+        });
+      }
+    });
+
+    const assignedTeachers = Array.from(combinedMap.values());
+
+    // Phân loại rõ trường hợp ĐÃ ĐƯỢC PHÂN CÔNG vs CHƯA ĐƯỢC PHÂN CÔNG
+    let assignmentSource: "PERIOD_ASSIGNED" | "ORIENTATION_ASSIGNED" | "UNASSIGNED" = "UNASSIGNED";
+    let activeAssignedTeacher: any = null;
+
+    if (recordTeacherId || recordTeacherName) {
+      const isAlsoInPeriod = assignedInPeriod.some(
+        (ap: any) => (recordTeacherId && ap.teacherId === recordTeacherId) || (recordTeacherName && ap.teacherName === recordTeacherName)
+      );
+      assignmentSource = isAlsoInPeriod ? "PERIOD_ASSIGNED" : "ORIENTATION_ASSIGNED";
+      activeAssignedTeacher = assignedTeachers[0] || {
+        teacherId: recordTeacherId,
+        teacherName: recordTeacherName
+      };
+    } else if (assignedInPeriod.length > 0) {
+      assignmentSource = "PERIOD_ASSIGNED";
+      activeAssignedTeacher = assignedInPeriod[0];
+    }
+
     let parsedPsychData: any = null;
     if (orientationRecord?.psychologyData) {
       try {
@@ -122,18 +327,25 @@ export async function GET(req: Request) {
       departments,
       selectedDepartmentCode: departmentCodeOrId,
       assignedTeachers,
+      assignedInPeriodCount: assignedInPeriod.length,
+      assignmentSource,
+      isAlreadyAssigned: assignmentSource !== "UNASSIGNED",
+      activeAssignedTeacher,
       tlhnTeachers,
       psychologyQuestions: psychQuestions,
       gdcsList,
-      referralStatus: orientationRecord?.psychologyReferralStatus || (parsedPsychData ? "COMPLETED" : "NONE"),
+      referralStatus: orientationRecord?.psychologyReferralStatus || (parsedPsychData ? "COMPLETED" : (assignmentSource !== "UNASSIGNED" ? "ASSIGNED" : "NONE")),
       referralReason: orientationRecord?.psychologyReferralReason || "",
-      referralTeacherId: orientationRecord?.psychologyTeacherId || "",
-      referralTeacherName: orientationRecord?.psychologyTeacherName || "",
+      referralTeacherId: activeAssignedTeacher?.teacherId || orientationRecord?.psychologyTeacherId || "",
+      referralTeacherName: activeAssignedTeacher?.teacherName || orientationRecord?.psychologyTeacherName || "",
       psychologyData: parsedPsychData,
       data: {
         student,
         departments,
         assignedTeachers,
+        assignmentSource,
+        isAlreadyAssigned: assignmentSource !== "UNASSIGNED",
+        activeAssignedTeacher,
         tlhnTeachers,
         psychQuestions,
         gdcsList,
@@ -141,8 +353,8 @@ export async function GET(req: Request) {
         currentReferral: {
           status: orientationRecord?.psychologyReferralStatus || (parsedPsychData ? "COMPLETED" : "NONE"),
           reason: orientationRecord?.psychologyReferralReason || "",
-          teacherId: orientationRecord?.psychologyTeacherId || "",
-          teacherName: orientationRecord?.psychologyTeacherName || ""
+          teacherId: activeAssignedTeacher?.teacherId || orientationRecord?.psychologyTeacherId || "",
+          teacherName: activeAssignedTeacher?.teacherName || orientationRecord?.psychologyTeacherName || ""
         }
       }
     });
@@ -160,6 +372,60 @@ export async function POST(req: Request) {
     }
 
     const body = await req.json();
+    const actorName = (session.user as any)?.fullName || session.user?.name || "Giáo viên Định hướng";
+
+    // NHÁNH A-ASSIGN: KHI GV ĐỊNH HƯỚNG CHỌN GÁN GV TÂM LÝ TRỰC TIẾP TRÊN PHIẾU
+    if (body.action === "assignPsychTeacher") {
+      const { studentId, teacherId, teacherName, reason } = body;
+      if (!studentId || (!teacherId && !teacherName)) {
+        return NextResponse.json({ success: false, error: "Vui lòng chọn Giáo viên Tâm lý để gán." }, { status: 400 });
+      }
+
+      const student = await (prisma as any).inputAssessmentStudent.findUnique({
+        where: { id: studentId },
+        include: { period: true, batch: true }
+      });
+
+      if (!student) {
+        return NextResponse.json({ success: false, error: "Không tìm thấy học sinh." }, { status: 404 });
+      }
+
+      const existingRecord = await getStudentOrientationRecord(studentId);
+      const syncResult = await ensurePsychTeacherSurveyAssignment({
+        student,
+        teacherId,
+        teacherName,
+        actorName,
+        reason: reason || existingRecord?.psychologyReferralReason || "Gán từ Phiếu định hướng đầu vào",
+        createNotification: true
+      });
+
+      const finalStatus =
+        existingRecord?.psychologyReferralStatus === "COMPLETED"
+          ? "COMPLETED"
+          : "REQUESTED";
+
+      const updatedRecord = await upsertStudentOrientationRecord({
+        studentId,
+        psychologyReferralStatus: finalStatus,
+        psychologyTeacherId: syncResult.assignedUserId || teacherId || null,
+        psychologyTeacherName: syncResult.resolvedTeacherName || teacherName || null,
+        psychologyReferralReason:
+          reason || existingRecord?.psychologyReferralReason || "Phân công GV Tâm lý khảo sát từ Phiếu định hướng"
+      });
+
+      return NextResponse.json({
+        success: true,
+        message: `Đã gán GV Tâm lý ${syncResult.resolvedTeacherName || teacherName} phụ trách khảo sát & đánh giá tâm lý cho học sinh ${student.fullName}!`,
+        data: {
+          record: updatedRecord,
+          teacherId: syncResult.assignedUserId || teacherId,
+          teacherName: syncResult.resolvedTeacherName || teacherName,
+          assignmentSource: "ORIENTATION_ASSIGNED",
+          syncedSurveyAssignment: syncResult.syncedAssignment
+        }
+      });
+    }
 
     // NHÁNH A0: LƯU TRỰC TIẾP KẾT QUẢ ĐÁNH GIÁ TÂM LÝ THEO FORM TÂM LÝ
     if (body.action === "savePsychologyAssessment") {
@@ -181,12 +447,33 @@ export async function POST(req: Request) {
         return NextResponse.json({ success: false, error: "Thiếu studentId." }, { status: 400 });
       }
 
+      const studentForSync = await (prisma as any).inputAssessmentStudent.findUnique({
+        where: { id: studentId }
+      });
+
       const assessorName =
         teacherName ||
         (session.user as any)?.fullName ||
         session.user?.name ||
         "Giáo viên Tâm lý";
       const assessorId = teacherId || (session.user as any)?.id || null;
+
+      // Đồng bộ phân công khảo sát nếu GV Tâm lý được chọn chưa có trong đợt
+      let resolvedAssessorId = assessorId;
+      let resolvedAssessorName = assessorName;
+      if (studentForSync) {
+        const syncRes = await ensurePsychTeacherSurveyAssignment({
+          student: studentForSync,
+          teacherId: assessorId,
+          teacherName: assessorName,
+          actorName,
+          reason: reason || conclusion,
+          createNotification: false
+        });
+        if (syncRes.assignedUserId) resolvedAssessorId = syncRes.assignedUserId;
+        if (syncRes.resolvedTeacherName) resolvedAssessorName = syncRes.resolvedTeacherName;
+      }
+
       const nowStr = new Date().toLocaleString("vi-VN", { timeZone: "Asia/Ho_Chi_Minh" });
 
       const psychDataObj = {
@@ -197,8 +484,8 @@ export async function POST(req: Request) {
         conclusion,
         recommendation,
         notes,
-        assessedBy: assessorName,
-        assessedById: assessorId,
+        assessedBy: resolvedAssessorName,
+        assessedById: resolvedAssessorId,
         assessedAt: new Date().toISOString(),
         assessedAtFormatted: nowStr
       };
@@ -206,8 +493,8 @@ export async function POST(req: Request) {
       const updatedRecord = await upsertStudentOrientationRecord({
         studentId,
         psychologyReferralStatus: "COMPLETED",
-        psychologyTeacherId: assessorId,
-        psychologyTeacherName: assessorName,
+        psychologyTeacherId: resolvedAssessorId,
+        psychologyTeacherName: resolvedAssessorName,
         psychologyReferralReason:
           reason || conclusion || evaluation?.suggestion || "Đã hoàn thành đánh giá tâm lý theo Form chuẩn",
         psychologyData: JSON.stringify(psychDataObj)
@@ -268,7 +555,8 @@ export async function POST(req: Request) {
         data: {
           record: updatedRecord,
           psychologyData: psychDataObj,
-          teacherName: assessorName
+          teacherId: resolvedAssessorId,
+          teacherName: resolvedAssessorName
         }
       });
     }
@@ -746,13 +1034,23 @@ export async function POST(req: Request) {
 
     const record = await getStudentOrientationRecord(studentId);
 
+    // Đồng bộ phân công khảo sát môn Tâm lý & thông báo hệ thống cho GV Tâm lý được chọn
+    const syncRefResult = await ensurePsychTeacherSurveyAssignment({
+      student,
+      teacherId,
+      teacherName,
+      actorName,
+      reason,
+      createNotification: true
+    });
+
     // 2. Cập nhật trạng thái chuyển tiếp trong StudentOrientationRecord
     const updatedRecord = await upsertStudentOrientationRecord({
       studentId,
       psychologyReferralStatus: "REQUESTED",
       psychologyReferralReason: reason,
-      psychologyTeacherId: teacherId || null,
-      psychologyTeacherName: teacherName || null
+      psychologyTeacherId: syncRefResult.assignedUserId || teacherId || null,
+      psychologyTeacherName: syncRefResult.resolvedTeacherName || teacherName || null
     });
 
     // 3. Gửi email thông báo cho GV Tâm lý nếu có
