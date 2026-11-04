@@ -88,11 +88,13 @@ export default function HocSinhLayout({ children }: { children: React.ReactNode 
   }
 
   const parsedGrade = (() => {
-    if (reflectionTask?.eligible !== undefined) return reflectionTask.eligible ? 10 : 0
     const cls = String(studentInfo?.className || studentInfo?.grade || "")
     const m = cls.match(/^(\d{1,2})/)
-    return m ? parseInt(m[1], 10) : 12
+    if (m) return parseInt(m[1], 10)
+    if (reflectionTask?.eligible !== undefined) return reflectionTask.eligible ? 10 : 2
+    return 2
   })()
+  const isGrade1To5 = parsedGrade >= 1 && parsedGrade <= 5
   const isGrade4To12 = parsedGrade >= 4 && parsedGrade <= 12
 
   const navItems: Array<{
@@ -111,6 +113,15 @@ export default function HocSinhLayout({ children }: { children: React.ReactNode 
       icon: LayoutDashboard,
       iconColor: "text-teal-300",
       activeClass: "bg-white/20 text-white border border-[#135E5B]/30"
+    },
+    {
+      href: "/hocsinh/portal/hanh-trinh-skyline",
+      labelVi: "Hành trình Sky-Line",
+      labelEn: "Sky-Line Adventure",
+      icon: Compass,
+      iconColor: "text-amber-300",
+      activeClass: "bg-amber-500/35 text-white border border-amber-400/60",
+      badge: isGrade1To5 ? "ĐẢO GAME" : undefined
     },
     ...(isGrade4To12
       ? [

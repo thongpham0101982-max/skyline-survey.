@@ -566,6 +566,8 @@ export async function getStudentJourneyOverview(studentId: string) {
         interestLabel: string;
         favoriteActivities?: string[];
         note?: string;
+        characterId?: string;
+        characterName?: string;
         submittedAt: string;
       } | null>(welcomeSurveyRow.metadataJson, null)
     : null;
@@ -578,6 +580,18 @@ export async function getStudentJourneyOverview(studentId: string) {
       badgeName: r.badgeName,
       title: r.title,
       awardedAt: r.awardedAt
+    }));
+
+  const shields = activeStagesView
+    .filter((s) => s.flagPlanted || s.autoChallengePassed)
+    .map((s) => ({
+      shieldCode: `SHIELD_${s.lessonCode}`,
+      periodIndex: s.periodIndex,
+      lessonCode: s.lessonCode,
+      lessonName: s.lessonName,
+      title: `Khiên Danh Dự Chặng ${s.periodIndex}: ${s.lessonName}`,
+      locationName: s.interactive.worldLocationName,
+      awardedAt: s.completedAt || s.lastPlayedAt
     }));
 
   const studentWorks = activeStagesView
@@ -643,6 +657,10 @@ export async function getStudentJourneyOverview(studentId: string) {
       passportCode: `SKY-PASS-${studentCodeVal}`,
       totalFeathers,
       flagsPlantedCount: activeStagesView.filter((s) => s.flagPlanted).length,
+      shieldsEarnedCount: shields.length,
+      shields,
+      selectedCharacterId: welcomeSurvey?.characterId || "SKYLINE_EXPLORER",
+      selectedCharacterName: welcomeSurvey?.characterName || "Chiến Binh Chim Sky-Line",
       badges,
       studentWorks,
       recentRewards: rewardRows.slice(0, 12)
@@ -651,8 +669,8 @@ export async function getStudentJourneyOverview(studentId: string) {
 }
 
 /**
- * Save or update Student's Game Opening & Subject Interest Survey
- * ("Mở đầu Game: Chào mừng đến với Game & Khảo sát Bạn có yêu thích hoạt động / môn học?")
+ * Save or update Student's Game Opening & Subject Interest Survey + Character Selection
+ * ("Mở đầu Game: Chọn nhân vật đồng hành, Chào mừng đến với Game & Khảo sát yêu thích")
  */
 export async function submitStudentWelcomeSurvey(
   studentId: string,
@@ -661,6 +679,8 @@ export async function submitStudentWelcomeSurvey(
     interestLabel: string;
     favoriteActivities?: string[];
     note?: string;
+    characterId?: string;
+    characterName?: string;
   }
 ) {
   const overview = await getStudentJourneyOverview(studentId);
@@ -672,6 +692,9 @@ export async function submitStudentWelcomeSurvey(
     interestLabel: input.interestLabel || "Rất yêu thích",
     favoriteActivities: Array.isArray(input.favoriteActivities) ? input.favoriteActivities : [],
     note: String(input.note || "").trim(),
+    characterId: input.characterId || overview.welcomeSurvey?.characterId || "SKYLINE_EXPLORER",
+    characterName:
+      input.characterName || overview.welcomeSurvey?.characterName || "Chiến Binh Chim Sky-Line",
     submittedAt: now
   });
 
@@ -989,7 +1012,7 @@ export async function submitStudentStageAction(
     )) as Array<{ id: string }>;
 
     if (existingReward.length === 0) {
-      const rewardTitle = `Cắm cờ Chặng ${stage.periodIndex}: ${stage.lessonName}`;
+      const rewardTitle = `Cắm cờ & Nhận Khiên Chặng ${stage.periodIndex}: ${stage.lessonName}`;
       await prisma.$executeRawUnsafe(
         `INSERT OR IGNORE INTO skyline_reward_ledger
           (id, idempotencyKey, studentId, classId, academicYearId, subjectId, lessonCode, periodIndex, rewardType, rewardCode, milestoneCode, title, rewardTitle, description, feathers, feathersEarned, badgeCode, badgeName, sourceLessonId, awardedAt)
@@ -1005,11 +1028,11 @@ export async function submitStudentStageAction(
         stageRewardCode,
         rewardTitle,
         rewardTitle,
-        `Vượt qua thử thách tại ${stageDef.interactive.worldLocationName}`,
+        `Vượt qua thử thách tại ${stageDef.interactive.worldLocationName} và nhận Khiên Danh Dự Chặng ${stage.periodIndex}`,
         stageDef.feathersReward,
         stageDef.feathersReward,
-        stageDef.badgeCode || null,
-        stageDef.badgeName || null,
+        stageDef.badgeCode || `SHIELD_${stage.lessonCode}`,
+        stageDef.badgeName || `Khiên Danh Dự Chặng ${stage.periodIndex}`,
         stage.lessonId,
         now
       );
@@ -1017,7 +1040,7 @@ export async function submitStudentStageAction(
         rewardCode: stageRewardCode,
         title: rewardTitle,
         feathers: stageDef.feathersReward,
-        badgeName: stageDef.badgeName
+        badgeName: stageDef.badgeName || `Khiên Danh Dự Chặng ${stage.periodIndex}`
       });
     }
 

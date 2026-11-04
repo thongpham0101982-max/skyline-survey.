@@ -6,36 +6,47 @@ import { StageValidationResult } from "@/lib/skyline-journey/validator";
 import {
   SkylineBirdCharacter,
   SkylineMusicController,
+  Skyline3DShieldBadge,
   playSkylineSfx,
   speakVietnameseText,
   startSkylineBgm,
-  getSkylineBgmState
+  getSkylineBgmState,
+  getDefaultThemeForGrade,
+  getCharacterById
 } from "./SkylineBirdCharacter";
+import { Skyline3DScenarioStage } from "./Skyline3DScenarioStage";
 
 export interface StageGamePlayerProps {
   stage: StudentStageView;
+  allStages?: StudentStageView[];
   studentName: string;
   grade: string;
+  characterId?: string;
   muted: boolean;
   reducedMotion: boolean;
   onClose: () => void;
   onStageUpdated: (updatedOverview: any) => void;
+  onNavigateToStage?: (nextStage: StudentStageView) => void;
 }
 
 type LoopStep =
   | "MISSION_BRIEF"       // 1. Nhận nhiệm vụ & Khám phá bối cảnh
   | "INTERACTIVE_PLAY"    // 2. Khám phá bối cảnh & Thao tác tương tác thế giới
   | "CONSEQUENCE_FEEDBACK"// 3. Quan sát hệ quả -> Nhận phản hồi -> Hoàn thành chặng
+  | "STAGE_TRANSITION"    // 4. Hoạt cảnh Chúc mừng & Chuyển chặng tiếp theo
   ;
 
 export function StageGamePlayer({
   stage,
+  allStages = [],
   studentName,
   grade,
+  characterId = "SKYLINE_EXPLORER",
   muted,
   reducedMotion,
   onClose,
-  onStageUpdated
+  onStageUpdated,
+  onNavigateToStage
 }: StageGamePlayerProps) {
   const [loopStep, setLoopStep] = useState<LoopStep>("MISSION_BRIEF");
   const [submitting, setSubmitting] = useState(false);
@@ -44,6 +55,8 @@ export function StageGamePlayer({
   const [isOffline, setIsOffline] = useState(false);
   const [validationResult, setValidationResult] = useState<StageValidationResult | null>(null);
   const [newRewards, setNewRewards] = useState<Array<any>>([]);
+  const [latestStagesList, setLatestStagesList] = useState<StudentStageView[]>(allStages);
+  const [transitionProgress, setTransitionProgress] = useState<number>(0);
   const [practicalNote, setPracticalNote] = useState<string>(stage.studentReflection || "");
 
   // --- Mechanic A State: BACKPACK_BUILDER ---
@@ -135,6 +148,96 @@ export function StageGamePlayer({
   const [selectedSurpriseOptionId, setSelectedSurpriseOptionId] = useState<string>(
     () => stage.savedActionPayload?.selectedSurpriseOptionId || ""
   );
+
+  // Sync latestStagesList when allStages prop changes
+  useEffect(() => {
+    if (allStages && allStages.length > 0) {
+      setLatestStagesList(allStages);
+    }
+  }, [allStages]);
+
+  // Reset internal state when navigating to a new stage
+  useEffect(() => {
+    setLoopStep("MISSION_BRIEF");
+    setValidationResult(null);
+    setNewRewards([]);
+    setNetworkError(null);
+    setTransitionProgress(0);
+    setPracticalNote(stage.studentReflection || "");
+    setActiveContextIdx(0);
+    setBackpackPlacements(stage.savedActionPayload?.placements || {});
+    setSelectedReasonOptionId(stage.savedActionPayload?.selectedReasonOptionId || "");
+    setSelectedShopItemIds(stage.savedActionPayload?.selectedItemIds || []);
+    setCalcTotalInput(
+      stage.savedActionPayload?.calculatedTotalCost !== undefined
+        ? String(stage.savedActionPayload.calculatedTotalCost)
+        : ""
+    );
+    setCalcRemainInput(
+      stage.savedActionPayload?.calculatedRemainingCoins !== undefined
+        ? String(stage.savedActionPayload.calculatedRemainingCoins)
+        : ""
+    );
+    setSelectedPoliteResponseId(stage.savedActionPayload?.selectedPoliteResponseId || "");
+
+    const initJars: Record<string, number> = {};
+    for (const jar of stage.interactive.nestConfig?.jars || []) {
+      initJars[jar.id] = jar.minCoins;
+    }
+    setJarAllocations(stage.savedActionPayload?.jarAllocations || initJars);
+    setSelectedGoalId(
+      stage.savedActionPayload?.selectedGoalId || stage.interactive.nestConfig?.goals?.[0]?.id || ""
+    );
+    setSelectedTwistOptionId(stage.savedActionPayload?.selectedTwistOptionId || "");
+    setHotspotActions(stage.savedActionPayload?.hotspotActions || {});
+    setActiveHotspotId(stage.interactive.villageConfig?.hotspots?.[0]?.id || "");
+    setSelectedReflectionOptionId(stage.savedActionPayload?.selectedReflectionOptionId || "");
+    setDiarySpentInput(
+      stage.savedActionPayload?.calculatedTotalSpent !== undefined
+        ? String(stage.savedActionPayload.calculatedTotalSpent)
+        : ""
+    );
+    setDiaryRemainInput(
+      stage.savedActionPayload?.calculatedRemainingCoins !== undefined
+        ? String(stage.savedActionPayload.calculatedRemainingCoins)
+        : ""
+    );
+    setEntryClassifications(stage.savedActionPayload?.entryClassifications || {});
+    setAdDecisions(stage.savedActionPayload?.adDecisions || {});
+    setCapstoneAllocations(
+      stage.savedActionPayload?.capstoneAllocations || {
+        needCoins: 15,
+        saveCoins: 10,
+        shareCoins: 5
+      }
+    );
+    setSelectedSurpriseOptionId(stage.savedActionPayload?.selectedSurpriseOptionId || "");
+  }, [stage.lessonCode]);
+
+  const nextStageInJourney = useMemo(() => {
+    const list = latestStagesList.length > 0 ? latestStagesList : allStages;
+    return list.find((s) => s.periodIndex === stage.periodIndex + 1) || null;
+  }, [latestStagesList, allStages, stage.periodIndex]);
+
+  const totalStagesCount = useMemo(() => {
+    const list = latestStagesList.length > 0 ? latestStagesList : allStages;
+    return list.length || 15;
+  }, [latestStagesList, allStages]);
+
+  const handleStartStageTransition = () => {
+    if (!nextStageInJourney) return;
+    playSkylineSfx("STAGE_TRANSITION", muted);
+    if (!muted) {
+      speakVietnameseText(
+        `Chúc mừng ${studentName} đã hoàn thành Chặng ${stage.periodIndex}! Bây giờ chim Sky-Line sẽ đưa em bay sang Chặng ${nextStageInJourney.periodIndex}: ${nextStageInJourney.lessonName}!`,
+        muted
+      );
+    }
+    setLoopStep("STAGE_TRANSITION");
+    setTransitionProgress(10);
+    setTimeout(() => setTransitionProgress(55), 300);
+    setTimeout(() => setTransitionProgress(100), 900);
+  };
 
   // Detect online/offline state for resilience
   useEffect(() => {
@@ -311,11 +414,18 @@ export function StageGamePlayer({
 
       if (vResult.autoChallengePassed) {
         playSkylineSfx("FLAG", muted);
+        speakVietnameseText(
+          `Hoan hô! Chúc mừng ${studentName} đã hoàn thành xuất sắc Chặng ${stage.periodIndex}: ${stage.lessonName}!`,
+          muted
+        );
       } else {
         playSkylineSfx("RETRY", muted);
       }
 
       if (data.overview) {
+        if (Array.isArray(data.overview.stages)) {
+          setLatestStagesList(data.overview.stages);
+        }
         onStageUpdated(data.overview);
       }
     } catch {
@@ -1498,7 +1608,7 @@ export function StageGamePlayer({
         <div className="bg-gradient-to-r from-teal-700 via-sky-700 to-emerald-700 text-white px-5 py-4 flex flex-wrap items-center justify-between gap-3 shrink-0">
           <div className="flex items-center gap-3">
             <span className="px-3 py-1 rounded-full bg-amber-400 text-slate-950 font-black text-xs shadow">
-              Chặng {stage.periodIndex}/15 • {stage.lessonCode}
+              Chặng {stage.periodIndex}/{totalStagesCount} • {stage.lessonCode}
             </span>
             <div>
               <h3 className="font-extrabold text-base sm:text-lg leading-tight">
@@ -1511,8 +1621,12 @@ export function StageGamePlayer({
           </div>
 
           <div className="flex flex-wrap items-center gap-2">
-            {/* Background Music Controller inside Stage Player */}
-            <SkylineMusicController muted={muted} compact={false} />
+            {/* Grade-Specific Background Music Controller inside Stage Player */}
+            <SkylineMusicController
+              muted={muted}
+              compact={false}
+              grade={Number(grade) || 2}
+            />
 
             {/* Voice narration button for Primary grades */}
             <button
@@ -1550,9 +1664,9 @@ export function StageGamePlayer({
           </div>
         </div>
 
-        {/* 6-Step Adventure Progress Stepper */}
+        {/* Adventure Progress Stepper (including Step 4: Celebration & Stage Transition) */}
         <div className="bg-slate-50 border-b border-slate-200 px-5 py-2.5 flex flex-wrap items-center justify-between gap-2 text-xs font-bold shrink-0">
-          <div className="flex items-center gap-2 sm:gap-4 flex-wrap">
+          <div className="flex items-center gap-2 sm:gap-3 flex-wrap">
             <button
               type="button"
               onClick={() => setLoopStep("MISSION_BRIEF")}
@@ -1562,7 +1676,7 @@ export function StageGamePlayer({
                   : "bg-teal-100 text-teal-800"
               }`}
             >
-              1. Nhận nhiệm vụ & Khám phá bối cảnh
+              1. Nhận nhiệm vụ
             </button>
             <span>→</span>
             <button
@@ -1574,18 +1688,40 @@ export function StageGamePlayer({
                   : "bg-teal-100 text-teal-800"
               }`}
             >
-              2. Thao tác tương tác thế giới
+              2. Thao tác thế giới
             </button>
             <span>→</span>
-            <span
-              className={`px-3 py-1 rounded-full ${
+            <button
+              type="button"
+              disabled={!validationResult}
+              onClick={() => validationResult && setLoopStep("CONSEQUENCE_FEEDBACK")}
+              className={`px-3 py-1 rounded-full transition ${
                 loopStep === "CONSEQUENCE_FEEDBACK"
                   ? "bg-amber-500 text-slate-950 shadow"
+                  : validationResult
+                  ? "bg-amber-100 text-amber-900"
                   : "bg-slate-200 text-slate-600"
               }`}
             >
-              3. Quan sát hệ quả • Nhận phản hồi • Cắm cờ
-            </span>
+              3. Hệ quả & Cắm cờ
+            </button>
+            <span>→</span>
+            <button
+              type="button"
+              disabled={!validationResult?.autoChallengePassed}
+              onClick={() =>
+                validationResult?.autoChallengePassed && handleStartStageTransition()
+              }
+              className={`px-3 py-1 rounded-full transition ${
+                loopStep === "STAGE_TRANSITION"
+                  ? "bg-gradient-to-r from-emerald-600 to-teal-600 text-white shadow"
+                  : validationResult?.autoChallengePassed
+                  ? "bg-emerald-100 text-emerald-800 hover:bg-emerald-200"
+                  : "bg-slate-200 text-slate-500"
+              }`}
+            >
+              4. 🎉 Chúc mừng & Chuyển chặng
+            </button>
           </div>
 
           <div className="text-amber-700 font-extrabold flex items-center gap-1">
@@ -1635,6 +1771,7 @@ export function StageGamePlayer({
                   mood="EXPLORER"
                   size="lg"
                   reducedMotion={reducedMotion}
+                  characterId={characterId}
                   badgeLabel={`Khối ${grade}`}
                   speechText={stage.interactive.storyBrief}
                 />
@@ -1669,19 +1806,19 @@ export function StageGamePlayer({
                 <button
                   type="button"
                   onClick={() => {
-                    playSkylineSfx("WELCOME", muted);
+                    playSkylineSfx("CLASSROOM_BELL", muted);
                     if (
                       !muted &&
                       typeof window !== "undefined" &&
                       localStorage.getItem("skyline_bgm_enabled") !== "0"
                     ) {
-                      startSkylineBgm("QUEST_EXCITEMENT");
+                      startSkylineBgm(getDefaultThemeForGrade(Number(grade) || 2));
                     }
                     setLoopStep("INTERACTIVE_PLAY");
                   }}
                   className="px-6 py-3.5 rounded-2xl bg-gradient-to-r from-teal-600 to-emerald-600 hover:from-teal-500 hover:to-emerald-500 text-white font-extrabold text-base shadow-lg flex items-center gap-2 transition"
                 >
-                  <span>🚀 Bắt đầu Khám phá bối cảnh & Thao tác</span>
+                  <span>🏫 Rung chuông vào Lớp học Tài chính 3D & Bắt đầu thực hành</span>
                   <span>→</span>
                 </button>
               </div>
@@ -1690,12 +1827,56 @@ export function StageGamePlayer({
 
           {loopStep === "INTERACTIVE_PLAY" && (
             <div className="space-y-6">
+              {/* Interactive 3D Financial Classroom & Scenario Diorama Simulator */}
+              <Skyline3DScenarioStage
+                stage={stage}
+                grade={Number(grade) || 2}
+                studentName={studentName}
+                muted={muted}
+                reducedMotion={reducedMotion}
+                activeContextIdx={activeContextIdx}
+                onSelectContextIdx={(idx) => setActiveContextIdx(idx)}
+                backpackPlacements={backpackPlacements}
+                onCycleBackpackItem={(contextId, itemId) => {
+                  const curr = backpackPlacements[contextId]?.[itemId];
+                  const next = curr === "GROUP_A" ? "GROUP_B" : "GROUP_A";
+                  handlePlaceItem(contextId, itemId, next);
+                }}
+                selectedShopItemIds={selectedShopItemIds}
+                onToggleShopItem={(id) => toggleShopItem(id)}
+                jarAllocations={jarAllocations}
+                selectedGoalId={selectedGoalId}
+                hotspotActions={hotspotActions}
+                onSelectHotspotAction={(spotId, actId) => {
+                  setActiveHotspotId(spotId);
+                  setHotspotActions((prev) => ({ ...prev, [spotId]: actId }));
+                }}
+                entryClassifications={entryClassifications}
+                onToggleEntryClassification={(entryId) => {
+                  setEntryClassifications((prev) => ({
+                    ...prev,
+                    [entryId]: prev[entryId] === undefined ? true : !prev[entryId]
+                  }));
+                }}
+                adDecisions={adDecisions}
+                onToggleAdShouldBuy={(adId) => {
+                  setAdDecisions((prev) => ({
+                    ...prev,
+                    [adId]: {
+                      ...(prev[adId] || {}),
+                      shouldBuy: !prev[adId]?.shouldBuy
+                    }
+                  }));
+                }}
+                capstoneAllocations={capstoneAllocations}
+              />
+
               {/* Mascot Guide Strip */}
               <div className="bg-teal-50/80 border border-teal-200 rounded-2xl p-3.5 flex items-center justify-between gap-3">
                 <div className="flex items-center gap-3 text-xs sm:text-sm text-teal-950">
                   <span className="text-2xl">🐦</span>
                   <span>
-                    <b>Mẹo của chim Sky-Line:</b> {stage.interactive.mascotGuideTip}
+                    <b>Mẹo của chim Sky-Line trong tiết học:</b> {stage.interactive.mascotGuideTip}
                   </span>
                 </div>
               </div>
@@ -1755,6 +1936,47 @@ export function StageGamePlayer({
 
           {loopStep === "CONSEQUENCE_FEEDBACK" && validationResult && (
             <div className="space-y-6">
+              {/* Grand Celebration Banner + 3D Shield Award when Auto Challenge Passed */}
+              {validationResult.autoChallengePassed && (
+                <div className="relative overflow-hidden rounded-3xl bg-gradient-to-r from-amber-400 via-yellow-300 to-emerald-400 p-1 shadow-xl">
+                  <div className="bg-gradient-to-r from-teal-900 via-emerald-900 to-sky-900 rounded-[20px] px-5 py-4 text-white flex flex-wrap items-center justify-between gap-4">
+                    <div className="flex items-center gap-4">
+                      <Skyline3DShieldBadge
+                        periodIndex={stage.periodIndex}
+                        size="md"
+                        animated={!reducedMotion}
+                      />
+                      <div>
+                        <div className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full bg-amber-400 text-slate-950 font-black text-[11px] uppercase tracking-wider">
+                          <span>🛡️ TẶNG KHIÊN DANH DỰ CHẶNG {stage.periodIndex} • CẮM CỜ THÀNH CÔNG!</span>
+                        </div>
+                        <h4 className="text-lg sm:text-xl font-black text-amber-200 mt-1">
+                          Tuyệt vời quá {studentName}! Em đã nhận +1 Khiên Chặng {stage.periodIndex}!
+                        </h4>
+                        <p className="text-xs text-emerald-100 mt-0.5">
+                          🛡️ +1 Khiên Danh Dự • 🚩 Đã cắm cờ • +{stage.feathersReward} 🪶 Lông vũ vào Hộ chiếu Hành trình!
+                        </p>
+                      </div>
+                    </div>
+
+                    {nextStageInJourney ? (
+                      <button
+                        type="button"
+                        onClick={handleStartStageTransition}
+                        className="px-5 py-3 rounded-2xl bg-gradient-to-r from-amber-400 via-yellow-300 to-amber-500 hover:from-amber-300 hover:to-yellow-200 text-slate-950 font-black text-sm shadow-xl flex items-center gap-2 transition transform hover:scale-105 cursor-pointer"
+                      >
+                        <span>🚀 Hoạt động Chuyển chặng: Bay tới Chặng {nextStageInJourney.periodIndex}</span>
+                        <span>→</span>
+                      </button>
+                    ) : (
+                      <div className="px-4 py-2.5 rounded-2xl bg-amber-400/20 border border-amber-300 text-amber-200 font-black text-xs">
+                        👑 Chúc mừng em đã chinh phục đủ bộ Khiên của Đảo!
+                      </div>
+                    )}
+                  </div>
+                </div>
+              )}
+
               <div
                 className={`rounded-3xl p-6 border-4 shadow-md ${
                   validationResult.autoChallengePassed
@@ -1766,11 +1988,20 @@ export function StageGamePlayer({
                   <SkylineBirdCharacter
                     mood={validationResult.autoChallengePassed ? "CELEBRATE" : "THINKING"}
                     size="lg"
+                    characterId={characterId}
                     reducedMotion={reducedMotion}
                     speechText={validationResult.feedbackSummary}
                   />
 
-                  <div className="text-right shrink-0">
+                  <div className="text-right shrink-0 flex items-center gap-3">
+                    {validationResult.autoChallengePassed && (
+                      <div className="px-3.5 py-2 rounded-2xl bg-amber-50 border-2 border-amber-400 shadow-sm text-center">
+                        <div className="text-[11px] text-amber-800 font-bold">Khiên đạt được</div>
+                        <div className="text-lg font-black text-amber-600">
+                          🛡️ Khiên C.{stage.periodIndex}
+                        </div>
+                      </div>
+                    )}
                     <div className="inline-block px-4 py-2 rounded-2xl bg-white border-2 border-teal-300 shadow-sm">
                       <div className="text-xs text-slate-500 font-bold">Mức độ hoàn thành</div>
                       <div className="text-2xl font-black text-teal-700">
@@ -1881,13 +2112,210 @@ export function StageGamePlayer({
                   🔄 Thử lại / Điều chỉnh phương án (Không bị trừ thành tích đã đạt)
                 </button>
 
-                <button
-                  type="button"
-                  onClick={onClose}
-                  className="px-6 py-3 rounded-2xl bg-teal-600 hover:bg-teal-500 text-white font-extrabold text-sm shadow-lg"
-                >
-                  🗺️ Quay về Bản đồ Đảo Tài Chính 2S
-                </button>
+                <div className="flex flex-wrap items-center gap-3">
+                  {validationResult.autoChallengePassed && nextStageInJourney && (
+                    <button
+                      type="button"
+                      onClick={handleStartStageTransition}
+                      className="px-6 py-3 rounded-2xl bg-gradient-to-r from-emerald-600 via-teal-600 to-sky-600 hover:from-emerald-500 hover:to-sky-500 text-white font-black text-sm shadow-lg flex items-center gap-2 transition"
+                    >
+                      <span>🎉 Chúc mừng & Bay sang Chặng {nextStageInJourney.periodIndex}</span>
+                      <span>→</span>
+                    </button>
+                  )}
+
+                  <button
+                    type="button"
+                    onClick={onClose}
+                    className="px-5 py-3 rounded-2xl bg-slate-800 hover:bg-slate-700 text-white font-extrabold text-sm shadow"
+                  >
+                    🗺️ Quay về Bản đồ Đảo
+                  </button>
+                </div>
+              </div>
+            </div>
+          )}
+
+          {/* STEP 4: CELEBRATION & INTERACTIVE STAGE TRANSITION ACTIVITY */}
+          {loopStep === "STAGE_TRANSITION" && validationResult && (
+            <div className="space-y-6">
+              <div className="relative overflow-hidden rounded-3xl border-4 border-amber-400 bg-gradient-to-br from-sky-900 via-teal-900 to-emerald-900 p-6 sm:p-8 text-white shadow-2xl">
+                {/* Floating celebratory sparkles */}
+                <div className="pointer-events-none select-none flex justify-between text-2xl opacity-80 mb-2">
+                  <span className={reducedMotion ? "" : "animate-bounce"}>🎊</span>
+                  <span className={reducedMotion ? "" : "animate-pulse"}>✨</span>
+                  <span className={reducedMotion ? "" : "animate-bounce"}>🏆</span>
+                  <span className={reducedMotion ? "" : "animate-pulse"}>🌟</span>
+                  <span className={reducedMotion ? "" : "animate-bounce"}>🎉</span>
+                </div>
+
+                <div className="text-center max-w-2xl mx-auto space-y-2">
+                  <div className="flex justify-center mb-2">
+                    <Skyline3DShieldBadge
+                      periodIndex={stage.periodIndex}
+                      size="lg"
+                      animated={!reducedMotion}
+                    />
+                  </div>
+                  <div className="inline-flex items-center gap-2 px-4 py-1 rounded-full bg-amber-400 text-slate-950 font-black text-xs uppercase tracking-wider shadow">
+                    <span>🛡️ NHẬN KHIÊN DANH DỰ CHẶNG {stage.periodIndex} & CHUYỂN CHẶNG PHIÊU LƯU</span>
+                  </div>
+                  <h3 className="text-2xl sm:text-3xl font-black text-amber-200">
+                    Chúc mừng {studentName} đã chinh phục Chặng {stage.periodIndex}!
+                  </h3>
+                  <p className="text-sm text-sky-100">
+                    Nhân vật đồng hành <b className="text-amber-300">{getCharacterById(characterId).name}</b> đã nhận{" "}
+                    <b className="text-amber-300">🛡️ Khiên Danh Dự Chặng {stage.periodIndex}</b>, cắm cờ tại{" "}
+                    <b className="text-amber-300">{stage.interactive.worldLocationName}</b> và đang vỗ cánh bay sang điểm đến tiếp theo!
+                  </p>
+                </div>
+
+                {/* Animated Island Flight Trail: Stage N -> Stage N+1 */}
+                <div className="mt-8 bg-white/10 backdrop-blur-md border-2 border-white/20 rounded-3xl p-5 sm:p-6">
+                  <div className="grid grid-cols-1 md:grid-cols-11 items-center gap-4">
+                    {/* Completed Stage Node */}
+                    <div className="md:col-span-4 bg-emerald-950/80 border-2 border-emerald-400 rounded-2xl p-4 text-left">
+                      <div className="flex items-center justify-between gap-2">
+                        <span className="px-2.5 py-0.5 rounded-full bg-emerald-400 text-slate-950 font-black text-xs">
+                          Chặng {stage.periodIndex} • ĐÃ NHẬN KHIÊN
+                        </span>
+                        <span className="text-xl">🛡️🚩</span>
+                      </div>
+                      <div className="font-extrabold text-base text-white mt-2">
+                        {stage.lessonName}
+                      </div>
+                      <div className="text-xs text-emerald-200 mt-1">
+                        📍 {stage.interactive.worldLocationName}
+                      </div>
+                      <div className="mt-2 inline-flex items-center gap-1.5 text-xs font-bold text-amber-300">
+                        <span>+1 🛡️ Khiên</span>
+                        <span>•</span>
+                        <span>+{stage.feathersReward} 🪶</span>
+                        <span>•</span>
+                        <span>Đạt {validationResult.scorePercent}%</span>
+                      </div>
+                    </div>
+
+                    {/* Animated Flight Path in the Center */}
+                    <div className="md:col-span-3 flex flex-col items-center justify-center py-2">
+                      <div className="text-xs font-extrabold text-amber-200 mb-2">
+                        {transitionProgress < 100
+                          ? `🐦 Đang bay mở đường... ${transitionProgress}%`
+                          : "✨ Đã mở khóa đường bay mới!"}
+                      </div>
+                      <div className="relative w-full h-14 flex items-center">
+                        {/* Dotted Flight Track */}
+                        <div className="w-full h-3 rounded-full bg-slate-800/90 overflow-hidden border border-white/20">
+                          <div
+                            className="h-full bg-gradient-to-r from-emerald-400 via-amber-300 to-sky-400 transition-all duration-150"
+                            style={{ width: `${transitionProgress}%` }}
+                          />
+                        </div>
+                        {/* Moving 3D Sky-Line Bird Mascot along the track */}
+                        <div
+                          className="absolute -top-2 transition-all duration-150"
+                          style={{
+                            left: `calc(${Math.min(Math.max(transitionProgress, 8), 88)}% - 24px)`,
+                          }}
+                        >
+                          <div className="w-12 h-12 rounded-2xl overflow-hidden border-2 border-amber-300 shadow-xl bg-white">
+                            <img
+                              src="/images/skyline-bird-mascot.jpg"
+                              alt="Chim Sky-Line đang bay chuyển chặng"
+                              className="w-full h-full object-cover"
+                            />
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+
+                    {/* Next Stage Node */}
+                    <div className="md:col-span-4 bg-amber-500/20 border-2 border-amber-300 rounded-2xl p-4 text-left">
+                      {nextStageInJourney ? (
+                        <>
+                          <div className="flex items-center justify-between gap-2">
+                            <span className="px-2.5 py-0.5 rounded-full bg-amber-300 text-slate-950 font-black text-xs">
+                              Chặng {nextStageInJourney.periodIndex} • SẴN SÀNG
+                            </span>
+                            <span className="text-xl">🔓</span>
+                          </div>
+                          <div className="font-extrabold text-base text-amber-100 mt-2">
+                            {nextStageInJourney.lessonName}
+                          </div>
+                          <div className="text-xs text-sky-100 mt-1">
+                            📍 {nextStageInJourney.interactive.worldLocationName}
+                          </div>
+                          <div className="mt-2 inline-flex items-center gap-1.5 text-xs font-bold text-amber-300">
+                            <span>Thưởng: +{nextStageInJourney.feathersReward} 🪶</span>
+                            <span>•</span>
+                            <span>{nextStageInJourney.criteria.length} mục tiêu</span>
+                          </div>
+                        </>
+                      ) : (
+                        <div className="text-center py-3">
+                          <div className="text-3xl mb-1">👑</div>
+                          <div className="font-black text-amber-200 text-sm">
+                            Hoàn thành toàn bộ {totalStagesCount} chặng trên Đảo!
+                          </div>
+                          <p className="text-xs text-sky-100 mt-1">
+                            Em đã trở thành Nhà Thám Hiểm Tài Chính Nhí xuất sắc!
+                          </p>
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                </div>
+
+                {/* Next Stage Mission Preview & Action Buttons */}
+                {nextStageInJourney ? (
+                  <div className="mt-6 bg-white rounded-3xl p-5 text-slate-900 shadow-lg flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+                    <div className="space-y-1">
+                      <div className="text-xs font-extrabold uppercase tracking-wider text-teal-700">
+                        🗺️ Điểm đến tiếp theo đang chờ em:
+                      </div>
+                      <div className="text-lg font-black text-slate-900">
+                        Chặng {nextStageInJourney.periodIndex}: {nextStageInJourney.lessonName}
+                      </div>
+                      <p className="text-xs text-slate-600 line-clamp-2">
+                        {nextStageInJourney.interactive.storyBrief}
+                      </p>
+                    </div>
+
+                    <div className="flex flex-wrap items-center gap-3 shrink-0 w-full sm:w-auto justify-end">
+                      <button
+                        type="button"
+                        onClick={onClose}
+                        className="px-4 py-3 rounded-2xl border-2 border-slate-300 text-slate-700 hover:bg-slate-100 font-bold text-xs sm:text-sm"
+                      >
+                        🗺️ Về Bản đồ Đảo
+                      </button>
+
+                      {onNavigateToStage && (
+                        <button
+                          type="button"
+                          onClick={() => {
+                            playSkylineSfx("WELCOME", muted);
+                            onNavigateToStage(nextStageInJourney);
+                          }}
+                          className="px-6 py-3.5 rounded-2xl bg-gradient-to-r from-amber-500 via-orange-500 to-amber-500 hover:from-amber-400 hover:to-orange-400 text-slate-950 font-black text-sm sm:text-base shadow-xl flex items-center gap-2 transition transform hover:scale-105 cursor-pointer"
+                        >
+                          <span>🎮 Vào ngay Chặng {nextStageInJourney.periodIndex}</span>
+                          <span>→</span>
+                        </button>
+                      )}
+                    </div>
+                  </div>
+                ) : (
+                  <div className="mt-6 flex justify-center">
+                    <button
+                      type="button"
+                      onClick={onClose}
+                      className="px-7 py-3.5 rounded-2xl bg-amber-400 hover:bg-amber-300 text-slate-950 font-black text-base shadow-xl"
+                    >
+                      🏆 Về Bản đồ ngắm Huy hiệu & Hộ chiếu Hành trình
+                    </button>
+                  </div>
+                )}
               </div>
             </div>
           )}

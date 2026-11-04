@@ -20,7 +20,7 @@ export async function getUsersByRole(roleCode: string) {
   try {
     const opScope = await getOperationalScope()
 
-    let whereClause: any = {
+    const whereClause: any = {
       status: "ACTIVE",
       OR: [
         { role: roleCode },
@@ -1313,26 +1313,9 @@ export async function deleteTaskCategory(id: string) {
 
 export async function getTaskGroups() {
   try {
-    let groups = await prisma.taskGroup.findMany({
+    const groups = await prisma.taskGroup.findMany({
       orderBy: { name: "asc" }
     })
-
-    // Seed default 5 groups if empty
-    if (groups.length === 0) {
-      const defaultNames = [
-        "Khảo thí Phổ thông",
-        "Khảo thí Tổng hợp",
-        "Khảo thí TA&CTQT",
-        "ĐBCL Học sinh",
-        "ĐBCL"
-      ]
-      for (const name of defaultNames) {
-        await prisma.taskGroup.create({
-          data: { name, department: "KT&ĐBCL" }
-        })
-      }
-      groups = await prisma.taskGroup.findMany({ orderBy: { name: "asc" } })
-    }
 
     return { 
       success: true, 
@@ -1346,7 +1329,7 @@ export async function getTaskGroups() {
   }
 }
 
-export async function createTaskGroup(data: { name: string; department?: string; memberUserIds?: string[] }) {
+export async function createTaskGroup(data: { name: string; description?: string; department?: string; leaderUserId?: string | null; memberUserIds?: string[] }) {
   try {
     const session = await auth()
     const opScope = await getOperationalScope()
@@ -1356,7 +1339,9 @@ export async function createTaskGroup(data: { name: string; department?: string;
     const group = await prisma.taskGroup.create({
       data: {
         name: data.name.trim(),
+        description: data.description?.trim() || null,
         department: data.department || "KT&ĐBCL",
+        leaderUserId: data.leaderUserId || null,
         memberUserIds: data.memberUserIds && data.memberUserIds.length > 0 ? JSON.stringify(data.memberUserIds) : null
       }
     })
@@ -1368,20 +1353,25 @@ export async function createTaskGroup(data: { name: string; department?: string;
   }
 }
 
-export async function updateTaskGroup(id: string, data: { name: string; department?: string; memberUserIds?: string[] }) {
+export async function updateTaskGroup(id: string, data: { name: string; description?: string; department?: string; leaderUserId?: string | null; memberUserIds?: string[] }) {
   try {
     const session = await auth()
     const opScope = await getOperationalScope()
     if (!session?.user || (!opScope.isManager && (session.user as any).role !== "ADMIN")) {
       return { success: false, error: "Quyền truy cập bị từ chối" }
     }
+    const updatePayload: any = {
+      name: data.name.trim(),
+      department: data.department || "KT&ĐBCL",
+    }
+    if (data.memberUserIds !== undefined) {
+      updatePayload.memberUserIds = JSON.stringify(data.memberUserIds)
+    }
+    if (data.description !== undefined) updatePayload.description = data.description?.trim() || null
+    if (data.leaderUserId !== undefined) updatePayload.leaderUserId = data.leaderUserId || null
     const group = await prisma.taskGroup.update({
       where: { id },
-      data: {
-        name: data.name.trim(),
-        department: data.department || "KT&ĐBCL",
-        memberUserIds: data.memberUserIds ? JSON.stringify(data.memberUserIds) : null
-      }
+      data: updatePayload
     })
     revalidatePath("/admin/tasks")
     revalidatePath("/admin/weekly-reports")
@@ -1512,13 +1502,26 @@ export async function saveDepartmentSettings(departmentCode: string = "KT&ĐBCL"
       return { success: false, error: "Quyền truy cập bị từ chối" }
     }
 
+    const isKtAlias =
+      departmentCode === "KT&ĐBCL" ||
+      departmentCode === "KT-ĐBCL" ||
+      departmentCode === "KT_DBCL"
+
     const dept = await prisma.department.findFirst({
       where: {
         OR: [
           { code: departmentCode },
-          { name: departmentCode }
-        ]
-      }
+          { name: departmentCode },
+          ...(isKtAlias
+            ? [
+                { code: "KT-ĐBCL" },
+                { code: "KT&ĐBCL" },
+                { name: "KT&ĐBCL" },
+                { divisionCode: "BAN_KT_DBCL" },
+              ]
+            : []),
+        ],
+      },
     })
 
     if (!dept) {

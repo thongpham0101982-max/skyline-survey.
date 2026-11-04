@@ -50,7 +50,11 @@ export async function POST(req: NextRequest) {
         favoriteActivities: Array.isArray(body?.favoriteActivities)
           ? body.favoriteActivities
           : [],
-        note: body?.note ? String(body.note) : ""
+        note: body?.note ? String(body.note) : "",
+        characterId: body?.characterId ? String(body.characterId) : "SKYLINE_EXPLORER",
+        characterName: body?.characterName
+          ? String(body.characterName)
+          : "Chiến Binh Chim Sky-Line"
       });
       const updatedOverview = await getStudentJourneyOverview(session.studentId);
       return NextResponse.json({

@@ -538,6 +538,12 @@ function UniversalSpecialSubjectEvaluationContent() {
                 <span className="px-2 py-0.5 rounded-full text-xs font-semibold bg-teal-500/20 text-teal-200 border border-teal-400/30">
                   {assignedGradeBadge}
                 </span>
+                <Link
+                  href={`/teacher/special-subjects/skyline-journey${activeAssignment?.classId ? `?classId=${activeAssignment.classId}` : ""}`}
+                  className="px-2.5 py-0.5 rounded-full text-xs font-extrabold bg-amber-400 hover:bg-amber-300 text-slate-950 shadow-sm transition"
+                >
+                  🐦 Hành trình Sky-Line (Đảo Game)
+                </Link>
               </div>
               <p className="text-xs text-teal-200/80">
                 Form đánh giá môn đặc thù được phân công • Chuẩn hóa chương trình 2026–2027

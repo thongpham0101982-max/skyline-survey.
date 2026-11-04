@@ -199,6 +199,30 @@ export default function StudentPortalHomePage() {
         }
       />
 
+      {/* 1A. HÀNH TRÌNH SKY-LINE: ĐẢO PHIÊU LƯU HỌC TẬP TIỂU HỌC (KHỐI 1–5) */}
+      {Number(gradeNum) >= 1 && Number(gradeNum) <= 5 && (
+        <div className="bg-gradient-to-r from-teal-700 via-sky-700 to-emerald-700 rounded-3xl p-6 text-white shadow-xl border-2 border-teal-400 flex flex-col md:flex-row md:items-center justify-between gap-5">
+          <div className="space-y-1.5">
+            <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-amber-400 text-slate-950 text-[11px] font-black uppercase tracking-wider shadow-sm">
+              🐦 HÀNH TRÌNH SKY-LINE • KHỐI {gradeNum}
+            </span>
+            <h2 className="text-xl sm:text-2xl font-black">
+              Hóa thân thành chú chim Sky-Line khám phá các Đảo Môn Học!
+            </h2>
+            <p className="text-xs sm:text-sm text-sky-100 max-w-2xl">
+              Vượt qua các chặng phiêu lưu tương tác trực tiếp (Chuẩn bị hành lý, Cửa hàng của chim, Xây tổ ước mơ, Giải cứu ngôi làng, Nhật ký đồng xu), cắm cờ và tích lũy Lông vũ vào Hộ chiếu Hành trình cá nhân!
+            </p>
+          </div>
+          <Link
+            href="/hocsinh/portal/hanh-trinh-skyline"
+            className="inline-flex items-center justify-center gap-2 rounded-2xl bg-amber-400 hover:bg-amber-300 px-6 py-3.5 text-sm font-black text-slate-950 shadow-lg transition shrink-0"
+          >
+            <span>🗺️ Tiếp tục Hành trình Sky-Line</span>
+            <ArrowRight className="h-4 w-4" />
+          </Link>
+        </div>
+      )}
+
       {/* 1B. NHIỆM VỤ MỚI: HÀNH TRÌNH TRƯỞNG THÀNH 5 PHẨM CHẤT & PRIDE NPS (CHỈ HIỂN THỊ KHI ADMIN MỞ KỲ) */}
       {reflectionTaskInfo?.eligible && reflectionTaskInfo?.hasOpenTask && reflectionTaskInfo?.activePeriod && (
         <SkylineFlagMascot
@@ -346,6 +370,45 @@ export default function StudentPortalHomePage() {
         </div>
 
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
+          {/* CARD SKY-LINE JOURNEY: HÀNH TRÌNH SKY-LINE (CẤP TIỂU HỌC KHỐI 1–5) */}
+          {Number(gradeNum) >= 1 && Number(gradeNum) <= 5 && (
+            <div className="bg-white rounded-3xl p-6 border-2 border-teal-400 shadow-sm hover:shadow-xl hover:-translate-y-1 transition-all duration-300 flex flex-col justify-between space-y-5 relative overflow-hidden group">
+              <div className="space-y-3.5">
+                <div className="flex items-center justify-between gap-2">
+                  <div className="w-14 h-14 rounded-2xl bg-teal-50 text-teal-700 flex items-center justify-center font-bold shadow-inner border border-teal-200 group-hover:scale-105 transition-transform p-1.5">
+                    <img
+                      src="/images/skyline-mascot-flag.png"
+                      alt="Chú chim Sky-Line"
+                      className="w-full h-full object-contain"
+                    />
+                  </div>
+                  <span className="text-[10px] font-black uppercase px-2.5 py-1 rounded-full bg-amber-100 text-amber-900 border border-amber-300">
+                    Đảo Game • Khối {gradeNum}
+                  </span>
+                </div>
+                <div>
+                  <span className="text-[10px] font-black text-teal-700 uppercase tracking-widest block">
+                    PHIÊU LƯU ĐẢO MÔN HỌC • HỘ CHIẾU LÔNG VŨ
+                  </span>
+                  <h3 className="text-lg font-black text-slate-900 group-hover:text-teal-700 transition-colors mt-0.5">
+                    Hành Trình Sky-Line
+                  </h3>
+                </div>
+                <p className="text-xs text-slate-500 font-medium leading-relaxed">
+                  Hóa thân thành <strong className="text-slate-700">chú chim Sky-Line</strong> khám phá các đảo môn học, vượt 15 chặng tương tác trực tiếp, cắm cờ và tích lũy Lông vũ vào Hộ chiếu cá nhân.
+                </p>
+              </div>
+
+              <Link
+                href="/hocsinh/portal/hanh-trinh-skyline"
+                className="w-full py-3.5 rounded-2xl bg-gradient-to-r from-teal-600 to-emerald-600 hover:from-teal-700 hover:to-emerald-700 text-white text-xs font-black flex items-center justify-center gap-2 shadow-md shadow-teal-200 transition-all active:scale-95 text-center cursor-pointer"
+              >
+                <span>Khám phá Bản đồ Đảo ngay</span>
+                <ArrowRight className="w-4 h-4" />
+              </Link>
+            </div>
+          )}
+
           {/* CARD 0: HÀNH TRÌNH TRƯỞNG THÀNH 5 PHẨM CHẤT & PRIDE NPS (KHỐI 4-12) */}
           {(reflectionTaskInfo?.eligible ?? (Number(gradeNum) >= 4 && Number(gradeNum) <= 12)) && (
             <div className="bg-white rounded-3xl p-6 border-2 border-purple-300 shadow-sm hover:shadow-xl hover:-translate-y-1 transition-all duration-300 flex flex-col justify-between space-y-5 relative overflow-hidden group">

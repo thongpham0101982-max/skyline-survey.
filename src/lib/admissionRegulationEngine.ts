@@ -1,3 +1,4 @@
+import * as XLSX from "xlsx"
 import { parseEntranceRecord, ProgramType } from "./entranceAcademicRecord"
 
 export interface AdmissionRegulationRule {
@@ -198,7 +199,15 @@ export function analyzeStudentAcademicAndRegulation(
   let combinationSummary = ""
 
   if (programType === "BO_GD_DT") {
-    academicRating = parsed.moet?.overallRating || parsed.overallRating || student?.kqgdTieuHoc || ""
+    let rawRating = parsed.moet?.overallRating || parsed.overallRating || student?.kqgdTieuHoc || ""
+    if (rawRating.includes("Trường cũ") || rawRating.includes("Đối tượng:")) {
+      const cleanLines = rawRating
+        .split(/[\r\n]+/)
+        .map(l => l.trim())
+        .filter(l => l && !l.includes("Trường cũ") && !l.includes("Đối tượng:"))
+      rawRating = cleanLines[0] || ""
+    }
+    academicRating = rawRating
     conductRating = parsed.moet?.conductRating || student?.kqRenLuyen || ""
     scores = (parsed.moet?.subjects || [])
       .filter(s => s.score && String(s.score).trim() !== "")
@@ -254,7 +263,15 @@ export function analyzeStudentAcademicAndRegulation(
 
   const vnSubjectName = gradeNum <= 5 ? "Tiếng Việt" : "Ngữ Văn"
   const psychSubjectName = gradeNum <= 5 ? "Tâm lý" : "Phiếu định hướng đầu vào"
-  const sysCode = String(student?.surveySystem || student?.surveyFormType || "HNS").toUpperCase()
+  const combinedSysRaw = `${student?.surveyFormType || ""} ${student?.surveySystem || ""}`.toUpperCase()
+  const sysCode =
+    combinedSysRaw.includes("HNG") || combinedSysRaw.includes("GLOBAL")
+      ? "HNG"
+      : combinedSysRaw.includes("SB") || combinedSysRaw.includes("SONG BẰNG") || combinedSysRaw.includes("SONG BANG")
+      ? "SB"
+      : combinedSysRaw.includes("HNS") || combinedSysRaw.includes("CHẤT LƯỢNG CAO") || combinedSysRaw.includes("CLC")
+      ? "HNS"
+      : String(student?.surveyFormType || student?.surveySystem || "HNS").toUpperCase()
   const criteria = String(student?.admissionCriteria || "").toLowerCase()
 
   // Tìm quy tắc Quy chế Tuyển sinh phù hợp với Khối & Hệ của học sinh
@@ -481,3 +498,463 @@ export function matchRecommendedSubjectIds(recommendedNames: string[], available
   })
   return Array.from(matchedIds)
 }
+
+/**
+ * Kiểm tra học sinh có thuộc nhóm Đủ điều kiện Xét học bạ / Tuyển thẳng
+ * (được miễn môn văn hóa Toán - Tiếng Việt/Ngữ Văn theo Quy chế Tuyển sinh) hay không.
+ */
+export function isStudentEligibleByRegulation(
+  student: any,
+  customConfig?: AdmissionRegulationConfig
+): boolean {
+  const insight = analyzeStudentAcademicAndRegulation(student, customConfig)
+  return (
+    insight.regulationStatus === "TUYEN_THANG_GOI_Y" ||
+    insight.regulationStatus === "XET_TUYEN_HOC_BA" ||
+    insight.exemptedSubjectNames.length > 0
+  )
+}
+
+function formatDobForExcel(dob?: string | null): string {
+  if (!dob) return ""
+  const s = String(dob).trim()
+  if (/^\d{2}\/\d{2}\/\d{4}$/.test(s)) return s
+  const d = new Date(s)
+  if (!isNaN(d.getTime())) {
+    const day = String(d.getDate()).padStart(2, "0")
+    const month = String(d.getMonth() + 1).padStart(2, "0")
+    const year = d.getFullYear()
+    return `${day}/${month}/${year}`
+  }
+  return s
+}
+
+/**
+ * Chuẩn hóa 1 dòng dữ liệu Học sinh đủ điều kiện khảo sát theo quy chế (Xét học bạ / Tuyển thẳng)
+ */
+export function buildEligibleStudentRegulationRow(
+  student: any,
+  index: number,
+  customConfig?: AdmissionRegulationConfig,
+  context?: {
+    periodName?: string
+    batchName?: string
+    campusName?: string
+  }
+) {
+  const insight = analyzeStudentAcademicAndRegulation(student, customConfig)
+  const gradeStr = String(student?.grade || "").replace(/\D/g, "") || String(student?.grade || "")
+  const combinedSys = `${student?.surveyFormType || ""} ${student?.surveySystem || ""}`.toUpperCase()
+  const sysDisplay = combinedSys.includes("HNG")
+    ? "HNG"
+    : combinedSys.includes("SB")
+    ? "SB"
+    : combinedSys.includes("HNS")
+    ? "HNS"
+    : student?.surveyFormType || student?.surveySystem || "HNS"
+
+  const formDisplay =
+    student?.surveySystem &&
+    (student.surveySystem.toLowerCase().includes("trực tiếp") ||
+      student.surveySystem.toLowerCase().includes("online") ||
+      student.surveySystem.toLowerCase().includes("offline"))
+      ? student.surveySystem
+      : student?.surveyFormType &&
+        (student.surveyFormType.toLowerCase().includes("trực tiếp") ||
+          student.surveyFormType.toLowerCase().includes("online") ||
+          student.surveyFormType.toLowerCase().includes("offline"))
+      ? student.surveyFormType
+      : "Trực tiếp"
+
+  const vnSubLabel = parseInt(gradeStr || "1", 10) <= 5 ? "Tiếng Việt" : "Ngữ Văn"
+  const scoreSummaryParts = [
+    insight.mathScore !== null ? `Toán: ${insight.mathScore}` : "",
+    insight.litScore !== null ? `${vnSubLabel}: ${insight.litScore}` : "",
+    insight.engScore !== null ? `Tiếng Anh: ${insight.engScore}` : ""
+  ].filter(Boolean)
+
+  const kqHocTapSummary = [
+    insight.academicRating ? `Xếp loại: ${insight.academicRating}` : "",
+    scoreSummaryParts.join(", ")
+  ]
+    .filter(Boolean)
+    .join(" | ")
+
+  return {
+    "STT": index + 1,
+    "Mã HS KS": student?.studentCode || "",
+    "Họ và Tên *": student?.fullName || "",
+    "Ngày sinh": formatDobForExcel(student?.dateOfBirth),
+    "Giới tính": student?.gender || "",
+    "Khối": gradeStr,
+    "Hệ Khảo sát": sysDisplay,
+    "Đăng ký CS": context?.campusName || student?.admissionCampus || student?.registeredCampus || "",
+    "Kỳ / Đợt khảo sát": [context?.periodName || student?.period?.name, context?.batchName || student?.batch?.name]
+      .filter(Boolean)
+      .join(" - "),
+    "Trường học cũ": student?.oldSchoolName || "",
+    "Đối tượng Tuyển sinh": student?.targetType || "Nội tỉnh",
+    "Hồ sơ / Bảng điểm": insight.programLabel,
+    "Học kỳ / Năm TS": student?.hocKy || insight.transcriptPeriodLabel || "Cả năm",
+    "KQ Xếp loại Học tập": insight.academicRating || "",
+    "Kết quả Rèn luyện": insight.conductRating || student?.kqRenLuyen || "Tốt",
+    "Điểm Toán": insight.mathScore !== null ? insight.mathScore : "",
+    "Điểm Tiếng Việt / Ngữ Văn": insight.litScore !== null ? insight.litScore : "",
+    "Điểm Tiếng Anh": insight.engScore !== null ? insight.engScore : "",
+    "Thành tích / Chứng chỉ QT": insight.achievements || "",
+    "Kết quả Học tập": kqHocTapSummary,
+    "Diện khảo sát":
+      insight.regulationStatus === "TUYEN_THANG_GOI_Y"
+        ? "Tuyển thẳng"
+        : insight.regulationStatus === "XET_TUYEN_HOC_BA"
+        ? "Xét tuyển học bạ"
+        : student?.admissionCriteria || "Xét học bạ",
+    "Hình thức KS": formDisplay,
+    "Diện Đủ ĐK theo Quy chế": insight.regulationBadgeLabel,
+    "Môn Văn hóa được miễn KS": insight.exemptedSubjectNames.join(", "),
+    "Môn cần phân công KS": insight.recommendedSubjectNames.join(", "),
+    "Nhóm Quy chế áp dụng": insight.appliedRuleName || "",
+    "Căn cứ Quy chế chi tiết": insight.regulationReason
+  }
+}
+
+/**
+ * Tạo bộ dữ liệu Mẫu chuẩn (Sample Rows) của Học sinh đủ điều kiện Xét học bạ / Tuyển thẳng
+ * (được miễn môn văn hóa theo Quy chế Tuyển sinh Sky-Line) trải đều các cấp Tiểu học, THCS, THPT và các hệ HNS, HNG, SB.
+ */
+export function getSampleRegulationEligibleRows(customConfig?: AdmissionRegulationConfig) {
+  const regConfig = customConfig || DEFAULT_ADMISSION_REGULATIONS
+  const rK25 = regConfig.rules.find(r => r.grades.includes("2")) || DEFAULT_ADMISSION_REGULATIONS.rules[1]
+  const rK69 = regConfig.rules.find(r => r.grades.includes("6")) || DEFAULT_ADMISSION_REGULATIONS.rules[2]
+  const rK1012 = regConfig.rules.find(r => r.grades.includes("10")) || DEFAULT_ADMISSION_REGULATIONS.rules[3]
+
+  const sampleStudents = [
+    {
+      studentCode: "HS_QC_001",
+      fullName: "Nguyễn Minh Khôi (Mẫu K3 - HNS Xét học bạ)",
+      dateOfBirth: "2018-04-15",
+      gender: "Nam",
+      grade: "3",
+      surveyFormType: "HNS",
+      surveySystem: "Trực tiếp",
+      admissionCriteria: "Xét tuyển",
+      registeredCampus: "CS1 - Sky-Line Riverside",
+      oldSchoolName: "Trường Tiểu học Phù Đổng",
+      targetType: "Nội tỉnh",
+      hocKy: "Cả năm",
+      kqRenLuyen: "Tốt",
+      kqHocTap: JSON.stringify({
+        programType: "BO_GD_DT",
+        transcriptPeriod: "CA_NAM",
+        overallRating: "Hoàn thành tốt",
+        moet: {
+          gradeLevel: "3",
+          overallRating: "Hoàn thành tốt",
+          conductRating: "Tốt",
+          subjects: [
+            { id: "toan", name: "Toán", score: String(Math.max(7.5, rK25.minCoreScoreHNS || 7.0)) },
+            { id: "tv", name: "Tiếng Việt", score: String(Math.max(8.0, rK25.minCoreScoreHNS || 7.0)) },
+            { id: "ta", name: "Tiếng Anh", score: "8.0" }
+          ]
+        }
+      }),
+      _periodName: "Khảo sát Tuyển sinh Đầu vào",
+      _batchName: "Đợt mẫu Quy chế"
+    },
+    {
+      studentCode: "HS_QC_002",
+      fullName: "Trần Bảo Ngọc (Mẫu K5 - HNG Tuyển thẳng Flyers)",
+      dateOfBirth: "2016-09-20",
+      gender: "Nữ",
+      grade: "5",
+      surveyFormType: "HNG",
+      surveySystem: "Trực tiếp",
+      admissionCriteria: "Tuyển thẳng",
+      registeredCampus: "CS3 - Sky-Line Global",
+      oldSchoolName: "Trường Tiểu học Hoàng Văn Thụ",
+      targetType: "Nội tỉnh",
+      hocKy: "Cả năm",
+      kqRenLuyen: "Tốt",
+      kqHocTap: JSON.stringify({
+        programType: "BO_GD_DT",
+        transcriptPeriod: "CA_NAM",
+        overallRating: "Hoàn thành xuất sắc",
+        achievements: "Chứng chỉ Cambridge Flyers 15 khiên",
+        moet: {
+          gradeLevel: "5",
+          overallRating: "Hoàn thành xuất sắc",
+          conductRating: "Tốt",
+          achievements: "Chứng chỉ Cambridge Flyers 15 khiên",
+          subjects: [
+            { id: "toan", name: "Toán", score: String(Math.max(9.0, rK25.minCoreScoreHNG_SB || 8.0)) },
+            { id: "tv", name: "Tiếng Việt", score: String(Math.max(8.5, rK25.minCoreScoreHNG_SB || 8.0)) },
+            { id: "ta", name: "Tiếng Anh", score: "9.5" }
+          ]
+        }
+      }),
+      _periodName: "Khảo sát Tuyển sinh Đầu vào",
+      _batchName: "Đợt mẫu Quy chế"
+    },
+    {
+      studentCode: "HS_QC_003",
+      fullName: "Lê Hoàng Nam (Mẫu K6 - HNS Xét học bạ Toán-Văn)",
+      dateOfBirth: "2015-02-10",
+      gender: "Nam",
+      grade: "6",
+      surveyFormType: "HNS",
+      surveySystem: "Trực tiếp",
+      admissionCriteria: "Xét tuyển",
+      registeredCampus: "CS1 - Sky-Line Riverside",
+      oldSchoolName: "Trường THCS Tây Sơn",
+      targetType: "Nội tỉnh",
+      hocKy: "Cả năm",
+      kqRenLuyen: "Tốt",
+      kqHocTap: JSON.stringify({
+        programType: "BO_GD_DT",
+        transcriptPeriod: "CA_NAM",
+        overallRating: "Khá",
+        moet: {
+          gradeLevel: "6",
+          overallRating: "Khá",
+          conductRating: "Tốt",
+          subjects: [
+            { id: "toan", name: "Toán", score: String(Math.max(7.5, rK69.minCoreScoreHNS || 7.0)) },
+            { id: "van", name: "Ngữ Văn", score: String(Math.max(7.5, rK69.minCoreScoreHNS || 7.0)) },
+            { id: "ta", name: "Tiếng Anh", score: "7.8" }
+          ]
+        }
+      }),
+      _periodName: "Khảo sát Tuyển sinh Đầu vào",
+      _batchName: "Đợt mẫu Quy chế"
+    },
+    {
+      studentCode: "HS_QC_004",
+      fullName: "Phạm Hà My (Mẫu K8 - HNG Xét học bạ Toán-Văn)",
+      dateOfBirth: "2013-11-05",
+      gender: "Nữ",
+      grade: "8",
+      surveyFormType: "HNG",
+      surveySystem: "Trực tiếp",
+      admissionCriteria: "Xét tuyển",
+      registeredCampus: "CS4 - Sky-Line Hill",
+      oldSchoolName: "Trường THCS Trưng Vương",
+      targetType: "Nội tỉnh",
+      hocKy: "Cả năm",
+      kqRenLuyen: "Tốt",
+      kqHocTap: JSON.stringify({
+        programType: "BO_GD_DT",
+        transcriptPeriod: "CA_NAM",
+        overallRating: "Tốt",
+        moet: {
+          gradeLevel: "8",
+          overallRating: "Tốt",
+          conductRating: "Tốt",
+          subjects: [
+            { id: "toan", name: "Toán", score: String(Math.max(8.5, rK69.minCoreScoreHNG_SB || 8.0)) },
+            { id: "van", name: "Ngữ Văn", score: String(Math.max(8.2, rK69.minCoreScoreHNG_SB || 8.0)) },
+            { id: "ta", name: "Tiếng Anh", score: "8.6" }
+          ]
+        }
+      }),
+      _periodName: "Khảo sát Tuyển sinh Đầu vào",
+      _batchName: "Đợt mẫu Quy chế"
+    },
+    {
+      studentCode: "HS_QC_005",
+      fullName: "Võ Quốc Anh (Mẫu K10 - SB Tuyển thẳng IELTS)",
+      dateOfBirth: "2011-06-28",
+      gender: "Nam",
+      grade: "10",
+      surveyFormType: "SB",
+      surveySystem: "Trực tiếp",
+      admissionCriteria: "Tuyển thẳng",
+      registeredCampus: "CS3 - Sky-Line Global",
+      oldSchoolName: "Trường THCS Nguyễn Khuyến",
+      targetType: "Nội tỉnh",
+      hocKy: "Cả năm",
+      kqRenLuyen: "Tốt",
+      kqHocTap: JSON.stringify({
+        programType: "BO_GD_DT",
+        transcriptPeriod: "CA_NAM",
+        overallRating: "Giỏi",
+        achievements: "Chứng chỉ IELTS 6.5, Giải Nhì HSG Tiếng Anh cấp Thành phố",
+        moet: {
+          gradeLevel: "10",
+          overallRating: "Giỏi",
+          conductRating: "Tốt",
+          achievements: "Chứng chỉ IELTS 6.5, Giải Nhì HSG Tiếng Anh cấp Thành phố",
+          subjects: [
+            { id: "toan", name: "Toán", score: String(Math.max(8.8, rK1012.minCoreScoreHNG_SB || 8.0)) },
+            { id: "van", name: "Ngữ Văn", score: String(Math.max(8.3, rK1012.minCoreScoreHNG_SB || 8.0)) },
+            { id: "ta", name: "Tiếng Anh", score: "9.2" }
+          ]
+        }
+      }),
+      _periodName: "Khảo sát Tuyển sinh Đầu vào",
+      _batchName: "Đợt mẫu Quy chế"
+    }
+  ]
+
+  return sampleStudents.map((st, idx) =>
+    buildEligibleStudentRegulationRow(st, idx, regConfig, {
+      periodName: st._periodName,
+      batchName: st._batchName,
+      campusName: st.registeredCampus
+    })
+  )
+}
+
+/**
+ * Tạo bảng tóm tắt Quy chế Tuyển sinh & Điều kiện miễn môn văn hóa (Sheet 2 trong file Excel)
+ */
+export function buildRegulationRulesSheetRows(customConfig?: AdmissionRegulationConfig) {
+  const regConfig = customConfig || DEFAULT_ADMISSION_REGULATIONS
+  return regConfig.rules
+    .filter(r => r.isActive !== false)
+    .map((r, idx) => ({
+      "STT": idx + 1,
+      "Nhóm Cấp / Khối": r.name,
+      "Các Khối áp dụng": r.grades.map(g => `Khối ${g}`).join(", "),
+      "Hệ áp dụng": r.systems.join(", "),
+      "Xếp loại Học tập tối thiểu": r.minAcademicRatings.join(", "),
+      "Xếp loại Rèn luyện tối thiểu": r.minConductRatings.join(", "),
+      "Ngưỡng điểm Toán - Văn (Hệ HNS)": r.minCoreScoreHNS > 0 ? `>= ${r.minCoreScoreHNS}` : "Không yêu cầu điểm học bạ",
+      "Ngưỡng điểm Toán - Văn (Hệ HNG / SB)": r.minCoreScoreHNG_SB > 0 ? `>= ${r.minCoreScoreHNG_SB}` : "Không yêu cầu điểm học bạ",
+      "Ngưỡng Tiếng Anh Tuyển thẳng": r.minEnglishScoreDirect > 0 ? `>= ${r.minEnglishScoreDirect}` : "—",
+      "Từ khóa Chứng chỉ QT / Thành tích": r.intlCertKeywords || "—",
+      "Môn Văn hóa được miễn (Khi đạt học bạ)": r.transcriptExemptSubjects.join(", ") || "Không miễn",
+      "Môn KS diện Xét học bạ": r.defaultSubjects.filter(s => !r.transcriptExemptSubjects.includes(s)).join(", "),
+      "Môn KS diện Tuyển thẳng": r.directAdmissionSubjects.join(", "),
+      "Ghi chú Quy chế": r.regulationNote || ""
+    }))
+}
+
+/**
+ * Xuất file Excel Danh sách Học sinh đủ điều kiện khảo sát theo quy chế (Xét học bạ / Tuyển thẳng - Miễn môn văn hóa)
+ * hoặc Xuất file Mẫu chuẩn (.xlsx) nếu chọn chế độ tải mẫu.
+ */
+export function exportEligibleStudentsRegulationExcel(options: {
+  students?: any[]
+  customConfig?: AdmissionRegulationConfig
+  campuses?: any[]
+  periods?: any[]
+  templateOnly?: boolean
+  fileName?: string
+}): { exportedCount: number; fileName: string; isSample: boolean } {
+  const regConfig = options.customConfig || DEFAULT_ADMISSION_REGULATIONS
+  const campuses = options.campuses || []
+  const periods = options.periods || []
+
+  const eligibleStudents = options.templateOnly
+    ? []
+    : (options.students || []).filter(s => isStudentEligibleByRegulation(s, regConfig))
+
+  const isSample = options.templateOnly || eligibleStudents.length === 0
+
+  const mainRows = isSample
+    ? getSampleRegulationEligibleRows(regConfig)
+    : eligibleStudents.map((s, idx) => {
+        const pObj = periods.find((p: any) => p.id === s.periodId)
+        const bObj =
+          (pObj?.batches || periods.flatMap((p: any) => p.batches || [])).find(
+            (b: any) => b.id === s.batchId
+          )
+        const cObj = campuses.find(
+          (c: any) =>
+            c.id === s.registeredCampus ||
+            c.campusCode === s.registeredCampus ||
+            c.campusName === s.registeredCampus ||
+            c.id === s.admissionCampus ||
+            c.campusCode === s.admissionCampus ||
+            c.campusName === s.admissionCampus
+        )
+        return buildEligibleStudentRegulationRow(s, idx, regConfig, {
+          periodName: s.period?.name || pObj?.name || "",
+          batchName: s.batch?.name || bObj?.name || "",
+          campusName: cObj ? `${cObj.campusCode} - ${cObj.campusName}` : s.registeredCampus || s.admissionCampus || ""
+        })
+      })
+
+  const wb = XLSX.utils.book_new()
+
+  const wsMain = XLSX.utils.json_to_sheet(mainRows)
+  wsMain["!cols"] = [
+    { wch: 6 },  // STT
+    { wch: 14 }, // Mã HS KS
+    { wch: 30 }, // Họ và Tên *
+    { wch: 13 }, // Ngày sinh
+    { wch: 10 }, // Giới tính
+    { wch: 8 },  // Khối
+    { wch: 13 }, // Hệ Khảo sát
+    { wch: 24 }, // Đăng ký CS
+    { wch: 26 }, // Kỳ / Đợt khảo sát
+    { wch: 26 }, // Trường học cũ
+    { wch: 18 }, // Đối tượng Tuyển sinh
+    { wch: 18 }, // Hồ sơ / Bảng điểm
+    { wch: 15 }, // Học kỳ / Năm TS
+    { wch: 22 }, // KQ Xếp loại Học tập
+    { wch: 16 }, // Kết quả Rèn luyện
+    { wch: 12 }, // Điểm Toán
+    { wch: 22 }, // Điểm Tiếng Việt / Ngữ Văn
+    { wch: 14 }, // Điểm Tiếng Anh
+    { wch: 36 }, // Thành tích / Chứng chỉ QT
+    { wch: 38 }, // Kết quả Học tập
+    { wch: 18 }, // Diện khảo sát
+    { wch: 14 }, // Hình thức KS
+    { wch: 28 }, // Diện Đủ ĐK theo Quy chế
+    { wch: 26 }, // Môn Văn hóa được miễn KS
+    { wch: 36 }, // Môn cần phân công KS
+    { wch: 32 }, // Nhóm Quy chế áp dụng
+    { wch: 55 }  // Căn cứ Quy chế chi tiết
+  ]
+
+  XLSX.utils.book_append_sheet(
+    wb,
+    wsMain,
+    isSample ? "Mau_HS_Du_DK_Quy_Che" : "DS_HS_Du_DK_Quy_Che"
+  )
+
+  // Nếu xuất danh sách thực tế thì đính kèm thêm Sheet mẫu tham khảo để đối chiếu
+  if (!isSample) {
+    const wsSample = XLSX.utils.json_to_sheet(getSampleRegulationEligibleRows(regConfig))
+    wsSample["!cols"] = wsMain["!cols"]
+    XLSX.utils.book_append_sheet(wb, wsSample, "Mau_Tham_Khao")
+  }
+
+  // Sheet Quy chế Tuyển sinh & Điều kiện miễn môn văn hóa
+  const ruleRows = buildRegulationRulesSheetRows(regConfig)
+  const wsRules = XLSX.utils.json_to_sheet(ruleRows)
+  wsRules["!cols"] = [
+    { wch: 6 },
+    { wch: 34 },
+    { wch: 24 },
+    { wch: 16 },
+    { wch: 36 },
+    { wch: 24 },
+    { wch: 26 },
+    { wch: 30 },
+    { wch: 24 },
+    { wch: 36 },
+    { wch: 28 },
+    { wch: 36 },
+    { wch: 32 },
+    { wch: 60 }
+  ]
+  XLSX.utils.book_append_sheet(wb, wsRules, "Quy_Che_Mien_Mon_VH")
+
+  const dateStr = new Date().toISOString().slice(0, 10)
+  const finalFileName =
+    options.fileName ||
+    (isSample
+      ? `Mau_DS_HS_Du_DK_Khao_Sat_Theo_Quy_Che.xlsx`
+      : `Danh_Sach_HS_Du_DK_Khao_Sat_Theo_Quy_Che_${dateStr}.xlsx`)
+
+  XLSX.writeFile(wb, finalFileName)
+
+  return {
+    exportedCount: isSample ? mainRows.length : eligibleStudents.length,
+    fileName: finalFileName,
+    isSample
+  }
+}
+

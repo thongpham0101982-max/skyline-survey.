@@ -5,11 +5,15 @@ import { StudentStageView } from "@/lib/skyline-journey/service";
 import {
   SkylineBirdCharacter,
   SkylineMusicController,
+  Skyline3DShieldBadge,
+  SKYLINE_CHARACTERS,
+  getCharacterById,
   playSkylineSfx,
   speakVietnameseText,
   startSkylineBgm,
   stopSkylineBgm,
-  getSkylineBgmState
+  getSkylineBgmState,
+  getDefaultThemeForGrade
 } from "@/components/skyline-journey/SkylineBirdCharacter";
 import { StageGamePlayer } from "@/components/skyline-journey/StageGamePlayer";
 
@@ -61,6 +65,8 @@ export default function StudentSkylineJourneyPage() {
   const [selectedZoneCode, setSelectedZoneCode] = useState<string>("ALL");
   const [activeStage, setActiveStage] = useState<StudentStageView | null>(null);
   const [birdTargetPeriod, setBirdTargetPeriod] = useState<number>(1);
+  const [is3DIslandMode, setIs3DIslandMode] = useState<boolean>(true);
+  const [selectedCharacterId, setSelectedCharacterId] = useState<string>("SKYLINE_EXPLORER");
 
   // Welcome & Subject Interest Survey Modal state
   const [showWelcomeModal, setShowWelcomeModal] = useState<boolean>(false);
@@ -82,6 +88,10 @@ export default function StudentSkylineJourneyPage() {
     if (typeof window !== "undefined") {
       setMuted(localStorage.getItem("skyline_muted") === "1");
       setReducedMotion(localStorage.getItem("skyline_reduced_motion") === "1");
+      const savedChar = localStorage.getItem("skyline_character_id");
+      if (savedChar) {
+        setSelectedCharacterId(savedChar);
+      }
     }
   }, []);
 
@@ -147,6 +157,12 @@ export default function StudentSkylineJourneyPage() {
           setSurveyActivities(data.welcomeSurvey.favoriteActivities);
         }
         setSurveyNote(data.welcomeSurvey.note || "");
+        if (data.welcomeSurvey.characterId) {
+          setSelectedCharacterId(data.welcomeSurvey.characterId);
+          if (typeof window !== "undefined") {
+            localStorage.setItem("skyline_character_id", data.welcomeSurvey.characterId);
+          }
+        }
       } else if (!hasAutoOpenedWelcome && data.activeIsland?.configStatus === "ACTIVE_APPROVED") {
         setShowWelcomeModal(true);
         setHasAutoOpenedWelcome(true);
@@ -168,9 +184,9 @@ export default function StudentSkylineJourneyPage() {
       playSkylineSfx("RETRY", muted);
       return;
     }
-    playSkylineSfx("WELCOME", muted);
+    playSkylineSfx("CLASSROOM_BELL", muted);
     if (!muted && typeof window !== "undefined" && localStorage.getItem("skyline_bgm_enabled") !== "0") {
-      startSkylineBgm("QUEST_EXCITEMENT");
+      startSkylineBgm(getDefaultThemeForGrade(Number(overview?.student?.grade) || 2));
     }
     setActiveStage(stage);
   };
@@ -181,9 +197,18 @@ export default function StudentSkylineJourneyPage() {
     );
   };
 
+  const handleSelectCharacter = (charId: string) => {
+    playSkylineSfx("CLICK", muted);
+    setSelectedCharacterId(charId);
+    if (typeof window !== "undefined") {
+      localStorage.setItem("skyline_character_id", charId);
+    }
+  };
+
   const handleSubmitWelcomeSurvey = async (openFirstStageAfter = false) => {
     const chosen =
       INTEREST_OPTIONS.find((o) => o.id === surveyInterestId) || INTEREST_OPTIONS[0];
+    const chosenChar = getCharacterById(selectedCharacterId);
     setSubmittingSurvey(true);
     setSurveyFeedbackMsg(null);
     try {
@@ -195,7 +220,9 @@ export default function StudentSkylineJourneyPage() {
           interestLevel: chosen.id,
           interestLabel: `${chosen.emoji} ${chosen.label}`,
           favoriteActivities: surveyActivities,
-          note: surveyNote
+          note: surveyNote,
+          characterId: chosenChar.id,
+          characterName: chosenChar.name
         })
       });
       const data = await res.json();
@@ -204,8 +231,8 @@ export default function StudentSkylineJourneyPage() {
         setOverview(data.overview);
         setSurveyFeedbackMsg(
           data.firstTimeBonus
-            ? "🎉 Cảm ơn em! Chim Sky-Line tặng em +1 Lông vũ Khởi Hành và Huy hiệu Nhà Thám Hiểm Khởi Hành!"
-            : "✅ Đã cập nhật phản hồi khảo sát yêu thích môn học của em!"
+            ? `🎉 Tuyệt vời! Em đã chọn nhân vật "${chosenChar.name}" và nhận +1 Lông vũ Khởi Hành!`
+            : `✅ Đã lưu nhân vật đồng hành "${chosenChar.name}" và khảo sát yêu thích của em!`
         );
         setTimeout(() => {
           setShowWelcomeModal(false);
@@ -296,6 +323,7 @@ export default function StudentSkylineJourneyPage() {
             <SkylineBirdCharacter
               mood="EXPLORER"
               size="lg"
+              characterId={selectedCharacterId}
               reducedMotion={reducedMotion}
               badgeLabel={`Lớp ${student.className}`}
             />
@@ -304,6 +332,10 @@ export default function StudentSkylineJourneyPage() {
                 <span>🏝️ HÀNH TRÌNH SKY-LINE • CẤP TIỂU HỌC</span>
                 <span>•</span>
                 <span>{gradeProfile?.label}</span>
+                <span>•</span>
+                <span className="text-amber-300">
+                  {getCharacterById(selectedCharacterId).emoji} {getCharacterById(selectedCharacterId).name}
+                </span>
               </div>
               <h1 className="text-2xl sm:text-3xl font-black tracking-tight">
                 Chào nhà thám hiểm nhí {student.fullName}!
@@ -315,20 +347,26 @@ export default function StudentSkylineJourneyPage() {
           </div>
 
           {/* Quick Passport Stats & Accessibility Controls */}
-          <div className="flex flex-wrap items-center gap-2.5">
-            <div className="bg-white/15 backdrop-blur px-4 py-2 rounded-2xl border border-white/25 text-center">
-              <div className="text-[11px] text-sky-100 font-semibold">Lông vũ tích lũy</div>
+          <div className="flex flex-wrap items-center gap-2">
+            <div className="bg-amber-400/20 backdrop-blur px-3.5 py-2 rounded-2xl border-2 border-amber-300 text-center shadow">
+              <div className="text-[11px] text-amber-100 font-bold">Khiên Danh Dự</div>
+              <div className="text-lg font-black text-amber-300">
+                🛡️ {passport?.shieldsEarnedCount ?? passport?.flagsPlantedCount ?? 0}/{stages.length || 15}
+              </div>
+            </div>
+            <div className="bg-white/15 backdrop-blur px-3.5 py-2 rounded-2xl border border-white/25 text-center">
+              <div className="text-[11px] text-sky-100 font-semibold">Lông vũ</div>
               <div className="text-lg font-black text-amber-300">
                 🪶 {passport?.totalFeathers || 0}
               </div>
             </div>
-            <div className="bg-white/15 backdrop-blur px-4 py-2 rounded-2xl border border-white/25 text-center">
+            <div className="bg-white/15 backdrop-blur px-3.5 py-2 rounded-2xl border border-white/25 text-center">
               <div className="text-[11px] text-sky-100 font-semibold">Cờ đã cắm</div>
               <div className="text-lg font-black text-emerald-300">
                 🚩 {passport?.flagsPlantedCount || 0}/{stages.length || 15}
               </div>
             </div>
-            <div className="bg-white/15 backdrop-blur px-4 py-2 rounded-2xl border border-white/25 text-center">
+            <div className="bg-white/15 backdrop-blur px-3.5 py-2 rounded-2xl border border-white/25 text-center">
               <div className="text-[11px] text-sky-100 font-semibold">Huy hiệu</div>
               <div className="text-lg font-black text-amber-200">
                 🏅 {passport?.badges?.length || 0}
@@ -336,7 +374,11 @@ export default function StudentSkylineJourneyPage() {
             </div>
 
             <div className="flex flex-col gap-1.5">
-              <SkylineMusicController muted={muted} onToggleMute={toggleMute} />
+              <SkylineMusicController
+                muted={muted}
+                onToggleMute={toggleMute}
+                grade={Number(student.grade) || 2}
+              />
               <div className="flex items-center gap-1.5">
                 <button
                   type="button"
@@ -426,77 +468,134 @@ export default function StudentSkylineJourneyPage() {
         </div>
       </div>
 
-      {/* MỞ ĐẦU GAME: CHÀO MỪNG & KHẢO SÁT YÊU THÍCH MÔN HỌC (Interactive Card on Map) */}
-      <div className="bg-gradient-to-r from-sky-50 via-white to-amber-50 border-2 border-sky-300 rounded-3xl p-4 sm:p-5 shadow-md flex flex-col lg:flex-row items-center justify-between gap-4">
-        <div className="flex flex-col sm:flex-row items-center gap-4 text-center sm:text-left">
-          <div className="relative shrink-0">
-            <img
-              src="/images/skyline-mascot-flag.png"
-              alt="Chú chim Sky-Line chào mừng"
-              className={`w-20 h-20 sm:w-24 sm:h-24 rounded-full object-contain p-1 border-4 border-sky-400 shadow-lg bg-white ${
-                !reducedMotion ? "hover:scale-105 transition-transform" : ""
-              }`}
-            />
-            <span className="absolute -bottom-1 -right-1 px-2 py-0.5 rounded-full bg-amber-400 text-slate-950 font-black text-[10px] shadow border border-white">
-              SKY-LINE
-            </span>
-          </div>
-          <div>
-            <div className="inline-flex items-center gap-1.5 px-3 py-0.5 rounded-full bg-sky-100 text-sky-800 font-extrabold text-xs mb-1">
-              <span>🎉 MỞ ĐẦU GAME • LỜI CHÀO TỪ CHÚ CHIM SKY-LINE</span>
+      {/* MỞ ĐẦU GAME: CHỌN NHÂN VẬT ĐỒNG HÀNH 3D & KHẢO SÁT YÊU THÍCH MÔN HỌC */}
+      <div className="bg-gradient-to-r from-sky-50 via-white to-amber-50 border-2 border-sky-300 rounded-3xl p-4 sm:p-5 shadow-md space-y-4">
+        <div className="flex flex-col lg:flex-row items-center justify-between gap-4">
+          <div className="flex flex-col sm:flex-row items-center gap-4 text-center sm:text-left">
+            <div className="relative shrink-0">
+              <img
+                src="/images/skyline-bird-mascot.jpg"
+                alt="Chú chim Sky-Line 3D chào mừng"
+                className={`w-20 h-20 sm:w-24 sm:h-24 rounded-full object-cover border-4 border-sky-400 shadow-lg bg-white ${
+                  !reducedMotion ? "hover:scale-105 transition-transform" : ""
+                }`}
+              />
+              <span className="absolute -bottom-1 -right-1 px-2 py-0.5 rounded-full bg-amber-400 text-slate-950 font-black text-[10px] shadow border border-white">
+                {getCharacterById(selectedCharacterId).emoji} SKY-LINE
+              </span>
             </div>
-            <h2 className="text-base sm:text-lg font-black text-slate-900">
-              Chào mừng {student.fullName} đến với Game Hành trình Sky-Line! Bạn có yêu thích hoạt động và môn học này không?
-            </h2>
-            <p className="text-xs text-slate-600 mt-1">
-              {welcomeSurvey ? (
-                <>
-                  Em đã chia sẻ: <b className="text-teal-700">{welcomeSurvey.interestLabel}</b>
-                  {welcomeSurvey.favoriteActivities?.length > 0 && (
-                    <> • Hoạt động mong chờ: <b>{welcomeSurvey.favoriteActivities.join(", ")}</b></>
-                  )}
-                  {welcomeSurvey.note && <> • &ldquo;{welcomeSurvey.note}&rdquo;</>}
-                </>
-              ) : (
-                "Hãy chạm vào biểu tượng cảm xúc bên cạnh hoặc mở bảng khảo sát đầu game để nhận ngay +1 Lông vũ Khởi Hành nhé!"
-              )}
-            </p>
+            <div>
+              <div className="inline-flex items-center gap-1.5 px-3 py-0.5 rounded-full bg-sky-100 text-sky-800 font-extrabold text-xs mb-1">
+                <span>🎉 MỞ ĐẦU GAME • CHỌN NHÂN VẬT 3D & KHẢO SÁT YÊU THÍCH</span>
+              </div>
+              <h2 className="text-base sm:text-lg font-black text-slate-900">
+                Chào mừng {student.fullName}! Em hãy chọn 1 Nhân vật đồng hành để bắt đầu hành trình săn Khiên Danh Dự nhé!
+              </h2>
+              <p className="text-xs text-slate-600 mt-1">
+                Nhân vật đang đồng hành:{" "}
+                <b className="text-teal-800">
+                  {getCharacterById(selectedCharacterId).emoji} {getCharacterById(selectedCharacterId).name} ({getCharacterById(selectedCharacterId).roleTitle})
+                </b>
+                {welcomeSurvey && (
+                  <>
+                    {" "}• Cảm nhận môn học: <b className="text-teal-700">{welcomeSurvey.interestLabel}</b>
+                  </>
+                )}
+              </p>
+            </div>
+          </div>
+
+          <div className="flex flex-wrap items-center justify-center gap-2 shrink-0">
+            {INTEREST_OPTIONS.map((opt) => {
+              const isSelected = welcomeSurvey?.interestLevel === opt.id;
+              return (
+                <button
+                  key={opt.id}
+                  type="button"
+                  onClick={() => {
+                    playSkylineSfx("CLICK", muted);
+                    setSurveyInterestId(opt.id);
+                    setShowWelcomeModal(true);
+                  }}
+                  className={`px-3 py-2 rounded-2xl border-2 text-xs font-extrabold flex items-center gap-1.5 transition cursor-pointer ${
+                    isSelected
+                      ? "bg-teal-600 text-white border-teal-700 shadow-md scale-105"
+                      : "bg-white hover:bg-sky-50 text-slate-800 border-slate-200 hover:border-sky-400"
+                  }`}
+                >
+                  <span className="text-base">{opt.emoji}</span>
+                  <span>{opt.label}</span>
+                </button>
+              );
+            })}
+            <button
+              type="button"
+              onClick={() => {
+                playSkylineSfx("CLICK", muted);
+                setShowWelcomeModal(true);
+              }}
+              className="px-4 py-2 rounded-2xl bg-amber-400 hover:bg-amber-300 text-slate-950 font-black text-xs shadow cursor-pointer"
+            >
+              {welcomeSurvey ? "🎭 Đổi Nhân Vật & Khảo sát" : "✨ Chọn Nhân Vật & Khảo sát (+1 🪶)"}
+            </button>
           </div>
         </div>
 
-        <div className="flex flex-wrap items-center justify-center gap-2 shrink-0">
-          {INTEREST_OPTIONS.map((opt) => {
-            const isSelected = welcomeSurvey?.interestLevel === opt.id;
-            return (
-              <button
-                key={opt.id}
-                type="button"
-                onClick={() => {
-                  playSkylineSfx("CLICK", muted);
-                  setSurveyInterestId(opt.id);
-                  setShowWelcomeModal(true);
-                }}
-                className={`px-3 py-2 rounded-2xl border-2 text-xs font-extrabold flex items-center gap-1.5 transition cursor-pointer ${
-                  isSelected
-                    ? "bg-teal-600 text-white border-teal-700 shadow-md scale-105"
-                    : "bg-white hover:bg-sky-50 text-slate-800 border-slate-200 hover:border-sky-400"
-                }`}
-              >
-                <span className="text-base">{opt.emoji}</span>
-                <span>{opt.label}</span>
-              </button>
-            );
-          })}
-          <button
-            type="button"
-            onClick={() => {
-              playSkylineSfx("CLICK", muted);
-              setShowWelcomeModal(true);
-            }}
-            className="px-4 py-2 rounded-2xl bg-amber-400 hover:bg-amber-300 text-slate-950 font-black text-xs shadow cursor-pointer"
-          >
-            {welcomeSurvey ? "✏️ Xem / Đổi khảo sát" : "✨ Mở khảo sát (+1 🪶)"}
-          </button>
+        {/* 5-Character 3D Selection Bar right on the Map */}
+        <div className="pt-3 border-t border-sky-200/80">
+          <div className="flex items-center justify-between gap-2 mb-2">
+            <span className="text-xs font-black text-teal-950 uppercase tracking-wider">
+              🎭 CHỌN 1 NHÂN VẬT 3D ĐỂ BẮT ĐẦU HÀNH TRÌNH CỦA EM:
+            </span>
+            <span className="text-[11px] font-bold text-amber-800">
+              🛡️ Hoàn thành mỗi chặng sẽ được tặng +1 Khiên Danh Dự 3D!
+            </span>
+          </div>
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-2.5">
+            {SKYLINE_CHARACTERS.map((char) => {
+              const isChosen = selectedCharacterId === char.id;
+              return (
+                <button
+                  key={char.id}
+                  type="button"
+                  onClick={() => handleSelectCharacter(char.id)}
+                  className={`p-3 rounded-2xl border-2 border-b-4 text-left transition-all flex items-center gap-2.5 cursor-pointer ${
+                    isChosen
+                      ? `bg-gradient-to-r ${char.auraGradient} text-white border-white shadow-lg scale-[1.02]`
+                      : "bg-white hover:bg-sky-50/80 text-slate-800 border-slate-200 hover:border-teal-400"
+                  }`}
+                >
+                  <div className="relative shrink-0">
+                    <img
+                      src="/images/skyline-bird-mascot.jpg"
+                      alt={char.name}
+                      className="w-11 h-11 rounded-full object-cover border-2 border-white shadow bg-white"
+                    />
+                    <span className="absolute -bottom-1 -right-1 text-sm bg-amber-300 rounded-full w-5 h-5 flex items-center justify-center shadow">
+                      {char.emoji}
+                    </span>
+                  </div>
+                  <div className="min-w-0">
+                    <div className="font-black text-xs truncate">{char.name}</div>
+                    <div
+                      className={`text-[10px] font-bold truncate ${
+                        isChosen ? "text-amber-100" : "text-teal-700"
+                      }`}
+                    >
+                      {char.roleTitle}
+                    </div>
+                    <div
+                      className={`text-[9px] truncate mt-0.5 ${
+                        isChosen ? "text-white/90" : "text-slate-500"
+                      }`}
+                    >
+                      {isChosen ? "✅ Đang đồng hành" : char.weaponOrGear}
+                    </div>
+                  </div>
+                </button>
+              );
+            })}
+          </div>
         </div>
       </div>
 
@@ -577,7 +676,7 @@ export default function StudentSkylineJourneyPage() {
               <div className="text-lg font-black text-emerald-800">
                 {progressMetrics.autoChallengePassedCount}/{stages.length || 15}
               </div>
-              <div className="text-[11px] font-bold text-slate-600">Vượt thử thách tự động</div>
+              <div className="text-[11px] font-bold text-slate-600">Vượt thử thách & Nhận Khiên</div>
             </div>
             <div className="p-2 rounded-2xl bg-indigo-50 border border-indigo-200">
               <div className="text-lg font-black text-indigo-800">
@@ -589,12 +688,12 @@ export default function StudentSkylineJourneyPage() {
         </div>
       )}
 
-      {/* TAB 1: BẢN ĐỒ CHỦ ĐỀ VÀ 15 CHẶNG PHIÊU LƯU (TC02S) */}
+      {/* TAB 1: BẢN ĐỒ CHỦ ĐỀ VÀ CÁC CHẶNG MÔ HÌNH 3D SỐNG ĐỘNG */}
       {activeTab === "ISLAND_MAP" && (
         <div className="space-y-6">
           {!activeIsland || activeIsland.configStatus !== "ACTIVE_APPROVED" ? (
             <div className="bg-white border-2 border-amber-300 rounded-3xl p-8 text-center shadow-sm max-w-2xl mx-auto">
-              <SkylineBirdCharacter mood="THINKING" size="xl" />
+              <SkylineBirdCharacter mood="THINKING" size="xl" characterId={selectedCharacterId} />
               <h3 className="text-xl font-extrabold text-slate-800 mt-4">
                 Đảo học tập của Khối {student.grade} đang chờ cấu hình chương trình chính thức
               </h3>
@@ -620,10 +719,10 @@ export default function StudentSkylineJourneyPage() {
                     Toàn bộ Đảo {activeIsland?.curriculumCode || "TC02S"}
                   </div>
                   <div className="text-base font-extrabold mt-1">
-                    🗺️ Tất cả {zones.length} Vùng ({stages.length} Chặng)
+                    🗺️ Tất cả {zones.length} Vùng ({stages.length} Chặng 3D)
                   </div>
                   <div className="text-xs mt-1 opacity-85">
-                    Xem toàn cảnh hành trình từ Chặng 1 đến Chặng {stages.length}
+                    Xem toàn cảnh mô hình 3D từ Chặng 1 đến Chặng {stages.length}
                   </div>
                 </button>
 
@@ -651,7 +750,7 @@ export default function StudentSkylineJourneyPage() {
                             isSel ? "bg-amber-400 text-slate-900" : "bg-teal-100 text-teal-800"
                           }`}
                         >
-                          🚩 {passedInZone}/{zoneStages.length} chặng
+                          🛡️🚩 {passedInZone}/{zoneStages.length} chặng
                         </span>
                       </div>
                       <div className="text-sm font-extrabold mt-1">{z.creativeZoneName}</div>
@@ -663,60 +762,97 @@ export default function StudentSkylineJourneyPage() {
                 })}
               </div>
 
-              {/* Interactive Scenic Island Map with Animated Bird & Stage Nodes */}
-              <div className="bg-gradient-to-b from-sky-200 via-teal-100 to-emerald-100 border-4 border-teal-400 rounded-3xl p-5 sm:p-6 shadow-inner relative overflow-hidden">
-                <div className="flex flex-wrap items-center justify-between gap-2 mb-4">
+              {/* Interactive 3D Scenic Island Map with 3D Stage Monuments & Chosen Companion */}
+              <div
+                className="bg-gradient-to-b from-sky-900 via-teal-900 to-emerald-950 border-4 border-teal-400 rounded-3xl p-5 sm:p-6 shadow-2xl relative overflow-hidden text-white"
+                style={{ perspective: "1400px" }}
+              >
+                {/* Ambient 3D Island Clouds & Ocean Glow */}
+                <div className="pointer-events-none absolute -top-20 left-1/4 w-96 h-48 bg-sky-400/15 rounded-full blur-3xl" />
+                <div className="pointer-events-none absolute -bottom-20 right-1/4 w-96 h-48 bg-emerald-400/15 rounded-full blur-3xl" />
+
+                <div className="flex flex-wrap items-center justify-between gap-3 mb-5 relative z-10">
                   <div>
-                    <h3 className="font-black text-teal-950 text-lg flex items-center gap-2">
+                    <h3 className="font-black text-amber-300 text-lg sm:text-xl flex items-center gap-2">
                       <span>
-                        🏝️ Đảo Tài Chính Thông Thái Khối {student.grade} (Mã chương trình: {activeIsland?.curriculumCode || "TC02S"})
+                        🏝️ Sa Bàn Đảo 3D Khối {student.grade} ({activeIsland?.curriculumCode || "TC02S"})
                       </span>
                     </h3>
-                    <p className="text-xs text-teal-800">
-                      Chạm vào một chặng trên bản đồ để chim Sky-Line bay tới và bắt đầu phiêu lưu!
+                    <p className="text-xs text-sky-100 mt-0.5">
+                      Chạm vào công trình 3D của từng chặng để <b>{getCharacterById(selectedCharacterId).name}</b> bay tới thực hành nhiệm vụ và nhận <b>🛡️ Khiên Danh Dự</b>!
                     </p>
                   </div>
+
                   <div className="flex flex-wrap items-center gap-2 text-[11px] font-bold">
-                    <span className="px-2.5 py-1 rounded-full bg-emerald-600 text-white">🚩 Hoàn thành</span>
-                    <span className="px-2.5 py-1 rounded-full bg-indigo-600 text-white">⏳ Chờ xác nhận</span>
-                    <span className="px-2.5 py-1 rounded-full bg-rose-600 text-white">✍️ Cần bổ sung</span>
-                    <span className="px-2.5 py-1 rounded-full bg-sky-600 text-white">✨ Sẵn sàng</span>
-                    <span className="px-2.5 py-1 rounded-full bg-slate-300 text-slate-700">🔒 Chưa mở</span>
+                    <button
+                      type="button"
+                      onClick={() => setIs3DIslandMode((v) => !v)}
+                      className="px-3 py-1.5 rounded-xl bg-amber-400 text-slate-950 font-black shadow hover:bg-amber-300 cursor-pointer"
+                    >
+                      {is3DIslandMode ? "📐 Đang bật Góc nhìn Đảo Nổi 3D" : "🗺️ Bật Góc nhìn Đảo Nổi 3D"}
+                    </button>
+                    <span className="px-2.5 py-1 rounded-full bg-emerald-500 text-slate-950 font-black">
+                      🛡️🚩 Đã nhận Khiên
+                    </span>
+                    <span className="px-2.5 py-1 rounded-full bg-indigo-500 text-white">⏳ Chờ xác nhận</span>
+                    <span className="px-2.5 py-1 rounded-full bg-sky-500 text-white">✨ Sẵn sàng</span>
+                    <span className="px-2.5 py-1 rounded-full bg-slate-700 text-slate-300">🔒 Chưa mở</span>
                   </div>
                 </div>
 
-                {/* Stage Trail Cards Grouped by 3 Official Zones */}
-                <div className="space-y-6">
+                {/* 3D Zones & Extruded 3D Stage Monuments */}
+                <div
+                  className="space-y-7 transition-transform duration-500"
+                  style={{
+                    transformStyle: "preserve-3d",
+                    transform:
+                      !reducedMotion && is3DIslandMode
+                        ? "rotateX(8deg) scale(0.99)"
+                        : "none"
+                  }}
+                >
                   {zones
                     .filter((z: any) => selectedZoneCode === "ALL" || z.topicCode === selectedZoneCode)
-                    .map((zone: any) => {
+                    .map((zone: any, zoneIdx: number) => {
                       const zoneStages: StudentStageView[] = filteredStages.filter(
                         (s) => s.topicCode === zone.topicCode
                       );
                       return (
                         <div
                           key={zone.topicCode}
-                          className="bg-white/85 backdrop-blur-sm border-2 border-teal-300 rounded-3xl p-5 shadow-sm"
+                          className="bg-gradient-to-b from-teal-950/90 to-slate-950/95 backdrop-blur-md border-2 border-b-8 border-teal-400/60 rounded-3xl p-5 shadow-[0_18px_35px_rgba(0,0,0,0.55)]"
                         >
-                          <div className="flex flex-wrap items-center justify-between gap-2 pb-3 mb-6 border-b border-teal-100">
+                          <div className="flex flex-wrap items-center justify-between gap-2 pb-3 mb-6 border-b border-white/15">
                             <div>
-                              <span className="text-xs font-extrabold uppercase text-teal-700">
-                                {zone.creativeZoneName}
+                              <span className="text-xs font-extrabold uppercase text-amber-300">
+                                🏝️ Vùng Đảo 3D số {zoneIdx + 1}: {zone.creativeZoneName}
                               </span>
-                              <h4 className="font-black text-slate-900 text-base">
+                              <h4 className="font-black text-white text-base sm:text-lg mt-0.5">
                                 {zone.officialTopicName} ({zone.topicCode})
                               </h4>
                             </div>
-                            <span className="text-xs font-bold px-3 py-1 rounded-full bg-amber-100 text-amber-900 border border-amber-300">
+                            <span className="text-xs font-black px-3.5 py-1.5 rounded-full bg-amber-400/20 text-amber-200 border border-amber-300/60">
                               🏅 Huy hiệu vùng: {zone.badgeName}
                             </span>
                           </div>
 
-                          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4 pt-2">
+                          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4 pt-3">
                             {zoneStages.map((st) => {
                               const badge = statusBadge(st.status);
                               const isBirdHere = birdTargetPeriod === st.periodIndex;
                               const isLocked = st.status === "LOCKED";
+                              const hasShield = st.flagPlanted || st.autoChallengePassed;
+
+                              const monumentIcon =
+                                st.interactive.mechanic === "BACKPACK_BUILDER"
+                                  ? "🎒"
+                                  : st.interactive.mechanic === "BIRD_SHOP"
+                                  ? "🏪"
+                                  : st.interactive.mechanic === "DREAM_NEST"
+                                  ? "🌳"
+                                  : st.interactive.mechanic === "VILLAGE_RESCUE"
+                                  ? "🏡"
+                                  : "🏛️";
 
                               return (
                                 <div
@@ -730,15 +866,27 @@ export default function StudentSkylineJourneyPage() {
                                       handleOpenStage(st);
                                     }
                                   }}
-                                  className={`relative rounded-2xl p-4 border-2 transition flex flex-col justify-between ${
+                                  style={{
+                                    transform:
+                                      !reducedMotion && is3DIslandMode
+                                        ? isBirdHere
+                                          ? "translateZ(26px) translateY(-8px)"
+                                          : hasShield
+                                          ? "translateZ(16px) translateY(-4px)"
+                                          : "translateZ(6px)"
+                                        : undefined
+                                  }}
+                                  className={`group relative rounded-3xl p-4 border-2 border-b-[10px] transition-all duration-300 flex flex-col justify-between ${
                                     isLocked
-                                      ? "bg-slate-100/90 border-slate-300 opacity-75 cursor-not-allowed"
+                                      ? "bg-slate-900/75 border-slate-700 border-b-slate-800 text-slate-400 opacity-75 cursor-not-allowed"
                                       : isBirdHere
-                                      ? "bg-gradient-to-b from-sky-50 via-amber-50/70 to-white border-amber-500 ring-4 ring-amber-300/70 shadow-xl cursor-pointer mt-2"
-                                      : "bg-white border-teal-200 hover:border-teal-500 hover:shadow-md cursor-pointer"
+                                      ? "bg-gradient-to-b from-amber-50 via-white to-sky-50 text-slate-900 border-amber-400 border-b-amber-600 ring-4 ring-amber-300/80 shadow-[0_20px_35px_rgba(245,158,11,0.45)] cursor-pointer mt-2"
+                                      : hasShield
+                                      ? "bg-gradient-to-b from-emerald-50 via-white to-teal-50 text-slate-900 border-emerald-400 border-b-emerald-700 hover:-translate-y-1.5 shadow-[0_14px_28px_rgba(16,185,129,0.3)] cursor-pointer"
+                                      : "bg-gradient-to-b from-white to-sky-50 text-slate-900 border-sky-300 border-b-teal-700 hover:-translate-y-1.5 hover:shadow-[0_14px_28px_rgba(14,165,233,0.35)] cursor-pointer"
                                   }`}
                                 >
-                                  {/* 3D Sky-Line Bird Mascot Perched on Current Stage */}
+                                  {/* Chosen 3D Companion Character Perched on Current Stage Monument */}
                                   {isBirdHere && (
                                     <div
                                       onClick={(e) => {
@@ -746,30 +894,37 @@ export default function StudentSkylineJourneyPage() {
                                         playSkylineSfx("CLICK", muted);
                                         setShowWelcomeModal(true);
                                       }}
-                                      title="Nhấn vào chú chim Sky-Line để mở lời chào & khảo sát yêu thích môn học"
-                                      className={`absolute -top-7 right-2 z-20 flex items-center gap-1.5 pl-1 pr-3 py-1 rounded-full bg-gradient-to-r from-amber-400 to-sky-400 text-slate-950 font-black text-[11px] shadow-lg border-2 border-white hover:scale-105 transition ${
+                                      title="Nhấn để đổi Nhân vật đồng hành 3D hoặc xem Khảo sát đầu game"
+                                      className={`absolute -top-8 right-2 z-20 flex items-center gap-1.5 pl-1 pr-3 py-1 rounded-full bg-gradient-to-r from-amber-400 via-yellow-300 to-sky-400 text-slate-950 font-black text-[11px] shadow-xl border-2 border-white hover:scale-105 transition ${
                                         !reducedMotion ? "animate-bounce" : ""
                                       }`}
                                     >
                                       <img
-                                        src="/images/skyline-mascot-flag.png"
-                                        alt="Chú chim Sky-Line"
-                                        className="w-10 h-10 rounded-full object-contain p-0.5 border-2 border-white bg-white shadow-sm"
+                                        src="/images/skyline-bird-mascot.jpg"
+                                        alt={getCharacterById(selectedCharacterId).name}
+                                        className="w-10 h-10 rounded-full object-cover border-2 border-white bg-white shadow-sm"
                                       />
                                       <div className="leading-tight text-left">
                                         <span className="block text-[10px] font-black text-slate-950">
-                                          Chim đang ở đây
+                                          {getCharacterById(selectedCharacterId).emoji} Đang ở đây
                                         </span>
                                         <span className="block text-[9px] font-extrabold text-teal-950">
-                                          Chào mừng & Khảo sát ✨
+                                          Đổi nhân vật ✨
                                         </span>
                                       </div>
                                     </div>
                                   )}
 
                                   <div className={isBirdHere ? "pt-3" : ""}>
-                                    <div className="flex items-center justify-between gap-1 mb-2">
-                                      <span className="text-xs font-black text-teal-800 bg-teal-100 px-2.5 py-0.5 rounded-lg">
+                                    {/* Top Row: Stage Number + 3D Monument Roof Icon + Status */}
+                                    <div className="flex items-center justify-between gap-1 mb-2.5">
+                                      <span
+                                        className={`text-xs font-black px-2.5 py-0.5 rounded-xl ${
+                                          isLocked
+                                            ? "bg-slate-800 text-slate-300"
+                                            : "bg-teal-700 text-white shadow-xs"
+                                        }`}
+                                      >
                                         Chặng {st.periodIndex}
                                       </span>
                                       <span
@@ -779,23 +934,85 @@ export default function StudentSkylineJourneyPage() {
                                       </span>
                                     </div>
 
-                                    <h5 className="font-extrabold text-slate-900 text-sm leading-snug">
+                                    {/* 3D Architectural Building / Scenario Preview inside Card */}
+                                    <div
+                                      className={`rounded-2xl p-2.5 mb-2.5 flex items-center justify-between border ${
+                                        isLocked
+                                          ? "bg-slate-800/80 border-slate-700"
+                                          : hasShield
+                                          ? "bg-gradient-to-r from-emerald-100/90 to-amber-100/90 border-emerald-300"
+                                          : "bg-gradient-to-r from-sky-100/80 to-teal-100/80 border-sky-200"
+                                      }`}
+                                    >
+                                      <div className="flex items-center gap-2 min-w-0">
+                                        <span className="text-2xl drop-shadow-sm shrink-0">
+                                          {monumentIcon}
+                                        </span>
+                                        <div className="min-w-0">
+                                          <div
+                                            className={`text-[10px] font-black uppercase truncate ${
+                                              isLocked ? "text-slate-400" : "text-teal-900"
+                                            }`}
+                                          >
+                                            Mô hình 3D
+                                          </div>
+                                          <div
+                                            className={`text-[11px] font-bold truncate ${
+                                              isLocked ? "text-slate-300" : "text-slate-800"
+                                            }`}
+                                          >
+                                            {st.interactive.worldLocationName}
+                                          </div>
+                                        </div>
+                                      </div>
+
+                                      {/* 3D Shield Emblem if completed */}
+                                      {hasShield ? (
+                                        <span
+                                          className="px-2 py-1 rounded-xl bg-amber-400 text-slate-950 font-black text-xs shadow flex items-center gap-0.5 shrink-0"
+                                          title={`Đã nhận Khiên Danh Dự Chặng ${st.periodIndex}`}
+                                        >
+                                          🛡️
+                                        </span>
+                                      ) : (
+                                        <span className="text-xs opacity-60 shrink-0">🛡️</span>
+                                      )}
+                                    </div>
+
+                                    <h5
+                                      className={`font-extrabold text-sm leading-snug ${
+                                        isLocked ? "text-slate-200" : "text-slate-900"
+                                      }`}
+                                    >
                                       {st.lessonName}
                                     </h5>
-                                    <div className="text-[11px] font-mono text-slate-500 mt-0.5">
+                                    <div
+                                      className={`text-[10px] font-mono mt-0.5 ${
+                                        isLocked ? "text-slate-400" : "text-slate-500"
+                                      }`}
+                                    >
                                       Mã bài: {st.lessonCode}
                                     </div>
-                                    <p className="text-xs text-slate-600 mt-1.5 line-clamp-2">
-                                      📍 {st.interactive.worldLocationName}
-                                    </p>
                                   </div>
 
-                                  <div className="mt-3 pt-2.5 border-t border-slate-100 flex items-center justify-between text-xs">
-                                    <span className="font-bold text-amber-700">
-                                      +{st.feathersReward} 🪶
+                                  <div
+                                    className={`mt-3 pt-2.5 border-t flex items-center justify-between text-xs ${
+                                      isLocked ? "border-slate-800" : "border-slate-200/80"
+                                    }`}
+                                  >
+                                    <span
+                                      className={`font-black ${
+                                        isLocked ? "text-slate-400" : "text-amber-700"
+                                      }`}
+                                    >
+                                      +1 🛡️ • +{st.feathersReward} 🪶
                                     </span>
-                                    <span className="font-bold text-teal-700">
-                                      {isLocked ? "Chưa mở 🔒" : "Vào chặng →"}
+                                    <span
+                                      className={`font-black ${
+                                        isLocked ? "text-slate-400" : "text-teal-700 group-hover:translate-x-0.5 transition-transform"
+                                      }`}
+                                    >
+                                      {isLocked ? "Chưa mở 🔒" : "Vào 3D →"}
                                     </span>
                                   </div>
                                 </div>
@@ -885,40 +1102,79 @@ export default function StudentSkylineJourneyPage() {
       {/* TAB 3: HỘ CHIẾU HÀNH TRÌNH CÁ NHÂN */}
       {activeTab === "PASSPORT" && (
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-5">
-          {/* Passport ID & Badges */}
+          {/* Passport ID, Shields & Badges */}
           <div className="lg:col-span-5 bg-gradient-to-br from-amber-50 via-white to-teal-50 border-2 border-amber-300 rounded-3xl p-6 shadow-sm space-y-5">
             <div className="flex items-center gap-4 border-b border-amber-200 pb-4">
-              <SkylineBirdCharacter mood="CELEBRATE" size="md" reducedMotion={reducedMotion} />
+              <SkylineBirdCharacter
+                mood="CELEBRATE"
+                size="md"
+                characterId={selectedCharacterId}
+                reducedMotion={reducedMotion}
+              />
               <div>
                 <div className="text-xs font-mono font-bold text-amber-800">
                   MÃ HỘ CHIẾU: {passport?.passportCode}
                 </div>
                 <h3 className="text-xl font-black text-slate-900">{student.fullName}</h3>
                 <div className="text-xs text-slate-600">
-                  Lớp {student.className} • {student.campusName}
+                  Lớp {student.className} • {getCharacterById(selectedCharacterId).emoji}{" "}
+                  {getCharacterById(selectedCharacterId).name}
                 </div>
               </div>
             </div>
 
-            <div className="grid grid-cols-3 gap-2.5 text-center">
-              <div className="p-3 rounded-2xl bg-white border border-amber-200">
-                <div className="text-2xl font-black text-amber-600">
+            <div className="grid grid-cols-4 gap-2 text-center">
+              <div className="p-2.5 rounded-2xl bg-amber-100/80 border-2 border-amber-400">
+                <div className="text-xl font-black text-amber-700">
+                  🛡️ {passport?.shieldsEarnedCount ?? passport?.flagsPlantedCount ?? 0}
+                </div>
+                <div className="text-[11px] font-black text-amber-900">Khiên 3D</div>
+              </div>
+              <div className="p-2.5 rounded-2xl bg-white border border-amber-200">
+                <div className="text-xl font-black text-amber-600">
                   🪶 {passport?.totalFeathers || 0}
                 </div>
-                <div className="text-xs font-bold text-slate-600">Lông vũ</div>
+                <div className="text-[11px] font-bold text-slate-600">Lông vũ</div>
               </div>
-              <div className="p-3 rounded-2xl bg-white border border-emerald-200">
-                <div className="text-2xl font-black text-emerald-600">
+              <div className="p-2.5 rounded-2xl bg-white border border-emerald-200">
+                <div className="text-xl font-black text-emerald-600">
                   🚩 {passport?.flagsPlantedCount || 0}
                 </div>
-                <div className="text-xs font-bold text-slate-600">Cờ đã cắm</div>
+                <div className="text-[11px] font-bold text-slate-600">Cờ cắm</div>
               </div>
-              <div className="p-3 rounded-2xl bg-white border border-teal-200">
-                <div className="text-2xl font-black text-teal-600">
+              <div className="p-2.5 rounded-2xl bg-white border border-teal-200">
+                <div className="text-xl font-black text-teal-600">
                   🏅 {passport?.badges?.length || 0}
                 </div>
-                <div className="text-xs font-bold text-slate-600">Huy hiệu</div>
+                <div className="text-[11px] font-bold text-slate-600">Huy hiệu</div>
               </div>
+            </div>
+
+            {/* 3D Shields Collection Hall */}
+            <div>
+              <h4 className="font-extrabold text-slate-800 text-sm mb-2.5 flex items-center justify-between">
+                <span>🛡️ Phòng Trưng Bày Khiên Danh Dự 3D:</span>
+                <span className="text-xs text-amber-800">
+                  {passport?.shields?.length || 0}/{stages.length || 15} Khiên
+                </span>
+              </h4>
+              {passport?.shields?.length > 0 ? (
+                <div className="grid grid-cols-3 sm:grid-cols-4 gap-3 bg-white/90 p-3.5 rounded-2xl border-2 border-amber-300">
+                  {passport.shields.map((sh: any) => (
+                    <Skyline3DShieldBadge
+                      key={sh.shieldCode}
+                      periodIndex={sh.periodIndex}
+                      lessonName={sh.lessonName}
+                      size="sm"
+                      animated={!reducedMotion}
+                    />
+                  ))}
+                </div>
+              ) : (
+                <div className="p-4 rounded-2xl bg-white/80 border border-dashed border-amber-300 text-xs text-slate-600 text-center">
+                  Mỗi khi em hoàn thành 1 chặng phiêu lưu trên đảo, em sẽ được trao tặng 1 chiếc <b>🛡️ Khiên Danh Dự 3D</b> lấp lánh tại đây!
+                </div>
+              )}
             </div>
 
             <div>
@@ -942,7 +1198,7 @@ export default function StudentSkylineJourneyPage() {
                 </div>
               ) : (
                 <div className="p-4 rounded-2xl bg-white/80 border border-dashed border-slate-300 text-xs text-slate-500 text-center">
-                  Hoàn thành trọn vẹn 5 chặng của mỗi vùng hoặc Chặng 15 để nhận Huy hiệu Danh dự nhé!
+                  Hoàn thành trọn vẹn các chặng của mỗi vùng để nhận Huy hiệu Danh dự nhé!
                 </div>
               )}
             </div>
@@ -962,7 +1218,7 @@ export default function StudentSkylineJourneyPage() {
                   >
                     <div className="flex flex-wrap items-center justify-between gap-2">
                       <span className="font-extrabold text-teal-900 text-sm">
-                        Chặng {w.periodIndex}: {w.lessonName} ({w.lessonCode})
+                        🛡️ Chặng {w.periodIndex}: {w.lessonName} ({w.lessonCode})
                       </span>
                       <span
                         className={`text-xs font-bold px-2.5 py-0.5 rounded-full ${
@@ -971,7 +1227,7 @@ export default function StudentSkylineJourneyPage() {
                             : "bg-sky-100 text-sky-800"
                         }`}
                       >
-                        {w.teacherConfirmed ? "✅ GV đã xác nhận" : "🚩 Đã lưu hành trình"}
+                        {w.teacherConfirmed ? "✅ GV đã xác nhận" : "🛡️🚩 Đã nhận Khiên & Lưu hành trình"}
                       </span>
                     </div>
                     {w.studentReflection && (
@@ -996,10 +1252,10 @@ export default function StudentSkylineJourneyPage() {
         </div>
       )}
 
-      {/* MODAL MỞ ĐẦU GAME: CHÀO MỪNG & KHẢO SÁT YÊU THÍCH MÔN HỌC */}
+      {/* MODAL MỞ ĐẦU GAME: CHỌN NHÂN VẬT 3D & KHẢO SÁT YÊU THÍCH MÔN HỌC */}
       {showWelcomeModal && (
         <div className="fixed inset-0 z-50 bg-slate-950/70 backdrop-blur-xs flex items-center justify-center p-4 overflow-y-auto">
-          <div className="bg-white border-4 border-sky-400 rounded-3xl max-w-2xl w-full p-5 sm:p-7 shadow-2xl relative animate-in fade-in zoom-in-95 duration-200 my-auto">
+          <div className="bg-white border-4 border-sky-400 rounded-3xl max-w-3xl w-full p-5 sm:p-7 shadow-2xl relative animate-in fade-in zoom-in-95 duration-200 my-auto">
             <button
               type="button"
               onClick={() => setShowWelcomeModal(false)}
@@ -1012,12 +1268,12 @@ export default function StudentSkylineJourneyPage() {
             <div className="flex flex-col sm:flex-row items-center gap-5 pb-5 border-b border-slate-200">
               <div className="relative shrink-0">
                 <img
-                  src="/images/skyline-mascot-flag.png"
-                  alt="Chú chim Sky-Line"
-                  className="w-28 h-28 sm:w-32 sm:h-32 rounded-full object-contain p-1.5 border-4 border-sky-400 shadow-xl bg-white"
+                  src="/images/skyline-bird-mascot.jpg"
+                  alt={getCharacterById(selectedCharacterId).name}
+                  className="w-28 h-28 sm:w-32 sm:h-32 rounded-full object-cover border-4 border-sky-400 shadow-xl bg-white"
                 />
                 <span className="absolute -bottom-2 left-1/2 -translate-x-1/2 px-3 py-0.5 rounded-full bg-sky-600 text-white font-black text-[10px] shadow whitespace-nowrap">
-                  Linh vật Sky-Line
+                  {getCharacterById(selectedCharacterId).emoji} {getCharacterById(selectedCharacterId).name}
                 </span>
               </div>
 
@@ -1026,21 +1282,21 @@ export default function StudentSkylineJourneyPage() {
                   <span>🌟 MỞ ĐẦU GAME HÀNH TRÌNH SKY-LINE</span>
                 </div>
                 <h2 className="text-xl sm:text-2xl font-black text-slate-900 leading-snug">
-                  Chào mừng {student.fullName} đến với Game Đảo Tài Chính Thông Thái!
+                  Chào mừng {student.fullName}! Hãy chọn 1 Nhân vật đồng hành 3D để bắt đầu!
                 </h2>
                 <p className="text-xs sm:text-sm text-slate-600 mt-1.5 leading-relaxed">
-                  Mình là chú chim <b>Sky-Line</b>! Trước khi chúng mình cất cánh khám phá 3 vùng đất và 15 chặng phiêu lưu, bạn hãy cho mình biết cảm nhận của bạn nhé!
+                  Mỗi khi vượt qua 1 chặng mô phỏng 3D trên đảo, em sẽ được trao tặng <b>🛡️ 1 Khiên Danh Dự 3D</b> và <b>🪶 Lông vũ</b> vào Hộ chiếu!
                 </p>
                 <div className="mt-2.5 flex flex-wrap items-center gap-2">
                   <button
                     type="button"
                     onClick={() => {
                       if (!muted && !getSkylineBgmState().isPlaying) {
-                        startSkylineBgm("ISLAND_ADVENTURE");
+                        startSkylineBgm(getDefaultThemeForGrade(Number(student.grade) || 2));
                       }
                       playSkylineSfx("WELCOME", muted);
                       speakVietnameseText(
-                        `Chào mừng ${student.fullName} đến với Game Hành trình Sky-Line! Bạn có yêu thích hoạt động và môn học Giáo dục tài chính này không?`,
+                        `Chào mừng ${student.fullName} đến với Game Hành trình Sky-Line! Em hãy chọn một nhân vật đồng hành và cho biết cảm nhận về môn học nhé!`,
                         muted
                       );
                     }}
@@ -1052,21 +1308,67 @@ export default function StudentSkylineJourneyPage() {
                     type="button"
                     onClick={() => {
                       if (muted) toggleMute();
-                      startSkylineBgm("ISLAND_ADVENTURE");
+                      startSkylineBgm(getDefaultThemeForGrade(Number(student.grade) || 2));
                       playSkylineSfx("WELCOME", false);
                     }}
                     className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-amber-100 hover:bg-amber-200 text-amber-950 font-extrabold text-xs border border-amber-300 cursor-pointer"
                   >
-                    <span>🎵 Bật nhạc phiêu lưu sôi động</span>
+                    <span>🎵 Bật nhạc Khối {student.grade} sôi động</span>
                   </button>
                 </div>
               </div>
             </div>
 
             <div className="mt-5 space-y-4">
+              {/* Step 1: Choose 1 Character to Start Journey */}
               <div>
                 <label className="block font-black text-slate-900 text-sm sm:text-base mb-2.5">
-                  1. Khảo sát: Bạn có yêu thích hoạt động và môn học này không?
+                  1. Chọn 1 Nhân vật đồng hành 3D của em trong suốt hành trình:
+                </label>
+                <div className="grid grid-cols-1 sm:grid-cols-3 lg:grid-cols-5 gap-2.5">
+                  {SKYLINE_CHARACTERS.map((char) => {
+                    const active = selectedCharacterId === char.id;
+                    return (
+                      <button
+                        key={char.id}
+                        type="button"
+                        onClick={() => handleSelectCharacter(char.id)}
+                        className={`p-3 rounded-2xl border-2 text-center transition flex flex-col items-center justify-between cursor-pointer ${
+                          active
+                            ? `bg-gradient-to-b ${char.auraGradient} text-white border-amber-300 ring-3 ring-amber-300 shadow-lg scale-[1.03]`
+                            : "bg-slate-50 hover:bg-white border-slate-200 text-slate-800"
+                        }`}
+                      >
+                        <div className="relative">
+                          <img
+                            src="/images/skyline-bird-mascot.jpg"
+                            alt={char.name}
+                            className="w-12 h-12 rounded-full object-cover border-2 border-white shadow bg-white"
+                          />
+                          <span className="absolute -bottom-1 -right-1 text-sm bg-amber-300 rounded-full w-5 h-5 flex items-center justify-center shadow">
+                            {char.emoji}
+                          </span>
+                        </div>
+                        <div className="mt-2">
+                          <div className="font-black text-xs leading-tight">{char.name}</div>
+                          <div
+                            className={`text-[10px] font-bold mt-0.5 ${
+                              active ? "text-amber-100" : "text-teal-700"
+                            }`}
+                          >
+                            {char.roleTitle}
+                          </div>
+                        </div>
+                      </button>
+                    );
+                  })}
+                </div>
+              </div>
+
+              {/* Step 2: Subject Interest Survey */}
+              <div>
+                <label className="block font-black text-slate-900 text-sm sm:text-base mb-2">
+                  2. Khảo sát: Bạn có yêu thích hoạt động và môn học này không?
                 </label>
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
                   {INTEREST_OPTIONS.map((opt) => {
@@ -1079,7 +1381,7 @@ export default function StudentSkylineJourneyPage() {
                           playSkylineSfx("CLICK", muted);
                           setSurveyInterestId(opt.id);
                         }}
-                        className={`p-3.5 rounded-2xl border-2 text-left transition flex items-start gap-3 cursor-pointer ${
+                        className={`p-3 rounded-2xl border-2 text-left transition flex items-start gap-3 cursor-pointer ${
                           active
                             ? `${opt.colorCls} ring-3 ring-sky-400 shadow-md`
                             : "bg-slate-50 hover:bg-white border-slate-200 text-slate-800"
@@ -1098,7 +1400,7 @@ export default function StudentSkylineJourneyPage() {
 
               <div>
                 <label className="block font-black text-slate-900 text-xs sm:text-sm mb-2">
-                  2. Bạn hào hứng với hoạt động nào nhất trên đảo? (Có thể chọn nhiều)
+                  3. Bạn hào hứng với hoạt động 3D nào nhất trên đảo? (Có thể chọn nhiều)
                 </label>
                 <div className="flex flex-wrap gap-2">
                   {FAVORITE_ACTIVITIES.map((act) => {
@@ -1124,13 +1426,13 @@ export default function StudentSkylineJourneyPage() {
 
               <div>
                 <label className="block font-black text-slate-900 text-xs sm:text-sm mb-1.5">
-                  3. Lời nhắn của bạn gửi chú chim Sky-Line (không bắt buộc):
+                  4. Lời nhắn của bạn gửi chú chim Sky-Line (không bắt buộc):
                 </label>
                 <input
                   type="text"
                   value={surveyNote}
                   onChange={(e) => setSurveyNote(e.target.value)}
-                  placeholder="Ví dụ: Em rất thích chơi đóng vai cửa hàng và xây tổ tiết kiệm..."
+                  placeholder="Ví dụ: Em rất thích chơi đóng vai cửa hàng 3D và sưu tầm Khiên Danh Dự..."
                   className="w-full px-3.5 py-2.5 rounded-2xl border-2 border-slate-200 focus:border-teal-500 focus:outline-none text-xs sm:text-sm"
                 />
               </div>
@@ -1155,7 +1457,7 @@ export default function StudentSkylineJourneyPage() {
                   onClick={() => handleSubmitWelcomeSurvey(false)}
                   className="px-5 py-2.5 rounded-2xl bg-teal-600 hover:bg-teal-500 text-white font-extrabold text-xs sm:text-sm shadow cursor-pointer disabled:opacity-50"
                 >
-                  {submittingSurvey ? "Đang lưu..." : "💾 Lưu khảo sát (+1 🪶)"}
+                  {submittingSurvey ? "Đang lưu..." : "💾 Lưu Nhân Vật & Khảo sát (+1 🪶)"}
                 </button>
                 <button
                   type="button"
@@ -1163,7 +1465,7 @@ export default function StudentSkylineJourneyPage() {
                   onClick={() => handleSubmitWelcomeSurvey(true)}
                   className="px-5 py-2.5 rounded-2xl bg-gradient-to-r from-amber-400 to-orange-400 hover:from-amber-300 hover:to-orange-300 text-slate-950 font-black text-xs sm:text-sm shadow-lg cursor-pointer disabled:opacity-50"
                 >
-                  🚀 Gửi khảo sát & Vào ngay Chặng 1 →
+                  🚀 Chọn Nhân Vật & Vào ngay Chặng 1 →
                 </button>
               </div>
             </div>
@@ -1175,11 +1477,17 @@ export default function StudentSkylineJourneyPage() {
       {activeStage && (
         <StageGamePlayer
           stage={activeStage}
+          allStages={stages}
           studentName={student.fullName}
           grade={student.grade}
+          characterId={selectedCharacterId}
           muted={muted}
           reducedMotion={reducedMotion}
           onClose={() => setActiveStage(null)}
+          onNavigateToStage={(nextSt) => {
+            setBirdTargetPeriod(nextSt.periodIndex);
+            setActiveStage(nextSt);
+          }}
           onStageUpdated={(newOverview) => {
             setOverview(newOverview);
             const updatedStage = newOverview.stages?.find(

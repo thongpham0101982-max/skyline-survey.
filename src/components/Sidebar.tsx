@@ -1375,6 +1375,33 @@ function SidebarContent({ role, permissionModules, actualRole, taskCount = 0, is
                   </div>
                   {!isCollapsed && <span>{SIDEBAR_TRANSLATIONS.teacherNav.obs_foreign[lang]}</span>}
                 </Link>
+
+                {/* 5. Hành trình Sky-Line (Game Tiểu học 1–5) */}
+                <Link 
+                  href="/teacher/special-subjects/skyline-journey" 
+                  onClick={() => setIsOpen(false)} 
+                  className={`group relative flex items-center ${isCollapsed ? 'justify-center px-2' : 'px-3'} py-2 rounded-xl transition-all duration-300 text-xs font-medium mb-1.5 ${
+                    pathname.startsWith('/teacher/special-subjects/skyline-journey')
+                      ? "bg-gradient-to-r from-amber-500/25 via-teal-500/15 to-transparent border border-amber-400/50 text-white shadow-md shadow-black/10"
+                      : "text-white/80 hover:text-white hover:bg-white/5 hover:translate-x-1"
+                  }`}
+                >
+                  <div className={`w-7 h-7 rounded-lg flex items-center justify-center transition-all ${isCollapsed ? 'mx-auto' : 'mr-2.5'} ${
+                    pathname.startsWith('/teacher/special-subjects/skyline-journey')
+                      ? "bg-amber-500/20 border border-amber-500/40 shadow-[0_0_8px_rgba(245,158,11,0.25)]"
+                      : "bg-white/5 border border-white/10 group-hover:border-amber-500/30"
+                  }`}>
+                    <Compass className="w-4 h-4 text-amber-300 transition-all group-hover:scale-110" />
+                  </div>
+                  {!isCollapsed && (
+                    <div className="flex items-center justify-between flex-1">
+                      <span>{lang === "en" ? "Sky-Line Journey" : "Hành trình Sky-Line"}</span>
+                      <span className="text-[9px] bg-amber-500/25 text-amber-200 px-1.5 py-0.5 rounded-full font-bold">
+                        1–5
+                      </span>
+                    </div>
+                  )}
+                </Link>
               </div>
             </>
           )}
@@ -1389,6 +1416,21 @@ function SidebarContent({ role, permissionModules, actualRole, taskCount = 0, is
               >
                 <LayoutDashboard className="w-4 h-4 mr-2.5 text-teal-300 shrink-0" />
                 {!isCollapsed && <span className="whitespace-nowrap overflow-hidden text-ellipsis">{SIDEBAR_TRANSLATIONS.parentNav.overview[lang]}</span>}
+              </Link>
+
+              <Link 
+                href="/parent/hanh-trinh-skyline" 
+                onClick={() => setIsOpen(false)} 
+                className={`group relative flex items-center ${isCollapsed ? 'justify-center px-2' : 'px-3'} py-2.5 rounded-xl transition-all text-xs font-medium ${
+                  pathname.startsWith('/parent/hanh-trinh-skyline') ? "bg-amber-500/30 text-white border border-amber-400/60" : "text-white/85 hover:text-white hover:bg-white/10"
+                }`}
+              >
+                <Compass className="w-4 h-4 mr-2.5 text-amber-300 shrink-0" />
+                {!isCollapsed && (
+                  <span className="whitespace-nowrap overflow-hidden text-ellipsis">
+                    {lang === "en" ? "Sky-Line Learning Journey" : "Hành trình Sky-Line của con"}
+                  </span>
+                )}
               </Link>
 
               <Link 

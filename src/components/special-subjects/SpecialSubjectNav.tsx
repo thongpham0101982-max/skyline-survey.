@@ -67,6 +67,11 @@ function SpecialSubjectNavInner({
       icon: Coins
     },
     {
+      name: "Hành trình Sky-Line (Game 1–5)",
+      href: "/admin/special-subjects/skyline-journey",
+      icon: Sparkles
+    },
+    {
       name: "Giám sát Hướng nghiệp (6–12)",
       href: "/admin/special-subjects/monitor?subject=GDHN",
       icon: Compass

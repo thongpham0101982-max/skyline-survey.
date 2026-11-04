@@ -12,6 +12,7 @@ import {
   FileText,
   Sliders,
   Sparkles,
+  Download,
   X,
   Info
 } from "lucide-react"
@@ -19,7 +20,8 @@ import {
   AdmissionRegulationConfig,
   AdmissionRegulationRule,
   DEFAULT_ADMISSION_REGULATIONS,
-  parseAdmissionRegulationConfig
+  parseAdmissionRegulationConfig,
+  exportEligibleStudentsRegulationExcel
 } from "@/lib/admissionRegulationEngine"
 
 interface AdmissionRegulationManagerProps {
@@ -216,7 +218,23 @@ export function AdmissionRegulationManager({
           </div>
         </div>
 
-        <div className="flex items-center gap-2">
+        <div className="flex flex-wrap items-center gap-2">
+          <button
+            type="button"
+            onClick={() => {
+              const res = exportEligibleStudentsRegulationExcel({
+                customConfig: config,
+                templateOnly: true
+              })
+              showToast(`Đã tải file mẫu "${res.fileName}" (${res.exportedCount} dòng mẫu chuẩn Quy chế)!`, "ok")
+            }}
+            className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-teal-400/20 hover:bg-teal-400/30 text-white border border-teal-200/40 text-xs font-bold transition-all cursor-pointer shadow-2xs"
+            title="Xuất file Excel mẫu danh sách Học sinh đủ điều kiện Xét học bạ / Tuyển thẳng (miễn môn văn hóa theo quy chế)"
+          >
+            <Download className="w-3.5 h-3.5 text-teal-200" />
+            <span>Xuất Mẫu DS Đủ ĐK Quy chế (.xlsx)</span>
+          </button>
+
           {/* Chuyển Tab trong trình cấu hình */}
           <div className="flex items-center bg-black/20 p-1 rounded-xl border border-white/10">
             <button

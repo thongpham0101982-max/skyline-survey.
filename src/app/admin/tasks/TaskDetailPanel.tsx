@@ -1,12 +1,56 @@
 "use client"
-import { useState, useEffect, useRef } from "react"
-import { 
-  X, Send, Paperclip, Download, Trash2, MessageSquare, File, Image, FileText, 
-  Clock, User, CheckCircle2, AlertTriangle, XCircle, ShieldCheck, Users, 
-  Flag, CheckSquare, AtSign, ArrowRight, CornerDownRight, Sparkles
+
+import React, { useState, useEffect, useRef } from "react"
+import {
+  X,
+  Send,
+  Paperclip,
+  Download,
+  Trash2,
+  MessageSquare,
+  File,
+  Image,
+  FileText,
+  Clock,
+  User,
+  CheckCircle2,
+  AlertTriangle,
+  XCircle,
+  ShieldCheck,
+  Users,
+  Flag,
+  CheckSquare,
+  AtSign,
+  ArrowRight,
+  CornerDownRight,
+  Sparkles,
+  History,
+  ListChecks,
+  Link2,
+  Play,
+  PauseCircle,
+  RotateCcw,
+  Plus,
+  ExternalLink,
 } from "lucide-react"
-import { getTaskDetails, addTaskComment, deleteTaskComment, addTaskAttachment, deleteTaskAttachment, updateCommentActionStatus } from "./collab_actions"
+import {
+  getTaskDetails,
+  addTaskComment,
+  deleteTaskComment,
+  addTaskAttachment,
+  deleteTaskAttachment,
+  updateCommentActionStatus,
+} from "./collab_actions"
 import { confirmTaskAssignment, rejectTaskAssignment } from "./actions"
+import {
+  getTaskFullGovernanceDetails,
+  transitionTaskWorkflow,
+  toggleTaskChecklistStep,
+} from "./qa_workspace_actions"
+import {
+  WORKFLOW_STATUS_LABELS,
+  type QaTaskWorkflowStatus,
+} from "@/lib/qa-workspace/types"
 
 function getFileIcon(contentType: string) {
   if (contentType.startsWith("image")) return Image
@@ -29,15 +73,52 @@ function formatTime(dateStr: string) {
   if (diffMin < 60) return diffMin + " phút trước"
   const diffHr = Math.floor(diffMin / 60)
   if (diffHr < 24) return diffHr + " giờ trước"
-  return d.toLocaleDateString("vi-VN") + " " + d.toLocaleTimeString("vi-VN", { hour: "2-digit", minute: "2-digit" })
+  return (
+    d.toLocaleDateString("vi-VN") +
+    " " +
+    d.toLocaleTimeString("vi-VN", { hour: "2-digit", minute: "2-digit" })
+  )
 }
 
 const COMMENT_TYPES = [
-  { value: "GENERAL", label: "Trao đổi", icon: MessageSquare, color: "text-slate-600 bg-slate-100 hover:bg-slate-200" },
-  { value: "PROGRESS", label: "Cập nhật tiến độ", icon: Clock, color: "text-blue-700 bg-blue-50 hover:bg-blue-100" },
-  { value: "BLOCKER", label: "Vướng mắc", icon: AlertTriangle, color: "text-red-700 bg-red-50 hover:bg-red-100" },
-  { value: "COOPERATION", label: "Phối hợp", icon: Users, color: "text-amber-700 bg-amber-50 hover:bg-amber-100" },
-  { value: "CONCLUSION", label: "Kết luận chỉ đạo", icon: Sparkles, color: "text-emerald-700 bg-emerald-50 hover:bg-emerald-100" }
+  {
+    value: "GENERAL",
+    label: "Trao đổi",
+    icon: MessageSquare,
+    color: "text-slate-600 bg-slate-100 hover:bg-slate-200",
+  },
+  {
+    value: "PROGRESS",
+    label: "Cập nhật tiến độ",
+    icon: Clock,
+    color: "text-blue-700 bg-blue-50 hover:bg-blue-100",
+  },
+  {
+    value: "BLOCKER",
+    label: "Vướng mắc",
+    icon: AlertTriangle,
+    color: "text-red-700 bg-red-50 hover:bg-red-100",
+  },
+  {
+    value: "COOPERATION",
+    label: "Phối hợp",
+    icon: Users,
+    color: "text-amber-700 bg-amber-50 hover:bg-amber-100",
+  },
+  {
+    value: "CONCLUSION",
+    label: "Kết luận chỉ đạo",
+    icon: Sparkles,
+    color: "text-emerald-700 bg-emerald-50 hover:bg-emerald-100",
+  },
+]
+
+const WORKFLOW_PIPELINE: QaTaskWorkflowStatus[] = [
+  "DRAFT",
+  "ASSIGNED",
+  "IN_PROGRESS",
+  "PENDING_REVIEW",
+  "COMPLETED",
 ]
 
 interface TaskDetailPanelProps {
@@ -49,8 +130,52 @@ interface TaskDetailPanelProps {
   onTaskUpdated?: () => void
 }
 
-export function TaskDetailPanel({ task, currentUserId, isAdmin, allStaffUsers = [], onClose, onTaskUpdated }: TaskDetailPanelProps) {
-  const [tab, setTab] = useState<"comments" | "attachments">("comments")
+export function TaskDetailPanel({
+  task,
+  currentUserId,
+  isAdmin,
+  allStaffUsers = [],
+  onClose,
+  onTaskUpdated,
+}: TaskDetailPanelProps) {
+  const [tab, setTab] = useState<
+    "roadmap" | "review" | "comments" | "attachments" | "history"
+  >("roadmap")
+
+  // Governance state loaded from server
+  const [qaMeta, setQaMeta] = useState<any>(task.qaMeta || null)
+  const [deadlineInfo, setDeadlineInfo] = useState<any>(task.deadlineInfo || null)
+  const [checklistStats, setChecklistStats] = useState<any>(
+    task.checklistStats || { totalSteps: 0, completedSteps: 0, percent: 0 }
+  )
+  const [auditLogs, setAuditLogs] = useState<any[]>([])
+
+  // Workflow transition form states
+  const [resultSummaryInput, setResultSummaryInput] = useState(
+    task.qaMeta?.resultSummary || task.staffNote || ""
+  )
+  const [evidenceLinksInput, setEvidenceLinksInput] = useState<string[]>(
+    task.qaMeta?.evidenceLinks || []
+  )
+  const [newEvidenceUrl, setNewEvidenceUrl] = useState("")
+  const [reviewCommentInput, setReviewCommentInput] = useState(
+    task.qaMeta?.reviewComment || ""
+  )
+  const [reviewRatingInput, setReviewRatingInput] = useState<
+    "DAT_CHUAN" | "XUAT_SAC" | "CAN_BO_SUNG"
+  >(task.qaMeta?.reviewRating || "DAT_CHUAN")
+  const [reasonModal, setReasonModal] = useState<{
+    toStatus: QaTaskWorkflowStatus
+    title: string
+  } | null>(null)
+  const [reasonText, setReasonText] = useState("")
+  const [workflowMsg, setWorkflowMsg] = useState<{
+    type: "error" | "success"
+    text: string
+  } | null>(null)
+  const [transitioning, setTransitioning] = useState(false)
+
+  // Collab comments & attachments state
   const [comments, setComments] = useState<any[]>([])
   const [attachments, setAttachments] = useState<any[]>([])
   const [newComment, setNewComment] = useState("")
@@ -75,25 +200,107 @@ export function TaskDetailPanel({ task, currentUserId, isAdmin, allStaffUsers = 
 
   const acceptanceStatus = task.acceptanceStatus || "WAITING_CONFIRMATION"
   const isAssignee = task.assignedToUserId === currentUserId
+  const isReviewerOrManager =
+    isAdmin ||
+    task.assignedById === currentUserId ||
+    qaMeta?.reviewerUserId === currentUserId ||
+    qaMeta?.coordinatorUserId === currentUserId ||
+    task.taskGroup?.leaderUserId === currentUserId
 
   useEffect(() => {
-    loadDetails()
+    loadAllDetails()
   }, [task.id])
 
-  useEffect(() => {
-    if (tab === "comments") {
-      commentsEndRef.current?.scrollIntoView({ behavior: "smooth" })
-    }
-  }, [comments, tab])
-
-  const loadDetails = async () => {
+  const loadAllDetails = async () => {
     setLoading(true)
-    const res = await getTaskDetails(task.id)
-    if (res.success) {
-      setComments(res.comments)
-      setAttachments(res.attachments)
+    const [collabRes, govRes] = await Promise.all([
+      getTaskDetails(task.id),
+      getTaskFullGovernanceDetails(task.id),
+    ])
+
+    if (collabRes.success) {
+      setComments(collabRes.comments)
+      setAttachments(collabRes.attachments)
+    }
+    if (govRes.success) {
+      setQaMeta(govRes.metadata)
+      setDeadlineInfo(govRes.deadlineInfo)
+      setChecklistStats(govRes.checklistStats)
+      setAuditLogs(govRes.auditLogs || [])
+      setResultSummaryInput(govRes.metadata?.resultSummary || task.staffNote || "")
+      setEvidenceLinksInput(govRes.metadata?.evidenceLinks || [])
+      setReviewCommentInput(govRes.metadata?.reviewComment || "")
+      if (govRes.metadata?.reviewRating) {
+        setReviewRatingInput(govRes.metadata.reviewRating)
+      }
     }
     setLoading(false)
+  }
+
+  const handleTransition = async (
+    toStatus: QaTaskWorkflowStatus,
+    extraReason?: string
+  ) => {
+    setWorkflowMsg(null)
+    setTransitioning(true)
+    try {
+      const res = await transitionTaskWorkflow(task.id, {
+        toStatus,
+        reason: extraReason || undefined,
+        resultSummary: resultSummaryInput,
+        evidenceLinks: evidenceLinksInput,
+        reviewComment: reviewCommentInput || extraReason,
+        reviewRating:
+          toStatus === "COMPLETED"
+            ? reviewRatingInput
+            : toStatus === "NEEDS_REVISION"
+            ? "CAN_BO_SUNG"
+            : undefined,
+        expectedVersion: qaMeta?.version,
+      })
+      if (!res.success) {
+        setWorkflowMsg({
+          type: "error",
+          text: res.error || "Không thể chuyển trạng thái nhiệm vụ.",
+        })
+      } else {
+        setWorkflowMsg({
+          type: "success",
+          text: `Đã cập nhật trạng thái sang "${WORKFLOW_STATUS_LABELS[toStatus]}"!`,
+        })
+        setReasonModal(null)
+        setReasonText("")
+        await loadAllDetails()
+        if (onTaskUpdated) onTaskUpdated()
+      }
+    } finally {
+      setTransitioning(false)
+    }
+  }
+
+  const handleToggleStep = async (stepId: string, nextCompleted: boolean) => {
+    setWorkflowMsg(null)
+    const res = await toggleTaskChecklistStep(
+      task.id,
+      stepId,
+      nextCompleted,
+      qaMeta?.version
+    )
+    if (!res.success) {
+      setWorkflowMsg({
+        type: "error",
+        text: res.error || "Không thể cập nhật bước thực hiện.",
+      })
+    } else {
+      await loadAllDetails()
+      if (onTaskUpdated) onTaskUpdated()
+    }
+  }
+
+  const handleAddEvidenceLink = () => {
+    if (!newEvidenceUrl.trim()) return
+    setEvidenceLinksInput(prev => [...prev, newEvidenceUrl.trim()])
+    setNewEvidenceUrl("")
   }
 
   const handleConfirmTask = async () => {
@@ -101,435 +308,895 @@ export function TaskDetailPanel({ task, currentUserId, isAdmin, allStaffUsers = 
     const res = await confirmTaskAssignment(task.id)
     setConfirming(false)
     if (res.success) {
-      alert("✅ Bạn đã xác nhận nhận công việc thành công!")
-      if (onTaskUpdated) onTaskUpdated()
-      else window.location.reload()
+      await handleTransition("IN_PROGRESS", "Đã xác nhận nhận việc và bắt đầu thực hiện")
     } else {
-      alert("Lỗi: " + res.error)
+      alert(res.error)
     }
   }
 
   const handleRejectTask = async () => {
-    if (!rejectReasonInput.trim()) return alert("Vui lòng nhập lý do từ chối / phản hồi!")
+    if (!rejectReasonInput.trim()) {
+      alert("Vui lòng nhập lý do hoặc ý kiến phản hồi")
+      return
+    }
     setRejecting(true)
-    const res = await rejectTaskAssignment(task.id, rejectReasonInput.trim())
+    const res = await rejectTaskAssignment(task.id, rejectReasonInput)
     setRejecting(false)
     if (res.success) {
-      alert("Đã gửi phản hồi đến người giao việc!")
+      setShowRejectForm(false)
       if (onTaskUpdated) onTaskUpdated()
-      else window.location.reload()
+      onClose()
     } else {
-      alert("Lỗi: " + res.error)
+      alert(res.error)
     }
   }
 
-  const handleSendComment = async () => {
-    if (!newComment.trim() || sending) return
+  const handleSendComment = async (e: React.FormEvent) => {
+    e.preventDefault()
+    if (!newComment.trim()) return
     setSending(true)
-    const res = await addTaskComment(task.id, newComment.trim(), {
+    const res = await addTaskComment(task.id, newComment, {
       commentType,
-      actionAssigneeId: actionAssigneeId || null,
-      actionDueDate: actionDueDate || null,
-      mentionedUserIds
+      actionAssigneeId: actionAssigneeId || undefined,
+      actionDueDate: actionDueDate || undefined,
+      mentionedUserIds: mentionedUserIds.length > 0 ? mentionedUserIds : undefined,
     })
     if (res.success && res.comment) {
-      setComments([...comments, res.comment])
+      setComments(prev => [...prev, res.comment])
       setNewComment("")
       setCommentType("GENERAL")
       setActionAssigneeId("")
       setActionDueDate("")
       setMentionedUserIds([])
+      setTimeout(
+        () => commentsEndRef.current?.scrollIntoView({ behavior: "smooth" }),
+        100
+      )
+      if (onTaskUpdated) onTaskUpdated()
     } else {
-      alert("Lỗi: " + res.error)
+      alert(res.error)
     }
     setSending(false)
   }
 
-  const handleToggleActionStatus = async (comment: any) => {
-    const nextStatus = comment.actionStatus === "RESOLVED" ? "PENDING" : "RESOLVED"
-    const res = await updateCommentActionStatus(comment.id, nextStatus)
+  const handleToggleActionStatus = async (
+    commentId: string,
+    currentStatus: string | null
+  ) => {
+    const nextStatus = currentStatus === "RESOLVED" ? "OPEN" : "RESOLVED"
+    const res = await updateCommentActionStatus(commentId, nextStatus)
     if (res.success) {
-      setComments(comments.map(c => c.id === comment.id ? { ...c, actionStatus: nextStatus } : c))
+      setComments(prev =>
+        prev.map(c => (c.id === commentId ? { ...c, actionStatus: nextStatus } : c))
+      )
+      if (onTaskUpdated) onTaskUpdated()
     } else {
-      alert("Lỗi: " + res.error)
+      alert(res.error)
     }
   }
 
   const handleDeleteComment = async (id: string) => {
     if (!confirm("Xóa bình luận này?")) return
     const res = await deleteTaskComment(id)
-    if (res.success) setComments(comments.filter(c => c.id !== id))
+    if (res.success) setComments(prev => prev.filter(c => c.id !== id))
+    else alert(res.error)
   }
 
   const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const files = e.target.files
     if (!files || files.length === 0) return
-    setUploading(true)
-    for (const file of Array.from(files)) {
-      if (file.size > 5 * 1024 * 1024) {
-        alert("File " + file.name + " quá lớn (tối đa 5MB)")
-        continue
-      }
-      const reader = new FileReader()
-      reader.onload = async () => {
-        const base64 = reader.result as string
-        const res = await addTaskAttachment(task.id, file.name, base64, file.size, file.type || "application/octet-stream")
-        if (res.success && res.attachment) {
-          setAttachments(prev => [res.attachment, ...prev])
-        }
-      }
-      reader.readAsDataURL(file)
+    const file = files[0]
+    if (file.size > 4 * 1024 * 1024) {
+      alert("Dung lượng tệp tối đa là 4MB!")
+      return
     }
-    setTimeout(() => setUploading(false), 1000)
-    e.target.value = ""
+    setUploading(true)
+    const reader = new FileReader()
+    reader.onload = async event => {
+      const base64 = event.target?.result as string
+      const res = await addTaskAttachment(task.id, {
+        fileName: file.name,
+        fileSize: file.size,
+        contentType: file.type || "application/octet-stream",
+        fileData: base64,
+      })
+      if (res.success && res.attachment) {
+        setAttachments(prev => [res.attachment, ...prev])
+      } else {
+        alert(res.error)
+      }
+      setUploading(false)
+      if (fileInputRef.current) fileInputRef.current.value = ""
+    }
+    reader.readAsDataURL(file)
   }
 
   const handleDeleteAttachment = async (id: string) => {
-    if (!confirm("Xóa file này?")) return
+    if (!confirm("Xóa tệp đính kèm này?")) return
     const res = await deleteTaskAttachment(id)
-    if (res.success) setAttachments(attachments.filter(a => a.id !== id))
+    if (res.success) setAttachments(prev => prev.filter(a => a.id !== id))
+    else alert(res.error)
   }
 
-  const handleDownload = (att: any) => {
-    const link = document.createElement("a")
-    link.href = att.fileData
-    link.download = att.fileName
-    link.click()
-  }
+  const currentWfStatus: QaTaskWorkflowStatus =
+    qaMeta?.workflowStatus ||
+    (task.progress === "COMPLETED"
+      ? "COMPLETED"
+      : task.progress === "IN_PROGRESS"
+      ? "IN_PROGRESS"
+      : "ASSIGNED")
 
-  const handleInsertMention = (user: any) => {
-    const tag = `@${user.fullName} `
-    setNewComment(prev => prev + tag)
-    if (!mentionedUserIds.includes(user.id)) {
-      setMentionedUserIds(prev => [...prev, user.id])
-    }
-    setShowMentionMenu(false)
-    textareaRef.current?.focus()
-  }
-
-  const handleKeyDown = (e: React.KeyboardEvent) => {
-    if (e.key === "Enter" && !e.shiftKey) {
-      e.preventDefault()
-      handleSendComment()
-    }
-  }
-
-  const priorityColor = task.priority === "URGENT" ? "bg-red-500 text-white" :
-    task.priority === "HIGH" ? "bg-orange-500 text-white" :
-    task.priority === "LOW" ? "bg-slate-400 text-white" : "bg-sky-500 text-white"
+  const checklistItems: any[] = qaMeta?.checklistJson || []
+  const userLookup = new Map(allStaffUsers.map(u => [u.id, u]))
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/60 backdrop-blur-sm p-3 sm:p-4 animate-in fade-in duration-150" onClick={onClose}>
-      <div className="bg-white rounded-3xl shadow-2xl w-full max-w-3xl max-h-[92vh] flex flex-col overflow-hidden animate-in zoom-in-95 duration-200 border border-slate-100" onClick={e => e.stopPropagation()}>
+    <div className="fixed inset-0 z-50 flex justify-end bg-slate-900/50 backdrop-blur-xs">
+      <div className="relative w-full max-w-2xl bg-white h-full shadow-2xl flex flex-col z-10 border-l border-slate-200 animate-in slide-in-from-right duration-200">
         {/* Header */}
-        <div className="bg-gradient-to-r from-[#48BFE3] to-[#00A19A] text-white p-5 flex items-start justify-between shadow-md">
-          <div className="flex-1 min-w-0 mr-4 space-y-1.5">
-            <div className="flex items-center gap-2 flex-wrap">
-              <span className="bg-white/20 backdrop-blur-md text-white text-[11px] font-bold px-2.5 py-0.5 rounded-full uppercase tracking-wide">
-                {task.category || "Công việc"}
-              </span>
-              {task.taskGroup?.name && (
-                <span className="bg-indigo-900/30 text-white text-[11px] font-bold px-2.5 py-0.5 rounded-full flex items-center gap-1 border border-white/20">
-                  📁 Nhóm: {task.taskGroup.name}
+        <div className="px-6 py-4 border-b border-slate-200 bg-slate-900 text-white">
+          <div className="flex items-start justify-between gap-3">
+            <div>
+              <div className="flex items-center gap-2 flex-wrap mb-1">
+                <span className="text-[10px] font-bold uppercase tracking-wider px-2 py-0.5 rounded bg-violet-500/30 text-violet-200 border border-violet-400/30">
+                  {task.category}
                 </span>
-              )}
-              {task.priority && task.priority !== "MEDIUM" && (
-                <span className={`${priorityColor} text-[11px] font-bold px-2.5 py-0.5 rounded-full flex items-center gap-1 shadow-xs`}>
-                  <Flag className="w-3 h-3" /> {task.priority === "URGENT" ? "Khẩn cấp" : task.priority === "HIGH" ? "Ưu tiên cao" : "Thấp"}
+                <span className="text-[10px] font-bold px-2 py-0.5 rounded bg-white/10 text-slate-200">
+                  Phiên bản v{qaMeta?.version || 1}
                 </span>
-              )}
-              {task.isImportant && !task.priority && (
-                <span className="bg-red-500 text-white text-[11px] font-bold px-2.5 py-0.5 rounded-full flex items-center gap-1 shadow-xs">
-                  <AlertTriangle className="w-3 h-3" /> QUAN TRỌNG
-                </span>
-              )}
+                {deadlineInfo?.isOverdue && (
+                  <span
+                    className={`text-[10px] font-extrabold px-2.5 py-0.5 rounded-full ${
+                      deadlineInfo.code === "OVERDUE_REVIEW"
+                        ? "bg-amber-500 text-slate-950"
+                        : "bg-rose-600 text-white"
+                    }`}
+                  >
+                    {deadlineInfo.code === "OVERDUE_REVIEW"
+                      ? `CHẬM DUYỆT: ${deadlineInfo.label}`
+                      : `CHẬM THỰC HIỆN: ${deadlineInfo.label}`}
+                  </span>
+                )}
+              </div>
+              <h3 className="text-base font-extrabold text-white leading-snug">
+                {task.title}
+              </h3>
             </div>
-            <h2 className="text-xl font-extrabold leading-snug">{task.title}</h2>
-            <div className="flex items-center gap-4 text-teal-100 text-xs font-medium pt-0.5 flex-wrap">
-              <span className="flex items-center gap-1"><User className="w-3.5 h-3.5" /> Giao cho: <b className="text-white">{task.assignedToUser?.fullName || task.assignedToRole}</b></span>
-              <span className="flex items-center gap-1"><Clock className="w-3.5 h-3.5" /> Hạn chót: <b className="text-white">{new Date(task.endDate).toLocaleDateString("vi-VN")}</b></span>
-              {task.completedAt && (
-                <span className="flex items-center gap-1 text-emerald-200">
-                  <CheckCircle2 className="w-3.5 h-3.5" /> Hoàn thành lúc: {new Date(task.completedAt).toLocaleDateString("vi-VN")}
-                </span>
-              )}
-            </div>
+            <button
+              onClick={onClose}
+              className="p-2 text-slate-300 hover:text-white rounded-xl bg-white/10 hover:bg-white/20 cursor-pointer"
+            >
+              <X className="w-5 h-5" />
+            </button>
           </div>
-          <button onClick={onClose} className="p-2 rounded-xl hover:bg-white/20 transition-colors text-white shrink-0">
-            <X className="w-5 h-5" />
-          </button>
-        </div>
 
-        {/* Task Confirmation Status Banner */}
-        <div className="px-5 py-2.5 border-b bg-slate-50 flex items-center justify-between text-xs flex-wrap gap-2">
-          <div className="flex items-center gap-2">
-            <span className="font-semibold text-slate-500">Xác nhận nhận việc:</span>
-            {acceptanceStatus === "ACCEPTED" ? (
-              <span className="bg-emerald-100 text-emerald-800 font-bold px-3 py-0.5 rounded-full flex items-center gap-1.5 border border-emerald-200">
-                <ShieldCheck className="w-4 h-4 text-emerald-600" /> ĐÃ XÁC NHẬN NHẬN VIỆC
-              </span>
-            ) : acceptanceStatus === "REJECTED" ? (
-              <span className="bg-red-100 text-red-800 font-bold px-3 py-0.5 rounded-full flex items-center gap-1.5 border border-red-200">
-                <XCircle className="w-4 h-4 text-red-600" /> TỪ CHỐI / CẦN TRAO ĐỔI LẠI
-              </span>
-            ) : (
-              <span className="bg-amber-100 text-amber-800 font-bold px-3 py-0.5 rounded-full flex items-center gap-1.5 border border-amber-200 animate-pulse">
-                <Clock className="w-4 h-4 text-amber-600" /> CHỜ NGƯỜI NHẬN XÁC NHẬN
-              </span>
+          {/* Thanh trạng thái Luồng chính: Nháp → Đã giao → Đang thực hiện → Chờ duyệt → Hoàn thành */}
+          <div className="mt-3 pt-3 border-t border-slate-800">
+            <div className="flex items-center justify-between gap-1 text-[10px] font-bold">
+              {WORKFLOW_PIPELINE.map((st, idx) => {
+                const isActive = currentWfStatus === st
+                const currentIdx = WORKFLOW_PIPELINE.indexOf(currentWfStatus)
+                const isPassed = currentIdx > idx || currentWfStatus === "COMPLETED"
+                return (
+                  <React.Fragment key={st}>
+                    <div
+                      className={`px-2 py-1 rounded-lg flex items-center gap-1 ${
+                        isActive
+                          ? "bg-violet-600 text-white ring-2 ring-violet-400"
+                          : isPassed
+                          ? "bg-emerald-500/20 text-emerald-300"
+                          : "bg-slate-800 text-slate-400"
+                      }`}
+                    >
+                      <span>{idx + 1}.</span>
+                      <span>{WORKFLOW_STATUS_LABELS[st]}</span>
+                    </div>
+                    {idx < WORKFLOW_PIPELINE.length - 1 && (
+                      <ArrowRight className="w-3 h-3 text-slate-600 shrink-0" />
+                    )}
+                  </React.Fragment>
+                )
+              })}
+            </div>
+            {(currentWfStatus === "NEEDS_REVISION" ||
+              currentWfStatus === "PAUSED" ||
+              currentWfStatus === "CANCELLED") && (
+              <div className="mt-2 px-3 py-1.5 rounded-lg bg-amber-500/20 border border-amber-400/40 text-amber-200 text-xs font-bold flex items-center justify-between">
+                <span>
+                  Trạng thái đặc biệt: {WORKFLOW_STATUS_LABELS[currentWfStatus]}
+                </span>
+                {qaMeta?.statusReason && (
+                  <span className="text-[11px] font-normal">
+                    Lý do: {qaMeta.statusReason}
+                  </span>
+                )}
+              </div>
             )}
           </div>
-          {task.acceptedAt && (
-            <span className="text-slate-400 text-[11px]">Xác nhận lúc: {new Date(task.acceptedAt).toLocaleString("vi-VN")}</span>
-          )}
         </div>
 
-        {/* Chi tiết công việc & người phối hợp */}
-        <div className="px-5 pt-3 space-y-2">
-          {task.description && (
-            <div className="p-3.5 bg-slate-50 border border-slate-200 rounded-2xl text-xs space-y-1">
-              <div className="font-bold text-slate-700 flex items-center gap-1.5">
-                <FileText className="w-4 h-4 text-[#48BFE3]" /> Chi tiết công việc:
-              </div>
-              <p className="text-slate-700 leading-relaxed whitespace-pre-wrap pl-5 font-medium">{task.description}</p>
-            </div>
-          )}
-
-          {task.collaborators && (
-            <div className="p-2.5 bg-teal-50/70 border border-teal-100 rounded-2xl text-xs flex items-center gap-2">
-              <Users className="w-4 h-4 text-[#48BFE3] shrink-0" />
-              <div>
-                <span className="font-bold text-teal-900">Người phối hợp: </span>
-                <span className="text-teal-800 font-semibold">{task.collaborators}</span>
-              </div>
-            </div>
-          )}
-
-          {task.rejectionReason && (
-            <div className="p-3 bg-red-50 border border-red-200 rounded-xl text-xs text-red-800 flex items-start gap-2">
-              <AlertTriangle className="w-4 h-4 text-red-600 mt-0.5 shrink-0" />
-              <div>
-                <p className="font-bold">Lý do từ chối / Phản hồi từ nhân viên:</p>
-                <p className="mt-0.5 opacity-90">{task.rejectionReason}</p>
-              </div>
-            </div>
-          )}
-        </div>
-
-        {/* Action Prompt for Assignee if waiting confirmation */}
-        {acceptanceStatus === "WAITING_CONFIRMATION" && (isAssignee || isAdmin) && (
-          <div className="mx-5 mt-3 p-3.5 bg-gradient-to-r from-amber-50 to-orange-50 border border-amber-200 rounded-2xl shadow-xs">
-            <div className="flex items-center justify-between flex-wrap gap-3">
-              <div>
-                <p className="font-bold text-amber-900 text-xs">⚠️ Yêu cầu xác nhận công việc được giao</p>
-                <p className="text-[11px] text-amber-700 mt-0.5">Vui lòng bấm xác nhận tiếp nhận để người giao việc biết bạn đã sẵn sàng thực hiện.</p>
-              </div>
-              <div className="flex items-center gap-2">
-                <button
-                  onClick={handleConfirmTask}
-                  disabled={confirming}
-                  className="bg-emerald-600 hover:bg-emerald-700 text-white font-bold px-3.5 py-1.5 rounded-xl text-xs flex items-center gap-1.5 shadow-xs transition-all"
-                >
-                  <CheckCircle2 className="w-4 h-4" /> {confirming ? "Đang xử lý..." : "Xác nhận nhận việc"}
-                </button>
-                <button
-                  onClick={() => setShowRejectForm(!showRejectForm)}
-                  className="bg-white border border-red-300 text-red-700 hover:bg-red-50 font-bold px-3 py-1.5 rounded-xl text-xs transition-all"
-                >
-                  Từ chối / Phản hồi
-                </button>
-              </div>
-            </div>
-
-            {showRejectForm && (
-              <div className="mt-3 pt-3 border-t border-amber-200 space-y-2">
-                <label className="block text-xs font-bold text-amber-900">Ghi rõ lý do hoặc nội dung trao đổi lại với người giao:</label>
-                <textarea
-                  value={rejectReasonInput}
-                  onChange={e => setRejectReasonInput(e.target.value)}
-                  placeholder="Ví dụ: Cần bổ sung tài liệu, trùng thời gian dự giờ, xin gia hạn hạn chót..."
-                  rows={2}
-                  className="w-full text-xs p-2.5 border rounded-xl outline-none focus:ring-2 focus:ring-red-400 bg-white"
-                />
-                <div className="flex justify-end gap-2">
-                  <button onClick={() => setShowRejectForm(false)} className="text-xs text-slate-500 px-3 py-1.5 rounded-lg hover:bg-amber-100">Hủy</button>
-                  <button onClick={handleRejectTask} disabled={rejecting} className="bg-red-600 text-white text-xs font-bold px-4 py-1.5 rounded-xl hover:bg-red-700">
-                    {rejecting ? "Đang gửi..." : "Gửi phản hồi"}
-                  </button>
-                </div>
-              </div>
-            )}
+        {/* Thông báo kết quả chuyển trạng thái / xung đột phiên bản */}
+        {workflowMsg && (
+          <div
+            className={`px-6 py-2.5 text-xs font-bold flex items-center justify-between ${
+              workflowMsg.type === "error"
+                ? "bg-rose-50 text-rose-800 border-b border-rose-200"
+                : "bg-emerald-50 text-emerald-800 border-b border-emerald-200"
+            }`}
+          >
+            <span>{workflowMsg.text}</span>
+            <button
+              type="button"
+              onClick={() => setWorkflowMsg(null)}
+              className="text-slate-500 hover:text-slate-800"
+            >
+              ✕
+            </button>
           </div>
         )}
 
-        {/* Tabs Header */}
-        <div className="flex border-b border-slate-200 mt-2 px-5">
-          <button onClick={() => setTab("comments")}
-            className={"flex-1 flex items-center justify-center gap-2 py-2.5 text-xs font-bold border-b-2 transition-colors " + (tab === "comments" ? "border-[#48BFE3] text-[#0284C7] bg-teal-50/50 rounded-t-xl" : "border-transparent text-slate-500 hover:text-slate-700")}>
-            <MessageSquare className="w-4 h-4" /> Trao đổi, Phản hồi & Vướng mắc ({comments.length})
-          </button>
-          <button onClick={() => setTab("attachments")}
-            className={"flex-1 flex items-center justify-center gap-2 py-2.5 text-xs font-bold border-b-2 transition-colors " + (tab === "attachments" ? "border-[#48BFE3] text-[#0284C7] bg-teal-50/50 rounded-t-xl" : "border-transparent text-slate-500 hover:text-slate-700")}>
-            <Paperclip className="w-4 h-4" /> File đính kèm ({attachments.length})
-          </button>
+        {/* Thanh hành động điều khiển luồng nhanh */}
+        <div className="px-6 py-2.5 bg-slate-50 border-b border-slate-200 flex flex-wrap items-center justify-between gap-2">
+          <div className="flex flex-wrap items-center gap-1.5">
+            {(currentWfStatus === "DRAFT" || currentWfStatus === "ASSIGNED") && (
+              <button
+                type="button"
+                disabled={transitioning}
+                onClick={() => handleTransition("IN_PROGRESS")}
+                className="inline-flex items-center gap-1 px-3 py-1.5 rounded-lg bg-sky-600 hover:bg-sky-700 text-white text-xs font-bold cursor-pointer"
+              >
+                <Play className="w-3.5 h-3.5" /> Bắt đầu thực hiện
+              </button>
+            )}
+
+            {(currentWfStatus === "IN_PROGRESS" ||
+              currentWfStatus === "NEEDS_REVISION") && (
+              <>
+                <button
+                  type="button"
+                  disabled={transitioning}
+                  onClick={() => {
+                    setTab("review")
+                    handleTransition("PENDING_REVIEW")
+                  }}
+                  className="inline-flex items-center gap-1 px-3 py-1.5 rounded-lg bg-violet-600 hover:bg-violet-700 text-white text-xs font-bold cursor-pointer"
+                >
+                  <ShieldCheck className="w-3.5 h-3.5" /> Gửi duyệt kết quả
+                </button>
+                {qaMeta?.requiresApproval === false && (
+                  <button
+                    type="button"
+                    disabled={transitioning}
+                    onClick={() => handleTransition("COMPLETED")}
+                    className="inline-flex items-center gap-1 px-3 py-1.5 rounded-lg bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold cursor-pointer"
+                  >
+                    <CheckCircle2 className="w-3.5 h-3.5" /> Hoàn thành (Không cần duyệt)
+                  </button>
+                )}
+              </>
+            )}
+
+            {currentWfStatus === "PENDING_REVIEW" && isReviewerOrManager && (
+              <>
+                <button
+                  type="button"
+                  disabled={transitioning}
+                  onClick={() => handleTransition("COMPLETED")}
+                  className="inline-flex items-center gap-1 px-3 py-1.5 rounded-lg bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold cursor-pointer"
+                >
+                  <CheckCircle2 className="w-3.5 h-3.5" /> Duyệt hoàn thành
+                </button>
+                <button
+                  type="button"
+                  disabled={transitioning}
+                  onClick={() =>
+                    setReasonModal({
+                      toStatus: "NEEDS_REVISION",
+                      title: "Yêu cầu bổ sung / chỉnh sửa kết quả",
+                    })
+                  }
+                  className="inline-flex items-center gap-1 px-3 py-1.5 rounded-lg bg-amber-600 hover:bg-amber-700 text-white text-xs font-bold cursor-pointer"
+                >
+                  <AlertTriangle className="w-3.5 h-3.5" /> Cần bổ sung
+                </button>
+              </>
+            )}
+          </div>
+
+          {/* Nhóm nút Tạm dừng / Hủy / Mở lại kèm lý do */}
+          <div className="flex items-center gap-1.5">
+            {currentWfStatus !== "PAUSED" &&
+              currentWfStatus !== "COMPLETED" &&
+              currentWfStatus !== "CANCELLED" && (
+                <button
+                  type="button"
+                  onClick={() =>
+                    setReasonModal({
+                      toStatus: "PAUSED",
+                      title: "Tạm dừng nhiệm vụ (Bắt buộc nhập lý do)",
+                    })
+                  }
+                  className="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg border border-slate-300 bg-white hover:bg-slate-100 text-slate-700 text-xs font-semibold cursor-pointer"
+                >
+                  <PauseCircle className="w-3.5 h-3.5" /> Tạm dừng
+                </button>
+              )}
+
+            {(currentWfStatus === "COMPLETED" ||
+              currentWfStatus === "CANCELLED" ||
+              currentWfStatus === "PAUSED") && (
+              <button
+                type="button"
+                onClick={() =>
+                  setReasonModal({
+                    toStatus: "IN_PROGRESS",
+                    title: "Mở lại nhiệm vụ (Bắt buộc nhập lý do)",
+                  })
+                }
+                className="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg border border-violet-300 bg-violet-50 hover:bg-violet-100 text-violet-700 text-xs font-bold cursor-pointer"
+              >
+                <RotateCcw className="w-3.5 h-3.5" /> Mở lại nhiệm vụ
+              </button>
+            )}
+
+            {currentWfStatus !== "CANCELLED" && isReviewerOrManager && (
+              <button
+                type="button"
+                onClick={() =>
+                  setReasonModal({
+                    toStatus: "CANCELLED",
+                    title: "Hủy nhiệm vụ (Bắt buộc nhập lý do)",
+                  })
+                }
+                className="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg border border-rose-200 bg-rose-50 hover:bg-rose-100 text-rose-700 text-xs font-semibold cursor-pointer"
+              >
+                <XCircle className="w-3.5 h-3.5" /> Hủy
+              </button>
+            )}
+          </div>
         </div>
 
-        {/* Content */}
-        <div className="flex-1 overflow-y-auto px-5 py-3">
+        {/* Hộp nhập lý do khi Cần bổ sung / Tạm dừng / Hủy / Mở lại */}
+        {reasonModal && (
+          <div className="px-6 py-3 bg-amber-50 border-b border-amber-200 space-y-2">
+            <div className="text-xs font-extrabold text-amber-900">
+              {reasonModal.title}
+            </div>
+            <textarea
+              rows={2}
+              value={reasonText}
+              onChange={e => setReasonText(e.target.value)}
+              placeholder="Nhập rõ lý do hoặc nội dung yêu cầu bổ sung để lưu vào lịch sử xử lý..."
+              className="w-full p-2.5 rounded-lg border border-amber-300 bg-white text-xs"
+            />
+            <div className="flex justify-end gap-2">
+              <button
+                type="button"
+                onClick={() => {
+                  setReasonModal(null)
+                  setReasonText("")
+                }}
+                className="px-3 py-1 rounded-lg bg-white border border-slate-300 text-xs font-semibold"
+              >
+                Đóng
+              </button>
+              <button
+                type="button"
+                disabled={!reasonText.trim() || transitioning}
+                onClick={() => handleTransition(reasonModal.toStatus, reasonText)}
+                className="px-3.5 py-1 rounded-lg bg-violet-600 text-white text-xs font-bold disabled:opacity-50"
+              >
+                Xác nhận lưu lịch sử
+              </button>
+            </div>
+          </div>
+        )}
+
+        {/* 5 Tabs chi tiết nhiệm vụ */}
+        <div className="flex border-b border-slate-200 bg-white px-4 overflow-x-auto">
+          {[
+            { id: "roadmap", label: "Yêu cầu & Lộ trình", icon: ListChecks },
+            { id: "review", label: "Kết quả & Nghiệm thu", icon: ShieldCheck },
+            {
+              id: "comments",
+              label: `Trao đổi & Vướng mắc (${comments.length})`,
+              icon: MessageSquare,
+            },
+            {
+              id: "attachments",
+              label: `Tệp đính kèm (${attachments.length})`,
+              icon: Paperclip,
+            },
+            {
+              id: "history",
+              label: `Lịch sử xử lý (${auditLogs.length})`,
+              icon: History,
+            },
+          ].map(item => {
+            const Icon = item.icon
+            return (
+              <button
+                key={item.id}
+                type="button"
+                onClick={() => setTab(item.id as any)}
+                className={`py-3 px-3 text-xs font-bold border-b-2 transition-colors flex items-center gap-1.5 whitespace-nowrap cursor-pointer ${
+                  tab === item.id
+                    ? "border-violet-600 text-violet-700"
+                    : "border-transparent text-slate-500 hover:text-slate-800"
+                }`}
+              >
+                <Icon className="w-3.5 h-3.5" />
+                {item.label}
+              </button>
+            )
+          })}
+        </div>
+
+        {/* Body Content */}
+        <div className="flex-1 overflow-y-auto p-6 bg-slate-50/50">
           {loading ? (
-            <div className="flex items-center justify-center p-12">
-              <div className="w-8 h-8 border-3 border-teal-200 border-t-[#48BFE3] rounded-full animate-spin"></div>
+            <div className="text-center py-12 text-slate-400 text-xs">
+              Đang tải thông tin chi tiết nhiệm vụ...
+            </div>
+          ) : tab === "roadmap" ? (
+            /* TAB 1: YÊU CẦU, SẢN PHẨM & LỘ TRÌNH THỰC HIỆN */
+            <div className="space-y-5">
+              {/* Thông tin người giao, người chịu trách nhiệm chính, người phối hợp, người duyệt */}
+              <div className="bg-white p-4 rounded-xl border border-slate-200 grid grid-cols-1 sm:grid-cols-2 gap-3 text-xs">
+                <div>
+                  <span className="text-slate-500">Người giao việc: </span>
+                  <strong className="text-slate-900">
+                    {task.assignedBy?.fullName || "Ban Điều hành"}
+                  </strong>
+                </div>
+                <div>
+                  <span className="text-slate-500">Chịu trách nhiệm chính: </span>
+                  <strong className="text-violet-700">
+                    {task.assignedToUser?.fullName || task.assignedToRole}
+                  </strong>
+                </div>
+                <div>
+                  <span className="text-slate-500">Người duyệt nghiệm thu: </span>
+                  <strong className="text-slate-900">
+                    {(qaMeta?.reviewerUserId &&
+                      userLookup.get(qaMeta.reviewerUserId)?.fullName) ||
+                      task.assignedBy?.fullName ||
+                      "Trưởng ban KT&ĐBCL"}
+                  </strong>
+                </div>
+                <div>
+                  <span className="text-slate-500">Hạn thực hiện / Hạn duyệt: </span>
+                  <strong className="text-slate-900">
+                    {new Date(task.endDate).toLocaleDateString("vi-VN")}
+                    {qaMeta?.reviewDueDate
+                      ? ` • Duyệt: ${new Date(qaMeta.reviewDueDate).toLocaleDateString("vi-VN")}`
+                      : ""}
+                  </strong>
+                </div>
+              </div>
+
+              {/* Yêu cầu, Sản phẩm đầu ra, Tiêu chí hoàn thành & Minh chứng cần nộp */}
+              <div className="bg-white p-4 rounded-xl border border-slate-200 space-y-3">
+                <h4 className="text-xs font-extrabold uppercase tracking-wider text-slate-500">
+                  1. Yêu cầu, Sản phẩm & Tiêu chí Hoàn thành
+                </h4>
+                {task.description && (
+                  <p className="text-xs text-slate-700 whitespace-pre-wrap leading-relaxed bg-slate-50 p-3 rounded-lg border border-slate-100">
+                    {task.description}
+                  </p>
+                )}
+                <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 text-xs">
+                  <div className="p-3 rounded-lg bg-violet-50/50 border border-violet-100">
+                    <div className="font-bold text-violet-900 mb-1">Sản phẩm đầu ra</div>
+                    <div className="text-slate-700">
+                      {qaMeta?.deliverables || "Theo nội dung phiếu giao việc"}
+                    </div>
+                  </div>
+                  <div className="p-3 rounded-lg bg-teal-50/50 border border-teal-100">
+                    <div className="font-bold text-teal-900 mb-1">Tiêu chí hoàn thành</div>
+                    <div className="text-slate-700">
+                      {qaMeta?.completionCriteria || "Đầy đủ nội dung & đúng hạn"}
+                    </div>
+                  </div>
+                  <div className="p-3 rounded-lg bg-amber-50/50 border border-amber-100">
+                    <div className="font-bold text-amber-900 mb-1">Minh chứng cần nộp</div>
+                    <div className="text-slate-700">
+                      {qaMeta?.requiredEvidences || "Tệp đính kèm hoặc liên kết"}
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              {/* Lộ trình thực hiện, Bước hiện tại, Bước tiếp theo & Checklist phụ thuộc */}
+              <div className="bg-white p-4 rounded-xl border border-slate-200 space-y-3">
+                <div className="flex items-center justify-between">
+                  <h4 className="text-xs font-extrabold uppercase tracking-wider text-slate-500">
+                    2. Lộ trình thực hiện & Tiến độ Checklist ({checklistStats.completedSteps}/{checklistStats.totalSteps} bước — {checklistStats.percent}%)
+                  </h4>
+                  <span className="text-[11px] font-semibold text-slate-500">
+                    Tách biệt khỏi đánh giá chất lượng
+                  </span>
+                </div>
+
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 text-xs">
+                  <div className="p-3 rounded-lg bg-sky-50 border border-sky-200">
+                    <div className="text-[10px] font-bold uppercase text-sky-700">
+                      Bước hiện tại
+                    </div>
+                    <div className="font-bold text-slate-900 mt-0.5">
+                      {qaMeta?.currentStepLabel ||
+                        WORKFLOW_STATUS_LABELS[currentWfStatus]}
+                    </div>
+                  </div>
+                  <div className="p-3 rounded-lg bg-indigo-50 border border-indigo-200">
+                    <div className="text-[10px] font-bold uppercase text-indigo-700">
+                      Bước tiếp theo
+                    </div>
+                    <div className="font-bold text-slate-900 mt-0.5">
+                      {qaMeta?.nextStepLabel ||
+                        (currentWfStatus === "COMPLETED"
+                          ? "Đã hoàn tất toàn bộ quy trình"
+                          : "Hoàn thiện bước hiện tại & gửi nghiệm thu")}
+                    </div>
+                  </div>
+                </div>
+
+                {checklistItems.length === 0 ? (
+                  <p className="text-xs text-slate-500 italic">
+                    Nhiệm vụ này không chia nhỏ công việc con (Checklist).
+                  </p>
+                ) : (
+                  <div className="space-y-2 pt-1">
+                    {checklistItems.map((step: any, idx: number) => {
+                      const prerequisite = step.dependsOnStepId
+                        ? checklistItems.find((s: any) => s.id === step.dependsOnStepId)
+                        : null
+                      const isLocked = Boolean(prerequisite && !prerequisite.completed)
+
+                      return (
+                        <div
+                          key={step.id}
+                          className={`flex items-center justify-between gap-3 p-3 rounded-xl border text-xs transition-colors ${
+                            step.completed
+                              ? "bg-emerald-50/40 border-emerald-200"
+                              : isLocked
+                              ? "bg-slate-100 border-slate-200 opacity-75"
+                              : "bg-white border-slate-200 hover:border-violet-300"
+                          }`}
+                        >
+                          <label className="flex items-center gap-2.5 cursor-pointer flex-1">
+                            <input
+                              type="checkbox"
+                              disabled={isLocked && !step.completed}
+                              checked={Boolean(step.completed)}
+                              onChange={e =>
+                                handleToggleStep(step.id, e.target.checked)
+                              }
+                              className="rounded text-violet-600 w-4 h-4"
+                            />
+                            <div>
+                              <span
+                                className={`font-bold ${
+                                  step.completed
+                                    ? "line-through text-slate-500"
+                                    : "text-slate-900"
+                                }`}
+                              >
+                                Bước {idx + 1}: {step.title}
+                              </span>
+                              {prerequisite && (
+                                <div className="text-[10px] text-amber-700 font-semibold mt-0.5">
+                                  Phụ thuộc: &ldquo;{prerequisite.title}&rdquo;{" "}
+                                  {prerequisite.completed ? "(Đã xong)" : "(Chưa xong)"}
+                                </div>
+                              )}
+                            </div>
+                          </label>
+                          <span
+                            className={`px-2 py-0.5 rounded text-[10px] font-bold ${
+                              step.completed
+                                ? "bg-emerald-100 text-emerald-800"
+                                : "bg-slate-100 text-slate-600"
+                            }`}
+                          >
+                            {step.completed ? "Đã xong" : "Chưa xong"}
+                          </span>
+                        </div>
+                      )
+                    })}
+                  </div>
+                )}
+              </div>
+            </div>
+          ) : tab === "review" ? (
+            /* TAB 2: KẾT QUẢ, MINH CHỨNG & NGHIỆM THU (TÁCH TIẾN ĐỘ CHECKLIST KHỎI CHẤT LƯỢNG KẾT QUẢ) */
+            <div className="space-y-5">
+              {/* Phần dành cho Người thực hiện nộp kết quả & minh chứng */}
+              <div className="bg-white p-4 rounded-xl border border-slate-200 space-y-3">
+                <h4 className="text-xs font-extrabold uppercase tracking-wider text-slate-700">
+                  1. Báo cáo Kết quả thực hiện & Liên kết Minh chứng
+                </h4>
+                <textarea
+                  rows={3}
+                  value={resultSummaryInput}
+                  onChange={e => setResultSummaryInput(e.target.value)}
+                  placeholder="Tóm tắt sản phẩm đã hoàn thành, số liệu chính hoặc ghi chú trình duyệt..."
+                  className="w-full p-3 rounded-xl border border-slate-300 text-xs"
+                />
+
+                <div>
+                  <label className="block text-xs font-bold text-slate-700 mb-1">
+                    Liên kết hồ sơ / Minh chứng đính kèm ({evidenceLinksInput.length})
+                  </label>
+                  <div className="flex gap-2">
+                    <input
+                      type="text"
+                      value={newEvidenceUrl}
+                      onChange={e => setNewEvidenceUrl(e.target.value)}
+                      placeholder="Dán URL minh chứng (Google Drive, OneDrive, đường dẫn hồ sơ SSM...)"
+                      className="flex-1 px-3 py-2 rounded-xl border border-slate-300 text-xs"
+                    />
+                    <button
+                      type="button"
+                      onClick={handleAddEvidenceLink}
+                      className="px-3 py-2 rounded-xl bg-slate-900 text-white text-xs font-bold inline-flex items-center gap-1 cursor-pointer"
+                    >
+                      <Plus className="w-3.5 h-3.5" /> Thêm link
+                    </button>
+                  </div>
+
+                  {evidenceLinksInput.length > 0 && (
+                    <div className="mt-2 space-y-1.5">
+                      {evidenceLinksInput.map((lnk, idx) => (
+                        <div
+                          key={idx}
+                          className="flex items-center justify-between gap-2 px-3 py-1.5 rounded-lg bg-slate-50 border border-slate-200 text-xs"
+                        >
+                          <a
+                            href={lnk}
+                            target="_blank"
+                            rel="noreferrer"
+                            className="text-violet-700 hover:underline truncate inline-flex items-center gap-1"
+                          >
+                            <Link2 className="w-3.5 h-3.5 shrink-0" />
+                            {lnk}
+                          </a>
+                          <button
+                            type="button"
+                            onClick={() =>
+                              setEvidenceLinksInput(prev =>
+                                prev.filter((_, i) => i !== idx)
+                              )
+                            }
+                            className="text-slate-400 hover:text-rose-600"
+                          >
+                            ✕
+                          </button>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                </div>
+
+                <div className="flex justify-end pt-2">
+                  <button
+                    type="button"
+                    disabled={transitioning}
+                    onClick={() => handleTransition("PENDING_REVIEW")}
+                    className="px-4 py-2 rounded-xl bg-violet-600 hover:bg-violet-700 text-white text-xs font-extrabold cursor-pointer"
+                  >
+                    Lưu kết quả & Gửi Chờ duyệt
+                  </button>
+                </div>
+              </div>
+
+              {/* Phần dành cho Người duyệt nghiệm thu kết quả */}
+              <div className="bg-violet-50/50 p-4 rounded-xl border border-violet-200 space-y-3">
+                <div className="flex items-center justify-between">
+                  <h4 className="text-xs font-extrabold uppercase tracking-wider text-violet-950">
+                    2. Đánh giá Chất lượng & Nghiệm thu (Dành cho Người duyệt)
+                  </h4>
+                  <span className="text-[11px] font-bold text-violet-700">
+                    Đã gửi duyệt KHÔNG đồng nghĩa đã hoàn thành
+                  </span>
+                </div>
+
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 text-xs">
+                  <div>
+                    <label className="block font-bold text-slate-700 mb-1">
+                      Xếp loại chất lượng sản phẩm (Độc lập với % checklist)
+                    </label>
+                    <select
+                      value={reviewRatingInput}
+                      onChange={e => setReviewRatingInput(e.target.value as any)}
+                      disabled={!isReviewerOrManager}
+                      className="w-full px-3 py-2 rounded-xl border border-slate-300 bg-white font-semibold"
+                    >
+                      <option value="XUAT_SAC">Xuất sắc — Vượt tiêu chí nghiệm thu</option>
+                      <option value="DAT_CHUAN">Đạt chuẩn — Đáp ứng đầy đủ tiêu chí</option>
+                      <option value="CAN_BO_SUNG">Cần bổ sung — Chưa đạt yêu cầu</option>
+                    </select>
+                  </div>
+                  <div>
+                    <label className="block font-bold text-slate-700 mb-1">
+                      Trạng thái nghiệm thu hiện tại
+                    </label>
+                    <div className="px-3 py-2 rounded-xl bg-white border border-slate-200 font-bold text-slate-800">
+                      {WORKFLOW_STATUS_LABELS[currentWfStatus]}
+                    </div>
+                  </div>
+                </div>
+
+                <div>
+                  <label className="block text-xs font-bold text-slate-700 mb-1">
+                    Nhận xét nghiệm thu / Yêu cầu chỉnh sửa của Người duyệt
+                  </label>
+                  <textarea
+                    rows={2}
+                    disabled={!isReviewerOrManager}
+                    value={reviewCommentInput}
+                    onChange={e => setReviewCommentInput(e.target.value)}
+                    placeholder="Nhập ý kiến đánh giá chất lượng chuyên môn hoặc nội dung yêu cầu bổ sung..."
+                    className="w-full p-3 rounded-xl border border-slate-300 bg-white text-xs"
+                  />
+                </div>
+
+                {isReviewerOrManager && (
+                  <div className="flex items-center justify-end gap-2 pt-2">
+                    <button
+                      type="button"
+                      disabled={transitioning}
+                      onClick={() => {
+                        if (!reviewCommentInput.trim()) {
+                          alert("Vui lòng nhập nội dung cần bổ sung vào ô Nhận xét.")
+                          return
+                        }
+                        handleTransition("NEEDS_REVISION", reviewCommentInput)
+                      }}
+                      className="px-4 py-2 rounded-xl bg-amber-600 hover:bg-amber-700 text-white text-xs font-bold cursor-pointer"
+                    >
+                      Yêu cầu bổ sung
+                    </button>
+                    <button
+                      type="button"
+                      disabled={transitioning}
+                      onClick={() => handleTransition("COMPLETED", reviewCommentInput)}
+                      className="px-4 py-2 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-extrabold cursor-pointer"
+                    >
+                      Phê duyệt Hoàn thành
+                    </button>
+                  </div>
+                )}
+              </div>
             </div>
           ) : tab === "comments" ? (
-            <div className="space-y-3.5">
-              {comments.length === 0 && (
+            /* TAB 3: TRAO ĐỔI, VƯỚNG MẮC & YÊU CẦU HỖ TRỢ */
+            <div className="space-y-4">
+              {comments.length === 0 ? (
                 <div className="text-center py-10 text-slate-400">
-                  <MessageSquare className="w-10 h-10 mx-auto mb-2 opacity-30" />
-                  <p className="font-semibold text-xs">Chưa có ý kiến trao đổi nào</p>
-                  <p className="text-[11px] mt-0.5">Viết bình luận, cập nhật tiến độ hoặc nêu vướng mắc để ban điều hành hỗ trợ!</p>
+                  <MessageSquare className="w-8 h-8 mx-auto mb-2 opacity-50" />
+                  <p className="text-xs font-medium">
+                    Chưa có trao đổi hay báo cáo vướng mắc nào.
+                  </p>
                 </div>
-              )}
-              {comments.map(c => {
-                const isOwn = c.userId === currentUserId
-                const isBlocker = c.commentType === "BLOCKER"
-                const isCooperation = c.commentType === "COOPERATION"
-                const isConclusion = c.commentType === "CONCLUSION"
-                const isProgress = c.commentType === "PROGRESS"
-                const hasAction = (isBlocker || isCooperation)
-
-                return (
-                  <div key={c.id} className="space-y-1">
-                    {/* Specialized Cards for Blockers & Conclusions */}
-                    {isBlocker ? (
-                      <div className="p-3.5 rounded-2xl bg-red-50/90 border border-red-200 text-xs space-y-2 shadow-2xs">
-                        <div className="flex items-center justify-between">
-                          <span className="bg-red-600 text-white font-extrabold px-2.5 py-0.5 rounded-md text-[10px] flex items-center gap-1">
-                            <AlertTriangle className="w-3 h-3" /> VƯỚNG MẮC / CẦN THÁO GỠ
+              ) : (
+                comments.map(c => {
+                  const isMe = c.user.id === currentUserId
+                  const isBlocker = c.commentType === "BLOCKER"
+                  const isResolved = c.actionStatus === "RESOLVED"
+                  return (
+                    <div
+                      key={c.id}
+                      className={`p-3.5 rounded-xl border text-xs ${
+                        isBlocker
+                          ? "bg-rose-50/70 border-rose-200"
+                          : isMe
+                          ? "bg-violet-50/60 border-violet-200"
+                          : "bg-white border-slate-200"
+                      }`}
+                    >
+                      <div className="flex items-center justify-between gap-2 mb-1">
+                        <div className="flex items-center gap-2">
+                          <span className="font-bold text-slate-900">
+                            {c.user.fullName}
                           </span>
-                          <span className="text-[10px] text-slate-400">{c.user?.fullName} • {formatTime(c.createdAt)}</span>
-                        </div>
-                        <p className="font-medium text-red-950 leading-relaxed whitespace-pre-wrap">{c.content}</p>
-                        
-                        {/* Action Item Box */}
-                        <div className="p-2.5 bg-white/80 border border-red-200 rounded-xl flex items-center justify-between flex-wrap gap-2 text-[11px]">
-                          <div className="flex items-center gap-3 flex-wrap">
-                            <span>Người giải quyết: <b>{c.actionAssigneeName || "Ban Giám Đốc"}</b></span>
-                            {c.actionDueDate && (
-                              <span>Hạn: <b>{new Date(c.actionDueDate).toLocaleDateString("vi-VN")}</b></span>
-                            )}
-                            <span className={`px-2 py-0.5 rounded-md font-bold ${
-                              c.actionStatus === "RESOLVED" ? "bg-emerald-100 text-emerald-800" : "bg-red-100 text-red-800 animate-pulse"
-                            }`}>
-                              {c.actionStatus === "RESOLVED" ? "✓ ĐÃ GIẢI QUYẾT" : "⚠️ ĐANG XỬ LÝ"}
+                          <span className="text-[10px] text-slate-400">
+                            {formatTime(c.createdAt)}
+                          </span>
+                          {isBlocker && (
+                            <span className="px-2 py-0.5 rounded bg-rose-100 text-rose-800 text-[10px] font-bold">
+                              VƯỚNG MẮC
                             </span>
-                          </div>
-                          {(isAdmin || isAssignee || c.userId === currentUserId) && (
-                            <button
-                              onClick={() => handleToggleActionStatus(c)}
-                              className={`px-3 py-1 rounded-lg font-bold text-[10px] transition-all flex items-center gap-1 ${
-                                c.actionStatus === "RESOLVED"
-                                  ? "bg-slate-100 text-slate-700 hover:bg-slate-200"
-                                  : "bg-emerald-600 text-white hover:bg-emerald-700 shadow-2xs"
-                              }`}
-                            >
-                              <CheckSquare className="w-3 h-3" />
-                              {c.actionStatus === "RESOLVED" ? "Mở lại vướng mắc" : "Đánh dấu Đã giải quyết"}
-                            </button>
                           )}
                         </div>
-                      </div>
-                    ) : isConclusion ? (
-                      <div className="p-3.5 rounded-2xl bg-gradient-to-r from-emerald-50 to-teal-50 border border-emerald-200 text-xs space-y-1.5 shadow-2xs">
-                        <div className="flex items-center justify-between">
-                          <span className="bg-emerald-600 text-white font-extrabold px-2.5 py-0.5 rounded-md text-[10px] flex items-center gap-1">
-                            <Sparkles className="w-3 h-3" /> KẾT LUẬN / CHỈ ĐẠO CỦA LÃNH ĐẠO
-                          </span>
-                          <span className="text-[10px] text-slate-400">{c.user?.fullName} • {formatTime(c.createdAt)}</span>
-                        </div>
-                        <p className="font-bold text-emerald-950 leading-relaxed whitespace-pre-wrap">{c.content}</p>
-                      </div>
-                    ) : isCooperation ? (
-                      <div className="p-3.5 rounded-2xl bg-amber-50/80 border border-amber-200 text-xs space-y-2 shadow-2xs">
-                        <div className="flex items-center justify-between">
-                          <span className="bg-amber-600 text-white font-extrabold px-2.5 py-0.5 rounded-md text-[10px] flex items-center gap-1">
-                            <Users className="w-3 h-3" /> YÊU CẦU PHỐI HỢP
-                          </span>
-                          <span className="text-[10px] text-slate-400">{c.user?.fullName} • {formatTime(c.createdAt)}</span>
-                        </div>
-                        <p className="font-medium text-amber-950 leading-relaxed whitespace-pre-wrap">{c.content}</p>
-                        {c.actionAssigneeName && (
-                          <div className="text-[11px] text-amber-900 font-semibold">
-                            Giao đầu mối hỗ trợ: <b>{c.actionAssigneeName}</b>
-                          </div>
+                        {(isMe || isAdmin) && (
+                          <button
+                            onClick={() => handleDeleteComment(c.id)}
+                            className="text-slate-400 hover:text-rose-600"
+                          >
+                            <Trash2 className="w-3.5 h-3.5" />
+                          </button>
                         )}
                       </div>
-                    ) : (
-                      /* Regular comment & Progress update */
-                      <div className={"flex " + (isOwn ? "justify-end" : "justify-start")}>
-                        <div className={"max-w-[85%] group " + (isOwn ? "order-2" : "")}>
-                          <div className={"rounded-2xl px-4 py-2.5 shadow-2xs " + (
-                            isOwn 
-                              ? "bg-[#48BFE3] text-white rounded-br-md" 
-                              : isProgress 
-                              ? "bg-sky-50 text-sky-950 border border-sky-200 rounded-bl-md" 
-                              : "bg-slate-100 text-slate-800 rounded-bl-md"
-                          )}>
-                            {!isOwn && (
-                              <div className="flex items-center gap-2 mb-1">
-                                <span className="text-[11px] font-bold text-[#0284C7]">{c.user?.fullName}</span>
-                                {isProgress && (
-                                  <span className="text-[9px] bg-sky-200 text-sky-800 px-1.5 py-0.5 rounded-md font-extrabold">Tiến độ</span>
-                                )}
-                              </div>
-                            )}
-                            {isProgress && isOwn && (
-                              <div className="text-[9px] bg-white/20 text-white px-1.5 py-0.5 rounded-md font-extrabold inline-block mb-1">
-                                Cập nhật tiến độ
-                              </div>
-                            )}
-                            <p className="text-xs whitespace-pre-wrap break-words leading-relaxed">{c.content}</p>
-                          </div>
-                          <div className={"flex items-center gap-2 mt-1 px-1 " + (isOwn ? "justify-end" : "")}>
-                            <span className="text-[10px] text-slate-400">{formatTime(c.createdAt)}</span>
-                            {(isOwn || isAdmin) && (
-                              <button onClick={() => handleDeleteComment(c.id)} className="opacity-0 group-hover:opacity-100 transition-opacity text-slate-400 hover:text-red-500">
-                                <Trash2 className="w-3 h-3" />
-                              </button>
-                            )}
-                          </div>
+                      <p className="text-slate-700 whitespace-pre-wrap">{c.content}</p>
+                      {isBlocker && (
+                        <div className="mt-2 pt-2 border-t border-rose-200/60 flex items-center justify-between">
+                          <span className="text-[11px] font-semibold text-rose-800">
+                            Trạng thái:{" "}
+                            {isResolved ? "Đã tháo gỡ" : "Đang chờ tháo gỡ"}
+                          </span>
+                          <button
+                            type="button"
+                            onClick={() =>
+                              handleToggleActionStatus(c.id, c.actionStatus)
+                            }
+                            className="px-2.5 py-1 rounded bg-white border border-rose-300 text-[11px] font-bold text-rose-700 cursor-pointer"
+                          >
+                            {isResolved
+                              ? "Mở lại vướng mắc"
+                              : "Đánh dấu Đã giải quyết"}
+                          </button>
                         </div>
-                      </div>
-                    )}
-                  </div>
-                )
-              })}
+                      )}
+                    </div>
+                  )
+                })
+              )}
               <div ref={commentsEndRef} />
             </div>
-          ) : (
-            <div className="space-y-2">
-              {attachments.length === 0 && (
-                <div className="text-center py-12 text-slate-400">
-                  <Paperclip className="w-12 h-12 mx-auto mb-3 opacity-30" />
-                  <p className="font-medium">Chưa có file đính kèm</p>
-                  <p className="text-xs mt-1">Tải lên file báo cáo hoặc tài liệu liên quan</p>
-                </div>
-              )}
+          ) : tab === "attachments" ? (
+            /* TAB 4: TỆP ĐÍNH KÈM MINH CHỨNG */
+            <div className="space-y-4">
+              <div>
+                <input
+                  type="file"
+                  ref={fileInputRef}
+                  onChange={handleFileUpload}
+                  className="hidden"
+                />
+                <button
+                  type="button"
+                  onClick={() => fileInputRef.current?.click()}
+                  disabled={uploading}
+                  className="w-full py-3 border-2 border-dashed border-violet-300 hover:border-violet-500 bg-violet-50/40 text-violet-700 font-bold rounded-xl text-xs flex items-center justify-center gap-2 cursor-pointer"
+                >
+                  <Paperclip className="w-4 h-4" />
+                  {uploading
+                    ? "Đang tải tệp lên..."
+                    : "Tải lên tệp sản phẩm / minh chứng (Tối đa 4MB)"}
+                </button>
+              </div>
               {attachments.map(a => {
-                const IconComp = getFileIcon(a.contentType)
+                const IconComponent = getFileIcon(a.contentType)
                 return (
-                  <div key={a.id} className="flex items-center gap-3 p-3 bg-white border border-slate-200 rounded-2xl hover:border-teal-300 hover:shadow-xs transition-all group">
-                    <div className="w-10 h-10 rounded-xl bg-teal-50 flex items-center justify-center shrink-0">
-                      <IconComp className="w-5 h-5 text-[#48BFE3]" />
+                  <div
+                    key={a.id}
+                    className="flex items-center justify-between p-3 bg-white rounded-xl border border-slate-200 text-xs"
+                  >
+                    <div className="flex items-center gap-3 min-w-0">
+                      <IconComponent className="w-5 h-5 text-violet-600 shrink-0" />
+                      <div className="truncate">
+                        <div className="font-bold text-slate-800 truncate">
+                          {a.fileName}
+                        </div>
+                        <div className="text-[10px] text-slate-400">
+                          {formatSize(a.fileSize)} • {a.user?.fullName}
+                        </div>
+                      </div>
                     </div>
-                    <div className="flex-1 min-w-0">
-                      <p className="text-xs font-bold text-slate-800 truncate">{a.fileName}</p>
-                      <p className="text-[11px] text-slate-400">{formatSize(a.fileSize)} • {a.user?.fullName} • {formatTime(a.createdAt)}</p>
-                    </div>
-                    <div className="flex items-center gap-1">
-                      <button onClick={() => handleDownload(a)} className="p-1.5 text-[#48BFE3] hover:bg-teal-50 rounded-lg" title="Tải xuống">
+                    <div className="flex items-center gap-1.5">
+                      <a
+                        href={a.fileData}
+                        download={a.fileName}
+                        className="p-1.5 rounded-lg bg-slate-100 hover:bg-violet-50 text-slate-700"
+                      >
                         <Download className="w-4 h-4" />
-                      </button>
-                      {(a.userId === currentUserId || isAdmin) && (
-                        <button onClick={() => handleDeleteAttachment(a.id)} className="p-1.5 text-red-500 hover:bg-red-50 rounded-lg" title="Xóa">
+                      </a>
+                      {(a.user?.id === currentUserId || isAdmin) && (
+                        <button
+                          type="button"
+                          onClick={() => handleDeleteAttachment(a.id)}
+                          className="p-1.5 rounded-lg bg-slate-100 hover:bg-rose-50 text-slate-500 hover:text-rose-600"
+                        >
                           <Trash2 className="w-4 h-4" />
                         </button>
                       )}
@@ -538,148 +1205,97 @@ export function TaskDetailPanel({ task, currentUserId, isAdmin, allStaffUsers = 
                 )
               })}
             </div>
-          )}
-        </div>
-
-        {/* Bottom Input Bar */}
-        <div className="p-3 bg-slate-50 border-t border-slate-200 space-y-2.5">
-          {tab === "comments" ? (
-            <div className="space-y-2">
-              {/* Type pills selector */}
-              <div className="flex items-center justify-between flex-wrap gap-1.5 text-[11px]">
-                <div className="flex items-center gap-1.5 flex-wrap">
-                  <span className="text-slate-400 font-bold text-[10px] mr-1">Phân loại:</span>
-                  {COMMENT_TYPES.map(t => {
-                    const Icon = t.icon
-                    const isSelected = commentType === t.value
-                    return (
-                      <button
-                        key={t.value}
-                        type="button"
-                        onClick={() => setCommentType(t.value)}
-                        className={`px-2.5 py-1 rounded-lg font-bold text-[10px] flex items-center gap-1 transition-all ${
-                          isSelected 
-                            ? "bg-[#00A19A] text-white shadow-2xs" 
-                            : t.color
-                        }`}
-                      >
-                        <Icon className="w-3 h-3" /> {t.label}
-                      </button>
-                    )
-                  })}
-                </div>
-
-                {/* Mention button */}
-                <div className="relative">
-                  <button
-                    type="button"
-                    onClick={() => setShowMentionMenu(!showMentionMenu)}
-                    className="text-[10px] font-bold text-slate-600 hover:text-slate-900 bg-white border border-slate-200 px-2 py-1 rounded-lg flex items-center gap-1 shadow-2xs hover:bg-slate-100"
-                  >
-                    <AtSign className="w-3 h-3 text-[#48BFE3]" /> @Nhắc tên
-                  </button>
-
-                  {showMentionMenu && (
-                    <div className="absolute right-0 bottom-full mb-2 w-56 bg-white border border-slate-200 rounded-2xl shadow-xl p-2 z-50 text-xs space-y-1">
-                      <input
-                        type="text"
-                        value={mentionFilter}
-                        onChange={e => setMentionFilter(e.target.value)}
-                        placeholder="Tìm nhân sự..."
-                        className="w-full text-xs p-1.5 border rounded-lg mb-1 outline-none focus:ring-1 focus:ring-teal-400"
-                      />
-                      <div className="max-h-36 overflow-y-auto space-y-0.5">
-                        {allStaffUsers
-                          .filter(u => u.fullName.toLowerCase().includes(mentionFilter.toLowerCase()))
-                          .slice(0, 10)
-                          .map(u => (
-                            <button
-                              key={u.id}
-                              type="button"
-                              onClick={() => handleInsertMention(u)}
-                              className="w-full text-left px-2 py-1.5 rounded-lg hover:bg-teal-50 text-slate-700 font-semibold truncate flex items-center gap-1.5"
-                            >
-                              <User className="w-3 h-3 text-slate-400 shrink-0" />
-                              <span>{u.fullName}</span>
-                            </button>
-                          ))}
-                      </div>
-                    </div>
-                  )}
-                </div>
-              </div>
-
-              {/* Action Item specific inputs if Blocker or Cooperation */}
-              {(commentType === "BLOCKER" || commentType === "COOPERATION") && (
-                <div className="p-2.5 bg-white border border-red-200 rounded-xl grid grid-cols-1 sm:grid-cols-2 gap-2 text-xs">
-                  <div>
-                    <label className="block text-[10px] font-bold text-slate-600 mb-0.5">Người chịu trách nhiệm xử lý / hỗ trợ:</label>
-                    <select
-                      value={actionAssigneeId}
-                      onChange={e => setActionAssigneeId(e.target.value)}
-                      className="w-full text-xs p-1.5 border rounded-lg bg-slate-50 font-bold"
-                    >
-                      <option value="">-- Chọn nhân sự giải quyết --</option>
-                      {allStaffUsers.map(u => (
-                        <option key={u.id} value={u.id}>{u.fullName}</option>
-                      ))}
-                    </select>
-                  </div>
-                  <div>
-                    <label className="block text-[10px] font-bold text-slate-600 mb-0.5">Hạn chót giải quyết điểm nghẽn:</label>
-                    <input
-                      type="date"
-                      value={actionDueDate}
-                      onChange={e => setActionDueDate(e.target.value)}
-                      className="w-full text-xs p-1.5 border rounded-lg bg-slate-50 font-bold"
-                    />
-                  </div>
-                </div>
-              )}
-
-              {/* Input row */}
-              <div className="flex items-end gap-2">
-                <textarea
-                  ref={textareaRef}
-                  value={newComment}
-                  onChange={e => setNewComment(e.target.value)}
-                  onKeyDown={handleKeyDown}
-                  placeholder={
-                    commentType === "BLOCKER" 
-                      ? "Nêu chi tiết khó khăn, vướng mắc và kiến nghị giải pháp..." 
-                      : commentType === "CONCLUSION"
-                      ? "Ghi rõ kết luận chỉ đạo của Ban lãnh đạo..."
-                      : commentType === "PROGRESS"
-                      ? "Cập nhật % tiến độ và nội dung công việc vừa hoàn tất..."
-                      : "Nhập nội dung trao đổi... (Enter để gửi)"
-                  }
-                  rows={2}
-                  className="flex-1 border border-slate-200 rounded-xl px-4 py-2.5 text-xs resize-none focus:outline-none focus:ring-2 focus:ring-[#48BFE3] bg-white font-medium"
-                />
-                <button
-                  onClick={handleSendComment}
-                  disabled={!newComment.trim() || sending}
-                  className="bg-[#48BFE3] text-white p-3 rounded-xl hover:bg-[#00A19A] disabled:opacity-40 transition-colors shadow-xs shrink-0"
-                  title="Gửi"
-                >
-                  <Send className="w-4 h-4" />
-                </button>
-              </div>
-            </div>
           ) : (
-            <div className="flex items-center justify-between">
-              <input ref={fileInputRef} type="file" multiple onChange={handleFileUpload} className="hidden" accept="*/*" />
-              <button
-                onClick={() => fileInputRef.current?.click()}
-                disabled={uploading}
-                className="flex items-center gap-2 bg-[#48BFE3] text-white px-5 py-2.5 rounded-xl hover:bg-[#00A19A] disabled:opacity-50 font-bold text-xs transition-colors shadow-xs"
-              >
-                <Paperclip className="w-4 h-4" /> {uploading ? "Đang tải lên..." : "Tải file tài liệu lên"}
-              </button>
-              <span className="text-[11px] text-slate-400">Hỗ trợ file tối đa 5MB</span>
+            /* TAB 5: LỊCH SỬ XỬ LÝ (AUDIT LOGS — ĐỔI NGƯỜI, ĐỔI HẠN, DUYỆT, HỦY, MỞ LẠI) */
+            <div className="space-y-3">
+              <div className="text-xs text-slate-500 mb-2">
+                Mọi thao tác phát hành, đổi người phụ trách, đổi hạn, gửi duyệt, phê duyệt, tạm dừng, hủy và mở lại đều được ghi vết bất biến.
+              </div>
+              {auditLogs.length === 0 ? (
+                <div className="p-6 text-center text-xs text-slate-400 bg-white rounded-xl border border-slate-200">
+                  Chưa có bản ghi lịch sử chuyển trạng thái nâng cao.
+                </div>
+              ) : (
+                auditLogs.map(log => (
+                  <div
+                    key={log.id}
+                    className="p-3.5 rounded-xl bg-white border border-slate-200 text-xs space-y-1"
+                  >
+                    <div className="flex items-center justify-between">
+                      <span className="font-extrabold text-slate-900">
+                        {log.actorName} ({log.actorRole})
+                      </span>
+                      <span className="text-[11px] text-slate-400">
+                        {new Date(log.createdAt).toLocaleString("vi-VN")}
+                      </span>
+                    </div>
+                    <div className="flex items-center gap-2 text-violet-700 font-bold">
+                      <span>Hành động: {log.action}</span>
+                      {log.fromStatus && log.toStatus && (
+                        <span>
+                          ({log.fromStatus} &rarr; {log.toStatus})
+                        </span>
+                      )}
+                    </div>
+                    {log.reason && (
+                      <p className="text-slate-600 bg-slate-50 p-2 rounded border border-slate-100">
+                        Lý do / Ghi chú: {log.reason}
+                      </p>
+                    )}
+                  </div>
+                ))
+              )}
             </div>
           )}
         </div>
+
+        {/* Footer nhập trao đổi nhanh khi ở tab comments */}
+        {tab === "comments" && (
+          <div className="p-3.5 bg-white border-t border-slate-200">
+            <div className="flex items-center gap-1.5 mb-2 overflow-x-auto">
+              {COMMENT_TYPES.map(ct => {
+                const Icon = ct.icon
+                const active = commentType === ct.value
+                return (
+                  <button
+                    key={ct.value}
+                    type="button"
+                    onClick={() => setCommentType(ct.value)}
+                    className={`flex items-center gap-1 px-2.5 py-1 rounded-lg text-[11px] font-bold cursor-pointer ${
+                      active
+                        ? "bg-violet-600 text-white"
+                        : "bg-slate-100 text-slate-600 hover:bg-slate-200"
+                    }`}
+                  >
+                    <Icon className="w-3 h-3" />
+                    {ct.label}
+                  </button>
+                )
+              })}
+            </div>
+            <form onSubmit={handleSendComment} className="flex gap-2">
+              <textarea
+                ref={textareaRef}
+                value={newComment}
+                onChange={e => setNewComment(e.target.value)}
+                placeholder={
+                  commentType === "BLOCKER"
+                    ? "Mô tả rõ vướng mắc cần lãnh đạo tháo gỡ..."
+                    : "Nhập nội dung trao đổi..."
+                }
+                rows={1}
+                className="flex-1 px-3 py-2 rounded-xl border border-slate-300 text-xs resize-none"
+              />
+              <button
+                type="submit"
+                disabled={!newComment.trim() || sending}
+                className="px-4 py-2 rounded-xl bg-violet-600 hover:bg-violet-700 disabled:opacity-50 text-white text-xs font-bold cursor-pointer"
+              >
+                <Send className="w-4 h-4" />
+              </button>
+            </form>
+          </div>
+        )}
       </div>
     </div>
   )
