@@ -84,6 +84,41 @@ export async function GET(request: Request) {
       });
     }
 
+    if (studentInfo) {
+      const isCuid = (v?: string | null) => Boolean(v && /^c[a-z0-9]{15,}$/i.test(String(v).trim()));
+      let resolvedCampusLabel =
+        studentInfo.batch?.campus?.campusCode ||
+        studentInfo.batch?.campus?.campusName ||
+        "";
+
+      const rawCampusId = isCuid(studentInfo.admissionCampus)
+        ? studentInfo.admissionCampus
+        : isCuid(studentInfo.registeredCampus)
+        ? studentInfo.registeredCampus
+        : null;
+
+      if (!resolvedCampusLabel && rawCampusId) {
+        try {
+          const foundCampus = await (prisma as any).campus.findUnique({
+            where: { id: rawCampusId },
+            select: { campusCode: true, campusName: true }
+          });
+          if (foundCampus) {
+            resolvedCampusLabel = foundCampus.campusCode || foundCampus.campusName || "";
+          }
+        } catch (e) {}
+      }
+
+      if (resolvedCampusLabel) {
+        if (isCuid(studentInfo.admissionCampus)) {
+          studentInfo.admissionCampus = resolvedCampusLabel;
+        }
+        if (isCuid(studentInfo.registeredCampus)) {
+          studentInfo.registeredCampus = resolvedCampusLabel;
+        }
+      }
+    }
+
     return NextResponse.json({ success: true, data: record, student: studentInfo });
   } catch (error: any) {
     console.error("GET /api/admin/orientation/records error:", error);

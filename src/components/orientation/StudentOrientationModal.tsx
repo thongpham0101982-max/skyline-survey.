@@ -1027,7 +1027,7 @@ export function StudentOrientationModal({
   }
 
   const findSubjectScore = (keywords: string[]) => {
-    // 1. Check parsed kqHocTap.scores
+    // 1. Check parsed kqHocTap.scores object
     if (parsedKqHocTap?.scores && typeof parsedKqHocTap.scores === "object") {
       for (const [k, v] of Object.entries(parsedKqHocTap.scores)) {
         const normK = k.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "")
@@ -1036,7 +1036,28 @@ export function StudentOrientationModal({
         }
       }
     }
-    // 2. Check studentDetail.scores array
+    // 2. Check parsed kqHocTap.moet?.subjects / bilingual?.moetSubjects / foreign?.subjects / homeschool?.subjects
+    const subjectArrays = [
+      parsedKqHocTap?.moet?.subjects,
+      parsedKqHocTap?.bilingual?.moetSubjects,
+      parsedKqHocTap?.bilingual?.internationalSubjects,
+      parsedKqHocTap?.foreign?.subjects,
+      parsedKqHocTap?.homeschool?.subjects
+    ]
+    for (const arr of subjectArrays) {
+      if (Array.isArray(arr)) {
+        for (const sub of arr) {
+          const sName = String(sub?.name || sub?.id || "")
+            .toLowerCase()
+            .normalize("NFD")
+            .replace(/[\u0300-\u036f]/g, "")
+          if (keywords.some(kw => sName.includes(kw)) && sub?.score !== null && sub?.score !== undefined && String(sub.score).trim() !== "") {
+            return String(sub.score)
+          }
+        }
+      }
+    }
+    // 3. Check studentDetail.scores array
     if (Array.isArray(studentDetail?.scores)) {
       for (const item of studentDetail.scores) {
         const sName = String(item?.subject?.name || item?.subjectName || "")
@@ -1044,7 +1065,7 @@ export function StudentOrientationModal({
           .normalize("NFD")
           .replace(/[\u0300-\u036f]/g, "")
         if (keywords.some(kw => sName.includes(kw))) {
-          const val = item?.score ?? item?.rawScore ?? item?.gradeLevel
+          const val = item?.finalScore ?? item?.score ?? item?.rawScore ?? item?.gradeLevel
           if (val !== null && val !== undefined && String(val).trim() !== "") {
             return String(val)
           }
@@ -1062,6 +1083,9 @@ export function StudentOrientationModal({
     : "—"
 
   const displayHocTap =
+    parsedKqHocTap?.overallRating ||
+    parsedKqHocTap?.moet?.overallRating ||
+    parsedKqHocTap?.bilingual?.moetRating ||
     parsedKqHocTap?.hocTap ||
     parsedKqHocTap?.academicRating ||
     parsedKqHocTap?.nangLuc ||
@@ -1071,10 +1095,11 @@ export function StudentOrientationModal({
     "Tốt"
 
   const displayRenLuyen =
-    studentDetail?.kqRenLuyen ||
-    studentDetail?.conductRating ||
+    parsedKqHocTap?.moet?.conductRating ||
     parsedKqHocTap?.renLuyen ||
     parsedKqHocTap?.phamChat ||
+    (typeof studentDetail?.kqRenLuyen === "string" && !studentDetail.kqRenLuyen.trim().startsWith("{") ? studentDetail.kqRenLuyen : "") ||
+    studentDetail?.conductRating ||
     "Tốt"
 
   const displayMath =

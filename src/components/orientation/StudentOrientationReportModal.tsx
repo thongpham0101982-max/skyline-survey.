@@ -54,10 +54,12 @@ export function StudentOrientationReportModal({
   const [loading, setLoading] = useState(false)
   const [exportingPdf, setExportingPdf] = useState(false)
   const [orientationData, setOrientationData] = useState<any>(propOrientationData || null)
+  const [studentInfo, setStudentInfo] = useState<any>(student)
 
   // Khởi tạo và fetch dữ liệu nhanh chóng, không làm đơ giao diện
   useEffect(() => {
     if (!isOpen || !student?.id) return
+    setStudentInfo(student)
 
     const initialData = propOrientationData || student?.orientationRecord || student?.orientationData
     if (initialData) {
@@ -76,6 +78,11 @@ export function StudentOrientationReportModal({
       .then(res => res.json())
       .then(data => {
         if (isMounted) {
+          if (data.student) {
+            setStudentInfo((prev: any) => ({ ...prev, ...data.student }))
+          } else if (data.data?.student) {
+            setStudentInfo((prev: any) => ({ ...prev, ...data.data.student }))
+          }
           if (data.success && data.data) {
             setOrientationData(data.data)
           } else if (!orientationData && (student?.orientationRecord || initialData)) {
@@ -429,6 +436,123 @@ export function StudentOrientationReportModal({
     return { gdcsGeneralNote: raw }
   }, [orientationData?.admissionConsultantNote])
 
+  const sData = studentInfo || student
+
+  const isCuidLike = (val?: string | null) =>
+    Boolean(val && /^(cm|cl)[a-z0-9]{15,}$/i.test(String(val).trim()))
+
+  const resolveCampusDisplay = () => {
+    const cCode = sData?.batch?.campus?.campusCode
+    const cName = sData?.batch?.campus?.campusName
+    if (cCode && !isCuidLike(cCode)) return cCode
+    if (cName && !isCuidLike(cName)) return cName
+    const adm = sData?.admissionCampus
+    if (adm && !isCuidLike(adm)) return adm
+    const reg = sData?.registeredCampus
+    if (reg && !isCuidLike(reg)) return reg
+    const bName = String(sData?.batch?.name || "")
+    const m = bName.match(/\b(CS\d+)\b/i)
+    if (m) return m[1].toUpperCase()
+    return "Sky-Line"
+  }
+
+  let parsedKqHocTap: any = null
+  const rawKq = sData?.kqHocTap
+  if (typeof rawKq === "string" && rawKq.trim().startsWith("{")) {
+    try {
+      parsedKqHocTap = JSON.parse(rawKq)
+    } catch (e) {}
+  } else if (rawKq && typeof rawKq === "object") {
+    parsedKqHocTap = rawKq
+  }
+
+  const findSubjectScore = (keywords: string[]) => {
+    if (parsedKqHocTap?.scores && typeof parsedKqHocTap.scores === "object") {
+      for (const [k, v] of Object.entries(parsedKqHocTap.scores)) {
+        const normK = k.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "")
+        if (keywords.some(kw => normK.includes(kw)) && v !== null && v !== undefined && String(v).trim() !== "") {
+          return String(v)
+        }
+      }
+    }
+    const subjectArrays = [
+      parsedKqHocTap?.moet?.subjects,
+      parsedKqHocTap?.bilingual?.moetSubjects,
+      parsedKqHocTap?.bilingual?.internationalSubjects,
+      parsedKqHocTap?.foreign?.subjects,
+      parsedKqHocTap?.homeschool?.subjects
+    ]
+    for (const arr of subjectArrays) {
+      if (Array.isArray(arr)) {
+        for (const sub of arr) {
+          const sName = String(sub?.name || sub?.id || "")
+            .toLowerCase()
+            .normalize("NFD")
+            .replace(/[\u0300-\u036f]/g, "")
+          if (keywords.some(kw => sName.includes(kw)) && sub?.score !== null && sub?.score !== undefined && String(sub.score).trim() !== "") {
+            return String(sub.score)
+          }
+        }
+      }
+    }
+    if (Array.isArray(sData?.scores)) {
+      for (const item of sData.scores) {
+        const sName = String(item?.subject?.name || item?.subjectName || "")
+          .toLowerCase()
+          .normalize("NFD")
+          .replace(/[\u0300-\u036f]/g, "")
+        if (keywords.some(kw => sName.includes(kw))) {
+          const val = item?.finalScore ?? item?.score ?? item?.rawScore ?? item?.gradeLevel
+          if (val !== null && val !== undefined && String(val).trim() !== "") {
+            return String(val)
+          }
+        }
+      }
+    }
+    return ""
+  }
+
+  const campusName = resolveCampusDisplay()
+  const displayHocTap =
+    parsedKqHocTap?.overallRating ||
+    parsedKqHocTap?.moet?.overallRating ||
+    parsedKqHocTap?.bilingual?.moetRating ||
+    parsedKqHocTap?.hocTap ||
+    parsedKqHocTap?.academicRating ||
+    parsedKqHocTap?.nangLuc ||
+    (typeof rawKq === "string" && !rawKq.trim().startsWith("{") ? rawKq : "") ||
+    sData?.academicRating ||
+    sData?.kqgdTieuHoc ||
+    "Tốt"
+
+  const displayRenLuyen =
+    parsedKqHocTap?.moet?.conductRating ||
+    parsedKqHocTap?.renLuyen ||
+    parsedKqHocTap?.phamChat ||
+    (typeof sData?.kqRenLuyen === "string" && !sData.kqRenLuyen.trim().startsWith("{") ? sData.kqRenLuyen : "") ||
+    sData?.conductRating ||
+    "Tốt"
+
+  const displayMath =
+    orientationData?.mathScore ||
+    sData?.mathScore ||
+    findSubjectScore(["toan", "math"]) ||
+    "—"
+
+  const displayLiterature =
+    orientationData?.literatureScore ||
+    sData?.literatureScore ||
+    findSubjectScore(["ngu van", "tieng viet", "van", "literature"]) ||
+    "—"
+
+  const displayEnglish =
+    orientationData?.writtenEnglishScore ||
+    sData?.writtenEnglishScore ||
+    orientationData?.oralEnglishScore ||
+    sData?.oralEnglishScore ||
+    findSubjectScore(["tieng anh", "ngoai ngu", "english"]) ||
+    "—"
+
   return (
     <div id="orientation-report-modal-backdrop" className="no-print-backdrop fixed inset-0 z-[260] flex items-center justify-center p-2 sm:p-4 bg-slate-900/60 backdrop-blur-xs overflow-y-auto print:p-0 print:bg-white print:static print:z-auto">
       
@@ -601,7 +725,7 @@ export function StudentOrientationReportModal({
                     <span>HỆ THỐNG GIÁO DỤC SKY-LINE</span>
                   </div>
                   <div className="text-xs font-bold text-slate-800">
-                    Cơ sở: {student?.admissionCampus || student?.registeredCampus || "Sky-Line Central"}
+                    Cơ sở: {campusName}
                   </div>
                   <div className="text-[10px] text-slate-500">
                     Hội đồng Khảo sát &amp; Định hướng Đầu vào Tuyển sinh
@@ -610,7 +734,7 @@ export function StudentOrientationReportModal({
 
                 <div className="text-right space-y-0.5">
                   <span className="text-[10px] font-mono font-bold text-teal-950 block">
-                    Mã hồ sơ: {student?.studentCode || "HS-KSDV"}
+                    Mã hồ sơ: {sData?.studentCode || "HS-KSDV"}
                   </span>
                   <span className="text-[10px] text-slate-500 block">
                     Phiên bản biểu mẫu: {interviewVersion}
@@ -634,56 +758,86 @@ export function StudentOrientationReportModal({
                 </p>
               </div>
 
-              {/* SECTION I: THÔNG TIN HỌC SINH */}
+              {/* SECTION I: THÔNG TIN HỌC SINH (BẢNG 12 CỘT CHUẨN) */}
               <div className="print-section space-y-1.5">
-                <div className="flex items-center gap-2 border-b border-teal-200 pb-1">
-                  <span className="w-2 h-2 rounded-full bg-teal-700" />
-                  <h2 className="text-[11px] font-black uppercase tracking-wider text-teal-950">
-                    I. Thông Tin Học Sinh &amp; Tuyển Sinh
-                  </h2>
+                <div className="flex flex-wrap items-center justify-between gap-2 border-b border-teal-200 pb-1">
+                  <div className="flex items-center gap-2">
+                    <span className="w-2 h-2 rounded-full bg-teal-700" />
+                    <h2 className="text-[11px] font-black uppercase tracking-wider text-teal-950">
+                      I. Thông Tin Học Sinh &amp; Kết Quả Đầu Vào
+                    </h2>
+                  </div>
+                  <div className="flex flex-wrap items-center gap-3 text-[10px] text-slate-700">
+                    <span>
+                      GV phỏng vấn: <strong className="text-teal-950">{orientationData?.interviewerName || "Cán bộ phỏng vấn"}</strong>
+                    </span>
+                    <span>&bull;</span>
+                    <span>
+                      Đại diện PHHS: <strong className="text-slate-900">{orientationData?.parentRepresentativeName || "Phụ huynh"}</strong>
+                      {orientationData?.parentPhone ? ` (${orientationData.parentPhone})` : ""}
+                    </span>
+                  </div>
                 </div>
 
-                <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 p-2.5 bg-teal-50/40 rounded-xl border border-teal-200 text-xs">
-                  <div>
-                    <span className="text-[9.5px] text-slate-500 block font-medium">Họ và tên học sinh:</span>
-                    <strong className="text-teal-950 text-xs font-black">{student?.fullName}</strong>
-                  </div>
-                  <div>
-                    <span className="text-[9.5px] text-slate-500 block font-medium">Ngày sinh / Giới tính:</span>
-                    <strong className="text-slate-800 text-[11px]">
-                      {student?.dateOfBirth ? new Date(student.dateOfBirth).toLocaleDateString("vi-VN") : "—"} ({student?.gender || "Nam"})
-                    </strong>
-                  </div>
-                  <div>
-                    <span className="text-[9.5px] text-slate-500 block font-medium">Khối đăng ký:</span>
-                    <strong className="text-teal-900 font-bold text-[11px]">{gradeConfig.label}</strong>
-                  </div>
-                  <div>
-                    <span className="text-[9.5px] text-slate-500 block font-medium">Hệ đào tạo:</span>
-                    <strong className="text-slate-800 text-[11px]">
-                      {orientationData?.proposedEduSystem || student?.surveyFormType || student?.surveySystem || "Chất lượng cao (CLC)"}
-                    </strong>
-                  </div>
-                  <div>
-                    <span className="text-[9.5px] text-slate-500 block font-medium">Trường học trước:</span>
-                    <span className="text-slate-800 font-semibold text-[11px]">{student?.oldSchoolName || "Chưa cập nhật"}</span>
-                  </div>
-                  <div>
-                    <span className="text-[9.5px] text-slate-500 block font-medium">Học tập / Rèn luyện:</span>
-                    <span className="text-slate-800 font-semibold text-[11px]">
-                      {student?.kqHocTap || student?.academicRating || "Tốt"} / {student?.kqRenLuyen || student?.conductRating || "Tốt"}
-                    </span>
-                  </div>
-                  <div>
-                    <span className="text-[9.5px] text-slate-500 block font-medium">Giáo viên thực hiện:</span>
-                    <strong className="text-teal-950 text-[11px]">{orientationData?.interviewerName || "Cán bộ phỏng vấn"}</strong>
-                  </div>
-                  <div>
-                    <span className="text-[9.5px] text-slate-500 block font-medium">Đại diện PHHS liên hệ:</span>
-                    <span className="text-slate-800 font-semibold text-[11px]">
-                      {orientationData?.parentRepresentativeName || "Phụ huynh"} {orientationData?.parentPhone ? `(${orientationData.parentPhone})` : ""}
-                    </span>
-                  </div>
+                <div className="border border-teal-200 rounded-lg overflow-hidden bg-white">
+                  <table className="w-full text-left border-collapse text-[9.5px]" style={{ tableLayout: "auto", width: "100%" }}>
+                    <thead>
+                      <tr className="bg-teal-100/80 text-[8.5px] font-black uppercase text-teal-950 border-b border-teal-200">
+                        <th className="py-1 px-1.5 border-r border-teal-200/70">1. Mã HS</th>
+                        <th className="py-1 px-1.5 border-r border-teal-200/70">2. Họ và tên</th>
+                        <th className="py-1 px-1.5 border-r border-teal-200/70">3. Ngày sinh / Phái</th>
+                        <th className="py-1 px-1.5 border-r border-teal-200/70">4. Khối đăng ký</th>
+                        <th className="py-1 px-1.5 border-r border-teal-200/70">5. Hệ đào tạo</th>
+                        <th className="py-1 px-1.5 border-r border-teal-200/70">6. Cơ sở</th>
+                        <th className="py-1 px-1.5 border-r border-teal-200/70">7. Trường cũ</th>
+                        <th className="py-1 px-1.5 border-r border-teal-200/70 text-center">8. Học tập</th>
+                        <th className="py-1 px-1.5 border-r border-teal-200/70 text-center">9. Rèn luyện</th>
+                        <th className="py-1 px-1.5 border-r border-teal-200/70 text-center">10. Toán</th>
+                        <th className="py-1 px-1.5 border-r border-teal-200/70 text-center">11. Ngữ Văn</th>
+                        <th className="py-1 px-1.5 text-center">12. Tiếng Anh</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      <tr className="text-slate-900">
+                        <td className="py-1.5 px-1.5 border-r border-slate-200/70 font-mono font-bold">
+                          {sData?.studentCode || "—"}
+                        </td>
+                        <td className="py-1.5 px-1.5 border-r border-slate-200/70 font-black text-teal-950">
+                          {sData?.fullName || "—"}
+                        </td>
+                        <td className="py-1.5 px-1.5 border-r border-slate-200/70">
+                          {sData?.dateOfBirth ? new Date(sData.dateOfBirth).toLocaleDateString("vi-VN") : "—"} ({sData?.gender || "Nam"})
+                        </td>
+                        <td className="py-1.5 px-1.5 border-r border-slate-200/70 font-bold text-teal-900">
+                          {gradeConfig.label}
+                        </td>
+                        <td className="py-1.5 px-1.5 border-r border-slate-200/70 font-bold">
+                          {orientationData?.proposedEduSystem || sData?.surveyFormType || sData?.surveySystem || "HNS"}
+                        </td>
+                        <td className="py-1.5 px-1.5 border-r border-slate-200/70 font-bold">
+                          {campusName}
+                        </td>
+                        <td className="py-1.5 px-1.5 border-r border-slate-200/70">
+                          {sData?.oldSchoolName || "—"}
+                        </td>
+                        <td className="py-1.5 px-1.5 border-r border-slate-200/70 text-center font-bold text-emerald-900">
+                          {displayHocTap}
+                        </td>
+                        <td className="py-1.5 px-1.5 border-r border-slate-200/70 text-center font-bold text-sky-900">
+                          {displayRenLuyen}
+                        </td>
+                        <td className="py-1.5 px-1.5 border-r border-slate-200/70 text-center font-bold">
+                          {displayMath}
+                        </td>
+                        <td className="py-1.5 px-1.5 border-r border-slate-200/70 text-center font-bold">
+                          {displayLiterature}
+                        </td>
+                        <td className="py-1.5 px-1.5 text-center font-bold">
+                          {displayEnglish}
+                        </td>
+                      </tr>
+                    </tbody>
+                  </table>
                 </div>
               </div>
 
@@ -1058,7 +1212,7 @@ export function StudentOrientationReportModal({
                     </span>
                     <div>
                       <strong className="text-slate-900 text-[11px] block font-bold">
-                        {student?.admissionCampus ? `GĐCS ${student.admissionCampus}` : "Ban Giám Đốc Cơ Sở"}
+                        {campusName && campusName !== "Sky-Line" ? `GĐCS ${campusName}` : "Ban Giám Đốc Cơ Sở"}
                       </strong>
                       <span className="text-[9px] text-slate-400 italic block">Phê duyệt tiếp nhận</span>
                     </div>
