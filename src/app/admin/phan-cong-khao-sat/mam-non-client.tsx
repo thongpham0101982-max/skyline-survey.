@@ -157,9 +157,17 @@ export function PhanCongMamNonClient({
   const [aNotifyingId, setANotifyingId] = useState<string | null>(null)
   const [aNotifyingAll, setANotifyingAll] = useState(false)
 
-  // Auto-set default period when available
+  // Auto-set default period when available (ưu tiên tham số URL ?periodId=...&batchId=...)
   useEffect(() => {
     if (periods.length > 0 && !aPeriodId) {
+      if (typeof window !== "undefined") {
+        const params = new URLSearchParams(window.location.search)
+        const qPeriodId = params.get("periodId")
+        if (qPeriodId && periods.some(p => p.id === qPeriodId)) {
+          setAPeriodId(qPeriodId)
+          return
+        }
+      }
       setAPeriodId(periods[0].id)
     }
   }, [periods, aPeriodId])
@@ -185,13 +193,22 @@ export function PhanCongMamNonClient({
 
   // Auto-sync batch when period changes
   useEffect(() => {
+    if (typeof window !== "undefined") {
+      const params = new URLSearchParams(window.location.search)
+      const qBatchId = params.get("batchId")
+      if (qBatchId && aSelPeriod?.batches?.some((b: any) => b.id === qBatchId)) {
+        setABatchId(qBatchId)
+        setShowCustomBatch(false)
+        return
+      }
+    }
     if (aLatestBatch) {
       setABatchId(aLatestBatch.id)
     } else {
       setABatchId("")
     }
     setShowCustomBatch(false)
-  }, [aPeriodId, aLatestBatch])
+  }, [aPeriodId, aLatestBatch, aSelPeriod])
 
   const aActiveBatch = useMemo(() => {
     if (!aPeriodId || !aBatchId || aBatchId === "all") return null

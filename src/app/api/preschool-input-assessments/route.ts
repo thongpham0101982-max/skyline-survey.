@@ -3,6 +3,7 @@ import { NextResponse } from "next/server"
 import { prisma } from "@/lib/db"
 import { auth } from "@/lib/auth"
 import { sendEmail } from "@/lib/mail"
+import { executeEntranceWorkflowAction } from "@/lib/entrance-progress/entranceProgressEngine"
 
 export async function GET(req) {
   const session = await auth();
@@ -137,8 +138,8 @@ export async function PUT(req) {
            ...(data.assignedUserId !== undefined && { assignedUserId: data.assignedUserId || null }),
            ...(data.startDate !== undefined && { startDate: data.startDate ? new Date(data.startDate) : null }),
            ...(data.endDate !== undefined && { endDate: data.endDate ? new Date(data.endDate) : null }),
-           ...(data.status !== undefined && { status: data.status })
-           ,...(data.surveyType !== undefined && { surveyType: data.surveyType || "KHAO_SAT_LE" })
+           ...(data.status !== undefined && { status: data.status }),
+           ...(data.surveyType !== undefined && { surveyType: data.surveyType || "KHAO_SAT_LE" })
         }
       });
       return NextResponse.json(result);
@@ -158,17 +159,57 @@ export async function PUT(req) {
       });
       return NextResponse.json(result);
     }
-    else if (action === "SEND_ASSIGNMENT_EMAIL") {
-      const batch = await (prisma as any).preschoolInputAssessmentBatch.findUnique({
-        where: { id },
-        include: { period: true, campus: true }
-      });
-      if (!batch) return NextResponse.json({ error: "Không tìm thấy đợt khảo sát" }, { status: 404 });
+    else if (action === "SEND_ASSIGNMENT_EMAIL" || action === "HANDOVER_TO_GIAO_VU") {
+      const targetBatchId = id || data?.batchId || body?.batchId || null;
+      const targetPeriodId = data?.periodId || body?.periodId || null;
+      const customAssignedUserId = data?.assignedUserId ?? body?.assignedUserId;
+      const customRecipients = data?.recipientEmails ?? body?.recipientEmails ?? data?.to ?? body?.to;
+      const customSubject = data?.subject ?? body?.subject;
+      const customNote = data?.note ?? body?.note;
+      const customStudentIds = Array.isArray(data?.studentIds || body?.studentIds) ? (data?.studentIds || body?.studentIds) : null;
+
+      let batch: any = null;
+      let period: any = null;
+
+      if (targetBatchId && targetBatchId !== "all" && targetBatchId !== "none") {
+        if (customAssignedUserId !== undefined) {
+          await (prisma as any).preschoolInputAssessmentBatch.update({
+            where: { id: targetBatchId },
+            data: { assignedUserId: customAssignedUserId || null }
+          }).catch(() => {});
+        }
+        batch = await (prisma as any).preschoolInputAssessmentBatch.findUnique({
+          where: { id: targetBatchId },
+          include: { period: true, campus: true, assignedUser: true }
+        });
+        period = batch?.period || null;
+      }
+
+      if (!period && targetPeriodId && targetPeriodId !== "all") {
+        period = await (prisma as any).preschoolInputAssessmentPeriod.findUnique({
+          where: { id: targetPeriodId }
+        });
+      }
+
+      if (!batch && !period) {
+        return NextResponse.json({ error: "Không tìm thấy đợt hoặc kỳ khảo sát để bàn giao" }, { status: 404 });
+      }
+
       const host = req.headers.get("host") || "skyline-survey.vercel.app";
       const protocol = host.includes("localhost") ? "http" : "https";
       const appUrl = `${protocol}://${host}`;
-      await notifyBatchAssignment(batch, appUrl);
-      return NextResponse.json({ success: true });
+      const session = await auth().catch(() => null);
+      const actorUser = (session?.user as any) || null;
+
+      const notifyRes = await notifyBatchAssignment(batch, appUrl, {
+        period,
+        recipientEmailsInput: customRecipients,
+        customSubject,
+        customNote,
+        studentIds: customStudentIds,
+        actorUser
+      });
+      return NextResponse.json({ success: true, ...notifyRes });
     }
     
     return NextResponse.json({ error: "Unknown action" }, { status: 400 });
@@ -198,75 +239,160 @@ export async function DELETE(req) {
 }
 
 
-async function notifyBatchAssignment(batch: any, appUrl?: string) {
-  if (!batch.assignedUserId) return;
+async function notifyBatchAssignment(batch: any, appUrl?: string, options?: {
+  period?: any;
+  recipientEmailsInput?: string | string[] | null;
+  customSubject?: string | null;
+  customNote?: string | null;
+  studentIds?: string[] | null;
+  actorUser?: any;
+}) {
   try {
     const loginUrl = appUrl || process.env.NEXTAUTH_URL || "https://skyline-survey.vercel.app";
-    const campusId = batch.campusId;
-    if (!campusId) return;
+    const resolvedPeriod = batch?.period || options?.period || null;
+    const resolvedPeriodId = batch?.periodId || resolvedPeriod?.id || "";
+    const resolvedBatchId = batch?.id || "";
 
-    const assignments = await (prisma as any).userCampusAssignment.findMany({
-      where: { campusId },
-      include: { user: true }
+    // 1. Lấy danh sách trẻ mầm non thuộc đợt / kỳ / danh sách chọn
+    const studentWhere: any = {};
+    if (options?.studentIds && options.studentIds.length > 0) {
+      studentWhere.id = { in: options.studentIds };
+    } else if (resolvedBatchId) {
+      studentWhere.batchId = resolvedBatchId;
+    } else if (resolvedPeriodId) {
+      studentWhere.periodId = resolvedPeriodId;
+    }
+
+    const students = await (prisma as any).preschoolInputAssessmentStudent.findMany({
+      where: studentWhere,
+      include: { batch: true, period: true },
+      orderBy: [
+        { grade: "asc" },
+        { studentCode: "asc" }
+      ]
+    }).catch(() => []);
+
+    // 2. Xác định Cơ sở
+    let campusId = batch?.campusId || null;
+    let campusName = batch?.campus?.campusName || batch?.campus?.campusCode || "";
+    let campusCode = batch?.campus?.campusCode || "";
+
+    if (!campusCode) {
+      const bName = (batch?.name || "").toUpperCase();
+      for (const code of ["CS1", "CS2", "CS3", "CS4", "CS5"]) {
+        if (bName.includes(code)) {
+          campusCode = code;
+          break;
+        }
+      }
+    }
+    if (!campusCode && students.length > 0) {
+      const firstCampus = String(students[0].admissionCampus || students[0].registeredCampus || "").toUpperCase();
+      for (const code of ["CS1", "CS2", "CS3", "CS4", "CS5"]) {
+        if (firstCampus.includes(code)) {
+          campusCode = code;
+          break;
+        }
+      }
+      if (!campusName && (students[0].admissionCampus || students[0].registeredCampus)) {
+        campusName = students[0].admissionCampus || students[0].registeredCampus;
+      }
+    }
+    if (!campusCode) campusCode = "CS1";
+    if (!campusName) campusName = campusCode;
+
+    if (!campusId && campusCode) {
+      const matchedCampus = await (prisma as any).campus.findFirst({
+        where: { campusCode: campusCode }
+      }).catch(() => null);
+      if (matchedCampus) {
+        campusId = matchedCampus.id;
+        campusName = matchedCampus.campusName || campusName;
+      }
+    }
+
+    // 3. Tìm danh sách tài khoản Giáo vụ Cơ sở
+    let giaovuUsers: any[] = [];
+    if (campusId) {
+      const assignments = await (prisma as any).userCampusAssignment.findMany({
+        where: { campusId },
+        include: { user: true }
+      }).catch(() => []);
+
+      giaovuUsers = assignments
+        .map((a: any) => a.user)
+        .filter((u: any) => {
+          const role = (u?.role || "").toUpperCase();
+          return ["GIAO_VU", "GIAO_VU_CS", "GVCS", "GDCS", "GĐ_CS", "GĐCS"].includes(role);
+        });
+    }
+
+    if (giaovuUsers.length === 0) {
+      giaovuUsers = await (prisma as any).user.findMany({
+        where: { role: { in: ["GIAO_VU", "GIAO_VU_CS", "GVCS"] } },
+        select: { id: true, fullName: true, email: true, role: true }
+      }).catch(() => []);
+    }
+
+    const batchCode = batch?.batchNumber ? `#${batch.batchNumber}` : (batch?.name ? batch.name : "Tất cả đợt");
+    const batchDisplayName = batch?.name ? (batch.batchNumber ? `Đợt #${batch.batchNumber} — ${batch.name}` : batch.name) : "Toàn kỳ khảo sát";
+    const surveyContent = resolvedPeriod?.name || "Khảo sát đầu vào Mầm non";
+    const startTimeStr = batch?.startDate
+      ? new Date(batch.startDate).toLocaleDateString("vi-VN")
+      : (resolvedPeriod?.startDate ? new Date(resolvedPeriod.startDate).toLocaleDateString("vi-VN") : "—");
+    const endTimeStr = batch?.endDate
+      ? new Date(batch.endDate).toLocaleDateString("vi-VN")
+      : (resolvedPeriod?.endDate ? new Date(resolvedPeriod.endDate).toLocaleDateString("vi-VN") : "—");
+    const timeDisplay = startTimeStr === endTimeStr ? startTimeStr : `${startTimeStr} → ${endTimeStr}`;
+
+    // Thống kê theo Nhóm tuổi
+    const gradeCounter: Record<string, number> = {};
+    students.forEach((st: any) => {
+      const gLabel = st.grade || "Chưa rõ nhóm tuổi";
+      gradeCounter[gLabel] = (gradeCounter[gLabel] || 0) + 1;
     });
+    const gradeSysSummary = Object.entries(gradeCounter)
+      .map(([k, count]) => `${k}: ${count} bé`)
+      .join(" • ") || "Chưa có học sinh";
 
-    const giaovuUsers = assignments
-      .map((a: any) => a.user)
-      .filter((u: any) => {
-        const role = (u?.role || "").toUpperCase();
-        return ["GIAO_VU", "GIAO_VU_CS", "GVCS"].includes(role);
-      });
+    const assignUrlPath = `/admin/phan-cong-khao-sat?tab=preschool${resolvedPeriodId ? `&periodId=${resolvedPeriodId}` : ""}${resolvedBatchId ? `&batchId=${resolvedBatchId}` : ""}`;
+    const assignFullUrl = `${loginUrl}${assignUrlPath}`;
 
-    const batchCode = batch.batchNumber ? `#${batch.batchNumber}` : `#${batch.id}`;
-    const surveyContent = batch.period?.name || "Khảo sát đầu vào";
-    const campusName = batch.campus?.campusName || batch.campus?.campusCode || "Cơ sở";
-    const campusCode = batch.campus?.campusCode || "CS1";
-    const startTimeStr = batch.startDate ? new Date(batch.startDate).toLocaleDateString("vi-VN") : "—";
-    const endTimeStr = batch.endDate ? new Date(batch.endDate).toLocaleDateString("vi-VN") : "—";
-    const timeDisplay = `${startTimeStr} - ${endTimeStr}`;
+    const senderName = options?.actorUser?.fullName || options?.actorUser?.name || "Bộ phận Tuyển sinh / KT&ĐBCL";
+    const handoverNote = (options?.customNote || "").trim();
 
-    const title = `[Hệ thống] Phân công người phụ trách đợt khảo sát ${batchCode}`;
-    const message = `Thông báo:\n- Mã Đợt: ${batchCode} (${batch.name || ""})\n- Nội dung khảo sát: ${surveyContent}\n- Cơ sở: ${campusName}\n- Thời gian: ${timeDisplay}\n\nKính nhờ thầy cô giáo vụ Cơ sở thực hiện phân công giáo viên khảo sát.`;
+    const title = `[Bàn giao Giáo vụ] Danh sách ${students.length} bé đợt ${batch?.name || batchCode} cần Phân công Khảo sát`;
+    const studentPreviewNames = students.slice(0, 5).map((s: any) => `${s.fullName} (${s.grade || "?"})`).join(", ");
+    const message = `Bàn giao danh sách trẻ mầm non khảo sát:\n- Kỳ khảo sát: ${surveyContent}\n- Đợt khảo sát: ${batchDisplayName}\n- Cơ sở: ${campusName}\n- Thời gian: ${timeDisplay}\n- Sĩ số bàn giao: ${students.length} bé (${gradeSysSummary})\n${studentPreviewNames ? `- Danh sách: ${studentPreviewNames}${students.length > 5 ? ` (+${students.length - 5} bé khác)` : ""}\n` : ""}${handoverNote ? `- Ghi chú bàn giao: ${handoverNote}\n` : ""}\nKính nhờ Quý Thầy/Cô Giáo vụ Cơ sở thực hiện phân công giáo viên khảo sát.`;
 
+    // 4. Email người nhận
+    const recipientEmailsSet = new Set<string>();
+    if (options?.recipientEmailsInput) {
+      const rawList = Array.isArray(options.recipientEmailsInput)
+        ? options.recipientEmailsInput
+        : String(options.recipientEmailsInput).split(",");
+      rawList.map(e => String(e || "").trim()).filter(e => e.includes("@")).forEach(e => recipientEmailsSet.add(e));
+    }
 
-
-    const recipientEmails = [];
-    if (batch.assignedUserId) {
+    let assignedUserFullName = batch?.assignedUser?.fullName || "";
+    if (batch?.assignedUserId) {
       const assignedUser = await (prisma as any).user.findUnique({
         where: { id: batch.assignedUserId },
         include: { teacher: true }
-      });
-      let resolvedEmail = "";
+      }).catch(() => null);
       if (assignedUser) {
-        if (assignedUser.teacher && assignedUser.teacher.email && assignedUser.teacher.email.includes("@")) {
-          resolvedEmail = assignedUser.teacher.email;
-        } else if (assignedUser.email && assignedUser.email.includes("@")) {
-          resolvedEmail = assignedUser.email;
+        assignedUserFullName = assignedUser.fullName || assignedUserFullName;
+        const resolvedEmail = (assignedUser.teacher?.email && assignedUser.teacher.email.includes("@"))
+          ? assignedUser.teacher.email
+          : (assignedUser.email && assignedUser.email.includes("@") ? assignedUser.email : "");
+        if (resolvedEmail && recipientEmailsSet.size === 0) {
+          recipientEmailsSet.add(resolvedEmail);
         }
       }
-      if (resolvedEmail) {
-        recipientEmails.push(resolvedEmail);
-      }
     }
 
-    const notifyUserIds = new Set();
-    if (batch.assignedUserId) notifyUserIds.add(batch.assignedUserId);
-    for (const u of giaovuUsers) {
-      notifyUserIds.add(u.id);
-    }
-
-    for (const userId of Array.from(notifyUserIds)) {
-      await (prisma as any).notification.create({
-        data: {
-          userId,
-          title,
-          message
-        }
-      });
-    }
-
-    if (recipientEmails.length === 0) {
-      const staticGiaovu = {
+    if (recipientEmailsSet.size === 0) {
+      const staticGiaovu: Record<string, string> = {
         CS1: "giaovu.cs1@skylineschool.edu.vn",
         CS2: "giaovu.cs2@skylineschool.edu.vn",
         CS3: "giaovu.cs3@skylineschool.edu.vn",
@@ -274,8 +400,78 @@ async function notifyBatchAssignment(batch: any, appUrl?: string) {
         CS5: "giaovu.cs5@skylineschool.edu.vn",
       };
       const fbEmail = staticGiaovu[campusCode.toUpperCase()] || "giaovu.cs1@skylineschool.edu.vn";
-      recipientEmails.push(fbEmail);
+      recipientEmailsSet.add(fbEmail);
     }
+
+    const recipientEmails = Array.from(recipientEmailsSet);
+
+    // 5. Tạo Notification trên hệ thống
+    const notifyUserIds = new Set<string>();
+    if (batch?.assignedUserId) notifyUserIds.add(batch.assignedUserId);
+    for (const u of giaovuUsers) {
+      if (u?.id) notifyUserIds.add(u.id);
+    }
+
+    for (const userId of Array.from(notifyUserIds)) {
+      await (prisma as any).notification.create({
+        data: {
+          userId,
+          title,
+          message,
+          link: assignUrlPath
+        }
+      }).catch(() => {});
+    }
+
+    // 6. Ghi nhận hoàn thành Bước 2 trên Tiến độ Điều hành Khảo sát
+    if (resolvedPeriodId && students.length > 0) {
+      try {
+        await executeEntranceWorkflowAction({
+          action: "CONFIRM",
+          targetScope: resolvedBatchId ? "BATCH" : "PERIOD",
+          periodId: resolvedPeriodId,
+          batchId: resolvedBatchId || null,
+          stageNumber: 2,
+          status: "COMPLETED",
+          note: `Bàn giao danh sách ${students.length} bé mầm non theo đợt khảo sát tới Giáo vụ để phân công khảo sát.${handoverNote ? ` Ghi chú: ${handoverNote}` : ""}`,
+          actor: {
+            id: options?.actorUser?.id || "system_handover",
+            fullName: senderName,
+            role: options?.actorUser?.role || "GIAO_VU",
+            isSuperAdmin: true,
+          },
+        });
+      } catch (wfErr) {
+        console.warn("Preschool handover workflow stage 2 update warning:", wfErr);
+      }
+    }
+
+    const studentRowsHtml = students.length === 0 ? `
+      <tr>
+        <td colspan="6" style="padding: 16px; text-align: center; font-size: 12.5px; color: #94A3B8; font-style: italic;">
+          Hiện chưa có hồ sơ bé nào trong đợt khảo sát này.
+        </td>
+      </tr>
+    ` : students.map((st: any, idx: number) => {
+      const bgRow = idx % 2 === 0 ? "#FFFFFF" : "#F8FAFC";
+      const dobStr = st.dateOfBirth ? new Date(st.dateOfBirth).toLocaleDateString("vi-VN") : "—";
+      const genderStr = st.gender === "M" || st.gender === "Nam" ? "Nam" : st.gender === "F" || st.gender === "Nữ" ? "Nữ" : (st.gender || "—");
+      const gradeStr = st.grade || "—";
+      const stCampus = st.admissionCampus || st.registeredCampus || campusName || "—";
+
+      return `
+        <tr style="border-bottom: 1px solid #E2E8F0; background-color: ${bgRow};">
+          <td style="padding: 9px 8px; font-size: 12px; color: #64748B; text-align: center; font-weight: 600;">${idx + 1}</td>
+          <td style="padding: 9px 8px; font-size: 12px; color: #003B3A; font-family: monospace; font-weight: 700;">${st.studentCode || "—"}</td>
+          <td style="padding: 9px 10px; font-size: 12.5px; color: #0F172A; font-weight: 700;">${st.fullName || "—"}</td>
+          <td style="padding: 9px 8px; font-size: 12px; color: #475569; text-align: center;">${dobStr} (${genderStr})</td>
+          <td style="padding: 9px 8px; font-size: 12px; color: #005854; text-align: center; font-weight: 800;">${gradeStr}</td>
+          <td style="padding: 9px 10px; font-size: 12px; color: #0F766E; text-align: center; font-weight: 700;">${stCampus}</td>
+        </tr>
+      `;
+    }).join("");
+
+    const emailSubject = options?.customSubject || `[Sky-Line SSM] Bàn giao Danh sách Trẻ Khảo sát Mầm non (${students.length} bé) - ${batch?.name || surveyContent}`;
 
     const emailHtml = `
       <!DOCTYPE html>
@@ -283,36 +479,36 @@ async function notifyBatchAssignment(batch: any, appUrl?: string) {
       <head>
         <meta charset="utf-8">
         <meta name="viewport" content="width=device-width, initial-scale=1.0">
-        <title>Thông báo phân công khảo sát Mầm non</title>
+        <title>${emailSubject}</title>
       </head>
       <body style="margin: 0; padding: 0; background-color: #F1F5F9; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;">
         <table role="presentation" border="0" cellpadding="0" cellspacing="0" width="100%" bgcolor="#F1F5F9" style="table-layout: fixed;">
           <tr>
-            <td align="center" style="padding: 28px 12px;">
-              <table role="presentation" border="0" cellpadding="0" cellspacing="0" width="100%" style="max-width: 640px; background-color: #FFFFFF; border-radius: 16px; overflow: hidden; box-shadow: 0 10px 25px rgba(0, 59, 58, 0.08); border: 1px solid #E2E8F0;">
+            <td align="center" style="padding: 24px 12px;">
+              <table role="presentation" border="0" cellpadding="0" cellspacing="0" width="100%" style="max-width: 720px; background-color: #FFFFFF; border-radius: 16px; overflow: hidden; box-shadow: 0 10px 25px rgba(0, 59, 58, 0.08); border: 1px solid #E2E8F0;">
                 
                 <!-- HEADER BANNER -->
                 <tr>
-                  <td bgcolor="#003B3A" style="padding: 30px 24px; text-align: center; background-color: #003B3A; background: linear-gradient(135deg, #003B3A 0%, #005B58 60%, #00A19A 100%);">
+                  <td bgcolor="#003B3A" style="padding: 28px 24px; text-align: center; background-color: #003B3A; background: linear-gradient(135deg, #003B3A 0%, #005B58 60%, #00A19A 100%);">
                     <table role="presentation" border="0" cellpadding="0" cellspacing="0" align="center" style="margin: 0 auto;">
                       <tr>
                         <td align="center" style="padding-bottom: 8px;">
-                          <span style="display: inline-block; padding: 4px 14px; background-color: rgba(255, 255, 255, 0.12); border: 1px solid rgba(255, 255, 255, 0.25); border-radius: 9999px; font-size: 11px; font-weight: 700; color: #FFFFFF; letter-spacing: 0.5px; text-transform: uppercase;">
+                          <span style="display: inline-block; padding: 4px 14px; background-color: rgba(255, 255, 255, 0.14); border: 1px solid rgba(255, 255, 255, 0.25); border-radius: 9999px; font-size: 11px; font-weight: 700; color: #FFFFFF; letter-spacing: 0.5px; text-transform: uppercase;">
                             🏫 BẬC MẦM NON • HỆ THỐNG GIÁO DỤC SKY-LINE
                           </span>
                         </td>
                       </tr>
                       <tr>
                         <td align="center">
-                          <h1 style="margin: 0; font-size: 21px; font-weight: 800; color: #FFFFFF; letter-spacing: -0.3px; line-height: 1.3; text-transform: uppercase;">
-                            THÔNG BÁO PHÂN CÔNG KHẢO SÁT
+                          <h1 style="margin: 0; font-size: 20px; font-weight: 800; color: #FFFFFF; letter-spacing: -0.3px; line-height: 1.35; text-transform: uppercase;">
+                            BÀN GIAO DANH SÁCH TRẺ KHẢO SÁT ĐẦU VÀO
                           </h1>
                         </td>
                       </tr>
                       <tr>
                         <td align="center" style="padding-top: 6px;">
-                          <div style="font-size: 13px; font-weight: 700; color: #FDE047; letter-spacing: 0.8px; text-transform: uppercase;">
-                            ĐỢT ${batchCode}
+                          <div style="font-size: 13px; font-weight: 700; color: #FDE047; letter-spacing: 0.5px; text-transform: uppercase;">
+                            ${batchDisplayName} • ${students.length} BÉ
                           </div>
                         </td>
                       </tr>
@@ -322,47 +518,83 @@ async function notifyBatchAssignment(batch: any, appUrl?: string) {
 
                 <!-- MAIN BODY -->
                 <tr>
-                  <td style="padding: 28px 28px 16px 28px; color: #1E293B;">
-                    <p style="margin: 0 0 10px 0; font-size: 15px; font-weight: 700; color: #003B3A;">
-                      Kính gửi Quý Thầy/Cô Giáo vụ Cơ sở,
+                  <td style="padding: 24px 28px 12px 28px; color: #1E293B;">
+                    <p style="margin: 0 0 8px 0; font-size: 15px; font-weight: 700; color: #003B3A;">
+                      Kính gửi Quý Thầy/Cô Giáo vụ Cơ sở${assignedUserFullName ? ` (${assignedUserFullName})` : ""},
                     </p>
-                    <p style="margin: 0 0 18px 0; font-size: 14px; color: #475569; line-height: 1.6;">
-                      Ban Khảo thí trân trọng thông báo thông tin đợt khảo sát năng lực đầu vào bậc Mầm non đã được chuyển giao phụ trách tại cơ sở. Chi tiết đợt khảo sát như sau:
+                    <p style="margin: 0 0 14px 0; font-size: 13.5px; color: #475569; line-height: 1.6;">
+                      Bộ phận Tiếp nhận hồ sơ / Ban Khảo thí trân trọng bàn giao <strong>Danh sách Trẻ đăng ký theo đợt khảo sát Mầm non</strong> để Quý Thầy/Cô Giáo vụ thực hiện <strong>Phân công Giáo viên khảo sát</strong>. Thông tin chi tiết như sau:
                     </p>
                   </td>
                 </tr>
 
                 <!-- INFO CARD -->
                 <tr>
-                  <td style="padding: 0 28px 20px 28px;">
-                    <table role="presentation" border="0" cellpadding="0" cellspacing="0" width="100%" bgcolor="#F0FDFA" style="background-color: #F0FDFA; border-radius: 12px; border: 1px solid #CCFBF1; border-left: 4px solid #00A19A; padding: 18px 20px;">
+                  <td style="padding: 0 28px 18px 28px;">
+                    <table role="presentation" border="0" cellpadding="0" cellspacing="0" width="100%" bgcolor="#F0FDFA" style="background-color: #F0FDFA; border-radius: 12px; border: 1px solid #CCFBF1; border-left: 4px solid #00A19A; padding: 16px 20px;">
                       <tr>
-                        <td style="padding: 6px 0; width: 32%; font-size: 11px; font-weight: 800; color: #007A87; text-transform: uppercase; letter-spacing: 0.5px;">MÃ ĐỢT:</td>
-                        <td style="padding: 6px 0; font-size: 14px; font-weight: 800; color: #003B3A;"><strong>${batchCode}</strong> (${batch.name || ""})</td>
+                        <td style="padding: 5px 0; width: 28%; font-size: 11px; font-weight: 800; color: #007A87; text-transform: uppercase; letter-spacing: 0.5px;">KỲ KHẢO SÁT:</td>
+                        <td style="padding: 5px 0; font-size: 13.5px; font-weight: 700; color: #1E293B;">${surveyContent}</td>
                       </tr>
                       <tr>
-                        <td style="padding: 6px 0; font-size: 11px; font-weight: 800; color: #007A87; text-transform: uppercase; letter-spacing: 0.5px;">NỘI DUNG:</td>
-                        <td style="padding: 6px 0; font-size: 14px; font-weight: 700; color: #1E293B;">${surveyContent}</td>
+                        <td style="padding: 5px 0; font-size: 11px; font-weight: 800; color: #007A87; text-transform: uppercase; letter-spacing: 0.5px;">ĐỢT KHẢO SÁT:</td>
+                        <td style="padding: 5px 0; font-size: 14px; font-weight: 800; color: #003B3A;">${batchDisplayName}</td>
                       </tr>
                       <tr>
-                        <td style="padding: 6px 0; font-size: 11px; font-weight: 800; color: #007A87; text-transform: uppercase; letter-spacing: 0.5px;">CƠ SỞ:</td>
-                        <td style="padding: 6px 0; font-size: 14px; font-weight: 700; color: #1E293B;">${campusName}</td>
+                        <td style="padding: 5px 0; font-size: 11px; font-weight: 800; color: #007A87; text-transform: uppercase; letter-spacing: 0.5px;">CƠ SỞ &amp; THỜI GIAN:</td>
+                        <td style="padding: 5px 0; font-size: 13.5px; font-weight: 700; color: #047857;">${campusName} • ${timeDisplay}</td>
                       </tr>
                       <tr>
-                        <td style="padding: 6px 0; font-size: 11px; font-weight: 800; color: #007A87; text-transform: uppercase; letter-spacing: 0.5px;">THỜI GIAN:</td>
-                        <td style="padding: 6px 0; font-size: 14px; font-weight: 800; color: #047857;">${timeDisplay}</td>
+                        <td style="padding: 5px 0; font-size: 11px; font-weight: 800; color: #007A87; text-transform: uppercase; letter-spacing: 0.5px;">SĨ SỐ BÀN GIAO:</td>
+                        <td style="padding: 5px 0; font-size: 13.5px; font-weight: 800; color: #B45309;">${students.length} bé (${gradeSysSummary})</td>
                       </tr>
+                      <tr>
+                        <td style="padding: 5px 0; font-size: 11px; font-weight: 800; color: #007A87; text-transform: uppercase; letter-spacing: 0.5px;">NGƯỜI BÀN GIAO:</td>
+                        <td style="padding: 5px 0; font-size: 13px; font-weight: 600; color: #334155;">${senderName}</td>
+                      </tr>
+                      ${handoverNote ? `
+                      <tr>
+                        <td style="padding: 5px 0; font-size: 11px; font-weight: 800; color: #92400E; text-transform: uppercase; letter-spacing: 0.5px;">GHI CHÚ BÀN GIAO:</td>
+                        <td style="padding: 5px 0; font-size: 13px; font-weight: 700; color: #92400E;">${handoverNote}</td>
+                      </tr>
+                      ` : ""}
                     </table>
+                  </td>
+                </tr>
+
+                <!-- STUDENT LIST TABLE -->
+                <tr>
+                  <td style="padding: 0 28px 22px 28px;">
+                    <div style="font-size: 12px; font-weight: 800; color: #003B3A; text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 10px;">
+                      📋 DANH SÁCH TRẺ THEO ĐỢT KHẢO SÁT (${students.length} BÉ)
+                    </div>
+                    <div style="border: 1px solid #CBD5E1; border-radius: 12px; overflow: hidden;">
+                      <table role="presentation" width="100%" border="0" cellspacing="0" cellpadding="0" style="border-collapse: collapse;">
+                        <thead>
+                          <tr bgcolor="#003B3A" style="background-color: #003B3A;">
+                            <th style="padding: 10px 6px; text-align: center; font-size: 10.5px; font-weight: 800; color: #FFFFFF; width: 36px;">#</th>
+                            <th style="padding: 10px 8px; text-align: left; font-size: 10.5px; font-weight: 800; color: #FFFFFF; width: 95px;">MÃ BÉ</th>
+                            <th style="padding: 10px 10px; text-align: left; font-size: 10.5px; font-weight: 800; color: #FFFFFF;">HỌ VÀ TÊN</th>
+                            <th style="padding: 10px 8px; text-align: center; font-size: 10.5px; font-weight: 800; color: #FFFFFF; width: 115px;">NGÀY SINH</th>
+                            <th style="padding: 10px 8px; text-align: center; font-size: 10.5px; font-weight: 800; color: #FFFFFF; width: 130px;">NHÓM TUỔI</th>
+                            <th style="padding: 10px 10px; text-align: center; font-size: 10.5px; font-weight: 800; color: #FFFFFF; width: 120px;">CƠ SỞ</th>
+                          </tr>
+                        </thead>
+                        <tbody>
+                          ${studentRowsHtml}
+                        </tbody>
+                      </table>
+                    </div>
                   </td>
                 </tr>
 
                 <!-- NOTICE CARD -->
                 <tr>
-                  <td style="padding: 0 28px 24px 28px;">
+                  <td style="padding: 0 28px 22px 28px;">
                     <table role="presentation" border="0" cellpadding="0" cellspacing="0" width="100%" bgcolor="#FFFBEB" style="background-color: #FFFBEB; border-left: 4px solid #D97706; border-radius: 8px;">
                       <tr>
                         <td style="padding: 12px 16px; font-size: 13px; color: #78350F; line-height: 1.55;">
-                          <strong style="color: #92400E;">📌 Lưu ý quan trọng:</strong> Kính nhờ Quý Thầy/Cô Giáo vụ Cơ sở truy cập hệ thống để thực hiện phân công giáo viên khảo sát cho các lớp/lứa tuổi theo đúng tiến độ kế hoạch.
+                          <strong style="color: #92400E;">📌 Đề nghị thực hiện:</strong> Kính nhờ Quý Thầy/Cô Giáo vụ Cơ sở truy cập hệ thống để phân công giáo viên khảo sát theo nhóm tuổi tương ứng.
                         </td>
                       </tr>
                     </table>
@@ -375,8 +607,8 @@ async function notifyBatchAssignment(batch: any, appUrl?: string) {
                     <table role="presentation" border="0" cellpadding="0" cellspacing="0" align="center" style="margin: 0 auto; border-collapse: separate;">
                       <tr>
                         <td align="center" bgcolor="#00A19A" style="border-radius: 10px; background-color: #00A19A;">
-                          <a href="${loginUrl}/admin/phan-cong-khao-sat?tab=mam-non" target="_blank" style="display: inline-block; padding: 14px 34px; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Arial, sans-serif; font-size: 13.5px; color: #FFFFFF; font-weight: 800; text-decoration: none; border-radius: 10px; text-transform: uppercase; letter-spacing: 0.5px; border: 1px solid #00A19A;">
-                            THỰC HIỆN PHÂN CÔNG GIÁO VIÊN &rarr;
+                          <a href="${assignFullUrl}" target="_blank" style="display: inline-block; padding: 14px 34px; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Arial, sans-serif; font-size: 13.5px; color: #FFFFFF; font-weight: 800; text-decoration: none; border-radius: 10px; text-transform: uppercase; letter-spacing: 0.5px; border: 1px solid #00A19A;">
+                            THỰC HIỆN PHÂN CÔNG KHẢO SÁT NGAY &rarr;
                           </a>
                         </td>
                       </tr>
@@ -391,13 +623,13 @@ async function notifyBatchAssignment(batch: any, appUrl?: string) {
                       HỆ THỐNG GIÁO DỤC SKY-LINE (SKY-LINE EDUCATION SYSTEM)
                     </p>
                     <p style="margin: 0 0 8px 0; font-size: 11px; font-weight: 600; color: #CCFBF1;">
-                      BAN ĐÀO TẠO & KHẢO THÍ ĐẢM BẢO CHẤT LƯỢNG GIÁO DỤC
+                      BAN ĐÀO TẠO &amp; KHẢO THÍ ĐẢM BẢO CHẤT LƯỢNG GIÁO DỤC
                     </p>
                     <p style="margin: 0; font-size: 10px; color: rgba(255, 255, 255, 0.65); line-height: 1.5;">
                       Email hỗ trợ: <a href="mailto:ktdbcl@skylineschool.edu.vn" style="color: #FDE047; text-decoration: none; font-weight: 600;">ktdbcl@skylineschool.edu.vn</a> • Website: <a href="https://skylineschool.edu.vn" target="_blank" style="color: #FDE047; text-decoration: none; font-weight: 600;">skylineschool.edu.vn</a>
                     </p>
                     <p style="margin: 6px 0 0 0; font-size: 10px; color: rgba(255, 255, 255, 0.4);">
-                      Đây là thư điện tử được gửi tự động từ Hệ thống Khảo sát Tuyển sinh Sky-Line.
+                      Đây là thư điện tử được gửi tự động từ Hệ thống Quản lý Khảo sát Tuyển sinh Sky-Line.
                     </p>
                   </td>
                 </tr>
@@ -410,16 +642,38 @@ async function notifyBatchAssignment(batch: any, appUrl?: string) {
       </html>
     `;
 
+    let sentCount = 0;
+    let lastError = "";
     for (const email of recipientEmails) {
-      await sendEmail({
+      const res = await sendEmail({
         to: email,
-        subject: `[Sky-line SMS] Thông báo phân công khảo sát - Đợt ${batchCode}`,
+        subject: emailSubject,
         html: emailHtml,
         replyTo: "ktdbcl@skylineschool.edu.vn"
       });
+      if (res?.success) {
+        sentCount++;
+      } else if (res?.error) {
+        lastError = res.error;
+      }
     }
-  } catch (err) {
-    console.error("Failed to notify batch assignment:", err);
+
+    return {
+      sent: sentCount > 0,
+      sentCount,
+      recipientEmails,
+      studentCount: students.length,
+      gradeSysSummary,
+      assignUrl: assignUrlPath,
+      html: emailHtml,
+      error: sentCount === 0 ? (lastError || "Không gửi được qua máy chủ SMTP") : undefined
+    };
+  } catch (err: any) {
+    console.error("Failed to notify preschool batch assignment:", err);
+    return {
+      sent: false,
+      sentCount: 0,
+      error: err?.message || "Lỗi xử lý bàn giao Giáo vụ"
+    };
   }
 }
-

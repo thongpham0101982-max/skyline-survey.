@@ -4,14 +4,16 @@ import {
   UserCheck, GraduationCap, BookOpen, Layers, Search, Trash2,
   Mail, Edit2, Loader2, Filter, Calendar, UserPlus, CheckCircle2,
   AlertCircle, X, Plus, RefreshCw, Users, ExternalLink, ArrowUpRight, Sparkles, Check, RotateCcw,
-  Award, ShieldCheck, Zap, FileCheck2, School, Clock
+  Award, ShieldCheck, Zap, FileCheck2, School, Clock, Download
 } from "lucide-react"
 import {
   analyzeStudentAcademicAndRegulation,
   matchRecommendedSubjectIds,
   AdmissionRegulationConfig,
   DEFAULT_ADMISSION_REGULATIONS,
-  parseAdmissionRegulationConfig
+  parseAdmissionRegulationConfig,
+  isStudentEligibleByRegulation,
+  exportEligibleStudentsRegulationExcel
 } from "@/lib/admissionRegulationEngine"
 
 // ─── Helpers ───
@@ -409,6 +411,16 @@ export function PhanCongK12Client({
   // Tự động gán Đợt mới nhất khi chọn Kỳ khảo sát (chỉ khi không đang chọn Phiên / Lịch ca thi)
   useEffect(() => {
     if (asSessionId) return
+    if (typeof window !== "undefined") {
+      const params = new URLSearchParams(window.location.search)
+      const qBatchId = params.get("batchId")
+      if (qBatchId && asSelPeriod?.batches?.some((b: any) => b.id === qBatchId)) {
+        setAsBatchId(qBatchId)
+        setAsFilterBatchId(qBatchId)
+        setShowCustomBatch(false)
+        return
+      }
+    }
     if (latestBatch) {
       setAsBatchId(latestBatch.id)
       setAsFilterBatchId(latestBatch.id)
@@ -417,7 +429,7 @@ export function PhanCongK12Client({
       setAsFilterBatchId("all")
     }
     setShowCustomBatch(false)
-  }, [asPeriodId, latestBatch, asSessionId])
+  }, [asPeriodId, latestBatch, asSessionId, asSelPeriod])
 
   // Chọn Phiên / Lịch ca thi (InputAssessmentSession)
   const handleSelectSession = useCallback((sessionId: string) => {
@@ -1093,7 +1105,44 @@ export function PhanCongK12Client({
                   </span>
                   {statsLoading && <Loader2 className="w-3.5 h-3.5 text-[#00736E] animate-spin" />}
                 </div>
-                <div className="flex flex-wrap items-center gap-3">
+                <div className="flex flex-wrap items-center gap-2">
+                  <button
+                    type="button"
+                    onClick={() => {
+                      const allStudentsInScope = Object.values(studentStats).flat()
+                      const res = exportEligibleStudentsRegulationExcel({
+                        students: allStudentsInScope,
+                        customConfig: regulationConfig,
+                        campuses,
+                        periods
+                      })
+                      if (res.isSample) {
+                        notify(`Đợt hiện tại chưa có HS thuộc diện miễn môn văn hóa. Đã tải File Mẫu chuẩn (${res.fileName})!`)
+                      } else {
+                        notify(`Đã xuất ${res.exportedCount} HS đủ điều kiện Xét học bạ / Tuyển thẳng theo quy chế (${res.fileName})!`)
+                      }
+                    }}
+                    className="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg bg-emerald-50 hover:bg-emerald-100 text-emerald-800 border border-emerald-200 text-[11px] font-bold transition-colors cursor-pointer shadow-2xs"
+                    title="Xuất danh sách Học sinh đủ điều kiện Xét học bạ / Tuyển thẳng (được miễn môn văn hóa theo quy chế) ra Excel"
+                  >
+                    <Download className="w-3 h-3 text-emerald-700" />
+                    <span>Xuất DS HS Đủ ĐK Quy chế</span>
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      const res = exportEligibleStudentsRegulationExcel({
+                        customConfig: regulationConfig,
+                        templateOnly: true
+                      })
+                      notify(`Đã tải mẫu danh sách HS đủ điều kiện khảo sát theo quy chế (${res.fileName})!`)
+                    }}
+                    className="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg bg-white hover:bg-teal-50 text-[#005854] border border-teal-200 text-[11px] font-bold transition-colors cursor-pointer shadow-2xs"
+                    title="Tải file Excel mẫu danh sách Học sinh đủ điều kiện khảo sát theo quy chế"
+                  >
+                    <Download className="w-3 h-3 text-[#00736E]" />
+                    <span>Tải mẫu Quy chế</span>
+                  </button>
                   {gradesWithStudents.length > 0 && (
                     <button
                       type="button"
@@ -1165,6 +1214,28 @@ export function PhanCongK12Client({
                           >
                             <Zap className="w-3 h-3 text-teal-200" />
                             <span>Nạp Môn • Khối • Hệ theo Quy chế</span>
+                          </button>
+                          <button
+                            type="button"
+                            onClick={() => {
+                              const res = exportEligibleStudentsRegulationExcel({
+                                students: studentsList,
+                                customConfig: regulationConfig,
+                                campuses,
+                                periods,
+                                fileName: `DS_HS_Du_DK_Quy_Che_Khoi_${grade}.xlsx`
+                              })
+                              if (res.isSample) {
+                                notify(`Khối ${grade} chưa có HS diện miễn môn văn hóa. Đã xuất File Mẫu chuẩn (${res.fileName})!`)
+                              } else {
+                                notify(`Đã xuất ${res.exportedCount} HS Khối ${grade} đủ ĐK Xét học bạ / Tuyển thẳng (${res.fileName})!`)
+                              }
+                            }}
+                            className="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg bg-emerald-50 hover:bg-emerald-100 text-emerald-800 border border-emerald-200 text-[11px] font-bold transition-colors cursor-pointer"
+                            title="Xuất danh sách học sinh Khối này đủ điều kiện Xét học bạ / Tuyển thẳng (miễn môn văn hóa theo quy chế)"
+                          >
+                            <Download className="w-3 h-3 text-emerald-700" />
+                            <span>Xuất DS Đủ ĐK Khối {grade}</span>
                           </button>
                           {!asSelGrades.includes(String(grade)) && (
                             <button

@@ -1338,6 +1338,197 @@ export function PreschoolInputAssessmentsClient({
     setChildrenCurrentPage(1);
   }, [cPeriodId, cBatchId, cSearch, cGradeFilter, cCampusFilter]);
   const [cSelected, setCSelected] = useState<string[]>([]);
+
+  // ───────── BÀN GIAO DANH SÁCH TRẺ MẦM NON TỚI GIÁO VỤ (PHÂN CÔNG KHẢO SÁT) ─────────
+  const [isHandoverModalOpen, setIsHandoverModalOpen] = useState(false);
+  const [handoverPeriodId, setHandoverPeriodId] = useState("");
+  const [handoverBatchId, setHandoverBatchId] = useState("");
+  const [handoverCampusCode, setHandoverCampusCode] = useState<"CS1" | "CS2" | "CS3" | "CS4" | "CS5">("CS3");
+  const [handoverAssignedUserId, setHandoverAssignedUserId] = useState("");
+  const [handoverSelectedEmails, setHandoverSelectedEmails] = useState<string[]>([]);
+  const [handoverCustomEmail, setHandoverCustomEmail] = useState("");
+  const [handoverSubject, setHandoverSubject] = useState("");
+  const [handoverNote, setHandoverNote] = useState("");
+  const [handoverOnlySelected, setHandoverOnlySelected] = useState(false);
+  const [handoverChildrenList, setHandoverChildrenList] = useState<PreschoolChild[]>([]);
+  const [handoverChildrenLoading, setHandoverChildrenLoading] = useState(false);
+  const [isSubmittingHandover, setIsSubmittingHandover] = useState(false);
+  const [handoverResult, setHandoverResult] = useState<{
+    sent: boolean;
+    sentCount: number;
+    recipientEmails: string[];
+    studentCount: number;
+    assignUrl: string;
+    html?: string;
+    error?: string;
+  } | null>(null);
+
+  const detectPreschoolCampusCode = useCallback((batchObj?: any, periodObj?: any, sampleChild?: any): "CS1" | "CS2" | "CS3" | "CS4" | "CS5" => {
+    if (batchObj?.campusId) {
+      const c = campuses.find(x => x.id === batchObj.campusId);
+      if (c?.campusCode && ["CS1", "CS2", "CS3", "CS4", "CS5"].includes(c.campusCode)) {
+        return c.campusCode as any;
+      }
+    }
+    const rawStr = `${batchObj?.name || ""} ${periodObj?.name || ""} ${sampleChild?.admissionCampus || ""}`.toUpperCase();
+    for (const cs of ["CS1", "CS2", "CS3", "CS4", "CS5"] as const) {
+      if (rawStr.includes(cs)) return cs;
+    }
+    if (rawStr.includes("RIVERSIDE")) return "CS1";
+    if (rawStr.includes("CENTRAL")) return "CS2";
+    if (rawStr.includes("GLOBAL")) return "CS3";
+    if (rawStr.includes("HILL")) return "CS4";
+    if (rawStr.includes("BEACH")) return "CS5";
+    return "CS3";
+  }, [campuses]);
+
+  const applyPreschoolHandoverDefaults = useCallback((pId: string, bId: string, childList?: PreschoolChild[]) => {
+    const pObj = rawPeriods.find(p => p.id === pId) || periods.find(p => p.id === pId);
+    const bObj = (pObj?.batches || []).find(b => b.id === bId);
+    const sampleChild = (childList && childList.length > 0) ? childList[0] : undefined;
+    const csCode = detectPreschoolCampusCode(bObj, pObj, sampleChild);
+    setHandoverCampusCode(csCode);
+
+    let defaultAssignee = bObj?.assignedUserId || pObj?.assignedUserId || "";
+    if (!defaultAssignee && Array.isArray(giaoVuCSUsers) && giaoVuCSUsers.length > 0) {
+      const targetCampusObj = campuses.find(c => c.campusCode === csCode);
+      const matchedUser = (giaoVuCSUsers as any[]).find(u =>
+        (targetCampusObj && Array.isArray(u.campusIds) && u.campusIds.includes(targetCampusObj.id)) ||
+        (u.email || "").toLowerCase().includes(csCode.toLowerCase()) ||
+        (u.fullName || "").toUpperCase().includes(csCode)
+      );
+      defaultAssignee = matchedUser?.id || "";
+    }
+    setHandoverAssignedUserId(defaultAssignee);
+
+    const emailSet = new Set<string>();
+    const gvEmail = (EMAIL_MAP.giaovu as any)[csCode];
+    if (gvEmail) emailSet.add(gvEmail);
+    if (defaultAssignee) {
+      const uObj = (giaoVuCSUsers as any[]).find(u => u.id === defaultAssignee);
+      if (uObj?.email && uObj.email.includes("@")) {
+        emailSet.add(uObj.email);
+      }
+    }
+    setHandoverSelectedEmails(Array.from(emailSet));
+
+    const label = bObj?.name || pObj?.name || "Đợt khảo sát Mầm non";
+    setHandoverSubject(`[SSM Sky-Line] Bàn giao Danh sách Trẻ Mầm non Khảo sát - ${label} (${csCode})`);
+  }, [rawPeriods, periods, detectPreschoolCampusCode, giaoVuCSUsers, campuses, EMAIL_MAP]);
+
+  const openPreschoolHandoverModal = useCallback((customPeriodId?: string, customBatchId?: string) => {
+    setHandoverResult(null);
+    setHandoverCustomEmail("");
+    setHandoverNote("");
+
+    let targetPId = customPeriodId || (cPeriodId && cPeriodId !== "all" ? cPeriodId : "");
+    let targetBId = customBatchId !== undefined ? customBatchId : (cBatchId || "");
+
+    if (!targetPId && targetBId) {
+      const foundP = rawPeriods.find(p => (p.batches || []).some(b => b.id === targetBId));
+      if (foundP) targetPId = foundP.id;
+    }
+    if (!targetPId) {
+      targetPId = rawPeriods[0]?.id || periods[0]?.id || "";
+    }
+
+    const pObj = rawPeriods.find(p => p.id === targetPId) || periods.find(p => p.id === targetPId);
+    if (!targetBId && pObj?.batches && pObj.batches.length > 0) {
+      const activeBatches = pObj.batches.filter(b => b.status === "ACTIVE");
+      targetBId = activeBatches[0]?.id || pObj.batches[0]?.id || "";
+    }
+
+    setHandoverPeriodId(targetPId);
+    setHandoverBatchId(targetBId);
+    setHandoverOnlySelected(cSelected.length > 0 && !customBatchId);
+    applyPreschoolHandoverDefaults(targetPId, targetBId, children);
+    setIsHandoverModalOpen(true);
+  }, [cPeriodId, cBatchId, rawPeriods, periods, cSelected.length, applyPreschoolHandoverDefaults, children]);
+
+  useEffect(() => {
+    if (!isHandoverModalOpen || !handoverPeriodId) return;
+    let isCancelled = false;
+    const loadChildren = async () => {
+      setHandoverChildrenLoading(true);
+      try {
+        const res = await fetch(`/api/preschool-input-assessment-students?periodId=${handoverPeriodId}&t=${Date.now()}`);
+        if (res.ok && !isCancelled) {
+          const data = await res.json();
+          const allList: PreschoolChild[] = Array.isArray(data) ? data : [];
+          const filtered = handoverBatchId
+            ? allList.filter(s => s.batchId === handoverBatchId)
+            : allList;
+          setHandoverChildrenList(filtered);
+        }
+      } catch (e) {
+        console.error("loadChildren error:", e);
+      } finally {
+        if (!isCancelled) setHandoverChildrenLoading(false);
+      }
+    };
+    loadChildren();
+    return () => { isCancelled = true; };
+  }, [isHandoverModalOpen, handoverPeriodId, handoverBatchId]);
+
+  const effectiveHandoverChildren = useMemo(() => {
+    if (handoverOnlySelected && cSelected.length > 0) {
+      const fromLoaded = handoverChildrenList.filter(s => cSelected.includes(s.id));
+      if (fromLoaded.length > 0) return fromLoaded;
+      return children.filter(s => cSelected.includes(s.id));
+    }
+    return handoverChildrenList;
+  }, [handoverOnlySelected, cSelected, handoverChildrenList, children]);
+
+  const submitPreschoolHandover = async () => {
+    if (!handoverPeriodId && !handoverBatchId) {
+      return notify("Vui lòng chọn Kỳ khảo sát / Đợt khảo sát cần bàn giao", "err");
+    }
+    const extraEmails = handoverCustomEmail
+      .split(/[,;\s]+/)
+      .map(e => e.trim())
+      .filter(e => e.includes("@"));
+    const allRecipients = Array.from(new Set([...handoverSelectedEmails, ...extraEmails]));
+    if (allRecipients.length === 0 && !handoverAssignedUserId) {
+      return notify("Vui lòng chọn ít nhất 1 địa chỉ Email Giáo vụ hoặc tài khoản Giáo vụ phụ trách", "err");
+    }
+
+    setIsSubmittingHandover(true);
+    setHandoverResult(null);
+    try {
+      const res = await fetch("/api/preschool-input-assessments", {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          action: "HANDOVER_TO_GIAO_VU",
+          id: handoverBatchId || undefined,
+          data: {
+            batchId: handoverBatchId || undefined,
+            periodId: handoverPeriodId || undefined,
+            assignedUserId: handoverAssignedUserId || undefined,
+            recipientEmails: allRecipients,
+            customSubject: handoverSubject.trim() || undefined,
+            note: handoverNote.trim() || undefined,
+            studentIds: handoverOnlySelected && cSelected.length > 0 ? cSelected : undefined,
+          }
+        })
+      });
+      const d = await res.json();
+      if (res.ok && d.success) {
+        setHandoverResult(d);
+        if (d.sent) {
+          notify(`Đã bàn giao danh sách ${d.studentCount || effectiveHandoverChildren.length} bé và gửi Email tới Giáo vụ thành công!`);
+        } else {
+          notify(`Đã cập nhật bàn giao & thông báo hệ thống cho Giáo vụ (${d.error || "Đã lưu thành công"})`);
+        }
+      } else {
+        notify(d.error || "Lỗi khi bàn giao danh sách tới Giáo vụ", "err");
+      }
+    } catch (e) {
+      notify("Lỗi kết nối máy chủ", "err");
+    } finally {
+      setIsSubmittingHandover(false);
+    }
+  };
   const [cModal, setCModal] = useState(false);
   const [editC, setEditC] = useState<PreschoolChild | null>(null);
   const [cForm, setCForm] = useState({ studentCode: "", fullName: "", dateOfBirth: "", gender: "", grade: "", admissionCampus: "", surveyFormType: "", batchId: "", admissionResult: "" });
@@ -3122,40 +3313,18 @@ Trân trọng kính mời Quý phụ huynh và các em học sinh!`;
                                             })()}
                                           </span>
                                         </div>
-                                        {b.assignedUserId && (
-                                          <button
-                                            onClick={async (e) => {
-                                              e.stopPropagation();
-                                              setSendingEmailBatchId(b.id);
-                                              try {
-                                                const res = await fetch("/api/preschool-input-assessments", {
-                                                  method: "PUT",
-                                                  headers: { "Content-Type": "application/json" },
-                                                  body: JSON.stringify({ action: "SEND_ASSIGNMENT_EMAIL", id: b.id })
-                                                });
-                                                if (res.ok) {
-                                                  notify("Đã gửi email thông báo thành công");
-                                                } else {
-                                                  const d = await res.json();
-                                                  notify(d.error || "Lỗi gửi email", "err");
-                                                }
-                                              } catch(e) {
-                                                notify("Lỗi kết nối", "err");
-                                              } finally {
-                                                setSendingEmailBatchId(null);
-                                              }
-                                            }}
-                                            className="p-1 text-slate-400 hover:text-[#00A19A] hover:bg-[#00A19A]/5 rounded-md transition-all ml-2"
-                                            disabled={sendingEmailBatchId === b.id}
-                                            title="Gửi email thông báo cho người phụ trách"
-                                          >
-                                            {sendingEmailBatchId === b.id ? (
-                                              <Loader2 className="w-3.5 h-3.5 animate-spin" />
-                                            ) : (
-                                              <Mail className="w-3.5 h-3.5" />
-                                            )}
-                                          </button>
-                                        )}
+                                        <button
+                                          type="button"
+                                          onClick={(e) => {
+                                            e.stopPropagation();
+                                            openPreschoolHandoverModal(p.id, b.id);
+                                          }}
+                                          className="px-2 py-1 rounded-lg bg-amber-50 hover:bg-amber-600 text-amber-800 hover:text-white border border-amber-200 transition-all ml-2 text-[11px] font-bold inline-flex items-center gap-1 cursor-pointer shrink-0"
+                                          title="Bàn giao & Gửi thông tin danh sách trẻ theo đợt khảo sát tới Giáo vụ để Phân công Khảo sát"
+                                        >
+                                          <Mail className="w-3.5 h-3.5" />
+                                          <span>Bàn giao GVụ</span>
+                                        </button>
                                       </div>
                                     </td>
                                     <td className="p-2 text-right border border-slate-200"><div className="flex justify-end gap-1"><button onClick={() => openEditBatch(b)} className="p-2 text-slate-300 hover:text-[#00A19A] hover:bg-[#00A19A]/5 rounded-none"><Edit2 className="w-4 h-4" /></button><button onClick={() => setConfirm({ msg: `Xóa đợt #${b.batchNumber}?`, fn: () => doDeleteBatch(b.id) })} className="p-2 text-slate-300 hover:text-rose-500 hover:bg-rose-50 text-xs font-semibold"><Trash2 className="w-4 h-4" /></button></div></td>
@@ -3693,6 +3862,14 @@ Trân trọng kính mời Quý phụ huynh và các em học sinh!`;
                 className="flex items-center gap-1.5 h-9 px-3.5 text-xs font-medium text-slate-700 bg-white hover:bg-slate-50 border border-slate-200 rounded-xl shadow-2xs transition-all disabled:opacity-50 cursor-pointer"
               >
                 <Plus className="w-3.5 h-3.5 text-slate-500" /> Tạo đợt
+              </button>
+              <button
+                type="button"
+                onClick={() => openPreschoolHandoverModal(cPeriodId && cPeriodId !== "all" ? cPeriodId : undefined, cBatchId || undefined)}
+                className="flex items-center gap-1.5 h-9 px-3.5 text-xs font-bold text-white bg-amber-500 hover:bg-amber-600 rounded-xl shadow-xs transition-all cursor-pointer"
+                title="Bàn giao tới Giáo vụ: Gửi thông tin Danh sách trẻ theo đợt Khảo sát đến Giáo vụ để Phân công Khảo sát"
+              >
+                <Mail className="w-3.5 h-3.5" /> Bàn giao tới Giáo vụ
               </button>
               <button
                 onClick={openAddChild}
@@ -8160,6 +8337,217 @@ Trân trọng kính mời Quý phụ huynh và các em học sinh!`;
               placeholder="Nhập mô tả chi tiết tiêu chí..."
             />
           </Field>
+        </div>
+      </Modal>
+
+      {/* Modal: Bàn giao Danh sách Trẻ Mầm non tới Giáo vụ để Phân công Khảo sát */}
+      <Modal
+        open={isHandoverModalOpen}
+        onClose={() => setIsHandoverModalOpen(false)}
+        title="Bàn giao tới Giáo vụ • Gửi Danh sách Trẻ theo Đợt Khảo sát"
+        size="xl"
+        footer={
+          <div className="flex flex-wrap items-center justify-between w-full gap-3 px-6 py-4 border-t border-slate-200 bg-slate-50">
+            <a
+              href={`/admin/phan-cong-khao-sat?tab=preschool&periodId=${handoverPeriodId || ""}&batchId=${handoverBatchId || ""}`}
+              className="h-10 px-4 rounded-xl bg-teal-50 hover:bg-teal-100 text-[#005854] border border-teal-200 text-xs font-bold inline-flex items-center gap-1.5 transition-all cursor-pointer"
+            >
+              <UserCheck className="w-4 h-4" />
+              <span>Mở trang Phân công Khảo sát Mầm non</span>
+            </a>
+            <div className="flex items-center gap-2.5">
+              <button
+                type="button"
+                onClick={() => setIsHandoverModalOpen(false)}
+                className="h-10 px-4 rounded-xl border border-slate-200 bg-white hover:bg-slate-50 text-slate-600 text-xs font-bold transition-all cursor-pointer"
+              >
+                Đóng
+              </button>
+              <button
+                type="button"
+                onClick={submitPreschoolHandover}
+                disabled={isSubmittingHandover}
+                className="h-10 px-5 rounded-xl bg-[#00736E] hover:bg-[#005854] text-white text-xs font-bold shadow-sm inline-flex items-center gap-2 transition-all cursor-pointer disabled:opacity-50"
+              >
+                {isSubmittingHandover ? (
+                  <>
+                    <Loader2 className="w-4 h-4 animate-spin" />
+                    <span>Đang bàn giao &amp; gửi Email...</span>
+                  </>
+                ) : (
+                  <>
+                    <Mail className="w-4 h-4" />
+                    <span>Xác nhận Bàn giao &amp; Gửi tới Giáo vụ ({effectiveHandoverChildren.length} bé)</span>
+                  </>
+                )}
+              </button>
+            </div>
+          </div>
+        }
+      >
+        <div className="space-y-4">
+          {handoverResult && (
+            <div className={`rounded-xl p-3.5 border text-xs font-bold flex flex-wrap items-center justify-between gap-2 ${handoverResult.sent ? "bg-emerald-50 border-emerald-200 text-emerald-900" : "bg-amber-50 border-amber-200 text-amber-900"}`}>
+              <span>
+                {handoverResult.sent
+                  ? `Đã bàn giao và gửi Email thành công tới ${handoverResult.sentCount} địa chỉ (${(handoverResult.recipientEmails || []).join(", ")})!`
+                  : `Đã lưu bàn giao & thông báo hệ thống cho Giáo vụ! (${handoverResult.error || "Hoàn tất"})`}
+              </span>
+              <a
+                href={handoverResult.assignUrl || `/admin/phan-cong-khao-sat?tab=preschool&periodId=${handoverPeriodId}&batchId=${handoverBatchId}`}
+                className="px-3 py-1.5 rounded-lg bg-[#00736E] text-white text-xs font-bold"
+              >
+                Đến Phân công Khảo sát →
+              </a>
+            </div>
+          )}
+
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
+            <div>
+              <label className="block text-[11px] font-bold text-slate-600 uppercase mb-1">Kỳ khảo sát *</label>
+              <select
+                value={handoverPeriodId}
+                onChange={(e) => {
+                  const newPId = e.target.value;
+                  setHandoverPeriodId(newPId);
+                  const pObj = rawPeriods.find(p => p.id === newPId);
+                  const firstBatchId = pObj?.batches?.[0]?.id || "";
+                  setHandoverBatchId(firstBatchId);
+                  applyPreschoolHandoverDefaults(newPId, firstBatchId);
+                }}
+                className="h-10 w-full px-3 bg-white border border-slate-300 rounded-xl text-xs font-semibold"
+              >
+                <option value="">-- Chọn Kỳ khảo sát --</option>
+                {rawPeriods.map(p => (
+                  <option key={p.id} value={p.id}>{p.name}</option>
+                ))}
+              </select>
+            </div>
+
+            <div>
+              <label className="block text-[11px] font-bold text-slate-600 uppercase mb-1">Đợt khảo sát *</label>
+              <select
+                value={handoverBatchId}
+                onChange={(e) => {
+                  const newBId = e.target.value;
+                  setHandoverBatchId(newBId);
+                  applyPreschoolHandoverDefaults(handoverPeriodId, newBId);
+                }}
+                className="h-10 w-full px-3 bg-white border border-slate-300 rounded-xl text-xs font-semibold"
+              >
+                <option value="">-- Toàn bộ các đợt --</option>
+                {(rawPeriods.find(p => p.id === handoverPeriodId)?.batches || []).map(b => (
+                  <option key={b.id} value={b.id}>{b.name}</option>
+                ))}
+              </select>
+            </div>
+
+            <div>
+              <label className="block text-[11px] font-bold text-slate-600 uppercase mb-1">Tài khoản Giáo vụ phụ trách</label>
+              <select
+                value={handoverAssignedUserId}
+                onChange={(e) => {
+                  const uid = e.target.value;
+                  setHandoverAssignedUserId(uid);
+                  const uObj = (giaoVuCSUsers as any[]).find(u => u.id === uid);
+                  if (uObj?.email && uObj.email.includes("@")) {
+                    setHandoverSelectedEmails(prev => Array.from(new Set([...prev, uObj.email])));
+                  }
+                }}
+                className="h-10 w-full px-3 bg-white border border-slate-300 rounded-xl text-xs font-semibold"
+              >
+                <option value="">-- Chọn Giáo vụ phụ trách --</option>
+                {(giaoVuCSUsers as any[]).map((u: any) => (
+                  <option key={u.id} value={u.id}>{u.fullName} {u.email ? `(${u.email})` : ""}</option>
+                ))}
+              </select>
+            </div>
+          </div>
+
+          <div className="border border-slate-200 rounded-xl p-3.5 space-y-2.5 bg-slate-50/50">
+            <div className="text-[11px] font-black text-[#005854] uppercase">Chọn Email Giáo vụ Cơ sở &amp; Người nhận</div>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
+              {(["CS1", "CS2", "CS3", "CS4", "CS5"] as const).map(cs => {
+                const em = (EMAIL_MAP.giaovu as any)[cs];
+                if (!em) return null;
+                const checked = handoverSelectedEmails.includes(em);
+                return (
+                  <label key={`mn-gv-${cs}`} className="flex items-center gap-2 text-xs text-slate-700 cursor-pointer">
+                    <input
+                      type="checkbox"
+                      checked={checked}
+                      onChange={(e) => {
+                        if (e.target.checked) {
+                          setHandoverSelectedEmails(prev => Array.from(new Set([...prev, em])));
+                        } else {
+                          setHandoverSelectedEmails(prev => prev.filter(x => x !== em));
+                        }
+                      }}
+                      className="rounded border-slate-300 text-[#00736E]"
+                    />
+                    <span className="font-bold text-[#005854]">Giáo vụ {cs}:</span>
+                    <span>{em}</span>
+                  </label>
+                );
+              })}
+            </div>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-3 pt-1">
+              <input
+                type="text"
+                value={handoverCustomEmail}
+                onChange={(e) => setHandoverCustomEmail(e.target.value)}
+                placeholder="Email nhận bổ sung (cách nhau dấu phẩy)..."
+                className="h-9 px-3 bg-white border border-slate-300 rounded-lg text-xs"
+              />
+              <input
+                type="text"
+                value={handoverNote}
+                onChange={(e) => setHandoverNote(e.target.value)}
+                placeholder="Ghi chú bàn giao gửi Giáo vụ (Tùy chọn)..."
+                className="h-9 px-3 bg-white border border-slate-300 rounded-lg text-xs"
+              />
+            </div>
+          </div>
+
+          <div className="border border-slate-200 rounded-xl overflow-hidden">
+            <div className="px-3.5 py-2 bg-slate-100 text-xs font-bold text-slate-700 flex items-center justify-between">
+              <span>Danh sách Trẻ bàn giao ({effectiveHandoverChildren.length} bé)</span>
+            </div>
+            {handoverChildrenLoading ? (
+              <div className="py-6 text-center text-xs text-slate-500">Đang tải danh sách trẻ...</div>
+            ) : effectiveHandoverChildren.length === 0 ? (
+              <div className="py-6 text-center text-xs text-amber-700 bg-amber-50/50">Chưa có hồ sơ trẻ trong đợt khảo sát đang chọn.</div>
+            ) : (
+              <div className="max-h-52 overflow-y-auto">
+                <table className="w-full text-left border-collapse text-xs">
+                  <thead className="bg-slate-50 text-slate-500 border-b border-slate-200">
+                    <tr>
+                      <th className="py-2 px-3 w-10 text-center">#</th>
+                      <th className="py-2 px-3">Mã HS</th>
+                      <th className="py-2 px-3">Họ và tên Bé</th>
+                      <th className="py-2 px-3 text-center">Ngày sinh</th>
+                      <th className="py-2 px-3">Nhóm tuổi / Lớp</th>
+                      <th className="py-2 px-3">Hệ KS</th>
+                      <th className="py-2 px-3">Cơ sở ĐK</th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-slate-100">
+                    {effectiveHandoverChildren.map((c, idx) => (
+                      <tr key={c.id}>
+                        <td className="py-1.5 px-3 text-center text-slate-500">{idx + 1}</td>
+                        <td className="py-1.5 px-3 font-mono font-bold text-[#005854]">{c.studentCode || "—"}</td>
+                        <td className="py-1.5 px-3 font-bold text-slate-800">{c.fullName}</td>
+                        <td className="py-1.5 px-3 text-center text-slate-600">{c.dateOfBirth ? new Date(c.dateOfBirth).toLocaleDateString("vi-VN") : "—"}</td>
+                        <td className="py-1.5 px-3 font-semibold text-teal-800">{c.grade || "—"}</td>
+                        <td className="py-1.5 px-3 text-indigo-700 font-semibold">{c.surveyFormType || "—"}</td>
+                        <td className="py-1.5 px-3 text-slate-600">{c.admissionCampus || handoverCampusCode}</td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            )}
+          </div>
         </div>
       </Modal>
     </div>
