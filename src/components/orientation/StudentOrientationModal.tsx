@@ -998,56 +998,183 @@ export function StudentOrientationModal({
 
   if (!isOpen) return null
 
-  const campusName = studentDetail?.batch?.campus?.campusName || studentDetail?.admissionCampus || studentDetail?.registeredCampus || "Sky-Line"
-  const oldSchool = studentDetail?.oldSchoolName || "Chưa cập nhật"
-  const gender = studentDetail?.gender || "Nam"
+  const isCuidLike = (val?: string | null) =>
+    Boolean(val && /^(cm|cl)[a-z0-9]{15,}$/i.test(String(val).trim()))
+
+  const resolveCampusDisplay = () => {
+    const cCode = studentDetail?.batch?.campus?.campusCode
+    const cName = studentDetail?.batch?.campus?.campusName
+    if (cCode && !isCuidLike(cCode)) return cCode
+    if (cName && !isCuidLike(cName)) return cName
+    const adm = studentDetail?.admissionCampus
+    if (adm && !isCuidLike(adm)) return adm
+    const reg = studentDetail?.registeredCampus
+    if (reg && !isCuidLike(reg)) return reg
+    const bName = String(studentDetail?.batch?.name || "")
+    const m = bName.match(/\b(CS\d+)\b/i)
+    if (m) return m[1].toUpperCase()
+    return "Sky-Line"
+  }
+
+  let parsedKqHocTap: any = null
+  const rawKq = studentDetail?.kqHocTap
+  if (typeof rawKq === "string" && rawKq.trim().startsWith("{")) {
+    try {
+      parsedKqHocTap = JSON.parse(rawKq)
+    } catch (e) {}
+  } else if (rawKq && typeof rawKq === "object") {
+    parsedKqHocTap = rawKq
+  }
+
+  const findSubjectScore = (keywords: string[]) => {
+    // 1. Check parsed kqHocTap.scores
+    if (parsedKqHocTap?.scores && typeof parsedKqHocTap.scores === "object") {
+      for (const [k, v] of Object.entries(parsedKqHocTap.scores)) {
+        const normK = k.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "")
+        if (keywords.some(kw => normK.includes(kw)) && v !== null && v !== undefined && String(v).trim() !== "") {
+          return String(v)
+        }
+      }
+    }
+    // 2. Check studentDetail.scores array
+    if (Array.isArray(studentDetail?.scores)) {
+      for (const item of studentDetail.scores) {
+        const sName = String(item?.subject?.name || item?.subjectName || "")
+          .toLowerCase()
+          .normalize("NFD")
+          .replace(/[\u0300-\u036f]/g, "")
+        if (keywords.some(kw => sName.includes(kw))) {
+          const val = item?.score ?? item?.rawScore ?? item?.gradeLevel
+          if (val !== null && val !== undefined && String(val).trim() !== "") {
+            return String(val)
+          }
+        }
+      }
+    }
+    return ""
+  }
+
+  const campusName = resolveCampusDisplay()
+  const oldSchool = studentDetail?.oldSchoolName || student?.oldSchoolName || "—"
+  const gender = studentDetail?.gender || student?.gender || "Nam"
+  const dobDisplay = (studentDetail?.dateOfBirth || student?.dateOfBirth)
+    ? new Date(studentDetail?.dateOfBirth || student?.dateOfBirth).toLocaleDateString("vi-VN")
+    : "—"
+
+  const displayHocTap =
+    parsedKqHocTap?.hocTap ||
+    parsedKqHocTap?.academicRating ||
+    parsedKqHocTap?.nangLuc ||
+    (typeof rawKq === "string" && !rawKq.trim().startsWith("{") ? rawKq : "") ||
+    studentDetail?.academicRating ||
+    studentDetail?.kqgdTieuHoc ||
+    "Tốt"
+
+  const displayRenLuyen =
+    studentDetail?.kqRenLuyen ||
+    studentDetail?.conductRating ||
+    parsedKqHocTap?.renLuyen ||
+    parsedKqHocTap?.phamChat ||
+    "Tốt"
+
+  const displayMath =
+    mathScore ||
+    studentDetail?.mathScore ||
+    findSubjectScore(["toan", "math"]) ||
+    "—"
+
+  const displayLiterature =
+    literatureScore ||
+    studentDetail?.literatureScore ||
+    findSubjectScore(["ngu van", "tieng viet", "van", "literature"]) ||
+    "—"
+
+  const displayEnglish =
+    writtenEnglishScore ||
+    studentDetail?.writtenEnglishScore ||
+    oralEnglishScore ||
+    studentDetail?.oralEnglishScore ||
+    findSubjectScore(["tieng anh", "ngoai ngu", "english"]) ||
+    "—"
+
+  const allExpandedA = questions.length > 0 && questions.every((q: any) => openAccordionA[q.id])
+  const toggleAllAccordionA = () => {
+    const nextState: Record<string, boolean> = {}
+    questions.forEach((q: any) => {
+      nextState[q.id] = !allExpandedA
+    })
+    setOpenAccordionA(nextState)
+  }
 
   return (
-    <div id="student-orientation-modal-root" className="fixed inset-0 z-[200] flex items-center justify-center p-2 sm:p-4 bg-slate-900/60 backdrop-blur-xs overflow-y-auto">
-      <div className="relative bg-white w-full max-w-[1240px] rounded-3xl shadow-2xl border border-purple-100 flex flex-col max-h-[96vh] overflow-hidden animate-in fade-in zoom-in-95 duration-200">
+    <div id="student-orientation-modal-root" className="fixed inset-0 z-[200] flex items-center justify-center p-2 sm:p-3 bg-slate-900/60 backdrop-blur-xs overflow-y-auto">
+      <div className="relative bg-white w-full max-w-[1320px] rounded-2xl shadow-2xl border border-purple-200 flex flex-col max-h-[96vh] overflow-hidden animate-in fade-in zoom-in-95 duration-200">
         
-        {/* HEADER THEO NHẬN DIỆN MÀU TÍM SKY-LINE */}
-        <div className="px-6 py-4.5 bg-gradient-to-r from-purple-950 via-purple-900 to-indigo-950 text-white flex flex-wrap items-center justify-between gap-4 border-b border-purple-800 flex-shrink-0">
-          <div className="flex items-center gap-3.5">
-            <div className="w-12 h-12 rounded-2xl bg-gradient-to-br from-purple-500 to-indigo-600 text-white flex items-center justify-center shadow-md shadow-purple-900/30 border border-purple-400/40 flex-shrink-0">
-              <Compass className="w-6 h-6" />
+        {/* HEADER GỌN CHUẨN THEO NHẬN DIỆN MÀU TÍM SKY-LINE */}
+        <div className="px-5 py-2.5 bg-gradient-to-r from-purple-950 via-purple-900 to-indigo-950 text-white flex flex-wrap items-center justify-between gap-3 border-b border-purple-800 flex-shrink-0">
+          <div className="flex items-center gap-2.5">
+            <div className="w-9 h-9 rounded-xl bg-gradient-to-br from-purple-500 to-indigo-600 text-white flex items-center justify-center shadow-sm border border-purple-400/40 flex-shrink-0">
+              <Compass className="w-5 h-5" />
             </div>
             <div>
               <div className="flex items-center gap-2">
-                <span className="px-2.5 py-0.5 rounded-full bg-purple-500/30 text-purple-200 border border-purple-400/40 text-[10px] font-black uppercase tracking-wider">
-                  Hồ sơ khảo sát định hướng đầu vào
+                <h2 className="text-sm sm:text-base font-black text-white tracking-tight">
+                  PHIẾU ĐỊNH HƯỚNG HỌC SINH &amp; TRAO ĐỔI PHHS
+                </h2>
+                <span className="px-2 py-0.5 rounded-full bg-purple-500/30 text-purple-100 border border-purple-400/40 text-[10px] font-bold">
+                  {groupConfig.label}
                 </span>
-                <span className="text-xs text-purple-300 font-semibold">• {groupConfig.label}</span>
-                <span className="text-[11px] text-purple-300 font-mono">Phiên bản {formVersion}</span>
+                <span className="hidden sm:inline text-[10px] text-purple-300 font-mono">v{formVersion}</span>
               </div>
-              <h2 className="text-lg font-black text-white tracking-tight flex items-center gap-2 mt-0.5">
-                <span>Phỏng Vấn Định Hướng Học Sinh &amp; Trao Đổi PHHS</span>
-              </h2>
+              <p className="text-[11px] text-purple-200/90 leading-tight">
+                Trọng tâm: {groupConfig.focus}
+              </p>
             </div>
           </div>
 
-          <div className="flex items-center gap-2">
+          <div className="flex flex-wrap items-center gap-2">
+            {/* Ngày phỏng vấn & GV phỏng vấn trên thanh Header */}
+            <div className="hidden lg:flex items-center gap-2 bg-purple-900/70 border border-purple-700/70 rounded-xl px-2.5 py-1 text-[11px]">
+              <Calendar className="w-3.5 h-3.5 text-purple-300" />
+              <span className="text-purple-200">Ngày PV:</span>
+              <input
+                type="date"
+                value={interviewDate}
+                onChange={e => { setInterviewDate(e.target.value); markDirty(); }}
+                className="bg-transparent text-white font-bold text-[11px] focus:outline-none cursor-pointer"
+              />
+              <span className="text-purple-600">|</span>
+              <span className="text-purple-200">GV:</span>
+              <input
+                type="text"
+                placeholder="Nhập tên GV..."
+                value={interviewerName}
+                onChange={e => { setInterviewerName(e.target.value); markDirty(); }}
+                className="bg-white/10 hover:bg-white/15 focus:bg-white/20 text-white placeholder:text-purple-300/70 rounded px-2 py-0.5 text-[11px] font-bold focus:outline-none w-32"
+              />
+            </div>
+
             {/* Trạng thái Auto-save */}
-            <div className="hidden md:flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-purple-900/60 border border-purple-700/60 text-xs text-purple-200">
+            <div className="hidden xl:flex items-center gap-1.5 px-2.5 py-1 rounded-xl bg-purple-900/60 border border-purple-700/60 text-[11px] text-purple-200">
               {saving ? (
                 <>
-                  <RefreshCw className="w-3.5 h-3.5 animate-spin text-purple-300" />
+                  <RefreshCw className="w-3 h-3 animate-spin text-purple-300" />
                   <span>Đang lưu...</span>
                 </>
               ) : hasUnsavedChanges ? (
                 <>
-                  <AlertCircle className="w-3.5 h-3.5 text-amber-300" />
-                  <span className="text-amber-200">Có thay đổi chưa lưu</span>
+                  <AlertCircle className="w-3 h-3 text-amber-300" />
+                  <span className="text-amber-200">Chưa lưu</span>
                 </>
               ) : lastSavedTime ? (
                 <>
-                  <Check className="w-3.5 h-3.5 text-emerald-400" />
-                  <span className="text-emerald-200">Đã lưu lúc {lastSavedTime}</span>
+                  <Check className="w-3 h-3 text-emerald-400" />
+                  <span className="text-emerald-200">Đã lưu {lastSavedTime}</span>
                 </>
               ) : (
                 <>
-                  <ShieldCheck className="w-3.5 h-3.5 text-teal-300" />
-                  <span>Tự động lưu nháp an toàn</span>
+                  <ShieldCheck className="w-3 h-3 text-teal-300" />
+                  <span>Tự động lưu nháp</span>
                 </>
               )}
             </div>
@@ -1056,7 +1183,7 @@ export function StudentOrientationModal({
             <button
               type="button"
               onClick={() => setIsPsychModalOpen(true)}
-              className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-bold transition-all cursor-pointer bg-purple-800/80 hover:bg-purple-700 text-purple-100 border border-purple-600"
+              className="flex items-center gap-1 px-2.5 py-1.5 rounded-xl text-[11px] font-bold transition-all cursor-pointer bg-purple-800/80 hover:bg-purple-700 text-purple-100 border border-purple-600"
             >
               <Brain className="w-3.5 h-3.5" />
               <span>{psychologyReferralStatus === "REQUESTED" ? "Đã Đề Xuất Tâm Lý" : "Khảo sát Tâm lý"}</span>
@@ -1066,116 +1193,139 @@ export function StudentOrientationModal({
             <button
               type="button"
               onClick={() => setIsAdvisoryModalOpen(true)}
-              className="flex items-center gap-1.5 px-3.5 py-1.5 bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-600 hover:to-amber-700 text-white border border-amber-300/60 rounded-xl text-xs font-black shadow-md cursor-pointer transition-all active:scale-[0.98]"
+              className="flex items-center gap-1 px-2.5 py-1.5 bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-600 hover:to-amber-700 text-white border border-amber-300/60 rounded-xl text-[11px] font-black shadow-sm cursor-pointer transition-all"
             >
               <Sparkles className="w-3.5 h-3.5 text-yellow-100 fill-yellow-100" />
-              <span>Trợ lý AI Admission</span>
+              <span>Trợ lý AI</span>
             </button>
 
             {/* Nút In / Xem trước A4 */}
             <button
               type="button"
               onClick={handleViewReport}
-              className="flex items-center gap-1.5 px-3.5 py-1.5 bg-white/10 hover:bg-white/20 text-purple-100 hover:text-white border border-purple-400/40 rounded-xl text-xs font-bold transition-all cursor-pointer"
+              className="flex items-center gap-1 px-2.5 py-1.5 bg-white/10 hover:bg-white/20 text-purple-100 hover:text-white border border-purple-400/40 rounded-xl text-[11px] font-bold transition-all cursor-pointer"
             >
               <Printer className="w-3.5 h-3.5" />
-              <span>Xem trước &amp; In A4</span>
+              <span>Xem &amp; In A4</span>
             </button>
 
             <button
               type="button"
               onClick={onClose}
-              className="p-2 text-purple-300 hover:text-white hover:bg-white/10 rounded-xl transition-all cursor-pointer"
+              className="p-1.5 text-purple-300 hover:text-white hover:bg-white/10 rounded-xl transition-all cursor-pointer"
             >
-              <X className="w-5 h-5" />
+              <X className="w-4 h-4" />
             </button>
           </div>
         </div>
 
-        {/* THÔNG TIN ĐẦU TRANG THEO YÊU CẦU ĐỀ BÀI */}
-        <div className="bg-purple-50/50 border-b border-purple-100 px-6 py-3 flex flex-wrap items-center justify-between gap-3 text-xs flex-shrink-0">
-          <div className="flex flex-wrap items-center gap-x-5 gap-y-2 text-slate-700">
-            {/* 1. Họ tên */}
-            <div className="flex items-center gap-1.5">
-              <User className="w-3.5 h-3.5 text-purple-700" />
-              <span className="text-slate-500">Họ tên:</span>
-              <strong className="text-purple-950 font-black text-sm">{studentDetail?.fullName || student?.fullName}</strong>
-            </div>
-
-            {/* 2. Mã HS / Mã hồ sơ */}
-            <div className="flex items-center gap-1.5">
-              <FileText className="w-3.5 h-3.5 text-purple-700" />
-              <span className="text-slate-500">Mã hồ sơ:</span>
-              <span className="font-mono font-bold text-slate-900 bg-white px-2 py-0.5 rounded border border-purple-200">
-                {studentDetail?.studentCode || student?.studentCode || "HS-KSDV"}
+        {/* PHẦN ĐẦU: THÔNG TIN HỌC SINH (BẢNG 12 CỘT CHUẨN, GỌN, LUÔN HIỂN THỊ) */}
+        <div className="bg-slate-50 border-b border-slate-200 px-4 py-2 flex-shrink-0">
+          <div className="flex flex-wrap items-center justify-between gap-2 mb-1.5">
+            <div className="flex items-center gap-2">
+              <span className="px-2 py-0.5 rounded bg-purple-700 text-white text-[10px] font-black uppercase tracking-wider">
+                Thông tin Học sinh
+              </span>
+              <span className="text-[11px] text-slate-500 font-medium hidden sm:inline">
+                Hồ sơ đăng ký dự tuyển &amp; Kết quả học tập / khảo sát đầu vào
               </span>
             </div>
 
-            {/* 3. Khối đăng ký & Trọng tâm */}
-            <div className="flex items-center gap-1.5">
-              <GraduationCap className="w-3.5 h-3.5 text-purple-700" />
-              <span className="text-slate-500">Khối đăng ký:</span>
-              <span className="font-bold text-purple-900 bg-purple-100/80 px-2 py-0.5 rounded">
-                {groupConfig.label} ({groupConfig.focus})
-              </span>
-            </div>
-
-            {/* 4. Hệ học */}
-            <div className="flex items-center gap-1.5">
-              <span className="text-slate-500">Hệ học:</span>
-              <strong className="text-slate-900">{proposedEduSystem || studentDetail?.surveyFormType || "Chất lượng cao"}</strong>
-            </div>
-
-            {/* 5. Cơ sở */}
-            <div className="flex items-center gap-1.5">
-              <MapPin className="w-3.5 h-3.5 text-purple-700" />
-              <span className="text-slate-500">Cơ sở:</span>
-              <strong className="text-purple-900 font-bold">{campusName}</strong>
-            </div>
-
-            {/* 6. Ngày phỏng vấn */}
-            <div className="flex items-center gap-1.5">
-              <Calendar className="w-3.5 h-3.5 text-purple-700" />
-              <span className="text-slate-500">Ngày PV:</span>
+            {/* Hiển thị Ngày PV & GV phỏng vấn trên màn hình nhỏ */}
+            <div className="flex lg:hidden items-center gap-2 text-[11px]">
+              <span className="text-slate-500 font-semibold">Ngày PV:</span>
               <input
                 type="date"
                 value={interviewDate}
                 onChange={e => { setInterviewDate(e.target.value); markDirty(); }}
-                className="bg-white border border-purple-200 rounded px-2 py-0.5 text-xs font-bold text-purple-950 focus:outline-purple-600 cursor-pointer"
+                className="bg-white border border-slate-300 rounded px-1.5 py-0.5 text-[11px] font-bold text-slate-800"
               />
-            </div>
-
-            {/* 7. Giáo viên thực hiện */}
-            <div className="flex items-center gap-1.5">
-              <span className="text-slate-500">GV phỏng vấn:</span>
+              <span className="text-slate-500 font-semibold">GV:</span>
               <input
                 type="text"
-                placeholder="Nhập tên giáo viên..."
+                placeholder="Tên GV..."
                 value={interviewerName}
                 onChange={e => { setInterviewerName(e.target.value); markDirty(); }}
-                className="bg-white border border-purple-200 rounded px-2 py-0.5 text-xs font-bold text-slate-900 focus:outline-purple-600 w-36"
+                className="bg-white border border-slate-300 rounded px-2 py-0.5 text-[11px] font-bold text-slate-800 w-28"
               />
             </div>
           </div>
 
-          {/* Quick Tab 4 toggle */}
-          <button
-            type="button"
-            onClick={() => setActiveTab("tab4")}
-            className="flex items-center gap-1.5 px-3 py-1 bg-white hover:bg-purple-50 text-purple-800 border border-purple-300 rounded-lg text-xs font-bold transition-all cursor-pointer shadow-2xs"
-          >
-            <FileSpreadsheet className="w-3.5 h-3.5 text-purple-700" />
-            <span>Hồ sơ tuyển sinh (17 Cột)</span>
-          </button>
+          <div className="overflow-x-auto border border-slate-200/90 rounded-xl bg-white shadow-2xs">
+            <table className="w-full text-left border-collapse text-[11.5px]">
+              <thead>
+                <tr className="bg-purple-50/80 text-[10px] font-black uppercase text-purple-950 border-b border-purple-100 whitespace-nowrap">
+                  <th className="py-1.5 px-2.5 border-r border-slate-200/70">1. Mã HS</th>
+                  <th className="py-1.5 px-2.5 border-r border-slate-200/70">2. Họ và tên</th>
+                  <th className="py-1.5 px-2.5 border-r border-slate-200/70">3. Ngày sinh / Phái</th>
+                  <th className="py-1.5 px-2.5 border-r border-slate-200/70">4. Khối đăng ký</th>
+                  <th className="py-1.5 px-2.5 border-r border-slate-200/70">5. Hệ đào tạo</th>
+                  <th className="py-1.5 px-2.5 border-r border-slate-200/70">6. Cơ sở</th>
+                  <th className="py-1.5 px-2.5 border-r border-slate-200/70">7. Trường cũ</th>
+                  <th className="py-1.5 px-2.5 border-r border-slate-200/70 text-center">8. Học tập</th>
+                  <th className="py-1.5 px-2.5 border-r border-slate-200/70 text-center">9. Rèn luyện</th>
+                  <th className="py-1.5 px-2.5 border-r border-slate-200/70 text-center">10. Toán</th>
+                  <th className="py-1.5 px-2.5 border-r border-slate-200/70 text-center">11. Ngữ Văn</th>
+                  <th className="py-1.5 px-2.5 text-center">12. Tiếng Anh</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr className="text-slate-800 whitespace-nowrap">
+                  <td className="py-1.5 px-2.5 border-r border-slate-100 font-mono font-bold text-slate-900">
+                    {studentDetail?.studentCode || student?.studentCode || "—"}
+                  </td>
+                  <td className="py-1.5 px-2.5 border-r border-slate-100 font-black text-purple-950">
+                    {studentDetail?.fullName || student?.fullName || "—"}
+                  </td>
+                  <td className="py-1.5 px-2.5 border-r border-slate-100 text-slate-700">
+                    {dobDisplay} <span className="text-slate-400">&bull;</span> <span className="font-semibold">{gender}</span>
+                  </td>
+                  <td className="py-1.5 px-2.5 border-r border-slate-100">
+                    <span className="px-2 py-0.5 rounded bg-purple-100 text-purple-900 font-bold text-[11px]">
+                      {groupConfig.label}
+                    </span>
+                  </td>
+                  <td className="py-1.5 px-2.5 border-r border-slate-100 font-bold text-teal-800">
+                    {proposedEduSystem || studentDetail?.surveyFormType || studentDetail?.surveySystem || "HNS"}
+                  </td>
+                  <td className="py-1.5 px-2.5 border-r border-slate-100 font-bold text-slate-900">
+                    {campusName}
+                  </td>
+                  <td className="py-1.5 px-2.5 border-r border-slate-100 text-slate-700 max-w-[160px] truncate" title={oldSchool}>
+                    {oldSchool}
+                  </td>
+                  <td className="py-1.5 px-2.5 border-r border-slate-100 text-center">
+                    <span className="px-1.5 py-0.5 rounded bg-emerald-50 text-emerald-800 border border-emerald-200 font-bold text-[11px]">
+                      {displayHocTap}
+                    </span>
+                  </td>
+                  <td className="py-1.5 px-2.5 border-r border-slate-100 text-center">
+                    <span className="px-1.5 py-0.5 rounded bg-sky-50 text-sky-800 border border-sky-200 font-bold text-[11px]">
+                      {displayRenLuyen}
+                    </span>
+                  </td>
+                  <td className="py-1.5 px-2.5 border-r border-slate-100 text-center font-bold text-slate-900">
+                    {displayMath}
+                  </td>
+                  <td className="py-1.5 px-2.5 border-r border-slate-100 text-center font-bold text-slate-900">
+                    {displayLiterature}
+                  </td>
+                  <td className="py-1.5 px-2.5 text-center font-bold text-slate-900">
+                    {displayEnglish}
+                  </td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
         </div>
 
         {/* CẢNH BÁO ĐIỀU CHỈNH KHỐI LỚP (BẢO VỆ DỮ LIỆU) */}
         {showGradeChangeWarning && (
-          <div className="bg-amber-50 border-b border-amber-200 px-6 py-2.5 flex items-center justify-between text-xs text-amber-900">
+          <div className="bg-amber-50 border-b border-amber-200 px-4 py-1.5 flex items-center justify-between text-xs text-amber-900 flex-shrink-0">
             <div className="flex items-center gap-2">
-              <AlertTriangle className="w-4 h-4 text-amber-600 flex-shrink-0" />
+              <AlertTriangle className="w-3.5 h-3.5 text-amber-600 flex-shrink-0" />
               <span>
-                <strong>Lưu ý điều chỉnh khối:</strong> Khối đăng ký hiện tại là <strong>{groupConfig.label}</strong> (Khác với phiên bản đã lưu trước đó: <strong>{savedGradeGroup}</strong>). Dữ liệu câu trả lời cũ đã được bảo toàn trong lịch sử phiên bản.
+                <strong>Lưu ý điều chỉnh khối:</strong> Khối đăng ký hiện tại là <strong>{groupConfig.label}</strong> (Khác với phiên bản đã lưu: <strong>{savedGradeGroup}</strong>). Dữ liệu cũ được bảo toàn.
               </span>
             </div>
             <button
@@ -1188,319 +1338,268 @@ export function StudentOrientationModal({
           </div>
         )}
 
-        {/* THANH ĐIỀU HƯỚNG BIỂU MẪU (3 TAB CHÍNH + TAB BẢNG 17 CỘT) */}
-        <div className="px-6 pt-2 pb-0 bg-white border-b border-slate-200 flex-shrink-0">
-          <div className="flex items-center gap-2 overflow-x-auto">
-            {/* TAB 1: PHỎNG VẤN HỌC SINH */}
+        {/* THANH ĐIỀU HƯỚNG 3 PHẦN CHÍNH: A - B - C */}
+        <div className="px-4 bg-white border-b border-slate-200 flex items-center justify-between gap-2 flex-shrink-0">
+          <div className="flex items-center gap-1.5 overflow-x-auto">
+            {/* TAB A: PHỎNG VẤN HỌC SINH */}
             <button
               type="button"
               onClick={() => setActiveTab("tab1")}
-              className={`flex items-center gap-2 px-5 py-3 border-b-2 font-black text-xs transition-all cursor-pointer whitespace-nowrap ${
+              className={`flex items-center gap-2 px-4 py-2.5 border-b-2 font-black text-xs transition-all cursor-pointer whitespace-nowrap ${
                 activeTab === "tab1"
-                  ? "border-purple-700 text-purple-950 bg-purple-50/70 rounded-t-xl shadow-2xs"
-                  : "border-transparent text-slate-600 hover:text-purple-800 hover:bg-slate-50 rounded-t-xl"
+                  ? "border-purple-700 text-purple-950 bg-purple-50/80 rounded-t-lg"
+                  : "border-transparent text-slate-600 hover:text-purple-800 hover:bg-slate-50 rounded-t-lg"
               }`}
             >
-              <UserCheck className={`w-4 h-4 ${activeTab === "tab1" ? "text-purple-700" : "text-slate-400"}`} />
+              <UserCheck className={`w-3.5 h-3.5 ${activeTab === "tab1" ? "text-purple-700" : "text-slate-400"}`} />
               <span>A. Phỏng Vấn Định Hướng Học Sinh</span>
-              <span className={`px-2 py-0.5 rounded-full text-[10px] font-black ${
+              <span className={`px-1.5 py-0.2 rounded-full text-[10px] font-black ${
                 activeTab === "tab1" ? "bg-purple-700 text-white" : "bg-purple-100 text-purple-800"
               }`}>
-                10 nhóm chuẩn hóa
+                10 nhóm
               </span>
             </button>
 
-            {/* TAB 2: TRAO ĐỔI PHỤ HUYNH */}
+            {/* TAB B: TRAO ĐỔI PHỤ HUYNH */}
             <button
               type="button"
               onClick={() => setActiveTab("tab2")}
-              className={`flex items-center gap-2 px-5 py-3 border-b-2 font-black text-xs transition-all cursor-pointer whitespace-nowrap ${
+              className={`flex items-center gap-2 px-4 py-2.5 border-b-2 font-black text-xs transition-all cursor-pointer whitespace-nowrap ${
                 activeTab === "tab2"
-                  ? "border-purple-700 text-purple-950 bg-purple-50/70 rounded-t-xl shadow-2xs"
-                  : "border-transparent text-slate-600 hover:text-purple-800 hover:bg-slate-50 rounded-t-xl"
+                  ? "border-purple-700 text-purple-950 bg-purple-50/80 rounded-t-lg"
+                  : "border-transparent text-slate-600 hover:text-purple-800 hover:bg-slate-50 rounded-t-lg"
               }`}
             >
-              <Users className={`w-4 h-4 ${activeTab === "tab2" ? "text-purple-700" : "text-slate-400"}`} />
+              <Users className={`w-3.5 h-3.5 ${activeTab === "tab2" ? "text-purple-700" : "text-slate-400"}`} />
               <span>B. Trao Đổi Định Hướng Với Phụ Huynh</span>
-              <span className={`px-2 py-0.5 rounded-full text-[10px] font-black ${
+              <span className={`px-1.5 py-0.2 rounded-full text-[10px] font-black ${
                 activeTab === "tab2" ? "bg-purple-700 text-white" : "bg-purple-100 text-purple-800"
               }`}>
-                5 nhóm nội dung
+                5 nhóm
               </span>
             </button>
 
-            {/* TAB 3: TỔNG HỢP NHẬN DIỆN & THẨM ĐỊNH */}
+            {/* TAB C: TỔNG HỢP NHẬN DIỆN & THẨM ĐỊNH */}
             <button
               type="button"
               onClick={() => setActiveTab("tab3")}
-              className={`flex items-center gap-2 px-5 py-3 border-b-2 font-black text-xs transition-all cursor-pointer whitespace-nowrap ${
+              className={`flex items-center gap-2 px-4 py-2.5 border-b-2 font-black text-xs transition-all cursor-pointer whitespace-nowrap ${
                 activeTab === "tab3"
-                  ? "border-purple-700 text-purple-950 bg-purple-50/70 rounded-t-xl shadow-2xs"
-                  : "border-transparent text-slate-600 hover:text-purple-800 hover:bg-slate-50 rounded-t-xl"
+                  ? "border-purple-700 text-purple-950 bg-purple-50/80 rounded-t-lg"
+                  : "border-transparent text-slate-600 hover:text-purple-800 hover:bg-slate-50 rounded-t-lg"
               }`}
             >
-              <FileCheck className={`w-4 h-4 ${activeTab === "tab3" ? "text-purple-700" : "text-slate-400"}`} />
+              <FileCheck className={`w-3.5 h-3.5 ${activeTab === "tab3" ? "text-purple-700" : "text-slate-400"}`} />
               <span>C. Tổng Hợp Nhận Diện &amp; Thẩm Định</span>
-              <span className={`px-2 py-0.5 rounded-full text-[10px] font-black ${
+              <span className={`px-1.5 py-0.2 rounded-full text-[10px] font-black ${
                 activeTab === "tab3" ? "bg-purple-700 text-white" : "bg-purple-100 text-purple-800"
               }`}>
                 9 mục &bull; QLCM &bull; GĐCS
               </span>
             </button>
-
-            {/* TAB 4: HỒ SƠ TUYỂN SINH (17 CỘT) */}
-            <button
-              type="button"
-              onClick={() => setActiveTab("tab4")}
-              className={`flex items-center gap-2 px-4 py-3 border-b-2 font-bold text-xs transition-all cursor-pointer whitespace-nowrap ${
-                activeTab === "tab4"
-                  ? "border-teal-700 text-teal-950 bg-teal-50/70 rounded-t-xl shadow-2xs"
-                  : "border-transparent text-slate-500 hover:text-teal-800 hover:bg-slate-50 rounded-t-xl"
-              }`}
-            >
-              <FileSpreadsheet className={`w-4 h-4 ${activeTab === "tab4" ? "text-teal-700" : "text-slate-400"}`} />
-              <span>Bảng 17 Cột Tuyển Sinh</span>
-            </button>
           </div>
+
+          {activeTab === "tab1" && (
+            <div className="hidden md:flex items-center gap-2">
+              <span className="text-[11px] font-semibold text-amber-800 bg-amber-50 border border-amber-200 px-2.5 py-1 rounded-lg flex items-center gap-1">
+                <AlertCircle className="w-3 h-3 text-amber-600" />
+                <span>Bắt buộc nhận xét khi chọn &quot;Cần tìm hiểu thêm&quot; / &quot;Chưa đủ thông tin&quot;</span>
+              </span>
+              <button
+                type="button"
+                onClick={toggleAllAccordionA}
+                className="text-[11px] font-bold text-purple-700 hover:text-purple-900 bg-purple-50 hover:bg-purple-100 border border-purple-200 px-2.5 py-1 rounded-lg cursor-pointer transition-all"
+              >
+                {allExpandedA ? "Thu gọn tất cả" : "Mở tất cả 10 mục"}
+              </button>
+            </div>
+          )}
         </div>
 
         {/* MODAL BODY (SCROLLABLE) */}
-        <div className="flex-1 overflow-y-auto p-6 space-y-6 bg-slate-50/50 custom-scrollbar">
+        <div className="flex-1 overflow-y-auto p-4 space-y-3 bg-slate-50/60 custom-scrollbar">
           {loading ? (
-            <div className="py-24 text-center space-y-3">
-              <RefreshCw className="w-8 h-8 animate-spin mx-auto text-purple-700" />
+            <div className="py-20 text-center space-y-3">
+              <RefreshCw className="w-7 h-7 animate-spin mx-auto text-purple-700" />
               <p className="text-xs font-bold text-slate-500">Đang chuẩn bị bộ câu hỏi phân hóa cho {groupConfig.label}...</p>
             </div>
           ) : activeTab === "tab1" ? (
-            /* TAB 1: PHẦN A - PHỎNG VẤN ĐỊNH HƯỚNG HỌC SINH (10 NHÓM NỘI DUNG) */
-            <div className="space-y-4">
-              
-              {/* Banner giới thiệu Phần A */}
-              <div className="bg-gradient-to-r from-purple-900 via-purple-800 to-indigo-900 p-4.5 rounded-2xl text-white shadow-sm flex flex-wrap items-center justify-between gap-3">
-                <div>
-                  <div className="flex items-center gap-2">
-                    <span className="px-2.5 py-0.5 rounded-full bg-purple-500/30 text-purple-200 border border-purple-400/40 text-[10px] font-black uppercase tracking-wider">
-                      {groupConfig.label} &bull; Trọng tâm: {groupConfig.focus}
-                    </span>
-                    <span className="text-[11px] text-purple-200 font-medium">10 Nhóm Nội Dung Phỏng Vấn Chuẩn Hóa</span>
-                  </div>
-                  <h3 className="text-sm font-black text-white tracking-tight mt-1 flex items-center gap-2">
-                    <MessageSquareQuote className="w-4 h-4 text-purple-300" />
-                    <span>A. PHỎNG VẤN ĐỊNH HƯỚNG HỌC SINH</span>
-                  </h3>
-                  <p className="text-xs text-purple-100/80 mt-0.5">
-                    Không sử dụng điểm số &bull; Quan sát 4 mức mô tả &bull; Ghi nhận câu trả lời &bull; Phân định nguồn minh chứng
-                  </p>
-                </div>
+            /* TAB A: PHỎNG VẤN ĐỊNH HƯỚNG HỌC SINH (10 NHÓM NỘI DUNG GỌN CHUẨN) */
+            <div className="space-y-2.5">
+              {(questions || []).map((q: any, idx: number) => {
+                const ans = answers[q.id] || { rating: "NORMAL", notes: "", studentNotes: "", teacherComment: "", evidenceSource: "STUDENT_SHARED" }
+                const isMandatory = isCommentMandatory(ans.rating)
+                const hasError = validationErrors[q.id]
+                const qHints: string[] = q.suggestedQuestions || []
+                const isOpenAcc = openAccordionA[q.id] ?? (idx < 3)
+                const isHintOpen = openHints[q.id] ?? false
 
-                <div className="flex items-center gap-2">
-                  <span className="text-[11px] font-bold text-amber-200 bg-amber-500/20 border border-amber-400/30 px-3 py-1 rounded-xl flex items-center gap-1.5">
-                    <AlertCircle className="w-3.5 h-3.5 text-amber-300" />
-                    <span>Bắt buộc nhận xét khi chọn &quot;Cần tìm hiểu thêm&quot; hoặc &quot;Chưa đủ thông tin&quot;</span>
-                  </span>
-                </div>
-              </div>
-
-              {/* DANH SÁCH 10 NHÓM CÂU HỎI (ACCORDION / STEP) */}
-              <div className="space-y-3.5">
-                {(questions || []).map((q: any, idx: number) => {
-                  const ans = answers[q.id] || { rating: "NORMAL", notes: "", studentNotes: "", teacherComment: "", evidenceSource: "STUDENT_SHARED" }
-                  const isMandatory = isCommentMandatory(ans.rating)
-                  const hasError = validationErrors[q.id]
-                  const qHints: string[] = q.suggestedQuestions || []
-                  const isOpenAcc = openAccordionA[q.id] ?? (idx < 3)
-                  const isHintOpen = openHints[q.id] ?? false
-
-                  return (
+                return (
+                  <div
+                    key={q.id}
+                    className={`bg-white rounded-xl border transition-all duration-150 shadow-2xs ${
+                      hasError
+                        ? "border-rose-400 ring-2 ring-rose-200 bg-rose-50/20"
+                        : isOpenAcc
+                        ? "border-purple-300"
+                        : "border-slate-200 hover:border-purple-200"
+                    }`}
+                  >
+                    {/* Tiêu đề Accordion Header Gọn */}
                     <div
-                      key={q.id}
-                      className={`bg-white rounded-2xl border transition-all duration-200 shadow-xs ${
-                        hasError
-                          ? "border-rose-400 ring-2 ring-rose-200 bg-rose-50/20"
-                          : isOpenAcc
-                          ? "border-purple-300 ring-1 ring-purple-100"
-                          : "border-slate-200 hover:border-purple-200"
-                      }`}
+                      onClick={() => toggleAccordionA(q.id)}
+                      className="px-3.5 py-2.5 flex items-center justify-between gap-3 cursor-pointer select-none bg-slate-50/60 rounded-t-xl hover:bg-purple-50/40 transition-all"
                     >
-                      {/* Tiêu đề Accordion Header */}
-                      <div
-                        onClick={() => toggleAccordionA(q.id)}
-                        className="p-4 flex items-center justify-between gap-3 cursor-pointer select-none bg-slate-50/40 rounded-t-2xl hover:bg-purple-50/30 transition-all"
-                      >
-                        <div className="flex items-center gap-3">
-                          <span className="w-7 h-7 rounded-xl bg-purple-100 text-purple-900 flex items-center justify-center font-black text-xs flex-shrink-0">
-                            {idx + 1}
+                      <div className="flex items-center gap-2.5 min-w-0">
+                        <span className="w-6 h-6 rounded-lg bg-purple-100 text-purple-900 flex items-center justify-center font-black text-xs flex-shrink-0">
+                          {idx + 1}
+                        </span>
+                        <div className="flex flex-wrap items-center gap-x-2 gap-y-0.5 min-w-0">
+                          <span className="font-mono text-[10px] font-bold text-purple-700 bg-purple-50 border border-purple-200 px-1.5 py-0.2 rounded">
+                            {q.code}
                           </span>
-                          <div>
-                            <div className="flex items-center gap-2">
-                              <span className="font-mono text-[10px] font-bold text-purple-700 bg-purple-50 border border-purple-200 px-1.5 py-0.2 rounded">
-                                {q.code}
-                              </span>
-                              <span className="text-[11px] font-bold text-purple-900">
-                                {q.categoryLabel || q.category}
-                              </span>
-                            </div>
-                            <h4 className="text-xs font-black text-slate-900 mt-0.5">
-                              {q.questionText}
-                            </h4>
-                          </div>
-                        </div>
-
-                        <div className="flex items-center gap-2.5">
-                          {/* Badge hiển thị mức đánh giá hiện tại */}
-                          <span className={`px-2.5 py-1 rounded-lg text-[10.5px] border font-bold ${ORIENTATION_RATING_OPTIONS[ans.rating]?.badgeClass || "bg-slate-100 text-slate-700"}`}>
-                            {ORIENTATION_RATING_OPTIONS[ans.rating]?.label || "Đang hình thành"}
+                          <span className="text-xs font-black text-slate-900">
+                            {q.questionText}
                           </span>
-
-                          <div className="w-6 h-6 rounded-lg text-slate-400 hover:text-purple-700 flex items-center justify-center">
-                            {isOpenAcc ? <ChevronUp className="w-4 h-4" /> : <ChevronDown className="w-4 h-4" />}
-                          </div>
+                          <span className="text-[11px] text-slate-500 hidden sm:inline">
+                            &mdash; {q.focus || q.suggestedGuideline}
+                          </span>
                         </div>
                       </div>
 
-                      {/* Nội dung chi tiết của câu hỏi */}
-                      {isOpenAcc && (
-                        <div className="p-4.5 pt-2 border-t border-purple-100/60 space-y-4">
-                          
-                          {/* 1. Nội dung cần tìm hiểu & Hướng dẫn quan sát */}
-                          <div className="p-3 bg-purple-50/40 rounded-xl border border-purple-200/80 text-xs text-purple-950 flex flex-wrap items-start justify-between gap-2">
-                            <div className="space-y-1 max-w-[85%]">
-                              <div>
-                                <span className="font-bold text-purple-900">Nội dung cần tìm hiểu: </span>
-                                <span className="text-slate-800 font-medium">{q.focus || q.suggestedGuideline}</span>
-                              </div>
-                            </div>
+                      <div className="flex items-center gap-2 flex-shrink-0">
+                        {Boolean(ans.studentNotes?.trim() || ans.teacherComment?.trim()) && (
+                          <span className="text-[10px] font-bold text-emerald-700 bg-emerald-50 border border-emerald-200 px-1.5 py-0.5 rounded">
+                            Đã ghi nhận
+                          </span>
+                        )}
+                        <span className={`px-2 py-0.5 rounded-lg text-[10.5px] border font-bold ${ORIENTATION_RATING_OPTIONS[ans.rating]?.badgeClass || "bg-slate-100 text-slate-700"}`}>
+                          {ORIENTATION_RATING_OPTIONS[ans.rating]?.label || "Đang hình thành"}
+                        </span>
+                        <div className="w-5 h-5 rounded text-slate-400 hover:text-purple-700 flex items-center justify-center">
+                          {isOpenAcc ? <ChevronUp className="w-4 h-4" /> : <ChevronDown className="w-4 h-4" />}
+                        </div>
+                      </div>
+                    </div>
 
+                    {/* Nội dung chi tiết câu hỏi (Thiết kế 2 cột Gọn & Nhanh) */}
+                    {isOpenAcc && (
+                      <div className="p-3.5 pt-2.5 border-t border-slate-100 space-y-2.5">
+                        {/* Thanh hướng dẫn + Nút xem câu hỏi gợi mở + Chọn nhanh 4 mức & Nguồn minh chứng */}
+                        <div className="flex flex-wrap items-center justify-between gap-2 bg-purple-50/40 px-3 py-1.5 rounded-lg border border-purple-100 text-[11px]">
+                          <div className="text-slate-700">
+                            <strong className="text-purple-900">Trọng tâm cần tìm hiểu: </strong>
+                            <span>{q.focus || q.suggestedGuideline}</span>
+                          </div>
+                          {qHints.length > 0 && (
                             <button
                               type="button"
                               onClick={() => toggleHint(q.id)}
                               className="flex items-center gap-1 text-[11px] font-bold text-purple-700 hover:text-purple-900 hover:underline cursor-pointer"
                             >
                               <HelpCircle className="w-3.5 h-3.5" />
-                              <span>{isHintOpen ? "Ẩn câu hỏi gợi mở" : "Xem câu hỏi gợi mở"}</span>
+                              <span>{isHintOpen ? "Ẩn câu hỏi gợi mở" : `Câu hỏi gợi mở (${qHints.length})`}</span>
                             </button>
+                          )}
+                        </div>
+
+                        {isHintOpen && qHints.length > 0 && (
+                          <div className="px-3 py-2 bg-indigo-50/50 rounded-lg border border-indigo-200 text-xs text-indigo-950">
+                            <ul className="list-disc pl-4 space-y-0.5 text-slate-800 text-[11px]">
+                              {qHints.map((hint, hIdx) => (
+                                <li key={hIdx}>{hint}</li>
+                              ))}
+                            </ul>
+                          </div>
+                        )}
+
+                        {/* Hàng chọn Mức độ quan sát định tính (4 mức) & Nguồn minh chứng (3 nguồn) trên cùng 1 dòng */}
+                        <div className="grid grid-cols-1 lg:grid-cols-12 gap-2.5 items-center">
+                          <div className="lg:col-span-7 flex flex-wrap items-center gap-1.5">
+                            <span className="text-[11px] font-bold text-slate-700 mr-1">Mức độ quan sát:</span>
+                            {(Object.keys(ORIENTATION_RATING_OPTIONS) as RatingCode[]).map(rCode => {
+                              const opt = ORIENTATION_RATING_OPTIONS[rCode]
+                              const isSelected = ans.rating === rCode
+                              return (
+                                <button
+                                  key={rCode}
+                                  type="button"
+                                  onClick={() => handleRatingChange(q.id, rCode)}
+                                  title={opt.subText}
+                                  className={`px-2.5 py-1 rounded-lg text-[11px] font-bold border transition-all cursor-pointer flex items-center gap-1 ${
+                                    isSelected
+                                      ? `${opt.borderClass} ${opt.bgClass} ${opt.textClass} ring-1 ring-purple-300 shadow-2xs`
+                                      : "border-slate-200 hover:border-slate-300 bg-white text-slate-700"
+                                  }`}
+                                >
+                                  <span>{opt.label}</span>
+                                  {isSelected && <Check className="w-3 h-3" />}
+                                </button>
+                              )
+                            })}
                           </div>
 
-                          {/* 2. Danh sách câu hỏi gợi mở (Gợi ý sư phạm) */}
-                          {isHintOpen && qHints.length > 0 && (
-                            <div className="p-3 bg-indigo-50/50 rounded-xl border border-indigo-200 space-y-1.5 text-xs text-indigo-950">
-                              <span className="font-bold text-indigo-900 block text-[11px] uppercase tracking-wide">
-                                Câu hỏi gợi mở sư phạm (giáo viên tham khảo khi trò chuyện):
-                              </span>
-                              <ul className="list-disc pl-4 space-y-1 text-slate-800 text-[11.5px]">
-                                {qHints.map((hint, hIdx) => (
-                                  <li key={hIdx}>{hint}</li>
-                                ))}
-                              </ul>
-                            </div>
-                          )}
+                          <div className="lg:col-span-5 flex flex-wrap items-center lg:justify-end gap-1.5">
+                            <span className="text-[11px] font-bold text-slate-700 mr-1">Minh chứng:</span>
+                            {(["STUDENT_SHARED", "TEACHER_OBSERVED", "TEACHER_ASSESSED"] as EvidenceSource[]).map(sCode => {
+                              const sOpt = ORIENTATION_EVIDENCE_SOURCES[sCode]
+                              const isSelected = (ans.evidenceSource || "STUDENT_SHARED") === sCode
+                              return (
+                                <button
+                                  key={sCode}
+                                  type="button"
+                                  onClick={() => handleEvidenceSourceChange(q.id, sCode)}
+                                  className={`px-2 py-1 rounded-lg text-[10.5px] font-bold border transition-all cursor-pointer ${
+                                    isSelected
+                                      ? "border-purple-600 bg-purple-50 text-purple-950 ring-1 ring-purple-200"
+                                      : "border-slate-200 hover:border-slate-300 bg-white text-slate-600"
+                                  }`}
+                                >
+                                  {sOpt.label}
+                                </button>
+                              )
+                            })}
+                          </div>
+                        </div>
 
-                          {/* 3. Ô ghi nhận câu trả lời / chia sẻ của học sinh */}
-                          <div className="space-y-1.5">
-                            <div className="flex items-center justify-between text-xs">
-                              <label className="font-bold text-slate-800 flex items-center gap-1.5">
+                        {/* Hàng 2 cột: Bên trái Câu trả lời của HS | Bên phải Nhận xét của GV */}
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                          {/* Cột trái: Ghi nhận chia sẻ của học sinh */}
+                          <div className="space-y-1">
+                            <div className="flex items-center justify-between text-[11px]">
+                              <label className="font-bold text-slate-800 flex items-center gap-1">
                                 <Smile className="w-3.5 h-3.5 text-purple-600" />
-                                <span>Ghi nhận câu trả lời / chia sẻ thực tế của học sinh:</span>
+                                <span>Câu trả lời / Chia sẻ thực tế của học sinh:</span>
                               </label>
-                              <span className="text-[11px] text-slate-400 italic">Trích lời chia sẻ tự nhiên của học sinh</span>
                             </div>
                             <textarea
                               rows={2}
                               value={ans.studentNotes || ""}
                               onChange={e => handleStudentNotesChange(q.id, e.target.value)}
-                              placeholder="Học sinh chia sẻ: 'Con thích học nhất là...', 'Khi gặp bài khó con thường...'"
-                              className="w-full text-xs p-3 rounded-xl border border-slate-300 focus:border-purple-600 focus:ring-2 focus:ring-purple-100 transition-all font-sans leading-relaxed text-slate-900 bg-white"
+                              placeholder="Ghi nhận chia sẻ tự nhiên của học sinh..."
+                              className="w-full text-xs p-2.5 rounded-xl border border-slate-300 focus:border-purple-600 focus:ring-2 focus:ring-purple-100 transition-all text-slate-900 bg-white"
                             />
                           </div>
 
-                          {/* 4. 04 Mức quan sát định tính (Không chấm điểm số) & Chọn Nguồn minh chứng */}
-                          <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 pt-1">
-                            {/* 4 mức quan sát */}
-                            <div className="space-y-1.5">
-                              <label className="text-xs font-bold text-slate-800 block">
-                                Mức độ quan sát định tính:
-                              </label>
-                              <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
-                                {(Object.keys(ORIENTATION_RATING_OPTIONS) as RatingCode[]).map(rCode => {
-                                  const opt = ORIENTATION_RATING_OPTIONS[rCode]
-                                  const isSelected = ans.rating === rCode
-                                  return (
-                                    <button
-                                      key={rCode}
-                                      type="button"
-                                      onClick={() => handleRatingChange(q.id, rCode)}
-                                      className={`p-2 rounded-xl text-left border transition-all cursor-pointer ${
-                                        isSelected
-                                          ? `${opt.borderClass} ${opt.bgClass} ring-2 ring-purple-300 shadow-2xs`
-                                          : "border-slate-200 hover:border-slate-300 bg-white"
-                                      }`}
-                                    >
-                                      <div className="flex items-center justify-between">
-                                        <span className={`text-[11px] font-black ${isSelected ? opt.textClass : "text-slate-800"}`}>
-                                          {opt.label}
-                                        </span>
-                                        {isSelected && <Check className={`w-3.5 h-3.5 ${opt.textClass}`} />}
-                                      </div>
-                                      <p className="text-[9.5px] text-slate-500 mt-0.5 leading-snug line-clamp-1">
-                                        {opt.subText}
-                                      </p>
-                                    </button>
-                                  )
-                                })}
-                              </div>
-                            </div>
-
-                            {/* Nguồn minh chứng */}
-                            <div className="space-y-1.5">
-                              <label className="text-xs font-bold text-slate-800 block">
-                                Nguồn thông tin / Minh chứng:
-                              </label>
-                              <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
-                                {(["STUDENT_SHARED", "TEACHER_OBSERVED", "TEACHER_ASSESSED"] as EvidenceSource[]).map(sCode => {
-                                  const sOpt = ORIENTATION_EVIDENCE_SOURCES[sCode]
-                                  const isSelected = (ans.evidenceSource || "STUDENT_SHARED") === sCode
-                                  return (
-                                    <button
-                                      key={sCode}
-                                      type="button"
-                                      onClick={() => handleEvidenceSourceChange(q.id, sCode)}
-                                      className={`p-2 rounded-xl text-left border transition-all cursor-pointer ${
-                                        isSelected
-                                          ? "border-purple-600 bg-purple-50 ring-2 ring-purple-200"
-                                          : "border-slate-200 hover:border-slate-300 bg-white"
-                                      }`}
-                                    >
-                                      <span className={`text-[11px] font-bold block ${isSelected ? "text-purple-950 font-black" : "text-slate-700"}`}>
-                                        {sOpt.label}
-                                      </span>
-                                    </button>
-                                  )
-                                })}
-                              </div>
-                            </div>
-                          </div>
-
-                          {/* 5. Nhận xét chi tiết của Giáo viên & Hỗ trợ AI */}
-                          <div className="space-y-1.5 pt-1">
-                            <div className="flex items-center justify-between text-xs">
-                              <label className="font-bold text-slate-800 flex items-center gap-1.5">
+                          {/* Cột phải: Nhận xét / Quan sát của giáo viên */}
+                          <div className="space-y-1">
+                            <div className="flex items-center justify-between text-[11px]">
+                              <label className="font-bold text-slate-800 flex items-center gap-1">
                                 <span>Nhận xét / Quan sát của giáo viên:</span>
                                 {isMandatory && (
-                                  <span className="text-rose-600 font-black text-xs">* (Bắt buộc)</span>
+                                  <span className="text-rose-600 font-black">* (Bắt buộc)</span>
                                 )}
                               </label>
-
-                              {/* Nút AI dự thảo nhận xét */}
                               <button
                                 type="button"
                                 onClick={() => handleAiDraftComment(q)}
                                 disabled={aiCommentLoading[q.id]}
-                                className="flex items-center gap-1 text-[11px] font-bold text-purple-700 hover:text-purple-900 bg-purple-50 hover:bg-purple-100 border border-purple-200 px-2.5 py-1 rounded-lg transition-all cursor-pointer"
+                                className="flex items-center gap-1 text-[10.5px] font-bold text-purple-700 hover:text-purple-900 bg-purple-50 hover:bg-purple-100 border border-purple-200 px-2 py-0.5 rounded-md transition-all cursor-pointer"
                               >
                                 {aiCommentLoading[q.id] ? (
                                   <>
                                     <RefreshCw className="w-3 h-3 animate-spin" />
-                                    <span>AI đang gợi ý...</span>
+                                    <span>Đang gợi ý...</span>
                                   </>
                                 ) : (
                                   <>
@@ -1510,193 +1609,153 @@ export function StudentOrientationModal({
                                 )}
                               </button>
                             </div>
-
                             <textarea
                               rows={2}
                               value={ans.teacherComment || ""}
                               onChange={e => handleTeacherCommentChange(q.id, e.target.value)}
-                              placeholder={isMandatory ? "Bắt buộc nhập biểu hiện cụ thể hoặc lý do cần tìm hiểu thêm..." : "Ghi chú thêm của giáo viên nếu cần thiết..."}
-                              className={`w-full text-xs p-3 rounded-xl border transition-all font-sans leading-relaxed text-slate-900 bg-white ${
+                              placeholder={isMandatory ? "Bắt buộc nhập biểu hiện cụ thể hoặc lý do cần tìm hiểu thêm..." : "Nhận xét, đánh giá sư phạm của giáo viên..."}
+                              className={`w-full text-xs p-2.5 rounded-xl border transition-all text-slate-900 bg-white ${
                                 hasError
                                   ? "border-rose-400 focus:border-rose-600 focus:ring-2 focus:ring-rose-200"
                                   : "border-slate-300 focus:border-purple-600 focus:ring-2 focus:ring-purple-100"
                               }`}
                             />
-
-                            {/* Hộp gợi ý nhận xét từ AI */}
-                            {showAiDraftBox[q.id] && aiDraftComments[q.id] && (
-                              <div className="p-3 bg-purple-50/70 border border-purple-300 rounded-xl space-y-2 text-xs text-purple-950 animate-in fade-in">
-                                <div className="flex items-center justify-between">
-                                  <span className="font-bold text-purple-900 flex items-center gap-1.5">
-                                    <Bot className="w-3.5 h-3.5 text-purple-600" />
-                                    <span>Dự thảo gợi ý từ Sky-Line AI (Không tự động ghi đè):</span>
-                                  </span>
-                                  <button
-                                    type="button"
-                                    onClick={() => handleApplyAiComment(q.id)}
-                                    className="px-2.5 py-1 bg-purple-700 hover:bg-purple-800 text-white rounded-lg font-bold text-[11px] cursor-pointer"
-                                  >
-                                    Áp dụng vào nhận xét
-                                  </button>
-                                </div>
-                                <p className="text-slate-800 italic bg-white p-2.5 rounded-lg border border-purple-200">
-                                  &quot;{aiDraftComments[q.id]}&quot;
-                                </p>
-                              </div>
-                            )}
                           </div>
-
                         </div>
-                      )}
-                    </div>
-                  )
-                })}
-              </div>
 
-              {/* Chuyển sang Tab 2 */}
-              <div className="flex justify-end pt-3">
+                        {/* Hộp gợi ý nhận xét từ AI */}
+                        {showAiDraftBox[q.id] && aiDraftComments[q.id] && (
+                          <div className="p-2.5 bg-purple-50/70 border border-purple-300 rounded-xl flex items-center justify-between gap-3 text-xs text-purple-950">
+                            <p className="text-slate-800 italic flex-1">
+                              <strong className="text-purple-900 not-italic mr-1">Gợi ý AI:</strong>
+                              &quot;{aiDraftComments[q.id]}&quot;
+                            </p>
+                            <button
+                              type="button"
+                              onClick={() => handleApplyAiComment(q.id)}
+                              className="px-2.5 py-1 bg-purple-700 hover:bg-purple-800 text-white rounded-lg font-bold text-[11px] cursor-pointer flex-shrink-0"
+                            >
+                              Áp dụng
+                            </button>
+                          </div>
+                        )}
+                      </div>
+                    )}
+                  </div>
+                )
+              })}
+
+              {/* Chuyển sang Phần B */}
+              <div className="flex justify-end pt-2">
                 <button
                   type="button"
                   onClick={() => setActiveTab("tab2")}
-                  className="flex items-center gap-2 px-5 py-2.5 bg-purple-700 hover:bg-purple-800 text-white rounded-xl text-xs font-bold shadow-md cursor-pointer transition-all"
+                  className="flex items-center gap-2 px-4 py-2 bg-purple-700 hover:bg-purple-800 text-white rounded-xl text-xs font-bold shadow-sm cursor-pointer transition-all"
                 >
-                  <span>Tiếp tục: Phần B – Trao đổi định hướng với Phụ huynh</span>
+                  <span>Tiếp tục: B. Trao Đổi Định Hướng Với Phụ Huynh</span>
                   <ArrowRight className="w-4 h-4" />
                 </button>
               </div>
-
             </div>
           ) : activeTab === "tab2" ? (
-            /* TAB 2: PHẦN B - TRAO ĐỔI ĐỊNH HƯỚNG VỚI PHỤ HUYNH (5 NHÓM NỘI DUNG) */
-            <div className="space-y-5">
-              
-              {/* Banner giới thiệu Phần B */}
-              <div className="bg-gradient-to-r from-indigo-900 via-purple-900 to-purple-950 p-4.5 rounded-2xl text-white shadow-sm flex flex-wrap items-center justify-between gap-3">
-                <div>
-                  <div className="flex items-center gap-2">
-                    <span className="px-2.5 py-0.5 rounded-full bg-indigo-500/30 text-indigo-200 border border-indigo-400/40 text-[10px] font-black uppercase tracking-wider">
-                      Gia đình &amp; Nhà trường
-                    </span>
-                    <span className="text-[11px] text-indigo-200 font-medium">5 Nhóm Nội Dung Trao Đổi Định Hướng</span>
+            /* TAB B: TRAO ĐỔI ĐỊNH HƯỚNG VỚI PHỤ HUYNH (5 NHÓM NỘI DUNG GỌN CHUẨN) */
+            <div className="space-y-3">
+              {/* Thanh thông tin đại diện PHHS gọn trên 1 hàng */}
+              <div className="p-3 bg-white rounded-xl border border-indigo-200 shadow-2xs flex flex-wrap items-center justify-between gap-3 text-xs">
+                <div className="flex flex-wrap items-center gap-3 flex-1">
+                  <div className="flex items-center gap-2 flex-1 min-w-[240px]">
+                    <span className="font-bold text-slate-700 whitespace-nowrap">Người đại diện PHHS:</span>
+                    <input
+                      type="text"
+                      value={parentRepresentativeName}
+                      onChange={e => { setParentRepresentativeName(e.target.value); markDirty(); }}
+                      placeholder="Ví dụ: Bố Nguyễn Văn A / Mẹ Lê Thị B"
+                      className="flex-1 text-xs px-2.5 py-1.5 rounded-lg border border-slate-300 focus:border-indigo-600 focus:outline-none text-slate-900 bg-white font-semibold"
+                    />
                   </div>
-                  <h3 className="text-sm font-black text-white tracking-tight mt-1 flex items-center gap-2">
-                    <Users className="w-4 h-4 text-indigo-300" />
-                    <span>B. TRAO ĐỔI ĐỊNH HƯỚNG VỚI PHỤ HUYNH</span>
-                  </h3>
-                  <p className="text-xs text-indigo-100/80 mt-0.5">
-                    Câu hỏi gợi mở &bull; Trường ghi nhận câu trả lời của gia đình &bull; Nhận xét của giáo viên
-                  </p>
+                  <div className="flex items-center gap-2 min-w-[200px]">
+                    <span className="font-bold text-slate-700 whitespace-nowrap">SĐT liên hệ:</span>
+                    <input
+                      type="text"
+                      value={parentPhone}
+                      onChange={e => { setParentPhone(e.target.value); markDirty(); }}
+                      placeholder="0905xxxxxx"
+                      className="w-36 text-xs px-2.5 py-1.5 rounded-lg border border-slate-300 focus:border-indigo-600 focus:outline-none text-slate-900 bg-white font-mono font-semibold"
+                    />
+                  </div>
                 </div>
-
-                <div className="flex items-center gap-2 text-[11px] font-bold text-amber-200 bg-amber-500/20 border border-amber-400/30 px-3 py-1 rounded-xl">
-                  <ShieldCheck className="w-3.5 h-3.5 text-amber-300" />
-                  <span>Dữ liệu gia đình cung cấp là nguồn tham khảo, chưa tự động xem là đã kiểm chứng</span>
-                </div>
-              </div>
-
-              {/* Thông tin đại diện PHHS */}
-              <div className="p-4 bg-white rounded-2xl border border-indigo-200 shadow-xs grid grid-cols-1 sm:grid-cols-2 gap-4 text-xs">
-                <div>
-                  <label className="font-bold text-slate-800 block mb-1">
-                    Họ tên Người đại diện PHHS trao đổi:
-                  </label>
-                  <input
-                    type="text"
-                    value={parentRepresentativeName}
-                    onChange={e => { setParentRepresentativeName(e.target.value); markDirty(); }}
-                    placeholder="Ví dụ: Bố Nguyễn Văn A / Mẹ Lê Thị B"
-                    className="w-full text-xs p-2.5 rounded-xl border border-slate-300 focus:border-indigo-600 focus:ring-2 focus:ring-indigo-100 text-slate-900 bg-white"
-                  />
-                </div>
-                <div>
-                  <label className="font-bold text-slate-800 block mb-1">
-                    Số điện thoại liên hệ chính thức:
-                  </label>
-                  <input
-                    type="text"
-                    value={parentPhone}
-                    onChange={e => { setParentPhone(e.target.value); markDirty(); }}
-                    placeholder="0905xxxxxx"
-                    className="w-full text-xs p-2.5 rounded-xl border border-slate-300 focus:border-indigo-600 focus:ring-2 focus:ring-indigo-100 text-slate-900 bg-white font-mono"
-                  />
-                </div>
+                <span className="text-[11px] text-amber-800 bg-amber-50 border border-amber-200 px-2.5 py-1 rounded-lg font-medium">
+                  Thông tin gia đình cung cấp là nguồn tham khảo phối hợp giáo dục
+                </span>
               </div>
 
               {/* DANH SÁCH 5 NHÓM TRAO ĐỔI VỚI PHHS */}
-              <div className="space-y-4">
+              <div className="space-y-2.5">
                 {(parentGroupsList || []).map((pGroup: any, pIdx: number) => {
                   const pAns = parentAnswers[pGroup.id] || { answer: "", teacherNote: "" }
                   const hints: string[] = pGroup.suggestedQuestions || []
 
                   return (
-                    <div key={pGroup.id} className="bg-white rounded-2xl border border-indigo-200 shadow-xs p-4.5 space-y-3">
-                      <div className="flex items-center gap-2.5">
-                        <span className="w-7 h-7 rounded-xl bg-indigo-100 text-indigo-900 flex items-center justify-center font-black text-xs flex-shrink-0">
-                          {pIdx + 1}
-                        </span>
-                        <div>
+                    <div key={pGroup.id} className="bg-white rounded-xl border border-indigo-200/90 shadow-2xs p-3.5 space-y-2.5">
+                      <div className="flex flex-wrap items-center justify-between gap-2">
+                        <div className="flex items-center gap-2">
+                          <span className="w-6 h-6 rounded-lg bg-indigo-100 text-indigo-900 flex items-center justify-center font-black text-xs flex-shrink-0">
+                            {pIdx + 1}
+                          </span>
                           <span className="text-[10px] font-mono font-bold text-indigo-700 bg-indigo-50 border border-indigo-200 px-1.5 py-0.2 rounded">
                             {pGroup.code}
                           </span>
-                          <h4 className="text-xs font-black text-slate-900 mt-0.5">
+                          <h4 className="text-xs font-black text-slate-900">
                             {pGroup.title}
                           </h4>
                         </div>
-                      </div>
-
-                      {/* Câu hỏi gợi mở */}
-                      {hints.length > 0 && (
-                        <div className="p-3 bg-indigo-50/40 rounded-xl border border-indigo-200/80 text-xs text-indigo-950 space-y-1">
-                          <span className="font-bold text-indigo-900 block text-[10.5px] uppercase">
-                            Câu hỏi gợi mở dành cho giáo viên trao đổi:
+                        {hints.length > 0 && (
+                          <span className="text-[11px] text-indigo-700 font-medium">
+                            Gợi mở: {hints.join(" • ")}
                           </span>
-                          <ul className="list-disc pl-4 space-y-0.5 text-slate-800 text-[11px]">
-                            {hints.map((h, i) => (
-                              <li key={i}>{h}</li>
-                            ))}
-                          </ul>
-                        </div>
-                      )}
-
-                      {/* Ô ghi nhận câu trả lời của Phụ huynh */}
-                      <div className="space-y-1">
-                        <label className="text-xs font-bold text-slate-800 flex items-center justify-between">
-                          <span>Nội dung phụ huynh chia sẻ &amp; cung cấp:</span>
-                          <span className="text-[10px] text-amber-700 italic">Nguồn phụ huynh cung cấp (tham khảo)</span>
-                        </label>
-                        <textarea
-                          rows={2}
-                          value={pAns.answer || ""}
-                          onChange={e => handleParentAnswerChange(pGroup.id, "answer", e.target.value)}
-                          placeholder={pGroup.placeholder || "Ghi nhận ý kiến chia sẻ của phụ huynh..."}
-                          className="w-full text-xs p-3 rounded-xl border border-slate-300 focus:border-indigo-600 focus:ring-2 focus:ring-indigo-100 transition-all font-sans leading-relaxed text-slate-900 bg-white"
-                        />
+                        )}
                       </div>
 
-                      {/* Ô nhận xét / quan sát thêm của Giáo viên */}
-                      <div className="space-y-1 pt-1">
-                        <label className="text-xs font-bold text-slate-800 block">
-                          Nhận xét / Đánh giá sư phạm của giáo viên:
-                        </label>
-                        <input
-                          type="text"
-                          value={pAns.teacherNote || ""}
-                          onChange={e => handleParentAnswerChange(pGroup.id, "teacherNote", e.target.value)}
-                          placeholder="Giáo viên nhận xét mức độ đồng thuận, mong muốn thực tế hoặc ghi chú thêm..."
-                          className="w-full text-xs p-2.5 rounded-xl border border-slate-300 focus:border-indigo-600 focus:ring-2 focus:ring-indigo-100 text-slate-900 bg-white"
-                        />
+                      <div className="grid grid-cols-1 md:grid-cols-12 gap-3">
+                        {/* Ô ghi nhận câu trả lời của Phụ huynh */}
+                        <div className="md:col-span-7 space-y-1">
+                          <label className="text-[11px] font-bold text-slate-700 block">
+                            Nội dung phụ huynh chia sẻ &amp; cung cấp:
+                          </label>
+                          <textarea
+                            rows={2}
+                            value={pAns.answer || ""}
+                            onChange={e => handleParentAnswerChange(pGroup.id, "answer", e.target.value)}
+                            placeholder={pGroup.placeholder || "Ghi nhận ý kiến chia sẻ của phụ huynh..."}
+                            className="w-full text-xs p-2.5 rounded-xl border border-slate-300 focus:border-indigo-600 focus:ring-2 focus:ring-indigo-100 transition-all text-slate-900 bg-white"
+                          />
+                        </div>
+
+                        {/* Ô nhận xét / quan sát thêm của Giáo viên */}
+                        <div className="md:col-span-5 space-y-1">
+                          <label className="text-[11px] font-bold text-slate-700 block">
+                            Nhận xét / Đánh giá sư phạm của giáo viên:
+                          </label>
+                          <textarea
+                            rows={2}
+                            value={pAns.teacherNote || ""}
+                            onChange={e => handleParentAnswerChange(pGroup.id, "teacherNote", e.target.value)}
+                            placeholder="Nhận xét mức độ đồng thuận, lưu ý phối hợp..."
+                            className="w-full text-xs p-2.5 rounded-xl border border-slate-300 focus:border-indigo-600 focus:ring-2 focus:ring-indigo-100 text-slate-900 bg-white"
+                          />
+                        </div>
                       </div>
                     </div>
                   )
                 })}
               </div>
 
-              {/* Chuyển sang Tab 3 */}
-              <div className="flex justify-between items-center pt-3">
+              {/* Điều hướng Phần A / Phần C */}
+              <div className="flex justify-between items-center pt-2">
                 <button
                   type="button"
                   onClick={() => setActiveTab("tab1")}
-                  className="flex items-center gap-1.5 px-4 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-xl text-xs font-bold cursor-pointer"
+                  className="flex items-center gap-1.5 px-3.5 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-xl text-xs font-bold cursor-pointer"
                 >
                   <ArrowLeft className="w-4 h-4" />
                   <span>Quay lại Phần A</span>
@@ -1705,75 +1764,65 @@ export function StudentOrientationModal({
                 <button
                   type="button"
                   onClick={() => setActiveTab("tab3")}
-                  className="flex items-center gap-2 px-5 py-2.5 bg-purple-700 hover:bg-purple-800 text-white rounded-xl text-xs font-bold shadow-md cursor-pointer transition-all"
+                  className="flex items-center gap-2 px-4 py-2 bg-purple-700 hover:bg-purple-800 text-white rounded-xl text-xs font-bold shadow-sm cursor-pointer transition-all"
                 >
-                  <span>Tiếp tục: Phần C – Tổng hợp nhận diện &amp; Thẩm định</span>
+                  <span>Tiếp tục: C. Tổng Hợp Nhận Diện &amp; Thẩm Định</span>
                   <ArrowRight className="w-4 h-4" />
                 </button>
               </div>
-
             </div>
-          ) : activeTab === "tab3" ? (
-            /* TAB 3: PHẦN C - TỔNG HỢP NHẬN DIỆN & THẨM ĐỊNH (9 MỤC NỘI DUNG) */
-            <div className="space-y-6">
-              
-              {/* Banner giới thiệu Phần C & Nút AI Tổng hợp */}
-              <div className="bg-gradient-to-r from-purple-950 via-purple-900 to-indigo-950 p-5 rounded-2xl text-white shadow-sm flex flex-wrap items-center justify-between gap-4">
+          ) : (
+            /* TAB C: TỔNG HỢP NHẬN DIỆN & THẨM ĐỊNH (9 MỤC NỘI DUNG + QLCM + GĐCS) */
+            <div className="space-y-4">
+              {/* Thanh tiêu đề Phần C & Nút AI Tổng hợp */}
+              <div className="bg-white p-3.5 rounded-xl border border-purple-200 shadow-2xs flex flex-wrap items-center justify-between gap-3">
                 <div>
-                  <div className="flex items-center gap-2">
-                    <span className="px-2.5 py-0.5 rounded-full bg-purple-500/30 text-purple-200 border border-purple-400/40 text-[10px] font-black uppercase tracking-wider">
-                      Tổng hợp toàn diện hồ sơ
-                    </span>
-                    <span className="text-[11px] text-purple-200 font-medium">9 Nội Dung Chuẩn Hóa SSM Sky-Line</span>
-                  </div>
-                  <h3 className="text-sm font-black text-white tracking-tight mt-1 flex items-center gap-2">
-                    <FileCheck className="w-4 h-4 text-purple-300" />
-                    <span>C. TỔNG HỢP NHẬN DIỆN VÀ ĐỊNH HƯỚNG BAN ĐẦU</span>
+                  <h3 className="text-xs font-black uppercase text-purple-950 tracking-wide flex items-center gap-2">
+                    <FileCheck className="w-4 h-4 text-purple-700" />
+                    <span>C. Tổng Hợp Nhận Diện &amp; Định Hướng Ban Đầu (9 Mục Chuẩn Hóa)</span>
                   </h3>
-                  <p className="text-xs text-purple-100/80 mt-0.5">
-                    Tổng hợp từ kết quả Phỏng vấn học sinh và Trao đổi PHHS &bull; Giáo viên có thể chỉnh sửa trước khi gửi thẩm định
+                  <p className="text-[11px] text-slate-500 mt-0.5">
+                    Tổng hợp từ kết quả Phỏng vấn học sinh (Phần A) và Trao đổi PHHS (Phần B) &bull; Giáo viên chỉnh sửa trực tiếp trước khi gửi thẩm định
                   </p>
                 </div>
 
-                <div className="flex items-center gap-2">
-                  <button
-                    type="button"
-                    onClick={handleAiSynthesizeSummary}
-                    disabled={aiSummaryLoading}
-                    className="flex items-center gap-1.5 px-4 py-2 bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-600 hover:to-amber-700 text-white rounded-xl text-xs font-black shadow-md cursor-pointer transition-all active:scale-[0.98] disabled:opacity-50"
-                  >
-                    {aiSummaryLoading ? (
-                      <>
-                        <RefreshCw className="w-4 h-4 animate-spin text-amber-100" />
-                        <span>AI Đang Phân Tích &amp; Tổng Hợp...</span>
-                      </>
-                    ) : (
-                      <>
-                        <Sparkles className="w-4 h-4 text-amber-200 fill-amber-200" />
-                        <span>Sky-Line AI Tổng Hợp (9 Mục)</span>
-                      </>
-                    )}
-                  </button>
-                </div>
+                <button
+                  type="button"
+                  onClick={handleAiSynthesizeSummary}
+                  disabled={aiSummaryLoading}
+                  className="flex items-center gap-1.5 px-3.5 py-1.5 bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-600 hover:to-amber-700 text-white rounded-xl text-xs font-black shadow-sm cursor-pointer transition-all disabled:opacity-50"
+                >
+                  {aiSummaryLoading ? (
+                    <>
+                      <RefreshCw className="w-3.5 h-3.5 animate-spin text-amber-100" />
+                      <span>AI Đang Tổng Hợp...</span>
+                    </>
+                  ) : (
+                    <>
+                      <Sparkles className="w-3.5 h-3.5 text-amber-200 fill-amber-200" />
+                      <span>Sky-Line AI Tổng Hợp Nhanh (9 Mục)</span>
+                    </>
+                  )}
+                </button>
               </div>
 
               {/* DRAWER DỰ THẢO TỔNG HỢP AI */}
               {showAiSummaryDrawer && aiSummaryData && (
-                <div className="p-5 bg-gradient-to-r from-purple-50 via-indigo-50 to-white rounded-2xl border-2 border-purple-300 shadow-md space-y-4 animate-in fade-in">
+                <div className="p-4 bg-gradient-to-r from-purple-50 via-indigo-50 to-white rounded-xl border-2 border-purple-300 shadow-sm space-y-3">
                   <div className="flex items-center justify-between border-b border-purple-200 pb-2">
                     <div className="flex items-center gap-2">
-                      <Sparkles className="w-5 h-5 text-purple-700" />
-                      <h4 className="text-xs font-black text-purple-950 uppercase tracking-wide">
-                        Bản Dự Thảo Tổng Hợp Thông Minh Từ Sky-Line AI (9 Mục)
+                      <Sparkles className="w-4 h-4 text-purple-700" />
+                      <h4 className="text-xs font-black text-purple-950 uppercase">
+                        Dự Thảo Tổng Hợp Từ Sky-Line AI (9 Mục)
                       </h4>
                     </div>
                     <div className="flex items-center gap-2">
                       <button
                         type="button"
                         onClick={handleApplyAiSummaryAll}
-                        className="px-4 py-1.5 bg-purple-700 hover:bg-purple-800 text-white font-bold text-xs rounded-xl shadow-xs cursor-pointer"
+                        className="px-3 py-1 bg-purple-700 hover:bg-purple-800 text-white font-bold text-xs rounded-lg cursor-pointer"
                       >
-                        Áp dụng toàn bộ vào 9 mục chính thức
+                        Áp dụng toàn bộ vào 9 mục
                       </button>
                       <button
                         type="button"
@@ -1785,217 +1834,152 @@ export function StudentOrientationModal({
                     </div>
                   </div>
 
-                  <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 text-xs">
-                    <div className="p-2.5 bg-white rounded-xl border border-purple-200">
-                      <span className="font-bold text-purple-900 block mb-1">1. Điểm mạnh nổi bật:</span>
-                      <p className="text-slate-700 text-[11px] leading-relaxed italic">{aiSummaryData.strongPoints || aiSummaryData.diemManhNoiBat}</p>
+                  <div className="grid grid-cols-1 sm:grid-cols-3 gap-2.5 text-xs">
+                    <div className="p-2 bg-white rounded-lg border border-purple-200">
+                      <span className="font-bold text-purple-900 block">1. Điểm mạnh nổi bật:</span>
+                      <p className="text-slate-700 text-[11px] italic">{aiSummaryData.strongPoints || aiSummaryData.diemManhNoiBat}</p>
                     </div>
-                    <div className="p-2.5 bg-white rounded-xl border border-purple-200">
-                      <span className="font-bold text-purple-900 block mb-1">2. Sở thích &amp; Động lực:</span>
-                      <p className="text-slate-700 text-[11px] leading-relaxed italic">{aiSummaryData.interestsMotivation || "Học sinh hào hứng tham gia hoạt động học tập."}</p>
+                    <div className="p-2 bg-white rounded-lg border border-purple-200">
+                      <span className="font-bold text-purple-900 block">2. Sở thích &amp; Động lực:</span>
+                      <p className="text-slate-700 text-[11px] italic">{aiSummaryData.interestsMotivation || "Học sinh hào hứng tham gia hoạt động học tập."}</p>
                     </div>
-                    <div className="p-2.5 bg-white rounded-xl border border-purple-200">
-                      <span className="font-bold text-purple-900 block mb-1">3. Khả năng thích nghi:</span>
-                      <p className="text-slate-700 text-[11px] leading-relaxed italic">{aiSummaryData.adaptabilityAutonomy || aiSummaryData.khaNangThichNghi}</p>
-                    </div>
-                    <div className="p-2.5 bg-white rounded-xl border border-purple-200">
-                      <span className="font-bold text-purple-900 block mb-1">4. Khó khăn / Cần quan tâm:</span>
-                      <p className="text-slate-700 text-[11px] leading-relaxed italic">{aiSummaryData.difficultiesNeeds || aiSummaryData.noiDungCanPhatTrien}</p>
-                    </div>
-                    <div className="p-2.5 bg-white rounded-xl border border-purple-200">
-                      <span className="font-bold text-purple-900 block mb-1">5. Kỳ vọng của học sinh:</span>
-                      <p className="text-slate-700 text-[11px] leading-relaxed italic">{aiSummaryData.studentExpectations || "Mong muốn kết thêm nhiều bạn mới và học tốt."}</p>
-                    </div>
-                    <div className="p-2.5 bg-white rounded-xl border border-purple-200">
-                      <span className="font-bold text-purple-900 block mb-1">6. Kỳ vọng của phụ huynh:</span>
-                      <p className="text-slate-700 text-[11px] leading-relaxed italic">{aiSummaryData.parentExpectations || "Mong muốn con tự tin và hạnh phúc tại Sky-Line."}</p>
+                    <div className="p-2 bg-white rounded-lg border border-purple-200">
+                      <span className="font-bold text-purple-900 block">3. Khả năng thích nghi:</span>
+                      <p className="text-slate-700 text-[11px] italic">{aiSummaryData.adaptabilityAutonomy || aiSummaryData.khaNangThichNghi}</p>
                     </div>
                   </div>
                 </div>
               )}
 
-              {/* KHU VỰC 9 MỤC TỔNG HỢP NHẬN DIỆN CHUẨN HÓA (GIÁO VIÊN CHỈNH SỬA TỰ DO) */}
-              <div className="space-y-4">
-                <div className="flex items-center justify-between">
-                  <h4 className="text-xs font-black uppercase text-purple-950 tracking-wider flex items-center gap-2">
-                    <span className="w-2.5 h-2.5 rounded-full bg-purple-700" />
-                    <span>Nội Dung Bản Tổng Hợp Nhận Diện &amp; Định Hướng Ban Đầu</span>
-                  </h4>
-                  <span className="text-[11px] text-slate-500 italic">Bấm vào từng ô để bổ sung / chỉnh sửa theo đánh giá thực tế</span>
+              {/* LƯỚI 9 MỤC TỔNG HỢP NHẬN DIỆN GỌN CHUẨN */}
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-3 text-xs">
+                <div className="p-3 bg-white rounded-xl border border-emerald-200 shadow-2xs space-y-1">
+                  <label className="font-bold text-emerald-950 block text-xs">
+                    1. Điểm mạnh nổi bật của học sinh:
+                  </label>
+                  <textarea
+                    rows={2}
+                    value={summary9.strongPoints}
+                    onChange={e => handleSummary9Change("strongPoints", e.target.value)}
+                    placeholder="Năng khiếu, phản xạ, thái độ tích cực nổi bật..."
+                    className="w-full text-xs p-2 rounded-lg border border-emerald-200 focus:border-emerald-600 focus:outline-none text-slate-900 bg-emerald-50/20"
+                  />
                 </div>
 
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-4 text-xs">
-                  {/* Mục 1: Điểm mạnh nổi bật */}
-                  <div className="p-3.5 bg-white rounded-2xl border border-emerald-200 shadow-xs space-y-1.5 flex flex-col justify-between">
-                    <div>
-                      <label className="font-bold text-emerald-950 block text-xs">
-                        1. Điểm mạnh nổi bật của học sinh:
-                      </label>
-                      <span className="text-[10px] text-slate-400 block mb-1.5">Năng khiếu, phản xạ, thái độ tích cực nổi bật</span>
-                      <textarea
-                        rows={3}
-                        value={summary9.strongPoints}
-                        onChange={e => handleSummary9Change("strongPoints", e.target.value)}
-                        placeholder="Ví dụ: Học sinh tự tin giao tiếp, phản xạ ngôn ngữ tốt, tư duy logic nhanh..."
-                        className="w-full text-xs p-2.5 rounded-xl border border-emerald-200 focus:border-emerald-600 focus:ring-2 focus:ring-emerald-100 text-slate-900 bg-emerald-50/20"
-                      />
-                    </div>
-                  </div>
+                <div className="p-3 bg-white rounded-xl border border-blue-200 shadow-2xs space-y-1">
+                  <label className="font-bold text-blue-950 block text-xs">
+                    2. Sở thích &amp; Động lực học tập:
+                  </label>
+                  <textarea
+                    rows={2}
+                    value={summary9.interestsMotivation}
+                    onChange={e => handleSummary9Change("interestsMotivation", e.target.value)}
+                    placeholder="Môn học yêu thích, đam mê cá nhân, động lực nội tại..."
+                    className="w-full text-xs p-2 rounded-lg border border-blue-200 focus:border-blue-600 focus:outline-none text-slate-900 bg-blue-50/20"
+                  />
+                </div>
 
-                  {/* Mục 2: Sở thích và động lực học tập */}
-                  <div className="p-3.5 bg-white rounded-2xl border border-blue-200 shadow-xs space-y-1.5 flex flex-col justify-between">
-                    <div>
-                      <label className="font-bold text-blue-950 block text-xs">
-                        2. Sở thích &amp; Động lực học tập:
-                      </label>
-                      <span className="text-[10px] text-slate-400 block mb-1.5">Môn học yêu thích, đam mê cá nhân, động lực nội tại</span>
-                      <textarea
-                        rows={3}
-                        value={summary9.interestsMotivation}
-                        onChange={e => handleSummary9Change("interestsMotivation", e.target.value)}
-                        placeholder="Ví dụ: Đam mê khám phá khoa học, thích vẽ tranh; học tập vì sự tò mò..."
-                        className="w-full text-xs p-2.5 rounded-xl border border-blue-200 focus:border-blue-600 focus:ring-2 focus:ring-blue-100 text-slate-900 bg-blue-50/20"
-                      />
-                    </div>
-                  </div>
+                <div className="p-3 bg-white rounded-xl border border-teal-200 shadow-2xs space-y-1">
+                  <label className="font-bold text-teal-950 block text-xs">
+                    3. Khả năng thích nghi &amp; Tự lập:
+                  </label>
+                  <textarea
+                    rows={2}
+                    value={summary9.adaptabilityAutonomy}
+                    onChange={e => handleSummary9Change("adaptabilityAutonomy", e.target.value)}
+                    placeholder="Tự phục vụ, hòa nhập lớp mới, quản lý thời gian..."
+                    className="w-full text-xs p-2 rounded-lg border border-teal-200 focus:border-teal-600 focus:outline-none text-slate-900 bg-teal-50/20"
+                  />
+                </div>
 
-                  {/* Mục 3: Khả năng thích nghi và tự lập */}
-                  <div className="p-3.5 bg-white rounded-2xl border border-teal-200 shadow-xs space-y-1.5 flex flex-col justify-between">
-                    <div>
-                      <label className="font-bold text-teal-950 block text-xs">
-                        3. Khả năng thích nghi &amp; Tự lập:
-                      </label>
-                      <span className="text-[10px] text-slate-400 block mb-1.5">Tự phục vụ, hòa nhập lớp mới, quản lý thời gian</span>
-                      <textarea
-                        rows={3}
-                        value={summary9.adaptabilityAutonomy}
-                        onChange={e => handleSummary9Change("adaptabilityAutonomy", e.target.value)}
-                        placeholder="Ví dụ: Nhanh nhẹn hòa đồng, tự giác sinh hoạt; sẵn sàng bước vào lớp mới..."
-                        className="w-full text-xs p-2.5 rounded-xl border border-teal-200 focus:border-teal-600 focus:ring-2 focus:ring-teal-100 text-slate-900 bg-teal-50/20"
-                      />
-                    </div>
-                  </div>
+                <div className="p-3 bg-white rounded-xl border border-amber-200 shadow-2xs space-y-1">
+                  <label className="font-bold text-amber-950 block text-xs">
+                    4. Khó khăn, nhu cầu cần quan tâm:
+                  </label>
+                  <textarea
+                    rows={2}
+                    value={summary9.difficultiesNeeds}
+                    onChange={e => handleSummary9Change("difficultiesNeeds", e.target.value)}
+                    placeholder="Nội dung cần rèn luyện thêm, biểu hiện cần hỗ trợ..."
+                    className="w-full text-xs p-2 rounded-lg border border-amber-200 focus:border-amber-600 focus:outline-none text-slate-900 bg-amber-50/20"
+                  />
+                </div>
 
-                  {/* Mục 4: Khó khăn, nhu cầu cần quan tâm */}
-                  <div className="p-3.5 bg-white rounded-2xl border border-amber-200 shadow-xs space-y-1.5 flex flex-col justify-between">
-                    <div>
-                      <label className="font-bold text-amber-950 block text-xs">
-                        4. Khó khăn, nhu cầu cần quan tâm:
-                      </label>
-                      <span className="text-[10px] text-slate-400 block mb-1.5">Nội dung cần rèn luyện thêm, biểu hiện cần hỗ trợ</span>
-                      <textarea
-                        rows={3}
-                        value={summary9.difficultiesNeeds}
-                        onChange={e => handleSummary9Change("difficultiesNeeds", e.target.value)}
-                        placeholder="Ví dụ: Cần rèn thêm sự tập trung khi nghe giảng, cần khích lệ phát biểu trước đám đông..."
-                        className="w-full text-xs p-2.5 rounded-xl border border-amber-200 focus:border-amber-600 focus:ring-2 focus:ring-amber-100 text-slate-900 bg-amber-50/20"
-                      />
-                    </div>
-                  </div>
+                <div className="p-3 bg-white rounded-xl border border-purple-200 shadow-2xs space-y-1">
+                  <label className="font-bold text-purple-950 block text-xs">
+                    5. Kỳ vọng của học sinh tại Sky-Line:
+                  </label>
+                  <textarea
+                    rows={2}
+                    value={summary9.studentExpectations}
+                    onChange={e => handleSummary9Change("studentExpectations", e.target.value)}
+                    placeholder="Mong muốn trải nghiệm, câu lạc bộ, bạn bè..."
+                    className="w-full text-xs p-2 rounded-lg border border-purple-200 focus:border-purple-600 focus:outline-none text-slate-900 bg-purple-50/20"
+                  />
+                </div>
 
-                  {/* Mục 5: Kỳ vọng của học sinh */}
-                  <div className="p-3.5 bg-white rounded-2xl border border-purple-200 shadow-xs space-y-1.5 flex flex-col justify-between">
-                    <div>
-                      <label className="font-bold text-purple-950 block text-xs">
-                        5. Kỳ vọng của học sinh tại Sky-Line:
-                      </label>
-                      <span className="text-[10px] text-slate-400 block mb-1.5">Mong muốn trải nghiệm, câu lạc bộ, bạn bè</span>
-                      <textarea
-                        rows={3}
-                        value={summary9.studentExpectations}
-                        onChange={e => handleSummary9Change("studentExpectations", e.target.value)}
-                        placeholder="Ví dụ: Mong muốn tham gia CLB bóng đá và bơi lội, muốn nói tiếng Anh lưu loát..."
-                        className="w-full text-xs p-2.5 rounded-xl border border-purple-200 focus:border-purple-600 focus:ring-2 focus:ring-purple-100 text-slate-900 bg-purple-50/20"
-                      />
-                    </div>
-                  </div>
+                <div className="p-3 bg-white rounded-xl border border-indigo-200 shadow-2xs space-y-1">
+                  <label className="font-bold text-indigo-950 block text-xs">
+                    6. Kỳ vọng của phụ huynh đối với học sinh:
+                  </label>
+                  <textarea
+                    rows={2}
+                    value={summary9.parentExpectations}
+                    onChange={e => handleSummary9Change("parentExpectations", e.target.value)}
+                    placeholder="Mục tiêu phát triển kỹ năng, học thuật và nhân cách..."
+                    className="w-full text-xs p-2 rounded-lg border border-indigo-200 focus:border-indigo-600 focus:outline-none text-slate-900 bg-indigo-50/20"
+                  />
+                </div>
 
-                  {/* Mục 6: Kỳ vọng của phụ huynh */}
-                  <div className="p-3.5 bg-white rounded-2xl border border-indigo-200 shadow-xs space-y-1.5 flex flex-col justify-between">
-                    <div>
-                      <label className="font-bold text-indigo-950 block text-xs">
-                        6. Kỳ vọng của phụ huynh đối với học sinh:
-                      </label>
-                      <span className="text-[10px] text-slate-400 block mb-1.5">Mục tiêu phát triển kỹ năng, học thuật và nhân cách</span>
-                      <textarea
-                        rows={3}
-                        value={summary9.parentExpectations}
-                        onChange={e => handleSummary9Change("parentExpectations", e.target.value)}
-                        placeholder="Ví dụ: Kỳ vọng con rèn tính tự lập, tự tin và được thầy cô đồng hành sát sao..."
-                        className="w-full text-xs p-2.5 rounded-xl border border-indigo-200 focus:border-indigo-600 focus:ring-2 focus:ring-indigo-100 text-slate-900 bg-indigo-50/20"
-                      />
-                    </div>
-                  </div>
+                <div className="p-3 bg-white rounded-xl border border-rose-200 shadow-2xs space-y-1">
+                  <label className="font-bold text-rose-950 block text-xs">
+                    7. Tương đồng / Khác biệt giữa 2 nguồn:
+                  </label>
+                  <textarea
+                    rows={2}
+                    value={summary9.alignmentDifferences}
+                    onChange={e => handleSummary9Change("alignmentDifferences", e.target.value)}
+                    placeholder="So sánh góc nhìn học sinh chia sẻ & gia đình cung cấp..."
+                    className="w-full text-xs p-2 rounded-lg border border-rose-200 focus:border-rose-600 focus:outline-none text-slate-900 bg-rose-50/20"
+                  />
+                </div>
 
-                  {/* Mục 7: Điểm tương đồng hoặc khác biệt giữa 2 nguồn */}
-                  <div className="p-3.5 bg-white rounded-2xl border border-rose-200 shadow-xs space-y-1.5 flex flex-col justify-between">
-                    <div>
-                      <label className="font-bold text-rose-950 block text-xs">
-                        7. Tương đồng / Khác biệt giữa 2 nguồn:
-                      </label>
-                      <span className="text-[10px] text-slate-400 block mb-1.5">So sánh góc nhìn học sinh tự chia sẻ &amp; gia đình cung cấp</span>
-                      <textarea
-                        rows={3}
-                        value={summary9.alignmentDifferences}
-                        onChange={e => handleSummary9Change("alignmentDifferences", e.target.value)}
-                        placeholder="Ví dụ: Gia đình và học sinh đồng thuận cao về sở thích môn học; cần dung hòa về kỳ vọng thời gian tự học..."
-                        className="w-full text-xs p-2.5 rounded-xl border border-rose-200 focus:border-rose-600 focus:ring-2 focus:ring-rose-100 text-slate-900 bg-rose-50/20"
-                      />
-                    </div>
-                  </div>
+                <div className="p-3 bg-white rounded-xl border border-emerald-300 shadow-2xs space-y-1">
+                  <label className="font-bold text-emerald-950 block text-xs">
+                    8. Đề xuất hỗ trợ &amp; Định hướng ban đầu:
+                  </label>
+                  <textarea
+                    rows={2}
+                    value={summary9.initialRecommendations}
+                    onChange={e => handleSummary9Change("initialRecommendations", e.target.value)}
+                    placeholder="Biện pháp đồng hành của GVCN/Bộ môn trong 4 tuần đầu..."
+                    className="w-full text-xs p-2 rounded-lg border border-emerald-300 focus:border-emerald-600 focus:outline-none text-slate-900 bg-emerald-50/30"
+                  />
+                </div>
 
-                  {/* Mục 8: Đề xuất hỗ trợ và định hướng giáo dục ban đầu */}
-                  <div className="p-3.5 bg-white rounded-2xl border border-emerald-300 shadow-xs space-y-1.5 flex flex-col justify-between md:col-span-2">
-                    <div>
-                      <label className="font-bold text-emerald-950 block text-xs">
-                        8. Đề xuất hỗ trợ &amp; Định hướng giáo dục ban đầu:
-                      </label>
-                      <span className="text-[10px] text-slate-400 block mb-1.5">Biện pháp đồng hành của GVCN/Bộ môn trong 4 tuần đầu sau nhập học</span>
-                      <textarea
-                        rows={3}
-                        value={summary9.initialRecommendations}
-                        onChange={e => handleSummary9Change("initialRecommendations", e.target.value)}
-                        placeholder="Ví dụ: Phân công bạn cán sự lớp hỗ trợ tuần đầu; GVCN động viên phát biểu; gia đình duy trì đọc sách mỗi tối..."
-                        className="w-full text-xs p-2.5 rounded-xl border border-emerald-300 focus:border-emerald-600 focus:ring-2 focus:ring-emerald-100 text-slate-900 bg-emerald-50/30"
-                      />
-                    </div>
-                  </div>
-
-                  {/* Mục 9: Nội dung cần xác minh hoặc trao đổi chuyên môn */}
-                  <div className="p-3.5 bg-white rounded-2xl border border-purple-300 shadow-xs space-y-1.5 flex flex-col justify-between md:col-span-3">
-                    <div>
-                      <label className="font-bold text-purple-950 block text-xs">
-                        9. Nội dung cần xác minh hoặc trao đổi chuyên môn thêm:
-                      </label>
-                      <span className="text-[10px] text-slate-400 block mb-1.5">Hồ sơ học bạ còn thiếu, lưu ý sức khỏe/tâm lý cần Hội đồng xem xét</span>
-                      <textarea
-                        rows={2}
-                        value={summary9.verificationItems}
-                        onChange={e => handleSummary9Change("verificationItems", e.target.value)}
-                        placeholder="Ví dụ: Cần đối chiếu bản sao học bạ chính thức; kiểm tra thêm thị lực học đường..."
-                        className="w-full text-xs p-2.5 rounded-xl border border-purple-200 focus:border-purple-600 focus:ring-2 focus:ring-purple-100 text-slate-900 bg-purple-50/20"
-                      />
-                    </div>
-                  </div>
+                <div className="p-3 bg-white rounded-xl border border-purple-300 shadow-2xs space-y-1">
+                  <label className="font-bold text-purple-950 block text-xs">
+                    9. Nội dung cần xác minh / trao đổi thêm:
+                  </label>
+                  <textarea
+                    rows={2}
+                    value={summary9.verificationItems}
+                    onChange={e => handleSummary9Change("verificationItems", e.target.value)}
+                    placeholder="Hồ sơ học bạ, lưu ý sức khỏe/tâm lý cần xem xét..."
+                    className="w-full text-xs p-2 rounded-lg border border-purple-200 focus:border-purple-600 focus:outline-none text-slate-900 bg-purple-50/20"
+                  />
                 </div>
               </div>
 
-              {/* QUY TRÌNH THẨM ĐỊNH QLCM & PHÂN QUYỀN */}
-              <div className="p-5 bg-white rounded-2xl border border-purple-200 shadow-xs space-y-4">
-                <div className="flex flex-wrap items-center justify-between gap-3 border-b border-purple-100 pb-3">
-                  <div>
-                    <h4 className="text-xs font-black uppercase text-purple-950 tracking-wider flex items-center gap-2">
+              {/* THẨM ĐỊNH QLCM & KẾT LUẬN GĐCS (2 CỘT SONG SONG GỌN GÀNG) */}
+              <div className="grid grid-cols-1 lg:grid-cols-2 gap-3">
+                {/* Cột 1: Thẩm định QLCM */}
+                <div className="p-3.5 bg-white rounded-xl border border-purple-200 shadow-2xs space-y-2.5 text-xs">
+                  <div className="flex items-center justify-between gap-2 border-b border-purple-100 pb-2">
+                    <h4 className="font-black uppercase text-purple-950 flex items-center gap-1.5">
                       <ShieldCheck className="w-4 h-4 text-purple-700" />
-                      <span>Thẩm Định Quản Lý Chuyên Môn Cơ Sở (QLCM)</span>
+                      <span>Thẩm Định Quản Lý Chuyên Môn (QLCM)</span>
                     </h4>
-                    <p className="text-[11px] text-slate-500">
-                      Quy trình: Giáo viên hoàn thành &rarr; QLCM thẩm định &rarr; GĐCS xem xét kết luận đầu vào
-                    </p>
-                  </div>
-
-                  {/* Trạng thái thẩm định */}
-                  <div className="flex items-center gap-2">
-                    <span className="text-xs font-bold text-slate-700">Trạng thái:</span>
                     <select
                       value={verificationStatus}
                       onChange={e => {
@@ -2004,7 +1988,7 @@ export function StudentOrientationModal({
                         if (val === "VERIFIED" && !verifiedAt) setVerifiedAt(new Date().toISOString())
                         markDirty()
                       }}
-                      className={`text-xs font-bold px-3 py-1.5 rounded-xl border focus:outline-none cursor-pointer ${
+                      className={`text-[11px] font-bold px-2.5 py-1 rounded-lg border focus:outline-none cursor-pointer ${
                         verificationStatus === "VERIFIED"
                           ? "bg-emerald-50 text-emerald-800 border-emerald-300"
                           : verificationStatus === "REJECTED"
@@ -2012,210 +1996,147 @@ export function StudentOrientationModal({
                           : "bg-amber-50 text-amber-800 border-amber-300"
                       }`}
                     >
-                      <option value="PENDING">⏳ Chờ Thẩm Định (PENDING)</option>
-                      <option value="VERIFIED">✓ Đã Thẩm Định - Xác Nhận (VERIFIED)</option>
-                      <option value="REJECTED">✕ Yêu Cầu Bổ Sung / Trả Phiếu (REJECTED)</option>
+                      <option value="PENDING">⏳ Chờ Thẩm Định</option>
+                      <option value="VERIFIED">✓ Đã Thẩm Định</option>
+                      <option value="REJECTED">✕ Yêu Cầu Bổ Sung</option>
                     </select>
                   </div>
-                </div>
 
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 text-xs">
-                  <div>
-                    <label className="font-bold text-slate-800 block mb-1">
-                      Họ tên Cán bộ Quản lý Chuyên môn thẩm định:
-                    </label>
-                    <input
-                      type="text"
-                      value={verifierName}
-                      onChange={e => { setVerifierName(e.target.value); markDirty(); }}
-                      placeholder="Ví dụ: Cô Trần Thị A - QLCM Cơ sở"
-                      className="w-full text-xs p-2.5 rounded-xl border border-slate-300 focus:border-purple-600 focus:ring-2 focus:ring-purple-100 text-slate-900 bg-white"
-                    />
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
+                    <div>
+                      <label className="font-bold text-slate-700 block mb-1 text-[11px]">Cán bộ QLCM thẩm định:</label>
+                      <input
+                        type="text"
+                        value={verifierName}
+                        onChange={e => { setVerifierName(e.target.value); markDirty(); }}
+                        placeholder="Họ tên QLCM..."
+                        className="w-full text-xs p-2 rounded-lg border border-slate-300 focus:border-purple-600 text-slate-900 bg-white"
+                      />
+                    </div>
+                    <div>
+                      <label className="font-bold text-slate-700 block mb-1 text-[11px]">Ý kiến thẩm định chuyên môn:</label>
+                      <input
+                        type="text"
+                        value={verificationNotes}
+                        onChange={e => { setVerificationNotes(e.target.value); markDirty(); }}
+                        placeholder="Nhận xét của QLCM..."
+                        className="w-full text-xs p-2 rounded-lg border border-slate-300 focus:border-purple-600 text-slate-900 bg-white"
+                      />
+                    </div>
                   </div>
 
-                  <div>
-                    <label className="font-bold text-slate-800 block mb-1">
-                      Ý kiến nhận xét &amp; Yêu cầu bổ sung của QLCM:
-                    </label>
+                  <div className="pt-1 flex items-center gap-2">
                     <input
-                      type="text"
-                      value={verificationNotes}
-                      onChange={e => { setVerificationNotes(e.target.value); markDirty(); }}
-                      placeholder="Ý kiến chuyên môn / Ghi chú yêu cầu bổ sung nếu có..."
-                      className="w-full text-xs p-2.5 rounded-xl border border-slate-300 focus:border-purple-600 focus:ring-2 focus:ring-purple-100 text-slate-900 bg-white"
+                      type="checkbox"
+                      id="supportReferralConfirm"
+                      checked={supportReferralConfirmed}
+                      onChange={e => { setSupportReferralConfirmed(e.target.checked); markDirty(); }}
+                      className="w-3.5 h-3.5 rounded text-purple-700 focus:ring-purple-500 cursor-pointer"
                     />
+                    <label htmlFor="supportReferralConfirm" className="text-[11px] font-semibold text-slate-700 cursor-pointer">
+                      Xác nhận liên thông dữ liệu định hướng vào Hồ sơ học tập sau nhập học
+                    </label>
                   </div>
                 </div>
 
-                {/* Checkbox liên thông hồ sơ học tập */}
-                <div className="pt-2 border-t border-slate-100 flex items-center gap-2">
-                  <input
-                    type="checkbox"
-                    id="supportReferralConfirm"
-                    checked={supportReferralConfirmed}
-                    onChange={e => { setSupportReferralConfirmed(e.target.checked); markDirty(); }}
-                    className="w-4 h-4 rounded text-purple-700 focus:ring-purple-500 cursor-pointer"
-                  />
-                  <label htmlFor="supportReferralConfirm" className="text-xs font-semibold text-slate-800 cursor-pointer">
-                    Xác nhận liên thông toàn bộ dữ liệu phỏng vấn &amp; định hướng vào Hồ sơ học tập học sinh sau nhập học
-                  </label>
-                </div>
-              </div>
-
-              {/* KẾT LUẬN & CHỈ ĐẠO TUYỂN SINH CỦA GIÁM ĐỐC CƠ SỞ (GĐCS) */}
-              <div className="p-5 bg-purple-50/40 rounded-2xl border border-purple-200 shadow-xs space-y-4">
-                <div className="flex flex-wrap items-center justify-between gap-3 border-b border-purple-200 pb-3">
-                  <div>
-                    <h4 className="text-xs font-black uppercase text-purple-950 tracking-wider flex items-center gap-2">
+                {/* Cột 2: Kết luận & Chỉ đạo của Giám đốc Cơ sở (GĐCS) */}
+                <div className="p-3.5 bg-purple-50/40 rounded-xl border border-purple-200 shadow-2xs space-y-2.5 text-xs">
+                  <div className="flex items-center justify-between gap-2 border-b border-purple-200 pb-2">
+                    <h4 className="font-black uppercase text-purple-950 flex items-center gap-1.5">
                       <GraduationCap className="w-4 h-4 text-purple-700" />
-                      <span>Kết Luận &amp; Chỉ Đạo Tiếp Nhận Tuyển Sinh (Giám Đốc Cơ Sở)</span>
+                      <span>Kết Luận Tiếp Nhận (Giám Đốc Cơ Sở)</span>
                     </h4>
-                    <p className="text-[11px] text-slate-500">
-                      GĐCS xem kết quả tổng hợp để phục vụ kết luận định hướng đầu vào theo quy chế tuyển sinh
-                    </p>
-                  </div>
-
-                  <div className="flex items-center gap-2">
-                    <span className="text-xs font-bold text-slate-700">Quyết định GĐCS:</span>
                     <select
                       value={gdcsDecision}
                       onChange={e => { setGdcsDecision(e.target.value as any); markDirty(); }}
-                      className="text-xs font-bold px-3 py-1.5 rounded-xl border border-purple-300 bg-white text-purple-950 focus:outline-none cursor-pointer"
+                      className="text-[11px] font-bold px-2.5 py-1 rounded-lg border border-purple-300 bg-white text-purple-950 focus:outline-none cursor-pointer"
                     >
                       <option value="TIEP_NHAN_CHUAN">✓ Tiếp nhận chuẩn (Theo quy chế)</option>
                       <option value="TIEP_NHAN_DONG_HANH">⚠️ Tiếp nhận có cam kết đồng hành</option>
                       <option value="TAM_HOAN_DANH_GIA">⏳ Tạm hoãn đánh giá / Chờ bổ sung</option>
                     </select>
                   </div>
-                </div>
 
-                <div className="space-y-2">
-                  <label className="text-xs font-bold text-slate-800 block">
-                    Ghi chú chỉ đạo của Ban Giám Đốc Cơ Sở:
-                  </label>
-                  <textarea
-                    rows={2}
-                    value={gdcsGeneralNote}
-                    onChange={e => { setGdcsGeneralNote(e.target.value); markDirty(); }}
-                    placeholder="Chỉ đạo về xếp lớp, phân công giáo viên chủ nhiệm đồng hành..."
-                    className="w-full text-xs p-3 rounded-xl border border-slate-300 focus:border-purple-600 focus:ring-2 focus:ring-purple-100 text-slate-900 bg-white"
-                  />
+                  <div>
+                    <label className="font-bold text-slate-700 block mb-1 text-[11px]">
+                      Ghi chú chỉ đạo của Ban Giám Đốc Cơ Sở:
+                    </label>
+                    <textarea
+                      rows={2}
+                      value={gdcsGeneralNote}
+                      onChange={e => { setGdcsGeneralNote(e.target.value); markDirty(); }}
+                      placeholder="Chỉ đạo về xếp lớp, phân công giáo viên chủ nhiệm đồng hành..."
+                      className="w-full text-xs p-2 rounded-lg border border-slate-300 focus:border-purple-600 text-slate-900 bg-white"
+                    />
+                  </div>
                 </div>
-              </div>
-
-            </div>
-          ) : (
-            /* TAB 4: HỒ SƠ TUYỂN SINH - DẠNG BẢNG 17 CỘT CHUẨN */
-            <div className="space-y-4">
-              <div className="p-4 bg-white rounded-2xl border border-slate-200 shadow-xs flex items-center justify-between">
-                <div>
-                  <h4 className="text-xs font-black uppercase text-slate-900">
-                    Bảng 17 Cột Thông Tin Nghiệp Vụ Hồ Sơ Tuyển Sinh
-                  </h4>
-                  <p className="text-[11px] text-slate-500">
-                    Liên thông trực tiếp từ Hồ sơ tuyển sinh và Học bạ điện tử học sinh
-                  </p>
-                </div>
-              </div>
-
-              <div className="overflow-x-auto border border-slate-200 rounded-2xl bg-white shadow-xs">
-                <table className="w-full text-left border-collapse text-xs">
-                  <thead>
-                    <tr className="bg-slate-100/80 text-[10px] font-black uppercase text-slate-800 border-b border-slate-200">
-                      <th className="p-2.5">1. Mã HS</th>
-                      <th className="p-2.5">2. Họ và tên</th>
-                      <th className="p-2.5">3. Ngày sinh / Phái</th>
-                      <th className="p-2.5">4. Khối đăng ký</th>
-                      <th className="p-2.5">5. Hệ đào tạo</th>
-                      <th className="p-2.5">6. Cơ sở</th>
-                      <th className="p-2.5">7. Trường cũ</th>
-                      <th className="p-2.5">8. Học tập</th>
-                      <th className="p-2.5">9. Rèn luyện</th>
-                      <th className="p-2.5">10. Toán</th>
-                      <th className="p-2.5">11. Ngữ Văn</th>
-                      <th className="p-2.5">12. Tiếng Anh</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    <tr>
-                      <td className="p-2.5 font-mono font-bold">{studentDetail?.studentCode || student?.studentCode || "—"}</td>
-                      <td className="p-2.5 font-bold text-purple-950">{studentDetail?.fullName || student?.fullName}</td>
-                      <td className="p-2.5">{studentDetail?.dateOfBirth ? new Date(studentDetail.dateOfBirth).toLocaleDateString("vi-VN") : "—"} ({studentDetail?.gender || "Nam"})</td>
-                      <td className="p-2.5 font-bold">{groupConfig.label}</td>
-                      <td className="p-2.5">{proposedEduSystem || studentDetail?.surveyFormType || "Chất lượng cao"}</td>
-                      <td className="p-2.5">{campusName}</td>
-                      <td className="p-2.5">{oldSchool}</td>
-                      <td className="p-2.5 font-bold">{studentDetail?.kqHocTap || studentDetail?.academicRating || "Tốt"}</td>
-                      <td className="p-2.5 font-bold">{studentDetail?.kqRenLuyen || studentDetail?.conductRating || "Tốt"}</td>
-                      <td className="p-2.5">{mathScore || studentDetail?.mathScore || "—"}</td>
-                      <td className="p-2.5">{literatureScore || studentDetail?.literatureScore || "—"}</td>
-                      <td className="p-2.5">{writtenEnglishScore || studentDetail?.writtenEnglishScore || "—"}</td>
-                    </tr>
-                  </tbody>
-                </table>
               </div>
             </div>
           )}
         </div>
 
-        {/* FOOTER CỐ ĐỊNH: LƯU NHÁP • TIẾP TỤC • HOÀN THÀNH & GỬI THẨM ĐỊNH • XEM BÁO CÁO A4 */}
-        <div className="px-6 py-4 bg-white border-t border-slate-200 flex flex-wrap items-center justify-between gap-3 flex-shrink-0">
+        {/* FOOTER CỐ ĐỊNH GỌN GÀNG */}
+        <div className="px-5 py-2.5 bg-white border-t border-slate-200 flex flex-wrap items-center justify-between gap-3 flex-shrink-0">
           <div className="flex items-center gap-3">
-            {/* Nút Xem trước & In A4 */}
             <button
               type="button"
               onClick={handleViewReport}
-              className="flex items-center gap-1.5 px-4 py-2 bg-slate-100 hover:bg-slate-200 text-slate-800 rounded-xl text-xs font-bold transition-all cursor-pointer"
+              className="flex items-center gap-1.5 px-3.5 py-1.5 bg-slate-100 hover:bg-slate-200 text-slate-800 rounded-xl text-xs font-bold transition-all cursor-pointer"
             >
-              <Printer className="w-4 h-4 text-purple-700" />
+              <Printer className="w-3.5 h-3.5 text-purple-700" />
               <span>Xem trước / Xuất PDF (A4)</span>
             </button>
 
-            {/* Thông báo lưu thành công */}
             {saveSuccess && (
-              <span className="text-xs font-bold text-emerald-700 bg-emerald-50 border border-emerald-200 px-3 py-1.5 rounded-xl flex items-center gap-1.5 animate-in fade-in">
-                <Check className="w-4 h-4 text-emerald-600" />
+              <span className="text-xs font-bold text-emerald-700 bg-emerald-50 border border-emerald-200 px-3 py-1 rounded-xl flex items-center gap-1.5 animate-in fade-in">
+                <Check className="w-3.5 h-3.5 text-emerald-600" />
                 <span>Đã lưu thành công dữ liệu phiếu định hướng!</span>
               </span>
             )}
           </div>
 
-          <div className="flex items-center gap-2.5">
-            {/* Nút Lưu nháp */}
+          <div className="flex items-center gap-2">
             <button
               type="button"
               onClick={() => handleSave(false)}
               disabled={saving}
-              className="flex items-center gap-1.5 px-4 py-2 bg-purple-50 hover:bg-purple-100 text-purple-900 border border-purple-300 rounded-xl text-xs font-bold transition-all cursor-pointer disabled:opacity-50"
+              className="flex items-center gap-1.5 px-3.5 py-1.5 bg-purple-50 hover:bg-purple-100 text-purple-900 border border-purple-300 rounded-xl text-xs font-bold transition-all cursor-pointer disabled:opacity-50"
             >
               {saving ? (
                 <>
-                  <RefreshCw className="w-4 h-4 animate-spin text-purple-700" />
+                  <RefreshCw className="w-3.5 h-3.5 animate-spin text-purple-700" />
                   <span>Đang lưu...</span>
                 </>
               ) : (
                 <>
-                  <Save className="w-4 h-4 text-purple-700" />
+                  <Save className="w-3.5 h-3.5 text-purple-700" />
                   <span>Lưu nháp</span>
                 </>
               )}
             </button>
 
-            {/* Nút Hoàn thành & Gửi thẩm định */}
             <button
               type="button"
               onClick={() => {
-                if (activeTab !== "tab3") {
+                if (activeTab === "tab1") {
+                  setActiveTab("tab2")
+                } else if (activeTab === "tab2") {
                   setActiveTab("tab3")
                 } else {
                   handleSave(false)
                 }
               }}
               disabled={saving}
-              className="flex items-center gap-2 px-5 py-2 bg-gradient-to-r from-purple-700 to-indigo-700 hover:from-purple-800 hover:to-indigo-800 text-white rounded-xl text-xs font-black shadow-md shadow-purple-700/20 cursor-pointer transition-all active:scale-[0.98] disabled:opacity-50"
+              className="flex items-center gap-1.5 px-4 py-1.5 bg-gradient-to-r from-purple-700 to-indigo-700 hover:from-purple-800 hover:to-indigo-800 text-white rounded-xl text-xs font-black shadow-sm cursor-pointer transition-all disabled:opacity-50"
             >
-              <Send className="w-4 h-4" />
-              <span>{activeTab === "tab3" ? "Hoàn thành & Gửi thẩm định QLCM" : "Tiếp tục & Tổng hợp"}</span>
+              <Send className="w-3.5 h-3.5" />
+              <span>
+                {activeTab === "tab3"
+                  ? "Hoàn thành & Gửi thẩm định QLCM"
+                  : activeTab === "tab2"
+                  ? "Tiếp tục & Tổng hợp (Phần C)"
+                  : "Tiếp tục: Trao đổi PHHS (Phần B)"}
+              </span>
             </button>
           </div>
         </div>
