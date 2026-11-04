@@ -199,6 +199,65 @@ export async function GET(req: any) {
             }
         });
 
+        // Đồng bộ thêm phân công từ Phiên / Lịch ca thi (InputAssessmentSessionExaminer có gán subjectCode) nếu chưa có trong InputAssessmentTeacherAssignment
+        try {
+            const sessionExaminers = await (prisma as any).inputAssessmentSessionExaminer.findMany({
+                where: {
+                    ...(isAdmin ? {} : { userId: session.user.id }),
+                    subjectCode: { not: null }
+                },
+                include: {
+                    session: {
+                        include: {
+                            batch: true,
+                            period: { include: { assignedUser: true } },
+                            studentSessions: { include: { student: true } }
+                        }
+                    }
+                }
+            });
+            if (sessionExaminers.length > 0) {
+                const allAssessmentSubjects = await prisma.assessmentSubject.findMany();
+                for (const ex of sessionExaminers) {
+                    const sess = ex.session;
+                    if (!sess || !sess.periodId) continue;
+                    if (academicYearId && sess.academicYearId && sess.academicYearId !== academicYearId) continue;
+                    const subCodeNorm = String(ex.subjectCode || "").toLowerCase().trim();
+                    const matchedSub = allAssessmentSubjects.find(s =>
+                        s.id === ex.subjectCode ||
+                        String(s.code || "").toLowerCase().trim() === subCodeNorm ||
+                        String(s.name || "").toLowerCase().trim() === subCodeNorm
+                    );
+                    if (!matchedSub) continue;
+                    const firstSt = sess.studentSessions?.[0]?.student;
+                    const stGrade = firstSt?.grade || "Tất cả";
+                    const stSys = firstSt?.surveyFormType || "Tất cả";
+                    const alreadyExists = combinedAssignments.some(a =>
+                        a.periodId === sess.periodId &&
+                        (a.batchId || null) === (sess.batchId || null) &&
+                        a.subjectId === matchedSub.id
+                    );
+                    if (!alreadyExists) {
+                        combinedAssignments.push({
+                            id: `session_ex_${ex.id}`,
+                            periodId: sess.periodId,
+                            batchId: sess.batchId || null,
+                            userId: ex.userId,
+                            subjectId: matchedSub.id,
+                            grade: stGrade,
+                            educationSystem: stSys,
+                            createdAt: sess.updatedAt || sess.createdAt,
+                            subject: matchedSub,
+                            batch: sess.batch || null,
+                            period: sess.period
+                        });
+                    }
+                }
+            }
+        } catch (exErr) {
+            console.error("Sync session examiner assignments error:", exErr);
+        }
+
         // Query counts for general K12 students
         const generalPeriodIds = Array.from(new Set(combinedAssignments.map(a => a.periodId).filter(Boolean)));
         const generalStudents = generalPeriodIds.length > 0 ? await prisma.inputAssessmentStudent.findMany({
@@ -220,7 +279,7 @@ export async function GET(req: any) {
             const aSys = (a.educationSystem || "").toLowerCase().trim();
             const aSysNames = eduSystemsMap[aSys] || new Set();
 
-            const studentCount = generalStudents.filter(st => {
+            const strictMatches = generalStudents.filter(st => {
                 if (st.periodId !== a.periodId) return false;
                 if (a.batchId && st.batchId !== a.batchId) return false;
 
@@ -246,11 +305,33 @@ export async function GET(req: any) {
                     }
                 }
                 return gradeMatch && sysMatch;
-            }).length;
+            });
+
+            // Nếu phân công gắn trực tiếp vào 1 Đợt khảo sát cụ thể (a.batchId) mà khối mặc định bị lệch so với HS trong đợt đó, tự động nhận diện HS trong đợt
+            let finalCount = strictMatches.length;
+            let resolvedGrade = a.grade;
+            let resolvedSys = a.educationSystem;
+
+            if (finalCount === 0 && a.batchId) {
+                const batchStudents = generalStudents.filter(
+                    st => st.periodId === a.periodId && st.batchId === a.batchId
+                );
+                if (batchStudents.length > 0) {
+                    finalCount = batchStudents.length;
+                    if (batchStudents[0].grade) {
+                        resolvedGrade = String(batchStudents[0].grade).replace(/^Khối\s+/i, "").trim();
+                    }
+                    if (batchStudents[0].surveyFormType) {
+                        resolvedSys = batchStudents[0].surveyFormType;
+                    }
+                }
+            }
 
             return {
                 ...a,
-                studentCount
+                grade: resolvedGrade,
+                educationSystem: resolvedSys,
+                studentCount: finalCount
             };
         });
 
@@ -1061,15 +1142,12 @@ export async function GET(req: any) {
             eduSystemsMap[code].add(s.name.toLowerCase());
         });
 
-        const assignedGrades = Array.from(new Set(teacherAssignments.map(ta => ta.grade).filter(Boolean)));
         const students = await prisma.inputAssessmentStudent.findMany({
             where: {
                 periodId: periodId || undefined,
-                ...(batchId ? { OR: [{ batchId: batchId }, { batchId: null }] } : {}),
-                ...(assignedGrades.length > 0 && !assignedGrades.includes("tất cả") && !assignedGrades.includes("Tất cả") ? {
-                    grade: { in: assignedGrades }
-                } : {})
-            },            include: {
+                ...(batchId ? { OR: [{ batchId: batchId }, { batchId: null }] } : {})
+            },
+            include: {
                 batch: { select: { id: true, name: true, status: true } },
                 scores: {
                     where: { subjectId: subjectId || undefined },
@@ -1079,9 +1157,8 @@ export async function GET(req: any) {
         });
 
         // Filter in memory to bypass any strict case-sensitivity issues of SQLite
-        
-        
-        const filteredStudents = students.filter(st => { if ((st as any).batch?.status === "COMPLETED") return false;
+        const filteredStudents = students.filter(st => {
+            if ((st as any).batch?.status === "COMPLETED") return false;
             // Check teacher assignments first
             if (teacherAssignments.length > 0) {
                 // The student must match at least one of the teacher's assignments for this subject
@@ -1089,14 +1166,17 @@ export async function GET(req: any) {
                 const stSys = (st.surveyFormType || "").toLowerCase().trim();
                 
                 const matchesAssignment = teacherAssignments.some(ta => {
+                    if (ta.batchId && st.batchId && ta.batchId !== st.batchId) return false;
                     const taGrade = (ta.grade || "").toLowerCase().trim();
                     const taSys = (ta.educationSystem || "").toLowerCase().trim();
                     
                     // FIX: So sánh số khối chính xác, tránh lỗi "10".includes("1") = true
                     const taGradeNum = taGrade.replace("khối", "").trim();
                     const stGradeNum = stGrade.replace("khối", "").trim();
-                    const gradeMatch = !taGrade || taGrade === "tất cả" || stGrade === taGrade ||
-                        (stGradeNum !== "" && taGradeNum !== "" && stGradeNum === taGradeNum);                    let sysMatch = false;
+                    let gradeMatch = !taGrade || taGrade === "tất cả" || stGrade === taGrade ||
+                        (stGradeNum !== "" && taGradeNum !== "" && stGradeNum === taGradeNum);
+
+                    let sysMatch = false;
                     if (!taSys || taSys === "tất cả") {
                         sysMatch = true;
                     } else {
@@ -1115,6 +1195,18 @@ export async function GET(req: any) {
                         }
                     }
 
+                    // Fallback cho phân công gắn trực tiếp vào 1 Đợt cụ thể (ta.batchId) nếu đợt đó không có học sinh nào khớp khối mặc định
+                    if ((!gradeMatch || !sysMatch) && ta.batchId && st.batchId === ta.batchId) {
+                        const batchHasStrictMatch = students.some(otherSt => {
+                            if (otherSt.batchId !== ta.batchId) return false;
+                            const oG = (otherSt.grade || "").toLowerCase().replace("khối", "").trim();
+                            return oG === taGradeNum;
+                        });
+                        if (!batchHasStrictMatch) {
+                            gradeMatch = true;
+                            sysMatch = true;
+                        }
+                    }
                     
                     return gradeMatch && sysMatch;
                 });
@@ -1132,9 +1224,15 @@ export async function GET(req: any) {
                 
                 const stGradeNum = stGrade.replace("khối", "").trim();
                 if (stGrade) {
-                    // FIX: So sánh số khối chính xác (không dùng includes)
                     const matchGrade = stGrade === qGrade || stGradeNum === qGradeNum;
-                    if (!matchGrade) return false;
+                    if (!matchGrade) {
+                        // Nếu đang lọc theo 1 đợt cụ thể mà đợt đó không có học sinh nào thuộc qGrade (do lệch khối khi gán đợt), vẫn hiển thị HS của đợt đó
+                        const anyStudentInBatchMatchesGrade = batchId && students.some(otherSt => {
+                            const oG = (otherSt.grade || "").toLowerCase().replace("khối", "").trim();
+                            return oG === qGradeNum;
+                        });
+                        if (!batchId || anyStudentInBatchMatchesGrade) return false;
+                    }
                 }
             }
 

@@ -345,17 +345,26 @@ export function PhanCongK12Client({
 
   const getAssignedStudentsForGroup = useCallback((a: any) => {
     if (!filterBatchStudents.length) return []
-    const grades = (a.grades || []).map((g: any) => String(g))
+    const grades = (a.grades || []).map((g: any) => String(g || "").toLowerCase().replace("khối", "").trim())
     const systems = (a.educationSystems || []).map((s: string) => s.toUpperCase())
-    
-    return filterBatchStudents.filter((st: any) => {
-      const matchGrade = grades.includes(String(st.grade || ""))
+    const batchScopedStudents = a.batchId
+      ? filterBatchStudents.filter((st: any) => st.batchId === a.batchId)
+      : filterBatchStudents
+
+    const strictMatched = batchScopedStudents.filter((st: any) => {
+      const stG = String(st.grade || "").toLowerCase().replace("khối", "").trim()
+      const matchGrade = grades.includes("tất cả") || grades.includes(stG)
       if (!matchGrade) return false
       if (systems.length === 0) return true
       const stSys = (st.surveySystem || st.surveyFormType || "").toUpperCase()
       if (!stSys) return true
-      return systems.some((sys: string) => stSys.includes(sys) || sys.includes(stSys))
+      return systems.some((sys: string) => sys === "TẤT CẢ" || stSys.includes(sys) || sys.includes(stSys))
     })
+
+    if (strictMatched.length === 0 && a.batchId && batchScopedStudents.length > 0) {
+      return batchScopedStudents
+    }
+    return strictMatched
   }, [filterBatchStudents])
 
   const [asDeptId, setAsDeptId] = useState("")
@@ -746,6 +755,40 @@ export function PhanCongK12Client({
   const gradesWithStudents = useMemo(() => {
     return activeGrades.filter(g => (studentStats[g]?.length || 0) > 0)
   }, [activeGrades, studentStats])
+
+  // Tự động đồng bộ Khối & Hệ theo học sinh thực tế của Đợt / Phiên khi chọn Đợt để tránh gán nhầm khối mặc định
+  useEffect(() => {
+    if (!asBatchId && !asSessionId) return
+    if (gradesWithStudents.length === 0) return
+
+    setAsSelGrades(prev => {
+      const hasOverlap = prev.some(g => gradesWithStudents.includes(g))
+      return hasOverlap ? prev : gradesWithStudents
+    })
+
+    const allBatchStudents = Object.values(studentStats).flat()
+    if (allBatchStudents.length > 0 && currentEduSystems.length > 0) {
+      const matchedSystems = new Set<string>()
+      allBatchStudents.forEach((st: any) => {
+        const sys = String(st.surveyFormType || st.surveySystem || "").toUpperCase().trim()
+        if (sys) {
+          currentEduSystems.forEach((es: any) => {
+            const code = String(es.code || "").toUpperCase()
+            if (sys === code || sys.includes(code) || code.includes(sys)) {
+              matchedSystems.add(es.code)
+            }
+          })
+        }
+      })
+      if (matchedSystems.size > 0) {
+        const sysArr = Array.from(matchedSystems)
+        setAsSelSystems(prev => {
+          const hasSysOverlap = prev.some(s => sysArr.includes(s))
+          return hasSysOverlap ? prev : sysArr
+        })
+      }
+    }
+  }, [asBatchId, asSessionId, gradesWithStudents, studentStats, currentEduSystems])
 
   // Tự động nạp phạm vi Môn • Khối • Hệ dựa trên Kết quả học tập & Quy chế tuyển sinh của 1 hoặc nhiều học sinh
   const applyRegulationScopeForStudents = (targetStudents: any[], label: string) => {

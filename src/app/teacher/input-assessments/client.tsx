@@ -57,27 +57,50 @@ export default function TeacherAssessmentsClient({ user }: { user: any }) {
     const [selectedPeriodId, setSelectedPeriodId] = useState<string>("");
     const [selectedBatchId, setSelectedBatchId] = useState<string>("all");
     const [latestBatchInfo, setLatestBatchInfo] = useState<any>(null);
+    const [lastAppliedUrlKey, setLastAppliedUrlKey] = useState<string>("");
 
+    // Luôn ưu tiên áp dụng tham số Deep Link từ URL (?periodId=...&batchId=...&subjectId=...) kể cả khi người dùng bấm từ Chuông thông báo khi đang đứng tại trang
     useEffect(() => {
-        if (Array.isArray(assignments) && assignments.length > 0 && !selectedPeriodId) {
-            // Prioritize Deep Link Period & Batch from Email
+        if (!Array.isArray(assignments) || assignments.length === 0) return;
+        const currentUrlKey = `${urlPeriodId}__${urlBatchId}__${urlSubjectId}`;
+
+        if ((urlPeriodId || urlBatchId || urlSubjectId) && currentUrlKey !== lastAppliedUrlKey) {
             if (urlPeriodId && assignments.some(a => a.periodId === urlPeriodId)) {
                 setSelectedPeriodId(urlPeriodId);
                 if (urlBatchId && assignments.some(a => a.periodId === urlPeriodId && (a.batchId === urlBatchId || urlBatchId === "all"))) {
                     setSelectedBatchId(urlBatchId);
+                } else {
+                    const firstBatchAssign = assignments.find(a => a.periodId === urlPeriodId && a.batchId);
+                    setSelectedBatchId(firstBatchAssign?.batchId || "all");
                 }
+                setLastAppliedUrlKey(currentUrlKey);
                 return;
+            } else if (urlBatchId) {
+                const matchedByBatch = assignments.find(a => a.batchId === urlBatchId);
+                if (matchedByBatch) {
+                    setSelectedPeriodId(matchedByBatch.periodId);
+                    setSelectedBatchId(urlBatchId);
+                    setLastAppliedUrlKey(currentUrlKey);
+                    return;
+                }
             }
+        }
 
+        if (!selectedPeriodId) {
             const allBatchesMap = new Map();
             assignments.forEach(a => {
                 if (a && a.batch && a.period) {
-                    allBatchesMap.set(a.batchId, {
-                        ...a.batch,
-                        periodId: a.periodId,
-                        periodName: a.period.name,
-                        periodCode: a.period.code
-                    });
+                    const existing = allBatchesMap.get(a.batchId);
+                    const assignTime = a.createdAt ? new Date(a.createdAt).getTime() : 0;
+                    if (!existing || assignTime > (existing.latestAssignTime || 0)) {
+                        allBatchesMap.set(a.batchId, {
+                            ...a.batch,
+                            periodId: a.periodId,
+                            periodName: a.period.name,
+                            periodCode: a.period.code,
+                            latestAssignTime: Math.max(assignTime, existing?.latestAssignTime || 0)
+                        });
+                    }
                 }
             });
             const allBatches = Array.from(allBatchesMap.values());
@@ -96,8 +119,12 @@ export default function TeacherAssessmentsClient({ user }: { user: any }) {
                 });
                 
                 if (!activeBatch) {
-                    const todayTime = today.getTime();
-                    const sorted = [...allBatches].sort((a, b) => {
+                    // Ưu tiên Đợt vừa mới được phân công gần nhất (latestAssignTime) để GV thấy ngay nhiệm vụ mới
+                    const sorted = [...allBatches].sort((a: any, b: any) => {
+                        if ((b.latestAssignTime || 0) !== (a.latestAssignTime || 0)) {
+                            return (b.latestAssignTime || 0) - (a.latestAssignTime || 0);
+                        }
+                        const todayTime = today.getTime();
                         const dateA = new Date(a.endDate || a.startDate || 0).getTime();
                         const dateB = new Date(b.endDate || b.startDate || 0).getTime();
                         return Math.abs(dateA - todayTime) - Math.abs(dateB - todayTime);
@@ -109,9 +136,12 @@ export default function TeacherAssessmentsClient({ user }: { user: any }) {
                     setSelectedPeriodId(activeBatch.periodId);
                     setSelectedBatchId(activeBatch.id);
                 }
+            } else if (assignments[0]?.periodId) {
+                setSelectedPeriodId(assignments[0].periodId);
+                setSelectedBatchId("all");
             }
         }
-    }, [assignments, selectedPeriodId, urlPeriodId, urlBatchId]);
+    }, [assignments, selectedPeriodId, urlPeriodId, urlBatchId, urlSubjectId, lastAppliedUrlKey]);
 
     useEffect(() => {
         if (!Array.isArray(assignments) || assignments.length === 0) {
@@ -247,7 +277,7 @@ export default function TeacherAssessmentsClient({ user }: { user: any }) {
 
     useEffect(() => {
         setLoading(true);
-        fetch(`/api/teacher-assessments?action=getAssignments&academicYearId=${academicYear || ""}`)
+        fetch(`/api/teacher-assessments?action=getAssignments&academicYearId=${academicYear || ""}&_t=${Date.now()}`, { cache: "no-store" })
             .then(res => res.json())
             .then(data => {
                 if(Array.isArray(data)) {
@@ -255,6 +285,7 @@ export default function TeacherAssessmentsClient({ user }: { user: any }) {
                     setSelectedPeriodId("");
                     setSelectedBatchId("");
                     setSelectedAssignmentId("");
+                    setLastAppliedUrlKey("");
                     setStudents([]);
                 } else {
                     console.error('API Error:', data);
@@ -273,7 +304,7 @@ export default function TeacherAssessmentsClient({ user }: { user: any }) {
                 setStudents([]);
                 setLoading(false);
             });
-    }, [academicYear]);
+    }, [academicYear, urlPeriodId, urlBatchId, urlSubjectId]);
 
     // Filtered lists
     const periods = useMemo(() => {
@@ -398,7 +429,14 @@ export default function TeacherAssessmentsClient({ user }: { user: any }) {
         const bMap = new Map();
         assignments.forEach(a => {
             if (a.periodId === selectedPeriodId && a.batch) {
-                bMap.set(a.batchId, a.batch);
+                const existing = bMap.get(a.batchId);
+                const assignTime = a.createdAt ? new Date(a.createdAt).getTime() : 0;
+                if (!existing || assignTime > (existing.latestAssignTime || 0)) {
+                    bMap.set(a.batchId, {
+                        ...a.batch,
+                        latestAssignTime: Math.max(assignTime, existing?.latestAssignTime || 0)
+                    });
+                }
             }
         });
         const periodBatches = Array.from(bMap.values());
@@ -420,7 +458,8 @@ export default function TeacherAssessmentsClient({ user }: { user: any }) {
             if (activeBatch) {
                 targetBatchId = activeBatch.id;
             } else {
-                targetBatchId = periodBatches[0].id;
+                const sorted = [...periodBatches].sort((a: any, b: any) => (b.latestAssignTime || 0) - (a.latestAssignTime || 0));
+                targetBatchId = sorted[0].id;
             }
         }
         

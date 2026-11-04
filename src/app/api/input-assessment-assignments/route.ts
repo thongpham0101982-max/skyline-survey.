@@ -145,23 +145,67 @@ export async function POST(req) {
        }
 
        let successCount = 0;
-       
-       // Override mode: delete existing assignments for the specific teacher in this period & batch
-       if (assignments.length > 0) {
-          const firstTeacher = assignments[0].teacherId;
-          const isSingleTeacher = assignments.every(a => a.teacherId === firstTeacher);
-          if (isSingleTeacher) {
-              await prisma.inputAssessmentTeacherAssignment.deleteMany({
-                  where: {
-                      periodId: resolvedPeriodId,
-                      batchId: resolvedBatchId || null,
-                      userId: firstTeacher
-                  }
-              });
+
+       // Tự động bổ sung Khối & Hệ thực tế của học sinh trong Đợt khảo sát (nếu Đợt có học sinh nhưng phạm vi chọn bị lệch khối mặc định)
+       const assignmentsToProcess: any[] = [...assignments];
+       if (resolvedBatchId && assignments.length > 0) {
+          try {
+             const batchStudents = await prisma.inputAssessmentStudent.findMany({
+                where: { batchId: resolvedBatchId },
+                select: { grade: true, surveyFormType: true }
+             });
+             if (batchStudents.length > 0) {
+                const normalizeG = (g: any) => String(g || "").toLowerCase().replace("khối", "").trim();
+                const batchGradeSysPairs = new Map<string, { grade: string; educationSystem: string }>();
+                batchStudents.forEach((st: any) => {
+                   const g = String(st.grade || "").replace(/^Khối\s+/i, "").trim();
+                   const sys = String(st.surveyFormType || "HNS").trim() || "HNS";
+                   if (g) {
+                      batchGradeSysPairs.set(`${g}__${sys}`, { grade: g, educationSystem: sys });
+                   }
+                });
+
+                // Với mỗi cặp (teacherId, subjectId), kiểm tra xem đã khớp ít nhất 1 học sinh trong đợt chưa
+                const teacherSubjectPairs = new Map<string, { teacherId: string; subjectId: string }>();
+                assignments.forEach((a: any) => {
+                   if (a.teacherId && a.subjectId) {
+                      teacherSubjectPairs.set(`${a.teacherId}__${a.subjectId}`, {
+                         teacherId: a.teacherId,
+                         subjectId: a.subjectId
+                      });
+                   }
+                });
+
+                teacherSubjectPairs.forEach(({ teacherId, subjectId }) => {
+                   const subAssigns = assignments.filter(
+                      (a: any) => a.teacherId === teacherId && a.subjectId === subjectId
+                   );
+                   const matchesAnyBatchStudent = batchStudents.some((st: any) => {
+                      const stG = normalizeG(st.grade);
+                      return subAssigns.some((a: any) => {
+                         const aG = normalizeG(a.grade);
+                         return !aG || aG === "tất cả" || aG === stG;
+                      });
+                   });
+
+                   if (!matchesAnyBatchStudent) {
+                      batchGradeSysPairs.forEach(({ grade, educationSystem }) => {
+                         assignmentsToProcess.push({
+                            teacherId,
+                            subjectId,
+                            grade,
+                            educationSystem
+                         });
+                      });
+                   }
+                });
+             }
+          } catch (batchCheckErr) {
+             console.error("Auto-sync batch student grade/system error:", batchCheckErr);
           }
        }
 
-       for (const a of assignments) {
+       for (const a of assignmentsToProcess) {
           try {
              const existing = await prisma.inputAssessmentTeacherAssignment.findFirst({
                 where: {
