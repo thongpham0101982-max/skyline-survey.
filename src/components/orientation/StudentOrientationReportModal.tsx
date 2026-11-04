@@ -403,7 +403,7 @@ export function StudentOrientationReportModal({
       case "NEED_SUPPORT":
         return { label: "Cần tìm hiểu thêm", cls: "text-amber-900 bg-amber-50 border-amber-300 font-bold" }
       case "SPECIAL_ATTENTION":
-        return { label: "Chưa đủ thông tin", cls: "text-purple-900 bg-purple-50 border-purple-300 font-bold" }
+        return { label: "Chưa đủ thông tin", cls: "text-teal-900 bg-teal-50 border-teal-300 font-bold" }
       default:
         return { label: "Đang hình thành", cls: "text-slate-800 bg-slate-50 border-slate-200 font-semibold" }
     }
@@ -529,14 +529,14 @@ export function StudentOrientationReportModal({
       <div id="orientation-report-main-container" className="relative bg-white w-full max-w-[900px] rounded-3xl shadow-2xl border border-slate-200 flex flex-col max-h-[95vh] print:max-h-none print:h-auto print:border-none print:shadow-none print:rounded-none overflow-hidden">
         
         {/* TOP BAR (HIDDEN IN PRINT) */}
-        <div className="no-print px-6 py-4 bg-gradient-to-r from-purple-950 via-purple-900 to-indigo-950 text-white flex items-center justify-between border-b border-purple-800 flex-shrink-0">
+        <div className="no-print px-6 py-4 bg-gradient-to-r from-[#083d39] via-[#0b524d] to-[#0f6b64] text-white flex items-center justify-between border-b border-teal-800 flex-shrink-0">
           <div className="flex items-center gap-3">
-            <div className="w-8 h-8 rounded-xl bg-purple-600 text-white flex items-center justify-center shadow-sm">
+            <div className="w-8 h-8 rounded-xl bg-teal-600 text-white flex items-center justify-center shadow-sm">
               <Printer className="w-4 h-4" />
             </div>
             <div>
               <h3 className="text-sm font-black text-white">Báo Cáo Phỏng Vấn Định Hướng Học Sinh & Trao Đổi PHHS (A4)</h3>
-              <p className="text-[11px] text-purple-200 font-medium">Khổ giấy A4 chuẩn &bull; Bảng tự động co giãn vừa trang in &bull; Không bị tràn lề</p>
+              <p className="text-[11px] text-teal-200 font-medium">Khổ giấy A4 chuẩn &bull; Bảng tự động co giãn vừa trang in &bull; Không bị tràn lề</p>
             </div>
           </div>
 
@@ -564,7 +564,7 @@ export function StudentOrientationReportModal({
               type="button"
               onClick={() => handlePrintOrExport(false)}
               disabled={loading}
-              className="flex items-center gap-1.5 px-3.5 py-2 bg-purple-800/80 hover:bg-purple-700 text-purple-100 rounded-xl text-xs font-bold border border-purple-600 cursor-pointer transition-all active:scale-[0.98]"
+              className="flex items-center gap-1.5 px-3.5 py-2 bg-teal-800/80 hover:bg-teal-700 text-teal-100 rounded-xl text-xs font-bold border border-teal-600 cursor-pointer transition-all active:scale-[0.98]"
             >
               <Printer className="w-4 h-4" />
               <span>In (A4)</span>
@@ -572,7 +572,7 @@ export function StudentOrientationReportModal({
             <button
               type="button"
               onClick={onClose}
-              className="p-2 text-purple-200 hover:text-white hover:bg-white/10 rounded-xl transition-all cursor-pointer"
+              className="p-2 text-teal-200 hover:text-white hover:bg-white/10 rounded-xl transition-all cursor-pointer"
             >
               <X className="w-5 h-5" />
             </button>
@@ -587,17 +587,17 @@ export function StudentOrientationReportModal({
         >
           {loading ? (
             <div className="py-24 text-center space-y-3">
-              <RefreshCw className="w-8 h-8 animate-spin mx-auto text-purple-700" />
+              <RefreshCw className="w-8 h-8 animate-spin mx-auto text-teal-700" />
               <p className="text-xs font-bold text-slate-500">Đang tổng hợp báo cáo nhận diện...</p>
             </div>
           ) : (
             <div className="space-y-3">
 
               {/* REPORT HEADER */}
-              <div className="print-section border-b-2 border-purple-900 pb-2.5 flex items-start justify-between gap-4">
+              <div className="print-section border-b-2 border-teal-900 pb-2.5 flex items-start justify-between gap-4">
                 <div className="space-y-0.5">
-                  <div className="text-[11px] font-black uppercase tracking-widest text-purple-900 flex items-center gap-1.5">
-                    <span className="w-2.5 h-2.5 rounded-full bg-purple-700 inline-block"></span>
+                  <div className="text-[11px] font-black uppercase tracking-widest text-teal-900 flex items-center gap-1.5">
+                    <span className="w-2.5 h-2.5 rounded-full bg-teal-700 inline-block"></span>
                     <span>HỆ THỐNG GIÁO DỤC SKY-LINE</span>
                   </div>
                   <div className="text-xs font-bold text-slate-800">
@@ -609,7 +609,7 @@ export function StudentOrientationReportModal({
                 </div>
 
                 <div className="text-right space-y-0.5">
-                  <span className="text-[10px] font-mono font-bold text-purple-950 block">
+                  <span className="text-[10px] font-mono font-bold text-teal-950 block">
                     Mã hồ sơ: {student?.studentCode || "HS-KSDV"}
                   </span>
                   <span className="text-[10px] text-slate-500 block">
@@ -623,10 +623,10 @@ export function StudentOrientationReportModal({
 
               {/* REPORT TITLE */}
               <div className="print-section text-center space-y-0.5 py-0.5">
-                <h1 className="text-sm sm:text-base font-black text-purple-950 uppercase tracking-tight">
+                <h1 className="text-sm sm:text-base font-black text-teal-950 uppercase tracking-tight">
                   PHIẾU PHỎNG VẤN ĐỊNH HƯỚNG HỌC SINH &amp; TRAO ĐỔI VỚI PHỤ HUYNH
                 </h1>
-                <p className="text-[11px] text-purple-800 font-bold">
+                <p className="text-[11px] text-teal-800 font-bold">
                   {gradeConfig.label} &bull; Trọng tâm: {gradeConfig.focus}
                 </p>
                 <p className="text-[9.5px] text-slate-500 italic">
@@ -636,17 +636,17 @@ export function StudentOrientationReportModal({
 
               {/* SECTION I: THÔNG TIN HỌC SINH */}
               <div className="print-section space-y-1.5">
-                <div className="flex items-center gap-2 border-b border-purple-200 pb-1">
-                  <span className="w-2 h-2 rounded-full bg-purple-700" />
-                  <h2 className="text-[11px] font-black uppercase tracking-wider text-purple-950">
+                <div className="flex items-center gap-2 border-b border-teal-200 pb-1">
+                  <span className="w-2 h-2 rounded-full bg-teal-700" />
+                  <h2 className="text-[11px] font-black uppercase tracking-wider text-teal-950">
                     I. Thông Tin Học Sinh &amp; Tuyển Sinh
                   </h2>
                 </div>
 
-                <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 p-2.5 bg-purple-50/40 rounded-xl border border-purple-200 text-xs">
+                <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 p-2.5 bg-teal-50/40 rounded-xl border border-teal-200 text-xs">
                   <div>
                     <span className="text-[9.5px] text-slate-500 block font-medium">Họ và tên học sinh:</span>
-                    <strong className="text-purple-950 text-xs font-black">{student?.fullName}</strong>
+                    <strong className="text-teal-950 text-xs font-black">{student?.fullName}</strong>
                   </div>
                   <div>
                     <span className="text-[9.5px] text-slate-500 block font-medium">Ngày sinh / Giới tính:</span>
@@ -656,7 +656,7 @@ export function StudentOrientationReportModal({
                   </div>
                   <div>
                     <span className="text-[9.5px] text-slate-500 block font-medium">Khối đăng ký:</span>
-                    <strong className="text-purple-900 font-bold text-[11px]">{gradeConfig.label}</strong>
+                    <strong className="text-teal-900 font-bold text-[11px]">{gradeConfig.label}</strong>
                   </div>
                   <div>
                     <span className="text-[9.5px] text-slate-500 block font-medium">Hệ đào tạo:</span>
@@ -676,7 +676,7 @@ export function StudentOrientationReportModal({
                   </div>
                   <div>
                     <span className="text-[9.5px] text-slate-500 block font-medium">Giáo viên thực hiện:</span>
-                    <strong className="text-purple-950 text-[11px]">{orientationData?.interviewerName || "Cán bộ phỏng vấn"}</strong>
+                    <strong className="text-teal-950 text-[11px]">{orientationData?.interviewerName || "Cán bộ phỏng vấn"}</strong>
                   </div>
                   <div>
                     <span className="text-[9.5px] text-slate-500 block font-medium">Đại diện PHHS liên hệ:</span>
@@ -709,22 +709,22 @@ export function StudentOrientationReportModal({
               {/* SECTION II: PHẦN A - PHỎNG VẤN ĐỊNH HƯỚNG HỌC SINH (10 NHÓM NỘI DUNG) */}
               {/* SỬ DỤNG print-section-flow ĐỂ CHO PHÉP BẢNG CHẢY TỰ NHIÊN GIỮA CÁC TRANG KHÔNG BỊ NHẢY TRANG VÔ LÝ */}
               <div className="print-section-flow space-y-1.5">
-                <div className="flex items-center justify-between border-b border-purple-300 pb-1">
+                <div className="flex items-center justify-between border-b border-teal-300 pb-1">
                   <div className="flex items-center gap-2">
-                    <span className="w-2.5 h-2.5 rounded-full bg-purple-700" />
-                    <h2 className="text-[11px] font-black uppercase tracking-wider text-purple-950">
+                    <span className="w-2.5 h-2.5 rounded-full bg-teal-700" />
+                    <h2 className="text-[11px] font-black uppercase tracking-wider text-teal-950">
                       A. Phỏng Vấn Định Hướng Học Sinh (10 Nhóm Nội Dung Chuẩn Hóa)
                     </h2>
                   </div>
-                  <span className="text-[9.5px] font-bold text-purple-700">
+                  <span className="text-[9.5px] font-bold text-teal-700">
                     Nguyên tắc: Không chấm điểm số &bull; Quan sát 4 mức mô tả
                   </span>
                 </div>
 
-                <div className="border border-purple-200 rounded-lg text-xs" style={{ width: "100%", maxWidth: "100%" }}>
+                <div className="border border-teal-200 rounded-lg text-xs" style={{ width: "100%", maxWidth: "100%" }}>
                   <table className="w-full text-left border-collapse" style={{ tableLayout: "fixed", width: "100%" }}>
                     <thead>
-                      <tr className="bg-purple-100/80 text-[9.5px] font-black uppercase text-purple-950 border-b border-purple-200">
+                      <tr className="bg-teal-100/80 text-[9.5px] font-black uppercase text-teal-950 border-b border-teal-200">
                         <th className="py-1.5 px-1 text-center" style={{ width: "5%" }}>STT</th>
                         <th className="py-1.5 px-2" style={{ width: "27%" }}>Nhóm nội dung tìm hiểu</th>
                         <th className="py-1.5 px-2" style={{ width: "27%" }}>Câu trả lời / Chia sẻ của HS</th>
@@ -732,19 +732,19 @@ export function StudentOrientationReportModal({
                         <th className="py-1.5 px-2" style={{ width: "25%" }}>Nhận xét của Giáo viên</th>
                       </tr>
                     </thead>
-                    <tbody className="divide-y divide-purple-100 text-[10px]">
+                    <tbody className="divide-y divide-teal-100 text-[10px]">
                       {interviewList.map((item, idx) => {
                         const r = ratingLabel(item.rating)
                         const studentNote = item.studentNotes || item.answer || item.notes || ""
                         const teacherCmt = item.teacherComment || (item.notes !== studentNote ? item.notes : "")
                         return (
-                          <tr key={idx} className="hover:bg-purple-50/30">
-                            <td className="py-1.5 px-1 text-center text-purple-900 font-bold align-top">{idx + 1}</td>
+                          <tr key={idx} className="hover:bg-teal-50/30">
+                            <td className="py-1.5 px-1 text-center text-teal-900 font-bold align-top">{idx + 1}</td>
                             <td className="py-1.5 px-2 align-top">
                               <div className="font-bold text-slate-900 leading-snug">
                                 {item.questionText || item.name}
                               </div>
-                              <div className="text-[9px] text-purple-700 font-semibold mt-0.5">
+                              <div className="text-[9px] text-teal-700 font-semibold mt-0.5">
                                 {item.code ? `[${item.code}] ` : ""}{item.categoryLabel || item.category}
                               </div>
                               {item.focus && (
@@ -767,7 +767,7 @@ export function StudentOrientationReportModal({
                             </td>
                             <td className="py-1.5 px-2 text-slate-800 leading-relaxed align-top">
                               {teacherCmt.trim() ? (
-                                <span className="font-medium text-purple-950">{teacherCmt}</span>
+                                <span className="font-medium text-teal-950">{teacherCmt}</span>
                               ) : (
                                 <span className="text-slate-400 italic">—</span>
                               )}
@@ -782,10 +782,10 @@ export function StudentOrientationReportModal({
 
               {/* SECTION III: PHẦN B - TRAO ĐỔI ĐỊNH HƯỚNG VỚI PHỤ HUYNH (5 NHÓM NỘI DUNG) */}
               <div className="print-section-flow space-y-1.5 pt-2">
-                <div className="flex items-center justify-between border-b border-indigo-300 pb-1">
+                <div className="flex items-center justify-between border-b border-teal-300 pb-1">
                   <div className="flex items-center gap-2">
-                    <span className="w-2.5 h-2.5 rounded-full bg-indigo-700" />
-                    <h2 className="text-[11px] font-black uppercase tracking-wider text-indigo-950">
+                    <span className="w-2.5 h-2.5 rounded-full bg-teal-700" />
+                    <h2 className="text-[11px] font-black uppercase tracking-wider text-teal-950">
                       B. Trao Đổi Định Hướng Với Phụ Huynh Học Sinh (5 Nhóm Nội Dung)
                     </h2>
                   </div>
@@ -794,17 +794,17 @@ export function StudentOrientationReportModal({
                   </span>
                 </div>
 
-                <div className="border border-indigo-200 rounded-lg text-xs" style={{ width: "100%", maxWidth: "100%" }}>
+                <div className="border border-teal-200 rounded-lg text-xs" style={{ width: "100%", maxWidth: "100%" }}>
                   <table className="w-full text-left border-collapse" style={{ tableLayout: "fixed", width: "100%" }}>
                     <thead>
-                      <tr className="bg-indigo-100/80 text-[9.5px] font-black uppercase text-indigo-950 border-b border-indigo-200">
+                      <tr className="bg-teal-100/80 text-[9.5px] font-black uppercase text-teal-950 border-b border-teal-200">
                         <th className="py-1.5 px-1 text-center" style={{ width: "5%" }}>STT</th>
                         <th className="py-1.5 px-2" style={{ width: "28%" }}>Nhóm nội dung trao đổi với PHHS</th>
                         <th className="py-1.5 px-2" style={{ width: "37%" }}>Nội dung Phụ huynh chia sẻ &amp; Kỳ vọng</th>
                         <th className="py-1.5 px-2" style={{ width: "30%" }}>Ghi nhận / Quan sát của Giáo viên</th>
                       </tr>
                     </thead>
-                    <tbody className="divide-y divide-indigo-100 text-[10px]">
+                    <tbody className="divide-y divide-teal-100 text-[10px]">
                       {parentItemsList.map((pItem, idx) => {
                         const pAns = pItem.answer || (
                           idx === 0 ? orientationData?.parentPersonalityNotes :
@@ -815,13 +815,13 @@ export function StudentOrientationReportModal({
                         ) || ""
                         const pNote = pItem.teacherNote || ""
                         return (
-                          <tr key={idx} className="hover:bg-indigo-50/30">
-                            <td className="py-1.5 px-1 text-center text-indigo-900 font-bold align-top">{idx + 1}</td>
+                          <tr key={idx} className="hover:bg-teal-50/30">
+                            <td className="py-1.5 px-1 text-center text-teal-900 font-bold align-top">{idx + 1}</td>
                             <td className="py-1.5 px-2 align-top">
                               <div className="font-bold text-slate-900 leading-snug">
                                 {pItem.title}
                               </div>
-                              <div className="text-[9px] text-indigo-700 font-semibold mt-0.5">
+                              <div className="text-[9px] text-teal-700 font-semibold mt-0.5">
                                 {pItem.code ? `[${pItem.code}] ` : ""}{pItem.categoryLabel || pItem.category}
                               </div>
                             </td>
@@ -834,7 +834,7 @@ export function StudentOrientationReportModal({
                             </td>
                             <td className="py-1.5 px-2 text-slate-800 leading-relaxed align-top">
                               {pNote.trim() ? (
-                                <span className="font-medium text-indigo-950">{pNote}</span>
+                                <span className="font-medium text-teal-950">{pNote}</span>
                               ) : (
                                 <span className="text-slate-400 italic">—</span>
                               )}
@@ -849,14 +849,14 @@ export function StudentOrientationReportModal({
 
               {/* SECTION IV: PHẦN C - TỔNG HỢP NHẬN DIỆN VÀ ĐỊNH HƯỚNG BAN ĐẦU (9 MỤC NỘI DUNG) */}
               <div className="print-section space-y-1.5 pt-2">
-                <div className="flex items-center justify-between border-b border-purple-300 pb-1">
+                <div className="flex items-center justify-between border-b border-teal-300 pb-1">
                   <div className="flex items-center gap-2">
-                    <span className="w-2.5 h-2.5 rounded-full bg-purple-700" />
-                    <h2 className="text-[11px] font-black uppercase tracking-wider text-purple-950">
+                    <span className="w-2.5 h-2.5 rounded-full bg-teal-700" />
+                    <h2 className="text-[11px] font-black uppercase tracking-wider text-teal-950">
                       C. Tổng Hợp Nhận Diện &amp; Định Hướng Ban Đầu (9 Nội Dung Chuẩn Hóa)
                     </h2>
                   </div>
-                  <span className="text-[9.5px] text-purple-700 font-semibold">
+                  <span className="text-[9.5px] text-teal-700 font-semibold">
                     Cơ sở xây dựng kế hoạch đồng hành sau nhập học
                   </span>
                 </div>
@@ -911,8 +911,8 @@ export function StudentOrientationReportModal({
                   </div>
 
                   {/* 5. Kỳ vọng của học sinh */}
-                  <div className="p-2 bg-purple-50/70 rounded-xl border border-purple-200">
-                    <span className="text-[9.5px] font-black text-purple-900 uppercase block mb-0.5">
+                  <div className="p-2 bg-teal-50/70 rounded-xl border border-teal-200">
+                    <span className="text-[9.5px] font-black text-teal-900 uppercase block mb-0.5">
                       5. Kỳ vọng của học sinh tại Sky-Line:
                     </span>
                     <p className="text-slate-800 text-[10px] leading-relaxed font-medium">
@@ -923,8 +923,8 @@ export function StudentOrientationReportModal({
                   </div>
 
                   {/* 6. Kỳ vọng của phụ huynh */}
-                  <div className="p-2 bg-indigo-50/70 rounded-xl border border-indigo-200">
-                    <span className="text-[9.5px] font-black text-indigo-900 uppercase block mb-0.5">
+                  <div className="p-2 bg-teal-50/70 rounded-xl border border-teal-200">
+                    <span className="text-[9.5px] font-black text-teal-900 uppercase block mb-0.5">
                       6. Kỳ vọng của phụ huynh đối với học sinh:
                     </span>
                     <p className="text-slate-800 text-[10px] leading-relaxed font-medium">
@@ -959,8 +959,8 @@ export function StudentOrientationReportModal({
                   </div>
 
                   {/* 9. Nội dung cần xác minh chuyên môn */}
-                  <div className="p-2 bg-purple-50/70 rounded-xl border border-purple-200">
-                    <span className="text-[9.5px] font-black text-purple-900 uppercase block mb-0.5">
+                  <div className="p-2 bg-teal-50/70 rounded-xl border border-teal-200">
+                    <span className="text-[9.5px] font-black text-teal-900 uppercase block mb-0.5">
                       9. Nội dung cần xác minh chuyên môn:
                     </span>
                     <p className="text-slate-800 text-[10px] leading-relaxed font-medium">
@@ -973,11 +973,11 @@ export function StudentOrientationReportModal({
               </div>
 
               {/* SECTION V: THẨM ĐỊNH QLCM & CHỈ ĐẠO CỦA GIÁM ĐỐC CƠ SỞ (GĐCS) */}
-              <div className="print-section p-2.5 bg-purple-50/50 rounded-xl border border-purple-200 text-xs space-y-1.5">
-                <div className="flex flex-wrap items-center justify-between gap-2 border-b border-purple-200 pb-1">
+              <div className="print-section p-2.5 bg-teal-50/50 rounded-xl border border-teal-200 text-xs space-y-1.5">
+                <div className="flex flex-wrap items-center justify-between gap-2 border-b border-teal-200 pb-1">
                   <div className="flex items-center gap-1.5">
-                    <span className="w-2 h-2 rounded-full bg-purple-700" />
-                    <h3 className="text-[10.5px] font-black uppercase text-purple-950 tracking-wider">
+                    <span className="w-2 h-2 rounded-full bg-teal-700" />
+                    <h3 className="text-[10.5px] font-black uppercase text-teal-950 tracking-wider">
                       D. Thẩm Định QLCM &amp; Kết Luận Tiếp Nhận Tuyển Sinh GĐCS
                     </h3>
                   </div>
@@ -995,7 +995,7 @@ export function StudentOrientationReportModal({
                       </span>
                     )}
 
-                    <span className="px-2 py-0.5 rounded-full bg-purple-100 text-purple-950 border border-purple-300 font-black text-[9.5px]">
+                    <span className="px-2 py-0.5 rounded-full bg-teal-100 text-teal-950 border border-teal-300 font-black text-[9.5px]">
                       {student?.admissionResult === "Đạt" ? "TIẾP NHẬN CHUẨN" : (student?.admissionResult || "TIẾP NHẬN CHUẨN")}
                     </span>
                   </div>
@@ -1008,7 +1008,7 @@ export function StudentOrientationReportModal({
                       {verificationInfo?.notes || "Hồ sơ phỏng vấn định hướng đầy đủ, đúng quy trình."}
                     </p>
                     {verificationInfo?.verifierName && (
-                      <span className="text-[9.5px] text-purple-800 italic block mt-0.5">
+                      <span className="text-[9.5px] text-teal-800 italic block mt-0.5">
                         Thẩm định bởi: {verificationInfo.verifierName} ({verificationInfo.verifiedAt ? new Date(verificationInfo.verifiedAt).toLocaleDateString("vi-VN") : ""})
                       </span>
                     )}

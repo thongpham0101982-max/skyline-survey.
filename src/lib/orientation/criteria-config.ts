@@ -2774,11 +2774,11 @@ export const ORIENTATION_RATING_OPTIONS: Record<
     code: "SPECIAL_ATTENTION",
     label: "Chưa đủ thông tin",
     subText: "Cần thêm thời gian tương tác hoặc xác minh chuyên môn bổ sung",
-    colorClass: "purple",
-    badgeClass: "bg-purple-100 text-purple-800 border-purple-300 font-bold",
-    bgClass: "bg-purple-50/70",
-    borderClass: "border-purple-400",
-    textClass: "text-purple-800"
+    colorClass: "slate",
+    badgeClass: "bg-slate-100 text-slate-800 border-slate-300 font-bold",
+    bgClass: "bg-slate-50/70",
+    borderClass: "border-slate-400",
+    textClass: "text-slate-800"
   }
 };
 

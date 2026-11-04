@@ -1108,12 +1108,12 @@ export function StudentOrientationModal({
 
   return (
     <div id="student-orientation-modal-root" className="fixed inset-0 z-[200] flex items-center justify-center p-2 sm:p-3 bg-slate-900/60 backdrop-blur-xs overflow-y-auto">
-      <div className="relative bg-white w-full max-w-[1320px] rounded-2xl shadow-2xl border border-purple-200 flex flex-col max-h-[96vh] overflow-hidden animate-in fade-in zoom-in-95 duration-200">
+      <div className="relative bg-white w-full max-w-[1320px] rounded-2xl shadow-2xl border border-teal-200 flex flex-col max-h-[96vh] overflow-hidden animate-in fade-in zoom-in-95 duration-200">
         
-        {/* HEADER GỌN CHUẨN THEO NHẬN DIỆN MÀU TÍM SKY-LINE */}
-        <div className="px-5 py-2.5 bg-gradient-to-r from-purple-950 via-purple-900 to-indigo-950 text-white flex flex-wrap items-center justify-between gap-3 border-b border-purple-800 flex-shrink-0">
+        {/* HEADER GỌN CHUẨN THEO NHẬN DIỆN MÀU XANH SKY-LINE */}
+        <div className="px-5 py-2.5 bg-gradient-to-r from-[#083d39] via-[#0b524d] to-[#0f6b64] text-white flex flex-wrap items-center justify-between gap-3 border-b border-teal-800 flex-shrink-0">
           <div className="flex items-center gap-2.5">
-            <div className="w-9 h-9 rounded-xl bg-gradient-to-br from-purple-500 to-indigo-600 text-white flex items-center justify-center shadow-sm border border-purple-400/40 flex-shrink-0">
+            <div className="w-9 h-9 rounded-xl bg-gradient-to-br from-teal-500 to-emerald-600 text-white flex items-center justify-center shadow-sm border border-teal-300/40 flex-shrink-0">
               <Compass className="w-5 h-5" />
             </div>
             <div>
@@ -1121,12 +1121,12 @@ export function StudentOrientationModal({
                 <h2 className="text-sm sm:text-base font-black text-white tracking-tight">
                   PHIẾU ĐỊNH HƯỚNG HỌC SINH &amp; TRAO ĐỔI PHHS
                 </h2>
-                <span className="px-2 py-0.5 rounded-full bg-purple-500/30 text-purple-100 border border-purple-400/40 text-[10px] font-bold">
+                <span className="px-2 py-0.5 rounded-full bg-teal-400/25 text-teal-50 border border-teal-300/40 text-[10px] font-bold">
                   {groupConfig.label}
                 </span>
-                <span className="hidden sm:inline text-[10px] text-purple-300 font-mono">v{formVersion}</span>
+                <span className="hidden sm:inline text-[10px] text-teal-200 font-mono">v{formVersion}</span>
               </div>
-              <p className="text-[11px] text-purple-200/90 leading-tight">
+              <p className="text-[11px] text-teal-100/90 leading-tight">
                 Trọng tâm: {groupConfig.focus}
               </p>
             </div>
@@ -1134,31 +1134,31 @@ export function StudentOrientationModal({
 
           <div className="flex flex-wrap items-center gap-2">
             {/* Ngày phỏng vấn & GV phỏng vấn trên thanh Header */}
-            <div className="hidden lg:flex items-center gap-2 bg-purple-900/70 border border-purple-700/70 rounded-xl px-2.5 py-1 text-[11px]">
-              <Calendar className="w-3.5 h-3.5 text-purple-300" />
-              <span className="text-purple-200">Ngày PV:</span>
+            <div className="hidden lg:flex items-center gap-2 bg-[#073330]/80 border border-teal-700/70 rounded-xl px-2.5 py-1 text-[11px]">
+              <Calendar className="w-3.5 h-3.5 text-teal-300" />
+              <span className="text-teal-100">Ngày PV:</span>
               <input
                 type="date"
                 value={interviewDate}
                 onChange={e => { setInterviewDate(e.target.value); markDirty(); }}
                 className="bg-transparent text-white font-bold text-[11px] focus:outline-none cursor-pointer"
               />
-              <span className="text-purple-600">|</span>
-              <span className="text-purple-200">GV:</span>
+              <span className="text-teal-600">|</span>
+              <span className="text-teal-100">GV:</span>
               <input
                 type="text"
                 placeholder="Nhập tên GV..."
                 value={interviewerName}
                 onChange={e => { setInterviewerName(e.target.value); markDirty(); }}
-                className="bg-white/10 hover:bg-white/15 focus:bg-white/20 text-white placeholder:text-purple-300/70 rounded px-2 py-0.5 text-[11px] font-bold focus:outline-none w-32"
+                className="bg-white/10 hover:bg-white/15 focus:bg-white/20 text-white placeholder:text-teal-200/70 rounded px-2 py-0.5 text-[11px] font-bold focus:outline-none w-32"
               />
             </div>
 
             {/* Trạng thái Auto-save */}
-            <div className="hidden xl:flex items-center gap-1.5 px-2.5 py-1 rounded-xl bg-purple-900/60 border border-purple-700/60 text-[11px] text-purple-200">
+            <div className="hidden xl:flex items-center gap-1.5 px-2.5 py-1 rounded-xl bg-[#073330]/70 border border-teal-700/60 text-[11px] text-teal-100">
               {saving ? (
                 <>
-                  <RefreshCw className="w-3 h-3 animate-spin text-purple-300" />
+                  <RefreshCw className="w-3 h-3 animate-spin text-teal-300" />
                   <span>Đang lưu...</span>
                 </>
               ) : hasUnsavedChanges ? (
@@ -1183,7 +1183,7 @@ export function StudentOrientationModal({
             <button
               type="button"
               onClick={() => setIsPsychModalOpen(true)}
-              className="flex items-center gap-1 px-2.5 py-1.5 rounded-xl text-[11px] font-bold transition-all cursor-pointer bg-purple-800/80 hover:bg-purple-700 text-purple-100 border border-purple-600"
+              className="flex items-center gap-1 px-2.5 py-1.5 rounded-xl text-[11px] font-bold transition-all cursor-pointer bg-teal-800/90 hover:bg-teal-700 text-teal-50 border border-teal-500/60"
             >
               <Brain className="w-3.5 h-3.5" />
               <span>{psychologyReferralStatus === "REQUESTED" ? "Đã Đề Xuất Tâm Lý" : "Khảo sát Tâm lý"}</span>
@@ -1203,7 +1203,7 @@ export function StudentOrientationModal({
             <button
               type="button"
               onClick={handleViewReport}
-              className="flex items-center gap-1 px-2.5 py-1.5 bg-white/10 hover:bg-white/20 text-purple-100 hover:text-white border border-purple-400/40 rounded-xl text-[11px] font-bold transition-all cursor-pointer"
+              className="flex items-center gap-1 px-2.5 py-1.5 bg-white/10 hover:bg-white/20 text-teal-50 hover:text-white border border-teal-400/40 rounded-xl text-[11px] font-bold transition-all cursor-pointer"
             >
               <Printer className="w-3.5 h-3.5" />
               <span>Xem &amp; In A4</span>
@@ -1212,7 +1212,7 @@ export function StudentOrientationModal({
             <button
               type="button"
               onClick={onClose}
-              className="p-1.5 text-purple-300 hover:text-white hover:bg-white/10 rounded-xl transition-all cursor-pointer"
+              className="p-1.5 text-teal-200 hover:text-white hover:bg-white/10 rounded-xl transition-all cursor-pointer"
             >
               <X className="w-4 h-4" />
             </button>
@@ -1223,7 +1223,7 @@ export function StudentOrientationModal({
         <div className="bg-slate-50 border-b border-slate-200 px-4 py-2 flex-shrink-0">
           <div className="flex flex-wrap items-center justify-between gap-2 mb-1.5">
             <div className="flex items-center gap-2">
-              <span className="px-2 py-0.5 rounded bg-purple-700 text-white text-[10px] font-black uppercase tracking-wider">
+              <span className="px-2.5 py-0.5 rounded-md bg-[#0b524d] text-white text-[10px] font-black uppercase tracking-wider shadow-2xs">
                 Thông tin Học sinh
               </span>
               <span className="text-[11px] text-slate-500 font-medium hidden sm:inline">
@@ -1251,10 +1251,10 @@ export function StudentOrientationModal({
             </div>
           </div>
 
-          <div className="overflow-x-auto border border-slate-200/90 rounded-xl bg-white shadow-2xs">
+          <div className="overflow-x-auto border border-teal-200/80 rounded-xl bg-white shadow-2xs">
             <table className="w-full text-left border-collapse text-[11.5px]">
               <thead>
-                <tr className="bg-purple-50/80 text-[10px] font-black uppercase text-purple-950 border-b border-purple-100 whitespace-nowrap">
+                <tr className="bg-teal-50/80 text-[10px] font-black uppercase text-[#083d39] border-b border-teal-100 whitespace-nowrap">
                   <th className="py-1.5 px-2.5 border-r border-slate-200/70">1. Mã HS</th>
                   <th className="py-1.5 px-2.5 border-r border-slate-200/70">2. Họ và tên</th>
                   <th className="py-1.5 px-2.5 border-r border-slate-200/70">3. Ngày sinh / Phái</th>
@@ -1274,14 +1274,14 @@ export function StudentOrientationModal({
                   <td className="py-1.5 px-2.5 border-r border-slate-100 font-mono font-bold text-slate-900">
                     {studentDetail?.studentCode || student?.studentCode || "—"}
                   </td>
-                  <td className="py-1.5 px-2.5 border-r border-slate-100 font-black text-purple-950">
+                  <td className="py-1.5 px-2.5 border-r border-slate-100 font-black text-[#083d39]">
                     {studentDetail?.fullName || student?.fullName || "—"}
                   </td>
                   <td className="py-1.5 px-2.5 border-r border-slate-100 text-slate-700">
                     {dobDisplay} <span className="text-slate-400">&bull;</span> <span className="font-semibold">{gender}</span>
                   </td>
                   <td className="py-1.5 px-2.5 border-r border-slate-100">
-                    <span className="px-2 py-0.5 rounded bg-purple-100 text-purple-900 font-bold text-[11px]">
+                    <span className="px-2 py-0.5 rounded bg-teal-50 text-teal-900 border border-teal-200 font-bold text-[11px]">
                       {groupConfig.label}
                     </span>
                   </td>
@@ -1338,61 +1338,61 @@ export function StudentOrientationModal({
           </div>
         )}
 
-        {/* THANH ĐIỀU HƯỚNG 3 PHẦN CHÍNH: A - B - C */}
-        <div className="px-4 bg-white border-b border-slate-200 flex items-center justify-between gap-2 flex-shrink-0">
-          <div className="flex items-center gap-1.5 overflow-x-auto">
-            {/* TAB A: PHỎNG VẤN HỌC SINH */}
+        {/* THANH ĐIỀU HƯỚNG THẺ TAG MÀU XANH SKY-LINE CHUẨN GỌN */}
+        <div className="px-4 py-2 bg-white border-b border-slate-200 flex flex-wrap items-center justify-between gap-2 flex-shrink-0">
+          <div className="flex items-center gap-2 overflow-x-auto">
+            {/* TAG A: PHỎNG VẤN ĐỊNH HƯỚNG HỌC SINH */}
             <button
               type="button"
               onClick={() => setActiveTab("tab1")}
-              className={`flex items-center gap-2 px-4 py-2.5 border-b-2 font-black text-xs transition-all cursor-pointer whitespace-nowrap ${
+              className={`flex items-center gap-2 px-3.5 py-2 rounded-xl font-black text-xs transition-all cursor-pointer whitespace-nowrap border ${
                 activeTab === "tab1"
-                  ? "border-purple-700 text-purple-950 bg-purple-50/80 rounded-t-lg"
-                  : "border-transparent text-slate-600 hover:text-purple-800 hover:bg-slate-50 rounded-t-lg"
+                  ? "bg-gradient-to-r from-[#0b524d] to-[#0f6b64] text-white border-[#083d39] shadow-sm"
+                  : "bg-slate-50 text-slate-700 border-slate-200 hover:bg-teal-50/70 hover:text-[#083d39] hover:border-teal-300"
               }`}
             >
-              <UserCheck className={`w-3.5 h-3.5 ${activeTab === "tab1" ? "text-purple-700" : "text-slate-400"}`} />
+              <UserCheck className={`w-3.5 h-3.5 ${activeTab === "tab1" ? "text-teal-200" : "text-teal-700"}`} />
               <span>A. Phỏng Vấn Định Hướng Học Sinh</span>
-              <span className={`px-1.5 py-0.2 rounded-full text-[10px] font-black ${
-                activeTab === "tab1" ? "bg-purple-700 text-white" : "bg-purple-100 text-purple-800"
+              <span className={`px-2 py-0.5 rounded-full text-[10px] font-bold ${
+                activeTab === "tab1" ? "bg-white/20 text-white border border-white/25" : "bg-teal-100/80 text-teal-900"
               }`}>
-                10 nhóm
+                10 nhóm chuẩn hóa
               </span>
             </button>
 
-            {/* TAB B: TRAO ĐỔI PHỤ HUYNH */}
+            {/* TAG B: TRAO ĐỔI ĐỊNH HƯỚNG VỚI PHỤ HUYNH */}
             <button
               type="button"
               onClick={() => setActiveTab("tab2")}
-              className={`flex items-center gap-2 px-4 py-2.5 border-b-2 font-black text-xs transition-all cursor-pointer whitespace-nowrap ${
+              className={`flex items-center gap-2 px-3.5 py-2 rounded-xl font-black text-xs transition-all cursor-pointer whitespace-nowrap border ${
                 activeTab === "tab2"
-                  ? "border-purple-700 text-purple-950 bg-purple-50/80 rounded-t-lg"
-                  : "border-transparent text-slate-600 hover:text-purple-800 hover:bg-slate-50 rounded-t-lg"
+                  ? "bg-gradient-to-r from-[#0b524d] to-[#0f6b64] text-white border-[#083d39] shadow-sm"
+                  : "bg-slate-50 text-slate-700 border-slate-200 hover:bg-teal-50/70 hover:text-[#083d39] hover:border-teal-300"
               }`}
             >
-              <Users className={`w-3.5 h-3.5 ${activeTab === "tab2" ? "text-purple-700" : "text-slate-400"}`} />
+              <Users className={`w-3.5 h-3.5 ${activeTab === "tab2" ? "text-teal-200" : "text-teal-700"}`} />
               <span>B. Trao Đổi Định Hướng Với Phụ Huynh</span>
-              <span className={`px-1.5 py-0.2 rounded-full text-[10px] font-black ${
-                activeTab === "tab2" ? "bg-purple-700 text-white" : "bg-purple-100 text-purple-800"
+              <span className={`px-2 py-0.5 rounded-full text-[10px] font-bold ${
+                activeTab === "tab2" ? "bg-white/20 text-white border border-white/25" : "bg-teal-100/80 text-teal-900"
               }`}>
-                5 nhóm
+                5 nhóm nội dung
               </span>
             </button>
 
-            {/* TAB C: TỔNG HỢP NHẬN DIỆN & THẨM ĐỊNH */}
+            {/* TAG C: TỔNG HỢP NHẬN DIỆN & THẨM ĐỊNH */}
             <button
               type="button"
               onClick={() => setActiveTab("tab3")}
-              className={`flex items-center gap-2 px-4 py-2.5 border-b-2 font-black text-xs transition-all cursor-pointer whitespace-nowrap ${
+              className={`flex items-center gap-2 px-3.5 py-2 rounded-xl font-black text-xs transition-all cursor-pointer whitespace-nowrap border ${
                 activeTab === "tab3"
-                  ? "border-purple-700 text-purple-950 bg-purple-50/80 rounded-t-lg"
-                  : "border-transparent text-slate-600 hover:text-purple-800 hover:bg-slate-50 rounded-t-lg"
+                  ? "bg-gradient-to-r from-[#0b524d] to-[#0f6b64] text-white border-[#083d39] shadow-sm"
+                  : "bg-slate-50 text-slate-700 border-slate-200 hover:bg-teal-50/70 hover:text-[#083d39] hover:border-teal-300"
               }`}
             >
-              <FileCheck className={`w-3.5 h-3.5 ${activeTab === "tab3" ? "text-purple-700" : "text-slate-400"}`} />
+              <FileCheck className={`w-3.5 h-3.5 ${activeTab === "tab3" ? "text-teal-200" : "text-teal-700"}`} />
               <span>C. Tổng Hợp Nhận Diện &amp; Thẩm Định</span>
-              <span className={`px-1.5 py-0.2 rounded-full text-[10px] font-black ${
-                activeTab === "tab3" ? "bg-purple-700 text-white" : "bg-purple-100 text-purple-800"
+              <span className={`px-2 py-0.5 rounded-full text-[10px] font-bold ${
+                activeTab === "tab3" ? "bg-white/20 text-white border border-white/25" : "bg-teal-100/80 text-teal-900"
               }`}>
                 9 mục &bull; QLCM &bull; GĐCS
               </span>
@@ -1408,7 +1408,7 @@ export function StudentOrientationModal({
               <button
                 type="button"
                 onClick={toggleAllAccordionA}
-                className="text-[11px] font-bold text-purple-700 hover:text-purple-900 bg-purple-50 hover:bg-purple-100 border border-purple-200 px-2.5 py-1 rounded-lg cursor-pointer transition-all"
+                className="text-[11px] font-bold text-[#0b524d] hover:text-[#083d39] bg-teal-50 hover:bg-teal-100 border border-teal-200 px-2.5 py-1 rounded-lg cursor-pointer transition-all"
               >
                 {allExpandedA ? "Thu gọn tất cả" : "Mở tất cả 10 mục"}
               </button>
@@ -1420,7 +1420,7 @@ export function StudentOrientationModal({
         <div className="flex-1 overflow-y-auto p-4 space-y-3 bg-slate-50/60 custom-scrollbar">
           {loading ? (
             <div className="py-20 text-center space-y-3">
-              <RefreshCw className="w-7 h-7 animate-spin mx-auto text-purple-700" />
+              <RefreshCw className="w-7 h-7 animate-spin mx-auto text-teal-700" />
               <p className="text-xs font-bold text-slate-500">Đang chuẩn bị bộ câu hỏi phân hóa cho {groupConfig.label}...</p>
             </div>
           ) : activeTab === "tab1" ? (
@@ -1441,21 +1441,21 @@ export function StudentOrientationModal({
                       hasError
                         ? "border-rose-400 ring-2 ring-rose-200 bg-rose-50/20"
                         : isOpenAcc
-                        ? "border-purple-300"
-                        : "border-slate-200 hover:border-purple-200"
+                        ? "border-teal-300"
+                        : "border-slate-200 hover:border-teal-200"
                     }`}
                   >
                     {/* Tiêu đề Accordion Header Gọn */}
                     <div
                       onClick={() => toggleAccordionA(q.id)}
-                      className="px-3.5 py-2.5 flex items-center justify-between gap-3 cursor-pointer select-none bg-slate-50/60 rounded-t-xl hover:bg-purple-50/40 transition-all"
+                      className="px-3.5 py-2.5 flex items-center justify-between gap-3 cursor-pointer select-none bg-slate-50/60 rounded-t-xl hover:bg-teal-50/40 transition-all"
                     >
                       <div className="flex items-center gap-2.5 min-w-0">
-                        <span className="w-6 h-6 rounded-lg bg-purple-100 text-purple-900 flex items-center justify-center font-black text-xs flex-shrink-0">
+                        <span className="w-6 h-6 rounded-lg bg-[#0b524d] text-white flex items-center justify-center font-black text-xs flex-shrink-0">
                           {idx + 1}
                         </span>
                         <div className="flex flex-wrap items-center gap-x-2 gap-y-0.5 min-w-0">
-                          <span className="font-mono text-[10px] font-bold text-purple-700 bg-purple-50 border border-purple-200 px-1.5 py-0.2 rounded">
+                          <span className="font-mono text-[10px] font-bold text-teal-800 bg-teal-50 border border-teal-200 px-1.5 py-0.2 rounded">
                             {q.code}
                           </span>
                           <span className="text-xs font-black text-slate-900">
@@ -1476,7 +1476,7 @@ export function StudentOrientationModal({
                         <span className={`px-2 py-0.5 rounded-lg text-[10.5px] border font-bold ${ORIENTATION_RATING_OPTIONS[ans.rating]?.badgeClass || "bg-slate-100 text-slate-700"}`}>
                           {ORIENTATION_RATING_OPTIONS[ans.rating]?.label || "Đang hình thành"}
                         </span>
-                        <div className="w-5 h-5 rounded text-slate-400 hover:text-purple-700 flex items-center justify-center">
+                        <div className="w-5 h-5 rounded text-slate-400 hover:text-teal-700 flex items-center justify-center">
                           {isOpenAcc ? <ChevronUp className="w-4 h-4" /> : <ChevronDown className="w-4 h-4" />}
                         </div>
                       </div>
@@ -1485,17 +1485,17 @@ export function StudentOrientationModal({
                     {/* Nội dung chi tiết câu hỏi (Thiết kế 2 cột Gọn & Nhanh) */}
                     {isOpenAcc && (
                       <div className="p-3.5 pt-2.5 border-t border-slate-100 space-y-2.5">
-                        {/* Thanh hướng dẫn + Nút xem câu hỏi gợi mở + Chọn nhanh 4 mức & Nguồn minh chứng */}
-                        <div className="flex flex-wrap items-center justify-between gap-2 bg-purple-50/40 px-3 py-1.5 rounded-lg border border-purple-100 text-[11px]">
+                        {/* Thanh hướng dẫn + Nút xem câu hỏi gợi mở */}
+                        <div className="flex flex-wrap items-center justify-between gap-2 bg-teal-50/40 px-3 py-1.5 rounded-lg border border-teal-100 text-[11px]">
                           <div className="text-slate-700">
-                            <strong className="text-purple-900">Trọng tâm cần tìm hiểu: </strong>
+                            <strong className="text-[#083d39]">Trọng tâm cần tìm hiểu: </strong>
                             <span>{q.focus || q.suggestedGuideline}</span>
                           </div>
                           {qHints.length > 0 && (
                             <button
                               type="button"
                               onClick={() => toggleHint(q.id)}
-                              className="flex items-center gap-1 text-[11px] font-bold text-purple-700 hover:text-purple-900 hover:underline cursor-pointer"
+                              className="flex items-center gap-1 text-[11px] font-bold text-teal-700 hover:text-teal-900 hover:underline cursor-pointer"
                             >
                               <HelpCircle className="w-3.5 h-3.5" />
                               <span>{isHintOpen ? "Ẩn câu hỏi gợi mở" : `Câu hỏi gợi mở (${qHints.length})`}</span>
@@ -1504,7 +1504,7 @@ export function StudentOrientationModal({
                         </div>
 
                         {isHintOpen && qHints.length > 0 && (
-                          <div className="px-3 py-2 bg-indigo-50/50 rounded-lg border border-indigo-200 text-xs text-indigo-950">
+                          <div className="px-3 py-2 bg-teal-50/60 rounded-lg border border-teal-200 text-xs text-teal-950">
                             <ul className="list-disc pl-4 space-y-0.5 text-slate-800 text-[11px]">
                               {qHints.map((hint, hIdx) => (
                                 <li key={hIdx}>{hint}</li>
@@ -1528,7 +1528,7 @@ export function StudentOrientationModal({
                                   title={opt.subText}
                                   className={`px-2.5 py-1 rounded-lg text-[11px] font-bold border transition-all cursor-pointer flex items-center gap-1 ${
                                     isSelected
-                                      ? `${opt.borderClass} ${opt.bgClass} ${opt.textClass} ring-1 ring-purple-300 shadow-2xs`
+                                      ? `${opt.borderClass} ${opt.bgClass} ${opt.textClass} ring-1 ring-teal-400 shadow-2xs`
                                       : "border-slate-200 hover:border-slate-300 bg-white text-slate-700"
                                   }`}
                                 >
@@ -1551,7 +1551,7 @@ export function StudentOrientationModal({
                                   onClick={() => handleEvidenceSourceChange(q.id, sCode)}
                                   className={`px-2 py-1 rounded-lg text-[10.5px] font-bold border transition-all cursor-pointer ${
                                     isSelected
-                                      ? "border-purple-600 bg-purple-50 text-purple-950 ring-1 ring-purple-200"
+                                      ? "border-teal-600 bg-teal-50 text-[#083d39] ring-1 ring-teal-200"
                                       : "border-slate-200 hover:border-slate-300 bg-white text-slate-600"
                                   }`}
                                 >
@@ -1568,7 +1568,7 @@ export function StudentOrientationModal({
                           <div className="space-y-1">
                             <div className="flex items-center justify-between text-[11px]">
                               <label className="font-bold text-slate-800 flex items-center gap-1">
-                                <Smile className="w-3.5 h-3.5 text-purple-600" />
+                                <Smile className="w-3.5 h-3.5 text-teal-600" />
                                 <span>Câu trả lời / Chia sẻ thực tế của học sinh:</span>
                               </label>
                             </div>
@@ -1577,7 +1577,7 @@ export function StudentOrientationModal({
                               value={ans.studentNotes || ""}
                               onChange={e => handleStudentNotesChange(q.id, e.target.value)}
                               placeholder="Ghi nhận chia sẻ tự nhiên của học sinh..."
-                              className="w-full text-xs p-2.5 rounded-xl border border-slate-300 focus:border-purple-600 focus:ring-2 focus:ring-purple-100 transition-all text-slate-900 bg-white"
+                              className="w-full text-xs p-2.5 rounded-xl border border-slate-300 focus:border-teal-600 focus:ring-2 focus:ring-teal-100 transition-all text-slate-900 bg-white"
                             />
                           </div>
 
@@ -1594,7 +1594,7 @@ export function StudentOrientationModal({
                                 type="button"
                                 onClick={() => handleAiDraftComment(q)}
                                 disabled={aiCommentLoading[q.id]}
-                                className="flex items-center gap-1 text-[10.5px] font-bold text-purple-700 hover:text-purple-900 bg-purple-50 hover:bg-purple-100 border border-purple-200 px-2 py-0.5 rounded-md transition-all cursor-pointer"
+                                className="flex items-center gap-1 text-[10.5px] font-bold text-teal-800 hover:text-teal-950 bg-teal-50 hover:bg-teal-100 border border-teal-200 px-2 py-0.5 rounded-md transition-all cursor-pointer"
                               >
                                 {aiCommentLoading[q.id] ? (
                                   <>
@@ -1603,7 +1603,7 @@ export function StudentOrientationModal({
                                   </>
                                 ) : (
                                   <>
-                                    <Sparkles className="w-3 h-3 text-purple-600" />
+                                    <Sparkles className="w-3 h-3 text-teal-600" />
                                     <span>AI Gợi ý nhận xét</span>
                                   </>
                                 )}
@@ -1617,7 +1617,7 @@ export function StudentOrientationModal({
                               className={`w-full text-xs p-2.5 rounded-xl border transition-all text-slate-900 bg-white ${
                                 hasError
                                   ? "border-rose-400 focus:border-rose-600 focus:ring-2 focus:ring-rose-200"
-                                  : "border-slate-300 focus:border-purple-600 focus:ring-2 focus:ring-purple-100"
+                                  : "border-slate-300 focus:border-teal-600 focus:ring-2 focus:ring-teal-100"
                               }`}
                             />
                           </div>
@@ -1625,15 +1625,15 @@ export function StudentOrientationModal({
 
                         {/* Hộp gợi ý nhận xét từ AI */}
                         {showAiDraftBox[q.id] && aiDraftComments[q.id] && (
-                          <div className="p-2.5 bg-purple-50/70 border border-purple-300 rounded-xl flex items-center justify-between gap-3 text-xs text-purple-950">
+                          <div className="p-2.5 bg-teal-50/70 border border-teal-300 rounded-xl flex items-center justify-between gap-3 text-xs text-teal-950">
                             <p className="text-slate-800 italic flex-1">
-                              <strong className="text-purple-900 not-italic mr-1">Gợi ý AI:</strong>
+                              <strong className="text-[#083d39] not-italic mr-1">Gợi ý AI:</strong>
                               &quot;{aiDraftComments[q.id]}&quot;
                             </p>
                             <button
                               type="button"
                               onClick={() => handleApplyAiComment(q.id)}
-                              className="px-2.5 py-1 bg-purple-700 hover:bg-purple-800 text-white rounded-lg font-bold text-[11px] cursor-pointer flex-shrink-0"
+                              className="px-2.5 py-1 bg-[#0b524d] hover:bg-[#083d39] text-white rounded-lg font-bold text-[11px] cursor-pointer flex-shrink-0"
                             >
                               Áp dụng
                             </button>
@@ -1650,7 +1650,7 @@ export function StudentOrientationModal({
                 <button
                   type="button"
                   onClick={() => setActiveTab("tab2")}
-                  className="flex items-center gap-2 px-4 py-2 bg-purple-700 hover:bg-purple-800 text-white rounded-xl text-xs font-bold shadow-sm cursor-pointer transition-all"
+                  className="flex items-center gap-2 px-4 py-2 bg-[#0b524d] hover:bg-[#083d39] text-white rounded-xl text-xs font-bold shadow-sm cursor-pointer transition-all"
                 >
                   <span>Tiếp tục: B. Trao Đổi Định Hướng Với Phụ Huynh</span>
                   <ArrowRight className="w-4 h-4" />
@@ -1661,7 +1661,7 @@ export function StudentOrientationModal({
             /* TAB B: TRAO ĐỔI ĐỊNH HƯỚNG VỚI PHỤ HUYNH (5 NHÓM NỘI DUNG GỌN CHUẨN) */
             <div className="space-y-3">
               {/* Thanh thông tin đại diện PHHS gọn trên 1 hàng */}
-              <div className="p-3 bg-white rounded-xl border border-indigo-200 shadow-2xs flex flex-wrap items-center justify-between gap-3 text-xs">
+              <div className="p-3 bg-white rounded-xl border border-teal-200 shadow-2xs flex flex-wrap items-center justify-between gap-3 text-xs">
                 <div className="flex flex-wrap items-center gap-3 flex-1">
                   <div className="flex items-center gap-2 flex-1 min-w-[240px]">
                     <span className="font-bold text-slate-700 whitespace-nowrap">Người đại diện PHHS:</span>
@@ -1670,7 +1670,7 @@ export function StudentOrientationModal({
                       value={parentRepresentativeName}
                       onChange={e => { setParentRepresentativeName(e.target.value); markDirty(); }}
                       placeholder="Ví dụ: Bố Nguyễn Văn A / Mẹ Lê Thị B"
-                      className="flex-1 text-xs px-2.5 py-1.5 rounded-lg border border-slate-300 focus:border-indigo-600 focus:outline-none text-slate-900 bg-white font-semibold"
+                      className="flex-1 text-xs px-2.5 py-1.5 rounded-lg border border-slate-300 focus:border-teal-600 focus:outline-none text-slate-900 bg-white font-semibold"
                     />
                   </div>
                   <div className="flex items-center gap-2 min-w-[200px]">
@@ -1680,7 +1680,7 @@ export function StudentOrientationModal({
                       value={parentPhone}
                       onChange={e => { setParentPhone(e.target.value); markDirty(); }}
                       placeholder="0905xxxxxx"
-                      className="w-36 text-xs px-2.5 py-1.5 rounded-lg border border-slate-300 focus:border-indigo-600 focus:outline-none text-slate-900 bg-white font-mono font-semibold"
+                      className="w-36 text-xs px-2.5 py-1.5 rounded-lg border border-slate-300 focus:border-teal-600 focus:outline-none text-slate-900 bg-white font-mono font-semibold"
                     />
                   </div>
                 </div>
@@ -1696,13 +1696,13 @@ export function StudentOrientationModal({
                   const hints: string[] = pGroup.suggestedQuestions || []
 
                   return (
-                    <div key={pGroup.id} className="bg-white rounded-xl border border-indigo-200/90 shadow-2xs p-3.5 space-y-2.5">
+                    <div key={pGroup.id} className="bg-white rounded-xl border border-teal-200/90 shadow-2xs p-3.5 space-y-2.5">
                       <div className="flex flex-wrap items-center justify-between gap-2">
                         <div className="flex items-center gap-2">
-                          <span className="w-6 h-6 rounded-lg bg-indigo-100 text-indigo-900 flex items-center justify-center font-black text-xs flex-shrink-0">
+                          <span className="w-6 h-6 rounded-lg bg-[#0b524d] text-white flex items-center justify-center font-black text-xs flex-shrink-0">
                             {pIdx + 1}
                           </span>
-                          <span className="text-[10px] font-mono font-bold text-indigo-700 bg-indigo-50 border border-indigo-200 px-1.5 py-0.2 rounded">
+                          <span className="text-[10px] font-mono font-bold text-teal-800 bg-teal-50 border border-teal-200 px-1.5 py-0.2 rounded">
                             {pGroup.code}
                           </span>
                           <h4 className="text-xs font-black text-slate-900">
@@ -1710,7 +1710,7 @@ export function StudentOrientationModal({
                           </h4>
                         </div>
                         {hints.length > 0 && (
-                          <span className="text-[11px] text-indigo-700 font-medium">
+                          <span className="text-[11px] text-teal-800 font-medium">
                             Gợi mở: {hints.join(" • ")}
                           </span>
                         )}
@@ -1727,7 +1727,7 @@ export function StudentOrientationModal({
                             value={pAns.answer || ""}
                             onChange={e => handleParentAnswerChange(pGroup.id, "answer", e.target.value)}
                             placeholder={pGroup.placeholder || "Ghi nhận ý kiến chia sẻ của phụ huynh..."}
-                            className="w-full text-xs p-2.5 rounded-xl border border-slate-300 focus:border-indigo-600 focus:ring-2 focus:ring-indigo-100 transition-all text-slate-900 bg-white"
+                            className="w-full text-xs p-2.5 rounded-xl border border-slate-300 focus:border-teal-600 focus:ring-2 focus:ring-teal-100 transition-all text-slate-900 bg-white"
                           />
                         </div>
 
@@ -1741,7 +1741,7 @@ export function StudentOrientationModal({
                             value={pAns.teacherNote || ""}
                             onChange={e => handleParentAnswerChange(pGroup.id, "teacherNote", e.target.value)}
                             placeholder="Nhận xét mức độ đồng thuận, lưu ý phối hợp..."
-                            className="w-full text-xs p-2.5 rounded-xl border border-slate-300 focus:border-indigo-600 focus:ring-2 focus:ring-indigo-100 text-slate-900 bg-white"
+                            className="w-full text-xs p-2.5 rounded-xl border border-slate-300 focus:border-teal-600 focus:ring-2 focus:ring-teal-100 text-slate-900 bg-white"
                           />
                         </div>
                       </div>
@@ -1764,7 +1764,7 @@ export function StudentOrientationModal({
                 <button
                   type="button"
                   onClick={() => setActiveTab("tab3")}
-                  className="flex items-center gap-2 px-4 py-2 bg-purple-700 hover:bg-purple-800 text-white rounded-xl text-xs font-bold shadow-sm cursor-pointer transition-all"
+                  className="flex items-center gap-2 px-4 py-2 bg-[#0b524d] hover:bg-[#083d39] text-white rounded-xl text-xs font-bold shadow-sm cursor-pointer transition-all"
                 >
                   <span>Tiếp tục: C. Tổng Hợp Nhận Diện &amp; Thẩm Định</span>
                   <ArrowRight className="w-4 h-4" />
@@ -1775,10 +1775,10 @@ export function StudentOrientationModal({
             /* TAB C: TỔNG HỢP NHẬN DIỆN & THẨM ĐỊNH (9 MỤC NỘI DUNG + QLCM + GĐCS) */
             <div className="space-y-4">
               {/* Thanh tiêu đề Phần C & Nút AI Tổng hợp */}
-              <div className="bg-white p-3.5 rounded-xl border border-purple-200 shadow-2xs flex flex-wrap items-center justify-between gap-3">
+              <div className="bg-white p-3.5 rounded-xl border border-teal-200 shadow-2xs flex flex-wrap items-center justify-between gap-3">
                 <div>
-                  <h3 className="text-xs font-black uppercase text-purple-950 tracking-wide flex items-center gap-2">
-                    <FileCheck className="w-4 h-4 text-purple-700" />
+                  <h3 className="text-xs font-black uppercase text-[#083d39] tracking-wide flex items-center gap-2">
+                    <FileCheck className="w-4 h-4 text-teal-700" />
                     <span>C. Tổng Hợp Nhận Diện &amp; Định Hướng Ban Đầu (9 Mục Chuẩn Hóa)</span>
                   </h3>
                   <p className="text-[11px] text-slate-500 mt-0.5">
@@ -1808,11 +1808,11 @@ export function StudentOrientationModal({
 
               {/* DRAWER DỰ THẢO TỔNG HỢP AI */}
               {showAiSummaryDrawer && aiSummaryData && (
-                <div className="p-4 bg-gradient-to-r from-purple-50 via-indigo-50 to-white rounded-xl border-2 border-purple-300 shadow-sm space-y-3">
-                  <div className="flex items-center justify-between border-b border-purple-200 pb-2">
+                <div className="p-4 bg-gradient-to-r from-teal-50 via-emerald-50/60 to-white rounded-xl border-2 border-teal-300 shadow-sm space-y-3">
+                  <div className="flex items-center justify-between border-b border-teal-200 pb-2">
                     <div className="flex items-center gap-2">
-                      <Sparkles className="w-4 h-4 text-purple-700" />
-                      <h4 className="text-xs font-black text-purple-950 uppercase">
+                      <Sparkles className="w-4 h-4 text-teal-700" />
+                      <h4 className="text-xs font-black text-[#083d39] uppercase">
                         Dự Thảo Tổng Hợp Từ Sky-Line AI (9 Mục)
                       </h4>
                     </div>
@@ -1820,7 +1820,7 @@ export function StudentOrientationModal({
                       <button
                         type="button"
                         onClick={handleApplyAiSummaryAll}
-                        className="px-3 py-1 bg-purple-700 hover:bg-purple-800 text-white font-bold text-xs rounded-lg cursor-pointer"
+                        className="px-3 py-1 bg-[#0b524d] hover:bg-[#083d39] text-white font-bold text-xs rounded-lg cursor-pointer"
                       >
                         Áp dụng toàn bộ vào 9 mục
                       </button>
@@ -1835,16 +1835,16 @@ export function StudentOrientationModal({
                   </div>
 
                   <div className="grid grid-cols-1 sm:grid-cols-3 gap-2.5 text-xs">
-                    <div className="p-2 bg-white rounded-lg border border-purple-200">
-                      <span className="font-bold text-purple-900 block">1. Điểm mạnh nổi bật:</span>
+                    <div className="p-2 bg-white rounded-lg border border-teal-200">
+                      <span className="font-bold text-[#083d39] block">1. Điểm mạnh nổi bật:</span>
                       <p className="text-slate-700 text-[11px] italic">{aiSummaryData.strongPoints || aiSummaryData.diemManhNoiBat}</p>
                     </div>
-                    <div className="p-2 bg-white rounded-lg border border-purple-200">
-                      <span className="font-bold text-purple-900 block">2. Sở thích &amp; Động lực:</span>
+                    <div className="p-2 bg-white rounded-lg border border-teal-200">
+                      <span className="font-bold text-[#083d39] block">2. Sở thích &amp; Động lực:</span>
                       <p className="text-slate-700 text-[11px] italic">{aiSummaryData.interestsMotivation || "Học sinh hào hứng tham gia hoạt động học tập."}</p>
                     </div>
-                    <div className="p-2 bg-white rounded-lg border border-purple-200">
-                      <span className="font-bold text-purple-900 block">3. Khả năng thích nghi:</span>
+                    <div className="p-2 bg-white rounded-lg border border-teal-200">
+                      <span className="font-bold text-[#083d39] block">3. Khả năng thích nghi:</span>
                       <p className="text-slate-700 text-[11px] italic">{aiSummaryData.adaptabilityAutonomy || aiSummaryData.khaNangThichNghi}</p>
                     </div>
                   </div>
@@ -1905,8 +1905,8 @@ export function StudentOrientationModal({
                   />
                 </div>
 
-                <div className="p-3 bg-white rounded-xl border border-purple-200 shadow-2xs space-y-1">
-                  <label className="font-bold text-purple-950 block text-xs">
+                <div className="p-3 bg-white rounded-xl border border-teal-200 shadow-2xs space-y-1">
+                  <label className="font-bold text-[#083d39] block text-xs">
                     5. Kỳ vọng của học sinh tại Sky-Line:
                   </label>
                   <textarea
@@ -1914,12 +1914,12 @@ export function StudentOrientationModal({
                     value={summary9.studentExpectations}
                     onChange={e => handleSummary9Change("studentExpectations", e.target.value)}
                     placeholder="Mong muốn trải nghiệm, câu lạc bộ, bạn bè..."
-                    className="w-full text-xs p-2 rounded-lg border border-purple-200 focus:border-purple-600 focus:outline-none text-slate-900 bg-purple-50/20"
+                    className="w-full text-xs p-2 rounded-lg border border-teal-200 focus:border-teal-600 focus:outline-none text-slate-900 bg-teal-50/20"
                   />
                 </div>
 
-                <div className="p-3 bg-white rounded-xl border border-indigo-200 shadow-2xs space-y-1">
-                  <label className="font-bold text-indigo-950 block text-xs">
+                <div className="p-3 bg-white rounded-xl border border-cyan-200 shadow-2xs space-y-1">
+                  <label className="font-bold text-cyan-950 block text-xs">
                     6. Kỳ vọng của phụ huynh đối với học sinh:
                   </label>
                   <textarea
@@ -1927,7 +1927,7 @@ export function StudentOrientationModal({
                     value={summary9.parentExpectations}
                     onChange={e => handleSummary9Change("parentExpectations", e.target.value)}
                     placeholder="Mục tiêu phát triển kỹ năng, học thuật và nhân cách..."
-                    className="w-full text-xs p-2 rounded-lg border border-indigo-200 focus:border-indigo-600 focus:outline-none text-slate-900 bg-indigo-50/20"
+                    className="w-full text-xs p-2 rounded-lg border border-cyan-200 focus:border-cyan-600 focus:outline-none text-slate-900 bg-cyan-50/20"
                   />
                 </div>
 
@@ -1957,8 +1957,8 @@ export function StudentOrientationModal({
                   />
                 </div>
 
-                <div className="p-3 bg-white rounded-xl border border-purple-300 shadow-2xs space-y-1">
-                  <label className="font-bold text-purple-950 block text-xs">
+                <div className="p-3 bg-white rounded-xl border border-teal-300 shadow-2xs space-y-1">
+                  <label className="font-bold text-[#083d39] block text-xs">
                     9. Nội dung cần xác minh / trao đổi thêm:
                   </label>
                   <textarea
@@ -1966,7 +1966,7 @@ export function StudentOrientationModal({
                     value={summary9.verificationItems}
                     onChange={e => handleSummary9Change("verificationItems", e.target.value)}
                     placeholder="Hồ sơ học bạ, lưu ý sức khỏe/tâm lý cần xem xét..."
-                    className="w-full text-xs p-2 rounded-lg border border-purple-200 focus:border-purple-600 focus:outline-none text-slate-900 bg-purple-50/20"
+                    className="w-full text-xs p-2 rounded-lg border border-teal-200 focus:border-teal-600 focus:outline-none text-slate-900 bg-teal-50/20"
                   />
                 </div>
               </div>
@@ -1974,10 +1974,10 @@ export function StudentOrientationModal({
               {/* THẨM ĐỊNH QLCM & KẾT LUẬN GĐCS (2 CỘT SONG SONG GỌN GÀNG) */}
               <div className="grid grid-cols-1 lg:grid-cols-2 gap-3">
                 {/* Cột 1: Thẩm định QLCM */}
-                <div className="p-3.5 bg-white rounded-xl border border-purple-200 shadow-2xs space-y-2.5 text-xs">
-                  <div className="flex items-center justify-between gap-2 border-b border-purple-100 pb-2">
-                    <h4 className="font-black uppercase text-purple-950 flex items-center gap-1.5">
-                      <ShieldCheck className="w-4 h-4 text-purple-700" />
+                <div className="p-3.5 bg-white rounded-xl border border-teal-200 shadow-2xs space-y-2.5 text-xs">
+                  <div className="flex items-center justify-between gap-2 border-b border-teal-100 pb-2">
+                    <h4 className="font-black uppercase text-[#083d39] flex items-center gap-1.5">
+                      <ShieldCheck className="w-4 h-4 text-teal-700" />
                       <span>Thẩm Định Quản Lý Chuyên Môn (QLCM)</span>
                     </h4>
                     <select
@@ -2010,7 +2010,7 @@ export function StudentOrientationModal({
                         value={verifierName}
                         onChange={e => { setVerifierName(e.target.value); markDirty(); }}
                         placeholder="Họ tên QLCM..."
-                        className="w-full text-xs p-2 rounded-lg border border-slate-300 focus:border-purple-600 text-slate-900 bg-white"
+                        className="w-full text-xs p-2 rounded-lg border border-slate-300 focus:border-teal-600 text-slate-900 bg-white"
                       />
                     </div>
                     <div>
@@ -2020,7 +2020,7 @@ export function StudentOrientationModal({
                         value={verificationNotes}
                         onChange={e => { setVerificationNotes(e.target.value); markDirty(); }}
                         placeholder="Nhận xét của QLCM..."
-                        className="w-full text-xs p-2 rounded-lg border border-slate-300 focus:border-purple-600 text-slate-900 bg-white"
+                        className="w-full text-xs p-2 rounded-lg border border-slate-300 focus:border-teal-600 text-slate-900 bg-white"
                       />
                     </div>
                   </div>
@@ -2031,7 +2031,7 @@ export function StudentOrientationModal({
                       id="supportReferralConfirm"
                       checked={supportReferralConfirmed}
                       onChange={e => { setSupportReferralConfirmed(e.target.checked); markDirty(); }}
-                      className="w-3.5 h-3.5 rounded text-purple-700 focus:ring-purple-500 cursor-pointer"
+                      className="w-3.5 h-3.5 rounded text-teal-700 focus:ring-teal-500 cursor-pointer"
                     />
                     <label htmlFor="supportReferralConfirm" className="text-[11px] font-semibold text-slate-700 cursor-pointer">
                       Xác nhận liên thông dữ liệu định hướng vào Hồ sơ học tập sau nhập học
@@ -2040,16 +2040,16 @@ export function StudentOrientationModal({
                 </div>
 
                 {/* Cột 2: Kết luận & Chỉ đạo của Giám đốc Cơ sở (GĐCS) */}
-                <div className="p-3.5 bg-purple-50/40 rounded-xl border border-purple-200 shadow-2xs space-y-2.5 text-xs">
-                  <div className="flex items-center justify-between gap-2 border-b border-purple-200 pb-2">
-                    <h4 className="font-black uppercase text-purple-950 flex items-center gap-1.5">
-                      <GraduationCap className="w-4 h-4 text-purple-700" />
+                <div className="p-3.5 bg-teal-50/40 rounded-xl border border-teal-200 shadow-2xs space-y-2.5 text-xs">
+                  <div className="flex items-center justify-between gap-2 border-b border-teal-200 pb-2">
+                    <h4 className="font-black uppercase text-[#083d39] flex items-center gap-1.5">
+                      <GraduationCap className="w-4 h-4 text-teal-700" />
                       <span>Kết Luận Tiếp Nhận (Giám Đốc Cơ Sở)</span>
                     </h4>
                     <select
                       value={gdcsDecision}
                       onChange={e => { setGdcsDecision(e.target.value as any); markDirty(); }}
-                      className="text-[11px] font-bold px-2.5 py-1 rounded-lg border border-purple-300 bg-white text-purple-950 focus:outline-none cursor-pointer"
+                      className="text-[11px] font-bold px-2.5 py-1 rounded-lg border border-teal-300 bg-white text-[#083d39] focus:outline-none cursor-pointer"
                     >
                       <option value="TIEP_NHAN_CHUAN">✓ Tiếp nhận chuẩn (Theo quy chế)</option>
                       <option value="TIEP_NHAN_DONG_HANH">⚠️ Tiếp nhận có cam kết đồng hành</option>
@@ -2066,7 +2066,7 @@ export function StudentOrientationModal({
                       value={gdcsGeneralNote}
                       onChange={e => { setGdcsGeneralNote(e.target.value); markDirty(); }}
                       placeholder="Chỉ đạo về xếp lớp, phân công giáo viên chủ nhiệm đồng hành..."
-                      className="w-full text-xs p-2 rounded-lg border border-slate-300 focus:border-purple-600 text-slate-900 bg-white"
+                      className="w-full text-xs p-2 rounded-lg border border-slate-300 focus:border-teal-600 text-slate-900 bg-white"
                     />
                   </div>
                 </div>
@@ -2083,7 +2083,7 @@ export function StudentOrientationModal({
               onClick={handleViewReport}
               className="flex items-center gap-1.5 px-3.5 py-1.5 bg-slate-100 hover:bg-slate-200 text-slate-800 rounded-xl text-xs font-bold transition-all cursor-pointer"
             >
-              <Printer className="w-3.5 h-3.5 text-purple-700" />
+              <Printer className="w-3.5 h-3.5 text-teal-700" />
               <span>Xem trước / Xuất PDF (A4)</span>
             </button>
 
@@ -2100,16 +2100,16 @@ export function StudentOrientationModal({
               type="button"
               onClick={() => handleSave(false)}
               disabled={saving}
-              className="flex items-center gap-1.5 px-3.5 py-1.5 bg-purple-50 hover:bg-purple-100 text-purple-900 border border-purple-300 rounded-xl text-xs font-bold transition-all cursor-pointer disabled:opacity-50"
+              className="flex items-center gap-1.5 px-3.5 py-1.5 bg-teal-50 hover:bg-teal-100 text-[#083d39] border border-teal-300 rounded-xl text-xs font-bold transition-all cursor-pointer disabled:opacity-50"
             >
               {saving ? (
                 <>
-                  <RefreshCw className="w-3.5 h-3.5 animate-spin text-purple-700" />
+                  <RefreshCw className="w-3.5 h-3.5 animate-spin text-teal-700" />
                   <span>Đang lưu...</span>
                 </>
               ) : (
                 <>
-                  <Save className="w-3.5 h-3.5 text-purple-700" />
+                  <Save className="w-3.5 h-3.5 text-teal-700" />
                   <span>Lưu nháp</span>
                 </>
               )}
@@ -2127,7 +2127,7 @@ export function StudentOrientationModal({
                 }
               }}
               disabled={saving}
-              className="flex items-center gap-1.5 px-4 py-1.5 bg-gradient-to-r from-purple-700 to-indigo-700 hover:from-purple-800 hover:to-indigo-800 text-white rounded-xl text-xs font-black shadow-sm cursor-pointer transition-all disabled:opacity-50"
+              className="flex items-center gap-1.5 px-4 py-1.5 bg-gradient-to-r from-[#0b524d] to-[#0f6b64] hover:from-[#083d39] hover:to-[#0b524d] text-white rounded-xl text-xs font-black shadow-sm cursor-pointer transition-all disabled:opacity-50"
             >
               <Send className="w-3.5 h-3.5" />
               <span>
