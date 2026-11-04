@@ -25,7 +25,7 @@ export default async function StudentInfoPage(props: {
       <StudentInfoClient 
         pageMode="danh-sach"
         initialTab={initialTab}
-        initialSubTab={initialSubTab === "periods" ? "periods" : "students"}
+        initialSubTab={initialSubTab === "periods" ? "periods" : initialSubTab === "handover" ? "handover" : "students"}
         {...data}
       />
     </div>

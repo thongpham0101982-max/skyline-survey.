@@ -572,6 +572,7 @@ export function InputAssessmentsClient({
     subjects: "INPUT_ASSESSMENTS_SUBJECTS",
     mapping: "INPUT_ASSESSMENTS_MAPPING",
     students: "INPUT_ASSESSMENTS_STUDENTS",
+    handover: "INPUT_ASSESSMENTS_STUDENTS",
     assignments: "INPUT_ASSESSMENTS_ASSIGNMENTS",
     reports: "INPUT_ASSESSMENTS_REPORTS",
   };
@@ -584,18 +585,18 @@ export function InputAssessmentsClient({
 
     // Explicit Role Rules: GDCS & GIAO_VU always have full permissions on students, reports, and periods
     const isGDCS = ["GDCS", "GĐ_CS", "GIAO_VU_CS", "GĐCS"].includes(userRole) || userRole.includes("GIAO_VU") || userRole.includes("GDCS");
-    if (isGDCS && (tabId === "students" || tabId === "reports" || tabId === "periods")) {
+    if (isGDCS && (tabId === "students" || tabId === "handover" || tabId === "reports" || tabId === "periods")) {
       return { canRead: true, canCreate: true, canUpdate: true, canDelete: true };
     }
 
     // Admissions / Consultation staff (TVAN, TVTS) can create and update students
     const isTVTS = userRole === "TVAN" || userRole === "TVTS" || userRole.includes("TU_VAN") || userRole.includes("TUYEN_SINH");
-    if (isTVTS && (tabId === "periods" || tabId === "students")) {
+    if (isTVTS && (tabId === "periods" || tabId === "students" || tabId === "handover")) {
       return { canRead: true, canCreate: true, canUpdate: true, canDelete: false };
     }
     
     let requiredModule = TAB_PERMISSION_MAP[tabId];
-    if (mode === "input" && (tabId === "periods" || tabId === "students")) {
+    if (mode === "input" && (tabId === "periods" || tabId === "students" || tabId === "handover")) {
       requiredModule = "STUDENT_INFO_K12";
     }
     let perm = rolePermissions?.find(p => p.module === requiredModule);
@@ -1820,7 +1821,21 @@ export function InputAssessmentsClient({
   }, [sPeriodId, sBatchId, periods, visiblePeriods, kslPeriod, selectedIds.length, applyHandoverDefaultsForSelection, students]);
 
   useEffect(() => {
-    if (!isHandoverModalOpen || !handoverPeriodId) return;
+    if (tab !== "handover") return;
+    if (!handoverPeriodId && (visiblePeriods.length > 0 || periods.length > 0)) {
+      const targetPId = (sPeriodId && sPeriodId !== "all") ? sPeriodId : (kslPeriod?.id || visiblePeriods[0]?.id || periods[0]?.id || "");
+      const pObj = periods.find(p => p.id === targetPId) || visiblePeriods.find(p => p.id === targetPId);
+      const targetBId = (sBatchId && sBatchId !== "none")
+        ? sBatchId
+        : (pObj?.batches?.filter(b => b.status !== "COMPLETED")[0]?.id || pObj?.batches?.[0]?.id || "");
+      setHandoverPeriodId(targetPId);
+      setHandoverBatchId(targetBId);
+      applyHandoverDefaultsForSelection(targetPId, targetBId, students);
+    }
+  }, [tab, handoverPeriodId, visiblePeriods, periods, sPeriodId, sBatchId, kslPeriod, applyHandoverDefaultsForSelection, students]);
+
+  useEffect(() => {
+    if ((!isHandoverModalOpen && tab !== "handover") || !handoverPeriodId) return;
     let isCancelled = false;
     const loadHandoverStudents = async () => {
       setHandoverStudentsLoading(true);
@@ -1842,7 +1857,7 @@ export function InputAssessmentsClient({
     };
     loadHandoverStudents();
     return () => { isCancelled = true; };
-  }, [isHandoverModalOpen, handoverPeriodId, handoverBatchId]);
+  }, [isHandoverModalOpen, tab, handoverPeriodId, handoverBatchId]);
 
   const effectiveHandoverStudents = useMemo(() => {
     if (handoverOnlySelected && selectedIds.length > 0) {
@@ -8059,6 +8074,402 @@ const [customCommitmentSubjects, setCustomCommitmentSubjects] = useState<string[
           )}
           </div>
           )}
+        </div>
+      )}
+
+      {/* ===== TAB 3: BÀN GIAO DANH SÁCH TỚI GIÁO VỤ (PHÂN CÔNG KHẢO SÁT) ===== */}
+      {tab === "handover" && (
+        <div className="space-y-4 animate-in fade-in slide-in-from-bottom-4 duration-500">
+          {/* Header Card */}
+          <div className="bg-white border border-slate-200/80 rounded-2xl p-5 shadow-2xs flex flex-col lg:flex-row lg:items-center justify-between gap-4">
+            <div className="flex items-start gap-3.5">
+              <div className="w-11 h-11 rounded-2xl bg-gradient-to-br from-[#005854] to-[#00736E] text-white flex items-center justify-center shrink-0 shadow-sm">
+                <Mail className="w-5 h-5" />
+              </div>
+              <div>
+                <div className="flex items-center gap-2.5 flex-wrap">
+                  <h2 className="text-base sm:text-lg font-bold text-slate-800 tracking-tight">
+                    Bàn giao Danh sách Học sinh theo Đợt Khảo sát tới Giáo vụ
+                  </h2>
+                  <span className="inline-flex items-center px-2.5 py-0.5 rounded-full bg-teal-50 text-[#005854] text-xs font-bold border border-teal-200">
+                    {effectiveHandoverStudents.length} học sinh trong đợt
+                  </span>
+                </div>
+                <p className="text-xs text-slate-500 mt-1">
+                  Gửi thông tin danh sách học sinh theo đợt khảo sát đến Giáo vụ Cơ sở qua Thông báo hệ thống &amp; Email để thực hiện Phân công Giáo viên chấm khảo sát.
+                </p>
+              </div>
+            </div>
+
+            <div className="flex flex-wrap items-center gap-2.5 shrink-0">
+              <a
+                href={`/admin/phan-cong-khao-sat?tab=k12&periodId=${handoverPeriodId || ""}&batchId=${handoverBatchId || ""}`}
+                className="h-10 px-4 rounded-xl bg-teal-50 hover:bg-teal-100 text-[#005854] border border-teal-200 text-xs font-bold inline-flex items-center gap-1.5 transition-all cursor-pointer"
+                title="Mở trực tiếp màn hình Phân công Khảo sát cho đợt này"
+              >
+                <UserCheck className="w-4 h-4" />
+                <span>Mở trang Phân công Khảo sát</span>
+              </a>
+              <button
+                type="button"
+                onClick={submitHandoverToGiaoVu}
+                disabled={isSubmittingHandover}
+                className="h-10 px-5 rounded-xl bg-gradient-to-r from-[#005854] to-[#00736E] hover:from-[#003B3A] hover:to-[#005854] text-white text-xs font-bold shadow-sm inline-flex items-center gap-2 transition-all cursor-pointer disabled:opacity-50"
+              >
+                {isSubmittingHandover ? (
+                  <>
+                    <Loader2 className="w-4 h-4 animate-spin" />
+                    <span>Đang bàn giao &amp; gửi Email...</span>
+                  </>
+                ) : (
+                  <>
+                    <Mail className="w-4 h-4" />
+                    <span>Xác nhận Bàn giao &amp; Gửi tới Giáo vụ ({effectiveHandoverStudents.length} HS)</span>
+                  </>
+                )}
+              </button>
+            </div>
+          </div>
+
+          {/* Kết quả sau khi gửi */}
+          {handoverResult && (
+            <div className={`rounded-2xl p-4 border shadow-2xs ${handoverResult.sent ? "bg-emerald-50 border-emerald-200 text-emerald-900" : "bg-amber-50 border-amber-200 text-amber-900"}`}>
+              <div className="flex flex-wrap items-center justify-between gap-2">
+                <div className="flex items-center gap-2 font-bold text-xs">
+                  <CheckCircle2 className="w-4 h-4 text-emerald-600 shrink-0" />
+                  <span>
+                    {handoverResult.sent
+                      ? `Đã bàn giao danh sách ${handoverResult.studentCount || effectiveHandoverStudents.length} học sinh và gửi Email thành công tới ${handoverResult.sentCount} địa chỉ (${(handoverResult.recipientEmails || []).join(", ")})!`
+                      : `Đã lưu bàn giao & gửi thông báo hệ thống cho Giáo vụ! (${handoverResult.error || "Hoàn tất"})`}
+                  </span>
+                </div>
+                <a
+                  href={handoverResult.assignUrl || `/admin/phan-cong-khao-sat?tab=k12&periodId=${handoverPeriodId}&batchId=${handoverBatchId}`}
+                  className="px-3.5 py-1.5 rounded-xl bg-[#00736E] hover:bg-[#005854] text-white text-xs font-bold inline-flex items-center gap-1.5 transition-all"
+                >
+                  <span>Chuyển sang Phân công Khảo sát ngay</span>
+                  <ArrowRight className="w-3.5 h-3.5" />
+                </a>
+              </div>
+            </div>
+          )}
+
+          {/* Khối cấu hình Đợt khảo sát & Email người nhận */}
+          <div className="grid grid-cols-1 lg:grid-cols-12 gap-4">
+            {/* Cột trái: Chọn Kỳ, Đợt, Giáo vụ & Ghi chú */}
+            <div className="lg:col-span-5 bg-white border border-slate-200/80 rounded-2xl p-5 space-y-4 shadow-2xs">
+              <div className="text-xs font-black text-[#005854] uppercase tracking-wider flex items-center gap-1.5 pb-2 border-b border-slate-100">
+                <Layers className="w-4 h-4" />
+                <span>1. Chọn Đợt khảo sát &amp; Giáo vụ tiếp nhận</span>
+              </div>
+
+              <div className="space-y-3">
+                <div>
+                  <label className="block text-[11px] font-bold text-slate-600 uppercase mb-1">Kỳ khảo sát *</label>
+                  <select
+                    value={handoverPeriodId}
+                    onChange={(e) => {
+                      const newPId = e.target.value;
+                      setHandoverPeriodId(newPId);
+                      const pObj = periods.find(p => p.id === newPId) || visiblePeriods.find(p => p.id === newPId);
+                      const firstBatchId = pObj?.batches?.filter(b => b.status !== "COMPLETED")[0]?.id || pObj?.batches?.[0]?.id || "";
+                      setHandoverBatchId(firstBatchId);
+                      applyHandoverDefaultsForSelection(newPId, firstBatchId);
+                    }}
+                    className={inp}
+                  >
+                    <option value="">-- Chọn Kỳ khảo sát --</option>
+                    {visiblePeriods.map(p => (
+                      <option key={p.id} value={p.id}>
+                        {p.name} ({(p as any)._count?.students || 0} HS)
+                      </option>
+                    ))}
+                  </select>
+                </div>
+
+                <div>
+                  <label className="block text-[11px] font-bold text-slate-600 uppercase mb-1">Đợt khảo sát bàn giao *</label>
+                  <select
+                    value={handoverBatchId}
+                    onChange={(e) => {
+                      const newBId = e.target.value;
+                      setHandoverBatchId(newBId);
+                      applyHandoverDefaultsForSelection(handoverPeriodId, newBId);
+                    }}
+                    className={inp}
+                  >
+                    <option value="">-- Toàn bộ học sinh trong Kỳ khảo sát --</option>
+                    {((periods.find(p => p.id === handoverPeriodId) || visiblePeriods.find(p => p.id === handoverPeriodId))?.batches || []).map((b: any) => {
+                      const cnt = b._count?.students ?? b.students?.length ?? 0;
+                      return (
+                        <option key={b.id} value={b.id}>
+                          [{cnt} HS] {b.name} {b.status === "COMPLETED" ? "(Hoàn thành)" : ""}
+                        </option>
+                      );
+                    })}
+                  </select>
+                </div>
+
+                <div>
+                  <label className="block text-[11px] font-bold text-slate-600 uppercase mb-1">Tài khoản Giáo vụ phụ trách trên hệ thống</label>
+                  <select
+                    value={handoverAssignedUserId}
+                    onChange={(e) => {
+                      const uid = e.target.value;
+                      setHandoverAssignedUserId(uid);
+                      const uObj = (giaoVuCSUsers as any[]).find(u => u.id === uid);
+                      if (uObj?.email && uObj.email.includes("@")) {
+                        setHandoverSelectedEmails(prev => Array.from(new Set([...prev, uObj.email])));
+                      }
+                    }}
+                    className={inp}
+                  >
+                    <option value="">-- Chọn Giáo vụ phụ trách --</option>
+                    {(giaoVuCSUsers as any[]).map((u: any) => (
+                      <option key={u.id} value={u.id}>
+                        {u.fullName} {u.email ? `(${u.email})` : ""}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+
+                <div>
+                  <label className="block text-[11px] font-bold text-slate-600 uppercase mb-1">Tiêu đề Email bàn giao</label>
+                  <input
+                    type="text"
+                    value={handoverSubject}
+                    onChange={(e) => setHandoverSubject(e.target.value)}
+                    placeholder="[SSM Sky-Line] Bàn giao Danh sách Học sinh Khảo sát..."
+                    className={inp}
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-[11px] font-bold text-slate-600 uppercase mb-1">Ghi chú bàn giao gửi Giáo vụ (Tùy chọn)</label>
+                  <textarea
+                    rows={3}
+                    value={handoverNote}
+                    onChange={(e) => setHandoverNote(e.target.value)}
+                    placeholder="Nhập lưu ý cho Giáo vụ khi phân công giáo viên chấm khảo sát (ví dụ: Lịch hẹn phụ huynh, học sinh cần lưu ý đặc biệt...)"
+                    className="w-full px-3 py-2 bg-white border border-slate-300 rounded-lg text-xs font-medium text-slate-800 outline-none focus:ring-2 focus:ring-[#00A19A]/15 focus:border-[#00A19A]"
+                  />
+                </div>
+              </div>
+            </div>
+
+            {/* Cột phải: Chọn Email Giáo vụ Cơ sở & CC */}
+            <div className="lg:col-span-7 bg-white border border-slate-200/80 rounded-2xl p-5 space-y-4 shadow-2xs">
+              <div className="flex flex-wrap items-center justify-between gap-2 pb-2 border-b border-slate-100">
+                <div className="text-xs font-black text-[#005854] uppercase tracking-wider flex items-center gap-1.5">
+                  <Users className="w-4 h-4" />
+                  <span>2. Chọn Email Giáo vụ &amp; Các bộ phận nhận danh sách</span>
+                </div>
+                <div className="flex items-center gap-1.5">
+                  <span className="text-[11px] font-bold text-slate-500 mr-1">Chọn nhanh Cơ sở:</span>
+                  {(["CS1", "CS2", "CS3", "CS4", "CS5"] as const).map(cs => {
+                    const active = handoverCampusCode === cs;
+                    return (
+                      <button
+                        key={cs}
+                        type="button"
+                        onClick={() => {
+                          setHandoverCampusCode(cs);
+                          const gvMail = (EMAIL_MAP.giaovu as any)[cs];
+                          if (gvMail) {
+                            setHandoverSelectedEmails([gvMail]);
+                          }
+                        }}
+                        className={`px-2.5 py-1 rounded-lg text-[11px] font-bold transition-all cursor-pointer border ${
+                          active
+                            ? "bg-[#00736E] text-white border-[#005854]"
+                            : "bg-slate-50 text-slate-600 border-slate-200 hover:bg-slate-100"
+                        }`}
+                      >
+                        {cs}
+                      </button>
+                    );
+                  })}
+                </div>
+              </div>
+
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
+                {/* Giáo vụ CS */}
+                <div className="border border-teal-200 bg-teal-50/40 rounded-xl p-3.5 space-y-2">
+                  <div className="text-[11px] font-black text-[#005854] uppercase">Giáo vụ Cơ sở (Nhận chính)</div>
+                  {(["CS1", "CS2", "CS3", "CS4", "CS5"] as const).map(cs => {
+                    const em = (EMAIL_MAP.giaovu as any)[cs];
+                    if (!em) return null;
+                    const checked = handoverSelectedEmails.includes(em);
+                    return (
+                      <label key={`tab-gv-${cs}`} className="flex items-center gap-2 text-xs text-slate-700 cursor-pointer py-0.5">
+                        <input
+                          type="checkbox"
+                          checked={checked}
+                          onChange={(e) => {
+                            if (e.target.checked) {
+                              setHandoverSelectedEmails(prev => Array.from(new Set([...prev, em])));
+                            } else {
+                              setHandoverSelectedEmails(prev => prev.filter(x => x !== em));
+                            }
+                          }}
+                          className="rounded border-slate-300 text-[#00736E] focus:ring-[#00736E]"
+                        />
+                        <span className="font-bold text-[#005854] w-8">{cs}:</span>
+                        <span className="truncate" title={em}>{em}</span>
+                      </label>
+                    );
+                  })}
+                </div>
+
+                {/* GĐCS */}
+                <div className="border border-slate-200 bg-slate-50/50 rounded-xl p-3.5 space-y-2">
+                  <div className="text-[11px] font-black text-slate-600 uppercase">Ban Giám đốc Cơ sở (CC)</div>
+                  {(["CS1", "CS2", "CS3", "CS4", "CS5"] as const).map(cs => {
+                    const em = (EMAIL_MAP.gdcs as any)[cs];
+                    if (!em) return null;
+                    const checked = handoverSelectedEmails.includes(em);
+                    return (
+                      <label key={`tab-gdcs-${cs}`} className="flex items-center gap-2 text-xs text-slate-700 cursor-pointer py-0.5">
+                        <input
+                          type="checkbox"
+                          checked={checked}
+                          onChange={(e) => {
+                            if (e.target.checked) {
+                              setHandoverSelectedEmails(prev => Array.from(new Set([...prev, em])));
+                            } else {
+                              setHandoverSelectedEmails(prev => prev.filter(x => x !== em));
+                            }
+                          }}
+                          className="rounded border-slate-300 text-[#00736E] focus:ring-[#00736E]"
+                        />
+                        <span className="font-bold text-slate-600 w-8">{cs}:</span>
+                        <span className="truncate" title={em}>{em}</span>
+                      </label>
+                    );
+                  })}
+                </div>
+
+                {/* Tư vấn */}
+                <div className="border border-slate-200 bg-slate-50/50 rounded-xl p-3.5 space-y-2">
+                  <div className="text-[11px] font-black text-slate-600 uppercase">Tư vấn Tuyển sinh (CC)</div>
+                  {(["CS1", "CS2", "CS3", "CS4", "CS5"] as const).map(cs => {
+                    const em = (EMAIL_MAP.tuvan as any)[cs];
+                    if (!em) return null;
+                    const checked = handoverSelectedEmails.includes(em);
+                    return (
+                      <label key={`tab-tv-${cs}`} className="flex items-center gap-2 text-xs text-slate-700 cursor-pointer py-0.5">
+                        <input
+                          type="checkbox"
+                          checked={checked}
+                          onChange={(e) => {
+                            if (e.target.checked) {
+                              setHandoverSelectedEmails(prev => Array.from(new Set([...prev, em])));
+                            } else {
+                              setHandoverSelectedEmails(prev => prev.filter(x => x !== em));
+                            }
+                          }}
+                          className="rounded border-slate-300 text-[#00736E] focus:ring-[#00736E]"
+                        />
+                        <span className="font-bold text-slate-600 w-8">{cs}:</span>
+                        <span className="truncate" title={em}>{em}</span>
+                      </label>
+                    );
+                  })}
+                </div>
+              </div>
+
+              <div>
+                <label className="block text-[11px] font-bold text-slate-600 uppercase mb-1">Email nhận bổ sung (Cách nhau bằng dấu phẩy)</label>
+                <input
+                  type="text"
+                  value={handoverCustomEmail}
+                  onChange={(e) => setHandoverCustomEmail(e.target.value)}
+                  placeholder="Ví dụ: giaovu.custom@skylineschool.edu.vn"
+                  className={inp}
+                />
+              </div>
+            </div>
+          </div>
+
+          {/* Bảng Danh sách Học sinh theo Đợt khảo sát sẽ gửi tới Giáo vụ */}
+          <div className="bg-white border border-slate-200/80 rounded-2xl p-5 space-y-3.5 shadow-2xs">
+            <div className="flex flex-wrap items-center justify-between gap-2">
+              <div className="text-xs font-black text-[#005854] uppercase tracking-wider flex items-center gap-1.5">
+                <ClipboardList className="w-4 h-4" />
+                <span>3. Danh sách Học sinh thuộc Đợt khảo sát ({effectiveHandoverStudents.length} học sinh)</span>
+              </div>
+              {handoverGradeSysBreakdown.length > 0 && (
+                <div className="flex flex-wrap items-center gap-1.5">
+                  {handoverGradeSysBreakdown.map((item, idx) => (
+                    <span
+                      key={idx}
+                      className="px-2.5 py-1 rounded-full bg-teal-50 text-[#005854] border border-teal-200 text-xs font-bold"
+                    >
+                      {item.label}: <strong>{item.count} HS</strong>
+                    </span>
+                  ))}
+                </div>
+              )}
+            </div>
+
+            {handoverStudentsLoading ? (
+              <div className="py-12 flex items-center justify-center gap-2 text-xs text-slate-500 font-semibold">
+                <Loader2 className="w-5 h-5 animate-spin text-[#00736E]" />
+                <span>Đang tải danh sách học sinh của đợt khảo sát...</span>
+              </div>
+            ) : effectiveHandoverStudents.length === 0 ? (
+              <div className="py-10 text-center bg-amber-50/60 border border-amber-200/80 rounded-xl text-xs text-amber-800 font-semibold">
+                Chưa có học sinh nào trong đợt khảo sát đang chọn. Vui lòng chọn Kỳ / Đợt khảo sát khác ở mục 1.
+              </div>
+            ) : (
+              <div className="overflow-x-auto border border-slate-200 rounded-xl">
+                <table className="w-full text-left border-collapse text-xs">
+                  <thead className="bg-slate-100 text-slate-600">
+                    <tr>
+                      <th className="py-2.5 px-3 font-bold uppercase text-[10px] w-10 text-center">#</th>
+                      <th className="py-2.5 px-3 font-bold uppercase text-[10px]">Mã HS / SBD</th>
+                      <th className="py-2.5 px-3 font-bold uppercase text-[10px]">Họ và tên Học sinh</th>
+                      <th className="py-2.5 px-3 font-bold uppercase text-[10px] text-center">Ngày sinh</th>
+                      <th className="py-2.5 px-3 font-bold uppercase text-[10px] text-center">Giới tính</th>
+                      <th className="py-2.5 px-3 font-bold uppercase text-[10px] text-center">Khối ĐK</th>
+                      <th className="py-2.5 px-3 font-bold uppercase text-[10px] text-center">Hệ KS</th>
+                      <th className="py-2.5 px-3 font-bold uppercase text-[10px]">Diện KS / Hình thức</th>
+                      <th className="py-2.5 px-3 font-bold uppercase text-[10px]">Trường học cũ</th>
+                      <th className="py-2.5 px-3 font-bold uppercase text-[10px]">Cơ sở ĐK</th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-slate-100">
+                    {effectiveHandoverStudents.map((s, idx) => (
+                      <tr key={s.id} className="hover:bg-slate-50/80">
+                        <td className="py-2.5 px-3 text-center text-slate-500 font-semibold">{idx + 1}</td>
+                        <td className="py-2.5 px-3 font-mono font-bold text-[#005854]">{s.studentCode || "—"}</td>
+                        <td className="py-2.5 px-3 font-bold text-slate-800">{s.fullName}</td>
+                        <td className="py-2.5 px-3 text-center text-slate-600">
+                          {s.dateOfBirth ? new Date(s.dateOfBirth).toLocaleDateString("vi-VN") : "—"}
+                        </td>
+                        <td className="py-2.5 px-3 text-center text-slate-600">{s.gender || "—"}</td>
+                        <td className="py-2.5 px-3 text-center">
+                          <span className="px-2 py-0.5 rounded bg-teal-50 text-[#005854] font-bold text-[11px]">
+                            {s.grade ? (String(s.grade).toUpperCase().startsWith("K") ? s.grade : `K${s.grade}`) : "—"}
+                          </span>
+                        </td>
+                        <td className="py-2.5 px-3 text-center font-bold text-indigo-700">
+                          {s.surveyFormType || s.surveySystem || "—"}
+                        </td>
+                        <td className="py-2.5 px-3 text-slate-600">
+                          {s.admissionCriteria || "Khảo sát"} {s.surveySystem ? `(${s.surveySystem})` : ""}
+                        </td>
+                        <td className="py-2.5 px-3 text-slate-600">{s.oldSchoolName || "—"}</td>
+                        <td className="py-2.5 px-3 text-slate-700 font-semibold">
+                          {s.registeredCampus || s.admissionCampus || handoverCampusCode}
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            )}
+          </div>
         </div>
       )}
 

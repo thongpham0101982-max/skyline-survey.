@@ -41,7 +41,8 @@ import {
   Check,
   ExternalLink,
   HeartHandshake,
-  Printer
+  Printer,
+  Mail
 } from "lucide-react";
 import { confirmEnrollmentAction, revertEnrollmentAction } from "../student-transfers/actions";
 import { getSurveyFormAgeGroup, getProbationAgeGroup } from "@/lib/preschool";
@@ -56,7 +57,7 @@ import { StudentOrientationReportModal } from "@/components/orientation/StudentO
 interface StudentInfoClientProps {
   pageMode?: "danh-sach" | "ket-qua";
   initialTab?: "general" | "preschool" | "transfer";
-  initialSubTab?: "periods" | "students" | "info" | "result";
+  initialSubTab?: "periods" | "students" | "handover" | "info" | "result";
   initialGeneralStudents: any[];
   initialPreschoolStudents: any[];
   generalPeriods: any[];
@@ -882,14 +883,14 @@ export function StudentInfoClient({
       </div>
     );
   };
-  const effectiveInitialSubTab = useMemo<"periods" | "students" | "info" | "result">(() => {
+  const effectiveInitialSubTab = useMemo<"periods" | "students" | "handover" | "info" | "result">(() => {
     if (pageMode === "ket-qua") {
       return initialSubTab === "result" ? "result" : "info";
     }
-    return initialSubTab === "periods" ? "periods" : "students";
+    return initialSubTab === "periods" ? "periods" : initialSubTab === "handover" ? "handover" : "students";
   }, [pageMode, initialSubTab]);
 
-  const [subTab, setSubTab] = useState<"periods" | "students" | "info" | "result">(effectiveInitialSubTab);
+  const [subTab, setSubTab] = useState<"periods" | "students" | "handover" | "info" | "result">(effectiveInitialSubTab);
 
   useEffect(() => {
     setSubTab(effectiveInitialSubTab);
@@ -973,7 +974,7 @@ export function StudentInfoClient({
     setCurrentPage(1);
   };
 
-  const handleSubTabChange = (newSub: "periods" | "students" | "info" | "result") => {
+  const handleSubTabChange = (newSub: "periods" | "students" | "handover" | "info" | "result") => {
     setSubTab(newSub);
     updateUrlParams(activeTab, newSub);
     setSelectedIds([]);
@@ -2254,12 +2255,25 @@ export function StudentInfoClient({
                 <Users className="w-3.5 h-3.5" />
                 <span>2. Danh sách khảo sát</span>
               </button>
+              <button
+                onClick={() => handleSubTabChange("handover")}
+                className={`flex items-center gap-2 px-4 py-2 rounded-lg text-xs font-bold transition-all cursor-pointer ${
+                  subTab === "handover"
+                    ? "bg-[#00A19A] text-white shadow-sm"
+                    : "text-white/80 hover:text-white hover:bg-white/10"
+                }`}
+              >
+                <Mail className="w-3.5 h-3.5" />
+                <span>3. Bàn giao danh sách tới Giáo vụ</span>
+              </button>
             </div>
             <div className="hidden md:flex items-center gap-2 text-[11px] text-teal-100/80 font-medium">
               <span className="w-1.5 h-1.5 rounded-full bg-teal-300"></span>
               <span>
                 {subTab === "periods"
                   ? "Bước 1: Thiết lập kỳ/đợt khảo sát hoặc xếp ca khảo sát nhanh"
+                  : subTab === "handover"
+                  ? "Bước 3: Bàn giao danh sách học sinh theo đợt khảo sát tới Giáo vụ để Phân công Giáo viên"
                   : "Bước 2: Tiếp nhận, rà soát hồ sơ đăng ký & kết quả học bạ đầu vào"}
               </span>
             </div>
@@ -2472,7 +2486,7 @@ export function StudentInfoClient({
       </div>
       )}
 
-      {(subTab === "periods" || subTab === "students") ? (
+      {(subTab === "periods" || subTab === "students" || subTab === "handover") ? (
         <div className="transition-all duration-300">
           {activeTab === "general" ? (
             <InputAssessmentsClient
@@ -2524,7 +2538,7 @@ export function StudentInfoClient({
               departments={departments}
               currentUser={currentUser}
               mode="input"
-              forcedTab={subTab === "students" ? "children" : "periods"}
+              forcedTab={subTab === "students" ? "children" : subTab}
             />
           )}
         </div>
