@@ -81,20 +81,20 @@ const STATUS_MAP: Record<string,{label:string,cls:string}> = {
 
 function Badge({ s }: { s: string }) {
   const m = STATUS_MAP[s] || STATUS_MAP.INACTIVE
-  return <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-[10px] font-black uppercase tracking-wider ${m.cls}`}>{m.label}</span>
+  return <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-[11px] font-semibold ${m.cls}`}>{m.label}</span>
 }
 
 function Field({ label, required, children }: { label:string; required?:boolean; children:React.ReactNode }) {
   return (
     <div className="flex flex-col gap-1.5">
-      <label className="flex items-center gap-1 text-[11px] font-black text-slate-400 uppercase tracking-widest ml-1">
+      <label className="flex items-center gap-1 text-xs font-semibold text-slate-700 ml-0.5">
         {label}{required && <span className="text-rose-500 ml-0.5">*</span>}
       </label>
       {children}
     </div>
   )
 }
-const inp = "h-11 w-full pl-3.5 pr-3.5 bg-white border border-[#D9E2EC] text-[#1E293B] placeholder-[#94A3B8] text-sm font-semibold rounded-xl outline-none transition-all focus:ring-4 focus:ring-[#00B5E2]/10 focus:border-[#00B5E2] disabled:bg-slate-100 disabled:text-slate-400 disabled:cursor-not-allowed"
+const inp = "h-10 w-full pl-3.5 pr-3.5 bg-white border border-slate-200 text-slate-900 placeholder-slate-400 text-xs font-medium rounded-xl outline-none transition-all focus:ring-3 focus:ring-[#00A19A]/15 focus:border-[#008B85] disabled:bg-slate-100 disabled:text-slate-400 disabled:cursor-not-allowed"
 
 function Modal({ open, onClose, title, size="md", children, footer }: {
   open:boolean; onClose:()=>void; title:string; size?:"sm"|"md"|"lg"|"xl"|"2xl";
@@ -104,11 +104,14 @@ function Modal({ open, onClose, title, size="md", children, footer }: {
   const w = size==="2xl" ? "max-w-6xl" : size==="xl" ? "max-w-5xl" : size==="lg" ? "max-w-3xl" : size==="sm" ? "max-w-sm" : "max-w-lg"
   return (
     <div className="fixed inset-0 z-[200] flex items-center justify-center p-4" onClick={onClose}>
-      <div className="absolute inset-0 bg-slate-900/50 backdrop-blur-sm"/>
-      <div className={`relative bg-white w-full ${w} rounded-2xl shadow-2xl flex flex-col max-h-[90vh] overflow-hidden animate-in zoom-in-95 duration-200`} onClick={e=>e.stopPropagation()}>
-        <div className="flex items-center justify-between px-6 py-4 border-b border-slate-100">
-          <h3 className="text-base font-black text-slate-800">{title}</h3>
-          <button onClick={onClose} className="w-8 h-8 flex items-center justify-center hover:bg-slate-50 transition-colors text-slate-500 shadow-sm text-xs font-semibold"><X className="w-4 h-4"/></button>
+      <div className="absolute inset-0 bg-slate-900/50 backdrop-blur-xs"/>
+      <div className={`relative bg-white w-full ${w} rounded-2xl border border-slate-200 shadow-2xl flex flex-col max-h-[90vh] overflow-hidden animate-in zoom-in-95 duration-200`} onClick={e=>e.stopPropagation()}>
+        <div className="flex items-center justify-between px-6 py-4 border-b border-slate-200 bg-slate-50/70">
+          <div className="flex items-center gap-2.5 min-w-0">
+            <span className="w-1.5 h-5 rounded-full bg-[#003B3A] shrink-0" />
+            <h3 className="text-sm sm:text-base font-bold text-slate-900 truncate">{title}</h3>
+          </div>
+          <button onClick={onClose} className="w-8 h-8 rounded-lg flex items-center justify-center hover:bg-slate-200/70 transition-colors text-slate-500 hover:text-slate-800 cursor-pointer" title="Đóng cửa sổ"><X className="w-4 h-4"/></button>
         </div>
         <div className="overflow-y-auto flex-1 px-6 py-5">{children}</div>
         <div className="flex gap-3 flex-shrink-0 text-xs font-semibold">{footer}</div>
@@ -1291,21 +1294,31 @@ export function XetDuyetK12Client({ academicYears = [], campuses = [], examBoard
   const [isOrientationModalOpen, setIsOrientationModalOpen] = useState(false);
   const [isOrientationReportModalOpen, setIsOrientationReportModalOpen] = useState(false);
   const [orientationData, setOrientationData] = useState<any>(null);
+  const [orientationAssignedTeacher, setOrientationAssignedTeacher] = useState<string>("");
+  const [showFullOrientationDetails, setShowFullOrientationDetails] = useState(false);
   const [loadingOrientation, setLoadingOrientation] = useState(false);
 
   // Tự động tải bản ghi định hướng khi mở modal chi tiết học sinh
   useEffect(() => {
     if (!reportStudentId) {
       setOrientationData(null);
+      setOrientationAssignedTeacher("");
+      setShowFullOrientationDetails(false);
       return;
     }
     let isMounted = true;
     setLoadingOrientation(true);
+    setShowFullOrientationDetails(false);
     fetch(`/api/admin/orientation/records?studentId=${reportStudentId}`)
       .then(res => res.json())
       .then(d => {
         if (isMounted && d.success) {
           setOrientationData(d.data || null);
+          setOrientationAssignedTeacher(
+            d.assignedOrientation?.assignedTeacherName ||
+            d.data?.interviewerName ||
+            ""
+          );
         }
       })
       .catch(err => console.error("Lỗi tải bản ghi định hướng:", err))
@@ -1547,7 +1560,13 @@ export function XetDuyetK12Client({ academicYears = [], campuses = [], examBoard
     const isPsych = sCode.includes("tly") || sName.includes("tâm lý");
 
     if (isPsych) {
-      const scNum = parsedScores[6] !== undefined ? parsedScores[6] : (parsedScores[20] !== undefined ? parsedScores[20] : "0");
+      let scNum = parseFloat(parsedScores[6] !== undefined ? parsedScores[6] : (parsedScores[20] !== undefined ? parsedScores[20] : "0"));
+      if (isNaN(scNum) || scNum < 0) {
+        scNum = parsedScores.slice(0, 20).reduce((acc: number, x: any) => {
+          const n = parseFloat(x);
+          return acc + (!isNaN(n) && n > 0 ? n : 0);
+        }, 0);
+      }
       setScoreInputs([String(scNum)]);
     } else {
       const colCount = Math.max(subj.scoreColumns || 1, 1);
@@ -2735,9 +2754,26 @@ export function XetDuyetK12Client({ academicYears = [], campuses = [], examBoard
 
     setInlineApprovalLoadingId(student.id);
     try {
-      const userRole = (currentUser?.role || "").toUpperCase();
       const approverName = currentUser?.fullName || "Giám đốc Cơ sở";
       const finalCampus = resolvedStudentCampusObj?.campusName || (campuses.find(c => c.id === reportCampusFilter)?.campusName) || student.admissionCampus || "";
+
+      const now = new Date();
+      const formattedTime = `${now.getDate().toString().padStart(2, '0')}/${(now.getMonth()+1).toString().padStart(2, '0')}/${now.getFullYear()} ${now.getHours().toString().padStart(2, '0')}:${now.getMinutes().toString().padStart(2, '0')}`;
+      const oldRes = student.admissionResult || "Chưa duyệt";
+      const existingParsed = parseApprovalHistory(student.directorNote);
+      const newHistoryItem = {
+        timestamp: formattedTime,
+        approver: approverName,
+        oldResult: oldRes,
+        newResult: resultType,
+        note: "Xét duyệt nhanh trên bảng tổng hợp"
+      };
+      const updatedHistory = [newHistoryItem, ...existingParsed.history];
+      const historyBlock = updatedHistory.map(h =>
+        `• ${h.timestamp} | ${h.approver} | ${h.oldResult} ➔ ${h.newResult} | Lý do: ${h.note || "Không có ghi chú"}`
+      ).join("\n");
+      const baseNote = existingParsed.cleanNote || `Xét duyệt: ${resultType}`;
+      const finalNote = `${baseNote.trim()}\n\n--- LỊCH SỬ XÉT DUYỆT & HIỆU CHỈNH ---\n${historyBlock}`;
 
       const res = await fetch("/api/input-assessment-students", {
         method: "PUT",
@@ -2748,7 +2784,7 @@ export function XetDuyetK12Client({ academicYears = [], campuses = [], examBoard
             admissionResult: resultType,
             admissionCampus: finalCampus,
             signatureName: approverName,
-            directorNote: `Xét duyệt nhanh: ${resultType} bởi ${approverName} vào lúc ${new Date().toLocaleString("vi-VN")}`
+            directorNote: finalNote
           }
         })
       });
@@ -2759,7 +2795,8 @@ export function XetDuyetK12Client({ academicYears = [], campuses = [], examBoard
           ...s,
           admissionResult: resultType,
           admissionCampus: finalCampus,
-          signatureName: approverName
+          signatureName: approverName,
+          directorNote: finalNote
         } : s));
       } else {
         notify(resData.error || "Không thể phê duyệt học sinh", "err");
@@ -3506,25 +3543,27 @@ export function XetDuyetK12Client({ academicYears = [], campuses = [], examBoard
 
   const renderReportPaginationControl = () => {
     if (filteredReportStudents.length === 0) return null;
+    const startIdx = Math.min(filteredReportStudents.length, (reportCurrentPage - 1) * reportPageSize + 1);
+    const endIdx = Math.min(filteredReportStudents.length, reportCurrentPage * reportPageSize);
     return (
-      <div className="flex items-center justify-between px-6 py-4 border-t border-slate-100 bg-slate-50/50 text-xs font-bold text-slate-505">
-        <div>
-          Hiển thị <span className="text-slate-800 font-extrabold">{Math.min(filteredReportStudents.length, (reportCurrentPage - 1) * reportPageSize + 1)}-{Math.min(filteredReportStudents.length, reportCurrentPage * reportPageSize)}</span> trong số <span className="text-[#48BFE3] font-extrabold">{filteredReportStudents.length}</span> học sinh
+      <div className="flex flex-col sm:flex-row items-center justify-between gap-3 px-5 py-3.5 border-t border-slate-200/80 bg-slate-50/70 text-xs font-medium text-slate-600">
+        <div className="tabular-nums">
+          Đang hiển thị <span className="text-slate-900 font-semibold">{startIdx}–{endIdx}</span> trên tổng số <span className="text-[#00736E] font-bold">{filteredReportStudents.length}</span> hồ sơ học sinh
         </div>
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-1.5">
           <button
             disabled={reportCurrentPage === 1}
             onClick={() => setReportCurrentPage(prev => Math.max(prev - 1, 1))}
-            className="px-3 py-1.5 rounded-xl border border-slate-200 hover:border-indigo-500 hover:bg-white text-slate-655 disabled:opacity-40 disabled:hover:border-slate-200 disabled:hover:bg-transparent transition-all cursor-pointer font-black bg-transparent border-none"
+            className="px-3 py-1.5 rounded-lg border border-slate-200 bg-white hover:border-[#008B85] hover:text-[#003B3A] text-slate-700 disabled:opacity-40 disabled:pointer-events-none transition-colors cursor-pointer font-semibold shadow-2xs"
           >
-            Trước
+            Trang trước
           </button>
-          <div className="flex items-center gap-1">
+          <div className="flex items-center gap-1 tabular-nums">
             {Array.from({ length: reportTotalPages }).map((_, i) => {
               const pageNum = i + 1;
               if (reportTotalPages > 6 && pageNum !== 1 && pageNum !== reportTotalPages && Math.abs(pageNum - reportCurrentPage) > 1) {
                 if (pageNum === 2 || pageNum === reportTotalPages - 1) {
-                  return <span key={pageNum} className="px-1 text-slate-400 font-bold select-none">...</span>;
+                  return <span key={pageNum} className="px-1.5 text-slate-400 font-semibold select-none">…</span>;
                 }
                 return null;
               }
@@ -3532,10 +3571,10 @@ export function XetDuyetK12Client({ academicYears = [], campuses = [], examBoard
                 <button
                   key={pageNum}
                   onClick={() => setReportCurrentPage(pageNum)}
-                  className={"h-8 w-8 rounded-xl flex items-center justify-center transition-all cursor-pointer border-none font-black " + (
+                  className={"h-8 min-w-8 px-2 rounded-lg flex items-center justify-center transition-colors cursor-pointer font-semibold " + (
                     reportCurrentPage === pageNum
-                      ? "bg-indigo-600 text-white shadow-sm shadow-indigo-600/20"
-                      : "text-slate-655 hover:bg-slate-100"
+                      ? "bg-[#003B3A] text-white shadow-2xs"
+                      : "text-slate-700 hover:bg-slate-200/70"
                   )}
                 >
                   {pageNum}
@@ -3546,9 +3585,9 @@ export function XetDuyetK12Client({ academicYears = [], campuses = [], examBoard
           <button
             disabled={reportCurrentPage === reportTotalPages || reportTotalPages === 0}
             onClick={() => setReportCurrentPage(prev => Math.min(prev + 1, reportTotalPages))}
-            className="px-3 py-1.5 rounded-xl border border-slate-200 hover:border-indigo-500 hover:bg-white text-slate-655 disabled:opacity-40 disabled:hover:border-slate-200 disabled:hover:bg-transparent transition-all cursor-pointer font-black bg-transparent border-none"
+            className="px-3 py-1.5 rounded-lg border border-slate-200 bg-white hover:border-[#008B85] hover:text-[#003B3A] text-slate-700 disabled:opacity-40 disabled:pointer-events-none transition-colors cursor-pointer font-semibold shadow-2xs"
           >
-            Sau
+            Trang sau
           </button>
         </div>
       </div>
@@ -4303,7 +4342,7 @@ export function XetDuyetK12Client({ academicYears = [], campuses = [], examBoard
   useEffect(() => {
     if (selectedReportStudent) {
       let commSubs: string[] = [];
-      let cleanNote = selectedReportStudent.directorNote || "";
+      let cleanNote = parseApprovalHistory(selectedReportStudent.directorNote).cleanNote || "";
       const match = cleanNote.match(/^Môn cam kết: \[(.*?)\](?:\r?\n\r?\n)?/);
       const matchRetest = cleanNote.match(/^Môn kiểm tra lại: \[(.*?)\](?:\r?\n\r?\n)?/);
       if (match) {
@@ -4316,7 +4355,7 @@ export function XetDuyetK12Client({ academicYears = [], campuses = [], examBoard
       setReportForm({
         admissionResult: selectedReportStudent.admissionResult || "",
         admissionCampus: selectedReportStudent.admissionCampus || "",
-        signatureName: selectedReportStudent.signatureName || "",
+        signatureName: selectedReportStudent.signatureName || currentUser?.fullName || "",
         directorNote: cleanNote,
         committedSubjects: commSubs
       });
@@ -6832,15 +6871,15 @@ const [customCommitmentSubjects, setCustomCommitmentSubjects] = useState<string[
       {/* ===== OTHER TABS PLACEHOLDERS ===== */}
       {tab === "reports" && (
         <div className="space-y-4 animate-in fade-in slide-in-from-bottom-2 duration-500">
-          {/* LATEST BATCH NOTIFICATION - COMPACT PILL */}
+          {/* LATEST BATCH NOTIFICATION - COMPACT LEDGER BANNER */}
           {latestBatchInfo && !alertDismissed && (
-            <div className="no-print mb-3 flex items-center justify-between gap-3 px-3.5 py-2 rounded-xl bg-gradient-to-r from-amber-50 to-orange-50/80 border border-amber-200 text-slate-700 shadow-2xs text-xs animate-in fade-in duration-200">
-              <div className="flex items-center gap-2 flex-wrap min-w-0">
-                <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md bg-amber-600 text-white font-bold text-[10px] uppercase tracking-wider shadow-2xs">
-                  <AlertCircle className="w-3 h-3" /> Đợt KS mới nhất
+            <div className="no-print mb-3 flex items-center justify-between gap-3 px-4 py-2.5 rounded-xl bg-amber-50/90 border border-amber-200/90 text-slate-800 text-xs">
+              <div className="flex items-center gap-2.5 flex-wrap min-w-0">
+                <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-md bg-amber-600 text-white font-semibold text-[11px]">
+                  <AlertCircle className="w-3.5 h-3.5" /> Đợt khảo sát mới nhất
                 </span>
-                <span className="font-bold text-slate-800 truncate">{latestBatchInfo.name}</span>
-                <span className="text-slate-400 text-[11px] hidden sm:inline">• Kỳ: <strong className="text-slate-600">{latestBatchInfo.periodName}</strong></span>
+                <span className="font-bold text-slate-900 truncate">{latestBatchInfo.name}</span>
+                <span className="text-slate-500 text-xs hidden sm:inline">thuộc kỳ <strong className="text-slate-700 font-semibold">{latestBatchInfo.periodName}</strong></span>
               </div>
               <div className="flex items-center gap-2 shrink-0">
                 <button
@@ -6849,14 +6888,14 @@ const [customCommitmentSubjects, setCustomCommitmentSubjects] = useState<string[
                     setReportBatchId(latestBatchInfo.id);
                     setReportsSubTab("results");
                   }}
-                  className="px-2.5 py-1 bg-amber-600 hover:bg-amber-700 text-white font-bold text-xs rounded-lg transition-all shadow-2xs cursor-pointer active:scale-95"
+                  className="px-3 py-1 bg-[#003B3A] hover:bg-[#005854] text-white font-semibold text-xs rounded-lg transition-colors cursor-pointer"
                 >
-                  Xem đợt này
+                  Chuyển đến đợt này
                 </button>
                 <button
                   onClick={() => setAlertDismissed(true)}
-                  className="p-1 text-slate-400 hover:text-slate-600 rounded-md hover:bg-amber-100 transition-colors cursor-pointer"
-                  title="Đóng thông báo"
+                  className="p-1 text-slate-400 hover:text-slate-700 rounded-md hover:bg-amber-100/80 transition-colors cursor-pointer"
+                  title="Ẩn thông báo"
                 >
                   <X className="w-3.5 h-3.5" />
                 </button>
@@ -6865,53 +6904,53 @@ const [customCommitmentSubjects, setCustomCommitmentSubjects] = useState<string[
           )}
 
           {/* UNIFIED APPROVAL CONTROL & FILTER BAR */}
-          <div className="bg-white rounded-2xl border border-slate-200/90 shadow-2xs p-3.5 space-y-3 mb-3 text-left">
-            {/* Row 1: Subtabs + Scope Badge + Primary Action */}
-            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2.5 pb-2.5 border-b border-slate-100">
-              <div className="flex items-center gap-2 flex-wrap">
+          <div className="bg-white rounded-2xl border border-slate-200/90 shadow-[0_1px_2px_rgba(15,23,42,0.03)] p-4 space-y-3.5 mb-3 text-left">
+            {/* Row 1: Subtabs + Scope Context + Actionable Alerts & Email */}
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-3 border-b border-slate-100">
+              <div className="flex items-center gap-2.5 flex-wrap">
                 {/* Subtab Switcher */}
-                <div className="bg-slate-100/90 p-1 rounded-xl flex gap-1 border border-slate-200/60 shadow-2xs">
+                <div className="bg-slate-100 p-1 rounded-xl flex gap-1 border border-slate-200/70">
                   <button
                     onClick={() => setReportsSubTab("results")}
-                    className={`flex items-center gap-1.5 px-3.5 py-1.5 rounded-lg text-xs font-bold transition-all cursor-pointer ${
+                    className={`flex items-center gap-2 px-3.5 py-1.5 rounded-lg text-xs font-semibold transition-all cursor-pointer ${
                       reportsSubTab === "results"
-                        ? "bg-white text-[#007A87] shadow-xs"
-                        : "text-slate-500 hover:text-slate-800"
+                        ? "bg-white text-[#003B3A] shadow-2xs border border-slate-200/60"
+                        : "text-slate-600 hover:text-slate-900"
                     }`}
                   >
-                    <Users className="w-3.5 h-3.5 text-[#007A87]" />
-                    <span>Xét duyệt Kết quả</span>
-                    <span className="px-1.5 py-0.2 rounded-md bg-teal-50 text-[#007A87] text-[10px] font-black">
+                    <Users className="w-3.5 h-3.5 text-[#008B85]" />
+                    <span>Danh sách xét duyệt</span>
+                    <span className="px-1.5 py-0.5 rounded-md bg-[#F0FDFA] text-[#00736E] border border-[#CCFBF1] text-[11px] font-bold tabular-nums">
                       {filteredReportStudents.length}
                     </span>
                   </button>
                   <button
                     onClick={() => setReportsSubTab("stats")}
-                    className={`flex items-center gap-1.5 px-3.5 py-1.5 rounded-lg text-xs font-bold transition-all cursor-pointer ${
+                    className={`flex items-center gap-2 px-3.5 py-1.5 rounded-lg text-xs font-semibold transition-all cursor-pointer ${
                       reportsSubTab === "stats"
-                        ? "bg-white text-[#007A87] shadow-xs"
-                        : "text-slate-500 hover:text-slate-800"
+                        ? "bg-white text-[#003B3A] shadow-2xs border border-slate-200/60"
+                        : "text-slate-600 hover:text-slate-900"
                     }`}
                   >
-                    <BarChart3 className="w-3.5 h-3.5 text-[#007A87]" />
-                    <span>Báo cáo & Thống kê</span>
+                    <BarChart3 className="w-3.5 h-3.5 text-[#008B85]" />
+                    <span>Báo cáo &amp; Thống kê</span>
                   </button>
                 </div>
 
-                {/* Scope / Location pill */}
-                <div className="hidden md:flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-slate-50 border border-slate-200 text-xs font-medium text-slate-600">
-                  <Building className="w-3.5 h-3.5 text-slate-400" />
-                  <span className="font-bold text-slate-800">
-                    {reportCampusFilter === "all" ? "Toàn hệ thống" : (campuses.find(c => c.id === reportCampusFilter)?.campusName || "Cơ sở")}
+                {/* Scope / Location Context */}
+                <div className="hidden md:flex items-center gap-2 px-3 py-1.5 rounded-lg bg-slate-50 border border-slate-200/80 text-xs text-slate-600">
+                  <Building className="w-3.5 h-3.5 text-[#008B85]" />
+                  <span className="font-semibold text-slate-800">
+                    {reportCampusFilter === "all" ? "Toàn hệ thống (5 cơ sở)" : (campuses.find(c => c.id === reportCampusFilter)?.campusName || "Cơ sở")}
                   </span>
-                  <span className="text-slate-300">•</span>
-                  <span className="text-slate-500 truncate max-w-[200px]">
-                    {reportBatchId === "all" ? "Tất cả các đợt" : (rawReportBatches.find(b => b.id === reportBatchId)?.name || "Đợt khảo sát")}
+                  <span className="text-slate-300">/</span>
+                  <span className="text-slate-600 font-medium truncate max-w-[220px]">
+                    {reportBatchId === "all" ? "Tất cả đợt khảo sát" : (rawReportBatches.find(b => b.id === reportBatchId)?.name || "Đợt khảo sát")}
                   </span>
                 </div>
               </div>
 
-              {/* Right: Pending Alert Badge + Email Action Button */}
+              {/* Right: Single Actionable Pulse for Pending + Email Actions */}
               <div className="flex items-center gap-2 flex-wrap self-end sm:self-auto">
                 {batchSummaryStats.pending > 0 && (
                   <button
@@ -6919,11 +6958,11 @@ const [customCommitmentSubjects, setCustomCommitmentSubjects] = useState<string[
                       setReportsSubTab("results");
                       setReportApprovalStatusFilter("Chưa duyệt");
                     }}
-                    className="inline-flex items-center gap-1.5 px-2.5 py-1.5 rounded-xl bg-amber-50 hover:bg-amber-100 text-amber-800 border border-amber-200 font-bold text-xs transition-colors cursor-pointer"
-                    title="Bấm để lọc nhanh danh sách chờ duyệt"
+                    className="inline-flex items-center gap-2 px-3 py-1.5 rounded-xl bg-amber-50 hover:bg-amber-100/80 text-amber-900 border border-amber-300/80 font-semibold text-xs transition-colors cursor-pointer tabular-nums"
+                    title="Lọc nhanh các hồ sơ đang chờ Hội đồng xét duyệt"
                   >
-                    <span className="w-2 h-2 rounded-full bg-amber-500 animate-ping" />
-                    <span>{batchSummaryStats.pending} HS chờ duyệt</span>
+                    <span className="w-2 h-2 rounded-full bg-amber-500 animate-pulse" />
+                    <span>{batchSummaryStats.pending} hồ sơ chờ duyệt</span>
                   </button>
                 )}
 
@@ -6931,10 +6970,10 @@ const [customCommitmentSubjects, setCustomCommitmentSubjects] = useState<string[
                   <button
                     onClick={handleSendBatchApprovalEmail}
                     disabled={sendingBatchEmail}
-                    className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-bold text-indigo-700 bg-indigo-50 border border-indigo-200 hover:bg-indigo-100 transition-all shadow-2xs disabled:opacity-50 cursor-pointer"
+                    className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-semibold text-[#003B3A] bg-[#F0FDFA] border border-[#99F6E4] hover:bg-[#CCFBF1]/70 transition-colors disabled:opacity-50 cursor-pointer"
                   >
-                    {sendingBatchEmail ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Mail className="w-3.5 h-3.5" />}
-                    <span>Thông báo GĐCS xét duyệt đợt</span>
+                    {sendingBatchEmail ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Mail className="w-3.5 h-3.5 text-[#00736E]" />}
+                    <span>Đề nghị GĐCS xét duyệt đợt</span>
                   </button>
                 )}
 
@@ -6942,22 +6981,22 @@ const [customCommitmentSubjects, setCustomCommitmentSubjects] = useState<string[
                   <button
                     onClick={handleSendBatchApprovalResultEmail}
                     disabled={sendingBatchResultEmail || filteredReportStudents.length === 0}
-                    className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-bold text-teal-700 bg-teal-50 border border-teal-200 hover:bg-teal-100 transition-all disabled:opacity-50 cursor-pointer shadow-2xs"
-                    title="Gửi email thông báo bảng kết quả xét duyệt đến GĐCS, Tư vấn & Ban KT&ĐBCL"
+                    className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-semibold text-[#003B3A] bg-[#F0FDFA] border border-[#99F6E4] hover:bg-[#CCFBF1]/70 transition-colors disabled:opacity-50 cursor-pointer"
+                    title="Gửi email bảng kết quả xét duyệt đến Giám đốc Cơ sở, Tư vấn Tuyển sinh & Ban KT&ĐBCL"
                   >
-                    {sendingBatchResultEmail ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Mail className="w-3.5 h-3.5" />}
-                    <span>Gửi email kết quả (GĐCS, Tư vấn, Ban KT)</span>
+                    {sendingBatchResultEmail ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Mail className="w-3.5 h-3.5 text-[#00736E]" />}
+                    <span>Gửi thông báo kết quả qua email</span>
                   </button>
                 )}
               </div>
             </div>
 
-            {/* Row 2: Compact Filters Toolbar (Kỳ, Cơ sở, Đợt, Tìm kiếm) */}
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-2.5">
+            {/* Row 2: 4-Column Filter Bar (Kỳ, Cơ sở, Đợt, Tìm kiếm) */}
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
               {/* 1. Kỳ khảo sát */}
               <div className="relative">
-                <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-slate-400">
-                  <Calendar className="w-3.5 h-3.5 text-indigo-500" />
+                <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                  <Calendar className="w-3.5 h-3.5 text-[#008B85]" />
                 </div>
                 <select
                   value={reportPeriodId}
@@ -6965,13 +7004,14 @@ const [customCommitmentSubjects, setCustomCommitmentSubjects] = useState<string[
                     setReportPeriodId(e.target.value);
                     setReportStudentId("");
                   }}
-                  className="w-full bg-slate-50/70 hover:bg-white border border-slate-200 rounded-xl pl-9 pr-8 py-2 text-xs font-semibold text-slate-700 outline-none focus:border-indigo-500 focus:bg-white focus:ring-2 focus:ring-indigo-500/10 transition-all cursor-pointer appearance-none shadow-2xs"
+                  aria-label="Kỳ khảo sát"
+                  className="w-full bg-slate-50/70 hover:bg-white border border-slate-200 rounded-xl pl-9 pr-8 py-2 text-xs font-semibold text-slate-800 outline-none focus:border-[#008B85] focus:bg-white focus:ring-3 focus:ring-[#00A19A]/15 transition-all cursor-pointer appearance-none"
                 >
                   {periods.length > 0 && <option value="all">Tất cả kỳ khảo sát</option>}
                   {visiblePeriods.map(p => (
                     <option key={p.id} value={p.id}>{p.name}</option>
                   ))}
-                  {periods.length === 0 && <option value="">Không có kỳ KS nào</option>}
+                  {periods.length === 0 && <option value="">Chưa có kỳ khảo sát</option>}
                 </select>
                 <div className="pointer-events-none absolute inset-y-0 right-0 flex items-center px-2.5 text-slate-400">
                   <ChevronDown className="w-3.5 h-3.5" />
@@ -6980,8 +7020,8 @@ const [customCommitmentSubjects, setCustomCommitmentSubjects] = useState<string[
 
               {/* 2. Cơ sở */}
               <div className="relative">
-                <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-slate-400">
-                  <Building className="w-3.5 h-3.5 text-indigo-500" />
+                <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                  <Building className="w-3.5 h-3.5 text-[#008B85]" />
                 </div>
                 <select
                   value={reportCampusFilter}
@@ -6989,9 +7029,10 @@ const [customCommitmentSubjects, setCustomCommitmentSubjects] = useState<string[
                     setReportCampusFilter(e.target.value);
                     setReportStudentId("");
                   }}
-                  className="w-full bg-slate-50/70 hover:bg-white border border-slate-200 rounded-xl pl-9 pr-8 py-2 text-xs font-semibold text-slate-700 outline-none focus:border-indigo-500 focus:bg-white focus:ring-2 focus:ring-indigo-500/10 transition-all cursor-pointer appearance-none shadow-2xs"
+                  aria-label="Cơ sở tuyển sinh"
+                  className="w-full bg-slate-50/70 hover:bg-white border border-slate-200 rounded-xl pl-9 pr-8 py-2 text-xs font-semibold text-slate-800 outline-none focus:border-[#008B85] focus:bg-white focus:ring-3 focus:ring-[#00A19A]/15 transition-all cursor-pointer appearance-none"
                 >
-                  <option value="all">Tất cả các cơ sở</option>
+                  <option value="all">Tất cả cơ sở</option>
                   {campuses.map(c => (
                     <option key={c.id} value={c.id}>{c.campusName}</option>
                   ))}
@@ -7003,8 +7044,8 @@ const [customCommitmentSubjects, setCustomCommitmentSubjects] = useState<string[
 
               {/* 3. Đợt khảo sát */}
               <div className="relative">
-                <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-slate-400">
-                  <Layers className="w-3.5 h-3.5 text-indigo-500" />
+                <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                  <Layers className="w-3.5 h-3.5 text-[#008B85]" />
                 </div>
                 <select
                   value={reportBatchId}
@@ -7012,13 +7053,14 @@ const [customCommitmentSubjects, setCustomCommitmentSubjects] = useState<string[
                     setReportBatchId(e.target.value);
                     setReportStudentId("");
                   }}
-                  className="w-full bg-slate-50/70 hover:bg-white border border-slate-200 rounded-xl pl-9 pr-8 py-2 text-xs font-semibold text-slate-700 outline-none focus:border-indigo-500 focus:bg-white focus:ring-2 focus:ring-indigo-500/10 transition-all cursor-pointer appearance-none shadow-2xs"
+                  aria-label="Đợt khảo sát"
+                  className="w-full bg-slate-50/70 hover:bg-white border border-slate-200 rounded-xl pl-9 pr-8 py-2 text-xs font-semibold text-slate-800 outline-none focus:border-[#008B85] focus:bg-white focus:ring-3 focus:ring-[#00A19A]/15 transition-all cursor-pointer appearance-none"
                 >
                   <option value="all">Tất cả các đợt</option>
                   {(() => {
                     const noBatchCount = (reportStudents || []).filter(s => !s.batchId).length;
                     const pendingNoBatch = (reportStudents || []).filter(s => !s.batchId && !s.admissionResult && !s.isAbsent).length;
-                    const suffixNoBatch = noBatchCount > 0 ? ` (${noBatchCount} HS${pendingNoBatch > 0 ? ` - ${pendingNoBatch} chờ` : ''})` : '';
+                    const suffixNoBatch = noBatchCount > 0 ? ` (${noBatchCount} HS${pendingNoBatch > 0 ? ` · ${pendingNoBatch} chờ duyệt` : ''})` : '';
                     return (
                       <option value="none">Khảo sát lẻ{suffixNoBatch}</option>
                     );
@@ -7026,7 +7068,7 @@ const [customCommitmentSubjects, setCustomCommitmentSubjects] = useState<string[
                   {reportBatches.map(b => {
                     const countInBatch = (reportStudents || []).filter(s => s.batchId === b.id).length;
                     const pendingInBatch = (reportStudents || []).filter(s => s.batchId === b.id && !s.admissionResult && !s.isAbsent).length;
-                    const suffix = countInBatch > 0 ? ` (${countInBatch} HS${pendingInBatch > 0 ? ` - ${pendingInBatch} chờ` : ''})` : '';
+                    const suffix = countInBatch > 0 ? ` (${countInBatch} HS${pendingInBatch > 0 ? ` · ${pendingInBatch} chờ duyệt` : ''})` : '';
                     return (
                       <option key={b.id} value={b.id}>{b.name}{suffix}</option>
                     );
@@ -7049,13 +7091,14 @@ const [customCommitmentSubjects, setCustomCommitmentSubjects] = useState<string[
                     setReportStudentSearchQuery(e.target.value);
                     setReportStudentId("");
                   }}
-                  placeholder="Tìm theo Mã HS, Họ tên..."
-                  className="w-full bg-slate-50/70 hover:bg-white border border-slate-200 rounded-xl pl-9 pr-8 py-2 text-xs font-semibold text-slate-700 outline-none focus:border-indigo-500 focus:bg-white focus:ring-2 focus:ring-indigo-500/10 placeholder:text-slate-400 placeholder:font-normal transition-all shadow-2xs"
+                  placeholder="Tìm mã học sinh, họ và tên..."
+                  className="w-full bg-slate-50/70 hover:bg-white border border-slate-200 rounded-xl pl-9 pr-8 py-2 text-xs font-medium text-slate-800 outline-none focus:border-[#008B85] focus:bg-white focus:ring-3 focus:ring-[#00A19A]/15 placeholder:text-slate-400 transition-all"
                 />
                 {reportStudentSearchQuery && (
                   <button
                     onClick={() => setReportStudentSearchQuery("")}
-                    className="absolute inset-y-0 right-0 flex items-center px-2.5 text-slate-400 hover:text-slate-600 font-bold"
+                    className="absolute inset-y-0 right-0 flex items-center px-2.5 text-slate-400 hover:text-slate-700 cursor-pointer"
+                    title="Xóa từ khóa tìm kiếm"
                   >
                     <X className="w-3.5 h-3.5" />
                   </button>
@@ -7066,173 +7109,172 @@ const [customCommitmentSubjects, setCustomCommitmentSubjects] = useState<string[
 
           {/* VIEW RENDERED CONDITIONALLY */}
           {reportsSubTab === "stats" ? (
-            <div className="space-y-8 animate-in fade-in duration-300 bg-gradient-to-br from-slate-50 via-white to-teal-50/10 text-slate-800 p-6 sm:p-8 rounded-3xl border border-slate-200 shadow-sm">
-              {/* KPI Cards Row */}
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-5">
-                {/* Card 1: Tổng Học sinh */}
-                <div className="relative overflow-hidden bg-white p-6 rounded-2xl border border-slate-200 border-l-4 border-l-blue-500 shadow-sm flex flex-col justify-between group hover:-translate-y-1 hover:shadow-md transition-all duration-300">
-                  <div className="flex items-center justify-between">
-                    <span className="text-[10px] font-black uppercase tracking-widest text-slate-400">Tổng Học sinh</span>
-                    <div className="p-2.5 bg-blue-50 text-blue-600 rounded-xl transition-all duration-300 group-hover:scale-110 group-hover:bg-blue-100">
-                      <Users className="w-4 h-4" />
+            <div className="space-y-6 animate-in fade-in duration-300 text-slate-800">
+              {/* UNIFIED ADMISSIONS LEDGER SUMMARY STRIP */}
+              <div className="bg-white rounded-2xl border border-slate-200/90 shadow-[0_1px_2px_rgba(15,23,42,0.03)] overflow-hidden">
+                <div className="grid grid-cols-1 md:grid-cols-12 divide-y md:divide-y-0 md:divide-x divide-slate-200/80">
+                  {/* Column 1: Tổng hồ sơ khảo sát */}
+                  <div className="md:col-span-3 p-5 flex flex-col justify-between bg-slate-50/40">
+                    <div className="flex items-center justify-between">
+                      <span className="text-xs font-semibold text-slate-600">Tổng hồ sơ đăng ký khảo sát</span>
+                      <span className="p-2 rounded-lg bg-[#F0FDFA] text-[#00736E] border border-[#CCFBF1]">
+                        <Users className="w-4 h-4" />
+                      </span>
+                    </div>
+                    <div className="mt-3 flex items-baseline gap-2 tabular-nums">
+                      <span className="text-3xl font-bold text-[#0F172A] tracking-tight">{overallKPIs.total}</span>
+                      <span className="text-xs font-medium text-slate-500">học sinh K-12</span>
+                    </div>
+                    <div className="mt-2 text-[11px] text-slate-500 font-medium tabular-nums">
+                      Đã có kết quả chấm: <strong className="text-slate-800 font-semibold">{overallKPIs.surveyed || 0}</strong> ({overallKPIs.total > 0 ? Math.round(((overallKPIs.surveyed || 0) / overallKPIs.total) * 100) : 0}%)
                     </div>
                   </div>
-                  <div className="flex items-baseline gap-1 mt-4">
-                    <span className="text-4xl font-black text-slate-800 tracking-tight">{overallKPIs.total}</span>
-                    <span className="text-xs text-slate-400 font-bold">học sinh</span>
-                  </div>
-                </div>
 
-                {/* Card 2: Kết quả Khảo sát */}
-                <div className="relative overflow-hidden bg-white p-6 rounded-2xl border border-slate-200 border-l-4 border-l-purple-500 shadow-sm flex flex-col justify-between group hover:-translate-y-1 hover:shadow-md transition-all duration-300">
-                  <div className="flex items-center justify-between">
-                    <span className="text-[10px] font-black uppercase tracking-widest text-slate-400">Kết quả Khảo sát K-12</span>
-                    <div className="p-2.5 bg-purple-50 text-purple-600 rounded-xl transition-all duration-300 group-hover:scale-110 group-hover:bg-purple-100">
-                      <GraduationCap className="w-4 h-4" />
+                  {/* Column 2: Phân bổ kết quả xét duyệt */}
+                  <div className="md:col-span-5 p-5 flex flex-col justify-between">
+                    <div className="flex items-center justify-between">
+                      <span className="text-xs font-semibold text-slate-600">Kết quả phê duyệt của Hội đồng</span>
+                      <span className="text-[11px] font-medium text-slate-500 tabular-nums">
+                        Chờ duyệt: <strong className="text-amber-700 font-semibold">{batchSummaryStats.pending}</strong>
+                      </span>
+                    </div>
+                    <div className="grid grid-cols-3 gap-3 mt-3 tabular-nums">
+                      <div className="p-2.5 rounded-xl bg-emerald-50/60 border border-emerald-200/70">
+                        <span className="text-[11px] font-medium text-emerald-800 block">Đạt chuẩn</span>
+                        <span className="text-2xl font-bold text-emerald-700">{overallKPIs.passed}</span>
+                      </div>
+                      <div className="p-2.5 rounded-xl bg-amber-50/60 border border-amber-200/70">
+                        <span className="text-[11px] font-medium text-amber-900 block">Đạt cam kết</span>
+                        <span className="text-2xl font-bold text-amber-700">{overallKPIs.committed}</span>
+                      </div>
+                      <div className="p-2.5 rounded-xl bg-rose-50/60 border border-rose-200/70">
+                        <span className="text-[11px] font-medium text-rose-800 block">Không đạt</span>
+                        <span className="text-2xl font-bold text-rose-700">{overallKPIs.failed}</span>
+                      </div>
                     </div>
                   </div>
-                  <div className="flex items-center justify-between mt-4">
-                    <div className="flex flex-col">
-                      <span className="text-3xl font-black text-emerald-600">{overallKPIs.passed}</span>
-                      <span className="text-[9px] text-emerald-600/70 font-bold uppercase tracking-wider">Đạt KS</span>
-                    </div>
-                    <div className="w-px h-8 bg-slate-250"></div>
-                    <div className="flex flex-col items-center">
-                      <span className="text-3xl font-black text-purple-650">{overallKPIs.committed}</span>
-                      <span className="text-[9px] text-purple-650/70 font-bold uppercase tracking-wider">Cam kết</span>
-                    </div>
-                    <div className="w-px h-8 bg-slate-250"></div>
-                    <div className="flex flex-col items-end">
-                      <span className="text-3xl font-black text-rose-600">{overallKPIs.failed}</span>
-                      <span className="text-[9px] text-rose-600/70 font-bold uppercase tracking-wider">Không Đạt</span>
-                    </div>
-                  </div>
-                </div>
 
-                {/* Card 3: Thống kê Nhập học */}
-                <div className="relative overflow-hidden bg-white p-6 rounded-2xl border border-slate-200 border-l-4 border-l-emerald-500 shadow-sm flex flex-col justify-between group hover:-translate-y-1 hover:shadow-md transition-all duration-300">
-                  <div className="flex items-center justify-between">
-                    <span className="text-[10px] font-black uppercase tracking-widest text-slate-400">Thống kê Nhập học (Đạt/Cam kết)</span>
-                    <div className="p-2.5 bg-emerald-50 text-emerald-600 rounded-xl transition-all duration-300 group-hover:scale-110 group-hover:bg-emerald-100">
-                      <UserCheck className="w-4 h-4" />
+                  {/* Column 3: Tỷ lệ hoàn tất nhập học */}
+                  <div className="md:col-span-4 p-5 flex flex-col justify-between">
+                    <div className="flex items-center justify-between">
+                      <span className="text-xs font-semibold text-slate-600">Chuyển đổi nhập học (Đạt &amp; Cam kết)</span>
+                      <span className="p-2 rounded-lg bg-emerald-50 text-emerald-700 border border-emerald-200/60">
+                        <UserCheck className="w-4 h-4" />
+                      </span>
                     </div>
-                  </div>
-                  <div className="flex items-baseline gap-1 mt-4">
-                    <span className="text-4xl font-black text-slate-800 tracking-tight">{enrollmentStats.total_enrolled}</span>
-                    <span className="text-xs text-slate-405 font-bold">/ {enrollmentStats.total_passed} HS nhập học ({enrollmentStats.overallRate}%)</span>
+                    <div className="mt-3 flex items-baseline justify-between gap-2 tabular-nums">
+                      <div>
+                        <span className="text-3xl font-bold text-[#003B3A] tracking-tight">{enrollmentStats.total_enrolled}</span>
+                        <span className="text-xs text-slate-500 font-medium"> / {enrollmentStats.total_passed} học sinh đủ điều kiện</span>
+                      </div>
+                      <span className="px-2 py-0.5 rounded-md bg-[#F0FDFA] text-[#00736E] border border-[#CCFBF1] text-xs font-bold">
+                        {enrollmentStats.overallRate}%
+                      </span>
+                    </div>
+                    <div className="w-full h-1.5 bg-slate-100 rounded-full overflow-hidden mt-2.5">
+                      <div className="h-full bg-[#00A19A] rounded-full transition-all duration-500" style={{ width: `${Math.min(100, enrollmentStats.overallRate || 0)}%` }} />
+                    </div>
                   </div>
                 </div>
               </div>
 
               {/* Grid 5 Cơ sở */}
-              <div className="bg-white p-6 rounded-2xl border border-slate-200 shadow-sm space-y-4">
-                <div className="flex items-center justify-between border-b border-slate-100 pb-3">
-                  <h4 className="font-black text-slate-800 text-sm tracking-tight uppercase flex items-center gap-2">
-                    <span className="flex h-2 w-2 relative">
-                      <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-teal-400 opacity-75"></span>
-                      <span className="relative inline-flex rounded-full h-2 w-2 bg-teal-500"></span>
-                    </span>
-                    Tổng hợp số liệu các Cơ sở tuyển sinh
-                  </h4>
-                  <span className="text-[9px] font-black text-slate-400 uppercase tracking-widest bg-slate-100 px-2 py-0.5 rounded">Trực quan nhanh</span>
+              <div className="bg-white p-5 sm:p-6 rounded-2xl border border-slate-200/90 shadow-[0_1px_2px_rgba(15,23,42,0.03)] space-y-4">
+                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-1 border-b border-slate-100 pb-3">
+                  <div>
+                    <h4 className="font-bold text-slate-900 text-sm">
+                      Tiến độ khảo sát &amp; xét duyệt theo Cơ sở
+                    </h4>
+                    <p className="text-xs text-slate-500 mt-0.5">
+                      So sánh quy mô hồ sơ, tỷ lệ đã khảo sát và phân bổ kết quả giữa 5 cơ sở Sky-Line
+                    </p>
+                  </div>
                 </div>
                 
-                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4">
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-3.5">
                   {campusStats.map(stat => {
                     const campusApprovedRate = stat.total > 0 ? Math.round(((stat.total - stat.pending) / stat.total) * 100) : 0;
                     const campusSurveyRate = stat.total > 0 ? Math.round((stat.surveyed / stat.total) * 100) : 0;
                     const shortCode = stat.campusName?.replace("Cơ sở ", "CS");
                     
                     let campusColor = {
-                      border: "border-l-slate-400 border-slate-200",
-                      text: "text-slate-700",
-                      bg: "bg-slate-50/10",
-                      accent: "bg-slate-50 text-slate-700 border-slate-200",
-                      bar: "bg-slate-400"
+                      border: "border-t-slate-400",
+                      accent: "bg-slate-100 text-slate-700 border-slate-200",
+                      bar: "bg-slate-500"
                     };
                     
                     if (shortCode === "CS1") {
                       campusColor = {
-                        border: "border-l-teal-500 border-teal-100",
-                        text: "text-teal-700",
-                        bg: "bg-teal-50/10",
-                        accent: "bg-teal-50 text-teal-700 border border-teal-200",
-                        bar: "bg-teal-500"
+                        border: "border-t-[#00A19A]",
+                        accent: "bg-[#F0FDFA] text-[#00736E] border border-[#CCFBF1]",
+                        bar: "bg-[#00A19A]"
                       };
                     } else if (shortCode === "CS2") {
                       campusColor = {
-                        border: "border-l-pink-500 border-pink-100",
-                        text: "text-pink-700",
-                        bg: "bg-pink-50/10",
-                        accent: "bg-pink-50 text-pink-700 border border-pink-200",
-                        bar: "bg-pink-500"
+                        border: "border-t-rose-500",
+                        accent: "bg-rose-50 text-rose-700 border border-rose-200",
+                        bar: "bg-rose-500"
                       };
                     } else if (shortCode === "CS3") {
                       campusColor = {
-                        border: "border-l-purple-500 border-purple-100",
-                        text: "text-purple-700",
-                        bg: "bg-purple-50/10",
-                        accent: "bg-purple-50 text-purple-700 border border-purple-200",
-                        bar: "bg-purple-550"
+                        border: "border-t-violet-600",
+                        accent: "bg-violet-50 text-violet-700 border border-violet-200",
+                        bar: "bg-violet-600"
                       };
                     } else if (shortCode === "CS4") {
                       campusColor = {
-                        border: "border-l-amber-500 border-amber-100",
-                        text: "text-amber-800",
-                        bg: "bg-amber-50/10",
+                        border: "border-t-amber-500",
                         accent: "bg-amber-50 text-amber-800 border border-amber-200",
                         bar: "bg-amber-500"
                       };
                     } else if (shortCode === "CS5") {
                       campusColor = {
-                        border: "border-l-blue-500 border-blue-100",
-                        text: "text-blue-700",
-                        bg: "bg-blue-50/10",
-                        accent: "bg-blue-50 text-blue-700 border border-blue-200",
-                        bar: "bg-blue-500"
+                        border: "border-t-sky-600",
+                        accent: "bg-sky-50 text-sky-700 border border-sky-200",
+                        bar: "bg-sky-600"
                       };
                     }
 
                     return (
                       <div 
                         key={stat.id} 
-                        className={`p-4 rounded-xl border-l-4 ${campusColor.border} border border-slate-200/80 shadow-sm flex flex-col justify-between hover:shadow hover:-translate-y-0.5 transition-all duration-300 bg-white`}
+                        className={`p-4 rounded-xl border border-slate-200/90 border-t-4 ${campusColor.border} flex flex-col justify-between bg-white hover:border-slate-300 transition-colors tabular-nums`}
                       >
                         <div className="flex items-center justify-between mb-2">
-                          <span className={`px-2 py-0.5 rounded text-[9px] font-black tracking-wider ${campusColor.accent}`}>{shortCode}</span>
-                          <span className="text-[10px] text-slate-400 font-bold">Duyệt: {campusApprovedRate}%</span>
+                          <span className={`px-2 py-0.5 rounded-md text-[10px] font-bold ${campusColor.accent}`}>{shortCode}</span>
+                          <span className="text-[11px] text-slate-500 font-medium">Đã duyệt: <strong className="text-slate-800">{campusApprovedRate}%</strong></span>
                         </div>
                         
                         <div className="mb-3">
-                          <h5 className="text-xs font-black text-slate-800 truncate" title={stat.campusName}>{stat.campusName}</h5>
+                          <h5 className="text-xs font-bold text-slate-800 truncate" title={stat.campusName}>{stat.campusName}</h5>
                           <div className="flex items-baseline gap-1.5 mt-1">
-                            <span className="text-2xl font-black text-slate-900">{stat.total}</span>
-                            <span className="text-[10px] text-slate-400 font-bold">HS</span>
+                            <span className="text-2xl font-bold text-slate-900">{stat.total}</span>
+                            <span className="text-xs text-slate-500 font-medium">hồ sơ</span>
                           </div>
                         </div>
                         
-                        <div className="space-y-1.5 pt-2 border-t border-slate-100 text-[10px]">
-                          <div className="flex justify-between items-center text-slate-400 font-bold">
-                            <span>Khảo sát:</span>
-                            <span className="font-extrabold text-slate-700">{stat.surveyed}/{stat.total} ({campusSurveyRate}%)</span>
+                        <div className="space-y-2 pt-2.5 border-t border-slate-100 text-[11px]">
+                          <div className="flex justify-between items-center text-slate-500 font-medium">
+                            <span>Đã khảo sát:</span>
+                            <span className="font-semibold text-slate-800">{stat.surveyed}/{stat.total} ({campusSurveyRate}%)</span>
                           </div>
                           
-                          <div className="w-full h-1 bg-slate-100 rounded-full overflow-hidden">
+                          <div className="w-full h-1.5 bg-slate-100 rounded-full overflow-hidden">
                             <div className={`h-full ${campusColor.bar} rounded-full`} style={{ width: `${campusSurveyRate}%` }}></div>
                           </div>
                           
-                          <div className="grid grid-cols-3 gap-1 pt-1.5 font-bold text-center">
-                            <div className="bg-emerald-50 text-emerald-700 rounded py-0.5">
-                              <span className="block text-[8px] uppercase font-bold opacity-60">Đạt</span>
-                              <span className="text-[10px] font-black">{stat.passed}</span>
+                          <div className="grid grid-cols-3 gap-1.5 pt-1 text-center">
+                            <div className="bg-emerald-50/80 text-emerald-800 rounded-lg py-1 border border-emerald-100">
+                              <span className="block text-[9px] font-medium text-emerald-700">Đạt</span>
+                              <span className="text-xs font-bold">{stat.passed}</span>
                             </div>
-                            <div className="bg-purple-50 text-purple-700 rounded py-0.5">
-                              <span className="block text-[8px] uppercase font-bold opacity-60">C.K</span>
-                              <span className="text-[10px] font-black">{stat.committed}</span>
+                            <div className="bg-amber-50/80 text-amber-900 rounded-lg py-1 border border-amber-100">
+                              <span className="block text-[9px] font-medium text-amber-800">Cam kết</span>
+                              <span className="text-xs font-bold">{stat.committed}</span>
                             </div>
-                            <div className="bg-rose-50 text-rose-700 rounded py-0.5">
-                              <span className="block text-[8px] uppercase font-bold opacity-60">K.Đ</span>
-                              <span className="text-[10px] font-black">{stat.failed}</span>
+                            <div className="bg-rose-50/80 text-rose-800 rounded-lg py-1 border border-rose-100">
+                              <span className="block text-[9px] font-medium text-rose-700">K.Đạt</span>
+                              <span className="text-xs font-bold">{stat.failed}</span>
                             </div>
                           </div>
                         </div>
@@ -7245,23 +7287,25 @@ const [customCommitmentSubjects, setCustomCommitmentSubjects] = useState<string[
               {/* Chart & Enrollment Breakdown Row */}
               <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
                 {/* Chart Card */}
-                <div className="lg:col-span-2 bg-white rounded-2xl border border-slate-200 shadow-sm p-6 overflow-hidden hover:shadow-md transition-all duration-300">
-                  <div className="flex flex-col sm:flex-row sm:items-center justify-between mb-6 border-b border-slate-100 pb-4 gap-3">
-                    <h4 className="font-black text-slate-800 text-sm tracking-tight uppercase flex items-center gap-2.5">
-                      <span className="flex h-2 w-2 relative">
-                        <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-teal-400 opacity-75"></span>
-                        <span className="relative inline-flex rounded-full h-2 w-2 bg-teal-500"></span>
-                      </span>
-                      Biểu đồ theo dõi Học sinh Khảo sát theo Khối của các Cơ sở
-                    </h4>
+                <div className="lg:col-span-2 bg-white rounded-2xl border border-slate-200/90 shadow-[0_1px_2px_rgba(15,23,42,0.03)] p-5 sm:p-6 overflow-hidden">
+                  <div className="flex flex-col sm:flex-row sm:items-center justify-between mb-5 border-b border-slate-100 pb-3.5 gap-3">
+                    <div>
+                      <h4 className="font-bold text-slate-900 text-sm">
+                        Phân bổ học sinh khảo sát theo Khối lớp (K1 – K12)
+                      </h4>
+                      <p className="text-xs text-slate-500 mt-0.5">
+                        Đối chiếu số lượng hồ sơ đăng ký và tiến độ khảo sát thực tế ở từng khối
+                      </p>
+                    </div>
                     <div className="flex items-center gap-2 self-end sm:self-auto">
-                      <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest hidden sm:inline-block">Hiển thị:</span>
+                      <label htmlFor="chartCampusSelect" className="text-xs font-medium text-slate-500 hidden sm:inline-block">Phạm vi:</label>
                       <select
+                        id="chartCampusSelect"
                         value={chartCampusId}
                         onChange={e => setChartCampusId(e.target.value)}
-                        className="bg-slate-50 border border-slate-200 rounded-xl text-[10px] font-black text-slate-700 py-1.5 px-3 outline-none cursor-pointer hover:border-slate-300 transition-colors shadow-sm"
+                        className="bg-slate-50 border border-slate-200 rounded-xl text-xs font-semibold text-slate-800 py-1.5 px-3 outline-none cursor-pointer hover:border-[#008B85] transition-colors"
                       >
-                        <option value="all">Tất cả các cơ sở</option>
+                        <option value="all">Toàn hệ thống</option>
                         <option value="CS1">Cơ sở 1</option>
                         <option value="CS2">Cơ sở 2</option>
                         <option value="CS3">Cơ sở 3</option>
@@ -7275,23 +7319,19 @@ const [customCommitmentSubjects, setCustomCommitmentSubjects] = useState<string[
                       <ComposedChart data={gradeStats} margin={{ top: 10, right: 10, left: -20, bottom: 0 }}>
                         <defs>
                           <linearGradient id="colorTotal" x1="0" y1="0" x2="0" y2="1">
-                            <stop offset="5%" stopColor="#4f46e5" stopOpacity={0.15}/>
-                            <stop offset="95%" stopColor="#4f46e5" stopOpacity={0.02}/>
+                            <stop offset="5%" stopColor="#003B3A" stopOpacity={0.18}/>
+                            <stop offset="95%" stopColor="#003B3A" stopOpacity={0.03}/>
                           </linearGradient>
                           <linearGradient id="colorSurveyed" x1="0" y1="0" x2="0" y2="1">
-                            <stop offset="5%" stopColor="#48BFE3" stopOpacity={0.8}/>
-                            <stop offset="95%" stopColor="#48BFE3" stopOpacity={0.2}/>
-                          </linearGradient>
-                          <linearGradient id="colorChung" x1="0" y1="0" x2="0" y2="1">
-                            <stop offset="5%" stopColor="#94a3b8" stopOpacity={0.2}/>
-                            <stop offset="95%" stopColor="#94a3b8" stopOpacity={0.02}/>
+                            <stop offset="5%" stopColor="#00A19A" stopOpacity={0.85}/>
+                            <stop offset="95%" stopColor="#00A19A" stopOpacity={0.25}/>
                           </linearGradient>
                         </defs>
                         <CartesianGrid strokeDasharray="4 4" vertical={false} stroke="#f1f5f9" />
                         <XAxis 
                           dataKey="grade" 
                           stroke="#64748b" 
-                          fontSize={10} 
+                          fontSize={11} 
                           tickLine={false} 
                           axisLine={false} 
                           dy={8} 
@@ -7299,12 +7339,12 @@ const [customCommitmentSubjects, setCustomCommitmentSubjects] = useState<string[
                           tickFormatter={(tick) => {
                             const stat = gradeStats.find(item => item.grade === tick);
                             if (!stat || stat.total === 0) return tick;
-                            return `${tick} (${stat.total} HS)`;
+                            return `${tick} (${stat.total})`;
                           }}
                         />
                         
                         {/* Left Y-axis: counts */}
-                        <YAxis yAxisId="left" stroke="#64748b" fontSize={10} tickLine={false} axisLine={false} allowDecimals={false} className="font-semibold" />
+                        <YAxis yAxisId="left" stroke="#64748b" fontSize={11} tickLine={false} axisLine={false} allowDecimals={false} className="font-semibold" />
                         
                         <Tooltip
                           content={({ active, payload, label }) => {
@@ -7317,39 +7357,39 @@ const [customCommitmentSubjects, setCustomCommitmentSubjects] = useState<string[
                               
                               if (chartCampusId === "all") {
                                 return (
-                                  <div className="bg-white border border-slate-200 rounded-xl p-4 shadow-lg text-xs font-semibold text-slate-800 space-y-2">
-                                    <div className="font-black text-sm border-b border-slate-100 pb-1.5 flex justify-between gap-4">
+                                  <div className="bg-white border border-slate-200 rounded-xl p-3.5 shadow-lg text-xs font-medium text-slate-800 space-y-2 tabular-nums">
+                                    <div className="font-bold text-sm border-b border-slate-100 pb-1.5 flex justify-between gap-4">
                                       <span>{stat.grade}</span>
-                                      <span className="text-indigo-650">{stat.total}/{overallTotal} HS ({gradePct}%)</span>
+                                      <span className="text-[#00736E]">{stat.total}/{overallTotal} HS ({gradePct}%)</span>
                                     </div>
                                     
                                     <div className="space-y-1.5 pt-1">
-                                      <div className="flex justify-between gap-4 text-slate-400 text-[9px] font-black uppercase tracking-wider">
-                                        <span>Cơ sở (Tổng HS Cơ sở)</span>
-                                        <span>Số HS trong Khối / Tổng Cơ sở</span>
+                                      <div className="flex justify-between gap-4 text-slate-400 text-[10px] font-semibold">
+                                        <span>Cơ sở (Quy mô)</span>
+                                        <span>Số HS khối / Cơ sở</span>
                                       </div>
                                       
                                       {[
-                                        { code: "CS1", name: "Cơ sở 1", color: "bg-teal-500", total: campusOverallTotal.CS1, count: stat.CS1_total },
-                                        { code: "CS2", name: "Cơ sở 2", color: "bg-pink-500", total: campusOverallTotal.CS2, count: stat.CS2_total },
-                                        { code: "CS3", name: "Cơ sở 3", color: "bg-purple-500", total: campusOverallTotal.CS3, count: stat.CS3_total },
-                                        { code: "CS4", name: "Cơ sở 4", color: "bg-amber-500", total: campusOverallTotal.CS4, count: stat.CS4_total },
-                                        { code: "CS5", name: "Cơ sở 5", color: "bg-blue-500", total: campusOverallTotal.CS5, count: stat.CS5_total }
+                                        { code: "CS1", name: "Cơ sở 1", total: campusOverallTotal.CS1, count: stat.CS1_total },
+                                        { code: "CS2", name: "Cơ sở 2", total: campusOverallTotal.CS2, count: stat.CS2_total },
+                                        { code: "CS3", name: "Cơ sở 3", total: campusOverallTotal.CS3, count: stat.CS3_total },
+                                        { code: "CS4", name: "Cơ sở 4", total: campusOverallTotal.CS4, count: stat.CS4_total },
+                                        { code: "CS5", name: "Cơ sở 5", total: campusOverallTotal.CS5, count: stat.CS5_total }
                                       ].map(cs => {
                                         const csPctOfCampus = cs.total > 0 ? ((cs.count / cs.total) * 100).toFixed(1) : "0";
                                         const csPctOfTotal = overallTotal > 0 ? ((cs.total / overallTotal) * 100).toFixed(1) : "0";
                                         return (
-                                          <div key={cs.code} className="flex justify-between items-center py-0.5">
+                                          <div key={cs.code} className="flex justify-between items-center py-0.5 gap-4">
                                             <div className="flex items-center gap-1.5">
                                               <span className={`w-2 h-2 rounded-full ${
-                                                cs.code === "CS1" ? "bg-teal-500" :
-                                                cs.code === "CS2" ? "bg-pink-500" :
-                                                cs.code === "CS3" ? "bg-purple-500" :
-                                                cs.code === "CS4" ? "bg-amber-500" : "bg-blue-500"
+                                                cs.code === "CS1" ? "bg-[#00A19A]" :
+                                                cs.code === "CS2" ? "bg-rose-500" :
+                                                cs.code === "CS3" ? "bg-violet-600" :
+                                                cs.code === "CS4" ? "bg-amber-500" : "bg-sky-600"
                                               }`}></span>
-                                              <span className="font-bold text-slate-700">{cs.name} ({cs.total}/{overallTotal} HS - {csPctOfTotal}%)</span>
+                                              <span className="font-semibold text-slate-700">{cs.name} ({cs.total} HS · {csPctOfTotal}%)</span>
                                             </div>
-                                            <span className="font-extrabold text-slate-850">{cs.count}/{cs.total} HS ({csPctOfCampus}%)</span>
+                                            <span className="font-bold text-slate-900">{cs.count}/{cs.total} ({csPctOfCampus}%)</span>
                                           </div>
                                         );
                                       })}
@@ -7370,19 +7410,19 @@ const [customCommitmentSubjects, setCustomCommitmentSubjects] = useState<string[
                                 else if (campusCode === "CS5") campusName = "Cơ sở 5";
                                 
                                 return (
-                                  <div className="bg-white border border-slate-200 rounded-xl p-4 shadow-lg text-xs font-semibold text-slate-800 space-y-2">
-                                    <div className="font-black text-sm border-b border-slate-100 pb-1.5 flex justify-between gap-4">
-                                      <span>{stat.grade} - {campusName}</span>
-                                      <span className="text-teal-650">{campusGradeTotal}/{campusTotal} HS ({campusGradePct}%)</span>
+                                  <div className="bg-white border border-slate-200 rounded-xl p-3.5 shadow-lg text-xs font-medium text-slate-800 space-y-2 tabular-nums">
+                                    <div className="font-bold text-sm border-b border-slate-100 pb-1.5 flex justify-between gap-4">
+                                      <span>{stat.grade} · {campusName}</span>
+                                      <span className="text-[#00736E]">{campusGradeTotal}/{campusTotal} HS ({campusGradePct}%)</span>
                                     </div>
                                     <div className="space-y-1.5 pt-1">
-                                      <div className="flex justify-between py-0.5">
-                                        <span className="text-slate-500 font-bold">Số HS Khảo sát:</span>
-                                        <span className="font-extrabold text-slate-850">{campusGradeTotal} HS</span>
+                                      <div className="flex justify-between py-0.5 gap-4">
+                                        <span className="text-slate-500">Hồ sơ trong khối:</span>
+                                        <span className="font-bold text-slate-900">{campusGradeTotal} HS</span>
                                       </div>
-                                      <div className="flex justify-between py-0.5 border-t border-slate-100/50 mt-1 pt-1">
-                                        <span className="text-slate-550 font-bold">Tỷ lệ trong tổng Khối khảo sát:</span>
-                                        <span className="font-extrabold text-slate-800">{stat.total > 0 ? ((campusGradeTotal / stat.total) * 100).toFixed(1) : 0}%</span>
+                                      <div className="flex justify-between py-0.5 border-t border-slate-100 mt-1 pt-1 gap-4">
+                                        <span className="text-slate-500">Tỷ trọng trong toàn khối:</span>
+                                        <span className="font-bold text-slate-900">{stat.total > 0 ? ((campusGradeTotal / stat.total) * 100).toFixed(1) : 0}%</span>
                                       </div>
                                     </div>
                                   </div>
@@ -7392,21 +7432,21 @@ const [customCommitmentSubjects, setCustomCommitmentSubjects] = useState<string[
                             return null;
                           }}
                         />
-                        <Legend verticalAlign="top" height={36} iconType="circle" iconSize={8} wrapperStyle={{ fontSize: "10px", fontWeight: "bold", paddingBottom: "10px" }} />
+                        <Legend verticalAlign="top" height={36} iconType="circle" iconSize={8} wrapperStyle={{ fontSize: "11px", fontWeight: 600, paddingBottom: "10px" }} />
                         
                         {chartCampusId === "all" ? (
                           <>
-                            <Bar yAxisId="left" dataKey="total" fill="url(#colorTotal)" radius={[4, 4, 0, 0]} barSize={26} name="Tổng Học sinh" />
-                            <Line yAxisId="left" type="monotone" dataKey="CS1_total" stroke="#48BFE3" strokeWidth={3} dot={{ r: 3, strokeWidth: 1.5, fill: "#ffffff" }} activeDot={{ r: 6 }} name="Cơ sở 1" />
-                            <Line yAxisId="left" type="monotone" dataKey="CS2_total" stroke="#db2777" strokeWidth={2.5} dot={{ r: 2.5, strokeWidth: 1.5, fill: "#ffffff" }} name="Cơ sở 2" />
-                            <Line yAxisId="left" type="monotone" dataKey="CS3_total" stroke="#7c3aed" strokeWidth={2.5} dot={{ r: 2.5, strokeWidth: 1.5, fill: "#ffffff" }} name="Cơ sở 3" />
-                            <Line yAxisId="left" type="monotone" dataKey="CS4_total" stroke="#d97706" strokeWidth={2.5} dot={{ r: 2.5, strokeWidth: 1.5, fill: "#ffffff" }} name="Cơ sở 4" />
-                            <Line yAxisId="left" type="monotone" dataKey="CS5_total" stroke="#2563eb" strokeWidth={2.5} dot={{ r: 2.5, strokeWidth: 1.5, fill: "#ffffff" }} name="Cơ sở 5" />
+                            <Bar yAxisId="left" dataKey="total" fill="url(#colorTotal)" radius={[4, 4, 0, 0]} barSize={26} name="Tổng hồ sơ" />
+                            <Line yAxisId="left" type="monotone" dataKey="CS1_total" stroke="#00A19A" strokeWidth={2.5} dot={{ r: 3, strokeWidth: 1.5, fill: "#ffffff" }} activeDot={{ r: 5 }} name="Cơ sở 1" />
+                            <Line yAxisId="left" type="monotone" dataKey="CS2_total" stroke="#e11d48" strokeWidth={2} dot={{ r: 2.5, strokeWidth: 1.5, fill: "#ffffff" }} name="Cơ sở 2" />
+                            <Line yAxisId="left" type="monotone" dataKey="CS3_total" stroke="#7c3aed" strokeWidth={2} dot={{ r: 2.5, strokeWidth: 1.5, fill: "#ffffff" }} name="Cơ sở 3" />
+                            <Line yAxisId="left" type="monotone" dataKey="CS4_total" stroke="#d97706" strokeWidth={2} dot={{ r: 2.5, strokeWidth: 1.5, fill: "#ffffff" }} name="Cơ sở 4" />
+                            <Line yAxisId="left" type="monotone" dataKey="CS5_total" stroke="#0284c7" strokeWidth={2} dot={{ r: 2.5, strokeWidth: 1.5, fill: "#ffffff" }} name="Cơ sở 5" />
                           </>
                         ) : (
                           <>
-                            <Bar yAxisId="left" dataKey={`${chartCampusId}_total`} fill="url(#colorTotal)" radius={[4, 4, 0, 0]} barSize={20} name="Tổng Học sinh" />
-                            <Bar yAxisId="left" dataKey={chartCampusId} fill="url(#colorSurveyed)" radius={[4, 4, 0, 0]} barSize={20} name="Đã Khảo sát" />
+                            <Bar yAxisId="left" dataKey={`${chartCampusId}_total`} fill="url(#colorTotal)" radius={[4, 4, 0, 0]} barSize={20} name="Tổng hồ sơ" />
+                            <Bar yAxisId="left" dataKey={chartCampusId} fill="url(#colorSurveyed)" radius={[4, 4, 0, 0]} barSize={20} name="Đã khảo sát" />
                           </>
                         )}
                       </ComposedChart>
@@ -7415,74 +7455,72 @@ const [customCommitmentSubjects, setCustomCommitmentSubjects] = useState<string[
                 </div>
 
                 {/* Enrollment Card */}
-                <div className="lg:col-span-1 bg-white rounded-2xl border border-slate-200 shadow-sm p-6 flex flex-col justify-between hover:shadow-md transition-all duration-300">
-                  <div className="flex items-center justify-between mb-5 border-b border-slate-100 pb-4">
-                    <h4 className="font-black text-slate-800 text-sm tracking-tight uppercase flex items-center gap-2.5">
-                      <span className="flex h-2 w-2 relative">
-                        <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-teal-400 opacity-75"></span>
-                        <span className="relative inline-flex rounded-full h-2 w-2 bg-teal-500"></span>
-                      </span>
-                      Nhập học theo Khối
+                <div className="lg:col-span-1 bg-white rounded-2xl border border-slate-200/90 shadow-[0_1px_2px_rgba(15,23,42,0.03)] p-5 sm:p-6 flex flex-col justify-between">
+                  <div className="mb-4 border-b border-slate-100 pb-3.5">
+                    <h4 className="font-bold text-slate-900 text-sm">
+                      Tỷ lệ nhập học theo Khối đầu cấp
                     </h4>
-                    <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest bg-slate-100 px-2 py-0.5 rounded">Trọng tâm</span>
+                    <p className="text-xs text-slate-500 mt-0.5">
+                      Theo dõi chuyển đổi nhập học ở Khối 1, Khối 6, Khối 10 và khối ngang
+                    </p>
                   </div>
 
-                  <div className="space-y-5 flex-1 flex flex-col justify-center">
+                  <div className="space-y-4 flex-1 flex flex-col justify-center tabular-nums">
                     {[
-                      { label: "Khối 1 (Tiểu học)", passed: enrollmentStats.g1_passed, enrolled: enrollmentStats.g1_enrolled, rate: enrollmentStats.g1Rate, color: "from-teal-400 to-teal-500", bg: "bg-teal-50 text-teal-700 border-teal-100" },
-                      { label: "Khối 6 (THCS)", passed: enrollmentStats.g6_passed, enrolled: enrollmentStats.g6_enrolled, rate: enrollmentStats.g6Rate, color: "from-indigo-400 to-indigo-500", bg: "bg-indigo-50 text-indigo-700 border-indigo-100" },
-                      { label: "Khối 10 (THPT)", passed: enrollmentStats.g10_passed, enrolled: enrollmentStats.g10_enrolled, rate: enrollmentStats.g10Rate, color: "from-amber-400 to-amber-500", bg: "bg-amber-50 text-amber-700 border-amber-100" },
-                      { label: "Các khối khác", passed: enrollmentStats.other_passed, enrolled: enrollmentStats.other_enrolled, rate: enrollmentStats.otherRate, color: "from-slate-400 to-slate-500", bg: "bg-slate-50 text-slate-600 border-slate-200" }
+                      { label: "Khối 1 (Đầu cấp Tiểu học)", passed: enrollmentStats.g1_passed, enrolled: enrollmentStats.g1_enrolled, rate: enrollmentStats.g1Rate, bar: "bg-[#00A19A]", bg: "bg-[#F0FDFA] text-[#00736E] border border-[#CCFBF1]" },
+                      { label: "Khối 6 (Đầu cấp THCS)", passed: enrollmentStats.g6_passed, enrolled: enrollmentStats.g6_enrolled, rate: enrollmentStats.g6Rate, bar: "bg-[#003B3A]", bg: "bg-slate-100 text-slate-800 border border-slate-200" },
+                      { label: "Khối 10 (Đầu cấp THPT)", passed: enrollmentStats.g10_passed, enrolled: enrollmentStats.g10_enrolled, rate: enrollmentStats.g10Rate, bar: "bg-amber-500", bg: "bg-amber-50 text-amber-800 border border-amber-200" },
+                      { label: "Các khối chuyển ngang khác", passed: enrollmentStats.other_passed, enrolled: enrollmentStats.other_enrolled, rate: enrollmentStats.otherRate, bar: "bg-slate-400", bg: "bg-slate-50 text-slate-600 border border-slate-200" }
                     ].map((g, idx) => (
-                      <div key={idx} className="space-y-2">
+                      <div key={idx} className="space-y-1.5">
                         <div className="flex justify-between items-center text-xs">
-                          <span className="font-extrabold text-slate-750">{g.label}</span>
-                          <span className={`px-2 py-0.5 rounded text-[10px] font-black ${g.bg}`}>
-                            {g.enrolled} / {g.passed} HS ({g.rate}%)
+                          <span className="font-semibold text-slate-700">{g.label}</span>
+                          <span className={`px-2 py-0.5 rounded-md text-[11px] font-bold ${g.bg}`}>
+                            {g.enrolled}/{g.passed} HS ({g.rate}%)
                           </span>
                         </div>
-                        <div className="w-full h-2 bg-slate-100 rounded-full overflow-hidden border border-slate-100/50">
-                          <div className={`h-full bg-gradient-to-r ${g.color} rounded-full transition-all duration-500`} style={{ width: `${g.rate}%` }}></div>
+                        <div className="w-full h-2 bg-slate-100 rounded-full overflow-hidden">
+                          <div className={`h-full ${g.bar} rounded-full transition-all duration-500`} style={{ width: `${g.rate}%` }}></div>
                         </div>
                       </div>
                     ))}
                   </div>
 
-                  <div className="mt-5 pt-4 border-t border-slate-100/80 text-[10px] font-bold text-slate-400 uppercase text-center tracking-wider">
-                    Dựa trên dữ liệu HS lưu chuyển (Chuyển đến)
+                  <div className="mt-5 pt-3.5 border-t border-slate-100 text-[11px] font-medium text-slate-500">
+                    Số liệu tổng hợp từ hồ sơ tiếp nhận chuyển đến trên hệ thống SSM
                   </div>
                 </div>
               </div>
 
               {/* Campus Breakdown Table Card */}
-              <div className="bg-white rounded-2xl border border-slate-200 shadow-sm p-6 overflow-hidden flex flex-col justify-between hover:shadow-md transition-all duration-300">
-                <div className="flex items-center justify-between mb-5 border-b border-slate-100 pb-4">
-                  <h4 className="font-black text-slate-800 text-sm tracking-tight uppercase flex items-center gap-2.5">
-                    <span className="flex h-2 w-2 relative">
-                      <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-teal-400 opacity-75"></span>
-                      <span className="relative inline-flex rounded-full h-2 w-2 bg-teal-500"></span>
-                    </span>
-                    Số liệu phân theo Cơ sở tuyển sinh
-                  </h4>
-                  <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest bg-slate-100 px-2 py-0.5 rounded">Chi tiết các cơ sở</span>
+              <div className="bg-white rounded-2xl border border-slate-200/90 shadow-[0_1px_2px_rgba(15,23,42,0.03)] overflow-hidden">
+                <div className="px-5 py-4 border-b border-slate-100 flex flex-col sm:flex-row sm:items-center justify-between gap-1">
+                  <div>
+                    <h4 className="font-bold text-slate-900 text-sm">
+                      Bảng tổng hợp kết quả theo Cơ sở tuyển sinh
+                    </h4>
+                    <p className="text-xs text-slate-500 mt-0.5">
+                      Chi tiết số lượng đạt chuẩn, đạt cam kết, không đạt và tỷ lệ hoàn tất xét duyệt tại từng cơ sở
+                    </p>
+                  </div>
                 </div>
                 
                 <div className="overflow-x-auto">
-                  <table className="w-full text-left whitespace-nowrap table-auto border-collapse">
+                  <table className="w-full text-left whitespace-nowrap table-auto border-collapse tabular-nums">
                     <thead>
-                      <tr className="border-b border-slate-200 bg-slate-50/50">
-                        <th className="py-3.5 px-4 text-[9px] font-extrabold text-slate-500 uppercase tracking-wider rounded-l-xl">Cơ sở</th>
-                        <th className="py-3.5 px-4 text-center text-[9px] font-extrabold text-slate-500 uppercase tracking-wider">Tổng HS</th>
-                        <th className="py-3.5 px-4 text-center text-[9px] font-extrabold text-slate-500 uppercase tracking-wider">Đã HS</th>
-                        <th className="py-3.5 px-4 text-center text-[9px] font-extrabold text-emerald-650 uppercase tracking-wider">Đạt</th>
-                        <th className="py-3.5 px-4 text-center text-[9px] font-extrabold text-purple-650 uppercase tracking-wider">Cam kết</th>
-                        <th className="py-3.5 px-4 text-center text-[9px] font-extrabold text-rose-600 uppercase tracking-wider">Không Đạt</th>
-                        <th className="py-3.5 px-4 text-center text-[9px] font-extrabold text-slate-500 uppercase tracking-wider">Chưa Duyệt</th>
-                        <th className="py-3.5 px-4 text-right text-[9px] font-extrabold text-slate-500 uppercase tracking-wider">Tiến độ KS</th>
-                        <th className="py-3.5 px-4 text-right text-[9px] font-extrabold text-slate-500 uppercase tracking-wider rounded-r-xl">Tỷ lệ duyệt</th>
+                      <tr className="border-b border-slate-200 bg-slate-50/80 text-[11px] font-semibold text-slate-600">
+                        <th className="py-3 px-4">Cơ sở đào tạo</th>
+                        <th className="py-3 px-4 text-center">Tổng hồ sơ</th>
+                        <th className="py-3 px-4 text-center">Đã khảo sát</th>
+                        <th className="py-3 px-4 text-center text-emerald-700">Đạt chuẩn</th>
+                        <th className="py-3 px-4 text-center text-amber-700">Đạt cam kết</th>
+                        <th className="py-3 px-4 text-center text-rose-700">Không đạt</th>
+                        <th className="py-3 px-4 text-center text-slate-600">Chờ duyệt</th>
+                        <th className="py-3 px-4 text-right">Tiến độ KS</th>
+                        <th className="py-3 px-4 text-right">Tỷ lệ duyệt</th>
                       </tr>
                     </thead>
-                    <tbody className="divide-y divide-slate-100">
+                    <tbody className="divide-y divide-slate-100 text-xs font-medium text-slate-700">
                       {campusStats.map(stat => {
                         const campusApprovedRate = stat.total > 0 ? Math.round(((stat.total - stat.pending) / stat.total) * 100) : 0;
                         const campusSurveyRate = stat.total > 0 ? Math.round((stat.surveyed / stat.total) * 100) : 0;
@@ -7491,89 +7529,73 @@ const [customCommitmentSubjects, setCustomCommitmentSubjects] = useState<string[
                         let borderLeftColor = "border-l-slate-400";
                         const shortCode = stat.campusName?.replace("Cơ sở ", "CS");
                         if (shortCode === "CS1") {
-                          badgeColor = "bg-teal-50 text-teal-700 border border-teal-200";
-                          borderLeftColor = "border-l-teal-500";
+                          badgeColor = "bg-[#F0FDFA] text-[#00736E] border border-[#CCFBF1]";
+                          borderLeftColor = "border-l-[#00A19A]";
                         } else if (shortCode === "CS2") {
-                          badgeColor = "bg-pink-50 text-pink-700 border border-pink-200";
-                          borderLeftColor = "border-l-pink-500";
+                          badgeColor = "bg-rose-50 text-rose-700 border border-rose-200";
+                          borderLeftColor = "border-l-rose-500";
                         } else if (shortCode === "CS3") {
-                          badgeColor = "bg-purple-50 text-purple-700 border border-purple-200";
-                          borderLeftColor = "border-l-purple-500";
+                          badgeColor = "bg-violet-50 text-violet-700 border border-violet-200";
+                          borderLeftColor = "border-l-violet-600";
                         } else if (shortCode === "CS4") {
                           badgeColor = "bg-amber-50 text-amber-800 border border-amber-200";
                           borderLeftColor = "border-l-amber-500";
                         } else if (shortCode === "CS5") {
-                          badgeColor = "bg-blue-50 text-blue-700 border border-blue-200";
-                          borderLeftColor = "border-l-blue-500";
+                          badgeColor = "bg-sky-50 text-sky-700 border border-sky-200";
+                          borderLeftColor = "border-l-sky-600";
                         }
 
                         return (
-                          <tr key={stat.id} className="hover:bg-slate-50/50 transition-colors duration-150 group/row text-xs font-semibold text-slate-700">
-                            <td className={`py-3.5 px-4 border-l-4 ${borderLeftColor}`}>
+                          <tr key={stat.id} className="hover:bg-slate-50/70 transition-colors">
+                            <td className={`py-3 px-4 border-l-4 ${borderLeftColor}`}>
                               <div className="flex items-center gap-2.5">
-                                <span className={`px-2 py-1 rounded-md text-[10px] font-black tracking-wider ${badgeColor}`}>{shortCode}</span>
-                                <span className="text-sm font-bold text-slate-800 group-hover/row:text-slate-900 transition-colors">{stat.campusName}</span>
+                                <span className={`px-2 py-0.5 rounded-md text-[10px] font-bold ${badgeColor}`}>{shortCode}</span>
+                                <span className="font-semibold text-slate-900">{stat.campusName}</span>
                               </div>
                             </td>
-                            <td className="py-3.5 px-4 text-center">
-                              <span className="font-extrabold text-slate-900 text-sm">{stat.total}</span>
-                            </td>
-                            <td className="py-3.5 px-4 text-center">
-                              <span className="font-extrabold text-slate-700 text-sm">{stat.surveyed}</span>
-                            </td>
-                            <td className="py-3.5 px-4 text-center">
+                            <td className="py-3 px-4 text-center font-bold text-slate-900">{stat.total}</td>
+                            <td className="py-3 px-4 text-center font-semibold text-slate-700">{stat.surveyed}</td>
+                            <td className="py-3 px-4 text-center">
                               {stat.passed > 0 ? (
-                                <span className="px-2 py-0.5 rounded bg-emerald-50 text-emerald-700 text-xs font-bold">{stat.passed}</span>
+                                <span className="px-2 py-0.5 rounded-md bg-emerald-50 text-emerald-700 font-bold">{stat.passed}</span>
                               ) : (
-                                <span className="text-slate-350 font-bold text-xs">—</span>
+                                <span className="text-slate-300">—</span>
                               )}
                             </td>
-                            <td className="py-3.5 px-4 text-center">
+                            <td className="py-3 px-4 text-center">
                               {stat.committed > 0 ? (
-                                <span className="px-2 py-0.5 rounded bg-purple-50 text-purple-700 text-xs font-bold">{stat.committed}</span>
+                                <span className="px-2 py-0.5 rounded-md bg-amber-50 text-amber-800 font-bold">{stat.committed}</span>
                               ) : (
-                                <span className="text-slate-350 font-bold text-xs">—</span>
+                                <span className="text-slate-300">—</span>
                               )}
                             </td>
-                            <td className="py-3.5 px-4 text-center">
+                            <td className="py-3 px-4 text-center">
                               {stat.failed > 0 ? (
-                                <span className="px-2 py-0.5 rounded bg-rose-50 text-rose-700 text-xs font-bold">{stat.failed}</span>
+                                <span className="px-2 py-0.5 rounded-md bg-rose-50 text-rose-700 font-bold">{stat.failed}</span>
                               ) : (
-                                <span className="text-slate-350 font-bold text-xs">—</span>
+                                <span className="text-slate-300">—</span>
                               )}
                             </td>
-                            <td className="py-3.5 px-4 text-center">
+                            <td className="py-3 px-4 text-center">
                               {stat.pending > 0 ? (
-                                <span className="px-2 py-0.5 rounded bg-slate-50 text-slate-500 text-xs font-bold">{stat.pending}</span>
+                                <span className="px-2 py-0.5 rounded-md bg-slate-100 text-slate-700 font-semibold">{stat.pending}</span>
                               ) : (
-                                <span className="text-slate-350 font-bold text-xs">—</span>
+                                <span className="text-slate-300">—</span>
                               )}
                             </td>
-                            <td className="py-3.5 px-4 text-right">
+                            <td className="py-3 px-4 text-right">
                               <div className="flex items-center justify-end gap-2.5">
-                                <span className="text-xs font-extrabold text-slate-800 w-9">{campusSurveyRate}%</span>
+                                <span className="font-bold text-slate-800 w-9">{campusSurveyRate}%</span>
                                 <div className="w-16 h-1.5 bg-slate-100 rounded-full overflow-hidden">
-                                  <div className={`h-full ${
-                                    shortCode === "CS1" ? "bg-teal-500" : 
-                                    shortCode === "CS2" ? "bg-pink-500" : 
-                                    shortCode === "CS3" ? "bg-purple-500" : 
-                                    shortCode === "CS4" ? "bg-amber-500" : 
-                                    shortCode === "CS5" ? "bg-blue-500" : "bg-slate-400"
-                                  } rounded-full`} style={{ width: `${campusSurveyRate}%` }}></div>
+                                  <div className="h-full bg-[#00A19A] rounded-full" style={{ width: `${campusSurveyRate}%` }}></div>
                                 </div>
                               </div>
                             </td>
-                            <td className="py-3.5 px-4 text-right">
+                            <td className="py-3 px-4 text-right">
                               <div className="flex items-center justify-end gap-2.5">
-                                <span className="text-xs font-extrabold text-slate-800 w-9">{campusApprovedRate}%</span>
+                                <span className="font-bold text-slate-800 w-9">{campusApprovedRate}%</span>
                                 <div className="w-16 h-1.5 bg-slate-100 rounded-full overflow-hidden">
-                                  <div className={`h-full ${
-                                    shortCode === "CS1" ? "bg-teal-500" : 
-                                    shortCode === "CS2" ? "bg-pink-500" : 
-                                    shortCode === "CS3" ? "bg-purple-500" : 
-                                    shortCode === "CS4" ? "bg-amber-500" : 
-                                    shortCode === "CS5" ? "bg-blue-500" : "bg-slate-400"
-                                  } rounded-full`} style={{ width: `${campusApprovedRate}%` }}></div>
+                                  <div className="h-full bg-[#003B3A] rounded-full" style={{ width: `${campusApprovedRate}%` }}></div>
                                 </div>
                               </div>
                             </td>
@@ -7582,7 +7604,7 @@ const [customCommitmentSubjects, setCustomCommitmentSubjects] = useState<string[
                       })}
                       {campusStats.length === 0 && (
                         <tr>
-                          <td colSpan={9} className="p-4 text-center text-xs font-bold text-slate-400 uppercase">Không có dữ liệu cơ sở</td>
+                          <td colSpan={9} className="py-8 text-center text-xs text-slate-400">Chưa có dữ liệu thống kê theo cơ sở</td>
                         </tr>
                       )}
                     </tbody>
@@ -7591,94 +7613,90 @@ const [customCommitmentSubjects, setCustomCommitmentSubjects] = useState<string[
               </div>
               
               {/* Batch Breakdown Table Card */}
-              <div className="bg-white rounded-2xl border border-slate-200 shadow-sm p-6 overflow-hidden flex flex-col justify-between hover:shadow-md transition-all duration-300">
-                <div className="flex items-center justify-between mb-5 border-b border-slate-100 pb-4">
-                  <h4 className="font-black text-slate-800 text-sm tracking-tight uppercase flex items-center gap-2.5">
-                    <span className="flex h-2 w-2 relative">
-                      <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-teal-400 opacity-75"></span>
-                      <span className="relative inline-flex rounded-full h-2 w-2 bg-teal-500"></span>
-                    </span>
-                    Số liệu phân theo Kỳ khảo sát
-                  </h4>
-                  <span className="text-[10px] font-black text-slate-500 uppercase tracking-widest bg-slate-100 px-2.5 py-1 rounded-lg">Chi tiết các kỳ</span>
+              <div className="bg-white rounded-2xl border border-slate-200/90 shadow-[0_1px_2px_rgba(15,23,42,0.03)] overflow-hidden">
+                <div className="px-5 py-4 border-b border-slate-100 flex flex-col sm:flex-row sm:items-center justify-between gap-1">
+                  <div>
+                    <h4 className="font-bold text-slate-900 text-sm">
+                      Bảng tổng hợp kết quả theo Đợt khảo sát
+                    </h4>
+                    <p className="text-xs text-slate-500 mt-0.5">
+                      Theo dõi tiến độ chấm điểm và phê duyệt của từng đợt khảo sát trong kỳ
+                    </p>
+                  </div>
                 </div>
                 
                 <div className="overflow-x-auto">
-                  <table className="w-full text-left whitespace-nowrap table-auto border-collapse">
+                  <table className="w-full text-left whitespace-nowrap table-auto border-collapse tabular-nums">
                     <thead>
-                      <tr className="border-b border-slate-200 bg-slate-50/50">
-                        <th className="py-3.5 px-4 text-[9px] font-extrabold text-slate-500 uppercase tracking-wider rounded-l-xl">Kỳ khảo sát</th>
-                        <th className="py-3.5 px-4 text-center text-[9px] font-extrabold text-slate-500 uppercase tracking-wider">Tổng HS</th>
-                        <th className="py-3.5 px-4 text-center text-[9px] font-extrabold text-slate-500 uppercase tracking-wider">Đã KS</th>
-                        <th className="py-3.5 px-4 text-center text-[9px] font-extrabold text-emerald-650 uppercase tracking-wider">Đạt</th>
-                        <th className="py-3.5 px-4 text-center text-[9px] font-extrabold text-purple-650 uppercase tracking-wider">Cam kết</th>
-                        <th className="py-3.5 px-4 text-center text-[9px] font-extrabold text-rose-600 uppercase tracking-wider">Không Đạt</th>
-                        <th className="py-3.5 px-4 text-center text-[9px] font-extrabold text-slate-500 uppercase tracking-wider">Chưa Duyệt</th>
-                        <th className="py-3.5 px-4 text-right text-[9px] font-extrabold text-slate-500 uppercase tracking-wider">Tiến độ KS</th>
-                        <th className="py-3.5 px-4 text-right text-[9px] font-extrabold text-slate-500 uppercase tracking-wider rounded-r-xl">Tỷ lệ duyệt</th>
+                      <tr className="border-b border-slate-200 bg-slate-50/80 text-[11px] font-semibold text-slate-600">
+                        <th className="py-3 px-4">Đợt khảo sát</th>
+                        <th className="py-3 px-4 text-center">Tổng hồ sơ</th>
+                        <th className="py-3 px-4 text-center">Đã khảo sát</th>
+                        <th className="py-3 px-4 text-center text-emerald-700">Đạt chuẩn</th>
+                        <th className="py-3 px-4 text-center text-amber-700">Đạt cam kết</th>
+                        <th className="py-3 px-4 text-center text-rose-700">Không đạt</th>
+                        <th className="py-3 px-4 text-center text-slate-600">Chờ duyệt</th>
+                        <th className="py-3 px-4 text-right">Tiến độ KS</th>
+                        <th className="py-3 px-4 text-right">Tỷ lệ duyệt</th>
                       </tr>
                     </thead>
-                    <tbody className="divide-y divide-slate-100">
+                    <tbody className="divide-y divide-slate-100 text-xs font-medium text-slate-700">
                       {batchStats.map(stat => {
                         const batchApprovedRate = stat.total > 0 ? Math.round(((stat.total - stat.pending) / stat.total) * 100) : 0;
                         const batchSurveyRate = stat.total > 0 ? Math.round((stat.surveyed / stat.total) * 100) : 0;
                         return (
-                          <tr key={stat.id} className="hover:bg-slate-50/50 transition-colors duration-150 group/row text-xs font-semibold text-slate-700">
-                            <td className="py-3.5 px-4">
-                              <div className="flex items-center gap-3">
-                                <div className="w-8 h-8 rounded-lg bg-teal-50 text-teal-700 flex items-center justify-center border border-transparent shadow-sm">
+                          <tr key={stat.id} className="hover:bg-slate-50/70 transition-colors">
+                            <td className="py-3 px-4">
+                              <div className="flex items-center gap-2.5">
+                                <div className="w-7 h-7 rounded-lg bg-[#F0FDFA] text-[#00736E] border border-[#CCFBF1] flex items-center justify-center shrink-0">
                                   <Layers className="w-3.5 h-3.5" />
                                 </div>
-                                <span className="text-sm font-bold text-slate-800 group-hover/row:text-slate-900 transition-colors">{stat.batchName}</span>
+                                <span className="font-semibold text-slate-900">{stat.batchName}</span>
                               </div>
                             </td>
-                            <td className="py-3.5 px-4 text-center">
-                              <span className="font-extrabold text-slate-900 text-sm">{stat.total}</span>
-                            </td>
-                            <td className="py-3.5 px-4 text-center">
-                              <span className="font-extrabold text-slate-700 text-sm">{stat.surveyed}</span>
-                            </td>
-                            <td className="py-3.5 px-4 text-center">
+                            <td className="py-3 px-4 text-center font-bold text-slate-900">{stat.total}</td>
+                            <td className="py-3 px-4 text-center font-semibold text-slate-700">{stat.surveyed}</td>
+                            <td className="py-3 px-4 text-center">
                               {stat.passed > 0 ? (
-                                <span className="px-2 py-0.5 rounded bg-emerald-50 text-emerald-700 text-xs font-bold">{stat.passed}</span>
+                                <span className="px-2 py-0.5 rounded-md bg-emerald-50 text-emerald-700 font-bold">{stat.passed}</span>
                               ) : (
-                                <span className="text-slate-350 font-bold text-xs">—</span>
+                                <span className="text-slate-300">—</span>
                               )}
                             </td>
-                            <td className="py-3.5 px-4 text-center">
+                            <td className="py-3 px-4 text-center">
                               {stat.committed > 0 ? (
-                                <span className="px-2 py-0.5 rounded bg-purple-50 text-purple-700 text-xs font-bold">{stat.committed}</span>
+                                <span className="px-2 py-0.5 rounded-md bg-amber-50 text-amber-800 font-bold">{stat.committed}</span>
                               ) : (
-                                <span className="text-slate-350 font-bold text-xs">—</span>
+                                <span className="text-slate-300">—</span>
                               )}
                             </td>
-                            <td className="py-3.5 px-4 text-center">
+                            <td className="py-3 px-4 text-center">
                               {stat.failed > 0 ? (
-                                <span className="px-2 py-0.5 rounded bg-rose-50 text-rose-700 text-xs font-bold">{stat.failed}</span>
+                                <span className="px-2 py-0.5 rounded-md bg-rose-50 text-rose-700 font-bold">{stat.failed}</span>
                               ) : (
-                                <span className="text-slate-350 font-bold text-xs">—</span>
+                                <span className="text-slate-300">—</span>
                               )}
                             </td>
-                            <td className="py-3.5 px-4 text-center">
+                            <td className="py-3 px-4 text-center">
                               {stat.pending > 0 ? (
-                                <span className="px-2 py-0.5 rounded bg-slate-50 text-slate-500 text-xs font-bold">{stat.pending}</span>
+                                <span className="px-2 py-0.5 rounded-md bg-slate-100 text-slate-700 font-semibold">{stat.pending}</span>
                               ) : (
-                                <span className="text-slate-350 font-bold text-xs">—</span>
+                                <span className="text-slate-300">—</span>
                               )}
                             </td>
-                            <td className="py-3.5 px-4 text-right">
+                            <td className="py-3 px-4 text-right">
                               <div className="flex items-center justify-end gap-2.5">
-                                <span className="text-xs font-extrabold text-slate-800 w-9">{batchSurveyRate}%</span>
+                                <span className="font-bold text-slate-800 w-9">{batchSurveyRate}%</span>
                                 <div className="w-16 h-1.5 bg-slate-100 rounded-full overflow-hidden">
-                                  <div className="h-full bg-teal-500 rounded-full transition-all duration-300" style={{ width: `${batchSurveyRate}%` }}></div>
+                                  <div className="h-full bg-[#00A19A] rounded-full" style={{ width: `${batchSurveyRate}%` }}></div>
                                 </div>
                               </div>
                             </td>
-                            <td className="py-3.5 px-4 text-right">
+                            <td className="py-3 px-4 text-right">
                               <div className="flex items-center justify-end gap-2.5">
-                                <span className="text-xs font-extrabold text-slate-800 w-9">{batchApprovedRate}%</span>
+                                <span className="font-bold text-slate-800 w-9">{batchApprovedRate}%</span>
                                 <div className="w-16 h-1.5 bg-slate-100 rounded-full overflow-hidden">
-                                  <div className="h-full bg-teal-555 rounded-full transition-all duration-300" style={{ width: `${batchApprovedRate}%` }}></div>
+                                  <div className="h-full bg-[#003B3A] rounded-full" style={{ width: `${batchApprovedRate}%` }}></div>
                                 </div>
                               </div>
                             </td>
@@ -7687,7 +7705,7 @@ const [customCommitmentSubjects, setCustomCommitmentSubjects] = useState<string[
                       })}
                       {batchStats.length === 0 && (
                         <tr>
-                          <td colSpan={9} className="p-4 text-center text-xs font-bold text-slate-400 uppercase">Không có dữ liệu đợt khảo sát</td>
+                          <td colSpan={9} className="py-8 text-center text-xs text-slate-400">Chưa có dữ liệu đợt khảo sát</td>
                         </tr>
                       )}
                     </tbody>
@@ -7710,36 +7728,36 @@ const [customCommitmentSubjects, setCustomCommitmentSubjects] = useState<string[
             <div className="space-y-4 animate-in fade-in duration-300">
           {/* MAIN CONTAINER */}
           {reportLoading ? (
-            <div className="p-20 text-center">
-              <Loader2 className="w-10 h-10 text-indigo-500 animate-spin mx-auto mb-4 opacity-50"/>
-              <p className="font-bold text-slate-400">Đang tải kết quả...</p>
+            <div className="py-20 text-center bg-white rounded-2xl border border-slate-200/80">
+              <Loader2 className="w-8 h-8 text-[#008B85] animate-spin mx-auto mb-3"/>
+              <p className="text-xs font-semibold text-slate-500">Đang tải danh sách hồ sơ khảo sát...</p>
             </div>
           ) : (
             <>
               {/* FLOATING / INLINE BATCH ACTIONS BAR */}
               {selectedStudentIds.length > 0 && (
-                <div className="bg-slate-900/95 backdrop-blur-md text-white p-3 rounded-2xl shadow-xl mb-3 flex flex-col sm:flex-row items-center justify-between gap-3 animate-in fade-in slide-in-from-top-2 duration-200 border border-slate-700/60">
-                  <div className="flex items-center gap-2">
-                    <span className="px-2.5 py-1 rounded-lg bg-teal-500 text-white font-black text-xs shadow-2xs">
-                      Đã chọn {selectedStudentIds.length} HS
+                <div className="bg-[#003B3A] text-white px-4 py-3 rounded-2xl shadow-lg mb-3 flex flex-col sm:flex-row items-center justify-between gap-3 animate-in fade-in slide-in-from-top-2 duration-200 border border-[#005854]">
+                  <div className="flex items-center gap-2.5">
+                    <span className="px-2.5 py-1 rounded-lg bg-[#00A19A] text-white font-bold text-xs tabular-nums">
+                      Đã chọn {selectedStudentIds.length} hồ sơ
                     </span>
-                    <span className="text-xs text-slate-300 hidden sm:inline">Phê duyệt hàng loạt:</span>
+                    <span className="text-xs text-teal-100 hidden sm:inline">Chọn quyết định phê duyệt hàng loạt:</span>
                   </div>
                   <div className="flex items-center gap-2 flex-wrap">
                     <button
                       onClick={() => handleBatchApprove("Đạt")}
                       disabled={batchActionLoading}
-                      className="px-3.5 py-1.5 bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-bold rounded-xl shadow-2xs transition-all flex items-center gap-1.5 cursor-pointer disabled:opacity-50"
+                      className="px-3.5 py-1.5 bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-semibold rounded-xl transition-colors flex items-center gap-1.5 cursor-pointer disabled:opacity-50"
                     >
-                      {batchActionLoading ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Zap className="w-3.5 h-3.5" />}
-                      Duyệt ĐẠT ({selectedStudentIds.length})
+                      {batchActionLoading ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Check className="w-3.5 h-3.5" />}
+                      Phê duyệt Đạt chuẩn ({selectedStudentIds.length})
                     </button>
                     <button
                       onClick={() => handleBatchApprove("Không đạt")}
                       disabled={batchActionLoading}
-                      className="px-3.5 py-1.5 bg-rose-600 hover:bg-rose-500 text-white text-xs font-bold rounded-xl shadow-2xs transition-all flex items-center gap-1.5 cursor-pointer disabled:opacity-50"
+                      className="px-3.5 py-1.5 bg-rose-600 hover:bg-rose-500 text-white text-xs font-semibold rounded-xl transition-colors flex items-center gap-1.5 cursor-pointer disabled:opacity-50"
                     >
-                      Duyệt Không đạt
+                      Phê duyệt Không đạt
                     </button>
                     <button
                       onClick={() => setSelectedStudentIds([])}
@@ -7752,79 +7770,79 @@ const [customCommitmentSubjects, setCustomCommitmentSubjects] = useState<string[
               )}
 
               {/* DATA CARD WITH INTEGRATED STATUS TABS */}
-              <div className="bg-white border border-slate-200/90 rounded-2xl shadow-xs overflow-hidden text-left mb-6">
+              <div className="bg-white border border-slate-200/90 rounded-2xl shadow-[0_1px_2px_rgba(15,23,42,0.03)] overflow-hidden text-left mb-6">
                 {/* CARD HEADER: STATUS SEGMENTED TABS + SUMMARY */}
-                <div className="px-4 py-3 border-b border-slate-200/80 bg-slate-50/50 flex flex-col md:flex-row md:items-center justify-between gap-3">
-                  {/* Status Segmented Control (1-chạm lọc trực quan) */}
-                  <div className="flex items-center gap-1.5 flex-wrap">
-                    <span className="text-[11px] font-bold text-slate-400 uppercase tracking-wider mr-1 hidden sm:inline">Trạng thái:</span>
+                <div className="px-4 py-3 border-b border-slate-200/80 bg-slate-50/60 flex flex-col md:flex-row md:items-center justify-between gap-3">
+                  {/* Status Segmented Control */}
+                  <div className="flex items-center gap-1.5 flex-wrap tabular-nums">
+                    <span className="text-xs font-semibold text-slate-500 mr-1 hidden sm:inline">Lọc trạng thái:</span>
                     <button
                       onClick={() => setReportApprovalStatusFilter("all")}
-                      className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-bold transition-all cursor-pointer ${
+                      className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-semibold transition-colors cursor-pointer ${
                         reportApprovalStatusFilter === "all"
-                          ? "bg-slate-800 text-white shadow-xs"
+                          ? "bg-[#003B3A] text-white shadow-2xs"
                           : "bg-white text-slate-600 hover:bg-slate-100 border border-slate-200/80"
                       }`}
                     >
                       <span>Tất cả</span>
-                      <span className={`px-1.5 py-0.2 rounded-md text-[10px] font-black ${reportApprovalStatusFilter === "all" ? "bg-white/20 text-white" : "bg-slate-100 text-slate-700"}`}>
+                      <span className={`px-1.5 py-0.2 rounded-md text-[10px] font-bold ${reportApprovalStatusFilter === "all" ? "bg-white/20 text-white" : "bg-slate-100 text-slate-700"}`}>
                         {batchSummaryStats.total}
                       </span>
                     </button>
 
                     <button
                       onClick={() => setReportApprovalStatusFilter("Chưa duyệt")}
-                      className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-bold transition-all cursor-pointer ${
+                      className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-semibold transition-colors cursor-pointer ${
                         reportApprovalStatusFilter === "Chưa duyệt"
-                          ? "bg-amber-500 text-white shadow-xs"
-                          : "bg-amber-50 text-amber-800 hover:bg-amber-100 border border-amber-200/90"
+                          ? "bg-amber-600 text-white shadow-2xs"
+                          : "bg-amber-50/80 text-amber-900 hover:bg-amber-100/80 border border-amber-200/90"
                       }`}
                     >
-                      {batchSummaryStats.pending > 0 && <span className="w-2 h-2 rounded-full bg-amber-400 animate-pulse" />}
+                      {batchSummaryStats.pending > 0 && <span className={`w-2 h-2 rounded-full ${reportApprovalStatusFilter === "Chưa duyệt" ? "bg-white" : "bg-amber-500"} animate-pulse`} />}
                       <span>Chờ duyệt</span>
-                      <span className={`px-1.5 py-0.2 rounded-md text-[10px] font-black ${reportApprovalStatusFilter === "Chưa duyệt" ? "bg-white/20 text-white" : "bg-amber-200/70 text-amber-900"}`}>
+                      <span className={`px-1.5 py-0.2 rounded-md text-[10px] font-bold ${reportApprovalStatusFilter === "Chưa duyệt" ? "bg-white/20 text-white" : "bg-amber-200/60 text-amber-900"}`}>
                         {batchSummaryStats.pending}
                       </span>
                     </button>
 
                     <button
                       onClick={() => setReportApprovalStatusFilter("Đạt")}
-                      className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-bold transition-all cursor-pointer ${
+                      className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-semibold transition-colors cursor-pointer ${
                         reportApprovalStatusFilter === "Đạt"
-                          ? "bg-emerald-600 text-white shadow-xs"
-                          : "bg-white text-emerald-800 hover:bg-emerald-50 border border-emerald-200/90"
+                          ? "bg-emerald-600 text-white shadow-2xs"
+                          : "bg-white text-emerald-800 hover:bg-emerald-50 border border-emerald-200/80"
                       }`}
                     >
                       <span>Đạt chuẩn</span>
-                      <span className={`px-1.5 py-0.2 rounded-md text-[10px] font-black ${reportApprovalStatusFilter === "Đạt" ? "bg-white/20 text-white" : "bg-emerald-100 text-emerald-900"}`}>
+                      <span className={`px-1.5 py-0.2 rounded-md text-[10px] font-bold ${reportApprovalStatusFilter === "Đạt" ? "bg-white/20 text-white" : "bg-emerald-50 text-emerald-800"}`}>
                         {batchSummaryStats.passed}
                       </span>
                     </button>
 
                     <button
                       onClick={() => setReportApprovalStatusFilter("Đạt cam kết")}
-                      className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-bold transition-all cursor-pointer ${
+                      className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-semibold transition-colors cursor-pointer ${
                         reportApprovalStatusFilter === "Đạt cam kết"
-                          ? "bg-orange-600 text-white shadow-xs"
-                          : "bg-white text-orange-800 hover:bg-orange-50 border border-orange-200/90"
+                          ? "bg-amber-600 text-white shadow-2xs"
+                          : "bg-white text-amber-900 hover:bg-amber-50 border border-amber-200/80"
                       }`}
                     >
                       <span>Đạt cam kết</span>
-                      <span className={`px-1.5 py-0.2 rounded-md text-[10px] font-black ${reportApprovalStatusFilter === "Đạt cam kết" ? "bg-white/20 text-white" : "bg-orange-100 text-orange-900"}`}>
+                      <span className={`px-1.5 py-0.2 rounded-md text-[10px] font-bold ${reportApprovalStatusFilter === "Đạt cam kết" ? "bg-white/20 text-white" : "bg-amber-50 text-amber-900"}`}>
                         {batchSummaryStats.committed}
                       </span>
                     </button>
 
                     <button
                       onClick={() => setReportApprovalStatusFilter("Không đạt")}
-                      className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-bold transition-all cursor-pointer ${
+                      className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-semibold transition-colors cursor-pointer ${
                         reportApprovalStatusFilter === "Không đạt"
-                          ? "bg-rose-600 text-white shadow-xs"
-                          : "bg-white text-rose-800 hover:bg-rose-50 border border-rose-200/90"
+                          ? "bg-rose-600 text-white shadow-2xs"
+                          : "bg-white text-rose-800 hover:bg-rose-50 border border-rose-200/80"
                       }`}
                     >
                       <span>Không đạt</span>
-                      <span className={`px-1.5 py-0.2 rounded-md text-[10px] font-black ${reportApprovalStatusFilter === "Không đạt" ? "bg-white/20 text-white" : "bg-rose-100 text-rose-900"}`}>
+                      <span className={`px-1.5 py-0.2 rounded-md text-[10px] font-bold ${reportApprovalStatusFilter === "Không đạt" ? "bg-white/20 text-white" : "bg-rose-50 text-rose-800"}`}>
                         {batchSummaryStats.failed}
                       </span>
                     </button>
@@ -7832,14 +7850,14 @@ const [customCommitmentSubjects, setCustomCommitmentSubjects] = useState<string[
                     {batchSummaryStats.absent > 0 && (
                       <button
                         onClick={() => setReportApprovalStatusFilter("Vắng khảo sát")}
-                        className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-bold transition-all cursor-pointer ${
+                        className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-semibold transition-colors cursor-pointer ${
                           reportApprovalStatusFilter === "Vắng khảo sát"
-                            ? "bg-slate-700 text-white shadow-xs"
+                            ? "bg-slate-700 text-white shadow-2xs"
                             : "bg-slate-100 text-slate-700 hover:bg-slate-200 border border-slate-300/80"
                         }`}
                       >
-                        <span>Vắng KS</span>
-                        <span className={`px-1.5 py-0.2 rounded-md text-[10px] font-black ${reportApprovalStatusFilter === "Vắng khảo sát" ? "bg-white/20 text-white" : "bg-slate-200 text-slate-800"}`}>
+                        <span>Vắng khảo sát</span>
+                        <span className={`px-1.5 py-0.2 rounded-md text-[10px] font-bold ${reportApprovalStatusFilter === "Vắng khảo sát" ? "bg-white/20 text-white" : "bg-slate-200 text-slate-800"}`}>
                           {batchSummaryStats.absent}
                         </span>
                       </button>
@@ -7847,9 +7865,9 @@ const [customCommitmentSubjects, setCustomCommitmentSubjects] = useState<string[
                   </div>
 
                   {/* Summary / Counter badge */}
-                  <div className="flex items-center gap-2 text-xs font-semibold text-slate-500 self-end md:self-auto shrink-0">
+                  <div className="flex items-center gap-2 text-xs font-medium text-slate-500 self-end md:self-auto shrink-0 tabular-nums">
                     <span>
-                      Hiển thị <strong className="text-slate-800">{filteredReportStudents.length}</strong> học sinh
+                      Danh sách <strong className="text-slate-900 font-semibold">{filteredReportStudents.length}</strong> học sinh
                     </span>
                   </div>
                 </div>
@@ -7857,25 +7875,25 @@ const [customCommitmentSubjects, setCustomCommitmentSubjects] = useState<string[
                 {/* TABLE */}
                 <div className="overflow-x-auto">
                   <table className="w-full text-left whitespace-nowrap table-auto border-collapse">
-                    <thead className="bg-slate-50/80 border-b border-slate-200 text-slate-600">
-                      <tr>
+                    <thead className="bg-slate-50/90 border-b border-slate-200 text-slate-600">
+                      <tr className="text-[11px] font-semibold">
                         <th className="py-3 px-3 text-center w-10">
                           <input
                             type="checkbox"
                             checked={paginatedReportStudents.length > 0 && paginatedReportStudents.every(s => selectedStudentIds.includes(s.id))}
                             onChange={e => handleToggleSelectAll(e.target.checked)}
-                            className="w-4 h-4 rounded text-teal-600 focus:ring-teal-500 cursor-pointer"
-                            title="Chọn tất cả trên trang này"
+                            className="w-4 h-4 rounded text-[#008B85] focus:ring-[#00A19A] cursor-pointer"
+                            title="Chọn tất cả học sinh trên trang này"
                           />
                         </th>
-                        <th className="py-3 px-3 text-[10px] font-bold text-slate-500 uppercase tracking-wider">Mã HS</th>
-                        <th className="py-3 px-3 text-[10px] font-bold text-slate-500 uppercase tracking-wider">Họ và tên</th>
-                        <th className="py-3 px-2.5 text-[10px] font-bold text-slate-500 uppercase tracking-wider text-center">Khối</th>
-                        <th className="py-3 px-3 text-[10px] font-bold text-slate-500 uppercase tracking-wider">Hệ / Diện KS</th>
-                        <th className="py-3 px-3 text-[10px] font-bold text-teal-700 uppercase tracking-wider">Điểm KS các môn</th>
-                        <th className="py-3 px-3 text-[10px] font-bold text-slate-500 uppercase tracking-wider text-center">Trạng thái</th>
-                        <th className="py-3 px-3 text-[10px] font-bold text-teal-700 uppercase tracking-wider text-center">Duyệt nhanh</th>
-                        <th className="py-3 px-3 text-[10px] font-bold text-slate-500 uppercase tracking-wider text-center">Thao tác</th>
+                        <th className="py-3 px-4">Mã học sinh</th>
+                        <th className="py-3 px-4">Họ và tên học sinh</th>
+                        <th className="py-3 px-3 text-center">Ngày sinh</th>
+                        <th className="py-3 px-3 text-center">Giới tính</th>
+                        <th className="py-3 px-3 text-center">Khối</th>
+                        <th className="py-3 px-4">Hệ đào tạo, Diện khảo sát</th>
+                        <th className="py-3 px-4 text-center text-[#003B3A]">Quyết định xét duyệt</th>
+                        <th className="py-3 px-4 text-right">Hồ sơ chi tiết</th>
                       </tr>
                     </thead>
                     <tbody className="divide-y divide-slate-100 text-xs">
@@ -7884,156 +7902,170 @@ const [customCommitmentSubjects, setCustomCommitmentSubjects] = useState<string[
                         const isChecked = selectedStudentIds.includes(s.id);
                         const isInlineLoading = inlineApprovalLoadingId === s.id;
                         const isPending = !s.admissionResult && !s.isAbsent;
+                        const isPassedStandard = s.admissionResult === "Đạt" || (s.admissionResult?.includes("Đạt") && !s.admissionResult?.includes("Không") && !s.admissionResult?.includes("cam kết"));
+                        const isCommitted = s.admissionResult?.includes("cam kết");
+                        const isFailed = s.admissionResult?.includes("Không đạt");
+                        const hasSpecialOutcome = s.admissionResult && !["Đạt", "Đạt cam kết", "Không đạt"].includes(s.admissionResult);
 
                         return (
                           <tr
                             key={s.id}
                             className={`transition-colors ${
                               isPending
-                                ? "bg-amber-50/20 hover:bg-amber-50/40 border-l-4 border-l-amber-400"
+                                ? "bg-amber-50/15 hover:bg-amber-50/35 border-l-3 border-l-amber-400"
                                 : isChecked
-                                ? "bg-teal-50/40 hover:bg-teal-50/60"
+                                ? "bg-[#F0FDFA]/60 hover:bg-[#F0FDFA]"
                                 : isSelected
-                                ? "bg-indigo-50/30 hover:bg-indigo-50/50"
+                                ? "bg-[#F0FDFA]/40 hover:bg-[#F0FDFA]/70"
                                 : "hover:bg-slate-50/80"
                             }`}
                           >
                             {/* Checkbox */}
-                            <td className="py-2.5 px-3 text-center">
+                            <td className="py-3 px-3 text-center">
                               <input
                                 type="checkbox"
                                 checked={isChecked}
                                 onChange={() => handleToggleSelectStudent(s.id)}
-                                className="w-4 h-4 rounded text-teal-600 focus:ring-teal-500 cursor-pointer"
+                                className="w-4 h-4 rounded text-[#008B85] focus:ring-[#00A19A] cursor-pointer"
                               />
                             </td>
 
                             {/* Mã HS */}
-                            <td className="py-2.5 px-3 font-mono text-xs font-bold text-slate-700">
-                              <span className="bg-slate-100/90 text-slate-700 px-2 py-0.5 rounded-md border border-slate-200/60 shadow-2xs">
+                            <td className="py-3 px-4 font-mono text-xs font-semibold text-slate-700 tabular-nums">
+                              <span className="bg-slate-100 text-slate-800 px-2 py-0.5 rounded-md border border-slate-200/80">
                                 {s.studentCode}
                               </span>
                             </td>
 
-                            {/* Họ và tên & Ngày sinh */}
-                            <td className="py-2.5 px-3">
+                            {/* Họ và tên */}
+                            <td className="py-3 px-4">
                               <button
                                 type="button"
                                 onClick={() => setReportStudentId(s.id)}
-                                className="font-bold text-slate-900 hover:text-teal-700 transition-colors cursor-pointer text-left flex items-center gap-1.5 group"
-                                title="Xem chi tiết kết quả & xét duyệt"
+                                className="font-bold text-slate-900 hover:text-[#00736E] transition-colors cursor-pointer text-left flex items-center gap-1.5 group"
+                                title="Mở hồ sơ điểm khảo sát & xét duyệt chi tiết"
                               >
                                 <span className="group-hover:underline">{s.fullName}</span>
-                                <Eye className="w-3.5 h-3.5 text-slate-300 group-hover:text-teal-600 transition-colors shrink-0" />
                               </button>
-                              <div className="text-[10px] text-slate-400 font-medium mt-0.5">
-                                {s.dateOfBirth ? new Date(s.dateOfBirth).toLocaleDateString("vi-VN") : "—"} • {s.gender === "M" || s.gender === "Nam" ? "Nam" : s.gender === "F" || s.gender === "Nữ" ? "Nữ" : s.gender || "—"}
-                              </div>
+                              {s.oldSchoolName && (
+                                <div className="text-[11px] text-slate-400 font-normal mt-0.5 truncate max-w-[200px]" title={s.oldSchoolName}>
+                                  {s.oldSchoolName}
+                                </div>
+                              )}
+                            </td>
+
+                            {/* Ngày sinh */}
+                            <td className="py-3 px-3 text-center tabular-nums text-slate-600 text-xs font-normal whitespace-nowrap">
+                              {s.dateOfBirth ? new Date(s.dateOfBirth).toLocaleDateString("vi-VN") : "—"}
+                            </td>
+
+                            {/* Giới tính */}
+                            <td className="py-3 px-3 text-center text-slate-600 text-xs font-normal">
+                              {s.gender === "M" || s.gender === "Nam" ? "Nam" : s.gender === "F" || s.gender === "Nữ" ? "Nữ" : s.gender || "—"}
                             </td>
 
                             {/* Khối */}
-                            <td className="py-2.5 px-2.5 text-center">
-                              <span className="px-2 py-0.5 rounded-md font-bold text-[11px] bg-slate-100 text-slate-700 border border-slate-200/60 shadow-2xs">
+                            <td className="py-3 px-3 text-center tabular-nums">
+                              <span className="px-2 py-0.5 rounded-md font-semibold text-xs bg-[#F0FDFA] text-[#003B3A] border border-[#CCFBF1]">
                                 K{s.grade || "—"}
                               </span>
                             </td>
 
                             {/* Hệ / Diện khảo sát */}
-                            <td className="py-2.5 px-3">
-                              <div className="font-bold text-slate-700 text-xs">{s.surveyFormType || "—"}</div>
-                              <div className="text-[10px] text-slate-500 max-w-[170px] truncate" title={s.admissionCriteria}>
-                                {s.admissionCriteria || "—"}
-                              </div>
-                              {!s.batchId && (
-                                <div className="mt-0.5">
-                                  <span className="inline-flex items-center px-1.5 py-0.2 rounded text-[9px] font-bold bg-amber-50 text-amber-800 border border-amber-200">
+                            <td className="py-3 px-4">
+                              <div className="flex items-center gap-1.5">
+                                <span className="font-semibold text-slate-800 text-xs">{s.surveyFormType || "—"}</span>
+                                {!s.batchId && (
+                                  <span className="inline-flex items-center px-1.5 py-0.2 rounded text-[10px] font-medium bg-amber-50 text-amber-800 border border-amber-200">
                                     Khảo sát lẻ
                                   </span>
-                                </div>
-                              )}
+                                )}
+                              </div>
+                              <div className="text-[11px] text-slate-500 max-w-[220px] truncate mt-0.5" title={s.admissionCriteria}>
+                                {s.admissionCriteria || "—"}
+                              </div>
                             </td>
 
-                            {/* Điểm KS các môn */}
-                            <td className="py-2.5 px-3">
-                              {renderStudentScoresCell(s)}
+                            {/* Quyết định xét duyệt (Unified Segmented Decision Bar) */}
+                            <td className="py-3 px-4 text-center">
+                              <div className="inline-flex items-center justify-center gap-2">
+                                {s.isAbsent ? (
+                                  <span className="font-semibold text-slate-600 bg-slate-100 border border-slate-200 px-2.5 py-1 rounded-lg text-[11px]">
+                                    Vắng khảo sát
+                                  </span>
+                                ) : isInlineLoading ? (
+                                  <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-lg bg-slate-50 border border-slate-200 text-slate-600 text-[11px]">
+                                    <Loader2 className="w-3.5 h-3.5 animate-spin text-[#008B85]" />
+                                    <span>Đang lưu...</span>
+                                  </div>
+                                ) : (
+                                  <div className="inline-flex items-center gap-1.5">
+                                    {isPending && (
+                                      <span className="inline-flex items-center gap-1 text-amber-800 bg-amber-50 border border-amber-200/90 px-2 py-1 rounded-lg text-[11px] font-semibold" title="Hồ sơ đang chờ phê duyệt">
+                                        <span className="w-1.5 h-1.5 rounded-full bg-amber-500 animate-pulse" />
+                                        Chờ duyệt
+                                      </span>
+                                    )}
+                                    {hasSpecialOutcome && (
+                                      <span className={`px-2 py-1 rounded-lg text-[11px] font-semibold border ${
+                                        isPassedStandard
+                                          ? "bg-emerald-50 text-emerald-800 border-emerald-200"
+                                          : isCommitted
+                                          ? "bg-amber-50 text-amber-900 border-amber-200"
+                                          : "bg-rose-50 text-rose-800 border-rose-200"
+                                      }`}>
+                                        {s.admissionResult}
+                                      </span>
+                                    )}
+                                    <div className="inline-flex items-center p-0.5 bg-slate-100/90 rounded-lg border border-slate-200/80">
+                                      <button
+                                        onClick={() => handleQuickApproveStudent(s, "Đạt")}
+                                        className={`px-2.5 py-1 rounded-md text-[11px] font-semibold transition-all cursor-pointer ${
+                                          s.admissionResult === "Đạt"
+                                            ? "bg-emerald-600 text-white shadow-2xs"
+                                            : "text-slate-600 hover:text-emerald-700 hover:bg-white"
+                                        }`}
+                                        title="Phê duyệt Đạt chuẩn"
+                                      >
+                                        Đạt chuẩn
+                                      </button>
+                                      <button
+                                        onClick={() => handleQuickApproveStudent(s, "Đạt cam kết")}
+                                        className={`px-2.5 py-1 rounded-md text-[11px] font-semibold transition-all cursor-pointer ${
+                                          s.admissionResult === "Đạt cam kết"
+                                            ? "bg-amber-600 text-white shadow-2xs"
+                                            : "text-slate-600 hover:text-amber-700 hover:bg-white"
+                                        }`}
+                                        title="Phê duyệt Đạt cam kết (chọn môn cam kết)"
+                                      >
+                                        Cam kết
+                                      </button>
+                                      <button
+                                        onClick={() => handleQuickApproveStudent(s, "Không đạt")}
+                                        className={`px-2.5 py-1 rounded-md text-[11px] font-semibold transition-all cursor-pointer ${
+                                          s.admissionResult === "Không đạt"
+                                            ? "bg-rose-600 text-white shadow-2xs"
+                                            : "text-slate-600 hover:text-rose-700 hover:bg-white"
+                                        }`}
+                                        title="Phê duyệt Không đạt"
+                                      >
+                                        Không đạt
+                                      </button>
+                                    </div>
+                                  </div>
+                                )}
+                              </div>
                             </td>
 
-                            {/* Trạng thái duyệt */}
-                            <td className="py-2.5 px-3 text-center">
-                              {s.isAbsent ? (
-                                <span className="font-bold text-slate-600 bg-slate-100 border border-slate-200 px-2.5 py-0.5 rounded-full text-[10px]">
-                                  Vắng KS
-                                </span>
-                              ) : s.admissionResult ? (
-                                <span className={`font-bold px-2.5 py-0.5 rounded-full text-[10px] inline-flex items-center gap-1 ${
-                                  s.admissionResult.includes("Đạt") && !s.admissionResult.includes("Không") && !s.admissionResult.includes("cam kết")
-                                    ? "bg-emerald-50 text-emerald-700 border border-emerald-200"
-                                    : s.admissionResult.includes("cam kết")
-                                    ? "bg-orange-50 text-orange-700 border border-orange-200"
-                                    : "bg-rose-50 text-rose-700 border border-rose-200"
-                                }`}>
-                                  {s.admissionResult}
-                                </span>
-                              ) : (
-                                <span className="inline-flex items-center gap-1 text-amber-700 bg-amber-50 border border-amber-200 px-2.5 py-0.5 rounded-full text-[10px] font-bold">
-                                  <span className="w-1.5 h-1.5 rounded-full bg-amber-500 animate-pulse" />
-                                  Chờ duyệt
-                                </span>
-                              )}
-                            </td>
-
-                            {/* Duyệt nhanh 1-Click: Segmented Pill */}
-                            <td className="py-2.5 px-3 text-center">
-                              {isInlineLoading ? (
-                                <Loader2 className="w-4 h-4 animate-spin text-teal-600 mx-auto" />
-                              ) : (
-                                <div className="inline-flex items-center p-0.5 bg-slate-100 rounded-lg border border-slate-200/80 shadow-2xs">
-                                  <button
-                                    onClick={() => handleQuickApproveStudent(s, "Đạt")}
-                                    className={`px-2 py-0.5 rounded-md text-[10px] font-bold transition-all cursor-pointer ${
-                                      s.admissionResult === "Đạt"
-                                        ? "bg-emerald-600 text-white shadow-2xs"
-                                        : "text-emerald-700 hover:bg-emerald-50"
-                                    }`}
-                                    title="Duyệt Đạt chuẩn"
-                                  >
-                                    Đạt
-                                  </button>
-                                  <button
-                                    onClick={() => handleQuickApproveStudent(s, "Đạt cam kết")}
-                                    className={`px-2 py-0.5 rounded-md text-[10px] font-bold transition-all cursor-pointer ${
-                                      s.admissionResult === "Đạt cam kết"
-                                        ? "bg-orange-600 text-white shadow-2xs"
-                                        : "text-orange-700 hover:bg-orange-50"
-                                    }`}
-                                    title="Duyệt Đạt cam kết (chọn môn)"
-                                  >
-                                    Cam kết
-                                  </button>
-                                  <button
-                                    onClick={() => handleQuickApproveStudent(s, "Không đạt")}
-                                    className={`px-2 py-0.5 rounded-md text-[10px] font-bold transition-all cursor-pointer ${
-                                      s.admissionResult === "Không đạt"
-                                        ? "bg-rose-600 text-white shadow-2xs"
-                                        : "text-rose-700 hover:bg-rose-50"
-                                    }`}
-                                    title="Duyệt Không đạt"
-                                  >
-                                    K.Đạt
-                                  </button>
-                                </div>
-                              )}
-                            </td>
-
-                            {/* Thao tác Chi tiết / Email */}
-                            <td className="py-2.5 px-3 text-center">
-                              <div className="flex items-center justify-center gap-1.5">
+                            {/* Hồ sơ chi tiết */}
+                            <td className="py-3 px-4 text-right">
+                              <div className="inline-flex items-center justify-end gap-1.5">
                                 {!s.admissionResult && (
                                   <button
                                     onClick={() => handleSendGdcsApprovalRequestForStudent(s)}
                                     disabled={sendingApprovalId === s.id}
-                                    title="Gửi email yêu cầu GĐCS xét duyệt"
-                                    className="p-1 rounded-lg hover:bg-slate-100 text-indigo-600 disabled:opacity-50 inline-flex items-center justify-center cursor-pointer transition-colors"
+                                    title="Gửi email nhắc Giám đốc Cơ sở xét duyệt hồ sơ này"
+                                    className="p-1.5 rounded-lg border border-transparent hover:border-slate-200 hover:bg-white text-slate-500 hover:text-[#00736E] disabled:opacity-50 inline-flex items-center justify-center cursor-pointer transition-colors"
                                   >
                                     {sendingApprovalId === s.id ? (
                                       <Loader2 className="w-3.5 h-3.5 animate-spin" />
@@ -8044,13 +8076,14 @@ const [customCommitmentSubjects, setCustomCommitmentSubjects] = useState<string[
                                 )}
                                 <button
                                   onClick={() => setReportStudentId(s.id)}
-                                  className={`px-2.5 py-1 rounded-lg text-xs font-bold transition-all cursor-pointer flex items-center gap-1 ${
+                                  className={`px-3 py-1.5 rounded-lg text-xs font-semibold transition-colors cursor-pointer inline-flex items-center gap-1.5 ${
                                     isSelected
-                                      ? "bg-[#007A87] text-white shadow-xs"
-                                      : "bg-teal-50 text-[#007A87] border border-teal-200 hover:bg-[#007A87] hover:text-white"
+                                      ? "bg-[#003B3A] text-white shadow-2xs"
+                                      : "bg-white text-[#003B3A] border border-slate-200 hover:border-[#008B85] hover:bg-[#F0FDFA]"
                                   }`}
                                 >
-                                  <span>Chi tiết</span>
+                                  <Eye className="w-3.5 h-3.5 text-[#008B85]" />
+                                  <span>Mở hồ sơ</span>
                                 </button>
                               </div>
                             </td>
@@ -8059,8 +8092,8 @@ const [customCommitmentSubjects, setCustomCommitmentSubjects] = useState<string[
                       })}
                       {filteredReportStudents.length === 0 && (
                         <tr>
-                          <td colSpan={9} className="py-12 text-center text-xs font-bold text-slate-400 uppercase">
-                            Không có học sinh nào trong đợt khảo sát này
+                          <td colSpan={9} className="py-12 text-center text-xs font-medium text-slate-400">
+                            Không tìm thấy hồ sơ học sinh nào khớp với bộ lọc hiện tại
                           </td>
                         </tr>
                       )}
@@ -8074,99 +8107,100 @@ const [customCommitmentSubjects, setCustomCommitmentSubjects] = useState<string[
                 <Modal
                   open={!!selectedReportStudent}
                   onClose={() => setReportStudentId("")}
-                  title={`Chi tiết kết quả & Xét duyệt - ${selectedReportStudent.fullName} (${selectedReportStudent.studentCode})`}
+                  title={`Hồ sơ khảo sát & Xét duyệt đầu vào — ${selectedReportStudent.fullName} (${selectedReportStudent.studentCode})`}
                   size="2xl"
                   footer={
-                    <div className="w-full px-6 py-4 bg-slate-50 border-t border-slate-150 flex justify-end gap-3">
+                    <div className="w-full px-6 py-3.5 bg-slate-50 border-t border-slate-200/80 flex justify-end gap-3">
                       <button 
                         onClick={() => setReportStudentId("")} 
-                        className="px-6 py-2 bg-white border border-slate-300 hover:bg-slate-50 text-slate-700 font-bold rounded-xl transition-all shadow-sm text-xs cursor-pointer"
+                        className="px-5 py-2 bg-white border border-slate-200 hover:bg-slate-100 text-slate-700 font-semibold rounded-xl transition-colors text-xs cursor-pointer"
                       >
-                        Đóng (Close)
+                        Đóng cửa sổ
                       </button>
                     </div>
                   }
                 >
                   <div className="space-y-5">
-              {/* STUDENT HEADER BANNER (SKY-LINE BRANDED & KHOA HỌC) */}
-              <div className="bg-gradient-to-r from-teal-50/50 via-white to-slate-50/40 rounded-2xl border border-teal-200/80 p-4 shadow-xs relative overflow-hidden mb-4 text-left">
-                <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4 relative z-10">
+              {/* STUDENT DOSSIER HEADER BANNER */}
+              <div className="bg-slate-50/70 rounded-2xl border border-slate-200/90 p-4 relative overflow-hidden mb-4 text-left">
+                <div className="absolute left-0 top-0 bottom-0 w-1.5 bg-[#003B3A]" />
+                <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4 pl-2">
                   {/* Left Part: Avatar & Primary Info */}
                   <div className="flex items-center gap-3.5">
-                    <div className="w-13 h-13 rounded-2xl bg-gradient-to-br from-[#003B3A] via-[#004D4A] to-[#0A5C59] flex items-center justify-center text-white font-black text-xl shadow-sm border border-teal-700/40 shrink-0">
+                    <div className="w-12 h-12 rounded-xl bg-[#003B3A] flex items-center justify-center text-white font-bold text-lg shrink-0">
                       {selectedReportStudent.fullName?.charAt(0)}
                     </div>
                     <div>
                       <div className="flex items-center gap-2 flex-wrap">
-                        <h3 className="font-black text-slate-900 text-base leading-tight">
+                        <h3 className="font-bold text-slate-900 text-base leading-tight">
                           {selectedReportStudent.fullName}
                         </h3>
-                        <span className="font-mono font-bold text-teal-800 bg-teal-50 px-2.5 py-0.5 rounded-md border border-teal-200 text-xs">
+                        <span className="font-mono font-semibold text-[#00736E] bg-[#F0FDFA] px-2 py-0.5 rounded-md border border-[#CCFBF1] text-xs tabular-nums">
                           {selectedReportStudent.studentCode}
                         </span>
                       </div>
-                      <p className="text-[11px] text-slate-500 font-medium mt-0.5">
-                        Đối tượng TS: <strong className="text-slate-700 font-bold">{selectedReportStudent.targetType || "—"}</strong>
+                      <p className="text-xs text-slate-500 mt-0.5">
+                        Đối tượng tuyển sinh: <strong className="text-slate-800 font-semibold">{selectedReportStudent.targetType || "—"}</strong>
                       </p>
-                      <div className="flex items-center gap-2 mt-2">
+                      <div className="flex items-center gap-2 mt-2.5 flex-wrap">
                         <button
                           type="button"
                           onClick={() => setIsOrientationReportModalOpen(true)}
-                          className="px-3 py-1.5 bg-white hover:bg-teal-50 text-teal-900 border border-teal-300 rounded-xl text-xs font-bold flex items-center gap-1.5 shadow-2xs transition-all cursor-pointer"
-                          title="Xem & in bản nhận diện định hướng A4"
+                          className="px-3 py-1.5 bg-white hover:bg-[#F0FDFA] text-[#003B3A] border border-slate-200 hover:border-[#008B85] rounded-lg text-xs font-semibold flex items-center gap-1.5 transition-colors cursor-pointer"
+                          title="Xem & in Bản nhận diện và định hướng đầu vào khổ A4"
                         >
-                          <Printer className="w-3.5 h-3.5 text-teal-700" />
-                          <span>Bản Định Hướng A4</span>
+                          <Printer className="w-3.5 h-3.5 text-[#008B85]" />
+                          <span>Bản định hướng A4</span>
                         </button>
                         <button
                           type="button"
                           onClick={() => setIsOrientationModalOpen(true)}
-                          className="px-3 py-1.5 bg-teal-700 hover:bg-teal-800 text-white rounded-xl text-xs font-bold flex items-center gap-1.5 shadow-2xs transition-all cursor-pointer"
-                          title="Mở phiếu định hướng đầu vào (3 Tab: Tab 1: 17 Cột, Tab 2: Phỏng vấn HS, Tab 3: Trao đổi PHHS)"
+                          className="px-3 py-1.5 bg-[#003B3A] hover:bg-[#005854] text-white rounded-lg text-xs font-semibold flex items-center gap-1.5 transition-colors cursor-pointer"
+                          title="Mở Phiếu định hướng đầu vào (3 Tab: 17 Cột nhận diện, Phỏng vấn HS, Trao đổi PHHS)"
                         >
-                          <Compass className="w-3.5 h-3.5 text-teal-200" />
-                          <span>Phiếu Định Hướng (3 Tab)</span>
+                          <Compass className="w-3.5 h-3.5 text-[#5EEAD4]" />
+                          <span>Phiếu định hướng (3 Tab)</span>
                         </button>
                       </div>
                     </div>
                   </div>
 
-                  {/* Right Part: Grid of Metadata */}
-                  <div className="flex-1 grid grid-cols-2 md:grid-cols-4 lg:grid-cols-5 gap-y-2.5 gap-x-3 border-t lg:border-t-0 lg:border-l border-slate-200/80 pt-3 lg:pt-0 lg:pl-5 text-xs">
+                  {/* Right Part: Structured Dossier Metadata */}
+                  <div className="flex-1 grid grid-cols-2 md:grid-cols-4 lg:grid-cols-5 gap-y-2.5 gap-x-4 border-t lg:border-t-0 lg:border-l border-slate-200/80 pt-3 lg:pt-0 lg:pl-5 text-xs">
                     <div className="flex flex-col">
-                      <span className="text-slate-400 font-black uppercase text-[9px] tracking-wider mb-0.5">Ngày sinh</span>
-                      <span className="font-bold text-slate-800">{selectedReportStudent.dateOfBirth ? new Date(selectedReportStudent.dateOfBirth).toLocaleDateString("vi-VN") : "—"}</span>
+                      <span className="text-slate-500 font-medium text-[11px] mb-0.5">Ngày sinh</span>
+                      <span className="font-semibold text-slate-900 tabular-nums">{selectedReportStudent.dateOfBirth ? new Date(selectedReportStudent.dateOfBirth).toLocaleDateString("vi-VN") : "—"}</span>
                     </div>
                     <div className="flex flex-col">
-                      <span className="text-slate-400 font-black uppercase text-[9px] tracking-wider mb-0.5">Giới tính</span>
-                      <span className="font-bold text-slate-800">{selectedReportStudent.gender === "M" || selectedReportStudent.gender === "Nam" ? "Nam" : selectedReportStudent.gender === "F" || selectedReportStudent.gender === "Nữ" ? "Nữ" : selectedReportStudent.gender || "—"}</span>
+                      <span className="text-slate-500 font-medium text-[11px] mb-0.5">Giới tính</span>
+                      <span className="font-semibold text-slate-900">{selectedReportStudent.gender === "M" || selectedReportStudent.gender === "Nam" ? "Nam" : selectedReportStudent.gender === "F" || selectedReportStudent.gender === "Nữ" ? "Nữ" : selectedReportStudent.gender || "—"}</span>
                     </div>
                     <div className="flex flex-col">
-                      <span className="text-slate-400 font-black uppercase text-[9px] tracking-wider mb-0.5">Khối học</span>
-                      <span className="font-black text-teal-900 bg-teal-50 px-2 py-0.5 rounded border border-teal-200 w-fit text-xs">K{selectedReportStudent.grade || "—"}</span>
+                      <span className="text-slate-500 font-medium text-[11px] mb-0.5">Khối đăng ký</span>
+                      <span className="font-bold text-[#003B3A] bg-[#F0FDFA] px-2 py-0.5 rounded border border-[#CCFBF1] w-fit text-xs tabular-nums">Khối {selectedReportStudent.grade || "—"}</span>
                     </div>
                     <div className="flex flex-col">
-                      <span className="text-slate-400 font-black uppercase text-[9px] tracking-wider mb-0.5">Hệ Khảo sát</span>
+                      <span className="text-slate-500 font-medium text-[11px] mb-0.5">Hệ khảo sát</span>
                       <div>
-                        <span className="font-black text-amber-800 bg-amber-50 px-2 py-0.5 rounded border border-amber-200 text-xs inline-block">{selectedReportStudent.surveyFormType || "—"}</span>
+                        <span className="font-semibold text-amber-900 bg-amber-50 px-2 py-0.5 rounded border border-amber-200 text-xs inline-block">{selectedReportStudent.surveyFormType || "—"}</span>
                       </div>
                     </div>
                     <div className="flex flex-col">
-                      <span className="text-slate-400 font-black uppercase text-[9px] tracking-wider mb-0.5">Diện Khảo sát</span>
-                      <span className="font-bold text-slate-700 truncate" title={selectedReportStudent.admissionCriteria}>{selectedReportStudent.admissionCriteria || "—"}</span>
+                      <span className="text-slate-500 font-medium text-[11px] mb-0.5">Diện khảo sát</span>
+                      <span className="font-semibold text-slate-800 truncate" title={selectedReportStudent.admissionCriteria}>{selectedReportStudent.admissionCriteria || "—"}</span>
                     </div>
 
                     {reportSelPeriod?.name?.toLowerCase().includes("open day") && (
                       <>
                         <div className="flex flex-col col-span-2">
-                          <span className="text-slate-400 font-black uppercase text-[9px] tracking-wider mb-0.5">Đăng ký CS</span>
-                          <span className="font-bold text-slate-800">
+                          <span className="text-slate-500 font-medium text-[11px] mb-0.5">Cơ sở đăng ký</span>
+                          <span className="font-semibold text-slate-900">
                             {campuses.find(c => c.id === selectedReportStudent.registeredCampus)?.campusName || selectedReportStudent.registeredCampus || "—"}
                           </span>
                         </div>
                         <div className="flex flex-col col-span-2">
-                          <span className="text-slate-400 font-black uppercase text-[9px] tracking-wider mb-0.5">Ủy quyền xét duyệt</span>
-                          <span className="font-bold text-slate-800">
+                          <span className="text-slate-500 font-medium text-[11px] mb-0.5">Ủy quyền xét duyệt</span>
+                          <span className="font-semibold text-slate-900">
                             {campuses.find(c => c.id === selectedReportStudent.registeredCampus)?.manager?.fullName || "—"}
                           </span>
                         </div>
@@ -8174,22 +8208,34 @@ const [customCommitmentSubjects, setCustomCommitmentSubjects] = useState<string[
                     )}
                   </div>
 
-                  {/* Rightmost Part: Approval Badge */}
+                  {/* Rightmost Part: Approval Status */}
                   <div className="flex items-start lg:items-end flex-col shrink-0 lg:border-l border-slate-200/80 lg:pl-5 pt-3 lg:pt-0">
-                    <span className="text-slate-400 font-black uppercase text-[9px] tracking-wider mb-1 block self-start lg:self-end">Trạng thái duyệt</span>
+                    <span className="text-slate-500 font-medium text-[11px] mb-1 block self-start lg:self-end">Quyết định hiện tại</span>
                     {selectedReportStudent.admissionResult ? (
-                      <span className="font-black text-emerald-800 bg-emerald-50 border border-emerald-200 px-3 py-1 rounded-xl text-xs flex items-center gap-1.5 shadow-2xs">
-                        <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse"></span>
+                      <span className={`font-bold px-3 py-1 rounded-lg text-xs flex items-center gap-1.5 border ${
+                        selectedReportStudent.admissionResult.includes("Không")
+                          ? "text-rose-800 bg-rose-50 border-rose-200"
+                          : selectedReportStudent.admissionResult.includes("cam kết")
+                          ? "text-amber-900 bg-amber-50 border-amber-200"
+                          : "text-emerald-800 bg-emerald-50 border-emerald-200"
+                      }`}>
+                        <span className={`w-1.5 h-1.5 rounded-full ${
+                          selectedReportStudent.admissionResult.includes("Không")
+                            ? "bg-rose-500"
+                            : selectedReportStudent.admissionResult.includes("cam kết")
+                            ? "bg-amber-500"
+                            : "bg-emerald-500"
+                        }`}></span>
                         {selectedReportStudent.admissionResult}
                       </span>
                     ) : (
-                      <span className="font-black text-slate-600 bg-slate-100 border border-slate-200 px-3 py-1 rounded-xl text-xs">
-                        Chưa duyệt
+                      <span className="font-semibold text-amber-800 bg-amber-50 border border-amber-200 px-3 py-1 rounded-lg text-xs">
+                        Chờ Hội đồng duyệt
                       </span>
                     )}
                     {selectedReportStudent.signatureName && (
-                      <span className="text-[10px] text-slate-500 font-medium mt-1">
-                        Ký: <strong className="text-slate-700 font-bold">{selectedReportStudent.signatureName}</strong>
+                      <span className="text-[11px] text-slate-500 mt-1">
+                        Người duyệt: <strong className="text-slate-800 font-semibold">{selectedReportStudent.signatureName}</strong>
                       </span>
                     )}
                   </div>
@@ -8202,41 +8248,42 @@ const [customCommitmentSubjects, setCustomCommitmentSubjects] = useState<string[
                 {/* LEFT COLUMN: ADMISSION DECISION FORM & RETEST HISTORY */}
                 <div className="lg:col-span-4 space-y-4 lg:sticky lg:top-20 self-start transition-all duration-300">
                   {/* ADMISSION DECISION FORM */}
-                  <div className="bg-white rounded-2xl border border-slate-200 p-4 shadow-sm space-y-3 text-left">
-                    <h4 className="font-black text-slate-800 text-xs flex items-center justify-between border-b pb-2 mb-1">
+                  <div className="bg-white rounded-2xl border border-slate-200/90 p-4 shadow-[0_1px_2px_rgba(15,23,42,0.03)] space-y-3.5 text-left">
+                    <h4 className="font-bold text-slate-900 text-xs flex items-center justify-between border-b border-slate-100 pb-2.5">
                       <span className="flex items-center gap-1.5">
-                        <CheckCircle2 className="w-3.5 h-3.5 text-emerald-500"/>
-                        Xét duyệt Tuyển sinh
+                        <CheckCircle2 className="w-4 h-4 text-[#008B85]"/>
+                        Quyết định của Hội đồng Tuyển sinh
                       </span>
                       {selectedReportStudent.admissionResult ? (
-                        <span className="text-[9px] font-black text-emerald-700 uppercase tracking-wider flex items-center gap-1 shadow-sm text-xs font-semibold">
-                          <span className="w-1 h-1 animate-pulse text-xs font-semibold"></span>
-                          Đã duyệt
+                        <span className="px-2 py-0.5 text-[10px] font-semibold bg-emerald-50 text-emerald-700 rounded-md border border-emerald-200">
+                          Đã phê duyệt
                         </span>
                       ) : (
-                        <span className="px-2 py-0.5 text-[9px] font-black bg-slate-100 text-slate-500 rounded-full border border-slate-200 uppercase tracking-wider">
-                          Chưa duyệt
+                        <span className="px-2 py-0.5 text-[10px] font-semibold bg-amber-50 text-amber-800 rounded-md border border-amber-200">
+                          Chờ duyệt
                         </span>
                       )}
                     </h4>
                     
                     {!canApprove && (
-                      <div className="text-rose-600 p-2.5 text-[10px] font-semibold flex items-center gap-1.5 animate-pulse mb-1 text-xs font-semibold">
-                        <AlertCircle className="w-3.5 h-3.5 flex-shrink-0"/>
-                        {selectedReportStudent?.batch?.status === "LOCKED" || selectedReportStudent?.batch?.status === "CLOSED" ? 
-                          "Đợt khảo sát đã BỊ KHÓA." : 
-                          "Bạn không có quyền xét duyệt."}
+                      <div className="text-rose-700 bg-rose-50 border border-rose-200 rounded-xl p-2.5 text-xs font-medium flex items-center gap-2">
+                        <AlertCircle className="w-4 h-4 flex-shrink-0 text-rose-600"/>
+                        <span>
+                          {selectedReportStudent?.batch?.status === "LOCKED" || selectedReportStudent?.batch?.status === "CLOSED"
+                            ? "Đợt khảo sát này đã khóa sổ xét duyệt."
+                            : "Tài khoản của bạn chỉ có quyền xem trên đợt này."}
+                        </span>
                       </div>
                     )}
 
-                    <Field label="Kết quả Xét tuyển">
+                    <Field label="Kết quả xét tuyển">
                       <select 
                         value={reportForm.admissionResult} 
                         onChange={e => setReportForm(f => ({ ...f, admissionResult: e.target.value }))}
                         className={`${inp} py-1.5 text-xs`}
                         disabled={!canApprove}
                       >
-                        <option value="">-- Chưa xét duyệt --</option>
+                        <option value="">— Chọn quyết định xét tuyển —</option>
                         <option value="Đạt">Đạt</option>
                         <option value="Đạt - Giao lưu">Đạt - Giao lưu</option>
                         <option value="Không đạt">Không đạt</option>
@@ -8421,20 +8468,20 @@ const [customCommitmentSubjects, setCustomCommitmentSubjects] = useState<string[
                         id="autoSendApprovalEmailCheck"
                         checked={autoSendApprovalEmail}
                         onChange={e => setAutoSendApprovalEmail(e.target.checked)}
-                        className="w-4 h-4 text-[#007A87] rounded border-slate-300 focus:ring-teal-500 cursor-pointer"
+                        className="w-4 h-4 text-[#008B85] rounded border-slate-300 focus:ring-[#00A19A] cursor-pointer"
                       />
-                      <label htmlFor="autoSendApprovalEmailCheck" className="text-xs font-bold text-teal-900 cursor-pointer select-none">
-                        ✉️ Gửi email kết quả đến GĐCS, Tư vấn Cơ sở và Ban KT&ĐBCL sau khi lưu
+                      <label htmlFor="autoSendApprovalEmailCheck" className="text-xs font-medium text-slate-800 cursor-pointer select-none leading-snug">
+                        Gửi email thông báo kết quả đến GĐCS, Tư vấn Cơ sở và Ban KT&amp;ĐBCL sau khi lưu
                       </label>
                     </div>
 
                     <button
                       onClick={handleSaveReportResult}
                       disabled={saveReportLoading || !canApprove}
-                      className="w-full bg-gradient-to-r from-[#003B3A] via-[#004D4A] to-[#0A5C59] hover:from-[#004D4A] hover:to-[#0C6E6A] text-white font-black text-xs uppercase tracking-wider py-2.5 rounded-xl shadow-md disabled:opacity-50 transition-all flex justify-center items-center gap-2 cursor-pointer"
+                      className="w-full bg-[#003B3A] hover:bg-[#005854] text-white font-semibold text-xs py-2.5 rounded-xl shadow-xs disabled:opacity-50 transition-colors flex justify-center items-center gap-2 cursor-pointer"
                     >
                       {saveReportLoading ? <Loader2 className="w-4 h-4 animate-spin"/> : <Check className="w-4 h-4"/>}
-                      <span>Lưu kết quả &amp; Lược sử xét duyệt</span>
+                      <span>Lưu quyết định xét duyệt</span>
                     </button>
 
                     {selectedReportStudent && selectedReportStudent.admissionResult === "Không đạt - Kiểm tra lại" && (
@@ -8444,10 +8491,10 @@ const [customCommitmentSubjects, setCustomCommitmentSubjects] = useState<string[
                           setRetestPeriodId("");
                           setRetestBatchId("");
                         }}
-                        className="w-full mt-2 bg-amber-50 hover:bg-amber-100 text-amber-900 border border-amber-300 font-black text-xs uppercase tracking-wider py-2 rounded-xl transition-all flex justify-center items-center gap-1.5 cursor-pointer shadow-xs"
+                        className="w-full mt-2 bg-amber-50 hover:bg-amber-100 text-amber-900 border border-amber-300 font-semibold text-xs py-2 rounded-xl transition-colors flex justify-center items-center gap-1.5 cursor-pointer"
                       >
                         <RefreshCw className="w-3.5 h-3.5"/>
-                        <span>Đăng ký Khảo sát lại (Thi lại)</span>
+                        <span>Xếp lịch khảo sát lại cho học sinh</span>
                       </button>
                     )}
                   </div>
@@ -8457,14 +8504,14 @@ const [customCommitmentSubjects, setCustomCommitmentSubjects] = useState<string[
                     const parsed = parseApprovalHistory(selectedReportStudent?.directorNote);
                     if (!parsed.history || parsed.history.length === 0) return null;
                     return (
-                      <div className="bg-white rounded-2xl border border-slate-200 p-4 shadow-sm space-y-3 animate-fade-in text-left">
-                        <h4 className="font-black text-slate-800 text-xs flex items-center justify-between border-b pb-2 mb-1">
+                      <div className="bg-white rounded-2xl border border-slate-200/90 p-4 shadow-[0_1px_2px_rgba(15,23,42,0.03)] space-y-3 animate-fade-in text-left">
+                        <h4 className="font-bold text-slate-900 text-xs flex items-center justify-between border-b border-slate-100 pb-2 mb-1">
                           <span className="flex items-center gap-1.5">
-                            <Clock className="w-3.5 h-3.5 text-teal-700 shrink-0" />
-                            Lược sử Xét duyệt &amp; Hiệu chỉnh
+                            <Clock className="w-3.5 h-3.5 text-[#008B85] shrink-0" />
+                            Nhật ký xét duyệt &amp; hiệu chỉnh
                           </span>
-                          <span className="text-[9px] font-black text-teal-800 bg-teal-50 border border-teal-200 px-2 py-0.5 rounded-full shrink-0">
-                            {parsed.history.length} Lần ghi nhận
+                          <span className="text-[10px] font-semibold text-[#00736E] bg-[#F0FDFA] border border-[#CCFBF1] px-2 py-0.5 rounded-md shrink-0 tabular-nums">
+                            {parsed.history.length} lần ghi nhận
                           </span>
                         </h4>
 
@@ -8806,14 +8853,14 @@ const [customCommitmentSubjects, setCustomCommitmentSubjects] = useState<string[
                         return (
                           <>
                             {/* RESULTS SUMMARY TABLE (ALL SCORES & COMMENTS AT A GLANCE) */}
-                            <div className="bg-white rounded-2xl border border-slate-200/90 shadow-sm overflow-hidden text-left">
-                              <div className="flex justify-between items-center px-4 py-3 border-b border-slate-200/80 bg-slate-50/60">
-                                <div className="flex items-center gap-2">
-                                  <span className="text-xs font-black text-slate-800 uppercase tracking-wider flex items-center gap-1.5">
-                                    <BarChart3 className="w-3.5 h-3.5 text-teal-700" />
-                                    Bảng tổng quan kết quả &amp; Nhận xét
+                            <div className="bg-white rounded-2xl border border-slate-200/90 shadow-[0_1px_2px_rgba(15,23,42,0.03)] overflow-hidden text-left">
+                              <div className="flex flex-wrap justify-between items-center gap-2 px-4 py-3 border-b border-slate-200/80 bg-slate-50/70">
+                                <div>
+                                  <span className="text-xs font-bold text-slate-900 flex items-center gap-1.5">
+                                    <BarChart3 className="w-3.5 h-3.5 text-[#008B85]" />
+                                    Bảng tổng hợp kết quả &amp; nhận xét các môn
                                   </span>
-                                  <span className="text-[10px] text-slate-400 font-medium italic hidden sm:inline">• Nhấp vào từng dòng để xem biểu đồ chi tiết</span>
+                                  <p className="text-[11px] text-slate-500 mt-0.5 hidden sm:block">Chọn một môn học trong bảng để xem chi tiết phiếu chấm bên dưới</p>
                                 </div>
                                 <button
                                   type="button"
@@ -8821,21 +8868,21 @@ const [customCommitmentSubjects, setCustomCommitmentSubjects] = useState<string[
                                     e.stopPropagation();
                                     handleOpenAddScore();
                                   }}
-                                  className="px-3.5 py-1.5 bg-gradient-to-r from-[#003B3A] to-[#0A5C59] hover:from-[#004D4A] hover:to-[#0C6E6A] text-white rounded-xl font-bold text-xs flex items-center gap-1.5 shadow-xs transition-all cursor-pointer hover:shadow"
-                                  title="Nhập điểm cho môn học mới của học sinh này"
+                                  className="px-3 py-1.5 bg-[#003B3A] hover:bg-[#005854] text-white rounded-lg font-semibold text-xs flex items-center gap-1.5 transition-colors cursor-pointer"
+                                  title="Nhập bổ sung điểm môn khảo sát cho học sinh này"
                                 >
-                                  <Plus className="w-3.5 h-3.5 text-teal-200" />
-                                  Nhập điểm môn mới
+                                  <Plus className="w-3.5 h-3.5 text-[#5EEAD4]" />
+                                  Bổ sung điểm môn học
                                 </button>
                               </div>
                               <div className="overflow-x-auto">
                                 <table className="w-full text-left table-fixed border-collapse">
                                   <thead>
-                                    <tr className="bg-slate-100/70 border-b border-slate-200 text-slate-600">
-                                      <th className="p-2.5 text-[10px] font-black uppercase tracking-wider w-1/4 border border-slate-200 text-slate-600">Môn khảo sát</th>
-                                      <th className="p-2.5 text-[10px] font-black uppercase tracking-wider w-1/5 text-center border border-slate-200 text-slate-600">Kết quả</th>
-                                      <th className="p-2.5 text-[10px] font-black uppercase tracking-wider border border-slate-200 text-slate-600">Ý kiến nhận xét chính từ giáo viên</th>
-                                      <th className="p-2.5 text-[10px] font-black uppercase tracking-wider w-24 text-center border border-slate-200 text-slate-600">Thao tác</th>
+                                    <tr className="bg-slate-50/90 border-b border-slate-200 text-slate-600 text-[11px] font-semibold">
+                                      <th className="p-2.5 w-1/4 border-r border-slate-200/70">Môn khảo sát</th>
+                                      <th className="p-2.5 w-1/5 text-center border-r border-slate-200/70">Điểm / Mức đạt</th>
+                                      <th className="p-2.5 border-r border-slate-200/70">Nhận xét chuyên môn của giáo viên</th>
+                                      <th className="p-2.5 w-24 text-center">Cập nhật</th>
                                     </tr>
                                   </thead>
                                   <tbody className="divide-y divide-slate-100">
