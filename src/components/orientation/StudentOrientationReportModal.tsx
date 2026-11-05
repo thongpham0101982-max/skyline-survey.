@@ -374,8 +374,9 @@ export function StudentOrientationReportModal({
   // Parse điểm môn học khảo sát thực tế tại Sky-Line
   const parseScores = () => {
     const res: Array<{ subject: string; score: string | number; remark?: string }> = []
-    if (student?.scores && Array.isArray(student.scores)) {
-      student.scores.forEach((sc: any) => {
+    const studentScoresList = (studentInfo || student)?.scores || student?.scores || orientationData?.student?.scores || []
+    if (studentScoresList && Array.isArray(studentScoresList)) {
+      studentScoresList.forEach((sc: any) => {
         const subName = sc.subject?.name || sc.subjectName || "Môn khảo sát"
         const subCode = String(sc.subject?.code || "").toUpperCase()
         if (subCode === "TLY" || subCode.includes("TÂM LÝ") || subCode.includes("TAM LY")) return
@@ -384,16 +385,31 @@ export function StudentOrientationReportModal({
         if (sc.scores && typeof sc.scores === "string") {
           try {
             const arr = JSON.parse(sc.scores)
-            if (Array.isArray(arr) && arr.length > 0) scoreVal = arr[arr.length - 1] ?? arr[0]
-            else scoreVal = sc.scores
+            if (Array.isArray(arr) && arr.length > 0) {
+              const nonEmpty = arr.filter((v: any) => v !== null && v !== undefined && String(v).trim() !== "")
+              scoreVal = nonEmpty.length > 0 ? nonEmpty[nonEmpty.length - 1] : "-"
+            } else {
+              scoreVal = sc.scores
+            }
           } catch (e) {
             scoreVal = sc.scores
+          }
+        }
+        let remarkVal = sc.remarks || sc.note || ""
+        if (!remarkVal && sc.comments && typeof sc.comments === "string") {
+          try {
+            const cArr = JSON.parse(sc.comments)
+            if (Array.isArray(cArr)) {
+              remarkVal = cArr.filter((c: any) => c && String(c).trim() !== "").join("; ")
+            }
+          } catch (e) {
+            remarkVal = sc.comments
           }
         }
         res.push({
           subject: subName,
           score: scoreVal,
-          remark: sc.remarks || sc.note || ""
+          remark: remarkVal
         })
       })
     }
@@ -442,9 +458,11 @@ export function StudentOrientationReportModal({
     year: "numeric"
   })
 
+  const sData = studentInfo || student
+
   // Parse dữ liệu quyết định và chỉ đạo của GĐCS
   const gdcsData = React.useMemo(() => {
-    const raw = orientationData?.admissionConsultantNote
+    const raw = orientationData?.admissionConsultantNote || sData?.directorNote
     if (!raw) return null
     if (typeof raw === "string" && raw.trim().startsWith("{")) {
       try {
@@ -454,9 +472,7 @@ export function StudentOrientationReportModal({
       }
     }
     return { gdcsGeneralNote: raw }
-  }, [orientationData?.admissionConsultantNote])
-
-  const sData = studentInfo || student
+  }, [orientationData?.admissionConsultantNote, sData?.directorNote])
 
   const isCuidLike = (val?: string | null) =>
     Boolean(val && /^(cm|cl)[a-z0-9]{15,}$/i.test(String(val).trim()))
@@ -522,7 +538,16 @@ export function StudentOrientationReportModal({
           .normalize("NFD")
           .replace(/[\u0300-\u036f]/g, "")
         if (keywords.some(kw => sName.includes(kw))) {
-          const val = item?.finalScore ?? item?.score ?? item?.rawScore ?? item?.gradeLevel
+          let val = item?.finalScore ?? item?.score ?? item?.rawScore ?? item?.gradeLevel
+          if ((val === null || val === undefined || String(val).trim() === "") && item?.scores) {
+            try {
+              const parsedArr = typeof item.scores === "string" ? JSON.parse(item.scores) : item.scores
+              if (Array.isArray(parsedArr)) {
+                const nonEmpty = parsedArr.filter((v: any) => v !== null && v !== undefined && String(v).trim() !== "")
+                if (nonEmpty.length > 0) val = nonEmpty[nonEmpty.length - 1]
+              }
+            } catch (e) {}
+          }
           if (val !== null && val !== undefined && String(val).trim() !== "") {
             return String(val)
           }

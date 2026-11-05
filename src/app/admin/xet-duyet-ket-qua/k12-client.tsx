@@ -1297,6 +1297,8 @@ export function XetDuyetK12Client({ academicYears = [], campuses = [], examBoard
   const [orientationAssignedTeacher, setOrientationAssignedTeacher] = useState<string>("");
   const [showFullOrientationDetails, setShowFullOrientationDetails] = useState(false);
   const [loadingOrientation, setLoadingOrientation] = useState(false);
+  const [dossierActiveTab, setDossierActiveTab] = useState<"scores" | "orientation">("scores");
+  const [orientationSubTab, setOrientationSubTab] = useState<"student" | "parent" | "summary">("student");
 
   // Tự động tải bản ghi định hướng khi mở modal chi tiết học sinh
   useEffect(() => {
@@ -1304,6 +1306,8 @@ export function XetDuyetK12Client({ academicYears = [], campuses = [], examBoard
       setOrientationData(null);
       setOrientationAssignedTeacher("");
       setShowFullOrientationDetails(false);
+      setDossierActiveTab("scores");
+      setOrientationSubTab("student");
       return;
     }
     let isMounted = true;
@@ -8107,13 +8111,25 @@ const [customCommitmentSubjects, setCustomCommitmentSubjects] = useState<string[
                   title={`Hồ sơ khảo sát & Xét duyệt đầu vào — ${selectedReportStudent.fullName} (${selectedReportStudent.studentCode})`}
                   size="2xl"
                   footer={
-                    <div className="w-full px-6 py-3.5 bg-slate-50 border-t border-slate-200/80 flex justify-end gap-3">
-                      <button 
-                        onClick={() => setReportStudentId("")} 
-                        className="px-5 py-2 bg-white border border-slate-200 hover:bg-slate-100 text-slate-700 font-semibold rounded-xl transition-colors text-xs cursor-pointer"
-                      >
-                        Đóng cửa sổ
-                      </button>
+                    <div className="w-full px-6 py-3.5 bg-slate-50 border-t border-slate-200/80 flex flex-wrap items-center justify-between gap-3">
+                      <div className="flex items-center gap-2">
+                        <button
+                          type="button"
+                          onClick={() => setIsOrientationReportModalOpen(true)}
+                          className="px-4 py-2 bg-white hover:bg-[#F0FDFA] text-[#003B3A] border border-[#008B85] font-semibold rounded-xl transition-colors text-xs flex items-center gap-1.5 cursor-pointer shadow-xs"
+                        >
+                          <Printer className="w-3.5 h-3.5 text-[#008B85]" />
+                          <span>Xuất PDF chi tiết để GV ký</span>
+                        </button>
+                      </div>
+                      <div className="flex items-center gap-2">
+                        <button 
+                          onClick={() => setReportStudentId("")} 
+                          className="px-5 py-2 bg-white border border-slate-200 hover:bg-slate-100 text-slate-700 font-semibold rounded-xl transition-colors text-xs cursor-pointer"
+                        >
+                          Đóng cửa sổ
+                        </button>
+                      </div>
                     </div>
                   }
                 >
@@ -8143,20 +8159,33 @@ const [customCommitmentSubjects, setCustomCommitmentSubjects] = useState<string[
                         <button
                           type="button"
                           onClick={() => setIsOrientationReportModalOpen(true)}
-                          className="px-3 py-1.5 bg-white hover:bg-[#F0FDFA] text-[#003B3A] border border-slate-200 hover:border-[#008B85] rounded-lg text-xs font-semibold flex items-center gap-1.5 transition-colors cursor-pointer"
-                          title="Xem & in Bản nhận diện và định hướng đầu vào khổ A4"
+                          className="px-3 py-1.5 bg-white hover:bg-[#F0FDFA] text-[#003B3A] border border-[#008B85] rounded-lg text-xs font-semibold flex items-center gap-1.5 transition-colors cursor-pointer shadow-2xs"
+                          title="Xem & xuất PDF chi tiết hồ sơ khảo sát và định hướng khổ A4 để giáo viên và Hội đồng ký"
                         >
                           <Printer className="w-3.5 h-3.5 text-[#008B85]" />
-                          <span>Bản định hướng A4</span>
+                          <span>Xuất PDF chi tiết để GV ký</span>
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => setDossierActiveTab("orientation")}
+                          className={`px-3 py-1.5 rounded-lg text-xs font-semibold flex items-center gap-1.5 transition-colors cursor-pointer ${
+                            dossierActiveTab === "orientation"
+                              ? "bg-[#003B3A] text-white"
+                              : "bg-white hover:bg-slate-100 text-slate-700 border border-slate-200"
+                          }`}
+                          title="Chuyển sang xem Phiếu định hướng đầu vào (3 Tab)"
+                        >
+                          <Compass className={`w-3.5 h-3.5 ${dossierActiveTab === "orientation" ? "text-[#5EEAD4]" : "text-[#008B85]"}`} />
+                          <span>Phiếu định hướng (3 Tab)</span>
                         </button>
                         <button
                           type="button"
                           onClick={() => setIsOrientationModalOpen(true)}
-                          className="px-3 py-1.5 bg-[#003B3A] hover:bg-[#005854] text-white rounded-lg text-xs font-semibold flex items-center gap-1.5 transition-colors cursor-pointer"
-                          title="Mở Phiếu định hướng đầu vào (3 Tab: 17 Cột nhận diện, Phỏng vấn HS, Trao đổi PHHS)"
+                          className="px-3 py-1.5 bg-white hover:bg-slate-100 text-slate-700 border border-slate-200 rounded-lg text-xs font-semibold flex items-center gap-1.5 transition-colors cursor-pointer"
+                          title="Mở biểu mẫu chỉnh sửa chi tiết Phiếu định hướng đầu vào (3 Tab)"
                         >
-                          <Compass className="w-3.5 h-3.5 text-[#5EEAD4]" />
-                          <span>Phiếu định hướng (3 Tab)</span>
+                          <Pencil className="w-3.5 h-3.5 text-slate-500" />
+                          <span>Sửa phiếu định hướng</span>
                         </button>
                       </div>
                     </div>
@@ -8239,467 +8268,71 @@ const [customCommitmentSubjects, setCustomCommitmentSubjects] = useState<string[
                 </div>
               </div>
 
-              {/* MAIN 2-COLUMN GRID */}
-              <div className="grid grid-cols-1 lg:grid-cols-12 gap-4 items-start">
-                
-                {/* LEFT COLUMN: ADMISSION DECISION FORM & RETEST HISTORY */}
-                <div className="lg:col-span-4 space-y-4 lg:sticky lg:top-20 self-start transition-all duration-300">
-                  {/* ADMISSION DECISION FORM */}
-                  <div className="bg-white rounded-2xl border border-slate-200/90 p-4 shadow-[0_1px_2px_rgba(15,23,42,0.03)] space-y-3.5 text-left">
-                    <h4 className="font-bold text-slate-900 text-xs flex items-center justify-between border-b border-slate-100 pb-2.5">
-                      <span className="flex items-center gap-1.5">
-                        <CheckCircle2 className="w-4 h-4 text-[#008B85]"/>
-                        Quyết định của Hội đồng Tuyển sinh
-                      </span>
-                      {selectedReportStudent.admissionResult ? (
-                        <span className="px-2 py-0.5 text-[10px] font-semibold bg-emerald-50 text-emerald-700 rounded-md border border-emerald-200">
-                          Đã phê duyệt
-                        </span>
-                      ) : (
-                        <span className="px-2 py-0.5 text-[10px] font-semibold bg-amber-50 text-amber-800 rounded-md border border-amber-200">
-                          Chờ duyệt
-                        </span>
-                      )}
-                    </h4>
-                    
-                    {!canApprove && (
-                      <div className="text-rose-700 bg-rose-50 border border-rose-200 rounded-xl p-2.5 text-xs font-medium flex items-center gap-2">
-                        <AlertCircle className="w-4 h-4 flex-shrink-0 text-rose-600"/>
-                        <span>
-                          {selectedReportStudent?.batch?.status === "LOCKED" || selectedReportStudent?.batch?.status === "CLOSED"
-                            ? "Đợt khảo sát này đã khóa sổ xét duyệt."
-                            : "Tài khoản của bạn chỉ có quyền xem trên đợt này."}
-                        </span>
-                      </div>
-                    )}
-
-                    <Field label="Kết quả xét tuyển">
-                      <select 
-                        value={reportForm.admissionResult} 
-                        onChange={e => setReportForm(f => ({ ...f, admissionResult: e.target.value }))}
-                        className={`${inp} py-1.5 text-xs`}
-                        disabled={!canApprove}
-                      >
-                        <option value="">— Chọn quyết định xét tuyển —</option>
-                        <option value="Đạt">Đạt</option>
-                        <option value="Đạt - Giao lưu">Đạt - Giao lưu</option>
-                        <option value="Không đạt">Không đạt</option>
-                        <option value="Không đạt - Kiểm tra lại">Không đạt - Kiểm tra lại</option>
-                        <option value="Không đạt - Không kiểm tra lại">Không đạt - Không kiểm tra lại</option>
-                        <option value="Đạt cam kết">Đạt cam kết</option>
-                        <option value="Học thử">Học thử</option>
-                      </select>
-                    </Field>
-
-                    {(reportForm.admissionResult === "Đạt cam kết" || String(reportForm.admissionResult || "").toLowerCase().includes("cam kết")) && (
-                      <Field label={`Môn Cam Kết ${(reportForm.committedSubjects || []).length > 0 ? `(${(reportForm.committedSubjects || []).length} đã chọn)` : ""}`}>
-                        <div className="bg-slate-50/70 rounded-xl p-2.5 border border-slate-200/80 space-y-2">
-                          <div className="grid grid-cols-1 sm:grid-cols-2 gap-1.5 max-h-48 overflow-y-auto pr-1">
-                            {availableCommitmentSubjects.map((sub, idx) => {
-                              const isChecked = (reportForm.committedSubjects || []).includes(sub.name);
-                              return (
-                                <label 
-                                  key={idx} 
-                                  className={`flex items-center justify-between gap-1.5 p-1.5 rounded-lg border transition-all cursor-pointer select-none text-[11px] font-semibold ${
-                                    isChecked 
-                                      ? "bg-teal-50 border-teal-300 text-teal-950 shadow-xs" 
-                                      : "bg-white border-slate-200 text-slate-700 hover:bg-slate-100/80"
-                                  }`}
-                                >
-                                  <div className="flex items-center gap-1.5 min-w-0 flex-1">
-                                    <input 
-                                      type="checkbox"
-                                      checked={isChecked}
-                                      disabled={!canApprove}
-                                      onChange={() => {
-                                        setReportForm(f => {
-                                          const next = isChecked 
-                                            ? f.committedSubjects.filter(name => name !== sub.name)
-                                            : [...f.committedSubjects, sub.name];
-                                          return { ...f, committedSubjects: next };
-                                        });
-                                      }}
-                                      className="rounded border-slate-300 text-teal-700 focus:ring-teal-500 w-3.5 h-3.5 shrink-0 cursor-pointer"
-                                    />
-                                    <span className="truncate" title={sub.name}>{sub.name}</span>
-                                  </div>
-                                  {sub.isSurveySubject && (
-                                    <span className="shrink-0 text-[8px] font-bold uppercase px-1 py-0.2 bg-teal-100 text-teal-700 rounded border border-teal-200">
-                                      Môn KS
-                                    </span>
-                                  )}
-                                </label>
-                              );
-                            })}
-                          </div>
-
-                          {canApprove && (
-                            <div className="flex items-center gap-1.5 pt-1.5 border-t border-slate-200/70">
-                              <input
-                                type="text"
-                                placeholder="+ Thêm môn khác..."
-                                value={newCustomSubjectInput}
-                                onChange={e => setNewCustomSubjectInput(e.target.value)}
-                                onKeyDown={e => {
-                                  if (e.key === "Enter") {
-                                    e.preventDefault();
-                                    handleAddCustomCommitmentSubject();
-                                  }
-                                }}
-                                className="flex-1 px-2.5 py-1 text-[11px] bg-white border border-slate-200 rounded-lg focus:outline-none focus:border-teal-600 font-medium"
-                              />
-                              <button
-                                type="button"
-                                onClick={handleAddCustomCommitmentSubject}
-                                className="px-2.5 py-1 text-[11px] bg-teal-700 hover:bg-teal-800 text-white font-bold rounded-lg transition shrink-0 cursor-pointer shadow-xs"
-                              >
-                                Thêm
-                              </button>
-                            </div>
-                          )}
-                        </div>
-                      </Field>
-                    )}
-
-                    {(reportForm.admissionResult === "Không đạt - Kiểm tra lại" || String(reportForm.admissionResult || "").toLowerCase().includes("kiểm tra lại")) && (
-                      <Field label={`Môn Kiểm tra lại ${(reportForm.committedSubjects || []).length > 0 ? `(${(reportForm.committedSubjects || []).length} đã chọn)` : ""}`}>
-                        <div className="bg-slate-50/70 rounded-xl p-2.5 border border-slate-200/80 space-y-2">
-                          <div className="grid grid-cols-1 sm:grid-cols-2 gap-1.5 max-h-48 overflow-y-auto pr-1">
-                            {availableCommitmentSubjects.map((sub, idx) => {
-                              const isChecked = (reportForm.committedSubjects || []).includes(sub.name);
-                              return (
-                                <label 
-                                  key={idx} 
-                                  className={`flex items-center justify-between gap-1.5 p-1.5 rounded-lg border transition-all cursor-pointer select-none text-[11px] font-semibold ${
-                                    isChecked 
-                                      ? "bg-amber-50 border-amber-200 text-amber-900 shadow-xs" 
-                                      : "bg-white border-slate-200 text-slate-700 hover:bg-slate-100/80"
-                                  }`}
-                                >
-                                  <div className="flex items-center gap-1.5 min-w-0 flex-1">
-                                    <input 
-                                      type="checkbox"
-                                      checked={isChecked}
-                                      disabled={!canApprove}
-                                      onChange={() => {
-                                        setReportForm(f => {
-                                          const next = isChecked 
-                                            ? f.committedSubjects.filter(name => name !== sub.name)
-                                            : [...f.committedSubjects, sub.name];
-                                          return { ...f, committedSubjects: next };
-                                        });
-                                      }}
-                                      className="rounded border-slate-300 text-amber-600 focus:ring-amber-500 w-3.5 h-3.5 shrink-0 cursor-pointer"
-                                    />
-                                    <span className="truncate" title={sub.name}>{sub.name}</span>
-                                  </div>
-                                  {sub.isSurveySubject && (
-                                    <span className="shrink-0 text-[8px] font-bold uppercase px-1 py-0.2 bg-teal-100 text-teal-700 rounded border border-teal-200">
-                                      Môn KS
-                                    </span>
-                                  )}
-                                </label>
-                              );
-                            })}
-                          </div>
-
-                          {canApprove && (
-                            <div className="flex items-center gap-1.5 pt-1.5 border-t border-slate-200/70">
-                              <input
-                                type="text"
-                                placeholder="+ Thêm môn khác..."
-                                value={newCustomSubjectInput}
-                                onChange={e => setNewCustomSubjectInput(e.target.value)}
-                                onKeyDown={e => {
-                                  if (e.key === "Enter") {
-                                    e.preventDefault();
-                                    handleAddCustomCommitmentSubject();
-                                  }
-                                }}
-                                className="flex-1 px-2.5 py-1 text-[11px] bg-white border border-slate-200 rounded-lg focus:outline-none focus:border-amber-500 font-medium"
-                              />
-                              <button
-                                type="button"
-                                onClick={handleAddCustomCommitmentSubject}
-                                className="px-2.5 py-1 text-[11px] bg-amber-600 hover:bg-amber-700 text-white font-bold rounded-lg transition shrink-0 cursor-pointer shadow-xs"
-                              >
-                                Thêm
-                              </button>
-                            </div>
-                          )}
-                        </div>
-                      </Field>
-                    )}
-
-                    {!(["GDCS", "GĐ_CS", "GIAO_VU_CS", "GĐCS"].includes((currentUser?.role || "").toUpperCase())) && (
-                      <>
-                        <Field label="Người duyệt / Phê duyệt">
-                          <select 
-                            value={reportForm.signatureName || selectedReportStudent.signatureName || autoCampusDirectorName || ""}
-                            onChange={e => setReportForm(f => ({ ...f, signatureName: e.target.value }))}
-                            className={`${inp} py-1.5 text-xs`}
-                            disabled={!canApprove}
-                          >
-                            <option value="">-- Chọn người phê duyệt --</option>
-                            {gdcsUsers.map(u => (
-                              <option key={u.id} value={u.fullName || u.email}>{u.fullName || u.email}</option>
-                            ))}
-                          </select>
-                        </Field>
-                      </>
-                    )}
-
-                    <Field label="Ý kiến / Ghi chú Hội đồng">
-                      <textarea 
-                        value={reportForm.directorNote}
-                        onChange={e => setReportForm(f => ({ ...f, directorNote: e.target.value }))}
-                        className={`${inp} h-16 py-1.5 text-xs resize-none`}
-                        placeholder="Nhập ý kiến hoặc lý do..."
-                        disabled={!canApprove}
-                      />
-                    </Field>
-
-                    <div className="p-3 bg-teal-50/70 rounded-xl border border-teal-200/80 flex items-center gap-3">
-                      <input
-                        type="checkbox"
-                        id="autoSendApprovalEmailCheck"
-                        checked={autoSendApprovalEmail}
-                        onChange={e => setAutoSendApprovalEmail(e.target.checked)}
-                        className="w-4 h-4 text-[#008B85] rounded border-slate-300 focus:ring-[#00A19A] cursor-pointer"
-                      />
-                      <label htmlFor="autoSendApprovalEmailCheck" className="text-xs font-medium text-slate-800 cursor-pointer select-none leading-snug">
-                        Gửi email thông báo kết quả đến GĐCS, Tư vấn Cơ sở và Ban KT&amp;ĐBCL sau khi lưu
-                      </label>
-                    </div>
-
+              {/* BƯỚC 1: KẾT QUẢ KHẢO SÁT CÁC MÔN & PHIẾU ĐỊNH HƯỚNG (3 TAB) */}
+              <div className="space-y-4">
+                {/* Thanh chuyển đổi Tab: Kết quả khảo sát các môn vs Phiếu định hướng (3 Tab) */}
+                <div className="flex flex-wrap items-center justify-between gap-3 bg-white px-4 py-2.5 rounded-2xl border border-slate-200/90 shadow-[0_1px_2px_rgba(15,23,42,0.03)]">
+                  <div className="flex items-center gap-1.5 p-1 bg-slate-100 rounded-xl border border-slate-200/80">
                     <button
-                      onClick={handleSaveReportResult}
-                      disabled={saveReportLoading || !canApprove}
-                      className="w-full bg-[#003B3A] hover:bg-[#005854] text-white font-semibold text-xs py-2.5 rounded-xl shadow-xs disabled:opacity-50 transition-colors flex justify-center items-center gap-2 cursor-pointer"
+                      type="button"
+                      onClick={() => setDossierActiveTab("scores")}
+                      className={`px-4 py-2 rounded-lg text-xs font-bold flex items-center gap-2 transition-all cursor-pointer ${
+                        dossierActiveTab === "scores"
+                          ? "bg-[#003B3A] text-white shadow-xs"
+                          : "text-slate-600 hover:text-slate-900 hover:bg-white/70"
+                      }`}
                     >
-                      {saveReportLoading ? <Loader2 className="w-4 h-4 animate-spin"/> : <Check className="w-4 h-4"/>}
-                      <span>Lưu quyết định xét duyệt</span>
+                      <BookOpen className={`w-4 h-4 ${dossierActiveTab === "scores" ? "text-[#5EEAD4]" : "text-slate-500"}`} />
+                      <span>Kết quả khảo sát các môn</span>
+                      <span className={`px-2 py-0.5 rounded-full text-[10px] font-bold tabular-nums ${
+                        dossierActiveTab === "scores" ? "bg-white/20 text-white" : "bg-slate-200 text-slate-700"
+                      }`}>
+                        {(selectedReportStudent.scores || []).length} môn đã chấm
+                      </span>
                     </button>
 
-                    {selectedReportStudent && selectedReportStudent.admissionResult === "Không đạt - Kiểm tra lại" && (
-                      <button
-                        onClick={() => {
-                          setIsRetestModalOpen(true);
-                          setRetestPeriodId("");
-                          setRetestBatchId("");
-                        }}
-                        className="w-full mt-2 bg-amber-50 hover:bg-amber-100 text-amber-900 border border-amber-300 font-semibold text-xs py-2 rounded-xl transition-colors flex justify-center items-center gap-1.5 cursor-pointer"
-                      >
-                        <RefreshCw className="w-3.5 h-3.5"/>
-                        <span>Xếp lịch khảo sát lại cho học sinh</span>
-                      </button>
-                    )}
+                    <button
+                      type="button"
+                      onClick={() => setDossierActiveTab("orientation")}
+                      className={`px-4 py-2 rounded-lg text-xs font-bold flex items-center gap-2 transition-all cursor-pointer ${
+                        dossierActiveTab === "orientation"
+                          ? "bg-[#003B3A] text-white shadow-xs"
+                          : "text-slate-600 hover:text-slate-900 hover:bg-white/70"
+                      }`}
+                    >
+                      <Compass className={`w-4 h-4 ${dossierActiveTab === "orientation" ? "text-[#5EEAD4]" : "text-slate-500"}`} />
+                      <span>Phiếu định hướng (3 Tab)</span>
+                      {orientationData ? (
+                        <span className={`px-2 py-0.5 rounded-full text-[10px] font-bold ${
+                          dossierActiveTab === "orientation" ? "bg-[#5EEAD4]/20 text-[#CCFBF1]" : "bg-teal-100 text-[#00736E]"
+                        }`}>
+                          Đã có hồ sơ
+                        </span>
+                      ) : (
+                        <span className={`px-2 py-0.5 rounded-full text-[10px] font-semibold ${
+                          dossierActiveTab === "orientation" ? "bg-white/20 text-white" : "bg-slate-200 text-slate-500"
+                        }`}>
+                          Chưa nhập
+                        </span>
+                      )}
+                    </button>
                   </div>
 
-                  {/* LƯỢC SỬ XÉT DUYỆT & HIỆU CHỈNH CARD */}
-                  {(() => {
-                    const parsed = parseApprovalHistory(selectedReportStudent?.directorNote);
-                    if (!parsed.history || parsed.history.length === 0) return null;
-                    return (
-                      <div className="bg-white rounded-2xl border border-slate-200/90 p-4 shadow-[0_1px_2px_rgba(15,23,42,0.03)] space-y-3 animate-fade-in text-left">
-                        <h4 className="font-bold text-slate-900 text-xs flex items-center justify-between border-b border-slate-100 pb-2 mb-1">
-                          <span className="flex items-center gap-1.5">
-                            <Clock className="w-3.5 h-3.5 text-[#008B85] shrink-0" />
-                            Nhật ký xét duyệt &amp; hiệu chỉnh
-                          </span>
-                          <span className="text-[10px] font-semibold text-[#00736E] bg-[#F0FDFA] border border-[#CCFBF1] px-2 py-0.5 rounded-md shrink-0 tabular-nums">
-                            {parsed.history.length} lần ghi nhận
-                          </span>
-                        </h4>
-
-                        <div className="relative pl-3 border-l-2 border-teal-200 space-y-3 max-h-[220px] overflow-y-auto pr-1 scrollbar-thin">
-                          {parsed.history.map((h, idx) => (
-                            <div key={idx} className="relative group text-left">
-                              <span className="absolute -left-[17px] top-1.5 w-2.5 h-2.5 rounded-full bg-teal-700 border-2 border-white ring-2 ring-teal-100" />
-                              <div className="bg-slate-50/80 p-2.5 rounded-xl border border-slate-200/60 space-y-1 hover:bg-teal-50/40 transition-colors">
-                                <div className="flex items-center justify-between gap-1 text-[11px]">
-                                  <span className="font-black text-slate-700">{h.approver}</span>
-                                  <span className="text-[10px] text-slate-400 font-bold">{h.timestamp}</span>
-                                </div>
-                                <div className="flex items-center gap-1.5 text-[11px] font-extrabold">
-                                  <span className="text-slate-400 line-through">{h.oldResult}</span>
-                                  <ArrowRight className="w-3 h-3 text-teal-600 shrink-0" />
-                                  <span className={`px-2 py-0.5 rounded text-[10px] ${
-                                    h.newResult.includes("Đạt") ? "bg-emerald-50 text-emerald-700 border border-emerald-200" :
-                                    h.newResult.includes("Không đạt") ? "bg-rose-50 text-rose-700 border border-rose-200" :
-                                    "bg-teal-50 text-teal-800 border border-teal-200"
-                                  }`}>
-                                    {h.newResult}
-                                  </span>
-                                </div>
-                                {h.note && (
-                                  <p className="text-[11px] text-slate-600 font-medium italic mt-1 bg-white p-2 rounded-lg border border-slate-100 leading-relaxed">
-                                    "{h.note}"
-                                  </p>
-                                )}
-                              </div>
-                            </div>
-                          ))}
-                        </div>
-                      </div>
-                    );
-                  })()}
-
-                  {/* RETEST HISTORY TIMELINE CARD */}
-                  {Array.isArray(retestHistory) && retestHistory.length > 1 && (
-                    <div className="bg-white rounded-2xl border border-slate-200 p-4 shadow-sm space-y-3 animate-fade-in text-left">
-                      <h4 className="font-black text-slate-800 text-xs flex items-center justify-between border-b pb-2 mb-1">
-                        <span className="flex items-center gap-1.5">
-                          <RefreshCw className="w-3.5 h-3.5 text-teal-700 animate-spin-slow shrink-0" />
-                          Lịch sử Khảo sát &amp; Thi lại
-                        </span>
-                        <span className="text-[9px] font-black text-teal-800 bg-teal-50 border border-teal-200 px-2 py-0.5 rounded-full shrink-0 shadow-2xs">
-                          {retestHistory.length} Đợt
-                        </span>
-                      </h4>
-                      
-                      <div className="relative pl-3 border-l-2 border-slate-100 space-y-4 my-1 max-h-[260px] overflow-y-auto pr-1 scrollbar-thin">
-                        {retestHistory.filter(Boolean).map((hist, idx) => {
-                          const isCurrent = selectedReportStudent && hist?.id === selectedReportStudent.id;
-                          let sNote = hist?.directorNote || "";
-                          let retestMuns = [];
-                          const matchRetest = sNote.match(/^Môn (?:kiểm tra lại|cam kết): \[(.*?)\](?:\r?\n\r?\n)?/);
-                          if (matchRetest && matchRetest[1]) {
-                            retestMuns = matchRetest[1].split(", ");
-                            sNote = sNote.replace(/^Môn (?:kiểm tra lại|cam kết): \[(.*?)\](?:\r?\n\r?\n)?/, "");
-                          }
-
-                          const parsedScores = Array.isArray(hist?.scores) ? hist.scores : [];
-
-                          return (
-                            <div key={hist?.id || idx} className="relative group text-left">
-                              {/* Timeline node dot */}
-                              <span className={`absolute -left-[19px] top-1.5 w-2 h-2 rounded-full border ${
-                                isCurrent ? "bg-teal-700 border-teal-200 scale-125 ring-2 ring-teal-50 animate-pulse" : "bg-slate-300 border-white group-hover:bg-teal-500 transition-all duration-300"
-                              }`} />
-                              
-                              <div className="space-y-1">
-                                <div className="flex items-center justify-between gap-1">
-                                  <span className={`text-[11px] font-black truncate max-w-[130px] ${
-                                    isCurrent ? "text-teal-900 font-black" : "text-slate-600 font-bold"
-                                  }`} title={hist?.period?.name}>
-                                    {hist?.period?.name || "Đợt khảo sát"}
-                                  </span>
-                                  <span className={`text-[8px] font-black uppercase tracking-wider px-1.5 py-0.5 rounded border ${
-                                    isCurrent ? "bg-teal-50 text-teal-900 border-teal-200 font-bold" : "bg-slate-50 text-slate-500 border-slate-200"
-                                  }`}>
-                                    {isCurrent ? "Hiện tại" : `Đợt ${retestHistory.length - idx}`}
-                                  </span>
-                                </div>
-                                
-                                <p className="text-[9px] text-slate-400 font-bold leading-none">
-                                  {hist?.batch?.name ? hist.batch.name.split("|")[0]?.trim() : "Khảo sát lẻ"} • {hist?.createdAt ? new Date(hist.createdAt).toLocaleDateString("vi-VN") : "—"}
-                                </p>
-
-                                {/* Attempt Result Badge */}
-                                <div className="flex items-center gap-1.5 mt-0.5">
-                                  <span className="text-[9px] font-bold text-slate-400">Kết quả:</span>
-                                  {hist?.admissionResult ? (
-                                    <span className={`text-[9px] font-black uppercase tracking-wider px-1.5 py-0.2 rounded ${
-                                      String(hist.admissionResult).includes("Không đạt")
-                                        ? "bg-rose-50 text-rose-700"
-                                        : String(hist.admissionResult).includes("Đạt cam kết")
-                                        ? "bg-amber-50 text-amber-700"
-                                        : "bg-emerald-50 text-emerald-700"
-                                    }`}>
-                                      {hist.admissionResult}
-                                    </span>
-                                  ) : (
-                                    <span className="text-[9px] font-black text-slate-450 text-xs font-semibold">Chưa duyệt</span>
-                                  )}
-                                </div>
-
-                                {/* Retest subjects warning */}
-                                {retestMuns.length > 0 && (
-                                  <div className="text-[9px] p-2 mt-1 space-y-1 text-xs font-semibold">
-                                    <span className="font-black text-teal-800 uppercase tracking-wider text-[8px] block">Môn cần thi lại/cam kết:</span>
-                                    <div className="flex flex-wrap gap-1">
-                                      {retestMuns.map(m => (
-                                        <span key={m} className="text-white text-[8px] font-black shadow-sm text-xs font-semibold">
-                                          {m}
-                                        </span>
-                                      ))}
-                                    </div>
-                                  </div>
-                                )}
-
-                                {/* Brief scores list from past attempt */}
-                                {!isCurrent && (parsedScores.length > 0 || hist.psychologyScore != null || hist.mathScore != null || hist.literatureScore != null || hist.writtenEnglishScore != null || hist.oralEnglishScore != null) && (
-                                  <div className="text-[9px] p-2 mt-1 space-y-1 text-xs font-semibold">
-                                    <span className="font-black text-slate-400 uppercase tracking-wider text-[8px] block">Điểm đợt thi cũ:</span>
-                                    <div className="grid grid-cols-2 gap-x-2 gap-y-0.5 text-[9px] font-bold text-slate-600">
-                                      {hist.psychologyScore != null && <div><span className="text-slate-400 font-normal">Tâm lý:</span> {hist.psychologyScore}đ</div>}
-                                      {hist.mathScore != null && <div><span className="text-slate-400 font-normal">Toán:</span> {hist.mathScore}đ</div>}
-                                      {hist.literatureScore != null && <div><span className="text-slate-400 font-normal">Ngữ Văn:</span> {hist.literatureScore}đ</div>}
-                                      {hist.writtenEnglishScore != null && <div><span className="text-slate-400 font-normal">Anh (viết):</span> {hist.writtenEnglishScore}{hist?.grade?.match(/\d+/)?.[0] === '1' ? '' : '/70'}đ</div>}
-                                      {hist.oralEnglishScore != null && <div><span className="text-slate-400 font-normal">Anh (nói):</span> {hist.oralEnglishScore}{hist?.grade?.match(/\d+/)?.[0] === '1' ? '' : '/30'}đ</div>}
-                                      {parsedScores.filter(Boolean).map((sc, sIdx) => {
-                                        const sub = sc?.subject || {};
-                                        const subCode = (sub?.code || "").toLowerCase();
-                                        let vStr = "—";
-                                        try {
-                                          if (sc?.scores) {
-                                            const parsed = JSON.parse(sc.scores);
-                                            const vArr = Array.isArray(parsed) ? parsed : [parsed];
-                                            if (subCode.includes("tly")) {
-                                              vStr = parseFloat(vArr[6] || vArr[20] || "0") + "đ";
-                                            } else if (subCode.includes("nltd")) {
-                                              const pctVal = vArr.length >= 5 ? vArr[4] : vArr[0];
-                                              vStr = pctVal !== undefined && pctVal !== null && pctVal !== "" ? pctVal + "%" : "—";
-                                            } else if (subCode.includes("tci") || subCode.includes("cpt")) {
-                                              vStr = Array.isArray(vArr) ? vArr.filter(x => x === "3").length + " Đạt" : "—";
-                                            } else {
-                                              vStr = vArr.find(x => x !== undefined && x !== "" && x !== null) || "—";
-                                            }
-                                          }
-                                        } catch {}
-                                        return (
-                                          <div key={sc?.id || sIdx} className="flex justify-between items-center border-b border-slate-200/20 pb-0.5">
-                                            <span className="text-slate-400 font-semibold truncate max-w-[80px]" title={sub?.name}>{sub?.name || "Môn"}</span>
-                                            <span className="font-black text-slate-700">{vStr}</span>
-                                          </div>
-                                        );
-                                      })}
-                                    </div>
-                                  </div>
-                                )}
-                                
-                                {/* Past notes */}
-                                {!isCurrent && sNote && (
-                                  <p className="text-[9px] text-slate-500 italic mt-0.5 font-semibold bg-slate-100/50 p-2 rounded-xl border border-slate-200/50 leading-relaxed">
-                                    "{sNote.trim()}"
-                                  </p>
-                                )}
-                              </div>
-                            </div>
-                          );
-                        })}
-                      </div>
-                    </div>
-                  )}
+                  <div className="flex items-center gap-2">
+                    <button
+                      type="button"
+                      onClick={() => setIsOrientationReportModalOpen(true)}
+                      className="px-3.5 py-1.5 bg-[#F0FDFA] hover:bg-[#CCFBF1] text-[#003B3A] border border-[#008B85] rounded-xl text-xs font-bold flex items-center gap-1.5 transition-colors cursor-pointer shadow-2xs"
+                      title="In hoặc xuất PDF chi tiết kết quả các môn và phiếu định hướng để giáo viên ký"
+                    >
+                      <Printer className="w-3.5 h-3.5 text-[#008B85]" />
+                      <span>Xuất PDF chi tiết để GV ký</span>
+                    </button>
+                  </div>
                 </div>
 
-                {/* RIGHT COLUMN: SUBJECT RESULTS SUMMARY & ACTIVE SUBJECT DETAILS */}
-                <div className="lg:col-span-8 space-y-4">
-                  <div className="flex items-center justify-between bg-white px-4 py-2.5 rounded-2xl border border-slate-200/80 shadow-sm text-left">
-                    <div className="flex items-center gap-2.5">
-                      <div className="w-8 h-8 rounded-xl bg-teal-50 border border-teal-200/70 flex items-center justify-center text-teal-800 shadow-2xs shrink-0 select-none">
-                        <BookOpen className="w-4 h-4 text-teal-700" />
-                      </div>
-                      <div>
-                        <h3 className="font-black text-slate-800 text-sm leading-snug">Kết quả khảo sát các môn</h3>
-                        <p className="text-[11px] text-slate-400 font-semibold mt-0.5">Chi tiết nhận định năng lực và đánh giá chuyên môn</p>
-                      </div>
-                    </div>
-                    <span className="text-xs font-black text-teal-900 bg-teal-50 border border-teal-200 px-3 py-1 rounded-xl shadow-2xs shrink-0">
-                      {(selectedReportStudent.scores || []).length} Môn đã chấm
-                    </span>
-                  </div>
+                {dossierActiveTab === "scores" ? (
+                  <div className="space-y-4">
 
                   {(!selectedReportStudent.scores || selectedReportStudent.scores.length === 0) ? (
                     <div className="bg-white border border-slate-200/80 rounded-2xl p-12 text-center text-slate-455 shadow-sm flex flex-col items-center justify-center gap-2">
@@ -9912,8 +9545,649 @@ const [customCommitmentSubjects, setCustomCommitmentSubjects] = useState<string[
                       })()}
                     </div>
                   )}
+                  </div>
+                ) : (
+                  /* TAB 2: PHIẾU ĐỊNH HƯỚNG ĐẦU VÀO (3 TAB) */
+                  <div className="bg-white rounded-2xl border border-slate-200/90 shadow-[0_1px_2px_rgba(15,23,42,0.03)] overflow-hidden text-left animate-fade-in">
+                    {/* Sub-tab header bar */}
+                    <div className="flex flex-wrap items-center justify-between gap-3 px-4 py-3 border-b border-slate-200/80 bg-slate-50/70">
+                      <div className="flex items-center gap-1.5 p-1 bg-slate-200/60 rounded-xl">
+                        <button
+                          type="button"
+                          onClick={() => setOrientationSubTab("student")}
+                          className={`px-3.5 py-1.5 rounded-lg text-xs font-bold flex items-center gap-1.5 transition-all cursor-pointer ${
+                            orientationSubTab === "student"
+                              ? "bg-white text-[#003B3A] shadow-2xs"
+                              : "text-slate-600 hover:text-slate-900"
+                          }`}
+                        >
+                          <GraduationCap className="w-3.5 h-3.5 text-[#008B85]" />
+                          <span>1. Phỏng vấn học sinh</span>
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => setOrientationSubTab("parent")}
+                          className={`px-3.5 py-1.5 rounded-lg text-xs font-bold flex items-center gap-1.5 transition-all cursor-pointer ${
+                            orientationSubTab === "parent"
+                              ? "bg-white text-[#003B3A] shadow-2xs"
+                              : "text-slate-600 hover:text-slate-900"
+                          }`}
+                        >
+                          <Users className="w-3.5 h-3.5 text-[#008B85]" />
+                          <span>2. Trao đổi phụ huynh</span>
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => setOrientationSubTab("summary")}
+                          className={`px-3.5 py-1.5 rounded-lg text-xs font-bold flex items-center gap-1.5 transition-all cursor-pointer ${
+                            orientationSubTab === "summary"
+                              ? "bg-white text-[#003B3A] shadow-2xs"
+                              : "text-slate-600 hover:text-slate-900"
+                          }`}
+                        >
+                          <Compass className="w-3.5 h-3.5 text-[#008B85]" />
+                          <span>3. Tổng hợp &amp; Thẩm định</span>
+                        </button>
+                      </div>
+
+                      <div className="flex items-center gap-2">
+                        <button
+                          type="button"
+                          onClick={() => setIsOrientationModalOpen(true)}
+                          className="px-3 py-1.5 bg-[#003B3A] hover:bg-[#005854] text-white rounded-lg text-xs font-semibold flex items-center gap-1.5 transition-colors cursor-pointer"
+                        >
+                          <Pencil className="w-3.5 h-3.5 text-[#5EEAD4]" />
+                          <span>Chỉnh sửa chi tiết (3 Tab)</span>
+                        </button>
+                      </div>
+                    </div>
+
+                    <div className="p-4 space-y-4">
+                      {loadingOrientation ? (
+                        <div className="py-12 flex flex-col items-center justify-center gap-2 text-slate-500 text-xs">
+                          <Loader2 className="w-5 h-5 animate-spin text-[#008B85]" />
+                          <span>Đang tải dữ liệu phiếu định hướng...</span>
+                        </div>
+                      ) : (
+                        <>
+                          {orientationSubTab === "student" && (
+                            <div className="space-y-4">
+                              <div className="flex flex-wrap items-center justify-between gap-2 pb-2 border-b border-slate-100 text-xs">
+                                <span className="font-bold text-slate-900 flex items-center gap-1.5">
+                                  <Compass className="w-4 h-4 text-[#008B85]" />
+                                  Nhận diện năng lực &amp; Phỏng vấn học sinh
+                                </span>
+                                <span className="text-slate-500">
+                                  GV tiếp nhận: <strong className="text-slate-800">{orientationData?.interviewerName || orientationAssignedTeacher || "Cán bộ tiếp nhận KT&ĐBCL"}</strong>
+                                </span>
+                              </div>
+
+                              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 text-xs">
+                                <div className="p-3 bg-slate-50/70 rounded-xl border border-slate-200/80 space-y-1">
+                                  <span className="font-bold text-[#003B3A] block">Thế mạnh nổi trội của học sinh</span>
+                                  <p className="text-slate-700 leading-relaxed">
+                                    {orientationData?.strengths || "Con hòa đồng, nhanh nhẹn, có khả năng thích nghi tốt với môi trường mới."}
+                                  </p>
+                                </div>
+                                <div className="p-3 bg-slate-50/70 rounded-xl border border-slate-200/80 space-y-1">
+                                  <span className="font-bold text-amber-900 block">Điểm cần rèn luyện &amp; hỗ trợ thêm</span>
+                                  <p className="text-slate-700 leading-relaxed">
+                                    {orientationData?.growthAreas || "Cần rèn luyện thêm sự tập trung và tính kiên nhẫn khi hoàn thành nhiệm vụ."}
+                                  </p>
+                                </div>
+                                <div className="p-3 bg-slate-50/70 rounded-xl border border-slate-200/80 space-y-1">
+                                  <span className="font-bold text-[#00736E] block">Năng khiếu &amp; Sở thích</span>
+                                  <p className="text-slate-700 leading-relaxed">
+                                    {orientationData?.talents || "Thích các hoạt động sáng tạo, vẽ tranh, kể chuyện và vận động thể chất."}
+                                  </p>
+                                </div>
+                                <div className="p-3 bg-slate-50/70 rounded-xl border border-slate-200/80 space-y-1">
+                                  <span className="font-bold text-slate-900 block">Ghi chú nề nếp &amp; Hành vi</span>
+                                  <p className="text-slate-700 leading-relaxed">
+                                    {orientationData?.behaviorNotes || "Ngoan ngoãn, lắng nghe lời thầy cô và tôn trọng bạn bè xung quanh."}
+                                  </p>
+                                </div>
+                              </div>
+
+                              {(() => {
+                                let ivList: any[] = [];
+                                if (orientationData?.interviewData) {
+                                  try {
+                                    ivList = typeof orientationData.interviewData === "string"
+                                      ? JSON.parse(orientationData.interviewData)
+                                      : orientationData.interviewData;
+                                  } catch {}
+                                }
+                                if (!Array.isArray(ivList) || ivList.length === 0) return null;
+                                return (
+                                  <div className="space-y-2 pt-1">
+                                    <span className="text-xs font-bold text-slate-800 block">
+                                      Chi tiết câu hỏi phỏng vấn học sinh ({ivList.length} nội dung)
+                                    </span>
+                                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5 max-h-60 overflow-y-auto pr-1">
+                                      {ivList.map((iv: any, idx: number) => (
+                                        <div key={idx} className="p-3 bg-white rounded-xl border border-slate-200/80 text-xs space-y-1">
+                                          <div className="font-semibold text-slate-900 flex items-start justify-between gap-2">
+                                            <span>{idx + 1}. {iv.q || iv.question || iv.questionText || iv.categoryLabel}</span>
+                                            {iv.rating && (
+                                              <span className="px-2 py-0.5 rounded bg-teal-50 text-[#00736E] border border-teal-200 text-[10px] font-bold shrink-0">
+                                                {iv.rating === "CONFIDENT" ? "Thể hiện rõ" : iv.rating === "NEED_SUPPORT" ? "Cần hỗ trợ" : "Đang hình thành"}
+                                              </span>
+                                            )}
+                                          </div>
+                                          {(iv.a || iv.studentNotes) && (
+                                            <div className="text-slate-600 italic">HS chia sẻ: &quot;{iv.a || iv.studentNotes}&quot;</div>
+                                          )}
+                                          {(iv.notes || iv.teacherComment) && (
+                                            <div className="text-[#00736E] font-medium">Nhận xét GV: {iv.notes || iv.teacherComment}</div>
+                                          )}
+                                        </div>
+                                      ))}
+                                    </div>
+                                  </div>
+                                );
+                              })()}
+                            </div>
+                          )}
+
+                          {orientationSubTab === "parent" && (
+                            <div className="space-y-4">
+                              <div className="flex flex-wrap items-center justify-between gap-2 pb-2 border-b border-slate-100 text-xs">
+                                <span className="font-bold text-slate-900 flex items-center gap-1.5">
+                                  <Users className="w-4 h-4 text-[#008B85]" />
+                                  Thông tin chia sẻ từ Phụ huynh &amp; Phối hợp gia đình
+                                </span>
+                                <span className="text-slate-500">
+                                  Đại diện PHHS: <strong className="text-slate-800">{orientationData?.parentRepresentativeName || "Phụ huynh học sinh"}</strong>
+                                  {orientationData?.parentPhone ? ` (${orientationData.parentPhone})` : ""}
+                                </span>
+                              </div>
+
+                              <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 text-xs">
+                                <div className="p-3 bg-slate-50/70 rounded-xl border border-slate-200/80 space-y-1.5">
+                                  <span className="font-bold text-[#003B3A] block">1. Kỳ vọng của gia đình đối với Sky-Line</span>
+                                  <p className="text-slate-700 leading-relaxed">
+                                    {orientationData?.parentExpectations || "Gia đình kỳ vọng con phát triển toàn diện, tự tin và được nuôi dưỡng đam mê học tập trong môi trường giáo dục hạnh phúc."}
+                                  </p>
+                                </div>
+                                <div className="p-3 bg-slate-50/70 rounded-xl border border-slate-200/80 space-y-1.5">
+                                  <span className="font-bold text-[#003B3A] block">2. Nề nếp &amp; Thói quen sinh hoạt ở nhà</span>
+                                  <p className="text-slate-700 leading-relaxed">
+                                    {orientationData?.homeHabits || "Con có nề nếp sinh hoạt điều độ, biết tự giác vệ sinh cá nhân, ăn uống tốt và có thời gian biểu sinh hoạt ổn định."}
+                                  </p>
+                                </div>
+                                <div className="p-3 bg-slate-50/70 rounded-xl border border-slate-200/80 space-y-1.5">
+                                  <span className="font-bold text-[#003B3A] block">3. Cam kết phối hợp Gia đình &amp; Nhà trường</span>
+                                  <p className="text-slate-700 leading-relaxed">
+                                    {orientationData?.cooperationCommitment || "Gia đình cam kết luôn đồng hành sát sao cùng giáo viên chủ nhiệm, tham gia đầy đủ các chuyên đề và hoạt động của trường."}
+                                  </p>
+                                </div>
+                              </div>
+
+                              {(() => {
+                                let pList: any[] = [];
+                                if (orientationData?.parentInterviewData) {
+                                  try {
+                                    pList = typeof orientationData.parentInterviewData === "string"
+                                      ? JSON.parse(orientationData.parentInterviewData)
+                                      : orientationData.parentInterviewData;
+                                  } catch {}
+                                }
+                                if (!Array.isArray(pList) || pList.length === 0) return null;
+                                return (
+                                  <div className="space-y-2 pt-1">
+                                    <span className="text-xs font-bold text-slate-800 block">
+                                      Chi tiết các nhóm nội dung trao đổi cùng Phụ huynh ({pList.length} mục)
+                                    </span>
+                                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
+                                      {pList.map((pItem: any, idx: number) => (
+                                        <div key={idx} className="p-3 bg-white rounded-xl border border-slate-200/80 text-xs space-y-1">
+                                          <div className="font-semibold text-slate-900">
+                                            {idx + 1}. {pItem.title || pItem.categoryLabel || pItem.category}
+                                          </div>
+                                          {pItem.answer && (
+                                            <p className="text-slate-700 leading-relaxed">Chia sẻ PH: {pItem.answer}</p>
+                                          )}
+                                          {pItem.teacherNote && (
+                                            <p className="text-[#00736E] italic">Ghi chú GV: {pItem.teacherNote}</p>
+                                          )}
+                                        </div>
+                                      ))}
+                                    </div>
+                                  </div>
+                                );
+                              })()}
+                            </div>
+                          )}
+
+                          {orientationSubTab === "summary" && (
+                            <div className="space-y-4">
+                              <div className="flex flex-wrap items-center justify-between gap-2 pb-2 border-b border-slate-100 text-xs">
+                                <span className="font-bold text-slate-900 flex items-center gap-1.5">
+                                  <CheckCircle2 className="w-4 h-4 text-[#008B85]" />
+                                  Tổng hợp nhận diện &amp; Thẩm định chuyên môn (QLCM)
+                                </span>
+                                <span className={`px-2.5 py-0.5 rounded-md text-[11px] font-semibold border ${
+                                  orientationData?.verificationStatus === "VERIFIED"
+                                    ? "bg-emerald-50 text-emerald-800 border-emerald-200"
+                                    : "bg-amber-50 text-amber-800 border-amber-200"
+                                }`}>
+                                  {orientationData?.verificationStatus === "VERIFIED" ? "Đã thẩm định chuyên môn" : "Chờ QLCM thẩm định"}
+                                </span>
+                              </div>
+
+                              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 text-xs">
+                                <div className="p-3 bg-slate-50/70 rounded-xl border border-slate-200/80 space-y-1">
+                                  <span className="font-bold text-slate-800 block">Trường trước đây &amp; Tiền sử học tập</span>
+                                  <p className="text-slate-700">
+                                    {selectedReportStudent.oldSchoolName || orientationData?.student?.oldSchoolName || "Chưa cập nhật trường cũ"}
+                                  </p>
+                                </div>
+                                <div className="p-3 bg-slate-50/70 rounded-xl border border-slate-200/80 space-y-1">
+                                  <span className="font-bold text-slate-800 block">Ý kiến thẩm định chuyên môn</span>
+                                  <p className="text-slate-700">
+                                    {orientationData?.verificationNotes || orientationData?.admissionConsultantNote || "Hồ sơ phỏng vấn định hướng đầy đủ, đề xuất Hội đồng Tuyển sinh xem xét phê duyệt."}
+                                  </p>
+                                </div>
+                              </div>
+                            </div>
+                          )}
+                        </>
+                      )}
+                    </div>
+                  </div>
+                )}
+              </div>
+
+              {/* BƯỚC 2: SAU ĐÓ MỚI MỤC QUYẾT ĐỊNH CỦA HỘI ĐỒNG TUYỂN SINH */}
+              <div className="bg-white rounded-2xl border border-slate-200/90 shadow-[0_1px_3px_rgba(15,23,42,0.04)] relative overflow-hidden text-left">
+                <div className="absolute left-0 top-0 bottom-0 w-1.5 bg-[#003B3A]" />
+
+                <div className="px-5 py-3.5 border-b border-slate-200/80 bg-slate-50/70 flex flex-wrap items-center justify-between gap-3 pl-6">
+                  <div className="flex items-center gap-2">
+                    <CheckCircle2 className="w-4 h-4 text-[#008B85] shrink-0" />
+                    <div>
+                      <h4 className="font-bold text-slate-900 text-sm leading-tight">
+                        Quyết định của Hội đồng Tuyển sinh
+                      </h4>
+                      <p className="text-[11px] text-slate-500 mt-0.5">
+                        Phê duyệt kết quả xét tuyển và xuất hồ sơ PDF chi tiết để giáo viên ký xác nhận
+                      </p>
+                    </div>
+                  </div>
+
+                  {selectedReportStudent.admissionResult ? (
+                    <span className="px-3 py-1 text-xs font-semibold bg-emerald-50 text-emerald-700 rounded-lg border border-emerald-200">
+                      Đã phê duyệt
+                    </span>
+                  ) : (
+                    <span className="px-3 py-1 text-xs font-semibold bg-amber-50 text-amber-800 rounded-lg border border-amber-200">
+                      Chờ duyệt
+                    </span>
+                  )}
                 </div>
 
+                <div className="p-5 pl-6 grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
+                  {/* Cột trái: Form quyết định */}
+                  <div className="lg:col-span-7 space-y-4">
+                    {!canApprove && (
+                      <div className="text-rose-700 bg-rose-50 border border-rose-200 rounded-xl p-2.5 text-xs font-medium flex items-center gap-2">
+                        <AlertCircle className="w-4 h-4 flex-shrink-0 text-rose-600"/>
+                        <span>
+                          {selectedReportStudent?.batch?.status === "LOCKED" || selectedReportStudent?.batch?.status === "CLOSED"
+                            ? "Đợt khảo sát này đã khóa sổ xét duyệt."
+                            : "Tài khoản của bạn chỉ có quyền xem trên đợt này."}
+                        </span>
+                      </div>
+                    )}
+
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                      <Field label="Kết quả xét tuyển">
+                        <select 
+                          value={reportForm.admissionResult} 
+                          onChange={e => setReportForm(f => ({ ...f, admissionResult: e.target.value }))}
+                          className={`${inp} py-1.5 text-xs`}
+                          disabled={!canApprove}
+                        >
+                          <option value="">— Chọn quyết định xét tuyển —</option>
+                          <option value="Đạt">Đạt</option>
+                          <option value="Đạt - Giao lưu">Đạt - Giao lưu</option>
+                          <option value="Không đạt">Không đạt</option>
+                          <option value="Không đạt - Kiểm tra lại">Không đạt - Kiểm tra lại</option>
+                          <option value="Không đạt - Không kiểm tra lại">Không đạt - Không kiểm tra lại</option>
+                          <option value="Đạt cam kết">Đạt cam kết</option>
+                          <option value="Học thử">Học thử</option>
+                        </select>
+                      </Field>
+
+                      {!(["GDCS", "GĐ_CS", "GIAO_VU_CS", "GĐCS"].includes((currentUser?.role || "").toUpperCase())) && (
+                        <Field label="Người duyệt / Phê duyệt">
+                          <select 
+                            value={reportForm.signatureName || selectedReportStudent.signatureName || autoCampusDirectorName || ""}
+                            onChange={e => setReportForm(f => ({ ...f, signatureName: e.target.value }))}
+                            className={`${inp} py-1.5 text-xs`}
+                            disabled={!canApprove}
+                          >
+                            <option value="">-- Chọn người phê duyệt --</option>
+                            {gdcsUsers.map(u => (
+                              <option key={u.id} value={u.fullName || u.email}>{u.fullName || u.email}</option>
+                            ))}
+                          </select>
+                        </Field>
+                      )}
+                    </div>
+
+                    {(reportForm.admissionResult === "Đạt cam kết" || String(reportForm.admissionResult || "").toLowerCase().includes("cam kết")) && (
+                      <Field label={`Môn Cam Kết ${(reportForm.committedSubjects || []).length > 0 ? `(${(reportForm.committedSubjects || []).length} đã chọn)` : ""}`}>
+                        <div className="bg-slate-50/70 rounded-xl p-2.5 border border-slate-200/80 space-y-2">
+                          <div className="grid grid-cols-1 sm:grid-cols-2 gap-1.5 max-h-48 overflow-y-auto pr-1">
+                            {availableCommitmentSubjects.map((sub, idx) => {
+                              const isChecked = (reportForm.committedSubjects || []).includes(sub.name);
+                              return (
+                                <label 
+                                  key={idx} 
+                                  className={`flex items-center justify-between gap-1.5 p-1.5 rounded-lg border transition-all cursor-pointer select-none text-[11px] font-semibold ${
+                                    isChecked 
+                                      ? "bg-teal-50 border-teal-300 text-teal-950 shadow-xs" 
+                                      : "bg-white border-slate-200 text-slate-700 hover:bg-slate-100/80"
+                                  }`}
+                                >
+                                  <div className="flex items-center gap-1.5 min-w-0 flex-1">
+                                    <input 
+                                      type="checkbox"
+                                      checked={isChecked}
+                                      disabled={!canApprove}
+                                      onChange={() => {
+                                        setReportForm(f => {
+                                          const next = isChecked 
+                                            ? f.committedSubjects.filter(name => name !== sub.name)
+                                            : [...f.committedSubjects, sub.name];
+                                          return { ...f, committedSubjects: next };
+                                        });
+                                      }}
+                                      className="rounded border-slate-300 text-teal-700 focus:ring-teal-500 w-3.5 h-3.5 shrink-0 cursor-pointer"
+                                    />
+                                    <span className="truncate" title={sub.name}>{sub.name}</span>
+                                  </div>
+                                  {sub.isSurveySubject && (
+                                    <span className="shrink-0 text-[8px] font-bold uppercase px-1 py-0.2 bg-teal-100 text-teal-700 rounded border border-teal-200">
+                                      Môn KS
+                                    </span>
+                                  )}
+                                </label>
+                              );
+                            })}
+                          </div>
+
+                          {canApprove && (
+                            <div className="flex items-center gap-1.5 pt-1.5 border-t border-slate-200/70">
+                              <input
+                                type="text"
+                                placeholder="+ Thêm môn khác..."
+                                value={newCustomSubjectInput}
+                                onChange={e => setNewCustomSubjectInput(e.target.value)}
+                                onKeyDown={e => {
+                                  if (e.key === "Enter") {
+                                    e.preventDefault();
+                                    handleAddCustomCommitmentSubject();
+                                  }
+                                }}
+                                className="flex-1 px-2.5 py-1 text-[11px] bg-white border border-slate-200 rounded-lg focus:outline-none focus:border-teal-600 font-medium"
+                              />
+                              <button
+                                type="button"
+                                onClick={handleAddCustomCommitmentSubject}
+                                className="px-2.5 py-1 text-[11px] bg-teal-700 hover:bg-teal-800 text-white font-bold rounded-lg transition shrink-0 cursor-pointer shadow-xs"
+                              >
+                                Thêm
+                              </button>
+                            </div>
+                          )}
+                        </div>
+                      </Field>
+                    )}
+
+                    {(reportForm.admissionResult === "Không đạt - Kiểm tra lại" || String(reportForm.admissionResult || "").toLowerCase().includes("kiểm tra lại")) && (
+                      <Field label={`Môn Kiểm tra lại ${(reportForm.committedSubjects || []).length > 0 ? `(${(reportForm.committedSubjects || []).length} đã chọn)` : ""}`}>
+                        <div className="bg-slate-50/70 rounded-xl p-2.5 border border-slate-200/80 space-y-2">
+                          <div className="grid grid-cols-1 sm:grid-cols-2 gap-1.5 max-h-48 overflow-y-auto pr-1">
+                            {availableCommitmentSubjects.map((sub, idx) => {
+                              const isChecked = (reportForm.committedSubjects || []).includes(sub.name);
+                              return (
+                                <label 
+                                  key={idx} 
+                                  className={`flex items-center justify-between gap-1.5 p-1.5 rounded-lg border transition-all cursor-pointer select-none text-[11px] font-semibold ${
+                                    isChecked 
+                                      ? "bg-amber-50 border-amber-200 text-amber-900 shadow-xs" 
+                                      : "bg-white border-slate-200 text-slate-700 hover:bg-slate-100/80"
+                                  }`}
+                                >
+                                  <div className="flex items-center gap-1.5 min-w-0 flex-1">
+                                    <input 
+                                      type="checkbox"
+                                      checked={isChecked}
+                                      disabled={!canApprove}
+                                      onChange={() => {
+                                        setReportForm(f => {
+                                          const next = isChecked 
+                                            ? f.committedSubjects.filter(name => name !== sub.name)
+                                            : [...f.committedSubjects, sub.name];
+                                          return { ...f, committedSubjects: next };
+                                        });
+                                      }}
+                                      className="rounded border-slate-300 text-amber-600 focus:ring-amber-500 w-3.5 h-3.5 shrink-0 cursor-pointer"
+                                    />
+                                    <span className="truncate" title={sub.name}>{sub.name}</span>
+                                  </div>
+                                  {sub.isSurveySubject && (
+                                    <span className="shrink-0 text-[8px] font-bold uppercase px-1 py-0.2 bg-teal-100 text-teal-700 rounded border border-teal-200">
+                                      Môn KS
+                                    </span>
+                                  )}
+                                </label>
+                              );
+                            })}
+                          </div>
+
+                          {canApprove && (
+                            <div className="flex items-center gap-1.5 pt-1.5 border-t border-slate-200/70">
+                              <input
+                                type="text"
+                                placeholder="+ Thêm môn khác..."
+                                value={newCustomSubjectInput}
+                                onChange={e => setNewCustomSubjectInput(e.target.value)}
+                                onKeyDown={e => {
+                                  if (e.key === "Enter") {
+                                    e.preventDefault();
+                                    handleAddCustomCommitmentSubject();
+                                  }
+                                }}
+                                className="flex-1 px-2.5 py-1 text-[11px] bg-white border border-slate-200 rounded-lg focus:outline-none focus:border-amber-500 font-medium"
+                              />
+                              <button
+                                type="button"
+                                onClick={handleAddCustomCommitmentSubject}
+                                className="px-2.5 py-1 text-[11px] bg-amber-600 hover:bg-amber-700 text-white font-bold rounded-lg transition shrink-0 cursor-pointer shadow-xs"
+                              >
+                                Thêm
+                              </button>
+                            </div>
+                          )}
+                        </div>
+                      </Field>
+                    )}
+
+                    <Field label="Ý kiến / Ghi chú Hội đồng">
+                      <textarea 
+                        value={reportForm.directorNote}
+                        onChange={e => setReportForm(f => ({ ...f, directorNote: e.target.value }))}
+                        className={`${inp} h-20 py-2 text-xs resize-none`}
+                        placeholder="Nhập ý kiến hoặc ghi chú của Hội đồng Tuyển sinh..."
+                        disabled={!canApprove}
+                      />
+                      {canApprove && (
+                        <div className="flex flex-wrap items-center gap-1.5 pt-1">
+                          <span className="text-[11px] text-slate-400 font-medium">Mẫu ghi chú nhanh:</span>
+                          {[
+                            "Đạt",
+                            "Đạt và xuất PDF chi tiết để GV ký, yêu cầu cải tiến",
+                            "Đạt tiêu chuẩn tiếp nhận của nhà trường",
+                            "Đạt cam kết - Yêu cầu bồi dưỡng thêm",
+                            "Không đạt - Yêu cầu kiểm tra lại"
+                          ].map((sampleNote) => (
+                            <button
+                              key={sampleNote}
+                              type="button"
+                              onClick={() => setReportForm(f => ({ ...f, directorNote: sampleNote }))}
+                              className="px-2 py-0.5 rounded-md bg-slate-100 hover:bg-[#F0FDFA] text-slate-600 hover:text-[#00736E] border border-slate-200/80 hover:border-[#008B85] text-[11px] font-medium transition-colors cursor-pointer"
+                            >
+                              {sampleNote}
+                            </button>
+                          ))}
+                        </div>
+                      )}
+                    </Field>
+
+                    <div className="p-3 bg-teal-50/70 rounded-xl border border-teal-200/80 flex items-center gap-3">
+                      <input
+                        type="checkbox"
+                        id="autoSendApprovalEmailCheck"
+                        checked={autoSendApprovalEmail}
+                        onChange={e => setAutoSendApprovalEmail(e.target.checked)}
+                        className="w-4 h-4 text-[#008B85] rounded border-slate-300 focus:ring-[#00A19A] cursor-pointer"
+                      />
+                      <label htmlFor="autoSendApprovalEmailCheck" className="text-xs font-medium text-slate-800 cursor-pointer select-none leading-snug">
+                        Gửi email thông báo kết quả đến GĐCS, Tư vấn Cơ sở và Ban KT&amp;ĐBCL sau khi lưu
+                      </label>
+                    </div>
+
+                    <div className="flex flex-wrap items-center gap-2.5 pt-1">
+                      <button
+                        type="button"
+                        onClick={handleSaveReportResult}
+                        disabled={saveReportLoading || !canApprove}
+                        className="flex-1 min-w-[200px] bg-[#003B3A] hover:bg-[#005854] text-white font-semibold text-xs py-2.5 px-5 rounded-xl shadow-xs disabled:opacity-50 transition-colors flex justify-center items-center gap-2 cursor-pointer"
+                      >
+                        {saveReportLoading ? <Loader2 className="w-4 h-4 animate-spin"/> : <Check className="w-4 h-4"/>}
+                        <span>Lưu quyết định xét duyệt</span>
+                      </button>
+
+                      <button
+                        type="button"
+                        onClick={() => setIsOrientationReportModalOpen(true)}
+                        className="px-4 py-2.5 bg-white hover:bg-[#F0FDFA] text-[#003B3A] border border-[#008B85] font-semibold text-xs rounded-xl transition-colors flex items-center justify-center gap-1.5 cursor-pointer shadow-2xs"
+                      >
+                        <Printer className="w-4 h-4 text-[#008B85]" />
+                        <span>Xuất PDF chi tiết để GV ký</span>
+                      </button>
+
+                      {selectedReportStudent && selectedReportStudent.admissionResult === "Không đạt - Kiểm tra lại" && (
+                        <button
+                          type="button"
+                          onClick={() => {
+                            setIsRetestModalOpen(true);
+                            setRetestPeriodId("");
+                            setRetestBatchId("");
+                          }}
+                          className="px-4 py-2.5 bg-amber-50 hover:bg-amber-100 text-amber-900 border border-amber-300 font-semibold text-xs rounded-xl transition-colors flex justify-center items-center gap-1.5 cursor-pointer"
+                        >
+                          <RefreshCw className="w-3.5 h-3.5"/>
+                          <span>Xếp lịch khảo sát lại</span>
+                        </button>
+                      )}
+                    </div>
+                  </div>
+
+                  {/* Cột phải: Nhật ký xét duyệt & Lịch sử khảo sát */}
+                  <div className="lg:col-span-5 space-y-4">
+                    {(() => {
+                      const parsed = parseApprovalHistory(selectedReportStudent?.directorNote);
+                      return (
+                        <div className="bg-slate-50/70 rounded-xl border border-slate-200/80 p-3.5 space-y-3 text-left">
+                          <h5 className="font-bold text-slate-900 text-xs flex items-center justify-between border-b border-slate-200/70 pb-2">
+                            <span className="flex items-center gap-1.5">
+                              <Clock className="w-3.5 h-3.5 text-[#008B85] shrink-0" />
+                              Nhật ký xét duyệt &amp; hiệu chỉnh
+                            </span>
+                            <span className="text-[10px] font-semibold text-[#00736E] bg-[#F0FDFA] border border-[#CCFBF1] px-2 py-0.5 rounded-md shrink-0 tabular-nums">
+                              {parsed.history?.length || 0} lần ghi nhận
+                            </span>
+                          </h5>
+
+                          {(!parsed.history || parsed.history.length === 0) ? (
+                            <p className="text-xs text-slate-500 py-4 text-center">
+                              Chưa có lịch sử thay đổi quyết định xét duyệt.
+                            </p>
+                          ) : (
+                            <div className="relative pl-3 border-l-2 border-teal-200 space-y-2.5 max-h-[220px] overflow-y-auto pr-1 scrollbar-thin">
+                              {parsed.history.map((h, idx) => (
+                                <div key={idx} className="relative group text-left">
+                                  <span className="absolute -left-[17px] top-1.5 w-2.5 h-2.5 rounded-full bg-teal-700 border-2 border-white ring-2 ring-teal-100" />
+                                  <div className="bg-white p-2.5 rounded-xl border border-slate-200/70 space-y-1">
+                                    <div className="flex items-center justify-between gap-1 text-[11px]">
+                                      <span className="font-bold text-slate-800">{h.approver}</span>
+                                      <span className="text-[10px] text-slate-400 font-semibold tabular-nums">{h.timestamp}</span>
+                                    </div>
+                                    <div className="flex items-center gap-1.5 text-[11px] font-bold">
+                                      <span className="text-slate-400 line-through">{h.oldResult}</span>
+                                      <ArrowRight className="w-3 h-3 text-teal-600 shrink-0" />
+                                      <span className={`px-2 py-0.5 rounded text-[10px] ${
+                                        h.newResult.includes("Đạt") ? "bg-emerald-50 text-emerald-700 border border-emerald-200" :
+                                        h.newResult.includes("Không đạt") ? "bg-rose-50 text-rose-700 border border-rose-200" :
+                                        "bg-teal-50 text-teal-800 border border-teal-200"
+                                      }`}>
+                                        {h.newResult}
+                                      </span>
+                                    </div>
+                                    {h.note && (
+                                      <p className="text-[11px] text-slate-600 italic mt-1 bg-slate-50 p-2 rounded-lg border border-slate-100 leading-relaxed">
+                                        &quot;{h.note}&quot;
+                                      </p>
+                                    )}
+                                  </div>
+                                </div>
+                              ))}
+                            </div>
+                          )}
+                        </div>
+                      );
+                    })()}
+
+                    {Array.isArray(retestHistory) && retestHistory.length > 1 && (
+                      <div className="bg-slate-50/70 rounded-xl border border-slate-200/80 p-3.5 space-y-3 text-left">
+                        <h5 className="font-bold text-slate-900 text-xs flex items-center justify-between border-b border-slate-200/70 pb-2">
+                          <span className="flex items-center gap-1.5">
+                            <RefreshCw className="w-3.5 h-3.5 text-[#008B85] shrink-0" />
+                            Lịch sử khảo sát &amp; thi lại
+                          </span>
+                          <span className="text-[10px] font-semibold text-[#00736E] bg-[#F0FDFA] border border-[#CCFBF1] px-2 py-0.5 rounded-md shrink-0 tabular-nums">
+                            {retestHistory.length} đợt
+                          </span>
+                        </h5>
+                        <div className="space-y-2 max-h-[180px] overflow-y-auto pr-1">
+                          {retestHistory.filter(Boolean).map((hist: any, idx: number) => {
+                            const isCurrent = selectedReportStudent && hist?.id === selectedReportStudent.id;
+                            return (
+                              <div key={hist?.id || idx} className="p-2.5 bg-white rounded-lg border border-slate-200/70 text-xs flex items-center justify-between gap-2">
+                                <div>
+                                  <div className="font-semibold text-slate-800">{hist?.period?.name || "Đợt khảo sát"}</div>
+                                  <div className="text-[11px] text-slate-400 tabular-nums">
+                                    {hist?.createdAt ? new Date(hist.createdAt).toLocaleDateString("vi-VN") : "—"}
+                                  </div>
+                                </div>
+                                <span className={`px-2 py-0.5 rounded text-[10px] font-semibold ${
+                                  isCurrent ? "bg-teal-50 text-[#00736E] border border-teal-200" : "bg-slate-100 text-slate-600"
+                                }`}>
+                                  {hist?.admissionResult || "Chưa duyệt"}
+                                </span>
+                              </div>
+                            );
+                          })}
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                </div>
               </div>
             </div>
           </Modal>
@@ -12164,7 +12438,12 @@ const [customCommitmentSubjects, setCustomCommitmentSubjects] = useState<string[
         <StudentOrientationModal
           isOpen={isOrientationModalOpen}
           onClose={() => setIsOrientationModalOpen(false)}
-          student={selectedReportStudent}
+          student={{
+            ...selectedReportStudent,
+            admissionResult: reportForm.admissionResult || selectedReportStudent.admissionResult,
+            directorNote: reportForm.directorNote || selectedReportStudent.directorNote,
+            signatureName: reportForm.signatureName || selectedReportStudent.signatureName
+          }}
           onOpenReport={(stu, orData) => {
             setIsOrientationReportModalOpen(true);
           }}
@@ -12183,7 +12462,12 @@ const [customCommitmentSubjects, setCustomCommitmentSubjects] = useState<string[
         <StudentOrientationReportModal
           isOpen={isOrientationReportModalOpen}
           onClose={() => setIsOrientationReportModalOpen(false)}
-          student={selectedReportStudent}
+          student={{
+            ...selectedReportStudent,
+            admissionResult: reportForm.admissionResult || selectedReportStudent.admissionResult,
+            directorNote: reportForm.directorNote || selectedReportStudent.directorNote,
+            signatureName: reportForm.signatureName || selectedReportStudent.signatureName
+          }}
           orientationData={orientationData}
         />
       )}
