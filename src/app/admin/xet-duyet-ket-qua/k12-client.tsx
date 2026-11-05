@@ -8281,95 +8281,54 @@ const [customCommitmentSubjects, setCustomCommitmentSubjects] = useState<string[
                 const hbLiterature = findTranscriptSubjectScore(["ngu van", "tieng viet", "van", "vietnamese", "literature"]) || "—"
                 const hbEnglish = findTranscriptSubjectScore(["tieng anh", "ngoai ngu", "english", "esl"]) || "—"
                 const gradeNum = parseInt(String(selectedReportStudent?.grade || "1").replace(/\D/g, ""), 10) || 1
-                const vnSubjectLabel = gradeNum <= 5 ? "Tiếng Việt (Học bạ)" : "Ngữ văn (Học bạ)"
+                const vnSubjectColHeader = gradeNum <= 5 ? "11. Tiếng Việt (HB)" : "11. Ngữ văn (HB)"
+                const isCuidLike = (val?: string | null) =>
+                  Boolean(val && /^(cm|cl)[a-z0-9]{15,}$/i.test(String(val).trim()))
+                const resolveCampusDisplay = () => {
+                  const foundCampus = campuses.find(c => c.id === selectedReportStudent?.registeredCampus || c.id === selectedReportStudent?.admissionCampus)
+                  if (foundCampus?.campusCode) return foundCampus.campusCode
+                  if (foundCampus?.campusName) return foundCampus.campusName
+                  const cCode = selectedReportStudent?.batch?.campus?.campusCode
+                  const cName = selectedReportStudent?.batch?.campus?.campusName
+                  if (cCode && !isCuidLike(cCode)) return cCode
+                  if (cName && !isCuidLike(cName)) return cName
+                  const adm = selectedReportStudent?.admissionCampus
+                  if (adm && !isCuidLike(adm)) return adm
+                  const reg = selectedReportStudent?.registeredCampus
+                  if (reg && !isCuidLike(reg)) return reg
+                  const bName = String(selectedReportStudent?.batch?.name || "")
+                  const m = bName.match(/\b(CS\d+)\b/i)
+                  if (m) return m[1].toUpperCase()
+                  return "Sky-Line"
+                }
+                const campusName = resolveCampusDisplay()
+                const genderDisplay =
+                  selectedReportStudent.gender === "M" || selectedReportStudent.gender === "Nam"
+                    ? "Nam"
+                    : selectedReportStudent.gender === "F" || selectedReportStudent.gender === "Nữ"
+                    ? "Nữ"
+                    : selectedReportStudent.gender || "Nam"
+                const dobDisplay = selectedReportStudent.dateOfBirth
+                  ? new Date(selectedReportStudent.dateOfBirth).toLocaleDateString("vi-VN")
+                  : "—"
 
                 return (
                   <div id="dossier-sec-1" className="bg-white rounded-2xl border border-slate-200/90 shadow-[0_1px_2px_rgba(15,23,42,0.03)] relative overflow-hidden text-left">
                     <div className="absolute left-0 top-0 bottom-0 w-1.5 bg-[#003B3A]" />
-                    <div className="px-5 py-3 border-b border-slate-200/80 bg-slate-50/70 flex flex-wrap items-center justify-between gap-2 pl-6">
-                      <div className="flex items-center gap-2">
+                    <div className="px-5 py-2.5 border-b border-slate-200/80 bg-slate-50/70 flex flex-wrap items-center justify-between gap-2 pl-6">
+                      <div className="flex items-center gap-2.5 flex-wrap">
                         <span className="w-5 h-5 rounded-md bg-[#003B3A] text-white text-[11px] font-bold flex items-center justify-center tabular-nums">1</span>
-                        <h4 className="font-bold text-slate-900 text-sm">Thông tin Học sinh &amp; Kết quả học bạ</h4>
-                      </div>
-                      <div className="flex items-center gap-2">
+                        <h4 className="font-bold text-slate-900 text-sm">Thông tin Học sinh</h4>
                         <span className="text-xs text-slate-500">
-                          Mã hồ sơ: <strong className="font-mono text-[#00736E] tabular-nums">{selectedReportStudent.studentCode}</strong>
+                          &bull; Đối tượng tuyển sinh: <strong className="text-slate-800 font-semibold">{selectedReportStudent.targetType || "—"}</strong>
+                          {selectedReportStudent.admissionCriteria ? (
+                            <span> &bull; Diện khảo sát: <strong className="text-slate-800 font-semibold">{selectedReportStudent.admissionCriteria}</strong></span>
+                          ) : null}
                         </span>
                       </div>
-                    </div>
-
-                    <div className="p-4 pl-6 flex flex-col lg:flex-row lg:items-center justify-between gap-4">
-                      {/* Left Part: Avatar & Primary Info */}
-                      <div className="flex items-center gap-3.5">
-                        <div className="w-12 h-12 rounded-xl bg-[#003B3A] flex items-center justify-center text-white font-bold text-lg shrink-0">
-                          {selectedReportStudent.fullName?.charAt(0)}
-                        </div>
-                        <div>
-                          <div className="flex items-center gap-2 flex-wrap">
-                            <h3 className="font-bold text-slate-900 text-base leading-tight">
-                              {selectedReportStudent.fullName}
-                            </h3>
-                            <span className="font-mono font-semibold text-[#00736E] bg-[#F0FDFA] px-2 py-0.5 rounded-md border border-[#CCFBF1] text-xs tabular-nums">
-                              {selectedReportStudent.studentCode}
-                            </span>
-                          </div>
-                          <p className="text-xs text-slate-500 mt-0.5">
-                            Đối tượng tuyển sinh: <strong className="text-slate-800 font-semibold">{selectedReportStudent.targetType || "—"}</strong>
-                            {selectedReportStudent.oldSchoolName ? (
-                              <span> &bull; Trường cũ: <strong className="text-slate-800 font-semibold">{selectedReportStudent.oldSchoolName}</strong></span>
-                            ) : null}
-                          </p>
-                        </div>
-                      </div>
-
-                      {/* Middle Part: Structured Dossier Metadata */}
-                      <div className="flex-1 grid grid-cols-2 md:grid-cols-4 lg:grid-cols-5 gap-y-2.5 gap-x-4 border-t lg:border-t-0 lg:border-l border-slate-200/80 pt-3 lg:pt-0 lg:pl-5 text-xs">
-                        <div className="flex flex-col">
-                          <span className="text-slate-500 font-medium text-[11px] mb-0.5">Ngày sinh</span>
-                          <span className="font-semibold text-slate-900 tabular-nums">{selectedReportStudent.dateOfBirth ? new Date(selectedReportStudent.dateOfBirth).toLocaleDateString("vi-VN") : "—"}</span>
-                        </div>
-                        <div className="flex flex-col">
-                          <span className="text-slate-500 font-medium text-[11px] mb-0.5">Giới tính</span>
-                          <span className="font-semibold text-slate-900">{selectedReportStudent.gender === "M" || selectedReportStudent.gender === "Nam" ? "Nam" : selectedReportStudent.gender === "F" || selectedReportStudent.gender === "Nữ" ? "Nữ" : selectedReportStudent.gender || "—"}</span>
-                        </div>
-                        <div className="flex flex-col">
-                          <span className="text-slate-500 font-medium text-[11px] mb-0.5">Khối đăng ký</span>
-                          <span className="font-bold text-[#003B3A] bg-[#F0FDFA] px-2 py-0.5 rounded border border-[#CCFBF1] w-fit text-xs tabular-nums">Khối {selectedReportStudent.grade || "—"}</span>
-                        </div>
-                        <div className="flex flex-col">
-                          <span className="text-slate-500 font-medium text-[11px] mb-0.5">Hệ khảo sát</span>
-                          <div>
-                            <span className="font-semibold text-amber-900 bg-amber-50 px-2 py-0.5 rounded border border-amber-200 text-xs inline-block">{selectedReportStudent.surveyFormType || "—"}</span>
-                          </div>
-                        </div>
-                        <div className="flex flex-col">
-                          <span className="text-slate-500 font-medium text-[11px] mb-0.5">Diện khảo sát</span>
-                          <span className="font-semibold text-slate-800 truncate" title={selectedReportStudent.admissionCriteria}>{selectedReportStudent.admissionCriteria || "—"}</span>
-                        </div>
-
-                        {reportSelPeriod?.name?.toLowerCase().includes("open day") && (
-                          <>
-                            <div className="flex flex-col col-span-2">
-                              <span className="text-slate-500 font-medium text-[11px] mb-0.5">Cơ sở đăng ký</span>
-                              <span className="font-semibold text-slate-900">
-                                {campuses.find(c => c.id === selectedReportStudent.registeredCampus)?.campusName || selectedReportStudent.registeredCampus || "—"}
-                              </span>
-                            </div>
-                            <div className="flex flex-col col-span-2">
-                              <span className="text-slate-500 font-medium text-[11px] mb-0.5">Ủy quyền xét duyệt</span>
-                              <span className="font-semibold text-slate-900">
-                                {campuses.find(c => c.id === selectedReportStudent.registeredCampus)?.manager?.fullName || "—"}
-                              </span>
-                            </div>
-                          </>
-                        )}
-                      </div>
-
-                      {/* Rightmost Part: Approval Status */}
-                      <div className="flex items-start lg:items-end flex-col shrink-0 lg:border-l border-slate-200/80 lg:pl-5 pt-3 lg:pt-0">
-                        <span className="text-slate-500 font-medium text-[11px] mb-1 block self-start lg:self-end">Quyết định hiện tại</span>
+                      <div className="flex items-center gap-2.5 flex-wrap">
                         {selectedReportStudent.admissionResult ? (
-                          <span className={`font-bold px-3 py-1 rounded-lg text-xs flex items-center gap-1.5 border ${
+                          <span className={`font-bold px-2.5 py-0.5 rounded-lg text-xs flex items-center gap-1.5 border ${
                             selectedReportStudent.admissionResult.includes("Không")
                               ? "text-rose-800 bg-rose-50 border-rose-200"
                               : selectedReportStudent.admissionResult.includes("cam kết")
@@ -8386,39 +8345,78 @@ const [customCommitmentSubjects, setCustomCommitmentSubjects] = useState<string[
                             {selectedReportStudent.admissionResult}
                           </span>
                         ) : (
-                          <span className="font-semibold text-amber-800 bg-amber-50 border border-amber-200 px-3 py-1 rounded-lg text-xs">
+                          <span className="font-semibold text-amber-800 bg-amber-50 border border-amber-200 px-2.5 py-0.5 rounded-lg text-xs">
                             Chờ Hội đồng duyệt
                           </span>
                         )}
                         {selectedReportStudent.signatureName && (
-                          <span className="text-[11px] text-slate-500 mt-1">
+                          <span className="text-[11px] text-slate-500">
                             Người duyệt: <strong className="text-slate-800 font-semibold">{selectedReportStudent.signatureName}</strong>
                           </span>
                         )}
                       </div>
                     </div>
 
-                    {/* Dải Sổ cái Kết quả học bạ (Trường cũ) */}
-                    <div className="px-5 py-2.5 pl-6 border-t border-slate-200/80 bg-[#F8FAFC] grid grid-cols-2 sm:grid-cols-5 gap-3 text-xs">
-                      <div className="flex items-center justify-between sm:justify-start gap-2 bg-white px-3 py-1.5 rounded-lg border border-slate-200/80">
-                        <span className="text-slate-500 font-medium text-[11px]">Học tập (Học bạ):</span>
-                        <span className="font-bold text-emerald-800 tabular-nums">{hbHocTap}</span>
-                      </div>
-                      <div className="flex items-center justify-between sm:justify-start gap-2 bg-white px-3 py-1.5 rounded-lg border border-slate-200/80">
-                        <span className="text-slate-500 font-medium text-[11px]">Rèn luyện (Học bạ):</span>
-                        <span className="font-bold text-[#00736E] tabular-nums">{hbRenLuyen}</span>
-                      </div>
-                      <div className="flex items-center justify-between sm:justify-start gap-2 bg-white px-3 py-1.5 rounded-lg border border-slate-200/80">
-                        <span className="text-slate-500 font-medium text-[11px]">Toán (Học bạ):</span>
-                        <span className="font-bold text-slate-900 tabular-nums">{hbMath}</span>
-                      </div>
-                      <div className="flex items-center justify-between sm:justify-start gap-2 bg-white px-3 py-1.5 rounded-lg border border-slate-200/80">
-                        <span className="text-slate-500 font-medium text-[11px]">{vnSubjectLabel}:</span>
-                        <span className="font-bold text-slate-900 tabular-nums">{hbLiterature}</span>
-                      </div>
-                      <div className="flex items-center justify-between sm:justify-start gap-2 bg-white px-3 py-1.5 rounded-lg border border-slate-200/80 col-span-2 sm:col-span-1">
-                        <span className="text-slate-500 font-medium text-[11px]">Tiếng Anh (Học bạ):</span>
-                        <span className="font-bold text-slate-900 tabular-nums">{hbEnglish}</span>
+                    <div className="p-3.5 pl-6">
+                      <div className="overflow-x-auto border border-slate-200 rounded-xl bg-white">
+                        <table className="w-full text-left border-collapse text-xs">
+                          <thead>
+                            <tr className="bg-[#F0FDFA] text-[11px] font-bold text-[#003B3A] border-b border-slate-200 whitespace-nowrap">
+                              <th className="py-2 px-2.5 border-r border-slate-200/80">1. Mã HS</th>
+                              <th className="py-2 px-2.5 border-r border-slate-200/80">2. Họ và tên</th>
+                              <th className="py-2 px-2.5 border-r border-slate-200/80">3. Ngày sinh / Giới tính</th>
+                              <th className="py-2 px-2.5 border-r border-slate-200/80">4. Khối đăng ký</th>
+                              <th className="py-2 px-2.5 border-r border-slate-200/80">5. Hệ đào tạo</th>
+                              <th className="py-2 px-2.5 border-r border-slate-200/80">6. Cơ sở</th>
+                              <th className="py-2 px-2.5 border-r border-slate-200/80">7. Trường cũ</th>
+                              <th className="py-2 px-2.5 border-r border-slate-200/80 text-center">8. Học tập (HB)</th>
+                              <th className="py-2 px-2.5 border-r border-slate-200/80 text-center">9. Rèn luyện (HB)</th>
+                              <th className="py-2 px-2.5 border-r border-slate-200/80 text-center">10. Toán (HB)</th>
+                              <th className="py-2 px-2.5 border-r border-slate-200/80 text-center">{vnSubjectColHeader}</th>
+                              <th className="py-2 px-2.5 text-center">12. Tiếng Anh (HB)</th>
+                            </tr>
+                          </thead>
+                          <tbody>
+                            <tr className="text-slate-800 whitespace-nowrap">
+                              <td className="py-2 px-2.5 border-r border-slate-200/70 font-mono font-bold text-[#00736E] tabular-nums">
+                                {selectedReportStudent.studentCode || "—"}
+                              </td>
+                              <td className="py-2 px-2.5 border-r border-slate-200/70 font-bold text-[#003B3A]">
+                                {selectedReportStudent.fullName || "—"}
+                              </td>
+                              <td className="py-2 px-2.5 border-r border-slate-200/70 tabular-nums">
+                                {dobDisplay} ({genderDisplay})
+                              </td>
+                              <td className="py-2 px-2.5 border-r border-slate-200/70 font-bold text-[#003B3A] tabular-nums">
+                                Khối {selectedReportStudent.grade || "—"}
+                              </td>
+                              <td className="py-2 px-2.5 border-r border-slate-200/70 font-bold text-amber-900">
+                                {orientationData?.proposedEduSystem || selectedReportStudent.surveyFormType || selectedReportStudent.surveySystem || "HNS"}
+                              </td>
+                              <td className="py-2 px-2.5 border-r border-slate-200/70 font-semibold text-slate-900">
+                                {campusName}
+                              </td>
+                              <td className="py-2 px-2.5 border-r border-slate-200/70 text-slate-700 max-w-[180px] truncate" title={selectedReportStudent.oldSchoolName || "—"}>
+                                {selectedReportStudent.oldSchoolName || "—"}
+                              </td>
+                              <td className="py-2 px-2.5 border-r border-slate-200/70 text-center font-bold text-emerald-800">
+                                {hbHocTap}
+                              </td>
+                              <td className="py-2 px-2.5 border-r border-slate-200/70 text-center font-bold text-[#00736E]">
+                                {hbRenLuyen}
+                              </td>
+                              <td className="py-2 px-2.5 border-r border-slate-200/70 text-center font-bold text-slate-900 tabular-nums">
+                                {hbMath}
+                              </td>
+                              <td className="py-2 px-2.5 border-r border-slate-200/70 text-center font-bold text-slate-900 tabular-nums">
+                                {hbLiterature}
+                              </td>
+                              <td className="py-2 px-2.5 text-center font-bold text-slate-900 tabular-nums">
+                                {hbEnglish}
+                              </td>
+                            </tr>
+                          </tbody>
+                        </table>
                       </div>
                     </div>
                   </div>

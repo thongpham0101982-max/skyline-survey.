@@ -1787,7 +1787,7 @@ export function StudentOrientationModal({
                 <tr className="bg-teal-50/80 text-[10px] font-black uppercase text-[#083d39] border-b border-teal-100 whitespace-nowrap">
                   <th className="py-1.5 px-2.5 border-r border-slate-200/70">1. Mã HS</th>
                   <th className="py-1.5 px-2.5 border-r border-slate-200/70">2. Họ và tên</th>
-                  <th className="py-1.5 px-2.5 border-r border-slate-200/70">3. Ngày sinh / Phái</th>
+                  <th className="py-1.5 px-2.5 border-r border-slate-200/70">3. Ngày sinh / Giới tính</th>
                   <th className="py-1.5 px-2.5 border-r border-slate-200/70">4. Khối đăng ký</th>
                   <th className="py-1.5 px-2.5 border-r border-slate-200/70">5. Hệ đào tạo</th>
                   <th className="py-1.5 px-2.5 border-r border-slate-200/70">6. Cơ sở</th>
