@@ -8185,121 +8185,245 @@ const [customCommitmentSubjects, setCustomCommitmentSubjects] = useState<string[
                 </button>
               </div>
 
-              {/* MỤC 1. THÔNG TIN HỌC SINH */}
-              <div id="dossier-sec-1" className="bg-white rounded-2xl border border-slate-200/90 shadow-[0_1px_2px_rgba(15,23,42,0.03)] relative overflow-hidden text-left">
-                <div className="absolute left-0 top-0 bottom-0 w-1.5 bg-[#003B3A]" />
-                <div className="px-5 py-3 border-b border-slate-200/80 bg-slate-50/70 flex flex-wrap items-center justify-between gap-2 pl-6">
-                  <div className="flex items-center gap-2">
-                    <span className="w-5 h-5 rounded-md bg-[#003B3A] text-white text-[11px] font-bold flex items-center justify-center tabular-nums">1</span>
-                    <h4 className="font-bold text-slate-900 text-sm">Thông tin Học sinh</h4>
-                  </div>
-                  <div className="flex items-center gap-2">
-                    <span className="text-xs text-slate-500">
-                      Mã hồ sơ: <strong className="font-mono text-[#00736E] tabular-nums">{selectedReportStudent.studentCode}</strong>
-                    </span>
-                  </div>
-                </div>
+              {/* MỤC 1. THÔNG TIN HỌC SINH & KẾT QUẢ HỌC BẠ */}
+              {(() => {
+                let parsedKqHocTap: any = null
+                const rawKq = selectedReportStudent?.kqHocTap
+                if (typeof rawKq === "string" && rawKq.trim().startsWith("{")) {
+                  try {
+                    parsedKqHocTap = JSON.parse(rawKq)
+                  } catch (e) {}
+                } else if (rawKq && typeof rawKq === "object") {
+                  parsedKqHocTap = rawKq
+                }
 
-                <div className="p-4 pl-6 flex flex-col lg:flex-row lg:items-center justify-between gap-4">
-                  {/* Left Part: Avatar & Primary Info */}
-                  <div className="flex items-center gap-3.5">
-                    <div className="w-12 h-12 rounded-xl bg-[#003B3A] flex items-center justify-center text-white font-bold text-lg shrink-0">
-                      {selectedReportStudent.fullName?.charAt(0)}
-                    </div>
-                    <div>
-                      <div className="flex items-center gap-2 flex-wrap">
-                        <h3 className="font-bold text-slate-900 text-base leading-tight">
-                          {selectedReportStudent.fullName}
-                        </h3>
-                        <span className="font-mono font-semibold text-[#00736E] bg-[#F0FDFA] px-2 py-0.5 rounded-md border border-[#CCFBF1] text-xs tabular-nums">
-                          {selectedReportStudent.studentCode}
+                const matchTranscriptSubject = (rawName: string, keywords: string[]) => {
+                  const norm = String(rawName || "")
+                    .toLowerCase()
+                    .normalize("NFD")
+                    .replace(/[\u0300-\u036f]/g, "")
+                    .trim()
+                  if (!norm) return false
+                  return keywords.some(kw => {
+                    if (kw === "van") {
+                      return /(^|\s|\/|-)van($|\s|\/|-)/.test(norm) && !norm.includes("van dap")
+                    }
+                    return norm.includes(kw)
+                  })
+                }
+
+                const findTranscriptSubjectScore = (keywords: string[]) => {
+                  if (parsedKqHocTap?.scores && typeof parsedKqHocTap.scores === "object") {
+                    for (const [k, v] of Object.entries(parsedKqHocTap.scores)) {
+                      if (matchTranscriptSubject(k, keywords) && v !== null && v !== undefined && String(v).trim() !== "") {
+                        return String(v).trim()
+                      }
+                    }
+                  }
+                  const subjectArrays = [
+                    parsedKqHocTap?.moet?.subjects,
+                    parsedKqHocTap?.bilingual?.moetSubjects,
+                    parsedKqHocTap?.bilingual?.internationalSubjects,
+                    parsedKqHocTap?.foreign?.subjects,
+                    parsedKqHocTap?.homeschool?.subjects
+                  ]
+                  for (const arr of subjectArrays) {
+                    if (Array.isArray(arr)) {
+                      for (const sub of arr) {
+                        const sName = String(sub?.name || sub?.id || "")
+                        if (matchTranscriptSubject(sName, keywords) && sub?.score !== null && sub?.score !== undefined && String(sub.score).trim() !== "") {
+                          return String(sub.score).trim()
+                        }
+                      }
+                    }
+                  }
+                  return ""
+                }
+
+                const cleanTranscriptRating = (val?: string | null) => {
+                  if (!val || typeof val !== "string") return ""
+                  let text = val.trim()
+                  if (!text || text.startsWith("{")) return ""
+                  if (text.includes("Trường cũ") || text.includes("Đối tượng:")) {
+                    const cleanLines = text
+                      .split(/[\r\n]+/)
+                      .map(l => l.trim())
+                      .filter(l => l && !l.includes("Trường cũ") && !l.includes("Đối tượng:"))
+                    text = cleanLines[0] || ""
+                  }
+                  return text.trim()
+                }
+
+                const hbHocTap =
+                  cleanTranscriptRating(parsedKqHocTap?.overallRating) ||
+                  cleanTranscriptRating(parsedKqHocTap?.moet?.overallRating) ||
+                  cleanTranscriptRating(parsedKqHocTap?.bilingual?.moetRating) ||
+                  cleanTranscriptRating(parsedKqHocTap?.bilingual?.internationalRating) ||
+                  cleanTranscriptRating(parsedKqHocTap?.foreign?.gpaOrHonors) ||
+                  cleanTranscriptRating(parsedKqHocTap?.homeschool?.overallEvaluation) ||
+                  cleanTranscriptRating(parsedKqHocTap?.hocTap) ||
+                  cleanTranscriptRating(parsedKqHocTap?.academicRating) ||
+                  cleanTranscriptRating(parsedKqHocTap?.nangLuc) ||
+                  cleanTranscriptRating(typeof rawKq === "string" ? rawKq : "") ||
+                  cleanTranscriptRating(selectedReportStudent?.academicRating) ||
+                  cleanTranscriptRating(selectedReportStudent?.kqgdTieuHoc) ||
+                  "—"
+
+                const hbRenLuyen =
+                  cleanTranscriptRating(parsedKqHocTap?.moet?.conductRating) ||
+                  cleanTranscriptRating(parsedKqHocTap?.renLuyen) ||
+                  cleanTranscriptRating(parsedKqHocTap?.phamChat) ||
+                  cleanTranscriptRating(typeof selectedReportStudent?.kqRenLuyen === "string" ? selectedReportStudent.kqRenLuyen : "") ||
+                  cleanTranscriptRating(selectedReportStudent?.conductRating) ||
+                  "—"
+
+                const hbMath = findTranscriptSubjectScore(["toan", "math"]) || "—"
+                const hbLiterature = findTranscriptSubjectScore(["ngu van", "tieng viet", "van", "vietnamese", "literature"]) || "—"
+                const hbEnglish = findTranscriptSubjectScore(["tieng anh", "ngoai ngu", "english", "esl"]) || "—"
+                const gradeNum = parseInt(String(selectedReportStudent?.grade || "1").replace(/\D/g, ""), 10) || 1
+                const vnSubjectLabel = gradeNum <= 5 ? "Tiếng Việt (Học bạ)" : "Ngữ văn (Học bạ)"
+
+                return (
+                  <div id="dossier-sec-1" className="bg-white rounded-2xl border border-slate-200/90 shadow-[0_1px_2px_rgba(15,23,42,0.03)] relative overflow-hidden text-left">
+                    <div className="absolute left-0 top-0 bottom-0 w-1.5 bg-[#003B3A]" />
+                    <div className="px-5 py-3 border-b border-slate-200/80 bg-slate-50/70 flex flex-wrap items-center justify-between gap-2 pl-6">
+                      <div className="flex items-center gap-2">
+                        <span className="w-5 h-5 rounded-md bg-[#003B3A] text-white text-[11px] font-bold flex items-center justify-center tabular-nums">1</span>
+                        <h4 className="font-bold text-slate-900 text-sm">Thông tin Học sinh &amp; Kết quả học bạ</h4>
+                      </div>
+                      <div className="flex items-center gap-2">
+                        <span className="text-xs text-slate-500">
+                          Mã hồ sơ: <strong className="font-mono text-[#00736E] tabular-nums">{selectedReportStudent.studentCode}</strong>
                         </span>
                       </div>
-                      <p className="text-xs text-slate-500 mt-0.5">
-                        Đối tượng tuyển sinh: <strong className="text-slate-800 font-semibold">{selectedReportStudent.targetType || "—"}</strong>
-                        {selectedReportStudent.oldSchoolName ? (
-                          <span> &bull; Trường cũ: <strong className="text-slate-800 font-semibold">{selectedReportStudent.oldSchoolName}</strong></span>
-                        ) : null}
-                      </p>
                     </div>
-                  </div>
 
-                  {/* Middle Part: Structured Dossier Metadata */}
-                  <div className="flex-1 grid grid-cols-2 md:grid-cols-4 lg:grid-cols-5 gap-y-2.5 gap-x-4 border-t lg:border-t-0 lg:border-l border-slate-200/80 pt-3 lg:pt-0 lg:pl-5 text-xs">
-                    <div className="flex flex-col">
-                      <span className="text-slate-500 font-medium text-[11px] mb-0.5">Ngày sinh</span>
-                      <span className="font-semibold text-slate-900 tabular-nums">{selectedReportStudent.dateOfBirth ? new Date(selectedReportStudent.dateOfBirth).toLocaleDateString("vi-VN") : "—"}</span>
-                    </div>
-                    <div className="flex flex-col">
-                      <span className="text-slate-500 font-medium text-[11px] mb-0.5">Giới tính</span>
-                      <span className="font-semibold text-slate-900">{selectedReportStudent.gender === "M" || selectedReportStudent.gender === "Nam" ? "Nam" : selectedReportStudent.gender === "F" || selectedReportStudent.gender === "Nữ" ? "Nữ" : selectedReportStudent.gender || "—"}</span>
-                    </div>
-                    <div className="flex flex-col">
-                      <span className="text-slate-500 font-medium text-[11px] mb-0.5">Khối đăng ký</span>
-                      <span className="font-bold text-[#003B3A] bg-[#F0FDFA] px-2 py-0.5 rounded border border-[#CCFBF1] w-fit text-xs tabular-nums">Khối {selectedReportStudent.grade || "—"}</span>
-                    </div>
-                    <div className="flex flex-col">
-                      <span className="text-slate-500 font-medium text-[11px] mb-0.5">Hệ khảo sát</span>
-                      <div>
-                        <span className="font-semibold text-amber-900 bg-amber-50 px-2 py-0.5 rounded border border-amber-200 text-xs inline-block">{selectedReportStudent.surveyFormType || "—"}</span>
+                    <div className="p-4 pl-6 flex flex-col lg:flex-row lg:items-center justify-between gap-4">
+                      {/* Left Part: Avatar & Primary Info */}
+                      <div className="flex items-center gap-3.5">
+                        <div className="w-12 h-12 rounded-xl bg-[#003B3A] flex items-center justify-center text-white font-bold text-lg shrink-0">
+                          {selectedReportStudent.fullName?.charAt(0)}
+                        </div>
+                        <div>
+                          <div className="flex items-center gap-2 flex-wrap">
+                            <h3 className="font-bold text-slate-900 text-base leading-tight">
+                              {selectedReportStudent.fullName}
+                            </h3>
+                            <span className="font-mono font-semibold text-[#00736E] bg-[#F0FDFA] px-2 py-0.5 rounded-md border border-[#CCFBF1] text-xs tabular-nums">
+                              {selectedReportStudent.studentCode}
+                            </span>
+                          </div>
+                          <p className="text-xs text-slate-500 mt-0.5">
+                            Đối tượng tuyển sinh: <strong className="text-slate-800 font-semibold">{selectedReportStudent.targetType || "—"}</strong>
+                            {selectedReportStudent.oldSchoolName ? (
+                              <span> &bull; Trường cũ: <strong className="text-slate-800 font-semibold">{selectedReportStudent.oldSchoolName}</strong></span>
+                            ) : null}
+                          </p>
+                        </div>
+                      </div>
+
+                      {/* Middle Part: Structured Dossier Metadata */}
+                      <div className="flex-1 grid grid-cols-2 md:grid-cols-4 lg:grid-cols-5 gap-y-2.5 gap-x-4 border-t lg:border-t-0 lg:border-l border-slate-200/80 pt-3 lg:pt-0 lg:pl-5 text-xs">
+                        <div className="flex flex-col">
+                          <span className="text-slate-500 font-medium text-[11px] mb-0.5">Ngày sinh</span>
+                          <span className="font-semibold text-slate-900 tabular-nums">{selectedReportStudent.dateOfBirth ? new Date(selectedReportStudent.dateOfBirth).toLocaleDateString("vi-VN") : "—"}</span>
+                        </div>
+                        <div className="flex flex-col">
+                          <span className="text-slate-500 font-medium text-[11px] mb-0.5">Giới tính</span>
+                          <span className="font-semibold text-slate-900">{selectedReportStudent.gender === "M" || selectedReportStudent.gender === "Nam" ? "Nam" : selectedReportStudent.gender === "F" || selectedReportStudent.gender === "Nữ" ? "Nữ" : selectedReportStudent.gender || "—"}</span>
+                        </div>
+                        <div className="flex flex-col">
+                          <span className="text-slate-500 font-medium text-[11px] mb-0.5">Khối đăng ký</span>
+                          <span className="font-bold text-[#003B3A] bg-[#F0FDFA] px-2 py-0.5 rounded border border-[#CCFBF1] w-fit text-xs tabular-nums">Khối {selectedReportStudent.grade || "—"}</span>
+                        </div>
+                        <div className="flex flex-col">
+                          <span className="text-slate-500 font-medium text-[11px] mb-0.5">Hệ khảo sát</span>
+                          <div>
+                            <span className="font-semibold text-amber-900 bg-amber-50 px-2 py-0.5 rounded border border-amber-200 text-xs inline-block">{selectedReportStudent.surveyFormType || "—"}</span>
+                          </div>
+                        </div>
+                        <div className="flex flex-col">
+                          <span className="text-slate-500 font-medium text-[11px] mb-0.5">Diện khảo sát</span>
+                          <span className="font-semibold text-slate-800 truncate" title={selectedReportStudent.admissionCriteria}>{selectedReportStudent.admissionCriteria || "—"}</span>
+                        </div>
+
+                        {reportSelPeriod?.name?.toLowerCase().includes("open day") && (
+                          <>
+                            <div className="flex flex-col col-span-2">
+                              <span className="text-slate-500 font-medium text-[11px] mb-0.5">Cơ sở đăng ký</span>
+                              <span className="font-semibold text-slate-900">
+                                {campuses.find(c => c.id === selectedReportStudent.registeredCampus)?.campusName || selectedReportStudent.registeredCampus || "—"}
+                              </span>
+                            </div>
+                            <div className="flex flex-col col-span-2">
+                              <span className="text-slate-500 font-medium text-[11px] mb-0.5">Ủy quyền xét duyệt</span>
+                              <span className="font-semibold text-slate-900">
+                                {campuses.find(c => c.id === selectedReportStudent.registeredCampus)?.manager?.fullName || "—"}
+                              </span>
+                            </div>
+                          </>
+                        )}
+                      </div>
+
+                      {/* Rightmost Part: Approval Status */}
+                      <div className="flex items-start lg:items-end flex-col shrink-0 lg:border-l border-slate-200/80 lg:pl-5 pt-3 lg:pt-0">
+                        <span className="text-slate-500 font-medium text-[11px] mb-1 block self-start lg:self-end">Quyết định hiện tại</span>
+                        {selectedReportStudent.admissionResult ? (
+                          <span className={`font-bold px-3 py-1 rounded-lg text-xs flex items-center gap-1.5 border ${
+                            selectedReportStudent.admissionResult.includes("Không")
+                              ? "text-rose-800 bg-rose-50 border-rose-200"
+                              : selectedReportStudent.admissionResult.includes("cam kết")
+                              ? "text-amber-900 bg-amber-50 border-amber-200"
+                              : "text-emerald-800 bg-emerald-50 border-emerald-200"
+                          }`}>
+                            <span className={`w-1.5 h-1.5 rounded-full ${
+                              selectedReportStudent.admissionResult.includes("Không")
+                                ? "bg-rose-500"
+                                : selectedReportStudent.admissionResult.includes("cam kết")
+                                ? "bg-amber-500"
+                                : "bg-emerald-500"
+                            }`}></span>
+                            {selectedReportStudent.admissionResult}
+                          </span>
+                        ) : (
+                          <span className="font-semibold text-amber-800 bg-amber-50 border border-amber-200 px-3 py-1 rounded-lg text-xs">
+                            Chờ Hội đồng duyệt
+                          </span>
+                        )}
+                        {selectedReportStudent.signatureName && (
+                          <span className="text-[11px] text-slate-500 mt-1">
+                            Người duyệt: <strong className="text-slate-800 font-semibold">{selectedReportStudent.signatureName}</strong>
+                          </span>
+                        )}
                       </div>
                     </div>
-                    <div className="flex flex-col">
-                      <span className="text-slate-500 font-medium text-[11px] mb-0.5">Diện khảo sát</span>
-                      <span className="font-semibold text-slate-800 truncate" title={selectedReportStudent.admissionCriteria}>{selectedReportStudent.admissionCriteria || "—"}</span>
+
+                    {/* Dải Sổ cái Kết quả học bạ (Trường cũ) */}
+                    <div className="px-5 py-2.5 pl-6 border-t border-slate-200/80 bg-[#F8FAFC] grid grid-cols-2 sm:grid-cols-5 gap-3 text-xs">
+                      <div className="flex items-center justify-between sm:justify-start gap-2 bg-white px-3 py-1.5 rounded-lg border border-slate-200/80">
+                        <span className="text-slate-500 font-medium text-[11px]">Học tập (Học bạ):</span>
+                        <span className="font-bold text-emerald-800 tabular-nums">{hbHocTap}</span>
+                      </div>
+                      <div className="flex items-center justify-between sm:justify-start gap-2 bg-white px-3 py-1.5 rounded-lg border border-slate-200/80">
+                        <span className="text-slate-500 font-medium text-[11px]">Rèn luyện (Học bạ):</span>
+                        <span className="font-bold text-[#00736E] tabular-nums">{hbRenLuyen}</span>
+                      </div>
+                      <div className="flex items-center justify-between sm:justify-start gap-2 bg-white px-3 py-1.5 rounded-lg border border-slate-200/80">
+                        <span className="text-slate-500 font-medium text-[11px]">Toán (Học bạ):</span>
+                        <span className="font-bold text-slate-900 tabular-nums">{hbMath}</span>
+                      </div>
+                      <div className="flex items-center justify-between sm:justify-start gap-2 bg-white px-3 py-1.5 rounded-lg border border-slate-200/80">
+                        <span className="text-slate-500 font-medium text-[11px]">{vnSubjectLabel}:</span>
+                        <span className="font-bold text-slate-900 tabular-nums">{hbLiterature}</span>
+                      </div>
+                      <div className="flex items-center justify-between sm:justify-start gap-2 bg-white px-3 py-1.5 rounded-lg border border-slate-200/80 col-span-2 sm:col-span-1">
+                        <span className="text-slate-500 font-medium text-[11px]">Tiếng Anh (Học bạ):</span>
+                        <span className="font-bold text-slate-900 tabular-nums">{hbEnglish}</span>
+                      </div>
                     </div>
-
-                    {reportSelPeriod?.name?.toLowerCase().includes("open day") && (
-                      <>
-                        <div className="flex flex-col col-span-2">
-                          <span className="text-slate-500 font-medium text-[11px] mb-0.5">Cơ sở đăng ký</span>
-                          <span className="font-semibold text-slate-900">
-                            {campuses.find(c => c.id === selectedReportStudent.registeredCampus)?.campusName || selectedReportStudent.registeredCampus || "—"}
-                          </span>
-                        </div>
-                        <div className="flex flex-col col-span-2">
-                          <span className="text-slate-500 font-medium text-[11px] mb-0.5">Ủy quyền xét duyệt</span>
-                          <span className="font-semibold text-slate-900">
-                            {campuses.find(c => c.id === selectedReportStudent.registeredCampus)?.manager?.fullName || "—"}
-                          </span>
-                        </div>
-                      </>
-                    )}
                   </div>
-
-                  {/* Rightmost Part: Approval Status */}
-                  <div className="flex items-start lg:items-end flex-col shrink-0 lg:border-l border-slate-200/80 lg:pl-5 pt-3 lg:pt-0">
-                    <span className="text-slate-500 font-medium text-[11px] mb-1 block self-start lg:self-end">Quyết định hiện tại</span>
-                    {selectedReportStudent.admissionResult ? (
-                      <span className={`font-bold px-3 py-1 rounded-lg text-xs flex items-center gap-1.5 border ${
-                        selectedReportStudent.admissionResult.includes("Không")
-                          ? "text-rose-800 bg-rose-50 border-rose-200"
-                          : selectedReportStudent.admissionResult.includes("cam kết")
-                          ? "text-amber-900 bg-amber-50 border-amber-200"
-                          : "text-emerald-800 bg-emerald-50 border-emerald-200"
-                      }`}>
-                        <span className={`w-1.5 h-1.5 rounded-full ${
-                          selectedReportStudent.admissionResult.includes("Không")
-                            ? "bg-rose-500"
-                            : selectedReportStudent.admissionResult.includes("cam kết")
-                            ? "bg-amber-500"
-                            : "bg-emerald-500"
-                        }`}></span>
-                        {selectedReportStudent.admissionResult}
-                      </span>
-                    ) : (
-                      <span className="font-semibold text-amber-800 bg-amber-50 border border-amber-200 px-3 py-1 rounded-lg text-xs">
-                        Chờ Hội đồng duyệt
-                      </span>
-                    )}
-                    {selectedReportStudent.signatureName && (
-                      <span className="text-[11px] text-slate-500 mt-1">
-                        Người duyệt: <strong className="text-slate-800 font-semibold">{selectedReportStudent.signatureName}</strong>
-                      </span>
-                    )}
-                  </div>
-                </div>
-              </div>
+                );
+              })()}
 
               {/* MỤC 2. PHIẾU ĐỊNH HƯỚNG HS & PH (LẤY ĐÚNG THEO CẤU HÌNH KHỐI) */}
               {(() => {

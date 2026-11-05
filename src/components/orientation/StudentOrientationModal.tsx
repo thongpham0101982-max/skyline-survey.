@@ -66,9 +66,21 @@ interface StudentOrientationModalProps {
   isOpen: boolean
   onClose: () => void
   student: any
+  initialSubjectId?: string
   onOpenReport?: (student: any, orientationData?: any) => void
   onSuccess?: () => void
 }
+
+const QUICK_SUBJECT_REMARKS = [
+  "Tiếp thu bài nhanh, tự tin và hoàn thành tốt yêu cầu.",
+  "Nắm vững kiến thức cơ bản, thao tác bài làm cẩn thận.",
+  "Tư duy logic nhạy bén, phản xạ tốt trong các tình huống.",
+  "Cần rèn luyện thêm kỹ năng tính toán và chú ý trình bày.",
+  "Cần tập trung hơn trong giờ học và chủ động tương tác.",
+  "Diễn đạt lưu loát, ngôn từ phong phú, phát âm rõ ràng.",
+  "Có tiến bộ trong quá trình làm bài, thái độ tích cực.",
+  "Cần củng cố thêm các kiến thức nền tảng của môn học."
+]
 
 interface QuestionAnswer {
   questionId: string
@@ -113,6 +125,7 @@ export function StudentOrientationModal({
   isOpen,
   onClose,
   student,
+  initialSubjectId,
   onOpenReport,
   onSuccess
 }: StudentOrientationModalProps) {
@@ -218,6 +231,14 @@ export function StudentOrientationModal({
   // GV phụ trách định hướng được phân công tự động
   const [assignedOrientationTeachers, setAssignedOrientationTeachers] = useState<any[]>([])
 
+  // Kết quả Môn Khảo sát đầu vào theo phân công của Giáo viên
+  const [subjectEvaluations, setSubjectEvaluations] = useState<any[]>([])
+  const [savingSubjectMap, setSavingSubjectMap] = useState<Record<string, "idle" | "saving" | "saved" | "error">>({})
+  const [dirtySubjectIds, setDirtySubjectIds] = useState<Set<string>>(new Set())
+  const [showAllSubjectsInModal, setShowAllSubjectsInModal] = useState(false)
+  const [isSubjectSectionExpanded, setIsSubjectSectionExpanded] = useState(true)
+  const [openQuickRemarksForSubject, setOpenQuickRemarksForSubject] = useState<string | null>(null)
+
   // Khảo sát tâm lý & Form đánh giá tâm lý chuẩn
   const [isPsychModalOpen, setIsPsychModalOpen] = useState(false)
   const [psychModalTab, setPsychModalTab] = useState<"referral" | "form">("referral")
@@ -310,6 +331,25 @@ export function StudentOrientationModal({
             }
             if (rData?.assignedOrientationTeacher?.teacherName) {
               autoAssignedTeacherName = rData.assignedOrientationTeacher.teacherName
+            }
+            if (Array.isArray(rData?.assignedSubjectEvaluations) && isMounted) {
+              const evalList = rData.assignedSubjectEvaluations.map((ev: any) => {
+                if (initialSubjectId && ev.subjectId === initialSubjectId && !ev.isLocked) {
+                  return { ...ev, isAssignedToMe: true, canEdit: true }
+                }
+                return ev
+              })
+              // Đưa môn đang chọn trên bộ lọc lên đầu danh sách
+              evalList.sort((a: any, b: any) => {
+                const aInit = initialSubjectId && a.subjectId === initialSubjectId ? 1 : 0
+                const bInit = initialSubjectId && b.subjectId === initialSubjectId ? 1 : 0
+                if (aInit !== bInit) return bInit - aInit
+                if (a.isAssignedToMe !== b.isAssignedToMe) return a.isAssignedToMe ? -1 : 1
+                if (a.canEdit !== b.canEdit) return a.canEdit ? -1 : 1
+                return 0
+              })
+              setSubjectEvaluations(evalList)
+              setDirtySubjectIds(new Set())
             }
             if (sDetail && isMounted) {
               setStudentDetail((prev: any) => ({ ...prev, ...sDetail }))
@@ -678,6 +718,132 @@ export function StudentOrientationModal({
     }))
   }
 
+  // Cập nhật điểm môn khảo sát theo phân công ngay trong Phiếu Định Hướng
+  const handleSubjectScoreChange = (subjectId: string, colIdx: number, val: string) => {
+    markDirty()
+    setDirtySubjectIds(prev => {
+      const next = new Set(prev)
+      next.add(subjectId)
+      return next
+    })
+    setSubjectEvaluations(prev =>
+      prev.map(ev => {
+        if (ev.subjectId !== subjectId) return ev
+        const newScoreVals = [...(ev.scoreVals || [])]
+        newScoreVals[colIdx] = val
+        // Tự động tính điểm tổng hợp nếu môn có nhiều hơn 1 cột điểm số
+        const isNumericType = !ev.gradeConfig?.scoreColumnTypes?.some((t: string) => t && t !== "SCORE_10")
+        const numCols = ev.gradeConfig?.scoreColumns || 1
+        if (isNumericType && numCols > 1 && colIdx < numCols) {
+          let sum = 0
+          let hasAny = false
+          for (let i = 0; i < numCols; i++) {
+            const v = parseFloat(String(newScoreVals[i] ?? "").replace(",", "."))
+            if (!isNaN(v)) {
+              sum += v
+              hasAny = true
+            }
+          }
+          newScoreVals[numCols] = hasAny ? String(Math.round(sum * 100) / 100) : ""
+        }
+
+        // Đồng bộ trực tiếp với mathScore / literatureScore / writtenEnglishScore / oralEnglishScore trên Header 12 cột
+        const subNameNorm = String(ev.subjectName || "")
+          .toLowerCase()
+          .normalize("NFD")
+          .replace(/[\u0300-\u036f]/g, "")
+        const primaryVal = String(
+          numCols > 1 && newScoreVals[numCols] !== undefined && newScoreVals[numCols] !== ""
+            ? newScoreVals[numCols]
+            : newScoreVals[0] ?? ""
+        ).trim()
+
+        if (subNameNorm.includes("toan") || subNameNorm.includes("math")) {
+          setMathScore(primaryVal)
+        } else if (subNameNorm.includes("ngu van") || subNameNorm.includes("tieng viet") || subNameNorm.includes("van")) {
+          setLiteratureScore(primaryVal)
+        } else if (subNameNorm.includes("tieng anh") || subNameNorm.includes("english")) {
+          if (numCols >= 2) {
+            if (newScoreVals[0] !== undefined) setWrittenEnglishScore(String(newScoreVals[0]))
+            if (newScoreVals[1] !== undefined) setOralEnglishScore(String(newScoreVals[1]))
+          } else {
+            setWrittenEnglishScore(primaryVal)
+          }
+        }
+
+        return {
+          ...ev,
+          scoreVals: newScoreVals
+        }
+      })
+    )
+  }
+
+  // Cập nhật nhận xét môn khảo sát theo phân công
+  const handleSubjectCommentChange = (subjectId: string, colIdx: number, val: string) => {
+    markDirty()
+    setDirtySubjectIds(prev => {
+      const next = new Set(prev)
+      next.add(subjectId)
+      return next
+    })
+    setSubjectEvaluations(prev =>
+      prev.map(ev => {
+        if (ev.subjectId !== subjectId) return ev
+        const newCommentVals = [...(ev.commentVals || [""])]
+        newCommentVals[colIdx] = val
+        return {
+          ...ev,
+          commentVals: newCommentVals
+        }
+      })
+    )
+  }
+
+  // Lưu nhanh điểm 1 môn khảo sát ngay trong Phiếu Định Hướng
+  const handleSaveSingleSubject = async (ev: any) => {
+    if (!student?.id || !ev?.subjectId) return
+    setSavingSubjectMap(prev => ({ ...prev, [ev.subjectId]: "saving" }))
+    try {
+      const res = await fetch("/api/teacher-assessments", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          studentId: student.id,
+          subjectId: ev.subjectId,
+          scores: ev.scoreVals || [],
+          comments: ev.commentVals || []
+        })
+      })
+      if (res.ok) {
+        setSavingSubjectMap(prev => ({ ...prev, [ev.subjectId]: "saved" }))
+        setDirtySubjectIds(prev => {
+          const next = new Set(prev)
+          next.delete(ev.subjectId)
+          return next
+        })
+        setSubjectEvaluations(prev =>
+          prev.map(item =>
+            item.subjectId === ev.subjectId
+              ? { ...item, isSaved: true, updatedAt: new Date().toISOString() }
+              : item
+          )
+        )
+        setTimeout(() => {
+          setSavingSubjectMap(prev => ({ ...prev, [ev.subjectId]: "idle" }))
+        }, 2500)
+        if (onSuccess) onSuccess()
+      } else {
+        const errData = await res.json().catch(() => ({}))
+        setSavingSubjectMap(prev => ({ ...prev, [ev.subjectId]: "error" }))
+        alert(errData?.error || "Không thể lưu điểm môn học.")
+      }
+    } catch (e: any) {
+      setSavingSubjectMap(prev => ({ ...prev, [ev.subjectId]: "error" }))
+      alert("Lỗi kết nối khi lưu điểm môn: " + e.message)
+    }
+  }
+
   const toggleAccordionA = (qId: string) => {
     setOpenAccordionA(prev => ({
       ...prev,
@@ -794,7 +960,14 @@ export function StudentOrientationModal({
             mathScore,
             literatureScore,
             writtenEnglishScore,
-            oralEnglishScore
+            oralEnglishScore,
+            subjectEvaluations: subjectEvaluations
+              .filter(ev => ev.scoreVals?.some((v: any) => String(v || "").trim() !== "") || ev.commentVals?.some((c: any) => String(c || "").trim() !== ""))
+              .map(ev => ({
+                subjectName: ev.subjectName,
+                scores: ev.scoreVals,
+                comments: ev.commentVals
+              }))
           }
         })
       })
@@ -971,7 +1144,15 @@ export function StudentOrientationModal({
         writtenEnglishScore,
         oralEnglishScore,
         mathScore,
-        literatureScore
+        literatureScore,
+        subjectEvaluations: subjectEvaluations
+          .filter(ev => ev.canEdit && !ev.isLocked && (dirtySubjectIds.has(ev.subjectId) || ev.scoreVals?.some((v: any) => String(v || "").trim() !== "") || ev.commentVals?.some((c: any) => String(c || "").trim() !== "")))
+          .map(ev => ({
+            subjectId: ev.subjectId,
+            subjectName: ev.subjectName,
+            scoreVals: ev.scoreVals || [],
+            commentVals: ev.commentVals || []
+          }))
       }
 
       const res = await fetch("/api/admin/orientation/records", {
@@ -1285,10 +1466,33 @@ export function StudentOrientationModal({
         psychologyReferralStatus,
         psychologyReferralReason,
         psychologyTeacherName: selectedPsychTeacherName,
-        psychologyData
+        psychologyData,
+        mathScore: mathScore || findSubjectScore(["toan", "math"]),
+        literatureScore: literatureScore || findSubjectScore(["ngu van", "tieng viet", "van", "literature"]),
+        writtenEnglishScore: writtenEnglishScore || findSubjectScore(["tieng anh", "ngoai ngu", "english"]),
+        oralEnglishScore
       }
 
-      onOpenReport(studentDetail || student, orientationDataPreview)
+      const enrichedStudentForReport = {
+        ...(studentDetail || student),
+        mathScore: mathScore || studentDetail?.mathScore || findSubjectScore(["toan", "math"]),
+        literatureScore: literatureScore || studentDetail?.literatureScore || findSubjectScore(["ngu van", "tieng viet", "van", "literature"]),
+        writtenEnglishScore: writtenEnglishScore || studentDetail?.writtenEnglishScore || findSubjectScore(["tieng anh", "ngoai ngu", "english"]),
+        oralEnglishScore: oralEnglishScore || studentDetail?.oralEnglishScore,
+        scores:
+          subjectEvaluations.length > 0
+            ? subjectEvaluations
+                .filter(ev => ev.scoreVals?.some((v: any) => String(v || "").trim() !== "") || ev.commentVals?.some((c: any) => String(c || "").trim() !== ""))
+                .map(ev => ({
+                  subjectId: ev.subjectId,
+                  subject: { id: ev.subjectId, name: ev.subjectName, code: ev.subjectCode },
+                  scores: JSON.stringify(ev.scoreVals || []),
+                  comments: JSON.stringify(ev.commentVals || [])
+                }))
+            : studentDetail?.scores || student?.scores
+      }
+
+      onOpenReport(enrichedStudentForReport, orientationDataPreview)
     }
   }
 
@@ -1322,17 +1526,32 @@ export function StudentOrientationModal({
     parsedKqHocTap = rawKq
   }
 
+  // Chỉ trích xuất điểm từ Kết quả học bạ (kqHocTap), tuyệt đối KHÔNG lấy từ điểm khảo sát đầu vào
+  const matchTranscriptSubject = (rawName: string, keywords: string[]) => {
+    const norm = String(rawName || "")
+      .toLowerCase()
+      .normalize("NFD")
+      .replace(/[\u0300-\u036f]/g, "")
+      .trim()
+    if (!norm) return false
+    return keywords.some(kw => {
+      if (kw === "van") {
+        return /(^|\s|\/|-)van($|\s|\/|-)/.test(norm) && !norm.includes("van dap")
+      }
+      return norm.includes(kw)
+    })
+  }
+
   const findSubjectScore = (keywords: string[]) => {
-    // 1. Check parsed kqHocTap.scores object
+    // 1. Check parsed kqHocTap.scores object (Học bạ)
     if (parsedKqHocTap?.scores && typeof parsedKqHocTap.scores === "object") {
       for (const [k, v] of Object.entries(parsedKqHocTap.scores)) {
-        const normK = k.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "")
-        if (keywords.some(kw => normK.includes(kw)) && v !== null && v !== undefined && String(v).trim() !== "") {
-          return String(v)
+        if (matchTranscriptSubject(k, keywords) && v !== null && v !== undefined && String(v).trim() !== "") {
+          return String(v).trim()
         }
       }
     }
-    // 2. Check parsed kqHocTap.moet?.subjects / bilingual?.moetSubjects / foreign?.subjects / homeschool?.subjects
+    // 2. Check parsed kqHocTap.moet?.subjects / bilingual?.moetSubjects / foreign?.subjects / homeschool?.subjects (Học bạ)
     const subjectArrays = [
       parsedKqHocTap?.moet?.subjects,
       parsedKqHocTap?.bilingual?.moetSubjects,
@@ -1344,31 +1563,27 @@ export function StudentOrientationModal({
       if (Array.isArray(arr)) {
         for (const sub of arr) {
           const sName = String(sub?.name || sub?.id || "")
-            .toLowerCase()
-            .normalize("NFD")
-            .replace(/[\u0300-\u036f]/g, "")
-          if (keywords.some(kw => sName.includes(kw)) && sub?.score !== null && sub?.score !== undefined && String(sub.score).trim() !== "") {
-            return String(sub.score)
-          }
-        }
-      }
-    }
-    // 3. Check studentDetail.scores array
-    if (Array.isArray(studentDetail?.scores)) {
-      for (const item of studentDetail.scores) {
-        const sName = String(item?.subject?.name || item?.subjectName || "")
-          .toLowerCase()
-          .normalize("NFD")
-          .replace(/[\u0300-\u036f]/g, "")
-        if (keywords.some(kw => sName.includes(kw))) {
-          const val = item?.finalScore ?? item?.score ?? item?.rawScore ?? item?.gradeLevel
-          if (val !== null && val !== undefined && String(val).trim() !== "") {
-            return String(val)
+          if (matchTranscriptSubject(sName, keywords) && sub?.score !== null && sub?.score !== undefined && String(sub.score).trim() !== "") {
+            return String(sub.score).trim()
           }
         }
       }
     }
     return ""
+  }
+
+  const cleanTranscriptRating = (val?: string | null) => {
+    if (!val || typeof val !== "string") return ""
+    let text = val.trim()
+    if (!text || text.startsWith("{")) return ""
+    if (text.includes("Trường cũ") || text.includes("Đối tượng:")) {
+      const cleanLines = text
+        .split(/[\r\n]+/)
+        .map(l => l.trim())
+        .filter(l => l && !l.includes("Trường cũ") && !l.includes("Đối tượng:"))
+      text = cleanLines[0] || ""
+    }
+    return text.trim()
   }
 
   const campusName = resolveCampusDisplay()
@@ -1379,44 +1594,42 @@ export function StudentOrientationModal({
     : "—"
 
   const displayHocTap =
-    parsedKqHocTap?.overallRating ||
-    parsedKqHocTap?.moet?.overallRating ||
-    parsedKqHocTap?.bilingual?.moetRating ||
-    parsedKqHocTap?.hocTap ||
-    parsedKqHocTap?.academicRating ||
-    parsedKqHocTap?.nangLuc ||
-    (typeof rawKq === "string" && !rawKq.trim().startsWith("{") ? rawKq : "") ||
-    studentDetail?.academicRating ||
-    studentDetail?.kqgdTieuHoc ||
-    "Tốt"
+    cleanTranscriptRating(parsedKqHocTap?.overallRating) ||
+    cleanTranscriptRating(parsedKqHocTap?.moet?.overallRating) ||
+    cleanTranscriptRating(parsedKqHocTap?.bilingual?.moetRating) ||
+    cleanTranscriptRating(parsedKqHocTap?.bilingual?.internationalRating) ||
+    cleanTranscriptRating(parsedKqHocTap?.foreign?.gpaOrHonors) ||
+    cleanTranscriptRating(parsedKqHocTap?.homeschool?.overallEvaluation) ||
+    cleanTranscriptRating(parsedKqHocTap?.hocTap) ||
+    cleanTranscriptRating(parsedKqHocTap?.academicRating) ||
+    cleanTranscriptRating(parsedKqHocTap?.nangLuc) ||
+    cleanTranscriptRating(typeof rawKq === "string" ? rawKq : "") ||
+    cleanTranscriptRating(studentDetail?.academicRating) ||
+    cleanTranscriptRating(studentDetail?.kqgdTieuHoc) ||
+    "—"
 
   const displayRenLuyen =
-    parsedKqHocTap?.moet?.conductRating ||
-    parsedKqHocTap?.renLuyen ||
-    parsedKqHocTap?.phamChat ||
-    (typeof studentDetail?.kqRenLuyen === "string" && !studentDetail.kqRenLuyen.trim().startsWith("{") ? studentDetail.kqRenLuyen : "") ||
-    studentDetail?.conductRating ||
-    "Tốt"
+    cleanTranscriptRating(parsedKqHocTap?.moet?.conductRating) ||
+    cleanTranscriptRating(parsedKqHocTap?.renLuyen) ||
+    cleanTranscriptRating(parsedKqHocTap?.phamChat) ||
+    cleanTranscriptRating(typeof studentDetail?.kqRenLuyen === "string" ? studentDetail.kqRenLuyen : "") ||
+    cleanTranscriptRating(studentDetail?.conductRating) ||
+    "—"
 
   const displayMath =
-    mathScore ||
-    studentDetail?.mathScore ||
     findSubjectScore(["toan", "math"]) ||
     "—"
 
   const displayLiterature =
-    literatureScore ||
-    studentDetail?.literatureScore ||
-    findSubjectScore(["ngu van", "tieng viet", "van", "literature"]) ||
+    findSubjectScore(["ngu van", "tieng viet", "van", "vietnamese", "literature"]) ||
     "—"
 
   const displayEnglish =
-    writtenEnglishScore ||
-    studentDetail?.writtenEnglishScore ||
-    oralEnglishScore ||
-    studentDetail?.oralEnglishScore ||
-    findSubjectScore(["tieng anh", "ngoai ngu", "english"]) ||
+    findSubjectScore(["tieng anh", "ngoai ngu", "english", "esl"]) ||
     "—"
+
+  const gradeNumForModalHeader = parseInt(String(studentDetail?.grade || student?.grade || "1").replace(/\D/g, ""), 10) || 1
+  const vnSubjectModalHeaderLabel = gradeNumForModalHeader <= 5 ? "11. Tiếng Việt (HB)" : "11. Ngữ văn (HB)"
 
   const allExpandedA = questions.length > 0 && questions.every((q: any) => openAccordionA[q.id])
   const toggleAllAccordionA = () => {
@@ -1549,10 +1762,10 @@ export function StudentOrientationModal({
           <div className="flex flex-wrap items-center justify-between gap-2 mb-1.5">
             <div className="flex items-center gap-2">
               <span className="px-2.5 py-0.5 rounded-md bg-[#0b524d] text-white text-[10px] font-black uppercase tracking-wider shadow-2xs">
-                Thông tin Học sinh
+                Thông tin Học sinh &amp; Học bạ
               </span>
               <span className="text-[11px] text-slate-500 font-medium hidden sm:inline">
-                Hồ sơ đăng ký dự tuyển &amp; Kết quả học tập / khảo sát đầu vào
+                Hồ sơ đăng ký dự tuyển &amp; Kết quả học bạ (Trường cũ)
               </span>
             </div>
 
@@ -1579,11 +1792,11 @@ export function StudentOrientationModal({
                   <th className="py-1.5 px-2.5 border-r border-slate-200/70">5. Hệ đào tạo</th>
                   <th className="py-1.5 px-2.5 border-r border-slate-200/70">6. Cơ sở</th>
                   <th className="py-1.5 px-2.5 border-r border-slate-200/70">7. Trường cũ</th>
-                  <th className="py-1.5 px-2.5 border-r border-slate-200/70 text-center">8. Học tập</th>
-                  <th className="py-1.5 px-2.5 border-r border-slate-200/70 text-center">9. Rèn luyện</th>
-                  <th className="py-1.5 px-2.5 border-r border-slate-200/70 text-center">10. Toán</th>
-                  <th className="py-1.5 px-2.5 border-r border-slate-200/70 text-center">11. Ngữ Văn</th>
-                  <th className="py-1.5 px-2.5 text-center">12. Tiếng Anh</th>
+                  <th className="py-1.5 px-2.5 border-r border-slate-200/70 text-center">8. Học tập (HB)</th>
+                  <th className="py-1.5 px-2.5 border-r border-slate-200/70 text-center">9. Rèn luyện (HB)</th>
+                  <th className="py-1.5 px-2.5 border-r border-slate-200/70 text-center">10. Toán (HB)</th>
+                  <th className="py-1.5 px-2.5 border-r border-slate-200/70 text-center">{vnSubjectModalHeaderLabel}</th>
+                  <th className="py-1.5 px-2.5 text-center">12. Tiếng Anh (HB)</th>
                 </tr>
               </thead>
               <tbody>
@@ -1621,19 +1834,300 @@ export function StudentOrientationModal({
                       {displayRenLuyen}
                     </span>
                   </td>
-                  <td className="py-1.5 px-2.5 border-r border-slate-100 text-center font-bold text-slate-900">
+                  <td className="py-1.5 px-2.5 border-r border-slate-100 text-center font-bold text-slate-900 tabular-nums">
                     {displayMath}
                   </td>
-                  <td className="py-1.5 px-2.5 border-r border-slate-100 text-center font-bold text-slate-900">
+                  <td className="py-1.5 px-2.5 border-r border-slate-100 text-center font-bold text-slate-900 tabular-nums">
                     {displayLiterature}
                   </td>
-                  <td className="py-1.5 px-2.5 text-center font-bold text-slate-900">
+                  <td className="py-1.5 px-2.5 text-center font-bold text-slate-900 tabular-nums">
                     {displayEnglish}
                   </td>
                 </tr>
               </tbody>
             </table>
           </div>
+
+          {/* SỔ CÁI NHẬP KẾT QUẢ MÔN KHẢO SÁT ĐẦU VÀO THEO PHÂN CÔNG (TÍCH HỢP TRỰC TIẾP TRONG PHIẾU ĐỊNH HƯỚNG) */}
+          {subjectEvaluations.length > 0 && (
+            <div className="mt-2 border border-[#003B3A]/20 rounded-xl bg-white shadow-2xs overflow-hidden">
+              <div className="px-3 py-1.5 bg-[#F8FAFC] border-b border-slate-200 flex flex-wrap items-center justify-between gap-2 border-l-4 border-l-[#003B3A]">
+                <div className="flex flex-wrap items-center gap-2">
+                  <BookOpen className="w-3.5 h-3.5 text-[#003B3A]" />
+                  <span className="text-xs font-bold text-[#003B3A]">
+                    Kết quả môn khảo sát đầu vào theo phân công
+                  </span>
+                  <span className="px-2 py-0.5 rounded bg-teal-50 text-[#00736E] border border-teal-200 text-[11px] font-semibold tabular-nums">
+                    {subjectEvaluations.filter(e => e.isAssignedToMe).length > 0
+                      ? `${subjectEvaluations.filter(e => e.isAssignedToMe).length} môn được phân công`
+                      : `${subjectEvaluations.length} môn khảo sát`}
+                  </span>
+                  <span className="text-[11px] text-slate-500 hidden md:inline">
+                    Nhập điểm &amp; nhận xét môn tại đây sẽ đồng bộ 2 chiều với bảng Nhập điểm khảo sát và Báo cáo A4
+                  </span>
+                </div>
+
+                <div className="flex items-center gap-2">
+                  {subjectEvaluations.some(e => !e.isAssignedToMe) && subjectEvaluations.some(e => e.isAssignedToMe) && (
+                    <button
+                      type="button"
+                      onClick={() => setShowAllSubjectsInModal(prev => !prev)}
+                      className="px-2 py-0.5 rounded border border-slate-200 bg-white hover:bg-slate-50 text-[11px] font-semibold text-slate-700 cursor-pointer transition-colors"
+                    >
+                      {showAllSubjectsInModal
+                        ? "Chỉ hiện môn tôi phụ trách"
+                        : `Xem tất cả môn (${subjectEvaluations.length})`}
+                    </button>
+                  )}
+                  <button
+                    type="button"
+                    onClick={() => setIsSubjectSectionExpanded(prev => !prev)}
+                    className="px-2 py-0.5 rounded border border-slate-200 bg-white hover:bg-slate-50 text-[11px] font-semibold text-[#003B3A] flex items-center gap-1 cursor-pointer transition-colors"
+                  >
+                    <span>{isSubjectSectionExpanded ? "Thu gọn" : "Mở rộng nhập điểm"}</span>
+                    {isSubjectSectionExpanded ? <ChevronUp className="w-3 h-3" /> : <ChevronDown className="w-3 h-3" />}
+                  </button>
+                </div>
+              </div>
+
+              {isSubjectSectionExpanded && (
+                <div className="divide-y divide-slate-100">
+                  {subjectEvaluations
+                    .filter(ev => {
+                      if (showAllSubjectsInModal) return true
+                      const hasMine = subjectEvaluations.some(x => x.isAssignedToMe)
+                      return hasMine ? ev.isAssignedToMe : true
+                    })
+                    .map((ev: any) => {
+                      const cfg = ev.gradeConfig || {
+                        scoreColumns: 1,
+                        commentColumns: 1,
+                        scoreLabels: ["Điểm khảo sát"],
+                        scoreColumnTypes: ["SCORE_10"],
+                        scoreMaxScores: [10],
+                        commentLabels: ["Nhận xét chuyên môn"]
+                      }
+                      const numScoreCols = Math.max(1, Number(cfg.scoreColumns || 1))
+                      const numCommentCols = Math.max(1, Number(cfg.commentColumns || 1))
+                      const isNumericType = !cfg.scoreColumnTypes?.some((t: string) => t && t !== "SCORE_10")
+                      const saveState = savingSubjectMap[ev.subjectId] || "idle"
+                      const isSubDirty = dirtySubjectIds.has(ev.subjectId)
+
+                      return (
+                        <div
+                          key={ev.subjectId}
+                          className={`px-3 py-2 flex flex-col lg:flex-row lg:items-center justify-between gap-2.5 transition-colors ${
+                            ev.isAssignedToMe ? "bg-white" : "bg-slate-50/70"
+                          }`}
+                        >
+                          {/* Cột trái: Tên môn & Trạng thái phân công */}
+                          <div className="flex items-center gap-2 min-w-[210px] max-w-[260px]">
+                            <div className={`w-2 h-7 rounded-full shrink-0 ${ev.isAssignedToMe ? "bg-[#00A19A]" : "bg-slate-300"}`} />
+                            <div className="min-w-0">
+                              <div className="flex items-center gap-1.5 flex-wrap">
+                                <span className="text-xs font-bold text-[#003B3A] truncate">
+                                  {ev.subjectName}
+                                </span>
+                                {ev.isAssignedToMe ? (
+                                  <span className="px-1.5 py-0.5 rounded bg-teal-50 text-[#00736E] border border-teal-200 text-[10px] font-semibold">
+                                    Phân công của bạn
+                                  </span>
+                                ) : (
+                                  <span className="px-1.5 py-0.5 rounded bg-slate-100 text-slate-600 border border-slate-200 text-[10px] font-medium">
+                                    GV: {ev.scoredByTeacherName || "Khác"}
+                                  </span>
+                                )}
+                              </div>
+                              <div className="text-[10.5px] text-slate-500 flex items-center gap-1.5 mt-0.5">
+                                {ev.isSaved ? (
+                                  <span className="text-emerald-700 font-semibold flex items-center gap-1">
+                                    <Check className="w-3 h-3" /> Đã có điểm
+                                  </span>
+                                ) : (
+                                  <span className="text-amber-700 font-medium">Chưa chấm điểm</span>
+                                )}
+                              </div>
+                            </div>
+                          </div>
+
+                          {/* Cột giữa: Các ô nhập điểm & nhận xét */}
+                          <div className="flex-1 flex flex-wrap items-start gap-2.5">
+                            {Array.from({ length: numScoreCols }).map((_, cIdx) => {
+                              const label = cfg.scoreLabels?.[cIdx] || `Điểm ${cIdx + 1}`
+                              const colType = cfg.scoreColumnTypes?.[cIdx] || "SCORE_10"
+                              const maxScore = Number(cfg.scoreMaxScores?.[cIdx] || 10)
+                              const curVal = ev.scoreVals?.[cIdx] ?? ""
+
+                              return (
+                                <div key={`sc-${cIdx}`} className="w-28 sm:w-32 shrink-0">
+                                  <label className="block text-[10.5px] font-semibold text-slate-600 mb-0.5 truncate" title={label}>
+                                    {label} {colType === "SCORE_10" ? `(Thang ${maxScore})` : ""}
+                                  </label>
+                                  {colType === "GRADE_SKL" ? (
+                                    <select
+                                      disabled={!ev.canEdit || ev.isLocked}
+                                      value={curVal}
+                                      onChange={e => handleSubjectScoreChange(ev.subjectId, cIdx, e.target.value)}
+                                      className="w-full h-8 px-2 rounded-lg border border-slate-300 bg-white text-xs font-bold text-slate-900 focus:border-[#00A19A] focus:outline-none disabled:bg-slate-100 tabular-nums"
+                                    >
+                                      <option value="">-- Chọn mức --</option>
+                                      <option value="Hoàn thành tốt">Hoàn thành tốt</option>
+                                      <option value="Hoàn thành">Hoàn thành</option>
+                                      <option value="Đạt">Đạt</option>
+                                      <option value="Cần cố gắng">Cần cố gắng</option>
+                                    </select>
+                                  ) : colType === "GRADE_CEFR" ? (
+                                    <select
+                                      disabled={!ev.canEdit || ev.isLocked}
+                                      value={curVal}
+                                      onChange={e => handleSubjectScoreChange(ev.subjectId, cIdx, e.target.value)}
+                                      className="w-full h-8 px-2 rounded-lg border border-slate-300 bg-white text-xs font-bold text-slate-900 focus:border-[#00A19A] focus:outline-none disabled:bg-slate-100 tabular-nums"
+                                    >
+                                      <option value="">-- CEFR --</option>
+                                      {["Pre-A1", "A1", "A2", "B1", "B2", "C1"].map(lv => (
+                                        <option key={lv} value={lv}>{lv}</option>
+                                      ))}
+                                    </select>
+                                  ) : colType === "GRADE_INTL" ? (
+                                    <select
+                                      disabled={!ev.canEdit || ev.isLocked}
+                                      value={curVal}
+                                      onChange={e => handleSubjectScoreChange(ev.subjectId, cIdx, e.target.value)}
+                                      className="w-full h-8 px-2 rounded-lg border border-slate-300 bg-white text-xs font-bold text-slate-900 focus:border-[#00A19A] focus:outline-none disabled:bg-slate-100 tabular-nums"
+                                    >
+                                      <option value="">-- Grade --</option>
+                                      {["A*", "A", "B", "C", "D", "E", "U"].map(lv => (
+                                        <option key={lv} value={lv}>{lv}</option>
+                                      ))}
+                                    </select>
+                                  ) : (
+                                    <input
+                                      type="number"
+                                      step="0.25"
+                                      min={0}
+                                      max={maxScore}
+                                      disabled={!ev.canEdit || ev.isLocked}
+                                      value={curVal}
+                                      onChange={e => handleSubjectScoreChange(ev.subjectId, cIdx, e.target.value)}
+                                      placeholder={`0 - ${maxScore}`}
+                                      className="w-full h-8 px-2.5 rounded-lg border border-slate-300 bg-white text-xs font-bold text-center text-[#003B3A] focus:border-[#00A19A] focus:ring-2 focus:ring-[#00A19A]/15 focus:outline-none disabled:bg-slate-100 tabular-nums"
+                                    />
+                                  )}
+                                </div>
+                              )
+                            })}
+
+                            {/* Cột điểm tổng hợp nếu môn có >= 2 cột điểm số */}
+                            {isNumericType && numScoreCols > 1 && (
+                              <div className="w-24 shrink-0">
+                                <label className="block text-[10.5px] font-semibold text-[#00736E] mb-0.5">
+                                  Tổng điểm
+                                </label>
+                                <div className="h-8 px-2.5 rounded-lg bg-teal-50/80 border border-teal-200 flex items-center justify-center text-xs font-black text-[#003B3A] tabular-nums">
+                                  {ev.scoreVals?.[numScoreCols] ?? "—"}
+                                </div>
+                              </div>
+                            )}
+
+                            {/* Cột nhận xét chuyên môn */}
+                            {Array.from({ length: numCommentCols }).map((_, cmIdx) => {
+                              const cmLabel = cfg.commentLabels?.[cmIdx] || (numCommentCols > 1 ? `Nhận xét ${cmIdx + 1}` : "Nhận xét môn khảo sát")
+                              const curCm = ev.commentVals?.[cmIdx] ?? ""
+                              const quickKey = `${ev.subjectId}_${cmIdx}`
+                              const isQuickOpen = openQuickRemarksForSubject === quickKey
+
+                              return (
+                                <div key={`cm-${cmIdx}`} className="flex-1 min-w-[220px]">
+                                  <div className="flex items-center justify-between gap-1 mb-0.5">
+                                    <label className="text-[10.5px] font-semibold text-slate-600 truncate">
+                                      {cmLabel}
+                                    </label>
+                                    {ev.canEdit && !ev.isLocked && (
+                                      <button
+                                        type="button"
+                                        onClick={() => setOpenQuickRemarksForSubject(isQuickOpen ? null : quickKey)}
+                                        className="text-[10px] font-semibold text-[#00736E] hover:underline cursor-pointer"
+                                      >
+                                        {isQuickOpen ? "Ẩn mẫu câu" : "+ Mẫu nhận xét nhanh"}
+                                      </button>
+                                    )}
+                                  </div>
+                                  <input
+                                    type="text"
+                                    disabled={!ev.canEdit || ev.isLocked}
+                                    value={curCm}
+                                    onChange={e => handleSubjectCommentChange(ev.subjectId, cmIdx, e.target.value)}
+                                    placeholder={ev.canEdit ? "Nhập nhận xét năng lực môn khảo sát..." : "Chưa có nhận xét"}
+                                    className="w-full h-8 px-2.5 rounded-lg border border-slate-300 bg-white text-xs text-slate-800 focus:border-[#00A19A] focus:ring-2 focus:ring-[#00A19A]/15 focus:outline-none disabled:bg-slate-100"
+                                  />
+                                  {isQuickOpen && ev.canEdit && !ev.isLocked && (
+                                    <div className="mt-1.5 flex flex-wrap gap-1 p-1.5 rounded-lg bg-slate-50 border border-slate-200">
+                                      {QUICK_SUBJECT_REMARKS.map((rmk, rIdx) => (
+                                        <button
+                                          key={rIdx}
+                                          type="button"
+                                          onClick={() => {
+                                            const nextText = curCm ? `${curCm.trim()}; ${rmk}` : rmk
+                                            handleSubjectCommentChange(ev.subjectId, cmIdx, nextText)
+                                            setOpenQuickRemarksForSubject(null)
+                                          }}
+                                          className="text-[10.5px] px-2 py-0.5 rounded bg-white hover:bg-teal-50 text-slate-700 hover:text-[#003B3A] border border-slate-200 hover:border-teal-300 transition-colors cursor-pointer text-left"
+                                        >
+                                          + {rmk}
+                                        </button>
+                                      ))}
+                                    </div>
+                                  )}
+                                </div>
+                              )
+                            })}
+                          </div>
+
+                          {/* Cột phải: Nút Lưu điểm môn tức thời */}
+                          <div className="flex items-center justify-end shrink-0">
+                            {ev.canEdit && !ev.isLocked ? (
+                              <button
+                                type="button"
+                                onClick={() => handleSaveSingleSubject(ev)}
+                                disabled={saveState === "saving"}
+                                className={`h-8 px-3 rounded-lg text-xs font-bold flex items-center gap-1.5 transition-all cursor-pointer ${
+                                  saveState === "saved"
+                                    ? "bg-emerald-600 text-white"
+                                    : isSubDirty
+                                    ? "bg-[#003B3A] hover:bg-[#005250] text-white shadow-2xs"
+                                    : "bg-slate-100 hover:bg-teal-50 text-[#003B3A] border border-slate-200"
+                                }`}
+                              >
+                                {saveState === "saving" ? (
+                                  <>
+                                    <RefreshCw className="w-3 h-3 animate-spin" />
+                                    <span>Đang lưu...</span>
+                                  </>
+                                ) : saveState === "saved" ? (
+                                  <>
+                                    <Check className="w-3.5 h-3.5" />
+                                    <span>Đã lưu điểm</span>
+                                  </>
+                                ) : (
+                                  <>
+                                    <Save className="w-3.5 h-3.5" />
+                                    <span>{isSubDirty ? "Lưu điểm môn" : "Cập nhật điểm"}</span>
+                                  </>
+                                )}
+                              </button>
+                            ) : (
+                              <span className="text-[11px] text-slate-400 italic px-2">
+                                {ev.isLocked ? "Đã khóa kỳ" : "Chỉ xem"}
+                              </span>
+                            )}
+                          </div>
+                        </div>
+                      )
+                    })}
+                </div>
+              )}
+            </div>
+          )}
         </div>
 
         {/* CẢNH BÁO ĐIỀU CHỈNH KHỐI LỚP (BẢO VỆ DỮ LIỆU) */}
@@ -1772,14 +2266,8 @@ export function StudentOrientationModal({
                           {idx + 1}
                         </span>
                         <div className="flex flex-wrap items-center gap-x-2 gap-y-0.5 min-w-0">
-                          <span className="font-mono text-[10px] font-bold text-teal-800 bg-teal-50 border border-teal-200 px-1.5 py-0.2 rounded">
-                            {q.code}
-                          </span>
                           <span className="text-xs font-black text-slate-900">
                             {q.questionText}
-                          </span>
-                          <span className="text-[11px] text-slate-500 hidden sm:inline">
-                            &mdash; {q.focus || q.suggestedGuideline}
                           </span>
                         </div>
                       </div>
@@ -2018,9 +2506,6 @@ export function StudentOrientationModal({
                         <div className="flex items-center gap-2">
                           <span className="w-6 h-6 rounded-lg bg-[#0b524d] text-white flex items-center justify-center font-black text-xs flex-shrink-0">
                             {pIdx + 1}
-                          </span>
-                          <span className="text-[10px] font-mono font-bold text-teal-800 bg-teal-50 border border-teal-200 px-1.5 py-0.2 rounded">
-                            {pGroup.code}
                           </span>
                           <h4 className="text-xs font-black text-slate-900">
                             {pGroup.title}

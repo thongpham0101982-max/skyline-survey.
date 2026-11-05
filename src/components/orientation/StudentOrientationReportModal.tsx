@@ -560,12 +560,28 @@ export function StudentOrientationReportModal({
     parsedKqHocTap = rawKq
   }
 
-  const findSubjectScore = (keywords: string[]) => {
+  // Chỉ trích xuất điểm từ Kết quả học bạ (kqHocTap), tuyệt đối KHÔNG lấy từ điểm khảo sát đầu vào (sData.scores / mathScore / writtenEnglishScore)
+  const matchTranscriptSubject = (rawName: string, keywords: string[]) => {
+    const norm = String(rawName || "")
+      .toLowerCase()
+      .normalize("NFD")
+      .replace(/[\u0300-\u036f]/g, "")
+      .trim()
+    if (!norm) return false
+    return keywords.some(kw => {
+      if (kw === "van") {
+        // Tránh khớp nhầm với "vấn đáp" (van dap)
+        return /(^|\s|\/|-)van($|\s|\/|-)/.test(norm) && !norm.includes("van dap")
+      }
+      return norm.includes(kw)
+    })
+  }
+
+  const findTranscriptSubjectScore = (keywords: string[]) => {
     if (parsedKqHocTap?.scores && typeof parsedKqHocTap.scores === "object") {
       for (const [k, v] of Object.entries(parsedKqHocTap.scores)) {
-        const normK = k.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "")
-        if (keywords.some(kw => normK.includes(kw)) && v !== null && v !== undefined && String(v).trim() !== "") {
-          return String(v)
+        if (matchTranscriptSubject(k, keywords) && v !== null && v !== undefined && String(v).trim() !== "") {
+          return String(v).trim()
         }
       }
     }
@@ -580,34 +596,8 @@ export function StudentOrientationReportModal({
       if (Array.isArray(arr)) {
         for (const sub of arr) {
           const sName = String(sub?.name || sub?.id || "")
-            .toLowerCase()
-            .normalize("NFD")
-            .replace(/[\u0300-\u036f]/g, "")
-          if (keywords.some(kw => sName.includes(kw)) && sub?.score !== null && sub?.score !== undefined && String(sub.score).trim() !== "") {
-            return String(sub.score)
-          }
-        }
-      }
-    }
-    if (Array.isArray(sData?.scores)) {
-      for (const item of sData.scores) {
-        const sName = String(item?.subject?.name || item?.subjectName || "")
-          .toLowerCase()
-          .normalize("NFD")
-          .replace(/[\u0300-\u036f]/g, "")
-        if (keywords.some(kw => sName.includes(kw))) {
-          let val = item?.finalScore ?? item?.score ?? item?.rawScore ?? item?.gradeLevel
-          if ((val === null || val === undefined || String(val).trim() === "") && item?.scores) {
-            try {
-              const parsedArr = typeof item.scores === "string" ? JSON.parse(item.scores) : item.scores
-              if (Array.isArray(parsedArr)) {
-                const nonEmpty = parsedArr.filter((v: any) => v !== null && v !== undefined && String(v).trim() !== "")
-                if (nonEmpty.length > 0) val = nonEmpty[nonEmpty.length - 1]
-              }
-            } catch (e) {}
-          }
-          if (val !== null && val !== undefined && String(val).trim() !== "") {
-            return String(val)
+          if (matchTranscriptSubject(sName, keywords) && sub?.score !== null && sub?.score !== undefined && String(sub.score).trim() !== "") {
+            return String(sub.score).trim()
           }
         }
       }
@@ -615,46 +605,58 @@ export function StudentOrientationReportModal({
     return ""
   }
 
+  const cleanTranscriptRating = (val?: string | null) => {
+    if (!val || typeof val !== "string") return ""
+    let text = val.trim()
+    if (!text || text.startsWith("{")) return ""
+    if (text.includes("Trường cũ") || text.includes("Đối tượng:")) {
+      const cleanLines = text
+        .split(/[\r\n]+/)
+        .map(l => l.trim())
+        .filter(l => l && !l.includes("Trường cũ") && !l.includes("Đối tượng:"))
+      text = cleanLines[0] || ""
+    }
+    return text.trim()
+  }
+
   const campusName = resolveCampusDisplay()
   const displayHocTap =
-    parsedKqHocTap?.overallRating ||
-    parsedKqHocTap?.moet?.overallRating ||
-    parsedKqHocTap?.bilingual?.moetRating ||
-    parsedKqHocTap?.hocTap ||
-    parsedKqHocTap?.academicRating ||
-    parsedKqHocTap?.nangLuc ||
-    (typeof rawKq === "string" && !rawKq.trim().startsWith("{") ? rawKq : "") ||
-    sData?.academicRating ||
-    sData?.kqgdTieuHoc ||
-    "Tốt"
+    cleanTranscriptRating(parsedKqHocTap?.overallRating) ||
+    cleanTranscriptRating(parsedKqHocTap?.moet?.overallRating) ||
+    cleanTranscriptRating(parsedKqHocTap?.bilingual?.moetRating) ||
+    cleanTranscriptRating(parsedKqHocTap?.bilingual?.internationalRating) ||
+    cleanTranscriptRating(parsedKqHocTap?.foreign?.gpaOrHonors) ||
+    cleanTranscriptRating(parsedKqHocTap?.homeschool?.overallEvaluation) ||
+    cleanTranscriptRating(parsedKqHocTap?.hocTap) ||
+    cleanTranscriptRating(parsedKqHocTap?.academicRating) ||
+    cleanTranscriptRating(parsedKqHocTap?.nangLuc) ||
+    cleanTranscriptRating(typeof rawKq === "string" ? rawKq : "") ||
+    cleanTranscriptRating(sData?.academicRating) ||
+    cleanTranscriptRating(sData?.kqgdTieuHoc) ||
+    "—"
 
   const displayRenLuyen =
-    parsedKqHocTap?.moet?.conductRating ||
-    parsedKqHocTap?.renLuyen ||
-    parsedKqHocTap?.phamChat ||
-    (typeof sData?.kqRenLuyen === "string" && !sData.kqRenLuyen.trim().startsWith("{") ? sData.kqRenLuyen : "") ||
-    sData?.conductRating ||
-    "Tốt"
+    cleanTranscriptRating(parsedKqHocTap?.moet?.conductRating) ||
+    cleanTranscriptRating(parsedKqHocTap?.renLuyen) ||
+    cleanTranscriptRating(parsedKqHocTap?.phamChat) ||
+    cleanTranscriptRating(typeof sData?.kqRenLuyen === "string" ? sData.kqRenLuyen : "") ||
+    cleanTranscriptRating(sData?.conductRating) ||
+    "—"
 
   const displayMath =
-    orientationData?.mathScore ||
-    sData?.mathScore ||
-    findSubjectScore(["toan", "math"]) ||
+    findTranscriptSubjectScore(["toan", "math"]) ||
     "—"
 
   const displayLiterature =
-    orientationData?.literatureScore ||
-    sData?.literatureScore ||
-    findSubjectScore(["ngu van", "tieng viet", "van", "literature"]) ||
+    findTranscriptSubjectScore(["ngu van", "tieng viet", "van", "vietnamese", "literature"]) ||
     "—"
 
   const displayEnglish =
-    orientationData?.writtenEnglishScore ||
-    sData?.writtenEnglishScore ||
-    orientationData?.oralEnglishScore ||
-    sData?.oralEnglishScore ||
-    findSubjectScore(["tieng anh", "ngoai ngu", "english"]) ||
+    findTranscriptSubjectScore(["tieng anh", "ngoai ngu", "english", "esl"]) ||
     "—"
+
+  const gradeNumForHeader = parseInt(String(sData?.grade || "1").replace(/\D/g, ""), 10) || 1
+  const vnSubjectHeaderLabel = gradeNumForHeader <= 5 ? "11. Tiếng Việt (HB)" : "11. Ngữ văn (HB)"
 
   return (
     <div id="orientation-report-modal-backdrop" className="no-print-backdrop fixed inset-0 z-[260] flex items-center justify-center p-2 sm:p-4 bg-slate-900/60 backdrop-blur-xs overflow-y-auto print:p-0 print:bg-white print:static print:z-auto">
@@ -867,7 +869,7 @@ export function StudentOrientationReportModal({
                   <div className="flex items-center gap-2">
                     <span className="w-2 h-2 rounded-full bg-teal-700" />
                     <h2 className="text-[11px] font-black uppercase tracking-wider text-teal-950">
-                      1. Thông Tin Học Sinh
+                      1. Thông Tin Học Sinh &amp; Kết Quả Học Bạ
                     </h2>
                   </div>
                   <div className="flex flex-wrap items-center gap-3 text-[10px] text-slate-700">
@@ -893,11 +895,11 @@ export function StudentOrientationReportModal({
                         <th className="py-1 px-1.5 border-r border-teal-200/70">5. Hệ đào tạo</th>
                         <th className="py-1 px-1.5 border-r border-teal-200/70">6. Cơ sở</th>
                         <th className="py-1 px-1.5 border-r border-teal-200/70">7. Trường cũ</th>
-                        <th className="py-1 px-1.5 border-r border-teal-200/70 text-center">8. Học tập</th>
-                        <th className="py-1 px-1.5 border-r border-teal-200/70 text-center">9. Rèn luyện</th>
-                        <th className="py-1 px-1.5 border-r border-teal-200/70 text-center">10. Toán</th>
-                        <th className="py-1 px-1.5 border-r border-teal-200/70 text-center">11. Ngữ Văn</th>
-                        <th className="py-1 px-1.5 text-center">12. Tiếng Anh</th>
+                        <th className="py-1 px-1.5 border-r border-teal-200/70 text-center">8. Học tập (HB)</th>
+                        <th className="py-1 px-1.5 border-r border-teal-200/70 text-center">9. Rèn luyện (HB)</th>
+                        <th className="py-1 px-1.5 border-r border-teal-200/70 text-center">10. Toán (HB)</th>
+                        <th className="py-1 px-1.5 border-r border-teal-200/70 text-center">{vnSubjectHeaderLabel}</th>
+                        <th className="py-1 px-1.5 text-center">12. Tiếng Anh (HB)</th>
                       </tr>
                     </thead>
                     <tbody>
