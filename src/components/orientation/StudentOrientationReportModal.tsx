@@ -322,43 +322,59 @@ export function StudentOrientationReportModal({
     }
   }
 
-  // Fallback nếu chưa có interviewList từ DB, tạo danh sách từ config
-  if (interviewList.length === 0 && gradeConfig?.criteria) {
-    interviewList = gradeConfig.criteria.map(c => ({
-      questionId: c.id,
-      criterionId: c.id,
-      code: c.code,
-      questionText: c.name,
-      category: c.category,
-      categoryLabel: c.categoryLabel,
-      focus: c.focus,
-      rating: "NORMAL",
-      teacherComment: "",
-      notes: ""
-    }))
+  // Hợp nhất danh sách 10 nhóm phỏng vấn Học sinh theo đúng cấu hình khối (gradeConfig.criteria)
+  if (gradeConfig?.criteria && gradeConfig.criteria.length > 0) {
+    const rawList = [...interviewList]
+    interviewList = gradeConfig.criteria.map((c, idx) => {
+      const matched = rawList.find((it: any) =>
+        it?.criterionId === c.id ||
+        it?.questionId === c.id ||
+        String(it?.code) === String(c.code)
+      ) || rawList[idx] || {}
+      return {
+        questionId: c.id,
+        criterionId: c.id,
+        code: c.code,
+        questionText: matched.questionText || matched.name || c.name,
+        category: c.category,
+        categoryLabel: c.categoryLabel,
+        focus: c.focus,
+        rating: matched.rating || "NORMAL",
+        studentNotes: matched.studentNotes || matched.answer || matched.a || matched.notes || "",
+        teacherComment: matched.teacherComment || (matched.notes && matched.notes !== (matched.studentNotes || matched.answer) ? matched.notes : "") || "",
+        notes: matched.notes || ""
+      }
+    })
   }
 
-  // Fallback 5 nhóm phụ huynh nếu chưa có
-  if (parentItemsList.length === 0 && gradeConfig?.parentGroups) {
-    parentItemsList = gradeConfig.parentGroups.map(p => ({
-      groupId: p.id,
-      code: p.code,
-      category: p.category,
-      categoryLabel: p.categoryLabel,
-      title: p.title,
-      focus: p.focus,
-      answer: "",
-      teacherNote: ""
-    }))
+  // Hợp nhất danh sách 5 nhóm trao đổi Phụ huynh theo đúng cấu hình khối (gradeConfig.parentGroups)
+  if (gradeConfig?.parentGroups && gradeConfig.parentGroups.length > 0) {
+    const rawPList = [...parentItemsList]
+    parentItemsList = gradeConfig.parentGroups.map((p, idx) => {
+      const matched = rawPList.find((it: any) =>
+        it?.groupId === p.id ||
+        String(it?.code) === String(p.code)
+      ) || rawPList[idx] || {}
+      return {
+        groupId: p.id,
+        code: p.code,
+        category: p.category,
+        categoryLabel: p.categoryLabel,
+        title: matched.title || p.title,
+        focus: p.focus,
+        answer: matched.answer || "",
+        teacherNote: matched.teacherNote || ""
+      }
+    })
   }
 
   // Fallback 9 mục tổng hợp nếu chưa có
   if (!summary9Items) {
     summary9Items = {
-      strongPoints: orientationData?.studentStrengths || "",
-      interestsMotivation: "",
-      adaptabilityAutonomy: orientationData?.adaptationLevel === "CONFIDENT" ? "Thích nghi nhanh, tự tin và chủ động" : "Cần thêm thời gian làm quen",
-      difficultiesNeeds: orientationData?.studentNeedsSupport || "",
+      strongPoints: orientationData?.studentStrengths || orientationData?.strengths || "",
+      interestsMotivation: orientationData?.talents || "",
+      adaptabilityAutonomy: orientationData?.adaptationLevel === "CONFIDENT" ? "Thích nghi nhanh, tự tin và chủ động" : "",
+      difficultiesNeeds: orientationData?.studentNeedsSupport || orientationData?.growthAreas || "",
       studentExpectations: "",
       parentExpectations: orientationData?.parentExpectations || "",
       alignmentDifferences: "",
@@ -371,45 +387,79 @@ export function StudentOrientationReportModal({
     proposedPlacementRecommendation = orientationData.proposedPlacementRecommendation
   }
 
-  // Parse điểm môn học khảo sát thực tế tại Sky-Line
+  // Parse điểm và nhận xét chuyên môn của tất cả các môn khảo sát thực tế tại Sky-Line
   const parseScores = () => {
-    const res: Array<{ subject: string; score: string | number; remark?: string }> = []
+    const res: Array<{ subject: string; teacherName: string; score: string | number; remark: string }> = []
     const studentScoresList = (studentInfo || student)?.scores || student?.scores || orientationData?.student?.scores || []
+    const rawGrade = (studentInfo || student)?.grade
+    const gradeMatch = rawGrade ? String(rawGrade).match(/\d+/) : null
+    const numGrade = gradeMatch ? parseInt(gradeMatch[0], 10) : null
+
     if (studentScoresList && Array.isArray(studentScoresList)) {
       studentScoresList.forEach((sc: any) => {
         const subName = sc.subject?.name || sc.subjectName || "Môn khảo sát"
-        const subCode = String(sc.subject?.code || "").toUpperCase()
-        if (subCode === "TLY" || subCode.includes("TÂM LÝ") || subCode.includes("TAM LY")) return
+        const subCode = String(sc.subject?.code || "").toLowerCase()
+        const sNameLower = subName.toLowerCase().normalize("NFC")
+        const teacherName = sc.teacherName || sc.user?.fullName || "Giáo viên chấm"
 
-        let scoreVal: any = sc.finalScore ?? sc.score ?? sc.scoreComposite ?? "-"
-        if (sc.scores && typeof sc.scores === "string") {
+        let scoreVal: any = sc.finalScore ?? sc.score ?? sc.scoreComposite ?? "—"
+        if (sc.scores) {
           try {
-            const arr = JSON.parse(sc.scores)
-            if (Array.isArray(arr) && arr.length > 0) {
-              const nonEmpty = arr.filter((v: any) => v !== null && v !== undefined && String(v).trim() !== "")
-              scoreVal = nonEmpty.length > 0 ? nonEmpty[nonEmpty.length - 1] : "-"
+            const parsed = typeof sc.scores === "string" ? JSON.parse(sc.scores) : sc.scores
+            const vArr = Array.isArray(parsed) ? parsed : [parsed]
+            if (subCode.includes("tly") || sNameLower.includes("tâm lý")) {
+              const scNum = parseFloat(vArr[6] ?? vArr[20] ?? vArr[0] ?? "0")
+              let lvl = "Bình thường"
+              if (scNum > 15 && scNum <= 31) lvl = "Dấu hiệu nhẹ"
+              else if (scNum > 31 && scNum <= 47) lvl = "Dấu hiệu vừa"
+              else if (scNum > 47 && scNum <= 63) lvl = "Nguy cơ cao"
+              else if (scNum > 63) lvl = "Nguy cơ rất cao"
+              scoreVal = `${lvl} (${scNum}đ)`
+            } else if (subCode.includes("tci") || subCode.includes("cpt") || sNameLower.includes("bộ chuẩn phát triển")) {
+              const passedCount = vArr.filter((x: any) => String(x) === "3").length
+              scoreVal = `${passedCount}/${vArr.length} Đạt`
+            } else if (subCode.includes("nltd") || sNameLower.includes("năng lực tư duy")) {
+              const pctVal = vArr.length >= 5 ? vArr[4] : vArr[0]
+              scoreVal = (pctVal !== undefined && pctVal !== null && String(pctVal).trim() !== "") ? `${pctVal}%` : "—"
             } else {
-              scoreVal = sc.scores
+              const firstVal = vArr.find((x: any) => x !== undefined && x !== null && String(x).trim() !== "")
+              if (firstVal !== undefined) {
+                scoreVal = String(firstVal)
+                if (sNameLower.includes("tiếng anh") || subCode.includes("eng") || subCode.includes("esl")) {
+                  if (sNameLower.includes("vấn đáp") || sNameLower.includes("nói") || subCode.includes("oral") || subCode.includes("vd")) {
+                    const maxOral = (numGrade && numGrade <= 5 && parseFloat(scoreVal) <= 10) ? 10 : (numGrade && numGrade >= 7 ? 20 : 30)
+                    if (!scoreVal.includes("/")) scoreVal = `${scoreVal}/${maxOral}`
+                  } else if (sNameLower.includes("viết") || subCode.includes("written") || subCode.includes("vt")) {
+                    const maxWrit = (numGrade && numGrade >= 7) ? 80 : 70
+                    if (!scoreVal.includes("/")) scoreVal = `${scoreVal}/${maxWrit}`
+                  }
+                }
+              }
             }
-          } catch (e) {
-            scoreVal = sc.scores
+          } catch {
+            scoreVal = sc.scores || "—"
           }
         }
+
         let remarkVal = sc.remarks || sc.note || ""
-        if (!remarkVal && sc.comments && typeof sc.comments === "string") {
+        if (!remarkVal && sc.comments) {
           try {
-            const cArr = JSON.parse(sc.comments)
+            const cArr = typeof sc.comments === "string" ? JSON.parse(sc.comments) : sc.comments
             if (Array.isArray(cArr)) {
-              remarkVal = cArr.filter((c: any) => c && String(c).trim() !== "").join("; ")
+              remarkVal = cArr.filter((c: any) => c && String(c).trim() !== "").join(" | ")
+            } else if (typeof cArr === "string") {
+              remarkVal = cArr
             }
-          } catch (e) {
-            remarkVal = sc.comments
+          } catch {
+            remarkVal = String(sc.comments || "")
           }
         }
+
         res.push({
           subject: subName,
+          teacherName,
           score: scoreVal,
-          remark: remarkVal
+          remark: remarkVal || "—"
         })
       })
     }
@@ -420,8 +470,9 @@ export function StudentOrientationReportModal({
         if (!exists) {
           res.push({
             subject: name,
+            teacherName: "Hội đồng Khảo sát",
             score: val,
-            remark: "Nhập trực tiếp"
+            remark: "Điểm nhập trực tiếp"
           })
         }
       }
@@ -460,18 +511,25 @@ export function StudentOrientationReportModal({
 
   const sData = studentInfo || student
 
-  // Parse dữ liệu quyết định và chỉ đạo của GĐCS
+  // Parse dữ liệu quyết định và chỉ đạo của Hội đồng Tuyển sinh / GĐCS (loại bỏ chuỗi lịch sử thô)
   const gdcsData = React.useMemo(() => {
-    const raw = orientationData?.admissionConsultantNote || sData?.directorNote
+    const raw = sData?.directorNote || orientationData?.admissionConsultantNote
     if (!raw) return null
-    if (typeof raw === "string" && raw.trim().startsWith("{")) {
+    let cleaned = String(raw)
+    if (cleaned.includes("--- LỊCH SỬ XÉT DUYỆT")) {
+      cleaned = cleaned.split("--- LỊCH SỬ XÉT DUYỆT")[0].trim()
+    }
+    if (cleaned.includes("[HISTORY]")) {
+      cleaned = cleaned.split("[HISTORY]")[0].trim()
+    }
+    if (cleaned.startsWith("{")) {
       try {
-        return JSON.parse(raw)
-      } catch (e) {
-        return { gdcsGeneralNote: raw }
+        return JSON.parse(cleaned)
+      } catch {
+        return { gdcsGeneralNote: cleaned }
       }
     }
-    return { gdcsGeneralNote: raw }
+    return { gdcsGeneralNote: cleaned }
   }, [orientationData?.admissionConsultantNote, sData?.directorNote])
 
   const isCuidLike = (val?: string | null) =>
@@ -793,23 +851,23 @@ export function StudentOrientationReportModal({
               {/* REPORT TITLE */}
               <div className="print-section text-center space-y-0.5 py-0.5">
                 <h1 className="text-sm sm:text-base font-black text-teal-950 uppercase tracking-tight">
-                  PHIẾU PHỎNG VẤN ĐỊNH HƯỚNG HỌC SINH &amp; TRAO ĐỔI VỚI PHỤ HUYNH
+                  HỒ SƠ KHẢO SÁT, PHỎNG VẤN ĐỊNH HƯỚNG &amp; XÉT DUYỆT TUYỂN SINH ĐẦU VÀO
                 </h1>
                 <p className="text-[11px] text-teal-800 font-bold">
                   {gradeConfig.label} &bull; Trọng tâm: {gradeConfig.focus}
                 </p>
                 <p className="text-[9.5px] text-slate-500 italic">
-                  (Chuẩn hóa theo từng khối lớp &bull; Liên thông Hồ sơ tuyển sinh &amp; Hồ sơ học tập học sinh)
+                  (Thống nhất chung: 1. Thông tin Học sinh &bull; 2. Phiếu định hướng HS&amp;PH &bull; 3. Kết quả khảo sát các môn &bull; 4. Quyết định của Hội đồng Tuyển sinh)
                 </p>
               </div>
 
-              {/* SECTION I: THÔNG TIN HỌC SINH (BẢNG 12 CỘT CHUẨN) */}
+              {/* MỤC 1: THÔNG TIN HỌC SINH (BẢNG 12 CỘT CHUẨN) */}
               <div className="print-section space-y-1.5">
                 <div className="flex flex-wrap items-center justify-between gap-2 border-b border-teal-200 pb-1">
                   <div className="flex items-center gap-2">
                     <span className="w-2 h-2 rounded-full bg-teal-700" />
                     <h2 className="text-[11px] font-black uppercase tracking-wider text-teal-950">
-                      I. Thông Tin Học Sinh &amp; Kết Quả Đầu Vào
+                      1. Thông Tin Học Sinh
                     </h2>
                   </div>
                   <div className="flex flex-wrap items-center gap-3 text-[10px] text-slate-700">
@@ -844,16 +902,16 @@ export function StudentOrientationReportModal({
                     </thead>
                     <tbody>
                       <tr className="text-slate-900">
-                        <td className="py-1.5 px-1.5 border-r border-slate-200/70 font-mono font-bold">
+                        <td className="py-1.5 px-1.5 border-r border-slate-200/70 font-mono font-bold tabular-nums">
                           {sData?.studentCode || "—"}
                         </td>
                         <td className="py-1.5 px-1.5 border-r border-slate-200/70 font-black text-teal-950">
                           {sData?.fullName || "—"}
                         </td>
-                        <td className="py-1.5 px-1.5 border-r border-slate-200/70">
+                        <td className="py-1.5 px-1.5 border-r border-slate-200/70 tabular-nums">
                           {sData?.dateOfBirth ? new Date(sData.dateOfBirth).toLocaleDateString("vi-VN") : "—"} ({sData?.gender || "Nam"})
                         </td>
-                        <td className="py-1.5 px-1.5 border-r border-slate-200/70 font-bold text-teal-900">
+                        <td className="py-1.5 px-1.5 border-r border-slate-200/70 font-bold text-teal-900 tabular-nums">
                           {gradeConfig.label}
                         </td>
                         <td className="py-1.5 px-1.5 border-r border-slate-200/70 font-bold">
@@ -871,13 +929,13 @@ export function StudentOrientationReportModal({
                         <td className="py-1.5 px-1.5 border-r border-slate-200/70 text-center font-bold text-sky-900">
                           {displayRenLuyen}
                         </td>
-                        <td className="py-1.5 px-1.5 border-r border-slate-200/70 text-center font-bold">
+                        <td className="py-1.5 px-1.5 border-r border-slate-200/70 text-center font-bold tabular-nums">
                           {displayMath}
                         </td>
-                        <td className="py-1.5 px-1.5 border-r border-slate-200/70 text-center font-bold">
+                        <td className="py-1.5 px-1.5 border-r border-slate-200/70 text-center font-bold tabular-nums">
                           {displayLiterature}
                         </td>
-                        <td className="py-1.5 px-1.5 text-center font-bold">
+                        <td className="py-1.5 px-1.5 text-center font-bold tabular-nums">
                           {displayEnglish}
                         </td>
                       </tr>
@@ -886,33 +944,13 @@ export function StudentOrientationReportModal({
                 </div>
               </div>
 
-              {/* KẾT QUẢ KHẢO SÁT CÁC MÔN HỌC (NẾU CÓ) */}
-              {subjectScores.length > 0 && (
-                <div className="print-section space-y-1">
-                  <div className="flex items-center gap-1.5 border-b border-slate-200 pb-0.5">
-                    <span className="w-1.5 h-1.5 rounded-full bg-teal-600" />
-                    <h3 className="text-[10px] font-black uppercase text-slate-800">
-                      Kết Quả Điểm Khảo Sát Năng Lực Học Thuật
-                    </h3>
-                  </div>
-                  <div className="flex flex-wrap gap-2 text-xs">
-                    {subjectScores.map((sc, i) => (
-                      <span key={i} className="px-2 py-0.5 rounded-md bg-teal-50 border border-teal-200 text-teal-950 font-bold text-[10px]">
-                        {sc.subject}: <span className="text-teal-700">{sc.score}</span>
-                      </span>
-                    ))}
-                  </div>
-                </div>
-              )}
-
-              {/* SECTION II: PHẦN A - PHỎNG VẤN ĐỊNH HƯỚNG HỌC SINH (10 NHÓM NỘI DUNG) */}
-              {/* SỬ DỤNG print-section-flow ĐỂ CHO PHÉP BẢNG CHẢY TỰ NHIÊN GIỮA CÁC TRANG KHÔNG BỊ NHẢY TRANG VÔ LÝ */}
-              <div className="print-section-flow space-y-1.5">
+              {/* MỤC 2: PHIẾU ĐỊNH HƯỚNG HỌC SINH & PHỤ HUYNH (THEO CẤU HÌNH KHỐI) */}
+              <div className="print-section-flow space-y-1.5 pt-1">
                 <div className="flex items-center justify-between border-b border-teal-300 pb-1">
                   <div className="flex items-center gap-2">
                     <span className="w-2.5 h-2.5 rounded-full bg-teal-700" />
                     <h2 className="text-[11px] font-black uppercase tracking-wider text-teal-950">
-                      A. Phỏng Vấn Định Hướng Học Sinh (10 Nhóm Nội Dung Chuẩn Hóa)
+                      2. Phiếu Định Hướng Học Sinh &amp; Phụ Huynh (Theo cấu hình {gradeConfig.label}) — 2.1. Phỏng Vấn Học Sinh (10 Nhóm)
                     </h2>
                   </div>
                   <span className="text-[9.5px] font-bold text-teal-700">
@@ -971,13 +1009,13 @@ export function StudentOrientationReportModal({
                 </div>
               </div>
 
-              {/* SECTION III: PHẦN B - TRAO ĐỔI ĐỊNH HƯỚNG VỚI PHỤ HUYNH (5 NHÓM NỘI DUNG) */}
+              {/* MỤC 2.2: TRAO ĐỔI ĐỊNH HƯỚNG VỚI PHỤ HUYNH (5 NHÓM NỘI DUNG THEO CẤU HÌNH) */}
               <div className="print-section-flow space-y-1.5 pt-2">
                 <div className="flex items-center justify-between border-b border-teal-300 pb-1">
                   <div className="flex items-center gap-2">
                     <span className="w-2.5 h-2.5 rounded-full bg-teal-700" />
                     <h2 className="text-[11px] font-black uppercase tracking-wider text-teal-950">
-                      B. Trao Đổi Định Hướng Với Phụ Huynh Học Sinh (5 Nhóm Nội Dung)
+                      2.2. Trao Đổi Định Hướng Với Phụ Huynh Học Sinh (5 Nhóm Nội Dung Theo Cấu Hình {gradeConfig.label})
                     </h2>
                   </div>
                   <span className="text-[9px] font-bold text-amber-800 bg-amber-50 border border-amber-200 px-1.5 py-0.2 rounded">
@@ -1007,7 +1045,7 @@ export function StudentOrientationReportModal({
                         const pNote = pItem.teacherNote || ""
                         return (
                           <tr key={idx} className="hover:bg-teal-50/30">
-                            <td className="py-1.5 px-1 text-center text-teal-900 font-bold align-top">{idx + 1}</td>
+                            <td className="py-1.5 px-1 text-center text-teal-900 font-bold align-top tabular-nums">{idx + 1}</td>
                             <td className="py-1.5 px-2 align-top">
                               <div className="font-bold text-slate-900 leading-snug">
                                 {pItem.title}
@@ -1035,13 +1073,13 @@ export function StudentOrientationReportModal({
                 </div>
               </div>
 
-              {/* SECTION IV: PHẦN C - TỔNG HỢP NHẬN DIỆN VÀ ĐỊNH HƯỚNG BAN ĐẦU (9 MỤC NỘI DUNG) */}
+              {/* MỤC 2.3: TỔNG HỢP NHẬN DIỆN VÀ ĐỊNH HƯỚNG BAN ĐẦU (9 MỤC NỘI DUNG CHUẨN HÓA) */}
               <div className="print-section space-y-1.5 pt-2">
                 <div className="flex items-center justify-between border-b border-teal-300 pb-1">
                   <div className="flex items-center gap-2">
                     <span className="w-2.5 h-2.5 rounded-full bg-teal-700" />
                     <h2 className="text-[11px] font-black uppercase tracking-wider text-teal-950">
-                      C. Tổng Hợp Nhận Diện &amp; Định Hướng Ban Đầu (9 Nội Dung Chuẩn Hóa)
+                      2.3. Tổng Hợp Nhận Diện &amp; Định Hướng Ban Đầu (9 Nội Dung Chuẩn Hóa)
                     </h2>
                   </div>
                   <span className="text-[9.5px] text-teal-700 font-semibold">
@@ -1160,7 +1198,59 @@ export function StudentOrientationReportModal({
                 </div>
               </div>
 
-              {/* SECTION IV-B: KẾT QUẢ KHẢO SÁT & ĐÁNH GIÁ TÂM LÝ HỌC ĐƯỜNG (NẾU CÓ) */}
+              {/* MỤC 3: KẾT QUẢ KHẢO SÁT CÁC MÔN */}
+              <div className="print-section-flow space-y-1.5 pt-2">
+                <div className="flex items-center justify-between border-b border-teal-300 pb-1">
+                  <div className="flex items-center gap-2">
+                    <span className="w-2.5 h-2.5 rounded-full bg-teal-700" />
+                    <h2 className="text-[11px] font-black uppercase tracking-wider text-teal-950">
+                      3. Kết Quả Khảo Sát Các Môn ({subjectScores.length} Môn Đã Chấm)
+                    </h2>
+                  </div>
+                  <span className="text-[9.5px] text-teal-700 font-semibold">
+                    Điểm số, mức đạt và nhận xét chuyên môn của giáo viên từng môn
+                  </span>
+                </div>
+
+                {subjectScores.length > 0 ? (
+                  <div className="border border-teal-200 rounded-lg text-xs" style={{ width: "100%", maxWidth: "100%" }}>
+                    <table className="w-full text-left border-collapse" style={{ tableLayout: "fixed", width: "100%" }}>
+                      <thead>
+                        <tr className="bg-teal-100/80 text-[9.5px] font-black uppercase text-teal-950 border-b border-teal-200">
+                          <th className="py-1.5 px-1 text-center" style={{ width: "5%" }}>STT</th>
+                          <th className="py-1.5 px-2" style={{ width: "22%" }}>Môn khảo sát</th>
+                          <th className="py-1.5 px-2" style={{ width: "20%" }}>Giáo viên chấm</th>
+                          <th className="py-1.5 px-1.5 text-center" style={{ width: "15%" }}>Điểm / Mức đạt</th>
+                          <th className="py-1.5 px-2" style={{ width: "38%" }}>Nhận xét chuyên môn của giáo viên</th>
+                        </tr>
+                      </thead>
+                      <tbody className="divide-y divide-teal-100 text-[10px]">
+                        {subjectScores.map((sc, idx) => (
+                          <tr key={idx} className="hover:bg-teal-50/30">
+                            <td className="py-1.5 px-1 text-center text-teal-900 font-bold align-top tabular-nums">{idx + 1}</td>
+                            <td className="py-1.5 px-2 font-bold text-slate-900 align-top">{sc.subject}</td>
+                            <td className="py-1.5 px-2 text-slate-700 align-top">{sc.teacherName}</td>
+                            <td className="py-1.5 px-1.5 text-center font-black text-teal-900 align-top tabular-nums">
+                              <span className="px-1.5 py-0.5 rounded bg-teal-50 border border-teal-200 inline-block">
+                                {sc.score}
+                              </span>
+                            </td>
+                            <td className="py-1.5 px-2 text-slate-800 leading-relaxed align-top">
+                              {sc.remark && sc.remark !== "—" ? sc.remark : <span className="text-slate-400 italic">Chưa có nhận xét</span>}
+                            </td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
+                ) : (
+                  <div className="p-3 bg-slate-50 rounded-lg border border-slate-200 text-center text-[10px] text-slate-500 italic">
+                    Chưa có kết quả khảo sát môn học nào được ghi nhận.
+                  </div>
+                )}
+              </div>
+
+              {/* KẾT QUẢ KHẢO SÁT & ĐÁNH GIÁ TÂM LÝ HỌC ĐƯỜNG CHI TIẾT (NẾU CÓ) */}
               {(() => {
                 const rawPsych = orientationData?.psychologyData
                 let parsedPsych: any = null
@@ -1187,7 +1277,7 @@ export function StudentOrientationReportModal({
                       <div className="flex items-center gap-1.5">
                         <span className="w-2 h-2 rounded-full bg-teal-700" />
                         <h3 className="text-[10.5px] font-black uppercase text-teal-950 tracking-wider">
-                          Khảo Sát &amp; Kết Quả Đánh Giá Tâm Lý Học Đường (Theo Form Tâm Lý)
+                          3.1. Chi Tiết Khảo Sát &amp; Đánh Giá Tâm Lý Học Đường
                         </h3>
                       </div>
                       <div className="flex items-center gap-2 text-[9.5px]">
@@ -1195,7 +1285,7 @@ export function StudentOrientationReportModal({
                           GV Tâm lý phụ trách: {orientationData?.psychologyTeacherName || parsedPsych?.assessedBy || "Tổ Tâm lý Học đường"}
                         </span>
                         {parsedPsych?.totalScore !== undefined && (
-                          <span className="px-2 py-0.5 rounded-full bg-teal-800 text-white font-black">
+                          <span className="px-2 py-0.5 rounded-full bg-teal-800 text-white font-black tabular-nums">
                             Tổng điểm: {parsedPsych.totalScore}/80đ ({parsedPsych?.evaluation?.level || "Đã đánh giá"})
                           </span>
                         )}
@@ -1207,7 +1297,7 @@ export function StudentOrientationReportModal({
                         {secLabels.map((sec, idx) => (
                           <div key={idx} className="p-1.5 bg-white rounded-lg border border-teal-200/80">
                             <span className="text-[8.5px] font-bold text-slate-500 block">{sec.label}</span>
-                            <span className="text-[10.5px] font-black text-teal-950">
+                            <span className="text-[10.5px] font-black text-teal-950 tabular-nums">
                               {parsedPsych.sectionScores[idx] ?? 0}/{sec.max}đ
                             </span>
                           </div>
@@ -1233,14 +1323,14 @@ export function StudentOrientationReportModal({
                 )
               })()}
 
-              {/* SECTION V: THẨM ĐỊNH QLCM & CHỈ ĐẠO CỦA GIÁM ĐỐC CƠ SỞ (GĐCS) */}
-              <div className="print-section p-2.5 bg-teal-50/50 rounded-xl border border-teal-200 text-xs space-y-1.5">
+              {/* MỤC 4: QUYẾT ĐỊNH CỦA HỘI ĐỒNG TUYỂN SINH & THẨM ĐỊNH QLCM */}
+              <div className="print-section p-2.5 bg-teal-50/50 rounded-xl border border-teal-200 text-xs space-y-2 pt-2">
                 <div className="flex flex-wrap items-center justify-between gap-2 border-b border-teal-200 pb-1">
                   <div className="flex items-center gap-1.5">
-                    <span className="w-2 h-2 rounded-full bg-teal-700" />
-                    <h3 className="text-[10.5px] font-black uppercase text-teal-950 tracking-wider">
-                      D. Thẩm Định QLCM &amp; Kết Luận Tiếp Nhận Tuyển Sinh GĐCS
-                    </h3>
+                    <span className="w-2.5 h-2.5 rounded-full bg-teal-700" />
+                    <h2 className="text-[11px] font-black uppercase text-teal-950 tracking-wider">
+                      4. Quyết Định Của Hội Đồng Tuyển Sinh
+                    </h2>
                   </div>
 
                   <div className="flex items-center gap-2">
@@ -1256,29 +1346,34 @@ export function StudentOrientationReportModal({
                       </span>
                     )}
 
-                    <span className="px-2 py-0.5 rounded-full bg-teal-100 text-teal-950 border border-teal-300 font-black text-[9.5px]">
-                      {student?.admissionResult === "Đạt" ? "TIẾP NHẬN CHUẨN" : (student?.admissionResult || "TIẾP NHẬN CHUẨN")}
+                    <span className="px-2.5 py-0.5 rounded-full bg-teal-800 text-white font-black text-[10px]">
+                      Kết quả xét tuyển: {sData?.admissionResult || "Chờ phê duyệt"}
                     </span>
                   </div>
                 </div>
 
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 pt-0.5 text-[10.5px]">
-                  <div>
-                    <span className="text-slate-500 text-[9.5px] block font-semibold uppercase">GV phụ trách định hướng &amp; Ý kiến Thẩm định QLCM:</span>
-                    <p className="text-slate-900 font-medium mt-0.5">
-                      {verificationInfo?.notes || "Hồ sơ phỏng vấn định hướng đầy đủ, đúng quy trình."}
+                <div className="grid grid-cols-1 sm:grid-cols-3 gap-2 pt-0.5 text-[10.5px]">
+                  <div className="p-2 bg-white rounded-lg border border-teal-200/80">
+                    <span className="text-slate-500 text-[9.5px] block font-semibold uppercase">Kết quả xét tuyển &amp; Người phê duyệt:</span>
+                    <p className="text-teal-950 font-black mt-0.5">
+                      {sData?.admissionResult || "Đạt"}
                     </p>
-                    {(verificationInfo?.verifiedBy || verificationInfo?.verifierName || orientationData?.interviewerName) && (
-                      <span className="text-[9.5px] text-teal-800 italic block mt-0.5">
-                        GV phụ trách định hướng: {verificationInfo?.verifiedBy || verificationInfo?.verifierName || orientationData?.interviewerName}
-                      </span>
-                    )}
+                    <span className="text-[9.5px] text-slate-600 block mt-0.5">
+                      Người duyệt: <strong>{sData?.signatureName || (campusName && campusName !== "Sky-Line" ? `GĐCS ${campusName}` : "Hội đồng Tuyển sinh")}</strong>
+                    </span>
                   </div>
 
-                  <div>
-                    <span className="text-slate-500 text-[9.5px] block font-semibold uppercase">Chỉ đạo &amp; Kết luận của Giám Đốc Cơ Sở:</span>
+                  <div className="p-2 bg-white rounded-lg border border-teal-200/80">
+                    <span className="text-slate-500 text-[9.5px] block font-semibold uppercase">Ý kiến / Ghi chú Hội đồng Tuyển sinh:</span>
                     <p className="text-slate-900 font-medium mt-0.5">
-                      {gdcsData?.gdcsGeneralNote || "Đồng ý tiếp nhận học sinh theo đúng quy chế tuyển sinh của Hệ thống Sky-Line."}
+                      {gdcsData?.gdcsGeneralNote || "Đồng ý tiếp nhận học sinh theo đúng quy chế tuyển sinh của Hệ thống Giáo dục Sky-Line."}
+                    </p>
+                  </div>
+
+                  <div className="p-2 bg-white rounded-lg border border-teal-200/80">
+                    <span className="text-slate-500 text-[9.5px] block font-semibold uppercase">Thẩm định Chuyên môn (QLCM):</span>
+                    <p className="text-slate-900 font-medium mt-0.5">
+                      {verificationInfo?.notes || "Hồ sơ khảo sát và phỏng vấn định hướng đầy đủ, đúng quy trình."}
                     </p>
                   </div>
                 </div>
@@ -1289,13 +1384,13 @@ export function StudentOrientationReportModal({
                 <div className="grid grid-cols-3 gap-3 text-center">
                   <div className="space-y-10">
                     <span className="text-[9.5px] font-black uppercase text-slate-600 block">
-                      GIÁO VIÊN PHỤ TRÁCH ĐỊNH HƯỚNG
+                      GIÁO VIÊN KHẢO SÁT / ĐỊNH HƯỚNG
                     </span>
                     <div>
                       <strong className="text-slate-900 text-[11px] block font-bold">
                         {orientationData?.interviewerName || verificationInfo?.verifiedBy || "Giáo viên thực hiện"}
                       </strong>
-                      <span className="text-[9px] text-slate-400 italic block">Đã hoàn thành phiếu</span>
+                      <span className="text-[9px] text-slate-400 italic block">Ký và ghi rõ họ tên</span>
                     </div>
                   </div>
 
@@ -1305,29 +1400,29 @@ export function StudentOrientationReportModal({
                     </span>
                     <div>
                       <strong className="text-slate-900 text-[11px] block font-bold">
-                        {verificationInfo?.verifiedBy || verificationInfo?.verifierName || orientationData?.interviewerName || "Ban Chuyên môn Cơ sở"}
+                        {verificationInfo?.verifiedBy || verificationInfo?.verifierName || "Ban Chuyên môn Cơ sở"}
                       </strong>
                       <span className="text-[9px] text-slate-400 italic block">
-                        {verificationInfo?.status === "VERIFIED" ? "Đã thẩm định chuyên môn" : "Xác nhận hồ sơ"}
+                        {verificationInfo?.status === "VERIFIED" ? "Đã thẩm định chuyên môn" : "Ký xác nhận hồ sơ"}
                       </span>
                     </div>
                   </div>
 
                   <div className="space-y-10">
                     <span className="text-[9.5px] font-black uppercase text-slate-600 block">
-                      GIÁM ĐỐC CƠ SỞ
+                      HỘI ĐỒNG TUYỂN SINH / GIÁM ĐỐC CƠ SỞ
                     </span>
                     <div>
                       <strong className="text-slate-900 text-[11px] block font-bold">
-                        {campusName && campusName !== "Sky-Line" ? `GĐCS ${campusName}` : "Ban Giám Đốc Cơ Sở"}
+                        {sData?.signatureName || (campusName && campusName !== "Sky-Line" ? `GĐCS ${campusName}` : "Ban Giám Đốc Cơ Sở")}
                       </strong>
-                      <span className="text-[9px] text-slate-400 italic block">Phê duyệt tiếp nhận</span>
+                      <span className="text-[9px] text-slate-400 italic block">Phê duyệt kết quả xét tuyển</span>
                     </div>
                   </div>
                 </div>
 
                 <div className="text-center text-[8.5px] text-slate-400 italic pt-3 border-t border-slate-100 mt-2">
-                  Biểu mẫu phỏng vấn định hướng chuẩn hóa Hệ thống Giáo dục Sky-Line &bull; Phân hóa theo 12 khối lớp &bull; Mã hồ sơ: {student?.studentCode || student?.id?.substring(0, 12)}
+                  Hồ sơ khảo sát, định hướng &amp; xét duyệt đầu vào chuẩn hóa Hệ thống Giáo dục Sky-Line &bull; Phân hóa theo 12 khối lớp &bull; Mã hồ sơ: {student?.studentCode || student?.id?.substring(0, 12)}
                 </div>
               </div>
 
