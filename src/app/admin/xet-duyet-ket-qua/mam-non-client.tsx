@@ -52,30 +52,30 @@ const getStatusBadge = (status: string | null | undefined) => {
   
   const normStatus = status.toUpperCase();
   const badgeConfig: Record<string, { bg: string, text: string, border: string, label: string }> = {
-    DAT_MIEN_HOC_THU: { bg: "bg-teal-50 text-slate-800 border-teal-200/60", label: "Miễn Học Thử" },
-    MIEN_HOC_THU: { bg: "bg-teal-50 text-slate-800 border-teal-200/60", label: "Miễn Học Thử" },
-    MIEN_HT: { bg: "bg-teal-50 text-slate-800 border-teal-200/60", label: "Miễn Học Thử" },
-    DAT_HOC_THU: { bg: "bg-sky-50 text-sky-700 border-sky-200/60", label: "Học thử" },
-    HOC_THU: { bg: "bg-sky-50 text-sky-700 border-sky-200/60", label: "Học thử" },
-    HOC_THU_LAI: { bg: "bg-sky-50 text-sky-700 border-sky-200/60", label: "Học thử" },
-    DAT: { bg: "bg-emerald-50 text-slate-800 border-emerald-250/60", label: "Đạt" },
-    KHONG_DAT: { bg: "bg-rose-50 text-slate-800 border-rose-250/60", label: "Không Đạt" },
-    K_DAT: { bg: "bg-rose-50 text-slate-800 border-rose-250/60", label: "Không Đạt" },
-    Y_KIEN_KHAC: { bg: "bg-amber-50 text-slate-800 border-amber-250/60", label: "Ý kiến khác" },
-    Y_KIEN: { bg: "bg-amber-50 text-slate-800 border-amber-250/60", label: "Ý kiến khác" },
-    CHUA_DANH_GIA: { bg: "bg-slate-50 text-slate-400 border-slate-200/60", label: "Chưa đánh giá" },
-    DA_DANH_GIA: { bg: "bg-emerald-50 text-slate-800 border-emerald-200/60", label: "Đã đánh giá" }
+    DAT_MIEN_HOC_THU: { bg: "bg-teal-50 text-teal-800 border-teal-200/70", label: "Miễn học thử" },
+    MIEN_HOC_THU: { bg: "bg-teal-50 text-teal-800 border-teal-200/70", label: "Miễn học thử" },
+    MIEN_HT: { bg: "bg-teal-50 text-teal-800 border-teal-200/70", label: "Miễn học thử" },
+    DAT_HOC_THU: { bg: "bg-sky-50 text-sky-700 border-sky-200/70", label: "Học thử" },
+    HOC_THU: { bg: "bg-sky-50 text-sky-700 border-sky-200/70", label: "Học thử" },
+    HOC_THU_LAI: { bg: "bg-sky-50 text-sky-700 border-sky-200/70", label: "Học thử" },
+    DAT: { bg: "bg-emerald-50 text-emerald-700 border-emerald-200/70", label: "Đạt" },
+    KHONG_DAT: { bg: "bg-rose-50 text-rose-700 border-rose-200/70", label: "Không đạt" },
+    K_DAT: { bg: "bg-rose-50 text-rose-700 border-rose-200/70", label: "Không đạt" },
+    Y_KIEN_KHAC: { bg: "bg-amber-50 text-amber-800 border-amber-200/70", label: "Ý kiến khác" },
+    Y_KIEN: { bg: "bg-amber-50 text-amber-800 border-amber-200/70", label: "Ý kiến khác" },
+    CHUA_DANH_GIA: { bg: "bg-slate-50 text-slate-500 border-slate-200/70", label: "Chưa đánh giá" },
+    DA_DANH_GIA: { bg: "bg-emerald-50 text-emerald-700 border-emerald-200/70", label: "Đã đánh giá" }
   };
   
-  const item = badgeConfig[normStatus] || { bg: "bg-slate-50 text-slate-500 border-slate-200/60", label: status };
+  const item = badgeConfig[normStatus] || { bg: "bg-slate-50 text-slate-600 border-slate-200/70", label: status };
   return (
-    <span className={`inline-flex items-center justify-center ${item.bg.split(" ")[0]} ${item.bg.split(" ")[1] || ""} ${item.text} border ${item.border} rounded-md px-2 py-0.5 text-[9px] font-black uppercase tracking-wider shadow-2xs`}>
+    <span className={`inline-flex items-center justify-center ${item.bg} border rounded-md px-2 py-0.5 text-[10px] font-semibold tracking-tight`}>
       {item.label}
     </span>
   );
 };
 
-const inp = "w-full bg-white border border-slate-300 rounded-none pl-4 pr-4 py-3 outline-none focus:border-teal-400 focus:ring-4 focus:ring-teal-400/10 text-sm font-medium text-slate-700 transition-all shadow-none";
+const inp = "w-full bg-white border border-slate-200 rounded-lg px-3.5 py-2 outline-none focus:border-[#003B3A] focus:ring-2 focus:ring-[#003B3A]/10 text-xs font-medium text-slate-800 transition-colors";
 
 function Toast({ msg, type }: { msg: string; type: string }) {
   return <div className={`fixed top-6 right-6 z-[9999] flex items-center gap-3 px-5 py-4 rounded-none shadow-2xl font-bold text-sm animate-in slide-in-from-right-4 fade-in duration-300 ${type === "err" ? "bg-rose-600 text-white" : "bg-emerald-600 text-white"}`}>{type === "err" ? <AlertCircle className="w-5 h-5" /> : <CheckCircle className="w-5 h-5" />}{msg}</div>;
@@ -123,28 +123,28 @@ const getCampusDefaultManager = (campusCodeOrName: string) => {
 
 function Badge({ s }: { s: string }) {
   const map: Record<string, string> = { 
-    ACTIVE: "bg-emerald-50 text-emerald-800 border border-emerald-300 font-bold uppercase tracking-wider", 
-    INACTIVE: "bg-slate-50 text-slate-600 border border-slate-300 font-bold uppercase tracking-wider", 
-    LOCKED: "bg-rose-50 text-rose-800 border border-rose-300 font-bold uppercase tracking-wider", 
-    CLOSED: "bg-slate-50 text-slate-600 border border-slate-300 font-bold uppercase tracking-wider" 
+    ACTIVE: "bg-emerald-50 text-emerald-700 border border-emerald-200", 
+    INACTIVE: "bg-slate-100 text-slate-600 border border-slate-200", 
+    LOCKED: "bg-rose-50 text-rose-700 border border-rose-200", 
+    CLOSED: "bg-slate-100 text-slate-600 border border-slate-200" 
   };
-  const label: Record<string, string> = { ACTIVE: "ĐANG MỞ", INACTIVE: "ĐÓNG", LOCKED: "ĐÃ KHÓA", CLOSED: "ĐÃ ĐÓNG" };
-  return <span className={`text-[9px] font-black uppercase px-2.5 py-1 rounded-none border ${map[s] || "bg-slate-50 text-slate-600 border-slate-300"}`}>{label[s] || s}</span>;
+  const label: Record<string, string> = { ACTIVE: "Đang mở", INACTIVE: "Tạm đóng", LOCKED: "Đã khóa", CLOSED: "Đã đóng" };
+  return <span className={`inline-flex items-center text-[11px] font-semibold px-2.5 py-0.5 rounded-md border ${map[s] || "bg-slate-100 text-slate-600 border-slate-200"}`}>{label[s] || s}</span>;
 }
 
 function ConfirmDialog({ open, onClose, onConfirm, message }: any) {
   if (!open) return null;
   return (
     <div className="fixed inset-0 z-[9998] flex items-center justify-center p-4 animate-in fade-in duration-200">
-      <div className="absolute inset-0 bg-slate-900/40 backdrop-blur-md" onClick={onClose}/>
-      <div className="relative bg-white rounded-[28px] border border-slate-100 shadow-[0_24px_60px_-15px_rgba(15,23,42,0.15)] p-7 max-w-[360px] w-full text-center animate-in zoom-in-95 duration-300">
-        <button onClick={onClose} className="absolute top-4 right-4 p-1.5 rounded-full text-slate-400 hover:text-slate-600 hover:bg-slate-50 transition-all cursor-pointer"><X className="w-4 h-4" /></button>
-        <div className="w-16 h-16 rounded-2xl bg-rose-50 border-4 border-rose-100/40 text-rose-500 flex items-center justify-center mx-auto mb-5 shadow-sm"><Trash2 className="w-6 h-6" /></div>
-        <h3 className="text-base font-black text-slate-800 tracking-tight mb-2">Xác nhận xóa</h3>
-        <p className="text-xs text-slate-500 font-semibold leading-relaxed mb-6 px-1">{message}</p>
-        <div className="flex gap-3">
-          <button onClick={onClose} className="flex-1 py-3 px-4 rounded-xl border border-slate-200 text-xs font-bold text-slate-500 hover:bg-slate-50 transition-all cursor-pointer active:scale-[0.97]">Hủy</button>
-          <button onClick={() => { onConfirm(); onClose(); }} className="flex-1 py-3 px-4 rounded-xl text-xs font-bold text-white shadow-md shadow-rose-500/10 hover:brightness-105 active:scale-[0.97] transition-all cursor-pointer" style={{ background: 'linear-gradient(135deg, #ef4444 0%, #dc2626 100%)' }}>Xóa</button>
+      <div className="absolute inset-0 bg-slate-900/40 backdrop-blur-xs" onClick={onClose}/>
+      <div className="relative bg-white rounded-2xl border border-slate-200 shadow-2xl p-6 max-w-[360px] w-full text-center animate-in zoom-in-95 duration-200">
+        <button onClick={onClose} className="absolute top-4 right-4 p-1.5 rounded-lg text-slate-400 hover:text-slate-600 hover:bg-slate-100 transition-all cursor-pointer"><X className="w-4 h-4" /></button>
+        <div className="w-12 h-12 rounded-xl bg-rose-50 border border-rose-200/70 text-rose-600 flex items-center justify-center mx-auto mb-4"><Trash2 className="w-5 h-5" /></div>
+        <h3 className="text-base font-bold text-slate-900 tracking-tight mb-1.5">Xác nhận xóa</h3>
+        <p className="text-xs text-slate-500 font-medium leading-relaxed mb-5 px-1">{message}</p>
+        <div className="flex gap-2.5">
+          <button onClick={onClose} className="flex-1 py-2.5 px-4 rounded-xl border border-slate-200 text-xs font-semibold text-slate-600 hover:bg-slate-50 transition-all cursor-pointer">Hủy</button>
+          <button onClick={() => { onConfirm(); onClose(); }} className="flex-1 py-2.5 px-4 rounded-xl bg-rose-600 hover:bg-rose-700 text-xs font-semibold text-white transition-all cursor-pointer">Xóa</button>
         </div>
       </div>
     </div>
@@ -155,21 +155,24 @@ function Modal({ open, onClose, title, children, footer, size = "md" }: any) {
   if (!open) return null;
   const sizeMap: Record<string, string> = { sm: "max-w-sm", md: "max-w-lg", lg: "max-w-2xl", xl: "max-w-4xl" };
   return (
-    <div className="fixed inset-0 z-[9990] flex items-center justify-center bg-black/50 backdrop-blur-sm p-4" onClick={onClose}>
-      <div className={`bg-white rounded-3xl shadow-2xl w-full ${sizeMap[size]} overflow-hidden animate-in zoom-in-95 duration-200`} onClick={e => e.stopPropagation()}>
-        <div className="flex items-center justify-between px-6 py-5 border-b border-slate-300">
-          <h3 className="font-black text-slate-800 text-base flex items-center gap-2"><Baby className="w-5 h-5 text-teal-400" />{title}</h3>
-          <button onClick={onClose} className="w-8 h-8 flex items-center justify-center rounded-full hover:bg-slate-100 text-slate-400 hover:text-slate-700 transition-all"><X className="w-4 h-4" /></button>
+    <div className="fixed inset-0 z-[9990] flex items-center justify-center bg-slate-900/50 backdrop-blur-xs p-4" onClick={onClose}>
+      <div className={`bg-white rounded-2xl border border-slate-200 shadow-2xl w-full ${sizeMap[size]} overflow-hidden animate-in zoom-in-95 duration-200`} onClick={e => e.stopPropagation()}>
+        <div className="flex items-center justify-between px-6 py-4 border-b border-slate-200 bg-slate-50/70">
+          <div className="flex items-center gap-2.5">
+            <span className="w-1 h-4 rounded-full bg-[#003B3A]" />
+            <h3 className="font-bold text-slate-900 text-base tracking-tight">{title}</h3>
+          </div>
+          <button onClick={onClose} className="w-8 h-8 flex items-center justify-center rounded-lg hover:bg-slate-200/60 text-slate-400 hover:text-slate-700 transition-colors cursor-pointer"><X className="w-4 h-4" /></button>
         </div>
         <div className="p-6 overflow-y-auto max-h-[70vh]">{children}</div>
-        {footer && <div className="flex gap-3 text-xs font-semibold">{footer}</div>}
+        {footer && <div className="px-6 py-4 border-t border-slate-200 bg-slate-50 flex justify-end gap-2.5 text-xs font-semibold">{footer}</div>}
       </div>
     </div>
   );
 }
 
 function Field({ label, required, children }: any) {
-  return <div className="space-y-1.5"><label className="block text-[11px] font-black text-slate-500 uppercase tracking-widest">{label}{required && <span className="text-slate-800 ml-1">*</span>}</label>{children}</div>;
+  return <div className="space-y-1.5"><label className="block text-xs font-semibold text-slate-700">{label}{required && <span className="text-rose-600 ml-1">*</span>}</label>{children}</div>;
 }
 
 const xetDuyetCols = [

@@ -104,48 +104,54 @@ export function XetDuyetKetQuaClient({
   }
 
   return (
-    <div className="space-y-3.5 max-w-[1440px] mx-auto">
-      {/* UNIFIED PAGE HEADER */}
-      <div className="bg-white border border-slate-200 shadow-2xs rounded-2xl px-5 py-3 flex flex-col md:flex-row md:items-center justify-between gap-3 no-print">
-        <div className="space-y-0.5">
-          <h1 className="text-base font-black text-slate-800 tracking-tight">
-            {activeTab === "k12" ? "Xét duyệt K-12" : "Xét duyệt Mầm non"}
-          </h1>
-          <p className="text-[10px] text-slate-400 font-bold uppercase tracking-widest hidden sm:block">
+    <div className="space-y-4 max-w-[1440px] mx-auto">
+      {/* AUTHORITATIVE ADMISSIONS LEDGER MASTHEAD */}
+      <header className="bg-white border border-slate-200/90 rounded-2xl px-5 py-3.5 flex flex-col md:flex-row md:items-center justify-between gap-3 no-print shadow-[0_1px_2px_rgba(15,23,42,0.03)] relative overflow-hidden">
+        <div className="absolute left-0 top-0 bottom-0 w-1.5 bg-[#003B3A]" />
+        <div className="pl-2 flex flex-col sm:flex-row sm:items-baseline gap-1 sm:gap-3">
+          <div className="flex items-center gap-2.5">
+            <span className="inline-flex items-center px-2 py-0.5 rounded-md bg-[#F0FDFA] text-[#00736E] border border-[#CCFBF1] text-[11px] font-semibold">
+              Hội đồng Tuyển sinh
+            </span>
+            <h1 className="text-lg font-bold text-[#0F172A] tracking-tight">
+              {activeTab === "k12" ? "Xét duyệt kết quả đầu vào K-12" : "Xét duyệt đầu vào Mầm non"}
+            </h1>
+          </div>
+          <p className="text-xs text-slate-500 font-medium hidden lg:block">
             {activeTab === "k12"
-              ? "Tổng hợp kết quả khảo sát & xét duyệt học sinh phổ thông"
-              : "Xét duyệt & đánh giá phát triển học sinh bậc Mầm non"}
+              ? "Thẩm định hồ sơ khảo sát năng lực, định hướng đầu vào và phê duyệt trúng tuyển phổ thông"
+              : "Đánh giá sự phát triển của trẻ và phê duyệt kết quả tiếp nhận bậc Mầm non"}
           </p>
         </div>
 
-        {/* Tab Selector */}
+        {/* Level Switcher */}
         {hasK12 && hasPreschool && (
-          <div className="flex p-1 bg-slate-100/90 rounded-xl gap-1 shrink-0 border border-slate-200/60 shadow-2xs">
+          <div className="flex p-1 bg-slate-100 rounded-xl gap-1 shrink-0 border border-slate-200/80">
             <button
               onClick={() => handleTabChange("k12")}
-              className={`flex items-center gap-1.5 px-4 py-2 rounded-lg text-xs font-bold transition-all duration-200 cursor-pointer ${
+              className={`flex items-center gap-2 px-3.5 py-1.5 rounded-lg text-xs font-semibold transition-all duration-150 cursor-pointer ${
                 activeTab === "k12"
-                  ? "bg-[#007A87] text-white shadow-xs"
-                  : "text-slate-600 hover:text-slate-800 hover:bg-slate-200/50"
+                  ? "bg-[#003B3A] text-white shadow-xs"
+                  : "text-slate-600 hover:text-slate-900 hover:bg-white/60"
               }`}
             >
-              <GraduationCap className="w-4 h-4" />
-              <span>Xét duyệt K-12</span>
+              <GraduationCap className="w-3.5 h-3.5" />
+              <span>Phổ thông K-12</span>
             </button>
             <button
               onClick={() => handleTabChange("preschool")}
-              className={`flex items-center gap-1.5 px-4 py-2 rounded-lg text-xs font-bold transition-all duration-200 cursor-pointer ${
+              className={`flex items-center gap-2 px-3.5 py-1.5 rounded-lg text-xs font-semibold transition-all duration-150 cursor-pointer ${
                 activeTab === "preschool"
-                  ? "bg-[#007A87] text-white shadow-xs"
-                  : "text-slate-600 hover:text-slate-800 hover:bg-slate-200/50"
+                  ? "bg-[#003B3A] text-white shadow-xs"
+                  : "text-slate-600 hover:text-slate-900 hover:bg-white/60"
               }`}
             >
-              <Baby className="w-4 h-4" />
-              <span>Xét duyệt Mầm non</span>
+              <Baby className="w-3.5 h-3.5" />
+              <span>Bậc Mầm non</span>
             </button>
           </div>
         )}
-      </div>
+      </header>
 
       {/* Tab Contents */}
       <div className="transition-all duration-350 ease-in-out">
