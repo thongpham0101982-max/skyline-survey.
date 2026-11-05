@@ -7891,7 +7891,7 @@ const [customCommitmentSubjects, setCustomCommitmentSubjects] = useState<string[
                         <th className="py-3 px-3 text-center">Ngày sinh</th>
                         <th className="py-3 px-3 text-center">Giới tính</th>
                         <th className="py-3 px-3 text-center">Khối</th>
-                        <th className="py-3 px-4">Hệ đào tạo, Diện khảo sát</th>
+                        <th className="py-3 px-4">Hệ đào tạo</th>
                         <th className="py-3 px-4 text-center text-[#003B3A]">Quyết định xét duyệt</th>
                         <th className="py-3 px-4 text-right">Hồ sơ chi tiết</th>
                       </tr>
@@ -7971,7 +7971,7 @@ const [customCommitmentSubjects, setCustomCommitmentSubjects] = useState<string[
                               </span>
                             </td>
 
-                            {/* Hệ / Diện khảo sát */}
+                            {/* Hệ đào tạo */}
                             <td className="py-3 px-4">
                               <div className="flex items-center gap-1.5">
                                 <span className="font-semibold text-slate-800 text-xs">{s.surveyFormType || "—"}</span>
@@ -7980,9 +7980,6 @@ const [customCommitmentSubjects, setCustomCommitmentSubjects] = useState<string[
                                     Khảo sát lẻ
                                   </span>
                                 )}
-                              </div>
-                              <div className="text-[11px] text-slate-500 max-w-[220px] truncate mt-0.5" title={s.admissionCriteria}>
-                                {s.admissionCriteria || "—"}
                               </div>
                             </td>
 
