@@ -26,7 +26,8 @@ import {
   GraduationCap,
   FileText,
   HelpCircle,
-  CheckSquare
+  CheckSquare,
+  ClipboardCheck
 } from "lucide-react"
 import {
   ORIENTATION_RATING_OPTIONS,
@@ -36,25 +37,35 @@ import {
   RatingCode,
   EvidenceSource
 } from "@/lib/orientation/criteria-config"
+import { questionsData, defaultQuestions } from "@/lib/orientation/psychologyQuestions"
 
 interface StudentOrientationReportModalProps {
   isOpen: boolean
   onClose: () => void
   student: any
   orientationData?: any
+  initialViewMode?: "ALL" | "PSYCHOLOGY_ONLY"
 }
 
 export function StudentOrientationReportModal({
   isOpen,
   onClose,
   student,
-  orientationData: propOrientationData
+  orientationData: propOrientationData,
+  initialViewMode = "ALL"
 }: StudentOrientationReportModalProps) {
   const printRef = useRef<HTMLDivElement>(null)
   const [loading, setLoading] = useState(false)
   const [exportingPdf, setExportingPdf] = useState(false)
+  const [reportViewMode, setReportViewMode] = useState<"ALL" | "PSYCHOLOGY_ONLY">(initialViewMode || "ALL")
   const [orientationData, setOrientationData] = useState<any>(propOrientationData || null)
   const [studentInfo, setStudentInfo] = useState<any>(student)
+
+  useEffect(() => {
+    if (initialViewMode) {
+      setReportViewMode(initialViewMode)
+    }
+  }, [initialViewMode])
 
   // Khởi tạo và fetch dữ liệu nhanh chóng, không làm đơ giao diện
   useEffect(() => {
@@ -105,6 +116,8 @@ export function StudentOrientationReportModal({
 
   if (!isOpen) return null
 
+  const sData = studentInfo || student
+
   // Xuất file PDF hoặc In A4 chuẩn đa trang (Multi-page) thông qua Isolated Print Frame
   const handlePrintOrExport = (isPdfDownload = false) => {
     try {
@@ -115,7 +128,10 @@ export function StudentOrientationReportModal({
         .replace(/[^a-zA-Z0-9]/g, "_")
       const studentCode = sData?.studentCode || student?.studentCode || "HS"
       const gradeStr = (sData?.grade || student?.grade) ? `Khoi_${sData?.grade || student?.grade}` : "DinhHuong"
-      const pdfTitle = `BaoCao_DinhHuong_${gradeStr}_${studentCode}_${cleanName}`
+      const isPsychologyOnly = reportViewMode === "PSYCHOLOGY_ONLY"
+      const pdfTitle = isPsychologyOnly
+        ? `Phieu_KhaoSat_TamLy_${gradeStr}_${studentCode}_${cleanName}`
+        : `BaoCao_DinhHuong_${gradeStr}_${studentCode}_${cleanName}`
 
       const printElement = printRef.current
       if (!printElement) {
@@ -395,6 +411,50 @@ export function StudentOrientationReportModal({
       parsedPsych = typeof rawPsych === "string" ? JSON.parse(rawPsych) : rawPsych
     } catch (e) {}
   }
+
+  const hasPsych = Boolean(
+    parsedPsych ||
+    (orientationData?.psychologyReferralStatus && orientationData.psychologyReferralStatus !== "NONE") ||
+    orientationData?.psychologyTeacherName
+  )
+
+  const hasDigitalSign = Boolean(
+    parsedPsych?.digitalSignature?.isSigned ||
+    sData?.signatureName ||
+    orientationData?.signatureName ||
+    parsedPsych?.reportedToGdcs ||
+    orientationData?.psychologyTeacherName
+  )
+
+  const signerName =
+    parsedPsych?.digitalSignature?.signedBy ||
+    sData?.signatureName ||
+    orientationData?.signatureName ||
+    orientationData?.psychologyTeacherName ||
+    parsedPsych?.reportedToGdcs?.reporterName ||
+    "Giáo viên Tâm lý học đường"
+
+  const signTime =
+    parsedPsych?.digitalSignature?.signedAtFormatted ||
+    parsedPsych?.reportedToGdcs?.reportedAtFormatted ||
+    (sData?.updatedAt ? new Date(sData.updatedAt).toLocaleString("vi-VN") : "Đã xác thực")
+
+  const signHash =
+    parsedPsych?.digitalSignature?.signatureHash ||
+    `SQMS-SIGN-TLY-${sData?.studentCode || String(sData?.id || '').slice(0, 8)}`
+
+  const secLabels = [
+    { label: "Mục I: Cảm xúc", max: 16 },
+    { label: "Mục II: Hành vi", max: 12 },
+    { label: "Mục III: Giao tiếp", max: 12 },
+    { label: "Mục IV: Chú ý & Học tập", max: 16 },
+    { label: "Mục V: Tư duy", max: 12 },
+    { label: "Mục VI: Động lực", max: 12 }
+  ]
+
+  const rawGradeClean = String(sData?.grade || student?.grade || "").toLowerCase().replace("khối", "").replace("khoi", "").trim()
+  const currentGradeKey = ["1", "2", "3", "4", "5", "6", "7", "8", "9", "10", "11", "12"].includes(rawGradeClean) ? rawGradeClean : "default"
+  const psychQuestionsSections = questionsData[currentGradeKey] || defaultQuestions
 
   // Parse điểm và nhận xét chuyên môn của tất cả các môn khảo sát thực tế tại Sky-Line
   const parseScores = () => {
@@ -767,18 +827,72 @@ export function StudentOrientationReportModal({
       <div id="orientation-report-main-container" className="relative bg-white w-full max-w-[900px] rounded-3xl shadow-2xl border border-slate-200 flex flex-col max-h-[95vh] print:max-h-none print:h-auto print:border-none print:shadow-none print:rounded-none overflow-hidden">
         
         {/* TOP BAR (HIDDEN IN PRINT) */}
-        <div className="no-print px-6 py-4 bg-gradient-to-r from-[#083d39] via-[#0b524d] to-[#0f6b64] text-white flex items-center justify-between border-b border-teal-800 flex-shrink-0">
-          <div className="flex items-center gap-3">
-            <div className="w-8 h-8 rounded-xl bg-teal-600 text-white flex items-center justify-center shadow-sm">
-              <Printer className="w-4 h-4" />
+        <div className="no-print px-5 py-3.5 bg-gradient-to-r from-[#083d39] via-[#0b524d] to-[#0f6b64] text-white flex flex-col sm:flex-row items-center justify-between gap-3 border-b border-teal-800 flex-shrink-0">
+          <div className="flex items-center gap-2.5 w-full sm:w-auto">
+            <div className="w-8 h-8 rounded-xl bg-teal-600 text-white flex items-center justify-center shadow-sm shrink-0">
+              {reportViewMode === "PSYCHOLOGY_ONLY" ? <Brain className="w-4 h-4 text-emerald-200" /> : <Printer className="w-4 h-4" />}
             </div>
             <div>
-              <h3 className="text-sm font-black text-white">Báo Cáo Phỏng Vấn Định Hướng Học Sinh & Trao Đổi PHHS (A4)</h3>
-              <p className="text-[11px] text-teal-200 font-medium">Khổ giấy A4 chuẩn &bull; Bảng tự động co giãn vừa trang in &bull; Không bị tràn lề</p>
+              <h3 className="text-sm font-black text-white">
+                {reportViewMode === "PSYCHOLOGY_ONLY"
+                  ? "Phiếu Kết Quả Khảo Sát & Đánh Giá Tâm Lý (A4)"
+                  : "Báo Cáo Phỏng Vấn Định Hướng Học Sinh & Trao Đổi PHHS (A4)"}
+              </h3>
+              <p className="text-[11px] text-teal-200 font-medium">
+                {reportViewMode === "PSYCHOLOGY_ONLY"
+                  ? "Khổ giấy A4 chuẩn • Kèm Chứng nhận Chữ ký điện tử SQMS Giáo viên • Lưu trữ hồ sơ tuyển sinh"
+                  : "Khổ giấy A4 chuẩn • Bảng tự động co giãn vừa trang in • Không bị tràn lề"}
+              </p>
             </div>
           </div>
 
-          <div className="flex items-center gap-2">
+          {/* VIEW MODE TOGGLE (NẾU HỌC SINH CÓ DỮ LIỆU TÂM LÝ) */}
+          {hasPsych && (
+            <div className="flex items-center p-1 bg-black/25 rounded-xl border border-teal-600/70 text-xs font-bold">
+              <button
+                type="button"
+                onClick={() => setReportViewMode("ALL")}
+                className={`px-3 py-1.5 rounded-lg transition-all cursor-pointer ${
+                  reportViewMode === "ALL"
+                    ? "bg-white text-[#003B3A] shadow-sm font-black"
+                    : "text-teal-200 hover:text-white"
+                }`}
+              >
+                📄 Toàn diện A4
+              </button>
+              <button
+                type="button"
+                onClick={() => setReportViewMode("PSYCHOLOGY_ONLY")}
+                className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg transition-all cursor-pointer ${
+                  reportViewMode === "PSYCHOLOGY_ONLY"
+                    ? "bg-[#00A19A] text-white shadow-sm font-black"
+                    : "text-teal-200 hover:text-white"
+                }`}
+              >
+                <Brain size={13} />
+                <span>🧠 Chỉ Phiếu Tâm Lý &amp; Ký Tên</span>
+              </button>
+            </div>
+          )}
+
+          <div className="flex items-center gap-2 w-full sm:w-auto justify-end">
+            {/* Phím tắt: nếu đang ở chế độ Toàn diện nhưng muốn chỉ lưu PDF phiếu tâm lý */}
+            {hasPsych && reportViewMode === "ALL" && (
+              <button
+                type="button"
+                onClick={() => {
+                  setReportViewMode("PSYCHOLOGY_ONLY");
+                  setTimeout(() => handlePrintOrExport(true), 250);
+                }}
+                disabled={exportingPdf || loading}
+                className="flex items-center gap-1.5 px-3 py-2 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl text-xs font-black shadow-md cursor-pointer transition-all active:scale-[0.98]"
+                title="Chỉ lưu PDF kết quả khảo sát tâm lý và ký tên"
+              >
+                <Brain size={13} />
+                <span>Lưu PDF Tâm Lý</span>
+              </button>
+            )}
+
             <button
               type="button"
               onClick={() => handlePrintOrExport(true)}
@@ -827,6 +941,253 @@ export function StudentOrientationReportModal({
             <div className="py-24 text-center space-y-3">
               <RefreshCw className="w-8 h-8 animate-spin mx-auto text-teal-700" />
               <p className="text-xs font-bold text-slate-500">Đang tổng hợp báo cáo nhận diện...</p>
+            </div>
+          ) : reportViewMode === "PSYCHOLOGY_ONLY" ? (
+            <div className="space-y-3.5">
+              {/* PSYCHOLOGY REPORT HEADER */}
+              <div className="print-section border-b-2 border-[#003B3A] pb-2.5 flex items-start justify-between gap-4">
+                <div className="space-y-0.5">
+                  <div className="text-[11px] font-black uppercase tracking-widest text-[#003B3A] flex items-center gap-1.5">
+                    <span className="w-2.5 h-2.5 rounded-full bg-[#00A19A] inline-block"></span>
+                    <span>HỆ THỐNG GIÁO DỤC SKY-LINE</span>
+                  </div>
+                  <div className="text-xs font-bold text-slate-800">
+                    Cơ sở: {campusName} &bull; Ban Khảo Thí &amp; ĐBCL
+                  </div>
+                  <div className="text-[10px] text-teal-700 font-semibold">
+                    Bộ phận Khảo sát &amp; Tư vấn Tâm lý Học đường
+                  </div>
+                </div>
+
+                <div className="text-right space-y-0.5">
+                  <span className="text-[10px] font-mono font-bold text-teal-950 block">
+                    Mã hồ sơ: {sData?.studentCode || student?.studentCode || "HS-KSDV"}
+                  </span>
+                  <span className="text-[10px] text-slate-500 block">
+                    Khảo sát tuyển sinh năm học 2026 - 2027
+                  </span>
+                  <span className="text-[10px] text-slate-500 block">
+                    Thời gian lập: {signTime}
+                  </span>
+                </div>
+              </div>
+
+              {/* PSYCHOLOGY REPORT TITLE */}
+              <div className="print-section text-center space-y-0.5 py-1">
+                <h1 className="text-base sm:text-lg font-black text-[#003B3A] uppercase tracking-tight">
+                  PHIẾU KẾT QUẢ KHẢO SÁT &amp; ĐÁNH GIÁ TÂM LÝ HỌC ĐƯỜNG
+                </h1>
+                <p className="text-[11.5px] text-teal-800 font-bold">
+                  Áp dụng cho học sinh {gradeConfig.label || `Khối ${rawGradeClean}`} &bull; Khảo sát tâm lý đầu vào chuyên sâu
+                </p>
+                <p className="text-[9.5px] text-slate-500 italic">
+                  (Biểu mẫu chuyên môn lưu trữ hồ sơ tâm lý và chứng nhận kết quả xét tuyển của Hệ thống Giáo dục Sky-Line)
+                </p>
+              </div>
+
+              {/* PHẦN 1: THÔNG TIN HỌC SINH */}
+              <div className="print-section bg-slate-50 rounded-xl border border-slate-200 p-2.5 text-xs">
+                <div className="text-[10.5px] font-black uppercase text-[#003B3A] mb-1.5 flex items-center gap-1.5">
+                  <User size={13} className="text-[#00A19A]" />
+                  <span>1. THÔNG TIN HỌC SINH ĐƯỢC KHẢO SÁT</span>
+                </div>
+                <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 text-[10.5px]">
+                  <div>
+                    <span className="text-slate-400 block text-[9px] uppercase font-bold">Họ và tên:</span>
+                    <strong className="text-[#003B3A] font-bold text-xs">{sData?.fullName || student?.fullName}</strong>
+                  </div>
+                  <div>
+                    <span className="text-slate-400 block text-[9px] uppercase font-bold">Mã học sinh:</span>
+                    <span className="font-mono font-bold text-slate-800">{sData?.studentCode || student?.studentCode}</span>
+                  </div>
+                  <div>
+                    <span className="text-slate-400 block text-[9px] uppercase font-bold">Ngày sinh / Giới tính:</span>
+                    <span className="font-semibold text-slate-800">
+                      {sData?.dateOfBirth ? new Date(sData.dateOfBirth).toLocaleDateString("vi-VN") : "—"} ({sData?.gender || "Nam"})
+                    </span>
+                  </div>
+                  <div>
+                    <span className="text-slate-400 block text-[9px] uppercase font-bold">Khối / Hệ khảo sát:</span>
+                    <span className="font-semibold text-slate-800">
+                      Khối {rawGradeClean} &bull; {sData?.surveySystem || sData?.surveyFormType || "Hệ HNS"}
+                    </span>
+                  </div>
+                </div>
+              </div>
+
+              {/* PHẦN 2: TỔNG HỢP 6 NHÓM CHỈ SỐ TÂM LÝ */}
+              <div className="print-section space-y-2">
+                <div className="flex items-center justify-between border-b border-teal-200 pb-1">
+                  <div className="flex items-center gap-2">
+                    <Brain size={14} className="text-[#00A19A]" />
+                    <h2 className="text-[11px] font-black uppercase tracking-wider text-[#003B3A]">
+                      2. TỔNG HỢP ĐIỂM SỐ 6 NHÓM TIÊU CHÍ TÂM LÝ
+                    </h2>
+                  </div>
+                  <div className="text-xs">
+                    <span className="text-slate-500 font-medium">Tổng điểm: </span>
+                    <strong className="text-emerald-700 font-black text-sm tabular-nums">
+                      {parsedPsych?.totalScore ?? 0}/80đ
+                    </strong>
+                    <span className="ml-2 px-2 py-0.5 rounded-full bg-emerald-100 text-emerald-800 text-[10px] font-black">
+                      {parsedPsych?.evaluation?.level || "Bình thường"}
+                    </span>
+                  </div>
+                </div>
+
+                <div className="grid grid-cols-2 sm:grid-cols-6 gap-1.5 text-center">
+                  {secLabels.map((sec, idx) => (
+                    <div key={idx} className="p-2 rounded-xl bg-teal-50/60 border border-teal-200">
+                      <span className="text-[8.5px] font-bold text-slate-500 block truncate" title={sec.label}>{sec.label}</span>
+                      <span className="text-xs font-black text-[#003B3A] tabular-nums mt-0.5 block">
+                        {parsedPsych?.sectionScores?.[idx] ?? 0}/{sec.max}đ
+                      </span>
+                    </div>
+                  ))}
+                </div>
+              </div>
+
+              {/* PHẦN 3: BẢNG CHI TIẾT 20 CÂU HỎI KHẢO SÁT TÂM LÝ */}
+              <div className="print-section-flow space-y-1.5">
+                <div className="flex items-center gap-2 border-b border-teal-200 pb-1">
+                  <ClipboardCheck size={14} className="text-[#00A19A]" />
+                  <h2 className="text-[11px] font-black uppercase tracking-wider text-[#003B3A]">
+                    3. KẾT QUẢ ĐÁNH GIÁ CHI TIẾT THEO TỪNG CÂU HỎI KHẢO SÁT
+                  </h2>
+                </div>
+
+                <table className="w-full border-collapse border border-slate-300 text-[9.5px]">
+                  <thead>
+                    <tr className="bg-[#003B3A] text-white font-bold text-center">
+                      <th className="p-1.5 border border-teal-800 w-8">STT</th>
+                      <th className="p-1.5 border border-teal-800 text-left">Nội dung câu hỏi / Tình huống khảo sát</th>
+                      <th className="p-1.5 border border-teal-800 w-24 text-center">Mức điểm</th>
+                      <th className="p-1.5 border border-teal-800 w-44 text-left">Ghi chú quan sát thực tế</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {(() => {
+                      let qCounter = 0;
+                      return psychQuestionsSections.map((sec: any, secIdx: number) => (
+                        <React.Fragment key={secIdx}>
+                          <tr className="bg-slate-100 font-bold text-[#003B3A]">
+                            <td colSpan={4} className="p-1 border border-slate-300 text-[9px] uppercase tracking-wide">
+                              {sec.title}
+                            </td>
+                          </tr>
+                          {sec.questions.map((q: any, qSubIdx: number) => {
+                            const currentQIdx = qCounter++;
+                            const scoreVal = parsedPsych?.scores?.[currentQIdx];
+                            const noteVal = parsedPsych?.notes?.[currentQIdx] || "";
+                            return (
+                              <tr key={qSubIdx} className="hover:bg-teal-50/30 border-b border-slate-200">
+                                <td className="p-1 border border-slate-300 text-center font-bold font-mono">
+                                  {currentQIdx + 1}
+                                </td>
+                                <td className="p-1 border border-slate-300 leading-tight">
+                                  {q.text}
+                                </td>
+                                <td className="p-1 border border-slate-300 text-center font-bold tabular-nums">
+                                  {scoreVal !== undefined && scoreVal >= 0 ? (
+                                    <span className="px-1.5 py-0.5 rounded bg-emerald-50 text-emerald-800 border border-emerald-200">
+                                      {scoreVal} / 4đ
+                                    </span>
+                                  ) : (
+                                    <span className="text-slate-400">—</span>
+                                  )}
+                                </td>
+                                <td className="p-1 border border-slate-300 text-slate-700 italic">
+                                  {noteVal || "—"}
+                                </td>
+                              </tr>
+                            );
+                          })}
+                        </React.Fragment>
+                      ));
+                    })()}
+                  </tbody>
+                </table>
+              </div>
+
+              {/* PHẦN 4: KẾT LUẬN SƠ BỘ & KHUYẾN NGHỊ */}
+              <div className="print-section grid grid-cols-1 sm:grid-cols-2 gap-2.5 text-xs">
+                <div className="p-2.5 bg-amber-50/50 rounded-xl border border-amber-200">
+                  <span className="font-black uppercase text-amber-900 text-[9px] block">
+                    4.1. KẾT LUẬN SƠ BỘ CỦA GIÁO VIÊN TÂM LÝ:
+                  </span>
+                  <p className="text-slate-800 mt-1 leading-relaxed text-[10px]">
+                    {parsedPsych?.conclusion || orientationData?.psychologyReferralReason || "Tất cả tiêu chí đều đạt. Các chỉ số tâm lý phát triển bình thường."}
+                  </p>
+                </div>
+
+                <div className="p-2.5 bg-emerald-50/50 rounded-xl border border-emerald-200">
+                  <span className="font-black uppercase text-emerald-900 text-[9px] block">
+                    4.2. KHUYẾN NGHỊ HỖ TRỢ DÀNH CHO PHỤ HUYNH &amp; NHÀ TRƯỜNG:
+                  </span>
+                  <p className="text-slate-800 mt-1 leading-relaxed text-[10px]">
+                    {parsedPsych?.recommendation || parsedPsych?.evaluation?.suggestion || "Tiếp tục tạo môi trường khuyến khích học sinh giao tiếp tự tin, đồng hành cùng nhà trường trong giai đoạn đầu nhập học."}
+                  </p>
+                </div>
+              </div>
+
+              {/* PHẦN 5: CHỨNG NHẬN KÝ ĐIỆN TỬ VÀ XÁC THỰC SQMS */}
+              <div className="print-section pt-3 border-t-2 border-slate-300 text-xs">
+                <div className="grid grid-cols-3 gap-3 text-center">
+                  <div className="flex flex-col items-center justify-between min-h-[100px]">
+                    <span className="text-[9.5px] font-black uppercase text-slate-600 block">
+                      GIÁO VIÊN KHẢO SÁT &amp; ĐÁNH GIÁ TÂM LÝ
+                    </span>
+                    <div className="p-2 rounded-xl border-2 border-emerald-600 bg-emerald-50/80 text-center w-full max-w-[210px] shadow-2xs my-1">
+                      <div className="text-[8px] font-black uppercase tracking-wider text-emerald-800 flex items-center justify-center gap-1">
+                        <ShieldCheck size={12} className="text-emerald-700" />
+                        <span>CHỨNG NHẬN KÝ ĐIỆN TỬ SQMS</span>
+                      </div>
+                      <div className="text-[11px] font-black text-[#003B3A] my-0.5 truncate">
+                        {signerName}
+                      </div>
+                      <div className="text-[8px] text-slate-500 font-mono">
+                        Thời gian: {signTime}
+                      </div>
+                      <div className="text-[7.5px] text-emerald-700 font-mono truncate mt-0.5">
+                        Mã xác thực: {signHash}
+                      </div>
+                      <div className="text-[7px] text-emerald-800 font-bold mt-0.5">
+                        ✓ ĐÃ KÝ ĐIỆN TỬ VÀ ĐỒNG BỘ CSDL
+                      </div>
+                    </div>
+                  </div>
+
+                  <div className="space-y-12">
+                    <span className="text-[9.5px] font-black uppercase text-slate-600 block">
+                      BAN KHẢO THÍ &amp; ĐBCL (QLCM)
+                    </span>
+                    <div>
+                      <strong className="text-slate-900 text-[11px] block font-bold">
+                        {verificationInfo?.verifiedBy || verificationInfo?.verifierName || "Ban Chuyên môn Cơ sở"}
+                      </strong>
+                      <span className="text-[9px] text-slate-400 italic block">
+                        Ký xác nhận lưu hồ sơ
+                      </span>
+                    </div>
+                  </div>
+
+                  <div className="space-y-12">
+                    <span className="text-[9.5px] font-black uppercase text-slate-600 block">
+                      GIÁM ĐỐC CƠ SỞ / HỘI ĐỒNG TUYỂN SINH
+                    </span>
+                    <div>
+                      <strong className="text-slate-900 text-[11px] block font-bold">
+                        {sData?.signatureName || (campusName && campusName !== "Sky-Line" ? `GĐCS ${campusName}` : "Hội đồng Tuyển sinh")}
+                      </strong>
+                      <span className="text-[9px] text-slate-400 italic block">Phê duyệt kết quả</span>
+                    </div>
+                  </div>
+                </div>
+
+                <div className="text-center text-[8.5px] text-slate-400 italic pt-3 border-t border-slate-100 mt-2">
+                  Hệ thống Quản lý Khảo sát &amp; Định hướng Sky-Line (SQMS) &bull; Khảo sát tâm lý đầu vào chuyên sâu &bull; Mã hồ sơ: {sData?.studentCode || student?.studentCode}
+                </div>
+              </div>
             </div>
           ) : (
             <div className="space-y-3">
@@ -1396,20 +1757,20 @@ export function StudentOrientationReportModal({
                     <span className="text-[9.5px] font-black uppercase text-slate-600 block">
                       GIÁO VIÊN KHẢO SÁT / ĐỊNH HƯỚNG
                     </span>
-                    {parsedPsych?.digitalSignature?.isSigned ? (
+                    {hasDigitalSign ? (
                       <div className="p-1.5 rounded-lg border-2 border-emerald-600 bg-emerald-50/60 text-center w-full max-w-[190px] shadow-2xs my-1">
                         <div className="text-[8px] font-black uppercase tracking-wider text-emerald-800 flex items-center justify-center gap-1">
                           <ShieldCheck size={11} className="text-emerald-700" />
                           <span>KÝ ĐIỆN TỬ SQMS</span>
                         </div>
                         <div className="text-[10.5px] font-black text-[#003B3A] my-0.5 truncate">
-                          {parsedPsych.digitalSignature.signedBy}
+                          {signerName}
                         </div>
                         <div className="text-[7.5px] text-slate-500 font-mono">
-                          {parsedPsych.digitalSignature.signedAtFormatted || "Đã xác thực"}
+                          {signTime}
                         </div>
                         <div className="text-[7px] text-emerald-700 font-mono truncate mt-0.5">
-                          {parsedPsych.digitalSignature.signatureHash || "SQMS-VERIFIED"}
+                          {signHash}
                         </div>
                       </div>
                     ) : (

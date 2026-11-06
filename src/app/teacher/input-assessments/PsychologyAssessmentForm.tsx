@@ -20,7 +20,10 @@ import {
     X,
     ShieldAlert,
     ShieldCheck,
-    Award
+    Award,
+    Printer,
+    Download,
+    Brain
 } from "lucide-react"
 
 import { 
@@ -39,7 +42,23 @@ import {
 export { questionsData, defaultQuestions }
 
 
-export default function PsychologyAssessmentForm({ student, onSave, isLocked }: any) {
+export default function PsychologyAssessmentForm({ student, onSave, isLocked, onPrintPsychologyPdf }: any) {
+    const handlePrintOrExport = (isPdf = false) => {
+        if (typeof onPrintPsychologyPdf === "function") {
+            onPrintPsychologyPdf(student, {
+                scores,
+                notes,
+                sectionScores,
+                totalScore,
+                evaluation,
+                conclusion,
+                recommendation,
+                digitalSignature
+            });
+            return;
+        }
+        window.print();
+    };
     
     const rawGrade = String(student?.grade || "").toLowerCase().replace("khối", "").replace("khoi", "").trim()
     const currentGrade = ["1", "2", "3", "4", "5", "6", "7", "8", "9", "10", "11", "12"].includes(rawGrade) ? rawGrade : "default"
@@ -676,6 +695,18 @@ export default function PsychologyAssessmentForm({ student, onSave, isLocked }: 
                     </div>
                     
                     <div className="flex items-center gap-2.5 w-full md:w-auto">
+                                                {/* NÚT LƯU PDF / IN PHIẾU TÂM LÝ */}
+                        <button
+                            type="button"
+                            onClick={() => handlePrintOrExport(true)}
+                            disabled={isSaving}
+                            className="flex-1 md:flex-initial flex items-center justify-center gap-2 px-4 py-2.5 bg-gradient-to-r from-emerald-600 to-teal-700 hover:from-emerald-700 hover:to-teal-800 text-white font-bold text-xs rounded-xl shadow-md shadow-emerald-700/20 transition-all cursor-pointer disabled:opacity-50"
+                            title="Chỉ lưu PDF kết quả khảo sát tâm lý và ký tên"
+                        >
+                            <Printer size={15} />
+                            <span>Lưu PDF &amp; In Phiếu</span>
+                        </button>
+
                         {/* NÚT GỬI EMAIL BÁO CÁO GĐCS */}
                         <button
                             type="button"

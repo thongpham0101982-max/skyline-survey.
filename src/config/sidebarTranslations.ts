@@ -163,7 +163,7 @@ export const SIDEBAR_TRANSLATIONS: SidebarTranslations = {
     DU_GIO_K12: { vi: "Khối Phổ thông", en: "K-12 Observation" },
     AI_GROWTH: { vi: "AI Growth – Đổi mới Tiết dạy", en: "AI Growth – Lesson Innovation" },
     DU_GIO_MAM_NON: { vi: "Khối Mầm non", en: "Preschool Observation" },
-    DU_GIO_GVNN: { vi: "Giáo viên nước ngoài", en: "Foreign Teacher Observation" },
+    DU_GIO_GVNN: { vi: "Tiếng Anh – Chương trình Song ngữ", en: "English – Bilingual Program" },
     TONG_HOP_DU_GIO: { vi: "Tổng hợp kết quả", en: "Observation Summary" },
     TONG_HOP_DU_GIO_K12: { vi: "Phổ thông K-12", en: "K-12 Observation Summary" },
     TONG_HOP_DU_GIO_MN: { vi: "Mầm non", en: "Preschool Observation Summary" },

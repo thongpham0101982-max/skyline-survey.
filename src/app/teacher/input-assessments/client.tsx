@@ -49,6 +49,7 @@ export default function TeacherAssessmentsClient({ user }: { user: any }) {
     const [orientationTargetStudent, setOrientationTargetStudent] = useState<any | null>(null);
     const [reportTargetStudent, setReportTargetStudent] = useState<any | null>(null);
     const [activeReportOrientationData, setActiveReportOrientationData] = useState<any | null>(null);
+    const [reportInitialViewMode, setReportInitialViewMode] = useState<"ALL" | "PSYCHOLOGY_ONLY">("ALL");
 
     useEffect(() => {
         setIsMounted(true);
@@ -2424,6 +2425,16 @@ export default function TeacherAssessmentsClient({ user }: { user: any }) {
                         student={activePsychStudent}
                         onSave={async (st: any, scores: any[], comments: any[]) => { await saveStudentScore(st, scores, comments); }}
                         isLocked={isLocked}
+                        onPrintPsychologyPdf={(stu: any, psychData: any) => {
+                            setReportTargetStudent(stu);
+                            setActiveReportOrientationData({
+                                student: stu,
+                                psychologyData: psychData,
+                                psychologyTeacherName: psychData?.digitalSignature?.signedBy || stu?.signatureName || stu?.currentTeacherName || "Giáo viên Tâm lý học đường",
+                                psychologyReferralStatus: "REQUESTED_DIRECTIVE"
+                            });
+                            setReportInitialViewMode("PSYCHOLOGY_ONLY");
+                        }}
                     />
                 </div>
             )}
@@ -2570,9 +2581,11 @@ export default function TeacherAssessmentsClient({ user }: { user: any }) {
                     onClose={() => {
                         setReportTargetStudent(null);
                         setActiveReportOrientationData(null);
+                        setReportInitialViewMode("ALL");
                     }}
                     student={reportTargetStudent}
                     orientationData={activeReportOrientationData}
+                    initialViewMode={reportInitialViewMode}
                 />
             )}
         </div>
