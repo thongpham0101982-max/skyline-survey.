@@ -674,7 +674,7 @@ export function StudentProfilesAdminClient({
             <button
               onClick={() => handleBatchPdfExport("class", true)}
               disabled={selectedClassId === "all"}
-              className="flex items-center gap-1.5 px-3.5 py-2 bg-gradient-to-r from-purple-700 via-indigo-600 to-teal-600 hover:from-purple-800 hover:to-teal-700 text-white rounded-xl disabled:opacity-40 disabled:cursor-not-allowed transition-all cursor-pointer shadow-xs font-bold"
+              className="flex items-center gap-1.5 px-3.5 py-2 bg-gradient-to-r from-teal-600 via-indigo-600 to-teal-600 hover:from-teal-600 hover:to-teal-700 text-white rounded-xl disabled:opacity-40 disabled:cursor-not-allowed transition-all cursor-pointer shadow-xs font-bold"
               title="Xuất theo lớp thành thư mục ZIP, bên trong là từng file PDF theo từng học sinh (Lớp_MaHS_Hovaten.pdf)"
             >
               <FolderArchive className="w-3.5 h-3.5" />
@@ -1060,7 +1060,7 @@ export function StudentProfilesAdminClient({
                         <div className="truncate font-black text-slate-800 text-xs flex items-center gap-1.5">
                           <span>{s.studentName}</span>
                           {s.studentType === "GIAO_LUU" && (
-                            <span className="px-1.5 py-0.2 rounded-full text-[9px] font-extrabold bg-purple-100 text-purple-700 border border-purple-200 flex-shrink-0" title="Học sinh giao lưu">
+                            <span className="px-1.5 py-0.2 rounded-full text-[9px] font-extrabold bg-teal-50 text-teal-800 border border-teal-200 flex-shrink-0" title="Học sinh giao lưu">
                               GL
                             </span>
                           )}
@@ -1133,8 +1133,8 @@ export function StudentProfilesAdminClient({
                         </span>
                       )}
                       {selectedStudent?.studentType === "GIAO_LUU" ? (
-                        <span className="inline-flex items-center gap-1 bg-purple-100 text-purple-800 border border-purple-300 px-2.5 py-0.5 rounded-full text-[10px] font-black uppercase tracking-wider shadow-2xs">
-                          <Sparkles className="w-3 h-3 text-purple-600" />
+                        <span className="inline-flex items-center gap-1 bg-teal-50 text-teal-800 border border-teal-400 px-2.5 py-0.5 rounded-full text-[10px] font-black uppercase tracking-wider shadow-2xs">
+                          <Sparkles className="w-3 h-3 text-teal-800" />
                           Học sinh Giao lưu
                         </span>
                       ) : (
@@ -1254,10 +1254,10 @@ export function StudentProfilesAdminClient({
                       const targetParam = targetClassId ? `&classId=${targetClassId}` : "";
                       window.open(`/admin/ho-so-hoc-sinh/print?type=class${targetParam}&academicYearId=${selectedYearId}&mode=${cvViewMode === 'cover' ? 'cover' : (cvViewMode === 'content' ? 'content' : 'all')}&autoexportzip=1`, "_blank");
                     }}
-                    className="flex items-center gap-1.5 bg-gradient-to-r from-purple-700 via-indigo-600 to-[#00A19A] hover:from-purple-800 hover:to-teal-800 text-white px-3.5 py-1.5 rounded-xl text-xs font-black shadow-xs hover:shadow-md transition-all cursor-pointer transform active:scale-95"
+                    className="flex items-center gap-1.5 bg-gradient-to-r from-teal-600 via-indigo-600 to-[#00A19A] hover:from-teal-600 hover:to-teal-800 text-white px-3.5 py-1.5 rounded-xl text-xs font-black shadow-xs hover:shadow-md transition-all cursor-pointer transform active:scale-95"
                     title="Xuất theo lớp thành thư mục ZIP, bên trong là từng file PDF theo từng học sinh (Lớp_MaHS_Hovaten.pdf)"
                   >
-                    <FolderArchive className="w-3.5 h-3.5 text-purple-200" />
+                    <FolderArchive className="w-3.5 h-3.5 text-teal-700" />
                     <span>Xuất ZIP Theo Lớp</span>
                   </button>
 
@@ -1738,8 +1738,8 @@ export function StudentProfilesAdminClient({
                 }
                 if (s === "CAN_CO_GANG") {
                   return (
-                    <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[9px] font-black bg-orange-100 text-orange-900 border border-orange-300">
-                      <span className="w-1.5 h-1.5 rounded-full bg-orange-500"></span>
+                    <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[9px] font-black bg-amber-50 text-amber-800 border border-amber-200">
+                      <span className="w-1.5 h-1.5 rounded-full bg-amber-500"></span>
                       <span>Cần cố gắng (25%)</span>
                     </span>
                   );
@@ -1763,11 +1763,11 @@ export function StudentProfilesAdminClient({
                 <div className="space-y-3 print-section-avoid">
                   <div className="flex items-center justify-between border-b border-slate-200 pb-1.5">
                     <h3 className="text-xs font-black text-[#003B3A] uppercase tracking-wider flex items-center gap-2">
-                      <div className="w-2.5 h-2.5 rounded-full bg-indigo-500" />
-                      <Compass className="w-4 h-4 text-indigo-500" />
+                      <div className="w-2.5 h-2.5 rounded-full bg-[#003B3A]" />
+                      <Compass className="w-4 h-4 text-teal-700" />
                       <span>II. CỐ VẤN HỌC TẬP &amp; NHẬT KÝ THEO DÕI MỤC TIÊU</span>
                     </h3>
-                    <span className="text-[9px] font-bold text-indigo-800 bg-indigo-50 px-2 py-0.5 rounded border border-indigo-200">
+                    <span className="text-[9px] font-bold text-teal-800 bg-teal-50 px-2 py-0.5 rounded border border-teal-200">
                       Phiếu Đánh Giá Kỳ Cố Vấn Học Tập
                     </span>
                   </div>
@@ -2697,7 +2697,7 @@ return (
                                   <div className="bg-white border border-slate-200/90 rounded-2xl p-4 space-y-3 shadow-2xs">
                                     <div className="flex items-center justify-between border-b border-slate-100 pb-2">
                                       <span className="text-xs font-black text-slate-800 uppercase tracking-wider">Học kỳ 2</span>
-                                      <span className="text-[9px] font-extrabold text-indigo-600 bg-indigo-50 px-2 py-0.5 rounded-full border border-indigo-100">HK2</span>
+                                      <span className="text-[9px] font-extrabold text-teal-800 bg-teal-50 px-2 py-0.5 rounded-full border border-teal-200">HK2</span>
                                     </div>
                                     <div className="space-y-2 text-xs font-semibold text-slate-600">
                                       {isPrimary ? (
@@ -2705,7 +2705,7 @@ return (
                                           <div className="flex justify-between items-center">
                                             <span className="font-bold text-slate-700">Đánh giá KQGD HK2:</span>
                                             {finalKqgdHK2 ? (
-                                              <span className="font-black text-indigo-800 bg-indigo-50 px-2.5 py-0.5 rounded-lg border border-indigo-200">{finalKqgdHK2}</span>
+                                              <span className="font-black text-teal-800 bg-teal-50 px-2.5 py-0.5 rounded-lg border border-teal-200">{finalKqgdHK2}</span>
                                             ) : (
                                               <span className="text-[11px] text-slate-400 italic font-medium">Không đánh giá định kỳ HK2</span>
                                             )}
@@ -2796,7 +2796,7 @@ return (
                                             <th rowSpan={2} className="py-3 px-3 text-center w-12 border-r border-slate-200">STT</th>
                                             <th rowSpan={2} className="py-3 px-4 border-r border-slate-200">Tên Môn học</th>
                                             <th colSpan={2} className="py-2 px-3 text-center border-r border-slate-200 text-teal-700 bg-teal-50/50">Học kỳ 1</th>
-                                            <th colSpan={2} className="py-2 px-3 text-center border-r border-slate-200 text-indigo-700 bg-indigo-50/50">Học kỳ 2</th>
+                                            <th colSpan={2} className="py-2 px-3 text-center border-r border-slate-200 text-teal-800 bg-teal-50/50">Học kỳ 2</th>
                                             <th colSpan={2} className="py-2 px-3 text-center text-emerald-800 bg-emerald-50/50">Cả năm</th>
                                           </tr>
                                           <tr className="bg-slate-50/80 text-slate-600 font-bold text-[9px] uppercase tracking-wider border-b border-slate-200">
@@ -2986,7 +2986,7 @@ return (
                                     if (!isNaN(pn)) {
                                       if (pn <= 15) { psychLabel = "Bình thường"; psychClass = "bg-teal-50 border-teal-200 text-teal-700" }
                                       else if (pn <= 31) { psychLabel = "Dấu hiệu nhẹ"; psychClass = "bg-amber-50 border-amber-200 text-amber-700" }
-                                      else if (pn <= 47) { psychLabel = "Dấu hiệu vừa"; psychClass = "bg-orange-50 border-orange-200 text-orange-700" }
+                                      else if (pn <= 47) { psychLabel = "Dấu hiệu vừa"; psychClass = "bg-amber-50 border-amber-200 text-amber-800" }
                                       else { psychLabel = "Nguy cơ cao"; psychClass = "bg-rose-50 border-rose-200 text-rose-700" }
                                     }
                                   }
@@ -2999,8 +2999,8 @@ return (
                                           <div className="text-2xl font-extrabold text-slate-805 mt-1">{mathVal !== null && mathVal !== undefined ? mathVal : "—"}</div>
                                           <div className="text-[9px] text-slate-400 font-bold">Thang 10</div>
                                         </div>
-                                        <div className="bg-indigo-50/30 border border-indigo-100 p-3.5 rounded-xl text-center">
-                                          <div className="text-[10px] text-indigo-650 font-bold uppercase tracking-wider">Ngữ văn</div>
+                                        <div className="bg-teal-50/30 border border-teal-200 p-3.5 rounded-xl text-center">
+                                          <div className="text-[10px] text-teal-800 font-bold uppercase tracking-wider">Ngữ văn</div>
                                           <div className="text-2xl font-extrabold text-slate-850 mt-1">{litVal !== null && litVal !== undefined ? litVal : "—"}</div>
                                           <div className="text-[9px] text-slate-400 font-bold">Thang 10</div>
                                         </div>
@@ -3016,9 +3016,9 @@ return (
                                         </div>
                                       </div>
                                       {totalEnglish !== null && (
-                                        <div className="bg-gradient-to-r from-indigo-50 to-sky-50 p-3 rounded-xl border border-indigo-100 text-center">
-                                          <span className="text-xs text-indigo-655 font-black uppercase tracking-wider">Tổng điểm Tiếng Anh: </span>
-                                          <span className="text-sm font-extrabold text-indigo-700">{totalEnglish}</span>
+                                        <div className="bg-gradient-to-r from-teal-600 to-sky-50 p-3 rounded-xl border border-teal-200 text-center">
+                                          <span className="text-xs text-teal-800 font-black uppercase tracking-wider">Tổng điểm Tiếng Anh: </span>
+                                          <span className="text-sm font-extrabold text-teal-800">{totalEnglish}</span>
                                         </div>
                                       )}
                                       {oralComment && (
@@ -3211,7 +3211,7 @@ return (
                           {(selectedStudent.transfers || []).length > 0 ? (
                             <div className="space-y-3">
                               {selectedStudent.transfers.map((tr: any) => (
-                                <div key={tr.id} className="bg-orange-50 border border-orange-200 p-4 rounded-xl text-xs font-semibold text-slate-705 shadow-2xs animate-in fade-in duration-200">
+                                <div key={tr.id} className="bg-amber-50 border border-amber-200 p-4 rounded-xl text-xs font-semibold text-slate-705 shadow-2xs animate-in fade-in duration-200">
                                   <div className="font-black text-slate-800">Học sinh Chuyển đến / Chuyển đi: {tr.type === "IN" ? "Chuyển đến" : tr.type === "OUT" ? "Chuyển đi" : "Chuyển lớp"}</div>
                                   <div className="mt-1">Ngày thực hiện: {new Date(tr.transferDate).toLocaleDateString('vi-VN')}</div>
                                   {tr.destinationSchool && <div>Trường chuyển đến/đi: {tr.destinationSchool}</div>}
@@ -3290,7 +3290,7 @@ return (
                                             <span className={`p-1 rounded-md flex-shrink-0 ${
                                               isGold ? 'bg-amber-100 text-amber-600' :
                                               isSilver ? 'bg-slate-100 text-slate-600' :
-                                              isBronze ? 'bg-orange-100 text-orange-600' :
+                                              isBronze ? 'bg-amber-50 text-amber-700' :
                                               'bg-[#00A19A]/10 text-[#00A19A]'
                                             }`}>
                                               {isGold ? <Trophy className="w-3.5 h-3.5" /> : isSilver || isBronze ? <Medal className="w-3.5 h-3.5" /> : <Award className="w-3.5 h-3.5" />}
@@ -3317,8 +3317,8 @@ return (
                                           <span className={`text-[10px] font-black px-2.5 py-1 rounded-md border ${
                                             isGold ? 'bg-amber-50 text-amber-800 border-amber-200' :
                                             isSilver ? 'bg-slate-100 text-slate-700 border-slate-300' :
-                                            isBronze ? 'bg-orange-50 text-orange-800 border-orange-200' :
-                                            'bg-indigo-50 text-indigo-700 border-indigo-200'
+                                            isBronze ? 'bg-amber-50 text-amber-800 border-amber-200' :
+                                            'bg-teal-50 text-teal-800 border-teal-200'
                                           }`}>
                                             {levelName}
                                           </span>
@@ -3424,12 +3424,12 @@ return (
           </div>
         </div>
 
-        <div className="bg-violet-50/70 border border-violet-200/80 rounded-2xl p-3.5 flex items-center gap-3">
-          <div className="w-10 h-10 rounded-xl bg-violet-500/15 text-violet-700 flex items-center justify-center font-black text-lg">
+        <div className="bg-teal-50/70 border border-teal-200/80 rounded-2xl p-3.5 flex items-center gap-3">
+          <div className="w-10 h-10 rounded-xl bg-teal-500/15 text-teal-800 flex items-center justify-center font-black text-lg">
             🌐
           </div>
           <div>
-            <div className="text-[10px] font-black text-violet-800 uppercase tracking-wider">Ngôn ngữ &amp; Hội nhập</div>
+            <div className="text-[10px] font-black text-teal-800 uppercase tracking-wider">Ngôn ngữ &amp; Hội nhập</div>
             <div className="text-lg font-black text-slate-900">{ngonNguCount} <span className="text-[10px] font-semibold text-slate-500">hoạt động</span></div>
           </div>
         </div>
@@ -3465,7 +3465,7 @@ return (
                     case "STEM":
                       return <span className="inline-flex items-center gap-1 bg-blue-50 text-blue-800 border border-blue-200 px-2 py-0.5 rounded-lg text-[10px] font-extrabold">🔬 Khoa học &amp; STEM</span>;
                     case "NGON_NGU":
-                      return <span className="inline-flex items-center gap-1 bg-violet-50 text-violet-800 border border-violet-200 px-2 py-0.5 rounded-lg text-[10px] font-extrabold">🌐 Ngôn ngữ &amp; Hội nhập</span>;
+                      return <span className="inline-flex items-center gap-1 bg-teal-50 text-teal-800 border border-teal-200 px-2 py-0.5 rounded-lg text-[10px] font-extrabold">🌐 Ngôn ngữ &amp; Hội nhập</span>;
                     default:
                       return <span className="inline-flex items-center gap-1 bg-slate-100 text-slate-700 border border-slate-200 px-2 py-0.5 rounded-lg text-[10px] font-bold">{act.themeAxisName || act.groupName || "Trải nghiệm"}</span>;
                   }
@@ -3644,7 +3644,7 @@ return (
                                   <div className="px-5 py-4 border-b bg-slate-50 flex items-center justify-between flex-wrap gap-2 text-slate-700">
                                     <div>
                                       <span className={`inline-block px-2.5 py-0.5 rounded-full text-[10px] font-black uppercase tracking-wider mr-2 ${
-                                        target.supportType === "ACADEMIC" ? "bg-blue-100 text-blue-800" : "bg-purple-100 text-purple-800"
+                                        target.supportType === "ACADEMIC" ? "bg-blue-100 text-blue-800" : "bg-teal-50 text-teal-800"
                                       }`}>
                                         {target.supportType === "ACADEMIC" ? "Bồi dưỡng Văn hóa" : "Hỗ trợ Tâm lý"}
                                       </span>
@@ -3652,7 +3652,7 @@ return (
                                     </div>
                                     <div className="flex items-center gap-2">
                                       <span className={`px-2.5 py-0.5 rounded-full text-[10px] font-extrabold ${
-                                        isTerminated ? "bg-emerald-100 text-emerald-800" : isPending ? "bg-amber-100 text-amber-800" : "bg-indigo-100 text-indigo-800"
+                                        isTerminated ? "bg-emerald-100 text-emerald-800" : isPending ? "bg-amber-100 text-amber-800" : "bg-teal-50 text-teal-800"
                                       }`}>
                                         {isTerminated ? "Đã hoàn thành" : isPending ? "Chờ duyệt hoàn thành" : target.status}
                                       </span>

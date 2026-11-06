@@ -189,7 +189,7 @@ export default function ThanhTichClient() {
     if (lvl.includes("THANH_PHO") || lvl.includes("TINH") || lvl === "3") {
       return {
         label: "Cấp Thành phố",
-        color: "bg-purple-100 text-purple-800 border-purple-300",
+        color: "bg-teal-50 text-teal-800 border-teal-400",
         icon: Trophy,
       };
     }
@@ -247,13 +247,13 @@ export default function ThanhTichClient() {
           onClick={() => { setSelectedLevel(selectedLevel === "THANH_PHO" ? "all" : "THANH_PHO"); setPage(1); }}
           className={`p-4 rounded-2xl border transition cursor-pointer shadow-xs ${
             selectedLevel === "THANH_PHO"
-              ? "bg-purple-500/10 border-purple-400 ring-2 ring-purple-400/30"
-              : "bg-white border-slate-200/80 hover:border-purple-300"
+              ? "bg-teal-500/10 border-teal-400 ring-2 ring-purple-400/30"
+              : "bg-white border-slate-200/80 hover:border-teal-400"
           }`}
         >
           <div className="flex items-center justify-between mb-2">
-            <span className="text-[11px] font-extrabold text-purple-700 uppercase tracking-wider">Cấp Tỉnh / TP</span>
-            <Trophy className="w-4 h-4 text-purple-500" />
+            <span className="text-[11px] font-extrabold text-teal-800 uppercase tracking-wider">Cấp Tỉnh / TP</span>
+            <Trophy className="w-4 h-4 text-teal-700" />
           </div>
           <div className="text-2xl font-extrabold text-slate-800">{summary.thanhPho}</div>
           <div className="text-[11px] text-slate-400 mt-1 font-medium">Giải thưởng vinh danh</div>

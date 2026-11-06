@@ -71,7 +71,7 @@ export function DataTable<T extends Record<string, any>>({
                 value={searchQuery}
                 onChange={(e) => handleSearchChange(e.target.value)}
                 placeholder={searchPlaceholder}
-                className="w-full bg-slate-50 border border-slate-200 rounded-xl pl-9 pr-3.5 py-1.5 text-xs text-slate-800 placeholder-slate-400 font-medium focus:outline-none focus:bg-white focus:border-[#48BFE3] focus:ring-2 focus:ring-[#48BFE3]/15 transition-all"
+                className="w-full bg-slate-50 border border-slate-200 rounded-xl pl-9 pr-3.5 py-1.5 text-xs text-slate-800 placeholder-slate-400 font-medium focus:outline-none focus:bg-white focus:border-[#003B3A] focus:ring-2 focus:ring-[#003B3A]/10 transition-all"
               />
             </div>
           ) : <div />}
@@ -90,7 +90,7 @@ export function DataTable<T extends Record<string, any>>({
                   <th
                     key={idx}
                     className={cn(
-                      "px-4 py-3 font-medium text-slate-500 text-xs tracking-normal whitespace-nowrap",
+                      "px-4 py-3 font-semibold text-slate-600 text-xs tracking-tight whitespace-nowrap",
                       col.className
                     )}
                   >
@@ -103,7 +103,7 @@ export function DataTable<T extends Record<string, any>>({
               {isLoading ? (
                 <tr>
                   <td colSpan={columns.length} className="py-12 text-center text-slate-400 font-semibold">
-                    <div className="inline-block size-6 border-2 border-[#48BFE3] border-t-transparent rounded-full animate-spin mb-2" />
+                    <div className="inline-block size-6 border-2 border-[#003B3A] border-t-transparent rounded-full animate-spin mb-2" />
                     <p>Đang tải dữ liệu...</p>
                   </td>
                 </tr>

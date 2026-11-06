@@ -81,8 +81,7 @@ function isSensitiveApi(url) {
     pathname.includes('ktdbcl') ||
     pathname.includes('du-gio') ||
     pathname.includes('auth') ||
-    pathname.includes('assistant') ||
-    pathname.includes('learning-resources')
+    pathname.includes('assistant')
   );
 }
 

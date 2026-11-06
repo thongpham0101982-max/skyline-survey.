@@ -383,7 +383,7 @@ export function GradeUnlockRequestsTab({
                       </td>
                       <td className="py-3.5 px-3">
                         <div className="font-bold text-slate-900 flex items-center gap-1.5">
-                          <User className="w-3.5 h-3.5 text-purple-600" />
+                          <User className="w-3.5 h-3.5 text-teal-800" />
                           <span>{req.teacherName || "Chưa rõ"}</span>
                         </div>
                         {req.teacherEmail && (
@@ -491,7 +491,7 @@ export function GradeUnlockRequestsTab({
                                 {lockingState[req.id] ? (
                                   <RefreshCw className="w-3 h-3 animate-spin" />
                                 ) : (
-                                  <Lock className="w-3 h-3 text-purple-700" />
+                                  <Lock className="w-3 h-3 text-teal-800" />
                                 )}
                                 Khóa lại sổ
                               </button>

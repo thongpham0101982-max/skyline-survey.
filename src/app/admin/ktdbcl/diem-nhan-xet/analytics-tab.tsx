@@ -637,14 +637,14 @@ export function GradeAnalyticsTab({
             onClick={() => setActiveSubView("ksdv_matrix")}
             className={`flex items-center gap-1.5 px-3.5 py-2 rounded-xl text-xs font-extrabold transition-all ${
               activeSubView === "ksdv_matrix"
-                ? "bg-white text-indigo-800 shadow-sm ring-1 ring-indigo-300"
+                ? "bg-white text-teal-800 shadow-sm ring-1 ring-indigo-300"
                 : "text-slate-600 hover:text-slate-900"
             }`}
           >
-            <Sparkles className="w-3.5 h-3.5 text-indigo-600" />
+            <Sparkles className="w-3.5 h-3.5 text-teal-800" />
             <span>Đối sánh KSĐV (Khối 2 - 12)</span>
             {(data.ksdvMatrix?.summary?.totalCommittedStudents || 0) > 0 && (
-              <span className="px-1.5 py-0.2 rounded-full text-[10px] font-black bg-indigo-100 text-indigo-800">
+              <span className="px-1.5 py-0.2 rounded-full text-[10px] font-black bg-teal-50 text-teal-800">
                 {data.ksdvMatrix?.summary?.totalCommittedStudents}
               </span>
             )}
@@ -771,22 +771,22 @@ export function GradeAnalyticsTab({
         {/* KPI 6: HS Diện Cam kết đầu vào */}
         <div 
           onClick={() => setActiveSubView("ksdv_matrix")}
-          className="bg-white p-4 rounded-2xl border border-indigo-200 shadow-sm bg-gradient-to-br from-white to-indigo-50/30 cursor-pointer hover:shadow-md hover:border-indigo-400 transition-all"
+          className="bg-white p-4 rounded-2xl border border-teal-200 shadow-sm bg-gradient-to-br from-white to-emerald-600/30 cursor-pointer hover:shadow-md hover:border-teal-200 transition-all"
           title="Nhấp để xem Ma trận Đối sánh KSĐV (Cam kết đầu vào)"
         >
           <div className="flex items-center justify-between">
-            <span className="text-xs font-bold text-indigo-800">Diện Cam kết</span>
-            <div className="w-8 h-8 rounded-xl bg-indigo-100 text-indigo-700 flex items-center justify-center font-bold">
+            <span className="text-xs font-bold text-teal-800">Diện Cam kết</span>
+            <div className="w-8 h-8 rounded-xl bg-teal-50 text-teal-800 flex items-center justify-center font-bold">
               <Sparkles className="w-4 h-4" />
             </div>
           </div>
           <div className="mt-2 flex items-baseline gap-2">
-            <span className="text-2xl font-black text-indigo-800">
+            <span className="text-2xl font-black text-teal-800">
               {Math.max(data.ksdvMatrix?.summary?.totalCommittedStudents || 0, data.summary.totalAdmissionCommitment + data.summary.totalLearningCommitment)}
             </span>
-            <span className="text-[11px] font-bold text-indigo-600">học sinh</span>
+            <span className="text-[11px] font-bold text-teal-800">học sinh</span>
           </div>
-          <div className="text-[11px] text-indigo-700/80 mt-1 font-medium">
+          <div className="text-[11px] text-teal-800/80 mt-1 font-medium">
             Có hồ sơ cam kết đầu vào / HT
           </div>
         </div>
@@ -852,7 +852,7 @@ export function GradeAnalyticsTab({
             {activeSubView === "ksdv_matrix" && (
               <button
                 onClick={handleExportKsdvMatrixExcel}
-                className="flex items-center gap-1.5 px-3 py-1.5 bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl text-xs font-bold transition-all shadow-sm"
+                className="flex items-center gap-1.5 px-3 py-1.5 bg-[#003B3A] hover:bg-[#003B3A] text-white rounded-xl text-xs font-bold transition-all shadow-sm"
               >
                 <Download className="w-3.5 h-3.5" />
                 <span>Xuất Excel Ma trận KSĐV</span>
@@ -1011,8 +1011,8 @@ export function GradeAnalyticsTab({
           </div>
 
           {activeSubView === "ksdv_matrix" && (
-            <div className="text-[11px] font-bold text-indigo-700 bg-indigo-50/80 px-3 py-1.5 rounded-xl border border-indigo-200 flex items-center gap-1.5 whitespace-nowrap shadow-sm">
-              <Sparkles className="w-3.5 h-3.5 text-indigo-600 flex-shrink-0" />
+            <div className="text-[11px] font-bold text-teal-800 bg-teal-50/80 px-3 py-1.5 rounded-xl border border-teal-200 flex items-center gap-1.5 whitespace-nowrap shadow-sm">
+              <Sparkles className="w-3.5 h-3.5 text-teal-800 flex-shrink-0" />
               <span>KSĐV chỉ áp dụng từ Khối 2 đến Khối 12 (không tính Khối 1)</span>
             </div>
           )}
@@ -1476,10 +1476,10 @@ export function GradeAnalyticsTab({
 
           {/* Dải thông tin nhận diện phạm vi áp dụng */}
           <div className="flex items-center justify-between gap-2 px-1 flex-wrap">
-            <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-indigo-50 border border-indigo-200 text-indigo-900 text-xs font-extrabold shadow-xs">
-              <Sparkles className="w-3.5 h-3.5 text-indigo-600" />
+            <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-teal-50 border border-teal-200 text-teal-800 text-xs font-extrabold shadow-xs">
+              <Sparkles className="w-3.5 h-3.5 text-teal-800" />
               <span>Phạm vi đối sánh Ma trận KSĐV: Khối 2 đến Khối 12</span>
-              <span className="text-[11px] font-bold text-indigo-600 bg-white px-2 py-0.5 rounded-full border border-indigo-100">
+              <span className="text-[11px] font-bold text-teal-800 bg-white px-2 py-0.5 rounded-full border border-teal-200">
                 Không tính Khối 1
               </span>
             </div>
@@ -1487,9 +1487,9 @@ export function GradeAnalyticsTab({
 
           {/* KPI Summary Cards */}
           <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3">
-            <div className="bg-white p-3.5 rounded-2xl border border-indigo-100 shadow-sm bg-gradient-to-br from-white to-indigo-50/30">
-              <span className="text-[11px] font-bold text-indigo-700 block uppercase tracking-wider">HS Cam kết nhập học</span>
-              <div className="text-2xl font-black text-indigo-900 mt-1">
+            <div className="bg-white p-3.5 rounded-2xl border border-teal-200 shadow-sm bg-gradient-to-br from-white to-emerald-600/30">
+              <span className="text-[11px] font-bold text-teal-800 block uppercase tracking-wider">HS Cam kết nhập học</span>
+              <div className="text-2xl font-black text-teal-800 mt-1">
                 {data.ksdvMatrix?.summary?.totalCommittedStudents || 0}
               </div>
               <span className="text-[10px] text-slate-400 font-medium">Hồ sơ cam kết đầu vào</span>
@@ -1511,9 +1511,9 @@ export function GradeAnalyticsTab({
               <span className="text-[10px] text-slate-400 font-medium">HS có cam kết TV / Văn</span>
             </div>
 
-            <div className="bg-white p-3.5 rounded-2xl border border-violet-100 shadow-sm bg-gradient-to-br from-white to-violet-50/30">
-              <span className="text-[11px] font-bold text-violet-700 block uppercase tracking-wider">Cam kết Tiếng Anh</span>
-              <div className="text-2xl font-black text-violet-900 mt-1">
+            <div className="bg-white p-3.5 rounded-2xl border border-teal-200 shadow-sm bg-gradient-to-br from-white to-emerald-600/30">
+              <span className="text-[11px] font-bold text-teal-800 block uppercase tracking-wider">Cam kết Tiếng Anh</span>
+              <div className="text-2xl font-black text-teal-800 mt-1">
                 {data.ksdvMatrix?.summary?.committedEngCount || 0}
               </div>
               <span className="text-[10px] text-slate-400 font-medium">Vấn đáp & Viết</span>
@@ -1587,8 +1587,8 @@ export function GradeAnalyticsTab({
                   onClick={() => setKsdvSubjectFilter("ENG")}
                   className={`px-3 py-1.5 rounded-xl text-xs font-bold transition-all ${
                     ksdvSubjectFilter === "ENG"
-                      ? "bg-violet-600 text-white shadow-sm"
-                      : "bg-violet-50 hover:bg-violet-100 text-violet-800 border border-violet-200"
+                      ? "bg-teal-500 text-white shadow-sm"
+                      : "bg-teal-50 hover:bg-teal-50 text-teal-800 border border-teal-200"
                   }`}
                 >
                   Tiếng Anh ({data.ksdvMatrix?.summary?.committedEngCount || 0})
@@ -1631,7 +1631,7 @@ export function GradeAnalyticsTab({
                     <th colSpan={4} className="py-2.5 px-3 bg-emerald-100/80 text-emerald-900 border-r border-emerald-200">
                       📖 Môn Tiếng Việt / Ngữ Văn
                     </th>
-                    <th colSpan={4} className="py-2.5 px-3 bg-violet-100/80 text-violet-900 border-r border-violet-200">
+                    <th colSpan={4} className="py-2.5 px-3 bg-teal-100/80 text-teal-800 border-r border-teal-200">
                       🌐 Môn Tiếng Anh (Tổng điểm KSĐV)
                     </th>
                     {/* NHÓM CỘT TÂM LÝ - MÀU ĐỎ NỔI BẬT */}
@@ -1664,10 +1664,10 @@ export function GradeAnalyticsTab({
                     <th className="py-2 px-2 text-center w-16 bg-emerald-50/50 border-r border-emerald-200" title="Độ lệch = Điểm kiểm tra - Điểm KSĐV">Độ lệch</th>
 
                     {/* Tiếng Anh */}
-                    <th className="py-2 px-1.5 text-center w-12 bg-violet-50/50" title="Môn có Cam kết đầu vào">CK [x]</th>
-                    <th className="py-2 px-2.5 text-center w-24 bg-violet-50/50" title="Tổng điểm KSĐV Tiếng Anh (Khối 1: Thang 30; Khối khác: Thang 100 & Quy đổi thang 10)">Tổng KSĐV</th>
-                    <th className="py-2 px-2 text-center w-16 bg-violet-50/50" title={`Điểm kiểm tra Kỳ ${currentPeriod}`}>Kỳ {currentPeriod}</th>
-                    <th className="py-2 px-2 text-center w-16 bg-violet-50/50 border-r border-violet-200" title="Độ lệch = Điểm kiểm tra - Điểm KSĐV">Độ lệch</th>
+                    <th className="py-2 px-1.5 text-center w-12 bg-teal-50/50" title="Môn có Cam kết đầu vào">CK [x]</th>
+                    <th className="py-2 px-2.5 text-center w-24 bg-teal-50/50" title="Tổng điểm KSĐV Tiếng Anh (Khối 1: Thang 30; Khối khác: Thang 100 & Quy đổi thang 10)">Tổng KSĐV</th>
+                    <th className="py-2 px-2 text-center w-16 bg-teal-50/50" title={`Điểm kiểm tra Kỳ ${currentPeriod}`}>Kỳ {currentPeriod}</th>
+                    <th className="py-2 px-2 text-center w-16 bg-teal-50/50 border-r border-teal-200" title="Độ lệch = Điểm kiểm tra - Điểm KSĐV">Độ lệch</th>
 
                     {/* Cam kết Tâm lý - Cột Header màu đỏ */}
                     <th className="py-2 px-1.5 text-center w-14 bg-red-50 text-red-800" title="Cam kết Tâm lý">CK [x]</th>
@@ -1698,7 +1698,7 @@ export function GradeAnalyticsTab({
                         >
                           <td className="py-2.5 px-2 text-center text-slate-400 font-medium">{idx + 1}</td>
                           <td className="py-2.5 px-2 text-center">
-                            <span className="px-2 py-0.5 rounded font-extrabold text-[10px] bg-purple-50 text-purple-700 border border-purple-200">
+                            <span className="px-2 py-0.5 rounded font-extrabold text-[10px] bg-teal-50 text-teal-800 border border-teal-200">
                               {st.campusName || st.campusCode || "CS"}
                             </span>
                           </td>
@@ -1793,7 +1793,7 @@ export function GradeAnalyticsTab({
                           </td>
 
                           {/* MÔN TIẾNG ANH */}
-                          <td className="py-2.5 px-1.5 text-center bg-violet-50/20">
+                          <td className="py-2.5 px-1.5 text-center bg-teal-50/20">
                             {st.english?.isCommitted ? (
                               <span className="inline-flex items-center justify-center w-5 h-5 rounded-full font-black text-xs bg-rose-500 text-white shadow-sm" title="Môn có Cam kết đầu vào">
                                 x
@@ -1802,36 +1802,36 @@ export function GradeAnalyticsTab({
                               <span className="text-slate-300">-</span>
                             )}
                           </td>
-                          <td className="py-2.5 px-2.5 text-center font-bold text-slate-800 bg-violet-50/20">
+                          <td className="py-2.5 px-2.5 text-center font-bold text-slate-800 bg-teal-50/20">
                             {(st.english?.entranceTotal100 !== null && st.english?.entranceTotal100 !== undefined) || (st.english?.entranceScale10 !== null && st.english?.entranceScale10 !== undefined) ? (
                               <div title={`Nói: ${st.english.oralScore ?? "-"} | Viết: ${st.english.writtenScore ?? "-"}${st.english.eptScore ? ` | EPT: ${st.english.eptScore}` : ""}`}>
                                 {st.isGrade1 || st.english?.isGrade1 ? (
                                   <>
-                                    <span className="text-xs font-black text-violet-900">{st.english.oralScore ?? (st.english.entranceScale10 ? Math.round(Number(st.english.entranceScale10) * 3 * 10) / 10 : "-")}</span>
+                                    <span className="text-xs font-black text-teal-800">{st.english.oralScore ?? (st.english.entranceScale10 ? Math.round(Number(st.english.entranceScale10) * 3 * 10) / 10 : "-")}</span>
                                     <span className="text-[10px] text-slate-400">/30</span>
                                   </>
                                 ) : (
                                   <>
-                                    <span className="text-xs font-black text-violet-900">{st.english.entranceTotal100 ?? Math.round(Number(st.english.entranceScale10) * 10)}</span>
+                                    <span className="text-xs font-black text-teal-800">{st.english.entranceTotal100 ?? Math.round(Number(st.english.entranceScale10) * 10)}</span>
                                     <span className="text-[10px] text-slate-400">/100</span>
                                   </>
                                 )}
-                                <span className="text-[10px] text-violet-600 font-bold block">({st.english.entranceScale10}đ)</span>
+                                <span className="text-[10px] text-teal-800 font-bold block">({st.english.entranceScale10}đ)</span>
                               </div>
                             ) : (
                               <span className="text-slate-300">-</span>
                             )}
                           </td>
-                          <td className="py-2.5 px-2 text-center font-black text-violet-900 bg-violet-50/20">
+                          <td className="py-2.5 px-2 text-center font-black text-teal-800 bg-teal-50/20">
                             {st.english?.currentScore !== null && st.english?.currentScore !== undefined ? (
-                              <span className="px-1.5 py-0.5 rounded bg-violet-100 text-violet-900 font-extrabold">
+                              <span className="px-1.5 py-0.5 rounded bg-teal-50 text-teal-800 font-extrabold">
                                 {st.english.currentScore}
                               </span>
                             ) : (
                               <span className="text-slate-300">-</span>
                             )}
                           </td>
-                          <td className="py-2.5 px-2 text-center bg-violet-50/20 font-extrabold border-r border-violet-200">
+                          <td className="py-2.5 px-2 text-center bg-teal-50/20 font-extrabold border-r border-teal-200">
                             {st.english?.delta !== null && st.english?.delta !== undefined ? (
                               st.english.delta > 0 ? (
                                 <span className="text-emerald-600 font-black">+{st.english.delta}</span>
@@ -1879,7 +1879,7 @@ export function GradeAnalyticsTab({
                           <td className="py-2.5 px-3">
                             <div className="space-y-0.5">
                               {st.admissionCriteria && (
-                                <span className="inline-block px-1.5 py-0.2 rounded text-[10px] font-bold bg-indigo-50 text-indigo-700 border border-indigo-100">
+                                <span className="inline-block px-1.5 py-0.2 rounded text-[10px] font-bold bg-teal-50 text-teal-800 border border-teal-200">
                                   {st.admissionCriteria}
                                 </span>
                               )}
@@ -2279,9 +2279,9 @@ function BenchmarkConfigModal({
                 </div>
               </div>
 
-              <div className="p-3 bg-indigo-50 border border-indigo-200 rounded-xl space-y-1">
-                <span className="font-bold text-indigo-900 block">Cấp THPT</span>
-                <span className="text-[11px] text-indigo-700 block">Quy định mặc định: 6.0đ</span>
+              <div className="p-3 bg-teal-50 border border-teal-200 rounded-xl space-y-1">
+                <span className="font-bold text-teal-800 block">Cấp THPT</span>
+                <span className="text-[11px] text-teal-800 block">Quy định mặc định: 6.0đ</span>
                 <div className="flex items-center gap-1.5 pt-1">
                   <input
                     type="number"
@@ -2290,7 +2290,7 @@ function BenchmarkConfigModal({
                     max="10"
                     value={thptScore}
                     onChange={e => setThptScore(parseFloat(e.target.value) || 6.0)}
-                    className="w-20 bg-white border border-indigo-300 rounded-lg px-2.5 py-1 font-black text-slate-800 text-center outline-none focus:ring-2 focus:ring-indigo-500"
+                    className="w-20 bg-white border border-teal-200 rounded-lg px-2.5 py-1 font-black text-slate-800 text-center outline-none focus:ring-2 focus:ring-indigo-500"
                   />
                   <span className="font-bold text-slate-600">điểm</span>
                 </div>

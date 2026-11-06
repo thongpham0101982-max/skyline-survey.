@@ -139,8 +139,8 @@ export default function HollandAdvisoryOverviewCard({
 
   if (loading && !assessment) {
     return (
-      <div className="p-4 rounded-2xl bg-white border border-purple-200/80 text-xs text-slate-500 flex items-center gap-2">
-        <RefreshCw className="w-3.5 h-3.5 animate-spin text-[#5B2D8B]" />
+      <div className="p-4 rounded-2xl bg-white border border-teal-200/80 text-xs text-slate-500 flex items-center gap-2">
+        <RefreshCw className="w-3.5 h-3.5 animate-spin text-[#003B3A]" />
         <span>Đang tải dữ liệu Khảo sát Holland (RIASEC)...</span>
       </div>
     )
@@ -149,13 +149,13 @@ export default function HollandAdvisoryOverviewCard({
   if (!assessment) {
     if (mode === "PARENT") return null
     return (
-      <div className="p-4 rounded-2xl bg-[#FAF8FC] border border-purple-200/70 flex flex-wrap items-center justify-between gap-3 text-xs">
+      <div className="p-4 rounded-2xl bg-[#FAF8FC] border border-teal-200/70 flex flex-wrap items-center justify-between gap-3 text-xs">
         <div className="flex items-center gap-2.5">
-          <div className="w-8 h-8 rounded-xl bg-[#5B2D8B]/10 text-[#5B2D8B] flex items-center justify-center font-bold">
+          <div className="w-8 h-8 rounded-xl bg-[#003B3A]/10 text-[#003B3A] flex items-center justify-center font-bold">
             <Compass className="w-4 h-4" />
           </div>
           <div>
-            <p className="font-bold text-[#2E1065]">
+            <p className="font-bold text-[#003B3A]">
               Khảo sát Holland – Khám phá sở thích nghề nghiệp (SKL_PSYCH v2.6.1)
             </p>
             <p className="text-[11px] text-slate-500">
@@ -165,7 +165,7 @@ export default function HollandAdvisoryOverviewCard({
             </p>
           </div>
         </div>
-        <span className="px-2.5 py-1 rounded-lg bg-purple-100 text-[#5B2D8B] text-[11px] font-bold">
+        <span className="px-2.5 py-1 rounded-lg bg-teal-50 text-[#003B3A] text-[11px] font-bold">
           {draft ? `Đang làm (${draft.answeredCount}/108)` : "Chưa khảo sát"}
         </span>
       </div>
@@ -177,12 +177,12 @@ export default function HollandAdvisoryOverviewCard({
   const top3Codes: RiasecCode[] = report?.top3Codes || ["R", "I", "A"]
 
   return (
-    <div className="bg-white rounded-2xl border border-purple-200/90 shadow-2xs overflow-hidden text-xs">
+    <div className="bg-white rounded-2xl border border-teal-200/90 shadow-2xs overflow-hidden text-xs">
       {/* Header Banner in Sky-Line Global Purple */}
       <div
         className="px-4 sm:px-5 py-3.5 text-white flex flex-wrap items-center justify-between gap-2"
         style={{
-          background: "linear-gradient(135deg, #2E1065 0%, #5B2D8B 55%, #01A49D 100%)"
+          background: "linear-gradient(135deg, #003B3A 0%, #003B3A 55%, #01A49D 100%)"
         }}
       >
         <div className="flex items-center gap-2.5">
@@ -194,11 +194,11 @@ export default function HollandAdvisoryOverviewCard({
               <h3 className="text-xs sm:text-sm font-extrabold">
                 Báo Cáo Khảo Sát Holland (RIASEC) • Mã {assessment.hollandCode}
               </h3>
-              <span className="px-2 py-0.5 rounded-full bg-white/15 border border-white/25 text-[10px] font-bold text-purple-100">
+              <span className="px-2 py-0.5 rounded-full bg-white/15 border border-white/25 text-[10px] font-bold text-teal-700">
                 {assessment.version || "SKL_PSYCH v2.6.1"} • Minh chứng tham khảo
               </span>
             </div>
-            <p className="text-[11px] text-purple-100/90">
+            <p className="text-[11px] text-teal-700/90">
               {studentName ? `Học sinh: ${studentName} • ` : ""}
               Hoàn thành 108/108 câu ngày{" "}
               {assessment.submittedAt
@@ -214,7 +214,7 @@ export default function HollandAdvisoryOverviewCard({
               🙋 Đề nghị Tư vấn 1:1 ({assessment.consultationRequestStatus})
             </span>
           )}
-          <span className="px-3 py-1 rounded-xl bg-white text-[#2E1065] font-mono font-black text-xs shadow-2xs">
+          <span className="px-3 py-1 rounded-xl bg-white text-[#003B3A] font-mono font-black text-xs shadow-2xs">
             {assessment.hollandCode}
           </span>
         </div>
@@ -232,8 +232,8 @@ export default function HollandAdvisoryOverviewCard({
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-4">
           {/* Left 7 cols: Top 3 Explanation & Recommended Clusters */}
           <div className="lg:col-span-7 space-y-2.5">
-            <div className="p-3 rounded-xl bg-[#FAF8FC] border border-purple-200/70 space-y-1">
-              <span className="font-extrabold text-[#2E1065] block">
+            <div className="p-3 rounded-xl bg-[#FAF8FC] border border-teal-200/70 space-y-1">
+              <span className="font-extrabold text-[#003B3A] block">
                 🧭 Giải thích tổ hợp sở thích nghề nghiệp Top 3 ({assessment.hollandCode}):
               </span>
               <p className="text-slate-700 leading-relaxed">
@@ -251,7 +251,7 @@ export default function HollandAdvisoryOverviewCard({
                     className="p-2.5 rounded-xl bg-slate-50 border border-slate-200/80 space-y-1"
                   >
                     <div className="flex items-center justify-between">
-                      <span className="font-extrabold text-[#5B2D8B]">
+                      <span className="font-extrabold text-[#003B3A]">
                         Top {idx + 1}: {code}
                       </span>
                       <span className="font-bold text-slate-700">
@@ -279,7 +279,7 @@ export default function HollandAdvisoryOverviewCard({
                   <span className="font-semibold text-slate-700">
                     #{i + 1} {d.code} ({d.nameVi})
                   </span>
-                  <span className="font-bold text-[#2E1065]">
+                  <span className="font-bold text-[#003B3A]">
                     {d.rawScore}/18 ({d.percentage}%)
                   </span>
                 </div>
@@ -288,7 +288,7 @@ export default function HollandAdvisoryOverviewCard({
                     className="h-full rounded-full"
                     style={{
                       width: `${Math.max(5, d.percentage)}%`,
-                      backgroundColor: i < 3 ? "#5B2D8B" : "#94A3B8"
+                      backgroundColor: i < 3 ? "#003B3A" : "#94A3B8"
                     }}
                   />
                 </div>
@@ -301,8 +301,8 @@ export default function HollandAdvisoryOverviewCard({
         {(assessment.studentReflection || assessment.consultationRequested) && (
           <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
             {assessment.studentReflection && (
-              <div className="p-3 rounded-xl bg-purple-50/60 border border-purple-200/70 space-y-1">
-                <span className="font-bold text-[#2E1065] text-[11px] block">
+              <div className="p-3 rounded-xl bg-teal-50/60 border border-teal-200/70 space-y-1">
+                <span className="font-bold text-[#003B3A] text-[11px] block">
                   💭 Tự nhận định của học sinh sau khảo sát:
                 </span>
                 <p className="text-slate-700 italic">“{assessment.studentReflection}”</p>
@@ -339,12 +339,12 @@ export default function HollandAdvisoryOverviewCard({
                 <span>GVCN / CVHT Xử Lý Đề Nghị Tư Vấn 1:1 & Nhận Xét Hướng Nghiệp</span>
               </span>
 
-              <label className="inline-flex items-center gap-1.5 cursor-pointer text-[11px] font-bold text-[#5B2D8B]">
+              <label className="inline-flex items-center gap-1.5 cursor-pointer text-[11px] font-bold text-[#003B3A]">
                 <input
                   type="checkbox"
                   checked={publishParent}
                   onChange={e => setPublishParent(e.target.checked)}
-                  className="rounded border-purple-300"
+                  className="rounded border-teal-400"
                 />
                 <span>Công bố báo cáo Holland trên Cổng Phụ huynh</span>
               </label>
@@ -425,8 +425,8 @@ export default function HollandAdvisoryOverviewCard({
             )}
 
             {report?.parentAccompanimentGuide?.length > 0 && (
-              <div className="p-3 rounded-xl bg-[#FAF8FC] border border-purple-200/80 space-y-1">
-                <span className="font-bold text-[#2E1065] text-[11px] block">
+              <div className="p-3 rounded-xl bg-[#FAF8FC] border border-teal-200/80 space-y-1">
+                <span className="font-bold text-[#003B3A] text-[11px] block">
                   🏡 Gợi ý Gia đình đồng hành cùng con theo mã Holland {assessment.hollandCode}:
                 </span>
                 <ul className="list-disc pl-4 space-y-1 text-slate-700 text-[11px]">
@@ -462,7 +462,7 @@ export default function HollandAdvisoryOverviewCard({
                 <button
                   type="submit"
                   disabled={saving}
-                  className="px-4 h-9 rounded-lg bg-[#5B2D8B] hover:bg-[#2E1065] text-white text-xs font-bold shrink-0 cursor-pointer disabled:opacity-50"
+                  className="px-4 h-9 rounded-lg bg-[#003B3A] hover:bg-[#003B3A] text-white text-xs font-bold shrink-0 cursor-pointer disabled:opacity-50"
                 >
                   {saving
                     ? "Đang gửi..."

@@ -65,7 +65,7 @@ export function ThkqKpiCards({ kpi, onSelectKpiFilter }: Props) {
       sub: `Chiếm ${kpi.belowSkylineRate}% tổng số bài`,
       badge: "< Chuẩn Trường",
       icon: AlertCircle,
-      bgGradient: "from-amber-50/90 to-orange-100/60",
+      bgGradient: "from-amber-50/90 to-amber-600/60",
       borderColor: "border-amber-200",
       textColor: "text-amber-800",
       iconBg: "bg-amber-500 text-white shadow-md shadow-amber-500/20",
@@ -104,10 +104,10 @@ export function ThkqKpiCards({ kpi, onSelectKpiFilter }: Props) {
       sub: `Chiếm ${kpi.perfect10Rate}% bài khảo sát`,
       badge: "Xuất sắc ★",
       icon: Sparkles,
-      bgGradient: "from-purple-50/90 to-fuchsia-100/60",
-      borderColor: "border-purple-200",
-      textColor: "text-purple-800",
-      iconBg: "bg-purple-600 text-white shadow-md shadow-purple-600/20",
+      bgGradient: "from-teal-600/90 to-fuchsia-100/60",
+      borderColor: "border-teal-200",
+      textColor: "text-teal-800",
+      iconBg: "bg-[#003B3A] text-white shadow-md shadow-purple-600/20",
       filterType: "PERFECT_10"
     }
   ]

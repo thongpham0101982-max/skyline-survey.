@@ -1077,7 +1077,7 @@ export function StudentSurveyReportModal({
             <button
               onClick={() => handlePrint("all")}
               disabled={isPrinting}
-              className="flex items-center gap-1.5 px-3.5 py-2 bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl text-xs font-bold transition-all shadow-xs cursor-pointer disabled:opacity-50"
+              className="flex items-center gap-1.5 px-3.5 py-2 bg-[#003B3A] hover:bg-[#003B3A] text-white rounded-xl text-xs font-bold transition-all shadow-xs cursor-pointer disabled:opacity-50"
               title="In toàn bộ phiếu điểm học sinh trong lớp (mỗi học sinh đúng 1 trang A4)"
             >
               <Users className="w-3.5 h-3.5" />

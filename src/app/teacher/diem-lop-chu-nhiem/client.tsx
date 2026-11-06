@@ -700,12 +700,12 @@ export function HomeroomGradesClient({
 
           <div className="bg-white border border-slate-200/80 rounded-2xl p-4 shadow-xs">
             <div className="text-[11px] font-bold text-slate-500 uppercase tracking-wide">Đối sánh lớp trong Khối</div>
-            <div className="text-2xl font-black text-purple-700 mt-1 flex items-baseline gap-1.5">
+            <div className="text-2xl font-black text-teal-800 mt-1 flex items-baseline gap-1.5">
               <span>{data?.siblingClassesCount || 0}</span>
               <span className="text-xs font-semibold text-slate-500">lớp cùng khối</span>
             </div>
             <div className="text-[11px] text-slate-500 mt-1 flex items-center gap-1">
-              <Layers className="w-3 h-3 text-purple-500" />
+              <Layers className="w-3 h-3 text-teal-700" />
               <span>{selectedScope === "campus" ? "Cùng cơ sở" : "Toàn trường"}</span>
             </div>
           </div>
@@ -770,13 +770,13 @@ export function HomeroomGradesClient({
             onClick={() => setActiveTab("term-grades")}
             className={`flex items-center gap-2 px-4 py-2 rounded-lg text-xs font-extrabold transition-all ${
               activeTab === "term-grades"
-                ? "bg-white text-indigo-900 shadow-xs ring-1 ring-indigo-200"
+                ? "bg-white text-teal-800 shadow-xs ring-1 ring-indigo-200"
                 : "text-slate-600 hover:text-slate-900"
             }`}
           >
-            <Award className="w-4 h-4 text-indigo-600" />
+            <Award className="w-4 h-4 text-teal-800" />
             <span>Tổng Kết Môn Học (TT27 &amp; TT22)</span>
-            <span className="px-1.5 py-0.5 bg-indigo-100 text-indigo-800 rounded-full text-[10px] font-bold">
+            <span className="px-1.5 py-0.5 bg-teal-50 text-teal-800 rounded-full text-[10px] font-bold">
               Chính thức
             </span>
           </button>
@@ -789,7 +789,7 @@ export function HomeroomGradesClient({
                 : "text-slate-600 hover:text-slate-900"
             }`}
           >
-            <BarChart3 className="w-4 h-4 text-purple-600" />
+            <BarChart3 className="w-4 h-4 text-teal-800" />
             <span>Thống Kê Chất Lượng & Đối Sánh Khối</span>
           </button>
 
@@ -854,7 +854,7 @@ export function HomeroomGradesClient({
           {activeTab === "comparative" && (
             <button
               onClick={handleExportComparativeExcel}
-              className="flex items-center justify-center gap-1.5 px-4 py-2 bg-purple-50 text-purple-700 border border-purple-200 hover:bg-purple-100 rounded-xl text-xs font-bold transition-all w-full sm:w-auto"
+              className="flex items-center justify-center gap-1.5 px-4 py-2 bg-teal-50 text-teal-800 border border-teal-200 hover:bg-teal-50 rounded-xl text-xs font-bold transition-all w-full sm:w-auto"
             >
               <Download className="w-3.5 h-3.5" />
               Xuất Báo Cáo Đối Sánh Khối
@@ -1057,7 +1057,7 @@ export function HomeroomGradesClient({
                               {/* Commitment badges */}
                               <td className="py-2.5 px-3 space-y-1 border-r border-slate-200">
                                 {st.isEntranceCommitted && (
-                                  <div className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-purple-100 text-purple-800 font-bold text-[10px]">
+                                  <div className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-teal-50 text-teal-800 font-bold text-[10px]">
                                     <Target className="w-2.5 h-2.5" />
                                     <span>Cam kết đầu vào</span>
                                   </div>
@@ -1460,8 +1460,8 @@ export function HomeroomGradesClient({
                     onClick={() => setTrackingFilter("ENTRANCE_COMMITMENT")}
                     className={`px-3 py-1.5 rounded-xl text-xs font-extrabold transition-all ${
                       trackingFilter === "ENTRANCE_COMMITMENT"
-                        ? "bg-purple-600 text-white shadow-xs"
-                        : "bg-purple-50 text-purple-800 border border-purple-200 hover:bg-purple-100"
+                        ? "bg-[#003B3A] text-white shadow-xs"
+                        : "bg-teal-50 text-teal-800 border border-teal-200 hover:bg-teal-50"
                     }`}
                   >
                     Cam kết đầu vào ({data?.summary?.entranceCommittedCount || 0})
@@ -1506,7 +1506,7 @@ export function HomeroomGradesClient({
                         <th className="py-3 px-3 min-w-[160px] border-r border-slate-700">Họ và tên</th>
                         <th className="py-3 px-3 text-center border-r border-slate-700 w-24">ĐTB Chung</th>
                         <th className="py-3 px-3 min-w-[220px] border-r border-slate-700">Môn Dưới Chuẩn / Cần Chú Ý</th>
-                        <th className="py-3 px-3 min-w-[200px] border-r border-slate-700 bg-purple-950">Hồ sơ Cam kết Đầu vào</th>
+                        <th className="py-3 px-3 min-w-[200px] border-r border-slate-700 bg-[#003B3A]">Hồ sơ Cam kết Đầu vào</th>
                         <th className="py-3 px-3 min-w-[200px] border-r border-slate-700 bg-teal-950">Cam kết Học tập (SLC)</th>
                         <th className="py-3 px-3 min-w-[200px] bg-pink-950 text-white">Hỗ trợ Tâm lý (Admin)</th>
                       </tr>
@@ -1595,16 +1595,16 @@ export function HomeroomGradesClient({
                               {/* Entrance commitment */}
                               <td className="py-3 px-3 border-r border-slate-200">
                                 {st.isEntranceCommitted && st.inputAssessment ? (
-                                  <div className="space-y-1 bg-purple-50/60 p-2.5 rounded-xl border border-purple-200">
-                                    <div className="text-[11px] font-extrabold text-purple-900 uppercase flex items-center gap-1">
-                                      <Target className="w-3 h-3 text-purple-600" />
+                                  <div className="space-y-1 bg-teal-50/60 p-2.5 rounded-xl border border-teal-200">
+                                    <div className="text-[11px] font-extrabold text-teal-800 uppercase flex items-center gap-1">
+                                      <Target className="w-3 h-3 text-teal-800" />
                                       <span>{st.inputAssessment.admissionCriteria || "Diện cam kết đầu vào"}</span>
                                     </div>
-                                    <div className="text-[11px] text-purple-800 font-semibold">
+                                    <div className="text-[11px] text-teal-800 font-semibold">
                                       Điểm KSĐV: Toán {st.inputAssessment.mathScore ?? "-"} • Văn {st.inputAssessment.literatureScore ?? "-"} • Anh {st.inputAssessment.writtenEnglishScore ?? "-"}
                                     </div>
                                     {st.inputAssessment.directorNote && (
-                                      <div className="text-[11px] text-purple-900 italic bg-white/80 p-1.5 rounded-md border border-purple-200 mt-1">
+                                      <div className="text-[11px] text-teal-800 italic bg-white/80 p-1.5 rounded-md border border-teal-200 mt-1">
                                         <strong>Chỉ đạo BGĐ:</strong> {st.inputAssessment.directorNote}
                                       </div>
                                     )}

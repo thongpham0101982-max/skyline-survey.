@@ -1247,16 +1247,19 @@ export async function registerObservation(slotId: string) {
       return { success: false, error: "You are already registered for this slot" }
     }
 
-    if (slot.registrations.length >= Math.min(slot.maxSeats || 4, 4)) {
-      return { success: false, error: "Tiết dạy này đã đủ số lượng giáo viên đăng ký (đã đóng đăng ký)" }
+const isAssigned = slot.requestOrigin === "ASSIGNED" || isAssignedSlotCreator(slot, currentTeacher.id);
+    if (!isAssigned && slot.registrations.length >= Math.min(slot.maxSeats || 4, 4)) {
+      return { success: false, error: "Tiết dạy này đã đủ số lượng giáo viên đăng ký (đã đóng đăng ký)" };
     }
 
     await prisma.observationRegistration.create({
       data: {
         slotId,
-        teacherId: currentTeacher.id
+        teacherId: currentTeacher.id,
+        isApproved: isAssigned,
+        approvedAt: isAssigned ? new Date() : null
       }
-    })
+    });
 
     // Asynchronous background dispatch of In-App Notification and Email via Next.js after()
     // Ensures 100% reliable delivery on Vercel Serverless without delaying UI response
@@ -6314,7 +6317,7 @@ function renderAssignedObservationEmailHtml(params: {
                   </tr>
                   <tr>
                     <td style="color: #007A75; padding: 3px 0; font-weight: 600;">Lớp học:</td>
-                    <td style="color: #7C3AED; padding: 3px 0; font-weight: 800;">${className}</td>
+                    <td style="color: #003B3A; padding: 3px 0; font-weight: 800;">${className}</td>
                   </tr>
                   <tr>
                     <td style="color: #007A75; padding: 3px 0; font-weight: 600;">Phòng học / Địa điểm:</td>
@@ -6328,8 +6331,8 @@ function renderAssignedObservationEmailHtml(params: {
           <!-- Card 3: Tên chuyên đề & Ghi chú điều hành -->
           <tr>
             <td style="padding: 6px 28px 12px 28px;">
-              <div style="background-color: #FAF5FF; border: 1px solid #E9D5FF; border-radius: 12px; padding: 14px 18px;">
-                <div style="font-size: 11px; font-weight: 800; color: #6B21A8; text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 8px; border-bottom: 1px solid #F3E8FF; padding-bottom: 4px;">
+              <div style="background-color: #F0FDFA; border: 1px solid #E9D5FF; border-radius: 12px; padding: 14px 18px;">
+                <div style="font-size: 11px; font-weight: 800; color: #6B21A8; text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 8px; border-bottom: 1px solid #F0FDFA; padding-bottom: 4px;">
                   📖 3. TÊN CHUYÊN ĐỀ & YÊU CẦU ĐIỀU HÀNH
                 </div>
                 <table role="presentation" width="100%" border="0" cellspacing="0" cellpadding="0" style="font-size: 13px;">

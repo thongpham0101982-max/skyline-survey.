@@ -179,7 +179,7 @@ export function ThkqFilterToolbar({
         {/* Kỳ khảo sát / Học kỳ */}
         <div>
           <label className="block text-[11px] font-bold text-slate-500 uppercase tracking-wider mb-1.5 flex items-center gap-1.5">
-            <Layers className="h-3.5 w-3.5 text-indigo-500" />
+            <Layers className="h-3.5 w-3.5 text-teal-700" />
             Kỳ khảo sát / Học kỳ
           </label>
           <select
@@ -198,7 +198,7 @@ export function ThkqFilterToolbar({
         {/* Bậc học */}
         <div>
           <label className="block text-[11px] font-bold text-slate-500 uppercase tracking-wider mb-1.5 flex items-center gap-1.5">
-            <GraduationCap className="h-3.5 w-3.5 text-purple-500" />
+            <GraduationCap className="h-3.5 w-3.5 text-teal-700" />
             Bậc học
           </label>
           <select

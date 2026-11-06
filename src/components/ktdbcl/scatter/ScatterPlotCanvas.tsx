@@ -103,7 +103,7 @@ export function ScatterPlotCanvas({
               </span>
             )}
             {data.hasLearningCommitment && (
-              <span className="text-purple-300 font-bold flex items-center gap-0.5">
+              <span className="text-teal-700 font-bold flex items-center gap-0.5">
                 ● Đang cam kết HT
               </span>
             )}
@@ -137,7 +137,7 @@ export function ScatterPlotCanvas({
             <span>Sàn Đạt Bộ GD&ĐT: <strong>5.0đ</strong></span>
           </div>
           <div className="flex items-center gap-1 text-slate-600">
-            <span className="w-3 h-0.5 bg-purple-500 inline-block" />
+            <span className="w-3 h-0.5 bg-teal-500 inline-block" />
             <span>Đường cân bằng (Y = X)</span>
           </div>
         </div>
@@ -218,7 +218,7 @@ export function ScatterPlotCanvas({
             {/* Đường cân bằng Y = X (Điểm tiến bộ) */}
             <ReferenceLine
               segment={[{ x: 0, y: 0 }, { x: 10, y: 10 }]}
-              stroke="#8b5cf6"
+              stroke="#2DD4BF"
               strokeDasharray="5 5"
               strokeWidth={1.5}
             />

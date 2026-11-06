@@ -9,6 +9,13 @@ import TeacherTriPartyHub from "@/components/advisory/TeacherTriPartyHub";
 import SklPsychStatsDashboard from "@/components/advisory/SklPsychStatsDashboard";
 import AdvisoryJourneyTab, { TeacherStudentJourneyBar } from "@/components/advisory/AdvisoryJourneyTab";
 import type { TeacherAdvisoryTab } from "@/lib/advisory/advisory-journey-engine";
+import UnifiedStudentProgressMatrix from "@/components/advisory/UnifiedStudentProgressMatrix";
+import {
+  TeacherOverviewSummaryCards,
+  GoalPlanExtendedPanel,
+  StudentFeedbackWorkspace,
+  CompanionSupportWorkspace,
+} from "@/components/advisory/AdvisoryUpgradedWorkspaces";
 
 export const dynamic = "force-dynamic"
 
@@ -53,7 +60,8 @@ export default function TeacherAdvisoryPage() {
   const [aiModalMode, setAiModalMode] = useState<AiModalMode>("PROGRESS_ANALYSIS")
   const [aiModalStudentId, setAiModalStudentId] = useState("")
 
-  const [activeTab, setActiveTab] = useState<"dashboard" | "journey" | "consultations" | "sos" | "tracking" | "rubric_eval" | "unlocks" | "requests" | "skl_psych">("dashboard")
+  const [activeTab, setActiveTab] = useState<"dashboard" | "journey" | "consultations" | "sos" | "tracking" | "rubric_eval" | "unlocks" | "requests" | "skl_psych" | "student_feedback" | "companion_support">("dashboard")
+  const [preselectedGoalForCompanion, setPreselectedGoalForCompanion] = useState<{ goalId: string; title: string; category: string } | null>(null)
 
   useEffect(() => {
     if (typeof window !== "undefined") {
@@ -61,7 +69,7 @@ export default function TeacherAdvisoryPage() {
       const tabParam = params.get("tab")
       const stParam = params.get("studentId")
       if (stParam) setSelectedStudentId(stParam)
-      if (tabParam === "journey" || tabParam === "tracking" || tabParam === "consultations" || tabParam === "rubric_eval" || tabParam === "unlocks" || tabParam === "sos" || tabParam === "requests" || tabParam === "skl_psych") {
+      if (tabParam === "journey" || tabParam === "tracking" || tabParam === "consultations" || tabParam === "rubric_eval" || tabParam === "unlocks" || tabParam === "sos" || tabParam === "requests" || tabParam === "skl_psych" || tabParam === "student_feedback" || tabParam === "companion_support") {
         setActiveTab(tabParam)
       }
     }
@@ -859,7 +867,7 @@ export default function TeacherAdvisoryPage() {
   }
 
   // Save Consultation Log
-  async function handleSaveConsultation() {
+  async function handleSaveConsultation(overrideStatus?: "DRAFT" | "COMPLETED") {
     if (!consultationForm.studentId || !consultationForm.content) {
       alert("Vui lòng chọn Học sinh và nhập Nội dung trao đổi!")
       return
@@ -883,7 +891,12 @@ export default function TeacherAdvisoryPage() {
           parentSharedSummary: consultationForm.notes,
           privateAdvisorNotes: consultationForm.privateAdvisorNotes || "",
           shareWithParent: consultationForm.shareWithParent !== false,
-          sessionStatus: consultationForm.sessionStatus || "COMPLETED"
+          sessionStatus: overrideStatus || consultationForm.sessionStatus || "COMPLETED",
+          consultationStatus: overrideStatus || consultationForm.sessionStatus || "COMPLETED",
+          linkedGoalIds: Array.isArray(consultationForm.linkedGoalIds) ? consultationForm.linkedGoalIds : [],
+          actionAssignee: consultationForm.actionAssignee || "Học sinh & GVCN",
+          nextFollowUpDate: consultationForm.nextFollowUpDate || "",
+          requestFeedbackFromStudent: (overrideStatus || consultationForm.sessionStatus || "COMPLETED") === "COMPLETED"
         })
       })
 
@@ -1075,19 +1088,19 @@ export default function TeacherAdvisoryPage() {
             }
           >
             <Compass className="w-4 h-4 text-teal-600" />
-            <span>Tổng Quan Lớp & Việc Cần Làm</span>
+            <span>1. Tổng quan</span>
           </button>
 
           <button
             onClick={() => setActiveTab("skl_psych")}
             className={
               activeTab === "skl_psych"
-                ? "px-3.5 py-2 rounded-xl text-xs font-black flex items-center gap-2 transition-all bg-white text-[#5B2D8B] shadow-md cursor-pointer"
+                ? "px-3.5 py-2 rounded-xl text-xs font-black flex items-center gap-2 transition-all bg-white text-[#003B3A] shadow-md cursor-pointer"
                 : "px-3.5 py-2 rounded-xl text-xs font-black flex items-center gap-2 transition-all bg-white/15 text-white hover:bg-white/25 cursor-pointer"
             }
           >
-            <Sparkles className="w-4 h-4 text-amber-300" />
-            <span>B1–B2 • Khám Phá & Hướng Nghiệp</span>
+            <User className="w-4 h-4 text-teal-600" />
+            <span>2. Hồ sơ học sinh</span>
           </button>
 
           <button
@@ -1098,8 +1111,8 @@ export default function TeacherAdvisoryPage() {
                 : "px-3.5 py-2 rounded-xl text-xs font-black flex items-center gap-2 transition-all bg-white/15 text-white hover:bg-white/25 cursor-pointer"
             }
           >
-            <Target className="w-4 h-4 text-teal-500" />
-            <span>B3–B4 • Mục Tiêu SMART & Kế Hoạch</span>
+            <Target className="w-4 h-4 text-teal-600" />
+            <span>3. Mục tiêu & Kế hoạch</span>
             {pendingAdjustmentCount > 0 && (
               <span className="px-1.5 py-0.5 rounded-full bg-rose-500 text-white text-[10px] font-black">
                 {pendingAdjustmentCount}
@@ -1115,11 +1128,11 @@ export default function TeacherAdvisoryPage() {
                 : "px-3.5 py-2 rounded-xl text-xs font-black flex items-center gap-2 transition-all bg-white/15 text-white hover:bg-white/25 cursor-pointer"
             }
           >
-            <MessageSquare className="w-4 h-4 text-blue-500" />
-            <span>B5–B6 • Tư Vấn 1:1 & Phối Hợp</span>
+            <MessageSquare className="w-4 h-4 text-teal-600" />
+            <span>4. Tư vấn 1:1</span>
             {classConsultationStats.totalStudents > 0 && (
               <span
-                className={`px-2 py-0.5 rounded-full text-[10px] font-black ${
+                className={`px-2 py-0.5 rounded-full text-[10px] font-black tabular-nums ${
                   classConsultationStats.unconsultedCount === 0
                     ? "bg-emerald-400 text-emerald-950"
                     : activeTab === "consultations" || activeTab === "sos"
@@ -1138,6 +1151,30 @@ export default function TeacherAdvisoryPage() {
           </button>
 
           <button
+            onClick={() => setActiveTab("student_feedback")}
+            className={
+              activeTab === "student_feedback"
+                ? "px-3.5 py-2 rounded-xl text-xs font-black flex items-center gap-2 transition-all bg-white text-[#003B3A] shadow-md cursor-pointer"
+                : "px-3.5 py-2 rounded-xl text-xs font-black flex items-center gap-2 transition-all bg-white/15 text-white hover:bg-white/25 cursor-pointer"
+            }
+          >
+            <FileText className="w-4 h-4 text-teal-600" />
+            <span>5. Phản hồi học sinh</span>
+          </button>
+
+          <button
+            onClick={() => setActiveTab("companion_support")}
+            className={
+              activeTab === "companion_support"
+                ? "px-3.5 py-2 rounded-xl text-xs font-black flex items-center gap-2 transition-all bg-white text-[#003B3A] shadow-md cursor-pointer"
+                : "px-3.5 py-2 rounded-xl text-xs font-black flex items-center gap-2 transition-all bg-white/15 text-white hover:bg-white/25 cursor-pointer"
+            }
+          >
+            <Users className="w-4 h-4 text-teal-600" />
+            <span>6. Đồng hành & Hỗ trợ</span>
+          </button>
+
+          <button
             onClick={() => {
               setActiveTab("rubric_eval")
               loadClassTermEvaluations()
@@ -1149,7 +1186,7 @@ export default function TeacherAdvisoryPage() {
             }
           >
             <Award className="w-4 h-4 text-amber-500" />
-            <span>B7–B8 • Đánh Giá Rubric & Công Bố</span>
+            <span>7. Đánh giá & Tiến bộ</span>
           </button>
         </div>
         <div className="hidden">
@@ -1278,7 +1315,7 @@ export default function TeacherAdvisoryPage() {
             onClick={() => setActiveTab("skl_psych")}
             className={
               activeTab === "skl_psych"
-                ? "px-4 py-2 rounded-xl text-xs font-black flex items-center gap-2 transition-all bg-[#5B2D8B] text-white border border-purple-300/60 shadow-md"
+                ? "px-4 py-2 rounded-xl text-xs font-black flex items-center gap-2 transition-all bg-[#003B3A] text-white border border-teal-300/60 shadow-md"
                 : "px-4 py-2 rounded-xl text-xs font-black flex items-center gap-2 transition-all bg-white/15 text-white hover:bg-white/25"
             }
           >
@@ -1485,17 +1522,99 @@ export default function TeacherAdvisoryPage() {
         </div>
       )}
 
-      {/* ----------------- TAB 7: THỐNG KÊ HƯỚNG NGHIỆP • SKL_PSYCH (THEO LỚP GVCN PHÂN CÔNG) ----------------- */}
+      {/* ----------------- TAB 2: HỒ SƠ HỌC SINH & KHÁM PHÁ HƯỚNG NGHIỆP ----------------- */}
       {activeTab === "skl_psych" && (
-        <SklPsychStatsDashboard
-          role="TEACHER"
-          academicYearId={academicYearId}
-          defaultClassId={selectedClassId || "ALL"}
-          classesList={classes.map((c: any) => ({
-            id: c.id,
-            className: c.className || c.name || "Lớp",
-            gradeLevel: c.grade
-          }))}
+        <div className="space-y-4">
+          {activeStudent && (
+            <div className="bg-white rounded-xl border border-slate-200 border-l-4 border-l-[#003B3A] p-4 shadow-sm flex flex-wrap items-center justify-between gap-3">
+              <div>
+                <h3 className="text-sm font-bold text-[#003B3A]">
+                  Hồ sơ học sinh đang chọn: {activeStudent.studentName} ({activeStudent.studentCode})
+                </h3>
+                <p className="text-xs text-slate-600 mt-0.5">
+                  Lớp: <strong>{selectedClass?.className}</strong> • Khối: <strong>{currentGrade}</strong> • Xem kết quả khảo sát Holland (RIASEC), hồ sơ năng lực học tập và lịch sử cố vấn.
+                </p>
+              </div>
+              <div className="flex flex-wrap items-center gap-2">
+                <button
+                  type="button"
+                  onClick={() => setActiveTab("companion_support")}
+                  className="px-3 py-1.5 rounded-lg border border-teal-200 bg-teal-50 text-[#008B85] text-xs font-bold hover:bg-teal-100"
+                >
+                  Hồ sơ Holland & Phân công TLHN
+                </button>
+                <button
+                  type="button"
+                  onClick={() =>
+                    window.open(
+                      `/teacher/ho-so-hoc-sinh?studentId=${selectedStudentId}&academicYearId=${academicYearId}`,
+                      "_blank"
+                    )
+                  }
+                  className="px-3.5 py-1.5 rounded-lg bg-[#003B3A] text-white text-xs font-bold hover:bg-[#00524F]"
+                >
+                  Mở Hồ sơ Học sinh 360°
+                </button>
+              </div>
+            </div>
+          )}
+          <SklPsychStatsDashboard
+            role="TEACHER"
+            academicYearId={academicYearId}
+            defaultClassId={selectedClassId || "ALL"}
+            classesList={classes.map((c: any) => ({
+              id: c.id,
+              className: c.className || c.name || "Lớp",
+              gradeLevel: c.grade
+            }))}
+          />
+        </div>
+      )}
+
+      {/* ----------------- TAB 5: PHẢN HỒI HỌC SINH (MỤC VI) ----------------- */}
+      {activeTab === "student_feedback" && (
+        <StudentFeedbackWorkspace
+          classId={selectedClassId}
+          schoolYear={academicYearId || "2025-2026"}
+          semester={evalTerm}
+          selectedStudentId={activeStudent?.studentCode || selectedStudentId}
+          onOpenScheduleConsult={(stCode, stName) => {
+            const matched = students.find(s => s.studentCode === stCode || s.id === stCode)
+            if (matched) setSelectedStudentId(matched.id)
+            setEditingConsultationId(null)
+            setConsultationForm((prev: any) => ({
+              ...prev,
+              studentId: matched?.id || selectedStudentId,
+              meetingDate: new Date().toISOString().split("T")[0],
+              content: `Tư vấn giải đáp phản hồi của học sinh ${stName}`
+            }))
+            setShowConsultationModal(true)
+          }}
+          onOpenAssignSupport={(stCode, stName, gId) => {
+            const matched = students.find(s => s.studentCode === stCode || s.id === stCode)
+            if (matched) setSelectedStudentId(matched.id)
+            setPreselectedGoalForCompanion({
+              goalId: gId || `GOAL_${stCode}`,
+              title: "Hỗ trợ theo phản hồi của học sinh",
+              category: "HOC_TAP"
+            })
+            setActiveTab("companion_support")
+          }}
+        />
+      )}
+
+      {/* ----------------- TAB 6: ĐỒNG HÀNH & HỖ TRỢ (GVBM & TỔ TLHN - MỤC IV & VII) ----------------- */}
+      {activeTab === "companion_support" && (
+        <CompanionSupportWorkspace
+          classId={selectedClassId}
+          className={selectedClass?.className}
+          gradeLevel={String(currentGrade).replace("K", "")}
+          schoolYear={academicYearId || "2025-2026"}
+          semester={evalTerm}
+          selectedStudentId={selectedStudentId}
+          selectedStudentCode={activeStudent?.studentCode}
+          selectedStudentName={activeStudent?.studentName}
+          preselectedGoal={preselectedGoalForCompanion}
         />
       )}
 
@@ -1521,6 +1640,22 @@ export default function TeacherAdvisoryPage() {
       )}
 
       {/* ----------------- TAB 0: TỔNG QUAN & ĐO LƯỜNG ĐA CẤP ----------------- */}
+      {activeTab === "dashboard" && (
+        <TeacherOverviewSummaryCards
+          classId={selectedClassId}
+          schoolYear={academicYearId || "2025-2026"}
+          semester={evalTerm}
+          selectedStudentId={selectedStudentId}
+          selectedStudentName={activeStudent?.studentName}
+          onNavigateTab={(t) => {
+            if (t === "student_goals") setActiveTab("tracking")
+            else if (t === "consultation_logs") setActiveTab("consultations")
+            else if (t === "student_feedback") setActiveTab("student_feedback")
+            else if (t === "companion_support") setActiveTab("companion_support")
+            else if (t === "evaluation_progress") setActiveTab("rubric_eval")
+          }}
+        />
+      )}
       {activeTab === "dashboard" && (
         <MultiLevelAdvisoryDashboard
           hideJourneyCard={true}
@@ -1694,18 +1829,60 @@ export default function TeacherAdvisoryPage() {
 
 
           {selectedStudentId && (
-            <TeacherTriPartyHub
-              stageMode="B3_B4"
-              studentId={selectedStudentId}
-              studentName={activeStudent?.studentName}
-              studentCode={activeStudent?.studentCode}
-              classId={selectedClassId}
-              academicYearId={academicYearId}
-              onRefreshParent={() => {
-                loadStudentTracking()
-                loadClassSubmissionStatus()
-              }}
-            />
+            <>
+              <TeacherTriPartyHub
+                stageMode="B3_B4"
+                studentId={selectedStudentId}
+                studentName={activeStudent?.studentName}
+                studentCode={activeStudent?.studentCode}
+                classId={selectedClassId}
+                academicYearId={academicYearId}
+                onRefreshParent={() => {
+                  loadStudentTracking()
+                  loadClassSubmissionStatus()
+                }}
+              />
+              <GoalPlanExtendedPanel
+                studentId={selectedStudentId}
+                studentCode={activeStudent?.studentCode || selectedStudentId}
+                studentName={activeStudent?.studentName || "Học sinh"}
+                classId={selectedClassId}
+                className={selectedClass?.className}
+                schoolYear={academicYearId || "2025-2026"}
+                semester={evalTerm}
+                goals={singleStudentTrackingRows.map((r: any, idx: number) => ({
+                  goalId: r.id || r.goalId || `GOAL_${idx + 1}`,
+                  category: r.categoryKey || r.category || "HOC_TAP",
+                  title: r.subCategory || r.targetExpectation || `Mục tiêu #${idx + 1}`,
+                  actionPlan: r.actionPlan || "",
+                  checkpoint: r.checkpoint || evalTerm,
+                  targetExpectation: r.targetExpectation || "",
+                  deadline: r.deadline || evalTerm,
+                }))}
+                onOpenCreateConsultation={(goal) => {
+                  setEditingConsultationId(null)
+                  setConsultationForm((prev: any) => ({
+                    ...prev,
+                    studentId: selectedStudentId,
+                    meetingDate: new Date().toISOString().split("T")[0],
+                    linkedGoalIds: [goal.goalId],
+                    content: `Tư vấn 1:1 về mục tiêu: ${goal.title}`,
+                  }))
+                  setShowConsultationModal(true)
+                }}
+                onOpenAssignCompanion={(goal) => {
+                  setPreselectedGoalForCompanion(goal)
+                  setActiveTab("companion_support")
+                }}
+                onOpenTrackCoordination={(goal) => {
+                  setPreselectedGoalForCompanion(null)
+                  setActiveTab("companion_support")
+                }}
+                onRefresh={() => {
+                  loadStudentTracking()
+                }}
+              />
+            </>
           )}
 
           <div className="flex flex-wrap items-center justify-between gap-3 border-b border-slate-100 pb-4 pt-2">
@@ -1933,9 +2110,9 @@ export default function TeacherAdvisoryPage() {
                   const numberStr = `0${catIdx + 1}`
                   const themesList = [
                     { border: "border-sky-200", badgeBg: "bg-sky-50 border-sky-200", badgeText: "text-sky-800", numberBadge: "bg-sky-600 text-white" },
-                    { border: "border-indigo-200", badgeBg: "bg-indigo-50 border-indigo-200", badgeText: "text-indigo-800", numberBadge: "bg-indigo-600 text-white" },
+                    { border: "border-teal-200", badgeBg: "bg-teal-50 border-teal-200", badgeText: "text-teal-800", numberBadge: "bg-[#003B3A] text-white" },
                     { border: "border-emerald-200", badgeBg: "bg-emerald-50 border-emerald-200", badgeText: "text-emerald-800", numberBadge: "bg-emerald-600 text-white" },
-                    { border: "border-purple-200", badgeBg: "bg-purple-50 border-purple-200", badgeText: "text-purple-800", numberBadge: "bg-purple-600 text-white" },
+                    { border: "border-teal-200", badgeBg: "bg-teal-50 border-teal-200", badgeText: "text-teal-800", numberBadge: "bg-[#003B3A] text-white" },
                     { border: "border-amber-200", badgeBg: "bg-amber-50 border-amber-200", badgeText: "text-amber-950", numberBadge: "bg-amber-600 text-white" }
                   ]
                   const theme = themesList[catIdx % themesList.length]
@@ -2251,6 +2428,27 @@ export default function TeacherAdvisoryPage() {
       )}
 
       {/* ----------------- TAB 3: ĐÁNH GIÁ KỲ THEO RUBRIC (BẢNG CẢ LỚP & CHI TIẾT HỌC SINH) ----------------- */}
+      {activeTab === "rubric_eval" && selectedClassId && (
+        <UnifiedStudentProgressMatrix
+          role="TEACHER"
+          schoolYear={academicYearId || "2025-2026"}
+          semester={evalTerm}
+          defaultClassId={selectedClassId}
+          classesList={classes.map((c: any) => ({
+            id: c.id,
+            className: c.className || c.name || "Lớp",
+            gradeLevel: String(c.grade || ""),
+          }))}
+          onNavigateStudentAction={(stId, stCode, targetTab) => {
+            const matched = students.find(s => s.id === stId || s.studentCode === stCode)
+            if (matched) setSelectedStudentId(matched.id)
+            if (targetTab === "tracking") setActiveTab("tracking")
+            else if (targetTab === "consultations") setActiveTab("consultations")
+            else if (targetTab === "student_feedback") setActiveTab("student_feedback")
+            else if (targetTab === "companion_support") setActiveTab("companion_support")
+          }}
+        />
+      )}
       {activeTab === "rubric_eval" && (
         <div className="space-y-6">
 
@@ -2438,7 +2636,7 @@ export default function TeacherAdvisoryPage() {
                         : percentDisplay >= 50
                         ? { label: "Khá 🟡", color: "bg-amber-100 text-amber-900 border-amber-300" }
                         : percentDisplay > 0
-                        ? { label: "Cần cố gắng 🟠", color: "bg-orange-100 text-orange-900 border-orange-300" }
+                        ? { label: "Cần cố gắng 🟠", color: "bg-amber-50 text-amber-800 border-amber-200" }
                         : { label: "Chưa đánh giá ⚪", color: "bg-slate-100 text-slate-600 border-slate-200" }
 
                       return (
@@ -2660,7 +2858,7 @@ export default function TeacherAdvisoryPage() {
                       <span className={`text-[10px] font-bold px-2 py-0.5 rounded-lg ${
                         cat.status === "DAT" ? "bg-emerald-500/30 text-emerald-200 border border-emerald-400/30" :
                         cat.status === "TIEN_TRIEN" ? "bg-amber-500/30 text-amber-200 border border-amber-400/30" :
-                        cat.status === "CAN_CO_GANG" ? "bg-orange-500/30 text-orange-200 border border-orange-400/30" :
+                        cat.status === "CAN_CO_GANG" ? "bg-amber-500/30 text-amber-700 border border-amber-400/30" :
                         cat.status === "CHUA_DAT" ? "bg-rose-500/30 text-rose-200 border border-rose-400/30" :
                         "bg-white/10 text-white/60"
                       }`}>
@@ -2672,7 +2870,7 @@ export default function TeacherAdvisoryPage() {
                         className={`h-full transition-all duration-500 rounded-full ${
                           cat.status === "DAT" ? "bg-emerald-400" :
                           cat.status === "TIEN_TRIEN" ? "bg-amber-400" :
-                          cat.status === "CAN_CO_GANG" ? "bg-orange-400" :
+                          cat.status === "CAN_CO_GANG" ? "bg-amber-500" :
                           cat.status === "CHUA_DAT" ? "bg-rose-400" : "bg-slate-400"
                         }`}
                         style={{ width: `${Math.min(100, Math.max(0, cat.averagePercent))}%` }}
@@ -2982,8 +3180,8 @@ export default function TeacherAdvisoryPage() {
                                   }
                                   if (avg >= 1.5) {
                                     return (
-                                      <span className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-black bg-orange-100 text-orange-900 border border-orange-300 shadow-2xs">
-                                        <span className="w-2 h-2 rounded-full bg-orange-500"></span>
+                                      <span className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-black bg-amber-50 text-amber-800 border border-amber-200 shadow-2xs">
+                                        <span className="w-2 h-2 rounded-full bg-amber-500"></span>
                                         <span>🟠 Cần cố gắng (25%)</span>
                                       </span>
                                     )
@@ -3012,7 +3210,7 @@ export default function TeacherAdvisoryPage() {
                                 }
                                 if (item.progressStatus === "CAN_CO_GANG") {
                                   return (
-                                    <span className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-black bg-orange-100 text-orange-900 border border-orange-300">
+                                    <span className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-black bg-amber-50 text-amber-800 border border-amber-200">
                                       <span>🟠 Cần cố gắng (25%)</span>
                                     </span>
                                   )
@@ -3377,15 +3575,15 @@ export default function TeacherAdvisoryPage() {
               </p>
             </div>
 
-            <div className="bg-purple-50/70 border border-purple-200 rounded-2xl p-4 space-y-1">
-              <span className="text-[10px] font-black uppercase text-purple-700 flex items-center gap-1.5">
-                <Clock className="w-3.5 h-3.5 text-purple-600" />
+            <div className="bg-teal-50/70 border border-teal-200 rounded-2xl p-4 space-y-1">
+              <span className="text-[10px] font-black uppercase text-teal-800 flex items-center gap-1.5">
+                <Clock className="w-3.5 h-3.5 text-teal-800" />
                 <span>TỔNG LƯỢT TƯ VẤN</span>
               </span>
-              <p className="text-2xl font-black text-purple-700">
-                {consultations.length} <span className="text-xs font-normal text-purple-600">phiên gặp</span>
+              <p className="text-2xl font-black text-teal-800">
+                {consultations.length} <span className="text-xs font-normal text-teal-800">phiên gặp</span>
               </p>
-              <p className="text-[11px] text-purple-700 font-medium">Đã ghi nhận trong năm học</p>
+              <p className="text-[11px] text-teal-800 font-medium">Đã ghi nhận trong năm học</p>
             </div>
           </div>
 
@@ -3828,7 +4026,7 @@ export default function TeacherAdvisoryPage() {
                             ? "px-2.5 py-1 rounded-xl text-xs font-black block text-center uppercase shadow-2xs bg-pink-100 text-pink-900 border border-pink-200"
                             : req.category === "SUC_KHOE"
                             ? "px-2.5 py-1 rounded-xl text-xs font-black block text-center uppercase shadow-2xs bg-emerald-100 text-emerald-900 border border-emerald-200"
-                            : "px-2.5 py-1 rounded-xl text-xs font-black block text-center uppercase shadow-2xs bg-purple-100 text-purple-900 border border-purple-200"
+                            : "px-2.5 py-1 rounded-xl text-xs font-black block text-center uppercase shadow-2xs bg-teal-50 text-teal-800 border border-teal-200"
                         }>
                           {req.category === "HOC_TAP"
                             ? "📚 Học tập & Bài vở"
@@ -4807,7 +5005,7 @@ export default function TeacherAdvisoryPage() {
                         setAiModalMode("CONSULTATION_TOPICS")
                         setShowAiModal(true)
                       }}
-                      className="px-2.5 py-1 rounded-lg bg-gradient-to-r from-teal-600 to-indigo-600 hover:from-teal-700 hover:to-indigo-700 text-white text-[11px] font-black shadow-2xs transition-all cursor-pointer flex items-center gap-1.5"
+                      className="px-2.5 py-1 rounded-lg bg-gradient-to-r from-teal-600 to-emerald-600 hover:from-teal-700 hover:to-emerald-600 text-white text-[11px] font-black shadow-2xs transition-all cursor-pointer flex items-center gap-1.5"
                     >
                       <Sparkles className="w-3 h-3 text-amber-300 animate-pulse" />
                       <span>AI Gợi ý nội dung trao đổi</span>
@@ -4843,6 +5041,27 @@ export default function TeacherAdvisoryPage() {
                     onChange={(e) => setConsultationForm({ ...consultationForm, nextActions: e.target.value })}
                     placeholder="Ví dụ: Cùng lập thời gian biểu buổi tối, kiểm tra lại sau 1 tuần..."
                     className="w-full p-2.5 rounded-xl border border-slate-200 font-medium text-xs focus:border-teal-500 outline-none transition-colors"
+                  />
+                </div>
+
+                {/* Người phụ trách giải pháp/hành động & Lịch theo dõi tiếp theo (Mục V) */}
+                <div>
+                  <label className="block mb-1 font-bold text-slate-800">👤 Người phụ trách hành động:</label>
+                  <input
+                    type="text"
+                    value={consultationForm.actionAssignee || "Học sinh & GVCN"}
+                    onChange={(e) => setConsultationForm({ ...consultationForm, actionAssignee: e.target.value })}
+                    placeholder="Học sinh, GVCN, GVBM hoặc PHHS..."
+                    className="w-full p-2.5 rounded-xl border border-slate-200 font-medium text-xs focus:border-teal-500 outline-none transition-colors"
+                  />
+                </div>
+                <div>
+                  <label className="block mb-1 font-bold text-slate-800">📅 Lịch theo dõi tiếp theo:</label>
+                  <input
+                    type="date"
+                    value={consultationForm.nextFollowUpDate || ""}
+                    onChange={(e) => setConsultationForm({ ...consultationForm, nextFollowUpDate: e.target.value })}
+                    className="w-full p-2.5 rounded-xl border border-slate-200 font-bold text-xs bg-slate-50 focus:bg-white focus:border-teal-500 outline-none transition-colors"
                   />
                 </div>
 
@@ -4907,12 +5126,21 @@ export default function TeacherAdvisoryPage() {
               </button>
               <button
                 type="button"
-                onClick={handleSaveConsultation}
+                onClick={() => handleSaveConsultation("DRAFT")}
+                disabled={saving}
+                className="px-4 py-2 sm:py-2.5 rounded-xl border border-[#003B3A] text-[#003B3A] bg-white hover:bg-slate-50 text-xs font-bold flex items-center gap-1.5 transition-all cursor-pointer disabled:opacity-50"
+              >
+                <Save className="w-4 h-4" />
+                <span>Lưu nháp</span>
+              </button>
+              <button
+                type="button"
+                onClick={() => handleSaveConsultation("COMPLETED")}
                 disabled={saving}
                 className="px-5 sm:px-6 py-2 sm:py-2.5 rounded-xl bg-[#003B3A] text-white text-xs font-black flex items-center gap-2 hover:bg-[#004D4A] shadow-md transition-all cursor-pointer disabled:opacity-50"
               >
                 <Save className="w-4 h-4" />
-                <span>{saving ? "Đang lưu..." : "Lưu Nhật Ký Tham Vấn"}</span>
+                <span>{saving ? "Đang lưu..." : "Hoàn thành và gửi yêu cầu phản hồi"}</span>
               </button>
             </div>
 

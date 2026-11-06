@@ -161,7 +161,7 @@ export default function AdminExperientialList() {
     switch (status) {
       case "COMPLETED": return { label: "Hoàn thành", containerCls: "bg-emerald-50 text-emerald-700 border-emerald-200/80" };
       case "IN_PROGRESS": return { label: "Đang đánh giá", containerCls: "bg-sky-50 text-sky-700 border-sky-200/80" };
-      case "ASSIGNED": return { label: "Đã giao", containerCls: "bg-indigo-50 text-indigo-700 border-indigo-200/80" };
+      case "ASSIGNED": return { label: "Đã giao", containerCls: "bg-teal-50 text-teal-800 border-teal-200/80" };
       case "LOCKED": return { label: "Đã khóa", containerCls: "bg-slate-100 text-slate-700 border-slate-300" };
       default: return { label: "Nháp", containerCls: "bg-amber-50 text-amber-700 border-amber-200/80" };
     }
@@ -222,7 +222,7 @@ export default function AdminExperientialList() {
             </div>
             <div className="flex items-center gap-3 shrink-0 flex-wrap">
               <button onClick={handleExportExcel} className="px-4 py-3 bg-white hover:bg-slate-50 text-slate-700 text-xs font-black rounded-2xl border border-slate-200/80 shadow-2xs transition-all">Xuất Excel</button>
-              <button onClick={() => router.push('/admin/experiential-activities/catalogs')} className="px-6 py-3 bg-gradient-to-r from-blue-700 via-indigo-600 to-[#00A19A] hover:from-blue-800 hover:to-indigo-700 text-white text-xs sm:text-sm font-black rounded-2xl shadow-lg shadow-blue-500/25 transition-all flex items-center gap-2.5 group transform active:scale-95 cursor-pointer" title="Đẩy Hoạt Động Xuống Cơ Sở & Gán Lớp Tiếp Nhận">
+              <button onClick={() => router.push('/admin/experiential-activities/catalogs')} className="px-6 py-3 bg-gradient-to-r from-blue-700 via-indigo-600 to-[#00A19A] hover:from-blue-800 hover:to-emerald-600 text-white text-xs sm:text-sm font-black rounded-2xl shadow-lg shadow-blue-500/25 transition-all flex items-center gap-2.5 group transform active:scale-95 cursor-pointer" title="Đẩy Hoạt Động Xuống Cơ Sở & Gán Lớp Tiếp Nhận">
                 Đẩy Hoạt Động Xuống Cơ Sở
               </button>
             </div>
@@ -234,7 +234,7 @@ export default function AdminExperientialList() {
                 <p className="text-[11px] font-bold text-slate-400 uppercase tracking-wider">Tổng hoạt động</p>
                 <p className="text-2xl font-black text-slate-800 mt-1">{totalActivities}</p>
               </div>
-              <div className="w-11 h-11 rounded-xl bg-indigo-50 text-indigo-600 flex items-center justify-center border border-indigo-200">#</div>
+              <div className="w-11 h-11 rounded-xl bg-teal-50 text-teal-800 flex items-center justify-center border border-teal-200">#</div>
             </div>
             <div className="bg-slate-50/70 p-4 rounded-2xl border border-slate-200/60 flex items-center justify-between">
               <div>
@@ -392,7 +392,7 @@ export default function AdminExperientialList() {
                             <div className="flex items-center gap-1">
                               <button onClick={() => setProgressModalActivity(act)} className="p-2 rounded-xl bg-slate-100 hover:bg-[#00A19A]/10 text-slate-600 hover:text-[#003B3A]" title="Tiến độ">Tiến độ</button>
                               <button onClick={e=>{e.stopPropagation(); router.push(`/admin/experiential-activities/catalogs?allocateId=${act.catalogId || act.id}`);}} className="p-2 rounded-xl bg-blue-50 hover:bg-blue-100 text-blue-700 font-bold" title="Đẩy Hoạt Động Xuống Cơ Sở & Gán Lớp Tiếp Nhận">Đẩy cơ sở</button>
-                              <button onClick={e=>handleDuplicate(e, act)} className="p-2 rounded-xl bg-slate-100 hover:bg-indigo-50 text-slate-600 hover:text-indigo-600" title="Nhân bản">Nhân bản</button>
+                              <button onClick={e=>handleDuplicate(e, act)} className="p-2 rounded-xl bg-slate-100 hover:bg-teal-50 text-slate-600 hover:text-teal-800" title="Nhân bản">Nhân bản</button>
                               <button onClick={e=>handleToggleLock(e, act)} className={`p-2 rounded-xl ${locked?'bg-amber-50 text-amber-700 hover:bg-amber-100':'bg-slate-100 text-slate-600 hover:bg-slate-200'}`} title={locked?'Mở khóa':'Khóa'}>{locked?'Mở khóa':'Khóa'}</button>
                               <button onClick={e=>handleDelete(e, act.id)} className="p-2 rounded-xl bg-slate-100 hover:bg-rose-50 text-slate-400 hover:text-rose-600" title="Xóa">Xóa</button>
                             </div>

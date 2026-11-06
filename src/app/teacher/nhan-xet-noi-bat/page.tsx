@@ -391,7 +391,7 @@ export default function TeacherHighlightCommentsPage() {
                           <div className="flex items-center gap-1">
                             <button
                               onClick={() => startEdit(c)}
-                              className="p-1.5 text-slate-400 hover:text-indigo-600 hover:bg-indigo-50 rounded-lg transition-all"
+                              className="p-1.5 text-slate-400 hover:text-teal-800 hover:bg-teal-50 rounded-lg transition-all"
                               title="Chỉnh sửa"
                             >
                               <Edit2 className="w-4 h-4" />

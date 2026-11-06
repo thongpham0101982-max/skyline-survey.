@@ -147,7 +147,7 @@ export function DashboardChartCard({
         <div className="flex items-center gap-3 flex-wrap">
           {legendItems && legendItems.length > 0 ? (
             <>
-              <span className="font-semibold text-slate-400 uppercase tracking-wider text-[10px]">
+              <span className="font-semibold text-slate-500 text-[11px]">
                 Chú giải:
               </span>
               {legendItems.map((item, idx) => (
@@ -158,7 +158,7 @@ export function DashboardChartCard({
                   />
                   <span className="text-slate-600 font-medium">{item.label}</span>
                   {item.value !== undefined && (
-                    <strong className="font-mono font-semibold text-slate-800">
+                    <strong className="font-mono font-semibold text-slate-800 tabular-nums">
                       ({item.value})
                     </strong>
                   )}

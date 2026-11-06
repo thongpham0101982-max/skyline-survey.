@@ -313,7 +313,7 @@ export default function ReportExportDrawer({
                         {selectedTemplate === "CAMBRIDGE" && (
                           <>
                             <td className="py-2 px-3 text-center font-mono tabular-nums font-semibold">{Math.round(score * 10)}%</td>
-                            <td className="py-2 px-3 text-center font-bold font-mono text-indigo-700">
+                            <td className="py-2 px-3 text-center font-bold font-mono text-teal-800">
                               {score >= 9 ? "A*" : score >= 8 ? "A" : score >= 7 ? "B" : score >= 6 ? "C" : score >= 5 ? "D" : "U"}
                             </td>
                             <td className="py-2 px-3 text-slate-600 text-[11px]">

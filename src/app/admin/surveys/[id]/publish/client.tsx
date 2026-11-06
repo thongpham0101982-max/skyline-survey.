@@ -11,8 +11,8 @@ const AUDIENCE_MAP: Record<string, { label: string; color: string; bg: string; b
 }
 
 const EDU_SYSTEM_COLORS: Record<string, { bg: string; text: string; border: string; activeBg: string }> = {
-  HNG: { bg: "bg-indigo-50", text: "text-indigo-700", border: "border-indigo-200", activeBg: "bg-indigo-600" },
-  SB:  { bg: "bg-purple-50", text: "text-purple-700", border: "border-purple-200", activeBg: "bg-purple-600" },
+  HNG: { bg: "bg-teal-50", text: "text-teal-800", border: "border-teal-200", activeBg: "bg-[#003B3A]" },
+  SB:  { bg: "bg-teal-50", text: "text-teal-800", border: "border-teal-200", activeBg: "bg-[#003B3A]" },
   HNS: { bg: "bg-teal-50",   text: "text-teal-700",   border: "border-teal-200",   activeBg: "bg-teal-600" },
   MNS: { bg: "bg-rose-50", text: "text-rose-700", border: "border-rose-200", activeBg: "bg-rose-600" },
   MNG: { bg: "bg-emerald-50", text: "text-emerald-700", border: "border-emerald-200", activeBg: "bg-emerald-600" },
@@ -160,8 +160,8 @@ export default function PublishSurveyClient({ initialSurvey, classes, eduSystems
 
         {/* Hệ học Filter Tabs - unified with Hệ học standard */}
         {eduSystems.length > 0 && (
-          <div className="bg-white/50 p-2 rounded-[2.5rem] border border-indigo-100 flex flex-wrap gap-2 items-center">
-            <div className="flex items-center gap-2 px-4 text-xs font-black text-indigo-400 uppercase tracking-widest">
+          <div className="bg-white/50 p-2 rounded-[2.5rem] border border-teal-200 flex flex-wrap gap-2 items-center">
+            <div className="flex items-center gap-2 px-4 text-xs font-black text-teal-700 uppercase tracking-widest">
               <Layers className="w-3.5 h-3.5" />
               Hệ học:
             </div>
@@ -189,7 +189,7 @@ export default function PublishSurveyClient({ initialSurvey, classes, eduSystems
       <div className="flex items-center justify-between">
         <p className="text-sm font-bold text-slate-500">
           Hiển thị <span className="text-slate-800 font-black">{filteredClasses.length}</span> lớp
-          {activeEduSystem !== "all" && <span className="ml-1 text-indigo-600">· Hệ {activeEduSystem}</span>}
+          {activeEduSystem !== "all" && <span className="ml-1 text-teal-800">· Hệ {activeEduSystem}</span>}
           {activeCampusId !== "all" && <span className="ml-1 text-teal-600">· {campuses.find(c => c.id === activeCampusId)?.name}</span>}
         </p>
         <button onClick={handleSelectAllVisible} className={`px-4 py-2 rounded-xl text-xs font-bold transition-all ${allVisibleSelected ? "bg-slate-800 text-white" : "bg-slate-100 text-slate-600 hover:bg-slate-200"}`}>

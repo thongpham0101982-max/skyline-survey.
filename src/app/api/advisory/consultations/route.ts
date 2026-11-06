@@ -111,14 +111,44 @@ export async function GET(req: Request) {
     const allLogStudentIds = Array.from(new Set([...targetStudentIds, ...logs.map(l => l.studentId)]))
     const policyMap = await getPoliciesByStudentIds(allLogStudentIds, "CONSULTATION")
 
+    const metaMap = new Map<string, any>()
+    if (allLogStudentIds.length > 0) {
+      try {
+        const placeholders = allLogStudentIds.map(() => "?").join(",")
+        const metaRows: any[] = await prisma.$queryRawUnsafe(
+          `SELECT * FROM "AdvisoryConsultationMeta" WHERE "studentId" IN (${placeholders})`,
+          ...allLogStudentIds
+        )
+        for (const m of metaRows || []) {
+          let linkedGoalIds: string[] = []
+          try {
+            linkedGoalIds = m.linkedGoalIdsJson ? JSON.parse(m.linkedGoalIdsJson) : []
+          } catch {}
+          metaMap.set(m.consultationId, {
+            ...m,
+            linkedGoalIds
+          })
+        }
+      } catch {}
+    }
+
     const formattedLogs = logs
       .map(l => {
         const policy = policyMap.get(`CONSULTATION:${l.id}`) || null
         const sanitized = sanitizeConsultationForViewer(l, policy, caller.actorRole)
         if (!sanitized) return null
+        const meta = metaMap.get(l.id) || null
         return {
           ...sanitized,
-          evaluatorName: l.teacher?.teacherName || "Giáo Viên Cố Vấn"
+          evaluatorName: l.teacher?.teacherName || "Giáo Viên Cố Vấn",
+          linkedGoalIds: meta?.linkedGoalIds || [],
+          actionAssignee: meta?.actionAssignee || "Học sinh & GVCN",
+          nextFollowUpDate: meta?.nextFollowUpDate || "",
+          consultationStatus: meta?.consultationStatus || (l.status === "PENDING" ? "SCHEDULED" : "COMPLETED"),
+          studentFeedbackStatus:
+            meta?.studentFeedbackStatus ||
+            (l.studentReflection ? "SUBMITTED" : "NOT_REQUESTED"),
+          advisorProcessStatus: meta?.advisorProcessStatus || "NONE"
         }
       })
       .filter(Boolean)
@@ -153,7 +183,12 @@ export async function POST(req: Request) {
       shareWithParent = true,
       privacyTier,
       sessionFormat = "DIRECT",
-      sessionStatus = "COMPLETED"
+      sessionStatus = "COMPLETED",
+      linkedGoalIds = [],
+      actionAssignee = "",
+      nextFollowUpDate = "",
+      consultationStatus = "COMPLETED",
+      requestStudentFeedback = false
     } = body
 
     if (!studentId || !content) {
@@ -231,6 +266,38 @@ export async function POST(req: Request) {
       updatedById: caller.userId,
       updatedByRole: caller.actorRole
     })
+
+    const nextStudentFeedbackStatus = requestStudentFeedback
+      ? "PENDING"
+      : log.studentReflection
+        ? "SUBMITTED"
+        : "NOT_REQUESTED"
+
+    await prisma.$executeRawUnsafe(
+      `INSERT INTO "AdvisoryConsultationMeta" (
+        "consultationId", "studentId", "academicYearId", "term",
+        "linkedGoalIdsJson", "actionAssignee", "nextFollowUpDate",
+        "consultationStatus", "studentFeedbackStatus", "advisorProcessStatus", "updatedAt"
+      ) VALUES (?, ?, ?, 'HK1', ?, ?, ?, ?, ?, 'NONE', CURRENT_TIMESTAMP)
+      ON CONFLICT("consultationId") DO UPDATE SET
+        "linkedGoalIdsJson" = excluded."linkedGoalIdsJson",
+        "actionAssignee" = COALESCE(excluded."actionAssignee", "AdvisoryConsultationMeta"."actionAssignee"),
+        "nextFollowUpDate" = COALESCE(excluded."nextFollowUpDate", "AdvisoryConsultationMeta"."nextFollowUpDate"),
+        "consultationStatus" = excluded."consultationStatus",
+        "studentFeedbackStatus" = CASE
+          WHEN "AdvisoryConsultationMeta"."studentFeedbackStatus" = 'SUBMITTED' THEN 'SUBMITTED'
+          ELSE excluded."studentFeedbackStatus"
+        END,
+        "updatedAt" = CURRENT_TIMESTAMP`,
+      log.id,
+      log.studentId,
+      log.academicYearId || "",
+      JSON.stringify(Array.isArray(linkedGoalIds) ? linkedGoalIds : []),
+      actionAssignee || null,
+      nextFollowUpDate || null,
+      consultationStatus || sessionStatus || "COMPLETED",
+      nextStudentFeedbackStatus
+    )
 
     await appendAdvisoryAuditLog({
       studentId: log.studentId,

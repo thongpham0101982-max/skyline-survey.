@@ -56,3 +56,9 @@ scratch/
 err.txt
 out.txt
 
+
+/storage/
+storage/
+
+.next-chunk-cache/
+.next-chunk-cache

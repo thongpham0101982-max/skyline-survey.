@@ -229,7 +229,7 @@ export function TeacherProfessionalConfigModal({
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-xs">
       <div className="bg-white rounded-3xl shadow-2xl border border-slate-200 w-full max-w-4xl max-h-[92vh] flex flex-col overflow-hidden animate-in fade-in zoom-in duration-200">
         {/* Header */}
-        <div className="flex items-center justify-between px-6 py-4 border-b border-slate-100 bg-gradient-to-r from-teal-50/80 via-emerald-50/70 to-indigo-50/80">
+        <div className="flex items-center justify-between px-6 py-4 border-b border-slate-100 bg-gradient-to-r from-teal-50/80 via-emerald-50/70 to-emerald-600/80">
           <div className="flex items-center gap-3">
             <div className="w-10 h-10 rounded-2xl bg-[#00A19A] text-white flex items-center justify-center shadow-xs">
               <GraduationCap className="w-5 h-5" />
@@ -259,10 +259,10 @@ export function TeacherProfessionalConfigModal({
         {/* Form Body */}
         <form onSubmit={handleSubmit} className="flex-1 overflow-y-auto p-6 space-y-6">
           {/* Banner hướng dẫn */}
-          <div className="p-3.5 rounded-2xl bg-indigo-50/80 border border-indigo-200/80 flex items-start gap-3">
-            <Sparkles className="w-5 h-5 text-indigo-600 shrink-0 mt-0.5" />
-            <div className="text-xs text-indigo-950 leading-relaxed font-medium">
-              <strong className="font-extrabold text-indigo-900">Nhiệm vụ của Giáo viên Phụ trách: </strong>
+          <div className="p-3.5 rounded-2xl bg-teal-50/80 border border-teal-200/80 flex items-start gap-3">
+            <Sparkles className="w-5 h-5 text-teal-800 shrink-0 mt-0.5" />
+            <div className="text-xs text-teal-800 leading-relaxed font-medium">
+              <strong className="font-extrabold text-teal-800">Nhiệm vụ của Giáo viên Phụ trách: </strong>
               Kính nhờ Thầy/Cô hoàn tất cấu hình: <strong>Nội dung giáo dục</strong>, <strong>Yêu cầu cần đạt</strong>, <strong>Hình thức tổ chức</strong>, <strong>Sản phẩm học tập dự án</strong> và <strong>Cấu hình & Tiêu chí đánh giá</strong> để phục vụ quá trình triển khai và bổ sung Hồ sơ Học sinh cuối năm.
             </div>
           </div>
@@ -293,7 +293,7 @@ export function TeacherProfessionalConfigModal({
           <div>
             <label className="block text-xs font-bold text-slate-700 mb-1 flex items-center justify-between">
               <span className="flex items-center gap-1.5">
-                <Award className="w-3.5 h-3.5 text-indigo-600" />
+                <Award className="w-3.5 h-3.5 text-teal-800" />
                 <span>1. Yêu cầu cần đạt (Chuẩn đầu ra)</span>
                 <span className="text-rose-500">*</span>
               </span>
@@ -307,7 +307,7 @@ export function TeacherProfessionalConfigModal({
               placeholder="Mô tả chuẩn đầu ra, thái độ, kỹ năng học sinh cần đạt được sau khi tham gia hoạt động..."
               value={learningOutcomes}
               onChange={e => setLearningOutcomes(e.target.value)}
-              className="w-full text-xs font-medium px-3.5 py-2.5 rounded-xl border border-slate-200 focus:outline-hidden focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500/20 transition-all resize-none"
+              className="w-full text-xs font-medium px-3.5 py-2.5 rounded-xl border border-slate-200 focus:outline-hidden focus:border-teal-200 focus:ring-2 focus:ring-indigo-500/20 transition-all resize-none"
             />
           </div>
 
@@ -353,7 +353,7 @@ export function TeacherProfessionalConfigModal({
                 placeholder="Ví dụ: Lịch sử & Địa lí, Mỹ thuật, Tiếng Anh..."
                 value={coopSubjectNames}
                 onChange={e => setCoopSubjectNames(e.target.value)}
-                className="w-full text-xs px-3 py-2 rounded-xl border border-slate-200 focus:outline-hidden focus:border-indigo-500 transition-all"
+                className="w-full text-xs px-3 py-2 rounded-xl border border-slate-200 focus:outline-hidden focus:border-teal-200 transition-all"
               />
             </div>
 
@@ -509,13 +509,13 @@ export function TeacherProfessionalConfigModal({
             )}
 
             {/* Chi tiết cho DANH SÁCH VAI TRÒ HỌC SINH */}
-            <div className="p-4 rounded-2xl bg-purple-50/60 border border-purple-200/80 space-y-2.5">
+            <div className="p-4 rounded-2xl bg-teal-50/60 border border-teal-200/80 space-y-2.5">
               <div className="flex items-center justify-between">
-                <label className="text-xs font-bold text-purple-950 flex items-center gap-1.5">
-                  <Users className="w-4 h-4 text-purple-700" />
+                <label className="text-xs font-bold text-teal-800 flex items-center gap-1.5">
+                  <Users className="w-4 h-4 text-teal-800" />
                   <span>Danh sách Vai trò Học sinh (Dành cho GVCN ghi nhận)</span>
                 </label>
-                <span className="text-[10px] text-purple-700 font-bold">
+                <span className="text-[10px] text-teal-800 font-bold">
                   {selectedRoles.length} vai trò khả dụng
                 </span>
               </div>
@@ -524,7 +524,7 @@ export function TeacherProfessionalConfigModal({
                 {selectedRoles.map((role) => (
                   <span
                     key={role}
-                    className="inline-flex items-center gap-1 px-2.5 py-1 rounded-xl bg-white border border-purple-200 text-xs font-bold text-purple-900 shadow-2xs"
+                    className="inline-flex items-center gap-1 px-2.5 py-1 rounded-xl bg-white border border-teal-200 text-xs font-bold text-teal-800 shadow-2xs"
                   >
                     <span>{role}</span>
                     <button
@@ -550,12 +550,12 @@ export function TeacherProfessionalConfigModal({
                       handleAddRole(newRoleInput);
                     }
                   }}
-                  className="flex-1 text-xs px-3 py-1.5 bg-white border border-purple-200 rounded-xl"
+                  className="flex-1 text-xs px-3 py-1.5 bg-white border border-teal-200 rounded-xl"
                 />
                 <button
                   type="button"
                   onClick={() => handleAddRole(newRoleInput)}
-                  className="text-xs font-bold px-3 py-1.5 bg-purple-600 text-white rounded-xl shadow-2xs hover:bg-purple-700 transition-all cursor-pointer"
+                  className="text-xs font-bold px-3 py-1.5 bg-[#003B3A] text-white rounded-xl shadow-2xs hover:bg-[#003B3A] transition-all cursor-pointer"
                 >
                   Thêm vai trò
                 </button>

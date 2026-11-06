@@ -246,15 +246,15 @@ export default function SpecialSubjectsDashboardPage() {
         <div className="bg-white rounded-xl p-3 border border-slate-200/90 shadow-2xs relative overflow-hidden">
           <div className="flex items-center justify-between">
             <span className="text-[10px] font-bold text-slate-500 uppercase tracking-wider">Lượt đánh giá</span>
-            <CheckCircle2 className="w-3.5 h-3.5 text-indigo-600" />
+            <CheckCircle2 className="w-3.5 h-3.5 text-teal-800" />
           </div>
           <div className="mt-1.5">
-            <div className="text-lg font-black text-indigo-700 tracking-tight">
+            <div className="text-lg font-black text-teal-800 tracking-tight">
               {loading ? "..." : (data?.totalGradeEntries || 0)}
             </div>
             <p className="text-[10px] text-slate-500">Hoàn tất: {data?.totalCompletedEntries || 0}</p>
           </div>
-          <div className="absolute bottom-0 left-0 right-0 h-1 bg-indigo-500" />
+          <div className="absolute bottom-0 left-0 right-0 h-1 bg-[#003B3A]" />
         </div>
 
         <div className="bg-white rounded-xl p-3 border border-slate-200/90 shadow-2xs relative overflow-hidden">
@@ -345,13 +345,13 @@ export default function SpecialSubjectsDashboardPage() {
           </div>
 
           {/* Năng lực Vận dụng */}
-          <div className="p-3.5 rounded-xl bg-purple-50/50 border border-purple-100 space-y-2">
+          <div className="p-3.5 rounded-xl bg-teal-50/50 border border-teal-200 space-y-2">
             <div className="flex items-center justify-between">
-              <span className="font-bold text-xs text-purple-900 flex items-center space-x-1.5">
-                <span className="w-2.5 h-2.5 rounded-full bg-purple-600 inline-block" />
+              <span className="font-bold text-xs text-teal-800 flex items-center space-x-1.5">
+                <span className="w-2.5 h-2.5 rounded-full bg-[#003B3A] inline-block" />
                 <span>Năng lực Vận dụng</span>
               </span>
-              <span className="text-[10px] font-semibold text-purple-700 bg-purple-100 px-1.5 py-0.5 rounded">
+              <span className="text-[10px] font-semibold text-teal-800 bg-teal-50 px-1.5 py-0.5 rounded">
                 {data?.competencyStats?.vanDung?.total || 0} lượt
               </span>
             </div>

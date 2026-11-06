@@ -109,7 +109,7 @@ function getThemeBadgeStyle(type: string) {
     case "HK1":
       return "bg-blue-100 text-blue-900 border-blue-300";
     case "HK2":
-      return "bg-purple-100 text-purple-900 border-purple-300";
+      return "bg-teal-50 text-teal-800 border-teal-400";
     case "TRAI_NGHIEM":
       return "bg-emerald-100 text-emerald-900 border-emerald-300";
     default:
@@ -517,7 +517,7 @@ export function AcademicYearsClient({ initialYears, updateAction, deleteAction, 
                               type="text"
                               value={editForm.name}
                               onChange={e => setEditForm({ ...editForm, name: e.target.value })}
-                              className="w-full border border-indigo-300 rounded-lg px-3 py-2 text-sm font-bold outline-none"
+                              className="w-full border border-teal-200 rounded-lg px-3 py-2 text-sm font-bold outline-none"
                             />
                           </div>
                           <div>
@@ -830,7 +830,7 @@ export function AcademicYearsClient({ initialYears, updateAction, deleteAction, 
                         emerald: { bg: "bg-emerald-50/60", text: "text-emerald-900", border: "border-emerald-200", badge: "bg-emerald-600" },
                         rose: { bg: "bg-rose-50/60", text: "text-rose-900", border: "border-rose-200", badge: "bg-rose-600" },
                         amber: { bg: "bg-amber-50/60", text: "text-amber-900", border: "border-amber-200", badge: "bg-amber-600" },
-                        purple: { bg: "bg-purple-50/60", text: "text-purple-900", border: "border-purple-200", badge: "bg-purple-600" }
+                        purple: { bg: "bg-teal-50/60", text: "text-teal-800", border: "border-teal-200", badge: "bg-[#003B3A]" }
                       };
                       const themeStyles = colorMap[p.color] || colorMap.blue;
 
@@ -865,7 +865,7 @@ export function AcademicYearsClient({ initialYears, updateAction, deleteAction, 
                 <div className="px-5 py-4 border-t border-slate-100 text-xs font-semibold">
                   <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-3 border-b border-slate-100 pb-3">
                     <h4 className="text-xs font-black text-slate-700 uppercase tracking-wider flex items-center gap-2">
-                      <Layers className="w-4 h-4 text-indigo-500" /> Hệ học ({(y.educationSystems || []).length})
+                      <Layers className="w-4 h-4 text-teal-700" /> Hệ học ({(y.educationSystems || []).length})
                     </h4>
 
                     <div className="flex flex-wrap items-center gap-3">
@@ -876,7 +876,7 @@ export function AcademicYearsClient({ initialYears, updateAction, deleteAction, 
                             <button
                               key={s.code}
                               onClick={() => addEduSystem(y.id, s.code, s.name)}
-                              className="flex items-center gap-1 px-2.5 py-1 text-xs font-bold bg-indigo-50 text-indigo-700 border border-indigo-100 rounded-lg hover:bg-indigo-100 transition-colors"
+                              className="flex items-center gap-1 px-2.5 py-1 text-xs font-bold bg-teal-50 text-teal-800 border border-teal-200 rounded-lg hover:bg-teal-50 transition-colors"
                             >
                               <Plus className="w-3 h-3" /> {s.code}
                             </button>
@@ -890,13 +890,13 @@ export function AcademicYearsClient({ initialYears, updateAction, deleteAction, 
                           type="text"
                           placeholder="MÃ HỆ HỌC (VD: ALEVEL)"
                           id={`custom-code-${y.id}`}
-                          className="border border-slate-200 bg-white rounded-lg px-2.5 py-1 text-xs outline-none focus:border-indigo-500 w-32 font-bold text-slate-800 uppercase"
+                          className="border border-slate-200 bg-white rounded-lg px-2.5 py-1 text-xs outline-none focus:border-teal-200 w-32 font-bold text-slate-800 uppercase"
                         />
                         <input
                           type="text"
                           placeholder="Tên hệ học"
                           id={`custom-name-${y.id}`}
-                          className="border border-slate-200 bg-white rounded-lg px-2.5 py-1 text-xs outline-none focus:border-indigo-500 w-44 font-semibold text-slate-700"
+                          className="border border-slate-200 bg-white rounded-lg px-2.5 py-1 text-xs outline-none focus:border-teal-200 w-44 font-semibold text-slate-700"
                         />
                         <button
                           onClick={() => {
@@ -926,7 +926,7 @@ export function AcademicYearsClient({ initialYears, updateAction, deleteAction, 
                     <div className="flex flex-wrap gap-2">
                       {(y.educationSystems || []).map((es: any) => (
                         <div key={es.id} className="flex items-center gap-2 bg-white border border-slate-200 rounded-lg px-3 py-1.5 shadow-2xs group">
-                          <span className="font-bold text-indigo-700 text-sm">{es.code}</span>
+                          <span className="font-bold text-teal-800 text-sm">{es.code}</span>
                           <span className="text-slate-500 text-xs">- {es.name}</span>
                           <button
                             onClick={() => removeEduSystem(y.id, es.id)}
@@ -1090,7 +1090,7 @@ export function AcademicYearsClient({ initialYears, updateAction, deleteAction, 
                 <div className="flex items-center justify-between gap-2">
                   <div>
                     <h4 className="text-xs font-black text-slate-800 uppercase tracking-wide flex items-center gap-1.5">
-                      <Layers className="w-4 h-4 text-indigo-600" />
+                      <Layers className="w-4 h-4 text-teal-800" />
                       <span>Chi tiết 5 Trụ Cột Cho Học Sinh Sky-Line</span>
                     </h4>
                     <p className="text-[11px] text-slate-500 font-medium mt-0.5">
@@ -1114,7 +1114,7 @@ export function AcademicYearsClient({ initialYears, updateAction, deleteAction, 
                       emerald: { bg: "bg-emerald-50/50", text: "text-emerald-900", border: "border-emerald-200", badge: "bg-emerald-600" },
                       rose: { bg: "bg-rose-50/50", text: "text-rose-900", border: "border-rose-200", badge: "bg-rose-600" },
                       amber: { bg: "bg-amber-50/50", text: "text-amber-900", border: "border-amber-200", badge: "bg-amber-600" },
-                      purple: { bg: "bg-purple-50/50", text: "text-purple-900", border: "border-purple-200", badge: "bg-purple-600" }
+                      purple: { bg: "bg-teal-50/50", text: "text-teal-800", border: "border-teal-200", badge: "bg-[#003B3A]" }
                     };
                     const themeStyles = colorMap[p.color] || colorMap.blue;
 

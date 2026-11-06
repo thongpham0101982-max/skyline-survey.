@@ -303,10 +303,10 @@ export function ExperientialReportsClient(props?: { academicYears?: any[]; activ
             <div className="flex items-center gap-2.5 flex-wrap">
               <button
                 onClick={() => handleExportMonthlyPdf()}
-                className="px-4 py-3 bg-indigo-50 hover:bg-indigo-100 border border-indigo-300 text-indigo-950 text-xs font-black rounded-2xl shadow-2xs transition-all flex items-center gap-2 cursor-pointer"
+                className="px-4 py-3 bg-teal-50 hover:bg-teal-50 border border-teal-200 text-teal-800 text-xs font-black rounded-2xl shadow-2xs transition-all flex items-center gap-2 cursor-pointer"
                 title="Xuất file PDF báo cáo các hoạt động trong tháng gắn theo lớp, GVCN phụ trách và tình trạng đánh giá (khổ A4)"
               >
-                <Calendar className="w-4 h-4 text-indigo-600" />
+                <Calendar className="w-4 h-4 text-teal-800" />
                 <span>Xuất PDF {selectedMonth !== 'ALL' ? `Tháng ${selectedMonth}` : 'Theo Tháng'} (A4)</span>
               </button>
 
@@ -346,7 +346,7 @@ export function ExperientialReportsClient(props?: { academicYears?: any[]; activ
                 <p className="text-2xl font-black text-slate-800 mt-1">{kpis.totalActivities}</p>
                 <p className="text-[10px] text-slate-500 mt-0.5 font-medium">Toàn hệ thống</p>
               </div>
-              <div className="w-10 h-10 rounded-xl bg-indigo-50 text-indigo-600 flex items-center justify-center border border-indigo-200">
+              <div className="w-10 h-10 rounded-xl bg-teal-50 text-teal-800 flex items-center justify-center border border-teal-200">
                 <Layers className="w-4 h-4" />
               </div>
             </div>
@@ -526,11 +526,11 @@ export function ExperientialReportsClient(props?: { academicYears?: any[]; activ
           {selectedClassId !== 'ALL' && (
             <div className="flex items-center gap-2 pt-2 border-t border-slate-100">
               <span className="text-xs text-slate-500 font-semibold">Đang lọc theo lớp:</span>
-              <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-black bg-indigo-50 text-indigo-700 border border-indigo-200">
+              <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-black bg-teal-50 text-teal-800 border border-teal-200">
                 <span>{selectedClassId}</span>
                 <button 
                   onClick={() => setSelectedClassId('ALL')} 
-                  className="hover:text-indigo-900 rounded-full p-0.5"
+                  className="hover:text-teal-800 rounded-full p-0.5"
                   title="Xóa lọc theo lớp"
                 >
                   <X className="w-3.5 h-3.5" />
@@ -859,8 +859,8 @@ export function ExperientialReportsClient(props?: { academicYears?: any[]; activ
                           </td>
                           <td className="py-3.5 px-4 whitespace-nowrap">
                             <div className="flex items-center gap-1.5">
-                              <UserCheck className="w-3.5 h-3.5 text-indigo-500 shrink-0" />
-                              <span className="font-bold text-indigo-950">{cs.homeroomTeacherName || '—'}</span>
+                              <UserCheck className="w-3.5 h-3.5 text-teal-700 shrink-0" />
+                              <span className="font-bold text-teal-800">{cs.homeroomTeacherName || '—'}</span>
                             </div>
                           </td>
                           <td className="py-3.5 px-4">
@@ -1025,7 +1025,7 @@ export function ExperientialReportsClient(props?: { academicYears?: any[]; activ
                             <span className="inline-flex items-center px-2 py-0.5 rounded text-[10px] font-black bg-amber-50 text-amber-900 border border-amber-200 mb-1">
                               {cp.themeName || 'Chủ đề giáo dục'}
                             </span>
-                            <div className="text-[11px] text-indigo-700 font-bold flex items-center gap-1">
+                            <div className="text-[11px] text-teal-800 font-bold flex items-center gap-1">
                               <BookOpen className="w-3 h-3 shrink-0" />
                               <span className="line-clamp-1">{cp.integratedSubjects || 'Liên môn'}</span>
                             </div>
@@ -1040,8 +1040,8 @@ export function ExperientialReportsClient(props?: { academicYears?: any[]; activ
                             <span className="text-[10px] text-slate-400 font-semibold">Chủ nhiệm</span>
                           </td>
                           <td className="py-3.5 px-4 whitespace-nowrap">
-                            <div className="font-extrabold text-indigo-900">{cp.subjectTeacherName || '—'}</div>
-                            <span className="text-[10px] text-indigo-500 font-semibold">GVBM / TCM Phụ trách</span>
+                            <div className="font-extrabold text-teal-800">{cp.subjectTeacherName || '—'}</div>
+                            <span className="text-[10px] text-teal-700 font-semibold">GVBM / TCM Phụ trách</span>
                           </td>
                           <td className="py-3.5 px-4 text-center whitespace-nowrap">
                             <div className="space-y-1">

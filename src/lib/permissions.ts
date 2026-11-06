@@ -104,7 +104,7 @@ export async function getRoleReadableModules(roleCode: string): Promise<string[]
     readableModules.add("KQKS_MAM_NON")
   }
 
-  // Cho phép Ban KT&ĐBCL, Quản lý Cơ sở, BGH, Giáo vụ và Giáo viên truy cập chức năng In bảng tên Họp PHHS trong Học liệu
+  // Cho phép Ban KT&ĐBCL, Quản lý Cơ sở, BGH, Giáo vụ và Giáo viên truy cập chức năng In bảng tên Họp PHHS
   if (
     [
       "KT_DBCL",

@@ -55,25 +55,25 @@ export function KPICard({
       accentBorder: "hover:border-[#00A19A]/40"
     },
     indigo: {
-      bg: "bg-[#6C5CE7]/10 text-[#6C5CE7] border-[#6C5CE7]/20",
-      badge: "bg-[#6C5CE7]/10 text-[#5A4AD1] border-[#6C5CE7]/30",
-      link: "text-[#5A4AD1] hover:text-[#6C5CE7]",
-      progress: "bg-[#6C5CE7]",
-      accentBorder: "hover:border-[#6C5CE7]/40"
+      bg: "bg-[#003B3A]/10 text-[#003B3A] border-[#003B3A]/20",
+      badge: "bg-[#003B3A]/10 text-[#003B3A] border-[#003B3A]/30",
+      link: "text-[#003B3A] hover:text-[#00A19A]",
+      progress: "bg-[#003B3A]",
+      accentBorder: "hover:border-[#003B3A]/40"
     },
     gold: {
-      bg: "bg-[#AE882E]/10 text-[#AE882E] border-[#AE882E]/20",
-      badge: "bg-[#AE882E]/10 text-[#937326] border-[#AE882E]/30",
-      link: "text-[#937326] hover:text-[#AE882E]",
-      progress: "bg-[#AE882E]",
-      accentBorder: "hover:border-[#AE882E]/40"
+      bg: "bg-amber-50 text-amber-700 border-amber-200/60",
+      badge: "bg-amber-50 text-amber-800 border-amber-200",
+      link: "text-amber-700 hover:text-amber-800",
+      progress: "bg-amber-500",
+      accentBorder: "hover:border-amber-300"
     },
     violet: {
-      bg: "bg-[#6E3D89]/10 text-[#6E3D89] border-[#6E3D89]/20",
-      badge: "bg-[#6E3D89]/10 text-[#593170] border-[#6E3D89]/30",
-      link: "text-[#593170] hover:text-[#6E3D89]",
-      progress: "bg-[#6E3D89]",
-      accentBorder: "hover:border-[#6E3D89]/40"
+      bg: "bg-[#00A19A]/10 text-[#00736E] border-[#00A19A]/20",
+      badge: "bg-[#CCFBF1] text-[#00736E] border-[#99F6E4]",
+      link: "text-[#00736E] hover:text-[#00A19A]",
+      progress: "bg-[#00A19A]",
+      accentBorder: "hover:border-[#00A19A]/40"
     },
     pine: {
       bg: "bg-[#003B3A]/10 text-[#003B3A] border-[#003B3A]/20",
@@ -104,11 +104,11 @@ export function KPICard({
       accentBorder: "hover:border-amber-300"
     },
     purple: {
-      bg: "bg-[#6E3D89]/10 text-[#6E3D89] border-[#6E3D89]/20",
-      badge: "bg-[#6E3D89]/10 text-[#593170] border-[#6E3D89]/30",
-      link: "text-[#593170] hover:text-[#6E3D89]",
-      progress: "bg-[#6E3D89]",
-      accentBorder: "hover:border-[#6E3D89]/40"
+      bg: "bg-[#003B3A]/10 text-[#003B3A] border-[#003B3A]/20",
+      badge: "bg-[#003B3A]/10 text-[#003B3A] border-[#003B3A]/30",
+      link: "text-[#003B3A] hover:text-[#00A19A]",
+      progress: "bg-[#003B3A]",
+      accentBorder: "hover:border-[#003B3A]/40"
     },
     rose: {
       bg: "bg-rose-50 text-rose-600 border-rose-100",

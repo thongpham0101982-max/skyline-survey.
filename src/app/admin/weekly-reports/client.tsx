@@ -1173,7 +1173,7 @@ export function WeeklyReportClient({
                         return (
                           <tr key={idx} className="hover:bg-slate-50">
                             <td className="p-3 text-center text-slate-400 font-bold">{idx + 1}</td>
-                            <td className="p-3 font-bold text-indigo-900">
+                            <td className="p-3 font-bold text-teal-800">
                               {item.taskGroup && (
                                 <span className="block text-[10px] text-teal-700 font-semibold mb-0.5">
                                   [{item.taskGroup}]
@@ -1758,12 +1758,12 @@ export function WeeklyReportClient({
                 </div>
 
                 <div className="bg-white p-4 sm:p-5 rounded-2xl border border-slate-100 shadow-sm flex items-center gap-4">
-                  <div className="w-12 h-12 rounded-xl bg-purple-50 text-purple-600 flex items-center justify-center font-black">
+                  <div className="w-12 h-12 rounded-xl bg-teal-50 text-teal-800 flex items-center justify-center font-black">
                     <MessageSquare className="w-6 h-6" />
                   </div>
                   <div>
                     <p className="text-xs font-bold text-slate-400 uppercase">Đã Duyệt / Nhận Xét</p>
-                    <p className="text-2xl font-black text-purple-600">{cardsSummary.reviewedCount}</p>
+                    <p className="text-2xl font-black text-teal-800">{cardsSummary.reviewedCount}</p>
                   </div>
                 </div>
               </div>
@@ -1840,7 +1840,7 @@ export function WeeklyReportClient({
                             </span>
 
                             {isReviewed ? (
-                              <span className="text-[11px] px-2.5 py-0.5 rounded-full font-extrabold bg-purple-50 text-purple-700 border border-purple-200 flex items-center gap-1">
+                              <span className="text-[11px] px-2.5 py-0.5 rounded-full font-extrabold bg-teal-50 text-teal-800 border border-teal-200 flex items-center gap-1">
                                 <CheckCircle2 className="w-3 h-3" /> Đã duyệt
                               </span>
                             ) : isSubmitted ? (
@@ -2493,15 +2493,15 @@ export function WeeklyReportClient({
                       <div className="space-y-6">
                         {/* 4 Cards Summary */}
                         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-                          <div className="p-4 rounded-2xl bg-gradient-to-br from-indigo-50 to-indigo-100/50 border border-indigo-200/70 shadow-2xs">
-                            <div className="flex items-center justify-between text-indigo-700 mb-2">
+                          <div className="p-4 rounded-2xl bg-gradient-to-br from-teal-600 to-emerald-600/50 border border-teal-200/70 shadow-2xs">
+                            <div className="flex items-center justify-between text-teal-800 mb-2">
                               <span className="text-xs font-bold uppercase tracking-wider">Tổng nhân sự</span>
                               <Users className="w-4 h-4" />
                             </div>
-                            <div className="text-2xl font-black text-indigo-950">
+                            <div className="text-2xl font-black text-teal-800">
                               {monthlyKpiData.summary?.totalStaff || 0}
                             </div>
-                            <div className="text-[11px] text-indigo-700/80 font-medium mt-1">
+                            <div className="text-[11px] text-teal-800/80 font-medium mt-1">
                               Tổng cộng {monthlyKpiData.summary?.totalTasksMonth || 0} đầu việc tháng
                             </div>
                           </div>
@@ -2914,7 +2914,7 @@ export function WeeklyReportClient({
                         </td>
                         <td className="p-3 text-center">
                           <span className={`px-2.5 py-0.5 rounded-full text-[11px] font-bold ${
-                            rpt.status === "REVIEWED" ? "bg-purple-100 text-purple-800" : "bg-emerald-100 text-emerald-800"
+                            rpt.status === "REVIEWED" ? "bg-teal-50 text-teal-800" : "bg-emerald-100 text-emerald-800"
                           }`}>
                             {rpt.status === "REVIEWED" ? "Đã duyệt" : "Đã nộp"}
                           </span>
@@ -3107,7 +3107,7 @@ export function WeeklyReportClient({
             </div>
 
             {/* Top Score Banner */}
-            <div className="p-4 bg-gradient-to-r from-amber-50 to-orange-50 rounded-2xl border border-amber-200/80 flex flex-col sm:flex-row items-center justify-between gap-4">
+            <div className="p-4 bg-gradient-to-r from-amber-50 to-amber-600 rounded-2xl border border-amber-200/80 flex flex-col sm:flex-row items-center justify-between gap-4">
               <div className="flex items-center gap-3">
                 <span className={`px-4 py-2 rounded-2xl text-base font-black border ${selectedStaffForKpiDetail.kpiColor} shadow-sm`}>
                   Hạng {selectedStaffForKpiDetail.kpiGrade}: {selectedStaffForKpiDetail.kpiGradeLabel}

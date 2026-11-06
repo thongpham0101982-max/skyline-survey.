@@ -2,14 +2,15 @@
 
 import React, { useCallback, useEffect, useState } from "react";
 import Link from "next/link";
-import { SkylineBirdCharacter } from "@/components/skyline-journey/SkylineBirdCharacter";
+import { SkylineBirdCharacter, getCharacterById } from "@/components/skyline-journey/SkylineBirdCharacter";
 
 export default function TeacherSkylineJourneyPage() {
   const [data, setData] = useState<any | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [selectedClassId, setSelectedClassId] = useState<string>("");
-  const [activeTab, setActiveTab] = useState<"STAGES" | "STUDENTS">("STAGES");
+  const [activeTab, setActiveTab] = useState<"STAGES" | "STUDENTS" | "LEADERBOARD">("STAGES");
+  const [rankingScope, setRankingScope] = useState<"CLASS" | "GRADE">("CLASS");
   const [statusFilter, setStatusFilter] = useState<string>("ALL");
 
   // Stage preview & guidance modal state
@@ -143,6 +144,11 @@ export default function TeacherSkylineJourneyPage() {
   const stages = data?.stages || [];
   const students = data?.students || [];
   const recentClassResults = data?.recentClassResults || [];
+  const leaderboard = data?.leaderboard;
+  const classLeaderboard: any[] = leaderboard?.classLeaderboard || [];
+  const gradeLeaderboard: any[] = leaderboard?.gradeLeaderboard || [];
+  const activeLeaderboard: any[] =
+    rankingScope === "CLASS" ? classLeaderboard : gradeLeaderboard;
 
   const filteredStudents = students.filter((stu: any) => {
     if (statusFilter === "ALL") return true;
@@ -244,6 +250,17 @@ export default function TeacherSkylineJourneyPage() {
           >
             👧👦 Theo dõi Kết quả Game & Xác nhận ({students.length} HS)
           </button>
+          <button
+            type="button"
+            onClick={() => setActiveTab("LEADERBOARD")}
+            className={`px-4 py-2 rounded-2xl font-extrabold text-xs sm:text-sm transition ${
+              activeTab === "LEADERBOARD"
+                ? "bg-amber-500 text-slate-950 shadow"
+                : "bg-amber-100 text-amber-900 hover:bg-amber-200"
+            }`}
+          >
+            🏆 Top Xếp Hạng Học Tập ({classLeaderboard.length} HS)
+          </button>
         </div>
       </div>
 
@@ -285,7 +302,7 @@ export default function TeacherSkylineJourneyPage() {
                   <span
                     className={`px-2 py-0.5 rounded ${
                       st.evaluationMode === "HYBRID_TEACHER"
-                        ? "bg-indigo-100 text-indigo-800"
+                        ? "bg-teal-50 text-teal-800"
                         : "bg-emerald-100 text-emerald-800"
                     }`}
                   >
@@ -306,7 +323,7 @@ export default function TeacherSkylineJourneyPage() {
                     <div className="text-slate-500">Đang chơi</div>
                   </div>
                   <div>
-                    <div className="font-black text-indigo-600 text-xs">
+                    <div className="font-black text-teal-800 text-xs">
                       {st.counts.waitingConfirmation}
                     </div>
                     <div className="text-slate-500">Chờ duyệt</div>
@@ -449,7 +466,7 @@ export default function TeacherSkylineJourneyPage() {
                         cell.status === "COMPLETED"
                           ? "bg-emerald-100 text-emerald-900 border-emerald-300"
                           : cell.status === "WAITING_CONFIRMATION"
-                          ? "bg-indigo-600 text-white border-indigo-700 animate-pulse"
+                          ? "bg-[#003B3A] text-white border-teal-200 animate-pulse"
                           : cell.status === "NEEDS_REVISION"
                           ? "bg-rose-100 text-rose-900 border-rose-300"
                           : cell.status === "IN_PROGRESS"
@@ -550,6 +567,115 @@ export default function TeacherSkylineJourneyPage() {
         </div>
       )}
 
+      {/* TAB 3: TOP DANH SÁCH HỌC SINH XẾP HẠNG HỌC TẬP */}
+      {activeTab === "LEADERBOARD" && (
+        <div className="bg-white border-2 border-amber-300 rounded-3xl p-5 sm:p-6 shadow-sm space-y-4">
+          <div className="flex flex-wrap items-center justify-between gap-3 border-b border-slate-200 pb-3">
+            <div>
+              <h3 className="text-lg font-black text-slate-900">
+                🏆 Bảng Xếp Hạng Học Tập ({rankingScope === "CLASS" ? `Lớp ${selectedClass?.name}` : `Toàn Khối ${selectedClass?.grade}`})
+              </h3>
+              <p className="text-xs text-slate-600 mt-0.5">
+                Xếp hạng theo Điểm bài học các chặng, Thời gian hoàn thành (⏱️ thưởng tốc độ), 🛡️ Khiên Danh Dự, 🌟 Sao xác nhận của Giáo viên và 🪶 Lông vũ.
+              </p>
+            </div>
+            <div className="flex items-center gap-2">
+              <button
+                type="button"
+                onClick={() => setRankingScope("CLASS")}
+                className={`px-3.5 py-2 rounded-2xl text-xs font-black border transition ${
+                  rankingScope === "CLASS"
+                    ? "bg-teal-700 text-white border-teal-800"
+                    : "bg-slate-100 text-slate-700 border-slate-200"
+                }`}
+              >
+                🏫 Lớp {selectedClass?.name} ({classLeaderboard.length} HS)
+              </button>
+              <button
+                type="button"
+                onClick={() => setRankingScope("GRADE")}
+                className={`px-3.5 py-2 rounded-2xl text-xs font-black border transition ${
+                  rankingScope === "GRADE"
+                    ? "bg-amber-500 text-slate-950 border-amber-600"
+                    : "bg-slate-100 text-slate-700 border-slate-200"
+                }`}
+              >
+                🌟 Toàn Khối {selectedClass?.grade} ({leaderboard?.totalGradeStudents || gradeLeaderboard.length} HS)
+              </button>
+            </div>
+          </div>
+
+          <div className="overflow-x-auto">
+            <table className="w-full text-left border-collapse text-xs tabular-nums">
+              <thead>
+                <tr className="bg-[#003B3A] text-white text-[11px] font-bold">
+                  <th className="py-2.5 px-3 text-center w-16">Hạng</th>
+                  <th className="py-2.5 px-3">Học sinh & Nhân vật</th>
+                  <th className="py-2.5 px-3">Lớp</th>
+                  <th className="py-2.5 px-3 text-center">Khiên Danh Dự</th>
+                  <th className="py-2.5 px-3 text-center">GV Xác Nhận</th>
+                  <th className="py-2.5 px-3 text-center">Điểm bài học</th>
+                  <th className="py-2.5 px-3 text-center">Thời gian hoàn thành</th>
+                  <th className="py-2.5 px-3 text-center">Lông vũ</th>
+                  <th className="py-2.5 px-3 text-right">Tổng điểm xếp hạng</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-slate-100">
+                {activeLeaderboard.map((item: any) => {
+                  const charObj = getCharacterById(item.characterId);
+                  return (
+                    <tr key={item.studentId} className="hover:bg-teal-50/50">
+                      <td className="py-2.5 px-3 text-center font-black">
+                        {item.rank === 1
+                          ? "👑 #1"
+                          : item.rank === 2
+                          ? "🥈 #2"
+                          : item.rank === 3
+                          ? "🥉 #3"
+                          : `#${item.rank}`}
+                      </td>
+                      <td className="py-2.5 px-3">
+                        <div className="font-bold text-slate-900">{item.fullName}</div>
+                        <div className="text-[10px] text-slate-500">
+                          {charObj.emoji} {charObj.name} • {item.studentCode} • {item.honorTitle}
+                        </div>
+                      </td>
+                      <td className="py-2.5 px-3 font-bold text-teal-800">{item.className}</td>
+                      <td className="py-2.5 px-3 text-center font-black text-amber-700">
+                        🛡️ {item.shieldsEarnedCount}/{stages.length || 15}
+                      </td>
+                      <td className="py-2.5 px-3 text-center font-bold text-teal-800">
+                        🌟 {item.teacherConfirmedCount}
+                      </td>
+                      <td className="py-2.5 px-3 text-center">
+                        <div className="font-black text-emerald-700">{item.totalStageScore || 0} đ</div>
+                        <div className="text-[10px] text-slate-500 font-semibold">TB: {item.avgScorePercent}%</div>
+                      </td>
+                      <td className="py-2.5 px-3 text-center">
+                        <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-lg bg-sky-50 border border-sky-200 text-sky-900 font-bold text-[11px]">
+                          ⏱️ {item.completionTimeFormatted || "—"}
+                        </span>
+                        {item.speedBonusPoints > 0 && (
+                          <div className="text-[10px] text-amber-700 font-bold mt-0.5">
+                            +{item.speedBonusPoints}đ tốc độ
+                          </div>
+                        )}
+                      </td>
+                      <td className="py-2.5 px-3 text-center font-bold text-sky-700">
+                        🪶 {item.totalFeathers}
+                      </td>
+                      <td className="py-2.5 px-3 text-right font-black text-teal-950">
+                        {item.rankingScore} đ
+                      </td>
+                    </tr>
+                  );
+                })}
+              </tbody>
+            </table>
+          </div>
+        </div>
+      )}
+
       {/* Modal 1: Stage Preview & Teacher Guidance */}
       {previewStage && (
         <div className="fixed inset-0 z-50 bg-slate-900/60 backdrop-blur-sm flex items-center justify-center p-4">
@@ -626,10 +752,10 @@ export default function TeacherSkylineJourneyPage() {
       {/* Modal 2: Review & Confirm Student Practical Task */}
       {reviewTarget && (
         <div className="fixed inset-0 z-50 bg-slate-900/60 backdrop-blur-sm flex items-center justify-center p-4">
-          <div className="bg-white max-w-lg w-full rounded-3xl p-6 shadow-2xl border-2 border-indigo-500 space-y-4">
+          <div className="bg-white max-w-lg w-full rounded-3xl p-6 shadow-2xl border-2 border-teal-200 space-y-4">
             <div className="flex items-start justify-between">
               <div>
-                <span className="text-xs font-bold px-2.5 py-1 rounded-lg bg-indigo-100 text-indigo-900">
+                <span className="text-xs font-bold px-2.5 py-1 rounded-lg bg-teal-50 text-teal-800">
                   Chặng {reviewTarget.periodIndex} ({reviewTarget.lessonCode})
                 </span>
                 <h3 className="text-lg font-extrabold text-slate-900 mt-1">

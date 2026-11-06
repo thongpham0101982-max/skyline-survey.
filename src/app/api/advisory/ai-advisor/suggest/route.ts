@@ -170,7 +170,9 @@ export async function POST(req: Request) {
       classTeachingAssignments,
       fallbackSubjectTeachers,
       existingGvbmTasks,
-      hollandAssessmentRows
+      hollandAssessmentRows,
+      studentFeedbackRows,
+      orientationRecordRows
     ] = await Promise.all([
       student.class?.id
         ? prisma.teachingAssignment
@@ -213,6 +215,20 @@ export async function POST(req: Request) {
         .$queryRawUnsafe<any[]>(
           `SELECT * FROM "StudentHollandAssessment" WHERE "studentId" = ? AND "status" = 'COMPLETED' ORDER BY "updatedAt" DESC LIMIT 1`,
           studentId
+        )
+        .catch(() => []),
+      prisma
+        .$queryRawUnsafe<any[]>(
+          `SELECT * FROM "StudentAdvisoryFeedback" WHERE "studentId" = ? OR "studentCode" = ? ORDER BY "createdAt" DESC LIMIT 5`,
+          studentId,
+          student.studentCode || studentId
+        )
+        .catch(() => []),
+      prisma
+        .$queryRawUnsafe<any[]>(
+          `SELECT * FROM "OrientationAdvisoryRecord" WHERE "studentId" = ? OR "studentCode" = ? ORDER BY "updatedAt" DESC LIMIT 1`,
+          studentId,
+          student.studentCode || studentId
         )
         .catch(() => [])
     ])
@@ -374,9 +390,34 @@ export async function POST(req: Request) {
     if (verifiedHolland?.hollandCode) {
       const topName = verifiedHolland.reportSummary?.primaryProfile?.nameVi || "RIASEC"
       dataEvidence.push({
-        metric: "Khảo sát Holland (SKL_PSYCH v2.6.1)",
-        value: `Mã ${verifiedHolland.hollandCode} (${topName})`,
+        metric: "Khảo sát Holland & Định hướng phát triển",
+        value: `Mã ${verifiedHolland.hollandCode} (${topName}) — Nguồn tham khảo sở thích (không tự động gán nghề)`,
         timepoint: "Minh chứng tham khảo đã xác thực"
+      })
+    }
+    if (Array.isArray(studentFeedbackRows) && studentFeedbackRows.length > 0) {
+      const latestFb = studentFeedbackRows[0]
+      dataEvidence.push({
+        metric: "Phản hồi & Tự đánh giá của học sinh",
+        value: latestFb.feedbackType === "POST_CONSULTATION"
+          ? `Sau tư vấn: "${latestFb.feelingAfter || "Đã phản hồi"}" (${latestFb.understoodNextStep || "Hiểu rõ"})`
+          : `Tự đánh giá mục tiêu: "${latestFb.actionsTaken || "Đã cập nhật"}"`,
+        timepoint: "Cập nhật từ học sinh"
+      })
+    }
+    if (Array.isArray(existingGvbmTasks) && existingGvbmTasks.length > 0) {
+      const completedSupport = existingGvbmTasks.filter((t: any) => t.status === "APPROVED" || t.status === "RESPONDED").length
+      dataEvidence.push({
+        metric: "Kết quả đồng hành & hỗ trợ (GVBM / Tổ TLHN)",
+        value: `${completedSupport}/${existingGvbmTasks.length} nhiệm vụ hỗ trợ đã có báo cáo kết quả`,
+        timepoint: "Phối hợp đồng hành"
+      })
+    }
+    if (Array.isArray(orientationRecordRows) && orientationRecordRows[0]?.agreedGoalTitle) {
+      dataEvidence.push({
+        metric: "Tư vấn Tổ Tâm lý – Hướng nghiệp (TLHN)",
+        value: `Mục tiêu thống nhất: ${orientationRecordRows[0].agreedGoalTitle}`,
+        timepoint: "Hồ sơ TLHN"
       })
     }
 

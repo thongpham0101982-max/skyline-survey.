@@ -56,12 +56,12 @@ export function GoalMultiSelector({
       icon: Sparkles
     },
     KY_NANG_CAM_XUC: {
-      border: "border-purple-200 hover:border-purple-300",
-      badgeBg: "bg-purple-50 border-purple-200",
-      badgeText: "text-purple-800",
-      iconColor: "text-purple-600",
-      focusBorder: "focus:border-purple-500 focus:ring-purple-500/20",
-      numberBadge: "bg-purple-600 text-white",
+      border: "border-teal-200 hover:border-teal-400",
+      badgeBg: "bg-teal-50 border-teal-200",
+      badgeText: "text-teal-800",
+      iconColor: "text-teal-800",
+      focusBorder: "focus:border-teal-400 focus:ring-teal-500/20",
+      numberBadge: "bg-[#003B3A] text-white",
       icon: Heart
     },
     DINH_HUONG: {

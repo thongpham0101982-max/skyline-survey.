@@ -114,15 +114,19 @@ export default function HocSinhLayout({ children }: { children: React.ReactNode 
       iconColor: "text-teal-300",
       activeClass: "bg-white/20 text-white border border-[#135E5B]/30"
     },
-    {
-      href: "/hocsinh/portal/hanh-trinh-skyline",
-      labelVi: "Hành trình Sky-Line",
-      labelEn: "Sky-Line Adventure",
-      icon: Compass,
-      iconColor: "text-amber-300",
-      activeClass: "bg-amber-500/35 text-white border border-amber-400/60",
-      badge: isGrade1To5 ? "ĐẢO GAME" : undefined
-    },
+    ...(isGrade1To5
+      ? [
+          {
+            href: "/hocsinh/portal/hanh-trinh-skyline",
+            labelVi: "Hành trình Sky-Line",
+            labelEn: "Sky-Line Adventure",
+            icon: Compass,
+            iconColor: "text-amber-300",
+            activeClass: "bg-amber-500/35 text-white border border-amber-400/60",
+            badge: "ĐẢO GAME"
+          }
+        ]
+      : []),
     ...(isGrade4To12
       ? [
           {
@@ -198,7 +202,7 @@ export default function HocSinhLayout({ children }: { children: React.ReactNode 
   ]
 
   return (
-    <div className="flex min-h-screen text-xs font-semibold font-sans text-slate-800 antialiased">
+    <div className="hocsinh-layout-wrapper flex min-h-screen text-xs font-medium font-sans text-slate-800 antialiased bg-[#F8FAFC]">
       {/* Mobile Dark Backdrop Overlay */}
       {isOpen && (
         <div
@@ -367,9 +371,9 @@ export default function HocSinhLayout({ children }: { children: React.ReactNode 
       </aside>
 
       {/* Main Content Area — Identical Structure to ParentLayout */}
-      <main className="flex-1 flex flex-col relative min-w-0 overflow-hidden bg-slate-50/50">
+      <main className="flex-1 flex flex-col relative min-w-0 overflow-hidden bg-[#F8FAFC]">
         {/* Top Header */}
-        <header className="h-16 border-b border-slate-200/90 bg-white/90 backdrop-blur-md sticky top-0 z-30 flex items-center justify-between px-4 sm:px-6 shrink-0 shadow-xs print:hidden">
+        <header className="h-16 border-b border-slate-200 bg-white/95 backdrop-blur-md sticky top-0 z-30 flex items-center justify-between px-4 sm:px-6 shrink-0 shadow-2xs print:hidden">
           <div className="flex items-center gap-3">
             <button
               type="button"
@@ -387,16 +391,16 @@ export default function HocSinhLayout({ children }: { children: React.ReactNode 
                 className="h-7 w-auto object-contain md:hidden"
               />
               <div className="flex flex-col">
-                <span className="text-xs md:text-sm font-black text-slate-800 tracking-tight flex items-center gap-1.5">
-                  <span className="text-[#0284C7] font-semibold uppercase tracking-wide">
+                <span className="text-xs md:text-sm font-bold text-slate-900 tracking-tight flex items-center gap-2">
+                  <span className="inline-flex items-center px-2 py-0.5 rounded-md bg-[#003B3A] text-white text-[11px] font-bold tracking-normal">
                     SQMS
                   </span>
-                  <span className="hidden md:inline text-xs font-bold text-slate-400">
-                    • Học sinh
+                  <span className="hidden md:inline text-xs font-semibold text-slate-600">
+                    Cổng Học sinh
                   </span>
                 </span>
-                <span className="md:hidden text-[9px] text-[#48BFE3] font-bold leading-none">
-                  Cổng Học Sinh 360°
+                <span className="md:hidden text-[9px] text-[#00736E] font-semibold leading-none mt-0.5">
+                  Cổng Học sinh 360°
                 </span>
               </div>
             </div>
@@ -406,14 +410,14 @@ export default function HocSinhLayout({ children }: { children: React.ReactNode 
             <LanguageSwitcher />
 
             {studentInfo?.academicYearName && (
-              <span className="hidden sm:inline-flex items-center px-3 py-1.5 rounded-xl bg-slate-100 border border-slate-200/80 text-xs font-bold text-slate-700">
+              <span className="hidden sm:inline-flex items-center px-3 py-1.5 rounded-xl bg-slate-100 border border-slate-200/80 text-xs font-bold text-slate-700 tabular-nums">
                 Năm học: {studentInfo.academicYearName}
               </span>
             )}
 
             <Link
               href="/hocsinh/portal/thong-bao"
-              className="p-2 rounded-xl bg-slate-100 hover:bg-purple-50 text-slate-600 hover:text-[#5B2D8B] border border-slate-200/80 transition-colors relative"
+              className="p-2 rounded-xl bg-slate-100 hover:bg-teal-50 text-slate-600 hover:text-[#003B3A] border border-slate-200/80 transition-colors relative"
               title="Trung tâm Thông báo"
             >
               <Bell className="w-4 h-4" />
@@ -425,10 +429,10 @@ export default function HocSinhLayout({ children }: { children: React.ReactNode 
                   {studentInfo.studentName ? studentInfo.studentName.charAt(0) : "H"}
                 </div>
                 <div className="hidden sm:block text-left leading-none">
-                  <p className="truncate max-w-[140px] font-black text-slate-800 text-xs">
+                  <p className="truncate max-w-[140px] font-bold text-slate-800 text-xs">
                     {studentInfo.studentName}
                   </p>
-                  <p className="text-[10px] text-teal-700 font-semibold mt-0.5">
+                  <p className="text-[10px] text-[#00736E] font-semibold mt-0.5 tabular-nums">
                     {studentInfo.className || "Học sinh"} • {studentInfo.studentCode}
                   </p>
                 </div>
@@ -437,7 +441,7 @@ export default function HocSinhLayout({ children }: { children: React.ReactNode 
           </div>
         </header>
 
-        <div className="p-3.5 sm:p-6 md:p-8 pb-24 md:pb-12 flex-1 overflow-x-auto overflow-y-auto text-xs font-semibold">
+        <div className="p-3.5 sm:p-6 md:p-8 pb-24 md:pb-12 flex-1 overflow-x-auto overflow-y-auto text-xs font-medium text-slate-800">
           {children}
         </div>
 

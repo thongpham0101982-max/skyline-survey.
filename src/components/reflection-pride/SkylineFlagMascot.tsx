@@ -41,21 +41,21 @@ export function SkylineFlagMascot({
     }
   > = {
     guide: {
-      containerBg: 'linear-gradient(135deg, #2E1065 0%, #5B2D8B 58%, #00A19A 100%)',
-      border: 'border-purple-300/30',
-      badgeBg: 'bg-amber-400 text-purple-950',
+      containerBg: 'linear-gradient(135deg, #003B3A 0%, #003B3A 58%, #00A19A 100%)',
+      border: 'border-teal-300/30',
+      badgeBg: 'bg-amber-400 text-teal-800',
       flagColor: '#F59E0B',
       defaultBadge: 'LINH VẬT SKY-LINE DẪN ĐƯỜNG',
     },
     notification: {
-      containerBg: 'linear-gradient(135deg, #3B0764 0%, #6D28D9 65%, #4F46E5 100%)',
-      border: 'border-violet-300/30',
+      containerBg: 'linear-gradient(135deg, #3B0764 0%, #6D28D9 65%, #00736E 100%)',
+      border: 'border-teal-300/30',
       badgeBg: 'bg-teal-400 text-slate-950',
       flagColor: '#14B8A6',
       defaultBadge: 'NHIỆM VỤ ĐANG MỞ • KHỐI 4–12',
     },
     celebration: {
-      containerBg: 'linear-gradient(135deg, #1E1B4B 0%, #5B2D8B 50%, #0D9488 100%)',
+      containerBg: 'linear-gradient(135deg, #1E1B4B 0%, #003B3A 50%, #0D9488 100%)',
       border: 'border-emerald-300/40',
       badgeBg: 'bg-emerald-400 text-emerald-950',
       flagColor: '#10B981',
@@ -69,9 +69,9 @@ export function SkylineFlagMascot({
       defaultBadge: 'CHƯA MỞ KỲ KHẢO SÁT',
     },
     empty: {
-      containerBg: 'linear-gradient(135deg, #4C1D95 0%, #5B2D8B 70%, #312E81 100%)',
-      border: 'border-purple-300/20',
-      badgeBg: 'bg-purple-200 text-purple-950',
+      containerBg: 'linear-gradient(135deg, #4C1D95 0%, #003B3A 70%, #312E81 100%)',
+      border: 'border-teal-300/20',
+      badgeBg: 'bg-teal-50 text-teal-800',
       flagColor: '#A78BFA',
       defaultBadge: 'SKY-LINE REFLECTION & PRIDE NPS',
     },
@@ -117,7 +117,7 @@ export function SkylineFlagMascot({
             </h3>
           )}
           {message && (
-            <p className="mt-1.5 text-sm leading-relaxed text-purple-100/95 sm:text-[15px]">
+            <p className="mt-1.5 text-sm leading-relaxed text-teal-700/95 sm:text-[15px]">
               {message}
             </p>
           )}

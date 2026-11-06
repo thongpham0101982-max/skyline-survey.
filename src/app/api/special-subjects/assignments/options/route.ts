@@ -57,6 +57,7 @@ export async function GET(req: NextRequest) {
           classCode: true,
           className: true,
           grade: true,
+          educationSystem: true,
           campusId: true,
           homeroomTeacherId: true,
           campus: { select: { campusCode: true, campusName: true } }
@@ -65,7 +66,26 @@ export async function GET(req: NextRequest) {
       }),
       (prisma as any).specialSubject.findMany({
         where: { status: "ACTIVE" },
-        select: { id: true, code: true, name: true, color: true }
+        select: {
+          id: true,
+          code: true,
+          name: true,
+          color: true,
+          curriculums: {
+            where: { status: "ACTIVE" },
+            select: {
+              id: true,
+              code: true,
+              name: true,
+              level: true,
+              targetGrades: true,
+              versions: {
+                where: { status: "PUBLISHED" },
+                select: { id: true, versionCode: true, status: true }
+              }
+            }
+          }
+        }
       }),
       prisma.academicYear.findMany({
         orderBy: { startDate: "desc" },

@@ -22,17 +22,26 @@ export default function StudentConsultationDiaryPage() {
   const [activeTab, setActiveTab] = useState<"consultations" | "reflections">("consultations")
   const [viewMode, setViewMode] = useState<"table" | "cards">("table")
 
-  // Modal Student Self-Reflection State for Consultation Session
+  // Modal Student Self-Reflection State for Consultation Session (Type A - Phản hồi sau tư vấn)
   const [selectedLog, setSelectedLog] = useState<any>(null)
   const [reflectionText, setReflectionText] = useState("")
+  const [listenedScore, setListenedScore] = useState(5)
+  const [understoodNextStep, setUnderstoodNextStep] = useState("Hiểu rõ các bước cần làm")
+  const [goalSuitability, setGoalSuitability] = useState("Phù hợp với năng lực & kế hoạch")
+  const [supportRequestText, setSupportRequestText] = useState("")
+  const [wantsMoreDiscussion, setWantsMoreDiscussion] = useState(false)
+  const [sharePostConsultWithParent, setSharePostConsultWithParent] = useState(true)
   const [savingReflection, setSavingReflection] = useState(false)
   const [toastMessage, setToastMessage] = useState("")
 
-  // Form State for Standalone Reflection Journal (Tab 2)
+  // Form State for Type B - Tự đánh giá thực hiện mục tiêu (Tab 2)
   const [feeling, setFeeling] = useState("HAPPY")
   const [selfRating, setSelfRating] = useState(5)
   const [standaloneText, setStandaloneText] = useState("")
+  const [resultsAndEvidence, setResultsAndEvidence] = useState("")
   const [standaloneDifficulties, setStandaloneDifficulties] = useState("")
+  const [supportNeededText, setSupportNeededText] = useState("")
+  const [adjustmentProposal, setAdjustmentProposal] = useState("")
   const [shareWithParent, setShareWithParent] = useState(false)
   const [savingStandalone, setSavingStandalone] = useState(false)
 
@@ -104,17 +113,39 @@ export default function StudentConsultationDiaryPage() {
     if (!selectedLog) return
     try {
       setSavingReflection(true)
-      const res = await fetch("/api/advisory/consultations", {
-        method: "PUT",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          id: selectedLog.id,
-          studentReflection: reflectionText
+      const [res] = await Promise.all([
+        fetch("/api/advisory/consultations", {
+          method: "PUT",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            id: selectedLog.id,
+            studentReflection: reflectionText
+          })
+        }),
+        fetch("/api/advisory/student-feedback", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            studentId,
+            studentCode,
+            studentName,
+            className,
+            schoolYear: academicYearId || "2025-2026",
+            feedbackType: "POST_CONSULTATION",
+            consultationId: selectedLog.id,
+            feelingAfter: reflectionText,
+            listenedScore,
+            understoodNextStep,
+            goalSuitability,
+            supportRequestText,
+            wantsMoreDiscussion,
+            shareWithParent: sharePostConsultWithParent,
+          })
         })
-      })
+      ])
 
       if (res.ok) {
-        setToastMessage("Đã lưu tự đánh giá sau buổi cố vấn thành công! Kết quả đã tự động đồng bộ sang Nhật ký GVCN.")
+        setToastMessage("Đã gửi phản hồi sau buổi tư vấn thành công! Kết quả đã đồng bộ sang GVCN.")
         setTimeout(() => setToastMessage(""), 4000)
         setSelectedLog(null)
         loadConsultationLogs(studentId, studentCode)
@@ -130,29 +161,52 @@ export default function StudentConsultationDiaryPage() {
 
   async function handleSaveStandaloneReflection() {
     if (!standaloneText.trim()) {
-      alert("Vui lòng nhập nội dung tự đánh giá của em nhé!")
+      alert("Vui lòng nhập việc đã thực hiện đối với mục tiêu của em nhé!")
       return
     }
     try {
       setSavingStandalone(true)
-      const res = await fetch("/api/advisory/reflections", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          studentId,
-          academicYearId,
-          feeling,
-          selfRating,
-          reflectionText: standaloneText,
-          difficulties: standaloneDifficulties,
-          shareWithParent
+      const [res] = await Promise.all([
+        fetch("/api/advisory/reflections", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            studentId,
+            academicYearId,
+            feeling,
+            selfRating,
+            reflectionText: `${standaloneText}${resultsAndEvidence ? ` | Kết quả & minh chứng: ${resultsAndEvidence}` : ""}`,
+            difficulties: `${standaloneDifficulties}${supportNeededText ? ` | Cần hỗ trợ: ${supportNeededText}` : ""}`,
+            shareWithParent
+          })
+        }),
+        fetch("/api/advisory/student-feedback", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            studentId,
+            studentCode,
+            studentName,
+            className,
+            schoolYear: academicYearId || "2025-2026",
+            feedbackType: "GOAL_SELF_ASSESSMENT",
+            actionsTaken: standaloneText,
+            resultsAndEvidence,
+            difficultiesText: standaloneDifficulties,
+            supportNeededText,
+            adjustmentProposal,
+            shareWithParent,
+          })
         })
-      })
+      ])
 
       if (res.ok) {
         setStandaloneText("")
+        setResultsAndEvidence("")
         setStandaloneDifficulties("")
-        setToastMessage("Đã lưu nhật ký tự phản chiếu thành công!")
+        setSupportNeededText("")
+        setAdjustmentProposal("")
+        setToastMessage("Đã lưu phiếu Tự đánh giá thực hiện mục tiêu thành công!")
         setTimeout(() => setToastMessage(""), 4000)
         loadStandaloneReflections(studentId)
       }
@@ -238,29 +292,29 @@ export default function StudentConsultationDiaryPage() {
         />
       )}
 
-      {/* Tiện ích Khảo sát Holland trong Cố vấn học tập */}
-      <div className="p-4 rounded-2xl bg-gradient-to-r from-[#2E1065] via-[#5B2D8B] to-[#6E3D89] text-white flex flex-col sm:flex-row sm:items-center justify-between gap-3 shadow-md">
+      {/* Tiện ích Khảo sát Holland & Định hướng phát triển (Sky-Line Academic Ledger) */}
+      <div className="p-4 rounded-2xl bg-white border border-slate-200 border-l-4 border-l-[#003B3A] text-slate-800 flex flex-col sm:flex-row sm:items-center justify-between gap-3 shadow-xs">
         <div className="flex items-center gap-3">
-          <div className="w-10 h-10 rounded-xl bg-white/15 flex items-center justify-center text-amber-300 shrink-0">
+          <div className="w-10 h-10 rounded-xl bg-teal-50 border border-teal-200 flex items-center justify-center text-[#008B85] shrink-0">
             <Sparkles className="w-5 h-5" />
           </div>
           <div>
             <div className="flex items-center gap-2">
-              <span className="px-2 py-0.5 rounded-full bg-white/20 text-[10px] font-bold uppercase text-purple-100">
-                SKL_PSYCH v2.6.1 • 108 Câu
+              <span className="px-2 py-0.5 rounded-full bg-teal-50 border border-teal-200 text-[10px] font-bold text-[#008B85]">
+                Định hướng phát triển • RIASEC
               </span>
-              <h3 className="text-xs sm:text-sm font-extrabold">
-                Khảo Sát Holland – Khám Phá Sở Thích Nghề Nghiệp (RIASEC)
+              <h3 className="text-xs sm:text-sm font-extrabold text-[#003B3A]">
+                Khảo sát Holland – Khám phá sở thích nghề nghiệp & Định hướng phát triển
               </h3>
             </div>
-            <p className="text-[11px] text-purple-100/90 mt-0.5">
-              Làm bài trắc nghiệm 108 câu Có/Không, nhận mã Holland Top 3, liên kết Mục tiêu Định hướng và đăng ký Tư vấn 1:1 cùng GVCN.
+            <p className="text-[11px] text-slate-600 mt-0.5">
+              Làm bài khảo sát 108 câu, xem điểm 6 nhóm RIASEC, liên kết hồ sơ Định hướng phát triển và đăng ký Tư vấn 1:1 cùng GVCN / Tổ TLHN.
             </p>
           </div>
         </div>
         <Link
           href="/hocsinh/portal/khao-sat-holland"
-          className="px-4 py-2 rounded-xl bg-amber-400 hover:bg-amber-300 text-slate-950 text-xs font-extrabold flex items-center gap-1.5 shrink-0 self-start sm:self-auto shadow-xs"
+          className="px-4 py-2 rounded-xl bg-[#003B3A] hover:bg-[#00524F] text-white text-xs font-extrabold flex items-center gap-1.5 shrink-0 self-start sm:self-auto shadow-xs"
         >
           <span>Mở Khảo sát Holland</span>
           <ArrowRight className="w-3.5 h-3.5" />
@@ -289,7 +343,7 @@ export default function StudentConsultationDiaryPage() {
                 🚀 Cam kết hành động 1:1: "{consultations[0]?.nextActions || "Tiếp tục thực hiện kế hoạch mục tiêu tuần này"}"
               </p>
               {consultations[0]?.parentFeedback && (
-                <p className="text-[11px] font-bold text-indigo-800">
+                <p className="text-[11px] font-bold text-teal-800">
                   👨‍👩‍👧 Lời nhắn đồng hành từ Ba Mẹ: "{consultations[0].parentFeedback}"
                 </p>
               )}
@@ -318,7 +372,7 @@ export default function StudentConsultationDiaryPage() {
           }`}
         >
           <BookOpen className="w-4 h-4 text-amber-300" />
-          <span>1. Nhật Ký Cố Vấn GVCN & Tự Đánh Giá Sau Cố Vấn ({consultations.length})</span>
+          <span>A. Phản hồi sau tư vấn 1:1 ({consultations.length})</span>
         </button>
 
         <button
@@ -330,7 +384,7 @@ export default function StudentConsultationDiaryPage() {
           }`}
         >
           <Feather className="w-4 h-4 text-amber-300" />
-          <span>2. Nhật Ký Tự Phản Chiếu Cá Nhân (Reflection) ({reflections.length})</span>
+          <span>B. Tự đánh giá thực hiện mục tiêu ({reflections.length})</span>
         </button>
       </div>
 
@@ -654,31 +708,64 @@ export default function StudentConsultationDiaryPage() {
               </div>
             </div>
 
-            {/* Reflection Text & Difficulties Input */}
+            {/* Reflection Text & Difficulties Input (Mục VI.B) */}
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div className="space-y-2">
-                <label className="text-xs font-black text-slate-800 uppercase tracking-wider block">
-                  3. Điều em đã làm tốt hoặc bài học em rút ra được (*):
+                <label className="text-xs font-black text-slate-800 block">
+                  3. Việc đã thực hiện đối với mục tiêu (*):
                 </label>
                 <textarea
-                  rows={3}
+                  rows={2}
                   value={standaloneText}
                   onChange={(e) => setStandaloneText(e.target.value)}
-                  placeholder="Nhập suy nghĩ, kết quả tự rèn luyện hoặc những điểm em thấy mình có tiến bộ..."
-                  className="w-full p-3 rounded-2xl border border-slate-200 text-xs font-semibold focus:border-teal-500 focus:ring-1 focus:ring-teal-300 bg-white"
+                  placeholder="Ghi rõ các hành động, bài tập hoặc kế hoạch em đã thực hiện..."
+                  className="w-full p-3 rounded-2xl border border-slate-200 text-xs font-semibold focus:border-teal-500 bg-white"
                 />
               </div>
 
               <div className="space-y-2">
-                <label className="text-xs font-black text-slate-800 uppercase tracking-wider block">
-                  4. Khó khăn / vướng mắc em muốn chia sẻ thêm với CVHT (Tùy chọn):
+                <label className="text-xs font-black text-slate-800 block">
+                  4. Kết quả đạt được và minh chứng:
                 </label>
                 <textarea
-                  rows={3}
+                  rows={2}
+                  value={resultsAndEvidence}
+                  onChange={(e) => setResultsAndEvidence(e.target.value)}
+                  placeholder="Điểm kiểm tra, sản phẩm học tập, thói quen cải thiện..."
+                  className="w-full p-3 rounded-2xl border border-slate-200 text-xs font-semibold focus:border-teal-500 bg-white"
+                />
+              </div>
+
+              <div className="space-y-2">
+                <label className="text-xs font-black text-slate-800 block">
+                  5. Khó khăn gặp phải (Không trừ điểm rèn luyện khi chia sẻ khó khăn):
+                </label>
+                <textarea
+                  rows={2}
                   value={standaloneDifficulties}
                   onChange={(e) => setStandaloneDifficulties(e.target.value)}
-                  placeholder="Những môn học, thói quen hoặc vấn đề em đang gặp trở ngại cần Thầy/Cô định hướng..."
-                  className="w-full p-3 rounded-2xl border border-slate-200 text-xs font-semibold focus:border-amber-500 focus:ring-1 focus:ring-amber-300 bg-white"
+                  placeholder="Những môn học, thói quen hoặc vướng mắc em đang gặp trở ngại..."
+                  className="w-full p-3 rounded-2xl border border-slate-200 text-xs font-semibold focus:border-amber-500 bg-white"
+                />
+              </div>
+
+              <div className="space-y-2">
+                <label className="text-xs font-black text-slate-800 block">
+                  6. Hỗ trợ cần thêm & Đề xuất điều chỉnh mục tiêu:
+                </label>
+                <input
+                  type="text"
+                  value={supportNeededText}
+                  onChange={(e) => setSupportNeededText(e.target.value)}
+                  placeholder="Hỗ trợ cần thêm từ GVCN / GVBM / Tổ TLHN..."
+                  className="w-full p-2.5 rounded-xl border border-slate-200 text-xs font-semibold bg-white mb-2"
+                />
+                <input
+                  type="text"
+                  value={adjustmentProposal}
+                  onChange={(e) => setAdjustmentProposal(e.target.value)}
+                  placeholder="Đề xuất điều chỉnh mốc thời gian hoặc mục tiêu (nếu có)..."
+                  className="w-full p-2.5 rounded-xl border border-slate-200 text-xs font-semibold bg-white"
                 />
               </div>
             </div>
@@ -821,18 +908,99 @@ export default function StudentConsultationDiaryPage() {
               <p className="font-bold">"{selectedLog.nextActions || "Tiếp tục duy trì kế hoạch học tập hiện tại"}"</p>
             </div>
 
-            {/* Reflection Textarea */}
-            <div className="space-y-2">
-              <label className="text-xs font-black text-slate-800 uppercase tracking-wider block">
-                Nội dung em tự đánh giá / Kết quả tự rèn luyện (*):
-              </label>
-              <textarea
-                rows={4}
-                value={reflectionText}
-                onChange={(e) => setReflectionText(e.target.value)}
-                placeholder="Ví dụ: Em đã hoàn thành 80% thời gian biểu buổi tối, tự tin hơn trong các bài kiểm tra môn Toán và chủ động trao đổi với bạn..."
-                className="w-full p-3 rounded-2xl border border-slate-300 text-xs font-semibold focus:border-amber-500 focus:ring-1 focus:ring-amber-300 bg-white"
-              />
+            {/* Reflection Textarea & Structured Fields (Mục VI.A) */}
+            <div className="space-y-3 text-xs">
+              <div>
+                <label className="font-black text-slate-800 block mb-1">
+                  1. Cảm nhận của em sau buổi tư vấn (*):
+                </label>
+                <textarea
+                  rows={3}
+                  value={reflectionText}
+                  onChange={(e) => setReflectionText(e.target.value)}
+                  placeholder="Chia sẻ cảm nhận và những điều em tâm đắc sau buổi trao đổi với Thầy/Cô..."
+                  className="w-full p-3 rounded-2xl border border-slate-300 text-xs font-semibold focus:border-teal-500 bg-white"
+                />
+              </div>
+
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-2.5">
+                <div>
+                  <label className="font-bold text-slate-700 block mb-1">2. Mức độ được lắng nghe (1–5):</label>
+                  <select
+                    value={listenedScore}
+                    onChange={e => setListenedScore(Number(e.target.value))}
+                    className="w-full p-2 rounded-xl border border-slate-300 font-bold"
+                  >
+                    {[5, 4, 3, 2, 1].map(n => (
+                      <option key={n} value={n}>{n} / 5</option>
+                    ))}
+                  </select>
+                </div>
+                <div>
+                  <label className="font-bold text-slate-700 block mb-1">3. Hiểu việc cần làm tiếp theo:</label>
+                  <select
+                    value={understoodNextStep}
+                    onChange={e => setUnderstoodNextStep(e.target.value)}
+                    className="w-full p-2 rounded-xl border border-slate-300 font-bold"
+                  >
+                    <option value="Hiểu rõ các bước cần làm">Hiểu rõ các bước cần làm</option>
+                    <option value="Hiểu cơ bản, cần hướng dẫn thêm">Hiểu cơ bản, cần hướng dẫn thêm</option>
+                    <option value="Còn băn khoăn">Còn băn khoăn</option>
+                  </select>
+                </div>
+                <div>
+                  <label className="font-bold text-slate-700 block mb-1">4. Độ phù hợp của mục tiêu:</label>
+                  <select
+                    value={goalSuitability}
+                    onChange={e => setGoalSuitability(e.target.value)}
+                    className="w-full p-2 rounded-xl border border-slate-300 font-bold"
+                  >
+                    <option value="Phù hợp với năng lực & kế hoạch">Phù hợp với năng lực & kế hoạch</option>
+                    <option value="Khá thử thách, cần cố gắng">Khá thử thách, cần cố gắng</option>
+                    <option value="Cần điều chỉnh lại">Cần điều chỉnh lại</option>
+                  </select>
+                </div>
+              </div>
+
+              <div>
+                <label className="font-bold text-slate-700 block mb-1">
+                  5. Ý kiến, đề nghị hỗ trợ hoặc mong muốn trao đổi thêm:
+                </label>
+                <input
+                  type="text"
+                  value={supportRequestText}
+                  onChange={e => setSupportRequestText(e.target.value)}
+                  placeholder="Ghi rõ nội dung em cần Thầy/Cô hỗ trợ thêm (nếu có)..."
+                  className="w-full p-2.5 rounded-xl border border-slate-300"
+                />
+                <label className="inline-flex items-center gap-2 mt-2 font-semibold text-slate-700 cursor-pointer">
+                  <input
+                    type="checkbox"
+                    checked={wantsMoreDiscussion}
+                    onChange={e => setWantsMoreDiscussion(e.target.checked)}
+                    className="rounded border-slate-300 text-[#003B3A]"
+                  />
+                  Em mong muốn được đặt lịch trao đổi thêm với Thầy/Cô
+                </label>
+              </div>
+
+              <div className="p-3 rounded-xl bg-slate-50 border border-slate-200 flex items-center justify-between gap-2">
+                <div className="text-[11px] text-slate-600">
+                  <strong>Quyền chia sẻ với Phụ huynh (PHHS):</strong>{' '}
+                  {sharePostConsultWithParent
+                    ? 'Nội dung cảm nhận & kế hoạch hành động sẽ hiển thị trên Cổng PHHS của Ba Mẹ.'
+                    : 'Chỉ gửi riêng cho Thầy/Cô GVCN/CVHT, không hiển thị trên Cổng PHHS.'}
+                </div>
+                <label className="inline-flex items-center gap-1.5 font-bold text-[#003B3A] shrink-0 cursor-pointer">
+                  <input
+                    type="checkbox"
+                    checked={sharePostConsultWithParent}
+                    onChange={e => setSharePostConsultWithParent(e.target.checked)}
+                    className="rounded border-slate-300 text-[#003B3A]"
+                  />
+                  Chia sẻ PHHS
+                </label>
+              </div>
             </div>
 
             <div className="pt-3 border-t border-slate-100 flex items-center justify-end gap-3">

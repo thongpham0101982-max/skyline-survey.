@@ -290,7 +290,7 @@ export default function SklPsychStatsDashboard({
       <div className="bg-white rounded-2xl border border-slate-200/90 p-4 shadow-2xs flex flex-col lg:flex-row lg:items-center justify-between gap-3">
         <div className="space-y-0.5">
           <div className="flex flex-wrap items-center gap-2">
-            <span className="px-2.5 py-0.5 rounded-full bg-purple-100 text-[#5B2D8B] border border-purple-200 text-[10px] font-black uppercase tracking-wider">
+            <span className="px-2.5 py-0.5 rounded-full bg-teal-50 text-[#003B3A] border border-teal-200 text-[10px] font-black uppercase tracking-wider">
               SKL_PSYCH v2.6.1 • 5 Bộ Công Cụ Chuẩn Hóa
             </span>
             <span className="text-xs text-teal-700 font-bold">
@@ -510,10 +510,10 @@ export default function SklPsychStatsDashboard({
           <span className="text-xs font-bold text-slate-400 uppercase tracking-wider block">
             Đề nghị Tư vấn 1:1
           </span>
-          <div className="text-3xl font-black text-purple-700 mt-2">
+          <div className="text-3xl font-black text-teal-800 mt-2">
             {summary.consultationRequestCount}
           </div>
-          <span className="text-[11px] text-purple-600 font-semibold mt-1 block">
+          <span className="text-[11px] text-teal-800 font-semibold mt-1 block">
             Học sinh / PHHS đăng ký trao đổi cùng GVCN
           </span>
         </div>
@@ -572,7 +572,7 @@ export default function SklPsychStatsDashboard({
                   code: "MBTI" as const,
                   name: "MBTI 16 Nhóm",
                   icon: "🧩",
-                  color: "bg-indigo-500",
+                  color: "bg-[#003B3A]",
                   grade: "Từ Khối 10"
                 },
                 {
@@ -704,10 +704,10 @@ export default function SklPsychStatsDashboard({
                   ].map(m => (
                     <div
                       key={m.k}
-                      className="p-2.5 rounded-xl bg-indigo-50/70 border border-indigo-200 text-center"
+                      className="p-2.5 rounded-xl bg-teal-50/70 border border-teal-200 text-center"
                     >
-                      <div className="text-[11px] font-bold text-indigo-900">{m.label}</div>
-                      <div className="text-lg font-black text-indigo-700">
+                      <div className="text-[11px] font-bold text-teal-800">{m.label}</div>
+                      <div className="text-lg font-black text-teal-800">
                         {traitDistributions.MBTI?.[m.k] || 0}
                       </div>
                     </div>
@@ -809,7 +809,7 @@ export default function SklPsychStatsDashboard({
                       <td className="py-3 px-3 text-center font-mono font-bold text-sky-700">
                         {cls.byTest?.LYUSIN_EQ || 0}
                       </td>
-                      <td className="py-3 px-3 text-center font-mono font-bold text-indigo-700">
+                      <td className="py-3 px-3 text-center font-mono font-bold text-teal-800">
                         {cls.byTest?.MBTI || 0}
                       </td>
                       <td className="py-3 px-3 text-right">

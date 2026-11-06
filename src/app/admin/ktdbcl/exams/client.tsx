@@ -382,7 +382,7 @@ export function ExamsClient({
 
         {/* Card 3: Total Registrations */}
         <div className="bg-white rounded-2xl border border-slate-200/60 p-4 shadow-2xs hover:shadow-xs transition-all flex items-center gap-4">
-          <div className="w-12 h-12 rounded-xl bg-purple-50 flex items-center justify-center shrink-0">
+          <div className="w-12 h-12 rounded-xl bg-teal-50 flex items-center justify-center shrink-0">
             <Users className="w-6 h-6 text-[#48BFE3]" />
           </div>
           <div>

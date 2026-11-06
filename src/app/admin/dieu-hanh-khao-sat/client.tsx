@@ -619,7 +619,7 @@ export function EntranceOperationsDashboardClient({
             {kpis.exceptionCount > 0 && (
               <button
                 onClick={() => setMilestoneFilter("EXCEPTION")}
-                className="px-2 py-0.5 rounded-full bg-violet-50 text-violet-700 font-bold text-[11px] hover:bg-violet-100 transition-colors cursor-pointer"
+                className="px-2 py-0.5 rounded-full bg-teal-50 text-teal-800 font-bold text-[11px] hover:bg-teal-50 transition-colors cursor-pointer"
               >
                 {kpis.exceptionCount} Miễn/KS lại/Ngoại lệ
               </button>
@@ -809,8 +809,8 @@ export function EntranceOperationsDashboardClient({
               }
               className={`px-2 py-0.5 rounded-full font-bold cursor-pointer border ${
                 stageStatusFilter === "NEEDS_ADJUSTMENT"
-                  ? "bg-orange-600 text-white border-orange-600"
-                  : "bg-orange-50 text-orange-700 border-orange-200"
+                  ? "bg-amber-500 text-white border-amber-200"
+                  : "bg-amber-50 text-amber-800 border-amber-200"
               }`}
             >
               Cần ĐC: {kpis.needsAdjustmentCount}
@@ -2430,7 +2430,7 @@ export function EntranceOperationsDashboardClient({
                       studentSummary: `${detailStudent.fullName} (${detailStudent.studentCode})`,
                     })
                   }
-                  className="px-3 py-1 rounded-xl border border-violet-300 bg-violet-50 hover:bg-violet-100 text-violet-700 font-bold cursor-pointer"
+                  className="px-3 py-1 rounded-xl border border-teal-200 bg-teal-50 hover:bg-teal-50 text-teal-800 font-bold cursor-pointer"
                 >
                   Thiết lập Miễn KS / KS lại / Ngoại lệ
                 </button>

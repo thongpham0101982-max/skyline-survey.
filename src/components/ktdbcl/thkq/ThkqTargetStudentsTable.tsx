@@ -85,7 +85,7 @@ export function ThkqTargetStudentsTable({
       label: "Theo dõi tâm lý",
       count: countsByGroup.psychological ?? 0,
       icon: Brain,
-      color: "text-purple-600"
+      color: "text-teal-800"
     },
     {
       id: "PERFECT_10",
@@ -268,7 +268,7 @@ export function ThkqTargetStudentsTable({
                           </span>
                         )}
                         {s.isPsychological && (
-                          <span className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded text-[10px] font-bold bg-purple-100 text-purple-700 border border-purple-200">
+                          <span className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded text-[10px] font-bold bg-teal-50 text-teal-800 border border-teal-200">
                             <Brain className="h-2.5 w-2.5" /> Tâm lý
                           </span>
                         )}

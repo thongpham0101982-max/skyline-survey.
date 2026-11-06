@@ -55,7 +55,7 @@ export function getJourneyStatusBadge(status: string) {
     case "WAITING_GVBM":
       return {
         label: "Chờ GVBM",
-        cls: "bg-purple-50 text-[#5B2D8B] border-purple-200"
+        cls: "bg-teal-50 text-[#003B3A] border-teal-200"
       }
     case "WAITING_APPROVAL":
       return {
@@ -177,7 +177,7 @@ export function NextBestActionHeroCard({
 
         <div className="flex items-center gap-2.5 ml-auto">
           {loopCount > 1 && (
-            <span className="px-2 py-0.5 rounded-full bg-indigo-50 text-indigo-700 border border-indigo-200 text-[10px] font-bold">
+            <span className="px-2 py-0.5 rounded-full bg-teal-50 text-teal-800 border border-teal-200 text-[10px] font-bold">
               🔄 Vòng lặp #{loopCount}
             </span>
           )}
@@ -356,9 +356,9 @@ export function NextBestActionHeroCard({
             <button
               type="button"
               onClick={onOpenAiAdvisor}
-              className="px-3.5 py-2 rounded-xl bg-white hover:bg-purple-50 border border-purple-200 text-[#5B2D8B] font-bold text-xs flex items-center gap-1.5 transition-all cursor-pointer"
+              className="px-3.5 py-2 rounded-xl bg-white hover:bg-teal-50 border border-teal-200 text-[#003B3A] font-bold text-xs flex items-center gap-1.5 transition-all cursor-pointer"
             >
-              <Sparkles className="w-3.5 h-3.5 text-[#5B2D8B]" />
+              <Sparkles className="w-3.5 h-3.5 text-[#003B3A]" />
               <span>AI Advisor gợi ý</span>
             </button>
           )}
@@ -878,11 +878,11 @@ export default function AdvisoryJourneyTab({
           </span>
         </div>
 
-        <div className="bg-white rounded-2xl p-4 border border-purple-200/80 shadow-2xs">
-          <span className="text-[10px] font-bold uppercase text-[#5B2D8B] block">
+        <div className="bg-white rounded-2xl p-4 border border-teal-200/80 shadow-2xs">
+          <span className="text-[10px] font-bold uppercase text-[#003B3A] block">
             4. Yêu cầu GVBM xử lý
           </span>
-          <div className="text-xl font-black text-[#5B2D8B] mt-1">
+          <div className="text-xl font-black text-[#003B3A] mt-1">
             {summary.gvbmPendingCount || 0}{" "}
             <span className="text-xs font-semibold text-slate-500">nhiệm vụ</span>
           </div>
@@ -1088,7 +1088,7 @@ export default function AdvisoryJourneyTab({
                                 {st.code}
                               </span>
                               {st.supportsDynamicLoop && (
-                                <span className="text-[10px] font-bold px-2 py-0.5 rounded bg-indigo-50 text-indigo-700 border border-indigo-200/70">
+                                <span className="text-[10px] font-bold px-2 py-0.5 rounded bg-teal-50 text-teal-800 border border-teal-200/70">
                                   🔄 Vòng lặp động
                                 </span>
                               )}
@@ -1307,7 +1307,7 @@ export default function AdvisoryJourneyTab({
             <div className="p-4 rounded-2xl bg-slate-50 border border-slate-200/80 space-y-3">
               <div className="flex flex-wrap items-center justify-between gap-2">
                 <div className="flex items-center gap-2">
-                  <span className="px-2.5 py-0.5 rounded-full bg-indigo-100 text-indigo-800 text-[10px] font-black uppercase">
+                  <span className="px-2.5 py-0.5 rounded-full bg-teal-50 text-teal-800 text-[10px] font-black uppercase">
                     CHU TRÌNH VÒNG LẶP ĐỘNG (GIAI ĐOẠN 5 & 6)
                   </span>
                   <span className="text-xs font-bold text-slate-800">
@@ -1334,7 +1334,7 @@ export default function AdvisoryJourneyTab({
                     <button
                       type="button"
                       onClick={() => onOpenAiAdvisor(selectedJourney.studentId)}
-                      className="px-3 py-1.5 rounded-lg bg-[#5B2D8B] hover:bg-[#4A2273] text-white text-xs font-bold flex items-center gap-1 cursor-pointer"
+                      className="px-3 py-1.5 rounded-lg bg-[#003B3A] hover:bg-[#4A2273] text-white text-xs font-bold flex items-center gap-1 cursor-pointer"
                     >
                       <Sparkles className="w-3.5 h-3.5 text-amber-300" />
                       <span>Phân công GVBM hỗ trợ</span>

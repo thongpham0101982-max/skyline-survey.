@@ -429,7 +429,7 @@ export default function TeacherExperientialActivitiesPage() {
 
   const getEvalModeBadge = (mode?: string) => {
     if (mode === "CRITERIA") return { label: "Rubric 4 mức", cls: "bg-blue-50 text-blue-700 border-blue-200" };
-    if (mode === "ROLE_BASED") return { label: "Theo vai trò", cls: "bg-purple-50 text-purple-700 border-purple-200" };
+    if (mode === "ROLE_BASED") return { label: "Theo vai trò", cls: "bg-teal-50 text-teal-800 border-teal-200" };
     if (mode === "PARTICIPATION_ONLY") return { label: "Điểm danh", cls: "bg-slate-100 text-slate-700 border-slate-200" };
     return { label: "Theo vai trò", cls: "bg-teal-50 text-teal-700 border-teal-200" };
   };
@@ -800,14 +800,14 @@ export default function TeacherExperientialActivitiesPage() {
             onClick={() => setStatusTab('MY_CREATED')}
             className={`px-3 py-1.5 rounded-xl text-xs font-bold transition-all flex items-center gap-1.5 cursor-pointer whitespace-nowrap ${
               statusTab === 'MY_CREATED'
-                ? 'bg-purple-600 text-white shadow-xs'
-                : 'bg-purple-50 text-purple-900 border border-purple-200/80 hover:bg-purple-100'
+                ? 'bg-[#003B3A] text-white shadow-xs'
+                : 'bg-teal-50 text-teal-800 border border-teal-200/80 hover:bg-teal-50'
             }`}
           >
             <Sparkles className="w-3.5 h-3.5" />
             <span>Hoạt động do tôi tạo</span>
             <span className={`px-1.5 py-0.2 rounded-full text-[10px] font-black ${
-              statusTab === 'MY_CREATED' ? 'bg-white/20 text-white' : 'bg-purple-200 text-purple-950'
+              statusTab === 'MY_CREATED' ? 'bg-white/20 text-white' : 'bg-teal-50 text-teal-800'
             }`}>
               {stats.myCreated}
             </span>
@@ -885,7 +885,7 @@ export default function TeacherExperientialActivitiesPage() {
 
                     <div className="flex items-center gap-1.5">
                       {act.isMyCreated && (
-                        <span className="px-2 py-0.5 rounded-md text-[10px] font-black bg-purple-50 text-purple-700 border border-purple-200">
+                        <span className="px-2 py-0.5 rounded-md text-[10px] font-black bg-teal-50 text-teal-800 border border-teal-200">
                           ✨ Tôi tự tạo
                         </span>
                       )}
@@ -1101,7 +1101,7 @@ export default function TeacherExperientialActivitiesPage() {
                             {act.code || "HDTN"}
                           </span>
                           {act.isMyCreated && (
-                            <span className="px-1.5 py-0.2 rounded text-[10px] font-black bg-purple-50 text-purple-700">
+                            <span className="px-1.5 py-0.2 rounded text-[10px] font-black bg-teal-50 text-teal-800">
                               ✨ Tôi tạo
                             </span>
                           )}
@@ -1450,7 +1450,7 @@ export default function TeacherExperientialActivitiesPage() {
                                     </span>
                                   )}
                                   {meta.primarySubjectName && (
-                                    <span>Môn: <strong className="text-indigo-700">{meta.primarySubjectName}</strong></span>
+                                    <span>Môn: <strong className="text-teal-800">{meta.primarySubjectName}</strong></span>
                                   )}
                                   {meta.timeFrame && (
                                     <span>• {meta.timeFrame}</span>

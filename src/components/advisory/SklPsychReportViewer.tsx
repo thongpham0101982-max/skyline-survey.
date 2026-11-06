@@ -456,8 +456,8 @@ export default function SklPsychReportViewer({
         label: "Dễ kích động / Cảm xúc (N)",
         score: nScore,
         max: 24,
-        barClass: "from-indigo-500 to-blue-600",
-        statusClass: "text-indigo-600",
+        barClass: "from-teal-600 to-blue-600",
+        statusClass: "text-teal-800",
         low: "Ổn định (< 12)",
         high: "Dễ xúc động (≥ 12)",
         status: nScore >= 12 ? "Dễ xúc động / Nhạy cảm" : "Ổn định / Kiên định"
@@ -682,7 +682,7 @@ export default function SklPsychReportViewer({
         leftScore: Number(dims.EI?.E || 0),
         rightLabel: "Hướng nội (I)",
         rightScore: Number(dims.EI?.I || 0),
-        colorLeft: "bg-indigo-600",
+        colorLeft: "bg-[#003B3A]",
         colorRight: "bg-teal-600"
       },
       {
@@ -692,7 +692,7 @@ export default function SklPsychReportViewer({
         rightLabel: "Trực giác (N)",
         rightScore: Number(dims.SN?.N || 0),
         colorLeft: "bg-sky-600",
-        colorRight: "bg-purple-600"
+        colorRight: "bg-[#003B3A]"
       },
       {
         title: "Ra quyết định: Lý trí (T) – Cảm xúc (F)",
@@ -752,17 +752,17 @@ export default function SklPsychReportViewer({
           </div>
         </div>
 
-        <div className="bg-indigo-50/50 border border-indigo-200 rounded-2xl p-5 space-y-4">
-          <div className="flex flex-wrap items-center justify-between gap-2 pb-3 border-b border-indigo-200/70">
+        <div className="bg-teal-50/50 border border-teal-200 rounded-2xl p-5 space-y-4">
+          <div className="flex flex-wrap items-center justify-between gap-2 pb-3 border-b border-teal-200/70">
             <div>
-              <span className="text-[11px] font-bold uppercase tracking-wider text-indigo-700 block">
+              <span className="text-[11px] font-bold uppercase tracking-wider text-teal-800 block">
                 Chân Dung Tính Cách & Phương Pháp Học Tập
               </span>
               <h4 className="text-xl font-black text-slate-800 mt-0.5">
                 {prof.code} – {prof.labelVi}
               </h4>
             </div>
-            <span className="px-3 py-1 rounded-full text-xs font-bold bg-indigo-100 text-indigo-800">
+            <span className="px-3 py-1 rounded-full text-xs font-bold bg-teal-50 text-teal-800">
               Nhóm {prof.temperamentCode}
             </span>
           </div>
@@ -781,7 +781,7 @@ export default function SklPsychReportViewer({
               <p className="text-slate-700 leading-relaxed">{prof.learningStyle}</p>
             </div>
             <div className="p-3.5 bg-white rounded-xl border border-slate-200/90 space-y-1">
-              <strong className="text-indigo-700 uppercase tracking-wider block">
+              <strong className="text-teal-800 uppercase tracking-wider block">
                 🤝 Vai trò phù hợp trong nhóm
               </strong>
               <p className="text-slate-700 leading-relaxed">{prof.teamRole}</p>
@@ -832,7 +832,7 @@ export default function SklPsychReportViewer({
                         key={item.code}
                         className={isCurrent ? "bg-teal-50/70" : "hover:bg-slate-50"}
                       >
-                        <td className="p-2.5 font-mono font-black text-indigo-700 whitespace-nowrap">
+                        <td className="p-2.5 font-mono font-black text-teal-800 whitespace-nowrap">
                           {item.code} {isCurrent && "★"}
                         </td>
                         <td className="p-2.5 font-bold text-slate-800">{item.labelVi}</td>
@@ -1067,7 +1067,7 @@ export default function SklPsychReportViewer({
             <div className="space-y-3">
               <div className="flex items-center justify-between">
                 <h4 className="text-xs font-extrabold text-slate-800 uppercase tracking-wider flex items-center gap-1.5">
-                  <UserCheck className="w-4 h-4 text-purple-600" />
+                  <UserCheck className="w-4 h-4 text-teal-800" />
                   <span>Đề Nghị Tư Vấn 1:1 Cùng GVCN / CVHT</span>
                 </h4>
                 {assessment.consultationRequested && (

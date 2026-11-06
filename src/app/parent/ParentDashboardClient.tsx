@@ -311,16 +311,16 @@ export default function ParentDashboardClient({
           </div>
 
           {/* CARD 5: TRAO ĐỔI & ĐỒNG HÀNH (PHỐI HỢP GIÁO DỤC) */}
-          <div className="bg-white rounded-3xl p-6 border border-purple-200/90 shadow-sm hover:shadow-xl hover:-translate-y-1 transition-all duration-300 flex flex-col justify-between space-y-5 relative overflow-hidden group">
+          <div className="bg-white rounded-3xl p-6 border border-slate-200/90 shadow-sm hover:shadow-xl hover:-translate-y-1 transition-all duration-300 flex flex-col justify-between space-y-5 relative overflow-hidden group">
             <div className="space-y-3.5">
-              <div className="w-14 h-14 rounded-2xl bg-purple-50 text-[#6E3D89] flex items-center justify-center font-bold shadow-inner border border-purple-100 group-hover:scale-105 transition-transform">
+              <div className="w-14 h-14 rounded-2xl bg-teal-50 text-[#003B3A] flex items-center justify-center font-bold shadow-inner border border-teal-100 group-hover:scale-105 transition-transform">
                 <MessageSquareText className="w-7 h-7" />
               </div>
               <div>
-                <span className="text-[10px] font-black text-[#6E3D89] uppercase tracking-widest block">
+                <span className="text-[10px] font-black text-[#00736E] uppercase tracking-widest block">
                   KẾT NỐI GVCN & GVBM
                 </span>
-                <h3 className="text-lg font-black text-slate-900 group-hover:text-[#6E3D89] transition-colors mt-0.5">
+                <h3 className="text-lg font-black text-slate-900 group-hover:text-[#003B3A] transition-colors mt-0.5">
                   Trao Đổi & Đồng Hành
                 </h3>
               </div>
@@ -331,7 +331,7 @@ export default function ParentDashboardClient({
 
             <Link 
               href="/parent/trao-doi-dong-hanh"
-              className="w-full py-3.5 rounded-2xl bg-[#6E3D89] hover:bg-[#5B3172] text-white text-xs font-black flex items-center justify-center gap-2 shadow-md shadow-purple-200 transition-all active:scale-95 text-center cursor-pointer"
+              className="w-full py-3.5 rounded-2xl bg-[#003B3A] hover:bg-[#004D4A] text-white text-xs font-black flex items-center justify-center gap-2 shadow-md transition-all active:scale-95 text-center cursor-pointer"
             >
               <span>Mở Trao đổi & Đồng hành</span>
               <ArrowRight className="w-4 h-4" />
@@ -367,16 +367,16 @@ export default function ParentDashboardClient({
           </div>
 
           {/* CARD 7: TRUNG TÂM THÔNG BÁO & LIÊN LẠC */}
-          <div className="bg-white rounded-3xl p-6 border border-[#E9D8FD] shadow-sm hover:shadow-xl hover:-translate-y-1 transition-all duration-300 flex flex-col justify-between space-y-5 relative overflow-hidden group">
+          <div className="bg-white rounded-3xl p-6 border border-slate-200/90 shadow-sm hover:shadow-xl hover:-translate-y-1 transition-all duration-300 flex flex-col justify-between space-y-5 relative overflow-hidden group">
             <div className="space-y-3.5">
-              <div className="w-14 h-14 rounded-2xl bg-[#F6F0FB] text-[#5B2D8B] flex items-center justify-center font-bold shadow-inner border border-[#E9D8FD] group-hover:scale-105 transition-transform">
+              <div className="w-14 h-14 rounded-2xl bg-teal-50 text-[#00736E] flex items-center justify-center font-bold shadow-inner border border-teal-100 group-hover:scale-105 transition-transform">
                 <Bell className="w-7 h-7" />
               </div>
               <div>
-                <span className="text-[10px] font-black text-[#5B2D8B] uppercase tracking-widest block">
+                <span className="text-[10px] font-black text-[#00736E] uppercase tracking-widest block">
                   KHẢO THÍ • GIÁO VIÊN • HỌC TẬP
                 </span>
-                <h3 className="text-lg font-black text-slate-900 group-hover:text-[#5B2D8B] transition-colors mt-0.5">
+                <h3 className="text-lg font-black text-slate-900 group-hover:text-[#003B3A] transition-colors mt-0.5">
                   Trung Tâm Thông Báo
                 </h3>
               </div>
@@ -387,37 +387,9 @@ export default function ParentDashboardClient({
 
             <Link 
               href={`/parent/thong-bao${activeChild?.id ? `?studentId=${activeChild.id}` : ""}`}
-              className="w-full py-3.5 rounded-2xl bg-[#5B2D8B] hover:bg-[#4A2273] text-white text-xs font-black flex items-center justify-center gap-2 shadow-md shadow-purple-200 transition-all active:scale-95 text-center cursor-pointer"
+              className="w-full py-3.5 rounded-2xl bg-[#00736E] hover:bg-[#005F5B] text-white text-xs font-black flex items-center justify-center gap-2 shadow-md transition-all active:scale-95 text-center cursor-pointer"
             >
               <span>Mở Hộp Thư Thông Báo</span>
-              <ArrowRight className="w-4 h-4" />
-            </Link>
-          </div>
-
-          {/* CARD 8: HƯỚNG NGHIỆP • SKL_PSYCH (5 BỘ CÔNG CỤ CHUẨN HÓA) */}
-          <div className="bg-white rounded-3xl p-6 border border-purple-200/90 shadow-sm hover:shadow-xl hover:-translate-y-1 transition-all duration-300 flex flex-col justify-between space-y-5 relative overflow-hidden group">
-            <div className="space-y-3.5">
-              <div className="w-14 h-14 rounded-2xl bg-purple-50 text-[#5B2D8B] flex items-center justify-center font-bold shadow-inner border border-purple-100 group-hover:scale-105 transition-transform">
-                <Sparkles className="w-7 h-7" />
-              </div>
-              <div>
-                <span className="text-[10px] font-black text-[#5B2D8B] uppercase tracking-widest block">
-                  HƯỚNG NGHIỆP • SKL_PSYCH
-                </span>
-                <h3 className="text-lg font-black text-slate-900 group-hover:text-[#5B2D8B] transition-colors mt-0.5">
-                  Khảo Sát Tâm Lý & Hướng Nghiệp
-                </h3>
-              </div>
-              <p className="text-xs text-slate-500 font-medium leading-relaxed">
-                Đồng hành cùng con thực hiện & xem báo cáo chuyên sâu <strong className="text-slate-700">5 bộ công cụ SKL_PSYCH (DISC, EPI, HOLLAND, EQ Lyusin, MBTI)</strong>, gửi phản hồi và đề nghị tư vấn 1:1.
-              </p>
-            </div>
-
-            <Link 
-              href="/parent/children/advisory?tab=skl_psych"
-              className="w-full py-3.5 rounded-2xl bg-[#5B2D8B] hover:bg-[#4A2273] text-white text-xs font-black flex items-center justify-center gap-2 shadow-md shadow-purple-200 transition-all active:scale-95 text-center cursor-pointer"
-            >
-              <span>Mở 5 Bộ Công Cụ SKL_PSYCH</span>
               <ArrowRight className="w-4 h-4" />
             </Link>
           </div>

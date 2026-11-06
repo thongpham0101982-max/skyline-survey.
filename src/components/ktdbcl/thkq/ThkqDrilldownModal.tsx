@@ -67,7 +67,7 @@ export function ThkqDrilldownModal({ isOpen, onClose, cellData, allTargetStudent
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-xs animate-in fade-in duration-200">
       <div className="bg-white rounded-3xl border border-slate-200 shadow-2xl max-w-4xl w-full max-h-[85vh] flex flex-col overflow-hidden">
         {/* Header */}
-        <div className="flex items-center justify-between p-5 border-b border-slate-100 bg-gradient-to-r from-rose-50 to-orange-50">
+        <div className="flex items-center justify-between p-5 border-b border-slate-100 bg-gradient-to-r from-rose-50 to-amber-600">
           <div className="flex items-center gap-3">
             <div className="h-10 w-10 rounded-2xl bg-red-500 text-white flex items-center justify-center shadow-md shadow-red-500/20">
               <Flame className="h-5 w-5" />
@@ -155,7 +155,7 @@ export function ThkqDrilldownModal({ isOpen, onClose, cellData, allTargetStudent
                             </span>
                           )}
                           {s.isPsychological && (
-                            <span className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded text-[10px] font-bold bg-purple-100 text-purple-700">
+                            <span className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded text-[10px] font-bold bg-teal-50 text-teal-800">
                               <Brain className="h-2.5 w-2.5" /> Tâm lý
                             </span>
                           )}

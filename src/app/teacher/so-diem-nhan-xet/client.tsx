@@ -54,7 +54,7 @@ import {
   ArrowRight,
   UserCheck,
   Check
-} from "lucide-react"
+, PenTool } from "lucide-react"
 import { calculateCompositeScore, getColumnMaxScore } from "@/lib/grading/formula-calculator"
 import { Button } from "@/components/ui/button"
 import { GvbmResponseModal } from "./components/GvbmResponseModal"
@@ -950,6 +950,14 @@ export function DiemNhanXetTeacherClient({
                 {savingEntries ? <RefreshCw className="w-3.5 h-3.5 animate-spin" /> : <Save className="w-3.5 h-3.5" />}
                 Lưu Sổ Điểm
               </button>
+
+              <Link
+                href={`/teacher/ho-so-cho-ky?classId=${selectedClassId}&subjectId=${selectedSubjectId}`}
+                className="flex items-center gap-1.5 px-3.5 py-2 bg-[#003B3A] hover:bg-[#002B2A] text-white rounded-xl text-xs font-bold shadow-md transition-all"
+              >
+                <PenTool className="w-3.5 h-3.5 text-teal-300" />
+                <span>Hồ sơ chờ ký</span>
+              </Link>
             </div>
           )}
         </div>
@@ -1000,21 +1008,21 @@ export function DiemNhanXetTeacherClient({
 
         {/* CẢNH BÁO SỔ ĐIỂM ĐÃ BỊ KHÓA & NÚT YÊU CẦU MỞ SỔ */}
         {isSheetLocked && !hasNoAssignments && (
-          <div className="bg-purple-50 border-2 border-purple-200 p-4 rounded-2xl flex flex-col md:flex-row items-start md:items-center justify-between gap-4 shadow-sm animate-fadeIn">
+          <div className="bg-teal-50 border-2 border-teal-200 p-4 rounded-2xl flex flex-col md:flex-row items-start md:items-center justify-between gap-4 shadow-sm animate-fadeIn">
             <div className="flex items-start gap-3">
-              <div className="w-10 h-10 rounded-xl bg-purple-100 text-purple-700 flex items-center justify-center shrink-0 mt-0.5">
+              <div className="w-10 h-10 rounded-xl bg-teal-50 text-teal-800 flex items-center justify-center shrink-0 mt-0.5">
                 <Lock className="w-5 h-5" />
               </div>
               <div>
-                <div className="text-xs font-black text-purple-950 uppercase tracking-wide flex flex-wrap items-center gap-1.5">
+                <div className="text-xs font-black text-teal-800 uppercase tracking-wide flex flex-wrap items-center gap-1.5">
                   <span>SỔ ĐIỂM ĐÃ BỊ KHÓA BỞI BAN KHẢO THÍ & ĐBCL</span>
                   {sheetLockInfo?.lockedBy && (
-                    <span className="text-[11px] font-normal text-purple-700">
+                    <span className="text-[11px] font-normal text-teal-800">
                       ({sheetLockInfo.lockedBy})
                     </span>
                   )}
                 </div>
-                <div className="text-xs text-purple-800 mt-0.5">
+                <div className="text-xs text-teal-800 mt-0.5">
                   Sổ điểm môn này trong Kỳ {EVAL_PERIODS.find(p => p.code === selectedPeriod)?.name || selectedPeriod} hiện đang ở trạng thái Khóa. Điểm số được bảo lưu và ở chế độ chỉ xem.
                 </div>
 
@@ -1046,7 +1054,7 @@ export function DiemNhanXetTeacherClient({
                 <button
                   type="button"
                   onClick={handleOpenUnlockModal}
-                  className="inline-flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-bold text-white bg-purple-700 hover:bg-purple-800 shadow-md shadow-purple-500/20 active:scale-95 transition-all"
+                  className="inline-flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-bold text-white bg-[#003B3A] hover:bg-[#003B3A] shadow-md shadow-purple-500/20 active:scale-95 transition-all"
                 >
                   <Unlock className="w-4 h-4" />
                   {unlockRequest?.status === "REJECTED" ? "Gửi lại yêu cầu mở sổ" : "Yêu cầu mở sổ"}
@@ -1068,7 +1076,7 @@ export function DiemNhanXetTeacherClient({
 
         {/* Coordination Banner with Homeroom Teacher */}
         {!hasNoAssignments && coordStudents.all.length > 0 && (
-          <div className="bg-gradient-to-r from-sky-50 via-teal-50 to-indigo-50 border border-teal-200/90 rounded-2xl p-4 flex flex-col sm:flex-row sm:items-center justify-between gap-3 shadow-xs">
+          <div className="bg-gradient-to-r from-sky-50 via-teal-50 to-emerald-600 border border-teal-200/90 rounded-2xl p-4 flex flex-col sm:flex-row sm:items-center justify-between gap-3 shadow-xs">
             <div className="flex items-start sm:items-center gap-3">
               <div className="w-10 h-10 rounded-xl bg-teal-600 text-white flex items-center justify-center shrink-0 shadow-xs">
                 <MessageSquare className="w-5 h-5" />
@@ -1169,7 +1177,7 @@ export function DiemNhanXetTeacherClient({
                     )}
 
                     {gradeSheetData.config?.hasRemarkColumn !== false && (
-                      <th className="py-3 px-3 border-slate-700 bg-indigo-950 min-w-[200px]">
+                      <th className="py-3 px-3 border-slate-700 bg-[#003B3A] min-w-[200px]">
                         Nhận xét của GVBM
                       </th>
                     )}
@@ -1250,7 +1258,7 @@ export function DiemNhanXetTeacherClient({
                                   disabled={isSheetLocked}
                                   value={val}
                                   onChange={(e) => handleScoreChange(st.id, cIdx, e.target.value)}
-                                  className="w-full text-center border border-slate-200 rounded-lg py-1 text-xs font-extrabold text-slate-800 bg-purple-50/60 focus:ring-2 focus:ring-purple-500 outline-none"
+                                  className="w-full text-center border border-slate-200 rounded-lg py-1 text-xs font-extrabold text-slate-800 bg-teal-50/60 focus:ring-2 focus:ring-purple-500 outline-none"
                                 >
                                   <option value="">-- Quốc tế --</option>
                                   {INTL_OPTIONS.map(opt => (
@@ -1531,14 +1539,14 @@ export function DiemNhanXetTeacherClient({
 
                         {/* Trao đổi / Đề xuất từ GVCN */}
                         <td className="py-3 px-3 border-r border-slate-200 align-top">
-                          <div className="bg-indigo-50/80 border border-indigo-200 rounded-xl p-3.5 space-y-2">
+                          <div className="bg-teal-50/80 border border-teal-200 rounded-xl p-3.5 space-y-2">
                             <div className="flex items-center justify-between text-[11px]">
-                              <span className="font-extrabold text-indigo-900 flex items-center gap-1.5">
-                                <UserCheck className="w-3.5 h-3.5 text-indigo-600" />
+                              <span className="font-extrabold text-teal-800 flex items-center gap-1.5">
+                                <UserCheck className="w-3.5 h-3.5 text-teal-800" />
                                 <span>GVCN: {coord.homeroomTeacherName || "Giáo viên Chủ nhiệm"}</span>
                               </span>
                               {coord.forwardedGvbm?.forwardedAt && (
-                                <span className="text-[10px] text-indigo-600 font-medium">
+                                <span className="text-[10px] text-teal-800 font-medium">
                                   {new Date(coord.forwardedGvbm.forwardedAt).toLocaleDateString("vi-VN")}
                                 </span>
                               )}
@@ -1613,14 +1621,14 @@ export function DiemNhanXetTeacherClient({
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/50 backdrop-blur-xs p-4 animate-fadeIn">
           <div className="bg-white rounded-2xl border border-slate-200 shadow-2xl max-w-lg w-full overflow-hidden animate-scaleUp">
             {/* Header */}
-            <div className="px-6 py-4 bg-purple-700 text-white flex items-center justify-between">
+            <div className="px-6 py-4 bg-[#003B3A] text-white flex items-center justify-between">
               <div className="flex items-center gap-2.5">
                 <div className="w-8 h-8 rounded-lg bg-white/20 flex items-center justify-center">
                   <Unlock className="w-4 h-4" />
                 </div>
                 <div>
                   <h3 className="text-sm font-black uppercase tracking-wider">Yêu cầu mở khóa sổ điểm</h3>
-                  <p className="text-[11px] text-purple-200">Gửi yêu cầu tới Ban Khảo thí & ĐBCL</p>
+                  <p className="text-[11px] text-teal-700">Gửi yêu cầu tới Ban Khảo thí & ĐBCL</p>
                 </div>
               </div>
               <button
@@ -1655,7 +1663,7 @@ export function DiemNhanXetTeacherClient({
                 </div>
                 <div className="flex justify-between border-t border-slate-200 pt-1.5 mt-1.5">
                   <span className="text-slate-500">Giáo viên yêu cầu:</span>
-                  <span className="font-bold text-purple-900">{teacherName}</span>
+                  <span className="font-bold text-teal-800">{teacherName}</span>
                 </div>
               </div>
 
@@ -1689,7 +1697,7 @@ export function DiemNhanXetTeacherClient({
                 <button
                   type="submit"
                   disabled={submittingUnlock}
-                  className="inline-flex items-center gap-1.5 px-5 py-2 rounded-xl text-xs font-bold text-white bg-purple-700 hover:bg-purple-800 shadow-md shadow-purple-500/20 active:scale-95 transition-all disabled:opacity-50"
+                  className="inline-flex items-center gap-1.5 px-5 py-2 rounded-xl text-xs font-bold text-white bg-[#003B3A] hover:bg-[#003B3A] shadow-md shadow-purple-500/20 active:scale-95 transition-all disabled:opacity-50"
                 >
                   {submittingUnlock ? (
                     <>

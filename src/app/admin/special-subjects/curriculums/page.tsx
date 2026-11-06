@@ -32,6 +32,8 @@ import toast from "react-hot-toast";
 export default function SpecialSubjectsCurriculumsPage() {
   const [loading, setLoading] = useState(true);
   const [curriculums, setCurriculums] = useState<any[]>([]);
+  const [tc01sMapping, setTc01sMapping] = useState<any | null>(null);
+  const [showSourceMappingTable, setShowSourceMappingTable] = useState(false);
   const [selectedCurriculumId, setSelectedCurriculumId] = useState<string>("");
   const [activeGrade, setActiveGrade] = useState("1");
   const [searchTerm, setSearchTerm] = useState("");
@@ -54,6 +56,9 @@ export default function SpecialSubjectsCurriculumsPage() {
       if (res.ok) {
         const currs = json.curriculums || [];
         setCurriculums(currs);
+        if (json.tc01sMapping) {
+          setTc01sMapping(json.tc01sMapping);
+        }
         if (currs.length > 0 && !selectedCurriculumId) {
           setSelectedCurriculumId(currs[0].id);
         }
@@ -302,12 +307,17 @@ export default function SpecialSubjectsCurriculumsPage() {
       {gradeConfig && (
         <div className="bg-white rounded-xl p-3.5 border border-slate-200/90 shadow-2xs flex flex-col md:flex-row md:items-center justify-between gap-3">
           <div className="space-y-1">
-            <div className="flex items-center space-x-2">
-              <span className="text-xs font-extrabold text-teal-800 uppercase tracking-wider">
+            <div className="flex flex-wrap items-center gap-2">
+              <span className="text-xs font-extrabold text-teal-800">
                 Mục tiêu trọng tâm Khối {activeGrade} ({activeCurriculum?.subject?.name})
               </span>
-              <span className="text-[10px] px-2 py-0.5 bg-teal-100/80 text-teal-800 rounded font-semibold">
-                {allLessons.length} bài học • {gradeConfig.periodMinutes || 35} phút/tiết
+              {activeCurriculum?.subject?.code === "FIN_EDU" && Number(activeGrade) >= 1 && Number(activeGrade) <= 5 && (
+                <span className="text-[10px] px-2 py-0.5 bg-[#003B3A] text-white rounded font-semibold tabular-nums">
+                  Mã chương trình: TC0{activeGrade}S • Sheet: KHỐI {activeGrade}S • Hệ đào tạo S
+                </span>
+              )}
+              <span className="text-[10px] px-2 py-0.5 bg-teal-100/80 text-teal-800 rounded font-semibold tabular-nums">
+                {allLessons.length} bài học • {gradeConfig.periodMinutes > 0 ? `${gradeConfig.periodMinutes} phút/tiết` : "Chưa cấu hình thời lượng / tuần / học kỳ"}
               </span>
             </div>
             <p className="text-xs text-slate-700 leading-relaxed max-w-4xl">
@@ -317,10 +327,113 @@ export default function SpecialSubjectsCurriculumsPage() {
 
           <div className="flex items-center space-x-2 shrink-0">
             <div className="px-3 py-1.5 bg-slate-50 rounded-lg border border-slate-100 text-right">
-              <div className="text-[9px] font-bold text-slate-400 uppercase">Thang đánh giá</div>
+              <div className="text-[10px] font-bold text-slate-500">Thang đánh giá</div>
               <div className="text-xs font-bold text-slate-900">Định tính 3 mức (Tốt / Đạt / CCG)</div>
             </div>
           </div>
+        </div>
+      )}
+
+      {/* TC01S Source Code Normalization & Anomaly Reconciliation Panel (Grade 1 FIN_EDU) */}
+      {activeCurriculum?.subject?.code === "FIN_EDU" && activeGrade === "1" && tc01sMapping && (
+        <div className="bg-white rounded-xl p-4 border-l-4 border-[#003B3A] border border-slate-200/90 shadow-2xs space-y-3">
+          <div className="flex flex-wrap items-center justify-between gap-2">
+            <div>
+              <h3 className="text-xs sm:text-sm font-bold text-slate-900 flex items-center gap-2">
+                <AlertTriangle className="w-4 h-4 text-amber-600 shrink-0" />
+                <span>Đối chiếu chuẩn hóa mã nguồn & Danh sách cần rà soát chuyên môn (Mã CT: {tc01sMapping.programCode} • Sheet: {tc01sMapping.sheetName})</span>
+              </h3>
+              <p className="text-[11px] text-slate-600 mt-0.5 tabular-nums">
+                Tổng cộng: <strong>{tc01sMapping.summary?.topicsCount} chủ đề</strong> • <strong>{tc01sMapping.summary?.lessonsCount} bài học</strong> • <strong>{tc01sMapping.summary?.criteriaCount} tiêu chuẩn</strong> (Hiểu: {tc01sMapping.summary?.competencyCounts?.["Hiểu"]}, Biết: {tc01sMapping.summary?.competencyCounts?.["Biết"]}, Vận dụng: {tc01sMapping.summary?.competencyCounts?.["Vận dụng"]}). {tc01sMapping.durationNote}
+              </p>
+            </div>
+            <button
+              onClick={() => setShowSourceMappingTable(prev => !prev)}
+              className="px-3 py-1.5 rounded-lg text-xs font-semibold bg-teal-50 hover:bg-teal-100 text-teal-800 border border-teal-200 transition-all"
+            >
+              {showSourceMappingTable ? "Ẩn bảng ánh xạ 46 tiêu chuẩn nguồn" : "Xem bảng ánh xạ 46 tiêu chuẩn nguồn → ID hệ thống"}
+            </button>
+          </div>
+
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-2.5 text-xs">
+            {(tc01sMapping.anomalyCategories || []).map((cat: any) => (
+              <div
+                key={cat.code}
+                className={`p-3 rounded-lg border ${
+                  cat.severity === "REVIEW_REQUIRED"
+                    ? "bg-amber-50/70 border-amber-200"
+                    : cat.severity === "WARNING"
+                    ? "bg-slate-50 border-slate-200"
+                    : "bg-slate-50/60 border-slate-200/80"
+                }`}
+              >
+                <div className="flex items-center justify-between gap-2 mb-1">
+                  <span className="font-bold text-slate-800">{cat.title}</span>
+                  <span className={`px-2 py-0.5 rounded text-[10px] font-bold shrink-0 ${
+                    cat.severity === "REVIEW_REQUIRED"
+                      ? "bg-amber-100 text-amber-800 border border-amber-300"
+                      : "bg-teal-50 text-teal-800 border border-teal-200"
+                  }`}>
+                    {cat.severity === "REVIEW_REQUIRED" ? "Cần rà soát" : "Đã chuẩn hóa"}
+                  </span>
+                </div>
+                <p className="text-[11px] text-slate-500 font-mono mb-1">
+                  Giá trị nguồn: {(cat.rawValues || []).join(" | ")}
+                </p>
+                <p className="text-[11px] text-slate-700 leading-relaxed">
+                  {cat.resolution}
+                </p>
+              </div>
+            ))}
+          </div>
+
+          {showSourceMappingTable && (
+            <div className="overflow-x-auto max-h-80 overflow-y-auto border border-slate-200 rounded-xl mt-2">
+              <table className="w-full text-left border-collapse text-[11px] tabular-nums">
+                <thead className="sticky top-0 bg-slate-100 text-slate-700 font-bold border-b border-slate-200">
+                  <tr>
+                    <th className="py-2 px-2.5 w-14 text-center">Dòng Excel</th>
+                    <th className="py-2 px-2.5">Chủ đề nguồn & Mã cột P</th>
+                    <th className="py-2 px-2.5">Bài học nguồn & Mã cột Q</th>
+                    <th className="py-2 px-2.5">Mã tiêu chuẩn nguồn</th>
+                    <th className="py-2 px-2.5 text-center">Mức / Năng lực nguồn</th>
+                    <th className="py-2 px-2.5">Ánh xạ ID hệ thống SSM</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-slate-100">
+                  {(tc01sMapping.records || []).map((rec: any) => (
+                    <tr key={rec.excelRow} className={rec.hasLevelCompetencyMismatch ? "bg-amber-50/70" : "hover:bg-slate-50"}>
+                      <td className="py-1.5 px-2.5 text-center font-mono font-bold text-slate-600">{rec.excelRow}</td>
+                      <td className="py-1.5 px-2.5">
+                        <div className="font-semibold text-slate-800">{rec.rawTopicName}</div>
+                        <div className="font-mono text-[10px] text-slate-500">
+                          Cột P: <span className={rec.rawTopicCode?.startsWith("#") ? "text-rose-600 font-bold" : ""}>{rec.rawTopicCode}</span> → Chuẩn: <span className="text-teal-700 font-semibold">{rec.normalizedTopicCode}</span>
+                        </div>
+                      </td>
+                      <td className="py-1.5 px-2.5">
+                        <div className="font-semibold text-slate-800">{rec.rawLessonName}</div>
+                        <div className="font-mono text-[10px] text-slate-500">
+                          Cột Q: <span className={rec.rawLessonCode?.startsWith("#") ? "text-rose-600 font-bold" : ""}>{rec.rawLessonCode}</span> → Chuẩn: <span className="text-teal-700 font-semibold">{rec.normalizedLessonCode}</span>
+                        </div>
+                      </td>
+                      <td className="py-1.5 px-2.5 font-mono font-bold text-teal-900">{rec.rawCriterionCode}</td>
+                      <td className="py-1.5 px-2.5 text-center">
+                        <span className="px-1.5 py-0.5 rounded bg-slate-100 text-slate-800 font-semibold mr-1">{rec.rawLevel}</span>
+                        <span className={`px-1.5 py-0.5 rounded font-semibold ${
+                          rec.hasLevelCompetencyMismatch ? "bg-amber-200 text-amber-900" : "bg-teal-50 text-teal-800"
+                        }`}>
+                          {rec.competencyGroup}
+                        </span>
+                      </td>
+                      <td className="py-1.5 px-2.5 font-mono text-[10px] text-slate-600">
+                        {rec.normalizedTopicId} → {rec.normalizedLessonId} → {rec.normalizedCriterionId}
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          )}
         </div>
       )}
 
@@ -336,7 +449,7 @@ export default function SpecialSubjectsCurriculumsPage() {
             className="w-full pl-8 pr-3 py-1.5 rounded-lg border border-slate-200 text-xs bg-slate-50 focus:bg-white focus:outline-none focus:ring-2 focus:ring-teal-500"
           />
         </div>
-        <div className="text-xs text-slate-500 font-medium">
+        <div className="text-xs text-slate-500 font-medium tabular-nums">
           Hiển thị: <span className="font-bold text-slate-800">{filteredLessons.length}</span>/{allLessons.length} bài học Khối {activeGrade}
         </div>
       </div>
@@ -344,10 +457,10 @@ export default function SpecialSubjectsCurriculumsPage() {
       {/* Lessons Table */}
       <div className="bg-white rounded-xl border border-slate-200/90 shadow-2xs overflow-hidden">
         <div className="overflow-x-auto">
-          <table className="w-full text-left border-collapse text-xs">
+          <table className="w-full text-left border-collapse text-xs tabular-nums">
             <thead>
-              <tr className="bg-slate-50/80 border-b border-slate-200 text-[11px] font-bold text-slate-600 uppercase tracking-wider">
-                <th className="py-2.5 px-3 w-14 text-center">Tiết</th>
+              <tr className="bg-slate-50/80 border-b border-slate-200 text-[11px] font-bold text-slate-600">
+                <th className="py-2.5 px-3 w-14 text-center">{gradeConfig?.periodMinutes > 0 ? "Tiết" : "Bài"}</th>
                 <th className="py-2.5 px-3.5 w-44">Chủ đề</th>
                 <th className="py-2.5 px-3.5 w-52">Tên bài học</th>
                 <th className="py-2.5 px-3.5 w-40 text-center">Tiêu chuẩn năng lực</th>
@@ -406,7 +519,7 @@ export default function SpecialSubjectsCurriculumsPage() {
                           <div className="flex items-center gap-1 text-[9px] font-semibold">
                             {hieuCount > 0 && <span className="px-1 bg-blue-50 text-blue-700 border border-blue-200 rounded">H: {hieuCount}</span>}
                             {bietCount > 0 && <span className="px-1 bg-amber-50 text-amber-700 border border-amber-200 rounded">B: {bietCount}</span>}
-                            {vdCount > 0 && <span className="px-1 bg-purple-50 text-purple-700 border border-purple-200 rounded">VD: {vdCount}</span>}
+                            {vdCount > 0 && <span className="px-1 bg-teal-50 text-teal-800 border border-teal-200 rounded">VD: {vdCount}</span>}
                           </div>
                         )}
                       </div>
@@ -487,7 +600,7 @@ export default function SpecialSubjectsCurriculumsPage() {
                       ? "bg-blue-50 text-blue-700 border-blue-200"
                       : isBiet
                       ? "bg-amber-50 text-amber-700 border-amber-200"
-                      : "bg-purple-50 text-purple-700 border-purple-200";
+                      : "bg-teal-50 text-teal-800 border-teal-200";
 
                     return (
                       <div key={crit.id || idx} className="p-3 hover:bg-slate-50/70 transition-colors">
@@ -728,11 +841,11 @@ export default function SpecialSubjectsCurriculumsPage() {
 
                           <div className="flex items-center gap-2 text-[10px] shrink-0">
                             <div className="bg-white px-2 py-1 rounded-lg border border-amber-200 font-semibold text-slate-700">
-                              Trước: <span className="text-blue-700">Biết ({sheet.diffSummary.oldDistribution?.Biết || 0})</span> • <span className="text-emerald-700">Hiểu ({sheet.diffSummary.oldDistribution?.Hiểu || 0})</span> • <span className="text-purple-700">Vận dụng ({sheet.diffSummary.oldDistribution?.["Vận dụng"] || 0})</span>
+                              Trước: <span className="text-blue-700">Biết ({sheet.diffSummary.oldDistribution?.Biết || 0})</span> • <span className="text-emerald-700">Hiểu ({sheet.diffSummary.oldDistribution?.Hiểu || 0})</span> • <span className="text-teal-800">Vận dụng ({sheet.diffSummary.oldDistribution?.["Vận dụng"] || 0})</span>
                             </div>
                             <span className="text-slate-400 font-bold">→</span>
                             <div className="bg-emerald-50 px-2 py-1 rounded-lg border border-emerald-300 font-bold text-emerald-900">
-                              Mới: <span className="text-blue-700">Biết ({sheet.diffSummary.newDistribution?.Biết || 0})</span> • <span className="text-emerald-700">Hiểu ({sheet.diffSummary.newDistribution?.Hiểu || 0})</span> • <span className="text-purple-700">Vận dụng ({sheet.diffSummary.newDistribution?.["Vận dụng"] || 0})</span>
+                              Mới: <span className="text-blue-700">Biết ({sheet.diffSummary.newDistribution?.Biết || 0})</span> • <span className="text-emerald-700">Hiểu ({sheet.diffSummary.newDistribution?.Hiểu || 0})</span> • <span className="text-teal-800">Vận dụng ({sheet.diffSummary.newDistribution?.["Vận dụng"] || 0})</span>
                             </div>
                           </div>
                         </div>
@@ -754,11 +867,11 @@ export default function SpecialSubjectsCurriculumsPage() {
                               {sheet.diffSummary.changedCriteria.map((item: any, idx: number) => {
                                 const oldBadge = item.oldCompetency === "Hiểu" ? "bg-emerald-50 text-emerald-800 border-emerald-200"
                                   : item.oldCompetency === "Biết" ? "bg-blue-50 text-blue-800 border-blue-200"
-                                  : "bg-purple-50 text-purple-800 border-purple-200";
+                                  : "bg-teal-50 text-teal-800 border-teal-200";
 
                                 const newBadge = item.newCompetency === "Hiểu" ? "bg-emerald-100 text-emerald-900 border-emerald-300 font-bold"
                                   : item.newCompetency === "Biết" ? "bg-blue-100 text-blue-900 border-blue-300 font-bold"
-                                  : "bg-purple-100 text-purple-900 border-purple-300 font-bold";
+                                  : "bg-teal-50 text-teal-800 border-teal-400 font-bold";
 
                                 return (
                                   <tr key={item.code} className="hover:bg-amber-50/50">

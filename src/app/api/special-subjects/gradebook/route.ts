@@ -5,9 +5,17 @@ import { getAdminSession } from "@/lib/session";
 export const dynamic = "force-dynamic";
 
 // Formula 1: Most Frequent / Tần suất đa số
-function calculateLessonResult(rubricDetailsObj: Record<string, string>, totalCriteria: number, explicitResult?: string): string {
+function calculateLessonResult(
+  rubricDetailsObj: Record<string, string>,
+  totalCriteria: number,
+  explicitResult?: string | null
+): string {
   if (explicitResult && ["TOT", "HOAN_THANH", "CAN_CO_GANG", "CHUA_DANH_GIA", "VANG"].includes(explicitResult)) {
-    return explicitResult;
+    // Only trust explicitResult if it's VANG or if rubricDetails is empty; otherwise compute from rubric if rubric exists
+    const hasRubricValues = Object.values(rubricDetailsObj || {}).some(v => Boolean(v) && v !== "CHUA_DANH_GIA");
+    if (!hasRubricValues || explicitResult === "VANG") {
+      return explicitResult;
+    }
   }
 
   const values = Object.values(rubricDetailsObj || {}).filter(v => Boolean(v) && v !== "CHUA_DANH_GIA");
@@ -19,12 +27,13 @@ function calculateLessonResult(rubricDetailsObj: Record<string, string>, totalCr
 
   values.forEach(v => {
     if (v === "TOT") totCount++;
-    else if (v === "HOAN_THANH") hoanThanhCount++;
+    else if (v === "HOAN_THANH" || v === "DAT") hoanThanhCount++;
     else if (v === "CAN_CO_GANG") canCoGangCount++;
   });
 
   // Rule 1: Nếu từ 50% tiêu chuẩn xếp loại Cần cố gắng -> Cần cố gắng
-  if (canCoGangCount >= totalCriteria / 2) {
+  const denominator = totalCriteria > 0 ? totalCriteria : values.length;
+  if (canCoGangCount > 0 && canCoGangCount >= denominator / 2) {
     return "CAN_CO_GANG";
   }
 
@@ -34,7 +43,11 @@ function calculateLessonResult(rubricDetailsObj: Record<string, string>, totalCr
   }
 
   // Rule 3: Còn lại -> Hoàn thành
-  return "HOAN_THANH";
+  if (hoanThanhCount > 0 || totCount > 0) {
+    return "HOAN_THANH";
+  }
+
+  return "CAN_CO_GANG";
 }
 
 export async function GET(req: NextRequest) {
@@ -59,6 +72,7 @@ export async function GET(req: NextRequest) {
         where: {
           subject: { code: subjectCode.toUpperCase() },
           classId: classId,
+          status: "ACTIVE",
           ...(activeYear ? { academicYearId: activeYear.id } : {})
         }
       });
@@ -82,9 +96,12 @@ export async function GET(req: NextRequest) {
             className: true,
             grade: true,
             level: true,
+            educationSystem: true,
             campusId: true,
+            academicYearId: true,
             homeroomTeacherId: true,
             campus: { select: { campusCode: true, campusName: true } },
+            academicYear: { select: { id: true, name: true } },
             students: {
               where: { status: "ACTIVE" },
               select: { id: true, studentCode: true, studentName: true, gender: true, status: true },
@@ -100,17 +117,67 @@ export async function GET(req: NextRequest) {
     }
 
     // Scoping check
-    const isPrivileged = session.isFullAccess || session.isSuperAdmin || session.isHeadOfAcademic || session.isGDCS || session.isTTCM;
+    const isPrivileged =
+      session.isFullAccess ||
+      session.isSuperAdmin ||
+      session.isHeadOfAcademic ||
+      session.isGDCS ||
+      session.isTTCM;
     if (!isPrivileged && session.teacherId && assignment.teacherId !== session.teacherId) {
-      return NextResponse.json({ error: "Forbidden: Bạn không có quyền truy cập sổ đánh giá của lớp này" }, { status: 403 });
+      return NextResponse.json(
+        { error: "Forbidden: Bạn không có quyền truy cập sổ đánh giá của lớp này" },
+        { status: 403 }
+      );
     }
 
-    // 2. Fetch all curriculum lessons for this grade and subject
-    const classGrade = assignment.class.grade;
+    const classGrade = String(assignment.class.grade || "1").replace(/\D/g, "") || "1";
+    const eduSys = String(assignment.class.educationSystem || "HNS").toUpperCase().trim();
+    const isGrade1FinEdu = assignment.subject.code === "FIN_EDU" && classGrade === "1";
+    const isSystemS = eduSys === "HNS" || eduSys === "S";
+
+    // Requirement 2: Lớp khối 1 chỉ hiển thị chương trình đúng khối và hệ đào tạo S được gán.
+    // Không tự động áp dụng TC01S cho hệ khác khi chưa có chương trình tương ứng.
+    if (isGrade1FinEdu && !isSystemS) {
+      return NextResponse.json({
+        assignment: {
+          id: assignment.id,
+          academicYearId: assignment.academicYearId,
+          academicYearName: assignment.class.academicYear?.name || "2026-2027",
+          subject: assignment.subject,
+          teacher: assignment.teacher,
+          class: {
+            id: assignment.class.id,
+            classCode: assignment.class.classCode,
+            className: assignment.class.className,
+            grade: classGrade,
+            educationSystem: eduSys,
+            campus: assignment.class.campus,
+            homeroomTeacherId: assignment.class.homeroomTeacherId,
+            totalStudents: assignment.class.students?.length || 0
+          }
+        },
+        programCode: null,
+        hasDurationConfig: false,
+        systemMismatch: true,
+        systemMismatchNotice: `Lớp ${assignment.class.className} thuộc hệ đào tạo ${eduSys}. Chương trình Giáo dục Tài chính cá nhân Khối 1 hiện cấu hình cho Hệ đào tạo S (mã chương trình TC01S, sheet KHỐI 1S); chưa áp dụng cho hệ ${eduSys}.`,
+        topicsCount: 0,
+        lessonsCount: 0,
+        totalCriteriaCount: 0,
+        lessons: [],
+        lesson: null,
+        sessionStatus: "NOT_STARTED",
+        isLocked: false,
+        students: [],
+        gradeEntries: []
+      });
+    }
+
+    // 2. Fetch all curriculum lessons & gradeConfig for this grade and subject
     const lessons = await (prisma as any).specialLesson.findMany({
       where: {
-        grade: classGrade.toString(),
+        grade: classGrade,
         version: {
+          status: "PUBLISHED",
           curriculum: {
             subjectId: assignment.subjectId
           }
@@ -118,12 +185,39 @@ export async function GET(req: NextRequest) {
       },
       orderBy: { periodIndex: "asc" },
       include: {
-        topic: { select: { id: true, name: true, code: true } },
+        version: {
+          select: {
+            id: true,
+            versionCode: true,
+            gradeConfigs: {
+              where: { grade: classGrade },
+              take: 1
+            }
+          }
+        },
+        topic: { select: { id: true, name: true, code: true, sortOrder: true } },
         criteria: {
           orderBy: { sortOrder: "asc" }
         }
       }
     });
+
+    const gradeConfig = lessons[0]?.version?.gradeConfigs?.[0] || null;
+    const versionCode = lessons[0]?.version?.versionCode || "v1.0";
+    const hasDurationConfig = Boolean(
+      gradeConfig && Number(gradeConfig.totalPeriods) > 0 && Number(gradeConfig.periodMinutes) > 0
+    );
+    const gNum = parseInt(classGrade, 10) || 1;
+    const programCode =
+      assignment.subject.code === "FIN_EDU" && gNum >= 1 && gNum <= 5
+        ? `TC0${gNum}S`
+        : assignment.subject.code === "FIN_EDU"
+        ? `TC0${gNum}`
+        : `${assignment.subject.code}_K${gNum}`;
+
+    const uniqueTopicIds = new Set(lessons.map((l: any) => l.topicId).filter(Boolean));
+    const topicsCount = uniqueTopicIds.size;
+    const totalCriteriaCount = lessons.reduce((sum: number, l: any) => sum + (l.criteria?.length || 0), 0);
 
     const activeLesson = lessonId
       ? lessons.find((l: any) => l.id === lessonId) || lessons[0]
@@ -132,9 +226,16 @@ export async function GET(req: NextRequest) {
     if (!activeLesson) {
       return NextResponse.json({
         assignment,
+        programCode,
+        versionCode,
+        hasDurationConfig,
+        topicsCount: 0,
+        lessonsCount: 0,
+        totalCriteriaCount: 0,
         lessons: [],
         lesson: null,
         students: [],
+        gradeEntries: [],
         message: `Chưa có bài học cho môn ${assignment.subject.name} - Khối ${classGrade}`
       });
     }
@@ -158,71 +259,137 @@ export async function GET(req: NextRequest) {
     let completedCount = 0;
     let draftCount = 0;
     let lockedCount = 0;
+    let totCount = 0;
+    let hoanThanhCount = 0;
+    let canCoGangCount = 0;
+    let absentCount = 0;
+    let unassessedCount = 0;
 
     const studentsData = (assignment.class.students || []).map((st: any) => {
       const entry = entryMap.get(st.id);
       let parsedRubric: Record<string, string> = {};
       if (entry?.rubricDetails) {
         try {
-          parsedRubric = JSON.parse(entry.rubricDetails);
+          parsedRubric =
+            typeof entry.rubricDetails === "string"
+              ? JSON.parse(entry.rubricDetails)
+              : entry.rubricDetails;
         } catch {
           parsedRubric = {};
         }
       }
 
-      if (entry?.status === "COMPLETED") completedCount++;
-      else if (entry?.status === "DRAFT") draftCount++;
-      else if (entry?.status === "LOCKED") lockedCount++;
+      const attendanceStatus = entry?.attendanceStatus || "PRESENT";
+      const isAbsent = attendanceStatus === "ABSENT" || attendanceStatus === "VANG" || entry?.evalResult === "VANG";
+
+      // Distinguish "Chưa nhập" (null / CHUA_DANH_GIA) from "Cần cố gắng" (CAN_CO_GANG)
+      // Absent or unassessed students are NEVER automatically given low results.
+      const rawEvalResult = entry?.evalResult || null;
+      const effectiveEvalResult = isAbsent
+        ? "VANG"
+        : rawEvalResult && rawEvalResult !== "CHUA_DANH_GIA"
+        ? rawEvalResult
+        : null;
+
+      const hasAnyInput =
+        isAbsent ||
+        Boolean(effectiveEvalResult) ||
+        Object.values(parsedRubric).some(v => Boolean(v) && v !== "CHUA_DANH_GIA") ||
+        Boolean(entry?.teacherFeedback?.trim());
+
+      const effectiveStatus = !hasAnyInput
+        ? "NOT_STARTED"
+        : entry?.status || "DRAFT";
+
+      if (entry?.status === "LOCKED") lockedCount++;
+      else if (effectiveStatus === "COMPLETED") completedCount++;
+      else if (effectiveStatus === "DRAFT") draftCount++;
+
+      if (isAbsent) {
+        absentCount++;
+      } else if (effectiveEvalResult === "TOT") {
+        totCount++;
+      } else if (effectiveEvalResult === "HOAN_THANH" || effectiveEvalResult === "DAT") {
+        hoanThanhCount++;
+      } else if (effectiveEvalResult === "CAN_CO_GANG") {
+        canCoGangCount++;
+      } else {
+        unassessedCount++;
+      }
 
       return {
+        id: st.id,
         studentId: st.id,
         studentCode: st.studentCode,
         studentName: st.studentName,
         gender: st.gender,
-        attendanceStatus: entry?.attendanceStatus || "PRESENT",
-        evalResult: entry?.evalResult || null,
+        attendanceStatus: isAbsent ? "ABSENT" : "PRESENT",
+        evalResult: effectiveEvalResult,
+        rawEvalResult: rawEvalResult || "CHUA_DANH_GIA",
         rubricDetails: parsedRubric,
         teacherFeedback: entry?.teacherFeedback || "",
-        status: entry?.status || "NOT_STARTED",
+        status: effectiveStatus,
         entryId: entry?.id || null,
         updatedAt: entry?.updatedAt || null,
         auditLogs: entry?.auditLogs || []
       };
     });
 
+    const isConfigLocked = Boolean(gradeConfig?.isLocked);
     let sessionStatus = "NOT_STARTED";
-    if (lockedCount > 0) sessionStatus = "LOCKED";
-    else if (completedCount > 0 && completedCount === studentsData.length) sessionStatus = "COMPLETED";
+    if (lockedCount > 0 || isConfigLocked) sessionStatus = "LOCKED";
+    else if (completedCount > 0 && completedCount >= studentsData.length - absentCount && studentsData.length > 0)
+      sessionStatus = "COMPLETED";
     else if (completedCount > 0 || draftCount > 0) sessionStatus = "DRAFT";
 
     return NextResponse.json({
       assignment: {
         id: assignment.id,
+        academicYearId: assignment.academicYearId,
+        academicYearName: assignment.class.academicYear?.name || "2026-2027",
+        versionCode,
+        programCode,
         subject: assignment.subject,
         teacher: assignment.teacher,
         class: {
           id: assignment.class.id,
           classCode: assignment.class.classCode,
           className: assignment.class.className,
-          grade: assignment.class.grade,
+          grade: classGrade,
+          educationSystem: eduSys,
           campus: assignment.class.campus,
           homeroomTeacherId: assignment.class.homeroomTeacherId,
           totalStudents: studentsData.length
         }
       },
+      programCode,
+      versionCode,
+      hasDurationConfig,
+      systemMismatch: false,
+      topicsCount,
+      lessonsCount: lessons.length,
+      totalCriteriaCount,
       lessons: lessons.map((l: any) => ({
         id: l.id,
         periodIndex: l.periodIndex,
+        lessonCode: `${l.topic?.code || programCode}.${String(l.periodIndex).padStart(4, "0")}`,
         lessonName: l.lessonName,
+        topicId: l.topic?.id,
+        topicCode: l.topic?.code,
         topicName: l.topic?.name,
+        hasDurationConfig,
         criteriaCount: l.criteria?.length || 0
       })),
       lesson: {
         id: activeLesson.id,
+        lessonCode: `${activeLesson.topic?.code || programCode}.${String(activeLesson.periodIndex).padStart(4, "0")}`,
         lessonName: activeLesson.lessonName,
         periodIndex: activeLesson.periodIndex,
         grade: activeLesson.grade,
+        topicId: activeLesson.topic?.id,
+        topicCode: activeLesson.topic?.code,
         topicName: activeLesson.topic?.name,
+        hasDurationConfig,
         criteriaCount: activeLesson.criteria?.length || 0,
         criteria: (activeLesson.criteria || []).map((c: any) => ({
           id: c.id,
@@ -231,12 +398,38 @@ export async function GET(req: NextRequest) {
           description: c.description,
           programLevel: c.programLevel || null,
           competencyGroup: c.competencyGroup || "Chung",
-          sortOrder: c.sortOrder
+          sortOrder: c.sortOrder,
+          hasReviewWarning: isGrade1FinEdu && c.code === "TC01S.01.0001.25",
+          reviewWarningText:
+            isGrade1FinEdu && c.code === "TC01S.01.0001.25"
+              ? "Nguồn KHỐI 1S ghi Mức 2 nhưng đánh dấu tại cột Vận dụng (giữ nguyên theo nguồn, cần rà soát)."
+              : null
         }))
+      },
+      stats: {
+        totalStudents: studentsData.length,
+        totCount,
+        hoanThanhCount,
+        canCoGangCount,
+        absentCount,
+        unassessedCount,
+        completedCount,
+        draftCount,
+        lockedCount
       },
       sessionStatus,
       isLocked: sessionStatus === "LOCKED",
-      students: studentsData
+      students: studentsData,
+      gradeEntries: studentsData.map((s: any) => ({
+        id: s.entryId,
+        studentId: s.studentId,
+        attendanceStatus: s.attendanceStatus,
+        evalResult: s.evalResult,
+        rubricDetails: s.rubricDetails,
+        teacherFeedback: s.teacherFeedback,
+        status: s.status,
+        updatedAt: s.updatedAt
+      }))
     });
   } catch (error: any) {
     console.error("[Universal Gradebook GET Error]:", error);
@@ -252,16 +445,17 @@ export async function POST(req: NextRequest) {
     }
 
     const body = await req.json();
-    const { 
-      assignmentId, 
-      lessonId, 
+    const {
+      action, // Optional: "LOCK" | "UNLOCK"
+      assignmentId,
+      lessonId,
       status = "DRAFT", // DRAFT | COMPLETED
       entries,
       actionReason
     } = body;
 
-    if (!assignmentId || !lessonId || !Array.isArray(entries)) {
-      return NextResponse.json({ error: "Dữ liệu yêu cầu không hợp lệ" }, { status: 400 });
+    if (!assignmentId || !lessonId) {
+      return NextResponse.json({ error: "Thiếu mã phân công (assignmentId) hoặc bài học (lessonId)" }, { status: 400 });
     }
 
     // 1. Verify Assignment & Scoping
@@ -269,7 +463,18 @@ export async function POST(req: NextRequest) {
       where: { id: assignmentId },
       include: {
         subject: { select: { id: true, code: true, name: true } },
-        class: { select: { id: true, className: true, grade: true } }
+        class: {
+          select: {
+            id: true,
+            className: true,
+            grade: true,
+            educationSystem: true,
+            students: {
+              where: { status: "ACTIVE" },
+              select: { id: true }
+            }
+          }
+        }
       }
     });
 
@@ -277,9 +482,76 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: "Không tìm thấy phân công lớp" }, { status: 404 });
     }
 
-    const isPrivileged = session.isFullAccess || session.isSuperAdmin || session.isHeadOfAcademic || session.isGDCS || session.isTTCM;
+    const isPrivileged =
+      session.isFullAccess ||
+      session.isSuperAdmin ||
+      session.isHeadOfAcademic ||
+      session.isGDCS ||
+      session.isTTCM;
+
+    // Handle LOCK / UNLOCK period action from Admin Monitor
+    if (action === "LOCK" || action === "UNLOCK") {
+      if (!isPrivileged) {
+        return NextResponse.json({ error: "Forbidden: Chỉ Quản trị viên / BGH mới có quyền khóa/mở khóa kỳ đánh giá" }, { status: 403 });
+      }
+
+      const targetStatus = action === "LOCK" ? "LOCKED" : "COMPLETED";
+      const existingLessonEntries = await (prisma as any).specialGradeEntry.findMany({
+        where: { assignmentId, lessonId }
+      });
+
+      if (existingLessonEntries.length > 0) {
+        await (prisma as any).specialGradeEntry.updateMany({
+          where: { assignmentId, lessonId },
+          data: {
+            status: targetStatus,
+            lastUpdatedById: session.userId,
+            updatedAt: new Date()
+          }
+        });
+      } else if (action === "LOCK" && assignment.class.students?.length > 0) {
+        // Create a lock record on the first student (with CHUA_DANH_GIA) so the lesson session is marked LOCKED without fabricating grades
+        const firstStudentId = assignment.class.students[0].id;
+        await (prisma as any).specialGradeEntry.create({
+          data: {
+            assignmentId,
+            studentId: firstStudentId,
+            lessonId,
+            evalScope: "LESSON",
+            evalResult: "CHUA_DANH_GIA",
+            rubricDetails: "{}",
+            teacherFeedback: "",
+            attendanceStatus: "PRESENT",
+            status: "LOCKED",
+            lastUpdatedById: session.userId
+          }
+        });
+      }
+
+      return NextResponse.json({
+        success: true,
+        isLocked: action === "LOCK",
+        sessionStatus: action === "LOCK" ? "LOCKED" : "COMPLETED",
+        message: action === "LOCK" ? "Đã khóa kỳ đánh giá bài học" : "Đã mở khóa kỳ đánh giá bài học"
+      });
+    }
+
+    if (!Array.isArray(entries)) {
+      return NextResponse.json({ error: "Dữ liệu danh sách đánh giá (entries) không hợp lệ" }, { status: 400 });
+    }
+
     if (!isPrivileged && session.teacherId && assignment.teacherId !== session.teacherId) {
       return NextResponse.json({ error: "Forbidden: Bạn không có quyền chấm điểm cho lớp này" }, { status: 403 });
+    }
+
+    // Check Grade 1 educationSystem S constraint
+    const classGrade = String(assignment.class.grade || "1").replace(/\D/g, "") || "1";
+    const eduSys = String(assignment.class.educationSystem || "HNS").toUpperCase().trim();
+    if (assignment.subject.code === "FIN_EDU" && classGrade === "1" && eduSys !== "HNS" && eduSys !== "S") {
+      return NextResponse.json(
+        { error: `Lớp ${assignment.class.className} thuộc hệ ${eduSys}, không thuộc phạm vi chương trình TC01S (Hệ đào tạo S).` },
+        { status: 400 }
+      );
     }
 
     // 2. Fetch lesson criteria count for summary calculation
@@ -300,9 +572,12 @@ export async function POST(req: NextRequest) {
     });
 
     if (existingLocked && !isPrivileged) {
-      return NextResponse.json({ 
-        error: "Phiên đánh giá bài học này đã bị KHÓA. Vui lòng liên hệ Quản trị viên hoặc BGH để mở khóa." 
-      }, { status: 423 });
+      return NextResponse.json(
+        {
+          error: "Phiên đánh giá bài học này đã bị KHÓA. Vui lòng liên hệ Quản trị viên hoặc BGH để mở khóa."
+        },
+        { status: 423 }
+      );
     }
 
     const savedEntries = [];
@@ -319,10 +594,24 @@ export async function POST(req: NextRequest) {
 
       if (!studentId) continue;
 
-      const rubricStr = JSON.stringify(rubricDetails || {});
-      const calculatedResult = attendanceStatus === "ABSENT" 
-        ? "VANG" 
-        : calculateLessonResult(rubricDetails, totalCriteria, explicitResult);
+      const cleanRubric: Record<string, string> = {};
+      Object.entries(rubricDetails || {}).forEach(([k, v]) => {
+        if (v && typeof v === "string" && v !== "CHUA_DANH_GIA") {
+          cleanRubric[k] = v;
+        }
+      });
+
+      const isAbsent = attendanceStatus === "ABSENT" || attendanceStatus === "VANG" || explicitResult === "VANG";
+      const rubricStr = JSON.stringify(cleanRubric);
+      const calculatedResult = isAbsent
+        ? "VANG"
+        : calculateLessonResult(cleanRubric, totalCriteria, explicitResult);
+
+      const hasActualInput =
+        isAbsent ||
+        calculatedResult !== "CHUA_DANH_GIA" ||
+        Object.keys(cleanRubric).length > 0 ||
+        Boolean(teacherFeedback && teacherFeedback.trim());
 
       const existingEntry = await (prisma as any).specialGradeEntry.findUnique({
         where: {
@@ -335,6 +624,13 @@ export async function POST(req: NextRequest) {
         }
       });
 
+      // Do not fabricate rows for completely untouched students when saving
+      if (!existingEntry && !hasActualInput) {
+        continue;
+      }
+
+      const rowStatus = !hasActualInput ? "NOT_STARTED" : status;
+
       let entry;
       if (existingEntry) {
         const hasResultChanged = existingEntry.evalResult !== calculatedResult;
@@ -346,8 +642,8 @@ export async function POST(req: NextRequest) {
             evalResult: calculatedResult,
             rubricDetails: rubricStr,
             teacherFeedback,
-            attendanceStatus,
-            status,
+            attendanceStatus: isAbsent ? "ABSENT" : "PRESENT",
+            status: rowStatus,
             lastUpdatedById: session.userId,
             updatedAt: new Date()
           }
@@ -359,10 +655,14 @@ export async function POST(req: NextRequest) {
             data: {
               gradeEntryId: entry.id,
               actorUserId: session.userId,
-              action: existingEntry.status === "DRAFT" && status === "COMPLETED" ? "SUBMIT_FINAL" : "UPDATE_SCORE",
+              action: existingEntry.status === "DRAFT" && rowStatus === "COMPLETED" ? "SUBMIT_FINAL" : "UPDATE_SCORE",
               oldValue: existingEntry.evalResult || "NONE",
               newValue: calculatedResult,
-              reason: actionReason || (hasResultChanged ? `Cập nhật kết quả: ${existingEntry.evalResult || 'Trống'} -> ${calculatedResult}` : "Lưu kết quả đánh giá")
+              reason:
+                actionReason ||
+                (hasResultChanged
+                  ? `Cập nhật kết quả: ${existingEntry.evalResult || "Trống"} -> ${calculatedResult}`
+                  : "Lưu kết quả đánh giá")
             }
           });
         }
@@ -376,8 +676,8 @@ export async function POST(req: NextRequest) {
             evalResult: calculatedResult,
             rubricDetails: rubricStr,
             teacherFeedback,
-            attendanceStatus,
-            status,
+            attendanceStatus: isAbsent ? "ABSENT" : "PRESENT",
+            status: rowStatus,
             lastUpdatedById: session.userId
           }
         });
@@ -386,7 +686,7 @@ export async function POST(req: NextRequest) {
           data: {
             gradeEntryId: entry.id,
             actorUserId: session.userId,
-            action: status === "COMPLETED" ? "SUBMIT_FINAL" : "CREATE_DRAFT",
+            action: rowStatus === "COMPLETED" ? "SUBMIT_FINAL" : "CREATE_DRAFT",
             oldValue: null,
             newValue: calculatedResult,
             reason: actionReason || "Đánh giá lần đầu"
@@ -399,7 +699,10 @@ export async function POST(req: NextRequest) {
 
     return NextResponse.json({
       success: true,
-      message: status === "COMPLETED" ? "Đã lưu và hoàn thành đánh giá bài học" : "Đã lưu nháp kết quả thành công",
+      message:
+        status === "COMPLETED"
+          ? "Đã lưu và hoàn thành đánh giá bài học"
+          : "Đã lưu nháp kết quả thành công",
       savedCount: savedEntries.length,
       sessionStatus: status
     });

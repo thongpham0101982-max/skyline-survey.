@@ -74,9 +74,9 @@ export function ExperienceResultSummary({
       <div className="p-4 rounded-xl border border-slate-200 bg-white shadow-2xs space-y-1">
         <div className="flex items-center justify-between text-slate-400">
           <span className="text-[11px] font-extrabold uppercase">Tiến độ lớp</span>
-          <TrendingUp className="w-4 h-4 text-indigo-600" />
+          <TrendingUp className="w-4 h-4 text-teal-800" />
         </div>
-        <div className="text-xl font-black text-indigo-700">
+        <div className="text-xl font-black text-teal-800">
           {completedRate}%
         </div>
         <div className="text-[11px] text-slate-500 font-medium">

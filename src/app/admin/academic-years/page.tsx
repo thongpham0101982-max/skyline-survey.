@@ -326,15 +326,15 @@ export default async function AcademicYearsPage() {
           <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
             <div>
               <label className="block text-sm font-semibold text-slate-700 mb-1.5">Tên Năm học *</label>
-              <input name="name" type="text" required placeholder="VD: 2026-2027" className="w-full border border-slate-200 rounded-xl px-4 py-2.5 text-sm focus:ring-2 focus:ring-indigo-100 focus:border-indigo-500 outline-none" />
+              <input name="name" type="text" required placeholder="VD: 2026-2027" className="w-full border border-slate-200 rounded-xl px-4 py-2.5 text-sm focus:ring-2 focus:ring-indigo-100 focus:border-teal-200 outline-none" />
             </div>
             <div>
               <label className="block text-sm font-semibold text-slate-700 mb-1.5">Ngày bắt đầu *</label>
-              <input name="startDate" type="date" required className="w-full border border-slate-200 rounded-xl px-4 py-2.5 text-sm focus:ring-2 focus:ring-indigo-100 focus:border-indigo-500 outline-none" />
+              <input name="startDate" type="date" required className="w-full border border-slate-200 rounded-xl px-4 py-2.5 text-sm focus:ring-2 focus:ring-indigo-100 focus:border-teal-200 outline-none" />
             </div>
             <div>
               <label className="block text-sm font-semibold text-slate-700 mb-1.5">Ngày kết thúc *</label>
-              <input name="endDate" type="date" required className="w-full border border-slate-200 rounded-xl px-4 py-2.5 text-sm focus:ring-2 focus:ring-indigo-100 focus:border-indigo-500 outline-none" />
+              <input name="endDate" type="date" required className="w-full border border-slate-200 rounded-xl px-4 py-2.5 text-sm focus:ring-2 focus:ring-indigo-100 focus:border-teal-200 outline-none" />
             </div>
             <div className="flex items-end">
               <button type="submit" className="w-full bg-[#48BFE3] text-white font-bold py-2.5 px-4 rounded-xl hover:bg-[#009085] transition-colors shadow-md shadow-indigo-500/20">
@@ -347,7 +347,7 @@ export default async function AcademicYearsPage() {
               <span>Chủ đề năm học <span className="text-xs font-normal text-slate-500">(Khẩu hiệu / Thông điệp hành động cho Học sinh Sky-Line)</span></span>
               <span className="text-[11px] font-medium text-teal-600 bg-teal-50 px-2 py-0.5 rounded-md border border-teal-100">* Sẽ tự động khởi tạo 5 trụ cột chuẩn Sky-Line</span>
             </label>
-            <input name="theme" type="text" placeholder="VD: Khát vọng vươn tầm - Vững bước hội nhập toàn cầu" className="w-full border border-slate-200 rounded-xl px-4 py-2.5 text-sm focus:ring-2 focus:ring-indigo-100 focus:border-indigo-500 outline-none" />
+            <input name="theme" type="text" placeholder="VD: Khát vọng vươn tầm - Vững bước hội nhập toàn cầu" className="w-full border border-slate-200 rounded-xl px-4 py-2.5 text-sm focus:ring-2 focus:ring-indigo-100 focus:border-teal-200 outline-none" />
           </div>
         </form>
       </div>

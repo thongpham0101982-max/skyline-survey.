@@ -77,22 +77,22 @@ export function CampusManagerClient({ initialCampuses, gdcsUsers = [] }: any) {
             <div className="space-y-2">
               <label className="block text-xs font-black text-slate-500 uppercase tracking-widest ml-1">Mã Cơ sở *</label>
               <input type="text" value={form.code} onChange={e => setForm({...form, code: e.target.value.toUpperCase()})}
-                placeholder="VD: CS1" className="w-full border border-slate-200 rounded-xl px-4 py-3 text-sm font-bold outline-none focus:border-indigo-500 focus:ring-4 focus:ring-indigo-50 transition-all" />
+                placeholder="VD: CS1" className="w-full border border-slate-200 rounded-xl px-4 py-3 text-sm font-bold outline-none focus:border-teal-200 focus:ring-4 focus:ring-indigo-50 transition-all" />
             </div>
             <div className="space-y-2">
               <label className="block text-xs font-black text-slate-500 uppercase tracking-widest ml-1">Tên Cơ sở *</label>
               <input type="text" value={form.name} onChange={e => setForm({...form, name: e.target.value})}
-                placeholder="VD: Skyline Central" className="w-full border border-slate-200 rounded-xl px-4 py-3 text-sm font-bold outline-none focus:border-indigo-500 focus:ring-4 focus:ring-indigo-50 transition-all" />
+                placeholder="VD: Skyline Central" className="w-full border border-slate-200 rounded-xl px-4 py-3 text-sm font-bold outline-none focus:border-teal-200 focus:ring-4 focus:ring-indigo-50 transition-all" />
             </div>
             <div className="space-y-2">
               <label className="block text-xs font-black text-slate-500 uppercase tracking-widest ml-1">Tên đầy đủ</label>
               <input type="text" value={form.address} onChange={e => setForm({...form, address: e.target.value})}
-                placeholder="Tên đầy đủ" className="w-full border border-slate-200 rounded-xl px-4 py-3 text-sm font-bold outline-none focus:border-indigo-500 focus:ring-4 focus:ring-indigo-50 transition-all" />
+                placeholder="Tên đầy đủ" className="w-full border border-slate-200 rounded-xl px-4 py-3 text-sm font-bold outline-none focus:border-teal-200 focus:ring-4 focus:ring-indigo-50 transition-all" />
             </div>
             <div className="space-y-2">
               <label className="block text-xs font-black text-slate-500 uppercase tracking-widest ml-1">Người phụ trách</label>
               <select value={form.managerId} onChange={e => setForm({...form, managerId: e.target.value})}
-                className="w-full border border-slate-200 rounded-xl px-4 py-3 text-sm font-bold outline-none bg-white focus:border-indigo-500 focus:ring-4 focus:ring-indigo-50 transition-all">
+                className="w-full border border-slate-200 rounded-xl px-4 py-3 text-sm font-bold outline-none bg-white focus:border-teal-200 focus:ring-4 focus:ring-indigo-50 transition-all">
                 <option value="">-- Chưa phân công --</option>
                 {gdcsUsers.map((u: any) => (
                   <option key={u.id} value={u.id}>{u.fullName} ({u.email})</option>
@@ -126,7 +126,7 @@ export function CampusManagerClient({ initialCampuses, gdcsUsers = [] }: any) {
               {filtered.map((c: any) => (
                 <tr key={c.id} className="hover:bg-[#48BFE3]/10/30 transition-colors group">
                   <td className="p-2 p-2 border border-slate-200">
-                    <span className="text-indigo-700 font-black text-xs tracking-wider text-xs font-semibold">
+                    <span className="text-teal-800 font-black text-xs tracking-wider text-xs font-semibold">
                       {c.campusCode}
                     </span>
                   </td>
@@ -142,7 +142,7 @@ export function CampusManagerClient({ initialCampuses, gdcsUsers = [] }: any) {
                   <td className="p-2 p-2 border border-slate-200">
                     <div className="font-semibold text-slate-700 text-sm">
                       {c.manager ? (
-                        <span className="text-indigo-700 font-bold text-xs text-xs font-semibold">
+                        <span className="text-teal-800 font-bold text-xs text-xs font-semibold">
                           {c.manager.fullName}
                         </span>
                       ) : (
@@ -159,7 +159,7 @@ export function CampusManagerClient({ initialCampuses, gdcsUsers = [] }: any) {
                   <td className="p-2 p-2 text-right border border-slate-200">
                     <div className="flex items-center justify-end gap-3 opacity-100 transition-all ">
                       <button onClick={() => { setEditingId(c.id); setForm({ code: c.campusCode, name: c.campusName, address: c.address || "", managerId: c.managerId || "" }); setShowAddForm(false); }}
-                        className="p-2.5 text-[#48BFE3] hover:bg-white hover:shadow-md rounded-xl transition-all border border-transparent hover:border-indigo-100">
+                        className="p-2.5 text-[#48BFE3] hover:bg-white hover:shadow-md rounded-xl transition-all border border-transparent hover:border-teal-200">
                         <Edit2 className="w-4 h-4" />
                       </button>
                       <button onClick={() => handleDelete(c.id, c.campusName)}

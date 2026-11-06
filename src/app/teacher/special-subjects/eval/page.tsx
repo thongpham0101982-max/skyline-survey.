@@ -77,7 +77,7 @@ interface StudentGradeRow {
 const SPECIAL_SUBJECTS = [
   { code: "CXXH", name: "Giáo dục Cảm xúc - Xã hội", grades: ["1", "2", "3", "4", "5", "6", "7", "8", "9"], icon: Heart, color: "#00A19A", badge: "Khối 1–9" },
   { code: "GDGT", name: "Giáo dục giới tính", grades: ["6", "7", "8", "9"], icon: Shield, color: "#E11D48", badge: "Khối 6–9" },
-  { code: "FIN_EDU", name: "Giáo dục tài chính cá nhân", grades: ["4", "5", "6", "7", "8", "9"], icon: Coins, color: "#16A34A", badge: "Khối 4–9" },
+  { code: "FIN_EDU", name: "Giáo dục tài chính cá nhân", grades: ["1", "2", "3", "4", "5", "6", "7", "8", "9"], icon: Coins, color: "#16A34A", badge: "Khối 1–9" },
   { code: "GDHN", name: "Giáo dục hướng nghiệp", grades: ["6", "7", "8", "9", "10", "11", "12"], icon: Compass, color: "#E67E22", badge: "Khối 6–12" },
 ];
 
@@ -85,6 +85,7 @@ function UniversalSpecialSubjectEvaluationContent() {
   const searchParams = useSearchParams();
   const querySubject = searchParams.get("subject");
   const queryClassId = searchParams.get("classId");
+  const queryAssignmentId = searchParams.get("assignmentId");
   const [selectedSubjectCode, setSelectedSubjectCode] = useState<string>(
     querySubject ? querySubject.toUpperCase() : "CXXH"
   );
@@ -98,6 +99,7 @@ function UniversalSpecialSubjectEvaluationContent() {
   // Filters
   const [selectedCampusId, setSelectedCampusId] = useState<string>("ALL");
   const [selectedGrade, setSelectedGrade] = useState<string>("ALL");
+  const [selectedTopicId, setSelectedTopicId] = useState<string>("ALL");
 
   // Lessons
   const [lessons, setLessons] = useState<Lesson[]>([]);
@@ -235,8 +237,9 @@ function UniversalSpecialSubjectEvaluationContent() {
     if (filteredAssignments.length > 0) {
       const stillValid = filteredAssignments.some(a => a.id === selectedAssignmentId);
       if (!stillValid) {
+        const byAssignQuery = queryAssignmentId ? filteredAssignments.find(a => a.id === queryAssignmentId) : null;
         const byClassQuery = queryClassId ? filteredAssignments.find(a => a.classId === queryClassId) : null;
-        setSelectedAssignmentId((byClassQuery || filteredAssignments[0]).id);
+        setSelectedAssignmentId((byAssignQuery || byClassQuery || filteredAssignments[0]).id);
       }
     } else {
       setSelectedAssignmentId("");
@@ -244,7 +247,7 @@ function UniversalSpecialSubjectEvaluationContent() {
       setLessons([]);
       setCurrentLesson(null);
     }
-  }, [filteredAssignments, selectedAssignmentId, queryClassId]);
+  }, [filteredAssignments, selectedAssignmentId, queryClassId, queryAssignmentId]);
 
   // Current active assignment
   const activeAssignment = useMemo(() => {
@@ -264,11 +267,13 @@ function UniversalSpecialSubjectEvaluationContent() {
       try {
         const grade = activeAssignment.class?.grade || "6";
         const subjCode = activeAssignment.subject?.code || selectedSubjectCode;
-        const res = await fetch(`/api/special-subjects/structure?subjectCode=${subjCode}&grade=${grade}`);
+        const classIdParam = activeAssignment.classId || activeAssignment.class?.id || "";
+        const res = await fetch(`/api/special-subjects/structure?subjectCode=${subjCode}&grade=${grade}&classId=${classIdParam}`);
         const json = await res.json();
         if (!cancelled && res.ok) {
           const lList = json.lessons || [];
           setLessons(lList);
+          setSelectedTopicId("ALL");
           if (lList.length > 0) {
             setSelectedLessonId(lList[0].id);
             setCurrentLesson(lList[0]);
@@ -286,6 +291,29 @@ function UniversalSpecialSubjectEvaluationContent() {
       cancelled = true;
     };
   }, [activeAssignment?.id, selectedSubjectCode]);
+
+  const availableTopics = useMemo(() => {
+    const map = new Map<string, { id: string; name: string; code: string; count: number }>();
+    lessons.forEach(l => {
+      const tId = l.topicId || l.topicName || "DEFAULT";
+      if (!map.has(tId)) {
+        map.set(tId, {
+          id: tId,
+          name: l.topicName || `Chủ đề Khối ${l.grade}`,
+          code: l.topicCode || "",
+          count: 1
+        });
+      } else {
+        map.get(tId)!.count++;
+      }
+    });
+    return Array.from(map.values());
+  }, [lessons]);
+
+  const filteredLessons = useMemo(() => {
+    if (selectedTopicId === "ALL") return lessons;
+    return lessons.filter(l => (l.topicId || l.topicName) === selectedTopicId);
+  }, [lessons, selectedTopicId]);
 
   // 3. Fetch Gradebook entries
   const fetchGradebookData = async () => {
@@ -371,12 +399,14 @@ function UniversalSpecialSubjectEvaluationContent() {
     setHasUnsavedChanges(true);
   };
 
-  // Attendance toggle
-  const handleAttendanceToggle = (studentId: string) => {
+  // Attendance toggle / select (1 = PRESENT, 0 = ABSENT)
+  const handleAttendanceToggle = (studentId: string, explicitVal?: "1" | "0") => {
     if (isLocked) return;
     setStudents(prev => prev.map(s => {
       if (s.studentId !== studentId) return s;
-      const newStatus = s.attendanceStatus === "PRESENT" ? "ABSENT" : "PRESENT";
+      const newStatus = explicitVal
+        ? (explicitVal === "0" ? "ABSENT" : "PRESENT")
+        : (s.attendanceStatus === "PRESENT" ? "ABSENT" : "PRESENT");
       const totalCrit = currentLesson?.criteria?.length || 3;
       const newResult = newStatus === "ABSENT" ? "VANG" : calculateOverall(s.rubricDetails, totalCrit);
       return {
@@ -611,10 +641,10 @@ function UniversalSpecialSubjectEvaluationContent() {
       {/* 2. Top Cascading Selector Toolbar: Năm học -> Cơ sở -> Môn -> Khối -> Lớp */}
       <div className="max-w-7xl mx-auto px-4 sm:px-6 pt-5">
         <div className="bg-white rounded-2xl p-4 shadow-sm border border-slate-200/80 mb-5">
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3.5">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-3.5">
             {/* Campus Selector (Only assigned campuses) */}
             <div>
-              <label className="block text-xs font-semibold text-slate-500 uppercase tracking-wider mb-1">
+              <label className="block text-xs font-semibold text-slate-600 mb-1">
                 1. Cơ sở Sky-Line
               </label>
               <select
@@ -640,14 +670,14 @@ function UniversalSpecialSubjectEvaluationContent() {
 
             {/* Grade Selector (Only assigned grades) */}
             <div>
-              <label className="block text-xs font-semibold text-slate-500 uppercase tracking-wider mb-1">
+              <label className="block text-xs font-semibold text-slate-600 mb-1 tabular-nums">
                 2. Khối lớp ({assignedGradeBadge})
               </label>
               <select
                 value={selectedGrade}
                 onChange={e => setSelectedGrade(e.target.value)}
                 disabled={availableGrades.length === 0}
-                className="w-full text-xs font-semibold bg-slate-50 border border-slate-300 rounded-xl px-3 py-2 text-slate-800 focus:outline-none focus:ring-2 focus:ring-teal-500 disabled:opacity-50"
+                className="w-full text-xs font-semibold bg-slate-50 border border-slate-300 rounded-xl px-3 py-2 text-slate-800 focus:outline-none focus:ring-2 focus:ring-teal-500 disabled:opacity-50 tabular-nums"
               >
                 {availableGrades.length === 0 ? (
                   <option value="ALL">Chưa có khối phân công</option>
@@ -666,31 +696,61 @@ function UniversalSpecialSubjectEvaluationContent() {
 
             {/* Class Selector (Only assigned classes) */}
             <div>
-              <label className="block text-xs font-semibold text-slate-500 uppercase tracking-wider mb-1">
+              <label className="block text-xs font-semibold text-slate-600 mb-1 tabular-nums">
                 3. Lớp được phân công
               </label>
               <select
                 value={selectedAssignmentId}
                 onChange={e => setSelectedAssignmentId(e.target.value)}
                 disabled={filteredAssignments.length === 0}
-                className="w-full text-xs font-semibold bg-slate-50 border border-slate-300 rounded-xl px-3 py-2 text-slate-800 focus:outline-none focus:ring-2 focus:ring-teal-500 disabled:opacity-50"
+                className="w-full text-xs font-semibold bg-slate-50 border border-slate-300 rounded-xl px-3 py-2 text-slate-800 focus:outline-none focus:ring-2 focus:ring-teal-500 disabled:opacity-50 tabular-nums"
               >
                 {filteredAssignments.length === 0 ? (
                   <option value="">Không có lớp phân công</option>
                 ) : (
                   filteredAssignments.map(a => (
                     <option key={a.id} value={a.id}>
-                      Lớp {a.class?.className} ({a.class?.campus?.campusName || 'Sky-Line'})
+                      Lớp {a.class?.className} (Hệ {a.class?.educationSystem || "HNS"} • {a.class?.campus?.campusCode || "Sky-Line"})
                     </option>
                   ))
                 )}
               </select>
             </div>
 
-            {/* Lesson Selector */}
+            {/* Topic Selector (4 Chủ đề cho Khối 1S) */}
             <div>
-              <label className="block text-xs font-semibold text-slate-500 uppercase tracking-wider mb-1">
-                4. Bài học ({lessons.length} bài)
+              <label className="block text-xs font-semibold text-slate-600 mb-1 tabular-nums">
+                4. Chủ đề ({availableTopics.length} chủ đề)
+              </label>
+              <select
+                value={selectedTopicId}
+                onChange={e => {
+                  const nextTopic = e.target.value;
+                  setSelectedTopicId(nextTopic);
+                  const firstInTopic = nextTopic === "ALL"
+                    ? lessons[0]
+                    : lessons.find(l => (l.topicId || l.topicName) === nextTopic);
+                  if (firstInTopic) {
+                    setSelectedLessonId(firstInTopic.id);
+                    setCurrentLesson(firstInTopic);
+                  }
+                }}
+                disabled={availableTopics.length === 0}
+                className="w-full text-xs font-semibold bg-slate-50 border border-slate-300 rounded-xl px-3 py-2 text-slate-800 focus:outline-none focus:ring-2 focus:ring-teal-500 disabled:opacity-50"
+              >
+                <option value="ALL">Tất cả chủ đề ({availableTopics.length})</option>
+                {availableTopics.map(t => (
+                  <option key={t.id} value={t.id}>
+                    {t.name} ({t.count} bài)
+                  </option>
+                ))}
+              </select>
+            </div>
+
+            {/* Lesson Selector (15 Bài học cho Khối 1S) */}
+            <div>
+              <label className="block text-xs font-semibold text-slate-600 mb-1 tabular-nums">
+                5. Bài học ({filteredLessons.length}/{lessons.length} bài)
               </label>
               <select
                 value={selectedLessonId}
@@ -699,12 +759,12 @@ function UniversalSpecialSubjectEvaluationContent() {
                   const l = lessons.find(item => item.id === e.target.value);
                   if (l) setCurrentLesson(l);
                 }}
-                disabled={lessons.length === 0}
-                className="w-full text-xs font-semibold bg-slate-50 border border-slate-300 rounded-xl px-3 py-2 text-slate-800 focus:outline-none focus:ring-2 focus:ring-teal-500 disabled:opacity-50"
+                disabled={filteredLessons.length === 0}
+                className="w-full text-xs font-semibold bg-slate-50 border border-slate-300 rounded-xl px-3 py-2 text-slate-800 focus:outline-none focus:ring-2 focus:ring-teal-500 disabled:opacity-50 tabular-nums"
               >
-                {lessons.map(l => (
+                {filteredLessons.map(l => (
                   <option key={l.id} value={l.id}>
-                    Bài {l.periodIndex}: {l.lessonName.substring(0, 32)}... ({l.criteriaCount} TC)
+                    {/^\d+\./.test(l.lessonName) ? `Bài ${l.lessonName}` : `Bài ${l.periodIndex}: ${l.lessonName}`} ({l.criteriaCount} TC)
                   </option>
                 ))}
               </select>
@@ -714,14 +774,16 @@ function UniversalSpecialSubjectEvaluationContent() {
           {/* Current Lesson Navigation Bar */}
           {currentLesson && (
             <div className="mt-4 pt-3.5 border-t border-slate-100 flex flex-wrap items-center justify-between gap-3">
-              <div className="flex items-center space-x-2">
+              <div className="flex flex-wrap items-center gap-2">
                 <span className="px-2.5 py-1 rounded-lg text-xs font-bold bg-teal-50 text-teal-700 border border-teal-200">
                   {currentLesson.topicName || `Chủ đề Khối ${currentLesson.grade}`}
                 </span>
                 <span className="text-sm font-bold text-slate-800">
-                  Bài {currentLesson.periodIndex}: {currentLesson.lessonName}
+                  {/^\d+\./.test(currentLesson.lessonName)
+                    ? `Bài ${currentLesson.lessonName}`
+                    : `Bài ${currentLesson.periodIndex}: ${currentLesson.lessonName}`}
                 </span>
-                <span className="text-xs px-2 py-0.5 rounded-full bg-slate-100 text-slate-600 font-semibold">
+                <span className="text-xs px-2 py-0.5 rounded-full bg-slate-100 text-slate-600 font-semibold tabular-nums">
                   {currentLesson.criteriaCount} tiêu chuẩn đánh giá
                 </span>
               </div>
@@ -735,7 +797,7 @@ function UniversalSpecialSubjectEvaluationContent() {
                   <ChevronLeft className="w-3.5 h-3.5" />
                   <span>Bài trước</span>
                 </button>
-                <span className="text-xs text-slate-500 font-medium">
+                <span className="text-xs text-slate-500 font-medium tabular-nums">
                   {currentLessonIndex + 1} / {lessons.length}
                 </span>
                 <button
@@ -752,50 +814,52 @@ function UniversalSpecialSubjectEvaluationContent() {
         </div>
 
         {/* 3. Session Status & Metrics Banner */}
-        <div className="grid grid-cols-2 sm:grid-cols-6 gap-3 mb-5">
+        <div className="grid grid-cols-2 sm:grid-cols-6 gap-3 mb-5 tabular-nums">
           <div className="bg-white p-3 rounded-xl border border-slate-200 shadow-sm flex items-center justify-between">
             <div>
-              <p className="text-[10px] font-bold text-slate-400 uppercase">Sĩ số lớp</p>
+              <p className="text-[11px] font-bold text-slate-500">Sĩ số lớp</p>
               <p className="text-base font-extrabold text-slate-800">{stats.total}</p>
             </div>
             <GraduationCap className="w-5 h-5 text-slate-400" />
           </div>
           <div className="bg-emerald-50 p-3 rounded-xl border border-emerald-200 shadow-sm flex items-center justify-between">
             <div>
-              <p className="text-[10px] font-bold text-emerald-600 uppercase">Đạt Tốt (T)</p>
-              <p className="text-base font-extrabold text-emerald-700">{stats.tot}</p>
+              <p className="text-[11px] font-bold text-emerald-700">Hoàn thành tốt (T)</p>
+              <p className="text-base font-extrabold text-emerald-800">{stats.tot}</p>
             </div>
             <Sparkles className="w-5 h-5 text-emerald-500" />
           </div>
-          <div className="bg-blue-50 p-3 rounded-xl border border-blue-200 shadow-sm flex items-center justify-between">
+          <div className="bg-teal-50 p-3 rounded-xl border border-teal-200 shadow-sm flex items-center justify-between">
             <div>
-              <p className="text-[10px] font-bold text-blue-600 uppercase">Hoàn thành (H)</p>
-              <p className="text-base font-extrabold text-blue-700">{stats.ht}</p>
+              <p className="text-[11px] font-bold text-teal-700">Hoàn thành (H)</p>
+              <p className="text-base font-extrabold text-teal-800">{stats.ht}</p>
             </div>
-            <CheckCircle2 className="w-5 h-5 text-blue-500" />
+            <CheckCircle2 className="w-5 h-5 text-teal-600" />
           </div>
           <div className="bg-amber-50 p-3 rounded-xl border border-amber-200 shadow-sm flex items-center justify-between">
             <div>
-              <p className="text-[10px] font-bold text-amber-600 uppercase">Cần cố gắng (C)</p>
-              <p className="text-base font-extrabold text-amber-700">{stats.ccg}</p>
+              <p className="text-[11px] font-bold text-amber-700">Cần cố gắng (C)</p>
+              <p className="text-base font-extrabold text-amber-800">{stats.ccg}</p>
             </div>
             <AlertCircle className="w-5 h-5 text-amber-500" />
           </div>
           <div className="bg-slate-100 p-3 rounded-xl border border-slate-200 shadow-sm flex items-center justify-between">
             <div>
-              <p className="text-[10px] font-bold text-slate-500 uppercase">Vắng mặt</p>
-              <p className="text-base font-extrabold text-slate-700">{stats.vang}</p>
+              <p className="text-[11px] font-bold text-slate-600">Chưa nhập / Vắng</p>
+              <p className="text-base font-extrabold text-slate-700">
+                {stats.un} <span className="text-xs font-normal text-rose-600">{stats.vang > 0 ? `(+${stats.vang} vắng)` : ""}</span>
+              </p>
             </div>
             <UserX className="w-5 h-5 text-slate-400" />
           </div>
-          <div className="bg-purple-50 p-3 rounded-xl border border-purple-200 shadow-sm flex items-center justify-between">
+          <div className="bg-white p-3 rounded-xl border border-slate-200 shadow-sm flex items-center justify-between">
             <div>
-              <p className="text-[10px] font-bold text-purple-600 uppercase">Trạng thái sổ</p>
-              <p className="text-xs font-bold text-purple-800">
-                {isLocked ? "ĐÃ KHÓA" : sessionStatus === "COMPLETED" ? "ĐÃ NỘP" : "BẢN NHÁP"}
+              <p className="text-[11px] font-bold text-slate-500">Trạng thái sổ</p>
+              <p className={`text-xs font-bold ${isLocked ? "text-rose-700" : sessionStatus === "COMPLETED" ? "text-emerald-700" : "text-teal-700"}`}>
+                {isLocked ? "ĐÃ KHÓA" : sessionStatus === "COMPLETED" ? "ĐÃ NỘP" : "ĐANG MỞ (NHÁP)"}
               </p>
             </div>
-            {isLocked ? <Lock className="w-5 h-5 text-purple-600" /> : <Unlock className="w-5 h-5 text-teal-600" />}
+            {isLocked ? <Lock className="w-5 h-5 text-rose-600" /> : <Unlock className="w-5 h-5 text-teal-600" />}
           </div>
         </div>
 
@@ -940,20 +1004,22 @@ function UniversalSpecialSubjectEvaluationContent() {
                         <td className="py-2.5 px-4 font-bold text-slate-800 bg-white whitespace-nowrap">
                           {st.studentName}
                         </td>
-                        {/* Attendance Toggle */}
+                        {/* Điểm danh (1 = Có mặt, 0 = Vắng) */}
                         <td className="py-2.5 px-2 text-center whitespace-nowrap">
-                          <button
-                            onClick={() => handleAttendanceToggle(st.studentId)}
+                          <select
+                            value={isAbsent ? "0" : "1"}
+                            onChange={e => handleAttendanceToggle(st.studentId, e.target.value as "1" | "0")}
                             disabled={isLocked}
-                            className={`p-1.5 rounded-lg text-xs font-semibold transition ${
+                            className={`px-2 py-1 rounded-lg text-xs font-bold border text-center tabular-nums cursor-pointer focus:outline-none focus:ring-2 focus:ring-teal-500 disabled:opacity-60 ${
                               isAbsent 
-                                ? "bg-rose-100 text-rose-700 hover:bg-rose-200" 
-                                : "bg-emerald-100 text-emerald-700 hover:bg-emerald-200"
+                                ? "bg-rose-50 text-rose-700 border-rose-200" 
+                                : "bg-emerald-50 text-emerald-700 border-emerald-200"
                             }`}
-                            title={isAbsent ? "Học sinh vắng (Bấm để đổi thành Có mặt)" : "Học sinh có mặt (Bấm để đổi thành Vắng)"}
+                            title="Điểm danh: 1 = Có mặt, 0 = Vắng"
                           >
-                            {isAbsent ? "VẮNG" : "CÓ"}
-                          </button>
+                            <option value="1">1</option>
+                            <option value="0">0</option>
+                          </select>
                         </td>
 
                         {/* Dynamic Criteria Evaluation Cells */}
@@ -1087,17 +1153,22 @@ function UniversalSpecialSubjectEvaluationContent() {
                       </p>
                     </div>
 
-                    <button
-                      onClick={() => handleAttendanceToggle(st.studentId)}
-                      disabled={isLocked}
-                      className={`px-3 py-1.5 rounded-xl text-xs font-bold transition ${
-                        isAbsent 
-                          ? "bg-rose-100 text-rose-700 border border-rose-200" 
-                          : "bg-emerald-100 text-emerald-800 border border-emerald-200"
-                      }`}
-                    >
-                      {isAbsent ? "TRẠNG THÁI: VẮNG HỌC" : "TRẠNG THÁI: CÓ MẶT"}
-                    </button>
+                    <div className="flex items-center space-x-2">
+                      <span className="text-xs font-bold text-slate-600">Điểm danh:</span>
+                      <select
+                        value={isAbsent ? "0" : "1"}
+                        onChange={e => handleAttendanceToggle(st.studentId, e.target.value as "1" | "0")}
+                        disabled={isLocked}
+                        className={`px-3 py-1.5 rounded-xl text-xs font-bold border tabular-nums cursor-pointer ${
+                          isAbsent 
+                            ? "bg-rose-50 text-rose-700 border-rose-200" 
+                            : "bg-emerald-50 text-emerald-800 border-emerald-200"
+                        }`}
+                      >
+                        <option value="1">1 (Có mặt)</option>
+                        <option value="0">0 (Vắng mặt)</option>
+                      </select>
+                    </div>
                   </div>
 
                   {/* Criteria Cards */}

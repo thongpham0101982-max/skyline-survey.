@@ -59,8 +59,8 @@ import {
 
 // CHUẨN MÀU CƠ SỞ THEO YÊU CẦU:
 // CS1: Xanh Sky-Line (#48BFE3)
-// CS2: Xanh Sky-Line pha màu tím (#6C5CE7)
-// CS3: Màu tím than đậm (#2E1065)
+// CS2: Xanh Sky-Line pha màu tím (#00A19A)
+// CS3: Màu tím than đậm (#003B3A)
 // CS4: Màu vàng đất (#D97706)
 // CS5: Màu xám xanh (#475569)
 const CAMPUS_COLOR_MAP: Record<
@@ -80,19 +80,19 @@ const CAMPUS_COLOR_MAP: Record<
     code: "CS2",
     name: "Cơ sở 2 (Sky-Line Riverside)",
     shortName: "CS2 • Riverside",
-    color: "#4F46E5",
-    bg: "bg-indigo-50",
-    border: "border-indigo-200",
-    text: "text-indigo-700"
+    color: "#00736E",
+    bg: "bg-teal-50",
+    border: "border-teal-200",
+    text: "text-teal-800"
   },
   CS3: {
     code: "CS3",
     name: "Cơ sở 3 (Sky-Line Hill)",
     shortName: "CS3 • Hill",
-    color: "#7C3AED",
-    bg: "bg-purple-50",
-    border: "border-purple-200",
-    text: "text-purple-700"
+    color: "#003B3A",
+    bg: "bg-slate-100",
+    border: "border-slate-300",
+    text: "text-[#003B3A]"
   },
   CS4: {
     code: "CS4",
@@ -146,8 +146,8 @@ const getCampusInfo = (nameOrCode: string) => {
 const LEVEL_COLORS: Record<string, string> = {
   "Mầm non": "#f43f5e",
   "Tiểu học": "#48BFE3",
-  "THCS": "#6C5CE7",
-  "THPT": "#2E1065",
+  "THCS": "#00A19A",
+  "THPT": "#003B3A",
   "Khác": "#94a3b8"
 }
 
@@ -614,14 +614,14 @@ export default function AdminDashboard() {
           value={finalMetrics.totalClasses}
           unit="Lớp hoạt động"
           icon={Layers}
-          colorTheme="indigo"
+          colorTheme="teal"
           trend="up"
           trendValue={`+${finalMetrics.newEnrollmentsCount || 0} nhập mới`}
           comparisonText={`Phổ thông: ${finalMetrics.generalClasses || 0} lớp • Mầm non: ${finalMetrics.preschoolClasses || 0} lớp`}
           subMetrics={[
             { label: "Nhập mới", value: finalMetrics.newEnrollmentsCount || 0, colorClass: "text-emerald-600" },
             { label: "Chuyển đi", value: finalMetrics.transferCount || 0, colorClass: "text-rose-600" },
-            { label: "Đổi lớp", value: finalMetrics.changeClassCount || 0, colorClass: "text-[#6C5CE7]" }
+            { label: "Đổi lớp", value: finalMetrics.changeClassCount || 0, colorClass: "text-[#00A19A]" }
           ]}
           href="/admin/student-transfers"
           hrefLabel="Quản lý lưu chuyển HS"
@@ -633,7 +633,7 @@ export default function AdminDashboard() {
           value={testingData.totalCandidates.toLocaleString("vi-VN")}
           unit="Hồ sơ KSĐV"
           icon={Award}
-          colorTheme="violet"
+          colorTheme="teal"
           trend={testingData.inputPassRate >= 70 ? "up" : "neutral"}
           trendValue={`${testingData.inputPassRate}% đạt/nhập học`}
           comparisonText={`${testingData.examsSummary.totalExams} kỳ thi • ${testingData.examsSummary.totalAchievements} giải thưởng`}
@@ -686,7 +686,7 @@ export default function AdminDashboard() {
           progress={Math.min(100, Math.max(advisoryData.consultationCoverageRate, advisoryData.goalCoverageRate))}
           subMetrics={[
             { label: "HS lập MT", value: advisoryData.studentsWithGoals, colorClass: "text-[#00A19A]" },
-            { label: "HS đã TV", value: advisoryData.consultedStudents, colorClass: "text-[#6C5CE7]" }
+            { label: "HS đã TV", value: advisoryData.consultedStudents, colorClass: "text-[#00A19A]" }
           ]}
           href="/admin/co-van-hoc-tap?tab=consultations"
           hrefLabel="Điều hành Cố vấn học tập"
@@ -843,7 +843,7 @@ export default function AdminDashboard() {
           title="Phân bố Sĩ số theo Cơ sở & Cấp học"
           subtitle="Tỷ trọng phân bổ học sinh thực tế giữa các cơ sở và bậc đào tạo"
           icon={Building2}
-          iconBgClass="bg-[#6C5CE7]/10 text-[#6C5CE7] border-[#6C5CE7]/20"
+          iconBgClass="bg-[#00A19A]/10 text-[#00A19A] border-[#00A19A]/20"
           unit="Học sinh (HS / %)"
           lastUpdated={lastUpdated}
           detailHref="/admin/classes"
@@ -889,15 +889,15 @@ export default function AdminDashboard() {
             distributionTab === "CAMPUS"
               ? [
                   { label: "CS1", color: "#48BFE3" },
-                  { label: "CS2", color: "#6C5CE7" },
-                  { label: "CS3", color: "#2E1065" },
+                  { label: "CS2", color: "#00A19A" },
+                  { label: "CS3", color: "#003B3A" },
                   { label: "CS4", color: "#D97706" },
                   { label: "CS5", color: "#475569" }
                 ]
               : [
                   { label: "Tiểu học", color: "#48BFE3" },
-                  { label: "THCS", color: "#6C5CE7" },
-                  { label: "THPT", color: "#2E1065" },
+                  { label: "THCS", color: "#00A19A" },
+                  { label: "THPT", color: "#003B3A" },
                   { label: "Mầm non", color: "#f43f5e" }
                 ]
           }
@@ -1091,8 +1091,8 @@ export default function AdminDashboard() {
                             : entry.level === "Tiểu học"
                             ? "#48BFE3"
                             : entry.level === "THCS"
-                            ? "#6C5CE7"
-                            : "#2E1065"
+                            ? "#00A19A"
+                            : "#003B3A"
                         return <Cell key={`cell-grade-${index}`} fill={color} />
                       })}
                     </Bar>
@@ -1111,7 +1111,7 @@ export default function AdminDashboard() {
           title="Phân tích Khảo thí Đầu vào & Kỳ thi Học sinh"
           subtitle={`Tổng hợp ${testingData.totalCandidates} hồ sơ khảo sát đầu vào và ${testingData.examsSummary.totalExams} kỳ thi năng lực`}
           icon={Award}
-          iconBgClass="bg-purple-50 text-[#2E1065] border-purple-200/70"
+          iconBgClass="bg-slate-50 text-[#003B3A] border-slate-200"
           unit="Học sinh (HS)"
           lastUpdated={lastUpdated}
           detailHref="/admin/xet-duyet-ket-qua"
@@ -1180,10 +1180,10 @@ export default function AdminDashboard() {
               </Link>
               <Link
                 href="/admin/input-assessments"
-                className="p-2.5 rounded-xl bg-indigo-50/50 hover:bg-indigo-50 border border-indigo-200/60 transition-colors"
+                className="p-2.5 rounded-xl bg-teal-50/50 hover:bg-teal-50 border border-teal-200/60 transition-colors"
               >
-                <span className="text-[10px] text-indigo-700 uppercase block">Bài chấm KSĐV</span>
-                <strong className="text-base font-bold font-mono text-indigo-700">
+                <span className="text-[10px] text-teal-800 uppercase block">Bài chấm KSĐV</span>
+                <strong className="text-base font-bold font-mono text-teal-800">
                   {testingData.assessmentScoresCount.toLocaleString("vi-VN")}
                 </strong>
               </Link>
@@ -1276,7 +1276,7 @@ export default function AdminDashboard() {
                       type="monotone"
                       dataKey="passRate"
                       name="Tỷ lệ đạt ≥ 5.0 (%)"
-                      stroke="#6C5CE7"
+                      stroke="#00A19A"
                       strokeWidth={2.5}
                       dot={{ r: 3.5 }}
                     />
@@ -1425,10 +1425,10 @@ export default function AdminDashboard() {
               </Link>
               <Link
                 href="/admin/co-van-hoc-tap?tab=consultations"
-                className="p-2.5 rounded-xl bg-indigo-50/50 hover:bg-indigo-50 border border-indigo-200/60 transition-colors"
+                className="p-2.5 rounded-xl bg-teal-50/50 hover:bg-teal-50 border border-teal-200/60 transition-colors"
               >
-                <span className="text-[10px] text-indigo-700 uppercase block">Tổng buổi tư vấn</span>
-                <strong className="text-base font-bold font-mono text-[#6C5CE7]">
+                <span className="text-[10px] text-teal-800 uppercase block">Tổng buổi tư vấn</span>
+                <strong className="text-base font-bold font-mono text-[#00A19A]">
                   {advisoryData.totalConsultations} buổi
                 </strong>
               </Link>
@@ -1485,7 +1485,7 @@ export default function AdminDashboard() {
           legendItems={[
             { label: "Tiết mở dự giờ", color: "#48BFE3", value: obsData.totalSlots },
             { label: "Phiếu đã chấm", color: "#00A19A", value: obsData.totalEvaluations },
-            { label: "GV có định mức", color: "#6C5CE7", value: obsData.teacherTargetsCount }
+            { label: "GV có định mức", color: "#00A19A", value: obsData.teacherTargetsCount }
           ]}
         >
           <div className="space-y-4">
@@ -1506,7 +1506,7 @@ export default function AdminDashboard() {
                     />
                     <Legend verticalAlign="top" height={28} iconType="circle" wrapperStyle={{ fontSize: "11px" }} />
                     <Bar dataKey="slots" name="Số tiết mở" fill="#48BFE3" radius={[4, 4, 0, 0]} barSize={20} />
-                    <Bar dataKey="registrations" name="Lượt đăng ký" fill="#6C5CE7" radius={[4, 4, 0, 0]} barSize={20} />
+                    <Bar dataKey="registrations" name="Lượt đăng ký" fill="#00A19A" radius={[4, 4, 0, 0]} barSize={20} />
                     <Bar dataKey="evaluations" name="Phiếu hoàn tất" fill="#00A19A" radius={[4, 4, 0, 0]} barSize={20} />
                   </BarChart>
                 </ResponsiveContainer>
@@ -1561,10 +1561,10 @@ export default function AdminDashboard() {
               </Link>
               <Link
                 href="/admin/du-gio-gvnn"
-                className="p-2.5 rounded-xl bg-indigo-50/50 hover:bg-indigo-50 border border-indigo-200/60 transition-colors"
+                className="p-2.5 rounded-xl bg-teal-50/50 hover:bg-teal-50 border border-teal-200/60 transition-colors"
               >
-                <span className="text-[10px] text-indigo-700 uppercase block">Phiếu hoàn thành</span>
-                <strong className="text-base font-bold font-mono text-[#6C5CE7]">
+                <span className="text-[10px] text-teal-800 uppercase block">Phiếu hoàn thành</span>
+                <strong className="text-base font-bold font-mono text-[#00A19A]">
                   {obsData.totalEvaluations} phiếu
                 </strong>
               </Link>
@@ -1696,8 +1696,8 @@ export default function AdminDashboard() {
           }
           legendItems={[
             { label: "Khối 1", color: "#48BFE3", value: finalMetrics.entryLevelStats?.grade1?.total || 0 },
-            { label: "Khối 6", color: "#6C5CE7", value: finalMetrics.entryLevelStats?.grade6?.total || 0 },
-            { label: "Khối 10", color: "#2E1065", value: finalMetrics.entryLevelStats?.grade10?.total || 0 }
+            { label: "Khối 6", color: "#00A19A", value: finalMetrics.entryLevelStats?.grade6?.total || 0 },
+            { label: "Khối 10", color: "#003B3A", value: finalMetrics.entryLevelStats?.grade10?.total || 0 }
           ]}
         >
           <div className="space-y-4">
@@ -1736,16 +1736,16 @@ export default function AdminDashboard() {
               </div>
 
               {/* KHỐI 6 */}
-              <div className="bg-indigo-50/40 rounded-xl border border-indigo-200/70 p-3.5 space-y-2">
+              <div className="bg-teal-50/40 rounded-xl border border-teal-200/70 p-3.5 space-y-2">
                 <div className="flex items-center justify-between">
-                  <span className="px-2 py-0.5 bg-[#6C5CE7] text-white rounded-md text-[11px] font-bold">
+                  <span className="px-2 py-0.5 bg-[#00A19A] text-white rounded-md text-[11px] font-bold">
                     Khối 6
                   </span>
-                  <strong className="text-sm font-bold font-mono text-[#6C5CE7]">
+                  <strong className="text-sm font-bold font-mono text-[#00A19A]">
                     {finalMetrics.entryLevelStats?.grade6?.total || 0} HS
                   </strong>
                 </div>
-                <div className="space-y-1 text-[11px] text-slate-600 pt-1 border-t border-indigo-100">
+                <div className="space-y-1 text-[11px] text-slate-600 pt-1 border-t border-teal-100">
                   <div className="flex justify-between">
                     <span>Qua Khảo sát:</span>
                     <strong className="font-mono text-slate-800">
@@ -1762,16 +1762,16 @@ export default function AdminDashboard() {
               </div>
 
               {/* KHỐI 10 */}
-              <div className="bg-purple-50/40 rounded-xl border border-purple-200/70 p-3.5 space-y-2">
+              <div className="bg-slate-50/70 rounded-xl border border-slate-200 p-3.5 space-y-2">
                 <div className="flex items-center justify-between">
-                  <span className="px-2 py-0.5 bg-[#2E1065] text-white rounded-md text-[11px] font-bold">
+                  <span className="px-2 py-0.5 bg-[#003B3A] text-white rounded-md text-[11px] font-bold">
                     Khối 10
                   </span>
-                  <strong className="text-sm font-bold font-mono text-[#2E1065]">
+                  <strong className="text-sm font-bold font-mono text-[#003B3A]">
                     {finalMetrics.entryLevelStats?.grade10?.total || 0} HS
                   </strong>
                 </div>
-                <div className="space-y-1 text-[11px] text-slate-600 pt-1 border-t border-purple-100">
+                <div className="space-y-1 text-[11px] text-slate-600 pt-1 border-t border-slate-200">
                   <div className="flex justify-between">
                     <span>Qua Khảo sát:</span>
                     <strong className="font-mono text-slate-800">
@@ -1957,8 +1957,8 @@ export default function AdminDashboard() {
                               st.rawGrade === "1"
                                 ? "bg-teal-100 text-[#00736E]"
                                 : st.rawGrade === "6"
-                                ? "bg-indigo-100 text-[#6C5CE7]"
-                                : "bg-purple-100 text-[#2E1065]"
+                                ? "bg-teal-100 text-[#00A19A]"
+                                : "bg-slate-100 text-[#003B3A]"
                             }`}
                           >
                             {st.grade}

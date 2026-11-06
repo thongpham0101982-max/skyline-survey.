@@ -358,7 +358,7 @@ export function TeacherWorkspaceOverviewPanel() {
                     <HeartHandshake className="w-3.5 h-3.5 text-rose-500" />
                     <span>6. Hiệu quả hỗ trợ HS</span>
                   </span>
-                  <span className="text-xs font-black text-purple-700 bg-purple-50 px-2 py-0.5 rounded-lg border border-purple-200">
+                  <span className="text-xs font-black text-teal-800 bg-teal-50 px-2 py-0.5 rounded-lg border border-teal-200">
                     {progressAndKPI.studentSupportEffectiveness.supportCoverageRate}%
                   </span>
                 </div>

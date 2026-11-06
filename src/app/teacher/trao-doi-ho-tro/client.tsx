@@ -310,7 +310,7 @@ export default function SubjectTeacherSupportClient({ user }: Props) {
   return (
     <div className="min-h-screen bg-slate-50/70 pb-12">
       {toastMessage && (
-        <div className="fixed bottom-5 right-5 z-50 flex items-center gap-2 rounded-xl bg-[#6E3D89] px-4 py-3 text-sm font-semibold text-white shadow-lg">
+        <div className="fixed bottom-5 right-5 z-50 flex items-center gap-2 rounded-xl bg-[#003B3A] px-4 py-3 text-sm font-semibold text-white shadow-lg">
           <CheckCircle2 className="h-4 w-4 shrink-0" />
           <span>{toastMessage}</span>
         </div>
@@ -321,7 +321,7 @@ export default function SubjectTeacherSupportClient({ user }: Props) {
         <div className="mx-auto max-w-7xl">
           <div className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
             <div>
-              <div className="flex items-center gap-2 text-xs font-semibold uppercase tracking-wider text-[#6E3D89]">
+              <div className="flex items-center gap-2 text-xs font-semibold uppercase tracking-wider text-[#003B3A]">
                 <span>Sổ Giáo viên</span>
                 <span>/</span>
                 <span>Trao đổi & Hỗ trợ Học sinh (GVBM)</span>
@@ -351,7 +351,7 @@ export default function SubjectTeacherSupportClient({ user }: Props) {
               <select
                 value={selectedSubjectId}
                 onChange={(e) => setSelectedSubjectId(e.target.value)}
-                className="rounded-lg border border-purple-200 bg-purple-50/60 px-3 py-1.5 text-xs font-semibold text-[#6E3D89]"
+                className="rounded-lg border border-teal-200 bg-teal-50/60 px-3 py-1.5 text-xs font-semibold text-[#003B3A]"
               >
                 <option value="">Tất cả môn phân công ({distinctSubjects.length})</option>
                 {distinctSubjects.map((s) => (
@@ -415,7 +415,7 @@ export default function SubjectTeacherSupportClient({ user }: Props) {
 
           <div className="rounded-xl border border-slate-200 bg-white p-3 shadow-xs">
             <div className="text-[11px] font-medium text-slate-500">Môn phân công</div>
-            <div className="mt-1.5 text-xl font-bold tabular-nums text-[#6E3D89]">
+            <div className="mt-1.5 text-xl font-bold tabular-nums text-[#003B3A]">
               {distinctSubjects.length}
             </div>
             <div className="text-[10px] text-slate-400">Hợp lệ hiệu lực</div>
@@ -429,9 +429,9 @@ export default function SubjectTeacherSupportClient({ user }: Props) {
             <div className="text-[10px] text-slate-400">Trao đổi môn học</div>
           </div>
 
-          <div className="rounded-xl border border-purple-100 bg-white p-3 shadow-xs">
+          <div className="rounded-xl border border-teal-200 bg-white p-3 shadow-xs">
             <div className="text-[11px] font-medium text-slate-500">Chưa đọc</div>
-            <div className="mt-1.5 text-xl font-bold tabular-nums text-[#6E3D89]">
+            <div className="mt-1.5 text-xl font-bold tabular-nums text-[#003B3A]">
               {kpis.unreadMessagesCount ?? 0}
             </div>
             <div className="text-[10px] text-slate-400">Tin nhắn mới</div>
@@ -473,9 +473,9 @@ export default function SubjectTeacherSupportClient({ user }: Props) {
             <div className="text-[10px] text-slate-400">Sau hỗ trợ</div>
           </div>
 
-          <div className="rounded-xl border border-purple-200 bg-purple-50/40 p-3 shadow-xs">
-            <div className="text-[11px] font-semibold text-[#6E3D89]">NPS Cá nhân</div>
-            <div className="mt-1.5 text-xl font-bold tabular-nums text-[#6E3D89]">
+          <div className="rounded-xl border border-teal-200 bg-teal-50/40 p-3 shadow-xs">
+            <div className="text-[11px] font-semibold text-[#003B3A]">NPS Cá nhân</div>
+            <div className="mt-1.5 text-xl font-bold tabular-nums text-[#003B3A]">
               {kpis.npsGvbmEligible && kpis.npsGvbm !== null ? kpis.npsGvbm : 'Ẩn (<5)'}
             </div>
             <div className="text-[10px] text-slate-500">{kpis.npsGvbmCount || 0} mẫu ẩn danh</div>
@@ -495,7 +495,7 @@ export default function SubjectTeacherSupportClient({ user }: Props) {
               onClick={() => setActiveTab('INBOX')}
               className={`inline-flex items-center gap-2 rounded-xl px-4 py-2 text-xs font-bold transition ${
                 activeTab === 'INBOX'
-                  ? 'bg-[#6E3D89] text-white'
+                  ? 'bg-[#003B3A] text-white'
                   : 'bg-white text-slate-600 hover:bg-slate-100'
               }`}
             >
@@ -507,7 +507,7 @@ export default function SubjectTeacherSupportClient({ user }: Props) {
               onClick={() => setActiveTab('SUPPORT_PLANS')}
               className={`inline-flex items-center gap-2 rounded-xl px-4 py-2 text-xs font-bold transition ${
                 activeTab === 'SUPPORT_PLANS'
-                  ? 'bg-[#6E3D89] text-white'
+                  ? 'bg-[#003B3A] text-white'
                   : 'bg-white text-slate-600 hover:bg-slate-100'
               }`}
             >
@@ -519,7 +519,7 @@ export default function SubjectTeacherSupportClient({ user }: Props) {
               onClick={() => setActiveTab('QUALITY')}
               className={`inline-flex items-center gap-2 rounded-xl px-4 py-2 text-xs font-bold transition ${
                 activeTab === 'QUALITY'
-                  ? 'bg-[#6E3D89] text-white'
+                  ? 'bg-[#003B3A] text-white'
                   : 'bg-white text-slate-600 hover:bg-slate-100'
               }`}
             >
@@ -546,7 +546,7 @@ export default function SubjectTeacherSupportClient({ user }: Props) {
                 onClick={() => setSelectedTopic('')}
                 className={`rounded-full px-2.5 py-1 text-[11px] font-semibold ${
                   selectedTopic === ''
-                    ? 'bg-[#6E3D89] text-white'
+                    ? 'bg-[#003B3A] text-white'
                     : 'bg-white text-slate-600 hover:bg-slate-100'
                 }`}
               >
@@ -558,7 +558,7 @@ export default function SubjectTeacherSupportClient({ user }: Props) {
                   onClick={() => setSelectedTopic(tp.code)}
                   className={`rounded-full px-2.5 py-1 text-[11px] font-semibold ${
                     selectedTopic === tp.code
-                      ? 'bg-[#6E3D89] text-white'
+                      ? 'bg-[#003B3A] text-white'
                       : 'bg-white text-slate-600 hover:bg-slate-100'
                   }`}
                 >
@@ -582,7 +582,7 @@ export default function SubjectTeacherSupportClient({ user }: Props) {
                       value={searchQuery}
                       onChange={(e) => setSearchQuery(e.target.value)}
                       placeholder="Tìm theo tên HS, mã HS, lớp, chủ đề..."
-                      className="w-full rounded-xl border border-slate-200 bg-slate-50 py-2 pl-9 pr-3 text-xs focus:border-[#6E3D89] focus:bg-white focus:outline-none"
+                      className="w-full rounded-xl border border-slate-200 bg-slate-50 py-2 pl-9 pr-3 text-xs focus:border-[#003B3A] focus:bg-white focus:outline-none"
                     />
                   </div>
                 </div>
@@ -610,8 +610,8 @@ export default function SubjectTeacherSupportClient({ user }: Props) {
                             setSelectedThreadId(item.id);
                             setMobileShowDetail(true);
                           }}
-                          className={`cursor-pointer p-3.5 transition hover:bg-purple-50/40 ${
-                            isSelected ? 'border-l-4 border-l-[#6E3D89] bg-purple-50/50' : ''
+                          className={`cursor-pointer p-3.5 transition hover:bg-teal-50/40 ${
+                            isSelected ? 'border-l-4 border-l-[#003B3A] bg-teal-50/50' : ''
                           }`}
                         >
                           <div className="flex items-start justify-between gap-2">
@@ -621,7 +621,7 @@ export default function SubjectTeacherSupportClient({ user }: Props) {
                               </span>
                               <p className="text-[11px] text-slate-500">
                                 Lớp {item.className} • Môn:{' '}
-                                <strong className="text-[#6E3D89]">{item.subjectName}</strong>
+                                <strong className="text-[#003B3A]">{item.subjectName}</strong>
                               </p>
                             </div>
                             <span
@@ -631,7 +631,7 @@ export default function SubjectTeacherSupportClient({ user }: Props) {
                             </span>
                           </div>
                           <div className="mt-1.5 flex flex-wrap items-center gap-1.5 text-[10px]">
-                            <span className="rounded bg-purple-100 px-2 py-0.5 font-semibold text-[#6E3D89]">
+                            <span className="rounded bg-teal-50 px-2 py-0.5 font-semibold text-[#003B3A]">
                               {item.topicLabel}
                             </span>
                             {item.assignmentId && (
@@ -689,7 +689,7 @@ export default function SubjectTeacherSupportClient({ user }: Props) {
                               <span className="rounded bg-slate-100 px-2 py-0.5">
                                 Lớp: {threadDetail.classInfo?.className}
                               </span>
-                              <span className="rounded bg-purple-100 px-2 py-0.5 font-bold text-[#6E3D89]">
+                              <span className="rounded bg-teal-50 px-2 py-0.5 font-bold text-[#003B3A]">
                                 Môn: {threadDetail.subjectInfo?.name || 'Bộ môn'}
                               </span>
                               <span className="rounded bg-teal-50 px-2 py-0.5 font-mono text-teal-800">
@@ -715,7 +715,7 @@ export default function SubjectTeacherSupportClient({ user }: Props) {
                             <div
                               className={`max-w-[85%] rounded-2xl px-4 py-2.5 text-xs ${
                                 isMine
-                                  ? 'bg-[#6E3D89] text-white'
+                                  ? 'bg-[#003B3A] text-white'
                                   : 'border border-slate-200 bg-white text-slate-800'
                               }`}
                             >
@@ -745,7 +745,7 @@ export default function SubjectTeacherSupportClient({ user }: Props) {
                         value={replyText}
                         onChange={(e) => setReplyText(e.target.value)}
                         placeholder="Nhập phản hồi chuyên môn cho Phụ huynh..."
-                        className="w-full rounded-xl border border-slate-200 p-3 text-xs focus:border-[#6E3D89] focus:outline-none"
+                        className="w-full rounded-xl border border-slate-200 p-3 text-xs focus:border-[#003B3A] focus:outline-none"
                       />
                       <div className="mt-2 flex flex-wrap items-center justify-between gap-2">
                         <label className="inline-flex items-center gap-1.5 text-xs text-slate-600">
@@ -753,14 +753,14 @@ export default function SubjectTeacherSupportClient({ user }: Props) {
                             type="checkbox"
                             checked={shareWithGvcn}
                             onChange={(e) => setShareWithGvcn(e.target.checked)}
-                            className="rounded border-slate-300 text-[#6E3D89]"
+                            className="rounded border-slate-300 text-[#003B3A]"
                           />
                           <span>Đồng thời chia sẻ hội thoại này với GVCN lớp để phối hợp</span>
                         </label>
                         <button
                           type="submit"
                           disabled={sendingReply || !replyText.trim()}
-                          className="inline-flex items-center gap-1.5 rounded-xl bg-[#6E3D89] px-4 py-2 text-xs font-bold text-white hover:bg-[#5B3172] disabled:opacity-50"
+                          className="inline-flex items-center gap-1.5 rounded-xl bg-[#003B3A] px-4 py-2 text-xs font-bold text-white hover:bg-[#5B3172] disabled:opacity-50"
                         >
                           <Send className="h-3.5 w-3.5" />
                           {sendingReply ? 'Đang gửi...' : 'Gửi phản hồi'}
@@ -821,7 +821,7 @@ export default function SubjectTeacherSupportClient({ user }: Props) {
                           </td>
                           <td className="px-4 py-3">
                             <div className="font-semibold text-slate-800">Lớp {c.className}</div>
-                            <div className="text-[11px] text-[#6E3D89]">{c.subjectName}</div>
+                            <div className="text-[11px] text-[#003B3A]">{c.subjectName}</div>
                           </td>
                           <td className="max-w-md px-4 py-3">
                             <div className="font-semibold text-slate-900">{c.title}</div>
@@ -836,7 +836,7 @@ export default function SubjectTeacherSupportClient({ user }: Props) {
                               </p>
                             )}
                             {c.verifiedConclusion && (
-                              <p className="mt-0.5 text-[11px] font-medium text-[#6E3D89]">
+                              <p className="mt-0.5 text-[11px] font-medium text-[#003B3A]">
                                 <strong>Kết luận:</strong> {c.verifiedConclusion}
                               </p>
                             )}
@@ -870,7 +870,7 @@ export default function SubjectTeacherSupportClient({ user }: Props) {
                                   syncToStudentSupportRecord: true,
                                 });
                               }}
-                              className="rounded-lg bg-[#6E3D89] px-3 py-1.5 text-[11px] font-semibold text-white hover:bg-[#5B3172]"
+                              className="rounded-lg bg-[#003B3A] px-3 py-1.5 text-[11px] font-semibold text-white hover:bg-[#5B3172]"
                             >
                               Ghi nhận tiến độ
                             </button>
@@ -888,8 +888,8 @@ export default function SubjectTeacherSupportClient({ user }: Props) {
         {/* TAB B4: CHẤT LƯỢNG PHẢN HỒI (Ẩn danh PHHS tuyệt đối) */}
         {activeTab === 'QUALITY' && (
           <div className="mt-4 space-y-4">
-            <div className="rounded-2xl border border-purple-200 bg-purple-50/60 p-4 text-xs text-slate-700">
-              <div className="font-bold text-[#6E3D89]">
+            <div className="rounded-2xl border border-teal-200 bg-teal-50/60 p-4 text-xs text-slate-700">
+              <div className="font-bold text-[#003B3A]">
                 Chính sách Bảo mật Danh tính & Sử dụng Chỉ số Chất lượng (Mục B4)
               </div>
               <ul className="mt-1 list-disc space-y-0.5 pl-5">
@@ -910,11 +910,11 @@ export default function SubjectTeacherSupportClient({ user }: Props) {
                 </h3>
                 {npsGvbmMetrics?.isEligibleToPublish ? (
                   <div className="mt-4 space-y-3 text-xs">
-                    <div className="flex items-center justify-between rounded-xl bg-purple-50 p-3">
+                    <div className="flex items-center justify-between rounded-xl bg-teal-50 p-3">
                       <span className="font-semibold text-slate-700">
                         Điểm NPS Bộ môn (Thang -100 đến +100):
                       </span>
-                      <span className="text-lg font-extrabold text-[#6E3D89]">
+                      <span className="text-lg font-extrabold text-[#003B3A]">
                         {npsGvbmMetrics.npsScore}
                       </span>
                     </div>
@@ -983,7 +983,7 @@ export default function SubjectTeacherSupportClient({ user }: Props) {
                         className="rounded-xl border border-slate-100 bg-slate-50 p-3 text-xs"
                       >
                         <div className="flex items-center justify-between text-[10px] text-slate-500">
-                          <span className="font-semibold text-[#6E3D89]">
+                          <span className="font-semibold text-[#003B3A]">
                             Phản hồi ẩn danh • Môn: {c.subjectName || 'Bộ môn'}
                           </span>
                           <span>Điểm tiêu chí TB: {c.criteriaAverage}/5.0</span>
@@ -1083,7 +1083,7 @@ export default function SubjectTeacherSupportClient({ user }: Props) {
                   onChange={(e) =>
                     setNewMsgForm({ ...newMsgForm, createSupportPlan: e.target.checked })
                   }
-                  className="rounded border-slate-300 text-[#6E3D89]"
+                  className="rounded border-slate-300 text-[#003B3A]"
                 />
                 <span className="font-semibold text-slate-700">
                   Đồng thời lập Kế hoạch Hỗ trợ Học sinh (B3)
@@ -1100,7 +1100,7 @@ export default function SubjectTeacherSupportClient({ user }: Props) {
                 </button>
                 <button
                   type="submit"
-                  className="rounded-xl bg-[#6E3D89] px-4 py-2 font-bold text-white hover:bg-[#5B3172]"
+                  className="rounded-xl bg-[#003B3A] px-4 py-2 font-bold text-white hover:bg-[#5B3172]"
                 >
                   Gửi trao đổi
                 </button>
@@ -1191,7 +1191,7 @@ export default function SubjectTeacherSupportClient({ user }: Props) {
                       syncToStudentSupportRecord: e.target.checked,
                     })
                   }
-                  className="rounded border-slate-300 text-[#6E3D89]"
+                  className="rounded border-slate-300 text-[#003B3A]"
                 />
                 <span className="text-slate-700">
                   Đồng bộ kết luận xác minh vào Hồ sơ Hỗ trợ Học tập (LearningSupportTarget)
@@ -1208,7 +1208,7 @@ export default function SubjectTeacherSupportClient({ user }: Props) {
                 </button>
                 <button
                   type="submit"
-                  className="rounded-xl bg-[#6E3D89] px-4 py-2 font-bold text-white hover:bg-[#5B3172]"
+                  className="rounded-xl bg-[#003B3A] px-4 py-2 font-bold text-white hover:bg-[#5B3172]"
                 >
                   Lưu & Đồng bộ
                 </button>

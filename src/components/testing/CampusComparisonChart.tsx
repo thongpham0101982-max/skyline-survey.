@@ -61,7 +61,7 @@ export function CampusComparisonChart({
                     </span>
                   </td>
                   <td className="py-2.5 px-3 text-center font-mono text-slate-800">{c.passRate.toFixed(1)}%</td>
-                  <td className="py-2.5 px-3 text-center font-mono text-purple-700 font-semibold">
+                  <td className="py-2.5 px-3 text-center font-mono text-teal-800 font-semibold">
                     {c.excellentRate.toFixed(1)}%
                   </td>
                   <td className="py-2.5 px-3 text-center font-mono text-slate-500">{c.stdDev.toFixed(2)}</td>

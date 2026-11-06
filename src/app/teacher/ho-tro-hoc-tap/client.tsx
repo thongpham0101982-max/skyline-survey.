@@ -407,7 +407,7 @@ const getSubjectBadgeStyle = (subjectName: string) => {
     return "bg-amber-50 text-amber-800 border-amber-200 hover:bg-amber-100/80";
   }
   if (sub.includes("ngữ văn") || sub.includes("văn")) {
-    return "bg-purple-50 text-purple-800 border-purple-200 hover:bg-purple-100/80";
+    return "bg-teal-50 text-teal-800 border-teal-200 hover:bg-teal-100/80";
   }
   if (sub.includes("anh") || sub.includes("tav") || sub.includes("english")) {
     return "bg-teal-50 text-teal-800 border-teal-200 hover:bg-teal-100/80";
@@ -1965,7 +1965,7 @@ const [evalSelectedMonth, setEvalSelectedMonth] = useState<string>("Tháng 9")
         </div>
         <div>
           <h1 className="text-3xl font-extrabold text-slate-900 tracking-tight flex items-center gap-2">
-            <FileText className="h-9 w-9 text-indigo-600" />
+            <FileText className="h-9 w-9 text-teal-800" />
             Phụ đạo, bồi dưỡng Học sinh
           </h1>
           <p className="text-slate-500 mt-1">
@@ -2019,17 +2019,17 @@ const [evalSelectedMonth, setEvalSelectedMonth] = useState<string>("Tháng 9")
 
         return (
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-2">
-            <div className="bg-gradient-to-br from-indigo-50 to-indigo-100/50 border border-indigo-200/60 p-5 rounded-2xl shadow-xs transition-all hover:scale-[1.02] duration-300">
+            <div className="bg-gradient-to-br from-teal-600 to-emerald-600/50 border border-teal-200/60 p-5 rounded-2xl shadow-xs transition-all hover:scale-[1.02] duration-300">
               <div className="flex justify-between items-start">
                 <div>
-                  <p className="text-[11px] font-bold text-indigo-600 uppercase tracking-wider">Học sinh phụ trách</p>
-                  <p className="text-3xl font-black text-indigo-900 mt-1">{teacherTargets.length}</p>
+                  <p className="text-[11px] font-bold text-teal-800 uppercase tracking-wider">Học sinh phụ trách</p>
+                  <p className="text-3xl font-black text-teal-800 mt-1">{teacherTargets.length}</p>
                 </div>
-                <div className="p-2.5 bg-indigo-500/10 rounded-xl border border-indigo-500/20 text-indigo-600">
+                <div className="p-2.5 bg-teal-500/10 rounded-xl border border-teal-500/20 text-teal-800">
                   <Users className="h-5 w-5" />
                 </div>
               </div>
-              <p className="text-[10px] text-indigo-500 mt-2 font-medium">Tổng số học sinh được phân công hoặc chủ nhiệm</p>
+              <p className="text-[10px] text-teal-700 mt-2 font-medium">Tổng số học sinh được phân công hoặc chủ nhiệm</p>
             </div>
 
             <div className="bg-gradient-to-br from-emerald-50 to-emerald-100/50 border border-emerald-200/60 p-5 rounded-2xl shadow-xs transition-all hover:scale-[1.02] duration-300">
@@ -2082,7 +2082,7 @@ const [evalSelectedMonth, setEvalSelectedMonth] = useState<string>("Tháng 9")
           onClick={() => setActiveSubTab("commitments")}
           className={`relative flex items-center justify-between gap-3 px-4 py-3.5 rounded-2xl transition-all cursor-pointer text-left ${
             activeSubTab === "commitments"
-              ? "bg-gradient-to-r from-amber-500 via-amber-600 to-orange-600 text-white shadow-lg shadow-amber-500/25 scale-[1.01] ring-2 ring-amber-400/40"
+              ? "bg-gradient-to-r from-amber-500 via-amber-600 to-amber-600 text-white shadow-lg shadow-amber-500/25 scale-[1.01] ring-2 ring-amber-400/40"
               : "bg-white/90 hover:bg-white text-slate-700 hover:text-slate-900 border border-slate-200/70 hover:border-amber-300 shadow-2xs hover:shadow-xs"
           }`}
         >
@@ -2207,15 +2207,15 @@ const [evalSelectedMonth, setEvalSelectedMonth] = useState<string>("Tháng 9")
           onClick={() => setActiveSubTab("psychology")}
           className={`relative flex items-center justify-between gap-3 px-4 py-3.5 rounded-2xl transition-all cursor-pointer text-left ${
             activeSubTab === "psychology"
-              ? "bg-gradient-to-r from-purple-950 via-[#3730a3] to-indigo-900 text-white shadow-lg shadow-purple-900/25 scale-[1.01] ring-2 ring-purple-400/40"
-              : "bg-white/90 hover:bg-white text-slate-700 hover:text-slate-900 border border-slate-200/70 hover:border-purple-300 shadow-2xs hover:shadow-xs"
+              ? "bg-gradient-to-r from-teal-600 via-[#3730a3] to-emerald-600 text-white shadow-lg shadow-purple-900/25 scale-[1.01] ring-2 ring-purple-400/40"
+              : "bg-white/90 hover:bg-white text-slate-700 hover:text-slate-900 border border-slate-200/70 hover:border-teal-400 shadow-2xs hover:shadow-xs"
           }`}
         >
           <div className="flex items-center gap-3">
             <div className={`p-2.5 rounded-xl transition-colors shrink-0 ${
               activeSubTab === "psychology"
                 ? "bg-white/20 text-white shadow-inner"
-                : "bg-purple-100 text-purple-800"
+                : "bg-teal-50 text-teal-800"
             }`}>
               <Brain className="h-4 w-4" />
             </div>
@@ -2228,7 +2228,7 @@ const [evalSelectedMonth, setEvalSelectedMonth] = useState<string>("Tháng 9")
                 </span>
               </div>
               <p className={`text-[10px] font-medium leading-none mt-1 ${
-                activeSubTab === "psychology" ? "text-purple-100" : "text-slate-500"
+                activeSubTab === "psychology" ? "text-teal-700" : "text-slate-500"
               }`}>
                 Theo dõi & tiến trình tham vấn lớp chủ nhiệm
               </p>
@@ -2236,8 +2236,8 @@ const [evalSelectedMonth, setEvalSelectedMonth] = useState<string>("Tháng 9")
           </div>
           <span className={`px-2.5 py-0.5 rounded-full text-[11px] font-black shrink-0 ${
             activeSubTab === "psychology"
-              ? "bg-white text-purple-950 shadow-sm"
-              : "bg-purple-100 text-purple-900 border border-purple-200"
+              ? "bg-white text-teal-800 shadow-sm"
+              : "bg-teal-50 text-teal-800 border border-teal-200"
           }`}>
             {rolePsychologicalStudents.length}
           </span>
@@ -2480,7 +2480,7 @@ const [evalSelectedMonth, setEvalSelectedMonth] = useState<string>("Tháng 9")
       {/* Main Student Target List Taught/Assigned */}
       {loading ? (
         <div className="flex justify-center py-20">
-          <RefreshCw className="h-8 w-8 text-indigo-600 animate-spin" />
+          <RefreshCw className="h-8 w-8 text-teal-800 animate-spin" />
         </div>
       ) : activeSubTab === "psychology" ? (
         <PsychologicalEvaluationLogTab
@@ -2504,7 +2504,7 @@ const [evalSelectedMonth, setEvalSelectedMonth] = useState<string>("Tháng 9")
                 type="button"
                 disabled={selectedEvalTargetIds.length === 0}
                 onClick={handleOpenBatchEvaluation}
-                className="bg-indigo-600 disabled:bg-slate-300 hover:bg-indigo-700 text-white font-bold py-2 px-4 rounded-lg shadow-sm transition-all cursor-pointer"
+                className="bg-[#003B3A] disabled:bg-slate-300 hover:bg-[#003B3A] text-white font-bold py-2 px-4 rounded-lg shadow-sm transition-all cursor-pointer"
               >
                 Đánh giá nhiều Học sinh
               </button>
@@ -2558,7 +2558,7 @@ const [evalSelectedMonth, setEvalSelectedMonth] = useState<string>("Tháng 9")
                         const allIds = filteredTargets.map((t: any) => t.id);
                         setSelectedEvalTargetIds(allIds);
                       } else setSelectedEvalTargetIds([]);
-                    }} className="rounded border-slate-300 text-indigo-600 focus:ring-indigo-500"/>
+                    }} className="rounded border-slate-300 text-teal-800 focus:ring-indigo-500"/>
                   </th>
                   <th className="px-4 py-3 text-left text-xs font-bold text-slate-500 uppercase tracking-wider">TT</th>
                   <th className="px-4 py-3 text-left text-xs font-bold text-slate-500 uppercase tracking-wider">Mã HS</th>
@@ -2609,13 +2609,13 @@ const [evalSelectedMonth, setEvalSelectedMonth] = useState<string>("Tháng 9")
                                 if (e.target.checked) setSelectedEvalTargetIds([...selectedEvalTargetIds, t.id]);
                                 else setSelectedEvalTargetIds(selectedEvalTargetIds.filter(id => id !== t.id));
                               }} 
-                              className="rounded border-slate-300 text-indigo-600 focus:ring-indigo-500"
+                              className="rounded border-slate-300 text-teal-800 focus:ring-indigo-500"
                             />
                         </td>
                         <td className="px-4 py-4 whitespace-nowrap text-slate-500 font-medium">{index + 1}</td>
                         <td className="px-4 py-4 whitespace-nowrap text-slate-600 font-semibold">{t.student?.studentCode || t.student?.code || "N/A"}</td>
                         <td className="px-4 py-4 whitespace-nowrap">
-                          <button onClick={() => handleOpenProfile(t.studentId)} className="font-bold text-indigo-600 hover:text-indigo-800 hover:underline text-left transition-all cursor-pointer">{t.student?.studentName || t.student?.fullName}</button>
+                          <button onClick={() => handleOpenProfile(t.studentId)} className="font-bold text-teal-800 hover:text-teal-800 hover:underline text-left transition-all cursor-pointer">{t.student?.studentName || t.student?.fullName}</button>
                         </td>
                         <td className="px-4 py-4 whitespace-nowrap text-slate-600 font-bold">
                           {t.student?.class?.className || t.student?.className}
@@ -2629,7 +2629,7 @@ const [evalSelectedMonth, setEvalSelectedMonth] = useState<string>("Tháng 9")
                               CKĐV
                             </span>
                           ) : (
-                            <span className="px-2.5 py-0.5 rounded-full text-xs font-black bg-indigo-100 text-indigo-900 border border-indigo-300" title="Bổ sung theo dõi">
+                            <span className="px-2.5 py-0.5 rounded-full text-xs font-black bg-teal-50 text-teal-800 border border-teal-200" title="Bổ sung theo dõi">
                               BSTD
                             </span>
                           )}
@@ -2682,15 +2682,15 @@ const [evalSelectedMonth, setEvalSelectedMonth] = useState<string>("Tháng 9")
             </div>
 
             {/* KPI 2: Số HS đã đánh giá */}
-            <div className="bg-white border border-slate-200/90 p-4 rounded-2xl shadow-xs flex flex-col justify-between hover:border-indigo-300 transition-all group">
+            <div className="bg-white border border-slate-200/90 p-4 rounded-2xl shadow-xs flex flex-col justify-between hover:border-teal-200 transition-all group">
               <div className="flex items-center justify-between mb-1">
                 <span className="text-[10px] font-black uppercase tracking-wider text-slate-500">Học sinh theo dõi</span>
-                <span className="p-1.5 bg-indigo-50 text-indigo-600 rounded-lg">
+                <span className="p-1.5 bg-teal-50 text-teal-800 rounded-lg">
                   <Users className="w-3.5 h-3.5" />
                 </span>
               </div>
               <div>
-                <div className="text-2xl font-black text-indigo-900">{summaryKpiStats.uniqueStudents}</div>
+                <div className="text-2xl font-black text-teal-800">{summaryKpiStats.uniqueStudents}</div>
                 <div className="text-[11px] text-slate-500 font-semibold mt-0.5">Đã ghi nhận kết quả</div>
               </div>
             </div>
@@ -3133,7 +3133,7 @@ const [evalSelectedMonth, setEvalSelectedMonth] = useState<string>("Tháng 9")
                                 <span className={`px-2 py-0.5 rounded-full text-[10px] font-black ${
                                   isCommitment
                                     ? "bg-amber-100 text-amber-900 border border-amber-300"
-                                    : "bg-indigo-100 text-indigo-900 border border-indigo-300"
+                                    : "bg-teal-50 text-teal-800 border border-teal-200"
                                 }`}>
                                   {isCommitment ? "CKĐV" : "BSTD"}
                                 </span>
@@ -3353,7 +3353,7 @@ const [evalSelectedMonth, setEvalSelectedMonth] = useState<string>("Tháng 9")
                               <span className={`px-2 py-0.5 rounded-full text-[10px] font-black ${
                                 isCommitment
                                   ? "bg-amber-100 text-amber-900 border border-amber-300"
-                                  : "bg-indigo-100 text-indigo-900 border border-indigo-300"
+                                  : "bg-teal-50 text-teal-800 border border-teal-200"
                               }`}>
                                 {isCommitment ? "CKĐV" : "BSTD"}
                               </span>
@@ -3504,7 +3504,7 @@ const [evalSelectedMonth, setEvalSelectedMonth] = useState<string>("Tháng 9")
                               <span className={`px-2.5 py-0.5 rounded-full text-[10px] font-black ${
                                 item.category === "CKĐV"
                                   ? "bg-amber-100 text-amber-900 border border-amber-300"
-                                  : "bg-indigo-100 text-indigo-900 border border-indigo-300"
+                                  : "bg-teal-50 text-teal-800 border border-teal-200"
                               }`}>
                                 {item.category}
                               </span>
@@ -3526,7 +3526,7 @@ const [evalSelectedMonth, setEvalSelectedMonth] = useState<string>("Tháng 9")
                               </div>
                             </td>
                             <td className="px-5 py-3.5 whitespace-nowrap">
-                              <span className="text-[11px] font-extrabold text-indigo-700 bg-indigo-50 border border-indigo-200 px-2.5 py-1 rounded-xl block text-center">
+                              <span className="text-[11px] font-extrabold text-teal-800 bg-teal-50 border border-teal-200 px-2.5 py-1 rounded-xl block text-center">
                                 {item.updatedStatus}
                               </span>
                             </td>
@@ -3548,7 +3548,7 @@ const [evalSelectedMonth, setEvalSelectedMonth] = useState<string>("Tháng 9")
                                 <button
                                   type="button"
                                   onClick={() => handleEditEvaluation(item)}
-                                  className="text-xs font-bold text-indigo-700 hover:text-white hover:bg-indigo-600 bg-indigo-50 border border-indigo-200 px-2.5 py-1 rounded-xl transition-all cursor-pointer inline-flex items-center gap-1"
+                                  className="text-xs font-bold text-teal-800 hover:text-white hover:bg-[#003B3A] bg-teal-50 border border-teal-200 px-2.5 py-1 rounded-xl transition-all cursor-pointer inline-flex items-center gap-1"
                                   title="Hiệu chỉnh nhận xét / kết quả đánh giá"
                                 >
                                   <SlidersHorizontal className="h-3.5 w-3.5" />
@@ -3620,7 +3620,7 @@ const [evalSelectedMonth, setEvalSelectedMonth] = useState<string>("Tháng 9")
                           <span className={`px-2.5 py-0.5 rounded-full text-[10px] font-black shrink-0 ${
                             isCommitment
                               ? "bg-amber-100 text-amber-900 border border-amber-300"
-                              : "bg-indigo-100 text-indigo-900 border border-indigo-300"
+                              : "bg-teal-50 text-teal-800 border border-teal-200"
                           }`}>
                             {isCommitment ? "CKĐV" : "BSTD"}
                           </span>
@@ -3758,7 +3758,7 @@ const [evalSelectedMonth, setEvalSelectedMonth] = useState<string>("Tháng 9")
                           <span className={`px-2.5 py-0.5 rounded-full text-[10px] font-black ${
                             selectedDetailEval.category === "CKĐV"
                               ? "bg-amber-100 text-amber-900 border border-amber-300"
-                              : "bg-indigo-100 text-indigo-900 border border-indigo-300"
+                              : "bg-teal-50 text-teal-800 border border-teal-200"
                           }`}>
                             {selectedDetailEval.category}
                           </span>
@@ -3799,9 +3799,9 @@ const [evalSelectedMonth, setEvalSelectedMonth] = useState<string>("Tháng 9")
                     </div>
 
                     {/* Đề xuất hành động & Thời gian */}
-                    <div className="bg-indigo-50/60 border border-indigo-200 rounded-2xl p-4 space-y-1">
-                      <span className="text-[10px] font-black text-indigo-800 uppercase tracking-wider block">Đề xuất hành động</span>
-                      <div className="text-sm font-extrabold text-indigo-900 pt-1">
+                    <div className="bg-teal-50/60 border border-teal-200 rounded-2xl p-4 space-y-1">
+                      <span className="text-[10px] font-black text-teal-800 uppercase tracking-wider block">Đề xuất hành động</span>
+                      <div className="text-sm font-extrabold text-teal-800 pt-1">
                         {selectedDetailEval.updatedStatus || "Tiếp tục theo dõi"}
                       </div>
                       <div className="pt-3 text-[11px] text-slate-500 space-y-0.5">
@@ -3904,7 +3904,7 @@ const [evalSelectedMonth, setEvalSelectedMonth] = useState<string>("Tháng 9")
                     <button
                       type="button"
                       onClick={() => handleEditEvaluation(selectedDetailEval)}
-                      className="bg-indigo-600 hover:bg-indigo-700 text-white font-bold py-2 px-4 rounded-xl text-xs flex items-center gap-1.5 transition-all cursor-pointer shadow-sm"
+                      className="bg-[#003B3A] hover:bg-[#003B3A] text-white font-bold py-2 px-4 rounded-xl text-xs flex items-center gap-1.5 transition-all cursor-pointer shadow-sm"
                     >
                       <SlidersHorizontal className="h-3.5 w-3.5" />
                       <span>Hiệu chỉnh</span>
@@ -4064,9 +4064,9 @@ const [evalSelectedMonth, setEvalSelectedMonth] = useState<string>("Tháng 9")
 
                                         <div className="flex flex-wrap items-center justify-between gap-2 pt-0.5 text-[11px]">
                                           {wEval.updatedStatus ? (
-                                            <div className="font-bold text-indigo-700 flex items-center gap-1.5">
+                                            <div className="font-bold text-teal-800 flex items-center gap-1.5">
                                               <span className="text-slate-500 font-medium">Đề xuất:</span>
-                                              <span className="bg-indigo-50 border border-indigo-200 px-2 py-0.5 rounded-md">
+                                              <span className="bg-teal-50 border border-teal-200 px-2 py-0.5 rounded-md">
                                                 {wEval.updatedStatus}
                                               </span>
                                             </div>
@@ -4152,9 +4152,9 @@ const [evalSelectedMonth, setEvalSelectedMonth] = useState<string>("Tháng 9")
                                   )}
                                   <div className="flex flex-wrap items-center justify-between gap-2 pt-0.5 text-[11px]">
                                     {monthlySummaryEval.updatedStatus ? (
-                                      <div className="font-bold text-indigo-700 flex items-center gap-1.5">
+                                      <div className="font-bold text-teal-800 flex items-center gap-1.5">
                                         <span className="text-slate-500 font-medium">Đề xuất tổng kết:</span>
-                                        <span className="bg-indigo-50 border border-indigo-200 px-2 py-0.5 rounded-md">
+                                        <span className="bg-teal-50 border border-teal-200 px-2 py-0.5 rounded-md">
                                           {monthlySummaryEval.updatedStatus}
                                         </span>
                                       </div>
@@ -4223,7 +4223,7 @@ const [evalSelectedMonth, setEvalSelectedMonth] = useState<string>("Tháng 9")
 
           {loadingEntranceCommitments ? (
             <div className="bg-white border rounded-2xl p-12 text-center text-slate-400">
-              <RefreshCw className="h-7 w-7 animate-spin inline-block mb-2 text-indigo-600" />
+              <RefreshCw className="h-7 w-7 animate-spin inline-block mb-2 text-teal-800" />
               <p className="text-sm font-medium">Đang tải danh sách học sinh cam kết đầu vào...</p>
             </div>
           ) : flattenedCommitmentRows.length === 0 ? (
@@ -4290,7 +4290,7 @@ const [evalSelectedMonth, setEvalSelectedMonth] = useState<string>("Tháng 9")
                                     if (e.target.checked) setSelectedCommitmentRowIds(prev => Array.from(new Set([...prev, ...ids])));
                                     else setSelectedCommitmentRowIds(prev => prev.filter(id => !ids.includes(id)));
                                   }}
-                                  className="rounded border-slate-300 text-indigo-600 focus:ring-indigo-500"
+                                  className="rounded border-slate-300 text-teal-800 focus:ring-indigo-500"
                                 />
                               </th>
                               <th className="px-5 py-3 text-center text-xs font-bold text-slate-500 uppercase tracking-wider w-12">TT</th>
@@ -4298,8 +4298,8 @@ const [evalSelectedMonth, setEvalSelectedMonth] = useState<string>("Tháng 9")
                               <th className="px-5 py-3 text-left text-xs font-bold text-slate-500 uppercase tracking-wider">Họ và tên</th>
                               <th className="px-5 py-3 text-left text-xs font-bold text-slate-500 uppercase tracking-wider">Lớp</th>
                               <th className="px-5 py-3 text-left text-xs font-bold text-slate-500 uppercase tracking-wider">Ngày nhập học</th>
-                              <th className="px-5 py-3 text-left text-xs font-bold text-indigo-700 uppercase tracking-wider">Môn cam kết</th>
-                              <th className="px-5 py-3 text-left text-xs font-bold text-indigo-700 uppercase tracking-wider">Điểm KS</th>
+                              <th className="px-5 py-3 text-left text-xs font-bold text-teal-800 uppercase tracking-wider">Môn cam kết</th>
+                              <th className="px-5 py-3 text-left text-xs font-bold text-teal-800 uppercase tracking-wider">Điểm KS</th>
                               <th className="px-5 py-3 text-center text-xs font-bold text-slate-500 uppercase tracking-wider">Thao tác</th>
                             </tr>
                           </thead>
@@ -4315,7 +4315,7 @@ const [evalSelectedMonth, setEvalSelectedMonth] = useState<string>("Tháng 9")
                                         if (e.target.checked) setSelectedCommitmentRowIds([...selectedCommitmentRowIds, row.rowId]);
                                         else setSelectedCommitmentRowIds(selectedCommitmentRowIds.filter(id => id !== row.rowId));
                                       }}
-                                      className="rounded border-slate-300 text-indigo-600 focus:ring-indigo-500"
+                                      className="rounded border-slate-300 text-teal-800 focus:ring-indigo-500"
                                     />
                                   </td>
                                   <td className="px-5 py-3.5 whitespace-nowrap text-center text-sm font-medium text-slate-500">
@@ -4331,20 +4331,20 @@ const [evalSelectedMonth, setEvalSelectedMonth] = useState<string>("Tháng 9")
                                   </td>
                                   <td className="px-5 py-3.5 whitespace-nowrap text-slate-600 font-bold text-xs">
                                     {row.className}
-                                    {row.isHomeroom && <span className="text-[10px] text-indigo-600 font-black block mt-0.5">(Lớp chủ nhiệm)</span>}
+                                    {row.isHomeroom && <span className="text-[10px] text-teal-800 font-black block mt-0.5">(Lớp chủ nhiệm)</span>}
                                   </td>
                                   <td className="px-5 py-3.5 whitespace-nowrap text-slate-600 text-xs font-medium">
                                     {row.enrollmentDate ? new Date(row.enrollmentDate).toLocaleDateString("vi-VN") : "Chưa có"}
                                   </td>
                                   <td className="px-5 py-3.5 whitespace-nowrap">
-                                    <span className="px-2.5 py-1 rounded-lg text-xs font-extrabold bg-indigo-600 text-white shadow-xs">
+                                    <span className="px-2.5 py-1 rounded-lg text-xs font-extrabold bg-[#003B3A] text-white shadow-xs">
                                       {row.subject}
                                     </span>
                                   </td>
                                   <td className="px-5 py-3.5 whitespace-nowrap">
                                     <span 
                                       title={row.scoreDetails || `Điểm KS: ${row.score}`}
-                                      className="inline-flex items-center px-2.5 py-1 rounded-lg text-xs font-black bg-indigo-50 text-indigo-800 border border-indigo-200 cursor-help"
+                                      className="inline-flex items-center px-2.5 py-1 rounded-lg text-xs font-black bg-teal-50 text-teal-800 border border-teal-200 cursor-help"
                                     >
                                       {row.score}
                                     </span>
@@ -4383,7 +4383,7 @@ const [evalSelectedMonth, setEvalSelectedMonth] = useState<string>("Tháng 9")
                           if (e.target.checked) setSelectedCommitmentRowIds(filteredFlattenedCommitments.map((r: any) => r.rowId));
                           else setSelectedCommitmentRowIds([]);
                         }}
-                        className="rounded border-slate-300 text-indigo-600 focus:ring-indigo-500"
+                        className="rounded border-slate-300 text-teal-800 focus:ring-indigo-500"
                       />
                     </th>
                     <th className="px-6 py-3 text-center text-xs font-bold text-slate-500 uppercase tracking-wider w-12">TT</th>
@@ -4533,7 +4533,7 @@ const [evalSelectedMonth, setEvalSelectedMonth] = useState<string>("Tháng 9")
                   return (
                     <tr key={group.studentId} className="hover:bg-slate-50">
                       <td className="px-6 py-4 whitespace-nowrap">
-                        <button onClick={() => handleOpenProfile(group.studentId)} className="font-bold text-indigo-600 hover:text-indigo-800 hover:underline text-left transition-all cursor-pointer">{group.student?.studentName}</button>
+                        <button onClick={() => handleOpenProfile(group.studentId)} className="font-bold text-teal-800 hover:text-teal-800 hover:underline text-left transition-all cursor-pointer">{group.student?.studentName}</button>
                         <div className="text-xs text-slate-500">{group.student?.studentCode}</div>
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap text-slate-600 font-semibold">
@@ -4544,7 +4544,7 @@ const [evalSelectedMonth, setEvalSelectedMonth] = useState<string>("Tháng 9")
                           {group.targets.map((t: any) => (
                             <div key={t.id} className="h-6 flex items-center">
                               <span className={`px-2 py-0.5 rounded text-xs font-medium border ${
-                                t.supportType === "ACADEMIC" ? "bg-blue-50 text-blue-700 border-blue-200" : "bg-purple-50 text-purple-700 border-purple-200"
+                                t.supportType === "ACADEMIC" ? "bg-blue-50 text-blue-700 border-blue-200" : "bg-teal-50 text-teal-800 border-teal-200"
                               }`}>
                                 {t.supportType === "ACADEMIC" ? "Bồi dưỡng Văn hóa" : "Hỗ trợ Tâm lý"}
                               </span>
@@ -4640,7 +4640,7 @@ const [evalSelectedMonth, setEvalSelectedMonth] = useState<string>("Tháng 9")
       {isProposeModalOpen && (
         <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-xs flex items-center justify-center p-4 z-50 transition-all">
           <div className="bg-white rounded-2xl shadow-2xl max-w-4xl w-full overflow-hidden flex flex-col transition-all duration-300">
-            <div className="px-6 py-4 border-b flex justify-between items-center bg-indigo-600 text-white shadow-xs">
+            <div className="px-6 py-4 border-b flex justify-between items-center bg-[#003B3A] text-white shadow-xs">
               <h2 className="text-base font-bold flex items-center gap-2">
                 <Plus className="h-5 w-5" />
                 Đề xuất HS Theo dõi
@@ -4657,7 +4657,7 @@ const [evalSelectedMonth, setEvalSelectedMonth] = useState<string>("Tháng 9")
               {/* Cột trái: Thông tin lớp & Chọn học sinh */}
               <div className="space-y-4 bg-white p-5 rounded-2xl border shadow-2xs flex flex-col">
                 <h3 className="text-sm font-bold text-slate-800 flex items-center gap-2 border-b pb-2">
-                  <Users className="h-4 w-4 text-indigo-600" />
+                  <Users className="h-4 w-4 text-teal-800" />
                   Bước 1: Chọn Lớp & Học sinh
                 </h3>
 
@@ -4789,7 +4789,7 @@ const [evalSelectedMonth, setEvalSelectedMonth] = useState<string>("Tháng 9")
                                 setSelectedStudentIds(eligibleStudents.map(s => s.id))
                               }
                             }}
-                            className="text-indigo-600 hover:text-indigo-800 text-[10px] font-black transition-all"
+                            className="text-teal-800 hover:text-teal-800 text-[10px] font-black transition-all"
                           >
                             {selectedStudentIds.length === eligibleStudents.length ? "Bỏ chọn tất cả" : "Chọn tất cả"}
                           </button>
@@ -4813,7 +4813,7 @@ const [evalSelectedMonth, setEvalSelectedMonth] = useState<string>("Tháng 9")
 
                     {loadingStudentsOfClass ? (
                       <div className="text-xs text-slate-500 flex items-center justify-center gap-1.5 py-8">
-                        <RefreshCw className="h-4 w-4 animate-spin text-indigo-600" /> Đang tải danh sách học sinh...
+                        <RefreshCw className="h-4 w-4 animate-spin text-teal-800" /> Đang tải danh sách học sinh...
                       </div>
                     ) : classStudents.length === 0 ? (
                       <div className="text-xs text-slate-400 italic py-8 text-center border border-dashed border-slate-200 rounded-xl bg-slate-50/30">
@@ -4857,7 +4857,7 @@ const [evalSelectedMonth, setEvalSelectedMonth] = useState<string>("Tháng 9")
                                   isAlreadyProposed 
                                     ? "opacity-50 cursor-not-allowed bg-slate-100/60 border-transparent" 
                                     : isChecked
-                                    ? "bg-indigo-50 border-indigo-200 text-indigo-900 cursor-pointer shadow-3xs"
+                                    ? "bg-teal-50 border-teal-200 text-teal-800 cursor-pointer shadow-3xs"
                                     : hasCommitment 
                                     ? "text-amber-900 cursor-pointer bg-amber-50 hover:bg-amber-100 border-amber-200" 
                                     : "text-slate-700 cursor-pointer hover:bg-white border-transparent hover:border-slate-200"
@@ -4875,7 +4875,7 @@ const [evalSelectedMonth, setEvalSelectedMonth] = useState<string>("Tháng 9")
                                       setSelectedStudentIds([...selectedStudentIds, s.id])
                                     }
                                   }}
-                                  className="rounded border-slate-300 text-indigo-600 focus:ring-indigo-500 h-4.5 w-4.5 disabled:opacity-50 mt-0.5"
+                                  className="rounded border-slate-300 text-teal-800 focus:ring-indigo-500 h-4.5 w-4.5 disabled:opacity-50 mt-0.5"
                                 />
                                 <div className="flex-1 min-w-0">
                                   <div className="font-bold flex items-center justify-between">
@@ -4922,7 +4922,7 @@ const [evalSelectedMonth, setEvalSelectedMonth] = useState<string>("Tháng 9")
               <div className="space-y-4 bg-white p-5 rounded-2xl border shadow-2xs flex flex-col justify-between">
                 <div className="space-y-4">
                   <h3 className="text-sm font-bold text-slate-800 flex items-center gap-2 border-b pb-2">
-                    <FileText className="h-4 w-4 text-indigo-600" />
+                    <FileText className="h-4 w-4 text-teal-800" />
                     Bước 2: Cấu hình Đề xuất
                   </h3>
 
@@ -4946,7 +4946,7 @@ const [evalSelectedMonth, setEvalSelectedMonth] = useState<string>("Tháng 9")
                           <>
                             <label className={`flex items-center gap-2.5 p-3 rounded-xl border text-xs font-bold transition-all ${
                               proposeAcademic 
-                                ? "bg-indigo-50 border-indigo-500 text-indigo-900 shadow-3xs" 
+                                ? "bg-teal-50 border-teal-200 text-teal-800 shadow-3xs" 
                                 : "bg-slate-50 border-slate-200 text-slate-500"
                             } ${canProposeAcademic ? "cursor-pointer" : "opacity-60 cursor-not-allowed"}`}>
                               <input
@@ -4958,13 +4958,13 @@ const [evalSelectedMonth, setEvalSelectedMonth] = useState<string>("Tháng 9")
                                   setProposeAcademic(val);
                                   if (val) setProposePsychological(false);
                                 }}
-                                className="rounded border-slate-300 text-indigo-600 focus:ring-indigo-500 h-4 w-4 disabled:opacity-50"
+                                className="rounded border-slate-300 text-teal-800 focus:ring-indigo-500 h-4 w-4 disabled:opacity-50"
                               />
                               Bồi dưỡng Văn hóa
                             </label>
                             <label className={`flex items-center gap-2.5 p-3 rounded-xl border text-xs font-bold transition-all ${
                               proposePsychological 
-                                ? "bg-indigo-50 border-indigo-500 text-indigo-900 shadow-3xs" 
+                                ? "bg-teal-50 border-teal-200 text-teal-800 shadow-3xs" 
                                 : "bg-slate-50 border-slate-200 text-slate-500"
                             } ${canProposePsych ? "cursor-pointer" : "opacity-60 cursor-not-allowed"}`}>
                               <input
@@ -4976,7 +4976,7 @@ const [evalSelectedMonth, setEvalSelectedMonth] = useState<string>("Tháng 9")
                                   setProposePsychological(val);
                                   if (val) setProposeAcademic(false);
                                 }}
-                                className="rounded border-slate-300 text-indigo-600 focus:ring-indigo-500 h-4 w-4 disabled:opacity-50"
+                                className="rounded border-slate-300 text-teal-800 focus:ring-indigo-500 h-4 w-4 disabled:opacity-50"
                               />
                               Hỗ trợ Tâm lý
                             </label>
@@ -5014,7 +5014,7 @@ const [evalSelectedMonth, setEvalSelectedMonth] = useState<string>("Tháng 9")
                                 key={sub.id || name} 
                                 className={`flex items-center gap-2 text-xs font-semibold p-1.5 rounded-lg transition-all cursor-pointer ${
                                   isChecked 
-                                    ? "bg-indigo-50 text-indigo-900 font-bold" 
+                                    ? "bg-teal-50 text-teal-800 font-bold" 
                                     : "text-slate-700 hover:bg-white"
                                 }`}
                               >
@@ -5028,11 +5028,11 @@ const [evalSelectedMonth, setEvalSelectedMonth] = useState<string>("Tháng 9")
                                       setSelectedSubjects([...selectedSubjects, name])
                                     }
                                   }}
-                                  className="rounded border-slate-300 text-indigo-600 focus:ring-indigo-500 h-3.5 w-3.5"
+                                  className="rounded border-slate-300 text-teal-800 focus:ring-indigo-500 h-3.5 w-3.5"
                                 />
                                 <span className="flex-1 min-w-0 flex items-center justify-between">
                                   <span>{name}</span>
-                                  <span className="text-[9px] bg-indigo-100 text-indigo-700 font-black px-1.5 py-0.5 rounded-md shrink-0">Môn giảng dạy</span>
+                                  <span className="text-[9px] bg-teal-50 text-teal-800 font-black px-1.5 py-0.5 rounded-md shrink-0">Môn giảng dạy</span>
                                 </span>
                               </label>
                             )
@@ -5097,7 +5097,7 @@ const [evalSelectedMonth, setEvalSelectedMonth] = useState<string>("Tháng 9")
                 className={`py-2 px-5 rounded-xl text-sm font-bold shadow-xs transition-all text-white ${
                   selectedStudentIds.length === 0 || (!proposeAcademic && !proposePsychological) || (proposeAcademic && selectedSubjects.length === 0)
                     ? "bg-slate-300 cursor-not-allowed"
-                    : "bg-indigo-600 hover:bg-indigo-700"
+                    : "bg-[#003B3A] hover:bg-[#003B3A]"
                 }`}
               >
                 Gửi đề xuất
@@ -5166,13 +5166,13 @@ const [evalSelectedMonth, setEvalSelectedMonth] = useState<string>("Tháng 9")
               <div className="p-5 sm:p-6 space-y-5 overflow-y-auto flex-1 bg-slate-50/40">
                 {/* 1. KHỐI THÔNG TIN HỌC SINH (Hiển thị đầy đủ tất cả các trường) */}
                 {isMulti ? (
-                  <div className="bg-white border border-indigo-100 rounded-2xl p-4 shadow-2xs space-y-2.5">
+                  <div className="bg-white border border-teal-200 rounded-2xl p-4 shadow-2xs space-y-2.5">
                     <div className="flex items-center justify-between">
-                      <span className="text-xs font-black text-indigo-950 uppercase flex items-center gap-1.5">
-                        <Users className="h-4 w-4 text-indigo-600" />
+                      <span className="text-xs font-black text-teal-800 uppercase flex items-center gap-1.5">
+                        <Users className="h-4 w-4 text-teal-800" />
                         Danh sách học sinh được chọn ({selectedEvalTargetIds.length} học sinh):
                       </span>
-                      <span className="text-[11px] font-bold text-indigo-600 bg-indigo-50 px-2.5 py-0.5 rounded-full border border-indigo-200">
+                      <span className="text-[11px] font-bold text-teal-800 bg-teal-50 px-2.5 py-0.5 rounded-full border border-teal-200">
                         Đánh giá hàng loạt
                       </span>
                     </div>
@@ -5193,14 +5193,14 @@ const [evalSelectedMonth, setEvalSelectedMonth] = useState<string>("Tháng 9")
                             const tObj = filteredTargets.find((t: any) => t.id === tid);
                             const isComm = tObj?.sourceType === "ADMISSION" || (tObj?.notes && tObj?.notes.includes("Cam kết Khảo sát đầu vào"));
                             return (
-                              <tr key={tid} className="hover:bg-indigo-50/40 transition-colors">
+                              <tr key={tid} className="hover:bg-teal-50/40 transition-colors">
                                 <td className="p-2.5 text-center font-bold text-slate-500">{idx + 1}</td>
-                                <td className="p-2.5 font-bold text-indigo-900">{tObj?.student?.studentCode || tObj?.student?.code || "N/A"}</td>
+                                <td className="p-2.5 font-bold text-teal-800">{tObj?.student?.studentCode || tObj?.student?.code || "N/A"}</td>
                                 <td className="p-2.5 font-black text-slate-900">{tObj?.student?.studentName || tObj?.student?.fullName}</td>
                                 <td className="p-2.5 font-bold text-slate-700">{tObj?.student?.class?.className || tObj?.student?.className}</td>
                                 <td className="p-2.5 font-medium text-slate-600">{tObj?.subject || (tObj?.supportType === "ACADEMIC" ? "Văn hóa" : "Tâm lý")}</td>
                                 <td className="p-2.5 text-center">
-                                  <span className={`px-2.5 py-0.5 rounded-full text-[10px] font-black ${isComm ? "bg-amber-100 text-amber-900 border border-amber-300" : "bg-indigo-100 text-indigo-900 border border-indigo-300"}`}>
+                                  <span className={`px-2.5 py-0.5 rounded-full text-[10px] font-black ${isComm ? "bg-amber-100 text-amber-900 border border-amber-300" : "bg-teal-50 text-teal-800 border border-teal-200"}`}>
                                     {isComm ? "CKĐV" : "BSTD"}
                                   </span>
                                 </td>
@@ -5224,10 +5224,10 @@ const [evalSelectedMonth, setEvalSelectedMonth] = useState<string>("Tháng 9")
                             <h3 className="text-base font-black text-slate-900">
                               {curStudent?.studentName || curStudent?.fullName || evalTargetName}
                             </h3>
-                            <span className="bg-indigo-50 border border-indigo-200 text-indigo-800 text-[11px] font-black px-2.5 py-0.5 rounded-full">
+                            <span className="bg-teal-50 border border-teal-200 text-teal-800 text-[11px] font-black px-2.5 py-0.5 rounded-full">
                               #{curStudent?.studentCode || curStudent?.code || "N/A"}
                             </span>
-                            <span className={`text-[11px] font-black px-2.5 py-0.5 rounded-full ${isCommitment ? "bg-amber-100 text-amber-900 border border-amber-300" : "bg-indigo-100 text-indigo-900 border border-indigo-300"}`}>
+                            <span className={`text-[11px] font-black px-2.5 py-0.5 rounded-full ${isCommitment ? "bg-amber-100 text-amber-900 border border-amber-300" : "bg-teal-50 text-teal-800 border border-teal-200"}`}>
                               {isCommitment ? "Cam kết đầu vào (CKĐV)" : "Bổ sung theo dõi (BSTD)"}
                             </span>
                           </div>
@@ -5260,7 +5260,7 @@ const [evalSelectedMonth, setEvalSelectedMonth] = useState<string>("Tháng 9")
                       </div>
                       <div className="bg-slate-50 p-2.5 rounded-xl border border-slate-200/70">
                         <span className="text-[10px] font-bold text-slate-500 uppercase block mb-0.5">Mức độ hiện tại:</span>
-                        <span className="font-black text-indigo-700">{historyEvals[0]?.trackingLevel || "Đang hỗ trợ"}</span>
+                        <span className="font-black text-teal-800">{historyEvals[0]?.trackingLevel || "Đang hỗ trợ"}</span>
                       </div>
                     </div>
 
@@ -5282,10 +5282,10 @@ const [evalSelectedMonth, setEvalSelectedMonth] = useState<string>("Tháng 9")
 
                 {/* 2. LƯỢC SỬ ĐÁNH GIÁ GẦN ĐÂY (Nếu đánh giá 1 HS và đã có lịch sử) */}
                 {!isMulti && historyEvals.length > 0 && (
-                  <div className="bg-white border border-indigo-100 rounded-2xl p-4 shadow-2xs space-y-2.5">
+                  <div className="bg-white border border-teal-200 rounded-2xl p-4 shadow-2xs space-y-2.5">
                     <div className="flex items-center justify-between">
-                      <h4 className="text-xs font-black text-indigo-950 uppercase flex items-center gap-1.5">
-                        <History className="h-4 w-4 text-indigo-600" />
+                      <h4 className="text-xs font-black text-teal-800 uppercase flex items-center gap-1.5">
+                        <History className="h-4 w-4 text-teal-800" />
                         Lược sử tiến trình đánh giá ({historyEvals.length} bản ghi):
                       </h4>
                       <span className="text-[11px] text-slate-500 font-semibold">Theo dõi sự tiến bộ qua các kỳ</span>
@@ -5293,14 +5293,14 @@ const [evalSelectedMonth, setEvalSelectedMonth] = useState<string>("Tháng 9")
 
                     <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-2.5 max-h-36 overflow-y-auto pr-1">
                       {historyEvals.map((ev: any) => (
-                        <div key={ev.id} className="bg-slate-50 border border-slate-200/80 rounded-xl p-2.5 text-xs space-y-1 hover:border-indigo-300 transition-all">
+                        <div key={ev.id} className="bg-slate-50 border border-slate-200/80 rounded-xl p-2.5 text-xs space-y-1 hover:border-teal-200 transition-all">
                           <div className="flex items-center justify-between">
                             <span className="font-black text-slate-800">{ev.periodName}</span>
                             <span className="text-[10px] font-semibold text-slate-500">{formatDateSafe(ev.createdAt, "N/A")}</span>
                           </div>
                           <div className="flex items-center gap-1.5">
                             <span className="text-[10px] font-bold text-slate-500">Mức:</span>
-                            <span className="text-[11px] font-black text-indigo-700 bg-indigo-50 px-2 py-0.2 rounded border border-indigo-200">{ev.trackingLevel}</span>
+                            <span className="text-[11px] font-black text-teal-800 bg-teal-50 px-2 py-0.2 rounded border border-teal-200">{ev.trackingLevel}</span>
                           </div>
                           {ev.comment && (
                             <p className="text-slate-600 text-[11px] italic line-clamp-2 bg-white p-1 rounded border border-slate-100">
@@ -5487,7 +5487,7 @@ const [evalSelectedMonth, setEvalSelectedMonth] = useState<string>("Tháng 9")
                   <div className="space-y-3">
                     <div className="flex flex-wrap items-center justify-between gap-2">
                       <label className="text-xs font-black text-slate-800 uppercase flex items-center gap-1.5">
-                        <Award className="h-4 w-4 text-indigo-600" />
+                        <Award className="h-4 w-4 text-teal-800" />
                         {evalIsMonthlySummary
                           ? "2. Kết quả đánh giá (Mức độ đạt được) theo Tháng:"
                           : "2. Kết quả đánh giá (Mức độ đạt được) theo Tuần:"}
@@ -6191,7 +6191,7 @@ const [evalSelectedMonth, setEvalSelectedMonth] = useState<string>("Tháng 9")
         <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-xs flex items-center justify-center p-4 z-50 transition-all">
           <div className="bg-white rounded-2xl shadow-2xl max-w-5xl w-full overflow-hidden flex flex-col max-h-[90vh] transition-all duration-300">
             {/* Header */}
-            <div className="px-6 py-4 border-b flex justify-between items-center bg-indigo-900 text-white shadow-sm no-print">
+            <div className="px-6 py-4 border-b flex justify-between items-center bg-[#003B3A] text-white shadow-sm no-print">
               <h2 className="text-base font-bold flex items-center gap-2">
                 <GraduationCap className="h-5 w-5" />
                 SỔ THEO DÕI KẾT QUẢ BỒI DƯỠNG & PHÁT TRIỂN HỌC SINH
@@ -6199,7 +6199,7 @@ const [evalSelectedMonth, setEvalSelectedMonth] = useState<string>("Tháng 9")
               <div className="flex items-center gap-3">
                 <button
                   onClick={() => window.print()}
-                  className="bg-indigo-700 hover:bg-indigo-600 text-white text-xs font-bold py-1.5 px-3.5 rounded-xl border border-indigo-500/30 flex items-center gap-1.5 transition-all cursor-pointer"
+                  className="bg-[#003B3A] hover:bg-[#003B3A] text-white text-xs font-bold py-1.5 px-3.5 rounded-xl border border-teal-500/30 flex items-center gap-1.5 transition-all cursor-pointer"
                 >
                   <Printer className="h-3.5 w-3.5" />
                   In học bạ
@@ -6215,7 +6215,7 @@ const [evalSelectedMonth, setEvalSelectedMonth] = useState<string>("Tháng 9")
 
             {loadingProfile ? (
               <div className="flex flex-col justify-center items-center py-24 space-y-4 flex-1">
-                <RefreshCw className="h-8 w-8 text-indigo-600 animate-spin" />
+                <RefreshCw className="h-8 w-8 text-teal-800 animate-spin" />
                 <p className="text-xs text-slate-500 font-bold">Đang tải học bạ điện tử học sinh...</p>
               </div>
             ) : !profileData ? (
@@ -6265,22 +6265,22 @@ const [evalSelectedMonth, setEvalSelectedMonth] = useState<string>("Tháng 9")
                   `}} />
 
                   {/* Profile Header Info Card */}
-                  <div className="bg-gradient-to-r from-indigo-900 to-slate-800 text-white rounded-2xl p-6 shadow-md flex flex-col sm:flex-row items-center gap-6 border border-indigo-950">
-                    <div className="w-16 h-16 rounded-full bg-gradient-to-tr from-indigo-400 to-indigo-600 flex items-center justify-center font-extrabold text-lg text-white shadow-inner shrink-0 shadow-black/20 uppercase">
+                  <div className="bg-gradient-to-r from-teal-600 to-slate-800 text-white rounded-2xl p-6 shadow-md flex flex-col sm:flex-row items-center gap-6 border border-teal-200">
+                    <div className="w-16 h-16 rounded-full bg-gradient-to-tr from-teal-600 to-emerald-600 flex items-center justify-center font-extrabold text-lg text-white shadow-inner shrink-0 shadow-black/20 uppercase">
                       {initials}
                     </div>
                     <div className="flex-1 text-center sm:text-left space-y-1">
                       <div className="flex flex-col sm:flex-row sm:items-center gap-2">
                         <h3 className="text-xl font-black">{student.studentName}</h3>
-                        <span className="bg-indigo-500/25 border border-indigo-400/30 text-indigo-200 text-[10px] font-black px-2 py-0.5 rounded-full w-max mx-auto sm:mx-0">
+                        <span className="bg-teal-500/25 border border-teal-400/30 text-teal-700 text-[10px] font-black px-2 py-0.5 rounded-full w-max mx-auto sm:mx-0">
                           #{student.studentCode}
                         </span>
                       </div>
-                      <div className="grid grid-cols-2 md:grid-cols-4 gap-x-6 gap-y-1 text-xs text-indigo-100">
-                        <div><span className="text-indigo-300 font-medium">Lớp:</span> <strong className="text-white font-bold">{student.class?.className || "N/A"}</strong></div>
-                        <div><span className="text-indigo-300 font-medium">Cơ sở:</span> <strong className="text-white font-bold">{student.campus?.name || "N/A"}</strong></div>
-                        <div><span className="text-indigo-300 font-medium">Ngày sinh:</span> <strong className="text-white font-bold">{student.dateOfBirth ? new Date(student.dateOfBirth).toLocaleDateString("vi-VN") : "N/A"}</strong></div>
-                        <div><span className="text-indigo-300 font-medium">Giới tính:</span> <strong className="text-white font-bold">{student.gender || "N/A"}</strong></div>
+                      <div className="grid grid-cols-2 md:grid-cols-4 gap-x-6 gap-y-1 text-xs text-teal-700">
+                        <div><span className="text-teal-700 font-medium">Lớp:</span> <strong className="text-white font-bold">{student.class?.className || "N/A"}</strong></div>
+                        <div><span className="text-teal-700 font-medium">Cơ sở:</span> <strong className="text-white font-bold">{student.campus?.name || "N/A"}</strong></div>
+                        <div><span className="text-teal-700 font-medium">Ngày sinh:</span> <strong className="text-white font-bold">{student.dateOfBirth ? new Date(student.dateOfBirth).toLocaleDateString("vi-VN") : "N/A"}</strong></div>
+                        <div><span className="text-teal-700 font-medium">Giới tính:</span> <strong className="text-white font-bold">{student.gender || "N/A"}</strong></div>
                       </div>
                     </div>
                   </div>
@@ -6292,7 +6292,7 @@ const [evalSelectedMonth, setEvalSelectedMonth] = useState<string>("Tháng 9")
                       onClick={() => setActiveProfileTab("overview")}
                       className={`py-2.5 px-1.5 text-xs font-bold border-b-2 transition-all flex items-center gap-1.5 ${
                         activeProfileTab === "overview"
-                          ? "border-indigo-600 text-indigo-600 font-extrabold"
+                          ? "border-teal-200 text-teal-800 font-extrabold"
                           : "border-transparent text-slate-500 hover:text-slate-800"
                       }`}
                     >
@@ -6304,7 +6304,7 @@ const [evalSelectedMonth, setEvalSelectedMonth] = useState<string>("Tháng 9")
                       onClick={() => setActiveProfileTab("timeline")}
                       className={`py-2.5 px-1.5 text-xs font-bold border-b-2 transition-all flex items-center gap-1.5 ${
                         activeProfileTab === "timeline"
-                          ? "border-indigo-600 text-indigo-600 font-extrabold"
+                          ? "border-teal-200 text-teal-800 font-extrabold"
                           : "border-transparent text-slate-500 hover:text-slate-800"
                       }`}
                     >
@@ -6316,7 +6316,7 @@ const [evalSelectedMonth, setEvalSelectedMonth] = useState<string>("Tháng 9")
                       onClick={() => setActiveProfileTab("achievements")}
                       className={`py-2.5 px-1.5 text-xs font-bold border-b-2 transition-all flex items-center gap-1.5 ${
                         activeProfileTab === "achievements"
-                          ? "border-indigo-600 text-indigo-600 font-extrabold"
+                          ? "border-teal-200 text-teal-800 font-extrabold"
                           : "border-transparent text-slate-500 hover:text-slate-800"
                       }`}
                     >
@@ -6334,7 +6334,7 @@ const [evalSelectedMonth, setEvalSelectedMonth] = useState<string>("Tháng 9")
                         {entrance && entrance.type === "K12" && (
                           <div className="bg-white rounded-2xl border p-5 shadow-xs space-y-4">
                             <h4 className="text-xs font-black text-slate-800 uppercase tracking-wider border-b pb-2 flex items-center gap-2">
-                              <BookOpen className="h-4.5 w-4.5 text-indigo-600" />
+                              <BookOpen className="h-4.5 w-4.5 text-teal-800" />
                               Kết quả khảo sát đầu vào (Khối Phổ thông)
                             </h4>
                             <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
@@ -6357,9 +6357,9 @@ const [evalSelectedMonth, setEvalSelectedMonth] = useState<string>("Tháng 9")
                             </div>
 
                             {entrance.totalEnglishScore != null && (
-                              <div className="bg-gradient-to-r from-indigo-50 to-sky-50 p-3 rounded-xl border border-indigo-100 text-center flex items-center justify-between px-5">
-                                <span className="text-xs text-indigo-700 font-black uppercase tracking-wider">Tổng điểm Tiếng Anh</span>
-                                <span className="text-base font-extrabold text-indigo-800">{entrance.totalEnglishScore}/100</span>
+                              <div className="bg-gradient-to-r from-teal-600 to-sky-50 p-3 rounded-xl border border-teal-200 text-center flex items-center justify-between px-5">
+                                <span className="text-xs text-teal-800 font-black uppercase tracking-wider">Tổng điểm Tiếng Anh</span>
+                                <span className="text-base font-extrabold text-teal-800">{entrance.totalEnglishScore}/100</span>
                               </div>
                             )}
 
@@ -6371,7 +6371,7 @@ const [evalSelectedMonth, setEvalSelectedMonth] = useState<string>("Tháng 9")
                                   {entrance.scores.map((s: any, i: number) => (
                                     <div key={i} className="border border-slate-100 rounded-xl p-3 bg-slate-50/50 flex justify-between items-center text-xs">
                                       <span className="font-bold text-slate-700">{s.subjectName}</span>
-                                      <span className="font-black text-indigo-700 bg-indigo-50 border border-indigo-100 px-2 py-0.5 rounded-md">
+                                      <span className="font-black text-teal-800 bg-teal-50 border border-teal-200 px-2 py-0.5 rounded-md">
                                         Điểm: {typeof s.scores === 'object' ? JSON.stringify(s.scores) : s.scores}
                                       </span>
                                     </div>
@@ -6500,7 +6500,7 @@ const [evalSelectedMonth, setEvalSelectedMonth] = useState<string>("Tháng 9")
                             const sorted = [...evals].sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
                             const proposerName = target.createdBy?.teacherName || "KTDBCL/BGH";
                             const supportTypeLabel = target.supportType === "ACADEMIC" ? "Bồi dưỡng Văn hóa" : "Hỗ trợ Tâm lý";
-                            const statusColor = target.terminationStatus === "TERMINATED" ? "bg-emerald-100 text-emerald-800" : target.terminationStatus === "PENDING_TERMINATION" ? "bg-amber-100 text-amber-800" : "bg-indigo-100 text-indigo-800";
+                            const statusColor = target.terminationStatus === "TERMINATED" ? "bg-emerald-100 text-emerald-800" : target.terminationStatus === "PENDING_TERMINATION" ? "bg-amber-100 text-amber-800" : "bg-teal-50 text-teal-800";
                             const statusText = target.terminationStatus === "TERMINATED" ? "Hoàn thành bồi dưỡng" : target.terminationStatus === "PENDING_TERMINATION" ? "Chờ duyệt kết thúc" : "Đang bồi dưỡng";
                             const cleanedReason = Array.from(new Set((target.reason || "").split(",").map((x: any) => x.trim()).filter(Boolean))).join(", ");
 
@@ -6542,8 +6542,8 @@ const [evalSelectedMonth, setEvalSelectedMonth] = useState<string>("Tháng 9")
                                         return (
                                           <div key={ev.id} className="relative">
                                             {/* Circular timeline node indicator */}
-                                            <span className="absolute -left-[31px] top-1.5 flex h-4 w-4 items-center justify-center rounded-full border-2 border-indigo-600 bg-white shadow-2xs">
-                                              <span className="h-1.5 w-1.5 rounded-full bg-indigo-600"></span>
+                                            <span className="absolute -left-[31px] top-1.5 flex h-4 w-4 items-center justify-center rounded-full border-2 border-teal-200 bg-white shadow-2xs">
+                                              <span className="h-1.5 w-1.5 rounded-full bg-[#003B3A]"></span>
                                             </span>
 
                                             {/* Card detail body */}
@@ -6565,7 +6565,7 @@ const [evalSelectedMonth, setEvalSelectedMonth] = useState<string>("Tháng 9")
                                                 &ldquo;{ev.comment}&rdquo;
                                               </p>
                                               {ev.updatedStatus && (
-                                                <div className="text-[10px] font-black text-indigo-700">
+                                                <div className="text-[10px] font-black text-teal-800">
                                                   📌 Đề xuất tiếp theo: {ev.updatedStatus}
                                                 </div>
                                               )}
@@ -6589,7 +6589,7 @@ const [evalSelectedMonth, setEvalSelectedMonth] = useState<string>("Tháng 9")
                         {/* Achievements Grid */}
                         <div className="bg-white rounded-2xl border p-5 shadow-xs space-y-3">
                           <h4 className="text-xs font-black text-slate-800 uppercase tracking-wider border-b pb-2 flex items-center gap-2">
-                            <Award className="h-4.5 w-4.5 text-indigo-600" />
+                            <Award className="h-4.5 w-4.5 text-teal-800" />
                             Danh sách thành tích học sinh đạt được
                           </h4>
                           {achievements.length === 0 ? (
@@ -6610,7 +6610,7 @@ const [evalSelectedMonth, setEvalSelectedMonth] = useState<string>("Tháng 9")
                         {/* Highlight Comments */}
                         <div className="bg-white rounded-2xl border p-5 shadow-xs space-y-3">
                           <h4 className="text-xs font-black text-slate-800 uppercase tracking-wider border-b pb-2 flex items-center gap-2">
-                            <MessageSquare className="h-4.5 w-4.5 text-indigo-600" />
+                            <MessageSquare className="h-4.5 w-4.5 text-teal-800" />
                             Ghi nhận nhận xét nổi bật từ GVCN / GVBM
                           </h4>
                           {highlights.length === 0 ? (
@@ -6620,7 +6620,7 @@ const [evalSelectedMonth, setEvalSelectedMonth] = useState<string>("Tháng 9")
                               {highlights.map((h: any) => (
                                 <div key={h.id} className="border border-slate-100 p-3.5 rounded-xl bg-slate-50/50 flex flex-col gap-1.5 text-xs">
                                   <div className="flex justify-between items-center flex-wrap gap-2">
-                                    <span className="font-bold text-slate-700 bg-indigo-50 border border-indigo-100 px-2 py-0.5 rounded">
+                                    <span className="font-bold text-slate-700 bg-teal-50 border border-teal-200 px-2 py-0.5 rounded">
                                       Phân loại: {h.category || "Ý thức học tập"}
                                     </span>
                                     <span className="text-[10px] font-bold text-slate-400">
@@ -6639,12 +6639,12 @@ const [evalSelectedMonth, setEvalSelectedMonth] = useState<string>("Tháng 9")
                         {/* Career Orientation */}
                         <div className="bg-white rounded-2xl border p-5 shadow-xs space-y-3">
                           <h4 className="text-xs font-black text-slate-800 uppercase tracking-wider border-b pb-2 flex items-center gap-2">
-                            <GraduationCap className="h-4.5 w-4.5 text-indigo-600" />
+                            <GraduationCap className="h-4.5 w-4.5 text-teal-800" />
                             Định hướng nghề nghiệp sớm (Khối Trung học)
                           </h4>
                           {orientation && orientation.result ? (
                             <div className="p-3.5 bg-slate-50 border border-slate-100 rounded-xl space-y-1 text-xs">
-                              <div><span className="text-slate-400 font-semibold">Hướng nghiệp định xuất:</span> <strong className="text-indigo-800 font-black">{orientation.result}</strong></div>
+                              <div><span className="text-slate-400 font-semibold">Hướng nghiệp định xuất:</span> <strong className="text-teal-800 font-black">{orientation.result}</strong></div>
                               {orientation.notes && <div className="mt-2 text-slate-600 font-medium leading-relaxed italic bg-white p-3 rounded-lg border border-slate-100"><strong>Ghi chú giáo viên:</strong> {orientation.notes}</div>}
                             </div>
                           ) : (
@@ -6676,7 +6676,7 @@ const [evalSelectedMonth, setEvalSelectedMonth] = useState<string>("Tháng 9")
       {isRequestTermModalOpen && (
         <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-xs flex items-center justify-center p-4 z-50">
           <div className="bg-white rounded-xl shadow-2xl max-w-md w-full overflow-hidden flex flex-col">
-            <div className="px-6 py-4 border-b flex justify-between items-center bg-indigo-50">
+            <div className="px-6 py-4 border-b flex justify-between items-center bg-teal-50">
               <h2 className="text-lg font-bold text-slate-800">
                 Đề xuất Kết thúc bồi dưỡng
               </h2>
@@ -6716,7 +6716,7 @@ const [evalSelectedMonth, setEvalSelectedMonth] = useState<string>("Tháng 9")
               </button>
               <button
                 onClick={handleRequestTermination}
-                className="bg-indigo-600 hover:bg-indigo-700 text-white py-2 px-4 rounded-lg text-sm font-medium shadow-sm transition-all"
+                className="bg-[#003B3A] hover:bg-[#003B3A] text-white py-2 px-4 rounded-lg text-sm font-medium shadow-sm transition-all"
               >
                 Gửi đề xuất kết thúc
               </button>

@@ -389,7 +389,7 @@ export default function HomeroomCoordinationClient({ user }: Props) {
     <div className="min-h-screen bg-slate-50/70 pb-12">
       {/* Toast Notification */}
       {toastMessage && (
-        <div className="fixed bottom-5 right-5 z-50 flex items-center gap-2 rounded-xl bg-[#6E3D89] px-4 py-3 text-sm font-semibold text-white shadow-lg">
+        <div className="fixed bottom-5 right-5 z-50 flex items-center gap-2 rounded-xl bg-[#003B3A] px-4 py-3 text-sm font-semibold text-white shadow-lg">
           <CheckCircle2 className="h-4 w-4 shrink-0" />
           <span>{toastMessage}</span>
         </div>
@@ -400,7 +400,7 @@ export default function HomeroomCoordinationClient({ user }: Props) {
         <div className="mx-auto max-w-7xl">
           <div className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
             <div>
-              <div className="flex items-center gap-2 text-xs font-semibold uppercase tracking-wider text-[#6E3D89]">
+              <div className="flex items-center gap-2 text-xs font-semibold uppercase tracking-wider text-[#003B3A]">
                 <span>Sổ Giáo viên</span>
                 <span>/</span>
                 <span>Phối hợp Giáo dục (GVCN)</span>
@@ -418,7 +418,7 @@ export default function HomeroomCoordinationClient({ user }: Props) {
               <select
                 value={selectedAyId}
                 onChange={(e) => setSelectedAyId(e.target.value)}
-                className="rounded-lg border border-slate-200 bg-white px-3 py-1.5 text-xs font-medium text-slate-700 focus:border-[#6E3D89] focus:outline-none"
+                className="rounded-lg border border-slate-200 bg-white px-3 py-1.5 text-xs font-medium text-slate-700 focus:border-[#003B3A] focus:outline-none"
               >
                 {(contextData?.academicYears || []).map((ay: any) => (
                   <option key={ay.id} value={ay.id}>
@@ -430,7 +430,7 @@ export default function HomeroomCoordinationClient({ user }: Props) {
               <select
                 value={selectedClassId}
                 onChange={(e) => setSelectedClassId(e.target.value)}
-                className="rounded-lg border border-purple-200 bg-purple-50/60 px-3 py-1.5 text-xs font-semibold text-[#6E3D89] focus:border-[#6E3D89] focus:outline-none"
+                className="rounded-lg border border-teal-200 bg-teal-50/60 px-3 py-1.5 text-xs font-semibold text-[#003B3A] focus:border-[#003B3A] focus:outline-none"
               >
                 {(contextData?.homeroomClasses || []).length === 0 ? (
                   <option value="">Chưa có lớp chủ nhiệm</option>
@@ -487,10 +487,10 @@ export default function HomeroomCoordinationClient({ user }: Props) {
 
         {/* A1. Dashboard GVCN (8 Compact KPI Cards) */}
         <div className="grid grid-cols-2 gap-3 sm:grid-cols-4 lg:grid-cols-8">
-          <div className="rounded-xl border border-purple-100 bg-white p-3.5 shadow-xs">
+          <div className="rounded-xl border border-teal-200 bg-white p-3.5 shadow-xs">
             <div className="flex items-center justify-between text-xs font-medium text-slate-500">
               <span>Tổng hội thoại</span>
-              <MessageSquare className="h-4 w-4 text-[#6E3D89]" />
+              <MessageSquare className="h-4 w-4 text-[#003B3A]" />
             </div>
             <div className="mt-2 text-2xl font-bold tabular-nums text-slate-900">
               {kpis.totalThreads ?? 0}
@@ -498,12 +498,12 @@ export default function HomeroomCoordinationClient({ user }: Props) {
             <div className="mt-0.5 text-[11px] text-slate-400">Lớp chủ nhiệm</div>
           </div>
 
-          <div className="rounded-xl border border-purple-100 bg-white p-3.5 shadow-xs">
+          <div className="rounded-xl border border-teal-200 bg-white p-3.5 shadow-xs">
             <div className="flex items-center justify-between text-xs font-medium text-slate-500">
               <span>Chưa đọc</span>
-              <span className="h-2 w-2 rounded-full bg-[#6E3D89]" />
+              <span className="h-2 w-2 rounded-full bg-[#003B3A]" />
             </div>
-            <div className="mt-2 text-2xl font-bold tabular-nums text-[#6E3D89]">
+            <div className="mt-2 text-2xl font-bold tabular-nums text-[#003B3A]">
               {kpis.unreadMessagesCount ?? 0}
             </div>
             <div className="mt-0.5 text-[11px] text-slate-400">Tin nhắn mới</div>
@@ -570,12 +570,12 @@ export default function HomeroomCoordinationClient({ user }: Props) {
             </div>
           </div>
 
-          <div className="rounded-xl border border-purple-200 bg-purple-50/40 p-3.5 shadow-xs">
-            <div className="flex items-center justify-between text-xs font-semibold text-[#6E3D89]">
+          <div className="rounded-xl border border-teal-200 bg-teal-50/40 p-3.5 shadow-xs">
+            <div className="flex items-center justify-between text-xs font-semibold text-[#003B3A]">
               <span>NPS GVCN</span>
-              <Award className="h-4 w-4 text-[#6E3D89]" />
+              <Award className="h-4 w-4 text-[#003B3A]" />
             </div>
-            <div className="mt-2 text-2xl font-bold tabular-nums text-[#6E3D89]">
+            <div className="mt-2 text-2xl font-bold tabular-nums text-[#003B3A]">
               {kpis.npsGvcnEligible && kpis.npsGvcn !== null ? kpis.npsGvcn : 'Ẩn (<5 mẫu)'}
             </div>
             <div className="mt-0.5 text-[11px] text-slate-500">
@@ -591,7 +591,7 @@ export default function HomeroomCoordinationClient({ user }: Props) {
               onClick={() => setActiveTab('INBOX')}
               className={`inline-flex items-center gap-2 rounded-xl px-4 py-2 text-xs font-bold transition ${
                 activeTab === 'INBOX'
-                  ? 'bg-[#6E3D89] text-white shadow-xs'
+                  ? 'bg-[#003B3A] text-white shadow-xs'
                   : 'bg-white text-slate-600 hover:bg-slate-100'
               }`}
             >
@@ -603,7 +603,7 @@ export default function HomeroomCoordinationClient({ user }: Props) {
               onClick={() => setActiveTab('COORD_GVBM')}
               className={`inline-flex items-center gap-2 rounded-xl px-4 py-2 text-xs font-bold transition ${
                 activeTab === 'COORD_GVBM'
-                  ? 'bg-[#6E3D89] text-white shadow-xs'
+                  ? 'bg-[#003B3A] text-white shadow-xs'
                   : 'bg-white text-slate-600 hover:bg-slate-100'
               }`}
             >
@@ -615,7 +615,7 @@ export default function HomeroomCoordinationClient({ user }: Props) {
               onClick={() => setActiveTab('QUALITY')}
               className={`inline-flex items-center gap-2 rounded-xl px-4 py-2 text-xs font-bold transition ${
                 activeTab === 'QUALITY'
-                  ? 'bg-[#6E3D89] text-white shadow-xs'
+                  ? 'bg-[#003B3A] text-white shadow-xs'
                   : 'bg-white text-slate-600 hover:bg-slate-100'
               }`}
             >
@@ -650,7 +650,7 @@ export default function HomeroomCoordinationClient({ user }: Props) {
                     value={searchQuery}
                     onChange={(e) => setSearchQuery(e.target.value)}
                     placeholder="Tìm học sinh, mã HS, phụ huynh, chủ đề..."
-                    className="w-full rounded-xl border border-slate-200 bg-slate-50 py-2 pl-9 pr-3 text-xs text-slate-800 focus:border-[#6E3D89] focus:bg-white focus:outline-none"
+                    className="w-full rounded-xl border border-slate-200 bg-slate-50 py-2 pl-9 pr-3 text-xs text-slate-800 focus:border-[#003B3A] focus:bg-white focus:outline-none"
                   />
                 </div>
                 <div className="mt-2.5 flex flex-wrap gap-1.5">
@@ -665,7 +665,7 @@ export default function HomeroomCoordinationClient({ user }: Props) {
                       onClick={() => setInboxQuickFilter(tab.key as any)}
                       className={`rounded-lg px-2.5 py-1 text-[11px] font-semibold transition ${
                         inboxQuickFilter === tab.key
-                          ? 'bg-purple-100 text-[#6E3D89]'
+                          ? 'bg-teal-50 text-[#003B3A]'
                           : 'bg-slate-100 text-slate-600 hover:bg-slate-200'
                       }`}
                     >
@@ -705,8 +705,8 @@ export default function HomeroomCoordinationClient({ user }: Props) {
                           setSelectedThreadId(item.id);
                           setMobileShowDetail(true);
                         }}
-                        className={`cursor-pointer p-3.5 transition hover:bg-purple-50/40 ${
-                          isSelected ? 'border-l-4 border-l-[#6E3D89] bg-purple-50/50' : ''
+                        className={`cursor-pointer p-3.5 transition hover:bg-teal-50/40 ${
+                          isSelected ? 'border-l-4 border-l-[#003B3A] bg-teal-50/50' : ''
                         }`}
                       >
                         <div className="flex items-start justify-between gap-2">
@@ -719,7 +719,7 @@ export default function HomeroomCoordinationClient({ user }: Props) {
                                 {item.studentCode}
                               </span>
                               {item.unreadCountTeacher > 0 && (
-                                <span className="rounded-full bg-[#6E3D89] px-1.5 py-0.5 text-[10px] font-bold text-white">
+                                <span className="rounded-full bg-[#003B3A] px-1.5 py-0.5 text-[10px] font-bold text-white">
                                   {item.unreadCountTeacher} mới
                                 </span>
                               )}
@@ -736,7 +736,7 @@ export default function HomeroomCoordinationClient({ user }: Props) {
                         </div>
 
                         <div className="mt-2 flex items-center gap-1.5">
-                          <span className="rounded bg-purple-50 px-2 py-0.5 text-[10px] font-semibold text-[#6E3D89]">
+                          <span className="rounded bg-teal-50 px-2 py-0.5 text-[10px] font-semibold text-[#003B3A]">
                             {item.topicLabel}
                           </span>
                           <span
@@ -809,7 +809,7 @@ export default function HomeroomCoordinationClient({ user }: Props) {
                             <h2 className="text-sm font-bold text-slate-900">
                               {threadDetail.subjectTitle}
                             </h2>
-                            <span className="rounded bg-purple-100 px-2 py-0.5 text-[10px] font-bold text-[#6E3D89]">
+                            <span className="rounded bg-teal-50 px-2 py-0.5 text-[10px] font-bold text-[#003B3A]">
                               {threadDetail.topicLabel}
                             </span>
                           </div>
@@ -828,7 +828,7 @@ export default function HomeroomCoordinationClient({ user }: Props) {
                       <div className="flex flex-wrap items-center gap-1.5">
                         <button
                           onClick={handleCreateCaseFromThread}
-                          className="inline-flex items-center gap-1 rounded-lg border border-purple-200 bg-purple-50 px-2.5 py-1.5 text-xs font-semibold text-[#6E3D89] hover:bg-purple-100"
+                          className="inline-flex items-center gap-1 rounded-lg border border-teal-200 bg-teal-50 px-2.5 py-1.5 text-xs font-semibold text-[#003B3A] hover:bg-teal-50"
                         >
                           <PlusCircle className="h-3.5 w-3.5" />
                           Tạo yêu cầu xử lý
@@ -853,8 +853,8 @@ export default function HomeroomCoordinationClient({ user }: Props) {
 
                     {/* Linked Cases Banner */}
                     {threadDetail.cases?.length > 0 && (
-                      <div className="mt-3 rounded-xl border border-indigo-100 bg-indigo-50/60 p-2.5 text-xs">
-                        <div className="font-semibold text-indigo-950">
+                      <div className="mt-3 rounded-xl border border-teal-200 bg-teal-50/60 p-2.5 text-xs">
+                        <div className="font-semibold text-teal-800">
                           Hồ sơ yêu cầu gắn kèm ({threadDetail.cases.length}):
                         </div>
                         {threadDetail.cases.map((c: any) => (
@@ -893,7 +893,7 @@ export default function HomeroomCoordinationClient({ user }: Props) {
                               msg.isInternalNote
                                 ? 'border border-amber-300 bg-amber-50 text-amber-950'
                                 : isMine
-                                  ? 'bg-[#6E3D89] text-white'
+                                  ? 'bg-[#003B3A] text-white'
                                   : 'border border-slate-200 bg-white text-slate-800'
                             }`}
                           >
@@ -945,7 +945,7 @@ export default function HomeroomCoordinationClient({ user }: Props) {
                         {pendingAttachments.map((att, idx) => (
                           <span
                             key={idx}
-                            className="inline-flex items-center gap-1 rounded-lg bg-purple-50 px-2 py-1 text-[11px] font-medium text-[#6E3D89]"
+                            className="inline-flex items-center gap-1 rounded-lg bg-teal-50 px-2 py-1 text-[11px] font-medium text-[#003B3A]"
                           >
                             <Paperclip className="h-3 w-3" />
                             {att.fileName}
@@ -968,13 +968,13 @@ export default function HomeroomCoordinationClient({ user }: Props) {
                       value={replyText}
                       onChange={(e) => setReplyText(e.target.value)}
                       placeholder="Nhập nội dung phản hồi cho Phụ huynh hoặc ghi chú phối hợp..."
-                      className="w-full rounded-xl border border-slate-200 p-3 text-xs text-slate-800 focus:border-[#6E3D89] focus:outline-none"
+                      className="w-full rounded-xl border border-slate-200 p-3 text-xs text-slate-800 focus:border-[#003B3A] focus:outline-none"
                     />
 
                     <div className="mt-2 flex flex-wrap items-center justify-between gap-2">
                       <div className="flex items-center gap-3">
                         <label className="inline-flex cursor-pointer items-center gap-1.5 rounded-lg border border-slate-200 px-2.5 py-1.5 text-xs font-medium text-slate-600 hover:bg-slate-50">
-                          <Paperclip className="h-3.5 w-3.5 text-[#6E3D89]" />
+                          <Paperclip className="h-3.5 w-3.5 text-[#003B3A]" />
                           <span>Đính kèm tệp (&le;5MB)</span>
                           <input
                             type="file"
@@ -990,7 +990,7 @@ export default function HomeroomCoordinationClient({ user }: Props) {
                             type="checkbox"
                             checked={isInternalNote}
                             onChange={(e) => setIsInternalNote(e.target.checked)}
-                            className="rounded border-slate-300 text-[#6E3D89]"
+                            className="rounded border-slate-300 text-[#003B3A]"
                           />
                           <span>Ghi chú nội bộ GV (ẩn với PHHS)</span>
                         </label>
@@ -999,7 +999,7 @@ export default function HomeroomCoordinationClient({ user }: Props) {
                       <button
                         type="submit"
                         disabled={sendingReply || !replyText.trim()}
-                        className="inline-flex items-center gap-1.5 rounded-xl bg-[#6E3D89] px-4 py-2 text-xs font-bold text-white shadow-xs hover:bg-[#5B3172] disabled:opacity-50"
+                        className="inline-flex items-center gap-1.5 rounded-xl bg-[#003B3A] px-4 py-2 text-xs font-bold text-white shadow-xs hover:bg-[#5B3172] disabled:opacity-50"
                       >
                         <Send className="h-3.5 w-3.5" />
                         {sendingReply ? 'Đang gửi...' : 'Gửi phản hồi'}
@@ -1015,8 +1015,8 @@ export default function HomeroomCoordinationClient({ user }: Props) {
         {/* TAB A3: PHỐI HỢP GIÁO VIÊN BỘ MÔN */}
         {activeTab === 'COORD_GVBM' && (
           <div className="mt-4 space-y-4">
-            <div className="rounded-2xl border border-purple-100 bg-purple-50/50 p-4 text-xs text-slate-700">
-              <div className="flex items-center gap-2 font-bold text-[#6E3D89]">
+            <div className="rounded-2xl border border-teal-200 bg-teal-50/50 p-4 text-xs text-slate-700">
+              <div className="flex items-center gap-2 font-bold text-[#003B3A]">
                 <Lock className="h-4 w-4" />
                 <span>Nguyên tắc bảo mật & phối hợp GVCN – GVBM</span>
               </div>
@@ -1060,7 +1060,7 @@ export default function HomeroomCoordinationClient({ user }: Props) {
                           CASE_STATUS_LABELS[c.status] || CASE_STATUS_LABELS.NEW;
                         return (
                           <tr key={c.id} className="hover:bg-slate-50/80">
-                            <td className="px-4 py-3 font-mono font-bold text-[#6E3D89]">
+                            <td className="px-4 py-3 font-mono font-bold text-[#003B3A]">
                               {c.caseCode}
                             </td>
                             <td className="px-4 py-3">
@@ -1085,7 +1085,7 @@ export default function HomeroomCoordinationClient({ user }: Props) {
                                 </div>
                               )}
                               {c.resolutionSummary && (
-                                <div className="mt-1 rounded bg-purple-50 px-2 py-1 text-[11px] text-purple-900">
+                                <div className="mt-1 rounded bg-teal-50 px-2 py-1 text-[11px] text-teal-800">
                                   <strong>Kết quả:</strong> {c.resolutionSummary}
                                 </div>
                               )}
@@ -1138,7 +1138,7 @@ export default function HomeroomCoordinationClient({ user }: Props) {
                                     onClick={() =>
                                       handleCaseStatusAction(c.id, 'CONFIRM_COMPLETED')
                                     }
-                                    className="rounded-lg bg-[#6E3D89] px-2.5 py-1 text-[11px] font-semibold text-white hover:bg-[#5B3172]"
+                                    className="rounded-lg bg-[#003B3A] px-2.5 py-1 text-[11px] font-semibold text-white hover:bg-[#5B3172]"
                                   >
                                     Hoàn tất
                                   </button>
@@ -1163,7 +1163,7 @@ export default function HomeroomCoordinationClient({ user }: Props) {
             <div className="space-y-4 lg:col-span-5">
               <div className="rounded-2xl border border-slate-200 bg-white p-5 shadow-xs">
                 <h3 className="flex items-center gap-2 text-sm font-bold text-slate-900">
-                  <Target className="h-4 w-4 text-[#6E3D89]" />
+                  <Target className="h-4 w-4 text-[#003B3A]" />
                   Thống kê Vấn đề Phát sinh Nhiều lần
                 </h3>
                 <div className="mt-3 space-y-2.5">
@@ -1178,7 +1178,7 @@ export default function HomeroomCoordinationClient({ user }: Props) {
                         className="flex items-center justify-between rounded-xl border border-slate-100 bg-slate-50 px-3.5 py-2.5 text-xs"
                       >
                         <span className="font-semibold text-slate-800">{iss.label}</span>
-                        <span className="rounded-full bg-purple-100 px-2.5 py-0.5 font-mono font-bold text-[#6E3D89]">
+                        <span className="rounded-full bg-teal-50 px-2.5 py-0.5 font-mono font-bold text-[#003B3A]">
                           {iss.count} yêu cầu
                         </span>
                       </div>
@@ -1189,7 +1189,7 @@ export default function HomeroomCoordinationClient({ user }: Props) {
 
               <div className="rounded-2xl border border-slate-200 bg-white p-5 shadow-xs">
                 <h3 className="flex items-center gap-2 text-sm font-bold text-slate-900">
-                  <Award className="h-4 w-4 text-[#6E3D89]" />
+                  <Award className="h-4 w-4 text-[#003B3A]" />
                   Kết quả Khảo sát Định kỳ (Ẩn danh PHHS)
                 </h3>
                 <p className="mt-1 text-[11px] text-slate-500">
@@ -1197,9 +1197,9 @@ export default function HomeroomCoordinationClient({ user }: Props) {
                 </p>
                 {dashboard?.npsSummary?.gvcnMetrics?.isEligibleToPublish ? (
                   <div className="mt-3 space-y-2 text-xs">
-                    <div className="flex justify-between rounded-lg bg-purple-50 p-2.5">
+                    <div className="flex justify-between rounded-lg bg-teal-50 p-2.5">
                       <span>Điểm NPS GVCN:</span>
-                      <strong className="text-[#6E3D89]">
+                      <strong className="text-[#003B3A]">
                         {dashboard.npsSummary.gvcnMetrics.npsScore}
                       </strong>
                     </div>
@@ -1221,7 +1221,7 @@ export default function HomeroomCoordinationClient({ user }: Props) {
             {/* Assigned Improvement Actions */}
             <div className="rounded-2xl border border-slate-200 bg-white p-5 shadow-xs lg:col-span-7">
               <h3 className="flex items-center gap-2 text-sm font-bold text-slate-900">
-                <FileText className="h-4 w-4 text-[#6E3D89]" />
+                <FileText className="h-4 w-4 text-[#003B3A]" />
                 Nhiệm vụ Cải tiến Chất lượng được giao ({improvements.length})
               </h3>
               <div className="mt-3 space-y-3">
@@ -1233,11 +1233,11 @@ export default function HomeroomCoordinationClient({ user }: Props) {
                   improvements.map((imp: any) => (
                     <div
                       key={imp.id}
-                      className="rounded-xl border border-slate-200 p-4 text-xs hover:border-purple-200"
+                      className="rounded-xl border border-slate-200 p-4 text-xs hover:border-teal-200"
                     >
                       <div className="flex items-center justify-between">
-                        <span className="font-mono font-bold text-[#6E3D89]">{imp.issueCode}</span>
-                        <span className="rounded-full bg-purple-100 px-2.5 py-0.5 text-[10px] font-bold text-[#6E3D89]">
+                        <span className="font-mono font-bold text-[#003B3A]">{imp.issueCode}</span>
+                        <span className="rounded-full bg-teal-50 px-2.5 py-0.5 text-[10px] font-bold text-[#003B3A]">
                           {imp.status}
                         </span>
                       </div>
@@ -1265,7 +1265,7 @@ export default function HomeroomCoordinationClient({ user }: Props) {
                               showToast('Đã gửi báo cáo hoàn thành nhiệm vụ cải tiến.');
                               fetchAllData();
                             }}
-                            className="rounded-lg bg-[#6E3D89] px-3 py-1 font-semibold text-white"
+                            className="rounded-lg bg-[#003B3A] px-3 py-1 font-semibold text-white"
                           >
                             Cập nhật minh chứng
                           </button>
@@ -1408,7 +1408,7 @@ export default function HomeroomCoordinationClient({ user }: Props) {
                 <button
                   type="submit"
                   disabled={submittingCoord}
-                  className="rounded-xl bg-[#6E3D89] px-4 py-2 font-bold text-white hover:bg-[#5B3172]"
+                  className="rounded-xl bg-[#003B3A] px-4 py-2 font-bold text-white hover:bg-[#5B3172]"
                 >
                   {submittingCoord ? 'Đang tạo...' : 'Giao yêu cầu phối hợp'}
                 </button>

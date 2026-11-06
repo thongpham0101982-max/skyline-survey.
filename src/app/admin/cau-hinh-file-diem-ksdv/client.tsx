@@ -1744,16 +1744,16 @@ function CauHinhFileDiemKsdvClientInner({
       {(currentSubject?.code === "PDHDV" || currentSubject?.code === "PDH" || currentSubject?.name?.toLowerCase().includes("định hướng")) && (() => {
         const curPreset = getOrientationPresetByGrade(selectedGrade)
         return (
-          <div className="relative overflow-hidden rounded-3xl bg-gradient-to-r from-slate-900 via-indigo-950 to-slate-900 text-white p-5 md:p-6 border border-indigo-700/50 shadow-xl shadow-indigo-950/20 animate-in fade-in duration-300">
-            <div className="absolute -right-8 -top-8 w-40 h-40 bg-indigo-500/10 rounded-full blur-2xl pointer-events-none" />
+          <div className="relative overflow-hidden rounded-3xl bg-gradient-to-r from-slate-900 via-indigo-950 to-slate-900 text-white p-5 md:p-6 border border-teal-700/50 shadow-xl shadow-indigo-950/20 animate-in fade-in duration-300">
+            <div className="absolute -right-8 -top-8 w-40 h-40 bg-teal-500/10 rounded-full blur-2xl pointer-events-none" />
             <div className="relative z-10 flex flex-col lg:flex-row items-start lg:items-center justify-between gap-5">
               <div className="flex items-start gap-4">
-                <div className="w-12 h-12 rounded-2xl bg-indigo-500/20 border border-indigo-400/30 flex items-center justify-center text-indigo-300 flex-shrink-0 mt-0.5">
-                  <HeartHandshake className="w-6 h-6 text-indigo-300 animate-pulse" />
+                <div className="w-12 h-12 rounded-2xl bg-teal-500/20 border border-teal-400/30 flex items-center justify-center text-teal-700 flex-shrink-0 mt-0.5">
+                  <HeartHandshake className="w-6 h-6 text-teal-700 animate-pulse" />
                 </div>
                 <div className="space-y-1.5">
                   <div className="flex flex-wrap items-center gap-2.5">
-                    <span className="px-2.5 py-0.5 rounded-full bg-indigo-500/30 text-indigo-200 text-[10px] font-black uppercase tracking-wider border border-indigo-400/30">
+                    <span className="px-2.5 py-0.5 rounded-full bg-teal-500/30 text-teal-700 text-[10px] font-black uppercase tracking-wider border border-teal-400/30">
                       Cấu phần đặc biệt KSĐV
                     </span>
                     <span className="px-2.5 py-0.5 rounded-full bg-teal-500/30 text-teal-200 text-[10px] font-black tracking-wide border border-teal-400/30">
@@ -1763,11 +1763,11 @@ function CauHinhFileDiemKsdvClientInner({
                       Phiếu Định Hướng Đầu Vào (Gồm 2 Tab Liên Kết)
                     </h3>
                   </div>
-                  <p className="text-xs text-indigo-200/90 leading-relaxed max-w-3xl">
+                  <p className="text-xs text-teal-700/90 leading-relaxed max-w-3xl">
                     Tích hợp hai cấu phần đồng bộ: <strong>Tab 1 – Phỏng vấn học sinh</strong> (bộ 4 tiêu chí chuẩn cho <strong>{selectedGrade}: {curPreset.subLabel}</strong>, nhận diện định tính 4 mức độ, quan sát giáo viên) 
                     và <strong>Tab 2 – Trao đổi PHHS</strong> (04 nhóm: nguyện vọng & kỳ vọng, đặc điểm cá nhân & thói quen, nhu cầu hỗ trợ, phối hợp giáo dục).
                   </p>
-                  <div className="flex flex-wrap items-center gap-2 pt-1 text-[11px] text-indigo-300/80">
+                  <div className="flex flex-wrap items-center gap-2 pt-1 text-[11px] text-teal-700/80">
                     <span className="flex items-center gap-1 font-semibold">
                       <CheckCircle2 className="w-3.5 h-3.5 text-emerald-400" /> Tự động lấy đúng bộ tiêu chí theo khối
                     </span>
@@ -1787,7 +1787,7 @@ function CauHinhFileDiemKsdvClientInner({
                 <button
                   type="button"
                   onClick={applyOrientationPreset}
-                  className="flex-1 sm:flex-none flex items-center justify-center gap-2 px-4 py-2.5 bg-gradient-to-r from-indigo-500 to-purple-600 hover:from-indigo-600 hover:to-purple-700 text-white rounded-xl text-xs font-black uppercase tracking-wider transition-all shadow-lg shadow-indigo-600/30 hover:scale-[1.02] active:scale-[0.98]"
+                  className="flex-1 sm:flex-none flex items-center justify-center gap-2 px-4 py-2.5 bg-gradient-to-r from-teal-600 to-emerald-600 hover:from-teal-600 hover:to-emerald-600 text-white rounded-xl text-xs font-black uppercase tracking-wider transition-all shadow-lg shadow-indigo-600/30 hover:scale-[1.02] active:scale-[0.98]"
                 >
                   <Sparkles className="w-4 h-4 text-amber-300" />
                   <span>Áp dụng mẫu {selectedGrade}</span>
@@ -1796,7 +1796,7 @@ function CauHinhFileDiemKsdvClientInner({
                 <Link
                   href="/admin/input-assessments?tab=categories&sub=orientation"
                   target="_blank"
-                  className="flex-1 sm:flex-none flex items-center justify-center gap-1.5 px-4 py-2.5 bg-white/10 hover:bg-white/15 text-indigo-200 hover:text-white border border-indigo-400/30 rounded-xl text-xs font-bold transition-all"
+                  className="flex-1 sm:flex-none flex items-center justify-center gap-1.5 px-4 py-2.5 bg-white/10 hover:bg-white/15 text-teal-700 hover:text-white border border-teal-400/30 rounded-xl text-xs font-bold transition-all"
                 >
                   <span>Ngân hàng câu hỏi</span>
                   <ExternalLink className="w-3.5 h-3.5" />
@@ -2195,31 +2195,31 @@ function CauHinhFileDiemKsdvClientInner({
 
           {/* LIVE SIMULATOR (MÔ PHỎNG TRỰC TIẾP) */}
           {hasComposite && isOrientationMode ? (
-            <div className="p-5 bg-gradient-to-br from-indigo-50/90 via-purple-50/70 to-slate-50 border-2 border-indigo-200 rounded-3xl space-y-4 shadow-sm animate-in fade-in">
-              <div className="flex flex-wrap items-center justify-between gap-3 pb-3 border-b border-indigo-100">
+            <div className="p-5 bg-gradient-to-br from-teal-600/90 via-purple-50/70 to-slate-50 border-2 border-teal-200 rounded-3xl space-y-4 shadow-sm animate-in fade-in">
+              <div className="flex flex-wrap items-center justify-between gap-3 pb-3 border-b border-teal-200">
                 <div className="flex items-center gap-2.5">
-                  <div className="w-8 h-8 rounded-xl bg-indigo-600 text-white flex items-center justify-center shadow-xs">
+                  <div className="w-8 h-8 rounded-xl bg-[#003B3A] text-white flex items-center justify-center shadow-xs">
                     <HeartHandshake className="w-4 h-4" />
                   </div>
                   <div>
-                    <span className="text-xs font-black text-indigo-950 uppercase tracking-wide block">
+                    <span className="text-xs font-black text-teal-800 uppercase tracking-wide block">
                       Mô phỏng Phiếu Định Hướng Đầu Vào (2 Tab Liên Kết)
                     </span>
-                    <span className="text-[11px] font-semibold text-indigo-600">
+                    <span className="text-[11px] font-semibold text-teal-800">
                       Nguyên tắc: Đánh giá định tính phi điểm số • Thấu hiểu & Đồng hành
                     </span>
                   </div>
                 </div>
 
                 {/* Sub-tabs toggle */}
-                <div className="inline-flex p-1 bg-white border border-indigo-200 rounded-2xl shadow-xs">
+                <div className="inline-flex p-1 bg-white border border-teal-200 rounded-2xl shadow-xs">
                   <button
                     type="button"
                     onClick={() => setActiveOrientationSimTab("tab1")}
                     className={`flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-black transition-all ${
                       activeOrientationSimTab === "tab1"
-                        ? "bg-indigo-600 text-white shadow-xs"
-                        : "text-slate-600 hover:text-indigo-600 hover:bg-indigo-50"
+                        ? "bg-[#003B3A] text-white shadow-xs"
+                        : "text-slate-600 hover:text-teal-800 hover:bg-teal-50"
                     }`}
                   >
                     <UserCheck className="w-3.5 h-3.5" />
@@ -2230,8 +2230,8 @@ function CauHinhFileDiemKsdvClientInner({
                     onClick={() => setActiveOrientationSimTab("tab2")}
                     className={`flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-black transition-all ${
                       activeOrientationSimTab === "tab2"
-                        ? "bg-purple-600 text-white shadow-xs"
-                        : "text-slate-600 hover:text-purple-600 hover:bg-purple-50"
+                        ? "bg-[#003B3A] text-white shadow-xs"
+                        : "text-slate-600 hover:text-teal-800 hover:bg-teal-50"
                     }`}
                   >
                     <Users className="w-3.5 h-3.5" />
@@ -2245,12 +2245,12 @@ function CauHinhFileDiemKsdvClientInner({
                 return activeOrientationSimTab === "tab1" ? (
                   /* TAB 1 SIMULATION: PHỎNG VẤN HỌC SINH (THEO KHỐI) */
                   <div className="space-y-3.5">
-                    <div className="flex items-center justify-between text-xs font-bold text-indigo-900">
+                    <div className="flex items-center justify-between text-xs font-bold text-teal-800">
                       <span className="flex items-center gap-1.5">
-                        <MessageSquareQuote className="w-4 h-4 text-indigo-600" />
+                        <MessageSquareQuote className="w-4 h-4 text-teal-800" />
                         Ghi nhận Định tính theo 4 Mức độ cho <strong>{selectedGrade}</strong> ({simOrientationCfg.gradeLabel}: {simOrientationCfg.subLabel}):
                       </span>
-                      <span className="text-[10px] text-indigo-600 font-bold bg-white px-2 py-0.5 rounded-full border border-indigo-200">
+                      <span className="text-[10px] text-teal-800 font-bold bg-white px-2 py-0.5 rounded-full border border-teal-200">
                         {columnCount} tiêu chí chuẩn
                       </span>
                     </div>
@@ -2261,15 +2261,15 @@ function CauHinhFileDiemKsdvClientInner({
                         const criterionName = columnNames[idx] || simOrientationCfg.criteria[idx]?.name || `Tiêu chí ${idx + 1}`
                         const critObj = simOrientationCfg.criteria[idx]
                         return (
-                          <div key={idx} className="bg-white p-3 rounded-2xl border border-indigo-100 shadow-xs space-y-2">
+                          <div key={idx} className="bg-white p-3 rounded-2xl border border-teal-200 shadow-xs space-y-2">
                             <div className="flex items-center justify-between">
                               <span className="text-xs font-black text-slate-800 flex items-center gap-1.5">
-                                <span className="w-5 h-5 rounded-md bg-indigo-50 text-indigo-700 text-[10px] font-black inline-flex items-center justify-center border border-indigo-200">
+                                <span className="w-5 h-5 rounded-md bg-teal-50 text-teal-800 text-[10px] font-black inline-flex items-center justify-center border border-teal-200">
                                   {idx + 1}
                                 </span>
                                 {criterionName}
                               </span>
-                              <span className="text-[10px] font-bold text-indigo-600 bg-indigo-50/70 px-2 py-0.5 rounded-md border border-indigo-100">
+                              <span className="text-[10px] font-bold text-teal-800 bg-teal-50/70 px-2 py-0.5 rounded-md border border-teal-200">
                                 {critObj?.categoryLabel || `Tiêu chí ${idx + 1}`}
                               </span>
                             </div>
@@ -2305,12 +2305,12 @@ function CauHinhFileDiemKsdvClientInner({
                       })}
                     </div>
 
-                    <div className="bg-white p-3 rounded-2xl border border-indigo-100 space-y-1.5">
-                      <label className="text-[11px] font-black text-indigo-900 uppercase tracking-wider flex items-center gap-1.5">
-                        <Edit2 className="w-3 h-3 text-indigo-600" />
+                    <div className="bg-white p-3 rounded-2xl border border-teal-200 space-y-1.5">
+                      <label className="text-[11px] font-black text-teal-800 uppercase tracking-wider flex items-center gap-1.5">
+                        <Edit2 className="w-3 h-3 text-teal-800" />
                         Ghi nhận quan sát & Nhận xét của Giáo viên tiếp nhận ({selectedGrade}):
                       </label>
-                      <p className="text-xs text-slate-700 italic bg-indigo-50/40 p-2.5 rounded-xl border border-indigo-100/60 leading-relaxed font-medium">
+                      <p className="text-xs text-slate-700 italic bg-teal-50/40 p-2.5 rounded-xl border border-teal-100/60 leading-relaxed font-medium">
                         {selectedGrade.includes("6")
                           ? `"Học sinh có ý thức tự học tốt, cởi mở khi làm quen môi trường THCS mới. Đã biết cách lập thời gian biểu và chủ động trao đổi với thầy cô bộ môn. Sẵn sàng hòa nhập tốt lớp 6."`
                           : selectedGrade.includes("10") || selectedGrade.includes("11") || selectedGrade.includes("12")
@@ -2323,49 +2323,49 @@ function CauHinhFileDiemKsdvClientInner({
                 ) : (
                   /* TAB 2 SIMULATION: TRAO ĐỔI PHHS (04 NHÓM CHUẨN HÓA THEO KHỐI) */
                   <div className="space-y-3.5 animate-in fade-in">
-                    <div className="flex items-center justify-between text-xs font-bold text-purple-900">
+                    <div className="flex items-center justify-between text-xs font-bold text-teal-800">
                       <span className="flex items-center gap-1.5">
-                        <Users className="w-4 h-4 text-purple-600" />
+                        <Users className="w-4 h-4 text-teal-800" />
                         04 Nhóm Trao đổi PHHS chuẩn hóa cho <strong>{selectedGrade}</strong>:
                       </span>
-                      <span className="text-[10px] text-purple-600 font-bold bg-white px-2 py-0.5 rounded-full border border-purple-200">
+                      <span className="text-[10px] text-teal-800 font-bold bg-white px-2 py-0.5 rounded-full border border-teal-200">
                         {simOrientationCfg.parentPrompts.groupLabel}
                       </span>
                     </div>
 
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-                      <div className="bg-white p-3 rounded-2xl border border-purple-100 space-y-1">
-                        <span className="text-[11px] font-black text-purple-900 uppercase">
+                      <div className="bg-white p-3 rounded-2xl border border-teal-200 space-y-1">
+                        <span className="text-[11px] font-black text-teal-800 uppercase">
                           {simOrientationCfg.parentPrompts.group1_expectations.title}
                         </span>
-                        <p className="text-xs text-slate-700 bg-purple-50/40 p-2.5 rounded-xl border border-purple-100/60 font-medium">
+                        <p className="text-xs text-slate-700 bg-teal-50/40 p-2.5 rounded-xl border border-teal-100/60 font-medium">
                           {simOrientationCfg.parentPrompts.group1_expectations.placeholder}
                         </p>
                       </div>
 
-                      <div className="bg-white p-3 rounded-2xl border border-purple-100 space-y-1">
-                        <span className="text-[11px] font-black text-purple-900 uppercase">
+                      <div className="bg-white p-3 rounded-2xl border border-teal-200 space-y-1">
+                        <span className="text-[11px] font-black text-teal-800 uppercase">
                           {simOrientationCfg.parentPrompts.group2_personality.title}
                         </span>
-                        <p className="text-xs text-slate-700 bg-purple-50/40 p-2.5 rounded-xl border border-purple-100/60 font-medium">
+                        <p className="text-xs text-slate-700 bg-teal-50/40 p-2.5 rounded-xl border border-teal-100/60 font-medium">
                           {simOrientationCfg.parentPrompts.group2_personality.placeholder}
                         </p>
                       </div>
 
-                      <div className="bg-white p-3 rounded-2xl border border-purple-100 space-y-1">
-                        <span className="text-[11px] font-black text-purple-900 uppercase">
+                      <div className="bg-white p-3 rounded-2xl border border-teal-200 space-y-1">
+                        <span className="text-[11px] font-black text-teal-800 uppercase">
                           {simOrientationCfg.parentPrompts.group3_support.title}
                         </span>
-                        <p className="text-xs text-slate-700 bg-purple-50/40 p-2.5 rounded-xl border border-purple-100/60 font-medium">
+                        <p className="text-xs text-slate-700 bg-teal-50/40 p-2.5 rounded-xl border border-teal-100/60 font-medium">
                           {simOrientationCfg.parentPrompts.group3_support.placeholder}
                         </p>
                       </div>
 
-                      <div className="bg-white p-3 rounded-2xl border border-purple-100 space-y-1">
-                        <span className="text-[11px] font-black text-purple-900 uppercase">
+                      <div className="bg-white p-3 rounded-2xl border border-teal-200 space-y-1">
+                        <span className="text-[11px] font-black text-teal-800 uppercase">
                           {simOrientationCfg.parentPrompts.group4_cooperation.title}
                         </span>
-                        <p className="text-xs text-slate-700 bg-purple-50/40 p-2.5 rounded-xl border border-purple-100/60 font-medium">
+                        <p className="text-xs text-slate-700 bg-teal-50/40 p-2.5 rounded-xl border border-teal-100/60 font-medium">
                           {simOrientationCfg.parentPrompts.group4_cooperation.placeholder}
                         </p>
                       </div>
@@ -2375,9 +2375,9 @@ function CauHinhFileDiemKsdvClientInner({
               })()}
 
               {/* FOOTER ĐỊNH HƯỚNG TỔNG THỂ */}
-              <div className="p-3 bg-white rounded-2xl border border-indigo-200/80 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
+              <div className="p-3 bg-white rounded-2xl border border-teal-200/80 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
                 <div className="space-y-0.5">
-                  <span className="text-[10px] font-black text-indigo-600 uppercase tracking-widest block">
+                  <span className="text-[10px] font-black text-teal-800 uppercase tracking-widest block">
                     Định hướng Tiếp nhận & Phân loại hỗ trợ:
                   </span>
                   <span className="text-xs font-black text-slate-800">
@@ -2822,7 +2822,7 @@ function CauHinhFileDiemKsdvClientInner({
 
                             const periodColor = cfg.periodId === "DAU_NAM" ? "bg-amber-50 text-amber-800 border-amber-200" :
                               cfg.periodId === "HK1" ? "bg-sky-50 text-sky-800 border-sky-200" :
-                              cfg.periodId === "HK2" ? "bg-indigo-50 text-indigo-800 border-indigo-200" :
+                              cfg.periodId === "HK2" ? "bg-teal-50 text-teal-800 border-teal-200" :
                               "bg-slate-50 text-slate-600 border-slate-200"
 
                             return (
@@ -2924,7 +2924,7 @@ function CauHinhFileDiemKsdvClientInner({
 
                   const periodColor = cfg.periodId === "DAU_NAM" ? "bg-amber-50 text-amber-800 border-amber-200" :
                     cfg.periodId === "HK1" ? "bg-sky-50 text-sky-800 border-sky-200" :
-                    cfg.periodId === "HK2" ? "bg-indigo-50 text-indigo-800 border-indigo-200" :
+                    cfg.periodId === "HK2" ? "bg-teal-50 text-teal-800 border-teal-200" :
                     "bg-slate-50 text-slate-600 border-slate-200"
 
                   return (

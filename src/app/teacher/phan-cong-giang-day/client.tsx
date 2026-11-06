@@ -519,7 +519,7 @@ export function TeachingAssignmentClient({
               <div key={idx} className="bg-white rounded-2xl border border-slate-200 shadow-sm p-5 space-y-4 hover:shadow-md transition-shadow">
                 <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-slate-100 pb-3">
                   <div className="flex items-center gap-3">
-                    <div className="w-10 h-10 rounded-xl bg-gradient-to-tr from-teal-600 to-indigo-600 flex items-center justify-center text-white font-black shadow-md">
+                    <div className="w-10 h-10 rounded-xl bg-gradient-to-tr from-teal-600 to-emerald-600 flex items-center justify-center text-white font-black shadow-md">
                       <BookOpen className="w-5 h-5" />
                     </div>
                     <div>
@@ -545,7 +545,7 @@ export function TeachingAssignmentClient({
                       <span key={sem} className={`px-2.5 py-1 rounded-lg text-[10px] font-extrabold uppercase border ${
                         sem === 1 
                           ? "bg-blue-50 text-blue-700 border-blue-200" 
-                          : "bg-indigo-50 text-indigo-700 border-indigo-200"
+                          : "bg-teal-50 text-teal-800 border-teal-200"
                       }`}>
                         Học kỳ {sem}
                       </span>
@@ -635,7 +635,7 @@ export function TeachingAssignmentClient({
                         <span className={`inline-flex items-center px-2 py-0.5 rounded text-[10px] font-extrabold tracking-wider ${
                           a.semester === 1 
                             ? "bg-blue-50 text-blue-600 border border-blue-100" 
-                            : "bg-indigo-50 text-indigo-600 border border-indigo-100"
+                            : "bg-teal-50 text-teal-800 border border-teal-200"
                         }`}>
                           HỌC KỲ {a.semester}
                         </span>

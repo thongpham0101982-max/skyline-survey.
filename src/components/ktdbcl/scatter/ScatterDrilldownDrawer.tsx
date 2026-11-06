@@ -178,9 +178,9 @@ export function ScatterDrilldownDrawer({
                 <span className="text-[11px] font-extrabold text-slate-700 uppercase tracking-wider block">
                   Phiếu Cam kết Học tập Đang Áp dụng:
                 </span>
-                <div className="p-3 bg-purple-50 rounded-xl border border-purple-200 text-purple-900 space-y-1">
+                <div className="p-3 bg-teal-50 rounded-xl border border-teal-200 text-teal-800 space-y-1">
                   <div className="font-bold">{student.learningCommitment.content}</div>
-                  <div className="text-[10px] text-purple-700">
+                  <div className="text-[10px] text-teal-800">
                     Phụ trách: {student.learningCommitment.teacherName || "Chưa gán"}
                   </div>
                 </div>

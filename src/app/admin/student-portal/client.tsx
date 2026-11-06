@@ -609,7 +609,7 @@ export function StudentPortalClient({ initialConfig, academicYears, stats }: any
         {activeTab === "config" && (
           <div className="bg-white border border-slate-200 rounded-3xl p-6 md:p-8 shadow-sm space-y-6">
             <h3 className="text-lg font-black text-slate-800 flex items-center gap-2">
-              <Globe className="w-5 h-5 text-indigo-500" /> Đường dẫn & Chia sẻ Cổng
+              <Globe className="w-5 h-5 text-teal-700" /> Đường dẫn & Chia sẻ Cổng
             </h3>
 
             <div className="p-4 bg-slate-50 rounded-2xl border border-slate-200 flex flex-col md:flex-row md:items-center justify-between gap-4">
@@ -643,8 +643,8 @@ export function StudentPortalClient({ initialConfig, academicYears, stats }: any
               </div>
             </div>
 
-            <div className="flex gap-4 p-4 bg-indigo-50/50 border border-indigo-100 rounded-2xl text-[11px] font-medium text-slate-600">
-              <Info className="w-5 h-5 text-indigo-500 shrink-0 mt-0.5" />
+            <div className="flex gap-4 p-4 bg-teal-50/50 border border-teal-200 rounded-2xl text-[11px] font-medium text-slate-600">
+              <Info className="w-5 h-5 text-teal-700 shrink-0 mt-0.5" />
               <div className="space-y-1">
                 <p className="font-extrabold text-slate-800">Quy trình vận hành đề xuất:</p>
                 <ol className="list-decimal pl-4 space-y-1">

@@ -748,7 +748,7 @@ export function NameplateFrontFace({
                 className="w-full h-full flex flex-col items-center justify-between text-center"
                 style={{
                   background: isPurple
-                    ? 'linear-gradient(180deg, #EDE9FE 0%, #F5F3FF 55%, #DDD6FE 100%)'
+                    ? 'linear-gradient(180deg, #F0FDFA 0%, #F5F3FF 55%, #CCFBF1 100%)'
                     : 'linear-gradient(180deg, #E0F2FE 0%, #F0FDFA 55%, #CCFBF1 100%)',
                   paddingTop: '3.5mm',
                   paddingBottom: '2.2mm',

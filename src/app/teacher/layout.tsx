@@ -178,10 +178,10 @@ export default async function TeacherLayout({ children }: { children: React.Reac
   }
 
   return (
-    <div className="flex min-h-dvh text-xs font-semibold bg-[#F8FAFC]">
+    <div className="teacher-layout-wrapper flex min-h-dvh text-xs font-medium text-slate-800 bg-[#F8FAFC]">
       <Sidebar role="TEACHER" permissionModules={readableModules} actualRole={roleCode} isGVCN={isGVCN} isTTCM={isTTCM} isPreschoolTeacher={isPreschoolTeacher} assignedSpecialSubjects={assignedSpecialSubjects} />
       <main className="flex-1 flex flex-col relative min-w-0 overflow-hidden bg-[#F8FAFC]">
-        <header className="teacher-layout-header h-16 border-b border-slate-200/70 bg-white/90 backdrop-blur-md sticky top-0 z-30 flex items-center justify-between px-4 sm:px-6 shrink-0 shadow-2xs">
+        <header className="teacher-layout-header h-16 border-b border-slate-200 bg-white/95 backdrop-blur-md sticky top-0 z-30 flex items-center justify-between px-4 sm:px-6 shrink-0 shadow-2xs">
           <div className="flex items-center gap-3">
             <MobileMenuTrigger />
             <div className="flex items-center gap-2">
@@ -191,11 +191,13 @@ export default async function TeacherLayout({ children }: { children: React.Reac
                 className="h-7 w-auto object-contain md:hidden" 
               />
               <div className="flex flex-col">
-                <span className="text-xs md:text-sm font-medium text-slate-800 tracking-normal flex items-center gap-1.5">
-                  <span className="text-[#0284C7] font-medium tracking-wide">SQMS</span>
-                  <span className="hidden md:inline text-xs font-normal text-slate-400">• Không gian Giáo viên</span>
+                <span className="text-xs md:text-sm font-bold text-slate-900 tracking-tight flex items-center gap-2">
+                  <span className="inline-flex items-center px-2 py-0.5 rounded-md bg-[#003B3A] text-white text-[11px] font-bold tracking-normal">
+                    SQMS
+                  </span>
+                  <span className="hidden md:inline text-xs font-semibold text-slate-600">Không gian Giáo viên</span>
                 </span>
-                <span className="md:hidden text-[10px] text-[#0284C7] font-normal leading-none">SQMS</span>
+                <span className="md:hidden text-[10px] text-[#00736E] font-semibold leading-none mt-0.5">Giáo viên</span>
               </div>
             </div>
 
@@ -209,7 +211,7 @@ export default async function TeacherLayout({ children }: { children: React.Reac
              <UserMenu session={session} />
           </div>
         </header>
-        <div className="p-4 sm:p-6 md:p-8 pb-24 md:pb-12 flex-1 overflow-x-auto overflow-y-auto text-sm font-normal">
+        <div className="p-4 sm:p-6 md:p-8 pb-24 md:pb-12 flex-1 overflow-x-auto overflow-y-auto text-sm font-normal text-slate-800">
           {children}
         </div>
         

@@ -247,7 +247,7 @@ export function PsychologicalDetailModal({
             <div>
               <div className="flex items-center gap-2">
                 <span className="font-extrabold text-sm text-slate-900">{s.studentName}</span>
-                <span className="px-2 py-0.5 rounded-md bg-purple-100 text-purple-800 font-mono text-[11px] font-bold border border-purple-200">
+                <span className="px-2 py-0.5 rounded-md bg-teal-50 text-teal-800 font-mono text-[11px] font-bold border border-teal-200">
                   {s.studentCode}
                 </span>
                 <span className="px-2 py-0.5 rounded-md bg-teal-100 text-teal-800 text-[10px] font-black border border-teal-200">
@@ -268,9 +268,9 @@ export function PsychologicalDetailModal({
               <span className={`inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[10px] font-black border shadow-2xs ${
                 isAttention
                   ? "bg-rose-100 text-rose-800 border-rose-200"
-                  : "bg-purple-100 text-purple-800 border-purple-200"
+                  : "bg-teal-50 text-teal-800 border-teal-200"
               }`}>
-                <span className={`w-1.5 h-1.5 rounded-full ${isAttention ? "bg-rose-500 animate-pulse" : "bg-purple-500 animate-pulse"}`} />
+                <span className={`w-1.5 h-1.5 rounded-full ${isAttention ? "bg-rose-500 animate-pulse" : "bg-teal-500 animate-pulse"}`} />
                 {s.status}
               </span>
             </div>
@@ -301,7 +301,7 @@ export function PsychologicalDetailModal({
                 : "border-transparent text-slate-500 hover:text-slate-900 hover:border-slate-300"
             }`}
           >
-            <Brain className="h-4 w-4 text-purple-600" />
+            <Brain className="h-4 w-4 text-teal-800" />
             2. Hồ sơ & Khảo sát đầu vào (6 chiều kích)
           </button>
 
@@ -448,8 +448,8 @@ export function PsychologicalDetailModal({
                                           </div>
                                         )}
                                         {parsed.phhsFeedback && (
-                                          <div className="p-2 bg-white/80 rounded-lg border border-indigo-200">
-                                            <span className="font-bold text-indigo-800">👨‍👩‍👧 Ý kiến PHHS: </span>
+                                          <div className="p-2 bg-white/80 rounded-lg border border-teal-200">
+                                            <span className="font-bold text-teal-800">👨‍👩‍👧 Ý kiến PHHS: </span>
                                             <span className="text-slate-700">{parsed.phhsFeedback}</span>
                                           </div>
                                         )}
@@ -535,8 +535,8 @@ export function PsychologicalDetailModal({
                                         </div>
                                       )}
                                       {parsed.phhsFeedback && (
-                                        <div className="p-2 bg-white/80 rounded-lg border border-indigo-200">
-                                          <span className="font-bold text-indigo-800">👨‍👩‍👧 Ý kiến PHHS: </span>
+                                        <div className="p-2 bg-white/80 rounded-lg border border-teal-200">
+                                          <span className="font-bold text-teal-800">👨‍👩‍👧 Ý kiến PHHS: </span>
                                           <span className="text-slate-700">{parsed.phhsFeedback}</span>
                                         </div>
                                       )}
@@ -582,23 +582,23 @@ export function PsychologicalDetailModal({
             <div className="space-y-6 animate-in fade-in duration-200">
               {/* Summary Highlight Cards */}
               <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                <div className="bg-gradient-to-br from-purple-50 to-indigo-50 border border-purple-200/80 p-4.5 rounded-2xl">
-                  <span className="text-[11px] font-black text-purple-700 uppercase tracking-wider block">
+                <div className="bg-gradient-to-br from-teal-600 to-emerald-600 border border-teal-200/80 p-4.5 rounded-2xl">
+                  <span className="text-[11px] font-black text-teal-800 uppercase tracking-wider block">
                     Tổng điểm khảo sát môn Tâm lý
                   </span>
                   <div className="flex items-baseline gap-2 mt-1">
-                    <span className={`text-3xl font-black ${s.totalScore !== null && s.totalScore < 0 ? "text-rose-600" : "text-purple-950"}`}>
+                    <span className={`text-3xl font-black ${s.totalScore !== null && s.totalScore < 0 ? "text-rose-600" : "text-teal-800"}`}>
                       {s.totalScore !== null && s.totalScore !== undefined ? `${s.totalScore} đ` : "Chưa chấm"}
                     </span>
                   </div>
-                  <p className="text-[11px] text-purple-600 mt-1 font-semibold">
+                  <p className="text-[11px] text-teal-800 mt-1 font-semibold">
                     {s.totalScore !== null && s.totalScore < 0 
                       ? "Cần lưu ý: Điểm âm ở các mục đánh giá" 
                       : (s.totalScore === 0 ? "Chỉ số tâm lý ở mức bình thường (0đ)" : "Điểm đánh giá các mục tâm lý")}
                   </p>
                 </div>
 
-                <div className="bg-gradient-to-br from-amber-50 to-orange-50 border border-amber-200/80 p-4.5 rounded-2xl">
+                <div className="bg-gradient-to-br from-amber-50 to-amber-600 border border-amber-200/80 p-4.5 rounded-2xl">
                   <span className="text-[11px] font-black text-amber-800 uppercase tracking-wider block">
                     Vấn đề / Lý do hỗ trợ tâm lý
                   </span>
@@ -628,14 +628,14 @@ export function PsychologicalDetailModal({
                 <div className="flex flex-wrap items-center justify-between gap-2">
                   <div>
                     <h4 className="text-sm font-black text-slate-900 flex items-center gap-2">
-                      <Layers className="h-4 w-4 text-purple-600" />
+                      <Layers className="h-4 w-4 text-teal-800" />
                       Chi tiết 6 Lĩnh Vực Đánh Giá Môn Tâm Lý (TLY)
                     </h4>
                     <p className="text-xs text-slate-500 font-medium mt-0.5">
                       Căn cứ dữ liệu chấm điểm của Giáo viên Môn Tâm lý ({s.counselorName})
                     </p>
                   </div>
-                  <span className="text-[11px] font-bold text-purple-700 bg-purple-50 border border-purple-200 px-3 py-1 rounded-full">
+                  <span className="text-[11px] font-bold text-teal-800 bg-teal-50 border border-teal-200 px-3 py-1 rounded-full">
                     Ngày cập nhật: {formatDateSafe(assessment.evaluatedAt || s.startDate)}
                   </span>
                 </div>
@@ -656,7 +656,7 @@ export function PsychologicalDetailModal({
                             isScoreNegative
                               ? "bg-rose-50 text-rose-700 border-rose-300"
                               : dimScore !== null
-                              ? "bg-purple-100 text-purple-900 border-purple-200"
+                              ? "bg-teal-50 text-teal-800 border-teal-200"
                               : "bg-slate-100 text-slate-500 border-slate-200"
                           }`}>
                             {dimScore !== null ? `${dimScore} đ` : "Chưa chấm"}
@@ -670,22 +670,22 @@ export function PsychologicalDetailModal({
 
               {/* Real Teacher Comments & Conclusions */}
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div className="bg-purple-50/70 border border-purple-200/80 rounded-2xl p-4.5 space-y-2">
-                  <h4 className="text-xs font-black text-purple-900 uppercase tracking-wider flex items-center gap-1.5">
-                    <FileText className="h-4 w-4 text-purple-600" />
+                <div className="bg-teal-50/70 border border-teal-200/80 rounded-2xl p-4.5 space-y-2">
+                  <h4 className="text-xs font-black text-teal-800 uppercase tracking-wider flex items-center gap-1.5">
+                    <FileText className="h-4 w-4 text-teal-800" />
                     Mức độ nhận xét của Giáo viên Tâm lý
                   </h4>
-                  <div className="p-3 bg-white rounded-xl border border-purple-200/60 text-xs font-semibold text-slate-800 leading-relaxed min-h-[70px]">
+                  <div className="p-3 bg-white rounded-xl border border-teal-200/60 text-xs font-semibold text-slate-800 leading-relaxed min-h-[70px]">
                     {assessment.levelComment || s.reason || "Chưa có ghi nhận mức độ"}
                   </div>
                 </div>
 
-                <div className="bg-indigo-50/70 border border-indigo-200/80 rounded-2xl p-4.5 space-y-2">
-                  <h4 className="text-xs font-black text-indigo-900 uppercase tracking-wider flex items-center gap-1.5">
-                    <Sparkles className="h-4 w-4 text-indigo-600" />
+                <div className="bg-teal-50/70 border border-teal-200/80 rounded-2xl p-4.5 space-y-2">
+                  <h4 className="text-xs font-black text-teal-800 uppercase tracking-wider flex items-center gap-1.5">
+                    <Sparkles className="h-4 w-4 text-teal-800" />
                     Kết luận sơ bộ / Đề xuất của Giáo viên Tâm lý
                   </h4>
-                  <div className="p-3 bg-white rounded-xl border border-indigo-200/60 text-xs font-medium text-slate-700 leading-relaxed min-h-[70px]">
+                  <div className="p-3 bg-white rounded-xl border border-teal-200/60 text-xs font-medium text-slate-700 leading-relaxed min-h-[70px]">
                     {assessment.conclusion || "Chưa có kết luận sơ bộ bổ sung từ GV tâm lý"}
                   </div>
                 </div>
@@ -772,7 +772,7 @@ export function PsychologicalDetailModal({
                 </div>
 
                 <div>
-                  <label className="text-xs font-bold text-indigo-800 block mb-1">
+                  <label className="text-xs font-bold text-teal-800 block mb-1">
                     Ý kiến phản hồi từ PHHS (nếu có)
                   </label>
                   <textarea
@@ -780,7 +780,7 @@ export function PsychologicalDetailModal({
                     value={newPhhsNote}
                     onChange={e => setNewPhhsNote(e.target.value)}
                     placeholder="Phản hồi từ phụ huynh khi trao đổi..."
-                    className="w-full bg-indigo-50/50 border border-indigo-200 rounded-xl p-2.5 text-xs font-medium text-slate-800 outline-none focus:ring-2 focus:ring-indigo-500/20"
+                    className="w-full bg-teal-50/50 border border-teal-200 rounded-xl p-2.5 text-xs font-medium text-slate-800 outline-none focus:ring-2 focus:ring-indigo-500/20"
                   />
                 </div>
               </div>

@@ -66,7 +66,7 @@ export function TeacherDashboardView({ data, onDrilldown }: TeacherDashboardView
             href="/teacher/du-an-trai-nghiem"
             className="p-3.5 bg-white border border-slate-200 rounded-xl hover:border-[#003B3A] shadow-2xs transition-all flex items-center gap-3 group"
           >
-            <div className="p-2 bg-purple-50 text-purple-700 rounded-lg group-hover:bg-[#003B3A] group-hover:text-white transition-colors">
+            <div className="p-2 bg-teal-50 text-teal-800 rounded-lg group-hover:bg-[#003B3A] group-hover:text-white transition-colors">
               <Award className="w-4 h-4" />
             </div>
             <div>

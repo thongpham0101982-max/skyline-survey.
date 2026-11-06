@@ -1,13 +1,26 @@
 "use client";
 
 import React, { useCallback, useEffect, useState } from "react";
+import Link from "next/link";
+import {
+  Compass,
+  GraduationCap,
+  Award,
+  LayoutDashboard,
+  ArrowRight,
+  BookOpen,
+  Info
+} from "lucide-react";
 import { StudentStageView } from "@/lib/skyline-journey/service";
 import {
   SkylineBirdCharacter,
+  SkylineCartoonAvatar,
   SkylineMusicController,
   Skyline3DShieldBadge,
+  StageGameIllustrationBanner,
   SKYLINE_CHARACTERS,
   getCharacterById,
+  getStageCartoonBuddy,
   playSkylineSfx,
   speakVietnameseText,
   startSkylineBgm,
@@ -61,8 +74,11 @@ export default function StudentSkylineJourneyPage() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
-  const [activeTab, setActiveTab] = useState<"ISLAND_MAP" | "WORLD_ISLANDS" | "PASSPORT">("ISLAND_MAP");
+  const [activeTab, setActiveTab] = useState<"ISLAND_MAP" | "LEADERBOARD" | "WORLD_ISLANDS" | "PASSPORT">("ISLAND_MAP");
+  const [rankingScope, setRankingScope] = useState<"CLASS" | "GRADE">("CLASS");
+  const [showAllLeaderboardRows, setShowAllLeaderboardRows] = useState<boolean>(false);
   const [selectedZoneCode, setSelectedZoneCode] = useState<string>("ALL");
+  const [selectedGradeOverride, setSelectedGradeOverride] = useState<string>("");
   const [activeStage, setActiveStage] = useState<StudentStageView | null>(null);
   const [birdTargetPeriod, setBirdTargetPeriod] = useState<number>(1);
   const [is3DIslandMode, setIs3DIslandMode] = useState<boolean>(true);
@@ -95,10 +111,15 @@ export default function StudentSkylineJourneyPage() {
     }
   }, []);
 
-  // Automatically start joyful adventure BGM on first user interaction unless muted or disabled
+  // Automatically start joyful adventure BGM on first user interaction for elementary students
   useEffect(() => {
     if (typeof window === "undefined") return;
+    if (overview && overview.isElementary === false) {
+      stopSkylineBgm();
+      return;
+    }
     const handleFirstInteraction = () => {
+      if (overview && overview.isElementary === false) return;
       const isMuted = localStorage.getItem("skyline_muted") === "1";
       const bgmDisabled = localStorage.getItem("skyline_bgm_enabled") === "0";
       if (!isMuted && !bgmDisabled && !getSkylineBgmState().isPlaying) {
@@ -115,7 +136,7 @@ export default function StudentSkylineJourneyPage() {
       window.removeEventListener("keydown", handleFirstInteraction);
       stopSkylineBgm();
     };
-  }, []);
+  }, [overview?.isElementary]);
 
   const toggleMute = () => {
     setMuted((prev) => {
@@ -137,11 +158,15 @@ export default function StudentSkylineJourneyPage() {
     });
   };
 
-  const fetchOverview = useCallback(async () => {
+  const fetchOverview = useCallback(async (gradeOverrideArg?: string) => {
     setLoading(true);
     setError(null);
     try {
-      const res = await fetch("/api/skyline-journey/student", { cache: "no-store" });
+      const targetGrade = gradeOverrideArg !== undefined ? gradeOverrideArg : selectedGradeOverride;
+      const url = targetGrade
+        ? `/api/skyline-journey/student?grade=${encodeURIComponent(targetGrade)}`
+        : "/api/skyline-journey/student";
+      const res = await fetch(url, { cache: "no-store" });
       const data = await res.json();
       if (!res.ok) {
         setError(data.error || "Không thể tải bản đồ Hành trình Sky-Line");
@@ -172,7 +197,7 @@ export default function StudentSkylineJourneyPage() {
     } finally {
       setLoading(false);
     }
-  }, [hasAutoOpenedWelcome]);
+  }, [hasAutoOpenedWelcome, selectedGradeOverride]);
 
   useEffect(() => {
     fetchOverview();
@@ -288,9 +313,186 @@ export default function StudentSkylineJourneyPage() {
     continueStage,
     needsRevisionStages = [],
     welcomeSurvey,
+    leaderboard,
     progressMetrics,
     passport
   } = overview;
+
+  const isElementary = overview?.isElementary ?? ["1", "2", "3", "4", "5"].includes(String(student?.grade || ""));
+
+  if (!isElementary) {
+    const studentGradeNum = Number(student?.grade || 10);
+    return (
+      <div className="space-y-5 pb-12 max-w-5xl mx-auto">
+        {/* Masthead Banner - Sky-Line Academic Ledger */}
+        <div className="bg-gradient-to-r from-[#003B3A] via-[#005854] to-[#00736E] text-white rounded-2xl p-5 sm:p-6 shadow-sm border border-slate-200">
+          <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
+            <div>
+              <div className="inline-flex items-center gap-2 px-2.5 py-0.5 rounded-full bg-teal-400/20 text-teal-200 text-xs font-semibold border border-teal-300/30 mb-2">
+                <span>Cổng học sinh Sky-Line</span>
+                <span>•</span>
+                <span>{studentGradeNum >= 10 ? "Cấp THPT" : "Cấp THCS"}</span>
+              </div>
+              <h1 className="text-xl sm:text-2xl font-bold tracking-tight text-white">
+                Cổng Học Tập Môn Đặc Thù & Định Hướng Năng Lực
+              </h1>
+              <p className="text-xs sm:text-sm text-teal-100/90 mt-1">
+                Học sinh: <strong className="text-white">{student.fullName}</strong> ({student.code}) • Lớp: <strong className="text-white tabular-nums">{student.className}</strong> (Khối <span className="tabular-nums">{student.grade}</span>) • {student.campusName}
+              </p>
+            </div>
+            <Link
+              href="/hocsinh/portal"
+              className="self-start md:self-auto px-4 py-2 rounded-xl bg-white/10 hover:bg-white/20 text-white text-xs font-semibold transition border border-white/20 flex items-center gap-1.5 cursor-pointer shrink-0"
+            >
+              <LayoutDashboard className="w-4 h-4" />
+              <span>Về Trang Tổng quan</span>
+            </Link>
+          </div>
+        </div>
+
+        {/* Informative Guidance Card */}
+        <div className="bg-white rounded-2xl p-5 sm:p-6 border border-slate-200/90 shadow-2xs space-y-4">
+          <div className="flex items-start gap-3.5">
+            <div className="p-2.5 rounded-xl bg-teal-50 border border-teal-200 text-[#003B3A] shrink-0">
+              <Info className="w-5 h-5" />
+            </div>
+            <div className="space-y-2 text-xs sm:text-sm text-slate-700 leading-relaxed">
+              <h2 className="text-base font-bold text-[#003B3A]">
+                Phạm vi áp dụng phân hệ Đảo Học Tập Gamified (Hành trình Sky-Line)
+              </h2>
+              <p>
+                Phân hệ <strong>Đảo Học Tập Gamified (Hành trình Sky-Line)</strong> với các hoạt động trải nghiệm tương tác thu thập lông vũ hiện tại được thiết kế chuyên biệt dành cho học sinh <strong>Cấp Tiểu học (Khối 1 – Khối 5)</strong> theo chuẩn chương trình môn Giáo dục Tài chính cá nhân.
+              </p>
+              <p>
+                Đối với học sinh <strong>Khối {student.grade} ({studentGradeNum >= 10 ? "Cấp THPT" : "Cấp THCS"})</strong>, các bộ môn đặc thù bao gồm:
+              </p>
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-2.5 pt-1">
+                <div className="p-3 rounded-xl bg-slate-50 border border-slate-200">
+                  <div className="font-bold text-slate-900 text-xs">Giáo dục Hướng nghiệp (GDHN)</div>
+                  <div className="text-[11px] text-slate-600 mt-0.5">Khám phá sở thích nghề nghiệp RIASEC, lập kế hoạch học tập và chuẩn bị lộ trình đại học/nghề.</div>
+                </div>
+                {studentGradeNum <= 9 && (
+                  <div className="p-3 rounded-xl bg-slate-50 border border-slate-200">
+                    <div className="font-bold text-slate-900 text-xs">Giáo dục Cảm xúc - Xã hội (CXXH)</div>
+                    <div className="text-[11px] text-slate-600 mt-0.5">Rèn luyện nhận thức bản thân, quản lý cảm xúc và kỹ năng xây dựng mối quan hệ.</div>
+                  </div>
+                )}
+                {studentGradeNum <= 9 && (
+                  <div className="p-3 rounded-xl bg-slate-50 border border-slate-200">
+                    <div className="font-bold text-slate-900 text-xs">Giáo dục Giới tính & SKSS (GDGT)</div>
+                    <div className="text-[11px] text-slate-600 mt-0.5">Hiểu biết cơ thể, bảo vệ sức khỏe và xây dựng lối sống lành mạnh, tôn trọng.</div>
+                  </div>
+                )}
+              </div>
+              <p className="text-[11px] text-slate-500 pt-1">
+                Các chuyên đề trên được Thầy/Cô bộ môn giảng dạy trực tiếp trên lớp và kết quả đánh giá năng lực được ghi nhận chính thức vào Sổ Đánh Giá Học Sinh cùng Báo Cáo Học Tập của Nhà trường.
+              </p>
+            </div>
+          </div>
+        </div>
+
+        {/* Quick Links for Secondary / High School */}
+        <div className="space-y-3">
+          <h3 className="text-sm font-bold text-slate-800 flex items-center gap-2">
+            <BookOpen className="w-4 h-4 text-[#003B3A]" />
+            <span>Phân hệ học tập & định hướng phù hợp dành cho em</span>
+          </h3>
+
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3.5">
+            <Link
+              href="/hocsinh/portal/muc-tieu"
+              className="group p-4 bg-white rounded-xl border border-slate-200 hover:border-teal-400 hover:shadow-xs transition flex flex-col justify-between cursor-pointer"
+            >
+              <div>
+                <div className="w-9 h-9 rounded-lg bg-teal-50 border border-teal-200 text-[#003B3A] flex items-center justify-center mb-2.5 group-hover:scale-105 transition">
+                  <Compass className="w-5 h-5" />
+                </div>
+                <h4 className="font-bold text-xs sm:text-sm text-slate-900 group-hover:text-teal-700">
+                  Sổ Mục tiêu SMART
+                </h4>
+                <p className="text-[11px] text-slate-600 mt-1 leading-normal">
+                  Thiết lập và theo dõi mục tiêu học tập, rèn luyện theo phương pháp SMART cho từng học kỳ.
+                </p>
+              </div>
+              <div className="mt-3 pt-2.5 border-t border-slate-100 flex items-center justify-between text-xs font-semibold text-teal-700">
+                <span>Vào Sổ Mục tiêu</span>
+                <ArrowRight className="w-3.5 h-3.5 group-hover:translate-x-1 transition" />
+              </div>
+            </Link>
+
+            <Link
+              href="/hocsinh/portal/khao-sat-holland"
+              className="group p-4 bg-white rounded-xl border border-slate-200 hover:border-teal-400 hover:shadow-xs transition flex flex-col justify-between cursor-pointer"
+            >
+              <div>
+                <div className="w-9 h-9 rounded-lg bg-sky-50 border border-sky-200 text-sky-800 flex items-center justify-center mb-2.5 group-hover:scale-105 transition">
+                  <GraduationCap className="w-5 h-5" />
+                </div>
+                <h4 className="font-bold text-xs sm:text-sm text-slate-900 group-hover:text-teal-700">
+                  Khảo sát Hướng nghiệp
+                </h4>
+                <p className="text-[11px] text-slate-600 mt-1 leading-normal">
+                  Trắc nghiệm Holland Code (RIASEC) xác định nhóm năng khiếu và định hướng ngành nghề.
+                </p>
+              </div>
+              <div className="mt-3 pt-2.5 border-t border-slate-100 flex items-center justify-between text-xs font-semibold text-teal-700">
+                <span>Làm khảo sát</span>
+                <ArrowRight className="w-3.5 h-3.5 group-hover:translate-x-1 transition" />
+              </div>
+            </Link>
+
+            <Link
+              href="/hocsinh/portal/reflection"
+              className="group p-4 bg-white rounded-xl border border-slate-200 hover:border-teal-400 hover:shadow-xs transition flex flex-col justify-between cursor-pointer"
+            >
+              <div>
+                <div className="w-9 h-9 rounded-lg bg-purple-50 border border-purple-200 text-purple-800 flex items-center justify-center mb-2.5 group-hover:scale-105 transition">
+                  <Award className="w-5 h-5" />
+                </div>
+                <h4 className="font-bold text-xs sm:text-sm text-slate-900 group-hover:text-teal-700">
+                  Hành trình trưởng thành
+                </h4>
+                <p className="text-[11px] text-slate-600 mt-1 leading-normal">
+                  Đánh giá tiến bộ, ghi nhận các thành quả tự hào và phản hồi xây dựng trường học hạnh phúc.
+                </p>
+              </div>
+              <div className="mt-3 pt-2.5 border-t border-slate-100 flex items-center justify-between text-xs font-semibold text-teal-700">
+                <span>Mở Hành trình</span>
+                <ArrowRight className="w-3.5 h-3.5 group-hover:translate-x-1 transition" />
+              </div>
+            </Link>
+
+            <Link
+              href="/hocsinh/portal"
+              className="group p-4 bg-white rounded-xl border border-slate-200 hover:border-teal-400 hover:shadow-xs transition flex flex-col justify-between cursor-pointer"
+            >
+              <div>
+                <div className="w-9 h-9 rounded-lg bg-emerald-50 border border-emerald-200 text-emerald-800 flex items-center justify-center mb-2.5 group-hover:scale-105 transition">
+                  <LayoutDashboard className="w-5 h-5" />
+                </div>
+                <h4 className="font-bold text-xs sm:text-sm text-slate-900 group-hover:text-teal-700">
+                  Trang Tổng quan
+                </h4>
+                <p className="text-[11px] text-slate-600 mt-1 leading-normal">
+                  Xem toàn bộ điểm số, thông báo nhà trường, lịch khảo sát và các hoạt động trải nghiệm.
+                </p>
+              </div>
+              <div className="mt-3 pt-2.5 border-t border-slate-100 flex items-center justify-between text-xs font-semibold text-teal-700">
+                <span>Về Tổng quan</span>
+                <ArrowRight className="w-3.5 h-3.5 group-hover:translate-x-1 transition" />
+              </div>
+            </Link>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  const classLeaderboard: any[] = leaderboard?.classLeaderboard || [];
+  const gradeLeaderboard: any[] = leaderboard?.gradeLeaderboard || [];
+  const activeLeaderboard: any[] =
+    rankingScope === "CLASS" ? classLeaderboard : gradeLeaderboard;
+  const topThreePodium = activeLeaderboard.slice(0, 3);
 
   const filteredStages: StudentStageView[] =
     selectedZoneCode === "ALL"
@@ -348,6 +550,20 @@ export default function StudentSkylineJourneyPage() {
 
           {/* Quick Passport Stats & Accessibility Controls */}
           <div className="flex flex-wrap items-center gap-2">
+            <button
+              type="button"
+              onClick={() => {
+                playSkylineSfx("CLICK", muted);
+                setActiveTab("LEADERBOARD");
+              }}
+              className="bg-gradient-to-b from-amber-300 to-amber-500 text-slate-950 px-3.5 py-2 rounded-2xl border-2 border-white text-center shadow-lg hover:scale-105 transition cursor-pointer"
+              title="Xem Top danh sách học sinh xếp hạng học tập"
+            >
+              <div className="text-[10px] font-black uppercase text-slate-900">Xếp hạng Lớp</div>
+              <div className="text-lg font-black text-slate-950">
+                🏆 #{leaderboard?.myClassRank || 1}/{leaderboard?.totalClassStudents || 1}
+              </div>
+            </button>
             <div className="bg-amber-400/20 backdrop-blur px-3.5 py-2 rounded-2xl border-2 border-amber-300 text-center shadow">
               <div className="text-[11px] text-amber-100 font-bold">Khiên Danh Dự</div>
               <div className="text-lg font-black text-amber-300">
@@ -413,13 +629,30 @@ export default function StudentSkylineJourneyPage() {
             <button
               type="button"
               onClick={() => setActiveTab("ISLAND_MAP")}
-              className={`px-4 py-2 rounded-2xl font-extrabold text-xs sm:text-sm transition ${
+              className={`px-4 py-2 rounded-2xl font-extrabold text-xs sm:text-sm transition cursor-pointer ${
                 activeTab === "ISLAND_MAP"
                   ? "bg-amber-400 text-slate-950 shadow-md"
                   : "bg-white/15 text-white hover:bg-white/25"
               }`}
             >
               🗺️ Bản đồ Chủ đề & {stages.length || 15} Chặng
+            </button>
+            <button
+              type="button"
+              onClick={() => {
+                playSkylineSfx("CLICK", muted);
+                setActiveTab("LEADERBOARD");
+              }}
+              className={`px-4 py-2 rounded-2xl font-extrabold text-xs sm:text-sm transition cursor-pointer flex items-center gap-1.5 ${
+                activeTab === "LEADERBOARD"
+                  ? "bg-amber-400 text-slate-950 shadow-md ring-2 ring-white"
+                  : "bg-amber-400/25 text-amber-200 border border-amber-300/60 hover:bg-amber-400/40"
+              }`}
+            >
+              <span>🏆 Top Xếp Hạng Học Tập</span>
+              <span className="px-2 py-0.5 rounded-full bg-white/90 text-slate-950 text-[10px] font-black">
+                Hạng #{leaderboard?.myClassRank || 1}
+              </span>
             </button>
             <button
               type="button"
@@ -468,40 +701,59 @@ export default function StudentSkylineJourneyPage() {
         </div>
       </div>
 
-      {/* MỞ ĐẦU GAME: CHỌN NHÂN VẬT ĐỒNG HÀNH 3D & KHẢO SÁT YÊU THÍCH MÔN HỌC */}
+      {/* MỞ ĐẦU GAME: BIỆT ĐỘI NHÂN VẬT HOẠT HÌNH THIẾU NHI & KHẢO SÁT YÊU THÍCH MÔN HỌC */}
       <div className="bg-gradient-to-r from-sky-50 via-white to-amber-50 border-2 border-sky-300 rounded-3xl p-4 sm:p-5 shadow-md space-y-4">
         <div className="flex flex-col lg:flex-row items-center justify-between gap-4">
           <div className="flex flex-col sm:flex-row items-center gap-4 text-center sm:text-left">
             <div className="relative shrink-0">
-              <img
-                src="/images/skyline-bird-mascot.jpg"
-                alt="Chú chim Sky-Line 3D chào mừng"
-                className={`w-20 h-20 sm:w-24 sm:h-24 rounded-full object-cover border-4 border-sky-400 shadow-lg bg-white ${
+              <div
+                className={`w-20 h-20 sm:w-24 sm:h-24 rounded-full overflow-hidden border-4 border-sky-400 shadow-lg bg-white p-0.5 ${
                   !reducedMotion ? "hover:scale-105 transition-transform" : ""
                 }`}
-              />
+              >
+                <SkylineCartoonAvatar
+                  characterId={selectedCharacterId}
+                  mood="CELEBRATE"
+                  reducedMotion={reducedMotion}
+                  className="w-full h-full"
+                />
+              </div>
               <span className="absolute -bottom-1 -right-1 px-2 py-0.5 rounded-full bg-amber-400 text-slate-950 font-black text-[10px] shadow border border-white">
-                {getCharacterById(selectedCharacterId).emoji} SKY-LINE
+                {getCharacterById(selectedCharacterId).emoji} BẠN NHỎ
               </span>
             </div>
             <div>
               <div className="inline-flex items-center gap-1.5 px-3 py-0.5 rounded-full bg-sky-100 text-sky-800 font-extrabold text-xs mb-1">
-                <span>🎉 MỞ ĐẦU GAME • CHỌN NHÂN VẬT 3D & KHẢO SÁT YÊU THÍCH</span>
+                <span>🎨 BIỆT ĐỘI HOẠT HÌNH GIÁO DỤC TÀI CHÍNH NHÍ SKY-LINE</span>
               </div>
               <h2 className="text-base sm:text-lg font-black text-slate-900">
-                Chào mừng {student.fullName}! Em hãy chọn 1 Nhân vật đồng hành để bắt đầu hành trình săn Khiên Danh Dự nhé!
+                Chào mừng {student.fullName}! Cùng <span className="text-teal-700">{getCharacterById(selectedCharacterId).name}</span> vui học và săn Khiên Danh Dự nhé!
               </h2>
               <p className="text-xs text-slate-600 mt-1">
-                Nhân vật đang đồng hành:{" "}
+                Bạn hoạt hình đồng hành:{" "}
                 <b className="text-teal-800">
                   {getCharacterById(selectedCharacterId).emoji} {getCharacterById(selectedCharacterId).name} ({getCharacterById(selectedCharacterId).roleTitle})
                 </b>
-                {welcomeSurvey && (
-                  <>
-                    {" "}• Cảm nhận môn học: <b className="text-teal-700">{welcomeSurvey.interestLabel}</b>
-                  </>
-                )}
+                {" "}• Bài học trọng tâm: <b className="text-amber-800">{getCharacterById(selectedCharacterId).educationalLesson}</b>
               </p>
+              <div className="mt-2 inline-flex flex-wrap items-center gap-2 bg-amber-50 border border-amber-300 rounded-2xl px-3 py-1.5 text-xs">
+                <span className="font-extrabold text-amber-900">
+                  🎶 Vè hoạt hình: &ldquo;{getCharacterById(selectedCharacterId).cartoonRhyme}&rdquo;
+                </span>
+                <button
+                  type="button"
+                  onClick={() => {
+                    const ch = getCharacterById(selectedCharacterId);
+                    speakVietnameseText(
+                      `${ch.name} chào em! ${ch.cartoonRhyme} ${ch.description}`,
+                      muted
+                    );
+                  }}
+                  className="px-2.5 py-0.5 rounded-full bg-teal-600 hover:bg-teal-500 text-white font-bold text-[11px] shadow-xs cursor-pointer"
+                >
+                  🔊 Nghe bạn hoạt hình kể chuyện
+                </button>
+              </div>
             </div>
           </div>
 
@@ -536,19 +788,19 @@ export default function StudentSkylineJourneyPage() {
               }}
               className="px-4 py-2 rounded-2xl bg-amber-400 hover:bg-amber-300 text-slate-950 font-black text-xs shadow cursor-pointer"
             >
-              {welcomeSurvey ? "🎭 Đổi Nhân Vật & Khảo sát" : "✨ Chọn Nhân Vật & Khảo sát (+1 🪶)"}
+              {welcomeSurvey ? "🎭 Đổi Bạn Hoạt Hình & Khảo sát" : "✨ Chọn Bạn Hoạt Hình (+1 🪶)"}
             </button>
           </div>
         </div>
 
-        {/* 5-Character 3D Selection Bar right on the Map */}
+        {/* 5-Character Cartoon Selection Bar right on the Map */}
         <div className="pt-3 border-t border-sky-200/80">
-          <div className="flex items-center justify-between gap-2 mb-2">
+          <div className="flex flex-wrap items-center justify-between gap-2 mb-2">
             <span className="text-xs font-black text-teal-950 uppercase tracking-wider">
-              🎭 CHỌN 1 NHÂN VẬT 3D ĐỂ BẮT ĐẦU HÀNH TRÌNH CỦA EM:
+              🐣🐷🐰🐻🐿️ CHỌN 1 NGƯỜI BẠN HOẠT HÌNH ĐÁNG YÊU CÙNG EM VƯỢT THỬ THÁCH:
             </span>
             <span className="text-[11px] font-bold text-amber-800">
-              🛡️ Hoàn thành mỗi chặng sẽ được tặng +1 Khiên Danh Dự 3D!
+              🛡️ Hoàn thành mỗi bài học sẽ được tặng +1 Khiên Danh Dự!
             </span>
           </div>
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-2.5">
@@ -559,18 +811,20 @@ export default function StudentSkylineJourneyPage() {
                   key={char.id}
                   type="button"
                   onClick={() => handleSelectCharacter(char.id)}
-                  className={`p-3 rounded-2xl border-2 border-b-4 text-left transition-all flex items-center gap-2.5 cursor-pointer ${
+                  className={`p-3 rounded-2xl border-2 text-left transition-all flex items-center gap-2.5 cursor-pointer ${
                     isChosen
-                      ? `bg-gradient-to-r ${char.auraGradient} text-white border-white shadow-lg scale-[1.02]`
+                      ? `bg-gradient-to-r ${char.auraGradient} text-white border-teal-700 shadow-md`
                       : "bg-white hover:bg-sky-50/80 text-slate-800 border-slate-200 hover:border-teal-400"
                   }`}
                 >
                   <div className="relative shrink-0">
-                    <img
-                      src="/images/skyline-bird-mascot.jpg"
-                      alt={char.name}
-                      className="w-11 h-11 rounded-full object-cover border-2 border-white shadow bg-white"
-                    />
+                    <div className="w-12 h-12 rounded-full overflow-hidden border-2 border-white shadow bg-white p-0.5">
+                      <SkylineCartoonAvatar
+                        characterId={char.id}
+                        reducedMotion={reducedMotion}
+                        className="w-full h-full"
+                      />
+                    </div>
                     <span className="absolute -bottom-1 -right-1 text-sm bg-amber-300 rounded-full w-5 h-5 flex items-center justify-center shadow">
                       {char.emoji}
                     </span>
@@ -589,7 +843,7 @@ export default function StudentSkylineJourneyPage() {
                         isChosen ? "text-white/90" : "text-slate-500"
                       }`}
                     >
-                      {isChosen ? "✅ Đang đồng hành" : char.weaponOrGear}
+                      {isChosen ? "✅ Đang đồng hành cùng em" : char.cartoonRhyme}
                     </div>
                   </div>
                 </button>
@@ -719,10 +973,10 @@ export default function StudentSkylineJourneyPage() {
                     Toàn bộ Đảo {activeIsland?.curriculumCode || "TC02S"}
                   </div>
                   <div className="text-base font-extrabold mt-1">
-                    🗺️ Tất cả {zones.length} Vùng ({stages.length} Chặng 3D)
+                    🗺️ Tất cả {zones.length} Vùng ({stages.length} Chặng)
                   </div>
                   <div className="text-xs mt-1 opacity-85">
-                    Xem toàn cảnh mô hình 3D từ Chặng 1 đến Chặng {stages.length}
+                    Xem toàn cảnh hành trình từ Chặng 1 đến Chặng {stages.length}
                   </div>
                 </button>
 
@@ -762,55 +1016,33 @@ export default function StudentSkylineJourneyPage() {
                 })}
               </div>
 
-              {/* Interactive 3D Scenic Island Map with 3D Stage Monuments & Chosen Companion */}
-              <div
-                className="bg-gradient-to-b from-sky-900 via-teal-900 to-emerald-950 border-4 border-teal-400 rounded-3xl p-5 sm:p-6 shadow-2xl relative overflow-hidden text-white"
-                style={{ perspective: "1400px" }}
-              >
-                {/* Ambient 3D Island Clouds & Ocean Glow */}
-                <div className="pointer-events-none absolute -top-20 left-1/4 w-96 h-48 bg-sky-400/15 rounded-full blur-3xl" />
-                <div className="pointer-events-none absolute -bottom-20 right-1/4 w-96 h-48 bg-emerald-400/15 rounded-full blur-3xl" />
-
-                <div className="flex flex-wrap items-center justify-between gap-3 mb-5 relative z-10">
+              {/* Interactive Scenic Island Map (Directly below Zone Filters for seamless navigation) */}
+              <div className="bg-gradient-to-b from-sky-100/90 via-teal-50 to-emerald-100/90 border-4 border-teal-300 rounded-3xl p-5 sm:p-6 shadow-md relative overflow-hidden">
+                <div className="flex flex-wrap items-center justify-between gap-3 mb-5">
                   <div>
-                    <h3 className="font-black text-amber-300 text-lg sm:text-xl flex items-center gap-2">
+                    <h3 className="font-black text-teal-950 text-lg sm:text-xl flex items-center gap-2">
                       <span>
-                        🏝️ Sa Bàn Đảo 3D Khối {student.grade} ({activeIsland?.curriculumCode || "TC02S"})
+                        🏝️ Bản Đồ Đảo Học Tập Khối {student.grade} (Mã chương trình: {activeIsland?.curriculumCode || "TC02S"})
                       </span>
                     </h3>
-                    <p className="text-xs text-sky-100 mt-0.5">
-                      Chạm vào công trình 3D của từng chặng để <b>{getCharacterById(selectedCharacterId).name}</b> bay tới thực hành nhiệm vụ và nhận <b>🛡️ Khiên Danh Dự</b>!
+                    <p className="text-xs text-teal-800 mt-0.5">
+                      Chạm vào một chặng trên bản đồ để <b>{getCharacterById(selectedCharacterId).name}</b> bay tới thực hành nhiệm vụ và nhận <b>🛡️ Khiên Danh Dự</b>!
                     </p>
                   </div>
 
                   <div className="flex flex-wrap items-center gap-2 text-[11px] font-bold">
-                    <button
-                      type="button"
-                      onClick={() => setIs3DIslandMode((v) => !v)}
-                      className="px-3 py-1.5 rounded-xl bg-amber-400 text-slate-950 font-black shadow hover:bg-amber-300 cursor-pointer"
-                    >
-                      {is3DIslandMode ? "📐 Đang bật Góc nhìn Đảo Nổi 3D" : "🗺️ Bật Góc nhìn Đảo Nổi 3D"}
-                    </button>
-                    <span className="px-2.5 py-1 rounded-full bg-emerald-500 text-slate-950 font-black">
-                      🛡️🚩 Đã nhận Khiên
+                    <span className="px-2.5 py-1 rounded-full bg-emerald-600 text-white">
+                      🛡️🚩 Hoàn thành
                     </span>
-                    <span className="px-2.5 py-1 rounded-full bg-indigo-500 text-white">⏳ Chờ xác nhận</span>
-                    <span className="px-2.5 py-1 rounded-full bg-sky-500 text-white">✨ Sẵn sàng</span>
-                    <span className="px-2.5 py-1 rounded-full bg-slate-700 text-slate-300">🔒 Chưa mở</span>
+                    <span className="px-2.5 py-1 rounded-full bg-indigo-600 text-white">⏳ Chờ xác nhận</span>
+                    <span className="px-2.5 py-1 rounded-full bg-rose-600 text-white">✍️ Cần bổ sung</span>
+                    <span className="px-2.5 py-1 rounded-full bg-sky-600 text-white">✨ Sẵn sàng</span>
+                    <span className="px-2.5 py-1 rounded-full bg-slate-300 text-slate-700">🔒 Chưa mở</span>
                   </div>
                 </div>
 
-                {/* 3D Zones & Extruded 3D Stage Monuments */}
-                <div
-                  className="space-y-7 transition-transform duration-500"
-                  style={{
-                    transformStyle: "preserve-3d",
-                    transform:
-                      !reducedMotion && is3DIslandMode
-                        ? "rotateX(8deg) scale(0.99)"
-                        : "none"
-                  }}
-                >
+                {/* Zones & Stage Nodes */}
+                <div className="space-y-6">
                   {zones
                     .filter((z: any) => selectedZoneCode === "ALL" || z.topicCode === selectedZoneCode)
                     .map((zone: any, zoneIdx: number) => {
@@ -820,39 +1052,30 @@ export default function StudentSkylineJourneyPage() {
                       return (
                         <div
                           key={zone.topicCode}
-                          className="bg-gradient-to-b from-teal-950/90 to-slate-950/95 backdrop-blur-md border-2 border-b-8 border-teal-400/60 rounded-3xl p-5 shadow-[0_18px_35px_rgba(0,0,0,0.55)]"
+                          className="bg-white/85 backdrop-blur border-2 border-teal-200 rounded-3xl p-4 sm:p-5 shadow-sm"
                         >
-                          <div className="flex flex-wrap items-center justify-between gap-2 pb-3 mb-6 border-b border-white/15">
+                          <div className="flex flex-wrap items-center justify-between gap-2 pb-3 mb-4 border-b border-teal-100">
                             <div>
-                              <span className="text-xs font-extrabold uppercase text-amber-300">
-                                🏝️ Vùng Đảo 3D số {zoneIdx + 1}: {zone.creativeZoneName}
+                              <span className="text-xs font-extrabold uppercase text-teal-700">
+                                {String(zone.creativeZoneName || "").toLowerCase().startsWith("vùng")
+                                  ? zone.creativeZoneName
+                                  : `Vùng ${zoneIdx + 1}: ${zone.creativeZoneName}`}
                               </span>
-                              <h4 className="font-black text-white text-base sm:text-lg mt-0.5">
+                              <h4 className="font-black text-slate-900 text-base sm:text-lg">
                                 {zone.officialTopicName} ({zone.topicCode})
                               </h4>
                             </div>
-                            <span className="text-xs font-black px-3.5 py-1.5 rounded-full bg-amber-400/20 text-amber-200 border border-amber-300/60">
+                            <span className="text-xs font-bold px-3 py-1 rounded-full bg-amber-100 text-amber-900 border border-amber-300">
                               🏅 Huy hiệu vùng: {zone.badgeName}
                             </span>
                           </div>
 
-                          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4 pt-3">
+                          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-3.5">
                             {zoneStages.map((st) => {
                               const badge = statusBadge(st.status);
                               const isBirdHere = birdTargetPeriod === st.periodIndex;
                               const isLocked = st.status === "LOCKED";
                               const hasShield = st.flagPlanted || st.autoChallengePassed;
-
-                              const monumentIcon =
-                                st.interactive.mechanic === "BACKPACK_BUILDER"
-                                  ? "🎒"
-                                  : st.interactive.mechanic === "BIRD_SHOP"
-                                  ? "🏪"
-                                  : st.interactive.mechanic === "DREAM_NEST"
-                                  ? "🌳"
-                                  : st.interactive.mechanic === "VILLAGE_RESCUE"
-                                  ? "🏡"
-                                  : "🏛️";
 
                               return (
                                 <div
@@ -866,27 +1089,17 @@ export default function StudentSkylineJourneyPage() {
                                       handleOpenStage(st);
                                     }
                                   }}
-                                  style={{
-                                    transform:
-                                      !reducedMotion && is3DIslandMode
-                                        ? isBirdHere
-                                          ? "translateZ(26px) translateY(-8px)"
-                                          : hasShield
-                                          ? "translateZ(16px) translateY(-4px)"
-                                          : "translateZ(6px)"
-                                        : undefined
-                                  }}
-                                  className={`group relative rounded-3xl p-4 border-2 border-b-[10px] transition-all duration-300 flex flex-col justify-between ${
+                                  className={`group relative rounded-2xl p-3 border-2 transition-all flex flex-col justify-between ${
                                     isLocked
-                                      ? "bg-slate-900/75 border-slate-700 border-b-slate-800 text-slate-400 opacity-75 cursor-not-allowed"
+                                      ? "bg-slate-100/85 border-slate-300 opacity-80 cursor-not-allowed"
                                       : isBirdHere
-                                      ? "bg-gradient-to-b from-amber-50 via-white to-sky-50 text-slate-900 border-amber-400 border-b-amber-600 ring-4 ring-amber-300/80 shadow-[0_20px_35px_rgba(245,158,11,0.45)] cursor-pointer mt-2"
+                                      ? "bg-gradient-to-br from-amber-50 to-white border-amber-400 ring-3 ring-amber-300 shadow-lg cursor-pointer mt-2"
                                       : hasShield
-                                      ? "bg-gradient-to-b from-emerald-50 via-white to-teal-50 text-slate-900 border-emerald-400 border-b-emerald-700 hover:-translate-y-1.5 shadow-[0_14px_28px_rgba(16,185,129,0.3)] cursor-pointer"
-                                      : "bg-gradient-to-b from-white to-sky-50 text-slate-900 border-sky-300 border-b-teal-700 hover:-translate-y-1.5 hover:shadow-[0_14px_28px_rgba(14,165,233,0.35)] cursor-pointer"
+                                      ? "bg-gradient-to-br from-emerald-50/70 to-white border-emerald-400 hover:border-emerald-500 hover:shadow-md cursor-pointer"
+                                      : "bg-white border-teal-300 hover:border-teal-500 hover:shadow-md cursor-pointer"
                                   }`}
                                 >
-                                  {/* Chosen 3D Companion Character Perched on Current Stage Monument */}
+                                  {/* Chosen Companion Perched on Current Stage */}
                                   {isBirdHere && (
                                     <div
                                       onClick={(e) => {
@@ -894,37 +1107,24 @@ export default function StudentSkylineJourneyPage() {
                                         playSkylineSfx("CLICK", muted);
                                         setShowWelcomeModal(true);
                                       }}
-                                      title="Nhấn để đổi Nhân vật đồng hành 3D hoặc xem Khảo sát đầu game"
-                                      className={`absolute -top-8 right-2 z-20 flex items-center gap-1.5 pl-1 pr-3 py-1 rounded-full bg-gradient-to-r from-amber-400 via-yellow-300 to-sky-400 text-slate-950 font-black text-[11px] shadow-xl border-2 border-white hover:scale-105 transition ${
-                                        !reducedMotion ? "animate-bounce" : ""
-                                      }`}
+                                      title="Nhấn để đổi Nhân vật đồng hành hoặc xem Khảo sát đầu game"
+                                      className="absolute -top-5 right-2 z-20 flex items-center gap-1.5 pl-1 pr-2.5 py-0.5 rounded-full bg-amber-400 text-slate-950 font-black text-[11px] shadow-md border-2 border-white hover:scale-105 transition"
                                     >
                                       <img
                                         src="/images/skyline-bird-mascot.jpg"
                                         alt={getCharacterById(selectedCharacterId).name}
-                                        className="w-10 h-10 rounded-full object-cover border-2 border-white bg-white shadow-sm"
+                                        className="w-6 h-6 rounded-full object-cover border border-white bg-white shadow-xs"
                                       />
-                                      <div className="leading-tight text-left">
-                                        <span className="block text-[10px] font-black text-slate-950">
-                                          {getCharacterById(selectedCharacterId).emoji} Đang ở đây
-                                        </span>
-                                        <span className="block text-[9px] font-extrabold text-teal-950">
-                                          Đổi nhân vật ✨
-                                        </span>
-                                      </div>
+                                      <span className="text-[10px] font-black text-slate-950">
+                                        {getCharacterById(selectedCharacterId).emoji} Đang ở đây
+                                      </span>
                                     </div>
                                   )}
 
-                                  <div className={isBirdHere ? "pt-3" : ""}>
-                                    {/* Top Row: Stage Number + 3D Monument Roof Icon + Status */}
-                                    <div className="flex items-center justify-between gap-1 mb-2.5">
-                                      <span
-                                        className={`text-xs font-black px-2.5 py-0.5 rounded-xl ${
-                                          isLocked
-                                            ? "bg-slate-800 text-slate-300"
-                                            : "bg-teal-700 text-white shadow-xs"
-                                        }`}
-                                      >
+                                  <div>
+                                    {/* Top header row: Chặng X + Status Pill */}
+                                    <div className="flex items-center justify-between gap-1 mb-2">
+                                      <span className="text-xs font-black text-teal-900">
                                         Chặng {st.periodIndex}
                                       </span>
                                       <span
@@ -934,85 +1134,33 @@ export default function StudentSkylineJourneyPage() {
                                       </span>
                                     </div>
 
-                                    {/* 3D Architectural Building / Scenario Preview inside Card */}
-                                    <div
-                                      className={`rounded-2xl p-2.5 mb-2.5 flex items-center justify-between border ${
-                                        isLocked
-                                          ? "bg-slate-800/80 border-slate-700"
-                                          : hasShield
-                                          ? "bg-gradient-to-r from-emerald-100/90 to-amber-100/90 border-emerald-300"
-                                          : "bg-gradient-to-r from-sky-100/80 to-teal-100/80 border-sky-200"
-                                      }`}
-                                    >
-                                      <div className="flex items-center gap-2 min-w-0">
-                                        <span className="text-2xl drop-shadow-sm shrink-0">
-                                          {monumentIcon}
-                                        </span>
-                                        <div className="min-w-0">
-                                          <div
-                                            className={`text-[10px] font-black uppercase truncate ${
-                                              isLocked ? "text-slate-400" : "text-teal-900"
-                                            }`}
-                                          >
-                                            Mô hình 3D
-                                          </div>
-                                          <div
-                                            className={`text-[11px] font-bold truncate ${
-                                              isLocked ? "text-slate-300" : "text-slate-800"
-                                            }`}
-                                          >
-                                            {st.interactive.worldLocationName}
-                                          </div>
-                                        </div>
-                                      </div>
-
-                                      {/* 3D Shield Emblem if completed */}
-                                      {hasShield ? (
-                                        <span
-                                          className="px-2 py-1 rounded-xl bg-amber-400 text-slate-950 font-black text-xs shadow flex items-center gap-0.5 shrink-0"
-                                          title={`Đã nhận Khiên Danh Dự Chặng ${st.periodIndex}`}
-                                        >
-                                          🛡️
-                                        </span>
-                                      ) : (
-                                        <span className="text-xs opacity-60 shrink-0">🛡️</span>
-                                      )}
+                                    {/* Gamified Stage Illustration Banner */}
+                                    <div className="mb-2.5">
+                                      <StageGameIllustrationBanner
+                                        periodIndex={st.periodIndex}
+                                        isLocked={isLocked}
+                                        isCompleted={hasShield}
+                                        isCurrent={isBirdHere}
+                                      />
                                     </div>
 
-                                    <h5
-                                      className={`font-extrabold text-sm leading-snug ${
-                                        isLocked ? "text-slate-200" : "text-slate-900"
-                                      }`}
-                                    >
+                                    <h5 className="font-extrabold text-slate-900 text-sm leading-snug">
                                       {st.lessonName}
                                     </h5>
-                                    <div
-                                      className={`text-[10px] font-mono mt-0.5 ${
-                                        isLocked ? "text-slate-400" : "text-slate-500"
-                                      }`}
-                                    >
+                                    <div className="text-[10px] font-mono text-slate-500 mt-0.5">
                                       Mã bài: {st.lessonCode}
+                                    </div>
+                                    <div className="text-[11px] text-teal-800 font-semibold mt-1">
+                                      📍 {st.interactive.worldLocationName}
                                     </div>
                                   </div>
 
-                                  <div
-                                    className={`mt-3 pt-2.5 border-t flex items-center justify-between text-xs ${
-                                      isLocked ? "border-slate-800" : "border-slate-200/80"
-                                    }`}
-                                  >
-                                    <span
-                                      className={`font-black ${
-                                        isLocked ? "text-slate-400" : "text-amber-700"
-                                      }`}
-                                    >
+                                  <div className="mt-3 pt-2 border-t border-slate-100 flex items-center justify-between text-xs">
+                                    <span className="font-bold text-amber-700">
                                       +1 🛡️ • +{st.feathersReward} 🪶
                                     </span>
-                                    <span
-                                      className={`font-black ${
-                                        isLocked ? "text-slate-400" : "text-teal-700 group-hover:translate-x-0.5 transition-transform"
-                                      }`}
-                                    >
-                                      {isLocked ? "Chưa mở 🔒" : "Vào 3D →"}
+                                    <span className="font-extrabold text-teal-700 group-hover:translate-x-0.5 transition-transform">
+                                      {isLocked ? "Chưa mở 🔒" : "Vào chặng →"}
                                     </span>
                                   </div>
                                 </div>
@@ -1024,8 +1172,530 @@ export default function StudentSkylineJourneyPage() {
                     })}
                 </div>
               </div>
+
+              {/* 🌟 BẢNG VÀNG THI ĐUA HỌC TẬP SKY-LINE (Bố cục 2 cột cân đối bên dưới Bản đồ) */}
+              {activeLeaderboard.length > 0 && (
+                <div className="bg-white border-2 border-slate-200 rounded-3xl p-5 sm:p-6 shadow-sm space-y-5">
+                  {/* Header Strip */}
+                  <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4 border-l-4 border-[#003B3A] pl-4 py-1">
+                    <div>
+                      <div className="flex flex-wrap items-center gap-2">
+                        <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full bg-amber-100 text-amber-900 font-extrabold text-xs">
+                          🌟 Bảng vàng thi đua học tập Sky-Line
+                        </span>
+                        <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full bg-teal-50 text-teal-800 border border-teal-200 font-bold text-xs tabular-nums">
+                          🏫 Hạng Lớp: #{leaderboard?.myClassRank || 1}/{leaderboard?.totalClassStudents || classLeaderboard.length}
+                        </span>
+                        <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full bg-sky-50 text-sky-800 border border-sky-200 font-bold text-xs tabular-nums">
+                          🌟 Hạng Khối: #{leaderboard?.myGradeRank || 1}/{leaderboard?.totalGradeStudents || gradeLeaderboard.length}
+                        </span>
+                      </div>
+                      <h3 className="text-lg sm:text-xl font-black text-slate-900 mt-1.5">
+                        🏆 Top danh sách học sinh xếp hạng học tập ({rankingScope === "CLASS" ? `Lớp ${student.className}` : `Toàn Khối ${student.grade}`})
+                      </h3>
+                      <p className="text-xs text-slate-600 mt-0.5">
+                        Xếp hạng tính theo: <strong>Điểm bài học các chặng</strong> + <strong>Thưởng tốc độ hoàn thành (⏱️)</strong> + 🛡️ Khiên (+100đ) + 🌟 Sao GV xác nhận (+50đ) + 🪶 Lông vũ (+15đ). Cùng điểm ưu tiên thời gian hoàn thành nhanh hơn.
+                      </p>
+                    </div>
+
+                    {/* Segmented Control: Class vs Grade */}
+                    <div className="inline-flex items-center p-1 rounded-2xl bg-slate-100 border border-slate-200 shrink-0 self-start lg:self-center">
+                      <button
+                        type="button"
+                        onClick={() => {
+                          playSkylineSfx("CLICK", muted);
+                          setRankingScope("CLASS");
+                        }}
+                        className={`px-3.5 py-2 rounded-xl text-xs font-extrabold transition cursor-pointer tabular-nums ${
+                          rankingScope === "CLASS"
+                            ? "bg-[#003B3A] text-white shadow-xs"
+                            : "text-slate-700 hover:text-slate-900"
+                        }`}
+                      >
+                        🏫 Lớp {student.className} ({classLeaderboard.length})
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => {
+                          playSkylineSfx("CLICK", muted);
+                          setRankingScope("GRADE");
+                        }}
+                        className={`px-3.5 py-2 rounded-xl text-xs font-extrabold transition cursor-pointer tabular-nums ${
+                          rankingScope === "GRADE"
+                            ? "bg-[#003B3A] text-white shadow-xs"
+                            : "text-slate-700 hover:text-slate-900"
+                        }`}
+                      >
+                        🌟 Toàn Khối {student.grade} ({leaderboard?.totalGradeStudents || gradeLeaderboard.length})
+                      </button>
+                    </div>
+                  </div>
+
+                  {/* Main 2-Column Balanced Grid: Left = Podium Top 3, Right = Ranked Ledger Table */}
+                  <div className="grid grid-cols-1 lg:grid-cols-12 gap-5 items-start">
+                    {/* Left Column (4 cols): Top 3 Podium Cards */}
+                    <div className="lg:col-span-4 space-y-2.5">
+                      <div className="text-xs font-extrabold text-slate-700 flex items-center justify-between px-1">
+                        <span>🥇 Bục vinh danh dẫn đầu</span>
+                        <span className="text-[11px] text-teal-700 font-bold">Top 3 xuất sắc</span>
+                      </div>
+
+                      {topThreePodium.map((entry: any) => {
+                        const charProfile = getCharacterById(entry.characterId);
+                        const isRank1 = entry.rank === 1;
+                        const isRank2 = entry.rank === 2;
+                        const medalEmoji = isRank1 ? "👑" : isRank2 ? "🥈" : "🥉";
+                        const cardStyle = isRank1
+                          ? "bg-gradient-to-r from-amber-50 via-yellow-50/70 to-white border-amber-300"
+                          : isRank2
+                          ? "bg-slate-50/80 border-slate-200"
+                          : "bg-orange-50/50 border-orange-200";
+
+                        return (
+                          <div
+                            key={entry.studentId}
+                            className={`rounded-2xl p-3.5 border-2 transition ${cardStyle} ${
+                              entry.isCurrentUser ? "ring-2 ring-teal-500" : ""
+                            }`}
+                          >
+                            <div className="flex items-center gap-3">
+                              <div className="relative shrink-0">
+                                <img
+                                  src="/images/skyline-bird-mascot.jpg"
+                                  alt={entry.fullName}
+                                  className="w-12 h-12 rounded-full object-cover border-2 border-white shadow-xs bg-white"
+                                />
+                                <span className="absolute -bottom-1 -right-1 w-5 h-5 rounded-full bg-amber-300 border border-white flex items-center justify-center text-[11px] shadow-xs">
+                                  {charProfile.emoji}
+                                </span>
+                              </div>
+
+                              <div className="min-w-0 flex-1">
+                                <div className="flex items-center justify-between gap-2">
+                                  <span
+                                    className={`px-2 py-0.5 rounded-full text-[10px] font-black tabular-nums ${
+                                      isRank1
+                                        ? "bg-amber-400 text-slate-950"
+                                        : isRank2
+                                        ? "bg-slate-700 text-white"
+                                        : "bg-orange-500 text-white"
+                                    }`}
+                                  >
+                                    {medalEmoji} Hạng #{entry.rank}
+                                  </span>
+                                  <span className="text-xs font-black text-teal-900 tabular-nums">
+                                    {entry.rankingScore} đ
+                                  </span>
+                                </div>
+
+                                <div className="font-black text-slate-900 text-sm truncate mt-1 flex items-center gap-1.5">
+                                  <span className="truncate">{entry.fullName}</span>
+                                  {entry.isCurrentUser && (
+                                    <span className="px-1.5 py-0.2 rounded bg-teal-600 text-white text-[9px] font-black shrink-0">
+                                      Em
+                                    </span>
+                                  )}
+                                </div>
+                                <div className="text-[11px] text-slate-600 flex items-center justify-between mt-1 tabular-nums">
+                                  <span>Lớp {entry.className} • ⏱️ {entry.completionTimeFormatted || "—"}</span>
+                                  <span className="font-bold text-amber-800">
+                                    🛡️ {entry.shieldsEarnedCount} • 🎯 {entry.totalStageScore || 0}đ ({entry.avgScorePercent}%)
+                                  </span>
+                                </div>
+                              </div>
+                            </div>
+                          </div>
+                        );
+                      })}
+                    </div>
+
+                    {/* Right Column (8 cols): Academic Ledger Ranking Table */}
+                    <div className="lg:col-span-8 bg-white rounded-2xl border border-slate-200 overflow-hidden shadow-2xs">
+                      <div className="px-4 py-2.5 bg-slate-50 border-b border-slate-200 flex flex-wrap items-center justify-between gap-2 text-xs">
+                        <span className="font-extrabold text-slate-800">
+                          📋 Danh sách xếp hạng chi tiết ({activeLeaderboard.length} học sinh)
+                        </span>
+                        <button
+                          type="button"
+                          onClick={() => setActiveTab("LEADERBOARD")}
+                          className="text-teal-700 hover:text-teal-900 font-extrabold cursor-pointer"
+                        >
+                          Mở toàn màn hình bảng xếp hạng →
+                        </button>
+                      </div>
+
+                      <div className="overflow-x-auto">
+                        <table className="w-full text-left border-collapse text-xs tabular-nums">
+                          <thead>
+                            <tr className="bg-[#003B3A] text-white text-[11px] font-bold">
+                              <th className="py-2.5 px-3 text-center w-14">Hạng</th>
+                              <th className="py-2.5 px-3">Học sinh & Nhân vật</th>
+                              <th className="py-2.5 px-3">Lớp</th>
+                              <th className="py-2.5 px-3 text-center">Khiên</th>
+                              <th className="py-2.5 px-3 text-center">Điểm bài học</th>
+                              <th className="py-2.5 px-3 text-center">Thời gian hoàn thành</th>
+                              <th className="py-2.5 px-3 text-right">Tổng điểm</th>
+                            </tr>
+                          </thead>
+                          <tbody className="divide-y divide-slate-100">
+                            {(showAllLeaderboardRows
+                              ? activeLeaderboard
+                              : activeLeaderboard.slice(0, 6)
+                            ).map((item: any) => {
+                              const charObj = getCharacterById(item.characterId);
+                              const rankBadge =
+                                item.rank === 1
+                                  ? "👑 #1"
+                                  : item.rank === 2
+                                  ? "🥈 #2"
+                                  : item.rank === 3
+                                  ? "🥉 #3"
+                                  : `#${item.rank}`;
+                              return (
+                                <tr
+                                  key={item.studentId}
+                                  className={`transition ${
+                                    item.isCurrentUser
+                                      ? "bg-amber-50/90 font-bold"
+                                      : "hover:bg-slate-50"
+                                  }`}
+                                >
+                                  <td className="py-2.5 px-3 text-center">
+                                    <span
+                                      className={`inline-block px-2 py-0.5 rounded-lg font-black text-xs ${
+                                        item.rank === 1
+                                          ? "bg-amber-400 text-slate-950"
+                                          : item.rank === 2
+                                          ? "bg-slate-700 text-white"
+                                          : item.rank === 3
+                                          ? "bg-orange-500 text-white"
+                                          : "bg-slate-100 text-slate-700"
+                                      }`}
+                                    >
+                                      {rankBadge}
+                                    </span>
+                                  </td>
+                                  <td className="py-2.5 px-3">
+                                    <div className="flex items-center gap-2">
+                                      <span className="w-7 h-7 rounded-full bg-sky-50 border border-sky-200 flex items-center justify-center text-sm shrink-0">
+                                        {charObj.emoji}
+                                      </span>
+                                      <div className="min-w-0">
+                                        <div className="font-bold text-slate-900 flex items-center gap-1.5">
+                                          <span className="truncate">{item.fullName}</span>
+                                          {item.isCurrentUser && (
+                                            <span className="px-2 py-0.2 rounded-full bg-teal-700 text-white text-[10px] font-black shrink-0">
+                                              Vị trí của em
+                                            </span>
+                                          )}
+                                        </div>
+                                        <div className="text-[10px] text-slate-500 truncate">
+                                          {item.honorTitle} • 🪶 {item.totalFeathers}
+                                        </div>
+                                      </div>
+                                    </div>
+                                  </td>
+                                  <td className="py-2.5 px-3 font-bold text-teal-900">
+                                    {item.className}
+                                  </td>
+                                  <td className="py-2.5 px-3 text-center font-black text-amber-700">
+                                    🛡️ {item.shieldsEarnedCount}/{stages.length || 15}
+                                  </td>
+                                  <td className="py-2.5 px-3 text-center">
+                                    <div className="font-black text-emerald-700">
+                                      {item.totalStageScore || 0} đ
+                                    </div>
+                                    <div className="text-[10px] text-slate-500 font-semibold">
+                                      TB: {item.avgScorePercent}%
+                                    </div>
+                                  </td>
+                                  <td className="py-2.5 px-3 text-center">
+                                    <div className="inline-flex items-center gap-1 px-2 py-0.5 rounded-lg bg-sky-50 border border-sky-200 text-sky-900 font-bold text-[11px]">
+                                      ⏱️ {item.completionTimeFormatted || "—"}
+                                    </div>
+                                    {item.speedBonusPoints > 0 && (
+                                      <div className="text-[10px] text-amber-700 font-bold mt-0.5">
+                                        +{item.speedBonusPoints}đ tốc độ
+                                      </div>
+                                    )}
+                                  </td>
+                                  <td className="py-2.5 px-3 text-right font-black text-slate-900">
+                                    {item.rankingScore} đ
+                                  </td>
+                                </tr>
+                              );
+                            })}
+                          </tbody>
+                        </table>
+                      </div>
+
+                      {activeLeaderboard.length > 6 && (
+                        <div className="px-4 py-2.5 bg-slate-50 border-t border-slate-200 flex items-center justify-between text-xs tabular-nums">
+                          <span className="text-slate-600 font-semibold">
+                            Hiển thị {showAllLeaderboardRows ? activeLeaderboard.length : Math.min(6, activeLeaderboard.length)} / {activeLeaderboard.length} học sinh
+                          </span>
+                          <button
+                            type="button"
+                            onClick={() => setShowAllLeaderboardRows((v) => !v)}
+                            className="px-3.5 py-1.5 rounded-xl bg-[#003B3A] hover:bg-teal-800 text-white font-bold text-xs cursor-pointer"
+                          >
+                            {showAllLeaderboardRows
+                              ? "Thu gọn danh sách ▲"
+                              : `Xem tất cả ${activeLeaderboard.length} học sinh ▼`}
+                          </button>
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                </div>
+              )}
             </>
           )}
+        </div>
+      )}
+
+      {/* TAB LEADERBOARD: BẢNG VÀNG THI ĐUA & TOP DANH SÁCH HỌC SINH XẾP HẠNG HỌC TẬP */}
+      {activeTab === "LEADERBOARD" && (
+        <div className="bg-white border-2 border-slate-200 rounded-3xl p-5 sm:p-6 shadow-sm space-y-5">
+          <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4 border-l-4 border-[#003B3A] pl-4 py-1">
+            <div>
+              <div className="flex flex-wrap items-center gap-2">
+                <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full bg-amber-100 text-amber-900 font-extrabold text-xs">
+                  🌟 Bảng vàng thi đua học tập Sky-Line
+                </span>
+                <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full bg-teal-50 text-teal-800 border border-teal-200 font-bold text-xs tabular-nums">
+                  🏫 Hạng Lớp: #{leaderboard?.myClassRank || 1}/{leaderboard?.totalClassStudents || classLeaderboard.length}
+                </span>
+                <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full bg-sky-50 text-sky-800 border border-sky-200 font-bold text-xs tabular-nums">
+                  🌟 Hạng Khối: #{leaderboard?.myGradeRank || 1}/{leaderboard?.totalGradeStudents || gradeLeaderboard.length}
+                </span>
+              </div>
+              <h3 className="text-lg sm:text-xl font-black text-slate-900 mt-1.5">
+                🏆 Top danh sách học sinh xếp hạng học tập ({rankingScope === "CLASS" ? `Lớp ${student.className}` : `Toàn Khối ${student.grade}`})
+              </h3>
+              <p className="text-xs text-slate-600 mt-0.5">
+                Điểm xếp hạng tính theo: <strong>Điểm bài học các chặng</strong> + <strong>Thưởng tốc độ hoàn thành (⏱️)</strong> + 🛡️ Khiên Danh Dự (+100đ) + 🌟 Sao GV xác nhận (+50đ) + 🪶 Lông vũ (+15đ). Cùng điểm ưu tiên thời gian hoàn thành nhanh hơn.
+              </p>
+            </div>
+
+            <div className="flex flex-wrap items-center gap-2 shrink-0">
+              <div className="inline-flex items-center p-1 rounded-2xl bg-slate-100 border border-slate-200">
+                <button
+                  type="button"
+                  onClick={() => setRankingScope("CLASS")}
+                  className={`px-3.5 py-2 rounded-xl text-xs font-extrabold transition cursor-pointer tabular-nums ${
+                    rankingScope === "CLASS"
+                      ? "bg-[#003B3A] text-white shadow-xs"
+                      : "text-slate-700 hover:text-slate-900"
+                  }`}
+                >
+                  🏫 Lớp {student.className} ({classLeaderboard.length})
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setRankingScope("GRADE")}
+                  className={`px-3.5 py-2 rounded-xl text-xs font-extrabold transition cursor-pointer tabular-nums ${
+                    rankingScope === "GRADE"
+                      ? "bg-[#003B3A] text-white shadow-xs"
+                      : "text-slate-700 hover:text-slate-900"
+                  }`}
+                >
+                  🌟 Toàn Khối {student.grade} ({leaderboard?.totalGradeStudents || gradeLeaderboard.length})
+                </button>
+              </div>
+              <button
+                type="button"
+                onClick={() => setActiveTab("ISLAND_MAP")}
+                className="px-3.5 py-2.5 rounded-2xl text-xs font-extrabold bg-slate-900 text-white hover:bg-slate-800 cursor-pointer"
+              >
+                🗺️ Về Bản đồ Đảo Học Tập
+              </button>
+            </div>
+          </div>
+
+          <div className="grid grid-cols-1 lg:grid-cols-12 gap-5 items-start">
+            {/* Left Column: Top 3 Podium */}
+            <div className="lg:col-span-4 space-y-2.5">
+              <div className="text-xs font-extrabold text-slate-700 flex items-center justify-between px-1">
+                <span>🥇 Bục vinh danh dẫn đầu</span>
+                <span className="text-[11px] text-teal-700 font-bold">Top 3 xuất sắc</span>
+              </div>
+              {topThreePodium.map((entry: any) => {
+                const charProfile = getCharacterById(entry.characterId);
+                const isRank1 = entry.rank === 1;
+                const isRank2 = entry.rank === 2;
+                const medalEmoji = isRank1 ? "👑" : isRank2 ? "🥈" : "🥉";
+                const cardStyle = isRank1
+                  ? "bg-gradient-to-r from-amber-50 via-yellow-50/70 to-white border-amber-300"
+                  : isRank2
+                  ? "bg-slate-50/80 border-slate-200"
+                  : "bg-orange-50/50 border-orange-200";
+
+                return (
+                  <div
+                    key={entry.studentId}
+                    className={`rounded-2xl p-3.5 border-2 transition ${cardStyle} ${
+                      entry.isCurrentUser ? "ring-2 ring-teal-500" : ""
+                    }`}
+                  >
+                    <div className="flex items-center gap-3">
+                      <div className="relative shrink-0">
+                        <img
+                          src="/images/skyline-bird-mascot.jpg"
+                          alt={entry.fullName}
+                          className="w-12 h-12 rounded-full object-cover border-2 border-white shadow-xs bg-white"
+                        />
+                        <span className="absolute -bottom-1 -right-1 w-5 h-5 rounded-full bg-amber-300 border border-white flex items-center justify-center text-[11px] shadow-xs">
+                          {charProfile.emoji}
+                        </span>
+                      </div>
+
+                      <div className="min-w-0 flex-1">
+                        <div className="flex items-center justify-between gap-2">
+                          <span
+                            className={`px-2 py-0.5 rounded-full text-[10px] font-black tabular-nums ${
+                              isRank1
+                                ? "bg-amber-400 text-slate-950"
+                                : isRank2
+                                ? "bg-slate-700 text-white"
+                                : "bg-orange-500 text-white"
+                            }`}
+                          >
+                            {medalEmoji} Hạng #{entry.rank}
+                          </span>
+                          <span className="text-xs font-black text-teal-900 tabular-nums">
+                            {entry.rankingScore} đ
+                          </span>
+                        </div>
+
+                        <div className="font-black text-slate-900 text-sm truncate mt-1 flex items-center gap-1.5">
+                          <span className="truncate">{entry.fullName}</span>
+                          {entry.isCurrentUser && (
+                            <span className="px-1.5 py-0.2 rounded bg-teal-600 text-white text-[9px] font-black shrink-0">
+                              Em
+                            </span>
+                          )}
+                        </div>
+                        <div className="text-[11px] text-slate-600 flex items-center justify-between mt-1 tabular-nums">
+                          <span>Lớp {entry.className} • ⏱️ {entry.completionTimeFormatted || "—"}</span>
+                          <span className="font-bold text-amber-800">
+                            🛡️ {entry.shieldsEarnedCount} • 🎯 {entry.totalStageScore || 0}đ ({entry.avgScorePercent}%)
+                          </span>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+
+            {/* Right Column: Full Ranking Table */}
+            <div className="lg:col-span-8 bg-white rounded-2xl border border-slate-200 overflow-hidden shadow-2xs">
+              <div className="overflow-x-auto">
+                <table className="w-full text-left border-collapse text-xs tabular-nums">
+                  <thead>
+                    <tr className="bg-[#003B3A] text-white text-[11px] font-bold">
+                      <th className="py-2.5 px-3 text-center w-14">Hạng</th>
+                      <th className="py-2.5 px-3">Học sinh & Nhân vật đồng hành</th>
+                      <th className="py-2.5 px-3">Lớp</th>
+                      <th className="py-2.5 px-3 text-center">Khiên Danh Dự</th>
+                      <th className="py-2.5 px-3 text-center">Điểm bài học</th>
+                      <th className="py-2.5 px-3 text-center">Thời gian hoàn thành</th>
+                      <th className="py-2.5 px-3 text-center">Lông vũ & Huy hiệu</th>
+                      <th className="py-2.5 px-3 text-right">Tổng điểm</th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-slate-100">
+                    {activeLeaderboard.map((item: any) => {
+                      const charObj = getCharacterById(item.characterId);
+                      const rankBadge =
+                        item.rank === 1
+                          ? "👑 #1"
+                          : item.rank === 2
+                          ? "🥈 #2"
+                          : item.rank === 3
+                          ? "🥉 #3"
+                          : `#${item.rank}`;
+                      return (
+                        <tr
+                          key={item.studentId}
+                          className={`transition ${
+                            item.isCurrentUser ? "bg-amber-50/90 font-bold" : "hover:bg-slate-50"
+                          }`}
+                        >
+                          <td className="py-2.5 px-3 text-center">
+                            <span
+                              className={`inline-block px-2 py-0.5 rounded-lg font-black text-xs ${
+                                item.rank === 1
+                                  ? "bg-amber-400 text-slate-950"
+                                  : item.rank === 2
+                                  ? "bg-slate-700 text-white"
+                                  : item.rank === 3
+                                  ? "bg-orange-500 text-white"
+                                  : "bg-slate-100 text-slate-700"
+                              }`}
+                            >
+                              {rankBadge}
+                            </span>
+                          </td>
+                          <td className="py-2.5 px-3">
+                            <div className="flex items-center gap-2.5">
+                              <span className="w-7 h-7 rounded-full bg-sky-50 border border-sky-200 flex items-center justify-center text-sm shrink-0">
+                                {charObj.emoji}
+                              </span>
+                              <div>
+                                <div className="font-bold text-slate-900 flex items-center gap-1.5">
+                                  <span>{item.fullName}</span>
+                                  {item.isCurrentUser && (
+                                    <span className="px-2 py-0.2 rounded-full bg-teal-700 text-white text-[10px] font-black">
+                                      Vị trí của em
+                                    </span>
+                                  )}
+                                </div>
+                                <div className="text-[10px] text-slate-500">
+                                  {item.honorTitle} • Mã HS: {item.studentCode}
+                                </div>
+                              </div>
+                            </div>
+                          </td>
+                          <td className="py-2.5 px-3 font-bold text-teal-900">{item.className}</td>
+                          <td className="py-2.5 px-3 text-center font-black text-amber-700">
+                            🛡️ {item.shieldsEarnedCount}/{stages.length || 15}
+                          </td>
+                          <td className="py-2.5 px-3 text-center">
+                            <div className="font-black text-emerald-700">
+                              {item.totalStageScore || 0} đ
+                            </div>
+                            <div className="text-[10px] text-slate-500 font-semibold">
+                              TB: {item.avgScorePercent}%
+                            </div>
+                          </td>
+                          <td className="py-2.5 px-3 text-center">
+                            <div className="inline-flex items-center gap-1 px-2 py-0.5 rounded-lg bg-sky-50 border border-sky-200 text-sky-900 font-bold text-[11px]">
+                              ⏱️ {item.completionTimeFormatted || "—"}
+                            </div>
+                            {item.speedBonusPoints > 0 && (
+                              <div className="text-[10px] text-amber-700 font-bold mt-0.5">
+                                +{item.speedBonusPoints}đ tốc độ
+                              </div>
+                            )}
+                          </td>
+                          <td className="py-2.5 px-3 text-center">
+                            <span className="font-bold text-sky-700">🪶 {item.totalFeathers}</span>
+                            <span className="mx-1 text-slate-300">•</span>
+                            <span className="font-bold text-emerald-700">🏅 {item.badgeCount}</span>
+                          </td>
+                          <td className="py-2.5 px-3 text-right font-black text-slate-900">
+                            {item.rankingScore} đ
+                          </td>
+                        </tr>
+                      );
+                    })}
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          </div>
         </div>
       )}
 
@@ -1128,7 +1798,7 @@ export default function StudentSkylineJourneyPage() {
                 <div className="text-xl font-black text-amber-700">
                   🛡️ {passport?.shieldsEarnedCount ?? passport?.flagsPlantedCount ?? 0}
                 </div>
-                <div className="text-[11px] font-black text-amber-900">Khiên 3D</div>
+                <div className="text-[11px] font-black text-amber-900">Khiên</div>
               </div>
               <div className="p-2.5 rounded-2xl bg-white border border-amber-200">
                 <div className="text-xl font-black text-amber-600">
@@ -1150,10 +1820,10 @@ export default function StudentSkylineJourneyPage() {
               </div>
             </div>
 
-            {/* 3D Shields Collection Hall */}
+            {/* Shields Collection Hall */}
             <div>
               <h4 className="font-extrabold text-slate-800 text-sm mb-2.5 flex items-center justify-between">
-                <span>🛡️ Phòng Trưng Bày Khiên Danh Dự 3D:</span>
+                <span>🛡️ Phòng Trưng Bày Khiên Danh Dự:</span>
                 <span className="text-xs text-amber-800">
                   {passport?.shields?.length || 0}/{stages.length || 15} Khiên
                 </span>
@@ -1172,7 +1842,7 @@ export default function StudentSkylineJourneyPage() {
                 </div>
               ) : (
                 <div className="p-4 rounded-2xl bg-white/80 border border-dashed border-amber-300 text-xs text-slate-600 text-center">
-                  Mỗi khi em hoàn thành 1 chặng phiêu lưu trên đảo, em sẽ được trao tặng 1 chiếc <b>🛡️ Khiên Danh Dự 3D</b> lấp lánh tại đây!
+                  Mỗi khi em hoàn thành 1 chặng phiêu lưu trên đảo, em sẽ được trao tặng 1 chiếc <b>🛡️ Khiên Danh Dự</b> lấp lánh tại đây!
                 </div>
               )}
             </div>
@@ -1252,7 +1922,7 @@ export default function StudentSkylineJourneyPage() {
         </div>
       )}
 
-      {/* MODAL MỞ ĐẦU GAME: CHỌN NHÂN VẬT 3D & KHẢO SÁT YÊU THÍCH MÔN HỌC */}
+      {/* MODAL MỞ ĐẦU GAME: CHỌN NHÂN VẬT ĐỒNG HÀNH & KHẢO SÁT YÊU THÍCH MÔN HỌC */}
       {showWelcomeModal && (
         <div className="fixed inset-0 z-50 bg-slate-950/70 backdrop-blur-xs flex items-center justify-center p-4 overflow-y-auto">
           <div className="bg-white border-4 border-sky-400 rounded-3xl max-w-3xl w-full p-5 sm:p-7 shadow-2xl relative animate-in fade-in zoom-in-95 duration-200 my-auto">
@@ -1282,10 +1952,10 @@ export default function StudentSkylineJourneyPage() {
                   <span>🌟 MỞ ĐẦU GAME HÀNH TRÌNH SKY-LINE</span>
                 </div>
                 <h2 className="text-xl sm:text-2xl font-black text-slate-900 leading-snug">
-                  Chào mừng {student.fullName}! Hãy chọn 1 Nhân vật đồng hành 3D để bắt đầu!
+                  Chào mừng {student.fullName}! Hãy chọn 1 Nhân vật đồng hành để bắt đầu!
                 </h2>
                 <p className="text-xs sm:text-sm text-slate-600 mt-1.5 leading-relaxed">
-                  Mỗi khi vượt qua 1 chặng mô phỏng 3D trên đảo, em sẽ được trao tặng <b>🛡️ 1 Khiên Danh Dự 3D</b> và <b>🪶 Lông vũ</b> vào Hộ chiếu!
+                  Mỗi khi vượt qua 1 chặng phiêu lưu trên đảo, em sẽ được trao tặng <b>🛡️ 1 Khiên Danh Dự</b> và <b>🪶 Lông vũ</b> vào Hộ chiếu!
                 </p>
                 <div className="mt-2.5 flex flex-wrap items-center gap-2">
                   <button
@@ -1323,7 +1993,7 @@ export default function StudentSkylineJourneyPage() {
               {/* Step 1: Choose 1 Character to Start Journey */}
               <div>
                 <label className="block font-black text-slate-900 text-sm sm:text-base mb-2.5">
-                  1. Chọn 1 Nhân vật đồng hành 3D của em trong suốt hành trình:
+                  1. Chọn 1 Nhân vật đồng hành của em trong suốt hành trình:
                 </label>
                 <div className="grid grid-cols-1 sm:grid-cols-3 lg:grid-cols-5 gap-2.5">
                   {SKYLINE_CHARACTERS.map((char) => {
@@ -1400,7 +2070,7 @@ export default function StudentSkylineJourneyPage() {
 
               <div>
                 <label className="block font-black text-slate-900 text-xs sm:text-sm mb-2">
-                  3. Bạn hào hứng với hoạt động 3D nào nhất trên đảo? (Có thể chọn nhiều)
+                  3. Bạn hào hứng với hoạt động nào nhất trên đảo? (Có thể chọn nhiều)
                 </label>
                 <div className="flex flex-wrap gap-2">
                   {FAVORITE_ACTIVITIES.map((act) => {
@@ -1432,7 +2102,7 @@ export default function StudentSkylineJourneyPage() {
                   type="text"
                   value={surveyNote}
                   onChange={(e) => setSurveyNote(e.target.value)}
-                  placeholder="Ví dụ: Em rất thích chơi đóng vai cửa hàng 3D và sưu tầm Khiên Danh Dự..."
+                  placeholder="Ví dụ: Em rất thích chơi đóng vai cửa hàng và sưu tầm Khiên Danh Dự..."
                   className="w-full px-3.5 py-2.5 rounded-2xl border-2 border-slate-200 focus:border-teal-500 focus:outline-none text-xs sm:text-sm"
                 />
               </div>

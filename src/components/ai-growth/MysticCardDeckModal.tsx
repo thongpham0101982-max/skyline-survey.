@@ -192,7 +192,7 @@ export function MysticCardDeckModal({
                   rarityBadge = "Đột Phá"
                   rarityPoints = "+120 IP"
                 } else if (card.rarityTier === "EPIC_AI" || card.isAiChallenge) {
-                  rarityColor = "from-purple-500/20 to-fuchsia-900/40 border-purple-500/40 text-purple-300"
+                  rarityColor = "from-teal-600/20 to-fuchsia-900/40 border-teal-500/40 text-teal-700"
                   rarityBadge = "Huyền Thoại AI"
                   rarityPoints = "+150 IP"
                 }

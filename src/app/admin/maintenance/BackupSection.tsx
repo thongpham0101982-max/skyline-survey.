@@ -386,8 +386,8 @@ export function BackupSection({ initialBackups, storageInfo }: BackupSectionProp
         {/* Card 3: Dung lượng ổ đĩa D */}
         <div className="p-5 bg-slate-50/80 rounded-2xl border border-slate-200/80 flex flex-col justify-between">
           <div>
-            <div className="flex items-center gap-2 text-indigo-700 font-bold text-xs uppercase tracking-wider mb-1.5">
-              <HardDrive className="w-4 h-4 text-indigo-600" />
+            <div className="flex items-center gap-2 text-teal-800 font-bold text-xs uppercase tracking-wider mb-1.5">
+              <HardDrive className="w-4 h-4 text-teal-800" />
               Lưu trữ Ổ đĩa D:\
             </div>
             <div className="text-xl font-black text-slate-800">

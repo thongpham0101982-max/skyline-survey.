@@ -670,19 +670,19 @@ export function ObservationMobileView({
               <button
                 type="button"
                 onClick={onOpenAssigned}
-                className="flex flex-col items-start justify-between p-3 rounded-xl bg-gradient-to-br from-purple-600 to-indigo-700 hover:from-purple-700 hover:to-indigo-800 active:scale-[0.98] text-white shadow-md shadow-purple-600/20 border border-purple-300/30 transition-all text-left cursor-pointer group"
+                className="flex flex-col items-start justify-between p-3 rounded-xl bg-gradient-to-br from-teal-600 to-emerald-600 hover:from-teal-600 hover:to-emerald-600 active:scale-[0.98] text-white shadow-md shadow-purple-600/20 border border-teal-300/30 transition-all text-left cursor-pointer group"
               >
                 <div className="flex items-center justify-between w-full mb-1.5">
-                  <div className="w-8 h-8 rounded-lg bg-black/20 flex items-center justify-center text-purple-100 group-hover:scale-110 transition-transform">
-                    <UserCheck className="w-4 h-4 text-purple-200" />
+                  <div className="w-8 h-8 rounded-lg bg-black/20 flex items-center justify-center text-teal-700 group-hover:scale-110 transition-transform">
+                    <UserCheck className="w-4 h-4 text-teal-700" />
                   </div>
-                  <span className="text-[9px] font-black uppercase px-1.5 py-0.5 rounded bg-black/25 text-purple-200">
+                  <span className="text-[9px] font-black uppercase px-1.5 py-0.5 rounded bg-black/25 text-teal-700">
                     Phân công
                   </span>
                 </div>
                 <div>
                   <span className="text-xs font-black block leading-tight">Chỉ định dự giờ</span>
-                  <span className="text-[10px] text-purple-100/80 font-medium block mt-0.5">Chỉ định GV được dự</span>
+                  <span className="text-[10px] text-teal-700/80 font-medium block mt-0.5">Chỉ định GV được dự</span>
                 </div>
               </button>
             </div>
@@ -740,15 +740,15 @@ export function ObservationMobileView({
             onClick={() => setFilterOrigin("ASSIGNED")}
             className={`px-3 py-1.5 rounded-full text-xs font-bold transition-all shrink-0 flex items-center gap-1 cursor-pointer ${
               filterOrigin === "ASSIGNED"
-                ? "bg-purple-700 text-white shadow-xs"
-                : "bg-purple-50 text-purple-800 hover:bg-purple-100 border border-purple-200"
+                ? "bg-[#003B3A] text-white shadow-xs"
+                : "bg-teal-50 text-teal-800 hover:bg-teal-50 border border-teal-200"
             }`}
           >
-            <UserCheck className="w-3 h-3 text-purple-400" />
+            <UserCheck className="w-3 h-3 text-teal-700" />
             <span>Chỉ định</span>
             {assignedCount > 0 && (
               <span className={`ml-0.5 px-1.5 py-0.2 rounded-full text-[10px] font-black ${
-                filterOrigin === "ASSIGNED" ? "bg-white text-purple-800" : "bg-purple-200 text-purple-900"
+                filterOrigin === "ASSIGNED" ? "bg-white text-teal-800" : "bg-teal-50 text-teal-800"
               }`}>
                 {assignedCount}
               </span>
@@ -804,8 +804,8 @@ export function ObservationMobileView({
                           <span>Đột xuất</span>
                         </span>
                       ) : slot.requestOrigin === "ASSIGNED" || (slot.topic && slot.topic.toLowerCase().includes("chỉ định")) ? (
-                        <span className="text-[10px] font-black px-2 py-0.5 rounded-full bg-purple-100 text-purple-900 border border-purple-300 flex items-center gap-1">
-                          <UserCheck className="w-3 h-3 text-purple-700" />
+                        <span className="text-[10px] font-black px-2 py-0.5 rounded-full bg-teal-50 text-teal-800 border border-teal-400 flex items-center gap-1">
+                          <UserCheck className="w-3 h-3 text-teal-800" />
                           <span>Chỉ định</span>
                         </span>
                       ) : null}
@@ -891,8 +891,8 @@ export function ObservationMobileView({
                           <span>Đột xuất</span>
                         </span>
                       ) : slot.requestOrigin === "ASSIGNED" || (slot.topic && slot.topic.toLowerCase().includes("chỉ định")) ? (
-                        <span className="text-[10px] font-black px-2 py-0.5 rounded-full bg-purple-100 text-purple-900 border border-purple-300 flex items-center gap-1">
-                          <UserCheck className="w-3 h-3 text-purple-700" />
+                        <span className="text-[10px] font-black px-2 py-0.5 rounded-full bg-teal-50 text-teal-800 border border-teal-400 flex items-center gap-1">
+                          <UserCheck className="w-3 h-3 text-teal-800" />
                           <span>Chỉ định</span>
                         </span>
                       ) : null}
@@ -949,8 +949,8 @@ export function ObservationMobileView({
                           <span>Đột xuất</span>
                         </span>
                       ) : slot.requestOrigin === "ASSIGNED" || (slot.topic && slot.topic.toLowerCase().includes("chỉ định")) ? (
-                        <span className="text-[10px] font-black px-2 py-0.5 rounded-full bg-purple-100 text-purple-900 border border-purple-300 flex items-center gap-1">
-                          <UserCheck className="w-3 h-3 text-purple-700" />
+                        <span className="text-[10px] font-black px-2 py-0.5 rounded-full bg-teal-50 text-teal-800 border border-teal-400 flex items-center gap-1">
+                          <UserCheck className="w-3 h-3 text-teal-800" />
                           <span>Chỉ định</span>
                         </span>
                       ) : null}
@@ -1344,14 +1344,14 @@ export function ObservationMobileView({
                   setShowQuickActionMenu(false)
                   onOpenAssigned?.()
                 }}
-                className="flex items-center gap-2.5 p-2 rounded-xl bg-purple-50 hover:bg-purple-100 text-purple-900 font-bold text-xs transition-colors cursor-pointer text-left border border-purple-200"
+                className="flex items-center gap-2.5 p-2 rounded-xl bg-teal-50 hover:bg-teal-50 text-teal-800 font-bold text-xs transition-colors cursor-pointer text-left border border-teal-200"
               >
-                <div className="w-7 h-7 rounded-lg bg-purple-600 text-white flex items-center justify-center shrink-0">
+                <div className="w-7 h-7 rounded-lg bg-[#003B3A] text-white flex items-center justify-center shrink-0">
                   <UserCheck className="w-3.5 h-3.5" />
                 </div>
                 <div>
                   <span className="block leading-tight">Chỉ định dự giờ</span>
-                  <span className="text-[10px] text-purple-700/80 font-normal">Phân công người dự</span>
+                  <span className="text-[10px] text-teal-800/80 font-normal">Phân công người dự</span>
                 </div>
               </button>
 

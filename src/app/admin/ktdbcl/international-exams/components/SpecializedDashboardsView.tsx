@@ -73,7 +73,7 @@ export default function SpecializedDashboardsView({
       id: 'PEARSON_EDEXCEL',
       label: '4. Pearson iPrimary / iLS',
       count: pearsonAnalytics?.totalSittings || 0,
-      badgeColor: 'bg-purple-600',
+      badgeColor: 'bg-[#003B3A]',
     },
     {
       id: 'CAMBRIDGE_CHECKPOINT',
@@ -395,7 +395,7 @@ export default function SpecializedDashboardsView({
                     <div>
                       <span
                         className={`inline-block px-2.5 py-0.5 rounded-md text-[11px] font-black uppercase ${
-                          isKet ? 'bg-blue-100 text-blue-800' : 'bg-indigo-100 text-indigo-800'
+                          isKet ? 'bg-blue-100 text-blue-800' : 'bg-teal-50 text-teal-800'
                         }`}
                       >
                         {isKet ? 'KET – A2 Key (Khung chuẩn 120–150)' : 'PET – B1 Preliminary (Khung chuẩn 140–170)'}
@@ -425,14 +425,14 @@ export default function SpecializedDashboardsView({
                         {data.targetMetCount}/{data.totalSittings} lượt
                       </div>
                     </div>
-                    <div className="p-3 rounded-xl bg-indigo-50 border border-indigo-100">
-                      <div className="text-[11px] text-indigo-700 font-semibold">
+                    <div className="p-3 rounded-xl bg-teal-50 border border-teal-200">
+                      <div className="text-[11px] text-teal-800 font-semibold">
                         Vượt khung Grade A ({isKet ? 'B1' : 'B2'})
                       </div>
-                      <div className="text-lg font-black text-indigo-800 mt-0.5">
+                      <div className="text-lg font-black text-teal-800 mt-0.5">
                         {data.exceedsRate}%
                       </div>
-                      <div className="text-[10px] text-indigo-600">
+                      <div className="text-[10px] text-teal-800">
                         {data.exceedsCount}/{data.totalSittings} lượt
                       </div>
                     </div>
@@ -687,7 +687,7 @@ export default function SpecializedDashboardsView({
                           <td className="py-2.5 text-center font-semibold text-emerald-700">
                             {yr.rate7_0Plus}%
                           </td>
-                          <td className="py-2.5 text-center font-semibold text-purple-700">
+                          <td className="py-2.5 text-center font-semibold text-teal-800">
                             {yr.rate8_0Plus}%
                           </td>
                         </tr>
@@ -730,15 +730,15 @@ export default function SpecializedDashboardsView({
          ===================================================================== */}
       {selectedDashboardTab === 'PEARSON_EDEXCEL' && (
         <div className="space-y-6">
-          <div className="bg-gradient-to-r from-purple-900 via-violet-900 to-slate-900 rounded-2xl p-6 text-white shadow-sm">
-            <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-white/15 text-purple-200 text-xs font-semibold mb-2">
+          <div className="bg-gradient-to-r from-teal-600 via-violet-900 to-slate-900 rounded-2xl p-6 text-white shadow-sm">
+            <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-white/15 text-teal-700 text-xs font-semibold mb-2">
               <Layers className="w-3.5 h-3.5" />
               Pearson Edexcel International Primary & Lower Secondary
             </div>
             <h2 className="text-xl font-black tracking-tight">
               Dashboard Chuyên biệt: Pearson Edexcel (Theo Từng Môn Mathematics & Science)
             </h2>
-            <p className="text-xs text-purple-100/90 mt-1 max-w-4xl">
+            <p className="text-xs text-teal-700/90 mt-1 max-w-4xl">
               Cấu trúc đánh giá độc lập theo từng môn học (Mathematics, Science) và giữ nguyên mức đạt chuẩn gốc (P1/P2/P3 cho iPrimary; S1/S2/S3/S4 cho iLowerSecondary). Tuyệt đối không gộp điểm các môn thành một cột điểm tổng chung và không quy đổi ngang sang Cambridge Checkpoint.
             </p>
           </div>
@@ -768,10 +768,10 @@ export default function SpecializedDashboardsView({
                       className="rounded-xl border border-slate-200 p-4 bg-slate-50/60 space-y-3"
                     >
                       <div className="flex items-center justify-between">
-                        <span className="text-xs font-extrabold text-purple-900">
+                        <span className="text-xs font-extrabold text-teal-800">
                           {sub.subjectName}
                         </span>
-                        <span className="px-2 py-0.5 rounded-full bg-purple-100 text-purple-800 text-[11px] font-bold">
+                        <span className="px-2 py-0.5 rounded-full bg-teal-50 text-teal-800 text-[11px] font-bold">
                           {sub.entriesCount} bài thi
                         </span>
                       </div>
@@ -801,7 +801,7 @@ export default function SpecializedDashboardsView({
                             </div>
                             <div className="w-full h-2 bg-slate-200 rounded-full overflow-hidden">
                               <div
-                                className="h-full bg-purple-600 rounded-full"
+                                className="h-full bg-[#003B3A] rounded-full"
                                 style={{ width: `${Math.max(lv.rate, lv.count > 0 ? 5 : 0)}%` }}
                               />
                             </div>
@@ -841,11 +841,11 @@ export default function SpecializedDashboardsView({
                       <td className="py-2.5 font-extrabold text-slate-900">{yr.academicYear}</td>
                       <td className="py-2.5 text-center font-bold">{yr.sittings}</td>
                       <td className="py-2.5 text-center">{yr.mathEntries}</td>
-                      <td className="py-2.5 text-center font-black text-purple-700">
+                      <td className="py-2.5 text-center font-black text-teal-800">
                         {yr.avgMath ?? '-'}
                       </td>
                       <td className="py-2.5 text-center">{yr.sciEntries}</td>
-                      <td className="py-2.5 text-center font-black text-indigo-700">
+                      <td className="py-2.5 text-center font-black text-teal-800">
                         {yr.avgScience ?? '-'}
                       </td>
                     </tr>
@@ -1026,7 +1026,7 @@ export default function SpecializedDashboardsView({
                       <td className="py-3 text-center font-bold text-blue-700">
                         {row.ketCount > 0 ? `${row.ketCount} (${row.ketTargetRate}%)` : '-'}
                       </td>
-                      <td className="py-3 text-center font-bold text-indigo-700">
+                      <td className="py-3 text-center font-bold text-teal-800">
                         {row.petCount > 0 ? `${row.petCount} (${row.petTargetRate}%)` : '-'}
                       </td>
                       <td className="py-3 text-center font-bold text-rose-700">

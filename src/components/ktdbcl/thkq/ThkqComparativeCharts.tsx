@@ -30,7 +30,7 @@ const CAMPUS_COLORS = [
   "#0EA5E9", // sky-500
   "#F59E0B", // amber-500
   "#10B981", // emerald-500
-  "#8B5CF6", // purple-500
+  "#2DD4BF", // purple-500
   "#EC4899", // pink-500
   "#6366F1"  // indigo-500
 ]
@@ -49,7 +49,7 @@ export function ThkqComparativeCharts({ charts, selectedCampusName = "Cơ sở",
       {/* Header Biểu đồ */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-4 border-b border-slate-100">
         <div className="flex items-center gap-3">
-          <div className="h-10 w-10 rounded-xl bg-gradient-to-tr from-sky-600 to-indigo-600 flex items-center justify-center text-white shadow-md shadow-sky-600/20">
+          <div className="h-10 w-10 rounded-xl bg-gradient-to-tr from-sky-600 to-emerald-600 flex items-center justify-center text-white shadow-md shadow-sky-600/20">
             <BarChart3 className="h-5 w-5" />
           </div>
           <div>
@@ -103,7 +103,7 @@ export function ThkqComparativeCharts({ charts, selectedCampusName = "Cơ sở",
           <div>
             <div className="flex items-center justify-between text-xs text-slate-500 mb-2 px-1">
               <span>Đơn vị tính: Điểm trung bình (ĐTB) trên thang điểm 10.0</span>
-              <span className="text-[11px] font-semibold text-indigo-600 flex items-center gap-1">
+              <span className="text-[11px] font-semibold text-teal-800 flex items-center gap-1">
                 <span className="inline-block w-2.5 h-2.5 rounded-full bg-slate-800" />
                 Cột màu đen sẫm đại diện cho Mặt bằng Chung Toàn Hệ thống
               </span>

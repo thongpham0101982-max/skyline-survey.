@@ -679,18 +679,18 @@ export function SurveyQuestionBuilderClient({ period, initialQuestions, categori
 
                           <div>
                             <div className="flex items-center gap-2 mb-3">
-                              <LayoutGrid className="w-4 h-4 text-indigo-500" />
+                              <LayoutGrid className="w-4 h-4 text-teal-700" />
                               <span className="text-xs font-bold text-slate-500 uppercase tracking-wider">Cột (Mức độ / Thang điểm)</span>
                             </div>
                             <div className="space-y-2">
                               {q.options?.columns?.map((col: string, cIndex: number) => (
                                 <div key={cIndex} className="flex items-center gap-2">
                                   <span className="text-xs font-bold text-slate-400 w-4">{String.fromCharCode(65 + cIndex)}.</span>
-                                  <input type="text" value={col} onChange={e => updateGridOption(realIndex, "columns", cIndex, e.target.value)} className="flex-1 bg-white border border-slate-200 rounded-xl px-3 py-2 text-xs font-bold focus:border-indigo-500 outline-none" />
+                                  <input type="text" value={col} onChange={e => updateGridOption(realIndex, "columns", cIndex, e.target.value)} className="flex-1 bg-white border border-slate-200 rounded-xl px-3 py-2 text-xs font-bold focus:border-teal-200 outline-none" />
                                   <button onClick={() => removeGridItem(realIndex, "columns", cIndex)} className="text-slate-400 hover:text-red-500 p-1"><X className="w-4 h-4"/></button>
                                 </div>
                               ))}
-                              <button onClick={() => addGridItem(realIndex, "columns")} className="w-full text-xs font-extrabold text-indigo-600 bg-white border border-dashed border-indigo-200 hover:bg-indigo-50 py-2 rounded-xl mt-2 transition-all">+ Thêm Cột</button>
+                              <button onClick={() => addGridItem(realIndex, "columns")} className="w-full text-xs font-extrabold text-teal-800 bg-white border border-dashed border-teal-200 hover:bg-teal-50 py-2 rounded-xl mt-2 transition-all">+ Thêm Cột</button>
                             </div>
                           </div>
                         </div>
@@ -779,8 +779,8 @@ export function SurveyQuestionBuilderClient({ period, initialQuestions, categori
                 <Plus className="w-4 h-4 text-amber-400" />
                 <span>Đánh giá sao</span>
               </button>
-              <button onClick={() => addQuestion("MC_GRID")} className="p-2.5 bg-slate-50 hover:bg-indigo-50 border border-slate-200 hover:border-indigo-300 rounded-xl text-xs font-bold text-slate-700 hover:text-indigo-600 transition-all flex flex-col items-center gap-1">
-                <LayoutGrid className="w-4 h-4 text-indigo-500" />
+              <button onClick={() => addQuestion("MC_GRID")} className="p-2.5 bg-slate-50 hover:bg-teal-50 border border-slate-200 hover:border-teal-200 rounded-xl text-xs font-bold text-slate-700 hover:text-teal-800 transition-all flex flex-col items-center gap-1">
+                <LayoutGrid className="w-4 h-4 text-teal-700" />
                 <span>Lưới Radio</span>
               </button>
               <button onClick={() => addQuestion("CB_GRID")} className="p-2.5 bg-slate-50 hover:bg-pink-50 border border-slate-200 hover:border-pink-300 rounded-xl text-xs font-bold text-slate-700 hover:text-pink-600 transition-all flex flex-col items-center gap-1">

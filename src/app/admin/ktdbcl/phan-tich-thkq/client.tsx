@@ -196,10 +196,21 @@ export function PhanTichThkqClient({
       setSelectedTargetType("BELOW_SKYLINE")
     } else if (filterType === "8_TO_10") {
       setSelectedScoreRange("8_TO_10")
-      setSelectedTargetType("ALL")
+      setSelectedTargetType("8_TO_10")
     } else if (filterType === "PERFECT_10") {
       setSelectedScoreRange("PERFECT_10")
       setSelectedTargetType("PERFECT_10")
+    } else if (filterType === "ABOVE_SKYLINE") {
+      setSelectedScoreRange("ALL")
+      setSelectedTargetType("ALL")
+    }
+  }
+
+  // Xử lý khi click chuyển tab trong bảng Học sinh Trọng điểm
+  const handleSelectTargetType = (type: string) => {
+    setSelectedTargetType(type)
+    if (type !== "ALL" || selectedScoreRange === "8_TO_10" || selectedScoreRange === "PERFECT_10") {
+      setSelectedScoreRange("ALL")
     }
   }
 
@@ -227,13 +238,15 @@ export function PhanTichThkqClient({
         "ĐTB Cơ sở": c.campusAvgScore,
         "ĐTB Hệ thống": c.systemAvgScore,
         "Độ lệch chuẩn (σ)": c.stdDev,
+        "Mức độ phân hóa": c.dispersionLabel || "",
         "Lệch với Cơ sở (Δ)": c.deltaCampus,
         "Lệch với Khối (Δ)": c.deltaGrade,
         "Số HS dưới 5": c.below5Count,
         "Tỷ lệ dưới 5 (%)": c.below5Rate,
         "Số HS dưới chuẩn SL": c.belowSkylineCount,
         "Tỷ lệ dưới chuẩn SL (%)": c.belowSkylineRate,
-        "Số HS Điểm 10": c.perfect10Count
+        "Số HS Điểm 10": c.perfect10Count,
+        "Đánh giá Sư phạm": c.pedagogicalNote || ""
       }))
       const wsClass = XLSX.utils.json_to_sheet(classRows)
       XLSX.utils.book_append_sheet(wb, wsClass, "ThongKe_Lop_DoLechChuan")
@@ -246,6 +259,7 @@ export function PhanTichThkqClient({
         "Lớp": s.className,
         "Khối": s.gradeLabel,
         "Cơ sở": s.campusName,
+        "Kỳ khảo sát": s.evaluationPeriod || "—",
         "Môn học": s.subjectName,
         "Điểm số": s.score,
         "Chuẩn Sky-Line": s.skylineBenchmark,
@@ -377,7 +391,7 @@ export function PhanTichThkqClient({
         totalCount={analyticsData.totalTargetStudentsCount}
         countsByGroup={analyticsData.countsByTargetGroup}
         selectedTargetType={selectedTargetType}
-        setSelectedTargetType={setSelectedTargetType}
+        setSelectedTargetType={handleSelectTargetType}
       />
 
       {/* Modal Drill-down xem chi tiết học sinh ô Heatmap */}

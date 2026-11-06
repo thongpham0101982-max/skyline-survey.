@@ -535,7 +535,7 @@ export default function EdgeOmrGradingWorkbench({
                 }
                 setShowBenchmarkPanel(!showBenchmarkPanel);
               }}
-              className="px-3 py-1.5 rounded-xl bg-purple-500/30 hover:bg-purple-500/50 border border-purple-300/40 text-purple-100 font-semibold flex items-center gap-1.5"
+              className="px-3 py-1.5 rounded-xl bg-teal-500/30 hover:bg-teal-500/50 border border-teal-300/40 text-teal-700 font-semibold flex items-center gap-1.5"
             >
               <Activity className="w-3.5 h-3.5" />
               <span>Kiểm thử 100 → 5.000 phiếu</span>
@@ -624,7 +624,7 @@ export default function EdgeOmrGradingWorkbench({
                 type="button"
                 disabled={syncingLms}
                 onClick={handleSyncMoodleLmsAttempts}
-                className="px-3 py-2 rounded-xl bg-indigo-500 hover:bg-indigo-600 text-white font-semibold flex items-center gap-1.5"
+                className="px-3 py-2 rounded-xl bg-[#003B3A] hover:bg-[#003B3A] text-white font-semibold flex items-center gap-1.5"
               >
                 <Globe className="w-3.5 h-3.5" />
                 <span>
@@ -640,7 +640,7 @@ export default function EdgeOmrGradingWorkbench({
       <div className="bg-white rounded-2xl border border-slate-200 p-4 shadow-2xs space-y-3">
         <div className="flex flex-wrap items-center justify-between gap-2">
           <div className="flex items-center gap-2">
-            <HardDrive className="w-4 h-4 text-purple-700" />
+            <HardDrive className="w-4 h-4 text-teal-800" />
             <span className="font-bold text-slate-900 text-xs">
               Hàng đợi Lưu tạm IndexedDB (`ssm_omr_edge_queue_v1`) & Chống trùng Idempotency Key
             </span>
@@ -651,7 +651,7 @@ export default function EdgeOmrGradingWorkbench({
               type="button"
               disabled={syncingBatch || countByStatus("UNSYNCED") === 0}
               onClick={() => handleBatchSync()}
-              className="px-3 py-1 rounded-lg bg-[#6D28D9] hover:bg-purple-800 text-white font-semibold flex items-center gap-1 disabled:opacity-40"
+              className="px-3 py-1 rounded-lg bg-[#6D28D9] hover:bg-[#003B3A] text-white font-semibold flex items-center gap-1 disabled:opacity-40"
             >
               <RefreshCw
                 className={`w-3 h-3 ${syncingBatch ? "animate-spin" : ""}`}
@@ -702,11 +702,11 @@ export default function EdgeOmrGradingWorkbench({
             </div>
           </div>
 
-          <div className="p-2.5 rounded-xl border border-indigo-200 bg-indigo-50/60">
-            <div className="text-[11px] text-indigo-800 font-semibold">
+          <div className="p-2.5 rounded-xl border border-teal-200 bg-teal-50/60">
+            <div className="text-[11px] text-teal-800 font-semibold">
               3. Đã nhận (RECEIVED)
             </div>
-            <div className="text-lg font-bold text-indigo-950 mt-0.5">
+            <div className="text-lg font-bold text-teal-800 mt-0.5">
               {countByStatus("RECEIVED")}
             </div>
           </div>
@@ -735,7 +735,7 @@ export default function EdgeOmrGradingWorkbench({
           <div className="flex flex-wrap items-center justify-between gap-2 px-3 py-2 rounded-xl bg-slate-50 border border-slate-200 text-[11px] text-slate-700">
             <span>
               Tốc độ Edge CV:{" "}
-              <strong className="text-purple-800">
+              <strong className="text-teal-800">
                 {edgeMetrics.avgMsPerSheet} ms/phiếu
               </strong>
             </span>
@@ -754,7 +754,7 @@ export default function EdgeOmrGradingWorkbench({
             </span>
             <span>
               Chống trùng Idempotency:{" "}
-              <strong className="text-indigo-700">
+              <strong className="text-teal-800">
                 {edgeMetrics.deduplicatedSkips} phiếu bỏ qua
               </strong>
             </span>
@@ -810,7 +810,7 @@ export default function EdgeOmrGradingWorkbench({
                         {item.statusLabelVi}
                       </span>
                     </td>
-                    <td className="py-2 px-2.5 font-mono font-bold text-purple-800">
+                    <td className="py-2 px-2.5 font-mono font-bold text-teal-800">
                       {item.serverMcqScore !== null
                         ? `${item.serverMcqScore.toFixed(2)}đ (${item.serverCorrectCount} câu)`
                         : "Chờ Server chấm"}
@@ -825,11 +825,11 @@ export default function EdgeOmrGradingWorkbench({
 
       {/* Performance Benchmark & Adverse Condition Report (100, 500, 1.000, 5.000 Sheets) */}
       {showBenchmarkPanel && benchmarkData && (
-        <div className="bg-white rounded-2xl border border-purple-200 p-5 shadow-2xs space-y-4">
+        <div className="bg-white rounded-2xl border border-teal-200 p-5 shadow-2xs space-y-4">
           <div className="flex flex-wrap items-center justify-between gap-2 border-b border-slate-100 pb-3">
             <div>
               <h4 className="font-bold text-slate-900 text-sm flex items-center gap-2">
-                <Zap className="w-4 h-4 text-purple-600" />
+                <Zap className="w-4 h-4 text-teal-800" />
                 <span>
                   Báo cáo Kiểm thử Hiệu năng Trước/Sau Tối ưu (100 • 500 • 1.000 • 5.000 Phiếu OMR)
                 </span>
@@ -843,7 +843,7 @@ export default function EdgeOmrGradingWorkbench({
               onClick={() =>
                 setBenchmarkData(runOmrPerformanceBenchmarkSuite(imagePolicy))
               }
-              className="px-3 py-1.5 rounded-lg bg-purple-100 hover:bg-purple-200 text-purple-900 text-xs font-semibold"
+              className="px-3 py-1.5 rounded-lg bg-teal-50 hover:bg-teal-50 text-teal-800 text-xs font-semibold"
             >
               Chạy lại Benchmark
             </button>
@@ -892,7 +892,7 @@ export default function EdgeOmrGradingWorkbench({
                       {row.avgTimePerSheetMs} ms ({row.totalProcessingSec}s)
                     </td>
                     <td className="py-2 px-3">
-                      <strong className="text-purple-800">
+                      <strong className="text-teal-800">
                         {row.recognitionAccuracyPercent}%
                       </strong>{" "}
                       • Rà soát {row.flaggedForReviewPercent}%
@@ -901,7 +901,7 @@ export default function EdgeOmrGradingWorkbench({
                       <span className="line-through text-slate-400 mr-1">
                         {row.legacyServerDiskMB} MB
                       </span>
-                      <strong className="text-indigo-700">
+                      <strong className="text-teal-800">
                         {row.optimizedServerDiskMB} MB
                       </strong>
                     </td>
@@ -936,7 +936,7 @@ export default function EdgeOmrGradingWorkbench({
                   </div>
                   <div className="text-[11px] text-slate-600">
                     Độ chính xác đáp án:{" "}
-                    <strong className="text-purple-800">
+                    <strong className="text-teal-800">
                       {ac.answerAccuracyPercent}%
                     </strong>
                   </div>

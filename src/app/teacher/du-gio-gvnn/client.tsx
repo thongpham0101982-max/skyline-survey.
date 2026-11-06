@@ -453,7 +453,7 @@ export const ESL_INDICATORS: IndicatorConfig[] = [
 ];
 
 const RATING_OPTIONS = [
-  { value: "4", label: "4 - Strong Practice", short: "4", badge: "bg-purple-600 text-white", desc: "Particularly effective; exemplary practice worth sharing." },
+  { value: "4", label: "4 - Strong Practice", short: "4", badge: "bg-[#003B3A] text-white", desc: "Particularly effective; exemplary practice worth sharing." },
   { value: "3", label: "3 - Effective", short: "3", badge: "bg-emerald-600 text-white", desc: "Consistently meets expectations and good standard." },
   { value: "2", label: "2 - Developing", short: "2", badge: "bg-amber-500 text-white", desc: "Partially effective; needs refining and coaching." },
   { value: "1", label: "1 - Need support", short: "1", badge: "bg-rose-500 text-white", desc: "Clear challenge; requires immediate support / intervention." },
@@ -1117,7 +1117,7 @@ export function ForeignObservationClient(props: {
         {/* Background ambient lighting effects */}
         <div className="absolute inset-0 opacity-15 pointer-events-none">
           <div className="absolute -top-24 -left-24 w-96 h-96 rounded-full bg-teal-400 blur-3xl"></div>
-          <div className="absolute top-1/2 -right-24 w-96 h-96 rounded-full bg-indigo-500 blur-3xl"></div>
+          <div className="absolute top-1/2 -right-24 w-96 h-96 rounded-full bg-[#003B3A] blur-3xl"></div>
         </div>
 
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-7 sm:py-9 relative z-10">
@@ -1212,7 +1212,7 @@ export function ForeignObservationClient(props: {
                       : "text-white/80 hover:text-white hover:bg-white/10")
                   }
                 >
-                  <BarChart3 className="w-4 h-4 text-indigo-600" />
+                  <BarChart3 className="w-4 h-4 text-teal-800" />
                   <span>{t.tabQuota}</span>
                 </button>
               </nav>
@@ -1768,7 +1768,7 @@ export function ForeignObservationClient(props: {
                 <button
                   type="button"
                   onClick={handleAutoGenerateSummary}
-                  className="inline-flex items-center gap-2 px-4 py-2 rounded-xl bg-gradient-to-r from-teal-600 to-indigo-600 hover:from-teal-500 hover:to-indigo-500 text-white font-black text-xs shadow-md transition cursor-pointer self-start sm:self-auto"
+                  className="inline-flex items-center gap-2 px-4 py-2 rounded-xl bg-gradient-to-r from-teal-600 to-emerald-600 hover:from-teal-500 hover:to-emerald-600 text-white font-black text-xs shadow-md transition cursor-pointer self-start sm:self-auto"
                 >
                   <Sparkles className="w-4 h-4 text-amber-300" />
                   <span>{t.autoSummaryBtn}</span>
@@ -1805,8 +1805,8 @@ export function ForeignObservationClient(props: {
                 </div>
 
                 <div className="md:col-span-2 space-y-1.5 pt-2 border-t border-slate-100">
-                  <label className="block text-xs font-black text-indigo-950 uppercase tracking-wider flex items-center gap-1.5">
-                    <CheckCircle2 className="w-4 h-4 text-indigo-600" />
+                  <label className="block text-xs font-black text-teal-800 uppercase tracking-wider flex items-center gap-1.5">
+                    <CheckCircle2 className="w-4 h-4 text-teal-800" />
                     <span>{t.agreedActionsLabel}</span>
                   </label>
                   <textarea
@@ -1814,7 +1814,7 @@ export function ForeignObservationClient(props: {
                     value={summary.agreedActions}
                     onChange={e => setSummary({ ...summary, agreedActions: e.target.value })}
                     placeholder={t.agreedActionsPlaceholder}
-                    className="w-full bg-indigo-50/40 border border-indigo-200 focus:border-indigo-600 focus:bg-white focus:ring-2 focus:ring-indigo-100 rounded-2xl p-3.5 text-xs text-slate-800 outline-none resize-none transition font-medium"
+                    className="w-full bg-teal-50/40 border border-teal-200 focus:border-teal-200 focus:bg-white focus:ring-2 focus:ring-indigo-100 rounded-2xl p-3.5 text-xs text-slate-800 outline-none resize-none transition font-medium"
                   />
                 </div>
               </div>

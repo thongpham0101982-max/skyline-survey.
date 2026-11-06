@@ -37,8 +37,8 @@ import {
 
 // Bảng màu định danh thống nhất 5 Cơ sở Hệ thống Giáo dục Sky-Line:
 // - CS1: Xanh Sky-Line (#00A19A)
-// - CS2: Xanh - Tím Global (Gradient #00A19A -> #6D28D9 / #4F46E5)
-// - CS3: Tím Global (#7C3AED)
+// - CS2: Xanh - Tím Global (Gradient #00A19A -> #6D28D9 / #00736E)
+// - CS3: Tím Global (#003B3A)
 // - CS4: Vàng đất (#D49A3D)
 // - CS5: Xanh biển (#0284C7)
 const CAMPUS_COLOR_MAP: Record<
@@ -63,22 +63,22 @@ const CAMPUS_COLOR_MAP: Record<
     border: "border-[#00A19A]/30",
   },
   CS2: {
-    hex: "#4F46E5",
+    hex: "#00736E",
     chartFill: "url(#campusGradCS2)",
     dotStyle: { background: "linear-gradient(135deg, #00A19A 0%, #6D28D9 100%)" },
     barStyle: { background: "linear-gradient(90deg, #00A19A 0%, #6D28D9 100%)" },
-    bg: "bg-indigo-50",
-    text: "text-indigo-700",
-    border: "border-indigo-200",
+    bg: "bg-teal-50",
+    text: "text-teal-800",
+    border: "border-teal-200",
   },
   CS3: {
-    hex: "#7C3AED",
-    chartFill: "#7C3AED",
-    dotStyle: { background: "#7C3AED" },
-    barStyle: { background: "#7C3AED" },
-    bg: "bg-purple-50",
-    text: "text-purple-700",
-    border: "border-purple-200",
+    hex: "#003B3A",
+    chartFill: "#003B3A",
+    dotStyle: { background: "#003B3A" },
+    barStyle: { background: "#003B3A" },
+    bg: "bg-teal-50",
+    text: "text-teal-800",
+    border: "border-teal-200",
   },
   CS4: {
     hex: "#D49A3D",
@@ -1268,7 +1268,7 @@ export function OverviewDashboard({
               comparisonText="so với tháng liền kề"
               progress={peakCaseload.activeCaseload > 0 ? Math.round((totalActivePsych / peakCaseload.activeCaseload) * 100) : 100}
               subMetrics={[
-                { label: "Quy mô cao nhất", value: `${peakCaseload.activeCaseload} HS (${peakCaseload.name})`, colorClass: "text-indigo-700" },
+                { label: "Quy mô cao nhất", value: `${peakCaseload.activeCaseload} HS (${peakCaseload.name})`, colorClass: "text-teal-800" },
                 { label: "Tháng phát sinh", value: `${actualDataMonthlyTimeline.length} tháng` },
               ]}
             />
@@ -1307,7 +1307,7 @@ export function OverviewDashboard({
               comparisonText="tiến độ Tuần/Tháng"
               progress={psychPeriodicEvalStats.evalRate}
               subMetrics={[
-                { label: "Chuyên viên / GV", value: `${psychTeacherStats.filter(t => t.teacherId !== "UNASSIGNED").length} GV`, colorClass: "text-purple-700" },
+                { label: "Chuyên viên / GV", value: `${psychTeacherStats.filter(t => t.teacherId !== "UNASSIGNED").length} GV`, colorClass: "text-teal-800" },
                 { label: "Đã ĐG định kỳ", value: `${psychPeriodicEvalStats.evaluatedActiveCount}/${psychPeriodicEvalStats.activeTotal} HS` },
               ]}
               onClick={() => handleOpenPdfModal(psychTeacherFilter, psychCampusFilter)}
@@ -1334,13 +1334,13 @@ export function OverviewDashboard({
                     ? [
                         { label: "Đang theo dõi", color: "#00A19A" },
                         { label: "Đã chấm dứt", color: "#003B3A" },
-                        { label: "Tiếp nhận mới (+)", color: "#6C5CE7" },
+                        { label: "Tiếp nhận mới (+)", color: "#00A19A" },
                       ]
                     : psychChartMetric === "activeCaseload"
                     ? [{ label: "Lũy kế đang theo dõi", color: "#00A19A" }]
                     : psychChartMetric === "terminated"
                     ? [{ label: "Đã chấm dứt theo dõi", color: "#003B3A" }]
-                    : [{ label: "Tiếp nhận mới phát sinh (+)", color: "#6C5CE7" }]
+                    : [{ label: "Tiếp nhận mới phát sinh (+)", color: "#00A19A" }]
                 }
                 headerRight={
                   <div className="flex flex-wrap items-center gap-1.5">
@@ -1442,8 +1442,8 @@ export function OverviewDashboard({
                                         <span className="font-black text-emerald-300">-{d.terminatedInMonth} ca</span>
                                       </p>
                                       <p className="flex justify-between gap-6 border-t border-slate-800 pt-1">
-                                        <span className="text-indigo-200 font-sans">Tiếp nhận mới trong tháng:</span>
-                                        <span className="font-bold text-indigo-300">+{d.newCases} ca</span>
+                                        <span className="text-teal-700 font-sans">Tiếp nhận mới trong tháng:</span>
+                                        <span className="font-bold text-teal-700">+{d.newCases} ca</span>
                                       </p>
                                       {d.commitmentCases > 0 && (
                                         <p className="flex justify-between gap-6 text-sky-300">
@@ -1494,9 +1494,9 @@ export function OverviewDashboard({
                             type="monotone"
                             dataKey="newCases"
                             name="newCases"
-                            stroke="#6C5CE7"
+                            stroke="#00A19A"
                             strokeWidth={2.5}
-                            dot={{ r: 4, fill: "#6C5CE7", strokeWidth: 2, stroke: "#fff" }}
+                            dot={{ r: 4, fill: "#00A19A", strokeWidth: 2, stroke: "#fff" }}
                             activeDot={{ r: 6 }}
                           />
                         </ComposedChart>
@@ -1644,14 +1644,14 @@ export function OverviewDashboard({
                                 const d = payload[0].payload
                                 return (
                                   <div className="bg-slate-900/95 text-white p-3.5 rounded-2xl shadow-2xl border border-slate-800 text-xs backdrop-blur-md">
-                                    <p className="font-extrabold text-indigo-300 mb-2 border-b border-slate-700 pb-1 flex items-center justify-between gap-4">
+                                    <p className="font-extrabold text-teal-700 mb-2 border-b border-slate-700 pb-1 flex items-center justify-between gap-4">
                                       <span>Tháng {d.month}</span>
                                       <span className="text-[10px] text-slate-400 font-normal">{d.name}</span>
                                     </p>
                                     <div className="space-y-1.5 text-[11px] font-mono tabular-nums">
                                       <p className="flex justify-between gap-6">
                                         <span className="text-slate-300 font-sans">Tiếp nhận mới:</span>
-                                        <span className="font-black text-indigo-300 text-sm">+{d.newCases} ca</span>
+                                        <span className="font-black text-teal-700 text-sm">+{d.newCases} ca</span>
                                       </p>
                                       <p className="flex justify-between gap-6 border-t border-slate-800 pt-1">
                                         <span className="text-slate-300 font-sans">Lũy kế đang theo dõi:</span>
@@ -1664,11 +1664,11 @@ export function OverviewDashboard({
                               return null
                             }}
                           />
-                          <Bar dataKey="newCases" fill="#6C5CE7" radius={[8, 8, 0, 0]} maxBarSize={48}>
+                          <Bar dataKey="newCases" fill="#00A19A" radius={[8, 8, 0, 0]} maxBarSize={48}>
                             <LabelList
                               dataKey="newCases"
                               position="top"
-                              fill="#5A4AD1"
+                              fill="#00736E"
                               fontSize={11}
                               fontWeight={800}
                               formatter={(v: any) => (Number(v) > 0 ? `${v}` : "")}
@@ -1702,7 +1702,7 @@ export function OverviewDashboard({
                               </td>
                               <td className="py-2.5 px-3 text-center font-mono tabular-nums">
                                 {row.newCases > 0 ? (
-                                  <span className="px-2 py-0.5 rounded-full bg-indigo-50 text-indigo-800 font-black border border-indigo-200">
+                                  <span className="px-2 py-0.5 rounded-full bg-teal-50 text-teal-800 font-black border border-teal-200">
                                     +{row.newCases}
                                   </span>
                                 ) : (
@@ -2246,10 +2246,10 @@ export function OverviewDashboard({
                       >
                         <div className="flex justify-between items-center mb-1.5 text-xs">
                           <span className="font-extrabold text-slate-800 flex items-center gap-1.5 truncate">
-                            <span className={`w-2 h-2 rounded-full ${isHighTransition ? "bg-indigo-500" : "bg-[#00A19A]"} shrink-0`} />
+                            <span className={`w-2 h-2 rounded-full ${isHighTransition ? "bg-[#003B3A]" : "bg-[#00A19A]"} shrink-0`} />
                             <span>{item.gradeName}</span>
                             {isHighTransition && (
-                              <span className="text-[9px] px-1.5 py-0.2 rounded-md bg-indigo-50 text-indigo-700 font-bold border border-indigo-200">
+                              <span className="text-[9px] px-1.5 py-0.2 rounded-md bg-teal-50 text-teal-800 font-bold border border-teal-200">
                                 Đầu cấp
                               </span>
                             )}
@@ -2473,7 +2473,7 @@ export function OverviewDashboard({
             <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4 mb-4 pb-4 border-b border-slate-100">
               <div>
                 <h2 className="text-base font-black text-slate-900 flex items-center gap-2">
-                  <HeartHandshake className="h-5 w-5 text-violet-600" />
+                  <HeartHandshake className="h-5 w-5 text-teal-800" />
                   Danh sách Học sinh Hỗ trợ Tâm lý Học đường
                   <span className="px-2.5 py-0.5 rounded-full bg-slate-100 text-slate-700 text-xs font-black">
                     {filteredPsychStudents.length === psychologyTargets.length
@@ -2837,7 +2837,7 @@ export function OverviewDashboard({
 
                           {/* GV / Chuyên viên */}
                           <td className="px-3 py-2.5">
-                            <span className="font-bold text-indigo-900 bg-indigo-50/80 px-2 py-0.5 rounded-md border border-indigo-100 inline-block text-[11px]">
+                            <span className="font-bold text-teal-800 bg-teal-50/80 px-2 py-0.5 rounded-md border border-teal-200 inline-block text-[11px]">
                               {teacherDisplay}
                             </span>
                           </td>
@@ -3010,7 +3010,7 @@ export function OverviewDashboard({
               trendValue={`${acadGradeStats.length} khối lớp`}
               comparisonText="phân công bộ môn"
               subMetrics={[
-                { label: "Tổng GV tham gia", value: `${acadTeacherStats.length} GV`, colorClass: "text-indigo-700" },
+                { label: "Tổng GV tham gia", value: `${acadTeacherStats.length} GV`, colorClass: "text-teal-800" },
                 { label: "Số khối lớp", value: `${acadGradeStats.length} khối` },
               ]}
               onClick={() => handleOpenPdfModal("ALL")}
@@ -3206,7 +3206,7 @@ export function OverviewDashboard({
             <div className="bg-white border border-slate-200/80 rounded-3xl p-5 shadow-sm">
               <div className="flex items-center justify-between mb-3">
                 <h3 className="text-sm font-black text-slate-800 flex items-center gap-2">
-                  <GraduationCap className="w-4 h-4 text-indigo-600" />
+                  <GraduationCap className="w-4 h-4 text-teal-800" />
                   Giáo viên phụ đạo
                 </h3>
                 <div className="flex items-center gap-1">
@@ -3222,10 +3222,10 @@ export function OverviewDashboard({
                   <button
                     type="button"
                     onClick={() => handleExportTeacherReport("ALL")}
-                    className="inline-flex items-center gap-1 px-2.5 py-1 rounded-xl bg-indigo-50 hover:bg-indigo-100 text-indigo-800 border border-indigo-200 text-[11px] font-bold shadow-xs transition-all cursor-pointer"
+                    className="inline-flex items-center gap-1 px-2.5 py-1 rounded-xl bg-teal-50 hover:bg-teal-50 text-teal-800 border border-teal-200 text-[11px] font-bold shadow-xs transition-all cursor-pointer"
                     title="Xuất file Excel báo cáo tiến độ học tập theo từng Giáo viên"
                   >
-                    <FileSpreadsheet className="w-3.5 h-3.5 text-indigo-600" />
+                    <FileSpreadsheet className="w-3.5 h-3.5 text-teal-800" />
                     <span>Excel</span>
                   </button>
                 </div>
@@ -3249,12 +3249,12 @@ export function OverviewDashboard({
                       <button
                         type="button"
                         onClick={() => handleExportTeacherReport(t.teacherId, t.teacherName)}
-                        className="p-1 rounded-lg bg-indigo-50 hover:bg-indigo-100 text-indigo-700 border border-indigo-200 transition-colors"
+                        className="p-1 rounded-lg bg-teal-50 hover:bg-teal-50 text-teal-800 border border-teal-200 transition-colors"
                         title={`Xuất file Excel tiến độ học tập của ${t.teacherName}`}
                       >
                         <Download className="w-3.5 h-3.5" />
                       </button>
-                      <span className="px-2.5 py-0.5 rounded-full bg-indigo-100 text-indigo-800 font-black">
+                      <span className="px-2.5 py-0.5 rounded-full bg-teal-50 text-teal-800 font-black">
                         {t.count} HS
                       </span>
                     </div>
@@ -3399,7 +3399,7 @@ export function OverviewDashboard({
               trendValue={`${targets.length > 0 ? Math.round((psychologyTargets.length / targets.length) * 100) : 0}% tỷ trọng`}
               comparisonText="tham vấn & đồng hành"
               subMetrics={[
-                { label: "Đang theo dõi", value: `${totalActivePsych} ca`, colorClass: "text-purple-700" },
+                { label: "Đang theo dõi", value: `${totalActivePsych} ca`, colorClass: "text-teal-800" },
                 { label: "Đã chấm dứt", value: `${totalTerminatedPsych} ca` },
               ]}
               onClick={() => setSupportScope("PSYCHOLOGICAL")}
@@ -3467,7 +3467,7 @@ export function OverviewDashboard({
                   return (
                     <div key={idx} className="flex items-center justify-between p-3.5 rounded-2xl bg-slate-50 hover:bg-slate-100/50 border border-slate-100 transition-all">
                       <div className="flex items-center gap-2.5">
-                        <div className="px-2.5 py-1 rounded-xl bg-indigo-50 text-indigo-700 border border-indigo-100 flex items-center justify-center text-xs font-black">
+                        <div className="px-2.5 py-1 rounded-xl bg-teal-50 text-teal-800 border border-teal-200 flex items-center justify-center text-xs font-black">
                           {cleanClassName}
                         </div>
                         <div>
@@ -3484,7 +3484,7 @@ export function OverviewDashboard({
                           </span>
                         )}
                         {classItem.psychology > 0 && (
-                          <span className="text-[10px] px-2 py-0.5 rounded-full bg-violet-50 text-violet-700 font-bold border border-violet-100 flex items-center gap-1">
+                          <span className="text-[10px] px-2 py-0.5 rounded-full bg-teal-50 text-teal-800 font-bold border border-teal-200 flex items-center gap-1">
                             <Brain className="w-2.5 h-2.5" />
                             {classItem.psychology}
                           </span>
@@ -3505,7 +3505,7 @@ export function OverviewDashboard({
             <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-4 pb-3 border-b border-slate-100">
               <div>
                 <h2 className="text-base font-black text-slate-800 flex items-center gap-2">
-                  <Clock className="h-5 w-5 text-indigo-600" />
+                  <Clock className="h-5 w-5 text-teal-800" />
                   Danh sách Đề xuất Chấm dứt Hỗ trợ
                 </h2>
                 <p className="text-xs text-slate-400 mt-0.5">Danh sách học sinh chờ duyệt hoặc đã duyệt kết thúc bồi dưỡng theo từng tháng</p>
@@ -3561,7 +3561,7 @@ export function OverviewDashboard({
                           {row.supportType === "ACADEMIC" ? (
                             <span className="px-2 py-0.5 rounded-full bg-blue-50 text-blue-700 font-bold text-[10px]">Học tập</span>
                           ) : (
-                            <span className="px-2 py-0.5 rounded-full bg-violet-50 text-violet-700 font-bold text-[10px]">Tâm lý</span>
+                            <span className="px-2 py-0.5 rounded-full bg-teal-50 text-teal-800 font-bold text-[10px]">Tâm lý</span>
                           )}
                         </td>
                         <td className="px-4 py-3">{row.createdBy?.teacherName || "—"}</td>

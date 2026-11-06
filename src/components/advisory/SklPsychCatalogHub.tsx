@@ -53,13 +53,13 @@ const TEST_DIMENSIONS: Record<SklPsychTestCode, { label: string; color: string }
   ],
   EPI: [
     { label: "E • Hướng ngoại – Hướng nội", color: "bg-teal-50 text-teal-700 border-teal-200/70" },
-    { label: "N • Ổn định cảm xúc", color: "bg-indigo-50 text-indigo-700 border-indigo-200/70" },
+    { label: "N • Ổn định cảm xúc", color: "bg-teal-50 text-teal-800 border-teal-200/70" },
     { label: "L • Thang độ tin cậy", color: "bg-slate-100 text-slate-700 border-slate-200" }
   ],
   HOLLAND: [
-    { label: "R • Thực tế", color: "bg-orange-50 text-orange-700 border-orange-200/70" },
+    { label: "R • Thực tế", color: "bg-amber-50 text-amber-800 border-amber-200/70" },
     { label: "I • Nghiên cứu", color: "bg-sky-50 text-sky-700 border-sky-200/70" },
-    { label: "A • Nghệ thuật", color: "bg-purple-50 text-purple-700 border-purple-200/70" },
+    { label: "A • Nghệ thuật", color: "bg-teal-50 text-teal-800 border-teal-200/70" },
     { label: "S • Xã hội", color: "bg-emerald-50 text-emerald-700 border-emerald-200/70" },
     { label: "E • Quản lý", color: "bg-amber-50 text-amber-700 border-amber-200/70" },
     { label: "C • Nghiệp vụ", color: "bg-teal-50 text-teal-700 border-teal-200/70" }
@@ -67,12 +67,12 @@ const TEST_DIMENSIONS: Record<SklPsychTestCode, { label: string; color: string }
   LYUSIN_EQ: [
     { label: "MEI • EQ Liên nhân cách", color: "bg-sky-50 text-sky-700 border-sky-200/70" },
     { label: "VEI • EQ Nội nhân cách", color: "bg-teal-50 text-teal-700 border-teal-200/70" },
-    { label: "PE • Thấu cảm", color: "bg-purple-50 text-purple-700 border-purple-200/70" },
+    { label: "PE • Thấu cảm", color: "bg-teal-50 text-teal-800 border-teal-200/70" },
     { label: "UE • Quản trị cảm xúc", color: "bg-emerald-50 text-emerald-700 border-emerald-200/70" }
   ],
   MBTI: [
-    { label: "E / I • Xu hướng tự nhiên", color: "bg-purple-50 text-purple-700 border-purple-200/70" },
-    { label: "S / N • Tìm hiểu thế giới", color: "bg-indigo-50 text-indigo-700 border-indigo-200/70" },
+    { label: "E / I • Xu hướng tự nhiên", color: "bg-teal-50 text-teal-800 border-teal-200/70" },
+    { label: "S / N • Tìm hiểu thế giới", color: "bg-teal-50 text-teal-800 border-teal-200/70" },
     { label: "T / F • Quyết định & Lý trí", color: "bg-sky-50 text-sky-700 border-sky-200/70" },
     { label: "J / P • Tổ chức & Nguyên tắc", color: "bg-teal-50 text-teal-700 border-teal-200/70" }
   ]
@@ -92,7 +92,7 @@ const TEST_THEME: Record<
     iconBg: "bg-rose-50 text-rose-600",
     iconBorder: "border-rose-200/80",
     codeColor: "text-rose-600",
-    topBar: "from-rose-500 to-orange-500",
+    topBar: "from-rose-500 to-amber-600",
     stepRoleLabel: "HÀNH VI"
   },
   EPI: {
@@ -106,7 +106,7 @@ const TEST_THEME: Record<
     iconBg: "bg-amber-50 text-amber-600",
     iconBorder: "border-amber-200/80",
     codeColor: "text-amber-600",
-    topBar: "from-amber-500 to-orange-500",
+    topBar: "from-amber-500 to-amber-600",
     stepRoleLabel: "NGHỀ NGHIỆP"
   },
   LYUSIN_EQ: {
@@ -117,10 +117,10 @@ const TEST_THEME: Record<
     stepRoleLabel: "CẢM XÚC EQ"
   },
   MBTI: {
-    iconBg: "bg-purple-50 text-[#5B2D8B]",
-    iconBorder: "border-purple-200/80",
-    codeColor: "text-[#5B2D8B]",
-    topBar: "from-[#5B2D8B] to-indigo-600",
+    iconBg: "bg-teal-50 text-[#003B3A]",
+    iconBorder: "border-teal-200/80",
+    codeColor: "text-[#003B3A]",
+    topBar: "from-[#003B3A] to-emerald-600",
     stepRoleLabel: "TÍNH CÁCH"
   }
 }

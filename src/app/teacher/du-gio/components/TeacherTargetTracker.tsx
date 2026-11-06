@@ -468,7 +468,7 @@ export function TeacherTargetTracker({
             {/* Progress bar */}
             <div className="w-full h-2 bg-slate-100 rounded-full overflow-hidden mb-2.5 border border-slate-200/60">
               <div
-                className="h-full rounded-full transition-all duration-700 bg-gradient-to-r from-amber-400 to-orange-400 shadow-2xs"
+                className="h-full rounded-full transition-all duration-700 bg-gradient-to-r from-amber-400 to-amber-600 shadow-2xs"
                 style={{ width: `${scorePercent}%` }}
               />
             </div>

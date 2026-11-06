@@ -187,7 +187,7 @@ export function AssignCatalogToClassModal({
               </div>
               <div>
                 <span className="text-slate-400 font-bold">Môn học:</span>{' '}
-                <strong className="text-indigo-900">{meta.primarySubjectName || 'HĐTN'}</strong>
+                <strong className="text-teal-800">{meta.primarySubjectName || 'HĐTN'}</strong>
               </div>
               {meta.timeFrame && (
                 <div className="col-span-2">

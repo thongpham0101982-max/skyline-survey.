@@ -219,19 +219,19 @@ export function UserWelcomeCard({
                     <span>{campusName || campusTheme.name}</span>
                   </div>
                   {roleBadgeText && (
-                    <span className="inline-flex items-center gap-1 text-[10px] font-bold text-[#003B3A] bg-[#003B3A]/8 border border-[#003B3A]/20 px-2 py-0.5 rounded-full uppercase tracking-wider">
+                    <span className="inline-flex items-center gap-1 text-[11px] font-semibold text-[#003B3A] bg-[#003B3A]/8 border border-[#003B3A]/20 px-2.5 py-0.5 rounded-md tracking-tight">
                       <Sparkles className="w-2.5 h-2.5 text-[#00A19A] shrink-0" />
                       <span>{roleBadgeText}</span>
                     </span>
                   )}
                   {showAcademicYear && academicYear && (
-                    <span className="hidden xl:inline-flex items-center gap-1 text-[11px] font-semibold text-slate-600 bg-white/90 border border-slate-200/80 px-2.5 py-0.5 rounded-full">
+                    <span className="hidden xl:inline-flex items-center gap-1 text-[11px] font-semibold text-slate-600 bg-white/90 border border-slate-200/80 px-2.5 py-0.5 rounded-full tabular-nums">
                       <GraduationCap className="w-3 h-3 text-[#AE882E] shrink-0" />
                       <span>NH {academicYear}</span>
                     </span>
                   )}
                 </div>
-                <div className="flex items-center gap-2 text-[11px] text-slate-500 mt-0.5 flex-wrap">
+                <div className="flex items-center gap-2 text-[11px] text-slate-500 mt-0.5 flex-wrap tabular-nums">
                   <span className="flex items-center gap-1">
                     <CalendarDays className="w-3 h-3 text-[#00A19A] shrink-0" />
                     <span className="capitalize">{currentDateStr || "Đang cập nhật..."}</span>
@@ -240,7 +240,7 @@ export function UserWelcomeCard({
                     <>
                       <span>•</span>
                       <span className="text-emerald-700 font-medium inline-flex items-center gap-1">
-                        <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-ping" />
+                        <span className="w-1.5 h-1.5 rounded-full bg-emerald-500" />
                         Đồng bộ: <strong>{lastUpdated}</strong>
                       </span>
                     </>

@@ -14,6 +14,7 @@ import {
   SKL_PSYCH_VERSION,
   calculateHollandResult
 } from "@/lib/advisory/holland-skl-psych"
+import { syncHollandToOrientationRecord } from "@/app/api/advisory/orientation-tracking/route"
 
 export const dynamic = "force-dynamic"
 
@@ -503,12 +504,27 @@ export async function POST(req: Request) {
       console.warn("[Holland -> StudentCareerOrientation sync warning]:", syncErr)
     }
 
-    // Notify Homeroom Teacher & Linked Parents
-    await notifyHomeroomTeacher(
-      student,
-      `🧭 Học sinh hoàn thành Khảo sát Holland (${computed.hollandCode})`,
-      `Học sinh ${student.studentName} (${student.class?.className || ""}) vừa hoàn thành bài Khảo sát Holland 108 câu với mã sở thích ${computed.hollandCode}.`
-    )
+    // Sync to OrientationAdvisoryRecord in CHO_PHAN_CONG state (without creating confirmed career goal or duplicate notifications)
+    const syncOrient = await syncHollandToOrientationRecord({
+      studentId: student.id,
+      classId: student.classId || null,
+      academicYearId: academicYearId || student.academicYearId || "",
+      assessmentId: recordId,
+      hollandCode: computed.hollandCode,
+      scores: computed.scores,
+      topGroups: top3Payload,
+      surveyBatch: "Đợt khảo sát RIASEC 108 câu",
+      surveyDate: nowIso
+    }).catch(() => ({ alreadyNotified: false }))
+
+    // Notify Homeroom Teacher / Coordinator only if not already notified for this result
+    if (!syncOrient.alreadyNotified) {
+      await notifyHomeroomTeacher(
+        student,
+        `🧭 Học sinh hoàn thành Khảo sát Holland (${computed.hollandCode}) — Chờ phân công tư vấn`,
+        `Học sinh ${student.studentName} (${student.class?.className || ""}) vừa hoàn thành bài Khảo sát Holland 108 câu với mã sở thích ${computed.hollandCode}. Hồ sơ Định hướng phát triển đang ở trạng thái Chờ phân công.`
+      )
+    }
 
     await appendAdvisoryAuditLog({
       studentId: student.id,

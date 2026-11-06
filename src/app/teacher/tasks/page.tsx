@@ -107,8 +107,8 @@ const SKYLINE_CATEGORIES: CategoryDefinition[] = [
     shortLabel: "Dự giờ & PTCM",
     modules: ["DU_GIO"],
     icon: Eye,
-    badgeClass: "bg-indigo-50 text-[#5B3E96] border-indigo-200",
-    dotClass: "bg-[#6E3D89]",
+    badgeClass: "bg-teal-50 text-[#5B3E96] border-teal-200",
+    dotClass: "bg-[#003B3A]",
   },
   {
     code: "CO_VAN_HOC_TAP",
@@ -125,8 +125,8 @@ const SKYLINE_CATEGORIES: CategoryDefinition[] = [
     shortLabel: "Môn đặc thù",
     modules: ["MON_DAC_THU"],
     icon: Sparkles,
-    badgeClass: "bg-purple-50 text-[#6E3D89] border-purple-200",
-    dotClass: "bg-purple-600",
+    badgeClass: "bg-teal-50 text-[#003B3A] border-teal-200",
+    dotClass: "bg-[#003B3A]",
   },
   {
     code: "HOAT_DONG_TRAI_NGHIEM",
@@ -134,8 +134,8 @@ const SKYLINE_CATEGORIES: CategoryDefinition[] = [
     shortLabel: "HĐ Trải nghiệm",
     modules: ["TRAI_NGHIEM"],
     icon: GraduationCap,
-    badgeClass: "bg-violet-50 text-violet-700 border-violet-200",
-    dotClass: "bg-violet-500",
+    badgeClass: "bg-teal-50 text-teal-800 border-teal-200",
+    dotClass: "bg-teal-500",
   },
   {
     code: "KHAO_THI_KHAO_SAT",
@@ -1362,7 +1362,7 @@ export default function TeacherTasksPage() {
                 )}
 
                 {profile.rolesDetected.isGVMonDacThu && (
-                  <span className="inline-flex items-center gap-1 text-xs font-semibold px-2.5 py-0.5 rounded-md bg-purple-50 text-[#5B3E96] border border-purple-200">
+                  <span className="inline-flex items-center gap-1 text-xs font-semibold px-2.5 py-0.5 rounded-md bg-teal-50 text-[#5B3E96] border border-teal-200">
                     <Sparkles className="w-3 h-3" />
                     <span>
                       Môn đặc thù:{" "}

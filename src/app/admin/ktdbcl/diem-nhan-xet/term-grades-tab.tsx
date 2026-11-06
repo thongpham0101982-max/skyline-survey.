@@ -1145,7 +1145,7 @@ export function TermGradesTab({
       <div className="bg-white p-4 rounded-xl border border-slate-200 shadow-sm space-y-3">
         <div className="flex flex-wrap items-center justify-between gap-3">
           <div className="flex items-center gap-2">
-            <div className="p-2 bg-indigo-50 text-indigo-700 rounded-lg">
+            <div className="p-2 bg-teal-50 text-teal-800 rounded-lg">
               <FileSpreadsheet className="w-5 h-5" />
             </div>
             <div>
@@ -1184,7 +1184,7 @@ export function TermGradesTab({
             <button
               onClick={handleAutoCalculate}
               disabled={loading || students.length === 0}
-              className="flex items-center gap-1.5 px-3.5 py-2 bg-gradient-to-r from-indigo-600 to-violet-600 hover:from-indigo-700 hover:to-violet-700 text-white rounded-lg text-xs font-semibold shadow-sm transition disabled:opacity-50"
+              className="flex items-center gap-1.5 px-3.5 py-2 bg-gradient-to-r from-teal-600 to-emerald-600 hover:from-teal-600 hover:to-emerald-600 text-white rounded-lg text-xs font-semibold shadow-sm transition disabled:opacity-50"
               title={isPrimary ? "Tính tổng kết theo Thông tư 27" : "Tính tổng kết theo Thông tư 22"}
             >
               <Sparkles className="w-4 h-4" />
@@ -1210,10 +1210,10 @@ export function TermGradesTab({
 
             <button
               onClick={() => setShowSubjectConfigModal(true)}
-              className="flex items-center gap-1.5 px-3 py-2 bg-indigo-50 hover:bg-indigo-100 text-indigo-700 border border-indigo-200 rounded-lg text-xs font-semibold shadow-xs transition"
+              className="flex items-center gap-1.5 px-3 py-2 bg-teal-50 hover:bg-teal-50 text-teal-800 border border-teal-200 rounded-lg text-xs font-semibold shadow-xs transition"
               title="Cấu hình môn học: Thêm môn (Điểm, Nhận xét), Bỏ chọn môn cho ba bậc học"
             >
-              <Sliders className="w-4 h-4 text-indigo-600" />
+              <Sliders className="w-4 h-4 text-teal-800" />
               <span>Cấu hình môn ({scoredSubjects.length + assessmentSubjects.length})</span>
             </button>
 
@@ -1240,7 +1240,7 @@ export function TermGradesTab({
                 <select
                   value={selectedClassId}
                   onChange={e => setSelectedClassId(e.target.value)}
-                  className="w-full text-xs font-black text-indigo-900 border-2 border-indigo-200 rounded-xl px-3 py-2 bg-indigo-50/50 focus:ring-2 focus:ring-indigo-500 outline-none"
+                  className="w-full text-xs font-black text-teal-800 border-2 border-teal-200 rounded-xl px-3 py-2 bg-teal-50/50 focus:ring-2 focus:ring-indigo-500 outline-none"
                 >
                   {effectiveClasses.map(c => (
                     <option key={c.id} value={c.id}>
@@ -1268,8 +1268,8 @@ export function TermGradesTab({
 
               {/* Cấp học & Khối badge */}
               <div className="flex items-center gap-2 mt-5">
-                <span className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-bold bg-indigo-100 text-indigo-800">
-                  <BookOpen className="w-3.5 h-3.5 text-indigo-600" />
+                <span className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-bold bg-teal-50 text-teal-800">
+                  <BookOpen className="w-3.5 h-3.5 text-teal-800" />
                   {isPrimary ? "Tiểu học (TT 27)" : selectedLevel === "THCS" ? "THCS (TT 22)" : "THPT (TT 22)"}
                 </span>
                 <span className="inline-flex items-center px-2.5 py-1.5 rounded-lg text-xs font-extrabold bg-slate-100 text-slate-700 border border-slate-200">
@@ -1318,7 +1318,7 @@ export function TermGradesTab({
                   onClick={() => setSelectedLevel("TIEU_HOC")}
                   className={`py-1.5 text-[11px] font-semibold rounded-md transition ${
                     selectedLevel === "TIEU_HOC"
-                      ? "bg-white text-indigo-700 shadow-sm"
+                      ? "bg-white text-teal-800 shadow-sm"
                       : "text-slate-600 hover:text-slate-900"
                   }`}
                 >
@@ -1329,7 +1329,7 @@ export function TermGradesTab({
                   onClick={() => setSelectedLevel("THCS")}
                   className={`py-1.5 text-[11px] font-semibold rounded-md transition ${
                     selectedLevel === "THCS"
-                      ? "bg-white text-indigo-700 shadow-sm"
+                      ? "bg-white text-teal-800 shadow-sm"
                       : "text-slate-600 hover:text-slate-900"
                   }`}
                 >
@@ -1340,7 +1340,7 @@ export function TermGradesTab({
                   onClick={() => setSelectedLevel("THPT")}
                   className={`py-1.5 text-[11px] font-semibold rounded-md transition ${
                     selectedLevel === "THPT"
-                      ? "bg-white text-indigo-700 shadow-sm"
+                      ? "bg-white text-teal-800 shadow-sm"
                       : "text-slate-600 hover:text-slate-900"
                   }`}
                 >
@@ -1374,7 +1374,7 @@ export function TermGradesTab({
                 value={selectedClassId}
                 onChange={e => setSelectedClassId(e.target.value)}
                 disabled={filteredClasses.length === 0}
-                className="w-full text-xs font-semibold border border-indigo-300 rounded-lg p-2 bg-indigo-50/50 text-indigo-950 focus:ring-2 focus:ring-indigo-500 focus:outline-none"
+                className="w-full text-xs font-semibold border border-teal-200 rounded-lg p-2 bg-teal-50/50 text-teal-800 focus:ring-2 focus:ring-indigo-500 focus:outline-none"
               >
                 {filteredClasses.length === 0 ? (
                   <option value="">Không có lớp</option>
@@ -1423,14 +1423,14 @@ export function TermGradesTab({
         <div className="flex flex-wrap items-center justify-between gap-2 px-3 py-2 bg-slate-50 border border-slate-200 rounded-lg text-xs">
           <div className="flex flex-wrap items-center gap-2">
             <span className="font-bold text-slate-700 flex items-center gap-1.5">
-              <BookOpen className="w-4 h-4 text-indigo-600" />
+              <BookOpen className="w-4 h-4 text-teal-800" />
               Cấu trúc Form:
             </span>
-            <span className="px-2 py-0.5 bg-indigo-100 text-indigo-800 font-bold rounded text-[11px]">
+            <span className="px-2 py-0.5 bg-teal-50 text-teal-800 font-bold rounded text-[11px]">
               {isPrimary ? `Tiểu học - Khối ${selectedGrade} (TT27)` : `Khối ${selectedGrade} - ${selectedLevel} (TT22)`}
             </span>
             <span className="font-semibold text-slate-800">
-              Lớp: <span className="text-indigo-600 font-bold">{classInfo?.className || filteredClasses.find(c => c.id === selectedClassId)?.className || "Chưa chọn lớp"}</span>
+              Lớp: <span className="text-teal-800 font-bold">{classInfo?.className || filteredClasses.find(c => c.id === selectedClassId)?.className || "Chưa chọn lớp"}</span>
             </span>
             <span className="text-slate-400">•</span>
             {isPrimary ? (
@@ -1449,10 +1449,10 @@ export function TermGradesTab({
           <div className="flex items-center gap-2">
             <button
               onClick={() => setShowSubjectConfigModal(true)}
-              className="flex items-center gap-1.5 px-2.5 py-1 bg-white hover:bg-indigo-50 text-indigo-700 border border-indigo-200 rounded-md text-xs font-bold transition shadow-xs"
+              className="flex items-center gap-1.5 px-2.5 py-1 bg-white hover:bg-teal-50 text-teal-800 border border-teal-200 rounded-md text-xs font-bold transition shadow-xs"
               title="Cấu hình môn học: Thêm môn (Điểm, Nhận xét), Bỏ chọn môn cho ba bậc học"
             >
-              <Sliders className="w-3.5 h-3.5 text-indigo-600" />
+              <Sliders className="w-3.5 h-3.5 text-teal-800" />
               <span>Tùy chỉnh môn ({scoredSubjects.length + assessmentSubjects.length})</span>
             </button>
             {isPrimary && (
@@ -1471,7 +1471,7 @@ export function TermGradesTab({
       <div className="bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden">
         {loading ? (
           <div className="py-24 text-center">
-            <RefreshCw className="w-8 h-8 text-indigo-600 animate-spin mx-auto mb-3" />
+            <RefreshCw className="w-8 h-8 text-teal-800 animate-spin mx-auto mb-3" />
             <p className="text-sm font-medium text-slate-600">Đang tải bảng điểm tổng kết...</p>
           </div>
         ) : filteredClasses.length === 0 ? (
@@ -1491,7 +1491,7 @@ export function TermGradesTab({
             <div className="bg-slate-100/90 border-b border-slate-300 px-4 py-2.5 flex flex-wrap items-center justify-between text-xs text-slate-700">
               <div className="flex flex-wrap items-center gap-3">
                 <span>
-                  Lớp: <strong className="text-slate-900 font-bold">{classInfo?.className || filteredClasses.find(c => c.id === selectedClassId)?.className || ""}</strong> - <strong className="text-indigo-700">{selectedSemester === "HK1" ? "Học kỳ 1" : "Cả năm"}</strong>
+                  Lớp: <strong className="text-slate-900 font-bold">{classInfo?.className || filteredClasses.find(c => c.id === selectedClassId)?.className || ""}</strong> - <strong className="text-teal-800">{selectedSemester === "HK1" ? "Học kỳ 1" : "Cả năm"}</strong>
                 </span>
                 <span className="text-slate-300">|</span>
                 <span>
@@ -1514,7 +1514,7 @@ export function TermGradesTab({
                   <button
                     type="button"
                     onClick={() => setToastMessage({ type: "success", text: "Hiệu trưởng đã phê duyệt danh sách lên lớp của lớp!" })}
-                    className="px-2.5 py-1 bg-indigo-50 border border-indigo-200 hover:bg-indigo-100 text-indigo-700 font-semibold rounded text-[11px] shadow-xs transition"
+                    className="px-2.5 py-1 bg-teal-50 border border-teal-200 hover:bg-teal-50 text-teal-800 font-semibold rounded text-[11px] shadow-xs transition"
                   >
                     Hiệu trưởng duyệt lên lớp
                   </button>
@@ -1561,7 +1561,7 @@ export function TermGradesTab({
 
                     {/* 4. Đánh giá KQGD (CHỈ HIỂN THỊ Ở HK2 / CẢ NĂM - HK1 KHÔNG CÓ) */}
                     {selectedSemester !== "HK1" && (
-                      <th colSpan={4} className="p-2 font-bold bg-purple-50 text-purple-950 border-b border-purple-200">
+                      <th colSpan={4} className="p-2 font-bold bg-teal-50 text-teal-800 border-b border-teal-200">
                         Đánh giá KQGD
                       </th>
                     )}
@@ -1636,10 +1636,10 @@ export function TermGradesTab({
                     {/* Đánh giá KQGD (Chỉ có ở HK2 / Cả năm) */}
                     {selectedSemester !== "HK1" && (
                       <>
-                        <th rowSpan={2} className="p-1 text-[10px] font-bold text-purple-900 w-16">Hoàn thành xuất sắc</th>
-                        <th rowSpan={2} className="p-1 text-[10px] font-bold text-purple-900 w-16">Hoàn thành tốt</th>
-                        <th rowSpan={2} className="p-1 text-[10px] font-bold text-purple-900 w-16">Hoàn thành</th>
-                        <th rowSpan={2} className="p-1 text-[10px] font-bold text-purple-900 w-16">Chưa hoàn thành</th>
+                        <th rowSpan={2} className="p-1 text-[10px] font-bold text-teal-800 w-16">Hoàn thành xuất sắc</th>
+                        <th rowSpan={2} className="p-1 text-[10px] font-bold text-teal-800 w-16">Hoàn thành tốt</th>
+                        <th rowSpan={2} className="p-1 text-[10px] font-bold text-teal-800 w-16">Hoàn thành</th>
+                        <th rowSpan={2} className="p-1 text-[10px] font-bold text-teal-800 w-16">Chưa hoàn thành</th>
                       </>
                     )}
 
@@ -1735,7 +1735,7 @@ export function TermGradesTab({
                                       : levelVal === "C"
                                       ? "bg-rose-50 text-rose-800 border-rose-300"
                                       : levelVal === "Miễn"
-                                      ? "bg-purple-100 text-purple-700 border-purple-300 font-extrabold"
+                                      ? "bg-teal-50 text-teal-800 border-teal-400 font-extrabold"
                                       : "bg-white text-slate-400 border-slate-200"
                                   }`}
                                 >
@@ -1757,7 +1757,7 @@ export function TermGradesTab({
                                     placeholder="-"
                                     className={`w-12 text-center font-bold rounded py-0.5 border text-xs focus:outline-none transition-colors ${
                                       isMien
-                                        ? "bg-purple-50 text-purple-700 border-purple-200 font-extrabold"
+                                        ? "bg-teal-50 text-teal-800 border-teal-200 font-extrabold"
                                         : scoreVal !== "" && Number(scoreVal) >= 9
                                         ? "text-emerald-700 bg-emerald-50/50 border-emerald-200"
                                         : scoreVal !== "" && Number(scoreVal) < 5
@@ -1860,11 +1860,11 @@ export function TermGradesTab({
                               <td
                                 key={m}
                                 onClick={() => handleSummaryChange(st.id, "academicRating", isMatch ? "" : m)}
-                                className="p-1 text-center border-r border-slate-200 cursor-pointer hover:bg-purple-100/50"
+                                className="p-1 text-center border-r border-slate-200 cursor-pointer hover:bg-teal-100/50"
                               >
                                 <span
                                   className={`inline-block w-4 h-4 rounded text-center leading-4 text-xs font-bold ${
-                                    isMatch ? "bg-purple-600 text-white" : "text-transparent border border-slate-300"
+                                    isMatch ? "bg-[#003B3A] text-white" : "text-transparent border border-slate-300"
                                   }`}
                                 >
                                   ✓
@@ -1997,7 +1997,7 @@ export function TermGradesTab({
                     </th>
                   )}
 
-                  <th colSpan={selectedSemester === "CN" ? 7 : 6} className="p-2 text-center font-bold bg-purple-50 text-purple-900 border-b border-purple-200">
+                  <th colSpan={selectedSemester === "CN" ? 7 : 6} className="p-2 text-center font-bold bg-teal-50 text-teal-800 border-b border-teal-200">
                     Đánh giá tổng kết {selectedSemester === "CN" ? "(Cả năm)" : `(${selectedSemester})`}
                   </th>
                 </tr>
@@ -2019,12 +2019,12 @@ export function TermGradesTab({
                     </th>
                   ))}
 
-                  <th className="p-2 text-center font-semibold text-purple-950 min-w-[105px]">Kết quả học tập</th>
-                  <th className="p-2 text-center font-semibold text-purple-950 min-w-[105px]">Kết quả rèn luyện</th>
+                  <th className="p-2 text-center font-semibold text-teal-800 min-w-[105px]">Kết quả học tập</th>
+                  <th className="p-2 text-center font-semibold text-teal-800 min-w-[105px]">Kết quả rèn luyện</th>
                   <th className="p-2 text-center font-semibold text-slate-700 w-12" title="Số buổi nghỉ có phép">P</th>
                   <th className="p-2 text-center font-semibold text-slate-700 w-12" title="Số buổi nghỉ không phép">K</th>
                   <th className="p-2 text-center font-semibold text-slate-700 w-14" title="Tổng số buổi nghỉ">Tổng</th>
-                  <th className="p-2 text-center font-semibold text-purple-950 min-w-[125px]">Danh hiệu thi đua</th>
+                  <th className="p-2 text-center font-semibold text-teal-800 min-w-[125px]">Danh hiệu thi đua</th>
                   {selectedSemester === "CN" && (
                     <th className="p-2 text-center font-semibold text-slate-700 min-w-[130px]">Ghi chú / Lên lớp</th>
                   )}
@@ -2037,7 +2037,7 @@ export function TermGradesTab({
                   const rowBg = isEven ? "bg-white" : "bg-slate-50/50"
 
                   return (
-                    <tr key={st.id} className={`hover:bg-indigo-50/40 transition-colors ${rowBg}`}>
+                    <tr key={st.id} className={`hover:bg-teal-50/40 transition-colors ${rowBg}`}>
                       <td className={`p-2 text-center text-slate-500 font-medium sticky left-0 z-10 ${rowBg} border-r border-slate-200`}>
                         {st.stt}
                       </td>
@@ -2065,7 +2065,7 @@ export function TermGradesTab({
                               placeholder="-"
                               className={`w-14 text-center font-semibold rounded py-1 border text-xs focus:outline-none transition-colors ${
                                 isMien
-                                  ? "bg-purple-50 text-purple-700 border-purple-300 font-bold"
+                                  ? "bg-teal-50 text-teal-800 border-teal-400 font-bold"
                                   : displayVal !== "" && Number(displayVal) < 5
                                   ? "text-rose-600 bg-rose-50 border-rose-200"
                                   : displayVal !== "" && Number(displayVal) >= 8
@@ -2092,7 +2092,7 @@ export function TermGradesTab({
                                   : evalGrade === "CĐ"
                                   ? "bg-rose-50 text-rose-700 border-rose-300"
                                   : evalGrade === "Miễn"
-                                  ? "bg-purple-100 text-purple-700 border-purple-300 font-extrabold"
+                                  ? "bg-teal-50 text-teal-800 border-teal-400 font-extrabold"
                                   : "bg-white text-slate-400 border-slate-200"
                               }`}
                             >
@@ -2206,7 +2206,7 @@ export function TermGradesTab({
                 <>
                   <span>
                     Hoàn thành xuất sắc:{" "}
-                    <strong className="text-purple-700">
+                    <strong className="text-teal-800">
                       {displayedStudents.filter(s => s.summary.academicRating === "Hoàn thành xuất sắc").length}
                     </strong>
                   </span>
@@ -2269,13 +2269,13 @@ export function TermGradesTab({
             {/* Header */}
             <div className="flex items-center justify-between p-4 border-b border-slate-100 bg-slate-50 flex-shrink-0">
               <div className="flex items-center gap-2.5">
-                <div className="p-2 bg-indigo-100 text-indigo-700 rounded-lg">
+                <div className="p-2 bg-teal-50 text-teal-800 rounded-lg">
                   <Sliders className="w-5 h-5" />
                 </div>
                 <div>
                   <h3 className="font-bold text-slate-800 text-sm flex items-center gap-2">
                     <span>Cấu Hình Môn Học — {selectedLevel === "TIEU_HOC" ? "Tiểu học" : selectedLevel === "THCS" ? "THCS" : "THPT"} (Khối {selectedGrade})</span>
-                    <span className="text-[11px] px-2 py-0.5 bg-indigo-100 text-indigo-800 font-semibold rounded-full">
+                    <span className="text-[11px] px-2 py-0.5 bg-teal-50 text-teal-800 font-semibold rounded-full">
                       {classInfo?.className || filteredClasses.find(c => c.id === selectedClassId)?.className || ""}
                     </span>
                   </h3>
@@ -2297,13 +2297,13 @@ export function TermGradesTab({
             {/* Modal Body (Scrollable) */}
             <div className="p-5 space-y-5 overflow-y-auto flex-1 text-xs">
               {/* PHẦN 1: THÊM MÔN HỌC MỚI (ĐIỂM / NHẬN XÉT) */}
-              <div className="bg-indigo-50/50 border border-indigo-200/80 rounded-xl p-4 space-y-3">
+              <div className="bg-teal-50/50 border border-teal-200/80 rounded-xl p-4 space-y-3">
                 <div className="flex items-center justify-between">
-                  <h4 className="font-bold text-indigo-950 flex items-center gap-1.5 text-xs">
-                    <Plus className="w-4 h-4 text-indigo-600" />
+                  <h4 className="font-bold text-teal-800 flex items-center gap-1.5 text-xs">
+                    <Plus className="w-4 h-4 text-teal-800" />
                     Thêm môn học mới vào bảng điểm
                   </h4>
-                  <span className="text-[11px] text-indigo-600 font-medium">
+                  <span className="text-[11px] text-teal-800 font-medium">
                     Áp dụng cho {selectedLevel === "TIEU_HOC" ? "Tiểu học" : selectedLevel} - Khối {selectedGrade}
                   </span>
                 </div>
@@ -2375,7 +2375,7 @@ export function TermGradesTab({
                     <button
                       type="button"
                       onClick={handleAddNewSubject}
-                      className="w-full flex items-center justify-center gap-1.5 py-2 px-3 bg-indigo-600 hover:bg-indigo-700 text-white font-bold rounded-lg text-xs shadow-xs transition"
+                      className="w-full flex items-center justify-center gap-1.5 py-2 px-3 bg-[#003B3A] hover:bg-[#003B3A] text-white font-bold rounded-lg text-xs shadow-xs transition"
                     >
                       <Plus className="w-4 h-4" />
                       <span>Thêm</span>
@@ -2457,7 +2457,7 @@ export function TermGradesTab({
                                 type="checkbox"
                                 checked={sub.selected}
                                 onChange={() => handleToggleSelectSubject(sub.id)}
-                                className="w-4 h-4 text-indigo-600 rounded border-slate-300 focus:ring-indigo-500 cursor-pointer"
+                                className="w-4 h-4 text-teal-800 rounded border-slate-300 focus:ring-indigo-500 cursor-pointer"
                               />
                             </td>
 
@@ -2468,7 +2468,7 @@ export function TermGradesTab({
                                   {sub.subjectName}
                                 </span>
                                 {sub.isCustom && (
-                                  <span className="text-[10px] px-1.5 py-0.2 bg-purple-100 text-purple-700 rounded font-semibold">
+                                  <span className="text-[10px] px-1.5 py-0.2 bg-teal-50 text-teal-800 rounded font-semibold">
                                     Tùy biến
                                   </span>
                                 )}
@@ -2554,7 +2554,7 @@ export function TermGradesTab({
                 <button
                   type="button"
                   onClick={() => setShowSubjectConfigModal(false)}
-                  className="px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white rounded-lg font-bold shadow-xs transition"
+                  className="px-4 py-2 bg-[#003B3A] hover:bg-[#003B3A] text-white rounded-lg font-bold shadow-xs transition"
                 >
                   Hoàn tất & Áp dụng
                 </button>
@@ -2671,7 +2671,7 @@ export function TermGradesTab({
                     Đánh Giá Năng Lực & Phẩm Chất Học Sinh
                   </h3>
                   <p className="text-xs text-slate-600 font-medium">
-                    Học sinh: <strong className="text-indigo-700 font-bold">{editingStudentForNlPc.studentName}</strong> ({editingStudentForNlPc.studentCode}) • Lớp: <strong>{classInfo?.className || ""}</strong>
+                    Học sinh: <strong className="text-teal-800 font-bold">{editingStudentForNlPc.studentName}</strong> ({editingStudentForNlPc.studentCode}) • Lớp: <strong>{classInfo?.className || ""}</strong>
                   </p>
                 </div>
               </div>
@@ -2824,7 +2824,7 @@ export function TermGradesTab({
               <button
                 type="button"
                 onClick={() => setEditingStudentForNlPc(null)}
-                className="px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white rounded-lg text-xs font-semibold shadow-sm transition"
+                className="px-4 py-2 bg-[#003B3A] hover:bg-[#003B3A] text-white rounded-lg text-xs font-semibold shadow-sm transition"
               >
                 Đóng & Lưu học sinh này
               </button>
@@ -2839,7 +2839,7 @@ export function TermGradesTab({
           <div className="bg-white rounded-2xl shadow-2xl border border-slate-200 w-full max-w-xl overflow-hidden animate-in fade-in zoom-in duration-200">
             <div className="flex items-center justify-between p-4 border-b border-slate-100 bg-slate-50">
               <div className="flex items-center gap-2">
-                <div className="p-2 bg-indigo-100 text-indigo-700 rounded-lg">
+                <div className="p-2 bg-teal-50 text-teal-800 rounded-lg">
                   <Upload className="w-5 h-5" />
                 </div>
                 <div>
@@ -2874,7 +2874,7 @@ export function TermGradesTab({
                       onClick={() => setImportSemester(sem)}
                       className={`py-2 text-xs font-bold rounded-lg border transition ${
                         importSemester === sem
-                          ? "bg-indigo-600 text-white border-indigo-600 shadow-sm"
+                          ? "bg-[#003B3A] text-white border-teal-200 shadow-sm"
                           : "bg-white text-slate-700 border-slate-300 hover:bg-slate-50"
                       }`}
                     >
@@ -2886,9 +2886,9 @@ export function TermGradesTab({
 
               <div
                 onClick={() => fileInputRef.current?.click()}
-                className="border-2 border-dashed border-indigo-200 hover:border-indigo-400 bg-indigo-50/40 rounded-xl p-6 text-center cursor-pointer transition"
+                className="border-2 border-dashed border-teal-200 hover:border-teal-200 bg-teal-50/40 rounded-xl p-6 text-center cursor-pointer transition"
               >
-                <FileSpreadsheet className="w-10 h-10 text-indigo-500 mx-auto mb-2" />
+                <FileSpreadsheet className="w-10 h-10 text-teal-700 mx-auto mb-2" />
                 <p className="text-xs font-semibold text-slate-800">
                   {importFile ? importFile.name : "Nhấn để chọn file Excel hoặc kéo thả vào đây"}
                 </p>
@@ -2910,7 +2910,7 @@ export function TermGradesTab({
 
               <div className="p-3 bg-slate-50 border border-slate-200 rounded-lg text-xs space-y-1 text-slate-600">
                 <div className="font-semibold text-slate-800 flex items-center gap-1.5">
-                  <Info className="w-3.5 h-3.5 text-indigo-600" />
+                  <Info className="w-3.5 h-3.5 text-teal-800" />
                   Quy ước định dạng file:
                 </div>
                 <ul className="list-disc pl-5 space-y-0.5 text-[11px] text-slate-500">
@@ -2967,7 +2967,7 @@ export function TermGradesTab({
                 type="button"
                 onClick={handleUploadMultiSheet}
                 disabled={!importFile || importLoading}
-                className="flex items-center gap-1.5 px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white rounded-lg text-xs font-semibold shadow-sm transition disabled:opacity-50"
+                className="flex items-center gap-1.5 px-4 py-2 bg-[#003B3A] hover:bg-[#003B3A] text-white rounded-lg text-xs font-semibold shadow-sm transition disabled:opacity-50"
               >
                 {importLoading ? (
                   <>

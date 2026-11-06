@@ -62,7 +62,7 @@ function SpecialSubjectNavInner({
       icon: Shield
     },
     {
-      name: "Giám sát Tài chính (2–9)",
+      name: "Giám sát Tài chính (1–9)",
       href: "/admin/special-subjects/monitor?subject=FIN_EDU",
       icon: Coins
     },

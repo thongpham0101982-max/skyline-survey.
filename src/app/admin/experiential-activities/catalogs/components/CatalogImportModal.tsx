@@ -245,7 +245,7 @@ export function CatalogImportModal({
                             <span className="text-slate-400 italic text-xs">—</span>
                           )}
                         </td>
-                        <td className="py-2.5 px-3 font-semibold text-indigo-700">{r.primarySubjectName || '—'}</td>
+                        <td className="py-2.5 px-3 font-semibold text-teal-800">{r.primarySubjectName || '—'}</td>
                         <td className="py-2.5 px-3 text-slate-500">{r.organizationFormat} ({r.timeFrame || `HK${r.semester}`})</td>
                         <td className="py-2.5 px-3 text-slate-600">{r.expectedLocation || '—'}</td>
                         <td className="py-2.5 px-3 text-center">

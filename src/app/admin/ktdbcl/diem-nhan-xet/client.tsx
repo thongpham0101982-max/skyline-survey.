@@ -1244,7 +1244,7 @@ function DiemNhanXetAdminClientInner({ academicYears, activeYearId, classes, sub
               <div>
                 <label className="block text-xs font-bold text-slate-700 mb-1.5 flex items-center justify-between">
                   <span className="flex items-center gap-1">
-                    <BookOpen className="w-3.5 h-3.5 text-purple-600" />
+                    <BookOpen className="w-3.5 h-3.5 text-teal-800" />
                     3. Áp dụng Môn học:
                   </span>
                   {configuredSubjectIdsInSelectedPeriodAndGrade.size > 0 && (
@@ -1606,10 +1606,10 @@ function DiemNhanXetAdminClientInner({ academicYears, activeYearId, classes, sub
 
                   {/* CUSTOM Formula Editor */}
                   {formulaType === "CUSTOM" && (
-                    <div className="p-4 bg-white rounded-xl border border-indigo-200/80 shadow-sm space-y-3">
+                    <div className="p-4 bg-white rounded-xl border border-teal-200/80 shadow-sm space-y-3">
                       <div className="flex items-center justify-between">
-                        <span className="text-xs font-bold text-indigo-950 flex items-center gap-1.5">
-                          <Code className="w-3.5 h-3.5 text-indigo-600" />
+                        <span className="text-xs font-bold text-teal-800 flex items-center gap-1.5">
+                          <Code className="w-3.5 h-3.5 text-teal-800" />
                           Trình soạn thảo Công thức Toán học Tùy biến:
                         </span>
                         <span className="text-[11px] text-slate-500">Bấm thẻ bên dưới để chèn nhanh</span>
@@ -1622,7 +1622,7 @@ function DiemNhanXetAdminClientInner({ academicYears, activeYearId, classes, sub
                             key={idx}
                             type="button"
                             onClick={() => setFormulaCustom(prev => (prev ? `${prev} + ` : "") + `[col${idx}]`)}
-                            className="px-2 py-1 bg-indigo-50 hover:bg-indigo-100 text-indigo-800 border border-indigo-200 rounded-md text-[11px] font-bold transition-all"
+                            className="px-2 py-1 bg-teal-50 hover:bg-teal-50 text-teal-800 border border-teal-200 rounded-md text-[11px] font-bold transition-all"
                           >
                             + [{name || `Cột ${idx + 1}`}]
                           </button>
@@ -1645,10 +1645,10 @@ function DiemNhanXetAdminClientInner({ academicYears, activeYearId, classes, sub
                           value={formulaCustom}
                           onChange={(e) => setFormulaCustom(e.target.value)}
                           placeholder="Ví dụ: ([col0] * 1 + [col1] * 2) / 3 hoặc [col0] * 0.4 + [col1] * 0.6"
-                          className="w-full font-mono border border-indigo-200 rounded-lg px-3 py-2 text-xs font-bold text-indigo-950 bg-indigo-50/20 focus:ring-2 focus:ring-indigo-500 outline-none"
+                          className="w-full font-mono border border-teal-200 rounded-lg px-3 py-2 text-xs font-bold text-teal-800 bg-teal-50/20 focus:ring-2 focus:ring-indigo-500 outline-none"
                         />
                         <div className="text-[11px] text-slate-500 mt-1">
-                          Quy ước: <code className="text-indigo-700 bg-indigo-50 px-1 rounded">[col0]</code> là Cột 1, <code className="text-indigo-700 bg-indigo-50 px-1 rounded">[col1]</code> là Cột 2...
+                          Quy ước: <code className="text-teal-800 bg-teal-50 px-1 rounded">[col0]</code> là Cột 1, <code className="text-teal-800 bg-teal-50 px-1 rounded">[col1]</code> là Cột 2...
                         </div>
                       </div>
                     </div>
@@ -1772,7 +1772,7 @@ function DiemNhanXetAdminClientInner({ academicYears, activeYearId, classes, sub
                   Xem trước Cấu trúc Cột File nhập điểm Excel:
                 </div>
                 {hasComposite && (
-                  <span className="text-[11px] font-bold text-indigo-700 bg-indigo-50 px-2 py-0.5 rounded border border-indigo-200">
+                  <span className="text-[11px] font-bold text-teal-800 bg-teal-50 px-2 py-0.5 rounded border border-teal-200">
                     Công thức: {getFormulaDescription({ formula: formulaType, weights, formulaCustom }, columnNames)}
                   </span>
                 )}
@@ -1804,13 +1804,13 @@ function DiemNhanXetAdminClientInner({ academicYears, activeYearId, classes, sub
                     )
                   })}
                   {hasComposite && (
-                    <span className="px-2.5 py-1 bg-indigo-100 text-indigo-900 text-[11px] font-extrabold rounded-md border border-indigo-300 flex items-center gap-1 shadow-sm">
-                      <Calculator className="w-3 h-3 text-indigo-600" />
+                    <span className="px-2.5 py-1 bg-teal-50 text-teal-800 text-[11px] font-extrabold rounded-md border border-teal-200 flex items-center gap-1 shadow-sm">
+                      <Calculator className="w-3 h-3 text-teal-800" />
                       {compositeColumnName || "Điểm thành phần"}
                     </span>
                   )}
                   {hasRemark && (
-                    <span className="px-2.5 py-1 bg-purple-100 text-purple-800 text-[11px] font-bold rounded-md border border-purple-300">
+                    <span className="px-2.5 py-1 bg-teal-50 text-teal-800 text-[11px] font-bold rounded-md border border-teal-400">
                       Nhận xét
                     </span>
                   )}
@@ -1967,9 +1967,9 @@ function DiemNhanXetAdminClientInner({ academicYears, activeYearId, classes, sub
                   const periodBadgeColor = 
                     cfg.evaluationPeriod === "KSĐN" ? "bg-teal-50 text-teal-800 border-teal-200" :
                     cfg.evaluationPeriod === "GK1" ? "bg-sky-50 text-sky-800 border-sky-200" :
-                    cfg.evaluationPeriod === "CK1" ? "bg-indigo-50 text-indigo-800 border-indigo-200" :
+                    cfg.evaluationPeriod === "CK1" ? "bg-teal-50 text-teal-800 border-teal-200" :
                     cfg.evaluationPeriod === "GK2" ? "bg-amber-50 text-amber-800 border-amber-200" :
-                    cfg.evaluationPeriod === "CK2" ? "bg-purple-50 text-purple-800 border-purple-200" :
+                    cfg.evaluationPeriod === "CK2" ? "bg-teal-50 text-teal-800 border-teal-200" :
                     "bg-slate-100 text-slate-700 border-slate-200"
 
                   return (
@@ -2018,8 +2018,8 @@ function DiemNhanXetAdminClientInner({ academicYears, activeYearId, classes, sub
 
                       {/* Composite Column Pill */}
                       {cfg.hasCompositeColumn && (
-                        <div className="text-[10px] text-indigo-700 bg-indigo-50/70 p-1.5 rounded-lg border border-indigo-100 flex items-center gap-1.5 font-medium">
-                          <Calculator className="w-3 h-3 text-indigo-600 shrink-0" />
+                        <div className="text-[10px] text-teal-800 bg-teal-50/70 p-1.5 rounded-lg border border-teal-200 flex items-center gap-1.5 font-medium">
+                          <Calculator className="w-3 h-3 text-teal-800 shrink-0" />
                           <span className="truncate">
                             Cột: <strong>{cfg.compositeColumnName || "Điểm thành phần"}</strong> ({getFormulaDescription(cfg, cols)})
                           </span>
@@ -2759,7 +2759,7 @@ function DiemNhanXetAdminClientInner({ academicYears, activeYearId, classes, sub
                     <button
                       type="button"
                       onClick={() => handleQuickSelectSubjects("CORE")}
-                      className="px-2 py-0.5 bg-purple-50 hover:bg-purple-100 text-purple-700 border border-purple-200 rounded font-semibold transition-all"
+                      className="px-2 py-0.5 bg-teal-50 hover:bg-teal-50 text-teal-800 border border-teal-200 rounded font-semibold transition-all"
                     >
                       Toán - Văn - Anh
                     </button>

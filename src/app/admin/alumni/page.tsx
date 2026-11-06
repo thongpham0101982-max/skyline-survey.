@@ -30,7 +30,7 @@ import {
   CartesianGrid
 } from "recharts";
 
-const COLORS = ["#005856", "#00A19A", "#D97706", "#2563EB", "#7C3AED", "#10B981", "#EC4899", "#6B7280"];
+const COLORS = ["#005856", "#00A19A", "#D97706", "#2563EB", "#003B3A", "#10B981", "#EC4899", "#6B7280"];
 
 export default function AlumniOverviewPage() {
   const [loading, setLoading] = useState(true);
@@ -278,7 +278,7 @@ export default function AlumniOverviewPage() {
             className="p-5 rounded-2xl bg-white border border-gray-200 hover:border-[#005856] hover:shadow-md transition-all group flex flex-col justify-between"
           >
             <div>
-              <div className="w-10 h-10 rounded-xl bg-purple-50 text-purple-700 flex items-center justify-center mb-3 group-hover:scale-110 transition-transform">
+              <div className="w-10 h-10 rounded-xl bg-teal-50 text-teal-800 flex items-center justify-center mb-3 group-hover:scale-110 transition-transform">
                 <QrCode className="w-5 h-5" />
               </div>
               <h4 className="font-bold text-gray-900 group-hover:text-[#005856] transition-colors">

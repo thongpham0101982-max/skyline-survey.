@@ -1,0 +1,2495 @@
+{
+  "programCode": "TC01S",
+  "sheetName": "KHỐI 1S",
+  "subjectCode": "FIN_EDU",
+  "subjectName": "Giáo dục Tài chính cá nhân",
+  "grade": "1",
+  "educationSystem": "HNS",
+  "educationSystemLabel": "Hệ đào tạo S (Sky-Line Chuẩn / Hội nhập S)",
+  "versionId": "spec_ver_fin_v1_0",
+  "versionCode": "v1.0",
+  "durationConfigured": false,
+  "durationNote": "Chưa có dữ liệu thời lượng, tuần hoặc học kỳ trong file nguồn KHỐI 1S; không tự quy đổi 15 bài học thành 15 tiết.",
+  "generatedAt": "2026-11-05T01:54:09.600Z",
+  "summary": {
+    "topicsCount": 4,
+    "lessonsCount": 15,
+    "criteriaCount": 46,
+    "competencyCounts": {
+      "Hiểu": 7,
+      "Biết": 26,
+      "Vận dụng": 13
+    },
+    "levelCounts": {
+      "Mức 1": 7,
+      "Mức 2": 27,
+      "Mức 3": 12
+    }
+  },
+  "anomalyCategories": [
+    {
+      "code": "LESSON_CODE_FORMULA_ERROR_REF",
+      "severity": "WARNING",
+      "title": "Lỗi công thức #REF! tại cột Mã bài học (Cột Q) và Mã chủ đề (Cột P)",
+      "affectedRows": [
+        9,
+        11,
+        38,
+        49
+      ],
+      "rawValues": [
+        "Q9: #REF!",
+        "Q11: #REF!",
+        "Q38: #REF!",
+        "P49: #REF!",
+        "Q49: #REF!"
+      ],
+      "resolution": "Lưu nguyên giá trị #REF! trong bảng đối chiếu nguồn; khôi phục quan hệ Chủ đề/Bài học từ vị trí nhóm ô gộp phía trên (Bài 2, Bài 12, Bài 15) và liên kết bằng ID nội bộ ổn định (les_fin_g1_p02, les_fin_g1_p12, les_fin_g1_p15). Không dùng #REF! làm khóa liên kết."
+    },
+    {
+      "code": "LESSON_CODE_FORMULA_ERROR_VALUE",
+      "severity": "WARNING",
+      "title": "Lỗi công thức #VALUE! tại cột Mã bài học (Cột Q) của Bài 5",
+      "affectedRows": [
+        18,
+        19,
+        20
+      ],
+      "rawValues": [
+        "Q18: #VALUE!",
+        "Q19: #VALUE!",
+        "Q20: #VALUE!"
+      ],
+      "resolution": "Toàn bộ 3 dòng của Bài 5 (\"5. Điều em cần hay em muốn?\") bị lỗi #VALUE! ở Cột Q do tiêu đề Chủ đề 2 dùng dấu hai chấm (\"Chủ đề 2: Chi tiêu thông minh\"). Khôi phục quan hệ bài học từ tên bài tại Cột C, chuẩn hóa mã bài thành TC01S.02.0005 và gắn khóa nội bộ les_fin_g1_p05."
+    },
+    {
+      "code": "TOPIC_CODE_REPEATED_TC01S_01",
+      "severity": "INFO",
+      "title": "Cột Mã chủ đề (Cột P) lặp mã TC01S.01 cho nhiều chủ đề",
+      "affectedRows": [
+        18,
+        19,
+        20,
+        21,
+        22,
+        23,
+        24,
+        25,
+        26,
+        27,
+        28,
+        29,
+        30,
+        31,
+        32,
+        33,
+        34,
+        35,
+        36,
+        37,
+        38,
+        39,
+        40,
+        41,
+        42,
+        43,
+        44,
+        45,
+        46,
+        47,
+        48
+      ],
+      "rawValues": [
+        "P18..P48: TC01S.01 (dù thuộc Chủ đề 2, 3, 4)"
+      ],
+      "resolution": "Lưu nguyên mã nguồn TC01S.01 để đối chiếu; chuẩn hóa mã chủ đề hệ thống theo thứ tự 4 chủ đề thành TC01S.01, TC01S.02, TC01S.03, TC01S.04 (top_fin_g1_1 .. top_fin_g1_4)."
+    },
+    {
+      "code": "CRITERION_CODE_STATIC_GROUP_PREFIX",
+      "severity": "INFO",
+      "title": "Mã tiêu chuẩn (Cột F) giữ cố định cụm .01.0001. cho tất cả 15 bài học",
+      "affectedRows": [
+        8,
+        9,
+        10,
+        11,
+        12,
+        13,
+        14,
+        15,
+        16,
+        17,
+        18,
+        19,
+        20,
+        21,
+        22,
+        23,
+        24,
+        25,
+        26,
+        27,
+        28,
+        29,
+        30,
+        31,
+        32,
+        33,
+        34,
+        35,
+        36,
+        37,
+        38,
+        39,
+        40,
+        41,
+        42,
+        43,
+        44,
+        45,
+        46,
+        47,
+        48,
+        49
+      ],
+      "rawValues": [
+        "TC01S.01.0001.05 .. TC01S.01.0001.46"
+      ],
+      "resolution": "Giữ nguyên mã tiêu chuẩn nguồn (TC01S.01.0001.01 .. TC01S.01.0001.46) để hiển thị và đối chiếu với file Excel; sử dụng khóa ngoại lessonId (les_fin_g1_p01 .. les_fin_g1_p15) để liên kết chính xác từng tiêu chuẩn vào đúng bài học và chủ đề."
+    },
+    {
+      "code": "LEVEL_COMPETENCY_MISMATCH_ROW_28",
+      "severity": "REVIEW_REQUIRED",
+      "title": "Cần rà soát chuyên môn: Bài 8 \"8. Siêu thị tí hon\" (TC01S.01.0001.25) ghi Mức 2 nhưng đánh dấu tại cột Vận dụng",
+      "affectedRows": [
+        28
+      ],
+      "rawValues": [
+        "Dòng 28 — Cột E (Mức): Mức 2 | Cột J (Vận dụng): x"
+      ],
+      "resolution": "Giữ nguyên Mức = \"Mức 2\" và Năng lực = \"Vận dụng\" đúng theo file nguồn (không tự ý đổi thành Mức 3 hoặc chuyển sang cột Biết khi chưa có xác nhận chuyên môn). Hiển thị cảnh báo trong danh sách cần rà soát trên giao diện Khung chương trình & Giám sát."
+    }
+  ],
+  "topics": [
+    {
+      "topicIndex": 1,
+      "topicId": "top_fin_g1_1",
+      "topicCode": "TC01S.01",
+      "rawTopicName": "Chủ đề 1. Làm quen với tiền",
+      "topicName": "Chủ đề 1. Làm quen với tiền",
+      "lessonsCount": 4,
+      "criteriaCount": 14,
+      "lessons": [
+        {
+          "lessonIndex": 1,
+          "lessonId": "les_fin_g1_p01",
+          "lessonCode": "TC01S.01.0001",
+          "lessonName": "Tiền quanh em",
+          "criteriaCount": 4,
+          "criteriaCodes": [
+            "TC01S.01.0001.01",
+            "TC01S.01.0001.02",
+            "TC01S.01.0001.03",
+            "TC01S.01.0001.04"
+          ]
+        },
+        {
+          "lessonIndex": 2,
+          "lessonId": "les_fin_g1_p02",
+          "lessonCode": "TC01S.01.0002",
+          "lessonName": "Tiền đến từ đâu?",
+          "criteriaCount": 4,
+          "criteriaCodes": [
+            "TC01S.01.0001.05",
+            "TC01S.01.0001.06",
+            "TC01S.01.0001.07",
+            "TC01S.01.0001.08"
+          ]
+        },
+        {
+          "lessonIndex": 3,
+          "lessonId": "les_fin_g1_p03",
+          "lessonCode": "TC01S.01.0003",
+          "lessonName": "Tiền giúp ích gì?",
+          "criteriaCount": 3,
+          "criteriaCodes": [
+            "TC01S.01.0001.09",
+            "TC01S.01.0001.10",
+            "TC01S.01.0001.11"
+          ]
+        },
+        {
+          "lessonIndex": 4,
+          "lessonId": "les_fin_g1_p04",
+          "lessonCode": "TC01S.01.0004",
+          "lessonName": "Em giữ gìn đồng tiền",
+          "criteriaCount": 3,
+          "criteriaCodes": [
+            "TC01S.01.0001.12",
+            "TC01S.01.0001.13",
+            "TC01S.01.0001.14"
+          ]
+        }
+      ]
+    },
+    {
+      "topicIndex": 2,
+      "topicId": "top_fin_g1_2",
+      "topicCode": "TC01S.02",
+      "rawTopicName": "Chủ đề 2: Chi tiêu thông minh",
+      "topicName": "Chủ đề 2. Chi tiêu thông minh",
+      "lessonsCount": 4,
+      "criteriaCount": 11,
+      "lessons": [
+        {
+          "lessonIndex": 5,
+          "lessonId": "les_fin_g1_p05",
+          "lessonCode": "TC01S.02.0005",
+          "lessonName": "Điều em cần hay em muốn?",
+          "criteriaCount": 3,
+          "criteriaCodes": [
+            "TC01S.01.0001.15",
+            "TC01S.01.0001.16",
+            "TC01S.01.0001.17"
+          ]
+        },
+        {
+          "lessonIndex": 6,
+          "lessonId": "les_fin_g1_p06",
+          "lessonCode": "TC01S.02.0006",
+          "lessonName": "Nghĩ trước khi mua",
+          "criteriaCount": 4,
+          "criteriaCodes": [
+            "TC01S.01.0001.18",
+            "TC01S.01.0001.19",
+            "TC01S.01.0001.20",
+            "TC01S.01.0001.21"
+          ]
+        },
+        {
+          "lessonIndex": 7,
+          "lessonId": "les_fin_g1_p07",
+          "lessonCode": "TC01S.02.0007",
+          "lessonName": "Em là người mua sắm thông thái",
+          "criteriaCount": 3,
+          "criteriaCodes": [
+            "TC01S.01.0001.22",
+            "TC01S.01.0001.23",
+            "TC01S.01.0001.24"
+          ]
+        },
+        {
+          "lessonIndex": 8,
+          "lessonId": "les_fin_g1_p08",
+          "lessonCode": "TC01S.02.0008",
+          "lessonName": "Siêu thị tí hon",
+          "criteriaCount": 1,
+          "criteriaCodes": [
+            "TC01S.01.0001.25"
+          ]
+        }
+      ]
+    },
+    {
+      "topicIndex": 3,
+      "topicId": "top_fin_g1_3",
+      "topicCode": "TC01S.03",
+      "rawTopicName": "Chủ đề 3. Tiết kiệm mỗi ngày",
+      "topicName": "Chủ đề 3. Tiết kiệm mỗi ngày",
+      "lessonsCount": 4,
+      "criteriaCount": 10,
+      "lessons": [
+        {
+          "lessonIndex": 9,
+          "lessonId": "les_fin_g1_p09",
+          "lessonCode": "TC01S.03.0009",
+          "lessonName": "Tiết kiệm là siêu năng lực",
+          "criteriaCount": 4,
+          "criteriaCodes": [
+            "TC01S.01.0001.26",
+            "TC01S.01.0001.27",
+            "TC01S.01.0001.28",
+            "TC01S.01.0001.29"
+          ]
+        },
+        {
+          "lessonIndex": 10,
+          "lessonId": "les_fin_g1_p10",
+          "lessonCode": "TC01S.03.0010",
+          "lessonName": "Ước mơ trong ống heo",
+          "criteriaCount": 2,
+          "criteriaCodes": [
+            "TC01S.01.0001.30",
+            "TC01S.01.0001.31"
+          ]
+        },
+        {
+          "lessonIndex": 11,
+          "lessonId": "les_fin_g1_p11",
+          "lessonCode": "TC01S.03.0011",
+          "lessonName": "Tiết kiệm từ việc nhỏ",
+          "criteriaCount": 1,
+          "criteriaCodes": [
+            "TC01S.01.0001.32"
+          ]
+        },
+        {
+          "lessonIndex": 12,
+          "lessonId": "les_fin_g1_p12",
+          "lessonCode": "TC01S.03.0012",
+          "lessonName": "Nhật ký tiết kiệm",
+          "criteriaCount": 3,
+          "criteriaCodes": [
+            "TC01S.01.0001.33",
+            "TC01S.01.0001.34",
+            "TC01S.01.0001.35"
+          ]
+        }
+      ]
+    },
+    {
+      "topicIndex": 4,
+      "topicId": "top_fin_g1_4",
+      "topicCode": "TC01S.04",
+      "rawTopicName": "Chủ đề 4. Em làm chủ đồng tiền",
+      "topicName": "Chủ đề 4. Em làm chủ đồng tiền",
+      "lessonsCount": 3,
+      "criteriaCount": 11,
+      "lessons": [
+        {
+          "lessonIndex": 13,
+          "lessonId": "les_fin_g1_p13",
+          "lessonCode": "TC01S.04.0013",
+          "lessonName": "Biết chia sẻ yêu thương",
+          "criteriaCount": 4,
+          "criteriaCodes": [
+            "TC01S.01.0001.36",
+            "TC01S.01.0001.37",
+            "TC01S.01.0001.38",
+            "TC01S.01.0001.39"
+          ]
+        },
+        {
+          "lessonIndex": 14,
+          "lessonId": "les_fin_g1_p14",
+          "lessonCode": "TC01S.04.0014",
+          "lessonName": "Kế hoạch chi tiêu đầu tiên",
+          "criteriaCount": 3,
+          "criteriaCodes": [
+            "TC01S.01.0001.40",
+            "TC01S.01.0001.41",
+            "TC01S.01.0001.42"
+          ]
+        },
+        {
+          "lessonIndex": 15,
+          "lessonId": "les_fin_g1_p15",
+          "lessonCode": "TC01S.04.0015",
+          "lessonName": "Nhà quản lí tài chính nhí",
+          "criteriaCount": 4,
+          "criteriaCodes": [
+            "TC01S.01.0001.43",
+            "TC01S.01.0001.44",
+            "TC01S.01.0001.45",
+            "TC01S.01.0001.46"
+          ]
+        }
+      ]
+    }
+  ],
+  "records": [
+    {
+      "excelRow": 4,
+      "criterionIndex": 1,
+      "rawTopicName": "Chủ đề 1. Làm quen với tiền",
+      "rawTopicCode": "TC01S.01",
+      "rawLessonName": "Tiền quanh em",
+      "rawLessonCode": "TC01S.01.0001",
+      "rawCriterionCode": "TC01S.01.0001.01",
+      "rawLevel": "Mức 1",
+      "rawMarks": {
+        "hieu": "x",
+        "biet": "",
+        "vanDung": ""
+      },
+      "description": "Nhận biết được tiền là phương tiện trao đổi",
+      "normalizedTopicId": "top_fin_g1_1",
+      "normalizedTopicCode": "TC01S.01",
+      "normalizedTopicName": "Chủ đề 1. Làm quen với tiền",
+      "normalizedLessonId": "les_fin_g1_p01",
+      "normalizedLessonCode": "TC01S.01.0001",
+      "normalizedLessonName": "Tiền quanh em",
+      "lessonIndex": 1,
+      "normalizedCriterionId": "crit_fin_g1_TC01S_01_0001_01",
+      "competencyGroup": "Hiểu",
+      "programLevel": "Mức 1",
+      "hasLevelCompetencyMismatch": false,
+      "anomalies": []
+    },
+    {
+      "excelRow": 5,
+      "criterionIndex": 2,
+      "rawTopicName": "Chủ đề 1. Làm quen với tiền",
+      "rawTopicCode": "TC01S.01",
+      "rawLessonName": "Tiền quanh em",
+      "rawLessonCode": "TC01S.01.0001",
+      "rawCriterionCode": "TC01S.01.0001.02",
+      "rawLevel": "Mức 1",
+      "rawMarks": {
+        "hieu": "x",
+        "biet": "",
+        "vanDung": ""
+      },
+      "description": "Phân biệt được tình huống cần dùng tiền với tình huống có thể giải quyết không cần tiền.",
+      "normalizedTopicId": "top_fin_g1_1",
+      "normalizedTopicCode": "TC01S.01",
+      "normalizedTopicName": "Chủ đề 1. Làm quen với tiền",
+      "normalizedLessonId": "les_fin_g1_p01",
+      "normalizedLessonCode": "TC01S.01.0001",
+      "normalizedLessonName": "Tiền quanh em",
+      "lessonIndex": 1,
+      "normalizedCriterionId": "crit_fin_g1_TC01S_01_0001_02",
+      "competencyGroup": "Hiểu",
+      "programLevel": "Mức 1",
+      "hasLevelCompetencyMismatch": false,
+      "anomalies": []
+    },
+    {
+      "excelRow": 6,
+      "criterionIndex": 3,
+      "rawTopicName": "Chủ đề 1. Làm quen với tiền",
+      "rawTopicCode": "TC01S.01",
+      "rawLessonName": "Tiền quanh em",
+      "rawLessonCode": "TC01S.01.0001",
+      "rawCriterionCode": "TC01S.01.0001.03",
+      "rawLevel": "Mức 2",
+      "rawMarks": {
+        "hieu": "",
+        "biet": "x",
+        "vanDung": ""
+      },
+      "description": "Hình thành thái độ trân trọng giá trị của đồng tiền.",
+      "normalizedTopicId": "top_fin_g1_1",
+      "normalizedTopicCode": "TC01S.01",
+      "normalizedTopicName": "Chủ đề 1. Làm quen với tiền",
+      "normalizedLessonId": "les_fin_g1_p01",
+      "normalizedLessonCode": "TC01S.01.0001",
+      "normalizedLessonName": "Tiền quanh em",
+      "lessonIndex": 1,
+      "normalizedCriterionId": "crit_fin_g1_TC01S_01_0001_03",
+      "competencyGroup": "Biết",
+      "programLevel": "Mức 2",
+      "hasLevelCompetencyMismatch": false,
+      "anomalies": []
+    },
+    {
+      "excelRow": 7,
+      "criterionIndex": 4,
+      "rawTopicName": "Chủ đề 1. Làm quen với tiền",
+      "rawTopicCode": "TC01S.01",
+      "rawLessonName": "Tiền quanh em",
+      "rawLessonCode": "TC01S.01.0001",
+      "rawCriterionCode": "TC01S.01.0001.04",
+      "rawLevel": "Mức 1",
+      "rawMarks": {
+        "hieu": "x",
+        "biet": "",
+        "vanDung": ""
+      },
+      "description": "Nhận biết được một số mệnh giá tiền Việt Nam thông dụng.",
+      "normalizedTopicId": "top_fin_g1_1",
+      "normalizedTopicCode": "TC01S.01",
+      "normalizedTopicName": "Chủ đề 1. Làm quen với tiền",
+      "normalizedLessonId": "les_fin_g1_p01",
+      "normalizedLessonCode": "TC01S.01.0001",
+      "normalizedLessonName": "Tiền quanh em",
+      "lessonIndex": 1,
+      "normalizedCriterionId": "crit_fin_g1_TC01S_01_0001_04",
+      "competencyGroup": "Hiểu",
+      "programLevel": "Mức 1",
+      "hasLevelCompetencyMismatch": false,
+      "anomalies": []
+    },
+    {
+      "excelRow": 8,
+      "criterionIndex": 5,
+      "rawTopicName": "Chủ đề 1. Làm quen với tiền",
+      "rawTopicCode": "TC01S.01",
+      "rawLessonName": "Tiền đến từ đâu?",
+      "rawLessonCode": "TC01S.01.0002",
+      "rawCriterionCode": "TC01S.01.0001.05",
+      "rawLevel": "Mức 2",
+      "rawMarks": {
+        "hieu": "",
+        "biet": "x",
+        "vanDung": ""
+      },
+      "description": "Biết tiền là thành quả của lao động.",
+      "normalizedTopicId": "top_fin_g1_1",
+      "normalizedTopicCode": "TC01S.01",
+      "normalizedTopicName": "Chủ đề 1. Làm quen với tiền",
+      "normalizedLessonId": "les_fin_g1_p02",
+      "normalizedLessonCode": "TC01S.01.0002",
+      "normalizedLessonName": "Tiền đến từ đâu?",
+      "lessonIndex": 2,
+      "normalizedCriterionId": "crit_fin_g1_TC01S_01_0001_05",
+      "competencyGroup": "Biết",
+      "programLevel": "Mức 2",
+      "hasLevelCompetencyMismatch": false,
+      "anomalies": [
+        {
+          "type": "CRITERION_CODE_STATIC_LESSON_SEGMENT",
+          "column": "F (Mã tiêu chuẩn)",
+          "rawValue": "TC01S.01.0001.05",
+          "resolvedValue": "les_fin_g1_p02 -> crit_fin_g1_TC01S_01_0001_05",
+          "note": "Mã tiêu chuẩn TC01S.01.0001.05 giữ cố định cụm .01.0001. của Bài 1 nhưng thuộc \"Tiền đến từ đâu?\"; giữ nguyên mã hiển thị nguồn và liên kết bằng khóa nội bộ crit_fin_g1_TC01S_01_0001_05 -> les_fin_g1_p02."
+        }
+      ]
+    },
+    {
+      "excelRow": 9,
+      "criterionIndex": 6,
+      "rawTopicName": "Chủ đề 1. Làm quen với tiền",
+      "rawTopicCode": "TC01S.01",
+      "rawLessonName": "Tiền đến từ đâu?",
+      "rawLessonCode": "#REF!",
+      "rawCriterionCode": "TC01S.01.0001.06",
+      "rawLevel": "Mức 2",
+      "rawMarks": {
+        "hieu": "",
+        "biet": "x",
+        "vanDung": ""
+      },
+      "description": "Nhận thức được sự vất vả của người lao động khi kiếm tiền.",
+      "normalizedTopicId": "top_fin_g1_1",
+      "normalizedTopicCode": "TC01S.01",
+      "normalizedTopicName": "Chủ đề 1. Làm quen với tiền",
+      "normalizedLessonId": "les_fin_g1_p02",
+      "normalizedLessonCode": "TC01S.01.0002",
+      "normalizedLessonName": "Tiền đến từ đâu?",
+      "lessonIndex": 2,
+      "normalizedCriterionId": "crit_fin_g1_TC01S_01_0001_06",
+      "competencyGroup": "Biết",
+      "programLevel": "Mức 2",
+      "hasLevelCompetencyMismatch": false,
+      "anomalies": [
+        {
+          "type": "LESSON_CODE_FORMULA_ERROR",
+          "column": "Q (MÃ BÀI HỌC)",
+          "rawValue": "#REF!",
+          "resolvedValue": "TC01S.01.0002",
+          "note": "Ô Q9 bị lỗi công thức #REF!; khôi phục theo bài học \"Tiền đến từ đâu?\" thành TC01S.01.0002 (les_fin_g1_p02)."
+        },
+        {
+          "type": "CRITERION_CODE_STATIC_LESSON_SEGMENT",
+          "column": "F (Mã tiêu chuẩn)",
+          "rawValue": "TC01S.01.0001.06",
+          "resolvedValue": "les_fin_g1_p02 -> crit_fin_g1_TC01S_01_0001_06",
+          "note": "Mã tiêu chuẩn TC01S.01.0001.06 giữ cố định cụm .01.0001. của Bài 1 nhưng thuộc \"Tiền đến từ đâu?\"; giữ nguyên mã hiển thị nguồn và liên kết bằng khóa nội bộ crit_fin_g1_TC01S_01_0001_06 -> les_fin_g1_p02."
+        }
+      ]
+    },
+    {
+      "excelRow": 10,
+      "criterionIndex": 7,
+      "rawTopicName": "Chủ đề 1. Làm quen với tiền",
+      "rawTopicCode": "TC01S.01",
+      "rawLessonName": "Tiền đến từ đâu?",
+      "rawLessonCode": "TC01S.01.0002",
+      "rawCriterionCode": "TC01S.01.0001.07",
+      "rawLevel": "Mức 1",
+      "rawMarks": {
+        "hieu": "x",
+        "biet": "",
+        "vanDung": ""
+      },
+      "description": "Hình thành ý thức quý trọng tiền và tránh lãng phí.",
+      "normalizedTopicId": "top_fin_g1_1",
+      "normalizedTopicCode": "TC01S.01",
+      "normalizedTopicName": "Chủ đề 1. Làm quen với tiền",
+      "normalizedLessonId": "les_fin_g1_p02",
+      "normalizedLessonCode": "TC01S.01.0002",
+      "normalizedLessonName": "Tiền đến từ đâu?",
+      "lessonIndex": 2,
+      "normalizedCriterionId": "crit_fin_g1_TC01S_01_0001_07",
+      "competencyGroup": "Hiểu",
+      "programLevel": "Mức 1",
+      "hasLevelCompetencyMismatch": false,
+      "anomalies": [
+        {
+          "type": "CRITERION_CODE_STATIC_LESSON_SEGMENT",
+          "column": "F (Mã tiêu chuẩn)",
+          "rawValue": "TC01S.01.0001.07",
+          "resolvedValue": "les_fin_g1_p02 -> crit_fin_g1_TC01S_01_0001_07",
+          "note": "Mã tiêu chuẩn TC01S.01.0001.07 giữ cố định cụm .01.0001. của Bài 1 nhưng thuộc \"Tiền đến từ đâu?\"; giữ nguyên mã hiển thị nguồn và liên kết bằng khóa nội bộ crit_fin_g1_TC01S_01_0001_07 -> les_fin_g1_p02."
+        }
+      ]
+    },
+    {
+      "excelRow": 11,
+      "criterionIndex": 8,
+      "rawTopicName": "Chủ đề 1. Làm quen với tiền",
+      "rawTopicCode": "TC01S.01",
+      "rawLessonName": "Tiền đến từ đâu?",
+      "rawLessonCode": "#REF!",
+      "rawCriterionCode": "TC01S.01.0001.08",
+      "rawLevel": "Mức 2",
+      "rawMarks": {
+        "hieu": "",
+        "biet": "x",
+        "vanDung": ""
+      },
+      "description": "Nêu được ví dụ về công việc tạo ra thu nhập và liên hệ với một số nghề quen thuộc.",
+      "normalizedTopicId": "top_fin_g1_1",
+      "normalizedTopicCode": "TC01S.01",
+      "normalizedTopicName": "Chủ đề 1. Làm quen với tiền",
+      "normalizedLessonId": "les_fin_g1_p02",
+      "normalizedLessonCode": "TC01S.01.0002",
+      "normalizedLessonName": "Tiền đến từ đâu?",
+      "lessonIndex": 2,
+      "normalizedCriterionId": "crit_fin_g1_TC01S_01_0001_08",
+      "competencyGroup": "Biết",
+      "programLevel": "Mức 2",
+      "hasLevelCompetencyMismatch": false,
+      "anomalies": [
+        {
+          "type": "LESSON_CODE_FORMULA_ERROR",
+          "column": "Q (MÃ BÀI HỌC)",
+          "rawValue": "#REF!",
+          "resolvedValue": "TC01S.01.0002",
+          "note": "Ô Q11 bị lỗi công thức #REF!; khôi phục theo bài học \"Tiền đến từ đâu?\" thành TC01S.01.0002 (les_fin_g1_p02)."
+        },
+        {
+          "type": "CRITERION_CODE_STATIC_LESSON_SEGMENT",
+          "column": "F (Mã tiêu chuẩn)",
+          "rawValue": "TC01S.01.0001.08",
+          "resolvedValue": "les_fin_g1_p02 -> crit_fin_g1_TC01S_01_0001_08",
+          "note": "Mã tiêu chuẩn TC01S.01.0001.08 giữ cố định cụm .01.0001. của Bài 1 nhưng thuộc \"Tiền đến từ đâu?\"; giữ nguyên mã hiển thị nguồn và liên kết bằng khóa nội bộ crit_fin_g1_TC01S_01_0001_08 -> les_fin_g1_p02."
+        }
+      ]
+    },
+    {
+      "excelRow": 12,
+      "criterionIndex": 9,
+      "rawTopicName": "Chủ đề 1. Làm quen với tiền",
+      "rawTopicCode": "TC01S.01",
+      "rawLessonName": "Tiền giúp ích gì?",
+      "rawLessonCode": "TC01S.01.0003",
+      "rawCriterionCode": "TC01S.01.0001.09",
+      "rawLevel": "Mức 2",
+      "rawMarks": {
+        "hieu": "",
+        "biet": "x",
+        "vanDung": ""
+      },
+      "description": "Hiểu vai trò của tiền trong cuộc sống và sử dụng đúng mục đích.",
+      "normalizedTopicId": "top_fin_g1_1",
+      "normalizedTopicCode": "TC01S.01",
+      "normalizedTopicName": "Chủ đề 1. Làm quen với tiền",
+      "normalizedLessonId": "les_fin_g1_p03",
+      "normalizedLessonCode": "TC01S.01.0003",
+      "normalizedLessonName": "Tiền giúp ích gì?",
+      "lessonIndex": 3,
+      "normalizedCriterionId": "crit_fin_g1_TC01S_01_0001_09",
+      "competencyGroup": "Biết",
+      "programLevel": "Mức 2",
+      "hasLevelCompetencyMismatch": false,
+      "anomalies": [
+        {
+          "type": "CRITERION_CODE_STATIC_LESSON_SEGMENT",
+          "column": "F (Mã tiêu chuẩn)",
+          "rawValue": "TC01S.01.0001.09",
+          "resolvedValue": "les_fin_g1_p03 -> crit_fin_g1_TC01S_01_0001_09",
+          "note": "Mã tiêu chuẩn TC01S.01.0001.09 giữ cố định cụm .01.0001. của Bài 1 nhưng thuộc \"Tiền giúp ích gì?\"; giữ nguyên mã hiển thị nguồn và liên kết bằng khóa nội bộ crit_fin_g1_TC01S_01_0001_09 -> les_fin_g1_p03."
+        }
+      ]
+    },
+    {
+      "excelRow": 13,
+      "criterionIndex": 10,
+      "rawTopicName": "Chủ đề 1. Làm quen với tiền",
+      "rawTopicCode": "TC01S.01",
+      "rawLessonName": "Tiền giúp ích gì?",
+      "rawLessonCode": "TC01S.01.0003",
+      "rawCriterionCode": "TC01S.01.0001.10",
+      "rawLevel": "Mức 2",
+      "rawMarks": {
+        "hieu": "",
+        "biet": "x",
+        "vanDung": ""
+      },
+      "description": "Sử dụng tiền phù hợp trong các tình huống mua bán đơn giản.",
+      "normalizedTopicId": "top_fin_g1_1",
+      "normalizedTopicCode": "TC01S.01",
+      "normalizedTopicName": "Chủ đề 1. Làm quen với tiền",
+      "normalizedLessonId": "les_fin_g1_p03",
+      "normalizedLessonCode": "TC01S.01.0003",
+      "normalizedLessonName": "Tiền giúp ích gì?",
+      "lessonIndex": 3,
+      "normalizedCriterionId": "crit_fin_g1_TC01S_01_0001_10",
+      "competencyGroup": "Biết",
+      "programLevel": "Mức 2",
+      "hasLevelCompetencyMismatch": false,
+      "anomalies": [
+        {
+          "type": "CRITERION_CODE_STATIC_LESSON_SEGMENT",
+          "column": "F (Mã tiêu chuẩn)",
+          "rawValue": "TC01S.01.0001.10",
+          "resolvedValue": "les_fin_g1_p03 -> crit_fin_g1_TC01S_01_0001_10",
+          "note": "Mã tiêu chuẩn TC01S.01.0001.10 giữ cố định cụm .01.0001. của Bài 1 nhưng thuộc \"Tiền giúp ích gì?\"; giữ nguyên mã hiển thị nguồn và liên kết bằng khóa nội bộ crit_fin_g1_TC01S_01_0001_10 -> les_fin_g1_p03."
+        }
+      ]
+    },
+    {
+      "excelRow": 14,
+      "criterionIndex": 11,
+      "rawTopicName": "Chủ đề 1. Làm quen với tiền",
+      "rawTopicCode": "TC01S.01",
+      "rawLessonName": "Tiền giúp ích gì?",
+      "rawLessonCode": "TC01S.01.0003",
+      "rawCriterionCode": "TC01S.01.0001.11",
+      "rawLevel": "Mức 3",
+      "rawMarks": {
+        "hieu": "",
+        "biet": "",
+        "vanDung": "x"
+      },
+      "description": "Biết hỏi người lớn khi chưa hiểu giá cả hoặc chưa chắc cách sử dụng tiền trong mua bán.",
+      "normalizedTopicId": "top_fin_g1_1",
+      "normalizedTopicCode": "TC01S.01",
+      "normalizedTopicName": "Chủ đề 1. Làm quen với tiền",
+      "normalizedLessonId": "les_fin_g1_p03",
+      "normalizedLessonCode": "TC01S.01.0003",
+      "normalizedLessonName": "Tiền giúp ích gì?",
+      "lessonIndex": 3,
+      "normalizedCriterionId": "crit_fin_g1_TC01S_01_0001_11",
+      "competencyGroup": "Vận dụng",
+      "programLevel": "Mức 3",
+      "hasLevelCompetencyMismatch": false,
+      "anomalies": [
+        {
+          "type": "CRITERION_CODE_STATIC_LESSON_SEGMENT",
+          "column": "F (Mã tiêu chuẩn)",
+          "rawValue": "TC01S.01.0001.11",
+          "resolvedValue": "les_fin_g1_p03 -> crit_fin_g1_TC01S_01_0001_11",
+          "note": "Mã tiêu chuẩn TC01S.01.0001.11 giữ cố định cụm .01.0001. của Bài 1 nhưng thuộc \"Tiền giúp ích gì?\"; giữ nguyên mã hiển thị nguồn và liên kết bằng khóa nội bộ crit_fin_g1_TC01S_01_0001_11 -> les_fin_g1_p03."
+        }
+      ]
+    },
+    {
+      "excelRow": 15,
+      "criterionIndex": 12,
+      "rawTopicName": "Chủ đề 1. Làm quen với tiền",
+      "rawTopicCode": "TC01S.01",
+      "rawLessonName": "Em giữ gìn đồng tiền",
+      "rawLessonCode": "TC01S.01.0004",
+      "rawCriterionCode": "TC01S.01.0001.12",
+      "rawLevel": "Mức 2",
+      "rawMarks": {
+        "hieu": "",
+        "biet": "x",
+        "vanDung": ""
+      },
+      "description": "Nhận biết được các khoản tiền đã nhận và biết cất hợp lí",
+      "normalizedTopicId": "top_fin_g1_1",
+      "normalizedTopicCode": "TC01S.01",
+      "normalizedTopicName": "Chủ đề 1. Làm quen với tiền",
+      "normalizedLessonId": "les_fin_g1_p04",
+      "normalizedLessonCode": "TC01S.01.0004",
+      "normalizedLessonName": "Em giữ gìn đồng tiền",
+      "lessonIndex": 4,
+      "normalizedCriterionId": "crit_fin_g1_TC01S_01_0001_12",
+      "competencyGroup": "Biết",
+      "programLevel": "Mức 2",
+      "hasLevelCompetencyMismatch": false,
+      "anomalies": [
+        {
+          "type": "CRITERION_CODE_STATIC_LESSON_SEGMENT",
+          "column": "F (Mã tiêu chuẩn)",
+          "rawValue": "TC01S.01.0001.12",
+          "resolvedValue": "les_fin_g1_p04 -> crit_fin_g1_TC01S_01_0001_12",
+          "note": "Mã tiêu chuẩn TC01S.01.0001.12 giữ cố định cụm .01.0001. của Bài 1 nhưng thuộc \"Em giữ gìn đồng tiền\"; giữ nguyên mã hiển thị nguồn và liên kết bằng khóa nội bộ crit_fin_g1_TC01S_01_0001_12 -> les_fin_g1_p04."
+        }
+      ]
+    },
+    {
+      "excelRow": 16,
+      "criterionIndex": 13,
+      "rawTopicName": "Chủ đề 1. Làm quen với tiền",
+      "rawTopicCode": "TC01S.01",
+      "rawLessonName": "Em giữ gìn đồng tiền",
+      "rawLessonCode": "TC01S.01.0004",
+      "rawCriterionCode": "TC01S.01.0001.13",
+      "rawLevel": "Mức 2",
+      "rawMarks": {
+        "hieu": "",
+        "biet": "x",
+        "vanDung": ""
+      },
+      "description": "Nhận biết được một số nguy cơ mất an toàn khi sử dụng tiền.",
+      "normalizedTopicId": "top_fin_g1_1",
+      "normalizedTopicCode": "TC01S.01",
+      "normalizedTopicName": "Chủ đề 1. Làm quen với tiền",
+      "normalizedLessonId": "les_fin_g1_p04",
+      "normalizedLessonCode": "TC01S.01.0004",
+      "normalizedLessonName": "Em giữ gìn đồng tiền",
+      "lessonIndex": 4,
+      "normalizedCriterionId": "crit_fin_g1_TC01S_01_0001_13",
+      "competencyGroup": "Biết",
+      "programLevel": "Mức 2",
+      "hasLevelCompetencyMismatch": false,
+      "anomalies": [
+        {
+          "type": "CRITERION_CODE_STATIC_LESSON_SEGMENT",
+          "column": "F (Mã tiêu chuẩn)",
+          "rawValue": "TC01S.01.0001.13",
+          "resolvedValue": "les_fin_g1_p04 -> crit_fin_g1_TC01S_01_0001_13",
+          "note": "Mã tiêu chuẩn TC01S.01.0001.13 giữ cố định cụm .01.0001. của Bài 1 nhưng thuộc \"Em giữ gìn đồng tiền\"; giữ nguyên mã hiển thị nguồn và liên kết bằng khóa nội bộ crit_fin_g1_TC01S_01_0001_13 -> les_fin_g1_p04."
+        }
+      ]
+    },
+    {
+      "excelRow": 17,
+      "criterionIndex": 14,
+      "rawTopicName": "Chủ đề 1. Làm quen với tiền",
+      "rawTopicCode": "TC01S.01",
+      "rawLessonName": "Em giữ gìn đồng tiền",
+      "rawLessonCode": "TC01S.01.0004",
+      "rawCriterionCode": "TC01S.01.0001.14",
+      "rawLevel": "Mức 3",
+      "rawMarks": {
+        "hieu": "",
+        "biet": "",
+        "vanDung": "x"
+      },
+      "description": "Hình thành ý thức bảo vệ tài sản của bản thân",
+      "normalizedTopicId": "top_fin_g1_1",
+      "normalizedTopicCode": "TC01S.01",
+      "normalizedTopicName": "Chủ đề 1. Làm quen với tiền",
+      "normalizedLessonId": "les_fin_g1_p04",
+      "normalizedLessonCode": "TC01S.01.0004",
+      "normalizedLessonName": "Em giữ gìn đồng tiền",
+      "lessonIndex": 4,
+      "normalizedCriterionId": "crit_fin_g1_TC01S_01_0001_14",
+      "competencyGroup": "Vận dụng",
+      "programLevel": "Mức 3",
+      "hasLevelCompetencyMismatch": false,
+      "anomalies": [
+        {
+          "type": "CRITERION_CODE_STATIC_LESSON_SEGMENT",
+          "column": "F (Mã tiêu chuẩn)",
+          "rawValue": "TC01S.01.0001.14",
+          "resolvedValue": "les_fin_g1_p04 -> crit_fin_g1_TC01S_01_0001_14",
+          "note": "Mã tiêu chuẩn TC01S.01.0001.14 giữ cố định cụm .01.0001. của Bài 1 nhưng thuộc \"Em giữ gìn đồng tiền\"; giữ nguyên mã hiển thị nguồn và liên kết bằng khóa nội bộ crit_fin_g1_TC01S_01_0001_14 -> les_fin_g1_p04."
+        }
+      ]
+    },
+    {
+      "excelRow": 18,
+      "criterionIndex": 15,
+      "rawTopicName": "Chủ đề 2: Chi tiêu thông minh",
+      "rawTopicCode": "TC01S.01",
+      "rawLessonName": "Điều em cần hay em muốn?",
+      "rawLessonCode": "#VALUE!",
+      "rawCriterionCode": "TC01S.01.0001.15",
+      "rawLevel": "Mức 2",
+      "rawMarks": {
+        "hieu": "",
+        "biet": "x",
+        "vanDung": ""
+      },
+      "description": "Phân biệt được nhu cầu thiết yếu và mong muốn cá nhân.",
+      "normalizedTopicId": "top_fin_g1_2",
+      "normalizedTopicCode": "TC01S.02",
+      "normalizedTopicName": "Chủ đề 2. Chi tiêu thông minh",
+      "normalizedLessonId": "les_fin_g1_p05",
+      "normalizedLessonCode": "TC01S.02.0005",
+      "normalizedLessonName": "Điều em cần hay em muốn?",
+      "lessonIndex": 5,
+      "normalizedCriterionId": "crit_fin_g1_TC01S_01_0001_15",
+      "competencyGroup": "Biết",
+      "programLevel": "Mức 2",
+      "hasLevelCompetencyMismatch": false,
+      "anomalies": [
+        {
+          "type": "TOPIC_CODE_REPEATED",
+          "column": "P (MÃ CHỦ ĐỀ)",
+          "rawValue": "TC01S.01",
+          "resolvedValue": "TC01S.02",
+          "note": "Ô P18 đang lặp mã TC01S.01 cho Chủ đề 2. Chi tiêu thông minh; chuẩn hóa mã chủ đề thành TC01S.02 (top_fin_g1_2)."
+        },
+        {
+          "type": "LESSON_CODE_FORMULA_ERROR",
+          "column": "Q (MÃ BÀI HỌC)",
+          "rawValue": "#VALUE!",
+          "resolvedValue": "TC01S.02.0005",
+          "note": "Ô Q18 bị lỗi công thức #VALUE!; khôi phục theo bài học \"Điều em cần hay em muốn?\" thành TC01S.02.0005 (les_fin_g1_p05)."
+        },
+        {
+          "type": "CRITERION_CODE_STATIC_LESSON_SEGMENT",
+          "column": "F (Mã tiêu chuẩn)",
+          "rawValue": "TC01S.01.0001.15",
+          "resolvedValue": "les_fin_g1_p05 -> crit_fin_g1_TC01S_01_0001_15",
+          "note": "Mã tiêu chuẩn TC01S.01.0001.15 giữ cố định cụm .01.0001. của Bài 1 nhưng thuộc \"Điều em cần hay em muốn?\"; giữ nguyên mã hiển thị nguồn và liên kết bằng khóa nội bộ crit_fin_g1_TC01S_01_0001_15 -> les_fin_g1_p05."
+        }
+      ]
+    },
+    {
+      "excelRow": 19,
+      "criterionIndex": 16,
+      "rawTopicName": "Chủ đề 2: Chi tiêu thông minh",
+      "rawTopicCode": "TC01S.01",
+      "rawLessonName": "Điều em cần hay em muốn?",
+      "rawLessonCode": "#VALUE!",
+      "rawCriterionCode": "TC01S.01.0001.16",
+      "rawLevel": "Mức 2",
+      "rawMarks": {
+        "hieu": "",
+        "biet": "x",
+        "vanDung": ""
+      },
+      "description": "Biết ưu tiên những khoản chi cần thiết.",
+      "normalizedTopicId": "top_fin_g1_2",
+      "normalizedTopicCode": "TC01S.02",
+      "normalizedTopicName": "Chủ đề 2. Chi tiêu thông minh",
+      "normalizedLessonId": "les_fin_g1_p05",
+      "normalizedLessonCode": "TC01S.02.0005",
+      "normalizedLessonName": "Điều em cần hay em muốn?",
+      "lessonIndex": 5,
+      "normalizedCriterionId": "crit_fin_g1_TC01S_01_0001_16",
+      "competencyGroup": "Biết",
+      "programLevel": "Mức 2",
+      "hasLevelCompetencyMismatch": false,
+      "anomalies": [
+        {
+          "type": "TOPIC_CODE_REPEATED",
+          "column": "P (MÃ CHỦ ĐỀ)",
+          "rawValue": "TC01S.01",
+          "resolvedValue": "TC01S.02",
+          "note": "Ô P19 đang lặp mã TC01S.01 cho Chủ đề 2. Chi tiêu thông minh; chuẩn hóa mã chủ đề thành TC01S.02 (top_fin_g1_2)."
+        },
+        {
+          "type": "LESSON_CODE_FORMULA_ERROR",
+          "column": "Q (MÃ BÀI HỌC)",
+          "rawValue": "#VALUE!",
+          "resolvedValue": "TC01S.02.0005",
+          "note": "Ô Q19 bị lỗi công thức #VALUE!; khôi phục theo bài học \"Điều em cần hay em muốn?\" thành TC01S.02.0005 (les_fin_g1_p05)."
+        },
+        {
+          "type": "CRITERION_CODE_STATIC_LESSON_SEGMENT",
+          "column": "F (Mã tiêu chuẩn)",
+          "rawValue": "TC01S.01.0001.16",
+          "resolvedValue": "les_fin_g1_p05 -> crit_fin_g1_TC01S_01_0001_16",
+          "note": "Mã tiêu chuẩn TC01S.01.0001.16 giữ cố định cụm .01.0001. của Bài 1 nhưng thuộc \"Điều em cần hay em muốn?\"; giữ nguyên mã hiển thị nguồn và liên kết bằng khóa nội bộ crit_fin_g1_TC01S_01_0001_16 -> les_fin_g1_p05."
+        }
+      ]
+    },
+    {
+      "excelRow": 20,
+      "criterionIndex": 17,
+      "rawTopicName": "Chủ đề 2: Chi tiêu thông minh",
+      "rawTopicCode": "TC01S.01",
+      "rawLessonName": "Điều em cần hay em muốn?",
+      "rawLessonCode": "#VALUE!",
+      "rawCriterionCode": "TC01S.01.0001.17",
+      "rawLevel": "Mức 2",
+      "rawMarks": {
+        "hieu": "",
+        "biet": "x",
+        "vanDung": ""
+      },
+      "description": "Hình thành thói quen suy nghĩ trước khi chi tiêu.",
+      "normalizedTopicId": "top_fin_g1_2",
+      "normalizedTopicCode": "TC01S.02",
+      "normalizedTopicName": "Chủ đề 2. Chi tiêu thông minh",
+      "normalizedLessonId": "les_fin_g1_p05",
+      "normalizedLessonCode": "TC01S.02.0005",
+      "normalizedLessonName": "Điều em cần hay em muốn?",
+      "lessonIndex": 5,
+      "normalizedCriterionId": "crit_fin_g1_TC01S_01_0001_17",
+      "competencyGroup": "Biết",
+      "programLevel": "Mức 2",
+      "hasLevelCompetencyMismatch": false,
+      "anomalies": [
+        {
+          "type": "TOPIC_CODE_REPEATED",
+          "column": "P (MÃ CHỦ ĐỀ)",
+          "rawValue": "TC01S.01",
+          "resolvedValue": "TC01S.02",
+          "note": "Ô P20 đang lặp mã TC01S.01 cho Chủ đề 2. Chi tiêu thông minh; chuẩn hóa mã chủ đề thành TC01S.02 (top_fin_g1_2)."
+        },
+        {
+          "type": "LESSON_CODE_FORMULA_ERROR",
+          "column": "Q (MÃ BÀI HỌC)",
+          "rawValue": "#VALUE!",
+          "resolvedValue": "TC01S.02.0005",
+          "note": "Ô Q20 bị lỗi công thức #VALUE!; khôi phục theo bài học \"Điều em cần hay em muốn?\" thành TC01S.02.0005 (les_fin_g1_p05)."
+        },
+        {
+          "type": "CRITERION_CODE_STATIC_LESSON_SEGMENT",
+          "column": "F (Mã tiêu chuẩn)",
+          "rawValue": "TC01S.01.0001.17",
+          "resolvedValue": "les_fin_g1_p05 -> crit_fin_g1_TC01S_01_0001_17",
+          "note": "Mã tiêu chuẩn TC01S.01.0001.17 giữ cố định cụm .01.0001. của Bài 1 nhưng thuộc \"Điều em cần hay em muốn?\"; giữ nguyên mã hiển thị nguồn và liên kết bằng khóa nội bộ crit_fin_g1_TC01S_01_0001_17 -> les_fin_g1_p05."
+        }
+      ]
+    },
+    {
+      "excelRow": 21,
+      "criterionIndex": 18,
+      "rawTopicName": "Chủ đề 2: Chi tiêu thông minh",
+      "rawTopicCode": "TC01S.01",
+      "rawLessonName": "Nghĩ trước khi mua",
+      "rawLessonCode": "TC01S.01.0006",
+      "rawCriterionCode": "TC01S.01.0001.18",
+      "rawLevel": "Mức 2",
+      "rawMarks": {
+        "hieu": "",
+        "biet": "x",
+        "vanDung": ""
+      },
+      "description": "Biết đặt câu hỏi trước khi mua và cân nhắc lựa chọn.",
+      "normalizedTopicId": "top_fin_g1_2",
+      "normalizedTopicCode": "TC01S.02",
+      "normalizedTopicName": "Chủ đề 2. Chi tiêu thông minh",
+      "normalizedLessonId": "les_fin_g1_p06",
+      "normalizedLessonCode": "TC01S.02.0006",
+      "normalizedLessonName": "Nghĩ trước khi mua",
+      "lessonIndex": 6,
+      "normalizedCriterionId": "crit_fin_g1_TC01S_01_0001_18",
+      "competencyGroup": "Biết",
+      "programLevel": "Mức 2",
+      "hasLevelCompetencyMismatch": false,
+      "anomalies": [
+        {
+          "type": "TOPIC_CODE_REPEATED",
+          "column": "P (MÃ CHỦ ĐỀ)",
+          "rawValue": "TC01S.01",
+          "resolvedValue": "TC01S.02",
+          "note": "Ô P21 đang lặp mã TC01S.01 cho Chủ đề 2. Chi tiêu thông minh; chuẩn hóa mã chủ đề thành TC01S.02 (top_fin_g1_2)."
+        },
+        {
+          "type": "LESSON_CODE_TOPIC_PREFIX",
+          "column": "Q (MÃ BÀI HỌC)",
+          "rawValue": "TC01S.01.0006",
+          "resolvedValue": "TC01S.02.0006",
+          "note": "Ô Q21 ghi TC01S.01.0006 (kế thừa mã chủ đề lặp TC01S.01); ánh xạ sang mã chuẩn TC01S.02.0006 (les_fin_g1_p06)."
+        },
+        {
+          "type": "CRITERION_CODE_STATIC_LESSON_SEGMENT",
+          "column": "F (Mã tiêu chuẩn)",
+          "rawValue": "TC01S.01.0001.18",
+          "resolvedValue": "les_fin_g1_p06 -> crit_fin_g1_TC01S_01_0001_18",
+          "note": "Mã tiêu chuẩn TC01S.01.0001.18 giữ cố định cụm .01.0001. của Bài 1 nhưng thuộc \"Nghĩ trước khi mua\"; giữ nguyên mã hiển thị nguồn và liên kết bằng khóa nội bộ crit_fin_g1_TC01S_01_0001_18 -> les_fin_g1_p06."
+        }
+      ]
+    },
+    {
+      "excelRow": 22,
+      "criterionIndex": 19,
+      "rawTopicName": "Chủ đề 2: Chi tiêu thông minh",
+      "rawTopicCode": "TC01S.01",
+      "rawLessonName": "Nghĩ trước khi mua",
+      "rawLessonCode": "TC01S.01.0006",
+      "rawCriterionCode": "TC01S.01.0001.19",
+      "rawLevel": "Mức 2",
+      "rawMarks": {
+        "hieu": "",
+        "biet": "x",
+        "vanDung": ""
+      },
+      "description": "So sánh được giá cả của một số mặt hàng quen thuộc.",
+      "normalizedTopicId": "top_fin_g1_2",
+      "normalizedTopicCode": "TC01S.02",
+      "normalizedTopicName": "Chủ đề 2. Chi tiêu thông minh",
+      "normalizedLessonId": "les_fin_g1_p06",
+      "normalizedLessonCode": "TC01S.02.0006",
+      "normalizedLessonName": "Nghĩ trước khi mua",
+      "lessonIndex": 6,
+      "normalizedCriterionId": "crit_fin_g1_TC01S_01_0001_19",
+      "competencyGroup": "Biết",
+      "programLevel": "Mức 2",
+      "hasLevelCompetencyMismatch": false,
+      "anomalies": [
+        {
+          "type": "TOPIC_CODE_REPEATED",
+          "column": "P (MÃ CHỦ ĐỀ)",
+          "rawValue": "TC01S.01",
+          "resolvedValue": "TC01S.02",
+          "note": "Ô P22 đang lặp mã TC01S.01 cho Chủ đề 2. Chi tiêu thông minh; chuẩn hóa mã chủ đề thành TC01S.02 (top_fin_g1_2)."
+        },
+        {
+          "type": "LESSON_CODE_TOPIC_PREFIX",
+          "column": "Q (MÃ BÀI HỌC)",
+          "rawValue": "TC01S.01.0006",
+          "resolvedValue": "TC01S.02.0006",
+          "note": "Ô Q22 ghi TC01S.01.0006 (kế thừa mã chủ đề lặp TC01S.01); ánh xạ sang mã chuẩn TC01S.02.0006 (les_fin_g1_p06)."
+        },
+        {
+          "type": "CRITERION_CODE_STATIC_LESSON_SEGMENT",
+          "column": "F (Mã tiêu chuẩn)",
+          "rawValue": "TC01S.01.0001.19",
+          "resolvedValue": "les_fin_g1_p06 -> crit_fin_g1_TC01S_01_0001_19",
+          "note": "Mã tiêu chuẩn TC01S.01.0001.19 giữ cố định cụm .01.0001. của Bài 1 nhưng thuộc \"Nghĩ trước khi mua\"; giữ nguyên mã hiển thị nguồn và liên kết bằng khóa nội bộ crit_fin_g1_TC01S_01_0001_19 -> les_fin_g1_p06."
+        }
+      ]
+    },
+    {
+      "excelRow": 23,
+      "criterionIndex": 20,
+      "rawTopicName": "Chủ đề 2: Chi tiêu thông minh",
+      "rawTopicCode": "TC01S.01",
+      "rawLessonName": "Nghĩ trước khi mua",
+      "rawLessonCode": "TC01S.01.0006",
+      "rawCriterionCode": "TC01S.01.0001.20",
+      "rawLevel": "Mức 3",
+      "rawMarks": {
+        "hieu": "",
+        "biet": "",
+        "vanDung": "x"
+      },
+      "description": "Thực hiện mua sắm hợp lý trong các tình huống giả định.",
+      "normalizedTopicId": "top_fin_g1_2",
+      "normalizedTopicCode": "TC01S.02",
+      "normalizedTopicName": "Chủ đề 2. Chi tiêu thông minh",
+      "normalizedLessonId": "les_fin_g1_p06",
+      "normalizedLessonCode": "TC01S.02.0006",
+      "normalizedLessonName": "Nghĩ trước khi mua",
+      "lessonIndex": 6,
+      "normalizedCriterionId": "crit_fin_g1_TC01S_01_0001_20",
+      "competencyGroup": "Vận dụng",
+      "programLevel": "Mức 3",
+      "hasLevelCompetencyMismatch": false,
+      "anomalies": [
+        {
+          "type": "TOPIC_CODE_REPEATED",
+          "column": "P (MÃ CHỦ ĐỀ)",
+          "rawValue": "TC01S.01",
+          "resolvedValue": "TC01S.02",
+          "note": "Ô P23 đang lặp mã TC01S.01 cho Chủ đề 2. Chi tiêu thông minh; chuẩn hóa mã chủ đề thành TC01S.02 (top_fin_g1_2)."
+        },
+        {
+          "type": "LESSON_CODE_TOPIC_PREFIX",
+          "column": "Q (MÃ BÀI HỌC)",
+          "rawValue": "TC01S.01.0006",
+          "resolvedValue": "TC01S.02.0006",
+          "note": "Ô Q23 ghi TC01S.01.0006 (kế thừa mã chủ đề lặp TC01S.01); ánh xạ sang mã chuẩn TC01S.02.0006 (les_fin_g1_p06)."
+        },
+        {
+          "type": "CRITERION_CODE_STATIC_LESSON_SEGMENT",
+          "column": "F (Mã tiêu chuẩn)",
+          "rawValue": "TC01S.01.0001.20",
+          "resolvedValue": "les_fin_g1_p06 -> crit_fin_g1_TC01S_01_0001_20",
+          "note": "Mã tiêu chuẩn TC01S.01.0001.20 giữ cố định cụm .01.0001. của Bài 1 nhưng thuộc \"Nghĩ trước khi mua\"; giữ nguyên mã hiển thị nguồn và liên kết bằng khóa nội bộ crit_fin_g1_TC01S_01_0001_20 -> les_fin_g1_p06."
+        }
+      ]
+    },
+    {
+      "excelRow": 24,
+      "criterionIndex": 21,
+      "rawTopicName": "Chủ đề 2: Chi tiêu thông minh",
+      "rawTopicCode": "TC01S.01",
+      "rawLessonName": "Nghĩ trước khi mua",
+      "rawLessonCode": "TC01S.01.0006",
+      "rawCriterionCode": "TC01S.01.0001.21",
+      "rawLevel": "Mức 3",
+      "rawMarks": {
+        "hieu": "",
+        "biet": "",
+        "vanDung": "x"
+      },
+      "description": "Biết kiểm tra món hàng, số tiền phải trả và tiền thừa trong tình huống mua hàng đơn giản.",
+      "normalizedTopicId": "top_fin_g1_2",
+      "normalizedTopicCode": "TC01S.02",
+      "normalizedTopicName": "Chủ đề 2. Chi tiêu thông minh",
+      "normalizedLessonId": "les_fin_g1_p06",
+      "normalizedLessonCode": "TC01S.02.0006",
+      "normalizedLessonName": "Nghĩ trước khi mua",
+      "lessonIndex": 6,
+      "normalizedCriterionId": "crit_fin_g1_TC01S_01_0001_21",
+      "competencyGroup": "Vận dụng",
+      "programLevel": "Mức 3",
+      "hasLevelCompetencyMismatch": false,
+      "anomalies": [
+        {
+          "type": "TOPIC_CODE_REPEATED",
+          "column": "P (MÃ CHỦ ĐỀ)",
+          "rawValue": "TC01S.01",
+          "resolvedValue": "TC01S.02",
+          "note": "Ô P24 đang lặp mã TC01S.01 cho Chủ đề 2. Chi tiêu thông minh; chuẩn hóa mã chủ đề thành TC01S.02 (top_fin_g1_2)."
+        },
+        {
+          "type": "LESSON_CODE_TOPIC_PREFIX",
+          "column": "Q (MÃ BÀI HỌC)",
+          "rawValue": "TC01S.01.0006",
+          "resolvedValue": "TC01S.02.0006",
+          "note": "Ô Q24 ghi TC01S.01.0006 (kế thừa mã chủ đề lặp TC01S.01); ánh xạ sang mã chuẩn TC01S.02.0006 (les_fin_g1_p06)."
+        },
+        {
+          "type": "CRITERION_CODE_STATIC_LESSON_SEGMENT",
+          "column": "F (Mã tiêu chuẩn)",
+          "rawValue": "TC01S.01.0001.21",
+          "resolvedValue": "les_fin_g1_p06 -> crit_fin_g1_TC01S_01_0001_21",
+          "note": "Mã tiêu chuẩn TC01S.01.0001.21 giữ cố định cụm .01.0001. của Bài 1 nhưng thuộc \"Nghĩ trước khi mua\"; giữ nguyên mã hiển thị nguồn và liên kết bằng khóa nội bộ crit_fin_g1_TC01S_01_0001_21 -> les_fin_g1_p06."
+        }
+      ]
+    },
+    {
+      "excelRow": 25,
+      "criterionIndex": 22,
+      "rawTopicName": "Chủ đề 2: Chi tiêu thông minh",
+      "rawTopicCode": "TC01S.01",
+      "rawLessonName": "Em là người mua sắm thông thái",
+      "rawLessonCode": "TC01S.01.0007",
+      "rawCriterionCode": "TC01S.01.0001.22",
+      "rawLevel": "Mức 2",
+      "rawMarks": {
+        "hieu": "",
+        "biet": "x",
+        "vanDung": ""
+      },
+      "description": "Biết lập kế hoạch sử dụng một khoản tiền nhỏ.",
+      "normalizedTopicId": "top_fin_g1_2",
+      "normalizedTopicCode": "TC01S.02",
+      "normalizedTopicName": "Chủ đề 2. Chi tiêu thông minh",
+      "normalizedLessonId": "les_fin_g1_p07",
+      "normalizedLessonCode": "TC01S.02.0007",
+      "normalizedLessonName": "Em là người mua sắm thông thái",
+      "lessonIndex": 7,
+      "normalizedCriterionId": "crit_fin_g1_TC01S_01_0001_22",
+      "competencyGroup": "Biết",
+      "programLevel": "Mức 2",
+      "hasLevelCompetencyMismatch": false,
+      "anomalies": [
+        {
+          "type": "TOPIC_CODE_REPEATED",
+          "column": "P (MÃ CHỦ ĐỀ)",
+          "rawValue": "TC01S.01",
+          "resolvedValue": "TC01S.02",
+          "note": "Ô P25 đang lặp mã TC01S.01 cho Chủ đề 2. Chi tiêu thông minh; chuẩn hóa mã chủ đề thành TC01S.02 (top_fin_g1_2)."
+        },
+        {
+          "type": "LESSON_CODE_TOPIC_PREFIX",
+          "column": "Q (MÃ BÀI HỌC)",
+          "rawValue": "TC01S.01.0007",
+          "resolvedValue": "TC01S.02.0007",
+          "note": "Ô Q25 ghi TC01S.01.0007 (kế thừa mã chủ đề lặp TC01S.01); ánh xạ sang mã chuẩn TC01S.02.0007 (les_fin_g1_p07)."
+        },
+        {
+          "type": "CRITERION_CODE_STATIC_LESSON_SEGMENT",
+          "column": "F (Mã tiêu chuẩn)",
+          "rawValue": "TC01S.01.0001.22",
+          "resolvedValue": "les_fin_g1_p07 -> crit_fin_g1_TC01S_01_0001_22",
+          "note": "Mã tiêu chuẩn TC01S.01.0001.22 giữ cố định cụm .01.0001. của Bài 1 nhưng thuộc \"Em là người mua sắm thông thái\"; giữ nguyên mã hiển thị nguồn và liên kết bằng khóa nội bộ crit_fin_g1_TC01S_01_0001_22 -> les_fin_g1_p07."
+        }
+      ]
+    },
+    {
+      "excelRow": 26,
+      "criterionIndex": 23,
+      "rawTopicName": "Chủ đề 2: Chi tiêu thông minh",
+      "rawTopicCode": "TC01S.01",
+      "rawLessonName": "Em là người mua sắm thông thái",
+      "rawLessonCode": "TC01S.01.0007",
+      "rawCriterionCode": "TC01S.01.0001.23",
+      "rawLevel": "Mức 2",
+      "rawMarks": {
+        "hieu": "",
+        "biet": "x",
+        "vanDung": ""
+      },
+      "description": "Biết lựa chọn sản phẩm phù hợp với nhu cầu và số tiền hiện có.",
+      "normalizedTopicId": "top_fin_g1_2",
+      "normalizedTopicCode": "TC01S.02",
+      "normalizedTopicName": "Chủ đề 2. Chi tiêu thông minh",
+      "normalizedLessonId": "les_fin_g1_p07",
+      "normalizedLessonCode": "TC01S.02.0007",
+      "normalizedLessonName": "Em là người mua sắm thông thái",
+      "lessonIndex": 7,
+      "normalizedCriterionId": "crit_fin_g1_TC01S_01_0001_23",
+      "competencyGroup": "Biết",
+      "programLevel": "Mức 2",
+      "hasLevelCompetencyMismatch": false,
+      "anomalies": [
+        {
+          "type": "TOPIC_CODE_REPEATED",
+          "column": "P (MÃ CHỦ ĐỀ)",
+          "rawValue": "TC01S.01",
+          "resolvedValue": "TC01S.02",
+          "note": "Ô P26 đang lặp mã TC01S.01 cho Chủ đề 2. Chi tiêu thông minh; chuẩn hóa mã chủ đề thành TC01S.02 (top_fin_g1_2)."
+        },
+        {
+          "type": "LESSON_CODE_TOPIC_PREFIX",
+          "column": "Q (MÃ BÀI HỌC)",
+          "rawValue": "TC01S.01.0007",
+          "resolvedValue": "TC01S.02.0007",
+          "note": "Ô Q26 ghi TC01S.01.0007 (kế thừa mã chủ đề lặp TC01S.01); ánh xạ sang mã chuẩn TC01S.02.0007 (les_fin_g1_p07)."
+        },
+        {
+          "type": "CRITERION_CODE_STATIC_LESSON_SEGMENT",
+          "column": "F (Mã tiêu chuẩn)",
+          "rawValue": "TC01S.01.0001.23",
+          "resolvedValue": "les_fin_g1_p07 -> crit_fin_g1_TC01S_01_0001_23",
+          "note": "Mã tiêu chuẩn TC01S.01.0001.23 giữ cố định cụm .01.0001. của Bài 1 nhưng thuộc \"Em là người mua sắm thông thái\"; giữ nguyên mã hiển thị nguồn và liên kết bằng khóa nội bộ crit_fin_g1_TC01S_01_0001_23 -> les_fin_g1_p07."
+        }
+      ]
+    },
+    {
+      "excelRow": 27,
+      "criterionIndex": 24,
+      "rawTopicName": "Chủ đề 2: Chi tiêu thông minh",
+      "rawTopicCode": "TC01S.01",
+      "rawLessonName": "Em là người mua sắm thông thái",
+      "rawLessonCode": "TC01S.01.0007",
+      "rawCriterionCode": "TC01S.01.0001.24",
+      "rawLevel": "Mức 3",
+      "rawMarks": {
+        "hieu": "",
+        "biet": "",
+        "vanDung": "x"
+      },
+      "description": "Phân chia tiền cho các mục đích khác nhau.",
+      "normalizedTopicId": "top_fin_g1_2",
+      "normalizedTopicCode": "TC01S.02",
+      "normalizedTopicName": "Chủ đề 2. Chi tiêu thông minh",
+      "normalizedLessonId": "les_fin_g1_p07",
+      "normalizedLessonCode": "TC01S.02.0007",
+      "normalizedLessonName": "Em là người mua sắm thông thái",
+      "lessonIndex": 7,
+      "normalizedCriterionId": "crit_fin_g1_TC01S_01_0001_24",
+      "competencyGroup": "Vận dụng",
+      "programLevel": "Mức 3",
+      "hasLevelCompetencyMismatch": false,
+      "anomalies": [
+        {
+          "type": "TOPIC_CODE_REPEATED",
+          "column": "P (MÃ CHỦ ĐỀ)",
+          "rawValue": "TC01S.01",
+          "resolvedValue": "TC01S.02",
+          "note": "Ô P27 đang lặp mã TC01S.01 cho Chủ đề 2. Chi tiêu thông minh; chuẩn hóa mã chủ đề thành TC01S.02 (top_fin_g1_2)."
+        },
+        {
+          "type": "LESSON_CODE_TOPIC_PREFIX",
+          "column": "Q (MÃ BÀI HỌC)",
+          "rawValue": "TC01S.01.0007",
+          "resolvedValue": "TC01S.02.0007",
+          "note": "Ô Q27 ghi TC01S.01.0007 (kế thừa mã chủ đề lặp TC01S.01); ánh xạ sang mã chuẩn TC01S.02.0007 (les_fin_g1_p07)."
+        },
+        {
+          "type": "CRITERION_CODE_STATIC_LESSON_SEGMENT",
+          "column": "F (Mã tiêu chuẩn)",
+          "rawValue": "TC01S.01.0001.24",
+          "resolvedValue": "les_fin_g1_p07 -> crit_fin_g1_TC01S_01_0001_24",
+          "note": "Mã tiêu chuẩn TC01S.01.0001.24 giữ cố định cụm .01.0001. của Bài 1 nhưng thuộc \"Em là người mua sắm thông thái\"; giữ nguyên mã hiển thị nguồn và liên kết bằng khóa nội bộ crit_fin_g1_TC01S_01_0001_24 -> les_fin_g1_p07."
+        }
+      ]
+    },
+    {
+      "excelRow": 28,
+      "criterionIndex": 25,
+      "rawTopicName": "Chủ đề 2: Chi tiêu thông minh",
+      "rawTopicCode": "TC01S.01",
+      "rawLessonName": "Siêu thị tí hon",
+      "rawLessonCode": "TC01S.01.0008",
+      "rawCriterionCode": "TC01S.01.0001.25",
+      "rawLevel": "Mức 2",
+      "rawMarks": {
+        "hieu": "",
+        "biet": "",
+        "vanDung": "x"
+      },
+      "description": "Thực hành mua bán đơn giản, tính tiền và trả tiền.",
+      "normalizedTopicId": "top_fin_g1_2",
+      "normalizedTopicCode": "TC01S.02",
+      "normalizedTopicName": "Chủ đề 2. Chi tiêu thông minh",
+      "normalizedLessonId": "les_fin_g1_p08",
+      "normalizedLessonCode": "TC01S.02.0008",
+      "normalizedLessonName": "Siêu thị tí hon",
+      "lessonIndex": 8,
+      "normalizedCriterionId": "crit_fin_g1_TC01S_01_0001_25",
+      "competencyGroup": "Vận dụng",
+      "programLevel": "Mức 2",
+      "hasLevelCompetencyMismatch": true,
+      "anomalies": [
+        {
+          "type": "TOPIC_CODE_REPEATED",
+          "column": "P (MÃ CHỦ ĐỀ)",
+          "rawValue": "TC01S.01",
+          "resolvedValue": "TC01S.02",
+          "note": "Ô P28 đang lặp mã TC01S.01 cho Chủ đề 2. Chi tiêu thông minh; chuẩn hóa mã chủ đề thành TC01S.02 (top_fin_g1_2)."
+        },
+        {
+          "type": "LESSON_CODE_TOPIC_PREFIX",
+          "column": "Q (MÃ BÀI HỌC)",
+          "rawValue": "TC01S.01.0008",
+          "resolvedValue": "TC01S.02.0008",
+          "note": "Ô Q28 ghi TC01S.01.0008 (kế thừa mã chủ đề lặp TC01S.01); ánh xạ sang mã chuẩn TC01S.02.0008 (les_fin_g1_p08)."
+        },
+        {
+          "type": "CRITERION_CODE_STATIC_LESSON_SEGMENT",
+          "column": "F (Mã tiêu chuẩn)",
+          "rawValue": "TC01S.01.0001.25",
+          "resolvedValue": "les_fin_g1_p08 -> crit_fin_g1_TC01S_01_0001_25",
+          "note": "Mã tiêu chuẩn TC01S.01.0001.25 giữ cố định cụm .01.0001. của Bài 1 nhưng thuộc \"Siêu thị tí hon\"; giữ nguyên mã hiển thị nguồn và liên kết bằng khóa nội bộ crit_fin_g1_TC01S_01_0001_25 -> les_fin_g1_p08."
+        },
+        {
+          "type": "LEVEL_COMPETENCY_MISMATCH",
+          "column": "E (Mức) & H-J (Năng lực)",
+          "rawValue": "Mức 2 / Năng lực: Vận dụng",
+          "resolvedValue": "Giữ nguyên nguồn (Mức 2 + Vận dụng) — Cần rà soát chuyên môn",
+          "note": "Dòng 28 (Siêu thị tí hon, mã TC01S.01.0001.25): Cột Mức ghi \"Mức 2\" nhưng đánh dấu x tại cột \"Vận dụng\". Đã giữ nguyên dữ liệu gốc và đưa vào danh sách cần rà soát."
+        }
+      ]
+    },
+    {
+      "excelRow": 29,
+      "criterionIndex": 26,
+      "rawTopicName": "Chủ đề 3. Tiết kiệm mỗi ngày",
+      "rawTopicCode": "TC01S.01",
+      "rawLessonName": "Tiết kiệm là siêu năng lực",
+      "rawLessonCode": "TC01S.01.0009",
+      "rawCriterionCode": "TC01S.01.0001.26",
+      "rawLevel": "Mức 1",
+      "rawMarks": {
+        "hieu": "x",
+        "biet": "",
+        "vanDung": ""
+      },
+      "description": "Hiểu được ý nghĩa của tiết kiệm.",
+      "normalizedTopicId": "top_fin_g1_3",
+      "normalizedTopicCode": "TC01S.03",
+      "normalizedTopicName": "Chủ đề 3. Tiết kiệm mỗi ngày",
+      "normalizedLessonId": "les_fin_g1_p09",
+      "normalizedLessonCode": "TC01S.03.0009",
+      "normalizedLessonName": "Tiết kiệm là siêu năng lực",
+      "lessonIndex": 9,
+      "normalizedCriterionId": "crit_fin_g1_TC01S_01_0001_26",
+      "competencyGroup": "Hiểu",
+      "programLevel": "Mức 1",
+      "hasLevelCompetencyMismatch": false,
+      "anomalies": [
+        {
+          "type": "TOPIC_CODE_REPEATED",
+          "column": "P (MÃ CHỦ ĐỀ)",
+          "rawValue": "TC01S.01",
+          "resolvedValue": "TC01S.03",
+          "note": "Ô P29 đang lặp mã TC01S.01 cho Chủ đề 3. Tiết kiệm mỗi ngày; chuẩn hóa mã chủ đề thành TC01S.03 (top_fin_g1_3)."
+        },
+        {
+          "type": "LESSON_CODE_TOPIC_PREFIX",
+          "column": "Q (MÃ BÀI HỌC)",
+          "rawValue": "TC01S.01.0009",
+          "resolvedValue": "TC01S.03.0009",
+          "note": "Ô Q29 ghi TC01S.01.0009 (kế thừa mã chủ đề lặp TC01S.01); ánh xạ sang mã chuẩn TC01S.03.0009 (les_fin_g1_p09)."
+        },
+        {
+          "type": "CRITERION_CODE_STATIC_LESSON_SEGMENT",
+          "column": "F (Mã tiêu chuẩn)",
+          "rawValue": "TC01S.01.0001.26",
+          "resolvedValue": "les_fin_g1_p09 -> crit_fin_g1_TC01S_01_0001_26",
+          "note": "Mã tiêu chuẩn TC01S.01.0001.26 giữ cố định cụm .01.0001. của Bài 1 nhưng thuộc \"Tiết kiệm là siêu năng lực\"; giữ nguyên mã hiển thị nguồn và liên kết bằng khóa nội bộ crit_fin_g1_TC01S_01_0001_26 -> les_fin_g1_p09."
+        }
+      ]
+    },
+    {
+      "excelRow": 30,
+      "criterionIndex": 27,
+      "rawTopicName": "Chủ đề 3. Tiết kiệm mỗi ngày",
+      "rawTopicCode": "TC01S.01",
+      "rawLessonName": "Tiết kiệm là siêu năng lực",
+      "rawLessonCode": "TC01S.01.0009",
+      "rawCriterionCode": "TC01S.01.0001.27",
+      "rawLevel": "Mức 2",
+      "rawMarks": {
+        "hieu": "",
+        "biet": "x",
+        "vanDung": ""
+      },
+      "description": "Phân biệt được các việc làm tiết kiệm và lãng phí trong sinh hoạt hằng ngày",
+      "normalizedTopicId": "top_fin_g1_3",
+      "normalizedTopicCode": "TC01S.03",
+      "normalizedTopicName": "Chủ đề 3. Tiết kiệm mỗi ngày",
+      "normalizedLessonId": "les_fin_g1_p09",
+      "normalizedLessonCode": "TC01S.03.0009",
+      "normalizedLessonName": "Tiết kiệm là siêu năng lực",
+      "lessonIndex": 9,
+      "normalizedCriterionId": "crit_fin_g1_TC01S_01_0001_27",
+      "competencyGroup": "Biết",
+      "programLevel": "Mức 2",
+      "hasLevelCompetencyMismatch": false,
+      "anomalies": [
+        {
+          "type": "TOPIC_CODE_REPEATED",
+          "column": "P (MÃ CHỦ ĐỀ)",
+          "rawValue": "TC01S.01",
+          "resolvedValue": "TC01S.03",
+          "note": "Ô P30 đang lặp mã TC01S.01 cho Chủ đề 3. Tiết kiệm mỗi ngày; chuẩn hóa mã chủ đề thành TC01S.03 (top_fin_g1_3)."
+        },
+        {
+          "type": "LESSON_CODE_TOPIC_PREFIX",
+          "column": "Q (MÃ BÀI HỌC)",
+          "rawValue": "TC01S.01.0009",
+          "resolvedValue": "TC01S.03.0009",
+          "note": "Ô Q30 ghi TC01S.01.0009 (kế thừa mã chủ đề lặp TC01S.01); ánh xạ sang mã chuẩn TC01S.03.0009 (les_fin_g1_p09)."
+        },
+        {
+          "type": "CRITERION_CODE_STATIC_LESSON_SEGMENT",
+          "column": "F (Mã tiêu chuẩn)",
+          "rawValue": "TC01S.01.0001.27",
+          "resolvedValue": "les_fin_g1_p09 -> crit_fin_g1_TC01S_01_0001_27",
+          "note": "Mã tiêu chuẩn TC01S.01.0001.27 giữ cố định cụm .01.0001. của Bài 1 nhưng thuộc \"Tiết kiệm là siêu năng lực\"; giữ nguyên mã hiển thị nguồn và liên kết bằng khóa nội bộ crit_fin_g1_TC01S_01_0001_27 -> les_fin_g1_p09."
+        }
+      ]
+    },
+    {
+      "excelRow": 31,
+      "criterionIndex": 28,
+      "rawTopicName": "Chủ đề 3. Tiết kiệm mỗi ngày",
+      "rawTopicCode": "TC01S.01",
+      "rawLessonName": "Tiết kiệm là siêu năng lực",
+      "rawLessonCode": "TC01S.01.0009",
+      "rawCriterionCode": "TC01S.01.0001.28",
+      "rawLevel": "Mức 2",
+      "rawMarks": {
+        "hieu": "",
+        "biet": "x",
+        "vanDung": ""
+      },
+      "description": "Nêu được một số việc làm thể hiện sự tiết kiệm.",
+      "normalizedTopicId": "top_fin_g1_3",
+      "normalizedTopicCode": "TC01S.03",
+      "normalizedTopicName": "Chủ đề 3. Tiết kiệm mỗi ngày",
+      "normalizedLessonId": "les_fin_g1_p09",
+      "normalizedLessonCode": "TC01S.03.0009",
+      "normalizedLessonName": "Tiết kiệm là siêu năng lực",
+      "lessonIndex": 9,
+      "normalizedCriterionId": "crit_fin_g1_TC01S_01_0001_28",
+      "competencyGroup": "Biết",
+      "programLevel": "Mức 2",
+      "hasLevelCompetencyMismatch": false,
+      "anomalies": [
+        {
+          "type": "TOPIC_CODE_REPEATED",
+          "column": "P (MÃ CHỦ ĐỀ)",
+          "rawValue": "TC01S.01",
+          "resolvedValue": "TC01S.03",
+          "note": "Ô P31 đang lặp mã TC01S.01 cho Chủ đề 3. Tiết kiệm mỗi ngày; chuẩn hóa mã chủ đề thành TC01S.03 (top_fin_g1_3)."
+        },
+        {
+          "type": "LESSON_CODE_TOPIC_PREFIX",
+          "column": "Q (MÃ BÀI HỌC)",
+          "rawValue": "TC01S.01.0009",
+          "resolvedValue": "TC01S.03.0009",
+          "note": "Ô Q31 ghi TC01S.01.0009 (kế thừa mã chủ đề lặp TC01S.01); ánh xạ sang mã chuẩn TC01S.03.0009 (les_fin_g1_p09)."
+        },
+        {
+          "type": "CRITERION_CODE_STATIC_LESSON_SEGMENT",
+          "column": "F (Mã tiêu chuẩn)",
+          "rawValue": "TC01S.01.0001.28",
+          "resolvedValue": "les_fin_g1_p09 -> crit_fin_g1_TC01S_01_0001_28",
+          "note": "Mã tiêu chuẩn TC01S.01.0001.28 giữ cố định cụm .01.0001. của Bài 1 nhưng thuộc \"Tiết kiệm là siêu năng lực\"; giữ nguyên mã hiển thị nguồn và liên kết bằng khóa nội bộ crit_fin_g1_TC01S_01_0001_28 -> les_fin_g1_p09."
+        }
+      ]
+    },
+    {
+      "excelRow": 32,
+      "criterionIndex": 29,
+      "rawTopicName": "Chủ đề 3. Tiết kiệm mỗi ngày",
+      "rawTopicCode": "TC01S.01",
+      "rawLessonName": "Tiết kiệm là siêu năng lực",
+      "rawLessonCode": "TC01S.01.0009",
+      "rawCriterionCode": "TC01S.01.0001.29",
+      "rawLevel": "Mức 3",
+      "rawMarks": {
+        "hieu": "",
+        "biet": "",
+        "vanDung": "x"
+      },
+      "description": "Hình thành thói quen tiết kiệm trong sinh hoạt hằng ngày",
+      "normalizedTopicId": "top_fin_g1_3",
+      "normalizedTopicCode": "TC01S.03",
+      "normalizedTopicName": "Chủ đề 3. Tiết kiệm mỗi ngày",
+      "normalizedLessonId": "les_fin_g1_p09",
+      "normalizedLessonCode": "TC01S.03.0009",
+      "normalizedLessonName": "Tiết kiệm là siêu năng lực",
+      "lessonIndex": 9,
+      "normalizedCriterionId": "crit_fin_g1_TC01S_01_0001_29",
+      "competencyGroup": "Vận dụng",
+      "programLevel": "Mức 3",
+      "hasLevelCompetencyMismatch": false,
+      "anomalies": [
+        {
+          "type": "TOPIC_CODE_REPEATED",
+          "column": "P (MÃ CHỦ ĐỀ)",
+          "rawValue": "TC01S.01",
+          "resolvedValue": "TC01S.03",
+          "note": "Ô P32 đang lặp mã TC01S.01 cho Chủ đề 3. Tiết kiệm mỗi ngày; chuẩn hóa mã chủ đề thành TC01S.03 (top_fin_g1_3)."
+        },
+        {
+          "type": "LESSON_CODE_TOPIC_PREFIX",
+          "column": "Q (MÃ BÀI HỌC)",
+          "rawValue": "TC01S.01.0009",
+          "resolvedValue": "TC01S.03.0009",
+          "note": "Ô Q32 ghi TC01S.01.0009 (kế thừa mã chủ đề lặp TC01S.01); ánh xạ sang mã chuẩn TC01S.03.0009 (les_fin_g1_p09)."
+        },
+        {
+          "type": "CRITERION_CODE_STATIC_LESSON_SEGMENT",
+          "column": "F (Mã tiêu chuẩn)",
+          "rawValue": "TC01S.01.0001.29",
+          "resolvedValue": "les_fin_g1_p09 -> crit_fin_g1_TC01S_01_0001_29",
+          "note": "Mã tiêu chuẩn TC01S.01.0001.29 giữ cố định cụm .01.0001. của Bài 1 nhưng thuộc \"Tiết kiệm là siêu năng lực\"; giữ nguyên mã hiển thị nguồn và liên kết bằng khóa nội bộ crit_fin_g1_TC01S_01_0001_29 -> les_fin_g1_p09."
+        }
+      ]
+    },
+    {
+      "excelRow": 33,
+      "criterionIndex": 30,
+      "rawTopicName": "Chủ đề 3. Tiết kiệm mỗi ngày",
+      "rawTopicCode": "TC01S.01",
+      "rawLessonName": "Ước mơ trong ống heo",
+      "rawLessonCode": "TC01S.01.0010",
+      "rawCriterionCode": "TC01S.01.0001.30",
+      "rawLevel": "Mức 1",
+      "rawMarks": {
+        "hieu": "x",
+        "biet": "",
+        "vanDung": ""
+      },
+      "description": "Xác định được một mục tiêu tiết kiệm phù hợp.",
+      "normalizedTopicId": "top_fin_g1_3",
+      "normalizedTopicCode": "TC01S.03",
+      "normalizedTopicName": "Chủ đề 3. Tiết kiệm mỗi ngày",
+      "normalizedLessonId": "les_fin_g1_p10",
+      "normalizedLessonCode": "TC01S.03.0010",
+      "normalizedLessonName": "Ước mơ trong ống heo",
+      "lessonIndex": 10,
+      "normalizedCriterionId": "crit_fin_g1_TC01S_01_0001_30",
+      "competencyGroup": "Hiểu",
+      "programLevel": "Mức 1",
+      "hasLevelCompetencyMismatch": false,
+      "anomalies": [
+        {
+          "type": "TOPIC_CODE_REPEATED",
+          "column": "P (MÃ CHỦ ĐỀ)",
+          "rawValue": "TC01S.01",
+          "resolvedValue": "TC01S.03",
+          "note": "Ô P33 đang lặp mã TC01S.01 cho Chủ đề 3. Tiết kiệm mỗi ngày; chuẩn hóa mã chủ đề thành TC01S.03 (top_fin_g1_3)."
+        },
+        {
+          "type": "LESSON_CODE_TOPIC_PREFIX",
+          "column": "Q (MÃ BÀI HỌC)",
+          "rawValue": "TC01S.01.0010",
+          "resolvedValue": "TC01S.03.0010",
+          "note": "Ô Q33 ghi TC01S.01.0010 (kế thừa mã chủ đề lặp TC01S.01); ánh xạ sang mã chuẩn TC01S.03.0010 (les_fin_g1_p10)."
+        },
+        {
+          "type": "CRITERION_CODE_STATIC_LESSON_SEGMENT",
+          "column": "F (Mã tiêu chuẩn)",
+          "rawValue": "TC01S.01.0001.30",
+          "resolvedValue": "les_fin_g1_p10 -> crit_fin_g1_TC01S_01_0001_30",
+          "note": "Mã tiêu chuẩn TC01S.01.0001.30 giữ cố định cụm .01.0001. của Bài 1 nhưng thuộc \"Ước mơ trong ống heo\"; giữ nguyên mã hiển thị nguồn và liên kết bằng khóa nội bộ crit_fin_g1_TC01S_01_0001_30 -> les_fin_g1_p10."
+        }
+      ]
+    },
+    {
+      "excelRow": 34,
+      "criterionIndex": 31,
+      "rawTopicName": "Chủ đề 3. Tiết kiệm mỗi ngày",
+      "rawTopicCode": "TC01S.01",
+      "rawLessonName": "Ước mơ trong ống heo",
+      "rawLessonCode": "TC01S.01.0010",
+      "rawCriterionCode": "TC01S.01.0001.31",
+      "rawLevel": "Mức 2",
+      "rawMarks": {
+        "hieu": "",
+        "biet": "x",
+        "vanDung": ""
+      },
+      "description": "Biết lập kế hoạch tiết kiệm đơn giản.",
+      "normalizedTopicId": "top_fin_g1_3",
+      "normalizedTopicCode": "TC01S.03",
+      "normalizedTopicName": "Chủ đề 3. Tiết kiệm mỗi ngày",
+      "normalizedLessonId": "les_fin_g1_p10",
+      "normalizedLessonCode": "TC01S.03.0010",
+      "normalizedLessonName": "Ước mơ trong ống heo",
+      "lessonIndex": 10,
+      "normalizedCriterionId": "crit_fin_g1_TC01S_01_0001_31",
+      "competencyGroup": "Biết",
+      "programLevel": "Mức 2",
+      "hasLevelCompetencyMismatch": false,
+      "anomalies": [
+        {
+          "type": "TOPIC_CODE_REPEATED",
+          "column": "P (MÃ CHỦ ĐỀ)",
+          "rawValue": "TC01S.01",
+          "resolvedValue": "TC01S.03",
+          "note": "Ô P34 đang lặp mã TC01S.01 cho Chủ đề 3. Tiết kiệm mỗi ngày; chuẩn hóa mã chủ đề thành TC01S.03 (top_fin_g1_3)."
+        },
+        {
+          "type": "LESSON_CODE_TOPIC_PREFIX",
+          "column": "Q (MÃ BÀI HỌC)",
+          "rawValue": "TC01S.01.0010",
+          "resolvedValue": "TC01S.03.0010",
+          "note": "Ô Q34 ghi TC01S.01.0010 (kế thừa mã chủ đề lặp TC01S.01); ánh xạ sang mã chuẩn TC01S.03.0010 (les_fin_g1_p10)."
+        },
+        {
+          "type": "CRITERION_CODE_STATIC_LESSON_SEGMENT",
+          "column": "F (Mã tiêu chuẩn)",
+          "rawValue": "TC01S.01.0001.31",
+          "resolvedValue": "les_fin_g1_p10 -> crit_fin_g1_TC01S_01_0001_31",
+          "note": "Mã tiêu chuẩn TC01S.01.0001.31 giữ cố định cụm .01.0001. của Bài 1 nhưng thuộc \"Ước mơ trong ống heo\"; giữ nguyên mã hiển thị nguồn và liên kết bằng khóa nội bộ crit_fin_g1_TC01S_01_0001_31 -> les_fin_g1_p10."
+        }
+      ]
+    },
+    {
+      "excelRow": 35,
+      "criterionIndex": 32,
+      "rawTopicName": "Chủ đề 3. Tiết kiệm mỗi ngày",
+      "rawTopicCode": "TC01S.01",
+      "rawLessonName": "Tiết kiệm từ việc nhỏ",
+      "rawLessonCode": "TC01S.01.0011",
+      "rawCriterionCode": "TC01S.01.0001.32",
+      "rawLevel": "Mức 2",
+      "rawMarks": {
+        "hieu": "",
+        "biet": "x",
+        "vanDung": ""
+      },
+      "description": "Có động lực thực hiện mục tiêu đã đặt ra.",
+      "normalizedTopicId": "top_fin_g1_3",
+      "normalizedTopicCode": "TC01S.03",
+      "normalizedTopicName": "Chủ đề 3. Tiết kiệm mỗi ngày",
+      "normalizedLessonId": "les_fin_g1_p11",
+      "normalizedLessonCode": "TC01S.03.0011",
+      "normalizedLessonName": "Tiết kiệm từ việc nhỏ",
+      "lessonIndex": 11,
+      "normalizedCriterionId": "crit_fin_g1_TC01S_01_0001_32",
+      "competencyGroup": "Biết",
+      "programLevel": "Mức 2",
+      "hasLevelCompetencyMismatch": false,
+      "anomalies": [
+        {
+          "type": "TOPIC_CODE_REPEATED",
+          "column": "P (MÃ CHỦ ĐỀ)",
+          "rawValue": "TC01S.01",
+          "resolvedValue": "TC01S.03",
+          "note": "Ô P35 đang lặp mã TC01S.01 cho Chủ đề 3. Tiết kiệm mỗi ngày; chuẩn hóa mã chủ đề thành TC01S.03 (top_fin_g1_3)."
+        },
+        {
+          "type": "LESSON_CODE_TOPIC_PREFIX",
+          "column": "Q (MÃ BÀI HỌC)",
+          "rawValue": "TC01S.01.0011",
+          "resolvedValue": "TC01S.03.0011",
+          "note": "Ô Q35 ghi TC01S.01.0011 (kế thừa mã chủ đề lặp TC01S.01); ánh xạ sang mã chuẩn TC01S.03.0011 (les_fin_g1_p11)."
+        },
+        {
+          "type": "CRITERION_CODE_STATIC_LESSON_SEGMENT",
+          "column": "F (Mã tiêu chuẩn)",
+          "rawValue": "TC01S.01.0001.32",
+          "resolvedValue": "les_fin_g1_p11 -> crit_fin_g1_TC01S_01_0001_32",
+          "note": "Mã tiêu chuẩn TC01S.01.0001.32 giữ cố định cụm .01.0001. của Bài 1 nhưng thuộc \"Tiết kiệm từ việc nhỏ\"; giữ nguyên mã hiển thị nguồn và liên kết bằng khóa nội bộ crit_fin_g1_TC01S_01_0001_32 -> les_fin_g1_p11."
+        }
+      ]
+    },
+    {
+      "excelRow": 36,
+      "criterionIndex": 33,
+      "rawTopicName": "Chủ đề 3. Tiết kiệm mỗi ngày",
+      "rawTopicCode": "TC01S.01",
+      "rawLessonName": "Nhật ký tiết kiệm",
+      "rawLessonCode": "TC01S.01.0012",
+      "rawCriterionCode": "TC01S.01.0001.33",
+      "rawLevel": "Mức 2",
+      "rawMarks": {
+        "hieu": "",
+        "biet": "x",
+        "vanDung": ""
+      },
+      "description": "Biết thực hiện tiết kiệm tiền, điện, nước và đồ dùng học tập.",
+      "normalizedTopicId": "top_fin_g1_3",
+      "normalizedTopicCode": "TC01S.03",
+      "normalizedTopicName": "Chủ đề 3. Tiết kiệm mỗi ngày",
+      "normalizedLessonId": "les_fin_g1_p12",
+      "normalizedLessonCode": "TC01S.03.0012",
+      "normalizedLessonName": "Nhật ký tiết kiệm",
+      "lessonIndex": 12,
+      "normalizedCriterionId": "crit_fin_g1_TC01S_01_0001_33",
+      "competencyGroup": "Biết",
+      "programLevel": "Mức 2",
+      "hasLevelCompetencyMismatch": false,
+      "anomalies": [
+        {
+          "type": "TOPIC_CODE_REPEATED",
+          "column": "P (MÃ CHỦ ĐỀ)",
+          "rawValue": "TC01S.01",
+          "resolvedValue": "TC01S.03",
+          "note": "Ô P36 đang lặp mã TC01S.01 cho Chủ đề 3. Tiết kiệm mỗi ngày; chuẩn hóa mã chủ đề thành TC01S.03 (top_fin_g1_3)."
+        },
+        {
+          "type": "LESSON_CODE_TOPIC_PREFIX",
+          "column": "Q (MÃ BÀI HỌC)",
+          "rawValue": "TC01S.01.0012",
+          "resolvedValue": "TC01S.03.0012",
+          "note": "Ô Q36 ghi TC01S.01.0012 (kế thừa mã chủ đề lặp TC01S.01); ánh xạ sang mã chuẩn TC01S.03.0012 (les_fin_g1_p12)."
+        },
+        {
+          "type": "CRITERION_CODE_STATIC_LESSON_SEGMENT",
+          "column": "F (Mã tiêu chuẩn)",
+          "rawValue": "TC01S.01.0001.33",
+          "resolvedValue": "les_fin_g1_p12 -> crit_fin_g1_TC01S_01_0001_33",
+          "note": "Mã tiêu chuẩn TC01S.01.0001.33 giữ cố định cụm .01.0001. của Bài 1 nhưng thuộc \"Nhật ký tiết kiệm\"; giữ nguyên mã hiển thị nguồn và liên kết bằng khóa nội bộ crit_fin_g1_TC01S_01_0001_33 -> les_fin_g1_p12."
+        }
+      ]
+    },
+    {
+      "excelRow": 37,
+      "criterionIndex": 34,
+      "rawTopicName": "Chủ đề 3. Tiết kiệm mỗi ngày",
+      "rawTopicCode": "TC01S.01",
+      "rawLessonName": "Nhật ký tiết kiệm",
+      "rawLessonCode": "TC01S.01.0012",
+      "rawCriterionCode": "TC01S.01.0001.34",
+      "rawLevel": "Mức 3",
+      "rawMarks": {
+        "hieu": "",
+        "biet": "",
+        "vanDung": "x"
+      },
+      "description": "Ghi hoặc đánh dấu được việc tiết kiệm đã thực hiện; nêu được một điều có thể làm tốt hơn.",
+      "normalizedTopicId": "top_fin_g1_3",
+      "normalizedTopicCode": "TC01S.03",
+      "normalizedTopicName": "Chủ đề 3. Tiết kiệm mỗi ngày",
+      "normalizedLessonId": "les_fin_g1_p12",
+      "normalizedLessonCode": "TC01S.03.0012",
+      "normalizedLessonName": "Nhật ký tiết kiệm",
+      "lessonIndex": 12,
+      "normalizedCriterionId": "crit_fin_g1_TC01S_01_0001_34",
+      "competencyGroup": "Vận dụng",
+      "programLevel": "Mức 3",
+      "hasLevelCompetencyMismatch": false,
+      "anomalies": [
+        {
+          "type": "TOPIC_CODE_REPEATED",
+          "column": "P (MÃ CHỦ ĐỀ)",
+          "rawValue": "TC01S.01",
+          "resolvedValue": "TC01S.03",
+          "note": "Ô P37 đang lặp mã TC01S.01 cho Chủ đề 3. Tiết kiệm mỗi ngày; chuẩn hóa mã chủ đề thành TC01S.03 (top_fin_g1_3)."
+        },
+        {
+          "type": "LESSON_CODE_TOPIC_PREFIX",
+          "column": "Q (MÃ BÀI HỌC)",
+          "rawValue": "TC01S.01.0012",
+          "resolvedValue": "TC01S.03.0012",
+          "note": "Ô Q37 ghi TC01S.01.0012 (kế thừa mã chủ đề lặp TC01S.01); ánh xạ sang mã chuẩn TC01S.03.0012 (les_fin_g1_p12)."
+        },
+        {
+          "type": "CRITERION_CODE_STATIC_LESSON_SEGMENT",
+          "column": "F (Mã tiêu chuẩn)",
+          "rawValue": "TC01S.01.0001.34",
+          "resolvedValue": "les_fin_g1_p12 -> crit_fin_g1_TC01S_01_0001_34",
+          "note": "Mã tiêu chuẩn TC01S.01.0001.34 giữ cố định cụm .01.0001. của Bài 1 nhưng thuộc \"Nhật ký tiết kiệm\"; giữ nguyên mã hiển thị nguồn và liên kết bằng khóa nội bộ crit_fin_g1_TC01S_01_0001_34 -> les_fin_g1_p12."
+        }
+      ]
+    },
+    {
+      "excelRow": 38,
+      "criterionIndex": 35,
+      "rawTopicName": "Chủ đề 3. Tiết kiệm mỗi ngày",
+      "rawTopicCode": "TC01S.01",
+      "rawLessonName": "Nhật ký tiết kiệm",
+      "rawLessonCode": "#REF!",
+      "rawCriterionCode": "TC01S.01.0001.35",
+      "rawLevel": "Mức 3",
+      "rawMarks": {
+        "hieu": "",
+        "biet": "",
+        "vanDung": "x"
+      },
+      "description": "Hình thành tinh thần trách nhiệm đối với gia đình và môi trường.",
+      "normalizedTopicId": "top_fin_g1_3",
+      "normalizedTopicCode": "TC01S.03",
+      "normalizedTopicName": "Chủ đề 3. Tiết kiệm mỗi ngày",
+      "normalizedLessonId": "les_fin_g1_p12",
+      "normalizedLessonCode": "TC01S.03.0012",
+      "normalizedLessonName": "Nhật ký tiết kiệm",
+      "lessonIndex": 12,
+      "normalizedCriterionId": "crit_fin_g1_TC01S_01_0001_35",
+      "competencyGroup": "Vận dụng",
+      "programLevel": "Mức 3",
+      "hasLevelCompetencyMismatch": false,
+      "anomalies": [
+        {
+          "type": "TOPIC_CODE_REPEATED",
+          "column": "P (MÃ CHỦ ĐỀ)",
+          "rawValue": "TC01S.01",
+          "resolvedValue": "TC01S.03",
+          "note": "Ô P38 đang lặp mã TC01S.01 cho Chủ đề 3. Tiết kiệm mỗi ngày; chuẩn hóa mã chủ đề thành TC01S.03 (top_fin_g1_3)."
+        },
+        {
+          "type": "LESSON_CODE_FORMULA_ERROR",
+          "column": "Q (MÃ BÀI HỌC)",
+          "rawValue": "#REF!",
+          "resolvedValue": "TC01S.03.0012",
+          "note": "Ô Q38 bị lỗi công thức #REF!; khôi phục theo bài học \"Nhật ký tiết kiệm\" thành TC01S.03.0012 (les_fin_g1_p12)."
+        },
+        {
+          "type": "CRITERION_CODE_STATIC_LESSON_SEGMENT",
+          "column": "F (Mã tiêu chuẩn)",
+          "rawValue": "TC01S.01.0001.35",
+          "resolvedValue": "les_fin_g1_p12 -> crit_fin_g1_TC01S_01_0001_35",
+          "note": "Mã tiêu chuẩn TC01S.01.0001.35 giữ cố định cụm .01.0001. của Bài 1 nhưng thuộc \"Nhật ký tiết kiệm\"; giữ nguyên mã hiển thị nguồn và liên kết bằng khóa nội bộ crit_fin_g1_TC01S_01_0001_35 -> les_fin_g1_p12."
+        }
+      ]
+    },
+    {
+      "excelRow": 39,
+      "criterionIndex": 36,
+      "rawTopicName": "Chủ đề 4. Em làm chủ đồng tiền",
+      "rawTopicCode": "TC01S.01",
+      "rawLessonName": "Biết chia sẻ yêu thương",
+      "rawLessonCode": "TC01S.01.0013",
+      "rawCriterionCode": "TC01S.01.0001.36",
+      "rawLevel": "Mức 1",
+      "rawMarks": {
+        "hieu": "x",
+        "biet": "",
+        "vanDung": ""
+      },
+      "description": "Hiểu được ý nghĩa của việc chia sẻ.",
+      "normalizedTopicId": "top_fin_g1_4",
+      "normalizedTopicCode": "TC01S.04",
+      "normalizedTopicName": "Chủ đề 4. Em làm chủ đồng tiền",
+      "normalizedLessonId": "les_fin_g1_p13",
+      "normalizedLessonCode": "TC01S.04.0013",
+      "normalizedLessonName": "Biết chia sẻ yêu thương",
+      "lessonIndex": 13,
+      "normalizedCriterionId": "crit_fin_g1_TC01S_01_0001_36",
+      "competencyGroup": "Hiểu",
+      "programLevel": "Mức 1",
+      "hasLevelCompetencyMismatch": false,
+      "anomalies": [
+        {
+          "type": "TOPIC_CODE_REPEATED",
+          "column": "P (MÃ CHỦ ĐỀ)",
+          "rawValue": "TC01S.01",
+          "resolvedValue": "TC01S.04",
+          "note": "Ô P39 đang lặp mã TC01S.01 cho Chủ đề 4. Em làm chủ đồng tiền; chuẩn hóa mã chủ đề thành TC01S.04 (top_fin_g1_4)."
+        },
+        {
+          "type": "LESSON_CODE_TOPIC_PREFIX",
+          "column": "Q (MÃ BÀI HỌC)",
+          "rawValue": "TC01S.01.0013",
+          "resolvedValue": "TC01S.04.0013",
+          "note": "Ô Q39 ghi TC01S.01.0013 (kế thừa mã chủ đề lặp TC01S.01); ánh xạ sang mã chuẩn TC01S.04.0013 (les_fin_g1_p13)."
+        },
+        {
+          "type": "CRITERION_CODE_STATIC_LESSON_SEGMENT",
+          "column": "F (Mã tiêu chuẩn)",
+          "rawValue": "TC01S.01.0001.36",
+          "resolvedValue": "les_fin_g1_p13 -> crit_fin_g1_TC01S_01_0001_36",
+          "note": "Mã tiêu chuẩn TC01S.01.0001.36 giữ cố định cụm .01.0001. của Bài 1 nhưng thuộc \"Biết chia sẻ yêu thương\"; giữ nguyên mã hiển thị nguồn và liên kết bằng khóa nội bộ crit_fin_g1_TC01S_01_0001_36 -> les_fin_g1_p13."
+        }
+      ]
+    },
+    {
+      "excelRow": 40,
+      "criterionIndex": 37,
+      "rawTopicName": "Chủ đề 4. Em làm chủ đồng tiền",
+      "rawTopicCode": "TC01S.01",
+      "rawLessonName": "Biết chia sẻ yêu thương",
+      "rawLessonCode": "TC01S.01.0013",
+      "rawCriterionCode": "TC01S.01.0001.37",
+      "rawLevel": "Mức 2",
+      "rawMarks": {
+        "hieu": "",
+        "biet": "x",
+        "vanDung": ""
+      },
+      "description": "Biết dành một phần tiền hoặc đồ dùng để giúp đỡ người khác.",
+      "normalizedTopicId": "top_fin_g1_4",
+      "normalizedTopicCode": "TC01S.04",
+      "normalizedTopicName": "Chủ đề 4. Em làm chủ đồng tiền",
+      "normalizedLessonId": "les_fin_g1_p13",
+      "normalizedLessonCode": "TC01S.04.0013",
+      "normalizedLessonName": "Biết chia sẻ yêu thương",
+      "lessonIndex": 13,
+      "normalizedCriterionId": "crit_fin_g1_TC01S_01_0001_37",
+      "competencyGroup": "Biết",
+      "programLevel": "Mức 2",
+      "hasLevelCompetencyMismatch": false,
+      "anomalies": [
+        {
+          "type": "TOPIC_CODE_REPEATED",
+          "column": "P (MÃ CHỦ ĐỀ)",
+          "rawValue": "TC01S.01",
+          "resolvedValue": "TC01S.04",
+          "note": "Ô P40 đang lặp mã TC01S.01 cho Chủ đề 4. Em làm chủ đồng tiền; chuẩn hóa mã chủ đề thành TC01S.04 (top_fin_g1_4)."
+        },
+        {
+          "type": "LESSON_CODE_TOPIC_PREFIX",
+          "column": "Q (MÃ BÀI HỌC)",
+          "rawValue": "TC01S.01.0013",
+          "resolvedValue": "TC01S.04.0013",
+          "note": "Ô Q40 ghi TC01S.01.0013 (kế thừa mã chủ đề lặp TC01S.01); ánh xạ sang mã chuẩn TC01S.04.0013 (les_fin_g1_p13)."
+        },
+        {
+          "type": "CRITERION_CODE_STATIC_LESSON_SEGMENT",
+          "column": "F (Mã tiêu chuẩn)",
+          "rawValue": "TC01S.01.0001.37",
+          "resolvedValue": "les_fin_g1_p13 -> crit_fin_g1_TC01S_01_0001_37",
+          "note": "Mã tiêu chuẩn TC01S.01.0001.37 giữ cố định cụm .01.0001. của Bài 1 nhưng thuộc \"Biết chia sẻ yêu thương\"; giữ nguyên mã hiển thị nguồn và liên kết bằng khóa nội bộ crit_fin_g1_TC01S_01_0001_37 -> les_fin_g1_p13."
+        }
+      ]
+    },
+    {
+      "excelRow": 41,
+      "criterionIndex": 38,
+      "rawTopicName": "Chủ đề 4. Em làm chủ đồng tiền",
+      "rawTopicCode": "TC01S.01",
+      "rawLessonName": "Biết chia sẻ yêu thương",
+      "rawLessonCode": "TC01S.01.0013",
+      "rawCriterionCode": "TC01S.01.0001.38",
+      "rawLevel": "Mức 3",
+      "rawMarks": {
+        "hieu": "",
+        "biet": "",
+        "vanDung": "x"
+      },
+      "description": "Biết trao đổi với gia đình/người lớn để lựa chọn cách chia sẻ phù hợp, an toàn và trong khả năng.",
+      "normalizedTopicId": "top_fin_g1_4",
+      "normalizedTopicCode": "TC01S.04",
+      "normalizedTopicName": "Chủ đề 4. Em làm chủ đồng tiền",
+      "normalizedLessonId": "les_fin_g1_p13",
+      "normalizedLessonCode": "TC01S.04.0013",
+      "normalizedLessonName": "Biết chia sẻ yêu thương",
+      "lessonIndex": 13,
+      "normalizedCriterionId": "crit_fin_g1_TC01S_01_0001_38",
+      "competencyGroup": "Vận dụng",
+      "programLevel": "Mức 3",
+      "hasLevelCompetencyMismatch": false,
+      "anomalies": [
+        {
+          "type": "TOPIC_CODE_REPEATED",
+          "column": "P (MÃ CHỦ ĐỀ)",
+          "rawValue": "TC01S.01",
+          "resolvedValue": "TC01S.04",
+          "note": "Ô P41 đang lặp mã TC01S.01 cho Chủ đề 4. Em làm chủ đồng tiền; chuẩn hóa mã chủ đề thành TC01S.04 (top_fin_g1_4)."
+        },
+        {
+          "type": "LESSON_CODE_TOPIC_PREFIX",
+          "column": "Q (MÃ BÀI HỌC)",
+          "rawValue": "TC01S.01.0013",
+          "resolvedValue": "TC01S.04.0013",
+          "note": "Ô Q41 ghi TC01S.01.0013 (kế thừa mã chủ đề lặp TC01S.01); ánh xạ sang mã chuẩn TC01S.04.0013 (les_fin_g1_p13)."
+        },
+        {
+          "type": "CRITERION_CODE_STATIC_LESSON_SEGMENT",
+          "column": "F (Mã tiêu chuẩn)",
+          "rawValue": "TC01S.01.0001.38",
+          "resolvedValue": "les_fin_g1_p13 -> crit_fin_g1_TC01S_01_0001_38",
+          "note": "Mã tiêu chuẩn TC01S.01.0001.38 giữ cố định cụm .01.0001. của Bài 1 nhưng thuộc \"Biết chia sẻ yêu thương\"; giữ nguyên mã hiển thị nguồn và liên kết bằng khóa nội bộ crit_fin_g1_TC01S_01_0001_38 -> les_fin_g1_p13."
+        }
+      ]
+    },
+    {
+      "excelRow": 42,
+      "criterionIndex": 39,
+      "rawTopicName": "Chủ đề 4. Em làm chủ đồng tiền",
+      "rawTopicCode": "TC01S.01",
+      "rawLessonName": "Biết chia sẻ yêu thương",
+      "rawLessonCode": "TC01S.01.0013",
+      "rawCriterionCode": "TC01S.01.0001.39",
+      "rawLevel": "Mức 2",
+      "rawMarks": {
+        "hieu": "",
+        "biet": "x",
+        "vanDung": ""
+      },
+      "description": "Hình thành lòng nhân ái và tinh thần tương thân tương ái.",
+      "normalizedTopicId": "top_fin_g1_4",
+      "normalizedTopicCode": "TC01S.04",
+      "normalizedTopicName": "Chủ đề 4. Em làm chủ đồng tiền",
+      "normalizedLessonId": "les_fin_g1_p13",
+      "normalizedLessonCode": "TC01S.04.0013",
+      "normalizedLessonName": "Biết chia sẻ yêu thương",
+      "lessonIndex": 13,
+      "normalizedCriterionId": "crit_fin_g1_TC01S_01_0001_39",
+      "competencyGroup": "Biết",
+      "programLevel": "Mức 2",
+      "hasLevelCompetencyMismatch": false,
+      "anomalies": [
+        {
+          "type": "TOPIC_CODE_REPEATED",
+          "column": "P (MÃ CHỦ ĐỀ)",
+          "rawValue": "TC01S.01",
+          "resolvedValue": "TC01S.04",
+          "note": "Ô P42 đang lặp mã TC01S.01 cho Chủ đề 4. Em làm chủ đồng tiền; chuẩn hóa mã chủ đề thành TC01S.04 (top_fin_g1_4)."
+        },
+        {
+          "type": "LESSON_CODE_TOPIC_PREFIX",
+          "column": "Q (MÃ BÀI HỌC)",
+          "rawValue": "TC01S.01.0013",
+          "resolvedValue": "TC01S.04.0013",
+          "note": "Ô Q42 ghi TC01S.01.0013 (kế thừa mã chủ đề lặp TC01S.01); ánh xạ sang mã chuẩn TC01S.04.0013 (les_fin_g1_p13)."
+        },
+        {
+          "type": "CRITERION_CODE_STATIC_LESSON_SEGMENT",
+          "column": "F (Mã tiêu chuẩn)",
+          "rawValue": "TC01S.01.0001.39",
+          "resolvedValue": "les_fin_g1_p13 -> crit_fin_g1_TC01S_01_0001_39",
+          "note": "Mã tiêu chuẩn TC01S.01.0001.39 giữ cố định cụm .01.0001. của Bài 1 nhưng thuộc \"Biết chia sẻ yêu thương\"; giữ nguyên mã hiển thị nguồn và liên kết bằng khóa nội bộ crit_fin_g1_TC01S_01_0001_39 -> les_fin_g1_p13."
+        }
+      ]
+    },
+    {
+      "excelRow": 43,
+      "criterionIndex": 40,
+      "rawTopicName": "Chủ đề 4. Em làm chủ đồng tiền",
+      "rawTopicCode": "TC01S.01",
+      "rawLessonName": "Kế hoạch chi tiêu đầu tiên",
+      "rawLessonCode": "TC01S.01.0014",
+      "rawCriterionCode": "TC01S.01.0001.40",
+      "rawLevel": "Mức 2",
+      "rawMarks": {
+        "hieu": "",
+        "biet": "x",
+        "vanDung": ""
+      },
+      "description": "Biết sử dụng tiền tiêu vặt hợp lý.",
+      "normalizedTopicId": "top_fin_g1_4",
+      "normalizedTopicCode": "TC01S.04",
+      "normalizedTopicName": "Chủ đề 4. Em làm chủ đồng tiền",
+      "normalizedLessonId": "les_fin_g1_p14",
+      "normalizedLessonCode": "TC01S.04.0014",
+      "normalizedLessonName": "Kế hoạch chi tiêu đầu tiên",
+      "lessonIndex": 14,
+      "normalizedCriterionId": "crit_fin_g1_TC01S_01_0001_40",
+      "competencyGroup": "Biết",
+      "programLevel": "Mức 2",
+      "hasLevelCompetencyMismatch": false,
+      "anomalies": [
+        {
+          "type": "TOPIC_CODE_REPEATED",
+          "column": "P (MÃ CHỦ ĐỀ)",
+          "rawValue": "TC01S.01",
+          "resolvedValue": "TC01S.04",
+          "note": "Ô P43 đang lặp mã TC01S.01 cho Chủ đề 4. Em làm chủ đồng tiền; chuẩn hóa mã chủ đề thành TC01S.04 (top_fin_g1_4)."
+        },
+        {
+          "type": "LESSON_CODE_TOPIC_PREFIX",
+          "column": "Q (MÃ BÀI HỌC)",
+          "rawValue": "TC01S.01.0014",
+          "resolvedValue": "TC01S.04.0014",
+          "note": "Ô Q43 ghi TC01S.01.0014 (kế thừa mã chủ đề lặp TC01S.01); ánh xạ sang mã chuẩn TC01S.04.0014 (les_fin_g1_p14)."
+        },
+        {
+          "type": "CRITERION_CODE_STATIC_LESSON_SEGMENT",
+          "column": "F (Mã tiêu chuẩn)",
+          "rawValue": "TC01S.01.0001.40",
+          "resolvedValue": "les_fin_g1_p14 -> crit_fin_g1_TC01S_01_0001_40",
+          "note": "Mã tiêu chuẩn TC01S.01.0001.40 giữ cố định cụm .01.0001. của Bài 1 nhưng thuộc \"Kế hoạch chi tiêu đầu tiên\"; giữ nguyên mã hiển thị nguồn và liên kết bằng khóa nội bộ crit_fin_g1_TC01S_01_0001_40 -> les_fin_g1_p14."
+        }
+      ]
+    },
+    {
+      "excelRow": 44,
+      "criterionIndex": 41,
+      "rawTopicName": "Chủ đề 4. Em làm chủ đồng tiền",
+      "rawTopicCode": "TC01S.01",
+      "rawLessonName": "Kế hoạch chi tiêu đầu tiên",
+      "rawLessonCode": "TC01S.01.0014",
+      "rawCriterionCode": "TC01S.01.0001.41",
+      "rawLevel": "Mức 2",
+      "rawMarks": {
+        "hieu": "",
+        "biet": "x",
+        "vanDung": ""
+      },
+      "description": "Biết cân nhắc trước khi đưa ra quyết định chi tiêu.",
+      "normalizedTopicId": "top_fin_g1_4",
+      "normalizedTopicCode": "TC01S.04",
+      "normalizedTopicName": "Chủ đề 4. Em làm chủ đồng tiền",
+      "normalizedLessonId": "les_fin_g1_p14",
+      "normalizedLessonCode": "TC01S.04.0014",
+      "normalizedLessonName": "Kế hoạch chi tiêu đầu tiên",
+      "lessonIndex": 14,
+      "normalizedCriterionId": "crit_fin_g1_TC01S_01_0001_41",
+      "competencyGroup": "Biết",
+      "programLevel": "Mức 2",
+      "hasLevelCompetencyMismatch": false,
+      "anomalies": [
+        {
+          "type": "TOPIC_CODE_REPEATED",
+          "column": "P (MÃ CHỦ ĐỀ)",
+          "rawValue": "TC01S.01",
+          "resolvedValue": "TC01S.04",
+          "note": "Ô P44 đang lặp mã TC01S.01 cho Chủ đề 4. Em làm chủ đồng tiền; chuẩn hóa mã chủ đề thành TC01S.04 (top_fin_g1_4)."
+        },
+        {
+          "type": "LESSON_CODE_TOPIC_PREFIX",
+          "column": "Q (MÃ BÀI HỌC)",
+          "rawValue": "TC01S.01.0014",
+          "resolvedValue": "TC01S.04.0014",
+          "note": "Ô Q44 ghi TC01S.01.0014 (kế thừa mã chủ đề lặp TC01S.01); ánh xạ sang mã chuẩn TC01S.04.0014 (les_fin_g1_p14)."
+        },
+        {
+          "type": "CRITERION_CODE_STATIC_LESSON_SEGMENT",
+          "column": "F (Mã tiêu chuẩn)",
+          "rawValue": "TC01S.01.0001.41",
+          "resolvedValue": "les_fin_g1_p14 -> crit_fin_g1_TC01S_01_0001_41",
+          "note": "Mã tiêu chuẩn TC01S.01.0001.41 giữ cố định cụm .01.0001. của Bài 1 nhưng thuộc \"Kế hoạch chi tiêu đầu tiên\"; giữ nguyên mã hiển thị nguồn và liên kết bằng khóa nội bộ crit_fin_g1_TC01S_01_0001_41 -> les_fin_g1_p14."
+        }
+      ]
+    },
+    {
+      "excelRow": 45,
+      "criterionIndex": 42,
+      "rawTopicName": "Chủ đề 4. Em làm chủ đồng tiền",
+      "rawTopicCode": "TC01S.01",
+      "rawLessonName": "Kế hoạch chi tiêu đầu tiên",
+      "rawLessonCode": "TC01S.01.0014",
+      "rawCriterionCode": "TC01S.01.0001.42",
+      "rawLevel": "Mức 3",
+      "rawMarks": {
+        "hieu": "",
+        "biet": "",
+        "vanDung": "x"
+      },
+      "description": "Lập được kế hoạch đơn giản gồm khoản cần chi, khoản tiết kiệm và khoản chia sẻ trong phạm vi số tiền giả định.",
+      "normalizedTopicId": "top_fin_g1_4",
+      "normalizedTopicCode": "TC01S.04",
+      "normalizedTopicName": "Chủ đề 4. Em làm chủ đồng tiền",
+      "normalizedLessonId": "les_fin_g1_p14",
+      "normalizedLessonCode": "TC01S.04.0014",
+      "normalizedLessonName": "Kế hoạch chi tiêu đầu tiên",
+      "lessonIndex": 14,
+      "normalizedCriterionId": "crit_fin_g1_TC01S_01_0001_42",
+      "competencyGroup": "Vận dụng",
+      "programLevel": "Mức 3",
+      "hasLevelCompetencyMismatch": false,
+      "anomalies": [
+        {
+          "type": "TOPIC_CODE_REPEATED",
+          "column": "P (MÃ CHỦ ĐỀ)",
+          "rawValue": "TC01S.01",
+          "resolvedValue": "TC01S.04",
+          "note": "Ô P45 đang lặp mã TC01S.01 cho Chủ đề 4. Em làm chủ đồng tiền; chuẩn hóa mã chủ đề thành TC01S.04 (top_fin_g1_4)."
+        },
+        {
+          "type": "LESSON_CODE_TOPIC_PREFIX",
+          "column": "Q (MÃ BÀI HỌC)",
+          "rawValue": "TC01S.01.0014",
+          "resolvedValue": "TC01S.04.0014",
+          "note": "Ô Q45 ghi TC01S.01.0014 (kế thừa mã chủ đề lặp TC01S.01); ánh xạ sang mã chuẩn TC01S.04.0014 (les_fin_g1_p14)."
+        },
+        {
+          "type": "CRITERION_CODE_STATIC_LESSON_SEGMENT",
+          "column": "F (Mã tiêu chuẩn)",
+          "rawValue": "TC01S.01.0001.42",
+          "resolvedValue": "les_fin_g1_p14 -> crit_fin_g1_TC01S_01_0001_42",
+          "note": "Mã tiêu chuẩn TC01S.01.0001.42 giữ cố định cụm .01.0001. của Bài 1 nhưng thuộc \"Kế hoạch chi tiêu đầu tiên\"; giữ nguyên mã hiển thị nguồn và liên kết bằng khóa nội bộ crit_fin_g1_TC01S_01_0001_42 -> les_fin_g1_p14."
+        }
+      ]
+    },
+    {
+      "excelRow": 46,
+      "criterionIndex": 43,
+      "rawTopicName": "Chủ đề 4. Em làm chủ đồng tiền",
+      "rawTopicCode": "TC01S.01",
+      "rawLessonName": "Nhà quản lí tài chính nhí",
+      "rawLessonCode": "TC01S.01.0015",
+      "rawCriterionCode": "TC01S.01.0001.43",
+      "rawLevel": "Mức 2",
+      "rawMarks": {
+        "hieu": "",
+        "biet": "x",
+        "vanDung": ""
+      },
+      "description": "Vận dụng kiến thức để giải quyết tình huống tài chính đơn giản.",
+      "normalizedTopicId": "top_fin_g1_4",
+      "normalizedTopicCode": "TC01S.04",
+      "normalizedTopicName": "Chủ đề 4. Em làm chủ đồng tiền",
+      "normalizedLessonId": "les_fin_g1_p15",
+      "normalizedLessonCode": "TC01S.04.0015",
+      "normalizedLessonName": "Nhà quản lí tài chính nhí",
+      "lessonIndex": 15,
+      "normalizedCriterionId": "crit_fin_g1_TC01S_01_0001_43",
+      "competencyGroup": "Biết",
+      "programLevel": "Mức 2",
+      "hasLevelCompetencyMismatch": false,
+      "anomalies": [
+        {
+          "type": "TOPIC_CODE_REPEATED",
+          "column": "P (MÃ CHỦ ĐỀ)",
+          "rawValue": "TC01S.01",
+          "resolvedValue": "TC01S.04",
+          "note": "Ô P46 đang lặp mã TC01S.01 cho Chủ đề 4. Em làm chủ đồng tiền; chuẩn hóa mã chủ đề thành TC01S.04 (top_fin_g1_4)."
+        },
+        {
+          "type": "LESSON_CODE_TOPIC_PREFIX",
+          "column": "Q (MÃ BÀI HỌC)",
+          "rawValue": "TC01S.01.0015",
+          "resolvedValue": "TC01S.04.0015",
+          "note": "Ô Q46 ghi TC01S.01.0015 (kế thừa mã chủ đề lặp TC01S.01); ánh xạ sang mã chuẩn TC01S.04.0015 (les_fin_g1_p15)."
+        },
+        {
+          "type": "CRITERION_CODE_STATIC_LESSON_SEGMENT",
+          "column": "F (Mã tiêu chuẩn)",
+          "rawValue": "TC01S.01.0001.43",
+          "resolvedValue": "les_fin_g1_p15 -> crit_fin_g1_TC01S_01_0001_43",
+          "note": "Mã tiêu chuẩn TC01S.01.0001.43 giữ cố định cụm .01.0001. của Bài 1 nhưng thuộc \"Nhà quản lí tài chính nhí\"; giữ nguyên mã hiển thị nguồn và liên kết bằng khóa nội bộ crit_fin_g1_TC01S_01_0001_43 -> les_fin_g1_p15."
+        }
+      ]
+    },
+    {
+      "excelRow": 47,
+      "criterionIndex": 44,
+      "rawTopicName": "Chủ đề 4. Em làm chủ đồng tiền",
+      "rawTopicCode": "TC01S.01",
+      "rawLessonName": "Nhà quản lí tài chính nhí",
+      "rawLessonCode": "TC01S.01.0015",
+      "rawCriterionCode": "TC01S.01.0001.44",
+      "rawLevel": "Mức 2",
+      "rawMarks": {
+        "hieu": "",
+        "biet": "x",
+        "vanDung": ""
+      },
+      "description": "Biết trao đổi và bảo vệ ý kiến của mình.",
+      "normalizedTopicId": "top_fin_g1_4",
+      "normalizedTopicCode": "TC01S.04",
+      "normalizedTopicName": "Chủ đề 4. Em làm chủ đồng tiền",
+      "normalizedLessonId": "les_fin_g1_p15",
+      "normalizedLessonCode": "TC01S.04.0015",
+      "normalizedLessonName": "Nhà quản lí tài chính nhí",
+      "lessonIndex": 15,
+      "normalizedCriterionId": "crit_fin_g1_TC01S_01_0001_44",
+      "competencyGroup": "Biết",
+      "programLevel": "Mức 2",
+      "hasLevelCompetencyMismatch": false,
+      "anomalies": [
+        {
+          "type": "TOPIC_CODE_REPEATED",
+          "column": "P (MÃ CHỦ ĐỀ)",
+          "rawValue": "TC01S.01",
+          "resolvedValue": "TC01S.04",
+          "note": "Ô P47 đang lặp mã TC01S.01 cho Chủ đề 4. Em làm chủ đồng tiền; chuẩn hóa mã chủ đề thành TC01S.04 (top_fin_g1_4)."
+        },
+        {
+          "type": "LESSON_CODE_TOPIC_PREFIX",
+          "column": "Q (MÃ BÀI HỌC)",
+          "rawValue": "TC01S.01.0015",
+          "resolvedValue": "TC01S.04.0015",
+          "note": "Ô Q47 ghi TC01S.01.0015 (kế thừa mã chủ đề lặp TC01S.01); ánh xạ sang mã chuẩn TC01S.04.0015 (les_fin_g1_p15)."
+        },
+        {
+          "type": "CRITERION_CODE_STATIC_LESSON_SEGMENT",
+          "column": "F (Mã tiêu chuẩn)",
+          "rawValue": "TC01S.01.0001.44",
+          "resolvedValue": "les_fin_g1_p15 -> crit_fin_g1_TC01S_01_0001_44",
+          "note": "Mã tiêu chuẩn TC01S.01.0001.44 giữ cố định cụm .01.0001. của Bài 1 nhưng thuộc \"Nhà quản lí tài chính nhí\"; giữ nguyên mã hiển thị nguồn và liên kết bằng khóa nội bộ crit_fin_g1_TC01S_01_0001_44 -> les_fin_g1_p15."
+        }
+      ]
+    },
+    {
+      "excelRow": 48,
+      "criterionIndex": 45,
+      "rawTopicName": "Chủ đề 4. Em làm chủ đồng tiền",
+      "rawTopicCode": "TC01S.01",
+      "rawLessonName": "Nhà quản lí tài chính nhí",
+      "rawLessonCode": "TC01S.01.0015",
+      "rawCriterionCode": "TC01S.01.0001.45",
+      "rawLevel": "Mức 3",
+      "rawMarks": {
+        "hieu": "",
+        "biet": "",
+        "vanDung": "x"
+      },
+      "description": "Phát triển năng lực ra quyết định và giải quyết vấn đề.",
+      "normalizedTopicId": "top_fin_g1_4",
+      "normalizedTopicCode": "TC01S.04",
+      "normalizedTopicName": "Chủ đề 4. Em làm chủ đồng tiền",
+      "normalizedLessonId": "les_fin_g1_p15",
+      "normalizedLessonCode": "TC01S.04.0015",
+      "normalizedLessonName": "Nhà quản lí tài chính nhí",
+      "lessonIndex": 15,
+      "normalizedCriterionId": "crit_fin_g1_TC01S_01_0001_45",
+      "competencyGroup": "Vận dụng",
+      "programLevel": "Mức 3",
+      "hasLevelCompetencyMismatch": false,
+      "anomalies": [
+        {
+          "type": "TOPIC_CODE_REPEATED",
+          "column": "P (MÃ CHỦ ĐỀ)",
+          "rawValue": "TC01S.01",
+          "resolvedValue": "TC01S.04",
+          "note": "Ô P48 đang lặp mã TC01S.01 cho Chủ đề 4. Em làm chủ đồng tiền; chuẩn hóa mã chủ đề thành TC01S.04 (top_fin_g1_4)."
+        },
+        {
+          "type": "LESSON_CODE_TOPIC_PREFIX",
+          "column": "Q (MÃ BÀI HỌC)",
+          "rawValue": "TC01S.01.0015",
+          "resolvedValue": "TC01S.04.0015",
+          "note": "Ô Q48 ghi TC01S.01.0015 (kế thừa mã chủ đề lặp TC01S.01); ánh xạ sang mã chuẩn TC01S.04.0015 (les_fin_g1_p15)."
+        },
+        {
+          "type": "CRITERION_CODE_STATIC_LESSON_SEGMENT",
+          "column": "F (Mã tiêu chuẩn)",
+          "rawValue": "TC01S.01.0001.45",
+          "resolvedValue": "les_fin_g1_p15 -> crit_fin_g1_TC01S_01_0001_45",
+          "note": "Mã tiêu chuẩn TC01S.01.0001.45 giữ cố định cụm .01.0001. của Bài 1 nhưng thuộc \"Nhà quản lí tài chính nhí\"; giữ nguyên mã hiển thị nguồn và liên kết bằng khóa nội bộ crit_fin_g1_TC01S_01_0001_45 -> les_fin_g1_p15."
+        }
+      ]
+    },
+    {
+      "excelRow": 49,
+      "criterionIndex": 46,
+      "rawTopicName": "Chủ đề 4. Em làm chủ đồng tiền",
+      "rawTopicCode": "#REF!",
+      "rawLessonName": "Nhà quản lí tài chính nhí",
+      "rawLessonCode": "#REF!",
+      "rawCriterionCode": "TC01S.01.0001.46",
+      "rawLevel": "Mức 3",
+      "rawMarks": {
+        "hieu": "",
+        "biet": "",
+        "vanDung": "x"
+      },
+      "description": "Trình bày được kế hoạch sử dụng tiền đơn giản và tự nhận xét một điểm làm tốt, một điểm cần cải thiện.",
+      "normalizedTopicId": "top_fin_g1_4",
+      "normalizedTopicCode": "TC01S.04",
+      "normalizedTopicName": "Chủ đề 4. Em làm chủ đồng tiền",
+      "normalizedLessonId": "les_fin_g1_p15",
+      "normalizedLessonCode": "TC01S.04.0015",
+      "normalizedLessonName": "Nhà quản lí tài chính nhí",
+      "lessonIndex": 15,
+      "normalizedCriterionId": "crit_fin_g1_TC01S_01_0001_46",
+      "competencyGroup": "Vận dụng",
+      "programLevel": "Mức 3",
+      "hasLevelCompetencyMismatch": false,
+      "anomalies": [
+        {
+          "type": "TOPIC_CODE_FORMULA_ERROR",
+          "column": "P (MÃ CHỦ ĐỀ)",
+          "rawValue": "#REF!",
+          "resolvedValue": "TC01S.04",
+          "note": "Ô P49 bị lỗi công thức #REF!; khôi phục theo nhóm chủ đề phía trên thành TC01S.04 (top_fin_g1_4)."
+        },
+        {
+          "type": "LESSON_CODE_FORMULA_ERROR",
+          "column": "Q (MÃ BÀI HỌC)",
+          "rawValue": "#REF!",
+          "resolvedValue": "TC01S.04.0015",
+          "note": "Ô Q49 bị lỗi công thức #REF!; khôi phục theo bài học \"Nhà quản lí tài chính nhí\" thành TC01S.04.0015 (les_fin_g1_p15)."
+        },
+        {
+          "type": "CRITERION_CODE_STATIC_LESSON_SEGMENT",
+          "column": "F (Mã tiêu chuẩn)",
+          "rawValue": "TC01S.01.0001.46",
+          "resolvedValue": "les_fin_g1_p15 -> crit_fin_g1_TC01S_01_0001_46",
+          "note": "Mã tiêu chuẩn TC01S.01.0001.46 giữ cố định cụm .01.0001. của Bài 1 nhưng thuộc \"Nhà quản lí tài chính nhí\"; giữ nguyên mã hiển thị nguồn và liên kết bằng khóa nội bộ crit_fin_g1_TC01S_01_0001_46 -> les_fin_g1_p15."
+        }
+      ]
+    }
+  ]
+}

@@ -237,7 +237,7 @@ export function RecipientInboxView({ portalRole }: RecipientInboxViewProps) {
     switch (category) {
       case "EXAM":
         return (
-          <div className="w-10 h-10 rounded-2xl bg-purple-100 text-[#6D28D9] border border-purple-200 flex items-center justify-center shrink-0">
+          <div className="w-10 h-10 rounded-2xl bg-teal-50 text-[#6D28D9] border border-teal-200 flex items-center justify-center shrink-0">
             <Calendar className="w-5 h-5" />
           </div>
         );
@@ -249,7 +249,7 @@ export function RecipientInboxView({ portalRole }: RecipientInboxViewProps) {
         );
       case "ACADEMIC_RESULT":
         return (
-          <div className="w-10 h-10 rounded-2xl bg-indigo-100 text-indigo-700 border border-indigo-200 flex items-center justify-center shrink-0">
+          <div className="w-10 h-10 rounded-2xl bg-teal-50 text-teal-800 border border-teal-200 flex items-center justify-center shrink-0">
             <Award className="w-5 h-5" />
           </div>
         );
@@ -265,15 +265,15 @@ export function RecipientInboxView({ portalRole }: RecipientInboxViewProps) {
   return (
     <div className="max-w-6xl mx-auto space-y-5 pb-16 font-sans">
       {/* 1. SKY-LINE PURPLE & TEAL BRANDED HEADER */}
-      <div className="bg-gradient-to-r from-[#4C1D95] via-[#5B2D8B] to-[#003B3A] rounded-3xl p-5 sm:p-6 text-white shadow-lg">
+      <div className="bg-gradient-to-r from-[#4C1D95] via-[#003B3A] to-[#003B3A] rounded-3xl p-5 sm:p-6 text-white shadow-lg">
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
           <div className="flex items-center gap-3.5">
             <div className="w-12 h-12 rounded-2xl bg-white/15 border border-white/25 flex items-center justify-center shrink-0 shadow-inner">
-              <Bell className="w-6 h-6 text-purple-200" />
+              <Bell className="w-6 h-6 text-teal-700" />
             </div>
             <div>
               <div className="flex items-center gap-2 flex-wrap">
-                <span className="text-[10px] font-black uppercase tracking-widest px-2.5 py-0.5 rounded-full bg-white/15 text-purple-100 border border-white/20">
+                <span className="text-[10px] font-black uppercase tracking-widest px-2.5 py-0.5 rounded-full bg-white/15 text-teal-700 border border-white/20">
                   SKY-LINE SSM
                 </span>
                 {unreadCount > 0 && (
@@ -285,7 +285,7 @@ export function RecipientInboxView({ portalRole }: RecipientInboxViewProps) {
               <h1 className="text-lg sm:text-xl font-black tracking-tight mt-1">
                 Thông báo &amp; Liên lạc Nhà trường
               </h1>
-              <p className="text-xs text-purple-100/90 font-medium mt-0.5">
+              <p className="text-xs text-teal-700/90 font-medium mt-0.5">
                 Cập nhật lịch kiểm tra định kỳ, hướng dẫn ôn tập, kết quả học tập và thông tin từ Giáo viên
               </p>
             </div>
@@ -304,7 +304,7 @@ export function RecipientInboxView({ portalRole }: RecipientInboxViewProps) {
         {/* Multi-Child Selector for Parents with multiple children */}
         {portalRole === "PARENT" && childrenList.length > 0 && (
           <div className="mt-4 pt-4 border-t border-white/15 flex items-center gap-2 flex-wrap">
-            <span className="text-xs font-bold text-purple-200 flex items-center gap-1.5 mr-1">
+            <span className="text-xs font-bold text-teal-700 flex items-center gap-1.5 mr-1">
               <UserCheck className="w-4 h-4" />
               <span>Học sinh:</span>
             </span>
@@ -389,15 +389,15 @@ export function RecipientInboxView({ portalRole }: RecipientInboxViewProps) {
                 }}
                 className={`px-3.5 py-2 rounded-xl text-xs font-extrabold whitespace-nowrap transition cursor-pointer flex items-center gap-1.5 ${
                   active
-                    ? "bg-[#5B2D8B] text-white shadow-xs"
-                    : "bg-slate-100 text-slate-600 hover:bg-purple-50 hover:text-[#5B2D8B]"
+                    ? "bg-[#003B3A] text-white shadow-xs"
+                    : "bg-slate-100 text-slate-600 hover:bg-teal-50 hover:text-[#003B3A]"
                 }`}
               >
                 <span>{t.label}</span>
                 {t.key === "UNREAD" && unreadCount > 0 && (
                   <span
                     className={`px-1.5 py-0.2 rounded-full text-[10px] font-black ${
-                      active ? "bg-white text-[#5B2D8B]" : "bg-rose-500 text-white"
+                      active ? "bg-white text-[#003B3A]" : "bg-rose-500 text-white"
                     }`}
                   >
                     {unreadCount}
@@ -452,7 +452,7 @@ export function RecipientInboxView({ portalRole }: RecipientInboxViewProps) {
             </div>
           ) : items.length === 0 ? (
             <div className="bg-white border border-slate-200 rounded-3xl p-10 text-center space-y-2.5">
-              <div className="w-14 h-14 rounded-2xl bg-purple-50 text-[#6D28D9] flex items-center justify-center mx-auto">
+              <div className="w-14 h-14 rounded-2xl bg-teal-50 text-[#6D28D9] flex items-center justify-center mx-auto">
                 <Bell className="w-7 h-7 opacity-75" />
               </div>
               <h3 className="text-sm font-black text-slate-800">Chưa có thông báo nào</h3>
@@ -471,9 +471,9 @@ export function RecipientInboxView({ portalRole }: RecipientInboxViewProps) {
                   onClick={() => openNotificationDetail(item)}
                   className={`rounded-2xl border p-4 transition-all cursor-pointer flex items-start gap-3.5 ${
                     isSelected
-                      ? "bg-purple-50/70 border-[#6D28D9] shadow-sm ring-1 ring-[#6D28D9]/30"
+                      ? "bg-teal-50/70 border-[#6D28D9] shadow-sm ring-1 ring-[#6D28D9]/30"
                       : !item.isRead
-                      ? "bg-white border-purple-200 shadow-xs hover:border-[#6D28D9]/60"
+                      ? "bg-white border-teal-200 shadow-xs hover:border-[#6D28D9]/60"
                       : "bg-white/80 border-slate-200/80 hover:bg-white hover:border-slate-300"
                   }`}
                 >
@@ -485,7 +485,7 @@ export function RecipientInboxView({ portalRole }: RecipientInboxViewProps) {
                         {!item.isRead && (
                           <span className="w-2.5 h-2.5 rounded-full bg-[#6D28D9] shrink-0" />
                         )}
-                        <span className="text-[10px] font-extrabold uppercase px-2 py-0.5 rounded-md bg-purple-100/80 text-[#5B2D8B]">
+                        <span className="text-[10px] font-extrabold uppercase px-2 py-0.5 rounded-md bg-teal-100/80 text-[#003B3A]">
                           {item.senderUnit || "Nhà trường"}
                         </span>
                         {item.studentName && (
@@ -603,10 +603,10 @@ export function RecipientInboxView({ portalRole }: RecipientInboxViewProps) {
           <div className="lg:col-span-7">
             <div className="bg-white rounded-3xl border border-slate-200 shadow-md overflow-hidden sticky top-20">
               {/* Detail Header */}
-              <div className="bg-gradient-to-r from-[#5B2D8B] to-[#003B3A] p-5 text-white flex items-start justify-between gap-3">
+              <div className="bg-gradient-to-r from-[#003B3A] to-[#003B3A] p-5 text-white flex items-start justify-between gap-3">
                 <div className="space-y-1">
                   <div className="flex items-center gap-2 flex-wrap">
-                    <span className="text-[10px] font-black uppercase px-2.5 py-0.5 rounded-full bg-white/15 text-purple-100">
+                    <span className="text-[10px] font-black uppercase px-2.5 py-0.5 rounded-full bg-white/15 text-teal-700">
                       {selectedItem.code} • {selectedItem.senderUnit}
                     </span>
                     {selectedItem.studentName && (
@@ -618,7 +618,7 @@ export function RecipientInboxView({ portalRole }: RecipientInboxViewProps) {
                   <h2 className="text-base sm:text-lg font-black leading-snug">
                     {selectedItem.title}
                   </h2>
-                  <p className="text-[11px] text-purple-100/80 font-medium">
+                  <p className="text-[11px] text-teal-700/80 font-medium">
                     Người gửi: {selectedItem.senderName} • Phát hành:{" "}
                     {selectedItem.publishedAt
                       ? new Date(selectedItem.publishedAt).toLocaleString("vi-VN")
@@ -639,32 +639,32 @@ export function RecipientInboxView({ portalRole }: RecipientInboxViewProps) {
               <div className="p-5 sm:p-6 space-y-5 max-h-[75vh] overflow-y-auto">
                 {/* Linked Exam Schedule Card */}
                 {selectedItem.examScheduleMeta && (
-                  <div className="rounded-2xl bg-purple-50/90 border border-purple-200 p-4 space-y-2.5">
+                  <div className="rounded-2xl bg-teal-50/90 border border-teal-200 p-4 space-y-2.5">
                     <div className="flex items-center justify-between gap-2 flex-wrap">
-                      <div className="flex items-center gap-2 text-[#5B2D8B] font-black text-xs uppercase">
+                      <div className="flex items-center gap-2 text-[#003B3A] font-black text-xs uppercase">
                         <Calendar className="w-4 h-4" />
                         <span>Thông tin Lịch kiểm tra liên kết</span>
                       </div>
-                      <span className="text-[10px] font-extrabold px-2.5 py-0.5 rounded-full bg-[#5B2D8B] text-white">
+                      <span className="text-[10px] font-extrabold px-2.5 py-0.5 rounded-full bg-[#003B3A] text-white">
                         {selectedItem.examScheduleMeta.examFormatLabel}
                       </span>
                     </div>
 
                     <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5 text-xs">
-                      <div className="bg-white rounded-xl p-2.5 border border-purple-100">
+                      <div className="bg-white rounded-xl p-2.5 border border-teal-200">
                         <span className="text-slate-400 block text-[10px] font-bold">Kỳ kiểm tra</span>
                         <span className="font-extrabold text-slate-800">
                           {selectedItem.examScheduleMeta.periodName}
                         </span>
                       </div>
-                      <div className="bg-white rounded-xl p-2.5 border border-purple-100">
+                      <div className="bg-white rounded-xl p-2.5 border border-teal-200">
                         <span className="text-slate-400 block text-[10px] font-bold">Môn kiểm tra</span>
                         <span className="font-extrabold text-slate-800">
                           {selectedItem.examScheduleMeta.subjectName} (
                           {selectedItem.examScheduleMeta.durationMinutes} phút)
                         </span>
                       </div>
-                      <div className="bg-white rounded-xl p-2.5 border border-purple-100">
+                      <div className="bg-white rounded-xl p-2.5 border border-teal-200">
                         <span className="text-slate-400 block text-[10px] font-bold">Khung giờ &amp; Ngày thi</span>
                         <span className="font-extrabold text-slate-800">
                           {selectedItem.examScheduleMeta.startTime} -{" "}
@@ -676,7 +676,7 @@ export function RecipientInboxView({ portalRole }: RecipientInboxViewProps) {
                             : ""}
                         </span>
                       </div>
-                      <div className="bg-white rounded-xl p-2.5 border border-purple-100">
+                      <div className="bg-white rounded-xl p-2.5 border border-teal-200">
                         <span className="text-slate-400 block text-[10px] font-bold">Phòng kiểm tra</span>
                         <span className="font-extrabold text-slate-800">
                           {selectedItem.examScheduleMeta.roomName}
@@ -750,7 +750,7 @@ export function RecipientInboxView({ portalRole }: RecipientInboxViewProps) {
 
                 {/* Independent Acknowledge Section */}
                 {selectedItem.requireAcknowledge && (
-                  <div className="p-4 rounded-2xl bg-purple-50/70 border border-purple-200 space-y-3">
+                  <div className="p-4 rounded-2xl bg-teal-50/70 border border-teal-200 space-y-3">
                     <div className="flex items-center justify-between gap-2">
                       <div className="flex items-center gap-2">
                         <CheckCircle2
@@ -778,13 +778,13 @@ export function RecipientInboxView({ portalRole }: RecipientInboxViewProps) {
                           value={ackNote}
                           onChange={(e) => setAckNote(e.target.value)}
                           placeholder="Ghi chú xác nhận (tùy chọn)..."
-                          className="flex-1 px-3 py-2 rounded-xl border border-purple-200 bg-white text-xs font-semibold focus:outline-none focus:border-[#6D28D9]"
+                          className="flex-1 px-3 py-2 rounded-xl border border-teal-200 bg-white text-xs font-semibold focus:outline-none focus:border-[#6D28D9]"
                         />
                         <button
                           type="button"
                           disabled={submittingAction}
                           onClick={handleAcknowledge}
-                          className="px-4 py-2 rounded-xl bg-[#6D28D9] hover:bg-[#5B2D8B] text-white text-xs font-extrabold shadow-xs transition cursor-pointer disabled:opacity-50"
+                          className="px-4 py-2 rounded-xl bg-[#6D28D9] hover:bg-[#003B3A] text-white text-xs font-extrabold shadow-xs transition cursor-pointer disabled:opacity-50"
                         >
                           Xác nhận đã xem
                         </button>

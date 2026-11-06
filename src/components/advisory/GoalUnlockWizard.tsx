@@ -48,8 +48,8 @@ const CATEGORY_META: Record<string, { label: string; icon: any; color: string; b
   DINH_HUONG: {
     label: "Mục tiêu định hướng",
     icon: Compass,
-    color: "text-purple-700 bg-purple-50 border-purple-200",
-    badgeColor: "bg-purple-100 text-purple-800"
+    color: "text-teal-800 bg-teal-50 border-teal-200",
+    badgeColor: "bg-teal-50 text-teal-800"
   }
 }
 

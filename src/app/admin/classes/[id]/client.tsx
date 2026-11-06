@@ -547,9 +547,9 @@ export function AdminClassStudentsClient({ classId, initialStudents, activeSurve
       {showConvertModal && convertingStudent && (
         <div className="fixed inset-0 bg-black/60 backdrop-blur-xs z-[70] flex items-center justify-center p-4 animate-in fade-in duration-200">
           <div className="bg-white rounded-2xl shadow-2xl w-full max-w-lg overflow-hidden border border-slate-100 animate-in zoom-in-95 duration-200">
-            <div className="flex items-center justify-between p-5 border-b border-slate-100 bg-gradient-to-r from-slate-50 to-purple-50/40">
+            <div className="flex items-center justify-between p-5 border-b border-slate-100 bg-gradient-to-r from-slate-50 to-emerald-600/40">
               <div className="flex items-center gap-2.5">
-                <div className="w-9 h-9 rounded-xl bg-purple-100 text-purple-700 flex items-center justify-center shadow-xs">
+                <div className="w-9 h-9 rounded-xl bg-teal-50 text-teal-800 flex items-center justify-center shadow-xs">
                   <ArrowRightLeft className="w-5 h-5" />
                 </div>
                 <div>
@@ -573,7 +573,7 @@ export function AdminClassStudentsClient({ classId, initialStudents, activeSurve
                   <span className="text-xs text-slate-500 font-medium">Diện hiện tại:</span>
                   <span className={`text-[11px] font-extrabold px-2.5 py-0.5 rounded-full ${
                     convertingStudent.studentType === "GIAO_LUU"
-                      ? "bg-purple-100 text-purple-800 border border-purple-200"
+                      ? "bg-teal-50 text-teal-800 border border-teal-200"
                       : "bg-sky-100 text-sky-800 border border-sky-200"
                   }`}>
                     {convertingStudent.studentType === "GIAO_LUU" ? "Học sinh Giao lưu" : "Học sinh Chính khóa"}
@@ -584,7 +584,7 @@ export function AdminClassStudentsClient({ classId, initialStudents, activeSurve
                   <span className={`text-xs font-extrabold px-2.5 py-0.5 rounded-full ${
                     convertTargetType === "CHINH_KHOA"
                       ? "bg-emerald-100 text-emerald-800 border border-emerald-300 ring-2 ring-emerald-400/20"
-                      : "bg-purple-100 text-purple-800 border border-purple-300 ring-2 ring-purple-400/20"
+                      : "bg-teal-50 text-teal-800 border border-teal-400 ring-2 ring-purple-400/20"
                   }`}>
                     ➔ {convertTargetType === "CHINH_KHOA" ? "Học sinh Chính khóa" : "Học sinh Giao lưu"}
                   </span>
@@ -614,7 +614,7 @@ export function AdminClassStudentsClient({ classId, initialStudents, activeSurve
                     onClick={() => setConvertTargetType("GIAO_LUU")}
                     className={`p-3 rounded-xl border text-left transition-all ${
                       convertTargetType === "GIAO_LUU"
-                        ? "border-purple-500 bg-purple-50/50 text-purple-900 ring-2 ring-purple-500/20 font-bold"
+                        ? "border-teal-400 bg-teal-50/50 text-teal-800 ring-2 ring-purple-500/20 font-bold"
                         : "border-slate-200 hover:bg-slate-50 text-slate-600 font-medium"
                     }`}
                   >
@@ -635,7 +635,7 @@ export function AdminClassStudentsClient({ classId, initialStudents, activeSurve
                   value={convertReason}
                   onChange={e => setConvertReason(e.target.value)}
                   placeholder="Ví dụ: Theo quyết định số 45/QĐ-BGH; Đã hoàn thành chương trình bồi dưỡng tiếng Việt; Đạt cam kết học tập chính thức..."
-                  className="w-full border border-slate-200 rounded-xl p-3 text-xs outline-none focus:ring-2 focus:ring-purple-500/20 focus:border-purple-500 font-medium"
+                  className="w-full border border-slate-200 rounded-xl p-3 text-xs outline-none focus:ring-2 focus:ring-purple-500/20 focus:border-teal-400 font-medium"
                 />
               </div>
 
@@ -646,7 +646,7 @@ export function AdminClassStudentsClient({ classId, initialStudents, activeSurve
                   id="convertSyncSurvey"
                   checked={convertSyncSurvey}
                   onChange={e => setConvertSyncSurvey(e.target.checked)}
-                  className="w-4 h-4 rounded text-purple-600 mt-0.5 cursor-pointer"
+                  className="w-4 h-4 rounded text-teal-800 mt-0.5 cursor-pointer"
                 />
                 <label htmlFor="convertSyncSurvey" className="text-xs text-amber-900 cursor-pointer select-none">
                   <span className="font-bold">Đồng bộ cập nhật hồ sơ khảo sát đầu vào:</span> Tự động ghi nhận chuyển đổi kết quả tuyển sinh sang <span className="font-bold">{convertTargetType === "CHINH_KHOA" ? "Đạt (Chính khóa)" : "Đạt - Giao lưu"}</span> và lưu nhật ký duyệt vào hệ thống.
@@ -667,7 +667,7 @@ export function AdminClassStudentsClient({ classId, initialStudents, activeSurve
                   type="button"
                   onClick={handleConvertStudentType}
                   disabled={convertingLoading || !convertReason.trim()}
-                  className="flex-[2] py-2.5 px-4 rounded-xl bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-700 hover:to-indigo-700 text-white text-xs font-bold shadow-md shadow-purple-500/20 disabled:opacity-50 transition-all cursor-pointer"
+                  className="flex-[2] py-2.5 px-4 rounded-xl bg-gradient-to-r from-teal-600 to-emerald-600 hover:from-teal-600 hover:to-emerald-600 text-white text-xs font-bold shadow-md shadow-purple-500/20 disabled:opacity-50 transition-all cursor-pointer"
                 >
                   {convertingLoading ? "Đang xử lý..." : "Xác nhận chuyển đổi"}
                 </button>
@@ -724,7 +724,7 @@ export function AdminClassStudentsClient({ classId, initialStudents, activeSurve
                </div>
                <div className="pt-4 flex gap-3">
                  <button type="button" onClick={() => setShowAddModal(false)} className="flex-1 bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold py-2.5 rounded-xl transition-all">Hủy</button>
-                 <button type="submit" disabled={submitting} className="flex-1 bg-indigo-600 hover:bg-indigo-700 text-white font-bold py-2.5 rounded-xl transition-all shadow-lg shadow-indigo-200 disabled:opacity-50 text-xs">{submitting ? "Đang xử lý..." : "Lưu Lại"}</button>
+                 <button type="submit" disabled={submitting} className="flex-1 bg-[#003B3A] hover:bg-[#003B3A] text-white font-bold py-2.5 rounded-xl transition-all shadow-lg shadow-indigo-200 disabled:opacity-50 text-xs">{submitting ? "Đang xử lý..." : "Lưu Lại"}</button>
                </div>
             </form>
           </div>
@@ -771,21 +771,21 @@ export function AdminClassStudentsClient({ classId, initialStudents, activeSurve
             <RefreshCw className={`w-4 h-4 mr-1.5 ${syncingSurveys ? "animate-spin" : ""}`} />
             {syncingSurveys ? "Đang đồng bộ..." : "Đồng bộ DS Khảo sát"}
           </button>
-          <button onClick={openAdd} className="flex items-center bg-indigo-600 hover:bg-indigo-700 text-white font-semibold py-2 px-3.5 rounded-md transition-colors shadow-sm text-xs">
+          <button onClick={openAdd} className="flex items-center bg-[#003B3A] hover:bg-[#003B3A] text-white font-semibold py-2 px-3.5 rounded-md transition-colors shadow-sm text-xs">
             <Plus className="w-4 h-4 mr-1.5" /> Thêm Học Sinh
           </button>
           <button 
             onClick={handleExportVnEduTemplate} 
-            className="flex items-center bg-indigo-50 hover:bg-indigo-100 text-indigo-700 font-semibold py-2 px-3 rounded-md transition-colors border border-indigo-200 text-xs" 
+            className="flex items-center bg-teal-50 hover:bg-teal-50 text-teal-800 font-semibold py-2 px-3 rounded-md transition-colors border border-teal-200 text-xs" 
             title="Xuất file Excel gồm STT, Mã HS, Họ Tên, Mã VNEdu để điền hoặc lưu trữ"
           >
-            <FileSpreadsheet className="w-4 h-4 mr-1.5 text-indigo-600" /> Xuất Mẫu Ánh Xạ VNEdu
+            <FileSpreadsheet className="w-4 h-4 mr-1.5 text-teal-800" /> Xuất Mẫu Ánh Xạ VNEdu
           </button>
           <input type="file" ref={fileInputMappingRef} onChange={handleFileMappingUpload} accept=".xlsx, .xls, .csv" className="hidden" />
           <button 
             onClick={() => fileInputMappingRef.current?.click()} 
             disabled={uploadingMapping} 
-            className="flex items-center bg-purple-600 hover:bg-purple-700 text-white font-semibold py-2 px-3 rounded-md transition-colors shadow-sm disabled:opacity-50 text-xs"
+            className="flex items-center bg-[#003B3A] hover:bg-[#003B3A] text-white font-semibold py-2 px-3 rounded-md transition-colors shadow-sm disabled:opacity-50 text-xs"
             title="Nhập file Excel chứa STT, Mã HS, Mã VNEdu để cập nhật ánh xạ hàng loạt cho lớp"
           >
             <Upload className="w-4 h-4 mr-1.5" /> {uploadingMapping ? "Đang import..." : "Import Ánh Xạ VNEdu"}
@@ -842,7 +842,7 @@ export function AdminClassStudentsClient({ classId, initialStudents, activeSurve
                   key={student.id} 
                   className={`border-b border-l border-r border-slate-200 transition-colors ${
                     selectedIds.includes(student.id) 
-                      ? "bg-indigo-50/70" 
+                      ? "bg-teal-50/70" 
                       : isSurvey 
                         ? "bg-emerald-50/70 hover:bg-emerald-100/70 font-medium" 
                         : "hover:bg-slate-50"
@@ -867,7 +867,7 @@ export function AdminClassStudentsClient({ classId, initialStudents, activeSurve
                           placeholder="Nhập mã vnEdu..."
                           autoFocus
                           disabled={savingVnEdu}
-                          className="w-32 px-2 py-1 text-xs border-2 border-indigo-400 rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-500 font-mono shadow-sm bg-white"
+                          className="w-32 px-2 py-1 text-xs border-2 border-teal-200 rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-500 font-mono shadow-sm bg-white"
                         />
                         <button 
                           onClick={() => handleSaveQuickVnEdu(student)}
@@ -896,7 +896,7 @@ export function AdminClassStudentsClient({ classId, initialStudents, activeSurve
                             setEditingVnEduId(student.id);
                             setTempVnEduValue(student.vnEduCode || "");
                           }}
-                          className="opacity-0 group-hover:opacity-100 p-1 text-slate-400 hover:text-indigo-600 hover:bg-indigo-50 rounded transition-all cursor-pointer"
+                          className="opacity-0 group-hover:opacity-100 p-1 text-slate-400 hover:text-teal-800 hover:bg-teal-50 rounded transition-all cursor-pointer"
                           title="Sửa nhanh Mã VNEdu"
                         >
                           <Edit2 className="w-3 h-3" />
@@ -938,8 +938,8 @@ export function AdminClassStudentsClient({ classId, initialStudents, activeSurve
                   <td className="px-6 py-4 border-r border-slate-200 text-center">
                     {student.studentType === "GIAO_LUU" ? (
                       <div className="inline-flex flex-col items-center gap-0.5">
-                        <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[10px] font-black bg-purple-100 text-purple-800 border border-purple-300 shadow-2xs">
-                          <Sparkles className="w-3 h-3 text-purple-600" />
+                        <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[10px] font-black bg-teal-50 text-teal-800 border border-teal-400 shadow-2xs">
+                          <Sparkles className="w-3 h-3 text-teal-800" />
                           GIAO LƯU
                         </span>
                         {student.studentTypeNote && (
@@ -981,7 +981,7 @@ export function AdminClassStudentsClient({ classId, initialStudents, activeSurve
                         {student.studentType === "GIAO_LUU" ? (
                           <button
                             onClick={() => openConvertModal(student, "CHINH_KHOA")}
-                            className="p-1.5 px-2 text-purple-700 hover:text-white bg-purple-50 hover:bg-purple-600 border border-purple-200 rounded-lg transition-all text-xs font-bold flex items-center gap-1 shadow-2xs"
+                            className="p-1.5 px-2 text-teal-800 hover:text-white bg-teal-50 hover:bg-[#003B3A] border border-teal-200 rounded-lg transition-all text-xs font-bold flex items-center gap-1 shadow-2xs"
                             title="Chuyển học sinh sang diện Chính khóa"
                           >
                             <ArrowRightLeft className="w-3.5 h-3.5" />
@@ -990,7 +990,7 @@ export function AdminClassStudentsClient({ classId, initialStudents, activeSurve
                         ) : (
                           <button
                             onClick={() => openConvertModal(student, "GIAO_LUU")}
-                            className="p-2 text-slate-400 hover:text-purple-600 hover:bg-purple-50 rounded-lg transition-colors text-xs"
+                            className="p-2 text-slate-400 hover:text-teal-800 hover:bg-teal-50 rounded-lg transition-colors text-xs"
                             title="Chuyển học sinh sang diện Giao lưu"
                           >
                             <ArrowRightLeft className="w-4 h-4" />
@@ -999,7 +999,7 @@ export function AdminClassStudentsClient({ classId, initialStudents, activeSurve
                         <button onClick={() => { setAssigningStudent(student); setSelectedSurveyId(""); setShowAssignModal(true); }} className="p-2 text-emerald-600 hover:bg-emerald-50 rounded-lg transition-colors text-xs" title="Gán khảo sát">
                           <Send className="w-4 h-4" />
                         </button>
-                        <button onClick={() => openEdit(student)} className="p-2 text-indigo-600 hover:bg-indigo-50 rounded-lg transition-colors text-xs" title="Sửa">
+                        <button onClick={() => openEdit(student)} className="p-2 text-teal-800 hover:bg-teal-50 rounded-lg transition-colors text-xs" title="Sửa">
                           <Edit2 className="w-4 h-4" />
                         </button>
                         <button onClick={() => handleDeleteOne(student.id)} className="p-2 text-red-500 hover:bg-red-50 rounded-lg transition-colors text-xs" title="Xóa">

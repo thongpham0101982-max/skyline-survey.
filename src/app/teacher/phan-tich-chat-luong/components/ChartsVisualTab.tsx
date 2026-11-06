@@ -83,9 +83,9 @@ export function ChartsVisualTab({
     "#10B981",
     "#F59E0B",
     "#EC4899",
-    "#8B5CF6",
+    "#2DD4BF",
     "#14B8A6",
-    "#F97316",
+    "#D97706",
     "#64748B"
   ]
 
@@ -144,7 +144,7 @@ export function ChartsVisualTab({
         <div className="bg-white rounded-2xl border border-slate-200/80 shadow-xs p-5">
           <div className="flex items-center justify-between mb-4">
             <div className="flex items-center gap-2">
-              <div className="p-2 rounded-xl bg-purple-50 text-[#6930C3]">
+              <div className="p-2 rounded-xl bg-teal-50 text-[#6930C3]">
                 <Layers className="w-4 h-4" />
               </div>
               <div>

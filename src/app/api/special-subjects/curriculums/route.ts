@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/db";
 import { getAdminSession } from "@/lib/session";
+import tc01sMapping from "@/lib/special-subjects/tc01s-mapping.json";
 
 export async function GET(req: NextRequest) {
   try {
@@ -67,7 +68,7 @@ export async function GET(req: NextRequest) {
       }
     });
 
-    return NextResponse.json({ curriculums });
+    return NextResponse.json({ curriculums, tc01sMapping });
   } catch (error: any) {
     console.error("[SpecialCurriculum GET Error]:", error);
     return NextResponse.json({ error: error.message || "Lỗi máy chủ" }, { status: 500 });

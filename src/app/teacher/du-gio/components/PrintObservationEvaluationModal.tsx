@@ -269,7 +269,7 @@ const ESL_SECTIONS = [
 ];
 
 const ESL_RATING_LABELS: Record<string, { label: string; short: string; badge: string }> = {
-  "4": { label: "4 - Strong Practice", short: "4", badge: "bg-purple-100 text-purple-900 border-purple-300" },
+  "4": { label: "4 - Strong Practice", short: "4", badge: "bg-teal-50 text-teal-800 border-teal-400" },
   "3": { label: "3 - Effective", short: "3", badge: "bg-emerald-100 text-emerald-900 border-emerald-300" },
   "2": { label: "2 - Developing", short: "2", badge: "bg-amber-100 text-amber-900 border-amber-300" },
   "1": { label: "1 - Need support", short: "1", badge: "bg-rose-100 text-rose-900 border-rose-300" },
@@ -1019,7 +1019,7 @@ export function PrintObservationEvaluationModal({ slot, registration, onClose }:
                 <div className="mt-2 text-[10px] text-slate-600 bg-slate-50 p-2.5 rounded border border-slate-200 font-sans">
                   <p className="font-bold text-slate-800 mb-1">(*) Thang đánh giá Khung ESL Walkthrough (Sky-Line / Official SY2026-2027 Standards):</p>
                   <div className="grid grid-cols-2 sm:grid-cols-5 gap-1.5 text-center">
-                    <span className="bg-purple-50 text-purple-900 p-1 rounded border border-purple-200 font-bold">4: Strong Practice</span>
+                    <span className="bg-teal-50 text-teal-800 p-1 rounded border border-teal-200 font-bold">4: Strong Practice</span>
                     <span className="bg-emerald-50 text-emerald-900 p-1 rounded border border-emerald-200 font-bold">3: Effective</span>
                     <span className="bg-amber-50 text-amber-900 p-1 rounded border border-amber-200 font-bold">2: Developing</span>
                     <span className="bg-rose-50 text-rose-900 p-1 rounded border border-rose-200 font-bold">1: Need support</span>
@@ -1033,24 +1033,24 @@ export function PrintObservationEvaluationModal({ slot, registration, onClose }:
             {categoryType === "GVNN_ESL" ? (
               <div className="space-y-4 mb-8 font-sans text-xs">
                 {/* Section F: Teacher Voice & Curriculum Feedback */}
-                <div className="p-3.5 rounded-xl border border-indigo-200 bg-indigo-50/20 space-y-2">
-                  <h4 className="font-black text-indigo-950 uppercase text-[11px] border-b border-indigo-100 pb-1">
+                <div className="p-3.5 rounded-xl border border-teal-200 bg-teal-50/20 space-y-2">
+                  <h4 className="font-black text-teal-800 uppercase text-[11px] border-b border-teal-200 pb-1">
                     Section F: Teacher Voice & Curriculum Feedback (Post-Lesson Discussion)
                   </h4>
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5 text-[11px]">
-                    <div className="p-2 bg-white rounded border border-indigo-100">
+                    <div className="p-2 bg-white rounded border border-teal-200">
                       <strong className="text-slate-800 block mb-0.5">1. Did the lesson go as planned? What went well?</strong>
                       <p className="text-slate-700 italic whitespace-pre-wrap">{parsedGeneral?.teacherVoice?.reflectionQ1 || parsedGeneral?.teacherVoice?.workingWell || "—"}</p>
                     </div>
-                    <div className="p-2 bg-white rounded border border-indigo-100">
+                    <div className="p-2 bg-white rounded border border-teal-200">
                       <strong className="text-slate-800 block mb-0.5">2. What challenges did you or the students face?</strong>
                       <p className="text-slate-700 italic whitespace-pre-wrap">{parsedGeneral?.teacherVoice?.reflectionQ2 || parsedGeneral?.teacherVoice?.challenges || "—"}</p>
                     </div>
-                    <div className="p-2 bg-white rounded border border-indigo-100">
+                    <div className="p-2 bg-white rounded border border-teal-200">
                       <strong className="text-slate-800 block mb-0.5">3. Is the curriculum pacing realistic for your students?</strong>
                       <p className="text-slate-700 italic whitespace-pre-wrap">{parsedGeneral?.teacherVoice?.reflectionQ3 || parsedGeneral?.teacherVoice?.curriculumAdjustments || "—"}</p>
                     </div>
-                    <div className="p-2 bg-white rounded border border-indigo-100">
+                    <div className="p-2 bg-white rounded border border-teal-200">
                       <strong className="text-slate-800 block mb-0.5">4. What additional support or resources do you need?</strong>
                       <p className="text-slate-700 italic whitespace-pre-wrap">{parsedGeneral?.teacherVoice?.reflectionQ4 || parsedGeneral?.teacherVoice?.supportNeeded || "—"}</p>
                     </div>
@@ -1080,8 +1080,8 @@ export function PrintObservationEvaluationModal({ slot, registration, onClose }:
                     </p>
                   </div>
 
-                  <div className="p-3 rounded-xl border border-indigo-300 bg-indigo-50/20">
-                    <h5 className="font-bold text-indigo-950 uppercase text-[10.5px] mb-0.5">
+                  <div className="p-3 rounded-xl border border-teal-200 bg-teal-50/20">
+                    <h5 className="font-bold text-teal-800 uppercase text-[10.5px] mb-0.5">
                       Agreed follow-up actions (Kế hoạch hành động thống nhất):
                     </h5>
                     <p className="text-slate-800 italic whitespace-pre-wrap">

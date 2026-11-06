@@ -63,11 +63,11 @@ interface Props {
 // ========= CONSTANTS =========
 const CATEGORY_TYPES = [
   { code: "DOI_TUONG_TS",  label: "Đối tượng Tuyển sinh", color: "from-pink-500 to-rose-500" },
-  { code: "DIEN_KS",       label: "Diện Khảo sát",      color: "from-violet-500 to-indigo-500" },
+  { code: "DIEN_KS",       label: "Diện Khảo sát",      color: "from-teal-600 to-emerald-600" },
   { code: "HINH_THUC_KS",  label: "Hình thức KS",        color: "from-blue-500 to-cyan-500" },
   { code: "HS_HT_HOC_SINH", label: "Hồ sơ/Bảng điểm",   color: "from-emerald-500 to-teal-500" },
-  { code: "HOC_KY",        label: "Học kỳ / Năm TS",     color: "from-amber-500 to-orange-500" },
-  { code: "KY_KS",          label: "Kỳ Khảo sát",         color: "from-orange-500 to-red-500" },
+  { code: "HOC_KY",        label: "Học kỳ / Năm TS",     color: "from-amber-500 to-amber-600" },
+  { code: "KY_KS",          label: "Kỳ Khảo sát",         color: "from-amber-500 to-red-500" },
   { code: "KQ_HOC_TAP",    label: "Kết quả Học tập",     color: "from-sky-500 to-blue-500" },
   { code: "KQ_REN_LUYEN",  label: "Kết quả Rèn luyện",   color: "from-green-500 to-emerald-500" },
 ]
@@ -149,7 +149,7 @@ function Toast({ msg, type }: { msg:string; type:"ok"|"err" }) {
   )
 }
 
-function Spin() { return <div className="flex justify-center py-20"><Loader2 className="w-10 h-10 text-indigo-500 animate-spin opacity-50"/></div> }
+function Spin() { return <div className="flex justify-center py-20"><Loader2 className="w-10 h-10 text-teal-700 animate-spin opacity-50"/></div> }
 function Empty({ icon:Icon, text, sub }: { icon:any; text:string; sub?:string }) {
   return (
     <div className="flex flex-col items-center justify-center py-24 text-center">
@@ -5234,7 +5234,7 @@ const [customCommitmentSubjects, setCustomCommitmentSubjects] = useState<string[
           )}
           <div className="flex items-center gap-4 bg-white p-5 rounded-3xl border-2 border-teal-100 shadow-sm">
              <div className="w-12 h-12 flex items-center justify-center flex-shrink-0 animate-pulse text-xs font-semibold">
-                <UserCheck className="w-6 h-6 text-indigo-500"/>
+                <UserCheck className="w-6 h-6 text-teal-700"/>
              </div>
              <div>
                 <h2 className="text-lg font-black text-slate-800">Phân công Giáo viên Khảo sát</h2>
@@ -5276,7 +5276,7 @@ const [customCommitmentSubjects, setCustomCommitmentSubjects] = useState<string[
                     </Field>
 
                     <Field label="Giáo viên phụ trách" required>
-                      <select value={asTeacherId} onChange={e=>setAsTeacherId(e.target.value)} className={inp+" bg-slate-50/50 border-indigo-100 hover:border-indigo-300 focus:bg-white"} disabled={isReadOnly}>
+                      <select value={asTeacherId} onChange={e=>setAsTeacherId(e.target.value)} className={inp+" bg-slate-50/50 border-teal-200 hover:border-teal-200 focus:bg-white"} disabled={isReadOnly}>
                         <option value="">-- Chọn Giáo viên --</option>
                         {filteredTeachers.map(t=><option key={t.userId} value={t.userId}>{t.teacherName}</option>)}
                       </select>
@@ -5301,7 +5301,7 @@ const [customCommitmentSubjects, setCustomCommitmentSubjects] = useState<string[
                     <div>
                       <div className="flex items-center justify-between mb-3 px-1">
                         <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest flex items-center gap-2"><BookOpen className="w-3.5 h-3.5"/> Môn khảo sát *</label>
-                        <button onClick={() => setAsSelSubjects(asSelSubjects.length === subjectsList.length ? [] : subjectsList.map(s=>s.id))} className={"text-[10px] font-black text-indigo-500 hover:bg-indigo-50 px-2 py-1 rounded-xl uppercase tracking-wider transition-colors " + (isReadOnly ? "pointer-events-none opacity-40 cursor-not-allowed" : "")} disabled={isReadOnly}>
+                        <button onClick={() => setAsSelSubjects(asSelSubjects.length === subjectsList.length ? [] : subjectsList.map(s=>s.id))} className={"text-[10px] font-black text-teal-700 hover:bg-teal-50 px-2 py-1 rounded-xl uppercase tracking-wider transition-colors " + (isReadOnly ? "pointer-events-none opacity-40 cursor-not-allowed" : "")} disabled={isReadOnly}>
                           {asSelSubjects.length === subjectsList.length ? "Bỏ chọn hết" : "Chọn tất cả"}
                         </button>
                       </div>
@@ -5310,7 +5310,7 @@ const [customCommitmentSubjects, setCustomCommitmentSubjects] = useState<string[
                           <button
                             key={sub.id}
                             onClick={() => setAsSelSubjects(p => p.includes(sub.id) ? p.filter(x=>x!==sub.id) : [...p, sub.id])}
-                            className={`px-4 py-2.5 rounded-2xl text-xs font-bold border-2 transition-all ${asSelSubjects.includes(sub.id) ? "bg-indigo-600 border-indigo-600 text-white shadow-md shadow-indigo-100" : "bg-white border-slate-100 text-slate-500 hover:border-indigo-200 hover:text-indigo-500"} ${isReadOnly ? "pointer-events-none opacity-40 cursor-not-allowed" : ""}`} disabled={isReadOnly}
+                            className={`px-4 py-2.5 rounded-2xl text-xs font-bold border-2 transition-all ${asSelSubjects.includes(sub.id) ? "bg-[#003B3A] border-teal-200 text-white shadow-md shadow-indigo-100" : "bg-white border-slate-100 text-slate-500 hover:border-teal-200 hover:text-teal-700"} ${isReadOnly ? "pointer-events-none opacity-40 cursor-not-allowed" : ""}`} disabled={isReadOnly}
                           >
                             {sub.name}
                           </button>
@@ -5379,20 +5379,20 @@ const [customCommitmentSubjects, setCustomCommitmentSubjects] = useState<string[
           <div className="space-y-4">
              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 px-2">
                 <div className="flex items-center gap-3">
-                   <h3 className="text-base font-black text-slate-800 flex items-center gap-2"><Search className="w-5 h-5 text-indigo-500"/> Danh sách đã Phân công</h3>
+                   <h3 className="text-base font-black text-slate-800 flex items-center gap-2"><Search className="w-5 h-5 text-teal-700"/> Danh sách đã Phân công</h3>
                    {asFilterBatchId && (
-                      <span className="text-indigo-600 text-xs font-black text-xs font-semibold">{groupedAssignments.length} nhóm phân công</span>
+                      <span className="text-teal-800 text-xs font-black text-xs font-semibold">{groupedAssignments.length} nhóm phân công</span>
                    )}
                 </div>
                 {asPeriodId && (
                    <div className="flex flex-wrap items-center gap-3 self-end sm:self-auto text-xs font-semibold">
                       <div className="flex items-center gap-2">
-                         <Filter className="w-4 h-4 text-indigo-500" />
+                         <Filter className="w-4 h-4 text-teal-700" />
                          <span className="text-[10px] font-black text-slate-400 uppercase tracking-wider">Lọc đợt:</span>
                          <select 
                             value={asFilterBatchId} 
                             onChange={e=>setAsFilterBatchId(e.target.value)} 
-                            className="bg-white border border-slate-200 rounded-xl px-3 py-1.5 text-xs font-bold text-slate-700 outline-none focus:ring-2 focus:ring-indigo-100 focus:border-indigo-400 transition-all shadow-sm cursor-pointer min-w-[150px]"
+                            className="bg-white border border-slate-200 rounded-xl px-3 py-1.5 text-xs font-bold text-slate-700 outline-none focus:ring-2 focus:ring-indigo-100 focus:border-teal-200 transition-all shadow-sm cursor-pointer min-w-[150px]"
                          >
                             <option value="">-- Chọn Đợt --</option>
                             {asSelPeriod?.batches?.map(b=><option key={b.id} value={b.id}>{b.name}</option>)}
@@ -5402,7 +5402,7 @@ const [customCommitmentSubjects, setCustomCommitmentSubjects] = useState<string[
                          <button
                             onClick={sendAllNotifications}
                             disabled={asNotifyingAll || groupedAssignments.length === 0 || cannotUpdate}
-                            className={"flex items-center gap-1.5 px-3 py-1.5 bg-indigo-600 text-white rounded-xl text-xs font-black hover:bg-indigo-700 transition-all shadow-sm disabled:opacity-50 " + (cannotUpdate ? "pointer-events-none opacity-40" : "")}
+                            className={"flex items-center gap-1.5 px-3 py-1.5 bg-[#003B3A] text-white rounded-xl text-xs font-black hover:bg-[#003B3A] transition-all shadow-sm disabled:opacity-50 " + (cannotUpdate ? "pointer-events-none opacity-40" : "")}
                             title="Gửi email thông báo phân công cho tất cả giáo viên trong danh sách"
                          >
                             {asNotifyingAll ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Mail className="w-3.5 h-3.5" />}
@@ -5441,7 +5441,7 @@ const [customCommitmentSubjects, setCustomCommitmentSubjects] = useState<string[
                           <tr key={a.id} className="group hover:bg-slate-50/70 transition-colors text-xs font-semibold">
                             <td className="p-2 border border-slate-200">
                               <div className="flex items-center gap-3">
-                                <div className="w-9 h-9 flex items-center justify-center text-indigo-600 font-black text-xs text-xs font-semibold">
+                                <div className="w-9 h-9 flex items-center justify-center text-teal-800 font-black text-xs text-xs font-semibold">
                                   {a.user?.fullName?.charAt(0)}
                                 </div>
                                 <div>
@@ -5453,7 +5453,7 @@ const [customCommitmentSubjects, setCustomCommitmentSubjects] = useState<string[
                             <td className="p-2 p-2 border border-slate-200">
                                 <div className="flex flex-wrap gap-1">
                                   {a.subjects.map((sub: string) => (
-                                    <span key={sub} className="px-3 py-1 bg-white border border-teal-100 rounded-xl text-xs font-black text-indigo-600 shadow-sm">{sub}</span>
+                                    <span key={sub} className="px-3 py-1 bg-white border border-teal-100 rounded-xl text-xs font-black text-teal-800 shadow-sm">{sub}</span>
                                   ))}
                                 </div>
                               </td>
@@ -5482,7 +5482,7 @@ const [customCommitmentSubjects, setCustomCommitmentSubjects] = useState<string[
                                </button>
                                <button 
                                  onClick={() => openEditAssignment(a)}
-                                 className={"p-2.5 text-slate-300 hover:text-indigo-600 hover:bg-indigo-50 rounded-xl transition-all mr-1 " + (cannotUpdate ? "pointer-events-none opacity-40" : "")} disabled={cannotUpdate}
+                                 className={"p-2.5 text-slate-300 hover:text-teal-800 hover:bg-teal-50 rounded-xl transition-all mr-1 " + (cannotUpdate ? "pointer-events-none opacity-40" : "")} disabled={cannotUpdate}
                                >
                                  <Edit2 className="w-4 h-4"/>
                                </button>
@@ -5517,7 +5517,7 @@ const [customCommitmentSubjects, setCustomCommitmentSubjects] = useState<string[
             <h2 className="text-sm font-black text-slate-600 uppercase tracking-widest flex items-center gap-2"><Clock className="w-4 h-4"/> Kỳ & Đợt Khảo sát</h2>
             <div className="flex gap-2">
               <button onClick={fetchPeriods} className="p-2 text-slate-400 hover:text-slate-700 hover:bg-slate-100 rounded-xl transition-all"><RefreshCw className="w-4 h-4"/></button>
-              <button onClick={e => { if (cannotCreate) return; openAddPeriod(); }} disabled={cannotCreate} className={"flex items-center gap-2 px-5 py-2.5 bg-indigo-600 text-white text-[13px] font-black rounded-xl hover:bg-indigo-700 transition-all shadow-xl shadow-indigo-100 " + (cannotCreate ? "pointer-events-none opacity-40 cursor-not-allowed" : "")}>
+              <button onClick={e => { if (cannotCreate) return; openAddPeriod(); }} disabled={cannotCreate} className={"flex items-center gap-2 px-5 py-2.5 bg-[#003B3A] text-white text-[13px] font-black rounded-xl hover:bg-[#003B3A] transition-all shadow-xl shadow-indigo-100 " + (cannotCreate ? "pointer-events-none opacity-40 cursor-not-allowed" : "")}>
                 <Plus className="w-4 h-4"/> Tạo Kỳ mới
               </button>
             </div>
@@ -5526,10 +5526,10 @@ const [customCommitmentSubjects, setCustomCommitmentSubjects] = useState<string[
           {pLoading ? <Spin/> : periods.length === 0 ? <Empty icon={Calendar} text="Chưa có Kỳ khảo sát nào" sub="Bấm Tạo Kỳ mới để bắt đầu" /> : (
             <div className="space-y-3">
               {visiblePeriods.map(p => (
-                <div key={p.id} className="bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden group/p hover:border-indigo-200 transition-all">
+                <div key={p.id} className="bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden group/p hover:border-teal-200 transition-all">
                   <div className="px-4 py-3.5 flex flex-wrap items-center justify-between gap-3 cursor-pointer" onClick={()=>setExpandedId(expandedId===p.id?null:p.id)}>
                     <div className="flex items-center gap-4">
-                      <div className="w-12 h-12 flex items-center justify-center flex-shrink-0 group-hover/p:bg-indigo-600 group-hover/p:text-white transition-all text-xs font-semibold">
+                      <div className="w-12 h-12 flex items-center justify-center flex-shrink-0 group-hover/p:bg-[#003B3A] group-hover/p:text-white transition-all text-xs font-semibold">
                         <Clock className="w-5 h-5"/>
                       </div>
                       <div>
@@ -5540,7 +5540,7 @@ const [customCommitmentSubjects, setCustomCommitmentSubjects] = useState<string[
                         <div className="flex items-center gap-3 mt-1 text-[11px] text-slate-400 font-black uppercase tracking-widest">
                           <span className="flex items-center gap-1"><Calendar className="w-3.5 h-3.5"/> {p.startDate?.slice(0,10)} → {p.endDate?.slice(0,10)||"?"}</span>
                           <span className="w-1 h-1 bg-slate-200 rounded-full"/>
-                          <span className="text-indigo-500">{p.batches?.length||0} đợt ghi nhận</span>
+                          <span className="text-teal-700">{p.batches?.length||0} đợt ghi nhận</span>
                         </div>
                       </div>
                     </div>
@@ -5548,7 +5548,7 @@ const [customCommitmentSubjects, setCustomCommitmentSubjects] = useState<string[
                       <button onClick={e=>{e.stopPropagation(); if (cannotCreate) return; openAddBatch(p.id)}} className={"flex items-center gap-1.5 px-4 py-2 text-[11px] font-black text-emerald-700 bg-emerald-50 hover:bg-emerald-600 hover:text-white rounded-xl transition-all border border-emerald-100 " + (cannotCreate ? "pointer-events-none opacity-40" : "")}>
                         <Plus className="w-3.5 h-3.5"/> Thêm Đợt
                       </button>
-                      <button onClick={e=>{e.stopPropagation(); if (cannotUpdate) return; openEditPeriod(p)}} className={"p-2 text-slate-400 hover:text-indigo-600 hover:bg-indigo-50 rounded-xl transition-all " + (cannotUpdate ? "pointer-events-none opacity-40" : "")}><Edit2 className="w-4 h-4"/></button>
+                      <button onClick={e=>{e.stopPropagation(); if (cannotUpdate) return; openEditPeriod(p)}} className={"p-2 text-slate-400 hover:text-teal-800 hover:bg-teal-50 rounded-xl transition-all " + (cannotUpdate ? "pointer-events-none opacity-40" : "")}><Edit2 className="w-4 h-4"/></button>
                       <button onClick={e=>{e.stopPropagation(); setConfirm({msg:`Xóa kỳ "${p.name}"?`,fn:()=>doDeletePeriod(p.id)})}} className={"p-2 text-slate-400 hover:text-rose-600 hover:bg-rose-50 rounded-xl transition-all " + (cannotDelete ? "pointer-events-none opacity-40" : "")}><Trash2 className="w-4 h-4"/></button>
                       <span className="text-slate-300 ml-2">{expandedId===p.id?<ChevronUp className="w-5 h-5"/>:<ChevronDown className="w-5 h-5"/>}</span>
                     </div>
@@ -5590,7 +5590,7 @@ const [customCommitmentSubjects, setCustomCommitmentSubjects] = useState<string[
                                  return (
                                    <tr key={b.id} className="group hover:bg-slate-50/50 transition-colors text-xs font-semibold">
                                      <td className="p-2 pl-6 border border-slate-200">
-                                       <span className="inline-flex items-center justify-center w-8 h-8 font-black text-indigo-600 text-xs text-xs font-semibold">
+                                       <span className="inline-flex items-center justify-center w-8 h-8 font-black text-teal-800 text-xs text-xs font-semibold">
                                          #{b.batchNumber}
                                        </span>
                                      </td>
@@ -5671,7 +5671,7 @@ const [customCommitmentSubjects, setCustomCommitmentSubjects] = useState<string[
                                                   setSendingEmailBatchId(null);
                                                 }
                                               }}
-                                              className="p-1 text-slate-400 hover:text-indigo-600 hover:bg-indigo-50 transition-all ml-2 text-xs font-semibold"
+                                              className="p-1 text-slate-400 hover:text-teal-800 hover:bg-teal-50 transition-all ml-2 text-xs font-semibold"
                                               disabled={sendingEmailBatchId === b.id}
                                               title="Gửi email thông báo cho người phụ trách"
                                             >
@@ -5686,7 +5686,7 @@ const [customCommitmentSubjects, setCustomCommitmentSubjects] = useState<string[
                                       </td>
                                      <td className="p-2 text-right pr-6 border border-slate-200">
                                        <div className="flex items-center justify-end gap-1">
-                                         <button onClick={() => openEditBatch(b)} className={"p-2 text-slate-400 hover:text-indigo-600 hover:bg-indigo-50 rounded-xl transition-all " + (cannotUpdate ? "pointer-events-none opacity-40" : "")} disabled={cannotUpdate} title="Chỉnh sửa">
+                                         <button onClick={() => openEditBatch(b)} className={"p-2 text-slate-400 hover:text-teal-800 hover:bg-teal-50 rounded-xl transition-all " + (cannotUpdate ? "pointer-events-none opacity-40" : "")} disabled={cannotUpdate} title="Chỉnh sửa">
                                            <Edit2 className="w-3.5 h-3.5" />
                                          </button>
                                          <button onClick={() => setConfirm({ msg: `Xóa đợt "` + b.name + `"?`, fn: () => doDeleteBatch(b.id) })} className={"p-2 text-slate-400 hover:text-rose-600 hover:bg-rose-50 rounded-xl transition-all " + (cannotDelete ? "pointer-events-none opacity-40" : "")} disabled={cannotDelete} title="Xóa">
@@ -5716,7 +5716,7 @@ const [customCommitmentSubjects, setCustomCommitmentSubjects] = useState<string[
           {latestBatchInfo && (
             <div className="no-print relative overflow-hidden p-4 rounded-2xl shadow-md animate-in fade-in slide-in-from-top-4 duration-500 mb-6 bg-gradient-to-br from-amber-50/90 via-orange-50/50 to-amber-100/60 border border-amber-200/80 ring-1 ring-amber-900/5 group hover:shadow-lg transition-all">
             <div className="absolute top-0 right-0 w-64 h-64 bg-amber-500/15 rounded-full blur-3xl -mr-20 -mt-20 pointer-events-none transition-transform duration-700 group-hover:scale-110"></div>
-            <div className="absolute bottom-0 left-0 w-40 h-40 bg-orange-500/15 rounded-full blur-2xl -ml-10 -mb-10 pointer-events-none"></div>
+            <div className="absolute bottom-0 left-0 w-40 h-40 bg-amber-500/15 rounded-full blur-2xl -ml-10 -mb-10 pointer-events-none"></div>
             
             <div className="relative flex flex-col sm:flex-row sm:items-center justify-between gap-4">
               <div className="flex items-start sm:items-center gap-3.5">
@@ -5725,11 +5725,11 @@ const [customCommitmentSubjects, setCustomCommitmentSubjects] = useState<string[
                 </div>
                 <div className="flex-1 min-w-0">
                   <div className="text-[13px] font-semibold text-slate-700 leading-relaxed flex flex-wrap items-center gap-y-1.5 gap-x-1.5">
-                    <span className="font-black text-transparent bg-clip-text bg-gradient-to-r from-amber-700 to-orange-600 uppercase tracking-widest text-xs py-0.5 px-2.5 rounded-lg bg-white/90 border border-amber-200/60 shadow-sm flex items-center gap-1.5">
+                    <span className="font-black text-transparent bg-clip-text bg-gradient-to-r from-amber-700 to-amber-600 uppercase tracking-widest text-xs py-0.5 px-2.5 rounded-lg bg-white/90 border border-amber-200/60 shadow-sm flex items-center gap-1.5">
                       Thông báo
                     </span>
                     <span className="opacity-90">Đợt khảo sát mới nhất:</span> 
-                    <span className="inline-flex items-center px-2.5 py-1 rounded-lg bg-gradient-to-r from-amber-600 to-orange-600 text-white font-bold shadow-sm text-xs tracking-wide">
+                    <span className="inline-flex items-center px-2.5 py-1 rounded-lg bg-gradient-to-r from-amber-600 to-amber-600 text-white font-bold shadow-sm text-xs tracking-wide">
                       {latestBatchInfo.name}
                     </span> 
                     <span className="opacity-90">thuộc Kỳ</span> 
@@ -5751,7 +5751,7 @@ const [customCommitmentSubjects, setCustomCommitmentSubjects] = useState<string[
                     setReportApprovalStatusFilter("Chưa duyệt");
                     setReportsSubTab("results");
                   }}
-                  className="px-4 py-2 bg-gradient-to-r from-amber-600 to-orange-600 hover:from-amber-700 hover:to-orange-700 text-white text-xs font-black rounded-xl shadow-md shadow-amber-600/20 active:scale-95 transition-all flex items-center gap-1.5 cursor-pointer"
+                  className="px-4 py-2 bg-gradient-to-r from-amber-600 to-amber-600 hover:from-amber-700 hover:to-amber-600 text-white text-xs font-black rounded-xl shadow-md shadow-amber-600/20 active:scale-95 transition-all flex items-center gap-1.5 cursor-pointer"
                 >
                   <span>Xem & Xét duyệt đợt này</span>
                   <ArrowRight className="w-3.5 h-3.5" />
@@ -5893,7 +5893,7 @@ const [customCommitmentSubjects, setCustomCommitmentSubjects] = useState<string[
                            <td className="p-2 text-center text-xs font-bold text-slate-500 border border-slate-300">{s.gender || "-"}</td>
                            <td className="p-2 text-center border border-slate-300"><span className="text-xs font-semibold text-slate-600">{s.dateOfBirth ? new Date(s.dateOfBirth).toLocaleDateString('vi-VN') : "-"}</span></td>
                            <td className="p-2 text-center border border-slate-300">
-                             <span className="inline-flex items-center text-[10px] font-bold uppercase tracking-wider text-indigo-600 text-xs font-semibold">
+                             <span className="inline-flex items-center text-[10px] font-bold uppercase tracking-wider text-teal-800 text-xs font-semibold">
                                {s.surveyFormType || "-"}
                              </span>
                            </td>
@@ -5990,14 +5990,14 @@ const [customCommitmentSubjects, setCustomCommitmentSubjects] = useState<string[
                       <h4 className="text-sm font-black text-slate-800 tracking-tight">{type.label}</h4>
                       <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">{type.code}</span>
                    </div>
-                   <button onClick={()=>openAddConfig(type.code)} className={"w-8 h-8 rounded-xl bg-slate-50 flex items-center justify-center text-slate-400 hover:bg-indigo-600 hover:text-white transition-all shadow-sm border border-slate-100 " + (cannotCreate ? "pointer-events-none opacity-40" : "")} disabled={cannotCreate}><Plus className="w-4 h-4"/></button>
+                   <button onClick={()=>openAddConfig(type.code)} className={"w-8 h-8 rounded-xl bg-slate-50 flex items-center justify-center text-slate-400 hover:bg-[#003B3A] hover:text-white transition-all shadow-sm border border-slate-100 " + (cannotCreate ? "pointer-events-none opacity-40" : "")} disabled={cannotCreate}><Plus className="w-4 h-4"/></button>
                 </div>
                 <div className="p-4 flex-1 space-y-1.5">
                    {configs.filter(c => c.categoryType === type.code).map(c => (
                      <div key={c.id} className="group flex items-center justify-between p-3 hover:bg-slate-50 transition-all hover:border-slate-100 text-xs font-semibold">
                         <span className="text-xs font-black text-slate-600 truncate">{c.name}</span>
                         <div className="flex items-center gap-0.5 ">
-                           <button onClick={()=>openEditConfig(c)} className={"p-1.5 text-slate-300 hover:text-indigo-600 " + (cannotUpdate ? "pointer-events-none opacity-40" : "")} disabled={cannotUpdate}><Edit2 className="w-3 h-3"/></button>
+                           <button onClick={()=>openEditConfig(c)} className={"p-1.5 text-slate-300 hover:text-teal-800 " + (cannotUpdate ? "pointer-events-none opacity-40" : "")} disabled={cannotUpdate}><Edit2 className="w-3 h-3"/></button>
                            <button onClick={()=>setConfirm({msg:`Xóa "${c.name}"?`,fn:()=>doDeleteConfig(c.id)})} className={"p-1.5 text-slate-300 hover:text-rose-600 " + (cannotDelete ? "pointer-events-none opacity-40" : "")} disabled={cannotDelete}><Trash2 className="w-3 h-3"/></button>
                         </div>
                      </div>
@@ -6051,19 +6051,19 @@ const [customCommitmentSubjects, setCustomCommitmentSubjects] = useState<string[
                       try { if (sub.columnNames) parsedCols = JSON.parse(sub.columnNames); } catch {}
                       return (
                         <tr key={sub.id} className="group hover:bg-slate-50/70 transition-colors text-xs font-semibold">
-                          <td className="p-2 border border-slate-200"><span className="font-mono text-xs font-black text-indigo-600 text-xs font-semibold">{sub.code}</span></td>
+                          <td className="p-2 border border-slate-200"><span className="font-mono text-xs font-black text-teal-800 text-xs font-semibold">{sub.code}</span></td>
                           <td className="p-2 border border-slate-200"><span className="text-sm font-black text-slate-700">{sub.name}</span></td>
                           
-                          <td className="p-2 text-center border border-slate-200"><span className="w-7 h-7 text-indigo-700 font-black text-xs inline-flex items-center justify-center text-xs font-semibold">{sub.scoreColumns ?? 0}</span></td>
+                          <td className="p-2 text-center border border-slate-200"><span className="w-7 h-7 text-teal-800 font-black text-xs inline-flex items-center justify-center text-xs font-semibold">{sub.scoreColumns ?? 0}</span></td>
                           <td className="p-2 text-center border border-slate-200"><span className="w-7 h-7 text-emerald-700 font-black text-xs inline-flex items-center justify-center text-xs font-semibold">{sub.commentColumns ?? 0}</span></td>
                           <td className="p-2 text-center border border-slate-200"><Badge s={sub.status || "ACTIVE"}/></td>
                           <td className="p-2 text-center border border-slate-200">
-                            {(() => { try { const arr = JSON.parse(sub.exemptCriteria || "[]"); return (Array.isArray(arr) && arr.length > 0) ? <div className="flex flex-wrap gap-1 justify-center">{arr.map((c: string) => <span key={c} className="text-[10px] font-bold text-violet-700 text-xs font-semibold">{c}</span>)}</div> : <span className="text-slate-300 text-xs">—</span>; } catch { return <span className="text-slate-300 text-xs">—</span>; } })()}
+                            {(() => { try { const arr = JSON.parse(sub.exemptCriteria || "[]"); return (Array.isArray(arr) && arr.length > 0) ? <div className="flex flex-wrap gap-1 justify-center">{arr.map((c: string) => <span key={c} className="text-[10px] font-bold text-teal-800 text-xs font-semibold">{c}</span>)}</div> : <span className="text-slate-300 text-xs">—</span>; } catch { return <span className="text-slate-300 text-xs">—</span>; } })()}
                           </td>
                           <td className="p-2 text-right border border-slate-200">
                             <div className="flex items-center justify-end gap-1">
                               <button title="Cấu hình tên cột" onClick={() => { setColumnConfigForm({ subjectId: sub.id, name: sub.name, scoreColumns: sub.scoreColumns ?? 1, commentColumns: sub.commentColumns ?? 1, scoreNames: parsedCols.scores || [], commentNames: parsedCols.comments || [], showScoreInReport: parsedCols.showScoreInReport || [], showCommentInReport: parsedCols.showCommentInReport || [] }); setIsColumnConfigOpen(true); }} className={"p-2.5 text-slate-300 hover:text-amber-600 hover:bg-amber-50 rounded-xl transition-all " + (cannotUpdate ? "pointer-events-none opacity-40" : "")} disabled={cannotUpdate}><PenLine className="w-4 h-4"/></button>
-                              <button onClick={() => { setEditingSubjectId(sub.id); setSubjectForm({ code: sub.code, name: sub.name, subjectType: sub.subjectType || "", scoreColumns: sub.scoreColumns ?? 1, commentColumns: sub.commentColumns ?? 1, status: sub.status || "ACTIVE", exemptCriteria: (() => { try { return JSON.parse(sub.exemptCriteria || "[]"); } catch { return []; } })() }); setIsSubjectOpen(true); }} className={"p-2.5 text-slate-300 hover:text-indigo-600 hover:bg-indigo-50 rounded-xl transition-all " + (cannotUpdate ? "pointer-events-none opacity-40" : "")} disabled={cannotUpdate}><Edit2 className="w-4 h-4"/></button>
+                              <button onClick={() => { setEditingSubjectId(sub.id); setSubjectForm({ code: sub.code, name: sub.name, subjectType: sub.subjectType || "", scoreColumns: sub.scoreColumns ?? 1, commentColumns: sub.commentColumns ?? 1, status: sub.status || "ACTIVE", exemptCriteria: (() => { try { return JSON.parse(sub.exemptCriteria || "[]"); } catch { return []; } })() }); setIsSubjectOpen(true); }} className={"p-2.5 text-slate-300 hover:text-teal-800 hover:bg-teal-50 rounded-xl transition-all " + (cannotUpdate ? "pointer-events-none opacity-40" : "")} disabled={cannotUpdate}><Edit2 className="w-4 h-4"/></button>
                               <button onClick={() => setConfirm({ msg: `Xóa môn ${sub.name}?`, fn: () => deleteSubject(sub.id) })} className={"p-2.5 text-slate-300 hover:text-rose-600 hover:bg-rose-50 rounded-xl transition-all " + (cannotDelete ? "pointer-events-none opacity-40" : "")} disabled={cannotDelete}><Trash2 className="w-4 h-4"/></button>
                             </div>
                           </td>
@@ -6752,7 +6752,7 @@ const [customCommitmentSubjects, setCustomCommitmentSubjects] = useState<string[
           <div className="bg-white rounded-3xl shadow-2xl max-w-lg w-full overflow-hidden animate-in zoom-in-95 duration-200 border border-slate-100">
             <div className="flex items-center justify-between text-xs font-semibold">
               <div className="flex items-center gap-3">
-                <div className="w-10 h-10 text-indigo-600 flex items-center justify-center text-xs font-semibold">
+                <div className="w-10 h-10 text-teal-800 flex items-center justify-center text-xs font-semibold">
                   <Tag className="w-5 h-5" />
                 </div>
                 <div>
@@ -6773,7 +6773,7 @@ const [customCommitmentSubjects, setCustomCommitmentSubjects] = useState<string[
                   value={docFormName} 
                   onChange={(e) => setDocFormName(e.target.value)} 
                   placeholder="Ví dụ: Đơn đăng ký nhập học" 
-                  className="w-full text-sm font-bold text-slate-700 outline-none focus:border-indigo-500 focus:bg-white transition-all animate-none text-xs font-semibold"
+                  className="w-full text-sm font-bold text-slate-700 outline-none focus:border-teal-200 focus:bg-white transition-all animate-none text-xs font-semibold"
                 />
               </div>
 
@@ -6785,7 +6785,7 @@ const [customCommitmentSubjects, setCustomCommitmentSubjects] = useState<string[
                     value={docFormQty} 
                     onChange={(e) => setDocFormQty(e.target.value)} 
                     placeholder="Ví dụ: 01 bản" 
-                    className="w-full text-sm font-bold text-slate-700 outline-none focus:border-indigo-500 focus:bg-white transition-all animate-none text-xs font-semibold"
+                    className="w-full text-sm font-bold text-slate-700 outline-none focus:border-teal-200 focus:bg-white transition-all animate-none text-xs font-semibold"
                   />
                 </div>
                 <div>
@@ -6795,7 +6795,7 @@ const [customCommitmentSubjects, setCustomCommitmentSubjects] = useState<string[
                     value={docFormNote} 
                     onChange={(e) => setDocFormNote(e.target.value)} 
                     placeholder="Ví dụ: Bản sao y" 
-                    className="w-full text-sm font-bold text-slate-700 outline-none focus:border-indigo-500 focus:bg-white transition-all animate-none text-xs font-semibold"
+                    className="w-full text-sm font-bold text-slate-700 outline-none focus:border-teal-200 focus:bg-white transition-all animate-none text-xs font-semibold"
                   />
                 </div>
               </div>
@@ -6817,7 +6817,7 @@ const [customCommitmentSubjects, setCustomCommitmentSubjects] = useState<string[
                   {configs.filter(c => c.categoryType === "DOI_TUONG_TS").map(c => {
                     const isChecked = docFormSelectedTargets.includes(c.name);
                     return (
-                      <label key={c.id} className="flex items-center gap-1.5 hover:bg-indigo-50/50 cursor-pointer select-none transition-colors text-xs font-semibold">
+                      <label key={c.id} className="flex items-center gap-1.5 hover:bg-teal-50/50 cursor-pointer select-none transition-colors text-xs font-semibold">
                         <input 
                           type="checkbox" 
                           checked={isChecked}
@@ -6828,7 +6828,7 @@ const [customCommitmentSubjects, setCustomCommitmentSubjects] = useState<string[
                               setDocFormSelectedTargets(p => p.filter(x => x !== c.name));
                             }
                           }}
-                          className="w-4 h-4 rounded text-indigo-600 focus:ring-indigo-500 border-slate-300"
+                          className="w-4 h-4 rounded text-teal-800 focus:ring-indigo-500 border-slate-300"
                         />
                         <span className="text-xs font-bold text-slate-600">{c.name}</span>
                       </label>
@@ -6864,7 +6864,7 @@ const [customCommitmentSubjects, setCustomCommitmentSubjects] = useState<string[
                   localStorage.setItem(getDocStorageKey(selectedDocGroup), JSON.stringify(updated));
                   setIsDocModalOpen(false);
                 }} 
-                className="hover:bg-indigo-700 text-white text-xs font-black transition-colors shadow-lg shadow-indigo-100 text-xs font-semibold"
+                className="hover:bg-[#003B3A] text-white text-xs font-black transition-colors shadow-lg shadow-indigo-100 text-xs font-semibold"
               >
                 Lưu hồ sơ
               </button>
@@ -7223,8 +7223,8 @@ const [customCommitmentSubjects, setCustomCommitmentSubjects] = useState<string[
                     } else if (shortCode === "CS3") {
                       campusColor = {
                         border: "border-t-violet-600",
-                        accent: "bg-violet-50 text-violet-700 border border-violet-200",
-                        bar: "bg-violet-600"
+                        accent: "bg-teal-50 text-teal-800 border border-teal-200",
+                        bar: "bg-teal-500"
                       };
                     } else if (shortCode === "CS4") {
                       campusColor = {
@@ -7389,7 +7389,7 @@ const [customCommitmentSubjects, setCustomCommitmentSubjects] = useState<string[
                                               <span className={`w-2 h-2 rounded-full ${
                                                 cs.code === "CS1" ? "bg-[#00A19A]" :
                                                 cs.code === "CS2" ? "bg-rose-500" :
-                                                cs.code === "CS3" ? "bg-violet-600" :
+                                                cs.code === "CS3" ? "bg-teal-500" :
                                                 cs.code === "CS4" ? "bg-amber-500" : "bg-sky-600"
                                               }`}></span>
                                               <span className="font-semibold text-slate-700">{cs.name} ({cs.total} HS · {csPctOfTotal}%)</span>
@@ -7444,7 +7444,7 @@ const [customCommitmentSubjects, setCustomCommitmentSubjects] = useState<string[
                             <Bar yAxisId="left" dataKey="total" fill="url(#colorTotal)" radius={[4, 4, 0, 0]} barSize={26} name="Tổng hồ sơ" />
                             <Line yAxisId="left" type="monotone" dataKey="CS1_total" stroke="#00A19A" strokeWidth={2.5} dot={{ r: 3, strokeWidth: 1.5, fill: "#ffffff" }} activeDot={{ r: 5 }} name="Cơ sở 1" />
                             <Line yAxisId="left" type="monotone" dataKey="CS2_total" stroke="#e11d48" strokeWidth={2} dot={{ r: 2.5, strokeWidth: 1.5, fill: "#ffffff" }} name="Cơ sở 2" />
-                            <Line yAxisId="left" type="monotone" dataKey="CS3_total" stroke="#7c3aed" strokeWidth={2} dot={{ r: 2.5, strokeWidth: 1.5, fill: "#ffffff" }} name="Cơ sở 3" />
+                            <Line yAxisId="left" type="monotone" dataKey="CS3_total" stroke="#003B3A" strokeWidth={2} dot={{ r: 2.5, strokeWidth: 1.5, fill: "#ffffff" }} name="Cơ sở 3" />
                             <Line yAxisId="left" type="monotone" dataKey="CS4_total" stroke="#d97706" strokeWidth={2} dot={{ r: 2.5, strokeWidth: 1.5, fill: "#ffffff" }} name="Cơ sở 4" />
                             <Line yAxisId="left" type="monotone" dataKey="CS5_total" stroke="#0284c7" strokeWidth={2} dot={{ r: 2.5, strokeWidth: 1.5, fill: "#ffffff" }} name="Cơ sở 5" />
                           </>
@@ -7540,7 +7540,7 @@ const [customCommitmentSubjects, setCustomCommitmentSubjects] = useState<string[
                           badgeColor = "bg-rose-50 text-rose-700 border border-rose-200";
                           borderLeftColor = "border-l-rose-500";
                         } else if (shortCode === "CS3") {
-                          badgeColor = "bg-violet-50 text-violet-700 border border-violet-200";
+                          badgeColor = "bg-teal-50 text-teal-800 border border-teal-200";
                           borderLeftColor = "border-l-violet-600";
                         } else if (shortCode === "CS4") {
                           badgeColor = "bg-amber-50 text-amber-800 border border-amber-200";
@@ -9022,7 +9022,7 @@ const [customCommitmentSubjects, setCustomCommitmentSubjects] = useState<string[
                                               badgeColor = "bg-amber-50 text-amber-800 border-amber-200";
                                             } else if (scNum > 47 && scNum <= 63) {
                                               lvl = "Nguy cơ cao";
-                                              badgeColor = "bg-orange-50 text-orange-800 border-orange-200";
+                                              badgeColor = "bg-amber-50 text-amber-800 border-amber-200";
                                             } else if (scNum > 63) {
                                               lvl = "Nguy cơ rất cao";
                                               badgeColor = "bg-rose-50 text-rose-800 border-rose-200";
@@ -9702,7 +9702,7 @@ const [customCommitmentSubjects, setCustomCommitmentSubjects] = useState<string[
                                               { name: "Bình thường", min: 0, max: 15, bg: "bg-teal-50 text-teal-800 border-teal-200", activeBg: "bg-teal-600", scaleBg: "bg-teal-100" },
                                               { name: "Dấu hiệu nhẹ", min: 16, max: 31, bg: "bg-blue-50 text-blue-700 border-blue-100", activeBg: "bg-blue-500", scaleBg: "bg-blue-100" },
                                               { name: "Dấu hiệu vừa", min: 32, max: 47, bg: "bg-amber-50 text-amber-700 border-amber-100", activeBg: "bg-amber-500", scaleBg: "bg-amber-100" },
-                                              { name: "Nguy cơ cao", min: 48, max: 63, bg: "bg-orange-50 text-orange-700 border-orange-100", activeBg: "bg-orange-500", scaleBg: "bg-orange-100" },
+                                              { name: "Nguy cơ cao", min: 48, max: 63, bg: "bg-amber-50 text-amber-800 border-amber-200", activeBg: "bg-amber-500", scaleBg: "bg-amber-50" },
                                               { name: "Nguy cơ rất cao", min: 64, max: 80, bg: "bg-rose-50 text-rose-700 border-rose-100", activeBg: "bg-rose-500", scaleBg: "bg-rose-100" }
                                             ];
                                             
@@ -10442,7 +10442,7 @@ const [customCommitmentSubjects, setCustomCommitmentSubjects] = useState<string[
                     type="button"
                     onClick={handleSaveScoreSubmit}
                     disabled={isSavingScore}
-                    className="px-6 py-2 bg-gradient-to-r from-indigo-600 to-violet-600 hover:from-indigo-700 hover:to-violet-700 text-white font-bold rounded-xl text-xs shadow-md transition-all flex items-center gap-2 cursor-pointer disabled:opacity-50"
+                    className="px-6 py-2 bg-gradient-to-r from-teal-600 to-emerald-600 hover:from-teal-600 hover:to-emerald-600 text-white font-bold rounded-xl text-xs shadow-md transition-all flex items-center gap-2 cursor-pointer disabled:opacity-50"
                   >
                     {isSavingScore ? <Loader2 className="w-4 h-4 animate-spin" /> : <Check className="w-4 h-4" />}
                     Lưu kết quả
@@ -10453,17 +10453,17 @@ const [customCommitmentSubjects, setCustomCommitmentSubjects] = useState<string[
           >
             <div className="space-y-5 text-left text-xs">
               {/* STUDENT & SUBJECT HEADER BANNER */}
-              <div className="bg-indigo-50/60 border border-teal-100 rounded-2xl p-4 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+              <div className="bg-teal-50/60 border border-teal-100 rounded-2xl p-4 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
                 <div>
-                  <span className="text-[10px] font-black uppercase tracking-wider text-indigo-500 block mb-0.5">Học sinh khảo sát</span>
+                  <span className="text-[10px] font-black uppercase tracking-wider text-teal-700 block mb-0.5">Học sinh khảo sát</span>
                   <h4 className="text-sm font-black text-slate-800">{selectedReportStudent.fullName} ({selectedReportStudent.studentCode})</h4>
                   <p className="text-[11px] text-slate-500 font-semibold mt-0.5">
                     Khối: <strong className="text-slate-700 font-bold">K{selectedReportStudent.grade || "—"}</strong> • Hệ: <strong className="text-amber-700 font-bold">{selectedReportStudent.surveyFormType || "—"}</strong>
                   </p>
                 </div>
-                <div className="text-right sm:border-l sm:border-indigo-100 sm:pl-4">
+                <div className="text-right sm:border-l sm:border-teal-200 sm:pl-4">
                   <span className="text-[10px] font-black uppercase tracking-wider text-slate-400 block mb-0.5">Môn khảo sát</span>
-                  <div className="font-black text-indigo-700 text-sm">{editingSubjectObj.name}</div>
+                  <div className="font-black text-teal-800 text-sm">{editingSubjectObj.name}</div>
                   {editingSubjectObj.code && <span className="font-mono text-[10px] font-bold text-slate-400">{editingSubjectObj.code}</span>}
                 </div>
               </div>
@@ -10521,7 +10521,7 @@ const [customCommitmentSubjects, setCustomCommitmentSubjects] = useState<string[
                     diagColor = "bg-amber-50 text-amber-700 border-amber-200";
                   } else if (scoreVal > 47 && scoreVal <= 63) {
                     diagLevel = "Nguy cơ cao";
-                    diagColor = "bg-orange-50 text-orange-700 border-orange-200";
+                    diagColor = "bg-amber-50 text-amber-800 border-amber-200";
                   } else if (scoreVal > 63) {
                     diagLevel = "Nguy cơ rất cao";
                     diagColor = "bg-rose-50 text-rose-700 border-rose-200";
@@ -10540,7 +10540,7 @@ const [customCommitmentSubjects, setCustomCommitmentSubjects] = useState<string[
                               value={scoreInputs[0] || ""}
                               onChange={e => setScoreInputs([e.target.value])}
                               placeholder="Nhập tổng điểm (0 - 80)"
-                              className={inp + " max-w-[200px] text-lg font-black text-indigo-700"}
+                              className={inp + " max-w-[200px] text-lg font-black text-teal-800"}
                             />
                             <div className={`px-3 py-2 rounded-xl border text-xs font-black shadow-sm flex items-center gap-1.5 ${diagColor}`}>
                               <span className="w-2 h-2 rounded-full bg-current animate-pulse"></span>
@@ -10613,7 +10613,7 @@ const [customCommitmentSubjects, setCustomCommitmentSubjects] = useState<string[
                                     setScoreInputs(next);
                                   }}
                                   placeholder={maxHint || "Nhập điểm số (vd: 8.5)"}
-                                  className={inp + " text-base font-black text-indigo-700"}
+                                  className={inp + " text-base font-black text-teal-800"}
                                 />
                                 {maxHint && (
                                   <span className="absolute right-3 top-3 text-[10px] font-bold text-slate-400">
@@ -10704,7 +10704,7 @@ const [customCommitmentSubjects, setCustomCommitmentSubjects] = useState<string[
              <div className="flex flex-wrap gap-2 p-3 text-xs font-semibold">
                {configs.filter(c => c.categoryType === "DIEN_KS").map(c => (
                  <button type="button" key={c.code} onClick={() => setSubjectForm(f => ({...f, exemptCriteria: f.exemptCriteria.includes(c.name) ? f.exemptCriteria.filter(x => x !== c.name) : [...f.exemptCriteria, c.name]}))}
-                   className={`text-xs px-3 py-1.5 rounded-xl font-bold border transition-all ${subjectForm.exemptCriteria.includes(c.name) ? 'bg-violet-500 text-white border-violet-500 shadow-md shadow-violet-200' : 'bg-white text-slate-600 border-slate-200 hover:border-violet-300'}`}
+                   className={`text-xs px-3 py-1.5 rounded-xl font-bold border transition-all ${subjectForm.exemptCriteria.includes(c.name) ? 'bg-teal-500 text-white border-teal-200 shadow-md shadow-violet-200' : 'bg-white text-slate-600 border-slate-200 hover:border-teal-200'}`}
                  >{subjectForm.exemptCriteria.includes(c.name) && <span className="mr-1">✓</span>}{c.name}</button>
                ))}
                {configs.filter(c => c.categoryType === "DIEN_KS").length === 0 && <span className="text-xs text-slate-400">Chưa có Diện KS nào trong Danh mục</span>}
@@ -10723,7 +10723,7 @@ const [customCommitmentSubjects, setCustomCommitmentSubjects] = useState<string[
                     <div key={i} className="flex items-center gap-3">
                        <span className="text-[10px] font-black uppercase tracking-widest text-slate-400 w-16">Cột {i+1}</span>
                        <input value={columnConfigForm.scoreNames[i]||""} onChange={e=>{const n=[...columnConfigForm.scoreNames];n[i]=e.target.value;setColumnConfigForm(f=>({...f,scoreNames:n}))}} placeholder="Vd: Điểm viết" className={inp}/>
-                       <label className="flex items-center gap-1 text-[10px] font-black text-indigo-600 whitespace-nowrap"><input type="checkbox" checked={columnConfigForm.showScoreInReport[i]||false} onChange={e=>{const r=[...columnConfigForm.showScoreInReport];r[i]=e.target.checked;setColumnConfigForm(f=>({...f,showScoreInReport:r}))}} className="rounded text-indigo-600"/> Lên Phiếu</label>
+                       <label className="flex items-center gap-1 text-[10px] font-black text-teal-800 whitespace-nowrap"><input type="checkbox" checked={columnConfigForm.showScoreInReport[i]||false} onChange={e=>{const r=[...columnConfigForm.showScoreInReport];r[i]=e.target.checked;setColumnConfigForm(f=>({...f,showScoreInReport:r}))}} className="rounded text-teal-800"/> Lên Phiếu</label>
                     </div>
                  ))}
               </div>
@@ -10735,7 +10735,7 @@ const [customCommitmentSubjects, setCustomCommitmentSubjects] = useState<string[
                     <div key={i} className="flex items-center gap-3">
                        <span className="text-[10px] font-black uppercase tracking-widest text-slate-400 w-16">NX {i+1}</span>
                        <input value={columnConfigForm.commentNames[i]||""} onChange={e=>{const n=[...columnConfigForm.commentNames];n[i]=e.target.value;setColumnConfigForm(f=>({...f,commentNames:n}))}} placeholder="Vd: Nhận xét chung" className={inp}/>
-                       <label className="flex items-center gap-1 text-[10px] font-black text-indigo-600 whitespace-nowrap"><input type="checkbox" checked={columnConfigForm.showCommentInReport[i]||false} onChange={e=>{const r=[...columnConfigForm.showCommentInReport];r[i]=e.target.checked;setColumnConfigForm(f=>({...f,showCommentInReport:r}))}} className="rounded text-indigo-600"/> Lên Phiếu</label>
+                       <label className="flex items-center gap-1 text-[10px] font-black text-teal-800 whitespace-nowrap"><input type="checkbox" checked={columnConfigForm.showCommentInReport[i]||false} onChange={e=>{const r=[...columnConfigForm.showCommentInReport];r[i]=e.target.checked;setColumnConfigForm(f=>({...f,showCommentInReport:r}))}} className="rounded text-teal-800"/> Lên Phiếu</label>
                     </div>
                  ))}
               </div>
@@ -10800,8 +10800,8 @@ const [customCommitmentSubjects, setCustomCommitmentSubjects] = useState<string[
                  className={`${inp} bg-slate-100 cursor-not-allowed`}
                />
               <div className="mt-1.5 p-3 text-xs font-semibold">
-                <p className="text-[10px] font-black text-indigo-400 uppercase tracking-widest mb-1">Hiển thị khoa học & Xét duyệt:</p>
-                <p className="text-xs font-bold text-indigo-600 truncate">
+                <p className="text-[10px] font-black text-teal-700 uppercase tracking-widest mb-1">Hiển thị khoa học & Xét duyệt:</p>
+                <p className="text-xs font-bold text-teal-800 truncate">
                    {(() => {
                      const campus = campuses.find(c => c.id === bForm.campusId);
                      const campusName = campus ? (campus.campusCode || campus.campusName) : "Chưa chọn cơ sở";
@@ -11568,7 +11568,7 @@ const [customCommitmentSubjects, setCustomCommitmentSubjects] = useState<string[
             {/* Modal Header */}
             <div className="flex items-center justify-between px-6 py-4 bg-slate-50 border-b border-slate-200/90 no-print text-xs font-semibold z-10">
               <div className="flex items-center gap-2">
-                {isInvitation ? <Mail className="w-5 h-5 text-indigo-600"/> : <GraduationCap className="w-5 h-5 text-indigo-600"/>}
+                {isInvitation ? <Mail className="w-5 h-5 text-teal-800"/> : <GraduationCap className="w-5 h-5 text-teal-800"/>}
                 <h3 className="text-base font-black text-slate-800">{isInvitation ? "Mẫu Thư mời khảo sát" : isCommitment ? "Bản Cam kết học tập" : "Mẫu Thư Chúc mừng"}</h3>
               </div>
               <div className="flex items-center gap-4">
@@ -11669,7 +11669,7 @@ const [customCommitmentSubjects, setCustomCommitmentSubjects] = useState<string[
 
                   {/* Letter Title */}
                   <div className="text-center my-4">
-                    <h2 className="text-2xl font-black tracking-widest text-indigo-950 uppercase mb-2" style={{ fontFamily: "'Times New Roman', Times, serif" }}>
+                    <h2 className="text-2xl font-black tracking-widest text-teal-800 uppercase mb-2" style={{ fontFamily: "'Times New Roman', Times, serif" }}>
                       {isInvitation ? (studentCampusConfig?.title || "THƯ MỜI") : isCommitment ? (studentCampusConfig?.title || "BẢN CAM KẾT HỌC TẬP") : (studentCampusConfig?.title || "THƯ CHÚC MỪNG")}
                     </h2>
                   </div>
@@ -11767,8 +11767,8 @@ const [customCommitmentSubjects, setCustomCommitmentSubjects] = useState<string[
                     
                     <div className="flex flex-col items-center">
                       <p className="italic text-slate-500 mb-1 text-xs">{formattedLetterDate}</p>
-                      <p className="font-bold uppercase text-indigo-950 text-xs tracking-wider">TM. HỘI ĐỒNG TUYỂN SINH</p>
-                      <p className="font-bold uppercase text-indigo-900/80 text-[10px] tracking-wider mb-4">GIÁM ĐỐC ĐIỀU HÀNH SKY-LINE {campusTitleSuffix}</p>
+                      <p className="font-bold uppercase text-teal-800 text-xs tracking-wider">TM. HỘI ĐỒNG TUYỂN SINH</p>
+                      <p className="font-bold uppercase text-teal-800/80 text-[10px] tracking-wider mb-4">GIÁM ĐỐC ĐIỀU HÀNH SKY-LINE {campusTitleSuffix}</p>
                       
                       <div className="h-16 flex items-center justify-center">
                         {studentCampusConfig?.signature ? (
@@ -11785,8 +11785,8 @@ const [customCommitmentSubjects, setCustomCommitmentSubjects] = useState<string[
                   <div className="flex flex-col items-end mt-4 pr-4">
                     <div className="flex flex-col items-center text-center" style={{ minWidth: "240px" }}>
                       <p className="italic text-slate-500 mb-1">{formattedLetterDate}</p>
-                      <p className="font-bold uppercase text-indigo-950 text-xs tracking-wider">TM. HỘI ĐỒNG TUYỂN SINH</p>
-                      <p className="font-bold uppercase text-indigo-900/80 text-[10px] tracking-wider mb-6">GIÁM ĐỐC ĐIỀU HÀNH SKY-LINE {campusTitleSuffix}</p>
+                      <p className="font-bold uppercase text-teal-800 text-xs tracking-wider">TM. HỘI ĐỒNG TUYỂN SINH</p>
+                      <p className="font-bold uppercase text-teal-800/80 text-[10px] tracking-wider mb-6">GIÁM ĐỐC ĐIỀU HÀNH SKY-LINE {campusTitleSuffix}</p>
                       
                       <div className="h-16 flex items-center justify-center">
                         {studentCampusConfig?.signature ? (
@@ -11906,7 +11906,7 @@ const [customCommitmentSubjects, setCustomCommitmentSubjects] = useState<string[
 
                       {/* Page Title */}
                       <div className="text-center my-6">
-                        <h2 className="text-xl font-bold tracking-widest text-indigo-950 uppercase mb-4" style={{ fontFamily: "'Times New Roman', Times, serif" }}>
+                        <h2 className="text-xl font-bold tracking-widest text-teal-800 uppercase mb-4" style={{ fontFamily: "'Times New Roman', Times, serif" }}>
                           DANH MỤC HỒ SƠ NHẬP HỌC
                         </h2>
                       </div>
@@ -12090,7 +12090,7 @@ const [customCommitmentSubjects, setCustomCommitmentSubjects] = useState<string[
                         </div>
 
                         <div className="text-center my-6">
-                          <h2 className="text-xl font-bold tracking-widest text-indigo-950 uppercase mb-2">CHI TIẾT ĐÁNH GIÁ</h2>
+                          <h2 className="text-xl font-bold tracking-widest text-teal-800 uppercase mb-2">CHI TIẾT ĐÁNH GIÁ</h2>
                           <h3 className="text-lg font-bold text-slate-700 uppercase">{subject.name}</h3>
                         </div>
 
@@ -12156,7 +12156,7 @@ const [customCommitmentSubjects, setCustomCommitmentSubjects] = useState<string[
       {/* Email Modal Overlay */}
                   {isEmailModalOpen && (
         <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-md flex justify-center items-center z-[150] p-4 overflow-y-auto">
-          <div className="bg-white rounded-3xl w-full max-w-4xl shadow-2xl overflow-hidden flex flex-col max-h-[90vh] border-2 border-violet-100 animate-in fade-in zoom-in-95 duration-300">
+          <div className="bg-white rounded-3xl w-full max-w-4xl shadow-2xl overflow-hidden flex flex-col max-h-[90vh] border-2 border-teal-200 animate-in fade-in zoom-in-95 duration-300">
             {/* Header */}
             <div className="bg-[#0c363f] p-6 text-white shrink-0 relative overflow-hidden border-b border-[#14b8a6]/10">
               <div className="absolute top-0 right-0 p-8 opacity-10">
@@ -12407,7 +12407,7 @@ const [customCommitmentSubjects, setCustomCommitmentSubjects] = useState<string[
                               s.admissionResult === "Đạt - Giao lưu" ? "bg-teal-50 text-teal-700 border border-teal-200" :
                               s.admissionResult === "Đạt cam kết" ? "bg-amber-50 text-amber-600 border border-amber-100" :
                               (s.admissionResult === "Không đạt" || s.admissionResult === "Không đạt - Kiểm tra lại" || s.admissionResult === "Không đạt - Không kiểm tra lại") ? "bg-rose-50 text-rose-600 border border-rose-100" :
-                              s.admissionResult === "Học thử" ? "bg-indigo-50 text-indigo-600 border border-teal-100" :
+                              s.admissionResult === "Học thử" ? "bg-teal-50 text-teal-800 border border-teal-100" :
                               "bg-slate-50 text-slate-500"
                             }`}>
                               {s.admissionResult || "Chưa duyệt"}
@@ -12498,7 +12498,7 @@ const [customCommitmentSubjects, setCustomCommitmentSubjects] = useState<string[
                             </button>
                             <a
                               href={`mailto:${recipientEmail}?subject=${encodeURIComponent(emailSubject)}&body=Xin mời xem bảng HTML báo cáo khảo sát đính kèm.`}
-                              className="hover:bg-indigo-700 text-white font-bold text-xs transition-all text-xs font-semibold"
+                              className="hover:bg-[#003B3A] text-white font-bold text-xs transition-all text-xs font-semibold"
                             >
                               📧 Mở Hòm thư Outlook/Gmail
                             </a>
@@ -12583,7 +12583,7 @@ const [customCommitmentSubjects, setCustomCommitmentSubjects] = useState<string[
               <p className="text-xs text-slate-500 leading-relaxed font-semibold">
                 Học sinh đã duyệt kết quả <span className="text-rose-600 font-bold">Không đạt - Kiểm tra lại</span>. 
                 Thực hiện đăng ký học sinh vào một Kỳ/Đợt khảo sát mới để thi lại. 
-                Mã học sinh <span className="font-bold text-indigo-600">({selectedReportStudent.studentCode})</span> sẽ được giữ nguyên để đối chiếu lịch sử.
+                Mã học sinh <span className="font-bold text-teal-800">({selectedReportStudent.studentCode})</span> sẽ được giữ nguyên để đối chiếu lịch sử.
               </p>
 
               {/* Target Period selection */}
@@ -12640,7 +12640,7 @@ const [customCommitmentSubjects, setCustomCommitmentSubjects] = useState<string[
                   await handleRegisterRetest();
                   setIsRetestModalOpen(false);
                 }}
-                className="flex items-center gap-1.5 hover:bg-indigo-700 text-white text-xs font-bold shadow-sm transition-all active:scale-95 cursor-pointer disabled:opacity-50 text-xs font-semibold"
+                className="flex items-center gap-1.5 hover:bg-[#003B3A] text-white text-xs font-bold shadow-sm transition-all active:scale-95 cursor-pointer disabled:opacity-50 text-xs font-semibold"
               >
                 {retestRegisterLoading ? <Loader2 className="w-4 h-4 animate-spin"/> : <RefreshCw className="w-4 h-4"/>}
                 Xác nhận

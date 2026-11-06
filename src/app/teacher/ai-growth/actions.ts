@@ -326,43 +326,21 @@ export async function getTeacherObservationSynthesis(targetTeacherId?: string) {
       recommendedChallengeCodes.push("CHAL_5MIN_NO_TALK", "CHAL_AI_HOOK", "CHAL_OPEN_QUESTION", "CHAL_THINK_PAIR_SHARE");
     }
 
-    // Construct AI Pedagogical Consultation Text
-    const primaryStrength = topStrengthsCriteria[0] ? `${topStrengthsCriteria[0].name} (${topStrengthsCriteria[0].percent}%)` : "tiến trình chuẩn mực";
-    const primaryGrowth = growthCriteria[0] ? `${growthCriteria[0].name}` : "tăng tính chủ động của học sinh";
-    const themeTitles = detectedThemes.map(t => t.theme).join(" • ");
-
-    const aiConsultation = {
-      summary: `Thầy/Cô ${teacher.teacherName} có phong cách sư phạm vững vàng, đặc biệt nổi trội ở ${primaryStrength}. Dựa trên các phiếu dự giờ đã qua, dư địa đổi mới sáng tạo nằm ở ${primaryGrowth}.`,
-      gdptOrientation: "Bám sát Chương trình GDPT 2018: Thầy/Cô được khuyến khích áp dụng dạy học phân hóa và chuyển giao quyền làm chủ cho học sinh, giúp các em tự tin trình bày và giải quyết vấn đề thực tiễn.",
-      edtechOrientation: "Ứng dụng Công nghệ & AI: Tận dụng các công cụ AI và nền tảng số để thiết kế tình huống mở đầu bất ngờ, tạo câu hỏi phân tầng và thu thập phản hồi Exit Ticket nhanh chóng.",
-      highlightThemes: themeTitles
-    };
-
     return {
       success: true,
-      teacher: {
-        id: teacher.id,
-        name: teacher.teacherName,
-        code: teacher.teacherCode,
-        campus: teacher.campus?.campusName || "Sky-Line",
-        department: teacher.departmentRel?.name || "Tổ chuyên môn"
-      },
-      stats: {
-        totalEvaluatedSlots,
-        totalEvaluations,
-        avgScore,
-        ratingStats
-      },
+      totalEvaluations: evaluations.length,
+      scoredCount,
+      avgScore,
+      ratingStats,
+      strengthsList,
+      improvementsList,
       criteriaStats,
       topStrengthsCriteria,
       growthCriteria,
-      strengthsList: strengthsList.slice(0, 10),
-      improvementsList: improvementsList.slice(0, 10),
       detectedThemes,
-      aiConsultation,
       recommendedChallengeCodes: Array.from(new Set(recommendedChallengeCodes))
     };
-  } catch (error) {
+  } catch (error: any) {
     console.error("Error in getTeacherObservationSynthesis:", error);
     return { success: false, error: error.message };
   }

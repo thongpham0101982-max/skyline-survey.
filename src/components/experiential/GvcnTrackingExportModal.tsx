@@ -221,7 +221,7 @@ export default function GvcnTrackingExportModal({
 
           <div className="bg-white p-3 rounded-xl border border-slate-200 shadow-2xs">
             <div className="text-[11px] font-bold text-slate-500 uppercase tracking-wider">Lượt kế hoạch gán</div>
-            <div className="text-xl font-black text-indigo-700 mt-0.5">{overallStats.totalPlansAssigned}</div>
+            <div className="text-xl font-black text-teal-800 mt-0.5">{overallStats.totalPlansAssigned}</div>
             <div className="text-[11px] text-slate-500 mt-0.5">Phân bổ toàn hệ thống</div>
           </div>
 

@@ -93,12 +93,12 @@ export function ScatterMetricsBar({ metrics, benchmarks, meta }: Props) {
       <div className="bg-white p-3.5 rounded-2xl border border-slate-200 shadow-sm">
         <div className="flex items-center justify-between">
           <span className="text-xs font-bold text-slate-600">Độ biến thiên (CV%)</span>
-          <div className="w-7 h-7 rounded-lg bg-indigo-50 text-indigo-700 flex items-center justify-center">
+          <div className="w-7 h-7 rounded-lg bg-teal-50 text-teal-800 flex items-center justify-center">
             <Activity className="w-4 h-4" />
           </div>
         </div>
         <div className="mt-2 flex items-baseline gap-1.5">
-          <span className="text-2xl font-black text-indigo-900">{cvY}%</span>
+          <span className="text-2xl font-black text-teal-800">{cvY}%</span>
           <span className="text-[11px] text-slate-500 font-medium">(σ = {stdDevY})</span>
         </div>
         <div className="mt-1">

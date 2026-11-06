@@ -481,7 +481,7 @@ export function ImportMappingClient({
                     <tr key={idx} className="hover:bg-slate-50/50">
                       <td className="p-3 text-center text-slate-400 font-medium">{r.stt}</td>
                       <td className="p-3 font-semibold text-slate-700">{r.studentName || "—"}</td>
-                      <td className="p-3 font-bold text-indigo-700 font-mono">{r.databaseCode || "—"}</td>
+                      <td className="p-3 font-bold text-teal-800 font-mono">{r.databaseCode || "—"}</td>
                       <td className="p-3 font-bold text-slate-800 font-mono">{r.markFileCode || "—"}</td>
                       <td className="p-3 text-slate-600">{r.className || "—"}</td>
                       <td className="p-3 text-slate-600">{r.campusName || "—"}</td>
@@ -595,7 +595,7 @@ export function ImportMappingClient({
                       <tr key={m.id} className="hover:bg-slate-50/50">
                         <td className="p-3 text-center text-slate-400 font-medium">{idx + 1}</td>
                         <td className="p-3 font-extrabold text-slate-800">{m.studentName}</td>
-                        <td className="p-3 text-indigo-700 font-bold font-mono">{m.databaseCode}</td>
+                        <td className="p-3 text-teal-800 font-bold font-mono">{m.databaseCode}</td>
                         <td className="p-3 text-slate-800 font-bold font-mono">{m.markFileCode}</td>
                         <td className="p-3 text-slate-600">{m.classCode || "—"}</td>
                         <td className="p-3 text-slate-600">{m.campusName || "—"}</td>

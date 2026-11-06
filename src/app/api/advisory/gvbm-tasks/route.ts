@@ -45,8 +45,26 @@ function sanitizeTaskForParent(row: any) {
 }
 
 function normalizeTaskRow(row: any) {
+  let executionLogs: any[] = []
+  try {
+    executionLogs = row.executionLogJson ? JSON.parse(row.executionLogJson) : []
+  } catch {}
+
+  const rawStatus = row.status || "ASSIGNED"
+  const isCompleted =
+    rawStatus === "DA_HOAN_THANH" ||
+    rawStatus === "APPROVED_FOR_PARENT" ||
+    rawStatus === "PARENT_ACKNOWLEDGED"
+  const isOverdue =
+    !isCompleted &&
+    Boolean(row.dueDate) &&
+    new Date(row.dueDate).getTime() < Date.now()
+
   return {
     ...row,
+    companionType: row.companionType || "GVBM",
+    executionLogs,
+    isOverdue,
     parentAcknowledged: Boolean(Number(row.parentAcknowledged)),
     parentRequestFollowUp: Boolean(Number(row.parentRequestFollowUp))
   }
@@ -67,6 +85,36 @@ export async function GET(req: Request) {
     const myTasks = searchParams.get("myTasks") === "true"
     const assignedByMe = searchParams.get("assignedByMe") === "true"
     const statusFilter = searchParams.get("status") || ""
+    const companionTypeFilter = searchParams.get("companionType") || ""
+    const includeClassTeachers = searchParams.get("includeClassTeachers") === "1"
+
+    let classSubjectTeachers: any[] = []
+    if (includeClassTeachers && classId) {
+      const assigns = await prisma.teacherClassAssignment
+        .findMany({
+          where: { classId },
+          include: {
+            teacher: { select: { id: true, teacherCode: true, teacherName: true } },
+            subject: { select: { id: true, code: true, name: true } }
+          }
+        })
+        .catch(() => [])
+      const seen = new Set<string>()
+      for (const a of assigns) {
+        if (!a.teacher) continue
+        const key = `${a.teacher.id}_${a.subject?.id || a.subjectId || ""}`
+        if (seen.has(key)) continue
+        seen.add(key)
+        classSubjectTeachers.push({
+          teacherId: a.teacher.id,
+          teacherCode: a.teacher.teacherCode,
+          teacherName: a.teacher.teacherName,
+          subjectId: a.subject?.id || a.subjectId || "",
+          subjectName: a.subject?.name || "Bộ môn giảng dạy",
+          companionType: "GVBM"
+        })
+      }
+    }
 
     // Trường hợp 1: Truy vấn theo studentId cụ thể
     if (studentId) {
@@ -126,6 +174,10 @@ export async function GET(req: Request) {
         whereClauses.push(`"status" = ?`)
         params.push(statusFilter)
       }
+      if (companionTypeFilter) {
+        whereClauses.push(`"companionType" = ?`)
+        params.push(companionTypeFilter)
+      }
 
       const whereSql = whereClauses.length > 0 ? `WHERE ${whereClauses.join(" AND ")}` : ""
       const rows: any[] = await prisma.$queryRawUnsafe(
@@ -181,7 +233,7 @@ export async function GET(req: Request) {
         }
       })
 
-      return jsonResponse({ tasks: enriched })
+      return jsonResponse({ tasks: enriched, classSubjectTeachers })
     }
 
     return jsonResponse({ tasks: [] })
@@ -253,6 +305,9 @@ export async function POST(req: Request) {
 
       const id = `gvbm_tsk_${Date.now()}_${Math.random().toString(36).slice(2, 7)}`
       const dueDateVal = item.dueDate ? new Date(item.dueDate).toISOString() : null
+      const acceptDeadlineVal = (item as any).acceptDeadline
+        ? new Date((item as any).acceptDeadline).toISOString()
+        : null
 
       await prisma.$executeRawUnsafe(
         `INSERT INTO "SubjectTeacherAdvisoryTask" (
@@ -261,8 +316,10 @@ export async function POST(req: Request) {
           "assignedByTeacherId", "assignedByTeacherName",
           "assignedToTeacherId", "assignedToTeacherName",
           "consultationPrompt", "supportGoal", "dueDate", "aiSuggestedContext",
+          "companionType", "goalId", "goalTitle", "goalCategory",
+          "expectedOutcome", "acceptDeadline", "updateMilestone",
           "status", "createdAt", "updatedAt"
-        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'ASSIGNED', CURRENT_TIMESTAMP, CURRENT_TIMESTAMP)`,
+        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'ASSIGNED', CURRENT_TIMESTAMP, CURRENT_TIMESTAMP)`,
         id,
         targetStudentId,
         student.classId,
@@ -277,7 +334,14 @@ export async function POST(req: Request) {
         item.consultationPrompt.trim(),
         (item.supportGoal || "Bồi dưỡng kiến thức trọng tâm & cải thiện điểm số").trim(),
         dueDateVal,
-        item.aiSuggestedContext || null
+        item.aiSuggestedContext || null,
+        (item as any).companionType || "GVBM",
+        (item as any).goalId || null,
+        (item as any).goalTitle || null,
+        (item as any).goalCategory || "HOC_TAP",
+        (item as any).expectedOutcome || item.supportGoal || "",
+        acceptDeadlineVal,
+        (item as any).updateMilestone || "Hàng tuần"
       )
 
       createdTasks.push({
@@ -610,6 +674,141 @@ export async function PATCH(req: Request) {
         message: "Đã ghi nhận xác nhận & phản hồi của Quý Phụ huynh vào Hồ sơ học sinh!",
         status: "PARENT_ACKNOWLEDGED"
       })
+    }
+
+    if (action === "ACCEPT_TASK") {
+      await prisma.$executeRawUnsafe(
+        `UPDATE "SubjectTeacherAdvisoryTask"
+         SET "status" = 'DA_TIEP_NHAN', "declineReason" = NULL, "updatedAt" = CURRENT_TIMESTAMP
+         WHERE "id" = ?`,
+        id
+      )
+      return jsonResponse({ success: true, status: "DA_TIEP_NHAN", message: "Đã tiếp nhận nhiệm vụ đồng hành & hỗ trợ!" })
+    }
+
+    if (action === "DECLINE_TASK") {
+      const reason = String(body.declineReason || "").trim()
+      if (!reason) {
+        return jsonResponse({ error: "Vui lòng nhập lý do chưa thể thực hiện nhiệm vụ này" }, 400)
+      }
+      await prisma.$executeRawUnsafe(
+        `UPDATE "SubjectTeacherAdvisoryTask"
+         SET "status" = 'CAN_BO_SUNG', "declineReason" = ?, "updatedAt" = CURRENT_TIMESTAMP
+         WHERE "id" = ?`,
+        reason,
+        id
+      )
+      return jsonResponse({ success: true, status: "CAN_BO_SUNG", message: "Đã gửi phản hồi lý do tới GVCN/CVHT!" })
+    }
+
+    if (action === "LOG_ACTIVITY") {
+      let existingLogs: any[] = []
+      try {
+        existingLogs = task.executionLogJson ? JSON.parse(task.executionLogJson) : []
+      } catch {}
+      if (body.activityNote && String(body.activityNote).trim()) {
+        existingLogs.unshift({
+          id: `log_${Date.now()}`,
+          actorName: caller.actorName || "Giáo viên đồng hành",
+          note: String(body.activityNote).trim(),
+          evidence: String(body.evidenceText || "").trim(),
+          createdAt: new Date().toISOString()
+        })
+      }
+      const nextStatus = body.submitForConfirmation ? "GVBM_RESPONDED" : "DANG_HO_TRO"
+      await prisma.$executeRawUnsafe(
+        `UPDATE "SubjectTeacherAdvisoryTask"
+         SET "executionLogJson" = ?,
+             "evidenceAndProposal" = COALESCE(?, "evidenceAndProposal"),
+             "gvbmProfessionalAssessment" = COALESCE(?, "gvbmProfessionalAssessment"),
+             "gvbmProposedSolutions" = COALESCE(?, "gvbmProposedSolutions"),
+             "gvbmParentAdvice" = COALESCE(?, "gvbmParentAdvice"),
+             "status" = ?,
+             "gvbmRespondedAt" = CASE WHEN ? = 'GVBM_RESPONDED' THEN CURRENT_TIMESTAMP ELSE "gvbmRespondedAt" END,
+             "updatedAt" = CURRENT_TIMESTAMP
+         WHERE "id" = ?`,
+        JSON.stringify(existingLogs),
+        body.evidenceAndProposal || null,
+        gvbmProfessionalAssessment || null,
+        gvbmProposedSolutions || null,
+        gvbmParentAdvice || null,
+        nextStatus,
+        nextStatus,
+        id
+      )
+      return jsonResponse({
+        success: true,
+        status: nextStatus,
+        message: body.submitForConfirmation
+          ? "Đã gửi báo cáo đề nghị hoàn thành tới GVCN/CVHT xác nhận!"
+          : "Đã cập nhật nhật ký thực hiện và minh chứng hỗ trợ!"
+      })
+    }
+
+    if (action === "REQUEST_SUPPLEMENT") {
+      const suppNote = String(body.supplementRequestNote || cvhtReviewNote || "").trim()
+      if (!suppNote) {
+        return jsonResponse({ error: "Vui lòng nhập nội dung yêu cầu bổ sung gửi giáo viên đồng hành" }, 400)
+      }
+      await prisma.$executeRawUnsafe(
+        `UPDATE "SubjectTeacherAdvisoryTask"
+         SET "status" = 'CAN_BO_SUNG',
+             "supplementRequestNote" = ?,
+             "cvhtReviewNote" = ?,
+             "updatedAt" = CURRENT_TIMESTAMP
+         WHERE "id" = ?`,
+        suppNote,
+        suppNote,
+        id
+      )
+      if (task.assignedToTeacherId) {
+        const targetT = await prisma.teacher.findUnique({
+          where: { id: task.assignedToTeacherId },
+          select: { userId: true }
+        }).catch(() => null)
+        if (targetT?.userId) {
+          await prisma.notification.create({
+            data: {
+              userId: targetT.userId,
+              title: `[Yêu cầu bổ sung] Nhiệm vụ đồng hành môn ${task.subjectName} - HS ${student?.studentName || ""}`,
+              message: `CVHT đề nghị bổ sung kết quả hỗ trợ: "${suppNote}"`,
+              link: `/teacher/co-van-hoc-tap?classId=${task.classId || ""}&tab=companion_support`
+            }
+          }).catch(() => null)
+        }
+      }
+      return jsonResponse({ success: true, status: "CAN_BO_SUNG", message: "Đã gửi yêu cầu bổ sung tới Giáo viên đồng hành!" })
+    }
+
+    if (action === "REMIND_TEACHER") {
+      if (task.assignedToTeacherId) {
+        const targetT = await prisma.teacher.findUnique({
+          where: { id: task.assignedToTeacherId },
+          select: { userId: true }
+        }).catch(() => null)
+        if (targetT?.userId) {
+          await prisma.notification.create({
+            data: {
+              userId: targetT.userId,
+              title: `[Nhắc cập nhật tiến độ] Đồng hành hỗ trợ HS ${student?.studentName || ""}`,
+              message: `CVHT nhắc cập nhật tiến độ nhiệm vụ "${task.subjectName}": ${task.supportGoal || ""}`,
+              link: `/teacher/co-van-hoc-tap?classId=${task.classId || ""}&tab=companion_support`
+            }
+          }).catch(() => null)
+        }
+      }
+      await appendAdvisoryAuditLog({
+        studentId: task.studentId,
+        actorId: caller.userId,
+        actorRole: caller.actorRole,
+        actorName: caller.actorName,
+        entityType: "GVBM_ADVISORY_TASK",
+        entityId: id,
+        action: "REMIND_COMPANION_TEACHER",
+        privacyTier: "PRIVATE_ADVISORY",
+        summary: `CVHT gửi nhắc cập nhật nhiệm vụ hỗ trợ môn ${task.subjectName} tới ${task.assignedToTeacherName}`
+      })
+      return jsonResponse({ success: true, message: "Đã gửi thông báo nhắc cập nhật tới Giáo viên đồng hành!" })
     }
 
     return jsonResponse({ error: "Hành động cập nhật không hợp lệ" }, 400)

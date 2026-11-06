@@ -322,22 +322,22 @@ export default function CareerDevelopmentProfilePage() {
               <div className="bg-white rounded-2xl p-5 shadow-sm border border-slate-200 space-y-4">
                 <div className="flex flex-wrap items-center justify-between gap-2">
                   <div className="flex items-center space-x-2">
-                    <Sparkles className="w-5 h-5 text-[#5B2D8B]" />
+                    <Sparkles className="w-5 h-5 text-[#003B3A]" />
                     <h3 className="font-bold text-sm text-slate-800">1. Tự nhận thức, Sở thích & Trắc nghiệm Holland (RIASEC)</h3>
                   </div>
-                  <span className="px-2.5 py-0.5 rounded-full bg-purple-50 text-[#5B2D8B] border border-purple-200 text-[10px] font-bold">
+                  <span className="px-2.5 py-0.5 rounded-full bg-teal-50 text-[#003B3A] border border-teal-200 text-[10px] font-bold">
                     Minh chứng tham khảo — Không tự động quy đổi thành điểm đánh giá GDHN
                   </span>
                 </div>
 
                 {profileData.hollandAssessment && (
-                  <div className="p-4 rounded-2xl bg-[#FAF8FC] border border-purple-200/80 space-y-2.5 text-xs">
+                  <div className="p-4 rounded-2xl bg-[#FAF8FC] border border-teal-200/80 space-y-2.5 text-xs">
                     <div className="flex flex-wrap items-center justify-between gap-2">
                       <div className="flex items-center gap-2">
-                        <span className="px-2.5 py-0.5 rounded-lg bg-[#2E1065] text-amber-300 font-mono font-extrabold text-xs">
+                        <span className="px-2.5 py-0.5 rounded-lg bg-[#003B3A] text-amber-300 font-mono font-extrabold text-xs">
                           Mã Holland: {profileData.hollandAssessment.hollandCode}
                         </span>
-                        <span className="text-[11px] font-bold text-[#5B2D8B]">
+                        <span className="text-[11px] font-bold text-[#003B3A]">
                           ({profileData.hollandAssessment.version} • 108 câu Có/Không)
                         </span>
                       </div>
@@ -359,10 +359,10 @@ export default function CareerDevelopmentProfilePage() {
                       {(["R", "I", "A", "S", "E", "C"] as const).map(code => (
                         <div
                           key={code}
-                          className="p-2 rounded-xl bg-white border border-purple-100 text-center"
+                          className="p-2 rounded-xl bg-white border border-teal-200 text-center"
                         >
                           <div className="text-[10px] font-bold text-slate-500">Nhóm {code}</div>
-                          <div className="text-xs font-extrabold text-[#2E1065]">
+                          <div className="text-xs font-extrabold text-[#003B3A]">
                             {profileData.hollandAssessment.scores?.[code] ?? 0}/18
                           </div>
                         </div>
@@ -438,7 +438,7 @@ export default function CareerDevelopmentProfilePage() {
               <div className="bg-white rounded-2xl p-5 shadow-sm border border-slate-200">
                 <div className="flex items-center justify-between mb-4">
                   <div className="flex items-center space-x-2">
-                    <BookOpen className="w-5 h-5 text-indigo-600" />
+                    <BookOpen className="w-5 h-5 text-teal-800" />
                     <h3 className="font-bold text-sm text-slate-800">
                       3. Kết quả các bài học Hướng nghiệp chính khóa (Khối 6–12)
                     </h3>

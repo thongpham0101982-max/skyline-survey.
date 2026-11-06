@@ -1,3 +1,0 @@
-module.exports=[537006,a=>{"use strict";var b=a.i(187924);a.s(["default",0,function({error:a,reset:c}){return(0,b.jsx)("html",{children:(0,b.jsx)("body",{children:(0,b.jsxs)("div",{style:{display:"flex",flexDirection:"column",alignItems:"center",justifyContent:"center",minHeight:"100vh",fontFamily:"sans-serif"},children:[(0,b.jsx)("h2",{children:"Hệ thống tạm thời gián đoạn"}),(0,b.jsx)("p",{children:"Xin lỗi, đã xảy ra lỗi nghiêm trọng toàn cục."}),(0,b.jsx)("button",{onClick:()=>c(),children:"Thử lại"})]})})})}])}];
-
-//# sourceMappingURL=src_app_global-error_tsx_0ib21jc._.js.map

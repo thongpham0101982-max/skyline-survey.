@@ -40,7 +40,7 @@ export function StudentSupportHeader({
     <div className={`p-5 rounded-2xl bg-white border border-slate-200 shadow-xs flex flex-col md:flex-row items-start md:items-center justify-between gap-4 ${className}`}>
       <div className="flex items-center gap-3.5">
         <div className={`w-12 h-12 rounded-2xl flex items-center justify-center font-bold text-white shrink-0 shadow-xs ${
-          isAcademic ? "bg-[#003B3A]" : "bg-purple-800"
+          isAcademic ? "bg-[#003B3A]" : "bg-[#003B3A]"
         }`}>
           {isAcademic ? <GraduationCap className="w-6 h-6" /> : <Heart className="w-6 h-6" />}
         </div>

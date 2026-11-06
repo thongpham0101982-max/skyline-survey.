@@ -206,7 +206,7 @@ export function TeacherQuestDashboard({
             </div>
 
             <div className="bg-white/5 border border-white/10 rounded-2xl p-3 text-center">
-              <div className="text-[11px] text-orange-400 font-bold flex items-center justify-center gap-1">
+              <div className="text-[11px] text-amber-700 font-bold flex items-center justify-center gap-1">
                 <Flame className="w-3.5 h-3.5 fill-orange-400" /> Chuỗi Tháng
               </div>
               <div className="text-xl sm:text-2xl font-black text-white mt-1">
@@ -266,7 +266,7 @@ export function TeacherQuestDashboard({
           }`}
         >
           <Target className="w-4 h-4 text-emerald-400" />
-          <span>Hồ Sơ Sư Phạm & Tổng Hợp Nhận Xét AI</span>
+          <span>Hồ Sơ Sư Phạm & Tổng Hợp Nhận Xét</span>
         </button>
 
         <button
@@ -313,7 +313,7 @@ export function TeacherQuestDashboard({
               : "text-slate-600 hover:text-slate-900 hover:bg-slate-100"
           }`}
         >
-          <Award className="w-4 h-4 text-purple-400" />
+          <Award className="w-4 h-4 text-teal-700" />
           <span>Dấu Ấn & Tủ Huy Hiệu ({badges?.length || 0}/5)</span>
         </button>
       </div>
@@ -371,69 +371,6 @@ export function TeacherQuestDashboard({
                     </div>
                   </div>
                 </div>
-              </div>
-
-              {/* AI Pedagogical Advice & GDPT 2018 Orientation */}
-              <div className="bg-gradient-to-br from-teal-950 via-[#003B3A] to-slate-900 border-2 border-teal-500/30 rounded-3xl p-6 text-white shadow-xl space-y-4 relative overflow-hidden">
-                <div className="flex items-center justify-between gap-3 pb-3 border-b border-white/10">
-                  <div className="flex items-center gap-3">
-                    <div className="w-10 h-10 rounded-2xl bg-amber-400/20 border border-amber-400/40 flex items-center justify-center text-amber-300">
-                      <Bot className="w-5 h-5 animate-pulse" />
-                    </div>
-                    <div>
-                      <span className="text-[10px] font-black uppercase tracking-wider text-amber-300 bg-amber-500/10 px-2.5 py-0.5 rounded-full border border-amber-500/30">
-                        AI Pedagogical Mentor
-                      </span>
-                      <h3 className="text-lg font-black text-white mt-0.5">
-                        Tư Vấn Đổi Mới Sư Phạm Cùng AI Theo GDPT 2018
-                      </h3>
-                    </div>
-                  </div>
-
-                  <button
-                    type="button"
-                    onClick={() => setModalOpen(true)}
-                    className="px-5 py-2.5 rounded-2xl bg-gradient-to-r from-amber-400 via-amber-500 to-amber-600 hover:brightness-110 text-slate-950 font-black text-xs flex items-center gap-2 shadow-lg shadow-amber-500/30 cursor-pointer transition-all"
-                  >
-                    <Zap className="w-4 h-4 fill-slate-950" /> Bốc Thẻ Thử Thách Cá Nhân Hóa
-                  </button>
-                </div>
-
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-xs">
-                  <div className="p-4 bg-white/5 border border-white/10 rounded-2xl space-y-2">
-                    <h5 className="font-bold text-amber-300 flex items-center gap-1.5">
-                      <Sparkles className="w-4 h-4" /> Tổng Hợp Phong Cách Sư Phạm:
-                    </h5>
-                    <p className="text-teal-100/90 leading-relaxed">
-                      {synthesis.aiConsultation?.summary}
-                    </p>
-                  </div>
-
-                  <div className="p-4 bg-white/5 border border-white/10 rounded-2xl space-y-2">
-                    <h5 className="font-bold text-sky-300 flex items-center gap-1.5">
-                      <Target className="w-4 h-4" /> Định Hướng Chương Trình GDPT 2018:
-                    </h5>
-                    <p className="text-teal-100/90 leading-relaxed">
-                      {synthesis.aiConsultation?.gdptOrientation}
-                    </p>
-                  </div>
-                </div>
-
-                {/* Detected Growth Themes Pills */}
-                {synthesis.detectedThemes && synthesis.detectedThemes.length > 0 && (
-                  <div className="pt-2 border-t border-white/10 flex flex-wrap items-center gap-2">
-                    <span className="text-xs font-bold text-teal-200">Chủ đề đổi mới trọng tâm:</span>
-                    {synthesis.detectedThemes.map((th: any, idx: number) => (
-                      <div
-                        key={idx}
-                        className="px-3 py-1 rounded-xl bg-amber-400/20 text-amber-200 border border-amber-400/30 text-xs font-bold flex items-center gap-1.5"
-                      >
-                        <span>●</span>
-                        <span>{th.theme}</span>
-                      </div>
-                    ))}
-                  </div>
-                )}
               </div>
 
               {/* 11 K-12 Rubric Criteria Breakdown */}
@@ -576,7 +513,7 @@ export function TeacherQuestDashboard({
               <Bot className="w-10 h-10 text-teal-600 mx-auto" />
               <h4 className="text-base font-bold text-slate-800">Chưa Đủ Dữ Liệu Dự Giờ Để Tổng Hợp</h4>
               <p className="text-xs max-w-md mx-auto">
-                Hệ thống sẽ tự động phân tích và tạo hồ sơ sư phạm AI ngay khi Thầy/Cô có phiếu đánh giá dự giờ đầu tiên được nộp.
+                Hệ thống sẽ tự động phân tích và tạo hồ sơ sư phạm ngay khi Thầy/Cô có phiếu đánh giá dự giờ đầu tiên được nộp.
               </p>
               <button
                 type="button"
@@ -610,7 +547,7 @@ export function TeacherQuestDashboard({
 
                   <span className={`text-[10px] font-black px-2.5 py-0.5 rounded-full border uppercase ${
                     activeQuest.challenge.rarityTier === "EPIC_AI"
-                      ? "bg-purple-500/20 text-purple-300 border-purple-500/40"
+                      ? "bg-teal-500/20 text-teal-700 border-teal-500/40"
                       : activeQuest.challenge.rarityTier === "RARE"
                       ? "bg-sky-500/20 text-sky-300 border-sky-500/40"
                       : "bg-emerald-500/20 text-emerald-300 border-emerald-500/40"
@@ -657,7 +594,7 @@ export function TeacherQuestDashboard({
 
                 {/* AI Hint Drawer */}
                 {showAiHint && (
-                  <div className="p-4 bg-purple-950/60 border border-purple-500/40 rounded-2xl text-xs text-purple-200 mb-4 animate-in fade-in duration-200">
+                  <div className="p-4 bg-teal-950/60 border border-teal-500/40 rounded-2xl text-xs text-teal-700 mb-4 animate-in fade-in duration-200">
                     <h5 className="font-bold text-amber-300 flex items-center gap-1.5 mb-1.5">
                       <Sparkles className="w-3.5 h-3.5" /> Gợi Ý Chuẩn Bị Tiết Dạy Từ AI:
                     </h5>
@@ -730,7 +667,7 @@ export function TeacherQuestDashboard({
                 </li>
                 <li className="flex justify-between py-1 border-b border-slate-100">
                   <span>Thử thách AI Huyền Thoại</span>
-                  <strong className="text-purple-600">+150 IP</strong>
+                  <strong className="text-teal-800">+150 IP</strong>
                 </li>
                 <li className="flex justify-between py-1 border-b border-slate-100">
                   <span>Nhận khoảnh khắc WOW</span>
@@ -842,7 +779,7 @@ export function TeacherQuestDashboard({
                           </div>
                           <span className={`inline-block mt-0.5 px-2 py-0.2 rounded-full text-[9px] font-black uppercase ${
                             rec.challenge.rarityTier === "EPIC_AI"
-                              ? "bg-purple-100 text-purple-800"
+                              ? "bg-teal-50 text-teal-800"
                               : rec.challenge.rarityTier === "RARE"
                               ? "bg-sky-100 text-sky-800"
                               : "bg-emerald-100 text-emerald-800"
@@ -890,7 +827,7 @@ export function TeacherQuestDashboard({
                             <button
                               type="button"
                               onClick={() => setSelectedInsightDetail(rec)}
-                              className="px-2.5 py-1 rounded-xl bg-purple-50 text-purple-700 border border-purple-200 font-bold hover:bg-purple-100 transition-colors inline-flex items-center gap-1 cursor-pointer"
+                              className="px-2.5 py-1 rounded-xl bg-teal-50 text-teal-800 border border-teal-200 font-bold hover:bg-teal-50 transition-colors inline-flex items-center gap-1 cursor-pointer"
                             >
                               <Sparkles className="w-3 h-3" /> Xem dấu ấn
                             </button>
@@ -945,7 +882,7 @@ export function TeacherQuestDashboard({
 
               <div className="bg-white border border-slate-200 rounded-3xl p-5 text-center shadow-xs">
                 <span className="text-xs font-bold text-slate-500 uppercase tracking-wider">Điểm cảm hứng tích lũy toàn trường</span>
-                <div className="text-2xl font-black text-purple-700 mt-1">
+                <div className="text-2xl font-black text-teal-800 mt-1">
                   {gamification.metrics?.totalPointsAwarded || 0} <span className="text-xs font-bold">IP</span>
                 </div>
               </div>
@@ -1108,7 +1045,7 @@ export function TeacherQuestDashboard({
           <div className="bg-white border border-slate-200/90 rounded-3xl p-6 shadow-xs space-y-4">
             <div className="flex items-center justify-between pb-3 border-b border-slate-100">
               <div className="flex items-center gap-2.5">
-                <div className="w-9 h-9 rounded-2xl bg-purple-100 text-purple-700 flex items-center justify-center shrink-0">
+                <div className="w-9 h-9 rounded-2xl bg-teal-50 text-teal-800 flex items-center justify-center shrink-0">
                   <Award className="w-5 h-5" />
                 </div>
                 <div>
@@ -1192,7 +1129,7 @@ export function TeacherQuestDashboard({
                       </h4>
 
                       {q.afterClassInsight ? (
-                        <div className="p-3 bg-purple-50/80 border border-purple-200 rounded-2xl text-xs text-purple-950 leading-relaxed italic">
+                        <div className="p-3 bg-teal-50/80 border border-teal-200 rounded-2xl text-xs text-teal-800 leading-relaxed italic">
                           "{q.afterClassInsight}"
                         </div>
                       ) : (
@@ -1295,7 +1232,7 @@ export function TeacherQuestDashboard({
           <div className="bg-white rounded-3xl max-w-lg w-full p-6 space-y-4 shadow-2xl">
             <div className="flex items-center justify-between pb-3 border-b border-slate-100">
               <div className="flex items-center gap-2">
-                <Sparkles className="w-5 h-5 text-purple-600" />
+                <Sparkles className="w-5 h-5 text-teal-800" />
                 <h4 className="text-sm font-black text-slate-900">
                   Dấu Ấn Sư Phạm AI: {selectedInsightDetail.teacherName}
                 </h4>
@@ -1316,11 +1253,11 @@ export function TeacherQuestDashboard({
                 <p className="text-slate-600 text-[11px]">{selectedInsightDetail.subjectName} - {selectedInsightDetail.className}</p>
               </div>
 
-              <div className="p-4 bg-purple-50/80 border border-purple-200 rounded-2xl space-y-1">
-                <span className="text-[11px] font-bold text-purple-900 uppercase flex items-center gap-1">
+              <div className="p-4 bg-teal-50/80 border border-teal-200 rounded-2xl space-y-1">
+                <span className="text-[11px] font-bold text-teal-800 uppercase flex items-center gap-1">
                   <Sparkles className="w-3.5 h-3.5" /> Lời nhận xét đúc kết từ AI:
                 </span>
-                <p className="text-purple-950 font-medium leading-relaxed italic">
+                <p className="text-teal-800 font-medium leading-relaxed italic">
                   "{selectedInsightDetail.afterClassInsight}"
                 </p>
               </div>

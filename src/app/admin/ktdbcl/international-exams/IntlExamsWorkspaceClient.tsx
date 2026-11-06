@@ -360,14 +360,14 @@ export default function IntlExamsWorkspaceClient({ initialData }: Props) {
               <div className="text-[11px] font-bold text-slate-500 uppercase tracking-wider">
                 3. Kết quả Kỹ năng / Môn học
               </div>
-              <div className="text-2xl font-black text-purple-700 mt-1">
+              <div className="text-2xl font-black text-teal-800 mt-1">
                 {data.denominators.totalComponentEntriesCount}
               </div>
               <div className="text-[11px] text-slate-500 mt-0.5">
                 Mẫu số phân tích RW/L/S, Math/Sci/ESL
               </div>
             </div>
-            <div className="p-2.5 rounded-xl bg-purple-50 text-purple-700">
+            <div className="p-2.5 rounded-xl bg-teal-50 text-teal-800">
               <Layers className="w-5 h-5" />
             </div>
           </div>

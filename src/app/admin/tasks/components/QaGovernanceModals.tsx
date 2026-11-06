@@ -88,7 +88,7 @@ export function QaAnalyticsReportModal({
       <div className="bg-white w-full max-w-5xl rounded-2xl shadow-2xl border border-slate-200 overflow-hidden my-6 flex flex-col max-h-[92vh]">
         <div className="px-6 py-4 bg-slate-900 text-white flex items-center justify-between">
           <div className="flex items-center gap-3">
-            <BarChart3 className="w-5 h-5 text-violet-400" />
+            <BarChart3 className="w-5 h-5 text-teal-700" />
             <div>
               <h2 className="text-base font-extrabold">
                 Báo cáo & Dữ liệu Điều hành Đa chiều — Ban KT&ĐBCL
@@ -155,7 +155,7 @@ export function QaAnalyticsReportModal({
                   {metric.label}
                 </div>
                 <div className="flex items-baseline gap-2">
-                  <span className="text-2xl font-black text-violet-700">
+                  <span className="text-2xl font-black text-teal-800">
                     {metric.percentage !== null ? `${metric.percentage}%` : "N/A"}
                   </span>
                   <span className="text-xs font-bold text-slate-600">
@@ -207,7 +207,7 @@ export function QaAnalyticsReportModal({
                       <td className="p-3 text-center text-sky-700 font-semibold">
                         {row.inProgressCount}
                       </td>
-                      <td className="p-3 text-center text-violet-700 font-bold">
+                      <td className="p-3 text-center text-teal-800 font-bold">
                         {row.pendingReviewCount}
                       </td>
                       <td className="p-3 text-center text-emerald-700 font-bold">
@@ -240,10 +240,10 @@ export function QaAnalyticsReportModal({
               </div>
             </div>
             <div>
-              <div className="font-bold text-violet-950">
+              <div className="font-bold text-teal-800">
                 Đã hoàn thành hành động (Chờ/Đã XN)
               </div>
-              <div className="text-2xl font-black text-violet-800 mt-1">
+              <div className="text-2xl font-black text-teal-800 mt-1">
                 {report.improvementSummary.actionCompletedCount}
               </div>
             </div>
@@ -372,7 +372,7 @@ export function QaSmartReminderModal({
                 className="p-3 rounded-xl bg-slate-50 border border-slate-200"
               >
                 <div className="font-bold text-slate-900">{item.label}</div>
-                <div className="text-[11px] text-violet-700 font-semibold mt-0.5">
+                <div className="text-[11px] text-teal-800 font-semibold mt-0.5">
                   Đích nhắc: {item.role}
                 </div>
               </div>
@@ -384,7 +384,7 @@ export function QaSmartReminderModal({
               type="button"
               disabled={dispatching}
               onClick={handleDispatchReminders}
-              className="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl bg-violet-600 hover:bg-violet-700 text-white text-xs font-extrabold cursor-pointer"
+              className="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl bg-teal-500 hover:bg-teal-500 text-white text-xs font-extrabold cursor-pointer"
             >
               <Send className="w-4 h-4" />
               {dispatching
@@ -428,7 +428,7 @@ export function QaSmartReminderModal({
                     className="p-3 rounded-xl bg-slate-50 border border-slate-200 text-xs flex items-center justify-between gap-2"
                   >
                     <div>
-                      <span className="px-2 py-0.5 rounded bg-violet-100 text-violet-800 font-bold text-[10px] mr-2">
+                      <span className="px-2 py-0.5 rounded bg-teal-50 text-teal-800 font-bold text-[10px] mr-2">
                         {log.reminderType}
                       </span>
                       <span className="font-semibold text-slate-800">
@@ -665,13 +665,13 @@ export function QaCapaActionModal({
             return (
               <div className="grid grid-cols-1 sm:grid-cols-4 gap-3">
                 <div>
-                  <label className="block font-bold text-violet-800 mb-1">
+                  <label className="block font-bold text-teal-800 mb-1">
                     1. Chọn Tổ CM
                   </label>
                   <select
                     value={capaDeptFilter}
                     onChange={e => setCapaDeptFilter(e.target.value)}
-                    className="w-full px-3 py-2 rounded-xl border border-violet-300 bg-violet-50 font-bold text-violet-900"
+                    className="w-full px-3 py-2 rounded-xl border border-teal-200 bg-teal-50 font-bold text-teal-800"
                   >
                     {deptNames.map(dn => (
                       <option key={dn} value={dn}>
@@ -768,12 +768,12 @@ export function QaCapaActionModal({
           </div>
 
           {!editingAction && (
-            <label className="inline-flex items-center gap-2 font-bold text-violet-800 cursor-pointer">
+            <label className="inline-flex items-center gap-2 font-bold text-teal-800 cursor-pointer">
               <input
                 type="checkbox"
                 checked={createLinkedWorkTask}
                 onChange={e => setCreateLinkedWorkTask(e.target.checked)}
-                className="rounded text-violet-600"
+                className="rounded text-teal-800"
               />
               <span>
                 Đồng thời phát hành Phiếu giao việc liên thông trong QA Workspace (Có khóa chống trùng lặp)
@@ -792,7 +792,7 @@ export function QaCapaActionModal({
             <button
               type="submit"
               disabled={saving}
-              className="px-5 py-2 rounded-xl bg-violet-600 hover:bg-violet-700 text-white font-extrabold cursor-pointer"
+              className="px-5 py-2 rounded-xl bg-teal-500 hover:bg-teal-500 text-white font-extrabold cursor-pointer"
             >
               {saving ? "Đang lưu..." : "Lưu Hồ sơ Cải tiến"}
             </button>

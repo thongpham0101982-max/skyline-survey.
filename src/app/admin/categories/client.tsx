@@ -289,7 +289,7 @@ export function CategoriesClient({ initialCategories }: { initialCategories: any
         </div>
 
         <div className="bg-white rounded-2xl border border-slate-200/80 p-4 shadow-2xs flex items-center gap-3">
-          <div className="w-10 h-10 rounded-xl bg-indigo-50 text-indigo-600 flex items-center justify-center font-black">
+          <div className="w-10 h-10 rounded-xl bg-teal-50 text-teal-800 flex items-center justify-center font-black">
             <Layers className="w-5 h-5" />
           </div>
           <div>
@@ -751,7 +751,7 @@ export function CategoriesClient({ initialCategories }: { initialCategories: any
               {isRoot && childCount > 0 && (
                 <button
                   onClick={() => toggleCollapseRoot(cat.id)}
-                  className="text-[10px] font-extrabold bg-indigo-50 hover:bg-indigo-100 text-indigo-700 border border-indigo-100 px-2 py-0.5 rounded-full transition-all cursor-pointer border-none flex items-center gap-1"
+                  className="text-[10px] font-extrabold bg-teal-50 hover:bg-teal-50 text-teal-800 border border-teal-200 px-2 py-0.5 rounded-full transition-all cursor-pointer border-none flex items-center gap-1"
                 >
                   <span>{childCount} danh mục con</span>
                   {isCollapsed ? <ChevronRight className="w-3 h-3" /> : <ChevronDown className="w-3 h-3" />}

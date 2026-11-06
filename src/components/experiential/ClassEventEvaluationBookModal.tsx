@@ -576,7 +576,7 @@ export default function ClassEventEvaluationBookModal({
 
                 {/* 3 Phases of Plan */}
                 <div className="md:col-span-2 space-y-1">
-                  <label className="block font-black text-indigo-900 bg-indigo-50 px-2 py-1 rounded-md">
+                  <label className="block font-black text-teal-800 bg-teal-50 px-2 py-1 rounded-md">
                     Giai đoạn 1: Chuẩn bị & Phổ biến (Trước sự kiện)
                   </label>
                   <textarea
@@ -928,7 +928,7 @@ export default function ClassEventEvaluationBookModal({
                                 <span className={`px-1 py-0.5 rounded text-[9.5px] inline-block ${
                                   roleKey === "TN" ? "bg-amber-100 text-amber-900 font-bold" :
                                   roleKey === "PN" ? "bg-blue-100 text-blue-900 font-bold" :
-                                  roleKey === "TK" ? "bg-purple-100 text-purple-900 font-bold" :
+                                  roleKey === "TK" ? "bg-teal-50 text-teal-800 font-bold" :
                                   roleKey === "TV_TC" ? "bg-emerald-100 text-emerald-900 font-bold" :
                                   "bg-slate-100 text-slate-700"
                                 }`}>

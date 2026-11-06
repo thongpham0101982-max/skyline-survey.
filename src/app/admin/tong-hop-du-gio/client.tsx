@@ -216,6 +216,7 @@ export function AdminTongHopClient({
   const [ttcmMatrixRoleFilter, setTtcmMatrixRoleFilter] = useState<string>("all")
   const [ttcmMatrixCampus, setTtcmMatrixCampus] = useState<string>("all")
   const [ttcmMatrixObservedCampus, setTtcmMatrixObservedCampus] = useState<string>("all")
+  const [ttcmMatrixOriginFilter, setTtcmMatrixOriginFilter] = useState<"all" | "PLAN" | "SURPRISE" | "ASSIGNED">("all")
   const [ttcmSearchQuery, setTtcmSearchQuery] = useState<string>("")
   // QA Dashboard Filters
   const [qaCampusFilter, setQaCampusFilter] = useState<string>("all")
@@ -351,6 +352,16 @@ export function AdminTongHopClient({
       slot.requestOrigin === "SURPRISE" ||
       (typeof slot.description === "string" && (slot.description.includes("[SURPRISE]") || slot.description.toLowerCase().includes("dự giờ đột xuất"))) ||
       (typeof slot.topic === "string" && slot.topic.toLowerCase().includes("đột xuất"))
+    );
+  };
+
+  // Helper to determine whether a slot is an assigned observation
+  const isAssignedSlot = (slot: any) => {
+    if (!slot) return false;
+    return (
+      slot.requestOrigin === "ASSIGNED" ||
+      (typeof slot.description === "string" && (slot.description.includes("[ASSIGNED]") || slot.description.toLowerCase().includes("chỉ định"))) ||
+      (typeof slot.topic === "string" && slot.topic.toLowerCase().includes("chỉ định"))
     );
   };
 
@@ -666,9 +677,11 @@ export function AdminTongHopClient({
       const matchLevel = filterLevel === "all" || slot.level === filterLevel;
       const matchGrade = filterGrade === "all" || slot.grade === filterGrade;
       const isSurprise = isSurpriseSlot(slot);
+      const isAssigned = isAssignedSlot(slot);
       const matchOrigin = filterObservedSlotOrigin === "all" ||
         (filterObservedSlotOrigin === "SURPRISE" && isSurprise) ||
-        (filterObservedSlotOrigin === "PLAN" && !isSurprise);
+        (filterObservedSlotOrigin === "ASSIGNED" && isAssigned) ||
+        (filterObservedSlotOrigin === "PLAN" && !isSurprise && !isAssigned);
       return matchQuery && matchLevel && matchGrade && matchOrigin;
     });
   }, [selTeacherObservedSlots, searchSlotQuery, filterLevel, filterGrade, filterObservedSlotOrigin]);
@@ -1191,9 +1204,10 @@ export function AdminTongHopClient({
         ? configuredObserved
         : getPresetTarget(observerType);
 
-      const campusStats: Record<string, { periods: number; surprisePeriods: number; evaluatedPeriods?: number; pendingPeriods?: number }> = {};
+      const campusStats: Record<string, { periods: number; surprisePeriods: number; assignedPeriods: number; evaluatedPeriods?: number; pendingPeriods?: number }> = {};
       let totalObserved = 0;
       let totalSurprise = 0;
+      let totalAssigned = 0;
       let internalObserved = 0;
       let crossObserved = 0;
 
@@ -1208,22 +1222,25 @@ export function AdminTongHopClient({
         }
 
         const isSurprise = isSurpriseSlot(slot);
+        const isAssigned = isAssignedSlot(slot);
         const increment = slot.isDoublePeriod ? 2 : 1;
 
         slot.registrations?.forEach((reg: any) => {
-          if (reg.teacherId === ttcm.id && reg.isApproved) {
+          if (reg.teacherId === ttcm.id && (reg.isApproved || isSurprise || isAssigned)) {
             const hasEval = reg.evaluation && reg.evaluation?.reEvaluationStatus !== "DRAFT";
             const observedCampus = getSlotCampusName(slot);
             if (!campusStats[observedCampus]) {
-              campusStats[observedCampus] = { periods: 0, surprisePeriods: 0, evaluatedPeriods: 0, pendingPeriods: 0 };
+              campusStats[observedCampus] = { periods: 0, surprisePeriods: 0, assignedPeriods: 0, evaluatedPeriods: 0, pendingPeriods: 0 };
             }
             campusStats[observedCampus].periods += increment;
             if (isSurprise) campusStats[observedCampus].surprisePeriods += increment;
+            if (isAssigned) campusStats[observedCampus].assignedPeriods += increment;
             if (hasEval) campusStats[observedCampus].evaluatedPeriods = (campusStats[observedCampus].evaluatedPeriods || 0) + increment;
             else campusStats[observedCampus].pendingPeriods = (campusStats[observedCampus].pendingPeriods || 0) + increment;
 
             totalObserved += increment;
             if (isSurprise) totalSurprise += increment;
+            if (isAssigned) totalAssigned += increment;
 
             if (observedCampus === homeCampus) {
               internalObserved += increment;
@@ -1238,6 +1255,7 @@ export function AdminTongHopClient({
         campusName,
         periods: stat.periods,
         surprisePeriods: stat.surprisePeriods,
+        assignedPeriods: stat.assignedPeriods || 0,
         isCrossCampus: campusName !== homeCampus
       })).sort((a, b) => b.periods - a.periods);
 
@@ -1255,11 +1273,13 @@ export function AdminTongHopClient({
         observerType,
         observedUnit,
         deptName: baseTTCM.deptName || ttcm.deptName || (isTBP ? (baseTTCM.divisionName || "Bộ phận chuyên môn") : "Tổ chuyên môn"),
+        deptId: (baseTTCM as any).deptId || ttcm.departmentId || (ttcm as any).departmentRel?.id || "",
         block: baseTTCM.block || ttcm.block || "Phổ thông K-12",
         homeCampus,
         reqObserved,
         totalObserved,
         totalSurprise,
+        totalAssigned,
         internalObserved,
         crossObserved,
         isTargetMet,
@@ -1268,6 +1288,7 @@ export function AdminTongHopClient({
           campusName: "Chưa có tiết dự",
           periods: 0,
           surprisePeriods: 0,
+          assignedPeriods: 0,
           isCrossCampus: false
         }]
       };
@@ -1295,6 +1316,14 @@ export function AdminTongHopClient({
         const hasObserved = item.breakdown.some(b => b.campusName === ttcmMatrixObservedCampus && b.periods > 0);
         if (!hasObserved) return false;
       }
+      if (ttcmMatrixOriginFilter === "SURPRISE") {
+        if (item.totalSurprise === 0) return false;
+      } else if (ttcmMatrixOriginFilter === "ASSIGNED") {
+        if ((item.totalAssigned || 0) === 0) return false;
+      } else if (ttcmMatrixOriginFilter === "PLAN") {
+        const planPeriods = item.totalObserved - item.totalSurprise - (item.totalAssigned || 0);
+        if (planPeriods <= 0) return false;
+      }
       if (ttcmSearchQuery.trim()) {
         const q = ttcmSearchQuery.toLowerCase().trim();
         const matchName = item.teacherName.toLowerCase().includes(q);
@@ -1304,13 +1333,14 @@ export function AdminTongHopClient({
       }
       return true;
     });
-  }, [ttcmMatrixData, ttcmMatrixBlock, ttcmMatrixCampus, ttcmMatrixObservedCampus, ttcmSearchQuery]);
+  }, [ttcmMatrixData, ttcmMatrixBlock, ttcmMatrixCampus, ttcmMatrixObservedCampus, ttcmMatrixOriginFilter, ttcmSearchQuery]);
 
   // Summary KPIs for TTCM matrix
   const ttcmMatrixKPIs = useMemo(() => {
     let totalTTCM = filteredTTCMMatrix.length;
     let totalObserved = 0;
     let totalSurprise = 0;
+    let totalAssigned = 0;
     let totalInternal = 0;
     let totalCross = 0;
     let targetMetCount = 0;
@@ -1318,6 +1348,7 @@ export function AdminTongHopClient({
     filteredTTCMMatrix.forEach(item => {
       totalObserved += item.totalObserved;
       totalSurprise += item.totalSurprise;
+      totalAssigned += (item.totalAssigned || 0);
       totalInternal += item.internalObserved;
       totalCross += item.crossObserved;
       if (item.isTargetMet) targetMetCount++;
@@ -1329,6 +1360,7 @@ export function AdminTongHopClient({
       totalTTCM,
       totalObserved,
       totalSurprise,
+      totalAssigned,
       totalInternal,
       totalCross,
       targetMetCount,
@@ -1356,6 +1388,7 @@ export function AdminTongHopClient({
         "Cơ sở dự giờ",
         "Số tiết dự",
         "Trong đó đột xuất",
+        "Trong đó chỉ định",
         "Phân loại",
         "Tổng tiết cả kỳ",
         "Chỉ tiêu dự giờ",
@@ -1384,6 +1417,7 @@ export function AdminTongHopClient({
             b.campusName,
             b.periods,
             b.surprisePeriods > 0 ? b.surprisePeriods : 0,
+            (b.assignedPeriods || 0) > 0 ? b.assignedPeriods : 0,
             b.periods === 0 ? "-" : (b.isCrossCampus ? "Liên cơ sở" : "Nội bộ cơ sở"),
             bIdx === 0 ? item.totalObserved : "",
             bIdx === 0 ? `${item.reqObserved} tiết / ${item.observedUnit}` : "",
@@ -2195,7 +2229,7 @@ export function AdminTongHopClient({
       return { label: "CS3 - Quốc tế", bg: "bg-amber-50 text-amber-700 border-amber-200" };
     }
     if (c.includes("CS4") || c.includes("BEACH")) {
-      return { label: "CS4 - Beach", bg: "bg-purple-50 text-purple-700 border-purple-200" };
+      return { label: "CS4 - Beach", bg: "bg-teal-50 text-teal-800 border-teal-200" };
     }
     if (c.includes("CS5") || c.includes("HILL") || c.includes("HỘI AN") || c.includes("HOI AN")) {
       return { label: "CS5 - Hill Hội An", bg: "bg-rose-50 text-rose-700 border-rose-200" };
@@ -2650,22 +2684,22 @@ export function AdminTongHopClient({
 
             <div className="bg-slate-50 rounded-xl p-3 border border-slate-200/80">
               <div className="text-[10px] font-bold uppercase tracking-wider text-slate-500">Tổng tiết dạy GĐCS</div>
-              <div className="text-xl font-black text-indigo-900 mt-1 flex items-baseline gap-1">
+              <div className="text-xl font-black text-teal-800 mt-1 flex items-baseline gap-1">
                 <span>{gdcsOverallStats.totalTaught}</span>
                 <span className="text-[11px] font-normal text-slate-500">tiết</span>
               </div>
-              <div className="text-[10px] text-indigo-700 font-medium mt-0.5">
+              <div className="text-[10px] text-teal-800 font-medium mt-0.5">
                 Đã giảng dạy trong kỳ
               </div>
             </div>
 
             <div className="bg-slate-50 rounded-xl p-3 border border-slate-200/80">
               <div className="text-[10px] font-bold uppercase tracking-wider text-slate-500">Tỷ lệ dự chéo cơ sở</div>
-              <div className="text-xl font-black text-indigo-900 mt-1 flex items-baseline gap-1">
+              <div className="text-xl font-black text-teal-800 mt-1 flex items-baseline gap-1">
                 <span>{gdcsOverallStats.totalCross}</span>
                 <span className="text-[11px] font-normal text-slate-500">/ {gdcsOverallStats.totalAttended} tiết</span>
               </div>
-              <div className="text-[10px] text-indigo-700 font-medium mt-0.5">
+              <div className="text-[10px] text-teal-800 font-medium mt-0.5">
                 {gdcsOverallStats.crossRate}% dự chéo cơ sở
               </div>
             </div>
@@ -2804,7 +2838,7 @@ export function AdminTongHopClient({
                                     <span className="text-emerald-700 font-medium">NB: {gdcs.internalCount}</span>
                                   )}
                                   {gdcs.crossCount > 0 && (
-                                    <span className="text-indigo-700 font-medium">Chéo: {gdcs.crossCount}</span>
+                                    <span className="text-teal-800 font-medium">Chéo: {gdcs.crossCount}</span>
                                   )}
                                 </div>
                               )}
@@ -2812,7 +2846,7 @@ export function AdminTongHopClient({
                           </td>
                           <td className="py-3 px-3 text-center">
                             <div>
-                              <span className={`font-bold text-sm ${gdcs.totalTaught > 0 ? "text-indigo-800" : "text-slate-500"}`}>
+                              <span className={`font-bold text-sm ${gdcs.totalTaught > 0 ? "text-teal-800" : "text-slate-500"}`}>
                                 {gdcs.totalTaught} tiết
                               </span>
                               {gdcs.reqTaught > 0 && (
@@ -2934,7 +2968,7 @@ export function AdminTongHopClient({
                                         }}
                                         className={`px-2.5 py-1 rounded-md font-semibold text-xs transition-all ${
                                           expandedDetailSubTab[gdcs.id] === "taught"
-                                            ? "bg-white text-indigo-900 shadow-2xs"
+                                            ? "bg-white text-teal-800 shadow-2xs"
                                             : "text-slate-600 hover:text-slate-900"
                                         }`}
                                       >
@@ -3083,7 +3117,7 @@ export function AdminTongHopClient({
                                                   <span className={`inline-block px-1.5 py-0.2 rounded text-[10px] font-semibold ${
                                                     slot.isInternal
                                                       ? "bg-slate-100 text-slate-700"
-                                                      : "bg-indigo-50 text-indigo-700 border border-indigo-200"
+                                                      : "bg-teal-50 text-teal-800 border border-teal-200"
                                                   }`}>
                                                     {slot.isInternal ? "Nội bộ CS" : "Dự chéo CS"}
                                                   </span>
@@ -3193,9 +3227,11 @@ export function AdminTongHopClient({
       const matchLevel = filterLevel === "all" || slot.level === filterLevel;
       const matchGrade = filterGrade === "all" || slot.grade === filterGrade;
       const isSurprise = isSurpriseSlot(slot);
+      const isAssigned = isAssignedSlot(slot);
       const matchOrigin = filterSlotOrigin === "all" ||
         (filterSlotOrigin === "SURPRISE" && isSurprise) ||
-        (filterSlotOrigin === "PLAN" && !isSurprise);
+        (filterSlotOrigin === "ASSIGNED" && isAssigned) ||
+        (filterSlotOrigin === "PLAN" && !isSurprise && !isAssigned);
       return matchQuery && matchLevel && matchGrade && matchOrigin;
     });
   }, [selTeacherSlots, searchSlotQuery, filterLevel, filterGrade, filterSlotOrigin]);
@@ -3653,8 +3689,8 @@ export function AdminTongHopClient({
         <div className="bg-white rounded-2xl border border-slate-200 shadow-2xs p-4 sm:p-5 flex flex-col md:flex-row md:items-center justify-between gap-4">
           <div>
             <div className="flex items-center gap-2">
-              <span className="px-2.5 py-0.5 rounded-md bg-indigo-50 text-indigo-800 border border-indigo-200 text-[10.5px] font-bold uppercase tracking-wider flex items-center gap-1">
-                <Sparkles className="w-3 h-3 text-indigo-600" />
+              <span className="px-2.5 py-0.5 rounded-md bg-teal-50 text-teal-800 border border-teal-200 text-[10.5px] font-bold uppercase tracking-wider flex items-center gap-1">
+                <Sparkles className="w-3 h-3 text-teal-800" />
                 Báo cáo ĐBCL & Khảo thí
               </span>
               <span className="text-xs font-semibold text-slate-500">• {yearName}</span>
@@ -3756,9 +3792,9 @@ export function AdminTongHopClient({
           <div className="bg-white rounded-xl p-4 border border-slate-200 shadow-2xs">
             <div className="text-[11px] font-semibold uppercase tracking-wider text-slate-500 flex items-center justify-between">
               <span>Điểm TB Hệ Thống (K-12)</span>
-              <TrendingUp className="w-4 h-4 text-indigo-600 stroke-2" />
+              <TrendingUp className="w-4 h-4 text-teal-800 stroke-2" />
             </div>
-            <div className="text-2xl font-bold text-indigo-700 mt-1">
+            <div className="text-2xl font-bold text-teal-800 mt-1">
               {qaAnalytics.k12.avgScore} <span className="text-xs font-normal text-slate-500">/ 20 điểm</span>
             </div>
             <div className="text-[11px] text-slate-500 mt-0.5">
@@ -3834,13 +3870,13 @@ export function AdminTongHopClient({
               <div className="space-y-2 pt-3 border-t border-slate-100">
                 <div className="flex items-center justify-between text-xs font-bold text-slate-800">
                   <span>Khối Mầm non ({qaAnalytics.totalMNEvaluations} phiếu)</span>
-                  <span className="text-indigo-600">Đạt chuẩn: {qaAnalytics.mn.passRate}%</span>
+                  <span className="text-teal-800">Đạt chuẩn: {qaAnalytics.mn.passRate}%</span>
                 </div>
                 <div className="grid grid-cols-4 gap-2">
-                  <div className="p-2 bg-indigo-50/60 border border-indigo-100 rounded-lg text-center">
-                    <div className="text-[10px] text-indigo-800 font-bold">Tốt</div>
-                    <div className="text-base font-black text-indigo-900 mt-0.5">{qaAnalytics.mn.tot}</div>
-                    <div className="text-[10px] text-indigo-700 font-semibold">{qaAnalytics.mn.totPct}%</div>
+                  <div className="p-2 bg-teal-50/60 border border-teal-200 rounded-lg text-center">
+                    <div className="text-[10px] text-teal-800 font-bold">Tốt</div>
+                    <div className="text-base font-black text-teal-800 mt-0.5">{qaAnalytics.mn.tot}</div>
+                    <div className="text-[10px] text-teal-800 font-semibold">{qaAnalytics.mn.totPct}%</div>
                   </div>
                   <div className="p-2 bg-sky-50/60 border border-sky-100 rounded-lg text-center">
                     <div className="text-[10px] text-sky-800 font-bold">Khá</div>
@@ -3866,7 +3902,7 @@ export function AdminTongHopClient({
           <div className="lg:col-span-6 bg-white rounded-2xl border border-slate-200 shadow-2xs p-5 space-y-3">
             <div className="flex items-center justify-between border-b border-slate-100 pb-3">
               <h3 className="font-bold text-sm text-slate-900 flex items-center gap-2">
-                <Building2 className="w-4 h-4 text-indigo-600" />
+                <Building2 className="w-4 h-4 text-teal-800" />
                 <span>Chất lượng Giảng dạy Theo Từng Cơ Sở</span>
               </h3>
               <span className="text-[11px] font-semibold text-slate-500">{qaAnalytics.campusList.length} cơ sở</span>
@@ -3900,7 +3936,7 @@ export function AdminTongHopClient({
                             {c.surpriseSlots} ({cSurprisePct}%)
                           </span>
                         </td>
-                        <td className="py-2.5 px-2 text-center font-bold text-indigo-700">{cAvg}đ</td>
+                        <td className="py-2.5 px-2 text-center font-bold text-teal-800">{cAvg}đ</td>
                         <td className="py-2.5 px-2 text-center font-bold text-teal-700">{cGioiPct}%</td>
                         <td className="py-2.5 pl-2 text-right font-black text-emerald-600">{cPassPct}%</td>
                       </tr>
@@ -4083,7 +4119,7 @@ export function AdminTongHopClient({
           <div className="flex items-center justify-between border-b border-slate-100 pb-3">
             <div>
               <h3 className="font-bold text-sm text-slate-900 flex items-center gap-2">
-                <Layers className="w-4 h-4 text-violet-600" />
+                <Layers className="w-4 h-4 text-teal-800" />
                 <span>Tiến Độ Thực Hiện KPI & Chất Lượng Giảng Dạy Theo Tổ Chuyên Môn</span>
               </h3>
               <p className="text-xs text-slate-500 mt-0.5">
@@ -4130,7 +4166,7 @@ export function AdminTongHopClient({
                         {d.taughtSurprise}
                       </span>
                     </td>
-                    <td className="py-2.5 px-3 text-center font-bold text-indigo-700">{d.totalObserved}</td>
+                    <td className="py-2.5 px-3 text-center font-bold text-teal-800">{d.totalObserved}</td>
                     <td className="py-2.5 px-3 text-center font-semibold text-slate-700">{d.totalEvals}</td>
                     <td className="py-2.5 px-3 text-right font-black text-emerald-600">
                       {d.totalEvals > 0 ? `${d.passRate}%` : <span className="text-slate-400 font-normal">Chưa có</span>}
@@ -4190,8 +4226,8 @@ export function AdminTongHopClient({
                 onClick={() => setTtcmMatrixRoleFilter("TBP")}
                 className={`px-2.5 py-1 rounded-lg text-xs font-bold transition-all cursor-pointer flex items-center gap-1.5 ${
                   ttcmMatrixRoleFilter === "TBP"
-                    ? "bg-indigo-700 text-white shadow-2xs"
-                    : "bg-indigo-50 hover:bg-indigo-100 text-indigo-700 border border-indigo-200"
+                    ? "bg-[#003B3A] text-white shadow-2xs"
+                    : "bg-teal-50 hover:bg-teal-50 text-teal-800 border border-teal-200"
                 }`}
               >
                 <ShieldCheck className="w-3.5 h-3.5" />
@@ -4292,11 +4328,20 @@ export function AdminTongHopClient({
             <div className="text-[11px] font-semibold text-slate-500 uppercase tracking-wide">
               Tổng tiết đã dự
             </div>
-            <div className="text-2xl font-bold text-teal-800 mt-1">
+            <div className="text-2xl font-bold text-teal-800 mt-1 tabular-nums">
               {ttcmMatrixKPIs.totalObserved} <span className="text-xs font-normal text-slate-500">tiết</span>
             </div>
-            <div className="text-[11px] text-slate-500 mt-1">
-              {ttcmMatrixKPIs.totalSurprise > 0 ? `${ttcmMatrixKPIs.totalSurprise} tiết đột xuất` : "100% theo kế hoạch"}
+            <div className="text-[11px] text-slate-500 mt-1 flex items-center gap-1.5 flex-wrap">
+              {ttcmMatrixKPIs.totalSurprise > 0 && (
+                <span className="text-amber-700 font-medium tabular-nums">{ttcmMatrixKPIs.totalSurprise} tiết đột xuất</span>
+              )}
+              {ttcmMatrixKPIs.totalSurprise > 0 && ttcmMatrixKPIs.totalAssigned > 0 && <span>&bull;</span>}
+              {ttcmMatrixKPIs.totalAssigned > 0 && (
+                <span className="text-teal-800 font-medium tabular-nums">{ttcmMatrixKPIs.totalAssigned} tiết chỉ định</span>
+              )}
+              {ttcmMatrixKPIs.totalSurprise === 0 && ttcmMatrixKPIs.totalAssigned === 0 && (
+                <span>100% theo kế hoạch</span>
+              )}
             </div>
           </div>
 
@@ -4421,6 +4466,21 @@ export function AdminTongHopClient({
             </select>
           </div>
 
+          {/* Lọc Hình thức dự giờ */}
+          <div className="flex items-center gap-1.5 bg-slate-50 border border-slate-200 rounded-lg px-2.5 py-1.5 text-xs">
+            <span className="text-[11px] font-semibold text-slate-500">Hình thức:</span>
+            <select
+              value={ttcmMatrixOriginFilter}
+              onChange={(e) => setTtcmMatrixOriginFilter(e.target.value as any)}
+              className="bg-transparent font-semibold text-slate-800 outline-none cursor-pointer text-xs"
+            >
+              <option value="all">Tất cả hình thức</option>
+              <option value="PLAN">Theo kế hoạch</option>
+              <option value="SURPRISE">Đột xuất</option>
+              <option value="ASSIGNED">Chỉ định</option>
+            </select>
+          </div>
+
           {/* Ô Tìm kiếm */}
           <div className="flex items-center gap-1.5 bg-slate-50 border border-slate-200 rounded-lg px-2.5 py-1.5 text-xs flex-1 min-w-[200px]">
             <Search className="w-3.5 h-3.5 text-slate-400 shrink-0" />
@@ -4443,7 +4503,7 @@ export function AdminTongHopClient({
           </div>
 
           {/* Nút Xóa Lọc */}
-          {(ttcmMatrixMonth !== "all" || ttcmMatrixBlock !== "all" || ttcmMatrixRoleFilter !== "all" || ttcmMatrixCampus !== "all" || ttcmMatrixObservedCampus !== "all" || ttcmSearchQuery) && (
+          {(ttcmMatrixMonth !== "all" || ttcmMatrixBlock !== "all" || ttcmMatrixRoleFilter !== "all" || ttcmMatrixCampus !== "all" || ttcmMatrixObservedCampus !== "all" || ttcmMatrixOriginFilter !== "all" || ttcmSearchQuery) && (
             <button
               type="button"
               onClick={() => {
@@ -4451,6 +4511,7 @@ export function AdminTongHopClient({
                 setTtcmMatrixBlock("all");
                 setTtcmMatrixCampus("all");
                 setTtcmMatrixObservedCampus("all");
+                setTtcmMatrixOriginFilter("all");
                 setTtcmSearchQuery("");
               }}
               className="px-2.5 py-1.5 text-xs font-semibold text-rose-600 hover:bg-rose-50 rounded-lg border border-rose-200 transition-all shrink-0 cursor-pointer"
@@ -4495,6 +4556,7 @@ export function AdminTongHopClient({
                   {filteredTTCMMatrix.map((item, idx) => {
                     const campusPeriodsMap = new Map(item.breakdown.map(b => [b.campusName, b.periods]));
                     const campusSurpriseMap = new Map(item.breakdown.map(b => [b.campusName, b.surprisePeriods]));
+                    const campusAssignedMap = new Map(item.breakdown.map(b => [b.campusName, b.assignedPeriods || 0]));
                     return (
                       <tr key={item.id} className="hover:bg-slate-50/80 transition-colors">
                         <td className="py-2.5 px-3 text-center text-slate-500 font-medium border-r border-slate-100">
@@ -4507,11 +4569,11 @@ export function AdminTongHopClient({
                         <td className="py-2.5 px-2 text-center border-r border-slate-100">
                           <span className={`inline-block px-1.5 py-0.5 rounded text-[11px] font-semibold border ${
                             item.position === "TBP"
-                              ? "bg-indigo-50 text-indigo-800 border-indigo-200"
+                              ? "bg-teal-50 text-teal-800 border-teal-200"
                               : item.position === "GĐCS"
                               ? "bg-emerald-50 text-emerald-800 border-emerald-200"
                               : item.position === "Ban ĐHCM"
-                              ? "bg-purple-50 text-purple-800 border-purple-200"
+                              ? "bg-teal-50 text-teal-800 border-teal-200"
                               : "bg-slate-100 text-slate-700 border-slate-200"
                           }`}>
                             {item.position}
@@ -4528,6 +4590,7 @@ export function AdminTongHopClient({
                         {distinctObservedCampusNames.map(cn => {
                           const count = campusPeriodsMap.get(cn) || 0;
                           const surprise = campusSurpriseMap.get(cn) || 0;
+                          const assigned = campusAssignedMap.get(cn) || 0;
                           const isHome = cn === item.homeCampus;
                           return (
                             <td
@@ -4537,15 +4600,20 @@ export function AdminTongHopClient({
                             >
                               {count > 0 ? (
                                 <div>
-                                  <span className={`inline-block px-2 py-0.5 rounded text-xs font-semibold ${isHome
+                                  <span className={`inline-block px-2 py-0.5 rounded text-xs font-semibold tabular-nums ${isHome
                                       ? "bg-emerald-50 text-emerald-800 border border-emerald-200"
                                       : "bg-sky-50 text-sky-800 border border-sky-200"
                                     }`}>
                                     {count} tiết
                                   </span>
-                                  {surprise > 0 && (
-                                    <div className="text-[10px] text-amber-700 font-medium mt-0.5">
-                                      ({surprise} đột xuất)
+                                  {(surprise > 0 || assigned > 0) && (
+                                    <div className="text-[10px] font-medium mt-0.5 space-x-1 tabular-nums">
+                                      {surprise > 0 && (
+                                        <span className="text-amber-700">({surprise} đột xuất{assigned > 0 ? "," : ")"}</span>
+                                      )}
+                                      {assigned > 0 && (
+                                        <span className="text-teal-800">{surprise > 0 ? "" : "("}{assigned} chỉ định)</span>
+                                      )}
                                     </div>
                                   )}
                                 </div>
@@ -4558,7 +4626,17 @@ export function AdminTongHopClient({
 
                         {/* Tổng đã dự */}
                         <td className="py-2.5 px-2 text-center font-bold text-slate-900 border-r border-slate-100 bg-teal-50/20">
-                          {item.totalObserved} tiết
+                          <div className="tabular-nums">{item.totalObserved} tiết</div>
+                          {(item.totalSurprise > 0 || (item.totalAssigned || 0) > 0) && (
+                            <div className="text-[10px] font-normal text-slate-500 mt-0.5 space-x-1 tabular-nums">
+                              {item.totalSurprise > 0 && (
+                                <span className="text-amber-700">({item.totalSurprise} đột xuất{(item.totalAssigned || 0) > 0 ? "," : ")"}</span>
+                              )}
+                              {(item.totalAssigned || 0) > 0 && (
+                                <span className="text-teal-800">{item.totalSurprise > 0 ? "" : "("}{item.totalAssigned} chỉ định)</span>
+                              )}
+                            </div>
+                          )}
                         </td>
 
                         {/* Chỉ tiêu */}
@@ -4613,7 +4691,7 @@ export function AdminTongHopClient({
                             <button
                               type="button"
                               onClick={() => handleExportTTCMHistoryPdf(item.id)}
-                              className="text-indigo-600 hover:text-indigo-800 hover:underline text-xs font-semibold cursor-pointer flex items-center gap-0.5"
+                              className="text-teal-800 hover:text-teal-800 hover:underline text-xs font-semibold cursor-pointer flex items-center gap-0.5"
                               title="Xuất phiếu tổng hợp lịch sử dự giờ để lưu hồ sơ"
                             >
                               <FileText className="w-3 h-3 inline" />
@@ -4643,14 +4721,42 @@ export function AdminTongHopClient({
                         const campusPeriodsMap = new Map(item.breakdown.map(b => [b.campusName, b.periods]));
                         return sum + (campusPeriodsMap.get(cn) || 0);
                       }, 0);
+                      const campusSurpriseTotal = filteredTTCMMatrix.reduce((sum, item) => {
+                        const campusSurpriseMap = new Map(item.breakdown.map(b => [b.campusName, b.surprisePeriods]));
+                        return sum + (campusSurpriseMap.get(cn) || 0);
+                      }, 0);
+                      const campusAssignedTotal = filteredTTCMMatrix.reduce((sum, item) => {
+                        const campusAssignedMap = new Map(item.breakdown.map(b => [b.campusName, b.assignedPeriods || 0]));
+                        return sum + (campusAssignedMap.get(cn) || 0);
+                      }, 0);
                       return (
                         <td key={cn} className="py-3 px-2 text-center font-bold text-slate-900 border-r border-slate-200 bg-slate-200/50">
-                          {campusTotal} tiết
+                          <div className="tabular-nums">{campusTotal} tiết</div>
+                          {(campusSurpriseTotal > 0 || campusAssignedTotal > 0) && (
+                            <div className="text-[10px] font-normal text-slate-600 mt-0.5 space-x-1 tabular-nums">
+                              {campusSurpriseTotal > 0 && (
+                                <span className="text-amber-800">({campusSurpriseTotal} đột xuất{campusAssignedTotal > 0 ? "," : ")"}</span>
+                              )}
+                              {campusAssignedTotal > 0 && (
+                                <span className="text-teal-800">{campusSurpriseTotal > 0 ? "" : "("}{campusAssignedTotal} chỉ định)</span>
+                              )}
+                            </div>
+                          )}
                         </td>
                       );
                     })}
                     <td className="py-3 px-2 text-center font-bold text-teal-900 border-r border-slate-200 bg-teal-100/50">
-                      {ttcmMatrixKPIs.totalObserved} tiết
+                      <div className="tabular-nums">{ttcmMatrixKPIs.totalObserved} tiết</div>
+                      {(ttcmMatrixKPIs.totalSurprise > 0 || ttcmMatrixKPIs.totalAssigned > 0) && (
+                        <div className="text-[10px] font-normal text-teal-800 mt-0.5 space-x-1 tabular-nums">
+                          {ttcmMatrixKPIs.totalSurprise > 0 && (
+                            <span>({ttcmMatrixKPIs.totalSurprise} đột xuất{ttcmMatrixKPIs.totalAssigned > 0 ? "," : ")"}</span>
+                          )}
+                          {ttcmMatrixKPIs.totalAssigned > 0 && (
+                            <span>{ttcmMatrixKPIs.totalSurprise > 0 ? "" : "("}{ttcmMatrixKPIs.totalAssigned} chỉ định)</span>
+                          )}
+                        </div>
+                      )}
                     </td>
                     <td className="py-3 px-2 text-center border-r border-slate-200 text-slate-500">
                       -
@@ -4711,11 +4817,11 @@ export function AdminTongHopClient({
                             >
                               <span className={`inline-block px-1.5 py-0.5 rounded text-[11px] font-semibold border ${
                                 item.position === "TBP"
-                                  ? "bg-indigo-50 text-indigo-800 border-indigo-200"
+                                  ? "bg-teal-50 text-teal-800 border-teal-200"
                                   : item.position === "GĐCS"
                                   ? "bg-emerald-50 text-emerald-800 border-emerald-200"
                                   : item.position === "Ban ĐHCM"
-                                  ? "bg-purple-50 text-purple-800 border-purple-200"
+                                  ? "bg-teal-50 text-teal-800 border-teal-200"
                                   : "bg-slate-100 text-slate-700 border-slate-200"
                               }`}>
                                 {item.position}
@@ -4761,13 +4867,18 @@ export function AdminTongHopClient({
                         <td className="py-2 px-2 text-center border-r border-slate-100">
                           {b.periods > 0 ? (
                             <div>
-                              <span className={`inline-block px-2 py-0.5 rounded text-xs font-semibold ${b.isCrossCampus ? "bg-sky-50 text-sky-800 border border-sky-200" : "bg-emerald-50 text-emerald-800 border border-emerald-200"
+                              <span className={`inline-block px-2 py-0.5 rounded text-xs font-semibold tabular-nums ${b.isCrossCampus ? "bg-sky-50 text-sky-800 border border-sky-200" : "bg-emerald-50 text-emerald-800 border border-emerald-200"
                                 }`}>
                                 {b.periods} tiết
                               </span>
-                              {b.surprisePeriods > 0 && (
-                                <div className="text-[10px] text-amber-700 font-medium mt-0.5">
-                                  ({b.surprisePeriods} đột xuất)
+                              {(b.surprisePeriods > 0 || (b.assignedPeriods || 0) > 0) && (
+                                <div className="text-[10px] font-medium mt-0.5 space-x-1 tabular-nums">
+                                  {b.surprisePeriods > 0 && (
+                                    <span className="text-amber-700">({b.surprisePeriods} đột xuất{(b.assignedPeriods || 0) > 0 ? "," : ")"}</span>
+                                  )}
+                                  {(b.assignedPeriods || 0) > 0 && (
+                                    <span className="text-teal-800">{b.surprisePeriods > 0 ? "" : "("}{b.assignedPeriods} chỉ định)</span>
+                                  )}
                                 </div>
                               )}
                             </div>
@@ -4839,7 +4950,7 @@ export function AdminTongHopClient({
                                 <button
                                   type="button"
                                   onClick={() => handleExportTTCMHistoryPdf(item.id)}
-                                  className="text-indigo-600 hover:text-indigo-800 hover:underline text-xs font-semibold cursor-pointer flex items-center gap-0.5"
+                                  className="text-teal-800 hover:text-teal-800 hover:underline text-xs font-semibold cursor-pointer flex items-center gap-0.5"
                                   title="Xuất phiếu tổng hợp lịch sử dự giờ để lưu hồ sơ"
                                 >
                                   <FileText className="w-3 h-3 inline" />
@@ -4918,7 +5029,7 @@ export function AdminTongHopClient({
               <span className="px-2 py-0.5 rounded-full text-[9.5px] font-black uppercase tracking-wider bg-white/10 border border-white/15 text-emerald-200">
                 SKY-LINE • TRUNG TÂM ĐIỀU HÀNH DỰ GIỜ
               </span>
-              <span className="px-2 py-0.5 rounded-full text-[9.5px] font-black uppercase bg-indigo-500 text-white border border-indigo-400/30">
+              <span className="px-2 py-0.5 rounded-full text-[9.5px] font-black uppercase bg-[#003B3A] text-white border border-teal-400/30">
                 👔 QUẢN LÝ CẤP CAO
               </span>
             </div>
@@ -4987,9 +5098,9 @@ export function AdminTongHopClient({
                 : "text-slate-600 hover:text-slate-900 hover:bg-slate-200/50"
               }`}
           >
-            <Sparkles className="w-3.5 h-3.5 text-indigo-600" />
+            <Sparkles className="w-3.5 h-3.5 text-teal-800" />
             <span>Báo cáo ĐBCL & Phân tích CM</span>
-            <span className={`px-1.5 py-0.2 rounded text-[10px] font-bold ${mainTab === "dbcl" ? "bg-indigo-50 text-indigo-800 border border-indigo-200" : "bg-slate-200 text-slate-600"
+            <span className={`px-1.5 py-0.2 rounded text-[10px] font-bold ${mainTab === "dbcl" ? "bg-teal-50 text-teal-800 border border-teal-200" : "bg-slate-200 text-slate-600"
               }`}>
               {qaAnalytics.totalEvaluations} ĐG
             </span>
@@ -5474,6 +5585,7 @@ export function AdminTongHopClient({
                         <option value="all">Mọi hình thức</option>
                         <option value="PLAN">Theo kế hoạch</option>
                         <option value="SURPRISE">Đột xuất</option>
+                        <option value="ASSIGNED">Chỉ định</option>
                       </select>
                     </div>
                   </div>
@@ -5502,7 +5614,7 @@ export function AdminTongHopClient({
                             key={slot.id}
                             className="bg-white border border-slate-200/90 rounded-2xl p-4 sm:p-5 shadow-xs hover:shadow-md transition-all space-y-3 relative overflow-hidden"
                           >
-                            <div className={`absolute top-0 left-0 right-0 h-1 ${isMamNonBlock ? "bg-gradient-to-r from-amber-400 to-orange-500" : "bg-gradient-to-r from-[#003B3A] to-[#48BFE3]"
+                            <div className={`absolute top-0 left-0 right-0 h-1 ${isMamNonBlock ? "bg-gradient-to-r from-amber-400 to-amber-600" : "bg-gradient-to-r from-[#003B3A] to-[#48BFE3]"
                               }`} />
 
                             <div className="flex flex-col sm:flex-row sm:items-start justify-between gap-2.5 pt-1">
@@ -5511,6 +5623,11 @@ export function AdminTongHopClient({
                                   {isSurprise && (
                                     <span className="px-2 py-0.5 bg-amber-100 text-amber-900 border border-amber-300 rounded text-[9px] font-bold flex items-center gap-1 shadow-2xs">
                                       Tiết dự đột xuất
+                                    </span>
+                                  )}
+                                  {isAssignedSlot(slot) && (
+                                    <span className="px-2 py-0.5 bg-teal-50 text-teal-800 border border-teal-400 rounded text-[9px] font-bold flex items-center gap-1 shadow-2xs">
+                                      Tiết dạy chỉ định
                                     </span>
                                   )}
                                   <span className={`px-2 py-0.5 text-[9px] font-black rounded-md uppercase ${isMamNonBlock
@@ -5534,7 +5651,7 @@ export function AdminTongHopClient({
                                     </span>
                                   )}
                                   {slot.isDoublePeriod && (
-                                    <span className="px-1.5 py-0.2 bg-purple-50 text-purple-700 border border-purple-200 rounded text-[9px] font-bold">
+                                    <span className="px-1.5 py-0.2 bg-teal-50 text-teal-800 border border-teal-200 rounded text-[9px] font-bold">
                                       Tiết đôi (x2)
                                     </span>
                                   )}
@@ -5602,7 +5719,7 @@ export function AdminTongHopClient({
                                           </div>
 
                                           <div className="flex items-center gap-1.5">
-                                            <span className="text-[11px] font-black text-indigo-700 bg-indigo-50 px-2 py-0.5 rounded-lg border border-indigo-200">
+                                            <span className="text-[11px] font-black text-teal-800 bg-teal-50 px-2 py-0.5 rounded-lg border border-teal-200">
                                               {evalData.totalScore !== null && evalData.totalScore !== undefined
                                                 ? evalData.totalScore.toFixed(2) + "đ"
                                                 : evalData.overallRating}
@@ -5716,6 +5833,7 @@ export function AdminTongHopClient({
                         <option value="all">Mọi hình thức</option>
                         <option value="PLAN">Theo kế hoạch</option>
                         <option value="SURPRISE">Đột xuất</option>
+                        <option value="ASSIGNED">Chỉ định</option>
                       </select>
                     </div>
                   </div>
@@ -5752,6 +5870,11 @@ export function AdminTongHopClient({
                                       Dự giờ đột xuất
                                     </span>
                                   )}
+                                  {isAssignedSlot(slot) && (
+                                    <span className="px-2 py-0.5 bg-teal-50 text-teal-800 border border-teal-400 rounded text-[9px] font-bold flex items-center gap-1 shadow-2xs">
+                                      Dự giờ chỉ định
+                                    </span>
+                                  )}
                                   <span className="px-2 py-0.5 text-[9px] font-black rounded-md uppercase bg-teal-100 text-teal-800 border border-teal-300">
                                     {slot.level}
                                   </span>
@@ -5770,7 +5893,7 @@ export function AdminTongHopClient({
                                     </span>
                                   )}
                                   {slot.isDoublePeriod && (
-                                    <span className="px-1.5 py-0.2 bg-purple-50 text-purple-700 border border-purple-200 rounded text-[9px] font-bold">
+                                    <span className="px-1.5 py-0.2 bg-teal-50 text-teal-800 border border-teal-200 rounded text-[9px] font-bold">
                                       Tiết đôi (x2)
                                     </span>
                                   )}
@@ -6199,7 +6322,7 @@ export function AdminTongHopClient({
                       <>
                         <div className="bg-white p-5 rounded-3xl border border-slate-200/90 shadow-sm grid grid-cols-1 md:grid-cols-12 gap-5 items-center">
                           <div className="md:col-span-5 flex flex-col items-center justify-center p-2">
-                            <span className="text-[11px] font-black text-indigo-600 uppercase tracking-wider mb-2">
+                            <span className="text-[11px] font-black text-teal-800 uppercase tracking-wider mb-2">
                               Biểu đồ Năng lực
                             </span>
                             <svg width="240" height="240" viewBox="0 0 260 260" className="overflow-visible">
@@ -6248,7 +6371,7 @@ export function AdminTongHopClient({
                         </div>
 
                         {/* Digital Pedagogical Badges & CPD Growth Portfolio */}
-                        <div className="p-4 bg-gradient-to-r from-amber-50/60 via-teal-50/40 to-indigo-50/50 rounded-2xl border border-amber-200/70 space-y-3">
+                        <div className="p-4 bg-gradient-to-r from-amber-50/60 via-teal-50/40 to-emerald-600/50 rounded-2xl border border-amber-200/70 space-y-3">
                           <div className="flex items-center justify-between border-b border-amber-200/50 pb-2">
                             <div className="flex items-center gap-2">
                               <Award className="w-4 h-4 text-amber-600" />
@@ -6293,7 +6416,7 @@ export function AdminTongHopClient({
                               const y11Crit = competencyData.find(c => c.id === "Y11" || c.id === "T2");
                               const isInnovator = y11Crit && y11Crit.pct >= 90;
                               return (
-                                <div className={`p-2.5 rounded-xl border flex flex-col items-center text-center ${isInnovator ? "bg-white border-indigo-200 shadow-2xs" : "bg-slate-50/60 border-slate-200 opacity-50"}`}>
+                                <div className={`p-2.5 rounded-xl border flex flex-col items-center text-center ${isInnovator ? "bg-white border-teal-200 shadow-2xs" : "bg-slate-50/60 border-slate-200 opacity-50"}`}>
                                   <div className="text-xl">🚀</div>
                                   <div className="text-[11px] font-bold text-slate-800 mt-1">Tiên Phong Đổi Mới</div>
                                   <div className="text-[9.5px] text-slate-500">{isInnovator ? "Sáng tạo & Đổi mới" : "Chưa đạt"}</div>
@@ -6340,9 +6463,9 @@ export function AdminTongHopClient({
                 const { dep, dmn, dc, dsw } = deptCompetencyResult;
                 return (
                   <div className="space-y-4">
-                    <div className="bg-gradient-to-r from-violet-50 to-indigo-50/50 border border-violet-200 rounded-2xl p-4 flex items-center justify-between">
+                    <div className="bg-gradient-to-r from-teal-600 to-emerald-600/50 border border-teal-200 rounded-2xl p-4 flex items-center justify-between">
                       <div className="flex items-center gap-3">
-                        <div className="p-2 bg-white text-violet-600 rounded-xl border border-violet-200 shadow-xs">
+                        <div className="p-2 bg-white text-teal-800 rounded-xl border border-teal-200 shadow-xs">
                           <Layers className="w-5 h-5" />
                         </div>
                         <div>
@@ -6362,7 +6485,7 @@ export function AdminTongHopClient({
                     ) : (
                       <div className="bg-white p-5 rounded-3xl border border-slate-200/90 shadow-sm space-y-3">
                         <h4 className="text-xs font-black text-slate-800 uppercase tracking-wider flex items-center gap-1.5 pb-2 border-b border-slate-100">
-                          <Award className="w-4 h-4 text-violet-600" />
+                          <Award className="w-4 h-4 text-teal-800" />
                           <span>Hiệu suất Năng lực Giảng dạy Toàn Tổ</span>
                         </h4>
                         <div className="space-y-2.5 max-h-[300px] overflow-y-auto pr-1">
@@ -6377,7 +6500,7 @@ export function AdminTongHopClient({
                                 </span>
                               </div>
                               <div className="w-full h-1.5 bg-slate-100 rounded-full overflow-hidden">
-                                <div className="h-full rounded-full bg-gradient-to-r from-violet-500 to-indigo-500" style={{ width: `${item.pt}%` }} />
+                                <div className="h-full rounded-full bg-gradient-to-r from-teal-600 to-emerald-600" style={{ width: `${item.pt}%` }} />
                               </div>
                             </div>
                           ))}
@@ -6865,10 +6988,10 @@ export function AdminTongHopClient({
                     </div>
                     <div>
                       <span className="text-[9px] text-slate-500 font-bold uppercase block">Dự chéo cơ sở</span>
-                      <strong className="text-sm font-black text-indigo-700">
+                      <strong className="text-sm font-black text-teal-800">
                         {selectedGdcsForEmail.crossCount || 0} tiết
                       </strong>
-                      <span className="text-[9px] text-indigo-600 block font-semibold">
+                      <span className="text-[9px] text-teal-800 block font-semibold">
                         ({selectedGdcsForEmail.totalAttended > 0 ? Math.round((selectedGdcsForEmail.crossCount / selectedGdcsForEmail.totalAttended) * 100) : 0}%)
                       </span>
                     </div>
@@ -7193,7 +7316,7 @@ export function AdminTongHopClient({
 
             <div className="space-y-3">
               <div className="space-y-1.5 p-3 bg-slate-50 rounded-xl border border-slate-200">
-                <label className="text-[10px] font-black text-indigo-900 uppercase tracking-wider block">
+                <label className="text-[10px] font-black text-teal-800 uppercase tracking-wider block">
                   1. Chỉ tiêu Người DỰ giờ
                 </label>
                 <div className="flex flex-wrap gap-1 mb-2">
@@ -7206,7 +7329,7 @@ export function AdminTongHopClient({
                         type="button"
                         onClick={() => handleObserverTypePreset(preset)}
                         className={`text-[9px] font-bold px-2 py-0.5 rounded-md border transition-all ${isSelected
-                            ? "bg-indigo-600 text-white border-indigo-600"
+                            ? "bg-[#003B3A] text-white border-teal-200"
                             : "bg-white text-slate-700 border-slate-200 hover:bg-slate-100"
                           }`}
                       >

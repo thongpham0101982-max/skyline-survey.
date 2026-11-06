@@ -30,6 +30,15 @@ function isSurpriseSlot(slot: any): boolean {
   )
 }
 
+function isAssignedSlot(slot: any): boolean {
+  if (!slot) return false
+  return (
+    slot.requestOrigin === "ASSIGNED" ||
+    (typeof slot.description === "string" && (slot.description.includes("[ASSIGNED]") || slot.description.toLowerCase().includes("chỉ định"))) ||
+    (typeof slot.topic === "string" && slot.topic.toLowerCase().includes("chỉ định"))
+  )
+}
+
 function getPresetTarget(type: string): number {
   if (type === "Ban ĐHCM") return 10
   if (type === "GĐCS" || type === "GDCS" || type === "Giám đốc Điều hành cơ sở") return 4
@@ -50,6 +59,7 @@ function buildReportHtml(data: {
     totalTTCM: number
     totalObserved: number
     totalSurprise: number
+    totalAssigned?: number
     totalInternal: number
     totalCross: number
     targetMetCount: number
@@ -379,6 +389,12 @@ function buildReportHtml(data: {
       font-weight: 600;
       margin-top: 1px;
     }
+    .cell-assigned {
+      font-size: 6.8pt;
+      color: #7e22ce;
+      font-weight: 600;
+      margin-top: 1px;
+    }
 
     .badge-met {
       background: #ecfdf5;
@@ -511,7 +527,7 @@ function buildReportHtml(data: {
       <div class="kpi-card kpi-teal">
         <div class="kpi-label">Tổng tiết đã dự</div>
         <div class="kpi-value" style="color: #005854;">${kpis.totalObserved}</div>
-        <div class="kpi-sub">${kpis.totalSurprise} tiết đột xuất</div>
+        <div class="kpi-sub">${kpis.totalSurprise} tiết đột xuất${(kpis.totalAssigned || 0) > 0 ? ` &bull; ${kpis.totalAssigned} chỉ định` : ''}</div>
       </div>
       <div class="kpi-card kpi-emerald">
         <div class="kpi-label">Dự nội bộ cơ sở</div>
@@ -553,6 +569,7 @@ function buildReportHtml(data: {
         ${matrixRows.map((item, idx) => {
           const campusPeriodsMap = new Map(item.breakdown.map((b: any) => [b.campusName, b.periods]))
           const campusSurpriseMap = new Map(item.breakdown.map((b: any) => [b.campusName, b.surprisePeriods]))
+          const campusAssignedMap = new Map(item.breakdown.map((b: any) => [b.campusName, b.assignedPeriods || 0]))
           return `
             <tr>
               <td class="text-center font-semibold" style="color: #64748b;">${idx + 1}</td>
@@ -575,12 +592,14 @@ function buildReportHtml(data: {
               ${distinctObservedCampuses.map(cn => {
                 const count = campusPeriodsMap.get(cn) || 0
                 const surprise = campusSurpriseMap.get(cn) || 0
+                const assigned = campusAssignedMap.get(cn) || 0
                 const isHome = cn === item.homeCampus
                 if (count > 0) {
                   return `
                     <td class="text-center">
                       <div class="${isHome ? 'cell-home' : 'cell-cross'}">${count} tiết</div>
                       ${surprise > 0 ? `<div class="cell-surprise">(${surprise} đột xuất)</div>` : ''}
+                      ${assigned > 0 ? `<div class="cell-assigned">(${assigned} chỉ định)</div>` : ''}
                     </td>
                   `
                 }
@@ -677,6 +696,7 @@ function buildReportHtml(data: {
               <td class="text-center font-bold" style="color: #003B3A;">
                 ${b.periods} tiết
                 ${b.surprisePeriods > 0 ? `<div class="cell-surprise">(${b.surprisePeriods} đột xuất)</div>` : ''}
+                ${(b.assignedPeriods || 0) > 0 ? `<div class="cell-assigned">(${b.assignedPeriods} chỉ định)</div>` : ''}
               </td>
               ${bIdx === 0 ? `
                 <td rowspan="${rowCount}" class="text-center" style="color: #334155; vertical-align: top;">
@@ -1021,9 +1041,10 @@ export async function GET(req: Request) {
         ? configuredObserved
         : getPresetTarget(observerType)
 
-      const campusStats: Record<string, { periods: number; surprisePeriods: number }> = {}
+      const campusStats: Record<string, { periods: number; surprisePeriods: number; assignedPeriods: number }> = {}
       let totalObserved = 0
       let totalSurprise = 0
+      let totalAssigned = 0
       let internalObserved = 0
       let crossObserved = 0
 
@@ -1038,19 +1059,22 @@ export async function GET(req: Request) {
         }
 
         const isSurprise = isSurpriseSlot(slot)
+        const isAssigned = isAssignedSlot(slot)
         const increment = slot.isDoublePeriod ? 2 : 1
 
         slot.registrations?.forEach((reg: any) => {
-          if (reg.teacherId === ttcm.id && reg.isApproved) {
+          if (reg.teacherId === ttcm.id && (reg.isApproved || isSurprise || isAssigned)) {
             const observedCampus = getSlotCampusName(slot)
             if (!campusStats[observedCampus]) {
-              campusStats[observedCampus] = { periods: 0, surprisePeriods: 0 }
+              campusStats[observedCampus] = { periods: 0, surprisePeriods: 0, assignedPeriods: 0 }
             }
             campusStats[observedCampus].periods += increment
             if (isSurprise) campusStats[observedCampus].surprisePeriods += increment
+            if (isAssigned) campusStats[observedCampus].assignedPeriods += increment
 
             totalObserved += increment
             if (isSurprise) totalSurprise += increment
+            if (isAssigned) totalAssigned += increment
 
             if (observedCampus === homeCampus) {
               internalObserved += increment
@@ -1065,6 +1089,7 @@ export async function GET(req: Request) {
         campusName,
         periods: stat.periods,
         surprisePeriods: stat.surprisePeriods,
+        assignedPeriods: stat.assignedPeriods || 0,
         isCrossCampus: campusName !== homeCampus
       })).sort((a, b) => b.periods - a.periods)
 
@@ -1086,6 +1111,7 @@ export async function GET(req: Request) {
         reqObserved,
         totalObserved,
         totalSurprise,
+        totalAssigned,
         internalObserved,
         crossObserved,
         isTargetMet,
@@ -1094,6 +1120,7 @@ export async function GET(req: Request) {
           campusName: "Chưa có tiết dự",
           periods: 0,
           surprisePeriods: 0,
+          assignedPeriods: 0,
           isCrossCampus: false
         }]
       }
@@ -1133,6 +1160,7 @@ export async function GET(req: Request) {
     let totalTTCM = filteredRows.length
     let totalObserved = 0
     let totalSurprise = 0
+    let totalAssigned = 0
     let totalInternal = 0
     let totalCross = 0
     let targetMetCount = 0
@@ -1140,6 +1168,7 @@ export async function GET(req: Request) {
     filteredRows.forEach(item => {
       totalObserved += item.totalObserved
       totalSurprise += item.totalSurprise
+      totalAssigned += (item.totalAssigned || 0)
       totalInternal += item.internalObserved
       totalCross += item.crossObserved
       if (item.isTargetMet) targetMetCount++
@@ -1169,6 +1198,7 @@ export async function GET(req: Request) {
         totalTTCM,
         totalObserved,
         totalSurprise,
+        totalAssigned,
         totalInternal,
         totalCross,
         targetMetCount,

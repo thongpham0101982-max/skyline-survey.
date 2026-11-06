@@ -49,7 +49,7 @@ export function ThkqHeatmapMatrix({ heatmap, onCellClick }: Props) {
       return "bg-amber-50 text-amber-800 border-amber-200 hover:bg-amber-100"
     }
     if (rate > 5.0 && rate <= 15.0) {
-      return "bg-orange-100/90 text-orange-900 border-orange-300 hover:bg-orange-200 font-semibold"
+      return "bg-amber-100/90 text-amber-800 border-amber-200 hover:bg-amber-50 font-semibold"
     }
     // > 15%: Báo động đỏ
     return "bg-red-500 text-white border-red-600 hover:bg-red-600 font-bold shadow-sm"
@@ -129,7 +129,7 @@ export function ThkqHeatmapMatrix({ heatmap, onCellClick }: Props) {
             <span>0.1% - 5.0% (Chấp nhận)</span>
           </div>
           <div className="flex items-center gap-1.5">
-            <span className="w-3.5 h-3.5 rounded bg-orange-200 border border-orange-400 inline-block" />
+            <span className="w-3.5 h-3.5 rounded bg-amber-50 border border-amber-200 inline-block" />
             <span>5.1% - 15.0% (Cảnh báo)</span>
           </div>
           <div className="flex items-center gap-1.5">
@@ -153,7 +153,7 @@ export function ThkqHeatmapMatrix({ heatmap, onCellClick }: Props) {
                   <th
                     key={col.key}
                     className={`py-2.5 px-3 font-bold text-center border-b border-r border-slate-200 whitespace-nowrap min-w-[110px] ${
-                      isSystem ? "bg-indigo-50 text-indigo-900 border-indigo-200" : "text-slate-700"
+                      isSystem ? "bg-teal-50 text-teal-800 border-teal-200" : "text-slate-700"
                     }`}
                   >
                     <div className="text-[10px] uppercase opacity-75 font-semibold">{col.campusName}</div>

@@ -27,7 +27,7 @@ import {
   Legend
 } from "recharts";
 
-const COLORS = ["#005856", "#00A19A", "#D97706", "#2563EB", "#7C3AED", "#10B981", "#EC4899", "#6B7280"];
+const COLORS = ["#005856", "#00A19A", "#D97706", "#2563EB", "#003B3A", "#10B981", "#EC4899", "#6B7280"];
 
 export default function AlumniReportsPage() {
   const [analytics, setAnalytics] = useState<any>(null);

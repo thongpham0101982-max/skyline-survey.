@@ -32,7 +32,6 @@ import { DetailDrawer } from "@/components/ui/drawer"
 import { StatusBadge, Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import { cn } from "@/lib/utils"
-import { PdfReaderModal } from "@/components/textbooks/PdfReaderModal"
 
 export interface ObservationDetailDrawerProps {
   open: boolean
@@ -92,29 +91,6 @@ export function ObservationDetailDrawer({
   onRegister,
   onCancelRegister
 }: ObservationDetailDrawerProps) {
-  // State for Digital Textbook integration (Mục XIV)
-  const [readerOpen, setReaderOpen] = React.useState(false);
-  const [textbookData, setTextbookData] = React.useState<any | null>(null);
-
-  React.useEffect(() => {
-    if (open && slot) {
-      const params = new URLSearchParams();
-      if (slot.subjectId) params.append("subjectId", slot.subjectId);
-      if (slot.grade) params.append("grade", slot.grade);
-      params.append("processingStatus", "READY");
-
-      fetch(`/api/learning-resources/textbooks?${params.toString()}`)
-        .then((res) => res.json())
-        .then((data) => {
-          if (data.success && Array.isArray(data.data) && data.data.length > 0) {
-            setTextbookData(data.data[0]);
-          } else {
-            setTextbookData(null);
-          }
-        })
-        .catch(() => setTextbookData(null));
-    }
-  }, [open, slot?.id, slot?.subjectId, slot?.grade]);
 
   if (!slot) return null;
 
@@ -202,7 +178,7 @@ export function ObservationDetailDrawer({
                 In phiếu A4
               </Button>
             )}
-            {isRegistered && !myReg?.evaluation && !isExpired && onEvaluate && (
+            {isRegistered && !myReg?.evaluation && slot.status !== "CANCELLED" && onEvaluate && (
               <Button variant="primary" size="sm" onClick={() => onEvaluate(slot, myReg)} leftIcon={<ClipboardList className="w-3.5 h-3.5" />}>
                 Chấm điểm phiếu
               </Button>
@@ -224,8 +200,8 @@ export function ObservationDetailDrawer({
                 </Badge>
               )}
               {isAssigned && (
-                <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[11px] font-black bg-purple-100 text-purple-800 border border-purple-300">
-                  <UserCheck className="size-3 text-purple-600" />
+                <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[11px] font-black bg-teal-50 text-teal-800 border border-teal-400">
+                  <UserCheck className="size-3 text-teal-800" />
                   <span>Chỉ định dự giờ</span>
                 </span>
               )}
@@ -237,11 +213,11 @@ export function ObservationDetailDrawer({
           </div>
 
           {isAssigned && (
-            <div className="p-3 bg-purple-50/90 rounded-xl border border-purple-200/80 flex items-start gap-2.5 text-purple-950">
-              <Info className="w-4 h-4 text-purple-600 shrink-0 mt-0.5" />
+            <div className="p-3 bg-teal-50/90 rounded-xl border border-teal-200/80 flex items-start gap-2.5 text-teal-800">
+              <Info className="w-4 h-4 text-teal-800 shrink-0 mt-0.5" />
               <div className="space-y-0.5 text-xs">
-                <p className="font-black text-purple-900">Lượt dự giờ được Chỉ định bởi Cán bộ Quản lý</p>
-                <p className="text-purple-700 text-[11px] leading-relaxed">
+                <p className="font-black text-teal-800">Lượt dự giờ được Chỉ định bởi Cán bộ Quản lý</p>
+                <p className="text-teal-800 text-[11px] leading-relaxed">
                   Lượt dự giờ này được khởi tạo trực tiếp từ BGH / QLCM / TTCM. Giáo viên được dự không cần phê duyệt và danh sách người dự đã được hệ thống xác nhận tham gia.
                 </p>
               </div>
@@ -290,45 +266,6 @@ export function ObservationDetailDrawer({
             )}
           </div>
         </div>
-
-        {/* NỘI DUNG BÀI HỌC SGK (MỤC XIV) */}
-        <div className="space-y-1.5">
-          <div className="flex items-center justify-between">
-            <h4 className="text-[11px] font-bold text-teal-800 uppercase tracking-wider flex items-center gap-1.5">
-              <BookOpen className="w-3.5 h-3.5 text-[#00A19A]" />
-              Nội dung bài học Sách giáo khoa
-            </h4>
-            {textbookData && (
-              <span className="text-[10px] font-medium text-teal-700 bg-teal-50 border border-teal-200 px-2 py-0.5 rounded-full">
-                {textbookData.series?.name || "SGK"}
-              </span>
-            )}
-          </div>
-          <div className="p-3.5 bg-gradient-to-r from-teal-50/80 via-emerald-50/40 to-white rounded-xl border border-teal-200/80 shadow-2xs space-y-2">
-            <div className="flex items-start justify-between gap-3">
-              <div>
-                <p className="font-bold text-xs text-[#003B3A]">
-                  {textbookData?.title || `SGK ${slot.subjectName || "Môn học"} Khối ${slot.grade || ""}`}
-                </p>
-                <p className="text-[11px] text-slate-600 mt-0.5">
-                  Chủ đề bài dạy: <strong>{slot.topic || "Bài học chuẩn"}</strong>
-                  {slot.lessonPageNumber ? ` • Trang ${slot.lessonPageNumber}` : ""}
-                </p>
-              </div>
-              {textbookData && (
-                <Button
-                  size="sm"
-                  onClick={() => setReaderOpen(true)}
-                  className="bg-[#00A19A] hover:bg-[#008B85] text-white text-xs h-8 shrink-0 font-medium rounded-lg shadow-xs"
-                >
-                  <BookOpen className="w-3.5 h-3.5 mr-1" />
-                  Xem nội dung SGK
-                </Button>
-              )}
-            </div>
-          </div>
-        </div>
-
         {/* 3. TEACHER (NGƯỜI DẠY) */}
         <div className="space-y-1.5">
           <h4 className="text-[11px] font-bold text-slate-400 uppercase tracking-wider">Giáo viên giảng dạy</h4>
@@ -438,7 +375,7 @@ export function ObservationDetailDrawer({
                         <Badge variant="warning" className="text-[10px]">Chờ đánh giá</Badge>
                       )}
 
-                      {isMe && !hasEval && !isExpired && onEvaluate && (
+                      {isMe && !hasEval && slot.status !== "CANCELLED" && onEvaluate && (
                         <Button variant="primary" size="xs" onClick={() => onEvaluate(slot, reg)}>
                           Chấm điểm
                         </Button>
@@ -621,15 +558,15 @@ export function ObservationDetailDrawer({
                     </div>
                   ) : isEslItem && parsedGeneral?.criterionScores && Array.isArray(parsedGeneral.criterionScores) ? (
                     <div className="space-y-1.5">
-                      <span className="text-[10px] font-bold text-indigo-900 uppercase tracking-wider block">
+                      <span className="text-[10px] font-bold text-teal-800 uppercase tracking-wider block">
                         ESL Rubric Indicators (Thang 4.00đ)
                       </span>
                       <div className="grid grid-cols-1 sm:grid-cols-2 gap-1.5">
                         {parsedGeneral.criterionScores.map((ind: any) => (
                           <div key={ind.id} className="p-2 bg-white rounded-xl border border-slate-200 text-xs">
                             <div className="flex items-center justify-between font-bold">
-                              <span className="text-indigo-800 text-[11px]">#{ind.id} {ind.code || "Indicator"}</span>
-                              <span className="px-1.5 py-0.5 rounded bg-indigo-50 text-indigo-700 text-[10px] font-black border border-indigo-200">
+                              <span className="text-teal-800 text-[11px]">#{ind.id} {ind.code || "Indicator"}</span>
+                              <span className="px-1.5 py-0.5 rounded bg-teal-50 text-teal-800 text-[10px] font-black border border-teal-200">
                                 {ind.score}/4đ
                               </span>
                             </div>
@@ -692,31 +629,31 @@ export function ObservationDetailDrawer({
                       parsedGeneral.teacherVoice.supportNeeded ||
                       parsedGeneral.teacherVoice.reflectionQ4
                     ) && (
-                      <div className="p-3 bg-indigo-50/40 rounded-xl border border-indigo-200/80 space-y-2">
-                        <span className="font-bold text-indigo-950 block text-[11px] uppercase tracking-wide">
+                      <div className="p-3 bg-teal-50/40 rounded-xl border border-teal-200/80 space-y-2">
+                        <span className="font-bold text-teal-800 block text-[11px] uppercase tracking-wide">
                           💬 Teacher Voice & Curriculum Feedback (Ý kiến phản hồi của GV dạy):
                         </span>
                         <div className="space-y-1.5 text-[11px]">
                           {(parsedGeneral.teacherVoice.reflectionQ1 || parsedGeneral.teacherVoice.workingWell) && (
-                            <div className="bg-white/80 p-2 rounded-lg border border-indigo-100">
+                            <div className="bg-white/80 p-2 rounded-lg border border-teal-200">
                               <span className="font-bold text-slate-700 block">1. Điều đã làm tốt (Went well):</span>
                               <p className="text-slate-800 italic">{parsedGeneral.teacherVoice.reflectionQ1 || parsedGeneral.teacherVoice.workingWell}</p>
                             </div>
                           )}
                           {(parsedGeneral.teacherVoice.reflectionQ2 || parsedGeneral.teacherVoice.challenges) && (
-                            <div className="bg-white/80 p-2 rounded-lg border border-indigo-100">
+                            <div className="bg-white/80 p-2 rounded-lg border border-teal-200">
                               <span className="font-bold text-slate-700 block">2. Khó khăn gặp phải (Challenges):</span>
                               <p className="text-slate-800 italic">{parsedGeneral.teacherVoice.reflectionQ2 || parsedGeneral.teacherVoice.challenges}</p>
                             </div>
                           )}
                           {(parsedGeneral.teacherVoice.reflectionQ3 || parsedGeneral.teacherVoice.curriculumAdjustments) && (
-                            <div className="bg-white/80 p-2 rounded-lg border border-indigo-100">
+                            <div className="bg-white/80 p-2 rounded-lg border border-teal-200">
                               <span className="font-bold text-slate-700 block">3. Tiến độ chương trình (Curriculum pacing):</span>
                               <p className="text-slate-800 italic">{parsedGeneral.teacherVoice.reflectionQ3 || parsedGeneral.teacherVoice.curriculumAdjustments}</p>
                             </div>
                           )}
                           {(parsedGeneral.teacherVoice.reflectionQ4 || parsedGeneral.teacherVoice.supportNeeded) && (
-                            <div className="bg-white/80 p-2 rounded-lg border border-indigo-100">
+                            <div className="bg-white/80 p-2 rounded-lg border border-teal-200">
                               <span className="font-bold text-slate-700 block">4. Đề xuất hỗ trợ (Support needed):</span>
                               <p className="text-slate-800 italic">{parsedGeneral.teacherVoice.reflectionQ4 || parsedGeneral.teacherVoice.supportNeeded}</p>
                             </div>
@@ -728,13 +665,13 @@ export function ObservationDetailDrawer({
 
                   {/* AI Support section */}
                   {ev.aiAnalysis && (
-                    <div className="p-3 bg-violet-50/60 rounded-xl border border-violet-200 space-y-1">
-                      <div className="flex items-center gap-1.5 text-violet-900 font-bold text-[11px]">
-                        <Sparkles className="size-3.5 text-violet-600" />
+                    <div className="p-3 bg-teal-50/60 rounded-xl border border-teal-200 space-y-1">
+                      <div className="flex items-center gap-1.5 text-teal-800 font-bold text-[11px]">
+                        <Sparkles className="size-3.5 text-teal-800" />
                         <span>AI Hỗ trợ Phân tích Chuyên môn</span>
                       </div>
-                      <p className="text-violet-800 text-xs leading-relaxed">{ev.aiAnalysis}</p>
-                      <p className="text-[10px] text-violet-600/80 italic pt-1">
+                      <p className="text-teal-800 text-xs leading-relaxed">{ev.aiAnalysis}</p>
+                      <p className="text-[10px] text-teal-800/80 italic pt-1">
                         * Ghi chú: Nội dung AI chỉ mang tính tham khảo hỗ trợ; kết quả chính thức được ký duyệt bởi người có thẩm quyền.
                       </p>
                     </div>
@@ -746,16 +683,6 @@ export function ObservationDetailDrawer({
         );
       })()}
       </div>
-
-      {/* Tích hợp Trình đọc PDF SGK trực tiếp trong SSM (Mục XIV) */}
-      {textbookData && (
-        <PdfReaderModal
-          open={readerOpen}
-          onOpenChange={setReaderOpen}
-          textbook={textbookData}
-          initialPage={slot.lessonPageNumber || 1}
-        />
-      )}
     </DetailDrawer>
   );
 }

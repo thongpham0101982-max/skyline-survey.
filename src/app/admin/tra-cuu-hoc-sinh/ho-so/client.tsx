@@ -230,7 +230,7 @@ export default function HoSoClient() {
         className={`rounded-2xl p-4 border-2 shadow-xs transition-all flex flex-col md:flex-row md:items-center justify-between gap-3 ${
           parentPortalUnlocked
             ? "bg-gradient-to-r from-emerald-50/90 via-white to-teal-50/70 border-emerald-300"
-            : "bg-gradient-to-r from-amber-50/90 via-white to-orange-50/60 border-amber-300"
+            : "bg-gradient-to-r from-amber-50/90 via-white to-amber-600/60 border-amber-300"
         }`}
       >
         <div className="flex items-start sm:items-center gap-3">
@@ -574,7 +574,7 @@ export default function HoSoClient() {
                             stu.status === "ACTIVE"
                               ? "bg-emerald-50 text-emerald-700 border border-emerald-200"
                               : stu.status === "GRADUATED"
-                              ? "bg-purple-50 text-purple-700 border border-purple-200"
+                              ? "bg-teal-50 text-teal-800 border border-teal-200"
                               : "bg-amber-50 text-amber-700 border border-amber-200"
                           }`}
                         >

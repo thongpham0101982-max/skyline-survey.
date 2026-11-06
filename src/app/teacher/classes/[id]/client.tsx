@@ -198,10 +198,10 @@ export function ClassDetailClient({
                   </Link>
                   <Link
                     href="/teacher/ho-tro-hoc-tap"
-                    className="flex items-center gap-1.5 px-3.5 py-2.5 rounded-xl bg-gradient-to-r from-purple-500/30 to-indigo-500/30 hover:from-purple-500/50 hover:to-indigo-500/50 text-white font-extrabold text-xs transition-all shadow-sm border border-purple-300/40 hover:scale-102"
+                    className="flex items-center gap-1.5 px-3.5 py-2.5 rounded-xl bg-gradient-to-r from-teal-600/30 to-emerald-600/30 hover:from-teal-600/50 hover:to-emerald-600/50 text-white font-extrabold text-xs transition-all shadow-sm border border-teal-300/40 hover:scale-102"
                     title="Theo dõi hỗ trợ học tập & Nhật ký đánh giá tâm lý"
                   >
-                    <Brain className="w-4 h-4 text-purple-200" />
+                    <Brain className="w-4 h-4 text-teal-700" />
                     <span>Hỗ trợ Học tập & Tâm lý</span>
                   </Link>
                 </div>
@@ -282,8 +282,8 @@ export function ClassDetailClient({
                         <td className="p-4 font-black text-slate-700 border-r border-slate-100 flex items-center justify-between">
                           <span>{student.studentName}</span>
                           {student.studentType === "GIAO_LUU" && (
-                            <span className="ml-2 inline-flex items-center gap-0.5 px-2 py-0.5 rounded-full text-[9px] font-black bg-purple-100 text-purple-800 border border-purple-300">
-                              <Sparkles className="w-2.5 h-2.5 text-purple-600" />
+                            <span className="ml-2 inline-flex items-center gap-0.5 px-2 py-0.5 rounded-full text-[9px] font-black bg-teal-50 text-teal-800 border border-teal-400">
+                              <Sparkles className="w-2.5 h-2.5 text-teal-800" />
                               Giao lưu
                             </span>
                           )}
@@ -557,8 +557,8 @@ export function ClassDetailClient({
                           </td>
                           <td className="p-4 border-r border-slate-100 text-center">
                             {student.studentType === "GIAO_LUU" ? (
-                              <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[10px] font-black bg-purple-100 text-purple-800 border border-purple-300 shadow-2xs">
-                                <Sparkles className="w-3 h-3 text-purple-600" />
+                              <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[10px] font-black bg-teal-50 text-teal-800 border border-teal-400 shadow-2xs">
+                                <Sparkles className="w-3 h-3 text-teal-800" />
                                 Giao lưu
                               </span>
                             ) : (

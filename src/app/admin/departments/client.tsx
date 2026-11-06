@@ -193,11 +193,11 @@ export default function DepartmentsClient({ currentSession }: { currentSession?:
       emerald: "bg-emerald-50 text-emerald-700 border-emerald-200",
       amber: "bg-amber-50 text-amber-700 border-amber-200",
       cyan: "bg-cyan-50 text-cyan-700 border-cyan-200",
-      violet: "bg-violet-50 text-violet-700 border-violet-200",
+      violet: "bg-teal-50 text-teal-800 border-teal-200",
       rose: "bg-rose-50 text-rose-700 border-rose-200",
       teal: "bg-teal-50 text-teal-700 border-teal-200",
-      purple: "bg-purple-50 text-purple-700 border-purple-200",
-      orange: "bg-orange-50 text-orange-700 border-orange-200",
+      purple: "bg-teal-50 text-teal-800 border-teal-200",
+      orange: "bg-amber-50 text-amber-800 border-amber-200",
     };
     const style = colorStyles[div.color] || "bg-slate-50 text-slate-700 border-slate-200";
 
@@ -229,7 +229,7 @@ export default function DepartmentsClient({ currentSession }: { currentSession?:
             {selectedIds.length > 0 && (
               <button
                 onClick={() => { setTargetDivisionCode(""); setBatchModalOpen(true); }}
-                className="px-4 py-2.5 bg-indigo-600 hover:bg-indigo-700 text-white rounded-2xl font-bold text-xs shadow-md shadow-indigo-100 flex items-center gap-2 transition-all active:scale-95 cursor-pointer"
+                className="px-4 py-2.5 bg-[#003B3A] hover:bg-[#003B3A] text-white rounded-2xl font-bold text-xs shadow-md shadow-indigo-100 flex items-center gap-2 transition-all active:scale-95 cursor-pointer"
               >
                 <ArrowRight className="w-4 h-4" /> Gán {selectedIds.length} Tổ vào Bộ Phận...
               </button>
@@ -256,11 +256,11 @@ export default function DepartmentsClient({ currentSession }: { currentSession?:
             emerald: { border: "border-emerald-200", bg: "bg-emerald-50/50", text: "text-emerald-800", countBg: "bg-emerald-100 text-emerald-800" },
             amber: { border: "border-amber-200", bg: "bg-amber-50/50", text: "text-amber-800", countBg: "bg-amber-100 text-amber-800" },
             cyan: { border: "border-cyan-200", bg: "bg-cyan-50/50", text: "text-cyan-800", countBg: "bg-cyan-100 text-cyan-800" },
-            violet: { border: "border-violet-200", bg: "bg-violet-50/50", text: "text-violet-800", countBg: "bg-violet-100 text-violet-800" },
+            violet: { border: "border-teal-200", bg: "bg-teal-50/50", text: "text-teal-800", countBg: "bg-teal-50 text-teal-800" },
             rose: { border: "border-rose-200", bg: "bg-rose-50/50", text: "text-rose-800", countBg: "bg-rose-100 text-rose-800" },
             teal: { border: "border-teal-200", bg: "bg-teal-50/50", text: "text-teal-800", countBg: "bg-teal-100 text-teal-800" },
-            purple: { border: "border-purple-200", bg: "bg-purple-50/50", text: "text-purple-800", countBg: "bg-purple-100 text-purple-800" },
-            orange: { border: "border-orange-200", bg: "bg-orange-50/50", text: "text-orange-800", countBg: "bg-orange-100 text-orange-800" },
+            purple: { border: "border-teal-200", bg: "bg-teal-50/50", text: "text-teal-800", countBg: "bg-teal-50 text-teal-800" },
+            orange: { border: "border-amber-200", bg: "bg-amber-50/50", text: "text-amber-800", countBg: "bg-amber-50 text-amber-800" },
           };
           const style = cardColors[div.color] || cardColors.blue;
 
@@ -321,7 +321,7 @@ export default function DepartmentsClient({ currentSession }: { currentSession?:
                   onClick={() => setActiveDivisionTab(div.code)}
                   className={`px-3 py-1.5 rounded-xl text-xs font-bold transition-all cursor-pointer flex items-center gap-1.5 ${
                     isSelected
-                      ? "bg-indigo-600 text-white shadow-xs"
+                      ? "bg-[#003B3A] text-white shadow-xs"
                       : "bg-white text-slate-600 border border-slate-200 hover:bg-slate-50"
                   }`}
                 >
@@ -350,7 +350,7 @@ export default function DepartmentsClient({ currentSession }: { currentSession?:
               value={search}
               onChange={e => setSearch(e.target.value)}
               placeholder="Tìm mã hoặc tên tổ..."
-              className="w-full pl-9 pr-4 py-2 rounded-xl text-xs border border-slate-200 focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500/10 outline-none bg-white font-medium"
+              className="w-full pl-9 pr-4 py-2 rounded-xl text-xs border border-slate-200 focus:border-teal-200 focus:ring-2 focus:ring-indigo-500/10 outline-none bg-white font-medium"
             />
           </div>
         </div>
@@ -365,7 +365,7 @@ export default function DepartmentsClient({ currentSession }: { currentSession?:
                     type="checkbox"
                     checked={filtered.length > 0 && selectedIds.length === filtered.length}
                     onChange={() => setSelectedIds(selectedIds.length === filtered.length ? [] : filtered.map(d => d.id))}
-                    className="w-4 h-4 rounded text-indigo-600 focus:ring-indigo-500 cursor-pointer"
+                    className="w-4 h-4 rounded text-teal-800 focus:ring-indigo-500 cursor-pointer"
                   />
                 </th>
                 <th className="p-3.5">Mã Tổ</th>
@@ -380,7 +380,7 @@ export default function DepartmentsClient({ currentSession }: { currentSession?:
               {loading ? (
                 <tr>
                   <td colSpan={7} className="p-12 text-center text-slate-400">
-                    <Loader2 className="w-6 h-6 animate-spin mx-auto mb-2 text-indigo-500" />
+                    <Loader2 className="w-6 h-6 animate-spin mx-auto mb-2 text-teal-700" />
                     Đang tải danh sách Tổ chuyên môn...
                   </td>
                 </tr>
@@ -396,16 +396,16 @@ export default function DepartmentsClient({ currentSession }: { currentSession?:
                   const teacherCount = d._count?.teachers || d._count?.teacherAssignments || 0;
 
                   return (
-                    <tr key={d.id} className={`hover:bg-slate-50/80 transition-colors ${isChecked ? "bg-indigo-50/30" : ""}`}>
+                    <tr key={d.id} className={`hover:bg-slate-50/80 transition-colors ${isChecked ? "bg-teal-50/30" : ""}`}>
                       <td className="p-3.5 text-center">
                         <input
                           type="checkbox"
                           checked={isChecked}
                           onChange={() => setSelectedIds(p => p.includes(d.id) ? p.filter(x => x !== d.id) : [...p, d.id])}
-                          className="w-4 h-4 rounded text-indigo-600 focus:ring-indigo-500 cursor-pointer"
+                          className="w-4 h-4 rounded text-teal-800 focus:ring-indigo-500 cursor-pointer"
                         />
                       </td>
-                      <td className="p-3.5 font-mono font-bold text-indigo-600">{d.code}</td>
+                      <td className="p-3.5 font-mono font-bold text-teal-800">{d.code}</td>
                       <td className="p-3.5 font-bold text-slate-800 text-sm">{d.name}</td>
                       <td className="p-3.5">{getDivisionBadge(d.divisionCode)}</td>
                       <td className="p-3.5 text-center">
@@ -419,7 +419,7 @@ export default function DepartmentsClient({ currentSession }: { currentSession?:
                           <button
                             onClick={() => handleEdit(d)}
                             title="Sửa"
-                            className="p-1.5 text-slate-400 hover:text-indigo-600 hover:bg-slate-100 rounded-lg transition-colors cursor-pointer"
+                            className="p-1.5 text-slate-400 hover:text-teal-800 hover:bg-slate-100 rounded-lg transition-colors cursor-pointer"
                           >
                             <Pencil className="w-3.5 h-3.5" />
                           </button>
@@ -447,7 +447,7 @@ export default function DepartmentsClient({ currentSession }: { currentSession?:
           <div className="bg-white rounded-3xl w-full max-w-md shadow-2xl border border-slate-100 overflow-hidden">
             <div className="p-5 border-b border-slate-100 flex justify-between items-center bg-slate-50/50">
               <h3 className="font-extrabold text-base text-slate-800 flex items-center gap-2">
-                <Layers className="w-4 h-4 text-indigo-600" />
+                <Layers className="w-4 h-4 text-teal-800" />
                 Gán {selectedIds.length} Tổ Vào Bộ Phận
               </h3>
               <button onClick={() => setBatchModalOpen(false)} className="p-1 text-slate-400 hover:text-slate-600 rounded-lg">
@@ -456,7 +456,7 @@ export default function DepartmentsClient({ currentSession }: { currentSession?:
             </div>
             <div className="p-6 space-y-4">
               <p className="text-xs text-slate-600">
-                Chọn Bộ Phận chuyên môn mà bạn muốn gán cho <strong className="text-indigo-600">{selectedIds.length} Tổ</strong> đã chọn:
+                Chọn Bộ Phận chuyên môn mà bạn muốn gán cho <strong className="text-teal-800">{selectedIds.length} Tổ</strong> đã chọn:
               </p>
               <div className="space-y-2">
                 {ACADEMIC_DIVISIONS.map(div => (
@@ -464,7 +464,7 @@ export default function DepartmentsClient({ currentSession }: { currentSession?:
                     key={div.code}
                     className={`flex items-center justify-between p-3 rounded-2xl border-2 cursor-pointer transition-all ${
                       targetDivisionCode === div.code
-                        ? "border-indigo-600 bg-indigo-50/40 shadow-xs"
+                        ? "border-teal-200 bg-teal-50/40 shadow-xs"
                         : "border-slate-100 hover:border-slate-200 bg-white"
                     }`}
                   >
@@ -474,7 +474,7 @@ export default function DepartmentsClient({ currentSession }: { currentSession?:
                         name="targetDivision"
                         checked={targetDivisionCode === div.code}
                         onChange={() => setTargetDivisionCode(div.code)}
-                        className="text-indigo-600 focus:ring-indigo-500"
+                        className="text-teal-800 focus:ring-indigo-500"
                       />
                       <div>
                         <div className="font-bold text-xs text-slate-800">{div.name}</div>
@@ -500,7 +500,7 @@ export default function DepartmentsClient({ currentSession }: { currentSession?:
                   type="button"
                   disabled={batchLoading || !targetDivisionCode}
                   onClick={handleBatchAssignDivision}
-                  className="px-5 py-2 bg-indigo-600 hover:bg-indigo-700 text-white font-bold rounded-xl text-xs shadow-md shadow-indigo-100 flex items-center gap-2 cursor-pointer disabled:opacity-50"
+                  className="px-5 py-2 bg-[#003B3A] hover:bg-[#003B3A] text-white font-bold rounded-xl text-xs shadow-md shadow-indigo-100 flex items-center gap-2 cursor-pointer disabled:opacity-50"
                 >
                   {batchLoading && <Loader2 className="w-3.5 h-3.5 animate-spin" />}
                   Xác Nhận Gán
@@ -530,7 +530,7 @@ export default function DepartmentsClient({ currentSession }: { currentSession?:
                   required
                   value={form.code}
                   onChange={e => setForm({ ...form, code: e.target.value.toUpperCase().replace(/\s+/g, '_') })}
-                  className="w-full border border-slate-200 rounded-xl px-4 py-2.5 focus:border-indigo-500 outline-none font-mono text-xs"
+                  className="w-full border border-slate-200 rounded-xl px-4 py-2.5 focus:border-teal-200 outline-none font-mono text-xs"
                   placeholder="VD: TO_TOAN, TO_KHOI_1..."
                 />
               </div>
@@ -540,7 +540,7 @@ export default function DepartmentsClient({ currentSession }: { currentSession?:
                   required
                   value={form.name}
                   onChange={e => setForm({ ...form, name: e.target.value })}
-                  className="w-full border border-slate-200 rounded-xl px-4 py-2.5 focus:border-indigo-500 outline-none text-xs"
+                  className="w-full border border-slate-200 rounded-xl px-4 py-2.5 focus:border-teal-200 outline-none text-xs"
                   placeholder="VD: Tổ Toán học, Tổ Khối 1..."
                 />
               </div>
@@ -549,7 +549,7 @@ export default function DepartmentsClient({ currentSession }: { currentSession?:
                 <select
                   value={form.divisionCode}
                   onChange={e => setForm({ ...form, divisionCode: e.target.value })}
-                  className="w-full border border-slate-200 rounded-xl px-4 py-2.5 focus:border-indigo-500 outline-none bg-white text-xs cursor-pointer font-medium text-slate-700"
+                  className="w-full border border-slate-200 rounded-xl px-4 py-2.5 focus:border-teal-200 outline-none bg-white text-xs cursor-pointer font-medium text-slate-700"
                 >
                   <option value="">-- Chưa gán Bộ Phận --</option>
                   {ACADEMIC_DIVISIONS.map(div => (
@@ -564,7 +564,7 @@ export default function DepartmentsClient({ currentSession }: { currentSession?:
                 <input
                   value={form.teamsWebhookUrl}
                   onChange={e => setForm({ ...form, teamsWebhookUrl: e.target.value })}
-                  className="w-full border border-slate-200 rounded-xl px-4 py-2.5 focus:border-indigo-500 outline-none text-[11px] font-mono"
+                  className="w-full border border-slate-200 rounded-xl px-4 py-2.5 focus:border-teal-200 outline-none text-[11px] font-mono"
                   placeholder="https://outlook.office.com/webhook/..."
                 />
               </div>
@@ -574,7 +574,7 @@ export default function DepartmentsClient({ currentSession }: { currentSession?:
                   rows={2}
                   value={form.description}
                   onChange={e => setForm({ ...form, description: e.target.value })}
-                  className="w-full border border-slate-200 rounded-xl px-4 py-2 focus:border-indigo-500 outline-none text-xs"
+                  className="w-full border border-slate-200 rounded-xl px-4 py-2 focus:border-teal-200 outline-none text-xs"
                   placeholder="Mô tả chức năng, nhiệm vụ của tổ..."
                 />
               </div>

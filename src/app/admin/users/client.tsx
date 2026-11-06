@@ -420,7 +420,7 @@ export function UsersClient({ initialUsers, roles, campuses = [], isCampusLocked
                   
                   <td className="p-2 p-2 border border-slate-200">
                     <div className="flex flex-col gap-1">
-                      <span className="px-2.5 py-1 rounded-md text-xs font-semibold bg-[#48BFE3]/10 text-indigo-700 border border-[#48BFE3]/20 w-fit">
+                      <span className="px-2.5 py-1 rounded-md text-xs font-semibold bg-[#48BFE3]/10 text-teal-800 border border-[#48BFE3]/20 w-fit">
                         {roles.find((r:any) => r.code === u.role)?.name || u.role}
                       </span>
                       {u.campusIds && u.campusIds.length > 0 && (

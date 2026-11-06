@@ -245,7 +245,7 @@ export default function StudentProfileInlineSectionToggles({
         className={`rounded-2xl p-3.5 sm:p-4 border-2 shadow-xs transition-all flex flex-col md:flex-row md:items-center justify-between gap-3 ${
           isParentPortalUnlocked
             ? "bg-gradient-to-r from-emerald-50/90 via-white to-teal-50/70 border-emerald-300"
-            : "bg-gradient-to-r from-amber-50/90 via-white to-orange-50/60 border-amber-300"
+            : "bg-gradient-to-r from-amber-50/90 via-white to-amber-600/60 border-amber-300"
         }`}
       >
         <div className="flex items-start sm:items-center gap-3">

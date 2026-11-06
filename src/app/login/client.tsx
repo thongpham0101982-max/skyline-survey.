@@ -130,23 +130,18 @@ export function LoginClient() {
 
           const params = typeof window !== 'undefined' ? new URLSearchParams(window.location.search) : null;
           const callbackUrl = params?.get('callbackUrl');
-          if (callbackUrl && callbackUrl.startsWith('/') && !callbackUrl.startsWith('//')) {
+          if (callbackUrl && callbackUrl.startsWith('/') && !callbackUrl.startsWith('//') && callbackUrl !== '/login' && callbackUrl !== '/') {
             window.location.href = callbackUrl;
             return;
           }
 
           if (userRole === 'PARENT') {
             window.location.href = '/parent'
-          } else if (['TEACHER', 'GV_MN', 'GVNN', 'GV', 'GIAO_VIEN'].includes(userRole)) {
-            window.location.href = '/teacher'
           } else if (userRole === 'STUDENT') {
             window.location.href = '/hocsinh/hs-khaosat/danh-sach'
-          } else if (userRole === 'ADMIN' || userRole === 'SUPER_ADMIN') {
-            window.location.href = '/admin'
-          } else if (permRes?.defaultRoute) {
-            window.location.href = permRes.defaultRoute
           } else {
-            window.location.href = role === 'TEACHER' ? '/teacher' : '/admin'
+            // Yêu cầu: "khi login sẽ trực tiếp đến trang Tổng quan cá nhân, là trang mặc định home"
+            window.location.href = '/teacher'
           }
 
         } catch (err: any) {

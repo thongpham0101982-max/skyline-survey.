@@ -201,11 +201,11 @@ export function StudentSpecialSubjectsSection({
     <div className="space-y-3">
       <h3 className="text-xs font-black text-[#003B3A] uppercase tracking-wider flex items-center justify-between border-b border-slate-100 pb-2">
         <div className="flex items-center gap-2">
-          <div className="w-2.5 h-2.5 rounded-full bg-indigo-600" />
-          <Sparkles className="w-4 h-4 text-indigo-600" />
+          <div className="w-2.5 h-2.5 rounded-full bg-[#003B3A]" />
+          <Sparkles className="w-4 h-4 text-teal-800" />
           <span>MÔN HỌC ĐẶC THÙ SKY-LINE (SKL)</span>
         </div>
-        <span className="text-[10px] font-bold text-indigo-700 bg-indigo-50 px-2.5 py-0.5 rounded-full border border-indigo-200">
+        <span className="text-[10px] font-bold text-teal-800 bg-teal-50 px-2.5 py-0.5 rounded-full border border-teal-200">
           Chương trình Bản sắc Sky-Line
         </span>
       </h3>

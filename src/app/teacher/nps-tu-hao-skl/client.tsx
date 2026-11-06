@@ -231,15 +231,15 @@ export default function TeacherReflectionPrideClient() {
 
       {/* HEADER TÍM GLOBAL SSM DÀNH CHO GVCN */}
       <div
-        className="border-b border-purple-900/20 text-white shadow-md"
+        className="border-b border-teal-900/20 text-white shadow-md"
         style={{
-          background: 'linear-gradient(135deg, #2E1065 0%, #5B2D8B 58%, #00A19A 100%)',
+          background: 'linear-gradient(135deg, #003B3A 0%, #003B3A 58%, #00A19A 100%)',
         }}
       >
         <div className="mx-auto max-w-7xl px-4 py-6 sm:px-6 lg:px-8">
           <div className="flex flex-col justify-between gap-4 lg:flex-row lg:items-center">
             <div>
-              <div className="flex flex-wrap items-center gap-2 text-xs font-bold uppercase tracking-wider text-purple-200">
+              <div className="flex flex-wrap items-center gap-2 text-xs font-bold uppercase tracking-wider text-teal-700">
                 <span>Lớp Học sinh</span>
                 <ChevronRight className="h-3.5 w-3.5" />
                 <span className="text-amber-300">NPS Tự hào Học sinh SKL</span>
@@ -252,7 +252,7 @@ export default function TeacherReflectionPrideClient() {
               <h1 className="mt-1.5 text-2xl font-extrabold tracking-tight sm:text-3xl">
                 Đồng hành Phẩm chất Học sinh & NPS Tự hào Sky-Line
               </h1>
-              <p className="mt-1 max-w-3xl text-sm text-purple-100/95">
+              <p className="mt-1 max-w-3xl text-sm text-teal-700/95">
                 Theo dõi kết quả tự đánh giá 5 phẩm chất (14 tiêu chí), đối chiếu ĐGNL định kỳ, xem chỉ số Pride NPS ẩn danh của lớp và kết nối mục tiêu phát triển cá nhân vào hồ sơ Cố vấn học tập (CVHT).
               </p>
             </div>
@@ -260,7 +260,7 @@ export default function TeacherReflectionPrideClient() {
             {/* Bộ chọn Lớp phụ trách & Kỳ khảo sát */}
             <div className="flex flex-wrap items-center gap-3">
               <div>
-                <label className="mb-1 block text-[10px] font-bold uppercase text-purple-200">
+                <label className="mb-1 block text-[10px] font-bold uppercase text-teal-700">
                   Lớp phụ trách (Khối 4–12)
                 </label>
                 <select
@@ -269,7 +269,7 @@ export default function TeacherReflectionPrideClient() {
                     setSelectedClassId(e.target.value);
                     setSelectedStudentId(null);
                   }}
-                  className="rounded-xl border border-white/25 bg-purple-950/75 px-3 py-2 text-xs font-bold text-white focus:border-amber-300 focus:outline-none"
+                  className="rounded-xl border border-white/25 bg-teal-950/75 px-3 py-2 text-xs font-bold text-white focus:border-amber-300 focus:outline-none"
                 >
                   {data?.classes?.map((c: any) => (
                     <option key={c.id} value={c.id}>
@@ -280,13 +280,13 @@ export default function TeacherReflectionPrideClient() {
               </div>
 
               <div>
-                <label className="mb-1 block text-[10px] font-bold uppercase text-purple-200">
+                <label className="mb-1 block text-[10px] font-bold uppercase text-teal-700">
                   Kỳ khảo sát
                 </label>
                 <select
                   value={selectedPeriodId}
                   onChange={(e) => setSelectedPeriodId(e.target.value)}
-                  className="rounded-xl border border-white/25 bg-purple-950/75 px-3 py-2 text-xs font-bold text-white focus:border-amber-300 focus:outline-none"
+                  className="rounded-xl border border-white/25 bg-teal-950/75 px-3 py-2 text-xs font-bold text-white focus:border-amber-300 focus:outline-none"
                 >
                   {data?.periods?.map((p: any) => (
                     <option key={p.id} value={p.id}>
@@ -327,11 +327,11 @@ export default function TeacherReflectionPrideClient() {
                   onClick={() => setActiveTab(t.id as TeacherTab)}
                   className={`inline-flex shrink-0 items-center gap-2 rounded-t-xl px-4 py-2.5 text-xs font-bold transition ${
                     active
-                      ? 'bg-[#F6F5FA] text-purple-950 shadow-sm'
-                      : 'bg-white/10 text-purple-100 hover:bg-white/20'
+                      ? 'bg-[#F6F5FA] text-teal-800 shadow-sm'
+                      : 'bg-white/10 text-teal-700 hover:bg-white/20'
                   }`}
                 >
-                  <Icon className={`h-4 w-4 ${active ? 'text-purple-700' : 'text-purple-200'}`} />
+                  <Icon className={`h-4 w-4 ${active ? 'text-teal-800' : 'text-teal-700'}`} />
                   {t.label}
                 </button>
               );
@@ -375,12 +375,12 @@ export default function TeacherReflectionPrideClient() {
             {activeTab === 'CLASS_OVERVIEW' && (
               <div className="space-y-6">
                 <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
-                  <div className="rounded-2xl border border-purple-200 bg-white p-5 shadow-sm">
-                    <span className="rounded-md bg-purple-100 px-2 py-0.5 text-[11px] font-extrabold text-purple-900">
+                  <div className="rounded-2xl border border-teal-200 bg-white p-5 shadow-sm">
+                    <span className="rounded-md bg-teal-50 px-2 py-0.5 text-[11px] font-extrabold text-teal-800">
                       TIẾN ĐỘ LỚP {data.selectedClass.name}
                     </span>
                     <div className="mt-2 flex items-baseline gap-2">
-                      <span className="text-3xl font-black text-purple-950">
+                      <span className="text-3xl font-black text-teal-800">
                         {data.overview.completionRatePct}%
                       </span>
                       <span className="text-xs font-semibold text-slate-500">
@@ -389,7 +389,7 @@ export default function TeacherReflectionPrideClient() {
                     </div>
                     <div className="mt-3 h-2 w-full overflow-hidden rounded-full bg-slate-100">
                       <div
-                        className="h-full bg-purple-700"
+                        className="h-full bg-[#003B3A]"
                         style={{ width: `${Math.min(100, data.overview.completionRatePct)}%` }}
                       />
                     </div>
@@ -432,12 +432,12 @@ export default function TeacherReflectionPrideClient() {
                     </p>
                   </div>
 
-                  <div className="rounded-2xl border border-indigo-200 bg-white p-5 shadow-sm">
-                    <span className="rounded-md bg-indigo-100 px-2 py-0.5 text-[11px] font-extrabold text-indigo-900">
+                  <div className="rounded-2xl border border-teal-200 bg-white p-5 shadow-sm">
+                    <span className="rounded-md bg-teal-50 px-2 py-0.5 text-[11px] font-extrabold text-teal-800">
                       ĐỒNG HÀNH GVCN & CVHT
                     </span>
                     <div className="mt-2 flex items-baseline gap-2">
-                      <span className="text-3xl font-black text-indigo-950">
+                      <span className="text-3xl font-black text-teal-800">
                         {data.overview.gvcnReviewedCount}
                       </span>
                       <span className="text-xs text-slate-500">
@@ -464,7 +464,7 @@ export default function TeacherReflectionPrideClient() {
                         >
                           <div className="flex items-center justify-between text-xs">
                             <div>
-                              <span className="rounded bg-purple-900 px-2 py-0.5 font-extrabold text-white">
+                              <span className="rounded bg-[#003B3A] px-2 py-0.5 font-extrabold text-white">
                                 {q.code}
                               </span>
                               <span className="ml-2 font-bold text-slate-900">{q.name}</span>
@@ -474,14 +474,14 @@ export default function TeacherReflectionPrideClient() {
                                 </span>
                               )}
                             </div>
-                            <span className="font-extrabold text-purple-950">
+                            <span className="font-extrabold text-teal-800">
                               {q.averageScore} / 4.0 ({q.percentage}%)
                             </span>
                           </div>
                           <div className="mt-2 h-2 w-full overflow-hidden rounded-full bg-white">
                             <div
                               className={`h-full rounded-full ${
-                                q.includedInOfficialIp21 ? 'bg-purple-700' : 'bg-amber-500'
+                                q.includedInOfficialIp21 ? 'bg-[#003B3A]' : 'bg-amber-500'
                               }`}
                               style={{ width: `${Math.min(100, q.percentage)}%` }}
                             />
@@ -493,8 +493,8 @@ export default function TeacherReflectionPrideClient() {
 
                   {/* Card hành động nhanh cho GVCN */}
                   <div className="space-y-4">
-                    <div className="rounded-2xl border border-purple-200 bg-white p-5 shadow-sm">
-                      <h3 className="text-sm font-extrabold text-purple-950">
+                    <div className="rounded-2xl border border-teal-200 bg-white p-5 shadow-sm">
+                      <h3 className="text-sm font-extrabold text-teal-800">
                         Tác vụ nhanh dành cho GVCN
                       </h3>
                       <div className="mt-3 space-y-2.5">
@@ -502,7 +502,7 @@ export default function TeacherReflectionPrideClient() {
                           type="button"
                           onClick={() => handleRemindStudents()}
                           disabled={actionLoading || data.overview.notStartedCount + data.overview.draftCount === 0}
-                          className="flex w-full items-center justify-between rounded-xl bg-purple-800 px-4 py-2.5 text-xs font-bold text-white shadow hover:bg-purple-900 disabled:opacity-50"
+                          className="flex w-full items-center justify-between rounded-xl bg-[#003B3A] px-4 py-2.5 text-xs font-bold text-white shadow hover:bg-[#003B3A] disabled:opacity-50"
                         >
                           <span className="flex items-center gap-2">
                             <Bell className="h-4 w-4 text-amber-300" />
@@ -514,7 +514,7 @@ export default function TeacherReflectionPrideClient() {
                         <button
                           type="button"
                           onClick={() => setActiveTab('SELF_ASSESSMENT_5Q')}
-                          className="flex w-full items-center justify-between rounded-xl border border-purple-200 bg-purple-50 px-4 py-2.5 text-xs font-bold text-purple-950 hover:bg-purple-100"
+                          className="flex w-full items-center justify-between rounded-xl border border-teal-200 bg-teal-50 px-4 py-2.5 text-xs font-bold text-teal-800 hover:bg-teal-50"
                         >
                           <span>Xem chi tiết tự đánh giá từng học sinh</span>
                           <ChevronRight className="h-4 w-4" />
@@ -574,7 +574,7 @@ export default function TeacherReflectionPrideClient() {
                       type="button"
                       onClick={() => handleRemindStudents()}
                       disabled={actionLoading}
-                      className="inline-flex items-center gap-1.5 rounded-xl bg-purple-800 px-3.5 py-2 text-xs font-extrabold text-white hover:bg-purple-900 disabled:opacity-50"
+                      className="inline-flex items-center gap-1.5 rounded-xl bg-[#003B3A] px-3.5 py-2 text-xs font-extrabold text-white hover:bg-[#003B3A] disabled:opacity-50"
                     >
                       <Bell className="h-3.5 w-3.5 text-amber-300" />
                       Nhắc tất cả HS chưa nộp
@@ -598,7 +598,7 @@ export default function TeacherReflectionPrideClient() {
                     </thead>
                     <tbody className="divide-y divide-slate-100">
                       {filteredStudents.map((s: any) => (
-                        <tr key={s.studentId} className="hover:bg-purple-50/40">
+                        <tr key={s.studentId} className="hover:bg-teal-50/40">
                           <td className="p-3 font-mono font-bold text-slate-600">{s.studentCode}</td>
                           <td className="p-3 font-extrabold text-slate-900">{s.fullName}</td>
                           <td className="p-3 text-center">
@@ -616,7 +616,7 @@ export default function TeacherReflectionPrideClient() {
                               </span>
                             )}
                           </td>
-                          <td className="p-3 text-center font-extrabold text-purple-950">
+                          <td className="p-3 text-center font-extrabold text-teal-800">
                             {s.scores ? `${s.scores.ip21TotalScore16} (${s.scores.ip21Percentage}%)` : '—'}
                           </td>
                           <td className="p-3 text-center font-semibold">
@@ -624,7 +624,7 @@ export default function TeacherReflectionPrideClient() {
                           </td>
                           <td className="p-3 text-center">
                             {s.scores ? (
-                              <span className="font-bold text-purple-900">{s.scores.ip21LevelLabel}</span>
+                              <span className="font-bold text-teal-800">{s.scores.ip21LevelLabel}</span>
                             ) : (
                               '—'
                             )}
@@ -653,7 +653,7 @@ export default function TeacherReflectionPrideClient() {
                                   handleSelectStudentForDetail(s);
                                   setActiveTab('SELF_ASSESSMENT_5Q');
                                 }}
-                                className="rounded-lg bg-purple-100 px-2.5 py-1 font-bold text-purple-900 hover:bg-purple-200"
+                                className="rounded-lg bg-teal-50 px-2.5 py-1 font-bold text-teal-800 hover:bg-teal-50"
                               >
                                 Xem chi tiết
                               </button>
@@ -687,15 +687,15 @@ export default function TeacherReflectionPrideClient() {
                           onClick={() => handleSelectStudentForDetail(s)}
                           className={`flex w-full items-center justify-between rounded-xl p-3 text-left text-xs transition ${
                             isSelected
-                              ? 'bg-purple-900 text-white shadow'
-                              : 'bg-slate-50 text-slate-800 hover:bg-purple-50'
+                              ? 'bg-[#003B3A] text-white shadow'
+                              : 'bg-slate-50 text-slate-800 hover:bg-teal-50'
                           }`}
                         >
                           <div>
                             <div className="font-extrabold">{s.fullName}</div>
                             <div
                               className={`text-[11px] ${
-                                isSelected ? 'text-purple-200' : 'text-slate-500'
+                                isSelected ? 'text-teal-700' : 'text-slate-500'
                               }`}
                             >
                               {s.studentCode}
@@ -722,7 +722,7 @@ export default function TeacherReflectionPrideClient() {
                     <div className="space-y-5">
                       <div className="flex flex-wrap items-center justify-between gap-4 border-b border-slate-200 pb-4">
                         <div>
-                          <span className="rounded bg-purple-100 px-2 py-0.5 text-xs font-bold text-purple-900">
+                          <span className="rounded bg-teal-50 px-2 py-0.5 text-xs font-bold text-teal-800">
                             {selectedStudent.studentCode}
                           </span>
                           <h2 className="mt-1 text-xl font-extrabold text-slate-900">
@@ -731,9 +731,9 @@ export default function TeacherReflectionPrideClient() {
                         </div>
                         {selectedStudent.scores && (
                           <div className="flex items-center gap-3 text-center text-xs">
-                            <div className="rounded-xl bg-purple-50 px-3.5 py-2">
+                            <div className="rounded-xl bg-teal-50 px-3.5 py-2">
                               <div className="text-[10px] text-slate-500">KPI IP2.1 (4 PC)</div>
-                              <div className="text-base font-black text-purple-950">
+                              <div className="text-base font-black text-teal-800">
                                 {selectedStudent.scores.ip21TotalScore16} / 16.0
                               </div>
                             </div>
@@ -761,10 +761,10 @@ export default function TeacherReflectionPrideClient() {
                                 className="rounded-xl border border-slate-200 p-3.5 text-xs"
                               >
                                 <div className="flex items-center justify-between font-bold">
-                                  <span className="text-purple-950">
+                                  <span className="text-teal-800">
                                     {q.qualityCode} - {q.qualityName}
                                   </span>
-                                  <span className="text-sm font-black text-purple-900">
+                                  <span className="text-sm font-black text-teal-800">
                                     {q.averageScore} / 4.0
                                   </span>
                                 </div>
@@ -775,7 +775,7 @@ export default function TeacherReflectionPrideClient() {
                                       className="rounded-lg bg-slate-50 p-2 text-[11px]"
                                     >
                                       <span className="font-bold text-slate-700">{c.code}:</span>{' '}
-                                      <strong className="text-purple-900">Mức {c.score}/4</strong>
+                                      <strong className="text-teal-800">Mức {c.score}/4</strong>
                                     </div>
                                   ))}
                                 </div>
@@ -803,8 +803,8 @@ export default function TeacherReflectionPrideClient() {
                             </div>
                           </div>
 
-                          <div className="rounded-xl border border-purple-200 bg-purple-50/50 p-4 text-xs">
-                            <div className="font-extrabold text-purple-950">
+                          <div className="rounded-xl border border-teal-200 bg-teal-50/50 p-4 text-xs">
+                            <div className="font-extrabold text-teal-800">
                               Mục tiêu phát triển bản thân & Minh chứng:
                             </div>
                             <p className="mt-1 text-slate-800">
@@ -821,7 +821,7 @@ export default function TeacherReflectionPrideClient() {
                             <button
                               type="button"
                               onClick={() => setActiveTab('CVHT_ACCOMPANIMENT')}
-                              className="inline-flex items-center gap-2 rounded-xl bg-purple-800 px-4 py-2 text-xs font-extrabold text-white hover:bg-purple-900"
+                              className="inline-flex items-center gap-2 rounded-xl bg-[#003B3A] px-4 py-2 text-xs font-extrabold text-white hover:bg-[#003B3A]"
                             >
                               <Compass className="h-4 w-4" />
                               Chuyển sang Nhận xét & Kết nối CVHT cho học sinh này
@@ -871,14 +871,14 @@ export default function TeacherReflectionPrideClient() {
                           selfPct !== null && dgnlPct !== null ? Math.round(selfPct - dgnlPct) : null;
 
                         return (
-                          <tr key={s.studentId} className="hover:bg-purple-50/40">
+                          <tr key={s.studentId} className="hover:bg-teal-50/40">
                             <td className="p-3 font-bold text-slate-900">
                               {s.fullName}{' '}
                               <span className="text-[11px] font-normal text-slate-500">
                                 ({s.studentCode})
                               </span>
                             </td>
-                            <td className="p-3 text-center font-extrabold text-purple-950">
+                            <td className="p-3 text-center font-extrabold text-teal-800">
                               {s.scores ? `${s.scores.ip21TotalScore16}/16` : 'Chưa nộp'}
                             </td>
                             <td className="p-3 text-center font-bold">
@@ -902,7 +902,7 @@ export default function TeacherReflectionPrideClient() {
                                   Tự đánh giá cao hơn ĐGNL (+{diff}%)
                                 </span>
                               ) : (
-                                <span className="rounded-full bg-indigo-100 px-2.5 py-0.5 font-bold text-indigo-800">
+                                <span className="rounded-full bg-teal-50 px-2.5 py-0.5 font-bold text-teal-800">
                                   Khiêm tốn / Cần khích lệ ({diff}%)
                                 </span>
                               )}
@@ -920,10 +920,10 @@ export default function TeacherReflectionPrideClient() {
                 TAB 5: PRIDE NPS LỚP (ẨN DANH TUYỆT ĐỐI KHI ĐẠT NGƯỠNG BẢO MẬT)
                ===================================================================== */}
             {activeTab === 'CLASS_PRIDE_NPS' && (
-              <div className="rounded-2xl border border-indigo-200 bg-white p-6 shadow-sm">
+              <div className="rounded-2xl border border-teal-200 bg-white p-6 shadow-sm">
                 <div className="flex flex-wrap items-center justify-between gap-4">
                   <div>
-                    <span className="inline-flex items-center gap-1 rounded-full bg-indigo-100 px-3 py-1 text-xs font-extrabold text-indigo-900">
+                    <span className="inline-flex items-center gap-1 rounded-full bg-teal-50 px-3 py-1 text-xs font-extrabold text-teal-800">
                       <ShieldCheck className="h-3.5 w-3.5" />
                       CHỈ HIỂN THỊ TỔNG HỢP ẨN DANH
                     </span>
@@ -936,8 +936,8 @@ export default function TeacherReflectionPrideClient() {
                     </p>
                   </div>
 
-                  <div className="rounded-2xl bg-indigo-950 px-6 py-4 text-center text-white">
-                    <div className="text-[11px] uppercase text-indigo-200">Pride NPS Lớp</div>
+                  <div className="rounded-2xl bg-[#003B3A] px-6 py-4 text-center text-white">
+                    <div className="text-[11px] uppercase text-teal-700">Pride NPS Lớp</div>
                     <div className="mt-1 text-3xl font-black text-amber-300">
                       {data.classPrideNps.isAnonymityMet
                         ? (data.classPrideNps.npsScore ?? 0) > 0
@@ -945,7 +945,7 @@ export default function TeacherReflectionPrideClient() {
                           : data.classPrideNps.npsScore
                         : 'Đang ẩn bảo mật'}
                     </div>
-                    <div className="mt-0.5 text-[11px] text-indigo-200">
+                    <div className="mt-0.5 text-[11px] text-teal-700">
                       Số phản hồi: {data.classPrideNps.totalResponses}
                     </div>
                   </div>
@@ -1019,8 +1019,8 @@ export default function TeacherReflectionPrideClient() {
                           onClick={() => handleSelectStudentForDetail(s)}
                           className={`flex w-full items-center justify-between rounded-xl p-3 text-left text-xs transition ${
                             active
-                              ? 'bg-purple-900 text-white'
-                              : 'bg-slate-50 text-slate-800 hover:bg-purple-50'
+                              ? 'bg-[#003B3A] text-white'
+                              : 'bg-slate-50 text-slate-800 hover:bg-teal-50'
                           }`}
                         >
                           <div>
@@ -1042,7 +1042,7 @@ export default function TeacherReflectionPrideClient() {
                   {selectedStudent ? (
                     <div className="space-y-5">
                       <div className="border-b border-slate-200 pb-3">
-                        <h2 className="text-lg font-extrabold text-purple-950">
+                        <h2 className="text-lg font-extrabold text-teal-800">
                           Đồng hành CVHT cùng học sinh: {selectedStudent.fullName}
                         </h2>
                         <p className="text-xs text-slate-500">
@@ -1062,14 +1062,14 @@ export default function TeacherReflectionPrideClient() {
                           value={feedbackDraft}
                           onChange={(e) => setFeedbackDraft(e.target.value)}
                           placeholder="Nhập lời nhận xét đồng hành của GVCN dành cho bản tự nhìn nhận của học sinh..."
-                          className="w-full rounded-xl border border-slate-300 p-3 text-xs focus:border-purple-700 focus:outline-none"
+                          className="w-full rounded-xl border border-slate-300 p-3 text-xs focus:border-teal-400 focus:outline-none"
                         />
                         <div className="mt-2 flex justify-end">
                           <button
                             type="button"
                             onClick={handleSaveGvcnFeedback}
                             disabled={actionLoading}
-                            className="inline-flex items-center gap-1.5 rounded-xl bg-purple-800 px-4 py-2 text-xs font-extrabold text-white hover:bg-purple-900 disabled:opacity-50"
+                            className="inline-flex items-center gap-1.5 rounded-xl bg-[#003B3A] px-4 py-2 text-xs font-extrabold text-white hover:bg-[#003B3A] disabled:opacity-50"
                           >
                             <MessageSquareHeart className="h-4 w-4" />
                             Lưu nhận xét của GVCN

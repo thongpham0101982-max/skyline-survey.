@@ -259,7 +259,7 @@ export default function AdminSkylineJourneyPage() {
                           res.status === "COMPLETED"
                             ? "bg-emerald-100 text-emerald-800"
                             : res.status === "WAITING_CONFIRMATION"
-                            ? "bg-indigo-100 text-indigo-800"
+                            ? "bg-teal-50 text-teal-800"
                             : res.status === "NEEDS_REVISION"
                             ? "bg-rose-100 text-rose-800"
                             : "bg-amber-100 text-amber-800"
@@ -361,7 +361,7 @@ export default function AdminSkylineJourneyPage() {
                   </td>
                   <td className="p-3 text-center font-bold">{sa.totalPlayers}</td>
                   <td className="p-3 text-center font-bold text-emerald-700">{sa.completedCount}</td>
-                  <td className="p-3 text-center font-bold text-indigo-700">{sa.waitingCount}</td>
+                  <td className="p-3 text-center font-bold text-teal-800">{sa.waitingCount}</td>
                   <td className="p-3 text-center">
                     <span
                       className={`px-2.5 py-0.5 rounded-full font-bold ${

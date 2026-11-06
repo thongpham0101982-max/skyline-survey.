@@ -1130,14 +1130,14 @@ export default function AiAdvisorModal({
 
                   {/* Nội dung cần xác minh thêm */}
                   {Array.isArray(data.verifiedTopicsNeeded) && (
-                    <div className="p-3 bg-indigo-50/50 rounded-xl border border-indigo-200/70 space-y-1">
-                      <span className="text-[10px] font-bold text-indigo-950 uppercase block">
+                    <div className="p-3 bg-teal-50/50 rounded-xl border border-teal-200/70 space-y-1">
+                      <span className="text-[10px] font-bold text-teal-800 uppercase block">
                         🔍 Nội dung cần CVHT xác minh thêm cùng học sinh:
                       </span>
                       <ul className="space-y-1 text-slate-700 text-[11px]">
                         {data.verifiedTopicsNeeded.map((t: string, idx: number) => (
                           <li key={idx} className="flex items-center gap-1.5">
-                            <span className="w-1.5 h-1.5 rounded-full bg-indigo-500 shrink-0" />
+                            <span className="w-1.5 h-1.5 rounded-full bg-[#003B3A] shrink-0" />
                             <span>{t}</span>
                           </li>
                         ))}

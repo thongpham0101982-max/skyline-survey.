@@ -662,7 +662,7 @@ export default function IntlExamPdfReportModal({
                       <td className="border border-slate-300 px-3 py-2.5 text-blue-800">
                         {stats.completedCount} lượt ({stats.absentCount} vắng)
                       </td>
-                      <td className="border border-slate-300 px-3 py-2.5 text-indigo-800">
+                      <td className="border border-slate-300 px-3 py-2.5 text-teal-800">
                         {stats.totalComponents} thành phần
                       </td>
                       <td className="border border-slate-300 px-3 py-2.5 text-emerald-800">

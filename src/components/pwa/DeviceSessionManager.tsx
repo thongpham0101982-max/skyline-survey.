@@ -142,7 +142,7 @@ export function DeviceSessionManager({ isOpen, onClose }: DeviceSessionManagerPr
       case "TABLET":
         return <Tablet className="w-5 h-5 text-teal-600" />
       case "DESKTOP":
-        return <Laptop className="w-5 h-5 text-indigo-600" />
+        return <Laptop className="w-5 h-5 text-teal-800" />
       default:
         return <Smartphone className="w-5 h-5 text-teal-600" />
     }

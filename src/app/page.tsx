@@ -3,7 +3,6 @@ export const revalidate = 0
 import { redirect } from "next/navigation"
 import { auth } from "@/lib/auth"
 import { prisma } from "@/lib/db"
-import { getDefaultRouteForRole, getRoleReadableModules } from "@/lib/permissions"
 
 export default async function Home() {
   const session = await auth()
@@ -14,7 +13,7 @@ export default async function Home() {
 
   let role = (session.user as any)?.role || "PARENT"
   try {
-    if (session.user.id) {
+    if (session.user?.id) {
       const dbUser = await prisma.user.findUnique({
         where: { id: session.user.id },
         select: { role: true }
@@ -29,31 +28,11 @@ export default async function Home() {
   
   if (upperRole === "STUDENT") {
     redirect("/hocsinh/hs-khaosat/danh-sach")
-  } else if (["TEACHER", "GV_MN", "GVNN", "GV", "GIAO_VIEN"].includes(upperRole)) {
-    redirect("/teacher")
   } else if (upperRole === "PARENT") {
     redirect("/parent")
-  } else if (upperRole === "ADMIN" || upperRole === "SUPER_ADMIN") {
-    redirect("/admin")
   } else {
-    // Check if user has a teacher profile and is not a management role
-    try {
-      const teacher = await prisma.teacher.findUnique({ where: { userId: session.user.id } })
-      const adminRoles = ["ADMIN", "NS", "GDCS", "GĐCS", "BGH_MN", "BGH MN", "GIAO_VU", "ĐBCL", "KHAO_THI", "CTHS", "TVAN"]
-      if (teacher && !adminRoles.includes(upperRole)) {
-        redirect("/teacher")
-      }
-    } catch (e: any) {
-      if (e?.digest?.includes("NEXT_REDIRECT")) throw e
-      console.error("Teacher check in Home:", e)
-    }
-
-    // Determine default landing page based on database permissions
-    const defaultRoute = await getDefaultRouteForRole(role)
-    if (defaultRoute) {
-      redirect(defaultRoute)
-    }
-
-    redirect("/admin")
+    // Yêu cầu: "khi login sẽ trực tiếp đến trang Tổng quan cá nhân, là trang mặc định home"
+    // Toàn bộ giáo viên và nhân sự nội bộ khi truy cập trang chủ mặc định (/) sẽ trực tiếp đến trang Tổng quan cá nhân (/teacher)
+    redirect("/teacher")
   }
 }

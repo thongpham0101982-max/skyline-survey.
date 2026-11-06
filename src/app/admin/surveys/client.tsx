@@ -321,7 +321,7 @@ export function AdminSurveysClient({ initialSurveys, years, campuses, createActi
 
 function StatCard({ title, value, icon: Icon, color, bg }: any) {
   return (
-    <div className="bg-white p-5 rounded-2xl border-2 border-violet-100 shadow-sm">
+    <div className="bg-white p-5 rounded-2xl border-2 border-teal-200 shadow-sm">
       <div className="flex justify-between items-center">
         <div>
            <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest leading-none mb-1.5">{title}</p>

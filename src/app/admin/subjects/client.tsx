@@ -31,8 +31,8 @@ export const EVALUATION_TYPES = [
     badgeLabel: "Đánh giá",
     description: "Đánh giá theo mức Đạt / Chưa đạt (hoặc theo chuẩn tiêu chí kỹ năng).",
     examples: "VD: Môn đặc thù SKL, Kỹ năng sống, Câu lạc bộ, Môn Quốc tế...",
-    color: "bg-purple-50 text-purple-700 border-purple-200 icon-purple",
-    badgeClass: "bg-purple-100 text-purple-800 border-purple-300",
+    color: "bg-teal-50 text-teal-800 border-teal-200 icon-purple",
+    badgeClass: "bg-teal-50 text-teal-800 border-teal-400",
     icon: CheckSquare
   },
   {
@@ -50,7 +50,7 @@ export const EVALUATION_TYPES = [
 export const CATEGORIES_CONFIG = [
   { id: "MOET", label: "Môn học theo Moet", shortLabel: "Theo Moet", icon: Award, theme: "blue", desc: "Chương trình chuẩn Bộ GD&ĐT", badgeClass: "bg-blue-50 text-blue-700 border-blue-200" },
   { id: "SKL", label: "Môn học Sky-Line", shortLabel: "Sky-Line", icon: Layers, theme: "emerald", desc: "Chương trình đặc thù của Hệ thống", badgeClass: "bg-emerald-50 text-emerald-700 border-emerald-200" },
-  { id: "BILINGUAL", label: "Môn học Song ngữ", shortLabel: "Song ngữ", icon: SlidersHorizontal, theme: "purple", desc: "Chương trình Song ngữ & Quốc tế", badgeClass: "bg-purple-50 text-purple-700 border-purple-200" },
+  { id: "BILINGUAL", label: "Môn học Song ngữ", shortLabel: "Song ngữ", icon: SlidersHorizontal, theme: "purple", desc: "Chương trình Song ngữ & Quốc tế", badgeClass: "bg-teal-50 text-teal-800 border-teal-200" },
   { id: "KSDV", label: "Môn Học KSĐV", shortLabel: "KSĐV", icon: CheckSquare, theme: "amber", desc: "Khảo sát đầu vào & Đánh giá năng lực", badgeClass: "bg-amber-50 text-amber-700 border-amber-200" }
 ];
 
@@ -367,7 +367,7 @@ export function SubjectsClient({ initialSubjects, years, defaultYearId }: any) {
     const colors: any = {
       blue: { bg: 'bg-blue-50/60', border: 'border-blue-100', text: 'text-blue-700', headerBg: 'bg-gradient-to-r from-blue-50 to-white', totalBg: 'bg-blue-600' },
       emerald: { bg: 'bg-emerald-50/60', border: 'border-emerald-100', text: 'text-emerald-700', headerBg: 'bg-gradient-to-r from-emerald-50 to-white', totalBg: 'bg-emerald-600' },
-      purple: { bg: 'bg-purple-50/60', border: 'border-purple-100', text: 'text-purple-700', headerBg: 'bg-gradient-to-r from-purple-50 to-white', totalBg: 'bg-purple-600' },
+      purple: { bg: 'bg-teal-50/60', border: 'border-teal-200', text: 'text-teal-800', headerBg: 'bg-gradient-to-r from-teal-600 to-white', totalBg: 'bg-[#003B3A]' },
       amber: { bg: 'bg-amber-50/60', border: 'border-amber-100', text: 'text-amber-700', headerBg: 'bg-gradient-to-r from-amber-50 to-white', totalBg: 'bg-amber-600' }
     };
     const c = colors[theme] || colors.blue;
@@ -405,7 +405,7 @@ export function SubjectsClient({ initialSubjects, years, defaultYearId }: any) {
                     type="checkbox"
                     checked={isAllVisibleSelected}
                     onChange={() => handleSelectAllVisible(visibleSubjectIds)}
-                    className="w-4 h-4 rounded border-slate-300 text-indigo-600 focus:ring-indigo-500 cursor-pointer"
+                    className="w-4 h-4 rounded border-slate-300 text-teal-800 focus:ring-indigo-500 cursor-pointer"
                     title="Chọn tất cả môn trong bảng này"
                   />
                 </th>
@@ -427,14 +427,14 @@ export function SubjectsClient({ initialSubjects, years, defaultYearId }: any) {
                 const isSelected = selectedSubjectIds.includes(s.id);
                 
                 return (
-                  <tr key={`${s.id}-${p}`} className={`transition-colors group ${isSelected ? 'bg-indigo-50/40' : 'hover:bg-slate-50/90'}`}>
+                  <tr key={`${s.id}-${p}`} className={`transition-colors group ${isSelected ? 'bg-teal-50/40' : 'hover:bg-slate-50/90'}`}>
                     <td className="px-4 py-3.5 text-center">
                       {isFirstOfSubject ? (
                         <input 
                           type="checkbox"
                           checked={isSelected}
                           onChange={() => toggleSelectSubject(s.id)}
-                          className="w-4 h-4 rounded border-slate-300 text-indigo-600 focus:ring-indigo-500 cursor-pointer"
+                          className="w-4 h-4 rounded border-slate-300 text-teal-800 focus:ring-indigo-500 cursor-pointer"
                         />
                       ) : null}
                     </td>
@@ -467,9 +467,9 @@ export function SubjectsClient({ initialSubjects, years, defaultYearId }: any) {
 
                     <td className="px-4 py-3.5">
                       <span className={`inline-flex items-center px-2.5 py-1 rounded-full text-xs font-bold ${
-                        p === 'Hệ Song Bằng' ? 'bg-purple-100 text-purple-700' :
+                        p === 'Hệ Song Bằng' ? 'bg-teal-50 text-teal-800' :
                         p === 'Hệ S Quốc tế' ? 'bg-rose-100 text-rose-700' :
-                        'bg-indigo-100 text-indigo-700'
+                        'bg-teal-50 text-teal-800'
                       }`}>
                         {p === "DEFAULT" ? "Chưa phân hệ" : p}
                       </span>
@@ -494,7 +494,7 @@ export function SubjectsClient({ initialSubjects, years, defaultYearId }: any) {
                     <td className="px-5 py-3.5 text-right">
                       {isFirstOfSubject && (
                         <div className="flex items-center justify-end gap-1 opacity-90 group-hover:opacity-100 transition-opacity">
-                          <button onClick={() => startEdit(s)} className="p-2 text-slate-500 hover:text-indigo-600 hover:bg-indigo-50 rounded-xl transition-all" title="Chỉnh sửa môn học">
+                          <button onClick={() => startEdit(s)} className="p-2 text-slate-500 hover:text-teal-800 hover:bg-teal-50 rounded-xl transition-all" title="Chỉnh sửa môn học">
                             <Edit2 className="w-4 h-4" />
                           </button>
                           <button onClick={() => handleDelete(s.id)} className="p-2 text-slate-500 hover:text-rose-600 hover:bg-rose-50 rounded-xl transition-all" title="Xóa môn học">
@@ -520,7 +520,7 @@ export function SubjectsClient({ initialSubjects, years, defaultYearId }: any) {
       {/* Clean Single Header */}
       <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 bg-white p-6 rounded-3xl shadow-sm border border-slate-100">
         <div className="flex items-center gap-4">
-          <div className="w-12 h-12 bg-gradient-to-br from-indigo-500 to-indigo-600 text-white rounded-2xl flex items-center justify-center shadow-md shadow-indigo-200 shrink-0">
+          <div className="w-12 h-12 bg-gradient-to-br from-teal-600 to-emerald-600 text-white rounded-2xl flex items-center justify-center shadow-md shadow-indigo-200 shrink-0">
             <BookOpen className="w-6 h-6" />
           </div>
           <div>
@@ -531,21 +531,21 @@ export function SubjectsClient({ initialSubjects, years, defaultYearId }: any) {
           </div>
         </div>
         <button onClick={() => startEdit()} 
-          className="w-full md:w-auto px-6 py-3.5 bg-indigo-600 text-white rounded-2xl text-sm font-bold flex items-center justify-center hover:bg-indigo-700 shadow-md hover:shadow-indigo-200 transition-all hover:-translate-y-0.5 active:translate-y-0">
+          className="w-full md:w-auto px-6 py-3.5 bg-[#003B3A] text-white rounded-2xl text-sm font-bold flex items-center justify-center hover:bg-[#003B3A] shadow-md hover:shadow-indigo-200 transition-all hover:-translate-y-0.5 active:translate-y-0">
           <Plus className="w-5 h-5 mr-2" /> Thêm Môn học mới
         </button>
       </div>
 
       {/* Bulk Action Toolbar (Floating / Inline when items are selected) */}
       {selectedSubjectIds.length > 0 && (
-        <div className="bg-indigo-900 text-white p-4 sm:p-5 rounded-3xl shadow-xl border border-indigo-700 flex flex-col sm:flex-row items-center justify-between gap-4 animate-in fade-in slide-in-from-top-4 duration-200">
+        <div className="bg-[#003B3A] text-white p-4 sm:p-5 rounded-3xl shadow-xl border border-teal-200 flex flex-col sm:flex-row items-center justify-between gap-4 animate-in fade-in slide-in-from-top-4 duration-200">
           <div className="flex items-center gap-3">
-            <div className="w-9 h-9 bg-indigo-700 text-white rounded-2xl flex items-center justify-center font-black text-sm">
+            <div className="w-9 h-9 bg-[#003B3A] text-white rounded-2xl flex items-center justify-center font-black text-sm">
               {selectedSubjectIds.length}
             </div>
             <div>
               <h4 className="font-extrabold text-sm text-white">Đã chọn {selectedSubjectIds.length} môn học</h4>
-              <p className="text-xs text-indigo-200 font-medium">Thực hiện thao tác cập nhật hoặc xóa hàng loạt</p>
+              <p className="text-xs text-teal-700 font-medium">Thực hiện thao tác cập nhật hoặc xóa hàng loạt</p>
             </div>
           </div>
 
@@ -557,7 +557,7 @@ export function SubjectsClient({ initialSubjects, years, defaultYearId }: any) {
                   if (e.target.value) handleBulkUpdateEvalType(e.target.value);
                   e.target.value = "";
                 }}
-                className="bg-indigo-800 text-white text-xs font-bold px-3 py-2 rounded-xl outline-none border border-indigo-700 cursor-pointer hover:bg-indigo-700 transition-colors"
+                className="bg-[#003B3A] text-white text-xs font-bold px-3 py-2 rounded-xl outline-none border border-teal-200 cursor-pointer hover:bg-[#003B3A] transition-colors"
               >
                 <option value="">-- Đổi Hình thức đánh giá --</option>
                 <option value="SCORE">💯 Cho điểm (Thang 10)</option>
@@ -573,7 +573,7 @@ export function SubjectsClient({ initialSubjects, years, defaultYearId }: any) {
                   if (e.target.value) handleBulkUpdateCategory(e.target.value);
                   e.target.value = "";
                 }}
-                className="bg-indigo-800 text-white text-xs font-bold px-3 py-2 rounded-xl outline-none border border-indigo-700 cursor-pointer hover:bg-indigo-700 transition-colors"
+                className="bg-[#003B3A] text-white text-xs font-bold px-3 py-2 rounded-xl outline-none border border-teal-200 cursor-pointer hover:bg-[#003B3A] transition-colors"
               >
                 <option value="">-- Đổi Danh mục môn --</option>
                 <option value="MOET">🏛️ Môn học theo Moet</option>
@@ -595,7 +595,7 @@ export function SubjectsClient({ initialSubjects, years, defaultYearId }: any) {
             {/* Deselect All */}
             <button 
               onClick={() => setSelectedSubjectIds([])}
-              className="px-3 py-2 bg-indigo-800 hover:bg-indigo-700 text-indigo-200 text-xs font-bold rounded-xl transition-colors"
+              className="px-3 py-2 bg-[#003B3A] hover:bg-[#003B3A] text-teal-700 text-xs font-bold rounded-xl transition-colors"
             >
               Bỏ chọn
             </button>
@@ -625,12 +625,12 @@ export function SubjectsClient({ initialSubjects, years, defaultYearId }: any) {
           </div>
         </div>
 
-        <div className="bg-white p-4 sm:p-5 rounded-3xl border border-purple-100 shadow-sm flex items-center gap-4">
-          <div className="w-10 h-10 sm:w-12 sm:h-12 bg-purple-50 text-purple-600 rounded-2xl flex items-center justify-center shrink-0">
+        <div className="bg-white p-4 sm:p-5 rounded-3xl border border-teal-200 shadow-sm flex items-center gap-4">
+          <div className="w-10 h-10 sm:w-12 sm:h-12 bg-teal-50 text-teal-800 rounded-2xl flex items-center justify-center shrink-0">
             <CheckSquare className="w-5 h-5" />
           </div>
           <div>
-            <span className="text-xs font-bold text-purple-600 uppercase tracking-wider">Môn đánh giá</span>
+            <span className="text-xs font-bold text-teal-800 uppercase tracking-wider">Môn đánh giá</span>
             <div className="text-xl sm:text-2xl font-black text-slate-800">{stats.gradeCount}</div>
           </div>
         </div>
@@ -657,7 +657,7 @@ export function SubjectsClient({ initialSubjects, years, defaultYearId }: any) {
               value={searchQuery}
               onChange={e => setSearchQuery(e.target.value)}
               placeholder="Tìm kiếm theo mã môn hoặc tên môn..."
-              className="w-full pl-10 pr-4 py-3 bg-slate-50/80 border border-slate-200 text-slate-800 text-sm font-bold rounded-2xl focus:bg-white focus:ring-4 focus:ring-indigo-500/10 focus:border-indigo-500 outline-none transition-all placeholder:text-slate-400"
+              className="w-full pl-10 pr-4 py-3 bg-slate-50/80 border border-slate-200 text-slate-800 text-sm font-bold rounded-2xl focus:bg-white focus:ring-4 focus:ring-indigo-500/10 focus:border-teal-200 outline-none transition-all placeholder:text-slate-400"
             />
             {searchQuery && (
               <button onClick={() => setSearchQuery("")} className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600">
@@ -677,12 +677,12 @@ export function SubjectsClient({ initialSubjects, years, defaultYearId }: any) {
         <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-5 gap-4 pt-1">
           <div className="space-y-1.5">
             <label className="text-xs font-bold text-slate-500 uppercase tracking-wider flex items-center gap-1.5">
-              <CalendarDays className="w-3.5 h-3.5 text-indigo-500" /> Năm học
+              <CalendarDays className="w-3.5 h-3.5 text-teal-700" /> Năm học
             </label>
             <select 
               value={selectedYearId} 
               onChange={e => setSelectedYearId(e.target.value)}
-              className="w-full bg-slate-50/80 border border-slate-200 text-slate-700 text-xs font-bold rounded-2xl focus:ring-4 focus:ring-indigo-500/10 focus:border-indigo-500 block p-3 outline-none transition-all cursor-pointer hover:bg-slate-50"
+              className="w-full bg-slate-50/80 border border-slate-200 text-slate-700 text-xs font-bold rounded-2xl focus:ring-4 focus:ring-indigo-500/10 focus:border-teal-200 block p-3 outline-none transition-all cursor-pointer hover:bg-slate-50"
             >
               {safeYears.map((y: any) => (
                 <option key={y.id} value={y.id}>{y.name} {y.status === "ACTIVE" ? "(Đang học)" : ""}</option>
@@ -708,12 +708,12 @@ export function SubjectsClient({ initialSubjects, years, defaultYearId }: any) {
 
           <div className="space-y-1.5">
             <label className="text-xs font-bold text-slate-500 uppercase tracking-wider flex items-center gap-1.5">
-              <Layers className="w-3.5 h-3.5 text-purple-500" /> Hệ đào tạo
+              <Layers className="w-3.5 h-3.5 text-teal-700" /> Hệ đào tạo
             </label>
             <select 
               value={filterProgram} 
               onChange={e => setFilterProgram(e.target.value)}
-              className="w-full bg-slate-50/80 border border-slate-200 text-slate-700 text-xs font-bold rounded-2xl focus:ring-4 focus:ring-purple-500/10 focus:border-purple-500 block p-3 outline-none transition-all cursor-pointer hover:bg-slate-50"
+              className="w-full bg-slate-50/80 border border-slate-200 text-slate-700 text-xs font-bold rounded-2xl focus:ring-4 focus:ring-purple-500/10 focus:border-teal-400 block p-3 outline-none transition-all cursor-pointer hover:bg-slate-50"
             >
               {["ALL_PROGRAMS", "Hệ S", "Hệ Song Bằng", "Hệ S Quốc tế"].map((prog) => (
                 <option key={prog} value={prog}>{prog === "ALL_PROGRAMS" ? "Tất cả Hệ đào tạo" : prog}</option>
@@ -856,7 +856,7 @@ export function SubjectsClient({ initialSubjects, years, defaultYearId }: any) {
           <div className="bg-white rounded-3xl shadow-2xl w-full max-w-4xl max-h-[92vh] flex flex-col overflow-hidden animate-in zoom-in-95 duration-200 border border-slate-100">
             <div className="flex items-center justify-between p-5 sm:p-6 bg-white border-b border-slate-100">
               <div className="flex items-center gap-3">
-                <div className="w-10 h-10 bg-indigo-50 text-indigo-600 rounded-2xl flex items-center justify-center shrink-0">
+                <div className="w-10 h-10 bg-teal-50 text-teal-800 rounded-2xl flex items-center justify-center shrink-0">
                   <BookOpen className="w-5 h-5" />
                 </div>
                 <div>
@@ -876,21 +876,21 @@ export function SubjectsClient({ initialSubjects, years, defaultYearId }: any) {
               {/* Section 1: Basic Info */}
               <div className="bg-white p-5 rounded-3xl border border-slate-100 shadow-sm space-y-4">
                 <h3 className="text-xs font-bold text-slate-800 uppercase tracking-wider flex items-center gap-2">
-                  <BookOpen className="w-4 h-4 text-indigo-500" /> Thông tin môn học cơ bản
+                  <BookOpen className="w-4 h-4 text-teal-700" /> Thông tin môn học cơ bản
                 </h3>
                 
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   <div className="space-y-1.5">
                     <label className="text-xs font-bold text-slate-700">Mã môn học <span className="text-rose-500">*</span></label>
                     <input value={formData.code} onChange={e=>setFormData({...formData, code: e.target.value.toUpperCase()})} 
-                      className="w-full p-3 bg-slate-50 rounded-2xl border border-slate-200 focus:bg-white focus:ring-4 focus:ring-indigo-500/10 focus:border-indigo-500 outline-none transition-all font-mono font-bold text-sm" 
+                      className="w-full p-3 bg-slate-50 rounded-2xl border border-slate-200 focus:bg-white focus:ring-4 focus:ring-indigo-500/10 focus:border-teal-200 outline-none transition-all font-mono font-bold text-sm" 
                       placeholder="VD: TOAN, VAN, ANH..." />
                   </div>
 
                   <div className="space-y-1.5">
                     <label className="text-xs font-bold text-slate-700">Tên môn học <span className="text-rose-500">*</span></label>
                     <input value={formData.name} onChange={e=>setFormData({...formData, name: e.target.value})} 
-                      className="w-full p-3 bg-slate-50 rounded-2xl border border-slate-200 focus:bg-white focus:ring-4 focus:ring-indigo-500/10 focus:border-indigo-500 outline-none transition-all font-bold text-sm" 
+                      className="w-full p-3 bg-slate-50 rounded-2xl border border-slate-200 focus:bg-white focus:ring-4 focus:ring-indigo-500/10 focus:border-teal-200 outline-none transition-all font-bold text-sm" 
                       placeholder="VD: Toán học, Ngữ văn..." />
                   </div>
 
@@ -899,7 +899,7 @@ export function SubjectsClient({ initialSubjects, years, defaultYearId }: any) {
                     <select 
                       value={formData.category} 
                       onChange={e=>setFormData({...formData, category: e.target.value})}
-                      className="w-full p-3 bg-slate-50 rounded-2xl border border-slate-200 focus:bg-white focus:ring-4 focus:ring-indigo-500/10 focus:border-indigo-500 outline-none transition-all font-bold text-xs cursor-pointer"
+                      className="w-full p-3 bg-slate-50 rounded-2xl border border-slate-200 focus:bg-white focus:ring-4 focus:ring-indigo-500/10 focus:border-teal-200 outline-none transition-all font-bold text-xs cursor-pointer"
                     >
                       <option value="MOET">Môn học theo Moet (Bộ GD&ĐT)</option>
                       <option value="SKL">Môn học Sky-Line (Đặc thù)</option>
@@ -914,7 +914,7 @@ export function SubjectsClient({ initialSubjects, years, defaultYearId }: any) {
                     <select 
                       value={formData.parentId} 
                       onChange={e=>setFormData({...formData, parentId: e.target.value})}
-                      className="w-full p-3 bg-slate-50 rounded-2xl border border-slate-200 focus:bg-white focus:ring-4 focus:ring-indigo-500/10 focus:border-indigo-500 outline-none transition-all font-bold text-xs cursor-pointer"
+                      className="w-full p-3 bg-slate-50 rounded-2xl border border-slate-200 focus:bg-white focus:ring-4 focus:ring-indigo-500/10 focus:border-teal-200 outline-none transition-all font-bold text-xs cursor-pointer"
                     >
                       <option value="">Không có (Môn chính độc lập)</option>
                       {parentCandidates.map((p: any) => (
@@ -942,7 +942,7 @@ export function SubjectsClient({ initialSubjects, years, defaultYearId }: any) {
                         key={type.id}
                         onClick={() => setFormData({...formData, evaluationType: type.id})}
                         className={`p-4 rounded-2xl border-2 cursor-pointer transition-all flex flex-col justify-between ${
-                          isSelected ? 'border-indigo-600 bg-indigo-50/40 shadow-sm' : 'border-slate-150 bg-white hover:border-slate-300'
+                          isSelected ? 'border-teal-200 bg-teal-50/40 shadow-sm' : 'border-slate-150 bg-white hover:border-slate-300'
                         }`}
                       >
                         <div>
@@ -951,7 +951,7 @@ export function SubjectsClient({ initialSubjects, years, defaultYearId }: any) {
                               <Icon className="w-4 h-4" />
                             </div>
                             <div className={`w-4 h-4 rounded-full border flex items-center justify-center ${
-                              isSelected ? 'border-indigo-600 bg-indigo-600' : 'border-slate-300'
+                              isSelected ? 'border-teal-200 bg-[#003B3A]' : 'border-slate-300'
                             }`}>
                               {isSelected && <div className="w-1.5 h-1.5 bg-white rounded-full" />}
                             </div>
@@ -971,7 +971,7 @@ export function SubjectsClient({ initialSubjects, years, defaultYearId }: any) {
               {/* Section 3: Programs & Levels */}
               <div className="bg-white p-5 rounded-3xl border border-slate-100 shadow-sm space-y-4">
                 <h3 className="text-xs font-bold text-slate-800 uppercase tracking-wider flex items-center gap-2">
-                  <Layers className="w-4 h-4 text-purple-500" /> Phạm vi áp dụng (Cấp học & Hệ đào tạo)
+                  <Layers className="w-4 h-4 text-teal-700" /> Phạm vi áp dụng (Cấp học & Hệ đào tạo)
                 </h3>
 
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
@@ -982,10 +982,10 @@ export function SubjectsClient({ initialSubjects, years, defaultYearId }: any) {
                       {["Hệ S", "Hệ Song Bằng", "Hệ S Quốc tế"].map(prog => {
                         const checked = formData.studyPrograms.includes(prog);
                         return (
-                          <label key={prog} className={`flex items-center gap-2 cursor-pointer px-3 py-2 rounded-xl border transition-all text-xs font-bold ${checked ? 'border-indigo-500 bg-indigo-50 text-indigo-700' : 'border-slate-200 bg-white text-slate-600 hover:border-slate-300'}`}>
+                          <label key={prog} className={`flex items-center gap-2 cursor-pointer px-3 py-2 rounded-xl border transition-all text-xs font-bold ${checked ? 'border-teal-200 bg-teal-50 text-teal-800' : 'border-slate-200 bg-white text-slate-600 hover:border-slate-300'}`}>
                             <input type="checkbox" className="hidden" 
                               checked={checked} onChange={(e) => handleProgramToggle(prog, e.target.checked)} /> 
-                            <div className={`w-3.5 h-3.5 rounded-md border flex items-center justify-center transition-all ${checked ? 'bg-indigo-600 border-indigo-600' : 'border-slate-300'}`}>
+                            <div className={`w-3.5 h-3.5 rounded-md border flex items-center justify-center transition-all ${checked ? 'bg-[#003B3A] border-teal-200' : 'border-slate-300'}`}>
                               {checked && <CheckCircle2 className="w-2.5 h-2.5 text-white" />}
                             </div>
                             <span>{prog}</span>
@@ -1032,12 +1032,12 @@ export function SubjectsClient({ initialSubjects, years, defaultYearId }: any) {
                 <div className="bg-white rounded-3xl border border-slate-100 shadow-sm overflow-hidden">
                   <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between px-5 py-3.5 bg-gradient-to-r from-slate-50 to-white border-b border-slate-100 gap-2">
                     <h3 className="text-xs font-bold text-slate-700 uppercase tracking-wider flex items-center gap-2">
-                      <Layers className="w-4 h-4 text-indigo-500" /> Cấu hình số tiết phân bổ theo Hệ
+                      <Layers className="w-4 h-4 text-teal-700" /> Cấu hình số tiết phân bổ theo Hệ
                     </h3>
                     <div className="flex flex-wrap gap-1.5">
                       {formData.studyPrograms.map(prog => (
                         <button key={prog} onClick={() => setActiveTab(prog)} type="button"
-                          className={`px-3 py-1 font-bold text-xs rounded-xl transition-all ${activeTab === prog ? 'bg-indigo-600 text-white shadow-sm' : 'bg-white text-slate-600 border border-slate-200 hover:border-indigo-300'}`}>
+                          className={`px-3 py-1 font-bold text-xs rounded-xl transition-all ${activeTab === prog ? 'bg-[#003B3A] text-white shadow-sm' : 'bg-white text-slate-600 border border-slate-200 hover:border-teal-200'}`}>
                           {prog}
                         </button>
                       ))}
@@ -1154,7 +1154,7 @@ export function SubjectsClient({ initialSubjects, years, defaultYearId }: any) {
                 Hủy bỏ
               </button>
               <button onClick={handleSave} disabled={loading || !formData.code || !formData.name || formData.studyPrograms.length === 0} 
-                className="px-7 py-2.5 text-xs font-bold text-white bg-indigo-600 hover:bg-indigo-700 rounded-xl shadow-md hover:shadow-indigo-200 transition-all disabled:opacity-50 flex items-center">
+                className="px-7 py-2.5 text-xs font-bold text-white bg-[#003B3A] hover:bg-[#003B3A] rounded-xl shadow-md hover:shadow-indigo-200 transition-all disabled:opacity-50 flex items-center">
                 {loading ? (
                   <span className="flex items-center gap-2">
                     <div className="w-3.5 h-3.5 border-2 border-white/30 border-t-white rounded-full animate-spin" /> Đang lưu dữ liệu...

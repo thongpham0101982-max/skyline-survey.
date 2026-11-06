@@ -816,7 +816,7 @@ export default function CreateActivityWizard() {
                               {preset.tag}
                             </span>
                             <span className={`text-[10px] font-black px-2 py-0.5 rounded-md border ${
-                              preset.strand === 'XA_HOI' ? 'bg-purple-50 text-purple-700 border-purple-200' :
+                              preset.strand === 'XA_HOI' ? 'bg-teal-50 text-teal-800 border-teal-200' :
                               preset.strand === 'TU_NHIEN' ? 'bg-emerald-50 text-emerald-700 border-emerald-200' :
                               preset.strand === 'HUONG_NGHIEP' ? 'bg-amber-50 text-amber-700 border-amber-200' :
                               'bg-sky-50 text-sky-700 border-sky-200'

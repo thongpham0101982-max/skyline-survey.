@@ -1062,12 +1062,12 @@ export default function SpecializedEntryModal({
                       </div>
                     </div>
 
-                    <div className="p-3 rounded-xl bg-indigo-50 border border-indigo-200">
-                      <div className="text-[11px] font-bold text-indigo-700">7. CEFR Level</div>
-                      <div className="text-lg font-black text-indigo-900 mt-0.5">
+                    <div className="p-3 rounded-xl bg-teal-50 border border-teal-200">
+                      <div className="text-[11px] font-bold text-teal-800">7. CEFR Level</div>
+                      <div className="text-lg font-black text-teal-800 mt-0.5">
                         {camLiveRule.cefr}
                       </div>
-                      <div className="text-[11px] text-indigo-700">
+                      <div className="text-[11px] text-teal-800">
                         Quy chuẩn: {examType === 'KET' ? 'KET 2020 (120–150)' : 'PET 2020 (140–170)'}
                       </div>
                     </div>
@@ -1147,7 +1147,7 @@ export default function SpecializedEntryModal({
               {/* D. FORM PEARSON EDEXCEL */}
               {examFamily === 'PEARSON_EDEXCEL' && (
                 <div className="space-y-3">
-                  <div className="text-xs text-purple-800 bg-purple-50 p-3 rounded-xl border border-purple-200">
+                  <div className="text-xs text-teal-800 bg-teal-50 p-3 rounded-xl border border-teal-200">
                     Lưu điểm chính thức và mức đánh giá gốc (<strong>P1, P2, P3</strong> cho iPrimary; <strong>S1, S2, S3, S4</strong> cho iLowerSecondary) riêng từng môn học. Học sinh chỉ dự thi 1 môn có thể để trống môn còn lại.
                   </div>
                   <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">

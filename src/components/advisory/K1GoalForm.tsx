@@ -89,11 +89,11 @@ export const K1_PRESETS = [
     badge: "Họa sĩ nhí",
     subtitle: "Tự tin & Năng động",
     theme: {
-      border: "border-purple-300 hover:border-purple-400",
-      bgHeader: "bg-gradient-to-r from-purple-400 via-fuchsia-500 to-pink-500 text-white",
-      cardBg: "bg-purple-50/70",
-      pill: "bg-white text-slate-800 border-purple-200 hover:border-purple-400 hover:bg-purple-50",
-      activePill: "bg-gradient-to-r from-purple-500 to-fuchsia-600 text-white border-fuchsia-600 shadow-md scale-[1.02]"
+      border: "border-teal-400 hover:border-teal-400",
+      bgHeader: "bg-gradient-to-r from-teal-600 via-fuchsia-500 to-pink-500 text-white",
+      cardBg: "bg-teal-50/70",
+      pill: "bg-white text-slate-800 border-teal-200 hover:border-teal-400 hover:bg-teal-50",
+      activePill: "bg-gradient-to-r from-teal-600 to-fuchsia-600 text-white border-fuchsia-600 shadow-md scale-[1.02]"
     },
     targets: [
       "Tự tin giao tiếp",
@@ -120,7 +120,7 @@ export const K1_PRESETS = [
       bgHeader: "bg-gradient-to-r from-amber-400 via-orange-400 to-amber-500 text-white",
       cardBg: "bg-amber-50/70",
       pill: "bg-white text-slate-800 border-amber-200 hover:border-amber-400 hover:bg-amber-50",
-      activePill: "bg-gradient-to-r from-amber-500 to-orange-500 text-white border-orange-600 shadow-md scale-[1.02]"
+      activePill: "bg-gradient-to-r from-amber-500 to-amber-600 text-white border-amber-200 shadow-md scale-[1.02]"
     },
     targets: [
       "Biết nói lời cảm ơn, xin lỗi",
@@ -544,7 +544,7 @@ export function K1GoalForm({
                             onClick={() => toggleAction(catKey, act)}
                             className={`w-full text-left p-3.5 rounded-2xl text-xs sm:text-sm font-extrabold transition-all duration-200 flex items-start gap-3 border-2 ${
                               isChecked
-                                ? "bg-gradient-to-r from-amber-500 to-orange-500 text-white border-orange-600 shadow-md scale-[1.02]"
+                                ? "bg-gradient-to-r from-amber-500 to-amber-600 text-white border-amber-200 shadow-md scale-[1.02]"
                                 : "bg-white text-slate-800 border-slate-200 hover:border-amber-300 hover:bg-amber-50/50 hover:scale-[1.01]"
                             } ${isSubmitted ? "cursor-not-allowed opacity-90" : "cursor-pointer active:scale-95"}`}
                           >

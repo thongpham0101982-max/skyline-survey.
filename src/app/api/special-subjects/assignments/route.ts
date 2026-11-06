@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/db";
 import { getAdminSession } from "@/lib/session";
 import { sendAssignmentNotificationEmails } from "@/lib/special-subjects/assignment-mail";
+import { getSpecialSubjectGrades, isGradeApplicableForSubject } from "@/lib/specialSubjectsPortfolio";
 
 export async function GET(req: NextRequest) {
   try {
@@ -17,6 +18,8 @@ export async function GET(req: NextRequest) {
     const subjectCode = searchParams.get("subjectCode");
     const classId = searchParams.get("classId");
     const grade = searchParams.get("grade");
+    const educationSystem = searchParams.get("educationSystem");
+    const versionCodeParam = searchParams.get("versionCode") || "v1.0";
     const departmentId = searchParams.get("departmentId");
     const teacherIdParam = searchParams.get("teacherId");
     const scope = (searchParams.get("scope") || "").toUpperCase();
@@ -75,6 +78,9 @@ export async function GET(req: NextRequest) {
     if (grade && grade !== "ALL") {
       where.class = { ...(where.class || {}), grade };
     }
+    if (educationSystem && educationSystem !== "ALL") {
+      where.class = { ...(where.class || {}), educationSystem };
+    }
 
     // Also resolve all special subjects assigned to this teacher in the active academic year
     let assignedSubjects: Array<{ id: string; code: string; name: string }> = [];
@@ -129,6 +135,7 @@ export async function GET(req: NextRequest) {
             className: true, 
             grade: true, 
             level: true, 
+            educationSystem: true,
             campusId: true, 
             homeroomTeacherId: true,
             campus: { select: { campusCode: true, campusName: true } } 
@@ -151,22 +158,63 @@ export async function GET(req: NextRequest) {
     });
     const gvcnMap = new Map(gvcnTeachers.map(t => [t.id, t]));
 
-    const enrichedAssignments = assignments.map((a: any) => {
+    // Resolve active subject code and allowed grades
+    let activeSubjectCode = subjectCode ? subjectCode.toUpperCase().trim() : "";
+    if (!activeSubjectCode && subjectId && subjectId !== "ALL") {
+      const sRec = await (prisma as any).specialSubject.findUnique({
+        where: { id: subjectId },
+        select: { code: true }
+      });
+      activeSubjectCode = (sRec?.code || "").toUpperCase().trim();
+    }
+    const allowedSubjectGrades = activeSubjectCode ? getSpecialSubjectGrades(activeSubjectCode) : null;
+
+    // Requirement 2 & Grade validation: Lọc phân công theo đúng khối quy định của môn học
+    const filteredAssignments = assignments.filter((a: any) => {
+      const aGrade = String(a.class?.grade || "").replace(/\D/g, "");
+      if (allowedSubjectGrades && !allowedSubjectGrades.includes(aGrade)) {
+        return false;
+      }
+      if (a.subject?.code === "FIN_EDU" && aGrade === "1") {
+        const eduSys = String(a.class?.educationSystem || "HNS").toUpperCase().trim();
+        return eduSys === "HNS" || eduSys === "S";
+      }
+      return true;
+    });
+
+    const enrichedAssignments = filteredAssignments.map((a: any) => {
       const gvcn = a.class.homeroomTeacherId ? gvcnMap.get(a.class.homeroomTeacherId) : null;
       const isGvcn = a.teacherId === a.class.homeroomTeacherId;
+      const gNum = parseInt(String(a.class.grade || "1"), 10) || 1;
+      const eduSys = String(a.class.educationSystem || "HNS").toUpperCase().trim();
+      const programCode =
+        a.subject?.code === "FIN_EDU" && gNum >= 1 && gNum <= 5
+          ? `TC0${gNum}S`
+          : a.subject?.code === "FIN_EDU"
+          ? `TC0${gNum}`
+          : `${a.subject?.code || "SUB"}_K${gNum}`;
       return {
         ...a,
         isGvcn,
+        educationSystem: eduSys,
+        programCode,
+        versionCode: versionCodeParam,
         homeroomTeacher: gvcn || null
       };
     });
 
-    // Also find unassigned primary classes in current filter scope
-    const assignedClassIds = new Set(assignments.map((a: any) => a.classId));
+    // Also find unassigned classes strictly within current filter and subject's allowed grades
+    const assignedClassIds = new Set(enrichedAssignments.map((a: any) => a.classId));
     const unassignedWhere: any = {
       status: "ACTIVE",
       academicYearId,
-      grade: grade && grade !== "ALL" ? grade : undefined,
+      grade:
+        grade && grade !== "ALL"
+          ? grade
+          : allowedSubjectGrades
+          ? { in: allowedSubjectGrades }
+          : undefined,
+      educationSystem: educationSystem && educationSystem !== "ALL" ? educationSystem : undefined,
       campusId: campusId && campusId !== "ALL" ? campusId : undefined,
       id: { notIn: Array.from(assignedClassIds) }
     };
@@ -178,6 +226,7 @@ export async function GET(req: NextRequest) {
         classCode: true,
         className: true,
         grade: true,
+        educationSystem: true,
         campusId: true,
         homeroomTeacherId: true,
         campus: { select: { campusCode: true, campusName: true } }
@@ -185,14 +234,24 @@ export async function GET(req: NextRequest) {
       orderBy: [{ grade: "asc" }, { className: "asc" }]
     });
 
-    const unassignedGvcnIds = Array.from(new Set(unassignedClassesRaw.map(c => c.homeroomTeacherId).filter(Boolean))) as string[];
+    const unassignedClassesFiltered = unassignedClassesRaw.filter(c => {
+      const cGrade = String(c.grade || "").replace(/\D/g, "");
+      if (allowedSubjectGrades && !allowedSubjectGrades.includes(cGrade)) return false;
+      if (activeSubjectCode === "FIN_EDU" && cGrade === "1") {
+        const eduSys = String(c.educationSystem || "HNS").toUpperCase().trim();
+        return eduSys === "HNS" || eduSys === "S";
+      }
+      return true;
+    });
+
+    const unassignedGvcnIds = Array.from(new Set(unassignedClassesFiltered.map(c => c.homeroomTeacherId).filter(Boolean))) as string[];
     const unassignedGvcns = await prisma.teacher.findMany({
       where: { id: { in: unassignedGvcnIds } },
       select: { id: true, teacherCode: true, teacherName: true, email: true, phone: true }
     });
     const unassignedGvcnMap = new Map(unassignedGvcns.map(t => [t.id, t]));
 
-    const unassignedClasses = unassignedClassesRaw.map(c => ({
+    const unassignedClasses = unassignedClassesFiltered.map(c => ({
       ...c,
       homeroomTeacher: c.homeroomTeacherId ? unassignedGvcnMap.get(c.homeroomTeacherId) || null : null
     }));
@@ -202,6 +261,7 @@ export async function GET(req: NextRequest) {
       assignedSubjects,
       unassignedClasses,
       academicYearId,
+      versionCode: versionCodeParam,
       totalAssigned: enrichedAssignments.length,
       totalUnassigned: unassignedClasses.length
     });
@@ -226,6 +286,8 @@ export async function POST(req: NextRequest) {
       classIds, 
       campusId, 
       grade, 
+      educationSystem,
+      versionCode = "v1.0",
       academicYearId, 
       semester = 1,
       sendNotificationEmail = false
@@ -263,6 +325,41 @@ export async function POST(req: NextRequest) {
         ? ["6", "7", "8", "9"]
         : ["1", "2", "3", "4", "5", "6", "7", "8", "9"];
 
+    // Helper: Upsert assignment in-place to preserve existing SpecialGradeEntry history
+    async function upsertClassAssignment(targetClassId: string, targetTeacherId: string) {
+      const existing = await (prisma as any).specialTeachingAssignment.findFirst({
+        where: {
+          subjectId,
+          classId: targetClassId,
+          academicYearId,
+          semester
+        }
+      });
+
+      if (existing) {
+        return await (prisma as any).specialTeachingAssignment.update({
+          where: { id: existing.id },
+          data: {
+            teacherId: targetTeacherId,
+            isLeadTeacher: true,
+            status: "ACTIVE"
+          }
+        });
+      }
+
+      return await (prisma as any).specialTeachingAssignment.create({
+        data: {
+          subjectId,
+          teacherId: targetTeacherId,
+          classId: targetClassId,
+          academicYearId,
+          semester,
+          isLeadTeacher: true,
+          status: "ACTIVE"
+        }
+      });
+    }
+
     // =========================================================================
     // MODE 1: AUTO_GVCN - Phân công tự động theo GVCN của lớp
     // =========================================================================
@@ -275,18 +372,18 @@ export async function POST(req: NextRequest) {
             id: { in: classIds },
             status: "ACTIVE"
           },
-          select: { id: true, className: true, homeroomTeacherId: true }
+          select: { id: true, className: true, grade: true, educationSystem: true, homeroomTeacherId: true }
         });
       } else {
-        // Find all classes matching campusId / grade filter in current academic year for this subject's grade range
         targetClasses = await prisma.class.findMany({
           where: {
             status: "ACTIVE",
             academicYearId,
             grade: grade && grade !== "ALL" ? grade : { in: defaultSubjectGrades },
+            educationSystem: educationSystem && educationSystem !== "ALL" ? educationSystem : undefined,
             campusId: campusId && campusId !== "ALL" ? campusId : undefined
           },
-          select: { id: true, className: true, homeroomTeacherId: true }
+          select: { id: true, className: true, grade: true, educationSystem: true, homeroomTeacherId: true }
         });
       }
 
@@ -296,36 +393,31 @@ export async function POST(req: NextRequest) {
 
       const assignedResults = [];
       const skippedClasses = [];
+      const skippedNonSystemSClasses = [];
+      const skippedWrongGradeClasses = [];
 
       for (const cls of targetClasses) {
+        const clsGrade = String(cls.grade || "").replace(/\D/g, "");
+        const clsEduSys = String(cls.educationSystem || "HNS").toUpperCase().trim();
+        // Quy tắc cốt lõi: Chỉ gán môn học đặc thù đúng theo khối quy định
+        if (!defaultSubjectGrades.includes(clsGrade)) {
+          skippedWrongGradeClasses.push(`${cls.className} (Khối ${clsGrade})`);
+          continue;
+        }
+
+        // Requirement 2: Môn Giáo dục Tài chính cá nhân Khối 1 (TC01S) chỉ áp dụng cho Hệ đào tạo S (HNS).
+        if (subjCodeUpper === "FIN_EDU" && clsGrade === "1" && clsEduSys !== "HNS" && clsEduSys !== "S") {
+          skippedNonSystemSClasses.push(`${cls.className} (Hệ ${clsEduSys})`);
+          continue;
+        }
+
         if (!cls.homeroomTeacherId) {
           skippedClasses.push(cls.className);
           continue;
         }
 
-        // Delete any existing assignment for this class & subject in this semester to prevent duplicate conflict
-        await (prisma as any).specialTeachingAssignment.deleteMany({
-          where: {
-            subjectId,
-            classId: cls.id,
-            academicYearId,
-            semester
-          }
-        });
-
-        // Create assignment for class's homeroom teacher
-        const created = await (prisma as any).specialTeachingAssignment.create({
-          data: {
-            subjectId,
-            teacherId: cls.homeroomTeacherId,
-            classId: cls.id,
-            academicYearId,
-            semester,
-            isLeadTeacher: true,
-            status: "ACTIVE"
-          }
-        });
-        assignedResults.push(created);
+        const upserted = await upsertClassAssignment(cls.id, cls.homeroomTeacherId);
+        assignedResults.push(upserted);
       }
 
       let emailNotice = "";
@@ -345,10 +437,15 @@ export async function POST(req: NextRequest) {
 
       return NextResponse.json({
         success: true,
-        message: `Đã phân công thành công ${assignedResults.length} lớp cho Giáo viên Chủ nhiệm (GVCN)${emailNotice}` + 
-                 (skippedClasses.length > 0 ? ` (Bỏ qua ${skippedClasses.length} lớp chưa có GVCN: ${skippedClasses.join(", ")})` : ""),
+        versionCode,
+        message: `Đã phân công thành công ${assignedResults.length} lớp (Phiên bản ${versionCode}) cho Giáo viên Chủ nhiệm (GVCN)${emailNotice}` + 
+                 (skippedClasses.length > 0 ? ` (Bỏ qua ${skippedClasses.length} lớp chưa có GVCN: ${skippedClasses.join(", ")})` : "") +
+                 (skippedWrongGradeClasses.length > 0 ? ` (Bỏ qua ${skippedWrongGradeClasses.length} lớp không thuộc khối của môn: ${skippedWrongGradeClasses.join(", ")})` : "") +
+                 (skippedNonSystemSClasses.length > 0 ? ` (Không tự động áp dụng TC01S cho ${skippedNonSystemSClasses.length} lớp ngoài Hệ S: ${skippedNonSystemSClasses.join(", ")})` : ""),
         assignedCount: assignedResults.length,
-        skippedCount: skippedClasses.length
+        skippedCount: skippedClasses.length,
+        skippedWrongGradeCount: skippedWrongGradeClasses.length,
+        skippedNonSystemSCount: skippedNonSystemSClasses.length
       });
     }
 
@@ -359,29 +456,34 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: "Thiếu thông tin phân công (giáo viên hoặc danh sách lớp)" }, { status: 400 });
     }
 
+    const selectedClassRecords = await prisma.class.findMany({
+      where: { id: { in: classIds } },
+      select: { id: true, className: true, grade: true, educationSystem: true }
+    });
+    const classRecordMap = new Map(selectedClassRecords.map(c => [c.id, c]));
+
     const results = [];
     for (const classId of classIds) {
-      // Clear prior assignment for this class & subject in this semester to keep clean 1-to-1 mapping
-      await (prisma as any).specialTeachingAssignment.deleteMany({
-        where: {
-          subjectId,
-          classId,
-          academicYearId,
-          semester
+      const clsInfo = classRecordMap.get(classId);
+      if (clsInfo) {
+        const clsGrade = String(clsInfo.grade || "").replace(/\D/g, "");
+        // Quy tắc cốt lõi: Chỉ gán môn học đặc thù đúng theo khối quy định
+        if (!defaultSubjectGrades.includes(clsGrade)) {
+          return NextResponse.json({
+            error: `Lớp ${clsInfo.className} thuộc Khối ${clsGrade}. Môn ${subjCodeUpper} chỉ áp dụng cho các khối: ${defaultSubjectGrades.join(", ")}.`
+          }, { status: 400 });
         }
-      });
+        if (subjCodeUpper === "FIN_EDU" && clsGrade === "1") {
+          const eduSys = String(clsInfo.educationSystem || "HNS").toUpperCase().trim();
+          if (eduSys !== "HNS" && eduSys !== "S") {
+            return NextResponse.json({
+              error: `Lớp ${clsInfo.className} thuộc hệ đào tạo ${eduSys}. Chương trình Giáo dục Tài chính cá nhân Khối 1 (TC01S) hiện chỉ áp dụng cho Hệ đào tạo S (HNS).`
+            }, { status: 400 });
+          }
+        }
+      }
 
-      const assignment = await (prisma as any).specialTeachingAssignment.create({
-        data: {
-          subjectId,
-          teacherId,
-          classId,
-          academicYearId,
-          semester,
-          isLeadTeacher: true,
-          status: "ACTIVE"
-        }
-      });
+      const assignment = await upsertClassAssignment(classId, teacherId);
       results.push(assignment);
     }
 

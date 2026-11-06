@@ -88,16 +88,16 @@ export function PsychologicalCumulativeModal({
     <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-xs flex items-center justify-center p-4 z-50 transition-all">
       <div className="bg-white rounded-3xl shadow-2xl max-w-6xl w-full overflow-hidden flex flex-col max-h-[92vh] animate-in fade-in zoom-in-95 duration-200">
         {/* Header */}
-        <div className="px-6 py-4.5 bg-gradient-to-r from-purple-950 via-purple-900 to-indigo-900 text-white flex items-center justify-between no-print">
+        <div className="px-6 py-4.5 bg-gradient-to-r from-teal-600 via-purple-900 to-emerald-600 text-white flex items-center justify-between no-print">
           <div className="flex items-center gap-3">
             <div className="p-2.5 bg-white/15 rounded-2xl backdrop-blur-xs">
-              <Brain className="h-5 w-5 text-purple-300" />
+              <Brain className="h-5 w-5 text-teal-700" />
             </div>
             <div>
               <h3 className="text-base font-black tracking-tight">
                 SỔ THEO DÕI ĐÁNH GIÁ TÂM LÝ HỌC SINH LŨY TIẾN (10 THÁNG NĂM HỌC)
               </h3>
-              <p className="text-xs text-purple-200 font-medium">
+              <p className="text-xs text-teal-700 font-medium">
                 Theo dõi tiến trình thích ứng, diễn biến tâm lý & biện pháp can thiệp từng tuần/tháng ({academicYearName})
               </p>
             </div>
@@ -154,8 +154,8 @@ export function PsychologicalCumulativeModal({
             </select>
           </div>
 
-          <div className="text-xs font-bold text-purple-900">
-            Tổng cộng: <strong className="text-purple-700">{filtered.length}</strong> học sinh diện tâm lý
+          <div className="text-xs font-bold text-teal-800">
+            Tổng cộng: <strong className="text-teal-800">{filtered.length}</strong> học sinh diện tâm lý
           </div>
         </div>
 
@@ -163,7 +163,7 @@ export function PsychologicalCumulativeModal({
         <div className="p-6 overflow-y-auto flex-1 space-y-4" id="psychological-record-print">
           {/* Print Header */}
           <div className="hidden print:block text-center space-y-1 mb-4 border-b pb-4">
-            <div className="text-[11px] font-black uppercase text-purple-900">HỆ THỐNG GIÁO DỤC SKY-LINE • BAN TÂM LÝ HỌC ĐƯỜNG</div>
+            <div className="text-[11px] font-black uppercase text-teal-800">HỆ THỐNG GIÁO DỤC SKY-LINE • BAN TÂM LÝ HỌC ĐƯỜNG</div>
             <h1 className="text-base font-black uppercase">SỔ THEO DÕI ĐÁNH GIÁ TÂM LÝ HỌC SINH LŨY TIẾN</h1>
             <div className="text-xs text-slate-600 font-bold">Năm học: {academicYearName}</div>
           </div>
@@ -184,9 +184,9 @@ export function PsychologicalCumulativeModal({
                 return (
                   <div key={target.id} className="bg-white rounded-2xl border border-slate-200 overflow-hidden shadow-xs">
                     {/* Student Mini Header */}
-                    <div className="bg-gradient-to-r from-purple-50 to-indigo-50/50 p-4 border-b flex flex-wrap justify-between items-center gap-2">
+                    <div className="bg-gradient-to-r from-teal-600 to-emerald-600/50 p-4 border-b flex flex-wrap justify-between items-center gap-2">
                       <div className="flex items-center gap-3">
-                        <span className="w-7 h-7 rounded-full bg-purple-700 text-white font-black text-xs flex items-center justify-center">
+                        <span className="w-7 h-7 rounded-full bg-[#003B3A] text-white font-black text-xs flex items-center justify-center">
                           #{idx + 1}
                         </span>
                         <div>
@@ -194,12 +194,12 @@ export function PsychologicalCumulativeModal({
                             {target.student?.studentName || target.student?.fullName}
                             <span className="text-xs text-slate-500 font-bold ml-2">({target.student?.studentCode})</span>
                           </h4>
-                          <span className="text-xs font-extrabold text-purple-800">
+                          <span className="text-xs font-extrabold text-teal-800">
                             Lớp: {target.student?.class?.className || target.student?.className} • Vấn đề: {target.reason || "Tâm lý học đường"}
                           </span>
                         </div>
                       </div>
-                      <span className="px-2.5 py-1 rounded-full text-[11px] font-black bg-purple-100 text-purple-900 border border-purple-200">
+                      <span className="px-2.5 py-1 rounded-full text-[11px] font-black bg-teal-50 text-teal-800 border border-teal-200">
                         {target.status || "Đang theo dõi"}
                       </span>
                     </div>
@@ -217,14 +217,14 @@ export function PsychologicalCumulativeModal({
                               key={month}
                               className={`p-2.5 rounded-xl border text-xs space-y-1 ${
                                 hasEval
-                                  ? "bg-purple-50/50 border-purple-200"
+                                  ? "bg-teal-50/50 border-teal-200"
                                   : "bg-slate-50/50 border-slate-200 opacity-60"
                               }`}
                             >
                               <div className="flex justify-between items-center font-bold">
-                                <span className="text-purple-950 font-black">{month}</span>
+                                <span className="text-teal-800 font-black">{month}</span>
                                 {hasEval && (
-                                  <span className="text-[10px] font-black text-purple-800 bg-purple-200/60 px-1.5 py-0.2 rounded">
+                                  <span className="text-[10px] font-black text-teal-800 bg-teal-200/60 px-1.5 py-0.2 rounded">
                                     {latest?.trackingLevel || "Đã ĐG"}
                                   </span>
                                 )}
@@ -251,12 +251,12 @@ export function PsychologicalCumulativeModal({
                             {sortedEvals.map((ev: any) => (
                               <div key={ev.id} className="bg-slate-50 p-2.5 rounded-lg border border-slate-200 text-xs flex justify-between items-start gap-3">
                                 <div>
-                                  <div className="font-black text-purple-900">
+                                  <div className="font-black text-teal-800">
                                     {ev.periodName} ({ev.periodType === "MONTH" ? "Đánh giá Tháng" : "Đánh giá Tuần"}) — <span className="text-slate-800 font-bold">{ev.trackingLevel}</span>
                                   </div>
                                   <p className="text-slate-600 mt-0.5">{ev.comment}</p>
                                   {ev.updatedStatus && (
-                                    <div className="text-[10px] font-extrabold text-indigo-700 mt-0.5">
+                                    <div className="text-[10px] font-extrabold text-teal-800 mt-0.5">
                                       👉 Đề xuất: {ev.updatedStatus}
                                     </div>
                                   )}

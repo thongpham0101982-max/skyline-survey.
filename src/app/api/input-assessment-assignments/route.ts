@@ -4,6 +4,7 @@ import { prisma } from "@/lib/db";
 import { sendEmail } from "@/lib/mail";
 import { auth } from "@/lib/auth";
 import { executeEntranceWorkflowAction } from "@/lib/entrance-progress/entranceProgressEngine";
+import { getCampusGiaovuEmail } from "@/lib/orientation/service";
 
 export async function GET(req) {
   try {
@@ -742,8 +743,13 @@ export async function POST(req) {
           `;
           
           try {
+             const campusHint = group.batchName || group.periodName || "";
+             const giaovuCcEmail = getCampusGiaovuEmail(campusHint);
+             const ccList = Array.from(new Set(["ktdbcl@skylineschool.edu.vn", giaovuCcEmail].filter(Boolean)));
+
              const mailRes = await sendEmail({
                 to: targetEmail,
+                cc: ccList,
                 subject: emailSubject,
                 html: emailHtml,
                 replyTo: "ktdbcl@skylineschool.edu.vn"

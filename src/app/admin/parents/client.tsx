@@ -493,12 +493,12 @@ export function ParentAccountsClient({ classes, years, campuses, defaultYearId }
         </div>
 
         <div className="bg-white p-5 rounded-2xl border border-slate-100 shadow-sm flex items-center gap-4">
-          <div className="w-12 h-12 rounded-2xl bg-indigo-50 text-indigo-600 flex items-center justify-center shrink-0">
+          <div className="w-12 h-12 rounded-2xl bg-teal-50 text-teal-800 flex items-center justify-center shrink-0">
             <Link className="w-6 h-6" />
           </div>
           <div>
             <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest">PHHS Nhiều con</p>
-            <p className="text-2xl font-black text-indigo-600">{stats.multiChild}</p>
+            <p className="text-2xl font-black text-teal-800">{stats.multiChild}</p>
           </div>
         </div>
       </div>
@@ -545,7 +545,7 @@ export function ParentAccountsClient({ classes, years, campuses, defaultYearId }
               >Chưa tạo ({stats.pending})</button>
               <button
                 onClick={() => setStatusFilter("MULTICHILD")}
-                className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-all ${statusFilter === "MULTICHILD" ? "bg-indigo-600 text-white shadow-sm" : "text-slate-500 hover:text-slate-800"}`}
+                className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-all ${statusFilter === "MULTICHILD" ? "bg-[#003B3A] text-white shadow-sm" : "text-slate-500 hover:text-slate-800"}`}
               >Nhiều con ({stats.multiChild})</button>
             </div>
 
@@ -705,11 +705,11 @@ export function ParentAccountsClient({ classes, years, campuses, defaultYearId }
                       {isMultiChild ? (
                         <button
                           onClick={() => setMultiChildModalParent(parentObj)}
-                          className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-indigo-50 hover:bg-indigo-100 text-indigo-700 font-bold text-[11px] border border-indigo-200/60 transition-all cursor-pointer shadow-sm"
+                          className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-teal-50 hover:bg-teal-50 text-teal-800 font-bold text-[11px] border border-teal-200/60 transition-all cursor-pointer shadow-sm"
                         >
-                          <Link className="w-3.5 h-3.5 text-indigo-600" />
+                          <Link className="w-3.5 h-3.5 text-teal-800" />
                           <span>Multi-Child ({linkedCount} con)</span>
-                          <Eye className="w-3.5 h-3.5 text-indigo-400 ml-1" />
+                          <Eye className="w-3.5 h-3.5 text-teal-700 ml-1" />
                         </button>
                       ) : (
                         <span className="text-[11px] text-slate-300 font-medium">1 con</span>
@@ -768,7 +768,7 @@ export function ParentAccountsClient({ classes, years, campuses, defaultYearId }
                             <button
                               onClick={() => setLinkModalStudent(s)}
                               title="Liên kết học sinh khác cho Phụ huynh này"
-                              className="p-2 rounded-xl bg-slate-50 hover:bg-indigo-50 text-slate-600 hover:text-indigo-600 border border-slate-200 hover:border-indigo-200 transition-all"
+                              className="p-2 rounded-xl bg-slate-50 hover:bg-teal-50 text-slate-600 hover:text-teal-800 border border-slate-200 hover:border-teal-200 transition-all"
                             >
                               <UserPlus className="w-4 h-4" />
                             </button>
@@ -814,12 +814,12 @@ export function ParentAccountsClient({ classes, years, campuses, defaultYearId }
           <div className="bg-white rounded-3xl max-w-lg w-full p-6 shadow-2xl border border-slate-100 space-y-6 animate-in zoom-in-95 duration-200">
             <div className="flex items-center justify-between border-b border-slate-100 pb-4">
               <div className="flex items-center gap-3">
-                <div className="w-10 h-10 rounded-2xl bg-indigo-50 text-indigo-600 flex items-center justify-center">
+                <div className="w-10 h-10 rounded-2xl bg-teal-50 text-teal-800 flex items-center justify-center">
                   <Users className="w-5 h-5" />
                 </div>
                 <div>
                   <h3 className="text-lg font-black text-slate-900">Danh Sách Con Của Phụ Huynh</h3>
-                  <p className="text-xs text-slate-400 font-semibold">Tài khoản chính: <code className="font-mono text-indigo-600 font-bold">{multiChildModalParent.user?.email || multiChildModalParent.parentCode}</code></p>
+                  <p className="text-xs text-slate-400 font-semibold">Tài khoản chính: <code className="font-mono text-teal-800 font-bold">{multiChildModalParent.user?.email || multiChildModalParent.parentCode}</code></p>
                 </div>
               </div>
               <button onClick={() => setMultiChildModalParent(null)} className="p-2 rounded-xl text-slate-400 hover:bg-slate-100">
@@ -837,7 +837,7 @@ export function ParentAccountsClient({ classes, years, campuses, defaultYearId }
                       <div className="flex items-center gap-3 text-xs text-slate-500 font-semibold">
                         <span>Mã HS: <strong className="font-mono text-slate-700">{child.studentCode}</strong></span>
                         <span>•</span>
-                        <span>Lớp: <strong className="text-indigo-600">{child.class?.className || "---"}</strong></span>
+                        <span>Lớp: <strong className="text-teal-800">{child.class?.className || "---"}</strong></span>
                       </div>
                     </div>
                     {multiChildModalParent.students.length > 1 && (

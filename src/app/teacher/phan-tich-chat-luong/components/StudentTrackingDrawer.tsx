@@ -138,8 +138,8 @@ export function StudentTrackingDrawer({
               onClick={() => setFilterType("COMMITMENT")}
               className={`px-3 py-1 rounded-lg text-xs font-medium transition-all ${
                 filterType === "COMMITMENT"
-                  ? "bg-purple-600 text-white"
-                  : "bg-purple-50 text-purple-700 hover:bg-purple-100 border border-purple-200"
+                  ? "bg-[#003B3A] text-white"
+                  : "bg-teal-50 text-teal-800 hover:bg-teal-50 border border-teal-200"
               }`}
             >
               Có cam kết học tập
@@ -194,7 +194,7 @@ export function StudentTrackingDrawer({
                     </span>
                   )}
                   {st.entranceCommitment && (
-                    <span className="px-2 py-0.5 rounded-md bg-purple-50 text-purple-700 border border-purple-200 font-medium">
+                    <span className="px-2 py-0.5 rounded-md bg-teal-50 text-teal-800 border border-teal-200 font-medium">
                       Cam kết đầu vào: {st.entranceCommitment}
                     </span>
                   )}

@@ -295,7 +295,7 @@ export function SSMTodayHome() {
           className="w-full bg-gradient-to-r from-amber-500/10 via-teal-500/10 to-emerald-500/10 hover:from-amber-500/15 hover:via-teal-500/15 hover:to-emerald-500/15 border border-teal-200/60 rounded-2xl p-3.5 flex items-center justify-between gap-3 text-left transition-all active:scale-[0.99] shadow-2xs cursor-pointer"
         >
           <div className="flex items-center gap-3">
-            <div className="w-10 h-10 rounded-xl bg-gradient-to-tr from-amber-400 to-orange-500 text-white flex items-center justify-center font-bold shadow-xs shrink-0 text-base">
+            <div className="w-10 h-10 rounded-xl bg-gradient-to-tr from-amber-400 to-amber-600 text-white flex items-center justify-center font-bold shadow-xs shrink-0 text-base">
               ☀️
             </div>
             <div>
@@ -495,7 +495,7 @@ export function SSMTodayHome() {
             href="/teacher/co-van-hoc-tap"
             className="bg-white rounded-xl p-2.5 border border-[#E6ECEA] flex flex-col items-center justify-center text-center gap-1.5 shadow-2xs hover:border-[#00A19A] transition-colors min-h-[74px]"
           >
-            <div className="w-8 h-8 rounded-lg bg-indigo-50 text-indigo-600 flex items-center justify-center">
+            <div className="w-8 h-8 rounded-lg bg-teal-50 text-teal-800 flex items-center justify-center">
               <UserCheck className="w-4 h-4" />
             </div>
             <span className="text-[10px] font-bold text-slate-700 leading-tight line-clamp-2">
@@ -518,7 +518,7 @@ export function SSMTodayHome() {
             {/* Header */}
             <div className="flex items-center justify-between pb-3 border-b border-slate-100">
               <div className="flex items-center gap-2.5">
-                <div className="w-9 h-9 rounded-xl bg-gradient-to-tr from-amber-400 to-orange-500 text-white flex items-center justify-center text-lg shadow-xs">
+                <div className="w-9 h-9 rounded-xl bg-gradient-to-tr from-amber-400 to-amber-600 text-white flex items-center justify-center text-lg shadow-xs">
                   ☀️
                 </div>
                 <div>

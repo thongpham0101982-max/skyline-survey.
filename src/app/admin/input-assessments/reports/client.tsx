@@ -242,7 +242,7 @@ const renderTemplate = (content: string, student: any, academicYearName?: string
     .replace(/\{\{devAssessmentResult\}\}/g, student?.devAssessmentResult || "");
 };
 
-const inp = "w-full bg-slate-50 border border-slate-200 rounded-2xl pl-4 pr-4 py-3 outline-none focus:border-indigo-400 focus:ring-4 focus:ring-indigo-400/10 text-sm font-medium text-slate-700 transition-all shadow-sm";
+const inp = "w-full bg-slate-50 border border-slate-200 rounded-2xl pl-4 pr-4 py-3 outline-none focus:border-teal-200 focus:ring-4 focus:ring-indigo-400/10 text-sm font-medium text-slate-700 transition-all shadow-sm";
 
 function Toast({ msg, type }: { msg: string; type: string }) {
   return (
@@ -271,7 +271,7 @@ function Modal({ open, onClose, title, children, footer, size = "md" }: any) {
     <div className="fixed inset-0 z-[9990] flex items-center justify-center bg-black/50 backdrop-blur-sm p-4 animate-in fade-in duration-200" onClick={onClose}>
       <div className={`bg-white rounded-3xl shadow-2xl w-full ${sizeMap[size]} overflow-hidden animate-in zoom-in-95 duration-200`} onClick={e => e.stopPropagation()}>
         <div className="flex items-center justify-between px-6 py-5 border-b border-slate-100">
-          <h3 className="font-black text-slate-800 text-base flex items-center gap-2"><ClipboardList className="w-5 h-5 text-indigo-500" />{title}</h3>
+          <h3 className="font-black text-slate-800 text-base flex items-center gap-2"><ClipboardList className="w-5 h-5 text-teal-700" />{title}</h3>
           <button onClick={onClose} className="w-8 h-8 flex items-center justify-center rounded-full hover:bg-slate-100 text-slate-400 hover:text-slate-700 transition-all"><X className="w-4 h-4" /></button>
         </div>
         <div className="p-6 overflow-y-auto max-h-[75vh]">{children}</div>
@@ -2387,7 +2387,7 @@ export function ReportsClient({
       {/* Main Header / Top Selectors */}
       <div className="bg-white border border-slate-200 shadow-sm rounded-3xl p-6 flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
         <div className="flex items-center gap-3">
-          <div className="w-12 h-12 bg-gradient-to-br from-indigo-500 to-indigo-700 text-white rounded-2xl flex items-center justify-center shadow-lg shadow-indigo-100">
+          <div className="w-12 h-12 bg-gradient-to-br from-teal-600 to-emerald-600 text-white rounded-2xl flex items-center justify-center shadow-lg shadow-indigo-100">
             <ClipboardList className="w-6 h-6"/>
           </div>
           <div>
@@ -2399,7 +2399,7 @@ export function ReportsClient({
         <div className="flex flex-wrap items-center gap-3 w-full md:w-auto md:justify-end">
           {/* School Year Selector */}
           <div className="flex items-center gap-2 hover:border-slate-300 transition-colors shadow-sm relative group cursor-pointer text-xs font-semibold">
-            <Calendar className="w-4 h-4 text-indigo-500" />
+            <Calendar className="w-4 h-4 text-teal-700" />
             <select
               value={yearId}
               onChange={e => setYearId(e.target.value)}
@@ -2411,7 +2411,7 @@ export function ReportsClient({
                 </option>
               ))}
             </select>
-            <div className="absolute right-3.5 pointer-events-none text-slate-400 group-hover:text-indigo-500 transition-colors">
+            <div className="absolute right-3.5 pointer-events-none text-slate-400 group-hover:text-teal-700 transition-colors">
               <ChevronDown className="w-3.5 h-3.5" />
             </div>
           </div>
@@ -2422,14 +2422,14 @@ export function ReportsClient({
               onClick={() => setSelectedLevel("high")}
               className={`flex items-center gap-2 px-5 py-2.5 rounded-xl text-xs font-black tracking-tight transition-all duration-300 ${selectedLevel === "high" ? "bg-white text-teal-600 shadow-md scale-[1.02]" : "text-slate-500 hover:text-slate-800"}`}
             >
-              <GraduationCap className="w-4 h-4 text-indigo-500" />
+              <GraduationCap className="w-4 h-4 text-teal-700" />
               Khảo thí Phổ thông
             </button>
             <button
               onClick={() => setSelectedLevel("preschool")}
-              className={`flex items-center gap-2 px-5 py-2.5 rounded-xl text-xs font-black tracking-tight transition-all duration-300 ${selectedLevel === "preschool" ? "bg-white text-violet-600 shadow-md scale-[1.02]" : "text-slate-500 hover:text-slate-800"}`}
+              className={`flex items-center gap-2 px-5 py-2.5 rounded-xl text-xs font-black tracking-tight transition-all duration-300 ${selectedLevel === "preschool" ? "bg-white text-teal-800 shadow-md scale-[1.02]" : "text-slate-500 hover:text-slate-800"}`}
             >
-              <Baby className="w-4 h-4 text-violet-500" />
+              <Baby className="w-4 h-4 text-teal-700" />
               Khảo thí Mầm non
             </button>
           </div>
@@ -2448,7 +2448,7 @@ export function ReportsClient({
             <button
               key={t.id}
               onClick={() => setTab(t.id)}
-              className={`flex items-center gap-2 px-6 py-3 rounded-xl text-xs font-black uppercase tracking-wider transition-all duration-200 ${tab === t.id ? "bg-indigo-600 text-white shadow-md shadow-indigo-100" : "text-slate-500 hover:bg-slate-50 hover:text-slate-800"}`}
+              className={`flex items-center gap-2 px-6 py-3 rounded-xl text-xs font-black uppercase tracking-wider transition-all duration-200 ${tab === t.id ? "bg-[#003B3A] text-white shadow-md shadow-indigo-100" : "text-slate-500 hover:bg-slate-50 hover:text-slate-800"}`}
             >
               <t.icon className={`w-4 h-4 ${tab === t.id ? "text-white" : "text-slate-400"}`} />
               {t.label}
@@ -2552,7 +2552,7 @@ export function ReportsClient({
                         <button onClick={() => setRcLogo("")} className="absolute -top-1 -right-1 w-4 h-4 bg-red-600 text-white rounded-full flex items-center justify-center shadow-md"><X className="w-2.5 h-2.5"/></button>
                       </div>
                     ) : (
-                      <label className="w-12 h-12 rounded-xl border-2 border-dashed border-slate-200 flex items-center justify-center text-slate-400 cursor-pointer hover:border-indigo-400 hover:text-teal-600 transition-all">
+                      <label className="w-12 h-12 rounded-xl border-2 border-dashed border-slate-200 flex items-center justify-center text-slate-400 cursor-pointer hover:border-teal-200 hover:text-teal-600 transition-all">
                         <Upload className="w-4 h-4"/>
                         <input type="file" accept="image/*" className="hidden" onChange={handleLogoUpload} />
                       </label>
@@ -2570,7 +2570,7 @@ export function ReportsClient({
                         <button onClick={() => setRcSignature("")} className="absolute -top-1 -right-1 w-4 h-4 bg-red-600 text-white rounded-full flex items-center justify-center shadow-md"><X className="w-2.5 h-2.5"/></button>
                       </div>
                     ) : (
-                      <label className="w-12 h-12 rounded-xl border-2 border-dashed border-slate-200 flex items-center justify-center text-slate-400 cursor-pointer hover:border-indigo-400 hover:text-teal-600 transition-all">
+                      <label className="w-12 h-12 rounded-xl border-2 border-dashed border-slate-200 flex items-center justify-center text-slate-400 cursor-pointer hover:border-teal-200 hover:text-teal-600 transition-all">
                         <Upload className="w-4 h-4"/>
                         <input type="file" accept="image/*" className="hidden" onChange={handleSignatureUpload} />
                       </label>
@@ -2588,7 +2588,7 @@ export function ReportsClient({
                         <button onClick={() => setRcBackground("")} className="absolute -top-1 -right-1 w-4 h-4 bg-red-600 text-white rounded-full flex items-center justify-center shadow-md"><X className="w-2.5 h-2.5"/></button>
                       </div>
                     ) : (
-                      <label className="w-12 h-12 rounded-xl border-2 border-dashed border-slate-200 flex items-center justify-center text-slate-400 cursor-pointer hover:border-indigo-400 hover:text-teal-600 transition-all">
+                      <label className="w-12 h-12 rounded-xl border-2 border-dashed border-slate-200 flex items-center justify-center text-slate-400 cursor-pointer hover:border-teal-200 hover:text-teal-600 transition-all">
                         <Upload className="w-4 h-4"/>
                         <input type="file" accept="image/*" className="hidden" onChange={handleBackgroundUpload} />
                       </label>
@@ -2606,7 +2606,7 @@ export function ReportsClient({
                         <button onClick={() => setRcFooter("")} className="absolute -top-1 -right-1 w-4 h-4 bg-red-600 text-white rounded-full flex items-center justify-center shadow-md"><X className="w-2.5 h-2.5"/></button>
                       </div>
                     ) : (
-                      <label className="w-12 h-12 rounded-xl border-2 border-dashed border-slate-200 flex items-center justify-center text-slate-400 cursor-pointer hover:border-indigo-400 hover:text-teal-600 transition-all">
+                      <label className="w-12 h-12 rounded-xl border-2 border-dashed border-slate-200 flex items-center justify-center text-slate-400 cursor-pointer hover:border-teal-200 hover:text-teal-600 transition-all">
                         <Upload className="w-4 h-4"/>
                         <input type="file" accept="image/*" className="hidden" onChange={handleFooterUpload} />
                       </label>
@@ -2616,7 +2616,7 @@ export function ReportsClient({
               </div>
             </div>
 
-            <button onClick={saveReportConfig} className="w-full hover:bg-indigo-700 text-white font-black text-xs uppercase tracking-widest shadow-lg shadow-indigo-100 transition-all flex items-center justify-center gap-2 cursor-pointer text-xs font-semibold">
+            <button onClick={saveReportConfig} className="w-full hover:bg-[#003B3A] text-white font-black text-xs uppercase tracking-widest shadow-lg shadow-indigo-100 transition-all flex items-center justify-center gap-2 cursor-pointer text-xs font-semibold">
               <Check className="w-4 h-4" /> Lưu cấu hình mẫu in
             </button>
           </div>
@@ -2661,7 +2661,7 @@ export function ReportsClient({
             return (
               <div className="lg:col-span-7 shadow-inner p-8 flex flex-col justify-between min-h-[500px] text-xs font-semibold">
                 <div className="flex items-center justify-between mb-5 flex-wrap gap-2">
-                  <span className="text-[10px] font-black text-indigo-500 uppercase tracking-widest">Khung Xem trước thiết kế A4 thực tế</span>
+                  <span className="text-[10px] font-black text-teal-700 uppercase tracking-widest">Khung Xem trước thiết kế A4 thực tế</span>
                   {((selectedLevel === "high" && rcReportType === "thu_chuc_mung") || (rcReportType === "cam_ket_hoc_tap" && isSplitTemp)) && (
                     <div className="flex items-center gap-1 bg-slate-200/60 p-0.5 rounded-lg text-[10px]">
                       <button 
@@ -2715,7 +2715,7 @@ export function ReportsClient({
                           </div>
 
                           <div className="text-center mb-3">
-                            <h2 className="text-xs font-black tracking-widest text-indigo-950 uppercase" style={{ fontFamily: '"Open Sans", sans-serif' }}>
+                            <h2 className="text-xs font-black tracking-widest text-teal-800 uppercase" style={{ fontFamily: '"Open Sans", sans-serif' }}>
                               DANH MỤC HỒ SƠ NHẬP HỌC
                             </h2>
                           </div>
@@ -2816,7 +2816,7 @@ export function ReportsClient({
                           </div>
 
                           <div className="text-center mb-3">
-                            <h2 className="text-xs font-black tracking-widest text-indigo-950 uppercase" style={{ fontFamily: '"Open Sans", sans-serif' }}>
+                            <h2 className="text-xs font-black tracking-widest text-teal-800 uppercase" style={{ fontFamily: '"Open Sans", sans-serif' }}>
                               {rcTitle}
                             </h2>
                           </div>
@@ -2925,7 +2925,7 @@ export function ReportsClient({
               onClick={() => setCResultFilter("all")}
               className={`p-3.5 rounded-2xl border shadow-sm flex items-center justify-between relative overflow-hidden group cursor-pointer transition-all duration-200 ${
                 cResultFilter === "all"
-                  ? "bg-gradient-to-r from-teal-900 to-indigo-900 border-teal-600 text-white shadow-md shadow-teal-900/20 ring-2 ring-teal-500"
+                  ? "bg-gradient-to-r from-teal-900 to-emerald-600 border-teal-600 text-white shadow-md shadow-teal-900/20 ring-2 ring-teal-500"
                   : "bg-gradient-to-br from-white to-slate-50 border-slate-200/80 hover:border-teal-400 hover:shadow-md"
               }`}
             >
@@ -2973,7 +2973,7 @@ export function ReportsClient({
               onClick={() => setCResultFilter(cResultFilter === "cam_ket" ? "all" : "cam_ket")}
               className={`p-3.5 rounded-2xl border shadow-sm flex items-center justify-between relative overflow-hidden group cursor-pointer transition-all duration-200 ${
                 cResultFilter === "cam_ket"
-                  ? "bg-gradient-to-r from-amber-800 to-orange-900 border-amber-500 text-white shadow-md shadow-amber-900/20 ring-2 ring-amber-400"
+                  ? "bg-gradient-to-r from-amber-800 to-amber-600 border-amber-500 text-white shadow-md shadow-amber-900/20 ring-2 ring-amber-400"
                   : "bg-gradient-to-br from-white to-amber-50/30 border-slate-200/80 hover:border-amber-400 hover:shadow-md"
               }`}
             >
@@ -3116,12 +3116,12 @@ export function ReportsClient({
           <div className="overflow-hidden border border-slate-100 rounded-2xl shadow-sm">
             {loadingStudents ? (
               <div className="flex flex-col items-center justify-center py-20 space-y-3 bg-white">
-                <Loader2 className="w-8 h-8 text-indigo-500 animate-spin" />
+                <Loader2 className="w-8 h-8 text-teal-700 animate-spin" />
                 <p className="text-xs font-black text-slate-400 uppercase tracking-widest animate-pulse">Đang tải danh sách học sinh...</p>
               </div>
             ) : filteredStudents.length === 0 ? (
               <div className="text-center py-20 text-slate-400 bg-white">
-                <Users className="w-12 h-12 mx-auto mb-3 opacity-30 text-indigo-500 animate-bounce duration-1000" />
+                <Users className="w-12 h-12 mx-auto mb-3 opacity-30 text-teal-700 animate-bounce duration-1000" />
                 <p className="text-sm font-black text-slate-500">Không tìm thấy học sinh nào trong đợt này</p>
                 <p className="text-xs text-slate-400 mt-1 font-semibold">Vui lòng điều chỉnh bộ lọc hoặc từ khóa tìm kiếm</p>
               </div>
@@ -3311,11 +3311,11 @@ export function ReportsClient({
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
           {/* Statistics summary */}
           <div className="bg-white border border-slate-200 shadow-sm rounded-3xl p-6 space-y-6">
-            <h3 className="text-base font-extrabold text-slate-800 border-b pb-3 mb-2 flex items-center gap-2"><BarChart3 className="w-5 h-5 text-indigo-500"/> Thống kê tổng quan</h3>
+            <h3 className="text-base font-extrabold text-slate-800 border-b pb-3 mb-2 flex items-center gap-2"><BarChart3 className="w-5 h-5 text-teal-700"/> Thống kê tổng quan</h3>
             
             <div className="grid grid-cols-2 gap-4">
               <div className="p-4 text-center space-y-1 text-xs font-semibold">
-                <span className="text-[10px] font-black text-indigo-500 uppercase tracking-widest block">Tổng học sinh</span>
+                <span className="text-[10px] font-black text-teal-700 uppercase tracking-widest block">Tổng học sinh</span>
                 <span className="text-2xl font-black text-slate-800 block">{filteredStudents.length}</span>
               </div>
 
@@ -3349,10 +3349,10 @@ export function ReportsClient({
           {/* Email triggers */}
           <div className="lg:col-span-2 bg-white border border-slate-200 shadow-sm rounded-3xl p-6 space-y-6">
             <div className="flex items-center justify-between border-b pb-3 mb-2">
-              <h3 className="text-base font-extrabold text-slate-800 flex items-center gap-2"><Mail className="w-5 h-5 text-indigo-500"/> Trả kết quả / Gửi mail nhanh</h3>
+              <h3 className="text-base font-extrabold text-slate-800 flex items-center gap-2"><Mail className="w-5 h-5 text-teal-700"/> Trả kết quả / Gửi mail nhanh</h3>
               <button
                 onClick={handleOpenEmailModal}
-                className="hover:bg-indigo-700 text-white text-xs font-black shadow-md shadow-indigo-100 flex items-center gap-2 cursor-pointer text-xs font-semibold"
+                className="hover:bg-[#003B3A] text-white text-xs font-black shadow-md shadow-indigo-100 flex items-center gap-2 cursor-pointer text-xs font-semibold"
               >
                 <Send className="w-3.5 h-3.5"/>
                 Gửi Email báo cáo nhanh
@@ -3413,7 +3413,7 @@ export function ReportsClient({
                   setDocFormSelectedGrades(docGroupGrades[selectedDocGroup] || []);
                   setIsDocModalOpen(true);
                 }}
-                className="hover:bg-indigo-700 text-white text-xs font-black transition-all flex items-center gap-2 shadow-lg shadow-indigo-100 cursor-pointer text-xs font-semibold"
+                className="hover:bg-[#003B3A] text-white text-xs font-black transition-all flex items-center gap-2 shadow-lg shadow-indigo-100 cursor-pointer text-xs font-semibold"
               >
                 <Plus className="w-3.5 h-3.5" />
                 Thêm hồ sơ mới
@@ -3425,13 +3425,13 @@ export function ReportsClient({
             {/* Left side configurations */}
             <div className="lg:col-span-5 bg-white rounded-3xl border border-slate-200 shadow-sm p-6 space-y-6">
               <div className="group space-y-2">
-                <label className="block text-xs font-bold tracking-widest uppercase mb-2 text-indigo-900/70 ml-1">Chọn Đối tượng Hồ sơ</label>
+                <label className="block text-xs font-bold tracking-widest uppercase mb-2 text-teal-800/70 ml-1">Chọn Đối tượng Hồ sơ</label>
                 <div className="flex items-center gap-2 flex-wrap">
                   <div className="relative w-full">
                     <select 
                       value={selectedDocGroup} 
                       onChange={(e) => setSelectedDocGroup(e.target.value)} 
-                      className="w-full pr-10 text-sm font-black text-slate-700 outline-none appearance-none cursor-pointer hover:bg-slate-100/50 focus:border-indigo-500 focus:bg-white transition-all duration-300 text-xs font-semibold"
+                      className="w-full pr-10 text-sm font-black text-slate-700 outline-none appearance-none cursor-pointer hover:bg-slate-100/50 focus:border-teal-200 focus:bg-white transition-all duration-300 text-xs font-semibold"
                     >
                       {docGroups.map(g => (
                         <option key={g.id} value={g.id}>{g.label}</option>
@@ -3452,7 +3452,7 @@ export function ReportsClient({
                           setSelectedDocGroup(newId);
                         }
                       }}
-                      className="flex-1 hover:bg-indigo-100 text-teal-600 flex items-center justify-center gap-2 text-xs font-black transition-all shadow-sm text-xs font-semibold"
+                      className="flex-1 hover:bg-teal-50 text-teal-600 flex items-center justify-center gap-2 text-xs font-black transition-all shadow-sm text-xs font-semibold"
                       title="Thêm đối tượng mới"
                     >
                       <Plus className="w-4 h-4" />
@@ -3522,7 +3522,7 @@ export function ReportsClient({
                   {configs.filter(c => c.categoryType === "DOI_TUONG_TS").map(c => {
                     const isChecked = (docGroupTargets[selectedDocGroup] || []).includes(c.name);
                     return (
-                      <label key={c.id} className="flex items-center gap-2 shadow-sm cursor-pointer hover:bg-indigo-50/20 hover:border-indigo-200 transition-all select-none text-xs font-semibold">
+                      <label key={c.id} className="flex items-center gap-2 shadow-sm cursor-pointer hover:bg-teal-50/20 hover:border-teal-200 transition-all select-none text-xs font-semibold">
                         <input 
                           type="checkbox" 
                           checked={isChecked}
@@ -3565,7 +3565,7 @@ export function ReportsClient({
                         localStorage.setItem('admission_doc_grades_mapping', JSON.stringify(updatedMappings));
                       }}
                       type="button"
-                      className="hover:bg-indigo-100 text-teal-600 text-[9px] font-black transition-all text-xs font-semibold"
+                      className="hover:bg-teal-50 text-teal-600 text-[9px] font-black transition-all text-xs font-semibold"
                     >
                       Chọn nhanh 2,3,4,5
                     </button>
@@ -3586,7 +3586,7 @@ export function ReportsClient({
                   {["Khối 1", "Khối 2", "Khối 3", "Khối 4", "Khối 5", "Khối 6", "Khối 7", "Khối 8", "Khối 9", "Khối 10", "Khối 11", "Khối 12"].map(g => {
                     const isChecked = (docGroupGrades[selectedDocGroup] || []).includes(g);
                     return (
-                      <label key={g} className="flex items-center gap-1.5 shadow-sm cursor-pointer hover:bg-indigo-50/20 hover:border-indigo-200 transition-all select-none font-medium text-xs font-semibold">
+                      <label key={g} className="flex items-center gap-1.5 shadow-sm cursor-pointer hover:bg-teal-50/20 hover:border-teal-200 transition-all select-none font-medium text-xs font-semibold">
                         <input 
                           type="checkbox" 
                           checked={isChecked}
@@ -3647,7 +3647,7 @@ export function ReportsClient({
                                   setDocFormSelectedGrades(item.grades || []);
                                   setIsDocModalOpen(true);
                                 }}
-                                className="w-7 h-7 hover:bg-indigo-100 text-teal-600 flex items-center justify-center transition-colors text-xs font-semibold"
+                                className="w-7 h-7 hover:bg-teal-50 text-teal-600 flex items-center justify-center transition-colors text-xs font-semibold"
                                 title="Sửa hồ sơ"
                               >
                                 <Pencil className="w-3 h-3" />
@@ -3680,7 +3680,7 @@ export function ReportsClient({
 
             {/* Right side live A4 design preview stack */}
             <div className="lg:col-span-7 shadow-inner p-8 flex flex-col justify-between min-h-[500px] text-xs font-semibold">
-              <span className="text-[10px] font-black text-indigo-500 uppercase tracking-widest mb-5">Khung Xem trước thiết kế A4 thực tế</span>
+              <span className="text-[10px] font-black text-teal-700 uppercase tracking-widest mb-5">Khung Xem trước thiết kế A4 thực tế</span>
               <div className="bg-white rounded-2xl border border-slate-200 p-10 shadow-lg flex flex-col justify-between w-full aspect-[210/297] relative overflow-hidden select-none font-serif text-slate-800 leading-normal" style={{ fontFamily: '"Open Sans", sans-serif' }}>
                 {/* Background Watermark for Preview */}
                 <div 
@@ -3714,7 +3714,7 @@ export function ReportsClient({
                     </div>
 
                     <div className="text-center mb-3">
-                      <h2 className="text-xs font-black tracking-widest text-indigo-950 uppercase" style={{ fontFamily: '"Open Sans", sans-serif' }}>
+                      <h2 className="text-xs font-black tracking-widest text-teal-800 uppercase" style={{ fontFamily: '"Open Sans", sans-serif' }}>
                         DANH MỤC HỒ SƠ NHẬP HỌC
                       </h2>
                     </div>
@@ -3851,7 +3851,7 @@ export function ReportsClient({
                   value={docFormName} 
                   onChange={(e) => setDocFormName(e.target.value)} 
                   placeholder="Ví dụ: Đơn đăng ký nhập học" 
-                  className="w-full text-sm font-bold text-slate-700 outline-none focus:border-indigo-500 focus:bg-white transition-all animate-none text-xs font-semibold"
+                  className="w-full text-sm font-bold text-slate-700 outline-none focus:border-teal-200 focus:bg-white transition-all animate-none text-xs font-semibold"
                 />
               </div>
 
@@ -3863,7 +3863,7 @@ export function ReportsClient({
                     value={docFormQty} 
                     onChange={(e) => setDocFormQty(e.target.value)} 
                     placeholder="Ví dụ: 01 bản" 
-                    className="w-full text-sm font-bold text-slate-700 outline-none focus:border-indigo-500 focus:bg-white transition-all animate-none text-xs font-semibold"
+                    className="w-full text-sm font-bold text-slate-700 outline-none focus:border-teal-200 focus:bg-white transition-all animate-none text-xs font-semibold"
                   />
                 </div>
                 <div>
@@ -3873,7 +3873,7 @@ export function ReportsClient({
                     value={docFormNote} 
                     onChange={(e) => setDocFormNote(e.target.value)} 
                     placeholder="Ví dụ: Bản sao y" 
-                    className="w-full text-sm font-bold text-slate-700 outline-none focus:border-indigo-500 focus:bg-white transition-all animate-none text-xs font-semibold"
+                    className="w-full text-sm font-bold text-slate-700 outline-none focus:border-teal-200 focus:bg-white transition-all animate-none text-xs font-semibold"
                   />
                 </div>
               </div>
@@ -3895,7 +3895,7 @@ export function ReportsClient({
                   {configs.filter(c => c.categoryType === "DOI_TUONG_TS").map(c => {
                     const isChecked = docFormSelectedTargets.includes(c.name);
                     return (
-                      <label key={c.id} className="flex items-center gap-1.5 hover:bg-indigo-50/50 cursor-pointer select-none transition-colors text-xs font-semibold">
+                      <label key={c.id} className="flex items-center gap-1.5 hover:bg-teal-50/50 cursor-pointer select-none transition-colors text-xs font-semibold">
                         <input 
                           type="checkbox" 
                           checked={isChecked}
@@ -3942,7 +3942,7 @@ export function ReportsClient({
                   localStorage.setItem(getDocStorageKey(selectedDocGroup), JSON.stringify(updated));
                   setIsDocModalOpen(false);
                 }} 
-                className="hover:bg-indigo-700 text-white text-xs font-black transition-colors shadow-lg shadow-indigo-100 text-xs font-semibold"
+                className="hover:bg-[#003B3A] text-white text-xs font-black transition-colors shadow-lg shadow-indigo-100 text-xs font-semibold"
               >
                 Lưu hồ sơ
               </button>
@@ -3985,7 +3985,7 @@ export function ReportsClient({
                           setRecipientEmail(current ? `${current}, ${p.email}` : p.email);
                         }
                       }}
-                      className={`px-2 py-1 rounded-lg text-[10px] font-bold border transition-all ${isActive ? 'bg-indigo-50 border-indigo-200 text-indigo-700' : 'bg-slate-50 border-slate-200 text-slate-500 hover:bg-slate-100'}`}
+                      className={`px-2 py-1 rounded-lg text-[10px] font-bold border transition-all ${isActive ? 'bg-teal-50 border-teal-200 text-teal-800' : 'bg-slate-50 border-slate-200 text-slate-500 hover:bg-slate-100'}`}
                     >
                       + {p.label}
                     </button>
@@ -4022,7 +4022,7 @@ export function ReportsClient({
                           setCcEmail(current ? `${current}, ${p.email}` : p.email);
                         }
                       }}
-                      className={`px-2 py-1 rounded-lg text-[10px] font-bold border transition-all ${isActive ? 'bg-indigo-50 border-indigo-200 text-indigo-700' : 'bg-slate-50 border-slate-200 text-slate-500 hover:bg-slate-100'}`}
+                      className={`px-2 py-1 rounded-lg text-[10px] font-bold border transition-all ${isActive ? 'bg-teal-50 border-teal-200 text-teal-800' : 'bg-slate-50 border-slate-200 text-slate-500 hover:bg-slate-100'}`}
                     >
                       + {p.label}
                     </button>
@@ -4038,10 +4038,10 @@ export function ReportsClient({
             </div>
 
             {/* Attachment checkbox */}
-            <div className="flex items-start gap-3 p-4 transition-all hover:bg-indigo-50/60 text-xs font-semibold">
+            <div className="flex items-start gap-3 p-4 transition-all hover:bg-teal-50/60 text-xs font-semibold">
               <input type="checkbox" id="attach_checkbox" checked={attachLetters} onChange={e => setAttachLetters(e.target.checked)} className="w-5 h-5 text-teal-600 border-slate-300 rounded mt-0.5 cursor-pointer focus:ring-indigo-500" />
               <div>
-                <label htmlFor="attach_checkbox" className="text-xs font-black text-indigo-900 cursor-pointer select-none">Tự động đính kèm tệp mẫu Thư PDF cho từng học sinh</label>
+                <label htmlFor="attach_checkbox" className="text-xs font-black text-teal-800 cursor-pointer select-none">Tự động đính kèm tệp mẫu Thư PDF cho từng học sinh</label>
                 <p className="text-[10px] text-slate-400 font-semibold mt-1 leading-normal">
                   Hệ thống tự động biên dịch và tạo tệp PDF Thư chúc mừng và Bản cam kết đính kèm trực tiếp vào mail gửi cho các đối tượng đạt khảo thí.
                 </p>
@@ -4079,7 +4079,7 @@ export function ReportsClient({
                 return (
                   <label
                     key={s.id}
-                    className={`flex items-center justify-between p-3 rounded-2xl border transition-all cursor-pointer select-none ${isSelected ? 'bg-white border-indigo-200 shadow-sm' : 'bg-slate-100/50 border-slate-200 opacity-60'}`}
+                    className={`flex items-center justify-between p-3 rounded-2xl border transition-all cursor-pointer select-none ${isSelected ? 'bg-white border-teal-200 shadow-sm' : 'bg-slate-100/50 border-slate-200 opacity-60'}`}
                   >
                     <div className="flex items-center gap-3">
                       <input

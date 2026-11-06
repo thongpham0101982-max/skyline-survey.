@@ -102,6 +102,7 @@ model Teacher {
   ctqtPrimaryAssignments     CtqtTeachingAssignment[] @relation("CtqtPrimaryTeacher")
   ctqtDelegatedAssignments   CtqtTeachingAssignment[] @relation("CtqtDelegatedTeacher")
   specialAssignments         SpecialTeachingAssignment[]
+  signatureProfile           TeacherSignatureProfile?
 
   @@index([campusId])
   @@index([departmentId])
@@ -187,7 +188,7 @@ model AcademicYear {
   ctqtTeachingAssignments        CtqtTeachingAssignment[]
   ctqtGradeEntries               CtqtGradeEntry[]
   ctqtCompetencyEntries          CtqtCompetencyEntry[]
-  textbooks                      Textbook[]
+  signableDocuments              SignableDocument[]
 }
 
 model Class {
@@ -215,6 +216,7 @@ model Class {
   ctqtGradeEntries       CtqtGradeEntry[]
   ctqtCompetencyEntries  CtqtCompetencyEntry[]
   specialAssignments     SpecialTeachingAssignment[]
+  signableDocuments      SignableDocument[]
 
   @@index([campusId])
   @@index([academicYearId])
@@ -284,6 +286,7 @@ model Student {
   ctqtCompetencyEntries  CtqtCompetencyEntry[]
   specialGradeEntries    SpecialGradeEntry[]
   specialProjectMembers  SpecialProjectMember[]
+  signableDocuments      SignableDocument[]
 
   @@unique([studentCode, academicYearId])
   @@index([classId])
@@ -525,7 +528,6 @@ model Subject {
   aliases                    SubjectAlias[]
   competencyAssessments      StudentCompetencyAssessment[]
   competencySummaries        StudentSubjectCompetencySummary[]
-  textbooks                  Textbook[]
   specialSubjects            SpecialSubject[]
 }
 
@@ -3070,193 +3072,6 @@ model CtqtCompetencyEntry {
   @@index([studentId])
 }
 
-// =========================================================================
-// THƯ VIỆN SÁCH GIÁO KHOA SỐ SSM (DIGITAL TEXTBOOKS)
-// =========================================================================
-
-model TextbookPublisher {
-  id          String           @id @default(cuid())
-  name        String
-  code        String           @unique
-  website     String?
-  status      String           @default("ACTIVE")
-  createdAt   DateTime         @default(now())
-  updatedAt   DateTime         @updatedAt
-  series      TextbookSeries[]
-  textbooks   Textbook[]
-
-  @@index([status])
-}
-
-model TextbookSeries {
-  id          String            @id @default(cuid())
-  name        String
-  code        String            @unique
-  publisherId String
-  publisher   TextbookPublisher @relation(fields: [publisherId], references: [id], onDelete: Cascade)
-  description String?
-  status      String            @default("ACTIVE")
-  createdAt   DateTime          @default(now())
-  updatedAt   DateTime          @updatedAt
-  textbooks   Textbook[]
-
-  @@index([publisherId])
-  @@index([status])
-}
-
-model TextbookSource {
-  id               String     @id @default(cuid())
-  sourceName       String
-  sourceType       String     // INTERNAL_STORAGE, MOET_PORTAL, PUBLISHER_PORTAL
-  baseUrl          String
-  allowedDomains   String     // JSON array of whitelisted domains
-  downloadAllowed  Boolean    @default(false)
-  aiIndexAllowed   Boolean    @default(true)
-  syncEnabled      Boolean    @default(false)
-  status           String     @default("ACTIVE")
-  createdAt        DateTime   @default(now())
-  updatedAt        DateTime   @updatedAt
-  textbooks        Textbook[]
-
-  @@index([status])
-}
-
-model Textbook {
-  id               String            @id @default(cuid())
-  title            String
-  subjectId        String
-  subject          Subject           @relation(fields: [subjectId], references: [id], onDelete: Cascade)
-  grade            String            // "1", "2", ..., "12"
-  schoolYearId     String?
-  schoolYear       AcademicYear?     @relation(fields: [schoolYearId], references: [id], onDelete: SetNull)
-  seriesId         String
-  series           TextbookSeries    @relation(fields: [seriesId], references: [id], onDelete: Restrict)
-  publisherId      String
-  publisher        TextbookPublisher @relation(fields: [publisherId], references: [id], onDelete: Restrict)
-  sourceId         String?
-  source           TextbookSource?   @relation(fields: [sourceId], references: [id], onDelete: SetNull)
-  
-  volume           String?           @default("TAP_1") // TAP_1, TAP_2, TOAN_TAP
-  editionYear      Int?              @default(2024)
-  isbn             String?
-  coverUrl         String?
-  sourceType       String            @default("UPLOAD_PDF") // UPLOAD_PDF, IMPORT_URL, INTERNAL_SYNC
-  sourceUrl        String?
-  fileUrl          String
-  storageKey       String
-  fileHash         String?
-  fileSize         Int               @default(0)
-  totalPages       Int               @default(0)
-  licenseNote      String?
-  
-  processingStatus String            @default("NEW") // NEW, PROCESSING, OCR_REQUIRED, REVIEW_REQUIRED, READY, ERROR, ARCHIVED
-  aiIndexStatus    String            @default("PENDING") // PENDING, INDEXING, INDEXED, FAILED
-  errorMessage     String?
-  
-  createdById      String?
-  createdAt        DateTime          @default(now())
-  updatedAt        DateTime          @updatedAt
-
-  chapters         TextbookChapter[]
-  pages            TextbookPage[]
-  chunks           TextbookChunk[]
-  jobs             TextbookProcessingJob[]
-
-  @@unique([subjectId, grade, seriesId, publisherId, volume, editionYear])
-  @@index([subjectId])
-  @@index([grade])
-  @@index([seriesId])
-  @@index([processingStatus])
-  @@index([fileHash])
-}
-
-model TextbookChapter {
-  id             String           @id @default(cuid())
-  textbookId     String
-  textbook       Textbook         @relation(fields: [textbookId], references: [id], onDelete: Cascade)
-  chapterNumber  String
-  title          String
-  sortOrder      Int              @default(0)
-  createdAt      DateTime         @default(now())
-  updatedAt      DateTime         @updatedAt
-  lessons        TextbookLesson[]
-
-  @@index([textbookId])
-  @@index([sortOrder])
-}
-
-model TextbookLesson {
-  id             String          @id @default(cuid())
-  chapterId      String
-  chapter        TextbookChapter @relation(fields: [chapterId], references: [id], onDelete: Cascade)
-  lessonNumber   String
-  title          String
-  pageStart      Int
-  pageEnd        Int
-  summary        String?
-  keywords       String?
-  sortOrder      Int             @default(0)
-  createdAt      DateTime        @default(now())
-  updatedAt      DateTime        @updatedAt
-
-  chunks         TextbookChunk[]
-
-  @@index([chapterId])
-  @@index([pageStart, pageEnd])
-}
-
-model TextbookPage {
-  id         String   @id @default(cuid())
-  textbookId String
-  textbook   Textbook @relation(fields: [textbookId], references: [id], onDelete: Cascade)
-  pageNumber Int
-  pageText   String
-  hasImages  Boolean  @default(false)
-  isOcr      Boolean  @default(false)
-  createdAt  DateTime @default(now())
-
-  @@unique([textbookId, pageNumber])
-  @@index([textbookId])
-}
-
-model TextbookChunk {
-  id          String          @id @default(cuid())
-  textbookId  String
-  textbook    Textbook        @relation(fields: [textbookId], references: [id], onDelete: Cascade)
-  subjectId   String
-  grade       String
-  seriesId    String
-  chapterId   String?
-  lessonId    String?
-  lesson      TextbookLesson? @relation(fields: [lessonId], references: [id], onDelete: SetNull)
-  pageStart   Int
-  pageEnd     Int
-  chunkText   String
-  tokenCount  Int             @default(0)
-  embedding   String?
-  createdAt   DateTime        @default(now())
-
-  @@index([textbookId])
-  @@index([subjectId, grade])
-  @@index([chapterId])
-  @@index([lessonId])
-}
-
-model TextbookProcessingJob {
-  id           String    @id @default(cuid())
-  textbookId   String
-  textbook     Textbook  @relation(fields: [textbookId], references: [id], onDelete: Cascade)
-  jobType      String
-  status       String    @default("QUEUED")
-  progress     Int       @default(0)
-  errorMessage String?
-  payloadJson  String?
-  createdAt    DateTime  @default(now())
-  updatedAt    DateTime  @updatedAt
-
-  @@index([textbookId])
-  @@index([status])
-}
 
 
 model MonthlyEnrollmentSnapshot {
@@ -5737,3 +5552,334 @@ model ReflectionTaskReminderLog {
   @@index([periodId, classId, studentId])
   @@map("reflection_task_reminder_logs")
 }
+
+// =========================================================================
+// HÀNH TRÌNH SKY-LINE (SKY-LINE LEARNING JOURNEY GAME - KHỐI 1–5)
+// =========================================================================
+
+model SkylineJourneyConfig {
+  id                     String    @id @default(cuid())
+  academicYearId         String
+  subjectCode            String    @default("FIN_EDU")
+  programCode            String    @default("TC02S") // e.g., TC02S
+  grade                  String    // "1", "2", "3", "4", "5"
+  educationSystem        String    @default("HNS")   // HNS (Hệ S), HNG, SB, ALL
+  campusId               String    @default("ALL")   // ALL or specific campusId
+  classId                String    @default("ALL")   // ALL or specific classId
+  isEnabled              Boolean   @default(true)
+  approvalStatus         String    @default("APPROVED") // UNCONFIGURED | DRAFT | PENDING_APPROVAL | APPROVED
+  missionVersion         String    @default("v1.0-TC02S")
+  defaultUnlockedStages  Int       @default(5)       // Số chặng mở sẵn mặc định khi khởi tạo lớp
+  approvedByUserId       String?
+  approvedByName         String?
+  approvedAt             DateTime?
+  notes                  String?
+  createdAt              DateTime  @default(now())
+  updatedAt              DateTime  @updatedAt
+
+  @@unique([academicYearId, subjectCode, grade, educationSystem, campusId, classId])
+  @@index([academicYearId, grade, isEnabled])
+  @@map("skyline_journey_configs")
+}
+
+model SkylineQuestAssignment {
+  id                String    @id @default(cuid())
+  academicYearId    String
+  assignmentId      String?   // FK -> SpecialTeachingAssignment.id
+  classId           String
+  subjectCode       String    @default("FIN_EDU")
+  programCode       String    @default("TC02S")
+  lessonId          String    // FK -> SpecialLesson.id
+  lessonCode        String    // e.g., TC02S.01.0001
+  periodIndex       Int
+  missionVersion    String    @default("v1.0-TC02S")
+  isUnlocked        Boolean   @default(true)
+  isExempted        Boolean   @default(false)
+  requiresTeacherConfirm Boolean @default(false)
+  teacherGuidance   String?
+  dueDate           DateTime?
+  unlockedByUserId  String?
+  unlockedByName    String?
+  unlockedAt        DateTime? @default(now())
+  createdAt         DateTime  @default(now())
+  updatedAt         DateTime  @updatedAt
+
+  @@unique([classId, subjectCode, lessonCode, academicYearId])
+  @@index([classId, subjectCode, isUnlocked])
+  @@index([assignmentId])
+  @@map("skyline_quest_assignments")
+}
+
+model SkylineQuestProgress {
+  id                     String    @id @default(cuid())
+  studentId              String
+  studentCode            String?
+  studentName            String?
+  classId                String
+  campusId               String?
+  academicYearId         String
+  subjectCode            String    @default("FIN_EDU")
+  programCode            String    @default("TC02S")
+  lessonId               String
+  lessonCode             String
+  periodIndex            Int
+  missionVersion         String    @default("v1.0-TC02S")
+  stageStatus            String    @default("READY") // LOCKED | READY | IN_PROGRESS | WAITING_CONFIRMATION | NEEDS_REVISION | COMPLETED
+  hasPlayed              Boolean   @default(false)
+  autoChallengePassed    Boolean   @default(false)
+  teacherConfirmed       Boolean   @default(false)
+  attemptsCount          Int       @default(0)
+  worldStateJson         String    @default("{}")    // Trạng thái thế giới: giỏ hàng, ví xu, chiếc tổ, ngôi làng, nhật ký
+  lastActionPayloadJson  String    @default("{}")
+  criteriaAchievedJson   String    @default("[]")    // Danh sách mã tiêu chuẩn đạt được: ["TC02S.01.0001.01", ...]
+  practicalActionText    String?                     // Đề xuất / chia sẻ việc làm thực tế của học sinh
+  shareWithParent        Boolean   @default(true)
+  teacherFeedback        String?
+  teacherRevisionNote    String?
+  reviewedByUserId       String?
+  reviewedByName         String?
+  reviewedAt             DateTime?
+  startedAt              DateTime?
+  completedAt            DateTime?
+  updatedAt              DateTime  @updatedAt
+  createdAt              DateTime  @default(now())
+
+  @@unique([studentId, subjectCode, lessonCode, academicYearId])
+  @@index([classId, subjectCode, stageStatus])
+  @@index([studentId, academicYearId])
+  @@map("skyline_quest_progress")
+}
+
+model SkylineRewardLedger {
+  id              String   @id @default(cuid())
+  idempotencyKey  String   @unique // studentId:academicYearId:lessonCode:rewardType:milestoneCode
+  studentId       String
+  classId         String
+  academicYearId  String
+  subjectCode     String   @default("FIN_EDU")
+  programCode     String   @default("TC02S")
+  lessonCode      String
+  periodIndex     Int
+  rewardType      String   // FEATHER | FLAG | BADGE
+  milestoneCode   String   // STAGE_CLEAR | TOPIC_MASTER | TEACHER_STAR | ISLAND_CHAMPION
+  rewardTitle     String
+  rewardIcon      String   @default("Feather")
+  feathersEarned  Int      @default(1)
+  metadataJson    String   @default("{}")
+  awardedAt       DateTime @default(now())
+
+  @@unique([studentId, academicYearId, lessonCode, rewardType, milestoneCode])
+  @@index([studentId, academicYearId])
+  @@index([classId, academicYearId])
+  @@map("skyline_reward_ledger")
+}
+
+// =============================================================================
+// API INTEGRATION & EXTERNAL SYSTEM CONNECTION MODELS
+// =============================================================================
+
+model ApiApplication {
+  id               String         @id @default(cuid())
+  name             String
+  description      String?
+  contactPerson    String?
+  status           String         @default("ACTIVE") // ACTIVE, INACTIVE, REVOKED
+  permissions      String         @default("[]")     // JSON array: ["students:read", "grades:write", ...]
+  allowedCampusIds String         @default("[]")     // JSON array of campus IDs, ["*"] for all
+  allowedClassIds  String         @default("[]")     // JSON array of class IDs, ["*"] for all
+  allowedDataScope String         @default("ALL")    // "ALL" or custom JSON scope
+  expiresAt        DateTime?
+  rateLimitRpm     Int            @default(60)       // Max requests per minute
+  lastUsedAt       DateTime?
+  createdById      String?
+  createdAt        DateTime       @default(now())
+  updatedAt        DateTime       @updatedAt
+  apiKeys          ApiKey[]
+  accessLogs       ApiAccessLog[]
+
+  @@index([status])
+  @@map("api_applications")
+}
+
+model ApiKey {
+  id            String         @id @default(cuid())
+  applicationId String
+  name          String?        // Human readable label (e.g. "Primary Key 2026")
+  keyId         String         @unique // Public identifier, e.g. "kid_..."
+  keyPrefix     String         // Masked display prefix, e.g. "sky_live_ab...8f2a"
+  keyHash       String         @unique // SHA-256 hash of secret API key
+  status        String         @default("ACTIVE") // ACTIVE, REVOKED, EXPIRED
+  expiresAt     DateTime?
+  lastUsedAt    DateTime?
+  revokedAt     DateTime?
+  revokedReason String?
+  createdAt     DateTime       @default(now())
+  updatedAt     DateTime       @updatedAt
+  application   ApiApplication @relation(fields: [applicationId], references: [id], onDelete: Cascade)
+
+  @@index([applicationId])
+  @@index([keyHash])
+  @@index([status])
+  @@map("api_keys")
+}
+
+model ApiAccessLog {
+  id             String         @id @default(cuid())
+  applicationId  String
+  keyId          String?
+  requestId      String
+  endpoint       String
+  method         String
+  statusCode     Int
+  ipAddress      String?
+  userAgent      String?
+  durationMs     Int?
+  requestSummary String?
+  errorMessage   String?
+  createdAt      DateTime       @default(now())
+  application    ApiApplication @relation(fields: [applicationId], references: [id], onDelete: Cascade)
+
+  @@index([applicationId])
+  @@index([requestId])
+  @@index([createdAt])
+  @@map("api_access_logs")
+}
+
+// =============================================================================
+// TEACHER DIGITAL SIGNATURE, DOCUMENTS, AUDIT & CONFIGURATION MODELS
+// =============================================================================
+
+model TeacherSignatureProfile {
+  id                  String   @id @default(cuid())
+  teacherId           String   @unique
+  provider            String   @default("NOT_CONFIGURED") // VNPT_SMARTCA, VIETTEL_CA, MISA_ESIGN, FPT_CA, MOCK_SANDBOX
+  connectionStatus    String   @default("NOT_CONNECTED") // NOT_CONNECTED, CONNECTED, EXPIRED, REVOKED
+  subjectDn           String?
+  serialNumber        String?
+  issuer              String?
+  validFrom           DateTime?
+  validTo             DateTime?
+  lastVerifiedAt      DateTime?
+  visualAppearanceUrl String?  // Base64 PNG or path
+  appearanceType      String   @default("DRAWN") // DRAWN | UPLOADED
+  appearanceVersion   Int      @default(1)
+  signatureRoleText   String?  // e.g. "Giáo viên Bộ môn", "Giáo viên Chủ nhiệm"
+  createdAt           DateTime @default(now())
+  updatedAt           DateTime @updatedAt
+  teacher             Teacher  @relation(fields: [teacherId], references: [id], onDelete: Cascade)
+
+  @@index([connectionStatus])
+  @@map("teacher_signature_profiles")
+}
+
+model DigitalSignatureConfig {
+  id                     String   @id @default(cuid())
+  key                    String   @unique // SYSTEM_CONFIG
+  isEnabled              Boolean  @default(true)
+  allowedProviders       String   @default("[\"VNPT_SMARTCA\",\"VIETTEL_CA\",\"MISA_ESIGN\",\"FPT_CA\",\"MOCK_SANDBOX\"]")
+  activeProvider         String   @default("VNPT_SMARTCA")
+  providerSettings       String   @default("{}") // Encrypted / server JSON config
+  applicableForms        String   @default("[\"HO_SO_NANG_LUC\",\"PHIEU_DANH_GIA_MON_HOC\",\"PHIEU_DANH_GIA_MAM_NON\",\"CAM_KET_HOC_TAP\"]")
+  signingFlowRules       String   @default("{\"order\":[\"GVBM\",\"GVCN\",\"TTCM\",\"GDCS\"],\"requirePreviousSigns\":true}")
+  anchorSettings         String   @default("{}")
+  campusScope            String   @default("[\"*\"]")
+  academicYearScope      String   @default("[\"*\"]")
+  autoPublishOnCompleted Boolean  @default(false)
+  createdAt              DateTime @default(now())
+  updatedAt              DateTime @updatedAt
+
+  @@index([key])
+  @@map("digital_signature_configs")
+}
+
+model SignableDocument {
+  id                String              @id @default(cuid())
+  documentCode      String              @unique // DOC-HSNL-2026-HS001-v1
+  formType          String              // HO_SO_NANG_LUC, PHIEU_DANH_GIA_MON_HOC, PHIEU_DANH_GIA_MAM_NON, CAM_KET_HOC_TAP
+  studentId         String
+  academicYearId    String
+  classId           String
+  campusId          String?
+  subjectId         String?             // For subject-specific evaluations
+  term              String?             // GK1, CK1, GK2, CK2, FULL_YEAR
+  title             String
+  version           String              @default("1.0")
+  versionNumber     Int                 @default(1)
+  contentHash       String              // SHA-256 of snapshot
+  contentSnapshot   String              // JSON snapshot
+  contentStatus     String              @default("READY_TO_SIGN") // DRAFT, NOT_ELIGIBLE, READY_TO_SIGN, REVISION_REQUIRED
+  publicationStatus String              @default("UNPUBLISHED")  // UNPUBLISHED, PUBLISHED, SUPERSEDED
+  publishedAt       DateTime?
+  publishedById     String?
+  isCompleted       Boolean             @default(false)
+  createdAt         DateTime            @default(now())
+  updatedAt         DateTime            @updatedAt
+  student           Student             @relation(fields: [studentId], references: [id], onDelete: Cascade)
+  academicYear      AcademicYear        @relation(fields: [academicYearId], references: [id], onDelete: Cascade)
+  class             Class               @relation(fields: [classId], references: [id], onDelete: Cascade)
+  signatures        DocumentSignature[]
+
+  @@index([studentId])
+  @@index([classId])
+  @@index([academicYearId])
+  @@index([subjectId])
+  @@index([formType])
+  @@index([contentStatus, publicationStatus])
+  @@map("signable_documents")
+}
+
+model DocumentSignature {
+  id                   String           @id @default(cuid())
+  documentId           String
+  signerId             String
+  signerName           String
+  signerRole           String           // GVBM, GVCN, TTCM, GDCS, ADMIN
+  orderIndex           Int              @default(1)
+  requestStatus        String           @default("AWAITING_AUTH") // AWAITING_AUTH, PROCESSING, SUCCESS, FAILED, CANCELLED, UNKNOWN_PENDING_RECONCILE
+  requestId            String           @unique // REQ-SIG-...
+  transactionId        String?
+  provider             String
+  dataHash             String           // SHA-256 of signed data
+  signatureValue       String?
+  certificateSerial    String?
+  certificateSubject   String?
+  certIssuer           String?
+  signedAt             DateTime?
+  verifiedAt           DateTime?
+  verificationResult   String?          // JSON
+  visualAppearanceUrl  String?
+  signedPdfPath        String?
+  failureReason        String?
+  retryCount           Int              @default(0)
+  reconciliationStatus String?
+  createdAt            DateTime         @default(now())
+  updatedAt            DateTime         @updatedAt
+  document             SignableDocument @relation(fields: [documentId], references: [id], onDelete: Cascade)
+
+  @@index([documentId])
+  @@index([signerId])
+  @@index([requestStatus])
+  @@index([requestId])
+  @@map("document_signatures")
+}
+
+model SignatureAuditLog {
+  id          String   @id @default(cuid())
+  documentId  String?
+  signatureId String?
+  action      String   // CONNECT_PROVIDER, UPDATE_APPEARANCE, REQUEST_SIGN, VERIFY_SIGN, BATCH_SIGN, RECONCILE, REVISION_TRIGGERED, PUBLISH, DOWNLOAD_PDF
+  actorId     String
+  actorName   String
+  actorRole   String
+  ipAddress   String?
+  userAgent   String?
+  details     String?  // JSON
+  createdAt   DateTime @default(now())
+
+  @@index([documentId])
+  @@index([actorId])
+  @@index([createdAt])
+  @@map("signature_audit_logs")
+}
+
+

@@ -655,11 +655,11 @@ export function ImportWizardClient({ currentUser }: ImportWizardClientProps) {
               <div className="text-xl font-black text-sky-700 mt-1">{validationStats.duplicateRows}</div>
             </div>
 
-            <div className="bg-indigo-50/60 p-4 rounded-2xl border border-indigo-200 shadow-2xs">
-              <div className="text-[10px] font-bold text-indigo-800 uppercase flex items-center gap-1">
-                <Info className="w-3 h-3 text-indigo-600" /> Cần duyệt
+            <div className="bg-teal-50/60 p-4 rounded-2xl border border-teal-200 shadow-2xs">
+              <div className="text-[10px] font-bold text-teal-800 uppercase flex items-center gap-1">
+                <Info className="w-3 h-3 text-teal-800" /> Cần duyệt
               </div>
-              <div className="text-xl font-black text-indigo-700 mt-1">{validationStats.needReviewRows}</div>
+              <div className="text-xl font-black text-teal-800 mt-1">{validationStats.needReviewRows}</div>
             </div>
           </div>
 
@@ -767,7 +767,7 @@ export function ImportWizardClient({ currentUser }: ImportWizardClientProps) {
                                 : item.status === "DUPLICATE"
                                 ? "bg-sky-50 text-sky-700 border-sky-200"
                                 : item.status === "NEED_REVIEW"
-                                ? "bg-indigo-50 text-indigo-700 border-indigo-200"
+                                ? "bg-teal-50 text-teal-800 border-teal-200"
                                 : "bg-emerald-50 text-emerald-700 border-emerald-200"
                             )}
                           >

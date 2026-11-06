@@ -23,8 +23,8 @@ export function YearTransitionBadge({ sourceType, isAuto = false, className = ""
 
   if (s === "TRANSFERRED" || s === "CHUYEN_TIEP") {
     return (
-      <span className={`inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-[10px] font-extrabold bg-indigo-50 text-indigo-800 border border-indigo-200 ${className}`}>
-        <RefreshCw className="w-3 h-3 text-indigo-600" />
+      <span className={`inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-[10px] font-extrabold bg-teal-50 text-teal-800 border border-teal-200 ${className}`}>
+        <RefreshCw className="w-3 h-3 text-teal-800" />
         <span>Chuyển tiếp từ năm trước</span>
       </span>
     )

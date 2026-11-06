@@ -129,7 +129,7 @@ export function ScatterDataTable({
                           </span>
                         )}
                         {st.hasLearningCommitment && (
-                          <span className="text-[9px] font-bold text-purple-700 bg-purple-50 px-1.5 py-0.2 rounded border border-purple-200">
+                          <span className="text-[9px] font-bold text-teal-800 bg-teal-50 px-1.5 py-0.2 rounded border border-teal-200">
                             Cam kết HT
                           </span>
                         )}

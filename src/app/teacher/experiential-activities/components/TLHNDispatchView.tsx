@@ -398,7 +398,7 @@ export function TLHNDispatchView({ selectedYearId, onRefreshParent }: TLHNDispat
                     </div>
                     <div className="flex justify-between">
                       <span className="text-slate-400">Môn chủ trì:</span>
-                      <span className="font-bold text-indigo-700">{act.primarySubjectName || '—'}</span>
+                      <span className="font-bold text-teal-800">{act.primarySubjectName || '—'}</span>
                     </div>
                     <div className="flex justify-between">
                       <span className="text-slate-400">Thời gian:</span>
@@ -490,7 +490,7 @@ export function TLHNDispatchView({ selectedYearId, onRefreshParent }: TLHNDispat
                 <div>
                   <div className="text-xs font-bold text-slate-800">{deployingItem.activityName}</div>
                   <div className="text-[11px] text-slate-500 mt-0.5">
-                    Môn chủ trì: <strong className="text-indigo-700">{deployingItem.primarySubjectName || '—'}</strong>
+                    Môn chủ trì: <strong className="text-teal-800">{deployingItem.primarySubjectName || '—'}</strong>
                     {deployingItem.coopSubjectNames && (
                       <span> • Môn phối hợp: <strong className="text-slate-700">{deployingItem.coopSubjectNames}</strong></span>
                     )}

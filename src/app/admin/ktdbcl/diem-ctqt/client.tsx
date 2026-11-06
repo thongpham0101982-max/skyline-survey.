@@ -1024,7 +1024,7 @@ export function DiemCtqtAdminClient({
                           currentSubjectDef?.code === "IELTS" ? (
                             <>
                               <th className="p-3 border border-slate-300 text-center w-36">Nội dung</th>
-                              <th className="p-3 border border-slate-300 text-center w-28 bg-indigo-50 text-indigo-900">IELTS Band (0-9)</th>
+                              <th className="p-3 border border-slate-300 text-center w-28 bg-teal-50 text-teal-800">IELTS Band (0-9)</th>
                             </>
                           ) : currentSubjectDef?.isQualitative ? (
                             <th className="p-3 border border-slate-300 text-center w-48">Nghiên cứu học thuật</th>
@@ -1089,7 +1089,7 @@ export function DiemCtqtAdminClient({
                                       value={g.ieltsScore ?? ""}
                                       onChange={e => updateStudentScore(st.id, "ieltsScore", e.target.value)}
                                       placeholder="0 - 9"
-                                      className="w-20 text-center font-black text-indigo-700 px-2 py-1.5 border border-slate-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:outline-none"
+                                      className="w-20 text-center font-black text-teal-800 px-2 py-1.5 border border-slate-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:outline-none"
                                     />
                                   </td>
                                 </>

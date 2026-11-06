@@ -567,8 +567,8 @@ const getAvatarGradient = (name: string) => {
   const gradients = [
     "from-teal-500 to-emerald-600",
     "from-sky-500 to-blue-600",
-    "from-indigo-500 to-violet-600",
-    "from-amber-500 to-orange-600",
+    "from-teal-600 to-emerald-600",
+    "from-amber-500 to-amber-600",
     "from-rose-500 to-pink-600",
     "from-cyan-500 to-teal-600",
   ];
@@ -589,6 +589,13 @@ const mapTabToMainTab = (tab: string | null | undefined, isDefaultAdmin = false)
   if (tab === "ttcm_summary" || tab === "ttcm" || tab === "theo-doi-tong-hop" || tab === "tong-hop-ttcm" || tab === "to-chuyen-mon") return "ttcm_summary";
   if (tab === "re_evaluations" || tab === "re-evaluations" || tab === "xet-duyet" || tab === "xet-duyet-danh-gia-lai") return "re_evaluations";
   return isDefaultAdmin ? "overview_slots" : "my_schedule";
+};
+
+const formatDeptName = (name: string | null | undefined): string => {
+  if (!name) return "Tổ chuyên môn";
+  const trimmed = name.trim();
+  if (trimmed.toLowerCase().startsWith("tổ ")) return trimmed;
+  return "Tổ " + trimmed;
 };
 
 const isPreschoolDepartment = (deptNameOrCode: string) => {
@@ -876,7 +883,7 @@ export function ObservationClient(props: ObservationClientProps) {
   const [selectedEvalMonth, setSelectedEvalMonth] = useState('ALL');
   const [activeMainTab, setActiveMainTab] = useState<"register_request" | "overview_slots" | "my_schedule" | "evaluations" | "teacher_report" | "ttcm_summary" | "re_evaluations">(() => mapTabToMainTab(searchParams.get("tab"), (props.isAdminPage || (typeof pathname === "string" && pathname.startsWith("/admin")))));
   const [myScheduleSubTab, setMyScheduleSubTab] = useState<"register" | "all" | "taught" | "observed" | "requests">("all");
-  type FilterTab = "all" | "self_open" | "expired" | "gbm_request" | "my_dept" | "other_dept";
+  type FilterTab = "all" | "self_open" | "assigned" | "expired" | "gbm_request" | "my_dept" | "other_dept";
   const [activeFilterTab, setActiveFilterTab] = useState<FilterTab>("all");
   const [taughtOriginFilter, setTaughtOriginFilter] = useState<"all" | "PLAN" | "SURPRISE" | "ASSIGNED">("all");
   const [taughtCategoryFilter, setTaughtCategoryFilter] = useState<"all" | "MN" | "PT">("all");
@@ -2331,7 +2338,7 @@ export function ObservationClient(props: ObservationClientProps) {
   }, [managementScope, isAdminUser]);
 
   useEffect(() => {
-    if (!isManagerRole && !isAdminRoute) {
+    if (!isManagerRole && !isAdminUser) {
       if (viewMode === "ADMIN") {
         setViewMode("TEACHER");
       }
@@ -3289,7 +3296,7 @@ export function ObservationClient(props: ObservationClientProps) {
       
       const isHost = slot.teacherId === currentTeacher?.id;
       const isAssignedCreator = isAssignedSlotCreator(slot, currentTeacher?.id);
-      const isObserverApproved = (slot.registrations || []).some((r: any) => r.teacherId === currentTeacher?.id && r.isApproved);
+      const isObserverApproved = (slot.registrations || []).some((r: any) => r.teacherId === currentTeacher?.id && (r.isApproved || slot.requestOrigin === "ASSIGNED"));
       const isSurprise = isSurpriseSlot(slot);
       
       if (!stats[key]) {
@@ -3305,7 +3312,7 @@ export function ObservationClient(props: ObservationClientProps) {
       }
       
       const countWeight = slot.isDoublePeriod ? 2 : 1;
-      if (isHost || isAssignedCreator) {
+      if (isHost) {
         const approvedRegs = (slot.registrations || []).filter((r: any) => r.isApproved || isSurprise || slot.requestOrigin === "ASSIGNED");
         const allEvaluated = approvedRegs.length > 0 && approvedRegs.some((r: any) => !!r.evaluation);
         if (allEvaluated) {
@@ -3434,7 +3441,7 @@ export function ObservationClient(props: ObservationClientProps) {
       const isSurprise = isSurpriseSlot(slot);
       const cat = getSlotCategoryInfo(slot);
 
-      if (isHost || isAssignedCreator) {
+      if (isHost) {
         stats[key].totalTaughtSlots += 1;
         const approvedRegs = (slot.registrations || []).filter((r: any) => r.isApproved || isSurprise || slot.requestOrigin === "ASSIGNED");
         const hasEval = approvedRegs.some((r: any) => isEvaluationOfficiallyApproved(r.evaluation));
@@ -3456,8 +3463,8 @@ export function ObservationClient(props: ObservationClientProps) {
           className: slot.className,
           subjectName: slot.subjectName,
           campusName: slot.campusName,
-          role: isHost ? "HOST" : "ASSIGNED_CREATOR",
-          partnerName: isHost ? (approvedRegs.map((r: any) => r.teacher?.teacherName || "Đồng nghiệp").join(", ") || "Chưa có người dự") : (slot.teacher?.teacherName ? `GV dạy: ${slot.teacher.teacherName}` : "Đồng nghiệp"),
+          role: "HOST",
+          partnerName: approvedRegs.map((r: any) => r.teacher?.teacherName || "Đồng nghiệp").join(", ") || "Chưa có người dự",
           category: cat,
           isSurprise,
           isDoublePeriod: !!slot.isDoublePeriod,
@@ -3702,6 +3709,7 @@ export function ObservationClient(props: ObservationClientProps) {
     
     let all = 0;
     let selfOpen = 0;
+    let assigned = 0;
     let expired = 0;
     let gbmRequest = 0;
     let myDept = 0;
@@ -3715,6 +3723,7 @@ export function ObservationClient(props: ObservationClientProps) {
 
       const isSurprise = isSurpriseSlot(slot);
       const isReq = slot.requestOrigin === "OBSERVER_REQUEST";
+      const isAssigned = slot.requestOrigin === "ASSIGNED" || (slot.topic && slot.topic.toLowerCase().includes("chỉ định"));
       const isExpired = isSlotExpired(slot, todayStart);
       const isMyDeptSlot = checkIsMyDept(slot);
 
@@ -3726,8 +3735,13 @@ export function ObservationClient(props: ObservationClientProps) {
       }
 
       // 2. Self Open: GV tu mo tiet day
-      if (!isReq && !isExpired) {
+      if (!isReq && !isAssigned && !isExpired) {
         selfOpen++;
+      }
+
+      // Dự giờ chỉ định
+      if (isAssigned && !isExpired) {
+        assigned++;
       }
 
       // 3. GBM Request: Ban chuyen mon / BGH yeu cau
@@ -3750,6 +3764,7 @@ export function ObservationClient(props: ObservationClientProps) {
       all,
       selfOpen,
       self_open: selfOpen,
+      assigned,
       expired,
       gbmRequest,
       gbm_request: gbmRequest,
@@ -3772,6 +3787,7 @@ export function ObservationClient(props: ObservationClientProps) {
 
       const isSurprise = isSurpriseSlot(slot);
       const isReq = slot.requestOrigin === "OBSERVER_REQUEST";
+      const isAssigned = slot.requestOrigin === "ASSIGNED" || (slot.topic && slot.topic.toLowerCase().includes("chỉ định"));
       const isExpired = isSlotExpired(slot, todayStart);
       const isMyDeptSlot = checkIsMyDept(slot);
 
@@ -3779,7 +3795,8 @@ export function ObservationClient(props: ObservationClientProps) {
       if (isExpired) return false;
 
       if (activeFilterTab === "all") return true;
-      if (activeFilterTab === "self_open") return !isReq;
+      if (activeFilterTab === "self_open") return !isReq && !isAssigned;
+      if (activeFilterTab === "assigned") return isAssigned;
       if (activeFilterTab === "gbm_request") return isReq;
       if (activeFilterTab === "my_dept") return isMyDeptSlot;
       if (activeFilterTab === "other_dept") return !isMyDeptSlot;
@@ -3942,10 +3959,20 @@ export function ObservationClient(props: ObservationClientProps) {
     showToast("Đã xuất danh sách tiết dự giờ thành công!", "success");
   };
 
+  const effectivePersonalSlots = useMemo(() => {
+    if (personalSlots && personalSlots.length > 0) return personalSlots;
+    if (!currentTeacher?.id) return [];
+    return (slots || []).filter((s: any) =>
+      s.teacherId === currentTeacher.id ||
+      (s.registrations || []).some((r: any) => r.teacherId === currentTeacher.id) ||
+      (s.topic && s.topic.includes(currentTeacher.id))
+    );
+  }, [personalSlots, slots, currentTeacher?.id]);
+
   const myTaughtSlots = useMemo(() => {
-    return (personalSlots || []).filter(slot => slot.teacherId === currentTeacher?.id || isAssignedSlotCreator(slot, currentTeacher?.id))
+    return (effectivePersonalSlots || []).filter(slot => slot.teacherId === currentTeacher?.id)
       .sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
-  }, [personalSlots, currentTeacher?.id]);
+  }, [effectivePersonalSlots, currentTeacher?.id]);
 
   const displayedMyTaughtSlots = useMemo(() => {
     return myTaughtSlots.filter(slot => {
@@ -3969,9 +3996,9 @@ export function ObservationClient(props: ObservationClientProps) {
   }, [myTaughtSlots, taughtOriginFilter, taughtCategoryFilter, myScheduleSearchQuery, matchTeacherSearch]);
 
   const myObservedSlots = useMemo(() => {
-    return (personalSlots || []).filter(slot => (slot.registrations || []).some((r: any) => r.teacherId === currentTeacher?.id))
+    return (effectivePersonalSlots || []).filter(slot => (slot.registrations || []).some((r: any) => r.teacherId === currentTeacher?.id))
       .sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
-  }, [personalSlots, currentTeacher?.id]);
+  }, [effectivePersonalSlots, currentTeacher?.id]);
 
   const displayedMyObservedSlots = useMemo(() => {
     return myObservedSlots.filter(slot => {
@@ -4216,17 +4243,15 @@ export function ObservationClient(props: ObservationClientProps) {
                 </div>
               )}
               <h1 className="text-xl sm:text-2xl font-black tracking-tight text-white flex items-center gap-2">
-                {(viewMode === "ADMIN" || props.isAdminPage || (typeof pathname === "string" && pathname.startsWith("/admin")))
+                {viewMode === "ADMIN"
                   ? (managementScope === "BAN_DHCM"
                       ? "Điều hành Dự giờ Toàn trường"
                       : managementScope === "GDCS"
                       ? `Điều hành Dự giờ ${myCampusName}`
                       : managementScope === "TBP"
                       ? `Điều hành Dự giờ Bộ phận ${myTBPDivisionName}`
-                      : `Điều hành Dự giờ Tổ ${myTTCMDeptNames}`)
-                  : ((isTTCM || isTBP || activeMainTab === "ttcm_summary")
-                      ? "Điều hành Dự giờ Tổ chuyên môn"
-                      : "Tiết dạy & Dự giờ của tôi")}
+                      : `Điều hành Dự giờ ${formatDeptName(myTTCMDeptNames)}`)
+                  : "Tiết dạy & Dự giờ của tôi"}
               </h1>
             </div>
 
@@ -4273,7 +4298,7 @@ export function ObservationClient(props: ObservationClientProps) {
                       campusTheme.type === "HILL"
                         ? "bg-[#AE882E] text-white"
                         : campusTheme.type === "GLOBAL"
-                        ? "bg-[#6E3D89] text-white"
+                        ? "bg-[#003B3A] text-white"
                         : "bg-[#00A19A] text-white"
                     }`}
                     title={`Biên chế: ${campusTheme.name}`}
@@ -4283,7 +4308,7 @@ export function ObservationClient(props: ObservationClientProps) {
                 </div>
 
                 {/* 2. Mode Switcher for Management Roles */}
-                {isManagerRole && (
+                {(isManagerRole || isAdminUser) && (
                   <div className="bg-slate-100/90 p-0.5 rounded-xl border border-slate-200/90 flex items-center gap-0.5 shadow-2xs">
                     <button
                       type="button"
@@ -4295,7 +4320,7 @@ export function ObservationClient(props: ObservationClientProps) {
                       }}
                       className={`px-2.5 py-1 rounded-lg text-xs font-bold flex items-center gap-1 transition-all cursor-pointer ${
                         viewMode === "ADMIN"
-                          ? "bg-purple-700 text-white shadow-xs font-black scale-105"
+                          ? "bg-[#003B3A] text-white shadow-xs font-black scale-105"
                           : "text-slate-600 hover:text-slate-900 hover:bg-white/70"
                       }`}
                       title="Chuyển sang Chế độ Quản trị & Điều hành"
@@ -4336,7 +4361,7 @@ export function ObservationClient(props: ObservationClientProps) {
                       campusTheme.type === "HILL"
                         ? "bg-[#AE882E] text-white"
                         : campusTheme.type === "GLOBAL"
-                        ? "bg-[#6E3D89] text-white"
+                        ? "bg-[#003B3A] text-white"
                         : "bg-[#00A19A] text-white"
                     }`}
                     title={`Biên chế: ${campusTheme.name}`}
@@ -4382,6 +4407,53 @@ export function ObservationClient(props: ObservationClientProps) {
                   </div>
                 )}
               </>
+            )}
+
+            {/* Mode Switcher trực tiếp trên Hero Banner */}
+            {(isManagerRole || isAdminUser) ? (
+              <div className="bg-white/15 backdrop-blur-md p-1 rounded-xl border border-white/25 flex items-center gap-1 shadow-inner">
+                <button
+                  type="button"
+                  onClick={() => {
+                    setViewMode("ADMIN");
+                    if (activeMainTab === "my_schedule" || activeMainTab === "register_request") {
+                      setActiveMainTab("overview_slots");
+                    }
+                  }}
+                  className={`px-3 py-1.5 rounded-lg text-xs font-bold flex items-center gap-1.5 transition-all cursor-pointer ${
+                    viewMode === "ADMIN"
+                      ? "bg-white text-[#003B3A] shadow-md font-black scale-102"
+                      : "text-white/80 hover:text-white hover:bg-white/10"
+                  }`}
+                  title="Chuyển sang Chế độ Quản lý & Điều hành"
+                >
+                  <LayoutDashboard className="w-3.5 h-3.5" />
+                  <span>Chế độ Quản lý</span>
+                </button>
+                <button
+                  type="button"
+                  onClick={() => {
+                    setViewMode("TEACHER");
+                    if (activeMainTab === "ttcm_summary") {
+                      setActiveMainTab("my_schedule");
+                    }
+                  }}
+                  className={`px-3 py-1.5 rounded-lg text-xs font-bold flex items-center gap-1.5 transition-all cursor-pointer ${
+                    viewMode === "TEACHER"
+                      ? "bg-[#00A19A] text-white shadow-md font-black scale-102"
+                      : "text-white/80 hover:text-white hover:bg-white/10"
+                  }`}
+                  title="Chuyển sang Chế độ Cá nhân (Lịch dạy & đi dự của tôi)"
+                >
+                  <UserCheck className="w-3.5 h-3.5" />
+                  <span>Chế độ Cá nhân</span>
+                </button>
+              </div>
+            ) : (
+              <div className="bg-white/15 backdrop-blur-md px-3 py-1.5 rounded-xl border border-white/20 flex items-center gap-1.5 text-xs font-bold text-white shadow-xs">
+                <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse" />
+                <span>Chế độ Cá nhân GV</span>
+              </div>
             )}
 
             {/* Primary Action Button: Đăng ký tiết dạy */}
@@ -4449,10 +4521,10 @@ export function ObservationClient(props: ObservationClientProps) {
                   setCreationMode("ASSIGNED");
                   setShowCreateModal(true);
                 }}
-                className="px-3.5 py-2 rounded-xl bg-purple-500/30 hover:bg-purple-500/40 text-purple-100 border border-purple-400/40 font-bold text-xs transition-all shadow-xs flex items-center gap-1.5 cursor-pointer hover:scale-105 active:scale-95"
+                className="px-3.5 py-2 rounded-xl bg-teal-500/30 hover:bg-teal-500/40 text-teal-700 border border-teal-400/40 font-bold text-xs transition-all shadow-xs flex items-center gap-1.5 cursor-pointer hover:scale-105 active:scale-95"
                 title="Chỉ định dự giờ đối với giáo viên (Dành cho Quản lý / BGH / TTCM)"
               >
-                <UserCheck className="w-3.5 h-3.5 text-purple-200" />
+                <UserCheck className="w-3.5 h-3.5 text-teal-700" />
                 <span>Chỉ định dự giờ</span>
               </button>
             )}
@@ -4474,7 +4546,7 @@ export function ObservationClient(props: ObservationClientProps) {
                   ? (campusTheme.type === "HILL"
                       ? "bg-gradient-to-r from-[#01A49D] to-[#AE882E] text-white shadow-md shadow-[#AE882E]/25 scale-[1.01] border border-white/20 font-black"
                       : campusTheme.type === "GLOBAL"
-                      ? "bg-gradient-to-r from-[#01A49D] to-[#6E3D89] text-white shadow-md shadow-[#6E3D89]/25 scale-[1.01] border border-white/20 font-black"
+                      ? "bg-gradient-to-r from-[#01A49D] to-[#003B3A] text-white shadow-md shadow-[#003B3A]/25 scale-[1.01] border border-white/20 font-black"
                       : "bg-gradient-to-r from-[#003B3A] to-[#00A19A] text-white shadow-md shadow-teal-900/25 scale-[1.01] border border-white/20 font-black")
                   : "text-slate-700 bg-slate-100/90 hover:bg-slate-200/90 border border-slate-200/90 font-bold hover:text-slate-900"
               }`}
@@ -4498,7 +4570,7 @@ export function ObservationClient(props: ObservationClientProps) {
                   ? (campusTheme.type === "HILL"
                       ? "bg-gradient-to-r from-[#01A49D] to-[#AE882E] text-white shadow-md shadow-[#AE882E]/25 scale-[1.01] border border-white/20 font-black"
                       : campusTheme.type === "GLOBAL"
-                      ? "bg-gradient-to-r from-[#01A49D] to-[#6E3D89] text-white shadow-md shadow-[#6E3D89]/25 scale-[1.01] border border-white/20 font-black"
+                      ? "bg-gradient-to-r from-[#01A49D] to-[#003B3A] text-white shadow-md shadow-[#003B3A]/25 scale-[1.01] border border-white/20 font-black"
                       : "bg-gradient-to-r from-[#003B3A] to-[#00A19A] text-white shadow-md shadow-teal-900/25 scale-[1.01] border border-white/20 font-black")
                   : "text-slate-700 bg-slate-100/90 hover:bg-slate-200/90 border border-slate-200/90 font-bold hover:text-slate-900"
               }`}
@@ -4510,7 +4582,7 @@ export function ObservationClient(props: ObservationClientProps) {
                   ? `2. Quản lý Tiết dạy ${myCampusName}`
                   : managementScope === "TBP"
                   ? `2. Quản lý Tiết dạy Bộ phận`
-                  : `2. Quản lý Tiết dạy Tổ ${myTTCMDeptNames}`}
+                  : `2. Quản lý Tiết dạy ${formatDeptName(myTTCMDeptNames)}`}
               </span>
               <span className={`px-2 py-0.5 text-[10px] rounded-full font-bold shrink-0 ${
                 activeMainTab === "overview_slots" 
@@ -4530,7 +4602,7 @@ export function ObservationClient(props: ObservationClientProps) {
                   ? (campusTheme.type === "HILL"
                       ? "bg-gradient-to-r from-[#01A49D] to-[#AE882E] text-white shadow-md shadow-[#AE882E]/25 scale-[1.01] border border-white/20 font-black"
                       : campusTheme.type === "GLOBAL"
-                      ? "bg-gradient-to-r from-[#01A49D] to-[#6E3D89] text-white shadow-md shadow-[#6E3D89]/25 scale-[1.01] border border-white/20 font-black"
+                      ? "bg-gradient-to-r from-[#01A49D] to-[#003B3A] text-white shadow-md shadow-[#003B3A]/25 scale-[1.01] border border-white/20 font-black"
                       : "bg-gradient-to-r from-[#003B3A] to-[#00A19A] text-white shadow-md shadow-teal-900/25 scale-[1.01] border border-white/20 font-black")
                   : "text-slate-700 bg-slate-100/90 hover:bg-slate-200/90 border border-slate-200/90 font-bold hover:text-slate-900"
               }`}
@@ -4554,7 +4626,7 @@ export function ObservationClient(props: ObservationClientProps) {
                   ? (campusTheme.type === "HILL"
                       ? "bg-gradient-to-r from-[#01A49D] to-[#AE882E] text-white shadow-md shadow-[#AE882E]/25 scale-[1.01] border border-white/20 font-black"
                       : campusTheme.type === "GLOBAL"
-                      ? "bg-gradient-to-r from-[#01A49D] to-[#6E3D89] text-white shadow-md shadow-[#6E3D89]/25 scale-[1.01] border border-white/20 font-black"
+                      ? "bg-gradient-to-r from-[#01A49D] to-[#003B3A] text-white shadow-md shadow-[#003B3A]/25 scale-[1.01] border border-white/20 font-black"
                       : "bg-gradient-to-r from-[#003B3A] to-[#00A19A] text-white shadow-md shadow-teal-900/25 scale-[1.01] border border-white/20 font-black")
                   : "text-slate-700 bg-slate-100/90 hover:bg-slate-200/90 border border-slate-200/90 font-bold hover:text-slate-900"
               }`}
@@ -4580,7 +4652,7 @@ export function ObservationClient(props: ObservationClientProps) {
                   ? (campusTheme.type === "HILL"
                       ? "bg-gradient-to-r from-[#01A49D] to-[#AE882E] text-white shadow-md shadow-[#AE882E]/25 scale-[1.01] border border-white/20 font-black"
                       : campusTheme.type === "GLOBAL"
-                      ? "bg-gradient-to-r from-[#01A49D] to-[#6E3D89] text-white shadow-md shadow-[#6E3D89]/25 scale-[1.01] border border-white/20 font-black"
+                      ? "bg-gradient-to-r from-[#01A49D] to-[#003B3A] text-white shadow-md shadow-[#003B3A]/25 scale-[1.01] border border-white/20 font-black"
                       : "bg-gradient-to-r from-[#003B3A] to-[#00A19A] text-white shadow-md shadow-teal-900/25 scale-[1.01] border border-white/20 font-black")
                   : "text-slate-700 bg-slate-100/90 hover:bg-slate-200/90 border border-slate-200/90 font-bold hover:text-slate-900"
               }`}
@@ -4604,7 +4676,7 @@ export function ObservationClient(props: ObservationClientProps) {
                   ? (campusTheme.type === "HILL"
                       ? "bg-gradient-to-r from-[#01A49D] to-[#AE882E] text-white shadow-md shadow-[#AE882E]/25 scale-[1.01] border border-white/20 font-black"
                       : campusTheme.type === "GLOBAL"
-                      ? "bg-gradient-to-r from-[#01A49D] to-[#6E3D89] text-white shadow-md shadow-[#6E3D89]/25 scale-[1.01] border border-white/20 font-black"
+                      ? "bg-gradient-to-r from-[#01A49D] to-[#003B3A] text-white shadow-md shadow-[#003B3A]/25 scale-[1.01] border border-white/20 font-black"
                       : "bg-gradient-to-r from-[#003B3A] to-[#00A19A] text-white shadow-md shadow-teal-900/25 scale-[1.01] border border-white/20 font-black")
                   : "text-slate-700 bg-slate-100/90 hover:bg-slate-200/90 border border-slate-200/90 font-bold hover:text-slate-900"
               }`}
@@ -4628,7 +4700,7 @@ export function ObservationClient(props: ObservationClientProps) {
                   ? (campusTheme.type === "HILL"
                       ? "bg-gradient-to-r from-[#01A49D] to-[#AE882E] text-white shadow-md shadow-[#AE882E]/25 scale-[1.01] border border-white/20 font-black"
                       : campusTheme.type === "GLOBAL"
-                      ? "bg-gradient-to-r from-[#01A49D] to-[#6E3D89] text-white shadow-md shadow-[#6E3D89]/25 scale-[1.01] border border-white/20 font-black"
+                      ? "bg-gradient-to-r from-[#01A49D] to-[#003B3A] text-white shadow-md shadow-[#003B3A]/25 scale-[1.01] border border-white/20 font-black"
                       : "bg-gradient-to-r from-[#003B3A] to-[#00A19A] text-white shadow-md shadow-teal-900/25 scale-[1.01] border border-white/20 font-black")
                   : "text-slate-700 bg-slate-100/90 hover:bg-slate-200/90 border border-slate-200/90 font-bold hover:text-slate-900"
               }`}
@@ -4652,7 +4724,7 @@ export function ObservationClient(props: ObservationClientProps) {
                   ? (campusTheme.type === "HILL"
                       ? "bg-gradient-to-r from-[#01A49D] to-[#AE882E] text-white shadow-md shadow-[#AE882E]/25 scale-[1.01] border border-white/20 font-black"
                       : campusTheme.type === "GLOBAL"
-                      ? "bg-gradient-to-r from-[#01A49D] to-[#6E3D89] text-white shadow-md shadow-[#6E3D89]/25 scale-[1.01] border border-white/20 font-black"
+                      ? "bg-gradient-to-r from-[#01A49D] to-[#003B3A] text-white shadow-md shadow-[#003B3A]/25 scale-[1.01] border border-white/20 font-black"
                       : "bg-gradient-to-r from-[#003B3A] to-[#00A19A] text-white shadow-md shadow-teal-900/25 scale-[1.01] border border-white/20 font-black")
                   : "text-slate-700 bg-slate-100/90 hover:bg-slate-200/90 border border-slate-200/90 font-bold hover:text-slate-900"
               }`}
@@ -4677,7 +4749,7 @@ export function ObservationClient(props: ObservationClientProps) {
                     ? (campusTheme.type === "HILL"
                         ? "bg-gradient-to-r from-[#01A49D] to-[#AE882E] text-white shadow-md shadow-[#AE882E]/25 scale-[1.01] border border-white/20 font-black"
                         : campusTheme.type === "GLOBAL"
-                        ? "bg-gradient-to-r from-[#01A49D] to-[#6E3D89] text-white shadow-md shadow-[#6E3D89]/25 scale-[1.01] border border-white/20 font-black"
+                        ? "bg-gradient-to-r from-[#01A49D] to-[#003B3A] text-white shadow-md shadow-[#003B3A]/25 scale-[1.01] border border-white/20 font-black"
                         : "bg-gradient-to-r from-[#003B3A] to-[#00A19A] text-white shadow-md shadow-teal-900/25 scale-[1.01] border border-white/20 font-black")
                     : "text-slate-700 bg-slate-100/90 hover:bg-slate-200/90 border border-slate-200/90 font-bold hover:text-slate-900"
                 }`}
@@ -4703,7 +4775,7 @@ export function ObservationClient(props: ObservationClientProps) {
                     ? (campusTheme.type === "HILL"
                         ? "bg-gradient-to-r from-[#01A49D] to-[#AE882E] text-white shadow-md shadow-[#AE882E]/25 scale-[1.01] border border-white/20 font-black"
                         : campusTheme.type === "GLOBAL"
-                        ? "bg-gradient-to-r from-[#01A49D] to-[#6E3D89] text-white shadow-md shadow-[#6E3D89]/25 scale-[1.01] border border-white/20 font-black"
+                        ? "bg-gradient-to-r from-[#01A49D] to-[#003B3A] text-white shadow-md shadow-[#003B3A]/25 scale-[1.01] border border-white/20 font-black"
                         : "bg-gradient-to-r from-[#003B3A] to-[#00A19A] text-white shadow-md shadow-teal-900/25 scale-[1.01] border border-white/20 font-black")
                     : "text-slate-700 bg-slate-100/90 hover:bg-slate-200/90 border border-slate-200/90 font-bold hover:text-slate-900"
                 }`}
@@ -5074,7 +5146,7 @@ export function ObservationClient(props: ObservationClientProps) {
                                       Tổ CM
                                     </span>
                                   ) : isSameDivision ? (
-                                    <span className="px-1.5 py-0.2 rounded-md bg-indigo-100 text-indigo-900 font-black text-[10px] shrink-0 border border-indigo-200">
+                                    <span className="px-1.5 py-0.2 rounded-md bg-teal-50 text-teal-800 font-black text-[10px] shrink-0 border border-teal-200">
                                       Bộ phận
                                     </span>
                                   ) : null}
@@ -5088,7 +5160,7 @@ export function ObservationClient(props: ObservationClientProps) {
                                       </span>
                                     )}
                                     {slot.requestOrigin === "ASSIGNED" && (
-                                      <span className="px-1.5 py-0.5 text-[9px] font-semibold bg-purple-50 text-purple-700 border border-purple-200 rounded shrink-0">
+                                      <span className="px-1.5 py-0.5 text-[9px] font-semibold bg-teal-50 text-teal-800 border border-teal-200 rounded shrink-0">
                                         Chỉ định
                                       </span>
                                     )}
@@ -5109,7 +5181,7 @@ export function ObservationClient(props: ObservationClientProps) {
                                 className={`px-3 py-1.5 text-[11px] font-black uppercase rounded-lg transition-all shrink-0 cursor-pointer shadow-2xs ${
                                   isPastSlot
                                     ? "bg-slate-100 text-slate-400 border border-slate-200 cursor-not-allowed"
-                                    : "bg-gradient-to-r from-amber-500 to-orange-500 hover:from-amber-600 hover:to-orange-600 text-white hover:scale-105 active:scale-95"
+                                    : "bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-600 hover:to-amber-600 text-white hover:scale-105 active:scale-95"
                                 }`}
                               >
                                 {isPastSlot ? "Hết" : "Đăng ký"}
@@ -5141,7 +5213,7 @@ export function ObservationClient(props: ObservationClientProps) {
                       ? `Quản lý Tiết Dự giờ - ${myCampusName}`
                       : managementScope === "TBP"
                       ? `Quản lý Tiết Dự giờ - Bộ phận ${myTBPDivisionName}`
-                      : `Quản lý Tiết Dự giờ - Tổ ${myTTCMDeptNames}`)
+                      : `Quản lý Tiết Dự giờ - ${formatDeptName(myTTCMDeptNames)}`)
                   : (myTeacherDivisionCodes.size > 0 && !isSuperOrBanDHCM
                       ? `Danh sách đăng ký tiết dạy - ${myTeacherDivisionName}`
                       : "Danh sách đăng ký tiết dạy")}
@@ -5150,7 +5222,7 @@ export function ObservationClient(props: ObservationClientProps) {
                 {viewMode === "ADMIN" 
                   ? (managementScope === "BAN_DHCM"
                       ? "Quản lý, điều phối, phê duyệt và theo dõi tiến độ dự giờ toàn trường"
-                      : `Quản lý, điều phối và theo dõi tiến độ dự giờ trong phạm vi ${managementScope === "GDCS" ? myCampusName : managementScope === "TBP" ? myTBPDivisionName : `Tổ ${myTTCMDeptNames}`}`)
+                      : `Quản lý, điều phối và theo dõi tiến độ dự giờ trong phạm vi ${managementScope === "GDCS" ? myCampusName : managementScope === "TBP" ? myTBPDivisionName : formatDeptName(myTTCMDeptNames)}`)
                   : (myTeacherDivisionCodes.size > 0 && !isSuperOrBanDHCM
                       ? `Chỉ hiển thị các tiết dạy thuộc ${myTeacherDivisionName}. Thầy/Cô có thể lọc theo tổ chuyên môn để chọn tiết dự giờ phù hợp.`
                       : "Tìm kiếm, lọc theo tổ chuyên môn và chọn tiết dự giờ phù hợp")}
@@ -5164,7 +5236,7 @@ export function ObservationClient(props: ObservationClientProps) {
             )}
           </div>
 
-          {/* Unified Filter Tabs Bar (6 Thẻ Lọc: Tất cả, Tiết tự mở, Hết hạn, Xin dự giờ, Thuộc TCM, TCM khác) */}
+          {/* Unified Filter Tabs Bar (7 Thẻ Lọc: Tất cả, Tiết tự mở, Dự giờ chỉ định, Hết hạn, Xin dự giờ, Thuộc TCM, TCM khác) */}
           <div className="flex flex-wrap items-center gap-2 bg-slate-100/90 p-1.5 rounded-2xl border border-slate-200/80 shadow-inner">
             {/* 1. Tất cả */}
             <button
@@ -5202,7 +5274,25 @@ export function ObservationClient(props: ObservationClientProps) {
               </span>
             </button>
 
-            {/* 3. Hết hạn */}
+            {/* 3. Dự giờ chỉ định */}
+            <button
+              type="button"
+              onClick={() => setActiveFilterTab("assigned")}
+              className={`px-3.5 py-2 text-xs font-semibold rounded-xl transition-all duration-200 flex items-center gap-2 cursor-pointer ${
+                activeFilterTab === "assigned"
+                  ? "bg-gradient-to-r from-teal-600 to-emerald-600 text-white shadow-md shadow-purple-700/30 border border-teal-400/40 scale-[1.02]"
+                  : "text-teal-800 bg-teal-50/70 hover:bg-teal-50 border border-teal-200/80"
+              }`}
+            >
+              <span>Dự giờ chỉ định</span>
+              <span className={`px-2 py-0.5 text-[10px] rounded-full font-semibold tabular-nums ${
+                activeFilterTab === "assigned" ? "bg-white/25 text-white border border-white/30" : "bg-teal-200/80 text-teal-800 border border-teal-400"
+              }`}>
+                {tabCounts.assigned}
+              </span>
+            </button>
+
+            {/* 4. Hết hạn */}
             <button
               type="button"
               onClick={() => setActiveFilterTab("expired")}
@@ -5220,25 +5310,25 @@ export function ObservationClient(props: ObservationClientProps) {
               </span>
             </button>
 
-            {/* 4. Xin dự giờ */}
+            {/* 5. Xin dự giờ */}
             <button
               type="button"
               onClick={() => setActiveFilterTab("gbm_request")}
               className={`px-3.5 py-2 text-xs font-semibold rounded-xl transition-all duration-200 flex items-center gap-2 cursor-pointer ${
                 activeFilterTab === "gbm_request"
-                  ? "bg-gradient-to-r from-indigo-600 to-blue-600 text-white shadow-md shadow-indigo-600/30 border border-indigo-400/40 scale-[1.02]"
-                  : "text-indigo-900 bg-indigo-50/70 hover:bg-indigo-100 border border-indigo-200/80"
+                  ? "bg-gradient-to-r from-teal-600 to-blue-600 text-white shadow-md shadow-indigo-600/30 border border-teal-400/40 scale-[1.02]"
+                  : "text-teal-800 bg-teal-50/70 hover:bg-teal-50 border border-teal-200/80"
               }`}
             >
               <span>Xin dự giờ</span>
               <span className={`px-2 py-0.5 text-[10px] rounded-full font-semibold ${
-                activeFilterTab === "gbm_request" ? "bg-white/25 text-white border border-white/30" : "bg-indigo-200/80 text-indigo-950 border border-indigo-300"
+                activeFilterTab === "gbm_request" ? "bg-white/25 text-white border border-white/30" : "bg-teal-200/80 text-teal-800 border border-teal-200"
               }`}>
                 {tabCounts.gbm_request}
               </span>
             </button>
 
-            {/* 5. Thuộc TCM */}
+            {/* 6. Thuộc TCM */}
             <button
               type="button"
               onClick={() => setActiveFilterTab("my_dept")}
@@ -5256,7 +5346,7 @@ export function ObservationClient(props: ObservationClientProps) {
               </span>
             </button>
 
-            {/* 6. TCM khác */}
+            {/* 7. TCM khác */}
             <button
               type="button"
               onClick={() => setActiveFilterTab("other_dept")}
@@ -5280,7 +5370,7 @@ export function ObservationClient(props: ObservationClientProps) {
                 type="button"
                 onClick={handleSyncStatuses}
                 disabled={isSyncingStatuses}
-                className="ml-auto px-3.5 py-2 text-xs font-black rounded-xl bg-gradient-to-r from-amber-600 to-orange-600 hover:from-amber-700 hover:to-orange-700 text-white shadow-md shadow-amber-900/20 transition-all flex items-center gap-1.5 cursor-pointer disabled:opacity-50 hover:scale-[1.02]"
+                className="ml-auto px-3.5 py-2 text-xs font-black rounded-xl bg-gradient-to-r from-amber-600 to-amber-600 hover:from-amber-700 hover:to-amber-600 text-white shadow-md shadow-amber-900/20 transition-all flex items-center gap-1.5 cursor-pointer disabled:opacity-50 hover:scale-[1.02]"
                 title="Rà soát và tự động cập nhật lại toàn bộ các tiết Chờ duyệt sang Đã duyệt hoặc Hết hạn"
               >
                 <span>{isSyncingStatuses ? "Đang đồng bộ..." : "Rà soát trạng thái"}</span>
@@ -5290,7 +5380,7 @@ export function ObservationClient(props: ObservationClientProps) {
         </div>
         
         {/* Thanh tìm kiếm theo Họ tên Giáo viên hoặc Mã SKL */}
-        <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-3 bg-gradient-to-r from-teal-50/70 via-slate-50 to-indigo-50/70 p-3 rounded-2xl border border-teal-200/80 shadow-2xs">
+        <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-3 bg-gradient-to-r from-teal-50/70 via-slate-50 to-emerald-600/70 p-3 rounded-2xl border border-teal-200/80 shadow-2xs">
           <div className="relative flex-1">
             <Search className="w-4 h-4 text-teal-600 absolute left-3.5 top-1/2 -translate-y-1/2 pointer-events-none" />
             <input
@@ -5354,7 +5444,7 @@ export function ObservationClient(props: ObservationClientProps) {
               <select 
                 value={myCampusId} 
                 disabled 
-                className="w-full text-xs font-bold rounded-xl border border-purple-200 p-2 bg-purple-50 text-purple-900 outline-none cursor-not-allowed"
+                className="w-full text-xs font-bold rounded-xl border border-teal-200 p-2 bg-teal-50 text-teal-800 outline-none cursor-not-allowed"
                 title={`Giám đốc cơ sở được phân quyền quản lý tại ${myCampusName}`}
               >
                 <option value={myCampusId}>{myCampusName}</option>
@@ -5460,14 +5550,14 @@ export function ObservationClient(props: ObservationClientProps) {
             <table className="w-full text-left text-xs border-collapse">
               <thead>
                 {activeFilterTab === "gbm_request" ? (
-                  <tr className="bg-indigo-50/80 border-b border-indigo-100 text-indigo-900 font-black uppercase text-[11px] tracking-wider">
+                  <tr className="bg-teal-50/80 border-b border-teal-200 text-teal-800 font-black uppercase text-[11px] tracking-wider">
                     {canDeleteAnySlot && (
                       <th className="p-4 text-center w-10">
                         <input
                           type="checkbox"
                           checked={isAllCurrentSelected}
                           onChange={handleToggleSelectAll}
-                          className="w-4 h-4 rounded text-indigo-600 border-indigo-300 focus:ring-indigo-500 cursor-pointer"
+                          className="w-4 h-4 rounded text-teal-800 border-teal-200 focus:ring-indigo-500 cursor-pointer"
                           title="Chọn / Bỏ chọn tất cả tiết hiển thị"
                         />
                       </th>
@@ -5528,8 +5618,8 @@ export function ObservationClient(props: ObservationClientProps) {
                       <tr 
                         key={slot.id} 
                         id={`slot-row-${slot.id}`}
-                        className={`hover:bg-indigo-50/30 transition-all duration-500 ${
-                          isSelected ? "bg-indigo-50/70" : ""
+                        className={`hover:bg-teal-50/30 transition-all duration-500 ${
+                          isSelected ? "bg-teal-50/70" : ""
                         } ${
                           highlightedSlotId === slot.id ? "bg-amber-100/90 ring-4 ring-amber-400 ring-offset-2 rounded-xl shadow-lg scale-[1.01]" : ""
                         }`}
@@ -5540,16 +5630,16 @@ export function ObservationClient(props: ObservationClientProps) {
                               type="checkbox"
                               checked={isSelected}
                               onChange={() => handleToggleSelectSlot(slot.id)}
-                              className="w-4 h-4 rounded text-indigo-600 border-indigo-300 focus:ring-indigo-500 cursor-pointer"
+                              className="w-4 h-4 rounded text-teal-800 border-teal-200 focus:ring-indigo-500 cursor-pointer"
                             />
                           </td>
                         )}
                         <td className="p-4 text-center font-black text-slate-400">{index + 1}</td>
                         <td className="p-4 font-bold text-slate-800">
                           <div className="flex flex-col">
-                            <span className="font-semibold text-indigo-950">{observerName}</span>
+                            <span className="font-semibold text-teal-800">{observerName}</span>
                             {(observerReg?.teacher?.teacherCode || observerReg?.teacherCode) && (
-                              <span className="text-[10px] font-mono text-indigo-600 font-bold">
+                              <span className="text-[10px] font-mono text-teal-800 font-bold">
                                 {observerReg?.teacher?.teacherCode || observerReg?.teacherCode}
                               </span>
                             )}
@@ -5575,7 +5665,7 @@ export function ObservationClient(props: ObservationClientProps) {
                             return (
                               <div className="space-y-1">
                                 <div className="flex items-center gap-1.5 font-bold text-slate-800 text-xs">
-                                  <Calendar className="w-3.5 h-3.5 text-indigo-600 shrink-0" />
+                                  <Calendar className="w-3.5 h-3.5 text-teal-800 shrink-0" />
                                   <span>{createdDate.toLocaleDateString("vi-VN", { day: "2-digit", month: "2-digit", year: "numeric" })}</span>
                                 </div>
                                 <div className="flex items-center gap-1.5 text-slate-500 text-[11px] font-semibold">
@@ -5745,7 +5835,7 @@ export function ObservationClient(props: ObservationClientProps) {
                               <div className="flex items-center gap-1.5 flex-wrap">
                                 <span className="px-1.5 py-0.5 text-[9px] font-black uppercase rounded bg-amber-100 text-amber-900 border border-amber-200">Mầm non</span>
                                 {slot.requestOrigin === "ASSIGNED" && (
-                                  <span className="px-1.5 py-0.5 text-[9px] font-bold bg-purple-50 text-purple-700 border border-purple-200 rounded shrink-0">
+                                  <span className="px-1.5 py-0.5 text-[9px] font-bold bg-teal-50 text-teal-800 border border-teal-200 rounded shrink-0">
                                     Chỉ định
                                   </span>
                                 )}
@@ -5786,7 +5876,7 @@ export function ObservationClient(props: ObservationClientProps) {
                                 </span>
                               )}
                               {slot.requestOrigin === "ASSIGNED" && (
-                                <span className="px-1.5 py-0.5 text-[9px] font-bold bg-purple-50 text-purple-700 border border-purple-200 rounded shrink-0">
+                                <span className="px-1.5 py-0.5 text-[9px] font-bold bg-teal-50 text-teal-800 border border-teal-200 rounded shrink-0">
                                   Chỉ định
                                 </span>
                               )}
@@ -5872,7 +5962,7 @@ export function ObservationClient(props: ObservationClientProps) {
                             Hết hạn
                           </span>
                         ) : observerCount >= (slot.maxSeats || 4) ? (
-                          <span className="inline-flex items-center gap-1 px-2.5 py-1 text-[11px] font-bold uppercase rounded-xl bg-indigo-50 text-indigo-700 border border-indigo-200">
+                          <span className="inline-flex items-center gap-1 px-2.5 py-1 text-[11px] font-bold uppercase rounded-xl bg-teal-50 text-teal-800 border border-teal-200">
                             Đã đủ
                           </span>
                         ) : (
@@ -5915,10 +6005,10 @@ export function ObservationClient(props: ObservationClientProps) {
                               <button
                                 type="button"
                                 onClick={() => openEditModal(slot)}
-                                className="p-1.5 rounded-xl bg-indigo-50 hover:bg-indigo-100 text-indigo-700 border border-indigo-200/80 transition-all cursor-pointer shadow-2xs hover:scale-105"
+                                className="p-1.5 rounded-xl bg-teal-50 hover:bg-teal-50 text-teal-800 border border-teal-200/80 transition-all cursor-pointer shadow-2xs hover:scale-105"
                                 title="Chỉnh sửa thông tin tiết dạy"
                               >
-                                <Edit className="w-3.5 h-3.5 text-indigo-600" />
+                                <Edit className="w-3.5 h-3.5 text-teal-800" />
                               </button>
                             )}
 
@@ -6112,7 +6202,7 @@ export function ObservationClient(props: ObservationClientProps) {
                 onClick={() => setMyScheduleSubTab("all")}
                 className={`px-4 py-2 text-xs font-bold rounded-xl transition-all flex items-center gap-2 cursor-pointer ${
                   myScheduleSubTab === "all"
-                    ? (campusTheme.type === "HILL" ? "bg-[#AE882E] text-white shadow-xs" : campusTheme.type === "GLOBAL" ? "bg-[#6E3D89] text-white shadow-xs" : "bg-[#003B3A] text-white shadow-xs")
+                    ? (campusTheme.type === "HILL" ? "bg-[#AE882E] text-white shadow-xs" : campusTheme.type === "GLOBAL" ? "bg-[#003B3A] text-white shadow-xs" : "bg-[#003B3A] text-white shadow-xs")
                     : "text-slate-600 hover:text-slate-900 bg-white/70 hover:bg-white"
                 }`}
               >
@@ -6234,7 +6324,7 @@ export function ObservationClient(props: ObservationClientProps) {
                       </span>
                     )}
                     {myTaughtSlots.filter(s => s.requestOrigin === "ASSIGNED").length > 0 && (
-                      <span className="px-2.5 py-0.5 text-xs font-semibold bg-purple-50 text-purple-700 rounded-full border border-purple-200 inline-block shadow-2xs">
+                      <span className="px-2.5 py-0.5 text-xs font-semibold bg-teal-50 text-teal-800 rounded-full border border-teal-200 inline-block shadow-2xs">
                         {myTaughtSlots.filter(s => s.requestOrigin === "ASSIGNED").length} chỉ định
                       </span>
                     )}
@@ -6289,8 +6379,8 @@ export function ObservationClient(props: ObservationClientProps) {
                       onClick={() => setTaughtOriginFilter("ASSIGNED")}
                       className={`px-3 py-1.5 rounded-xl text-xs font-black transition-all cursor-pointer flex items-center gap-1 ${
                         taughtOriginFilter === "ASSIGNED"
-                          ? "bg-white text-purple-700 shadow-xs"
-                          : "text-slate-500 hover:text-purple-700"
+                          ? "bg-white text-teal-800 shadow-xs"
+                          : "text-slate-500 hover:text-teal-800"
                       }`}
                     >
                       <span>Chỉ định</span>
@@ -6426,7 +6516,7 @@ export function ObservationClient(props: ObservationClientProps) {
                                   {slot.topic}
                                 </p>
                                 {(slot.registrations || []).some((r: any) => r.evaluation?.isSupplemental && r.evaluation?.supplementalStatus === "PENDING") && (
-                                  <span className="px-2 py-0.5 text-[9px] font-black bg-gradient-to-r from-amber-500 to-orange-500 text-white rounded-md shadow-xs animate-pulse flex items-center gap-1" title="Có giáo viên nộp phiếu dự giờ bổ sung cần Thầy/Cô xét duyệt">
+                                  <span className="px-2 py-0.5 text-[9px] font-black bg-gradient-to-r from-amber-500 to-amber-600 text-white rounded-md shadow-xs animate-pulse flex items-center gap-1" title="Có giáo viên nộp phiếu dự giờ bổ sung cần Thầy/Cô xét duyệt">
                                     <span>🔔 Có phiếu bổ sung chờ duyệt</span>
                                   </span>
                                 )}
@@ -6436,7 +6526,7 @@ export function ObservationClient(props: ObservationClientProps) {
                                   </span>
                                 )}
                                 {slot.requestOrigin === "ASSIGNED" && (
-                                  <span className="px-1.5 py-0.5 text-[9px] font-semibold bg-purple-50 text-purple-700 border border-purple-200 rounded shrink-0">
+                                  <span className="px-1.5 py-0.5 text-[9px] font-semibold bg-teal-50 text-teal-800 border border-teal-200 rounded shrink-0">
                                     {isAssignedSlotCreator(slot, currentTeacher?.id) ? "Chỉ định (Người chỉ đạo)" : "Chỉ định"}
                                   </span>
                                 )}
@@ -6453,7 +6543,7 @@ export function ObservationClient(props: ObservationClientProps) {
                                 <span className="text-slate-400">•</span>
                                 <span className="text-slate-600 font-bold">Lớp {slot.className || "Chưa xếp"}</span>
                                 {slot.requestOrigin === "ASSIGNED" && isAssignedSlotCreator(slot, currentTeacher?.id) && slot.teacherId !== currentTeacher?.id && (
-                                  <span className="text-purple-700 font-black">• GV dạy: {slot.teacher?.teacherName || "Đồng nghiệp"}</span>
+                                  <span className="text-teal-800 font-black">• GV dạy: {slot.teacher?.teacherName || "Đồng nghiệp"}</span>
                                 )}
                               </div>
                             </div>
@@ -6520,7 +6610,7 @@ export function ObservationClient(props: ObservationClientProps) {
                                                         <button
                                                           type="button"
                                                           onClick={() => setReviewSupplementalModal({ slot, registration: reg })}
-                                                          className="px-2.5 py-0.5 text-[10px] font-black rounded-md bg-gradient-to-r from-amber-600 to-orange-600 hover:from-amber-700 hover:to-orange-700 text-white shadow-2xs flex items-center gap-1 cursor-pointer animate-pulse"
+                                                          className="px-2.5 py-0.5 text-[10px] font-black rounded-md bg-gradient-to-r from-amber-600 to-amber-600 hover:from-amber-700 hover:to-amber-600 text-white shadow-2xs flex items-center gap-1 cursor-pointer animate-pulse"
                                                         >
                                                           <span>🔔 Duyệt phiếu</span>
                                                         </button>
@@ -6540,7 +6630,7 @@ export function ObservationClient(props: ObservationClientProps) {
                                                       </>
                                                     ) : reg.evaluation.supplementalStatus === "NEEDS_REVISION" ? (
                                                       <>
-                                                        <span className="px-2 py-0.5 text-[10px] font-bold rounded-md bg-orange-50 text-orange-800 border border-orange-300" title={reg.evaluation.supplementalReviewNote || "Đã yêu cầu sửa"}>
+                                                        <span className="px-2 py-0.5 text-[10px] font-bold rounded-md bg-amber-50 text-amber-800 border border-amber-200" title={reg.evaluation.supplementalReviewNote || "Đã yêu cầu sửa"}>
                                                           Đã yêu cầu sửa
                                                         </span>
                                                         <button
@@ -6650,7 +6740,7 @@ export function ObservationClient(props: ObservationClientProps) {
                           <td className="p-3.5 text-right">
                             <div className="flex items-center justify-end gap-1.5">
                               {slot.requestOrigin === "ASSIGNED" && !canAssignObservation ? (
-                                <span className="text-[11px] text-purple-700 bg-purple-50 border border-purple-200 px-2.5 py-1 rounded-xl font-bold" title="Tiết do Cán bộ quản lý chỉ định, GV không thể tự sửa hoặc hủy">
+                                <span className="text-[11px] text-teal-800 bg-teal-50 border border-teal-200 px-2.5 py-1 rounded-xl font-bold" title="Tiết do Cán bộ quản lý chỉ định, GV không thể tự sửa hoặc hủy">
                                   Tiết chỉ định
                                 </span>
                               ) : (
@@ -6708,7 +6798,7 @@ export function ObservationClient(props: ObservationClientProps) {
                       </span>
                     )}
                     {myObservedSlots.filter(s => s.requestOrigin === "ASSIGNED").length > 0 && (
-                      <span className="px-2.5 py-0.5 text-xs font-semibold bg-purple-50 text-purple-700 rounded-full border border-purple-200 inline-block shadow-2xs">
+                      <span className="px-2.5 py-0.5 text-xs font-semibold bg-teal-50 text-teal-800 rounded-full border border-teal-200 inline-block shadow-2xs">
                         {myObservedSlots.filter(s => s.requestOrigin === "ASSIGNED").length} chỉ định
                       </span>
                     )}
@@ -6763,8 +6853,8 @@ export function ObservationClient(props: ObservationClientProps) {
                       onClick={() => setObservedOriginFilter("ASSIGNED")}
                       className={`px-3 py-1.5 rounded-xl text-xs font-black transition-all cursor-pointer flex items-center gap-1 ${
                         observedOriginFilter === "ASSIGNED"
-                          ? "bg-white text-purple-700 shadow-xs"
-                          : "text-slate-500 hover:text-purple-700"
+                          ? "bg-white text-teal-800 shadow-xs"
+                          : "text-slate-500 hover:text-teal-800"
                       }`}
                     >
                       <span>Chỉ định</span>
@@ -6857,7 +6947,7 @@ export function ObservationClient(props: ObservationClientProps) {
                           const reg = (singleSlot.registrations || []).find((r: any) => r.teacherId === currentTeacher?.id);
                           if (reg) openEvalModal(reg, singleSlot, true);
                         }}
-                        className="px-4 py-2 rounded-xl bg-gradient-to-r from-amber-600 to-orange-600 hover:from-amber-700 hover:to-orange-700 text-white font-black text-xs shadow-xs flex items-center gap-1.5 transition-all cursor-pointer whitespace-nowrap"
+                        className="px-4 py-2 rounded-xl bg-gradient-to-r from-amber-600 to-amber-600 hover:from-amber-700 hover:to-amber-600 text-white font-black text-xs shadow-xs flex items-center gap-1.5 transition-all cursor-pointer whitespace-nowrap"
                       >
                         <FileText className="w-4 h-4" />
                         <span>Nộp phiếu bổ sung ngay</span>
@@ -6983,7 +7073,7 @@ export function ObservationClient(props: ObservationClientProps) {
                                   </span>
                                 )}
                                 {slot.requestOrigin === "ASSIGNED" && (
-                                  <span className="px-1.5 py-0.5 text-[9px] font-semibold bg-purple-50 text-purple-700 border border-purple-200 rounded shrink-0">
+                                  <span className="px-1.5 py-0.5 text-[9px] font-semibold bg-teal-50 text-teal-800 border border-teal-200 rounded shrink-0">
                                     Chỉ định
                                   </span>
                                 )}
@@ -7045,7 +7135,7 @@ export function ObservationClient(props: ObservationClientProps) {
                                         <span>⏳ Chờ GV dạy duyệt</span>
                                       </span>
                                     ) : myReg.evaluation.supplementalStatus === "NEEDS_REVISION" ? (
-                                      <span className="px-2.5 py-1 rounded-xl bg-orange-50 text-orange-900 border border-orange-300 font-bold text-xs shadow-2xs flex items-center gap-1" title={myReg.evaluation.supplementalReviewNote || "Yêu cầu chỉnh sửa"}>
+                                      <span className="px-2.5 py-1 rounded-xl bg-amber-50 text-amber-800 border border-amber-200 font-bold text-xs shadow-2xs flex items-center gap-1" title={myReg.evaluation.supplementalReviewNote || "Yêu cầu chỉnh sửa"}>
                                         <span>⚠️ Yêu cầu sửa</span>
                                       </span>
                                     ) : myReg.evaluation.supplementalStatus === "REJECTED" ? (
@@ -7071,7 +7161,7 @@ export function ObservationClient(props: ObservationClientProps) {
                                     <button
                                       type="button"
                                       onClick={() => openEvalModal(myReg, slot, true)}
-                                      className="px-3 py-1 bg-gradient-to-r from-amber-600 to-orange-600 hover:from-amber-700 hover:to-orange-700 text-white rounded-xl text-xs font-black shadow-xs animate-pulse flex items-center gap-1 cursor-pointer"
+                                      className="px-3 py-1 bg-gradient-to-r from-amber-600 to-amber-600 hover:from-amber-700 hover:to-amber-600 text-white rounded-xl text-xs font-black shadow-xs animate-pulse flex items-center gap-1 cursor-pointer"
                                     >
                                       <span>Sửa phiếu bổ sung</span>
                                     </button>
@@ -7163,7 +7253,7 @@ export function ObservationClient(props: ObservationClientProps) {
                                       <button
                                         type="button"
                                         onClick={() => openEvalModal(myReg, slot, true)}
-                                        className="px-3.5 py-1.5 bg-gradient-to-r from-amber-500 to-orange-500 hover:from-amber-600 hover:to-orange-600 text-white rounded-xl text-xs font-black shadow-sm transition-all cursor-pointer hover:scale-105 active:scale-95 flex items-center gap-1.5"
+                                        className="px-3.5 py-1.5 bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-600 hover:to-amber-600 text-white rounded-xl text-xs font-black shadow-sm transition-all cursor-pointer hover:scale-105 active:scale-95 flex items-center gap-1.5"
                                         title="Tiết dạy đã qua ngày. Nhấn để nộp Phiếu dự giờ bổ sung (yêu cầu GV dạy phê duyệt)"
                                       >
                                         <FileText className="w-3.5 h-3.5" />
@@ -7432,7 +7522,7 @@ export function ObservationClient(props: ObservationClientProps) {
 
                 {/* Supplemental Evaluation Alert Banner */}
                 {isSupplementalEval && (
-                  <div className="p-4 bg-gradient-to-r from-amber-50 to-orange-50 rounded-2xl border-2 border-amber-300 flex items-start gap-3 shadow-xs">
+                  <div className="p-4 bg-gradient-to-r from-amber-50 to-amber-600 rounded-2xl border-2 border-amber-300 flex items-start gap-3 shadow-xs">
                     <AlertTriangle className="w-5 h-5 text-amber-600 shrink-0 mt-0.5" />
                     <div className="space-y-1">
                       <div className="flex items-center gap-2">
@@ -7504,7 +7594,7 @@ export function ObservationClient(props: ObservationClientProps) {
                 )}
 {/* [PHASE 2] Prominent Local Draft Recovery Banner */}
                 {hasEvalDraft && !isReadOnly && !evalModal.registration.evaluation && (
-                  <div className="p-4 bg-gradient-to-r from-amber-50 to-orange-50 border-2 border-amber-300/80 rounded-2xl flex flex-col sm:flex-row sm:items-center justify-between gap-3 shadow-xs animate-in fade-in slide-in-from-top-2">
+                  <div className="p-4 bg-gradient-to-r from-amber-50 to-amber-600 border-2 border-amber-300/80 rounded-2xl flex flex-col sm:flex-row sm:items-center justify-between gap-3 shadow-xs animate-in fade-in slide-in-from-top-2">
                     <div className="flex items-center gap-3 text-xs text-amber-950 font-medium">
                       <div className="w-9 h-9 rounded-xl bg-amber-500 text-white flex items-center justify-center font-black text-sm shadow-xs shrink-0">
                         ⚡
@@ -7523,7 +7613,7 @@ export function ObservationClient(props: ObservationClientProps) {
                       <button
                         type="button"
                         onClick={handleRestoreDraft}
-                        className="px-4 py-2 bg-gradient-to-r from-amber-600 to-orange-600 hover:from-amber-700 hover:to-orange-700 text-white rounded-xl text-xs font-black shadow-xs transition-all flex items-center gap-1.5 cursor-pointer active:scale-95"
+                        className="px-4 py-2 bg-gradient-to-r from-amber-600 to-amber-600 hover:from-amber-700 hover:to-amber-600 text-white rounded-xl text-xs font-black shadow-xs transition-all flex items-center gap-1.5 cursor-pointer active:scale-95"
                       >
                         <span>Khôi phục bản nháp</span>
                       </button>
@@ -8438,7 +8528,7 @@ export function ObservationClient(props: ObservationClientProps) {
                             setReEvalReason("");
                             setReEvalError(null);
                           }}
-                          className="px-4 py-2 bg-gradient-to-r from-amber-500 to-orange-600 hover:from-amber-600 hover:to-orange-700 text-white font-black rounded-xl text-xs shadow-sm flex items-center gap-1.5 transition-all cursor-pointer"
+                          className="px-4 py-2 bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-600 hover:to-amber-600 text-white font-black rounded-xl text-xs shadow-sm flex items-center gap-1.5 transition-all cursor-pointer"
                         >
                           <span>Yêu cầu đánh giá lại</span>
                         </button>
@@ -8462,7 +8552,7 @@ export function ObservationClient(props: ObservationClientProps) {
                       disabled={evalSubmitting}
                       className={`px-6 py-2.5 disabled:bg-slate-200 disabled:text-slate-400 text-white font-extrabold rounded-xl transition-all shadow-md text-xs cursor-pointer flex items-center gap-2 ${
                         isSupplementalEval
-                          ? "bg-gradient-to-r from-amber-600 to-orange-600 hover:from-amber-700 hover:to-orange-700 shadow-amber-600/30"
+                          ? "bg-gradient-to-r from-amber-600 to-amber-600 hover:from-amber-700 hover:to-amber-600 shadow-amber-600/30"
                           : "bg-gradient-to-r from-[#00A19A] to-[#006059] hover:from-[#007068] hover:to-[#004f4a]"
                       }`}
                     >
@@ -8567,7 +8657,7 @@ export function ObservationClient(props: ObservationClientProps) {
               </div>
             </div>
 
-            <div className="p-4 bg-gradient-to-br from-amber-50 to-orange-50 rounded-3xl border border-amber-200 shadow-xs flex items-center justify-between">
+            <div className="p-4 bg-gradient-to-br from-amber-50 to-amber-600 rounded-3xl border border-amber-200 shadow-xs flex items-center justify-between">
               <div>
                 <p className="text-[11px] font-black text-amber-800 uppercase tracking-wider">Chờ xét duyệt</p>
                 <p className="text-2xl font-black text-amber-950 mt-1">{pendingReEvalCount}</p>
@@ -8768,7 +8858,7 @@ export function ObservationClient(props: ObservationClientProps) {
       {reEvalModal && (
         <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm animate-in fade-in duration-200">
           <div className="bg-white w-full max-w-lg rounded-3xl shadow-2xl border border-slate-100 overflow-hidden flex flex-col animate-in zoom-in-95 duration-200">
-            <div className="px-6 py-5 bg-gradient-to-r from-amber-600 to-orange-600 text-white flex items-center justify-between">
+            <div className="px-6 py-5 bg-gradient-to-r from-amber-600 to-amber-600 text-white flex items-center justify-between">
               <div>
                 <h3 className="font-black text-base flex items-center gap-2">
                   <RotateCcw className="w-5 h-5" /> GỬI YÊU CẦU ĐÁNH GIÁ LẠI
@@ -8826,7 +8916,7 @@ export function ObservationClient(props: ObservationClientProps) {
                 type="button"
                 onClick={handleRequestReEval}
                 disabled={reEvalSubmitting}
-                className="px-6 py-2 bg-gradient-to-r from-amber-600 to-orange-600 hover:from-amber-700 hover:to-orange-700 disabled:bg-slate-200 text-white font-extrabold rounded-xl text-xs shadow-md transition-all cursor-pointer flex items-center gap-1.5"
+                className="px-6 py-2 bg-gradient-to-r from-amber-600 to-amber-600 hover:from-amber-700 hover:to-amber-600 disabled:bg-slate-200 text-white font-extrabold rounded-xl text-xs shadow-md transition-all cursor-pointer flex items-center gap-1.5"
               >
                 {reEvalSubmitting ? "Đang gửi..." : "Gửi yêu cầu xét duyệt"}
               </button>

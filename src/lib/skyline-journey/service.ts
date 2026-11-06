@@ -40,6 +40,33 @@ export interface JourneyIslandSummary {
   feathersEarned: number;
 }
 
+export interface StudentRankingEntry {
+  rank: number;
+  studentId: string;
+  studentCode: string;
+  fullName: string;
+  className: string;
+  grade: string;
+  campusName: string;
+  characterId: string;
+  characterName: string;
+  shieldsEarnedCount: number;
+  completedStagesCount: number;
+  teacherConfirmedCount: number;
+  totalFeathers: number;
+  badgeCount: number;
+  totalStageScore: number;
+  avgScorePercent: number;
+  totalCompletionSeconds: number;
+  avgCompletionSeconds: number;
+  completionTimeFormatted: string;
+  speedBonusPoints: number;
+  rankingScore: number;
+  honorTitle: string;
+  isCurrentUser: boolean;
+  lastPlayedAt: string | null;
+}
+
 export interface StudentStageView {
   periodIndex: number;
   lessonId: string;
@@ -251,7 +278,7 @@ async function resolveJourneyConfigForClass(params: {
 /**
  * Fetch student's complete Sky-Line Journey overview (Map, Islands, 15 TC02S Stages, Passport)
  */
-export async function getStudentJourneyOverview(studentId: string) {
+export async function getStudentJourneyOverview(studentId: string, gradeOverride?: string) {
   await ensureSkylineJourneyTables();
 
   const student: any = await prisma.student.findUnique({
@@ -274,7 +301,11 @@ export async function getStudentJourneyOverview(studentId: string) {
   const cls = student.class;
   const rawClassName = String(cls.className || cls.name || "");
   const parsedGradeFromClass = (rawClassName.match(/^(\d{1,2})/) || [])[1] || "2";
-  const grade = String(cls.grade || parsedGradeFromClass).replace(/^K/i, "").trim();
+  const nativeGrade = String(cls.grade || parsedGradeFromClass).replace(/^K/i, "").trim();
+  const normalizedOverride = String(gradeOverride || "").replace(/^K/i, "").trim();
+  const grade = ["1", "2", "3", "4", "5"].includes(normalizedOverride)
+    ? normalizedOverride
+    : nativeGrade;
   const educationSystem = String(cls.educationSystem || "HNS").trim();
   const academicYearId = cls.academicYearId || student.academicYearId || "ay_2025_2026";
   const studentCodeVal = String(student.studentCode || student.code || "");
@@ -284,9 +315,11 @@ export async function getStudentJourneyOverview(studentId: string) {
     cls.campus?.campusName || cls.campus?.name || student.campus?.campusName || ""
   );
 
-  const gradeProfile =
-    GRADE_DIFFERENTIATION_PROFILES[grade] || GRADE_DIFFERENTIATION_PROFILES["2"];
-  const gradeBundle = getGradeCurriculumBundle(grade);
+  const isElementary = ["1", "2", "3", "4", "5"].includes(grade);
+  const gradeProfile = isElementary
+    ? (GRADE_DIFFERENTIATION_PROFILES[grade] || GRADE_DIFFERENTIATION_PROFILES["1"])
+    : null;
+  const gradeBundle = isElementary ? getGradeCurriculumBundle(grade) : getGradeCurriculumBundle("1");
 
   // 1. Find all special subjects assigned to this student's class
   const specialAssignments: any[] = await prisma.specialTeachingAssignment.findMany({
@@ -353,7 +386,9 @@ export async function getStudentJourneyOverview(studentId: string) {
   const islands: JourneyIslandSummary[] = [];
   let activeStagesView: StudentStageView[] = [];
 
-  for (const subj of Array.from(assignedSubjectsMap.values())) {
+  // Game islands are strictly supported for Primary education (Grades 1–5)
+  if (isElementary) {
+    for (const subj of Array.from(assignedSubjectsMap.values())) {
     const visual = SUBJECT_ISLAND_VISUALS[subj.subjectCode] || {
       icon: "🏝️",
       color: "#0284C7",
@@ -464,9 +499,9 @@ export async function getStudentJourneyOverview(studentId: string) {
           lessonId: dbLesson?.id || stageDef.lessonId,
           lessonCode: stageDef.lessonCode,
           lessonName: dbLesson?.lessonName || dbLesson?.name || stageDef.lessonName,
-          topicId: dbLesson?.topicId || stageDef.topicId,
-          topicCode: dbLesson?.topic?.code || stageDef.topicCode,
-          officialTopicName: dbLesson?.topic?.name || stageDef.officialTopicName,
+          topicId: stageDef.topicId || dbLesson?.topicId,
+          topicCode: stageDef.topicCode || dbLesson?.topic?.code,
+          officialTopicName: stageDef.officialTopicName || dbLesson?.topic?.name,
           creativeZoneName: stageDef.creativeZoneName,
           isProject: Boolean(dbLesson?.isProject ?? stageDef.isProject),
           feathersReward: stageDef.feathersReward,
@@ -523,7 +558,7 @@ export async function getStudentJourneyOverview(studentId: string) {
         needsRevisionCount: revisionCount,
         feathersEarned: islandFeathers
       });
-    } else {
+    } else if (subj.subjectCode === "FIN_EDU") {
       islands.push({
         islandId: `island_${subj.subjectCode}_g${grade}`,
         subjectId: subj.subjectId,
@@ -545,6 +580,7 @@ export async function getStudentJourneyOverview(studentId: string) {
       });
     }
   }
+}
 
   const needsRevisionStages = activeStagesView.filter((s) => s.status === "NEEDS_REVISION");
   const continueStage =
@@ -613,7 +649,30 @@ export async function getStudentJourneyOverview(studentId: string) {
   ).length;
   const passedAutoCount = activeStagesView.filter((s) => s.autoChallengePassed).length;
 
+  // Build real-time Class & Grade Learning Leaderboards from actual students & progress
+  const leaderboard = await buildJourneyLeaderboards({
+    currentStudentId: student.id,
+    currentStudentFallback: {
+      id: student.id,
+      studentCode: studentCodeVal,
+      studentName: studentNameVal,
+      classId: cls.id,
+      class: {
+        id: cls.id,
+        className: classNameVal,
+        grade,
+        campus: {
+          campusName: campusNameVal
+        }
+      }
+    },
+    classId: cls.id,
+    grade,
+    academicYearId
+  });
+
   return {
+    isElementary: Boolean(isElementary),
     student: {
       id: student.id,
       code: studentCodeVal,
@@ -631,11 +690,12 @@ export async function getStudentJourneyOverview(studentId: string) {
     islands,
     activeIsland:
       islands.find((i) => i.configStatus === "ACTIVE_APPROVED") || islands[0] || null,
-    zones: gradeBundle.zones,
+    zones: isElementary ? gradeBundle.zones : [],
     stages: activeStagesView,
     continueStage,
     needsRevisionStages,
     welcomeSurvey,
+    leaderboard,
     progressMetrics: {
       assignedStagesCount,
       completedAssignedCount,
@@ -660,11 +720,366 @@ export async function getStudentJourneyOverview(studentId: string) {
       shieldsEarnedCount: shields.length,
       shields,
       selectedCharacterId: welcomeSurvey?.characterId || "SKYLINE_EXPLORER",
-      selectedCharacterName: welcomeSurvey?.characterName || "Chiến Binh Chim Sky-Line",
+      selectedCharacterName: welcomeSurvey?.characterName || "Chim Non Bồ Câu Sky-Line",
       badges,
       studentWorks,
       recentRewards: rewardRows.slice(0, 12)
     }
+  };
+}
+
+function formatDurationVi(seconds: number): string {
+  if (!seconds || seconds <= 0) return "—";
+  const rounded = Math.max(1, Math.round(seconds));
+  const mins = Math.floor(rounded / 60);
+  const secs = rounded % 60;
+  if (mins === 0) return `${secs}s`;
+  if (mins < 60) return `${mins}p ${secs < 10 ? `0${secs}` : secs}s`;
+  const hrs = Math.floor(mins / 60);
+  const remMins = mins % 60;
+  return `${hrs}g ${remMins}p`;
+}
+
+/**
+ * Compute Top Learning Leaderboard for a student's Class and Grade
+ */
+async function buildJourneyLeaderboards(params: {
+  currentStudentId?: string;
+  currentStudentFallback?: any;
+  classId: string;
+  grade: string;
+  academicYearId: string;
+}): Promise<{
+  classLeaderboard: StudentRankingEntry[];
+  gradeLeaderboard: StudentRankingEntry[];
+  myClassRank: number | null;
+  myGradeRank: number | null;
+  totalClassStudents: number;
+  totalGradeStudents: number;
+}> {
+  const normGrade = normalizeElementaryGrade(params.grade);
+
+  // Fetch all active students in the same Grade (which includes the student's class)
+  let gradeStudents: any[] = [];
+  try {
+    const found = await prisma.student.findMany?.({
+      where: {
+        status: "ACTIVE",
+        class: {
+          grade: { in: [normGrade, `K${normGrade}`, `Khối ${normGrade}`] },
+          ...(params.academicYearId ? { academicYearId: params.academicYearId } : {})
+        }
+      },
+      select: {
+        id: true,
+        studentCode: true,
+        studentName: true,
+        classId: true,
+        class: {
+          select: {
+            id: true,
+            className: true,
+            grade: true,
+            campus: {
+              select: {
+                campusName: true
+              }
+            }
+          }
+        }
+      },
+      orderBy: [{ studentName: "asc" }]
+    });
+    if (Array.isArray(found)) gradeStudents = [...found];
+  } catch {
+    gradeStudents = [];
+  }
+
+  // Ensure students of the current class are included even if grade string format differs
+  const existingIds = new Set(gradeStudents.map((s) => s.id));
+  let classOnlyStudents: any[] = [];
+  try {
+    const foundClass = await prisma.student.findMany?.({
+      where: {
+        classId: params.classId,
+        status: "ACTIVE"
+      },
+      select: {
+        id: true,
+        studentCode: true,
+        studentName: true,
+        classId: true,
+        class: {
+          select: {
+            id: true,
+            className: true,
+            grade: true,
+            campus: {
+              select: {
+                campusName: true
+              }
+            }
+          }
+        }
+      },
+      orderBy: [{ studentName: "asc" }]
+    });
+    if (Array.isArray(foundClass)) classOnlyStudents = foundClass;
+  } catch {
+    classOnlyStudents = [];
+  }
+
+  for (const cs of classOnlyStudents) {
+    if (!existingIds.has(cs.id)) {
+      gradeStudents.push(cs);
+      existingIds.add(cs.id);
+    }
+  }
+  if (params.currentStudentFallback?.id && !existingIds.has(params.currentStudentFallback.id)) {
+    gradeStudents.push(params.currentStudentFallback);
+    existingIds.add(params.currentStudentFallback.id);
+  }
+
+  let allProgRows: Array<any> = [];
+  let allRewardRows: Array<any> = [];
+  try {
+    const [pRows, rRows] = await Promise.all([
+      prisma.$queryRawUnsafe(
+        `SELECT studentId, lessonCode, status, hasPlayed, autoChallengePassed, teacherConfirmed, flagPlanted, feathersEarned, worldStateJson, startedAt, completedAt, createdAt, lastPlayedAt, updatedAt
+         FROM skyline_quest_progress
+         WHERE subjectId = 'spec_sub_fin_edu'`
+      ) as Promise<Array<any>>,
+      prisma.$queryRawUnsafe(
+        `SELECT studentId, rewardType, feathers, badgeCode, metadataJson
+         FROM skyline_reward_ledger
+         WHERE subjectId = 'spec_sub_fin_edu'`
+      ) as Promise<Array<any>>
+    ]);
+    if (Array.isArray(pRows)) allProgRows = pRows;
+    if (Array.isArray(rRows)) allRewardRows = rRows;
+  } catch {
+    allProgRows = [];
+    allRewardRows = [];
+  }
+
+  const progByStudent = new Map<string, Array<any>>();
+  for (const p of allProgRows) {
+    const sid = String(p.studentId || "");
+    if (!sid) continue;
+    if (!progByStudent.has(sid)) progByStudent.set(sid, []);
+    progByStudent.get(sid)!.push(p);
+  }
+
+  const rewardStatsByStudent = new Map<
+    string,
+    {
+      totalFeathers: number;
+      badgeCount: number;
+      characterId: string;
+      characterName: string;
+    }
+  >();
+
+  for (const r of allRewardRows) {
+    const sid = String(r.studentId || "");
+    if (!sid) continue;
+    const prev = rewardStatsByStudent.get(sid) || {
+      totalFeathers: 0,
+      badgeCount: 0,
+      characterId: "SKYLINE_EXPLORER",
+      characterName: "Chiến Binh Chim Sky-Line"
+    };
+    prev.totalFeathers += Number(r.feathers || 0);
+    if (r.badgeCode) {
+      prev.badgeCount += 1;
+    }
+    if (r.rewardType === "WELCOME_SURVEY" && r.metadataJson) {
+      const meta = safeJsonParse<any>(r.metadataJson, null);
+      if (meta?.characterId) prev.characterId = meta.characterId;
+      if (meta?.characterName) prev.characterName = meta.characterName;
+    }
+    rewardStatsByStudent.set(sid, prev);
+  }
+
+  const buildUnrankedEntry = (stu: any): Omit<StudentRankingEntry, "rank" | "honorTitle"> => {
+    const progs = progByStudent.get(stu.id) || [];
+    const rw = rewardStatsByStudent.get(stu.id) || {
+      totalFeathers: 0,
+      badgeCount: 0,
+      characterId: "SKYLINE_EXPLORER",
+      characterName: "Chiến Binh Chim Sky-Line"
+    };
+
+    const shieldsEarnedCount = progs.filter(
+      (p) => Number(p.flagPlanted) === 1 || Number(p.autoChallengePassed) === 1
+    ).length;
+    const completedStagesCount = progs.filter((p) => p.status === "COMPLETED").length;
+    const teacherConfirmedCount = progs.filter((p) => Number(p.teacherConfirmed) === 1).length;
+
+    const scoredStages = progs.filter((p) => Number(p.hasPlayed) === 1);
+    let scoreSum = 0;
+    let totalCompletionSeconds = 0;
+    let timedStagesCount = 0;
+    let speedBonusPoints = 0;
+    let lastPlayedAt: string | null = null;
+
+    for (const p of scoredStages) {
+      const ws = safeJsonParse<any>(p.worldStateJson, {});
+      const sc =
+        typeof ws?.scorePercent === "number"
+          ? ws.scorePercent
+          : Number(p.autoChallengePassed) === 1
+          ? 100
+          : 0;
+      scoreSum += sc;
+
+      // Extract completion duration in seconds (from worldStateJson or timestamp diff fallback)
+      let stageDurSec = 0;
+      if (typeof ws?.durationSeconds === "number" && ws.durationSeconds > 0) {
+        stageDurSec = Math.min(1800, Math.max(5, Math.round(ws.durationSeconds)));
+      } else if (Number(p.autoChallengePassed) === 1 || Number(p.flagPlanted) === 1) {
+        const startStr = p.startedAt || p.createdAt;
+        const endStr = p.completedAt || p.lastPlayedAt || p.updatedAt;
+        if (startStr && endStr) {
+          const diffSec = Math.round(
+            (new Date(endStr).getTime() - new Date(startStr).getTime()) / 1000
+          );
+          stageDurSec = diffSec >= 5 && diffSec <= 1800 ? diffSec : 55;
+        } else {
+          stageDurSec = 55;
+        }
+      }
+
+      if (stageDurSec > 0 && (Number(p.autoChallengePassed) === 1 || Number(p.flagPlanted) === 1)) {
+        totalCompletionSeconds += stageDurSec;
+        timedStagesCount += 1;
+        // Speed bonus: up to +30 pts per passed stage when completed under 180s
+        const stageSpeedBonus = Math.max(5, Math.min(30, Math.round((200 - stageDurSec) / 6)));
+        speedBonusPoints += stageSpeedBonus;
+      }
+
+      const t = p.completedAt || p.lastPlayedAt || p.updatedAt || null;
+      if (t && (!lastPlayedAt || t > lastPlayedAt)) {
+        lastPlayedAt = t;
+      }
+    }
+
+    const totalStageScore = Math.round(scoreSum);
+    const avgScorePercent =
+      scoredStages.length > 0 ? Math.round(scoreSum / scoredStages.length) : 0;
+    const avgCompletionSeconds =
+      timedStagesCount > 0 ? Math.round(totalCompletionSeconds / timedStagesCount) : 0;
+    const completionTimeFormatted =
+      totalCompletionSeconds > 0 ? formatDurationVi(totalCompletionSeconds) : "—";
+
+    // Composite learning score:
+    // + Total Stage Score (0-100 pts per stage)
+    // + 100 pts per Shield earned
+    // + 50 pts per Teacher confirmation
+    // + 15 pts per Feather
+    // + 40 pts per Zone Badge
+    // + Speed Bonus Points (for fast completion)
+    const rankingScore =
+      totalStageScore +
+      shieldsEarnedCount * 100 +
+      teacherConfirmedCount * 50 +
+      rw.totalFeathers * 15 +
+      rw.badgeCount * 40 +
+      speedBonusPoints;
+
+    return {
+      studentId: stu.id,
+      studentCode: String(stu.studentCode || ""),
+      fullName: String(stu.studentName || "Học sinh"),
+      className: String(stu.class?.className || ""),
+      grade: String(stu.class?.grade || normGrade),
+      campusName: String(stu.class?.campus?.campusName || "Sky-Line"),
+      characterId: rw.characterId,
+      characterName: rw.characterName,
+      shieldsEarnedCount,
+      completedStagesCount,
+      teacherConfirmedCount,
+      totalFeathers: rw.totalFeathers,
+      badgeCount: rw.badgeCount,
+      totalStageScore,
+      avgScorePercent,
+      totalCompletionSeconds,
+      avgCompletionSeconds,
+      completionTimeFormatted,
+      speedBonusPoints,
+      rankingScore,
+      isCurrentUser: Boolean(params.currentStudentId && stu.id === params.currentStudentId),
+      lastPlayedAt
+    };
+  };
+
+  const sortAndAssignRanks = (
+    rawList: Array<Omit<StudentRankingEntry, "rank" | "honorTitle">>
+  ): StudentRankingEntry[] => {
+    const sorted = [...rawList].sort((a, b) => {
+      if (b.rankingScore !== a.rankingScore) return b.rankingScore - a.rankingScore;
+      if (b.totalStageScore !== a.totalStageScore) return b.totalStageScore - a.totalStageScore;
+      if (b.shieldsEarnedCount !== a.shieldsEarnedCount)
+        return b.shieldsEarnedCount - a.shieldsEarnedCount;
+      // Faster completion time wins when both have completed stages
+      if (a.totalCompletionSeconds > 0 && b.totalCompletionSeconds > 0) {
+        if (a.totalCompletionSeconds !== b.totalCompletionSeconds) {
+          return a.totalCompletionSeconds - b.totalCompletionSeconds;
+        }
+      }
+      if (b.completedStagesCount !== a.completedStagesCount)
+        return b.completedStagesCount - a.completedStagesCount;
+      if (b.totalFeathers !== a.totalFeathers) return b.totalFeathers - a.totalFeathers;
+      if (b.avgScorePercent !== a.avgScorePercent) return b.avgScorePercent - a.avgScorePercent;
+      return a.fullName.localeCompare(b.fullName, "vi");
+    });
+
+    return sorted.map((item, index) => {
+      const rank = index + 1;
+      const hasActivity = item.shieldsEarnedCount > 0 || item.totalFeathers > 0 || item.avgScorePercent > 0;
+      let honorTitle = "🌱 Tân Binh Đảo Học Tập";
+      if (rank === 1 && hasActivity) {
+        honorTitle = "👑 Quán Quân Đảo Tài Chính";
+      } else if (rank === 2 && hasActivity) {
+        honorTitle = "🥈 Á Quân Khiên Vàng";
+      } else if (rank === 3 && hasActivity) {
+        honorTitle = "🥉 Thủ Lĩnh Thông Thái";
+      } else if (item.shieldsEarnedCount >= 10) {
+        honorTitle = "🛡️ Đại Sứ Khiên Danh Dự";
+      } else if (item.shieldsEarnedCount >= 5) {
+        honorTitle = "🌟 Nhà Thám Hiểm Xuất Sắc";
+      } else if (hasActivity) {
+        honorTitle = "🧭 Chiến Binh Khởi Hành";
+      }
+
+      return {
+        ...item,
+        rank,
+        honorTitle
+      };
+    });
+  };
+
+  const allGradeEntries = gradeStudents.map(buildUnrankedEntry);
+  const fullGradeRanked = sortAndAssignRanks(allGradeEntries);
+  const classEntries = allGradeEntries.filter((e) => {
+    const stuObj = gradeStudents.find((s) => s.id === e.studentId);
+    return stuObj?.classId === params.classId;
+  });
+  const fullClassRanked = sortAndAssignRanks(classEntries);
+
+  const myClassRank =
+    fullClassRanked.find((e) => e.studentId === params.currentStudentId)?.rank || null;
+  const myGradeRank =
+    fullGradeRanked.find((e) => e.studentId === params.currentStudentId)?.rank || null;
+
+  return {
+    classLeaderboard: fullClassRanked,
+    gradeLeaderboard: fullGradeRanked.slice(0, 30),
+    myClassRank,
+    myGradeRank,
+    totalClassStudents: fullClassRanked.length,
+    totalGradeStudents: fullGradeRanked.length
   };
 }
 
@@ -855,6 +1270,7 @@ export async function submitStudentStageAction(
     lessonCode: string;
     actionPayload: StageActionPayload;
     studentReflection?: string;
+    durationSeconds?: number;
   }
 ) {
   const overview = await getStudentJourneyOverview(studentId);
@@ -918,9 +1334,23 @@ export async function submitStudentStageAction(
   const completedAt =
     finalStatus === "COMPLETED" ? existing?.completedAt || now : existing?.completedAt || null;
 
+  const prevWorldState = safeJsonParse<any>(existing?.worldStateJson, {});
+  const rawInputDur = Number(
+    input.durationSeconds ?? (input.actionPayload as any)?.durationSeconds ?? 0
+  );
+  const clampedNewDur =
+    rawInputDur > 0 ? Math.min(1800, Math.max(5, Math.round(rawInputDur))) : 55;
+  const bestDurationSeconds =
+    prevAutoPassed && typeof prevWorldState?.durationSeconds === "number" && prevWorldState.durationSeconds > 0
+      ? Math.min(prevWorldState.durationSeconds, clampedNewDur)
+      : clampedNewDur;
+
   const worldStateWithScore = {
     ...(validation.worldStateEffect || {}),
-    scorePercent: validation.scorePercent,
+    scorePercent: validation.autoChallengePassed
+      ? Math.max(Number(prevWorldState?.scorePercent || 0), validation.scorePercent)
+      : validation.scorePercent,
+    durationSeconds: bestDurationSeconds,
     mechanic: validation.mechanic,
     evaluationMode: validation.evaluationMode
   };
@@ -1105,6 +1535,10 @@ export async function submitStudentStageAction(
     stageStatus: finalStatus,
     flagPlanted,
     feathersEarned,
+    durationSeconds: bestDurationSeconds,
+    speedBonusPoints: validation.autoChallengePassed
+      ? Math.max(5, Math.min(30, Math.round((200 - bestDurationSeconds) / 6)))
+      : 0,
     newRewardsGranted
   };
 }
@@ -1453,6 +1887,12 @@ export async function getTeacherJourneyDashboard(params: {
     };
   });
 
+  const leaderboard = await buildJourneyLeaderboards({
+    classId: selectedClass.id,
+    grade: selectedClass.grade,
+    academicYearId: selectedClass.academicYearId
+  });
+
   return {
     classes: classes.map((c) => {
       const cBundle = getGradeCurriculumBundle(c.grade);
@@ -1486,7 +1926,8 @@ export async function getTeacherJourneyDashboard(params: {
     classRole: roleByClass.get(selectedClass.id) || "SPECIAL_TEACHER",
     stages: stagesSummary,
     students: studentMatrix,
-    recentClassResults
+    recentClassResults,
+    leaderboard
   };
 }
 

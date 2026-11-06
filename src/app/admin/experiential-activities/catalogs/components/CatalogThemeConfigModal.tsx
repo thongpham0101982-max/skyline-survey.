@@ -18,12 +18,12 @@ const PRESET_COLORS = [
   { tagColor: '#d97706', badgeCls: 'bg-amber-50 text-amber-900 border-amber-200/80', borderCls: 'border-amber-400', label: 'Hổ phách' },
   { tagColor: '#0284c7', badgeCls: 'bg-sky-50 text-sky-800 border-sky-200/80', borderCls: 'border-sky-400', label: 'Xanh da trời' },
   { tagColor: '#059669', badgeCls: 'bg-emerald-50 text-emerald-800 border-emerald-200/80', borderCls: 'border-emerald-400', label: 'Xanh lục' },
-  { tagColor: '#ea580c', badgeCls: 'bg-orange-50 text-orange-900 border-orange-200/80', borderCls: 'border-orange-400', label: 'Cam đậm' },
+  { tagColor: '#B45309', badgeCls: 'bg-amber-50 text-amber-800 border-amber-200/80', borderCls: 'border-amber-200', label: 'Cam đậm' },
   { tagColor: '#0d9488', badgeCls: 'bg-teal-50 text-teal-800 border-teal-200/80', borderCls: 'border-teal-400', label: 'Xanh teal' },
   { tagColor: '#0891b2', badgeCls: 'bg-cyan-50 text-cyan-800 border-cyan-200/80', borderCls: 'border-cyan-400', label: 'Xanh cyan' },
-  { tagColor: '#9333ea', badgeCls: 'bg-purple-50 text-purple-800 border-purple-200/80', borderCls: 'border-purple-400', label: 'Tím mộng mơ' },
-  { tagColor: '#4f46e5', badgeCls: 'bg-indigo-50 text-indigo-800 border-indigo-200/80', borderCls: 'border-indigo-400', label: 'Xanh chàm' },
-  { tagColor: '#7c3aed', badgeCls: 'bg-violet-50 text-violet-800 border-violet-200/80', borderCls: 'border-violet-400', label: 'Tím violet' },
+  { tagColor: '#00736E', badgeCls: 'bg-teal-50 text-teal-800 border-teal-200/80', borderCls: 'border-teal-400', label: 'Tím mộng mơ' },
+  { tagColor: '#00736E', badgeCls: 'bg-teal-50 text-teal-800 border-teal-200/80', borderCls: 'border-teal-200', label: 'Xanh chàm' },
+  { tagColor: '#003B3A', badgeCls: 'bg-teal-50 text-teal-800 border-teal-200/80', borderCls: 'border-teal-200', label: 'Tím violet' },
   { tagColor: '#db2777', badgeCls: 'bg-pink-50 text-pink-800 border-pink-200/80', borderCls: 'border-pink-400', label: 'Hồng fuchsia' },
   { tagColor: '#2563eb', badgeCls: 'bg-blue-50 text-blue-900 border-blue-200/80', borderCls: 'border-blue-400', label: 'Xanh dương' }
 ];
@@ -200,7 +200,7 @@ export function CatalogThemeConfigModal({
       <div className="bg-white rounded-3xl shadow-2xl border border-slate-200 w-full max-w-4xl max-h-[92vh] flex flex-col overflow-hidden">
         
         {/* Header */}
-        <div className="flex items-center justify-between px-6 py-4 border-b border-slate-100 bg-gradient-to-r from-teal-50/70 via-indigo-50/50 to-purple-50/60">
+        <div className="flex items-center justify-between px-6 py-4 border-b border-slate-100 bg-gradient-to-r from-teal-50/70 via-indigo-50/50 to-emerald-600/60">
           <div className="flex items-center gap-3">
             <div className="w-10 h-10 rounded-2xl bg-[#00A19A]/15 text-[#00A19A] flex items-center justify-center font-bold">
               <Sparkles className="w-5 h-5" />
@@ -314,14 +314,14 @@ export function CatalogThemeConfigModal({
           <div className="space-y-3">
             <div className="flex items-center justify-between">
               <h3 className="text-xs font-black uppercase tracking-wider text-slate-500 flex items-center gap-2">
-                <BookOpen className="w-3.5 h-3.5 text-indigo-500" />
+                <BookOpen className="w-3.5 h-3.5 text-teal-700" />
                 <span>Danh sách {themes.length} chủ đề giáo dục hiện tại</span>
               </h3>
               <button
                 type="button"
                 onClick={handleResetDefault}
                 disabled={saving}
-                className="text-[11px] font-bold text-slate-500 hover:text-indigo-600 flex items-center gap-1 cursor-pointer transition-colors"
+                className="text-[11px] font-bold text-slate-500 hover:text-teal-800 flex items-center gap-1 cursor-pointer transition-colors"
                 title="Khôi phục lại danh sách 12 chủ đề chuẩn của trường"
               >
                 <RotateCcw className="w-3 h-3" />
@@ -357,7 +357,7 @@ export function CatalogThemeConfigModal({
                           <button
                             type="button"
                             onClick={() => handleStartEdit(t)}
-                            className="p-1 rounded-lg text-slate-400 hover:text-indigo-600 hover:bg-indigo-50 transition-colors cursor-pointer"
+                            className="p-1 rounded-lg text-slate-400 hover:text-teal-800 hover:bg-teal-50 transition-colors cursor-pointer"
                             title="Chỉnh sửa chủ đề"
                           >
                             <Edit2 className="w-3.5 h-3.5" />

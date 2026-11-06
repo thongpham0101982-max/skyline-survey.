@@ -101,7 +101,7 @@ export default async function TeacherNpsPage() {
       <SurveyTabs activeTab="nps" role="TEACHER" />
       
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mt-8">
-        <div className="bg-white rounded-xl p-6 shadow-sm border-2 border-violet-100 col-span-1 md:col-span-3 flex flex-col items-center justify-center py-12">
+        <div className="bg-white rounded-xl p-6 shadow-sm border-2 border-teal-200 col-span-1 md:col-span-3 flex flex-col items-center justify-center py-12">
            <h2 className="text-xl font-medium text-slate-500 mb-4">Chỉ số NPS Tổng thể (Các lớp của bạn)</h2>
            <div className="text-6xl font-black text-[#48BFE3] mb-4">{nps}</div>
            <div className="flex gap-8 text-sm font-medium">

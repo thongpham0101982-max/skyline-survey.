@@ -16,11 +16,11 @@ export default async function ParentLayout({ children }: { children: React.React
   }
   const roleCode = (session?.user as any)?.role || "PARENT"
   return (
-    <div className="flex min-h-screen text-xs font-semibold">
+    <div className="parent-layout-wrapper flex min-h-screen text-xs font-medium text-slate-800 bg-[#F8FAFC]">
       <Sidebar role="PARENT" actualRole={roleCode} />
-      <main className="flex-1 flex flex-col relative min-w-0 overflow-hidden bg-slate-50/50">
+      <main className="flex-1 flex flex-col relative min-w-0 overflow-hidden bg-[#F8FAFC]">
         {/* Top Header */}
-        <header className="h-16 border-b border-slate-200/90 bg-white/90 backdrop-blur-md sticky top-0 z-30 flex items-center justify-between px-4 sm:px-6 shrink-0 shadow-xs">
+        <header className="h-16 border-b border-slate-200 bg-white/95 backdrop-blur-md sticky top-0 z-30 flex items-center justify-between px-4 sm:px-6 shrink-0 shadow-2xs">
           <div className="flex items-center gap-3">
             <MobileMenuTrigger />
             <div className="flex items-center gap-2.5">
@@ -30,11 +30,13 @@ export default async function ParentLayout({ children }: { children: React.React
                 className="h-7 w-auto object-contain md:hidden" 
               />
               <div className="flex flex-col">
-                <span className="text-xs md:text-sm font-black text-slate-800 tracking-tight flex items-center gap-1.5">
-                  <span className="text-[#0284C7] font-semibold uppercase tracking-wide">SQMS</span>
-                  <span className="hidden md:inline text-xs font-bold text-slate-400">• Phụ huynh</span>
+                <span className="text-xs md:text-sm font-bold text-slate-900 tracking-tight flex items-center gap-2">
+                  <span className="inline-flex items-center px-2 py-0.5 rounded-md bg-[#003B3A] text-white text-[11px] font-bold tracking-normal">
+                    SQMS
+                  </span>
+                  <span className="hidden md:inline text-xs font-semibold text-slate-600">Cổng Phụ huynh</span>
                 </span>
-                <span className="md:hidden text-[9px] text-[#48BFE3] font-bold leading-none">Cổng thông tin</span>
+                <span className="md:hidden text-[9px] text-[#00736E] font-semibold leading-none mt-0.5">Cổng Phụ huynh</span>
               </div>
             </div>
           </div>
@@ -45,7 +47,7 @@ export default async function ParentLayout({ children }: { children: React.React
              <UserMenu session={session} />
           </div>
         </header>
-        <div className="p-3.5 sm:p-6 md:p-8 pb-24 md:pb-12 flex-1 overflow-x-auto overflow-y-auto text-xs font-semibold">
+        <div className="p-3.5 sm:p-6 md:p-8 pb-24 md:pb-12 flex-1 overflow-x-auto overflow-y-auto text-xs font-medium text-slate-800">
           {children}
         </div>
         <ParentMobileBottomNav />

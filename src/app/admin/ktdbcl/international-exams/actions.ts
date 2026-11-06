@@ -998,7 +998,7 @@ function buildCamMainAnalytics(rows: any[]) {
               { code: 'BELOW_THRESHOLD', label: 'Not Reported (<120 • Dưới ngưỡng)', count: gradeCounts.BELOW_THRESHOLD, color: '#EF4444' },
             ],
       cefrDistribution: [
-        { cefr: 'B2', count: cefrCounts.B2, color: '#7C3AED' },
+        { cefr: 'B2', count: cefrCounts.B2, color: '#003B3A' },
         { cefr: 'B1', count: cefrCounts.B1, color: '#10B981' },
         { cefr: 'A2', count: cefrCounts.A2, color: '#3B82F6' },
         { cefr: 'A1', count: cefrCounts.A1, color: '#F59E0B' },

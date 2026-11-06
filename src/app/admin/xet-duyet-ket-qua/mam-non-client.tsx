@@ -92,7 +92,7 @@ function Empty({ text, sub }: { text: string; sub?: string }) {
 function TypeBadge({ t }: { t: string }) {
   const map: Record<string, string> = {
     KHAO_SAT_LE: "bg-blue-50 text-blue-700 border border-blue-200",
-    OPEN_DAY: "bg-[#48BFE3]/5 text-purple-700 border border-purple-200"
+    OPEN_DAY: "bg-[#48BFE3]/5 text-teal-800 border border-teal-200"
   };
   const label: Record<string, string> = {
     KHAO_SAT_LE: "Khảo sát lẻ cơ sở",
@@ -258,21 +258,21 @@ const renderAreaMiniCard = (s: any, areaCode: string) => {
   const chuaDanhGiaCount = areaScores.length - datCount - khongDatCount;
   const pct = Math.round((datCount / areaScores.length) * 100);
 
-  let cardClass = "bg-gradient-to-br from-indigo-50/60 to-purple-50/20 border-indigo-100/60 text-indigo-900 shadow-xs";
-  let progressBg = "bg-gradient-to-r from-indigo-450 to-purple-450";
-  let progressTrack = "bg-indigo-50";
-  let pillClass = "text-indigo-700 bg-indigo-50 border-indigo-150/50";
+  let cardClass = "bg-gradient-to-br from-teal-600/60 to-emerald-600/20 border-teal-100/60 text-teal-800 shadow-xs";
+  let progressBg = "bg-gradient-to-r from-teal-600 to-emerald-600";
+  let progressTrack = "bg-teal-50";
+  let pillClass = "text-teal-800 bg-teal-50 border-teal-150/50";
   let headerIcon = "🤸";
 
   if (areaCode === "NHAN_THUC") {
-    cardClass = "bg-gradient-to-br from-amber-50/60 to-orange-50/20 border-amber-100/60 text-amber-900 shadow-xs";
-    progressBg = "bg-gradient-to-r from-amber-400 to-orange-400";
+    cardClass = "bg-gradient-to-br from-amber-50/60 to-amber-600/20 border-amber-100/60 text-amber-900 shadow-xs";
+    progressBg = "bg-gradient-to-r from-amber-400 to-amber-600";
     progressTrack = "bg-amber-50";
     pillClass = "text-slate-800 bg-amber-50 border-amber-150/50";
     headerIcon = "🧩";
   } else if (areaCode === "NGON_NGU") {
-    cardClass = "bg-gradient-to-br from-sky-50/60 to-indigo-50/20 border-sky-100/60 text-sky-900 shadow-xs";
-    progressBg = "bg-gradient-to-r from-sky-400 to-indigo-400";
+    cardClass = "bg-gradient-to-br from-sky-50/60 to-emerald-600/20 border-sky-100/60 text-sky-900 shadow-xs";
+    progressBg = "bg-gradient-to-r from-sky-400 to-emerald-600";
     progressTrack = "bg-sky-50";
     pillClass = "text-sky-700 bg-sky-50 border-sky-150/50";
     headerIcon = "🗣️";
@@ -1678,7 +1678,7 @@ export function XetDuyetMamNonClient({ academicYears, campuses, giaoVuCSUsers, g
   const getBMIClassification = (bmi: number) => {
     if (bmi < 13.5) return { label: "Gầy (Thiếu cân)", color: "text-amber-600 bg-amber-50 border-amber-100", dot: "bg-amber-400" };
     if (bmi <= 17.0) return { label: "Bình thường", color: "text-emerald-600 bg-emerald-50 border-emerald-100", dot: "bg-emerald-400" };
-    if (bmi <= 18.5) return { label: "Thừa cân", color: "text-orange-600 bg-orange-50 border-orange-100", dot: "bg-orange-400" };
+    if (bmi <= 18.5) return { label: "Thừa cân", color: "text-amber-700 bg-amber-50 border-amber-200", dot: "bg-amber-500" };
     return { label: "Béo phì", color: "text-rose-600 bg-rose-50 border-rose-100", dot: "bg-rose-400" };
   };
 
@@ -2664,11 +2664,11 @@ Trân trọng kính mời Quý phụ huynh và các em học sinh!`;
           .container {
             width: 100%;
             max-width: 800px;
-            border: 4px double #4f46e5;
+            border: 4px double #00736E;
             padding: 40px;
             border-radius: 16px;
             box-shadow: 0 4px 6px -1px rgba(0,0,0,0.05);
-            background: radial-gradient(circle at top left, #faf5ff 0%, #ffffff 100%);
+            background: radial-gradient(circle at top left, #F0FDFA 0%, #ffffff 100%);
             position: relative;
           }
           .header {
@@ -2695,7 +2695,7 @@ Trân trọng kính mời Quý phụ huynh và các em học sinh!`;
             text-align: center;
             font-size: 28px;
             font-weight: 900;
-            color: #4f46e5;
+            color: #00736E;
             margin: 20px 0;
             letter-spacing: -0.5px;
             text-transform: uppercase;
@@ -4434,7 +4434,7 @@ Trân trọng kính mời Quý phụ huynh và các em học sinh!`;
           {latestBatchInfo && devTab !== "stats" && (
             <div className="no-print relative overflow-hidden p-4 rounded-2xl shadow-md animate-in fade-in slide-in-from-top-4 duration-500 mb-6 bg-gradient-to-br from-amber-50/90 via-orange-50/50 to-amber-100/60 border border-amber-200/80 ring-1 ring-amber-900/5 group hover:shadow-lg transition-all">
             <div className="absolute top-0 right-0 w-64 h-64 bg-amber-500/15 rounded-full blur-3xl -mr-20 -mt-20 pointer-events-none transition-transform duration-700 group-hover:scale-110"></div>
-            <div className="absolute bottom-0 left-0 w-40 h-40 bg-orange-500/15 rounded-full blur-2xl -ml-10 -mb-10 pointer-events-none"></div>
+            <div className="absolute bottom-0 left-0 w-40 h-40 bg-amber-500/15 rounded-full blur-2xl -ml-10 -mb-10 pointer-events-none"></div>
             
             <div className="relative flex flex-col sm:flex-row sm:items-center justify-between gap-4">
               <div className="flex items-start sm:items-center gap-3.5">
@@ -4443,11 +4443,11 @@ Trân trọng kính mời Quý phụ huynh và các em học sinh!`;
                 </div>
                 <div className="flex-1 min-w-0">
                   <div className="text-[13px] font-semibold text-slate-700 leading-relaxed flex flex-wrap items-center gap-y-1.5 gap-x-1.5">
-                    <span className="font-black text-transparent bg-clip-text bg-gradient-to-r from-amber-700 to-orange-600 uppercase tracking-widest text-xs py-0.5 px-2.5 rounded-lg bg-white/90 border border-amber-200/60 shadow-sm flex items-center gap-1.5">
+                    <span className="font-black text-transparent bg-clip-text bg-gradient-to-r from-amber-700 to-amber-600 uppercase tracking-widest text-xs py-0.5 px-2.5 rounded-lg bg-white/90 border border-amber-200/60 shadow-sm flex items-center gap-1.5">
                       Thông báo
                     </span>
                     <span className="opacity-90">Đợt khảo sát mới nhất:</span> 
-                    <span className="inline-flex items-center px-2.5 py-1 rounded-lg bg-gradient-to-r from-amber-600 to-orange-600 text-white font-bold shadow-sm text-xs tracking-wide">
+                    <span className="inline-flex items-center px-2.5 py-1 rounded-lg bg-gradient-to-r from-amber-600 to-amber-600 text-white font-bold shadow-sm text-xs tracking-wide">
                       {latestBatchInfo.name}
                     </span> 
                     <span className="opacity-90">thuộc Kỳ</span> 
@@ -4468,7 +4468,7 @@ Trân trọng kính mời Quý phụ huynh và các em học sinh!`;
                     setCBatchId(latestBatchInfo.id);
                     setDevTab("xetDuyet");
                   }}
-                  className="px-4 py-2 bg-gradient-to-r from-amber-600 to-orange-600 hover:from-amber-700 hover:to-orange-700 text-white text-xs font-black rounded-xl shadow-md shadow-amber-600/20 active:scale-95 transition-all flex items-center gap-1.5 cursor-pointer"
+                  className="px-4 py-2 bg-gradient-to-r from-amber-600 to-amber-600 hover:from-amber-700 hover:to-amber-600 text-white text-xs font-black rounded-xl shadow-md shadow-amber-600/20 active:scale-95 transition-all flex items-center gap-1.5 cursor-pointer"
                 >
                   <span>Xem & Xét duyệt đợt này</span>
                 </button>
@@ -4603,10 +4603,10 @@ Trân trọng kính mời Quý phụ huynh và các em học sinh!`;
                 </div>
 
                 {/* Card 2: Kết quả Khảo sát */}
-                <div className="relative overflow-hidden bg-white p-6 rounded-2xl border border-slate-200/80 border-l-4 border-l-purple-500 shadow-sm flex flex-col justify-between group hover:-translate-y-1.5 hover:shadow-[0_12px_30px_rgba(147,51,234,0.1)] hover:border-purple-300 transition-all duration-500 cursor-pointer">
+                <div className="relative overflow-hidden bg-white p-6 rounded-2xl border border-slate-200/80 border-l-4 border-l-purple-500 shadow-sm flex flex-col justify-between group hover:-translate-y-1.5 hover:shadow-[0_12px_30px_rgba(147,51,234,0.1)] hover:border-teal-400 transition-all duration-500 cursor-pointer">
                   <div className="flex items-center justify-between">
                     <span className="text-[10px] font-black uppercase tracking-widest text-slate-400">Kết quả Khảo sát Mầm non</span>
-                    <div className="p-2.5 bg-purple-50 text-purple-600 rounded-xl transition-all duration-300 group-hover:scale-110 group-hover:bg-purple-100">
+                    <div className="p-2.5 bg-teal-50 text-teal-800 rounded-xl transition-all duration-300 group-hover:scale-110 group-hover:bg-teal-50">
                       <Baby className="w-4 h-4" />
                     </div>
                   </div>
@@ -4695,13 +4695,13 @@ Trân trọng kính mời Quý phụ huynh và các em học sinh!`;
                       };
                     } else if (shortCode === "CS3") {
                       campusColor = {
-                        border: "border-l-purple-500 border-purple-100",
-                        text: "text-purple-700",
-                        bg: "bg-purple-50/10",
-                        accent: "bg-purple-50 text-purple-700 border border-purple-200",
-                        bar: "bg-purple-550",
+                        border: "border-l-purple-500 border-teal-200",
+                        text: "text-teal-800",
+                        bg: "bg-teal-50/10",
+                        accent: "bg-teal-50 text-teal-800 border border-teal-200",
+                        bar: "bg-[#003B3A]",
                         hoverShadow: "hover:shadow-[0_10px_25px_rgba(168,85,247,0.12)]",
-                        hoverBorder: "hover:border-purple-355"
+                        hoverBorder: "hover:border-teal-400"
                       };
                     } else if (shortCode === "CS4") {
                       campusColor = {
@@ -4899,7 +4899,7 @@ Trân trọng kính mời Quý phụ huynh và các em học sinh!`;
                             <Bar yAxisId="left" dataKey="total" fill="url(#colorTotal)" radius={[4, 4, 0, 0]} barSize={26} name="Tổng Trẻ Khảo sát" />
                             <Line yAxisId="left" type="monotone" dataKey="CS1_total" stroke="#48BFE3" strokeWidth={3} dot={{ r: 3, strokeWidth: 1.5, fill: "#ffffff" }} activeDot={{ r: 6 }} name="Cơ sở 1" />
                             <Line yAxisId="left" type="monotone" dataKey="CS2_total" stroke="#db2777" strokeWidth={2.5} dot={{ r: 2.5, strokeWidth: 1.5, fill: "#ffffff" }} name="Cơ sở 2" />
-                            <Line yAxisId="left" type="monotone" dataKey="CS3_total" stroke="#7c3aed" strokeWidth={2.5} dot={{ r: 2.5, strokeWidth: 1.5, fill: "#ffffff" }} name="Cơ sở 3" />
+                            <Line yAxisId="left" type="monotone" dataKey="CS3_total" stroke="#003B3A" strokeWidth={2.5} dot={{ r: 2.5, strokeWidth: 1.5, fill: "#ffffff" }} name="Cơ sở 3" />
                             <Line yAxisId="left" type="monotone" dataKey="CS4_total" stroke="#d97706" strokeWidth={2.5} dot={{ r: 2.5, strokeWidth: 1.5, fill: "#ffffff" }} name="Cơ sở 4" />
                             <Line yAxisId="left" type="monotone" dataKey="CS5_total" stroke="#2563eb" strokeWidth={2.5} dot={{ r: 2.5, strokeWidth: 1.5, fill: "#ffffff" }} name="Cơ sở 5" />
                           </>
@@ -5092,7 +5092,7 @@ Trân trọng kính mời Quý phụ huynh và các em học sinh!`;
                                 <td className="w-28 min-w-[112px] p-3 align-middle bg-inherit border border-slate-100">
                                   <button
                                     onClick={() => openEvaluation(s)}
-                                    className="inline-flex items-center justify-center gap-1.5 px-3 py-1.5 text-[10px] font-extrabold text-slate-800 bg-violet-50 hover:bg-violet-100  rounded-xl transition-all shadow-xs w-fit cursor-pointer hover:scale-[1.02]"
+                                    className="inline-flex items-center justify-center gap-1.5 px-3 py-1.5 text-[10px] font-extrabold text-slate-800 bg-teal-50 hover:bg-teal-50  rounded-xl transition-all shadow-xs w-fit cursor-pointer hover:scale-[1.02]"
                                   >
                                     <Eye className="w-3.5 h-3.5" /> Xem kết quả
                                   </button>
@@ -5364,15 +5364,15 @@ Trân trọng kính mời Quý phụ huynh và các em học sinh!`;
                               let areaName = "Lĩnh vực";
 
                               if (areaCode === "NHAN_THUC") {
-                                cardClass = "bg-gradient-to-br from-amber-50/60 to-orange-50/20 border-amber-100/60 text-amber-900 shadow-xs";
-                                progressBg = "bg-gradient-to-r from-amber-400 to-orange-400";
+                                cardClass = "bg-gradient-to-br from-amber-50/60 to-amber-600/20 border-amber-100/60 text-amber-900 shadow-xs";
+                                progressBg = "bg-gradient-to-r from-amber-400 to-amber-600";
                                 progressTrack = "bg-amber-50";
                                 pillClass = "text-slate-800 bg-amber-50 border-amber-150/50";
                                 headerIcon = "🧩";
                                 areaName = "Nhận thức";
                               } else if (areaCode === "NGON_NGU") {
-                                cardClass = "bg-gradient-to-br from-sky-50/60 to-indigo-50/20 border-sky-100/60 text-sky-900 shadow-xs";
-                                progressBg = "bg-gradient-to-r from-sky-400 to-indigo-400";
+                                cardClass = "bg-gradient-to-br from-sky-50/60 to-emerald-600/20 border-sky-100/60 text-sky-900 shadow-xs";
+                                progressBg = "bg-gradient-to-r from-sky-400 to-emerald-600";
                                 progressTrack = "bg-sky-50";
                                 pillClass = "text-sky-700 bg-sky-50 border-sky-150/50";
                                 headerIcon = "🗣️";
@@ -5489,7 +5489,7 @@ Trân trọng kính mời Quý phụ huynh và các em học sinh!`;
 
                                     if (isMienHT) {
                                       return (
-                                        <button onClick={() => openEmailCongratsModal(s)} className="inline-flex items-center justify-center gap-1.5 px-3.5 py-1.5 text-[10px] font-bold text-white bg-violet-600 hover:bg-violet-700 active:scale-[0.98] rounded-lg transition-all shadow-sm border border-violet-700/10 cursor-pointer">
+                                        <button onClick={() => openEmailCongratsModal(s)} className="inline-flex items-center justify-center gap-1.5 px-3.5 py-1.5 text-[10px] font-bold text-white bg-teal-500 hover:bg-teal-500 active:scale-[0.98] rounded-lg transition-all shadow-sm border border-teal-700/10 cursor-pointer">
                                           <Mail className="w-3.5 h-3.5" /> Trả Kết quả
                                         </button>
                                       );
@@ -5888,7 +5888,7 @@ Trân trọng kính mời Quý phụ huynh và các em học sinh!`;
                                     </button>
                                     <button
                                       onClick={() => openEmailCongratsModal(s)}
-                                      className="inline-flex items-center gap-1.5 px-3 py-1.5 text-[10px] font-extrabold text-slate-800 bg-violet-50 hover:bg-violet-100 hover:scale-[1.02]  rounded-xl transition-all shadow-xs w-fit cursor-pointer"
+                                      className="inline-flex items-center gap-1.5 px-3 py-1.5 text-[10px] font-extrabold text-slate-800 bg-teal-50 hover:bg-teal-50 hover:scale-[1.02]  rounded-xl transition-all shadow-xs w-fit cursor-pointer"
                                     >
                                       <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2.5"><path strokeLinecap="round" strokeLinejoin="round" d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"/></svg>
                                       Gửi Email
@@ -5979,7 +5979,7 @@ Trân trọng kính mời Quý phụ huynh và các em học sinh!`;
                   const items = gradesStr.split("&").map(x => x.trim());
                   const tagBg = isPhase1 
                     ? "bg-[#48BFE3]/5/60 text-teal-800 border-slate-300 hover:bg-teal-100/40" 
-                    : "bg-indigo-50/60 text-indigo-800 border-indigo-100 hover:bg-indigo-100/40";
+                    : "bg-teal-50/60 text-teal-800 border-teal-200 hover:bg-teal-100/40";
                   return (
                     <div className="flex flex-wrap gap-1.5 mt-2.5">
                       {items.map(item => (
@@ -5992,14 +5992,14 @@ Trân trọng kính mời Quý phụ huynh và các em học sinh!`;
                 };
 
                 return (
-                  <div className="bg-gradient-to-br from-teal-50/40 via-white to-indigo-50/20 border border-slate-300/60 rounded-3xl p-5 shadow-none max-w-4xl my-4 hover:shadow-none transition-all duration-300 relative overflow-hidden animate-fadeIn">
+                  <div className="bg-gradient-to-br from-teal-50/40 via-white to-emerald-600/20 border border-slate-300/60 rounded-3xl p-5 shadow-none max-w-4xl my-4 hover:shadow-none transition-all duration-300 relative overflow-hidden animate-fadeIn">
                     {/* Decorative backdrop blur glow */}
                     <div className="absolute right-0 top-0 w-32 h-32 blur-2xl pointer-events-none text-xs font-semibold" />
                     <div className="absolute left-1/3 bottom-0 w-24 h-24 blur-xl pointer-events-none text-xs font-semibold" />
 
                     {/* Header */}
                     <div className="flex items-center gap-3.5 pb-4 border-b border-slate-300">
-                      <div className="w-10 h-10 rounded-none bg-gradient-to-tr from-teal-500 to-indigo-500 flex items-center justify-center text-white font-extrabold shadow-none shadow-teal-100 shrink-0">
+                      <div className="w-10 h-10 rounded-none bg-gradient-to-tr from-teal-500 to-emerald-600 flex items-center justify-center text-white font-extrabold shadow-none shadow-teal-100 shrink-0">
                         <Calendar className="w-5 h-5 text-white" />
                       </div>
                       <div>
@@ -6028,10 +6028,10 @@ Trân trọng kính mời Quý phụ huynh và các em học sinh!`;
                       </div>
 
                       {/* Giai đoạn 2 */}
-                      <div className="p-4 flex flex-col justify-between hover:border-indigo-200/60 transition-all text-xs font-semibold">
+                      <div className="p-4 flex flex-col justify-between hover:border-teal-200/60 transition-all text-xs font-semibold">
                         <div>
                           <div className="flex items-center justify-between">
-                            <span className="text-indigo-700 text-[9px] font-extrabold uppercase tracking-wider text-xs font-semibold">
+                            <span className="text-teal-800 text-[9px] font-extrabold uppercase tracking-wider text-xs font-semibold">
                               Giai đoạn 2
                             </span>
                             <span className="text-[10px] text-slate-400 font-semibold">Từ 01/01 đến 31/05</span>
@@ -6162,7 +6162,7 @@ Trân trọng kính mời Quý phụ huynh và các em học sinh!`;
           </div>
 
           <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-            {[{ label: "Tổng trẻ KS", value: rptStats.total, color: "from-teal-600 to-teal-500", icon: Baby }, { label: "Đạt yêu cầu", value: rptStats.passed, color: "from-emerald-500 to-teal-400", icon: CheckCircle }, { label: "Chưa duyệt", value: rptStats.pending, color: "from-amber-500 to-orange-500", icon: AlertCircle }, { label: "Không đạt", value: rptStats.failed, color: "from-rose-500 to-red-400", icon: X }].map((stat, i) => (
+            {[{ label: "Tổng trẻ KS", value: rptStats.total, color: "from-teal-600 to-teal-500", icon: Baby }, { label: "Đạt yêu cầu", value: rptStats.passed, color: "from-emerald-500 to-teal-400", icon: CheckCircle }, { label: "Chưa duyệt", value: rptStats.pending, color: "from-amber-500 to-amber-600", icon: AlertCircle }, { label: "Không đạt", value: rptStats.failed, color: "from-rose-500 to-red-400", icon: X }].map((stat, i) => (
               <div key={i} className={`bg-gradient-to-br ${stat.color} rounded-none p-5 text-white shadow-none relative overflow-hidden`}>
                 <div className="absolute top-3 right-3 opacity-20"><stat.icon className="w-10 h-10" /></div>
                 <p className="text-[10px] font-black uppercase tracking-widest opacity-80 mb-2">{stat.label}</p>
@@ -6828,7 +6828,7 @@ Trân trọng kính mời Quý phụ huynh và các em học sinh!`;
           <div className="bg-white rounded-3xl border border-slate-300 shadow-2xl max-w-2xl w-full overflow-hidden flex flex-col max-h-[90vh] animate-scale-up">
             
             {/* Header */}
-            <div className="bg-gradient-to-r from-teal-600 to-indigo-700 p-6 text-white relative">
+            <div className="bg-gradient-to-r from-teal-600 to-emerald-600 p-6 text-white relative">
               <button 
                 onClick={() => setIsEmailCongratsModalOpen(false)}
                 className="absolute right-6 top-6 text-white/80 hover:text-white bg-white/10 hover:bg-white/20 p-1.5 rounded-full transition-all cursor-pointer"
@@ -6867,7 +6867,7 @@ Trân trọng kính mời Quý phụ huynh và các em học sinh!`;
                       <div className="flex gap-2 text-[10px] font-bold">
                         <button 
                           onClick={() => setEmailCongratsRecipients(prev => prev.map(r => ({ ...r, checked: true })))}
-                          className="text-slate-800 hover:text-violet-800 bg-[#48BFE3]/5 px-2.5 py-1 rounded-none border border-slate-300 transition-colors cursor-pointer"
+                          className="text-slate-800 hover:text-teal-800 bg-[#48BFE3]/5 px-2.5 py-1 rounded-none border border-slate-300 transition-colors cursor-pointer"
                         >
                           Chọn tất cả
                         </button>
@@ -6909,7 +6909,7 @@ Trân trọng kính mời Quý phụ huynh và các em học sinh!`;
                                     key={idx} 
                                     className={`flex items-start gap-2.5 p-2 rounded-none border transition-all cursor-pointer select-none text-xs font-semibold ${
                                       r.checked 
-                                        ? "bg-[#48BFE3]/5/50 border-slate-300 text-violet-900 shadow-none" 
+                                        ? "bg-[#48BFE3]/5/50 border-slate-300 text-teal-800 shadow-none" 
                                         : "bg-white border-slate-300 text-slate-500 hover:bg-slate-50"
                                     }`}
                                   >
@@ -7018,7 +7018,7 @@ Trân trọng kính mời Quý phụ huynh và các em học sinh!`;
                 {/* TO field */}
                 <div>
                   <label className="block text-xs font-bold uppercase tracking-wider text-slate-500 mb-1.5 ml-1">Địa chỉ Email người nhận (To) <span className="text-rose-500">*</span></label>
-                  <input value={recipientEmail} onChange={e => setRecipientEmail(e.target.value)} placeholder="Nhập email người nhận (phân cách bằng dấu phẩy)..." className="w-full outline-none focus:border-indigo-400 focus:ring-4 focus:ring-indigo-400/10 text-sm font-medium text-slate-700 transition-all shadow-none text-xs font-semibold" />
+                  <input value={recipientEmail} onChange={e => setRecipientEmail(e.target.value)} placeholder="Nhập email người nhận (phân cách bằng dấu phẩy)..." className="w-full outline-none focus:border-teal-200 focus:ring-4 focus:ring-indigo-400/10 text-sm font-medium text-slate-700 transition-all shadow-none text-xs font-semibold" />
                   
                   {/* Presets for To */}
                   <div className="flex flex-wrap gap-1 mt-2">
@@ -7043,7 +7043,7 @@ Trân trọng kính mời Quý phụ huynh và các em học sinh!`;
                               setRecipientEmail(current ? (current + ", " + p.email) : p.email);
                             }
                           }}
-                          className={"px-2 py-1 rounded-none text-[10px] font-bold border transition-all " + (isActive ? 'bg-[#48BFE3]/10 border-indigo-200 text-indigo-700' : 'bg-slate-50 border-slate-300 text-slate-500 hover:bg-slate-100')}
+                          className={"px-2 py-1 rounded-none text-[10px] font-bold border transition-all " + (isActive ? 'bg-[#48BFE3]/10 border-teal-200 text-teal-800' : 'bg-slate-50 border-slate-300 text-slate-500 hover:bg-slate-100')}
                         >
                           + {p.label}
                         </button>
@@ -7055,7 +7055,7 @@ Trân trọng kính mời Quý phụ huynh và các em học sinh!`;
                 {/* CC field */}
                 <div>
                   <label className="block text-xs font-bold uppercase tracking-wider text-slate-500 mb-1.5 ml-1">Đồng kính gửi (CC)</label>
-                  <input value={ccEmail} onChange={e => setCcEmail(e.target.value)} placeholder="Nhập email CC (phân cách bằng dấu phẩy)..." className="w-full outline-none focus:border-indigo-400 focus:ring-4 focus:ring-indigo-400/10 text-sm font-medium text-slate-700 transition-all shadow-none text-xs font-semibold" />
+                  <input value={ccEmail} onChange={e => setCcEmail(e.target.value)} placeholder="Nhập email CC (phân cách bằng dấu phẩy)..." className="w-full outline-none focus:border-teal-200 focus:ring-4 focus:ring-indigo-400/10 text-sm font-medium text-slate-700 transition-all shadow-none text-xs font-semibold" />
                   
                   {/* Presets for CC */}
                   <div className="flex flex-wrap gap-1 mt-2">
@@ -7080,7 +7080,7 @@ Trân trọng kính mời Quý phụ huynh và các em học sinh!`;
                               setCcEmail(current ? (current + ", " + p.email) : p.email);
                             }
                           }}
-                          className={"px-2 py-1 rounded-none text-[10px] font-bold border transition-all " + (isActive ? 'bg-[#48BFE3]/10 border-indigo-200 text-indigo-700' : 'bg-slate-50 border-slate-300 text-slate-500 hover:bg-slate-100')}
+                          className={"px-2 py-1 rounded-none text-[10px] font-bold border transition-all " + (isActive ? 'bg-[#48BFE3]/10 border-teal-200 text-teal-800' : 'bg-slate-50 border-slate-300 text-slate-500 hover:bg-slate-100')}
                         >
                           + {p.label}
                         </button>
@@ -7098,7 +7098,7 @@ Trân trọng kính mời Quý phụ huynh và các em học sinh!`;
                     value={emailSubject} 
                     onChange={e => setEmailSubject(e.target.value)} 
                     placeholder="Nhập tiêu đề email..." 
-                    className="w-full outline-none focus:border-indigo-400 focus:ring-4 focus:ring-indigo-400/10 text-sm font-medium text-slate-700 transition-all shadow-none text-xs font-semibold"
+                    className="w-full outline-none focus:border-teal-200 focus:ring-4 focus:ring-indigo-400/10 text-sm font-medium text-slate-700 transition-all shadow-none text-xs font-semibold"
                   />
                 </div>
                 
@@ -7126,7 +7126,7 @@ Trân trọng kính mời Quý phụ huynh và các em học sinh!`;
                   <div className="flex gap-2 text-[10px] font-bold">
                     <button 
                       onClick={() => setEmailStudents(prev => prev.map(s => ({ ...s, checked: true })))}
-                      className="text-slate-800 hover:text-violet-800 bg-[#48BFE3]/5 px-2.5 py-1 rounded-none border border-slate-300 transition-colors cursor-pointer"
+                      className="text-slate-800 hover:text-teal-800 bg-[#48BFE3]/5 px-2.5 py-1 rounded-none border border-slate-300 transition-colors cursor-pointer"
                     >
                       Chọn tất cả
                     </button>
@@ -7768,7 +7768,7 @@ Trân trọng kính mời Quý phụ huynh và các em học sinh!`;
 
                   {/* Letter Title */}
                   <div className="text-center my-4">
-                    <h2 className="text-indigo-950 uppercase mb-2" style={{ fontFamily: "'Times New Roman', Times, serif", fontSize: "18pt", fontWeight: "bold", letterSpacing: "1px" }}>
+                    <h2 className="text-teal-800 uppercase mb-2" style={{ fontFamily: "'Times New Roman', Times, serif", fontSize: "18pt", fontWeight: "bold", letterSpacing: "1px" }}>
                       {isInvitation ? (studentCampusConfig?.title || "THƯ MỜI") : isCommitment ? (studentCampusConfig?.title || "BẢN CAM KẾT HỌC TẬP") : (studentCampusConfig?.title || "THƯ CHÚC MỪNG")}
                     </h2>
                   </div>
@@ -7990,7 +7990,7 @@ Trân trọng kính mời Quý phụ huynh và các em học sinh!`;
 
                       {/* Page Title */}
                       <div className="text-center my-6">
-                        <h2 className="text-indigo-950 uppercase mb-4" style={{ fontFamily: "'Times New Roman', Times, serif", fontSize: "18pt", fontWeight: "bold", letterSpacing: "1px" }}>
+                        <h2 className="text-teal-800 uppercase mb-4" style={{ fontFamily: "'Times New Roman', Times, serif", fontSize: "18pt", fontWeight: "bold", letterSpacing: "1px" }}>
                           DANH MỤC HỒ SƠ NHẬP HỌC
                         </h2>
                       </div>
@@ -8181,7 +8181,7 @@ Trân trọng kính mời Quý phụ huynh và các em học sinh!`;
                         </div>
 
                         <div className="text-center my-6">
-                          <h2 className="text-indigo-950 uppercase mb-2" style={{ fontSize: "18pt", fontWeight: "bold", letterSpacing: "1px" }}>CHI TIẾT ĐÁNH GIÁ</h2>
+                          <h2 className="text-teal-800 uppercase mb-2" style={{ fontSize: "18pt", fontWeight: "bold", letterSpacing: "1px" }}>CHI TIẾT ĐÁNH GIÁ</h2>
                           <h3 className="text-lg font-bold text-slate-700 uppercase">{subject.name}</h3>
                         </div>
 
@@ -8306,7 +8306,7 @@ Trân trọng kính mời Quý phụ huynh và các em học sinh!`;
             <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 md:gap-6 border-t md:border-t-0 border-slate-200/60 pt-4 md:pt-0 w-full md:w-auto">
               <div className="text-xs">
                 <span className="text-[9px] font-black text-slate-400 uppercase tracking-widest block leading-none mb-1.5">Nhóm tuổi</span>
-                <span className="text-xs font-black text-purple-700 bg-purple-50 px-2.5 py-1 rounded-xl border border-purple-100/50">{evalStudent?.grade}</span>
+                <span className="text-xs font-black text-teal-800 bg-teal-50 px-2.5 py-1 rounded-xl border border-teal-100/50">{evalStudent?.grade}</span>
               </div>
               <div className="text-xs">
                 <span className="text-[9px] font-black text-slate-400 uppercase tracking-widest block leading-none mb-1.5">Khối lớp</span>
@@ -8318,7 +8318,7 @@ Trân trọng kính mời Quý phụ huynh và các em học sinh!`;
               </div>
               <div className="text-xs">
                 <span className="text-[9px] font-black text-slate-400 uppercase tracking-widest block leading-none mb-1.5">GV khảo sát</span>
-                <span className="text-xs font-black text-indigo-700 bg-indigo-50 px-2.5 py-1 rounded-xl border border-indigo-100/50 truncate max-w-[120px] inline-block align-bottom" title={assignedTeachers}>{assignedTeachers || "Chưa phân công"}</span>
+                <span className="text-xs font-black text-teal-800 bg-teal-50 px-2.5 py-1 rounded-xl border border-teal-100/50 truncate max-w-[120px] inline-block align-bottom" title={assignedTeachers}>{assignedTeachers || "Chưa phân công"}</span>
               </div>
             </div>
           </div>
@@ -8966,13 +8966,13 @@ Trân trọng kính mời Quý phụ huynh và các em học sinh!`;
                 <p className="text-[9px] font-black text-slate-400 uppercase tracking-wider">Mã bé</p>
                 <p className="text-xs font-black text-slate-800 font-mono">{probStudent?.studentCode}</p>
               </div>
-              <div className="bg-purple-50/80 backdrop-blur-sm px-3 py-1.5 rounded-xl border border-purple-200/60 shadow-2xs">
-                <p className="text-[9px] font-black text-purple-400 uppercase tracking-wider">Nhóm tuổi</p>
-                <p className="text-xs font-black text-purple-700">{probStudent?.grade}</p>
+              <div className="bg-teal-50/80 backdrop-blur-sm px-3 py-1.5 rounded-xl border border-teal-200/60 shadow-2xs">
+                <p className="text-[9px] font-black text-teal-700 uppercase tracking-wider">Nhóm tuổi</p>
+                <p className="text-xs font-black text-teal-800">{probStudent?.grade}</p>
               </div>
-              <div className="bg-indigo-50/80 backdrop-blur-sm px-3 py-1.5 rounded-xl border border-indigo-200/60 shadow-2xs">
-                <p className="text-[9px] font-black text-indigo-400 uppercase tracking-wider">Cơ sở</p>
-                <p className="text-xs font-black text-indigo-700">{probStudent?.admissionCampus || "—"}</p>
+              <div className="bg-teal-50/80 backdrop-blur-sm px-3 py-1.5 rounded-xl border border-teal-200/60 shadow-2xs">
+                <p className="text-[9px] font-black text-teal-700 uppercase tracking-wider">Cơ sở</p>
+                <p className="text-xs font-black text-teal-800">{probStudent?.admissionCampus || "—"}</p>
               </div>
             </div>
           </div>
@@ -8993,7 +8993,7 @@ Trân trọng kính mời Quý phụ huynh và các em học sinh!`;
             </div>
             <div>
               <label className="block text-[10px] font-black text-slate-500 uppercase tracking-widest mb-1.5 flex items-center gap-1">
-                <GraduationCap className="w-3 h-3 text-purple-600" /> Lớp học thử
+                <GraduationCap className="w-3 h-3 text-teal-800" /> Lớp học thử
               </label>
               <input
                 type="text"
@@ -9005,7 +9005,7 @@ Trân trọng kính mời Quý phụ huynh và các em học sinh!`;
             </div>
             <div>
               <label className="block text-[10px] font-black text-slate-500 uppercase tracking-widest mb-1.5 flex items-center gap-1">
-                <Users className="w-3 h-3 text-indigo-600" /> Giáo viên học thử
+                <Users className="w-3 h-3 text-teal-800" /> Giáo viên học thử
               </label>
               <input
                 type="text"
@@ -9025,7 +9025,7 @@ Trân trọng kính mời Quý phụ huynh và các em học sinh!`;
             </div>
           ) : devAreas.length === 0 ? (
             <div className="text-center text-slate-400 font-bold text-xs p-8 bg-slate-50/50 rounded-2xl border border-slate-200/80">
-              Chưa cấu hình tiêu chí nào cho nhóm tuổi: <span className="text-purple-700 font-black">{probStudent?.grade}</span>
+              Chưa cấu hình tiêu chí nào cho nhóm tuổi: <span className="text-teal-800 font-black">{probStudent?.grade}</span>
             </div>
           ) : (
             <div className="space-y-4">
@@ -9088,8 +9088,8 @@ Trân trọng kính mời Quý phụ huynh và các em học sinh!`;
                                   onClick={() => setScoreResult(currentScore.result === "BAT_DAU_THE_HIEN" ? "" : "BAT_DAU_THE_HIEN")}
                                   className={`px-2.5 py-1.5 rounded-xl border text-[10px] font-extrabold transition-all cursor-pointer flex items-center justify-center gap-1 mx-auto ${
                                     currentScore.result === "BAT_DAU_THE_HIEN"
-                                      ? "bg-indigo-600 text-white border-indigo-700 shadow-sm shadow-indigo-600/30 scale-[1.03]"
-                                      : "border-indigo-200 bg-indigo-50/40 text-indigo-700 hover:bg-indigo-100/80"
+                                      ? "bg-[#003B3A] text-white border-teal-200 shadow-sm shadow-indigo-600/30 scale-[1.03]"
+                                      : "border-teal-200 bg-teal-50/40 text-teal-800 hover:bg-teal-100/80"
                                   }`}
                                 >
                                   {currentScore.result === "BAT_DAU_THE_HIEN" && <CheckCircle2 className="w-3 h-3 text-white" />}

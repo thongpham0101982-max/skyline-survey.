@@ -1,0 +1,562 @@
+openapi: 3.0.3
+info:
+  title: Sky-Line SSM Integration API v1
+  description: >
+    API tích hợp dành cho các ứng dụng đối tác, hệ thống LMS, OMR chấm thi và tự động hóa n8n
+    kết nối vào Hệ thống Quản lý Giáo dục Sky-Line School (SSM).
+  version: 1.0.0
+  contact:
+    name: Ban Đảm bảo Chất lượng & CNTT Sky-Line
+    email: ktdbcl@skylineschool.edu.vn
+servers:
+  - url: https://ssm.skylineschool.edu.vn
+    description: Máy chủ Vận hành (Production)
+  - url: http://localhost:3000
+    description: Máy chủ Phát triển Cục bộ (Local Development)
+
+security:
+  - BearerAuth: []
+
+paths:
+  # =========================================================================
+  # 1. HỌC SINH (STUDENTS)
+  # =========================================================================
+  /api/v1/students:
+    get:
+      summary: Lấy danh sách học sinh (Có phân trang & lọc phạm vi)
+      description: Yêu cầu quyền students:read. Chỉ trả về học sinh thuộc phạm vi cơ sở và lớp được cấp phép.
+      parameters:
+        - name: page
+          in: query
+          schema: { type: integer, default: 1 }
+        - name: limit
+          in: query
+          schema: { type: integer, default: 20, maximum: 100 }
+        - name: campusId
+          in: query
+          schema: { type: string }
+        - name: classId
+          in: query
+          schema: { type: string }
+        - name: academicYearId
+          in: query
+          schema: { type: string }
+        - name: status
+          in: query
+          schema: { type: string, default: ACTIVE }
+        - name: search
+          in: query
+          schema: { type: string }
+      responses:
+        '200':
+          description: Danh sách học sinh hợp lệ
+        '401':
+          description: Khóa API không hợp lệ hoặc hết hạn
+        '403':
+          description: Thiếu quyền students:read hoặc vi phạm phạm vi cơ sở/lớp
+
+    post:
+      summary: Khởi tạo hồ sơ học sinh mới
+      description: Yêu cầu quyền students:write. Kiểm tra trùng lặp và bảo vệ chống tạo trùng khi gửi lại yêu cầu.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [studentCode, studentName, classId, campusId, academicYearId]
+              properties:
+                studentCode: { type: string }
+                studentName: { type: string }
+                englishName: { type: string }
+                classId: { type: string }
+                campusId: { type: string }
+                academicYearId: { type: string }
+                dateOfBirth: { type: string, format: date }
+                gender: { type: string, enum: [NAM, NU] }
+                studentType: { type: string, default: CHINH_KHOA }
+      responses:
+        '201':
+          description: Tạo học sinh thành công
+        '400':
+          description: Thiếu trường bắt buộc hoặc gửi trường ngoài danh sách cho phép
+        '409':
+          description: Học sinh đã tồn tại trong năm học
+
+  /api/v1/students/{id}:
+    get:
+      summary: Chi tiết hồ sơ học sinh
+      description: Lấy chi tiết học sinh theo ID hoặc studentCode (bảo vệ chống IDOR qua phạm vi cơ sở).
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema: { type: string }
+      responses:
+        '200':
+          description: Thông tin chi tiết học sinh
+        '403':
+          description: Học sinh nằm ngoài cơ sở/lớp được cấp quyền
+        '404':
+          description: Không tìm thấy học sinh
+
+    patch:
+      summary: Cập nhật thông tin học sinh
+      description: Cập nhật thông tin có kiểm tra phiên bản (optimistic locking) và lưu vết kiểm toán AuditLog.
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema: { type: string }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                studentName: { type: string }
+                englishName: { type: string }
+                status: { type: string }
+                dateOfBirth: { type: string, format: date }
+                gender: { type: string }
+                studentType: { type: string }
+                expectedVersion: { type: string }
+      responses:
+        '200':
+          description: Cập nhật thành công
+        '409':
+          description: Xung đột phiên bản dữ liệu (VERSION_CONFLICT)
+
+  /api/v1/students/{id}/grades:
+    get:
+      summary: Bảng điểm & Điểm tổng kết học kỳ của học sinh
+      description: Yêu cầu quyền grades:read hoặc students:read. Trả về điểm thường xuyên, giữa kỳ, cuối kỳ và điểm trung bình học kỳ của học sinh kèm Anti-IDOR Scope.
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema: { type: string }
+          description: ID hoặc mã học sinh (studentCode)
+        - name: academicYearId
+          in: query
+          schema: { type: string }
+        - name: semester
+          in: query
+          schema: { type: string, enum: [HK1, HK2, CA_NAM] }
+      responses:
+        '200':
+          description: Chi tiết bảng điểm của học sinh
+        '403':
+          description: Học sinh nằm ngoài cơ sở/lớp được cấp quyền
+        '404':
+          description: Không tìm thấy học sinh
+
+  # =========================================================================
+  # 2. GIÁO VIÊN (TEACHERS)
+  # =========================================================================
+  /api/v1/teachers:
+    get:
+      summary: Danh bạ giáo viên (Phân trang & Lọc tổ chuyên môn / cơ sở)
+      description: Yêu cầu quyền teachers:directory:read hoặc teachers:read. Tự động che giấu số điện thoại cá nhân (PII) nếu không có toàn quyền.
+      parameters:
+        - name: page
+          in: query
+          schema: { type: integer, default: 1 }
+        - name: limit
+          in: query
+          schema: { type: integer, default: 20, maximum: 100 }
+        - name: campusId
+          in: query
+          schema: { type: string }
+        - name: departmentId
+          in: query
+          schema: { type: string }
+        - name: status
+          in: query
+          schema: { type: string, default: ACTIVE }
+        - name: search
+          in: query
+          schema: { type: string }
+      responses:
+        '200':
+          description: Danh bạ giáo viên hợp lệ
+        '401':
+          description: Khóa API không hợp lệ
+        '403':
+          description: Thiếu quyền teachers:directory:read
+
+    post:
+      summary: Thêm mới hoặc đồng bộ giáo viên
+      description: Yêu cầu quyền teachers:profile:write hoặc teachers:write. Kiểm tra trùng mã GV và email.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [teacherCode, teacherName, campusId]
+              properties:
+                teacherCode: { type: string }
+                teacherName: { type: string }
+                email: { type: string, format: email }
+                phone: { type: string }
+                campusId: { type: string }
+                departmentId: { type: string }
+                mainSubjectId: { type: string }
+                position: { type: string, default: GV }
+      responses:
+        '201':
+          description: Khởi tạo giáo viên thành công
+        '409':
+          description: Mã giáo viên hoặc email đã tồn tại
+
+  /api/v1/teachers/{id}:
+    get:
+      summary: Chi tiết hồ sơ giáo viên
+      description: Yêu cầu quyền teachers:directory:read hoặc teachers:read. Tra cứu theo ID hoặc mã GV (teacherCode).
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema: { type: string }
+      responses:
+        '200':
+          description: Chi tiết hồ sơ giáo viên
+        '404':
+          description: Không tìm thấy giáo viên
+
+    patch:
+      summary: Cập nhật thông tin giáo viên
+      description: Yêu cầu quyền teachers:profile:write hoặc teachers:write. Cập nhật hồ sơ, email, chức vụ và lưu vết AuditLog.
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema: { type: string }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                teacherName: { type: string }
+                email: { type: string }
+                phone: { type: string }
+                position: { type: string }
+                departmentId: { type: string }
+                mainSubjectId: { type: string }
+                status: { type: string }
+      responses:
+        '200':
+          description: Cập nhật thành công
+        '404':
+          description: Không tìm thấy giáo viên
+
+  /api/v1/teachers/{id}/assignments:
+    get:
+      summary: Lịch phân công giảng dạy của giáo viên
+      description: Yêu cầu quyền teachers:assignments:read hoặc teachers:read. Trả về các lớp, môn học và số tiết phân công.
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema: { type: string }
+        - name: academicYearId
+          in: query
+          schema: { type: string }
+        - name: semester
+          in: query
+          schema: { type: string }
+      responses:
+        '200':
+          description: Danh sách phân công giảng dạy của giáo viên
+        '404':
+          description: Không tìm thấy giáo viên
+
+  # =========================================================================
+  # 3. SỔ ĐIỂM (GRADES)
+  # =========================================================================
+  /api/v1/grades:
+    get:
+      summary: Danh sách điểm môn học & kỳ đánh giá
+      description: Yêu cầu quyền grades:read.
+      parameters:
+        - name: page
+          in: query
+          schema: { type: integer, default: 1 }
+        - name: limit
+          in: query
+          schema: { type: integer, default: 50 }
+        - name: campusId
+          in: query
+          schema: { type: string }
+        - name: classId
+          in: query
+          schema: { type: string }
+        - name: subjectId
+          in: query
+          schema: { type: string }
+        - name: evaluationPeriod
+          in: query
+          schema: { type: string }
+        - name: studentId
+          in: query
+          schema: { type: string }
+      responses:
+        '200':
+          description: Danh sách điểm
+
+    post:
+      summary: Nhập điểm mới cho học sinh
+      description: Yêu cầu quyền grades:write. Kiểm tra trạng thái khóa sổ điểm (GradebookLock) và thang điểm 0-10.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [studentId, subjectId, classId, academicYearId, evaluationPeriod]
+              properties:
+                studentId: { type: string }
+                subjectId: { type: string }
+                classId: { type: string }
+                academicYearId: { type: string }
+                evaluationPeriod: { type: string, example: "KSĐN" }
+                compositeScore: { type: number, minimum: 0, maximum: 10 }
+                componentScores:
+                  type: object
+                  additionalProperties: { type: number, minimum: 0, maximum: 10 }
+                remark: { type: string }
+      responses:
+        '201':
+          description: Lưu điểm thành công
+        '400':
+          description: Điểm ngoài thang quy định (0-10)
+        '403':
+          description: Sổ điểm đang bị khóa (GRADEBOOK_LOCKED) hoặc vượt quá phạm vi
+
+  /api/v1/grades/{id}:
+    patch:
+      summary: Cập nhật bản ghi điểm
+      description: Cập nhật điểm kiểm tra khóa và kiểm soát phiên bản. Lưu vết thay đổi trước/sau trong AuditLog.
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema: { type: string }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                compositeScore: { type: number, minimum: 0, maximum: 10 }
+                componentScores: { type: object }
+                remark: { type: string }
+                expectedVersion: { type: string }
+      responses:
+        '200':
+          description: Cập nhật điểm thành công
+        '403':
+          description: Sổ điểm đã khóa
+        '409':
+          description: Xung đột phiên bản
+
+  # =========================================================================
+  # 3. PHÂN CÔNG GIẢNG DẠY (ASSIGNMENTS)
+  # =========================================================================
+  /api/v1/assignments:
+    get:
+      summary: Danh sách phân công giảng dạy
+      description: Yêu cầu quyền assignments:read.
+      parameters:
+        - name: page
+          in: query
+          schema: { type: integer, default: 1 }
+        - name: limit
+          in: query
+          schema: { type: integer, default: 30 }
+        - name: teacherId
+          in: query
+          schema: { type: string }
+        - name: classId
+          in: query
+          schema: { type: string }
+        - name: subjectId
+          in: query
+          schema: { type: string }
+      responses:
+        '200':
+          description: Danh sách phân công
+
+    post:
+      summary: Tạo phân công giảng dạy mới
+      description: Yêu cầu quyền assignments:write. Hỗ trợ chống tạo trùng.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [teacherId, classId, subjectId, academicYearId]
+              properties:
+                teacherId: { type: string }
+                classId: { type: string }
+                subjectId: { type: string }
+                academicYearId: { type: string }
+                semester: { type: integer, default: 1 }
+      responses:
+        '201':
+          description: Phân công thành công
+        '403':
+          description: Lớp học ngoài phạm vi được cấp quyền
+
+  /api/v1/assignments/{id}:
+    patch:
+      summary: Điều chỉnh phân công giảng dạy
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema: { type: string }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                teacherId: { type: string }
+                semester: { type: integer }
+                expectedVersion: { type: string }
+      responses:
+        '200':
+          description: Cập nhật thành công
+
+  # =========================================================================
+  # 4. KẾT QUẢ KHẢO SÁT (SURVEY RESULTS)
+  # =========================================================================
+  /api/v1/survey-results:
+    get:
+      summary: Danh sách kết quả khảo sát
+      description: Yêu cầu quyền survey-results:read.
+      parameters:
+        - name: surveyPeriodId
+          in: query
+          schema: { type: string }
+        - name: classId
+          in: query
+          schema: { type: string }
+        - name: studentId
+          in: query
+          schema: { type: string }
+      responses:
+        '200':
+          description: Danh sách kết quả khảo sát
+
+    post:
+      summary: Gửi phản hồi khảo sát mới
+      description: Yêu cầu quyền survey-results:write. Kết quả lưu trạng thái SUBMITTED, không tự chuyển sang APPROVED.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [surveyPeriodId, studentId, classId, campusId, academicYearId]
+              properties:
+                surveyPeriodId: { type: string }
+                studentId: { type: string }
+                classId: { type: string }
+                campusId: { type: string }
+                academicYearId: { type: string }
+                parentId: { type: string }
+                npsScoreRaw: { type: integer, minimum: 0, maximum: 10 }
+                responses:
+                  type: array
+                  items:
+                    type: object
+                    required: [questionId]
+                    properties:
+                      questionId: { type: string }
+                      numericScore: { type: integer }
+                      textAnswer: { type: string }
+      responses:
+        '201':
+          description: Gửi khảo sát thành công
+        '400':
+          description: Đợt khảo sát đã đóng
+
+  /api/v1/survey-results/{id}:
+    patch:
+      summary: Cập nhật kết quả khảo sát
+      description: Không cho phép tự ý chuyển trạng thái sang APPROVED qua API tích hợp.
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema: { type: string }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                npsScoreRaw: { type: integer }
+                responses: { type: array, items: { type: object } }
+      responses:
+        '200':
+          description: Cập nhật thành công
+        '403':
+          description: Từ chối thao tác duyệt tự động hoặc bản ghi đã duyệt
+
+  # =========================================================================
+  # 5. NHẬT KÝ & DỮ LIỆU TRUY CẬP (ACCESS LOGS & TELEMETRY)
+  # =========================================================================
+  /api/v1/access-logs:
+    get:
+      summary: Lấy nhật ký và dữ liệu truy cập của ứng dụng
+      description: >
+        Cho phép ứng dụng đối tác hoặc hệ thống giám sát SIEM/n8n truy vấn lại lịch sử
+        các yêu cầu gọi API, thời gian phản hồi (durationMs), mã trạng thái HTTP và thông báo lỗi.
+        Chỉ trả về nhật ký của chính ứng dụng đang xác thực.
+      parameters:
+        - name: page
+          in: query
+          schema: { type: integer, default: 1 }
+        - name: limit
+          in: query
+          schema: { type: integer, default: 20, maximum: 100 }
+        - name: statusCode
+          in: query
+          schema: { type: integer, example: 403 }
+        - name: method
+          in: query
+          schema: { type: string, enum: [GET, POST, PATCH] }
+        - name: endpoint
+          in: query
+          schema: { type: string }
+        - name: from
+          in: query
+          schema: { type: string, format: date-time }
+        - name: to
+          in: query
+          schema: { type: string, format: date-time }
+      responses:
+        '200':
+          description: Danh sách nhật ký truy cập thành công
+        '401':
+          description: Khóa API không hợp lệ hoặc đã hết hạn
+
+components:
+  securitySchemes:
+    BearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: API_KEY
+      description: >
+        Nhập khóa API với tiền tố `sky_live_...` được sinh từ trang Quản trị -> Kết nối API.

@@ -31,8 +31,8 @@ export default async function MaintenancePage() {
       </div>
 
       <div className="grid grid-cols-3 gap-4">
-         <StatCard label="Học sinh" value={stats.students} color="border-indigo-100" />
-         <StatCard label="Phụ huynh" value={stats.parents} color="border-purple-100" />
+         <StatCard label="Học sinh" value={stats.students} color="border-teal-200" />
+         <StatCard label="Phụ huynh" value={stats.parents} color="border-teal-200" />
          <StatCard label="Tổng User" value={stats.users} color="border-sky-100" />
       </div>
 
@@ -84,7 +84,7 @@ export default async function MaintenancePage() {
 
 function StatCard({ label, value, color }: any) {
   return (
-    <div className={`bg-white p-6 rounded-2xl border-2 ${color || "border-indigo-100"} shadow-sm text-center`}>
+    <div className={`bg-white p-6 rounded-2xl border-2 ${color || "border-teal-200"} shadow-sm text-center`}>
        <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1">{label}</p>
        <p className="text-3xl font-black text-slate-800">{value?.toLocaleString("vi-VN")}</p>
     </div>

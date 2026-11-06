@@ -204,17 +204,17 @@ export function GvbmResponseModal({
           )}
 
           {/* Section 2: Đề xuất & Lời nhắn từ GVCN */}
-          <div className="bg-purple-50/70 border border-purple-200 rounded-2xl p-4 space-y-2">
-            <div className="flex items-center justify-between text-xs font-extrabold text-purple-900">
+          <div className="bg-teal-50/70 border border-teal-200 rounded-2xl p-4 space-y-2">
+            <div className="flex items-center justify-between text-xs font-extrabold text-teal-800">
               <span className="flex items-center gap-1.5 uppercase tracking-wide">
-                <Send className="w-4 h-4 text-purple-600" />
+                <Send className="w-4 h-4 text-teal-800" />
                 <span>Đề xuất / Lời nhắn từ Giáo viên Chủ nhiệm:</span>
               </span>
-              <span className="text-[11px] font-semibold text-purple-700">
+              <span className="text-[11px] font-semibold text-teal-800">
                 {coordinationInfo?.homeroomTeacherName || "GVCN"}
               </span>
             </div>
-            <div className="text-xs text-purple-950 bg-white/80 p-3 rounded-xl border border-purple-200/80 font-medium leading-relaxed">
+            <div className="text-xs text-teal-800 bg-white/80 p-3 rounded-xl border border-teal-200/80 font-medium leading-relaxed">
               {forwarded?.message ? (
                 <span>{forwarded.message}</span>
               ) : (

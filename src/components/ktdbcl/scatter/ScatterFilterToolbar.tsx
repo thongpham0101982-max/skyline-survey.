@@ -400,14 +400,14 @@ export function ScatterFilterToolbar({
 
         {mode === "CROSS_SUBJECT" && (
           <div>
-            <label className="block text-[10px] font-bold text-indigo-800 mb-1 flex items-center gap-1">
-              <ArrowRightLeft className="w-3 h-3 text-indigo-600" />
+            <label className="block text-[10px] font-bold text-teal-800 mb-1 flex items-center gap-1">
+              <ArrowRightLeft className="w-3 h-3 text-teal-800" />
               Môn đối sánh (Trục X):
             </label>
             <select
               value={compareSubjectId}
               onChange={e => setCompareSubjectId(e.target.value)}
-              className="w-full border border-indigo-200 rounded-xl px-2 py-1.5 text-xs font-bold text-indigo-900 bg-indigo-50/50 focus:ring-2 focus:ring-indigo-500 outline-none"
+              className="w-full border border-teal-200 rounded-xl px-2 py-1.5 text-xs font-bold text-teal-800 bg-teal-50/50 focus:ring-2 focus:ring-indigo-500 outline-none"
             >
               <option value="">-- Chọn môn đối sánh --</option>
               {subjects.filter(s => s.id !== selectedSubjectId).map(s => (

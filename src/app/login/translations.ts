@@ -58,7 +58,7 @@ export const LOGIN_TRANSLATIONS = {
         { index: "06", title: "Hoạt động Trải nghiệm & Dự án", description: "Triển khai và đánh giá hoạt động trải nghiệm theo 4 mạch GDPT 2018, chủ đề tháng và kết xuất sổ sự kiện PDF." },
         { index: "07", title: "Khảo sát Đầu vào & Tuyển sinh", description: "Tổ chức khảo sát đầu vào Phổ thông K-12 & Mầm non, đánh giá 5 lĩnh vực phát triển, xét duyệt AI và gửi kết quả tự động." },
         { index: "08", title: "Quản lý Đào tạo & Thời khóa biểu", description: "Quản lý lớp học, phân công giảng dạy, xếp Thời khóa biểu Kéo & Thả thông minh, theo dõi sỹ số tháng và học sinh lưu chuyển." },
-        { index: "09", title: "Học liệu Số & Bảng tên QR", description: "Thư viện Sách giáo khoa điện tử tích hợp hỏi đáp AI trên nội dung sách và tiện ích in bảng tên họp PHHS kèm mã QR định danh." },
+        { index: "09", title: "In bảng tên Họp PHHS & QR", description: "Tiện ích thiết kế và in bảng tên học sinh gập chữ A phục vụ Họp Phụ huynh kèm mã QR định danh bảo mật." },
         { index: "10", title: "Mạng lưới Cựu học sinh (Alumni)", description: "Kế thừa hồ sơ tốt nghiệp, cấp mã QR định danh bảo mật, cổng tự cập nhật OTP và theo dõi hành trình Đại học & Sự nghiệp." },
         { index: "11", title: "Khảo sát Định kỳ & Đo lường NPS", description: "Khảo sát đa chiều Phụ huynh – Học sinh – Giáo viên, phân tích chỉ số hài lòng NPS và theo dõi xử lý phản hồi 2 chiều." },
         { index: "12", title: "Điều hành Công việc, AI & PWA", description: "Giao việc Kanban/Timeline, báo cáo tuần, Sổ giáo viên tự động gom việc, trợ lý SSM AI (RAG) và ứng dụng di động PWA." }
@@ -124,7 +124,7 @@ export const LOGIN_TRANSLATIONS = {
         { index: "06", title: "Experiential Learning & Projects", description: "Manage experiential activities across 4 core streams, monthly themes, student participation, and PDF event books." },
         { index: "07", title: "Entrance Assessment & Admissions", description: "K-12 & Preschool diagnostic assessments, 5-domain child development tracking, AI admission review, and automated emails." },
         { index: "08", title: "Academic Management & Timetable", description: "Class & teacher management, intelligent Drag & Drop Timetable solver, monthly enrollment, and student transfers." },
-        { index: "09", title: "Digital Textbooks & QR Nameplates", description: "E-Textbook library with interactive AI Q&A and instant A4 Parent Meeting nameplates with lifelong QR verification." },
+        { index: "09", title: "Parent Meeting QR Nameplates", description: "Instant A4 Parent Meeting foldable nameplate designer with secure dynamic QR code verification." },
         { index: "10", title: "Sky-Line Alumni Network", description: "Graduation profile inheritance, secure QR tokens, OTP self-service portal, and global university & career tracking." },
         { index: "11", title: "Periodic Surveys & NPS Analytics", description: "Multi-stakeholder surveys for Parents, Students, and Staff with real-time Net Promoter Score (NPS) and feedback tracking." },
         { index: "12", title: "Task Operations, SSM AI & PWA", description: "Kanban/Timeline task management, weekly reports, unified teacher task engine, RAG AI Assistant, and Mobile PWA." }

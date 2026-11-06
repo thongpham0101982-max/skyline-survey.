@@ -37,10 +37,10 @@ export function ParentMobileBottomNav() {
         <Link
           href="/parent/thong-bao"
           className={`flex flex-col items-center gap-1 text-[10px] transition-colors ${
-            isNotifications ? "text-[#5B2D8B] font-bold" : "text-slate-500 hover:text-[#5B2D8B] font-medium"
+            isNotifications ? "text-[#003B3A] font-bold" : "text-slate-500 hover:text-[#003B3A] font-medium"
           }`}
         >
-          <div className={`p-1.5 rounded-xl transition-all ${isNotifications ? "bg-purple-100 text-[#5B2D8B] shadow-xs" : ""}`}>
+          <div className={`p-1.5 rounded-xl transition-all ${isNotifications ? "bg-teal-50 text-[#003B3A] shadow-xs" : ""}`}>
             <Bell className="w-4 h-4" />
           </div>
           <span>Thông báo</span>
@@ -61,10 +61,10 @@ export function ParentMobileBottomNav() {
         <Link
           href="/parent/trao-doi-dong-hanh"
           className={`flex flex-col items-center gap-1 text-[10px] transition-colors ${
-            isCoordination ? "text-[#6E3D89] font-bold" : "text-slate-500 hover:text-[#6E3D89] font-medium"
+            isCoordination ? "text-[#003B3A] font-bold" : "text-slate-500 hover:text-[#003B3A] font-medium"
           }`}
         >
-          <div className={`p-1.5 rounded-xl transition-all ${isCoordination ? "bg-purple-100 text-[#6E3D89] shadow-xs" : ""}`}>
+          <div className={`p-1.5 rounded-xl transition-all ${isCoordination ? "bg-teal-50 text-[#003B3A] shadow-xs" : ""}`}>
             <MessageSquare className="w-4 h-4" />
           </div>
           <span>Trao đổi</span>

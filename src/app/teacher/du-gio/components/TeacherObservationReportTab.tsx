@@ -513,10 +513,10 @@ export function TeacherObservationReportTab({
         <div className="bg-white rounded-3xl p-5 border border-slate-200 shadow-xs flex flex-col justify-between gap-3 border-t-4 border-t-violet-600">
           <div className="flex items-center justify-between">
             <span className="text-xs font-black text-slate-500 uppercase tracking-wider flex items-center gap-1.5">
-              <Star className="w-4 h-4 text-violet-600" />
+              <Star className="w-4 h-4 text-teal-800" />
               Điểm TB Nhận Được
             </span>
-            <span className="px-2 py-0.5 rounded-full bg-violet-100 text-violet-800 text-[11px] font-black">
+            <span className="px-2 py-0.5 rounded-full bg-teal-50 text-teal-800 text-[11px] font-black">
               {scoreRating}
             </span>
           </div>
@@ -530,7 +530,7 @@ export function TeacherObservationReportTab({
 
           <div className="w-full bg-slate-100 h-2.5 rounded-full overflow-hidden">
             <div
-              className="bg-violet-600 h-full rounded-full transition-all duration-500"
+              className="bg-teal-500 h-full rounded-full transition-all duration-500"
               style={{ width: `${numAvgScore ? Math.min(100, Math.round((numAvgScore / maxScore) * 100)) : 0}%` }}
             />
           </div>
@@ -824,7 +824,7 @@ export function TeacherObservationReportTab({
                         {/* Điểm TB dạy */}
                         <td className="p-3 text-center font-extrabold">
                           {st.avgScore ? (
-                            <span className="px-2 py-0.5 rounded-lg bg-violet-50 text-violet-800 border border-violet-200">
+                            <span className="px-2 py-0.5 rounded-lg bg-teal-50 text-teal-800 border border-teal-200">
                               ⭐ {st.avgScore}đ
                             </span>
                           ) : (
@@ -839,7 +839,7 @@ export function TeacherObservationReportTab({
                               🚨 Nợ {st.pendingObservedCount} phiếu
                             </span>
                           ) : st.observedCount >= targetObs * 1.5 ? (
-                            <span className="px-2.5 py-1 rounded-full bg-gradient-to-r from-purple-100 to-indigo-100 text-indigo-900 border border-indigo-200 text-[10.5px] font-black inline-flex items-center gap-1">
+                            <span className="px-2.5 py-1 rounded-full bg-gradient-to-r from-teal-600 to-emerald-600 text-teal-800 border border-teal-200 text-[10.5px] font-black inline-flex items-center gap-1">
                               🌟 Vượt chỉ tiêu
                             </span>
                           ) : st.observedCount >= targetObs ? (
@@ -926,7 +926,7 @@ export function TeacherObservationReportTab({
                                     <button
                                       type="button"
                                       onClick={() => setDrillDownCategory("TAUGHT")}
-                                      className={`px-2.5 py-1 rounded-lg transition cursor-pointer ${drillDownCategory === "TAUGHT" ? "bg-purple-700 text-white font-black shadow-2xs" : "bg-purple-50 text-purple-800 hover:bg-purple-100"}`}
+                                      className={`px-2.5 py-1 rounded-lg transition cursor-pointer ${drillDownCategory === "TAUGHT" ? "bg-[#003B3A] text-white font-black shadow-2xs" : "bg-teal-50 text-teal-800 hover:bg-teal-50"}`}
                                     >
                                       🎓 Tiết tôi dạy ({st.taughtCount})
                                     </button>

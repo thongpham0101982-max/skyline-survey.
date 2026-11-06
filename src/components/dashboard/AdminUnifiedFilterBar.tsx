@@ -97,7 +97,7 @@ export function AdminUnifiedFilterBar({
 
           {/* 2. Cơ sở */}
           <div className="flex items-center gap-1.5 bg-slate-50 hover:bg-slate-100/80 px-2.5 py-1.5 rounded-xl border border-slate-200/90 transition-colors">
-            <Building2 className="w-3.5 h-3.5 text-[#6C5CE7] shrink-0" />
+            <Building2 className="w-3.5 h-3.5 text-[#00A19A] shrink-0" />
             <span className="text-[11px] text-slate-400 font-medium hidden sm:inline">Cơ sở:</span>
             <select
               aria-label="Chọn cơ sở"
@@ -139,7 +139,7 @@ export function AdminUnifiedFilterBar({
 
           {/* 4. Khối lớp */}
           <div className="flex items-center gap-1.5 bg-slate-50 hover:bg-slate-100/80 px-2.5 py-1.5 rounded-xl border border-slate-200/90 transition-colors">
-            <GraduationCap className="w-3.5 h-3.5 text-[#2E1065] shrink-0" />
+            <GraduationCap className="w-3.5 h-3.5 text-[#003B3A] shrink-0" />
             <span className="text-[11px] text-slate-400 font-medium hidden sm:inline">Khối:</span>
             <select
               aria-label="Chọn khối lớp"

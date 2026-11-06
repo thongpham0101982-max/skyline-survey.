@@ -255,7 +255,7 @@ export default function ChildDevStandardForm({ student, onSave, isLocked, onClos
                     </div>
                 </div>
 
-                <div className="bg-white rounded-2xl p-5 shadow-sm border-2 border-indigo-100">
+                <div className="bg-white rounded-2xl p-5 shadow-sm border-2 border-teal-200">
                     <h3 className="font-bold text-slate-800 text-sm mb-3 uppercase tracking-wider flex items-center gap-2">
                         <span className="w-2 h-6 inline-block text-xs font-semibold"></span>
                         Nhận xét chung

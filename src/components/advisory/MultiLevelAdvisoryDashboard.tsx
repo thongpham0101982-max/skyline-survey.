@@ -137,7 +137,7 @@ export default function MultiLevelAdvisoryDashboard({
   if (loading && !stats) {
     return (
       <div className="p-8 text-center text-slate-500 bg-white rounded-2xl border border-slate-200">
-        <RefreshCw className="w-6 h-6 animate-spin mx-auto mb-2 text-indigo-600" />
+        <RefreshCw className="w-6 h-6 animate-spin mx-auto mb-2 text-teal-800" />
         <p className="text-sm font-medium">Đang tổng hợp dữ liệu đo lường Cố vấn học tập...</p>
       </div>
     )
@@ -200,18 +200,18 @@ export default function MultiLevelAdvisoryDashboard({
         <div className="bg-white p-5 rounded-2xl border border-slate-200 shadow-xs flex flex-col justify-between">
           <div className="flex items-center justify-between">
             <span className="text-xs font-bold text-slate-500 uppercase tracking-wider">Đã chốt SMART</span>
-            <div className="w-8 h-8 rounded-xl bg-indigo-50 flex items-center justify-center text-indigo-600">
+            <div className="w-8 h-8 rounded-xl bg-teal-50 flex items-center justify-center text-teal-800">
               <Target className="w-4 h-4" />
             </div>
           </div>
           <div className="mt-3">
             <div className="flex items-baseline gap-2">
-              <span className="text-2xl font-black text-indigo-600">{stats?.smartGoalStats?.submittedPercent || 0}%</span>
+              <span className="text-2xl font-black text-teal-800">{stats?.smartGoalStats?.submittedPercent || 0}%</span>
               <span className="text-xs text-slate-500">({stats?.smartGoalStats?.submitted || 0}/{stats?.totalStudents || 0} HS)</span>
             </div>
             <div className="w-full bg-slate-100 rounded-full h-1.5 mt-2 overflow-hidden">
               <div
-                className="bg-indigo-600 h-1.5 rounded-full transition-all"
+                className="bg-[#003B3A] h-1.5 rounded-full transition-all"
                 style={{ width: `${Math.min(stats?.smartGoalStats?.submittedPercent || 0, 100)}%` }}
               />
             </div>
@@ -270,7 +270,7 @@ export default function MultiLevelAdvisoryDashboard({
               onClick={() => setActiveSubTab("priority")}
               className={`px-4 py-2 rounded-xl text-xs font-bold transition-all cursor-pointer ${
                 activeSubTab === "priority"
-                  ? "bg-indigo-600 text-white shadow-xs"
+                  ? "bg-[#003B3A] text-white shadow-xs"
                   : "bg-white text-slate-600 hover:bg-slate-100 border border-slate-200"
               }`}
             >
@@ -280,7 +280,7 @@ export default function MultiLevelAdvisoryDashboard({
               onClick={() => setActiveSubTab("actions")}
               className={`px-4 py-2 rounded-xl text-xs font-bold transition-all cursor-pointer ${
                 activeSubTab === "actions"
-                  ? "bg-indigo-600 text-white shadow-xs"
+                  ? "bg-[#003B3A] text-white shadow-xs"
                   : "bg-white text-slate-600 hover:bg-slate-100 border border-slate-200"
               }`}
             >
@@ -358,7 +358,7 @@ export default function MultiLevelAdvisoryDashboard({
                           setActiveStudentForModal(st.id)
                         }
                       }}
-                      className="px-3 py-1.5 rounded-lg text-xs font-bold bg-indigo-50 hover:bg-indigo-100 text-indigo-700 border border-indigo-200 transition-all cursor-pointer flex items-center gap-1 shadow-2xs"
+                      className="px-3 py-1.5 rounded-lg text-xs font-bold bg-teal-50 hover:bg-teal-50 text-teal-800 border border-teal-200 transition-all cursor-pointer flex items-center gap-1 shadow-2xs"
                     >
                       <Calendar className="w-3.5 h-3.5" /> Gặp 1-1
                     </button>

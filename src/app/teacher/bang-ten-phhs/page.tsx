@@ -1,7 +1,7 @@
 import React from 'react';
 import { auth } from '@/lib/auth';
 import { redirect } from 'next/navigation';
-import NameplateGeneratorClient from '@/app/learning-resources/nameplates/client';
+import NameplateGeneratorClient from './client';
 
 export const dynamic = 'force-dynamic';
 

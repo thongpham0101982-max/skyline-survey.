@@ -1206,14 +1206,14 @@ export default function TeacherAssessmentsClient({ user }: { user: any }) {
                 {/* English Components Switcher (if applicable) */}
                 {currentAssignment && isEnglishAssignment && relatedEnglishAssignments.length > 0 && (
                     <div className="mt-4 pt-3 border-t border-slate-100 flex flex-wrap items-center gap-2">
-                        <span className="text-[11px] font-black text-indigo-500 uppercase tracking-wider mr-1">Hạng mục Tiếng Anh:</span>
+                        <span className="text-[11px] font-black text-teal-700 uppercase tracking-wider mr-1">Hạng mục Tiếng Anh:</span>
                         {relatedEnglishAssignments.map(a => (
                             <button 
                                 key={a.id}
                                 onClick={() => setSelectedAssignmentId(a.id)}
                                 className={`px-3 py-1.5 rounded-xl font-bold text-xs transition-all flex items-center gap-1.5 cursor-pointer ${
                                     selectedAssignmentId === a.id 
-                                        ? 'bg-indigo-600 text-white shadow-sm shadow-indigo-200' 
+                                        ? 'bg-[#003B3A] text-white shadow-sm shadow-indigo-200' 
                                         : 'bg-slate-100 text-slate-600 hover:bg-slate-200 border border-slate-200/80'
                                 }`}
                             >
@@ -1395,7 +1395,8 @@ export default function TeacherAssessmentsClient({ user }: { user: any }) {
                                         });
                                         const data = await res.json();
                                         if (res.ok && data.success) {
-                                            alert(`Đã xác nhận hoàn thành đánh giá (Bước 4) cho ${evaluatedStudents.length} học sinh! Tiến độ nhiệm vụ đã được đồng bộ lên Trung tâm Điều hành.`);
+                                            alert(`Đã xác nhận hoàn thành đánh giá (Bước 4) và tự động gán chữ ký điện tử cho ${evaluatedStudents.length} học sinh! Tiến độ nhiệm vụ đã được đồng bộ lên Trung tâm Điều hành.`);
+                                            fetchStudents();
                                         } else {
                                             alert(data.error || "Không thể xác nhận hoàn thành đánh giá.");
                                         }
@@ -1737,15 +1738,15 @@ export default function TeacherAssessmentsClient({ user }: { user: any }) {
                                                                 )}
                                                             </div>
                                                         ) : isOrientationSubject ? (
-                                                            // Specialized Orientation Form (2 Tabs)
+                                                            // Specialized Orientation Form (3 Tabs + Subject Evaluation)
                                                             <div className="flex flex-col items-center justify-center gap-1.5 py-1">
                                                                 <button 
                                                                     type="button"
                                                                     onClick={() => setOrientationTargetStudent(st)}
-                                                                    className="bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-700 hover:to-purple-700 text-white font-bold py-1.5 px-4 rounded-xl shadow-xs flex items-center gap-1.5 transition-all active:scale-95 text-xs cursor-pointer"
+                                                                    className="bg-[#003B3A] hover:bg-[#005250] text-white font-bold py-1.5 px-4 rounded-xl shadow-xs flex items-center gap-1.5 transition-all active:scale-95 text-xs cursor-pointer"
                                                                 >
-                                                                    <HeartHandshake className="w-3.5 h-3.5" /> 
-                                                                    <span>Mở Phiếu Định Hướng (3 Tab)</span>
+                                                                    <HeartHandshake className="w-3.5 h-3.5 text-teal-300" /> 
+                                                                    <span>Mở Phiếu Định Hướng &amp; Kết Quả Môn</span>
                                                                 </button>
                                                                 <button
                                                                     type="button"
@@ -1753,10 +1754,10 @@ export default function TeacherAssessmentsClient({ user }: { user: any }) {
                                                                         setReportTargetStudent(st);
                                                                         setActiveReportOrientationData(null);
                                                                     }}
-                                                                    className="inline-flex items-center gap-1 text-[11px] font-bold text-teal-700 hover:text-teal-900 hover:underline cursor-pointer"
+                                                                    className="inline-flex items-center gap-1 text-[11px] font-bold text-[#00736E] hover:text-[#003B3A] hover:underline cursor-pointer"
                                                                 >
                                                                     <Printer className="w-3 h-3" />
-                                                                    <span>Xem & In Báo Cáo A4</span>
+                                                                    <span>Xem &amp; In Báo Cáo A4</span>
                                                                 </button>
                                                             </div>
                                                         ) : isPsychSubject ? (
@@ -1775,7 +1776,7 @@ export default function TeacherAssessmentsClient({ user }: { user: any }) {
                                                                                 if (score <= 15) { level = "Bình thường"; badgeColor = "text-emerald-700 bg-emerald-50 border-emerald-200"; }
                                                                                 else if (score <= 31) { level = "Dấu hiệu nhẹ"; badgeColor = "text-blue-700 bg-blue-50 border-blue-200"; }
                                                                                 else if (score <= 47) { level = "Dấu hiệu vừa"; badgeColor = "text-amber-800 bg-amber-50 border-amber-200"; }
-                                                                                else if (score <= 63) { level = "Nguy cơ cao"; badgeColor = "text-orange-800 bg-orange-50 border-orange-200"; }
+                                                                                else if (score <= 63) { level = "Nguy cơ cao"; badgeColor = "text-amber-800 bg-amber-50 border-amber-200"; }
                                                                                 else { level = "Nguy cơ rất cao"; badgeColor = "text-rose-700 bg-rose-50 border-rose-200"; }
                                                                                 return (
                                                                                     <span className={`px-2 py-0.5 rounded-md border text-[10px] font-bold uppercase tracking-wider ${badgeColor}`}>
@@ -2091,73 +2092,148 @@ export default function TeacherAssessmentsClient({ user }: { user: any }) {
                                                         </>
                                                     )}
 
-                                                    {/* Sticky Right: Trạng thái & Xác nhận - Solid Background & Shadow */}
-                                                    <td className="px-4 py-3 text-center bg-white md:sticky md:right-0 z-10 border-b border-slate-100 shadow-[-4px_0_8px_rgba(0,0,0,0.06)] group-hover:bg-[#F0FDFA]/70 transition-colors">
-                                                        {(() => {
-                                                            const isCustomSubject = isPsychSubject || isChildDevSubject || isThinkingSkillsSubject || isPreschoolSubject;
+                                                    {/* Sticky Right: Trạng thái & Xác nhận + Mở Phiếu Định Hướng & Kết quả Môn */}
+                                                    <td className="px-4 py-3 text-center bg-white md:sticky md:right-0 z-10 border-b border-slate-100 shadow-[-4px_0_8px_rgba(0,0,0,0.06)] group-hover:bg-[#F0FDFA]/70 transition-colors min-w-[175px]">
+                                                        <div className="flex flex-col items-stretch gap-1.5">
+                                                            {(() => {
+                                                                const isCustomSubject = isPsychSubject || isChildDevSubject || isThinkingSkillsSubject || isPreschoolSubject;
 
-                                                            if (isCustomSubject) {
-                                                                if (isSaved) {
-                                                                    return (
+                                                                if (isCustomSubject) {
+                                                                    if (isSaved) {
+                                                                        return (
+                                                                            <div className="inline-flex items-center justify-center gap-1.5 px-3 py-1.5 rounded-xl bg-emerald-50 text-emerald-700 border border-emerald-200 text-xs font-bold w-full">
+                                                                                <CheckCircle2 className="w-4 h-4 text-emerald-600 shrink-0" />
+                                                                                <span>Đã hoàn thành</span>
+                                                                            </div>
+                                                                        );
+                                                                    } else {
+                                                                        return (
+                                                                            <button
+                                                                                type="button"
+                                                                                onClick={() => {
+                                                                                    if (isPsychSubject) { setActivePsychStudent(st); setIsPsychModalOpen(true); }
+                                                                                    else if (isPreschoolSubject) { setActivePreschoolStudent(st); setIsPreschoolModalOpen(true); }
+                                                                                    else if (isThinkingSkillsSubject) { setActiveThinkingSkillsStudent(st); setIsThinkingSkillsModalOpen(true); }
+                                                                                    else if (isChildDevSubject) { setActiveChildDevStudent(st); setIsChildDevModalOpen(true); }
+                                                                                }}
+                                                                                className="inline-flex items-center justify-center gap-1.5 px-3 py-1.5 rounded-xl bg-amber-50 hover:bg-amber-100 text-amber-800 border border-amber-200 text-xs font-bold w-full transition-colors cursor-pointer"
+                                                                            >
+                                                                                <Clock className="w-3.5 h-3.5 text-amber-600 shrink-0" />
+                                                                                <span>Chờ điền form</span>
+                                                                            </button>
+                                                                        );
+                                                                    }
+                                                                }
+
+                                                                if (isOrientationSubject) {
+                                                                    return st.orientationRecord?.id ? (
                                                                         <div className="inline-flex items-center justify-center gap-1.5 px-3 py-1.5 rounded-xl bg-emerald-50 text-emerald-700 border border-emerald-200 text-xs font-bold w-full">
-                                                                            <CheckCircle2 className="w-4 h-4 text-emerald-600 shrink-0" />
-                                                                            <span>Đã hoàn thành</span>
+                                                                            <CheckCircle2 className="w-3.5 h-3.5 text-emerald-600 shrink-0" />
+                                                                            <span>{isPsychSubject ? "Đã lưu phiếu Tâm lý" : "Đã lưu phiếu ĐH"}</span>
+                                                                        </div>
+                                                                    ) : (
+                                                                        <div className="inline-flex items-center justify-center gap-1.5 px-3 py-1.5 rounded-xl bg-amber-50 text-amber-800 border border-amber-200 text-xs font-bold w-full">
+                                                                            <Clock className="w-3.5 h-3.5 text-amber-600 shrink-0" />
+                                                                            <span>{isPsychSubject ? "Chờ đánh giá Tâm lý" : "Chờ định hướng"}</span>
                                                                         </div>
                                                                     );
-                                                                } else {
-                                                                    return (
-                                                                        <button
-                                                                            onClick={() => {
-                                                                                if (isPsychSubject) { setActivePsychStudent(st); setIsPsychModalOpen(true); }
-                                                                                else if (isPreschoolSubject) { setActivePreschoolStudent(st); setIsPreschoolModalOpen(true); }
-                                                                                else if (isThinkingSkillsSubject) { setActiveThinkingSkillsStudent(st); setIsThinkingSkillsModalOpen(true); }
-                                                                                else if (isChildDevSubject) { setActiveChildDevStudent(st); setIsChildDevModalOpen(true); }
-                                                                            }}
-                                                                            className="inline-flex items-center justify-center gap-1.5 px-3 py-1.5 rounded-xl bg-amber-50 hover:bg-amber-100 text-amber-800 border border-amber-200 text-xs font-bold w-full transition-colors cursor-pointer"
-                                                                        >
-                                                                            <Clock className="w-3.5 h-3.5 text-amber-600 shrink-0" />
-                                                                            <span>Chờ điền form</span>
-                                                                        </button>
-                                                                    );
                                                                 }
-                                                            }
 
-                                                            // Regular subjects: Save Button
-                                                            return (
-                                                                <button 
-                                                                    onClick={() => saveStudentScore(st)}
-                                                                    disabled={isLocked}
-                                                                    className={`px-3 py-1.5 rounded-xl text-xs font-bold flex items-center justify-center w-full gap-1.5 transition-all shadow-2xs ${
-                                                                        isLocked 
-                                                                            ? "bg-slate-200 text-slate-400 cursor-not-allowed border-none" 
-                                                                            : saveStatus[st.id] === "saved" 
-                                                                            ? "bg-emerald-600 text-white" 
-                                                                            : saveStatus[st.id] === "saving" 
-                                                                            ? "bg-slate-200 text-slate-600" 
-                                                                            : isDirty 
-                                                                            ? "bg-[#00A19A] hover:bg-[#008B85] text-white shadow-teal-900/15" 
-                                                                            : "bg-white border border-slate-200 text-slate-700 hover:bg-slate-50 hover:border-slate-300"
-                                                                    }`}
-                                                                >
-                                                                    {saveStatus[st.id] === "saved" ? (
-                                                                        <>
-                                                                            <CheckCircle2 className="w-3.5 h-3.5" />
-                                                                            <span>Đã lưu</span>
-                                                                        </>
-                                                                    ) : saveStatus[st.id] === "saving" ? (
-                                                                        <>
-                                                                            <div className="w-3 h-3 border-2 border-slate-600 border-t-transparent rounded-full animate-spin" />
-                                                                            <span>Lưu...</span>
-                                                                        </>
-                                                                    ) : (
-                                                                        <>
-                                                                            <Save className="w-3.5 h-3.5" />
-                                                                            <span>{isDirty ? "Lưu điểm" : "Lưu"}</span>
-                                                                        </>
-                                                                    )}
-                                                                </button>
-                                                            );
-                                                        })()}
+                                                                // Regular subjects: Save Button
+                                                                return (
+                                                                    <button 
+                                                                        type="button"
+                                                                        onClick={() => saveStudentScore(st)}
+                                                                        disabled={isLocked}
+                                                                        className={`px-3 py-1.5 rounded-xl text-xs font-bold flex items-center justify-center w-full gap-1.5 transition-all shadow-2xs cursor-pointer ${
+                                                                            isLocked 
+                                                                                ? "bg-slate-200 text-slate-400 cursor-not-allowed border-none" 
+                                                                                : saveStatus[st.id] === "saved" 
+                                                                                ? "bg-emerald-600 text-white" 
+                                                                                : saveStatus[st.id] === "saving" 
+                                                                                ? "bg-slate-200 text-slate-600" 
+                                                                                : isDirty 
+                                                                                ? "bg-[#00A19A] hover:bg-[#008B85] text-white shadow-teal-900/15" 
+                                                                                : "bg-white border border-slate-200 text-slate-700 hover:bg-slate-50 hover:border-slate-300"
+                                                                        }`}
+                                                                    >
+                                                                        {saveStatus[st.id] === "saved" ? (
+                                                                            <>
+                                                                                <CheckCircle2 className="w-3.5 h-3.5" />
+                                                                                <span>Đã lưu</span>
+                                                                            </>
+                                                                        ) : saveStatus[st.id] === "saving" ? (
+                                                                            <>
+                                                                                <div className="w-3 h-3 border-2 border-slate-600 border-t-transparent rounded-full animate-spin" />
+                                                                                <span>Lưu...</span>
+                                                                            </>
+                                                                        ) : (
+                                                                            <>
+                                                                                <Save className="w-3.5 h-3.5" />
+                                                                                <span>{isDirty ? "Lưu điểm" : "Lưu"}</span>
+                                                                            </>
+                                                                        )}
+                                                                    </button>
+                                                                );
+                                                            })()}
+
+                                                            {/* Nút Mở trực tiếp Phiếu Định Hướng / Phiếu Đánh Giá Tâm Lý + In Báo cáo A4 */}
+                                                            {!isOrientationSubject && (
+                                                                <div className="flex items-center gap-1">
+                                                                    <button
+                                                                        type="button"
+                                                                        onClick={() => {
+                                                                            if (isPsychSubject) {
+                                                                                setActivePsychStudent(st);
+                                                                                setIsPsychModalOpen(true);
+                                                                            } else {
+                                                                                setOrientationTargetStudent(st);
+                                                                            }
+                                                                        }}
+                                                                        className={`flex-1 px-2.5 py-1.5 rounded-lg text-[11px] font-bold flex items-center justify-center gap-1 border transition-all cursor-pointer ${
+                                                                            st.orientationRecord?.id || (isPsychSubject && st.scoreVals?.length >= 7)
+                                                                                ? "bg-teal-50/90 hover:bg-[#003B3A] text-[#003B3A] hover:text-white border-teal-200 shadow-2xs"
+                                                                                : "bg-[#003B3A] hover:bg-[#005250] text-white border-[#003B3A]"
+                                                                        }`}
+                                                                        title={isPsychSubject ? "Mở Phiếu Đánh Giá Tâm Lý Chi Tiết & Ký điện tử" : "Mở Phiếu Định Hướng Học Sinh & Nhập kết quả Môn"}
+                                                                    >
+                                                                        <HeartHandshake className="w-3 h-3 shrink-0" />
+                                                                        <span className="truncate">
+                                                                            {isPsychSubject
+                                                                                ? (st.orientationRecord?.id || st.scoreVals?.length >= 7 ? "Phiếu Đánh giá Tâm lý (đã lưu)" : "Phiếu Đánh giá Tâm lý")
+                                                                                : (st.orientationRecord?.id ? "Phiếu Định Hướng (đã lưu)" : "Phiếu Định Hướng")}
+                                                                        </span>
+                                                                        {(() => {
+                                                                            const hasDigitalSig = Boolean(
+                                                                                st.signatureName ||
+                                                                                (st.orientationRecord?.psychologyData && String(st.orientationRecord.psychologyData).includes('"isSigned":true'))
+                                                                            );
+                                                                            if (!hasDigitalSig) return null;
+                                                                            return (
+                                                                                <span 
+                                                                                    className="inline-flex items-center gap-0.5 px-1 py-0.2 rounded-full bg-emerald-600 text-white text-[9px] font-extrabold shrink-0 shadow-2xs ml-0.5"
+                                                                                    title="Đã được tự động gán chữ ký điện tử GVBM sau khi xác nhận B4"
+                                                                                >
+                                                                                    <ShieldCheck className="w-2.5 h-2.5 text-white" />
+                                                                                    <span>Đã ký</span>
+                                                                                </span>
+                                                                            );
+                                                                        })()}
+                                                                    </button>
+                                                                    <button
+                                                                        type="button"
+                                                                        onClick={() => {
+                                                                            setReportTargetStudent(st);
+                                                                            setActiveReportOrientationData(null);
+                                                                        }}
+                                                                        className="px-2 py-1.5 rounded-lg border border-slate-200 bg-white hover:bg-teal-50 text-slate-700 hover:text-[#003B3A] text-[11px] font-bold flex items-center justify-center transition-colors cursor-pointer shrink-0"
+                                                                        title={isPsychSubject ? "Xem & In Phiếu Đánh Giá Tâm Lý & Báo cáo Định hướng A4" : "Xem & In Báo cáo Phỏng vấn Định hướng A4"}
+                                                                    >
+                                                                        <Printer className="w-3.5 h-3.5" />
+                                                                    </button>
+                                                                </div>
+                                                            )}
+                                                        </div>
                                                     </td>
                                                 </tr>
                                             );
@@ -2468,12 +2544,13 @@ export default function TeacherAssessmentsClient({ user }: { user: any }) {
                 })}
             />
 
-            {/* MODAL PHIẾU ĐỊNH HƯỚNG ĐẦU VÀO (2 TAB) */}
+            {/* MODAL PHIẾU ĐỊNH HƯỚNG ĐẦU VÀO (3 TAB + NHẬP ĐIỂM MÔN THEO PHÂN CÔNG) */}
             {orientationTargetStudent && (
                 <StudentOrientationModal
                     isOpen={!!orientationTargetStudent}
                     onClose={() => setOrientationTargetStudent(null)}
                     student={orientationTargetStudent}
+                    initialSubjectId={currentAssignment?.subjectId}
                     onOpenReport={(stu, orData) => {
                         setReportTargetStudent(stu);
                         setActiveReportOrientationData(orData);

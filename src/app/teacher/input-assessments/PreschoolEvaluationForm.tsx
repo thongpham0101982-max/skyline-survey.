@@ -210,7 +210,7 @@ export default function PreschoolEvaluationForm({
   const getBMIClassification = (bmi: number) => {
     if (bmi < 13.5) return { label: "Gầy (Thiếu cân)", color: "text-amber-600 bg-amber-50 border-amber-100", dot: "bg-amber-400" }
     if (bmi <= 17.0) return { label: "Bình thường", color: "text-emerald-600 bg-emerald-50 border-emerald-100", dot: "bg-emerald-400" }
-    if (bmi <= 18.5) return { label: "Thừa cân", color: "text-orange-600 bg-orange-50 border-orange-100", dot: "bg-orange-400" }
+    if (bmi <= 18.5) return { label: "Thừa cân", color: "text-amber-700 bg-amber-50 border-amber-200", dot: "bg-amber-500" }
     return { label: "Béo phì", color: "text-rose-600 bg-rose-50 border-rose-100", dot: "bg-rose-400" }
   }
 
@@ -256,7 +256,7 @@ export default function PreschoolEvaluationForm({
 
   const probRadioOpts = [
     { key: "CHUA_THE_HIEN", label: "Chưa thể hiện", color: "peer-checked:bg-amber-50 peer-checked:text-amber-700 peer-checked:border-amber-200 border-slate-200" },
-    { key: "BAT_DAU_THE_HIEN", label: "Bắt đầu thể hiện", color: "peer-checked:bg-indigo-50 peer-checked:text-indigo-700 peer-checked:border-indigo-200 border-slate-200" },
+    { key: "BAT_DAU_THE_HIEN", label: "Bắt đầu thể hiện", color: "peer-checked:bg-teal-50 peer-checked:text-teal-800 peer-checked:border-teal-200 border-slate-200" },
     { key: "THE_HIEN_TOT", label: "Thể hiện tốt", color: "peer-checked:bg-emerald-50 peer-checked:text-emerald-700 peer-checked:border-emerald-200 border-slate-200" }
   ]
 
@@ -384,7 +384,7 @@ export default function PreschoolEvaluationForm({
                           {isPhysical ? (
                             <div className="flex flex-col md:flex-row md:items-center gap-4">
                               {/* Physical Measurement Value */}
-                              <div className="flex items-center bg-white border-2 border-violet-100 rounded-2xl overflow-hidden hover:border-violet-300 focus-within:border-violet-500 focus-within:ring-4 focus-within:ring-violet-100/30 transition-all shadow-sm max-w-[200px]">
+                              <div className="flex items-center bg-white border-2 border-teal-200 rounded-2xl overflow-hidden hover:border-teal-200 focus-within:border-teal-200 focus-within:ring-4 focus-within:ring-violet-100/30 transition-all shadow-sm max-w-[200px]">
                                 <input
                                   type="number"
                                   step={isHeight ? "1" : "0.1"}
@@ -396,7 +396,7 @@ export default function PreschoolEvaluationForm({
                                   disabled={isAssessmentLocked}
                                   className="w-24 text-xl font-black text-slate-800 outline-none bg-transparent text-center px-3 py-2.5 disabled:text-slate-400 disabled:cursor-not-allowed"
                                 />
-                                <div className="text-sm font-black text-violet-600 select-none min-w-[48px] text-center text-xs font-semibold">
+                                <div className="text-sm font-black text-teal-800 select-none min-w-[48px] text-center text-xs font-semibold">
                                   {unit}
                                 </div>
                               </div>
@@ -726,8 +726,8 @@ export default function PreschoolEvaluationForm({
             return (
               <div className="bg-white rounded-3xl border border-slate-100 shadow-sm p-5 space-y-4">
                 <h3 className="text-[12px] font-black text-slate-800 uppercase tracking-widest flex items-center gap-1.5 pb-2 border-b border-slate-100">
-                  <ClipboardList className="w-4 h-4 text-indigo-500" /> Lược sử đánh giá mầm non
-                  <span className="text-[10px] font-bold text-indigo-700 ml-auto text-xs font-semibold">{pastAssessments.length} đợt</span>
+                  <ClipboardList className="w-4 h-4 text-teal-700" /> Lược sử đánh giá mầm non
+                  <span className="text-[10px] font-bold text-teal-800 ml-auto text-xs font-semibold">{pastAssessments.length} đợt</span>
                 </h3>
                 {loadingHistory ? (
                   <div className="text-xs text-slate-500 py-2">Đang tải lược sử...</div>

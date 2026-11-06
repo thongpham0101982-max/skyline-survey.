@@ -637,25 +637,25 @@ function ActivityCatalogsContent() {
               onClick={() => setCategoryFilter(categoryFilter === 'HOAT_DONG_SU_KIEN' ? 'ALL' : 'HOAT_DONG_SU_KIEN')}
               className={`p-3.5 rounded-2xl border text-left transition-all cursor-pointer relative overflow-hidden group ${
                 categoryFilter === 'HOAT_DONG_SU_KIEN'
-                  ? 'bg-purple-50/60 border-purple-500 shadow-md ring-2 ring-purple-400/25'
-                  : 'bg-white border-slate-200/90 hover:border-purple-200 hover:bg-purple-50/20'
+                  ? 'bg-teal-50/60 border-teal-400 shadow-md ring-2 ring-purple-400/25'
+                  : 'bg-white border-slate-200/90 hover:border-teal-200 hover:bg-teal-50/20'
               }`}
             >
               <div className="flex items-center justify-between mb-1.5">
-                <span className="text-[11px] font-black uppercase tracking-wider text-purple-700">1. Hoạt động sự kiện</span>
-                <div className={`w-7 h-7 rounded-xl flex items-center justify-center transition-colors ${categoryFilter === 'HOAT_DONG_SU_KIEN' ? 'bg-purple-200 text-purple-800' : 'bg-purple-100/60 text-purple-600'}`}>
+                <span className="text-[11px] font-black uppercase tracking-wider text-teal-800">1. Hoạt động sự kiện</span>
+                <div className={`w-7 h-7 rounded-xl flex items-center justify-center transition-colors ${categoryFilter === 'HOAT_DONG_SU_KIEN' ? 'bg-teal-50 text-teal-800' : 'bg-teal-100/60 text-teal-800'}`}>
                   <Users className="w-3.5 h-3.5" />
                 </div>
               </div>
               <div className="flex items-baseline gap-2">
-                <span className="text-2xl font-black text-purple-950">{eventCount}</span>
-                <span className="text-xs font-bold text-purple-600">hoạt động</span>
+                <span className="text-2xl font-black text-teal-800">{eventCount}</span>
+                <span className="text-xs font-bold text-teal-800">hoạt động</span>
               </div>
-              <p className="text-[11px] text-purple-700/80 mt-1 line-clamp-1">
+              <p className="text-[11px] text-teal-800/80 mt-1 line-clamp-1">
                 Vai trò HS & Điểm danh • Không lập Rubric
               </p>
               {categoryFilter === 'HOAT_DONG_SU_KIEN' && (
-                <div className="absolute bottom-0 left-0 right-0 h-1 bg-purple-500" />
+                <div className="absolute bottom-0 left-0 right-0 h-1 bg-teal-500" />
               )}
             </button>
 
@@ -972,7 +972,7 @@ function ActivityCatalogsContent() {
 
                 {/* Nhóm HK1: 8..1 */}
                 <div className="flex items-center gap-1 shrink-0 pl-1">
-                  <span className="text-[10px] font-black uppercase text-indigo-700 bg-indigo-50 border border-indigo-200 px-1.5 py-0.5 rounded-md">
+                  <span className="text-[10px] font-black uppercase text-teal-800 bg-teal-50 border border-teal-200 px-1.5 py-0.5 rounded-md">
                     HK1
                   </span>
                   {SCHOOL_YEAR_MONTHS.filter(m => m.semester === 1).map(m => {
@@ -1405,7 +1405,7 @@ function ActivityCatalogsContent() {
                                 {progTypes.map((prog: string) => (
                                   <span
                                     key={prog}
-                                    className="px-1.5 py-0.2 rounded-md text-[10px] font-bold bg-indigo-50 text-indigo-800 border border-indigo-200 whitespace-nowrap"
+                                    className="px-1.5 py-0.2 rounded-md text-[10px] font-bold bg-teal-50 text-teal-800 border border-teal-200 whitespace-nowrap"
                                   >
                                     {formatProgTypeName(prog)}
                                   </span>
@@ -1413,7 +1413,7 @@ function ActivityCatalogsContent() {
 
                                 {/* Phân loại */}
                                 {isEvent ? (
-                                  <span className="px-1.5 py-0.2 rounded-md text-[10px] font-bold bg-purple-100/80 text-purple-800 border border-purple-200">
+                                  <span className="px-1.5 py-0.2 rounded-md text-[10px] font-bold bg-teal-100/80 text-teal-800 border border-teal-200">
                                     Sự kiện
                                   </span>
                                 ) : (
@@ -1462,7 +1462,7 @@ function ActivityCatalogsContent() {
                               <div>
                                 {meta.primarySubjectName && (
                                   <div className="mb-0.5">
-                                    <span className="font-bold text-indigo-700 bg-indigo-50/90 border border-indigo-200 px-1.5 py-0.2 rounded text-[10px] inline-block">
+                                    <span className="font-bold text-teal-800 bg-teal-50/90 border border-teal-200 px-1.5 py-0.2 rounded text-[10px] inline-block">
                                       Chủ trì: {meta.primarySubjectName}
                                     </span>
                                   </div>

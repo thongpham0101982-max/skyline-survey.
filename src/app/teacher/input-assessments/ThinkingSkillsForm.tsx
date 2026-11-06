@@ -61,7 +61,7 @@ export default function ThinkingSkillsForm({ student, onClose, onSave, isLocked 
                     <div className="relative z-10 flex justify-between items-start">
                         <div>
                             <h2 className="text-2xl font-black mb-1">Đánh giá Năng lực tư duy</h2>
-                            <p className="text-indigo-100 text-sm font-medium">Học sinh: {student?.fullName} - Lớp: Khối {student?.grade}</p>
+                            <p className="text-teal-700 text-sm font-medium">Học sinh: {student?.fullName} - Lớp: Khối {student?.grade}</p>
                         </div>
                         <button onClick={onClose} className="p-2 bg-white/10 hover:bg-white/20 rounded-full backdrop-blur-sm transition-colors text-white">
                             <X className="w-5 h-5" />
@@ -84,8 +84,8 @@ export default function ThinkingSkillsForm({ student, onClose, onSave, isLocked 
                                             disabled={isLocked}
                                             className={`w-10 h-10 rounded-xl font-bold transition-all border-2 flex items-center justify-center ${
                                                 item.value === opt 
-                                                    ? "bg-indigo-600 border-indigo-600 text-white shadow-md shadow-indigo-200 scale-105" 
-                                                    : "bg-white border-slate-200 text-slate-500 hover:border-indigo-300 hover:text-indigo-600"
+                                                    ? "bg-[#003B3A] border-teal-200 text-white shadow-md shadow-indigo-200 scale-105" 
+                                                    : "bg-white border-slate-200 text-slate-500 hover:border-teal-200 hover:text-teal-800"
                                             }`}
                                         >
                                             {opt}
@@ -105,7 +105,7 @@ export default function ThinkingSkillsForm({ student, onClose, onSave, isLocked 
                                     value={percent}
                                     onChange={(e) => setPercent(e.target.value)}
                                     disabled={isLocked}
-                                    className="w-full text-center text-xl font-black text-indigo-700 p-4 outline-none focus:border-indigo-500 focus:ring-4 focus:ring-indigo-50 transition-all focus:bg-white text-xs font-semibold"
+                                    className="w-full text-center text-xl font-black text-teal-800 p-4 outline-none focus:border-teal-200 focus:ring-4 focus:ring-indigo-50 transition-all focus:bg-white text-xs font-semibold"
                                     placeholder="Ví dụ: 95"
                                 />
                                 <div className="absolute right-4 top-1/2 -translate-y-1/2 text-xl font-bold text-slate-400">%</div>
@@ -118,7 +118,7 @@ export default function ThinkingSkillsForm({ student, onClose, onSave, isLocked 
                 {/* Footer */}
                 <div className="p-4 bg-white border-t border-slate-100 flex justify-between items-center shrink-0">
                     <div className="flex items-center gap-2 text-slate-500 text-xs font-medium px-2">
-                        <AlertCircle className="w-4 h-4 text-indigo-500" />
+                        <AlertCircle className="w-4 h-4 text-teal-700" />
                         <span>Hãy kiểm tra kỹ thông tin trước khi lưu.</span>
                     </div>
                     <div className="flex gap-3">
@@ -126,7 +126,7 @@ export default function ThinkingSkillsForm({ student, onClose, onSave, isLocked 
                         <button
                             onClick={handleSave}
                             disabled={isSaving || isLocked}
-                            className="flex items-center gap-2 hover:bg-indigo-700 text-white font-bold shadow-md shadow-indigo-200 transition-all disabled:opacity-50 text-sm text-xs font-semibold"
+                            className="flex items-center gap-2 hover:bg-[#003B3A] text-white font-bold shadow-md shadow-indigo-200 transition-all disabled:opacity-50 text-sm text-xs font-semibold"
                         >
                             {isSaving ? <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin"></div> : <Save className="w-4 h-4" />}
                             Lưu Kết Quả

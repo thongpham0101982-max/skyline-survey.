@@ -121,7 +121,7 @@ export function CheerObservationBar({
         <div className="flex items-center gap-2 self-start sm:self-auto shrink-0">
           <span className={`text-[11px] font-black px-3 py-1 rounded-full border uppercase tracking-wider ${
             isEpic
-              ? "bg-purple-500/20 text-purple-300 border-purple-500/40"
+              ? "bg-teal-500/20 text-teal-700 border-teal-500/40"
               : isRare
               ? "bg-sky-500/20 text-sky-300 border-sky-500/40"
               : "bg-emerald-500/20 text-emerald-300 border-emerald-500/40"
@@ -216,12 +216,12 @@ export function CheerObservationBar({
 
           {/* AI After-Class Insight */}
           {quest.afterClassInsight && (
-            <div className="p-4 bg-purple-950/40 border border-purple-500/30 rounded-xl space-y-1.5">
+            <div className="p-4 bg-teal-950/40 border border-teal-500/30 rounded-xl space-y-1.5">
               <div className="flex items-center gap-1.5 text-xs font-black text-amber-300 uppercase tracking-wider">
                 <Sparkles className="w-3.5 h-3.5" />
                 Dấu Ấn Sư Phạm Tổng Hợp Từ AI
               </div>
-              <p className="text-xs text-purple-100/90 leading-relaxed italic">
+              <p className="text-xs text-teal-700/90 leading-relaxed italic">
                 "{quest.afterClassInsight}"
               </p>
             </div>

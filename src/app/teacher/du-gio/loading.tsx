@@ -4,7 +4,7 @@ export default function ObservationLoading() {
       {/* Top Banner / Stats Skeleton */}
       <div className="bg-white rounded-2xl sm:rounded-3xl p-5 sm:p-6 border border-slate-200/80 shadow-xs flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
         <div className="flex items-center gap-4">
-          <div className="w-12 h-12 sm:w-14 sm:h-14 rounded-2xl bg-indigo-100/70 shrink-0" />
+          <div className="w-12 h-12 sm:w-14 sm:h-14 rounded-2xl bg-teal-100/70 shrink-0" />
           <div className="space-y-2">
             <div className="h-6 w-56 sm:w-72 bg-slate-200 rounded-lg" />
             <div className="h-4 w-40 sm:w-48 bg-slate-100 rounded-md" />
@@ -12,7 +12,7 @@ export default function ObservationLoading() {
         </div>
         <div className="flex items-center gap-2.5 w-full md:w-auto">
           <div className="h-10 w-28 bg-slate-100 rounded-xl" />
-          <div className="h-10 w-36 bg-indigo-200/70 rounded-xl" />
+          <div className="h-10 w-36 bg-teal-200/70 rounded-xl" />
         </div>
       </div>
 

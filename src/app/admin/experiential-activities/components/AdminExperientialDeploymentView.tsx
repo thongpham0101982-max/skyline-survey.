@@ -558,15 +558,15 @@ export default function ExperientialActivitiesList() {
                       const yr = curYear?.title || curYear?.name || "2026-2027";
                       window.open(`/api/admin/experiential-activities/export-monthly-pdf?academicYear=${encodeURIComponent(yr)}`, "_blank");
                     }}
-                    className="w-full text-left p-2.5 rounded-xl hover:bg-indigo-50 transition-colors flex items-start gap-2.5 cursor-pointer text-slate-800 hover:text-indigo-900"
+                    className="w-full text-left p-2.5 rounded-xl hover:bg-teal-50 transition-colors flex items-start gap-2.5 cursor-pointer text-slate-800 hover:text-teal-800"
                   >
-                    <div className="w-7 h-7 rounded-lg bg-indigo-100 text-indigo-700 flex items-center justify-center shrink-0 mt-0.5">
+                    <div className="w-7 h-7 rounded-lg bg-teal-50 text-teal-800 flex items-center justify-center shrink-0 mt-0.5">
                       <Calendar className="w-4 h-4" />
                     </div>
                     <div>
                       <div className="font-bold flex items-center gap-1">
                         <span>Xuất PDF Báo Cáo Theo Tháng</span>
-                        <span className="px-1.5 py-0.5 bg-indigo-100 text-indigo-800 rounded font-black text-[9px]">A4 Dọc</span>
+                        <span className="px-1.5 py-0.5 bg-teal-50 text-teal-800 rounded font-black text-[9px]">A4 Dọc</span>
                       </div>
                       <p className="text-[11px] text-slate-500 mt-0.5 leading-tight">
                         Hoạt động theo tháng gắn theo lớp, GVCN phụ trách và tình trạng đánh giá
@@ -582,7 +582,7 @@ export default function ExperientialActivitiesList() {
                     }}
                     className="w-full text-left p-2.5 rounded-xl hover:bg-slate-50 transition-colors flex items-start gap-2.5 cursor-pointer text-slate-700"
                   >
-                    <div className="w-7 h-7 rounded-lg bg-indigo-50 text-indigo-600 flex items-center justify-center shrink-0 mt-0.5">
+                    <div className="w-7 h-7 rounded-lg bg-teal-50 text-teal-800 flex items-center justify-center shrink-0 mt-0.5">
                       <Eye className="w-4 h-4" />
                     </div>
                     <div>
@@ -656,7 +656,7 @@ export default function ExperientialActivitiesList() {
         <div className="p-3.5 rounded-2xl border border-slate-200/90 bg-white shadow-2xs">
           <div className="flex items-center justify-between mb-1.5">
             <span className="text-[11px] font-black uppercase tracking-wider text-slate-500">Lớp được phân bổ</span>
-            <div className="w-7 h-7 rounded-xl bg-indigo-50 text-indigo-600 flex items-center justify-center">
+            <div className="w-7 h-7 rounded-xl bg-teal-50 text-teal-800 flex items-center justify-center">
               <Building2 className="w-3.5 h-3.5" />
             </div>
           </div>
@@ -1089,7 +1089,7 @@ export default function ExperientialActivitiesList() {
 
                       {/* 5. Hệ học */}
                       <td className="py-2.5 px-3 align-middle">
-                        <span className="px-2 py-0.5 rounded-lg text-[10px] font-bold bg-indigo-50 text-indigo-800 border border-indigo-200 whitespace-nowrap">
+                        <span className="px-2 py-0.5 rounded-lg text-[10px] font-bold bg-teal-50 text-teal-800 border border-teal-200 whitespace-nowrap">
                           {formatProgTypeName(act.programType || (act.meta && act.meta.programType) || 'SONG_NGU')}
                         </span>
                       </td>
@@ -1131,7 +1131,7 @@ export default function ExperientialActivitiesList() {
                               </span>
                             )}
                             {act.deliverables && (
-                              <span className="inline-flex items-center gap-1 text-[9.5px] font-bold text-purple-800 bg-purple-50 px-1.5 py-0.2 rounded border border-purple-200" title={`Sản phẩm: ${act.deliverables}`}>
+                              <span className="inline-flex items-center gap-1 text-[9.5px] font-bold text-teal-800 bg-teal-50 px-1.5 py-0.2 rounded border border-teal-200" title={`Sản phẩm: ${act.deliverables}`}>
                                 <span>Sản phẩm</span>
                               </span>
                             )}
@@ -1143,7 +1143,7 @@ export default function ExperientialActivitiesList() {
                       <td className="py-2.5 px-3 align-middle">
                         {act.primarySubjectName || act.subjectName ? (
                           <div className="mb-0.5">
-                            <span className="font-bold text-indigo-700 bg-indigo-50/80 border border-indigo-200 px-1.5 py-0.2 rounded text-[10px] inline-block">
+                            <span className="font-bold text-teal-800 bg-teal-50/80 border border-teal-200 px-1.5 py-0.2 rounded text-[10px] inline-block">
                               Chủ trì: {act.primarySubjectName || act.subjectName}
                             </span>
                           </div>

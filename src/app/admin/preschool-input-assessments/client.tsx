@@ -65,7 +65,7 @@ function Empty({ text, sub }: { text: string; sub?: string }) {
 function TypeBadge({ t }: { t: string }) {
   const map: Record<string, string> = {
     KHAO_SAT_LE: "bg-blue-50 text-blue-700 border border-blue-200",
-    OPEN_DAY: "bg-[#00A19A]/5 text-purple-700 border border-purple-200"
+    OPEN_DAY: "bg-[#00A19A]/5 text-teal-800 border border-teal-200"
   };
   const label: Record<string, string> = {
     KHAO_SAT_LE: "Khảo sát lẻ cơ sở",
@@ -1051,7 +1051,7 @@ export function PreschoolInputAssessmentsClient({
   const getBMIClassification = (bmi: number) => {
     if (bmi < 13.5) return { label: "Gầy (Thiếu cân)", color: "text-amber-600 bg-amber-50 border-amber-100", dot: "bg-amber-400" };
     if (bmi <= 17.0) return { label: "Bình thường", color: "text-emerald-600 bg-emerald-50 border-emerald-100", dot: "bg-emerald-400" };
-    if (bmi <= 18.5) return { label: "Thừa cân", color: "text-orange-600 bg-orange-50 border-orange-100", dot: "bg-orange-400" };
+    if (bmi <= 18.5) return { label: "Thừa cân", color: "text-amber-700 bg-amber-50 border-amber-200", dot: "bg-amber-500" };
     return { label: "Béo phì", color: "text-rose-600 bg-rose-50 border-rose-100", dot: "bg-rose-400" };
   };
 
@@ -2277,11 +2277,11 @@ Trân trọng kính mời Quý phụ huynh và các em học sinh!`;
           .container {
             width: 100%;
             max-width: 800px;
-            border: 4px double #4f46e5;
+            border: 4px double #00736E;
             padding: 40px;
             border-radius: 16px;
             box-shadow: 0 4px 6px -1px rgba(0,0,0,0.05);
-            background: radial-gradient(circle at top left, #faf5ff 0%, #ffffff 100%);
+            background: radial-gradient(circle at top left, #F0FDFA 0%, #ffffff 100%);
             position: relative;
           }
           .header {
@@ -2308,7 +2308,7 @@ Trân trọng kính mời Quý phụ huynh và các em học sinh!`;
             text-align: center;
             font-size: 28px;
             font-weight: 900;
-            color: #4f46e5;
+            color: #00736E;
             margin: 20px 0;
             letter-spacing: -0.5px;
             text-transform: uppercase;
@@ -4000,7 +4000,7 @@ Trân trọng kính mời Quý phụ huynh và các em học sinh!`;
                           <td className="py-2 px-3 font-bold text-slate-800">{c.fullName}</td>
                           <td className="py-2 px-3 text-center text-slate-600">{c.dateOfBirth ? new Date(c.dateOfBirth).toLocaleDateString("vi-VN") : "—"}</td>
                           <td className="py-2 px-3 font-semibold text-teal-800">{c.grade || "—"}</td>
-                          <td className="py-2 px-3 text-indigo-700 font-semibold">{c.surveyFormType || "—"}</td>
+                          <td className="py-2 px-3 text-teal-800 font-semibold">{c.surveyFormType || "—"}</td>
                           <td className="py-2 px-3 text-slate-600">{resolveCampusDisplay(c.admissionCampus, handoverCampusCode)}</td>
                         </tr>
                       ))}
@@ -4373,7 +4373,7 @@ Trân trọng kính mời Quý phụ huynh và các em học sinh!`;
                     <button
                       onClick={() => setChildrenCurrentPage((p) => Math.min(Math.ceil(filtChildren.length / childrenPageSize), p + 1))}
                       disabled={childrenCurrentPage === Math.ceil(filtChildren.length / childrenPageSize) || Math.ceil(filtChildren.length / childrenPageSize) === 0}
-                      className="px-3 py-1.5 rounded-xl border border-slate-200 hover:border-indigo-500 hover:bg-white text-slate-655 disabled:opacity-40 disabled:hover:border-slate-200 disabled:hover:bg-transparent transition-all cursor-pointer font-black bg-transparent border-none"
+                      className="px-3 py-1.5 rounded-xl border border-slate-200 hover:border-teal-200 hover:bg-white text-slate-655 disabled:opacity-40 disabled:hover:border-slate-200 disabled:hover:bg-transparent transition-all cursor-pointer font-black bg-transparent border-none"
                     >
                       Sau
                     </button>
@@ -4538,7 +4538,7 @@ Trân trọng kính mời Quý phụ huynh và các em học sinh!`;
                                 <td className="px-4 py-3 border-b border-slate-100">
                                   <button
                                     onClick={() => openEvaluation(s)}
-                                    className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-black text-violet-700 bg-[#00A19A]/5 hover:bg-[#00A19A] hover:text-white rounded-none border border-slate-300 transition-all shadow-none"
+                                    className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-black text-teal-800 bg-[#00A19A]/5 hover:bg-[#00A19A] hover:text-white rounded-none border border-slate-300 transition-all shadow-none"
                                   >
                                     <Eye className="w-3.5 h-3.5" /> Xem kết quả
                                   </button>
@@ -4702,15 +4702,15 @@ Trân trọng kính mời Quý phụ huynh và các em học sinh!`;
                               let areaName = "Lĩnh vực";
 
                               if (areaCode === "NHAN_THUC") {
-                                cardClass = "bg-gradient-to-br from-amber-50/70 to-orange-50/30 border-amber-100/70 text-amber-900 shadow-[0_4px_12px_rgba(245,158,11,0.03)]";
-                                progressBg = "bg-gradient-to-r from-amber-400 to-orange-500";
+                                cardClass = "bg-gradient-to-br from-amber-50/70 to-amber-600/30 border-amber-100/70 text-amber-900 shadow-[0_4px_12px_rgba(245,158,11,0.03)]";
+                                progressBg = "bg-gradient-to-r from-amber-400 to-amber-600";
                                 progressTrack = "bg-amber-100/60";
                                 pillClass = "text-amber-700 bg-amber-100/80 border-amber-200/50";
                                 headerIcon = "🧩";
                                 areaName = "Nhận thức";
                               } else if (areaCode === "NGON_NGU") {
-                                cardClass = "bg-gradient-to-br from-sky-50/70 to-indigo-50/30 border-sky-100/70 text-sky-900 shadow-[0_4px_12px_rgba(14,165,233,0.03)]";
-                                progressBg = "bg-gradient-to-r from-sky-400 to-indigo-500";
+                                cardClass = "bg-gradient-to-br from-sky-50/70 to-emerald-600/30 border-sky-100/70 text-sky-900 shadow-[0_4px_12px_rgba(14,165,233,0.03)]";
+                                progressBg = "bg-gradient-to-r from-sky-400 to-emerald-600";
                                 progressTrack = "bg-sky-100/60";
                                 pillClass = "text-sky-700 bg-sky-100/80 border-sky-200/50";
                                 headerIcon = "🗣️";
@@ -4784,7 +4784,7 @@ Trân trọng kính mời Quý phụ huynh và các em học sinh!`;
                                     <div className="font-bold text-slate-800 text-[13px] leading-tight">{s.fullName}</div>
                                     <div className="flex items-center gap-1.5 flex-wrap">
                                       <span className="font-mono text-[9px] font-semibold text-[#00A19A] leading-none">{s.studentCode}</span>
-                                      {s.grade && <span className="text-[9px] font-semibold text-purple-700 leading-none">{s.grade}</span>}
+                                      {s.grade && <span className="text-[9px] font-semibold text-teal-800 leading-none">{s.grade}</span>}
                                     </div>
                                     <div className="text-[10px] text-slate-400 font-medium leading-normal space-y-0.5">
                                       <div>NS: <span className="text-slate-600 font-semibold">{s.dateOfBirth ? new Date(s.dateOfBirth).toLocaleDateString("vi-VN") : "—"}</span> • <span className="text-slate-600 font-medium">{s.gender || "—"}</span></div>
@@ -4851,7 +4851,7 @@ Trân trọng kính mời Quý phụ huynh và các em học sinh!`;
                                       </div>
                                     )}
                                     {s.devPsychologyComment && (
-                                      <div className="bg-[#00A19A]/10/30 border-l-[3px] border-indigo-500 rounded-r-xl p-2 flex flex-col gap-0.5 shadow-[0_1px_2px_rgba(0,0,0,0.01)]">
+                                      <div className="bg-[#00A19A]/10/30 border-l-[3px] border-teal-200 rounded-r-xl p-2 flex flex-col gap-0.5 shadow-[0_1px_2px_rgba(0,0,0,0.01)]">
                                         <span className="text-[9px] font-black text-[#00A19A] uppercase tracking-wider">Tâm lý</span>
                                         <span className="text-[11px] leading-relaxed text-slate-700 font-medium">{s.devPsychologyComment}</span>
                                       </div>
@@ -4965,7 +4965,7 @@ Trân trọng kính mời Quý phụ huynh và các em học sinh!`;
                                      </button>
                                      <button
                                        onClick={() => openEvaluation(s)}
-                                       className="flex items-center justify-center gap-1.5 px-3 py-1.5 text-xs font-black text-violet-700 bg-[#00A19A]/5 hover:bg-[#00A19A] hover:text-white rounded-none border border-slate-300 transition-all shadow-none"
+                                       className="flex items-center justify-center gap-1.5 px-3 py-1.5 text-xs font-black text-teal-800 bg-[#00A19A]/5 hover:bg-[#00A19A] hover:text-white rounded-none border border-slate-300 transition-all shadow-none"
                                        title="Xem kết quả"
                                      >
                                        <Eye className="w-3.5 h-3.5" /> Xem kết quả
@@ -5100,7 +5100,7 @@ Trân trọng kính mời Quý phụ huynh và các em học sinh!`;
                                     className={`flex items-center gap-1.5 px-3 py-1.5 text-xs font-black rounded-none border transition-all shadow-none ${
                                       isExempt 
                                         ? 'text-slate-400 bg-slate-100 border-slate-200 cursor-not-allowed' 
-                                        : 'text-violet-700 bg-[#00A19A]/5 hover:bg-[#00A19A] hover:text-white border-slate-300'
+                                        : 'text-teal-800 bg-[#00A19A]/5 hover:bg-[#00A19A] hover:text-white border-slate-300'
                                     }`}
                                   >
                                     <ClipboardList className="w-3.5 h-3.5" /> Đánh giá học thử
@@ -5225,7 +5225,7 @@ Trân trọng kính mời Quý phụ huynh và các em học sinh!`;
                                     </button>
                                     <button
                                       onClick={() => openEmailCongratsModal(s)}
-                                      className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-black text-violet-700 bg-[#00A19A]/5 hover:bg-[#00A19A] hover:text-white rounded-none border border-slate-300 transition-all shadow-none whitespace-nowrap cursor-pointer"
+                                      className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-black text-teal-800 bg-[#00A19A]/5 hover:bg-[#00A19A] hover:text-white rounded-none border border-slate-300 transition-all shadow-none whitespace-nowrap cursor-pointer"
                                     >
                                       <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2.5"><path strokeLinecap="round" strokeLinejoin="round" d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"/></svg>
                                       Gửi Email
@@ -5272,7 +5272,7 @@ Trân trọng kính mời Quý phụ huynh và các em học sinh!`;
                   <button
                     key={g}
                     onClick={() => setAgeGroupFilter(g)}
-                    className={`px-4 py-2 text-[11px] font-bold rounded-none transition-all ${ageGroupFilter === g ? "bg-white text-violet-700 shadow-none border border-slate-300" : "text-slate-500 hover:text-[#00A19A]"}`}
+                    className={`px-4 py-2 text-[11px] font-bold rounded-none transition-all ${ageGroupFilter === g ? "bg-white text-teal-800 shadow-none border border-slate-300" : "text-slate-500 hover:text-[#00A19A]"}`}
                   >
                     {g}
                   </button>
@@ -5365,7 +5365,7 @@ Trân trọng kính mời Quý phụ huynh và các em học sinh!`;
                   const items = gradesStr.split("&").map(x => x.trim());
                   const tagBg = isPhase1 
                     ? "bg-[#00A19A]/5/60 text-teal-800 border-slate-300 hover:bg-teal-100/40" 
-                    : "bg-indigo-50/60 text-indigo-800 border-indigo-100 hover:bg-indigo-100/40";
+                    : "bg-teal-50/60 text-teal-800 border-teal-200 hover:bg-teal-100/40";
                   return (
                     <div className="flex flex-wrap gap-1.5 mt-2.5">
                       {items.map(item => (
@@ -5378,14 +5378,14 @@ Trân trọng kính mời Quý phụ huynh và các em học sinh!`;
                 };
 
                 return (
-                  <div className="bg-gradient-to-br from-teal-50/40 via-white to-indigo-50/20 border border-slate-300/60 rounded-3xl p-5 shadow-none max-w-4xl my-4 hover:shadow-none transition-all duration-300 relative overflow-hidden animate-fadeIn">
+                  <div className="bg-gradient-to-br from-teal-50/40 via-white to-emerald-600/20 border border-slate-300/60 rounded-3xl p-5 shadow-none max-w-4xl my-4 hover:shadow-none transition-all duration-300 relative overflow-hidden animate-fadeIn">
                     {/* Decorative backdrop blur glow */}
                     <div className="absolute right-0 top-0 w-32 h-32 blur-2xl pointer-events-none text-xs font-semibold" />
                     <div className="absolute left-1/3 bottom-0 w-24 h-24 blur-xl pointer-events-none text-xs font-semibold" />
 
                     {/* Header */}
                     <div className="flex items-center gap-3.5 pb-4 border-b border-slate-300">
-                      <div className="w-10 h-10 rounded-none bg-gradient-to-tr from-teal-500 to-indigo-500 flex items-center justify-center text-white font-extrabold shadow-none shadow-teal-100 shrink-0">
+                      <div className="w-10 h-10 rounded-none bg-gradient-to-tr from-teal-500 to-emerald-600 flex items-center justify-center text-white font-extrabold shadow-none shadow-teal-100 shrink-0">
                         <Calendar className="w-5 h-5 text-white" />
                       </div>
                       <div>
@@ -5414,10 +5414,10 @@ Trân trọng kính mời Quý phụ huynh và các em học sinh!`;
                       </div>
 
                       {/* Giai đoạn 2 */}
-                      <div className="p-4 flex flex-col justify-between hover:border-indigo-200/60 transition-all text-xs font-semibold">
+                      <div className="p-4 flex flex-col justify-between hover:border-teal-200/60 transition-all text-xs font-semibold">
                         <div>
                           <div className="flex items-center justify-between">
-                            <span className="text-indigo-700 text-[9px] font-extrabold uppercase tracking-wider text-xs font-semibold">
+                            <span className="text-teal-800 text-[9px] font-extrabold uppercase tracking-wider text-xs font-semibold">
                               Giai đoạn 2
                             </span>
                             <span className="text-[10px] text-slate-400 font-semibold">Từ 01/01 đến 31/05</span>
@@ -5538,7 +5538,7 @@ Trân trọng kính mời Quý phụ huynh và các em học sinh!`;
           </div>
 
           <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-            {[{ label: "Tổng trẻ KS", value: rptStats.total, color: "from-teal-600 to-teal-500", icon: Baby }, { label: "Đạt yêu cầu", value: rptStats.passed, color: "from-emerald-500 to-teal-400", icon: CheckCircle }, { label: "Chưa duyệt", value: rptStats.pending, color: "from-amber-500 to-orange-500", icon: AlertCircle }, { label: "Không đạt", value: rptStats.failed, color: "from-rose-500 to-red-400", icon: X }].map((stat, i) => (
+            {[{ label: "Tổng trẻ KS", value: rptStats.total, color: "from-teal-600 to-teal-500", icon: Baby }, { label: "Đạt yêu cầu", value: rptStats.passed, color: "from-emerald-500 to-teal-400", icon: CheckCircle }, { label: "Chưa duyệt", value: rptStats.pending, color: "from-amber-500 to-amber-600", icon: AlertCircle }, { label: "Không đạt", value: rptStats.failed, color: "from-rose-500 to-red-400", icon: X }].map((stat, i) => (
               <div key={i} className={`bg-gradient-to-br ${stat.color} rounded-none p-5 text-white shadow-none relative overflow-hidden`}>
                 <div className="absolute top-3 right-3 opacity-20"><stat.icon className="w-10 h-10" /></div>
                 <p className="text-[10px] font-black uppercase tracking-widest opacity-80 mb-2">{stat.label}</p>
@@ -5615,7 +5615,7 @@ Trân trọng kính mời Quý phụ huynh và các em học sinh!`;
                     setRcContent(defaultText);
                     notify("Đã tải mẫu nội dung mặc định!", "ok");
                   }}
-                  className="text-[10px] font-extrabold text-[#00A19A] hover:text-violet-700 hover:bg-teal-100 transition-all text-xs font-semibold"
+                  className="text-[10px] font-extrabold text-[#00A19A] hover:text-teal-800 hover:bg-teal-100 transition-all text-xs font-semibold"
                 >
                   Khôi phục mẫu mặc định
                 </button>
@@ -5854,7 +5854,7 @@ Trân trọng kính mời Quý phụ huynh và các em học sinh!`;
 
             {/* Info note */}
             <div className="mt-4 bg-[#00A19A]/5 border border-slate-300 rounded-none p-3">
-              <p className="text-[11px] font-bold text-violet-700">💡 Lưu ý:</p>
+              <p className="text-[11px] font-bold text-teal-800">💡 Lưu ý:</p>
               <p className="text-[10px] text-[#00A19A] mt-1">Cấu hình sẽ tự động được áp dụng khi xuất thư cho trẻ thuộc cơ sở <strong>{getCampusFullName(campuses.find(c => c.id === rcCampusId)?.campusName || "")}</strong>. Mỗi cơ sở có thể có cấu hình riêng.</p>
             </div>
           </div>
@@ -6214,7 +6214,7 @@ Trân trọng kính mời Quý phụ huynh và các em học sinh!`;
           <div className="bg-white rounded-3xl border border-slate-300 shadow-2xl max-w-2xl w-full overflow-hidden flex flex-col max-h-[90vh] animate-scale-up">
             
             {/* Header */}
-            <div className="bg-gradient-to-r from-teal-600 to-indigo-700 p-6 text-white relative">
+            <div className="bg-gradient-to-r from-teal-600 to-emerald-600 p-6 text-white relative">
               <button 
                 onClick={() => setIsEmailCongratsModalOpen(false)}
                 className="absolute right-6 top-6 text-white/80 hover:text-white bg-white/10 hover:bg-white/20 p-1.5 rounded-full transition-all cursor-pointer"
@@ -6253,7 +6253,7 @@ Trân trọng kính mời Quý phụ huynh và các em học sinh!`;
                       <div className="flex gap-2 text-[10px] font-bold">
                         <button 
                           onClick={() => setEmailCongratsRecipients(prev => prev.map(r => ({ ...r, checked: true })))}
-                          className="text-[#00A19A] hover:text-violet-800 bg-[#00A19A]/5 px-2.5 py-1 rounded-none border border-slate-300 transition-colors cursor-pointer"
+                          className="text-[#00A19A] hover:text-teal-800 bg-[#00A19A]/5 px-2.5 py-1 rounded-none border border-slate-300 transition-colors cursor-pointer"
                         >
                           Chọn tất cả
                         </button>
@@ -6295,7 +6295,7 @@ Trân trọng kính mời Quý phụ huynh và các em học sinh!`;
                                     key={idx} 
                                     className={`flex items-start gap-2.5 p-2 rounded-none border transition-all cursor-pointer select-none text-xs font-semibold ${
                                       r.checked 
-                                        ? "bg-[#00A19A]/5/50 border-slate-300 text-violet-900 shadow-none" 
+                                        ? "bg-[#00A19A]/5/50 border-slate-300 text-teal-800 shadow-none" 
                                         : "bg-white border-slate-300 text-slate-500 hover:bg-slate-50"
                                     }`}
                                   >
@@ -6404,7 +6404,7 @@ Trân trọng kính mời Quý phụ huynh và các em học sinh!`;
                 {/* TO field */}
                 <div>
                   <label className="block text-xs font-bold uppercase tracking-wider text-slate-500 mb-1.5 ml-1">Địa chỉ Email người nhận (To) <span className="text-rose-500">*</span></label>
-                  <input value={recipientEmail} onChange={e => setRecipientEmail(e.target.value)} placeholder="Nhập email người nhận (phân cách bằng dấu phẩy)..." className="w-full outline-none focus:border-indigo-400 focus:ring-4 focus:ring-indigo-400/10 text-sm font-medium text-slate-700 transition-all shadow-none text-xs font-semibold" />
+                  <input value={recipientEmail} onChange={e => setRecipientEmail(e.target.value)} placeholder="Nhập email người nhận (phân cách bằng dấu phẩy)..." className="w-full outline-none focus:border-teal-200 focus:ring-4 focus:ring-indigo-400/10 text-sm font-medium text-slate-700 transition-all shadow-none text-xs font-semibold" />
                   
                   {/* Presets for To */}
                   <div className="flex flex-wrap gap-1 mt-2">
@@ -6429,7 +6429,7 @@ Trân trọng kính mời Quý phụ huynh và các em học sinh!`;
                               setRecipientEmail(current ? (current + ", " + p.email) : p.email);
                             }
                           }}
-                          className={"px-2 py-1 rounded-none text-[10px] font-bold border transition-all " + (isActive ? 'bg-[#00A19A]/10 border-indigo-200 text-indigo-700' : 'bg-slate-50 border-slate-300 text-slate-500 hover:bg-slate-100')}
+                          className={"px-2 py-1 rounded-none text-[10px] font-bold border transition-all " + (isActive ? 'bg-[#00A19A]/10 border-teal-200 text-teal-800' : 'bg-slate-50 border-slate-300 text-slate-500 hover:bg-slate-100')}
                         >
                           + {p.label}
                         </button>
@@ -6441,7 +6441,7 @@ Trân trọng kính mời Quý phụ huynh và các em học sinh!`;
                 {/* CC field */}
                 <div>
                   <label className="block text-xs font-bold uppercase tracking-wider text-slate-500 mb-1.5 ml-1">Đồng kính gửi (CC)</label>
-                  <input value={ccEmail} onChange={e => setCcEmail(e.target.value)} placeholder="Nhập email CC (phân cách bằng dấu phẩy)..." className="w-full outline-none focus:border-indigo-400 focus:ring-4 focus:ring-indigo-400/10 text-sm font-medium text-slate-700 transition-all shadow-none text-xs font-semibold" />
+                  <input value={ccEmail} onChange={e => setCcEmail(e.target.value)} placeholder="Nhập email CC (phân cách bằng dấu phẩy)..." className="w-full outline-none focus:border-teal-200 focus:ring-4 focus:ring-indigo-400/10 text-sm font-medium text-slate-700 transition-all shadow-none text-xs font-semibold" />
                   
                   {/* Presets for CC */}
                   <div className="flex flex-wrap gap-1 mt-2">
@@ -6466,7 +6466,7 @@ Trân trọng kính mời Quý phụ huynh và các em học sinh!`;
                               setCcEmail(current ? (current + ", " + p.email) : p.email);
                             }
                           }}
-                          className={"px-2 py-1 rounded-none text-[10px] font-bold border transition-all " + (isActive ? 'bg-[#00A19A]/10 border-indigo-200 text-indigo-700' : 'bg-slate-50 border-slate-300 text-slate-500 hover:bg-slate-100')}
+                          className={"px-2 py-1 rounded-none text-[10px] font-bold border transition-all " + (isActive ? 'bg-[#00A19A]/10 border-teal-200 text-teal-800' : 'bg-slate-50 border-slate-300 text-slate-500 hover:bg-slate-100')}
                         >
                           + {p.label}
                         </button>
@@ -6484,7 +6484,7 @@ Trân trọng kính mời Quý phụ huynh và các em học sinh!`;
                     value={emailSubject} 
                     onChange={e => setEmailSubject(e.target.value)} 
                     placeholder="Nhập tiêu đề email..." 
-                    className="w-full outline-none focus:border-indigo-400 focus:ring-4 focus:ring-indigo-400/10 text-sm font-medium text-slate-700 transition-all shadow-none text-xs font-semibold"
+                    className="w-full outline-none focus:border-teal-200 focus:ring-4 focus:ring-indigo-400/10 text-sm font-medium text-slate-700 transition-all shadow-none text-xs font-semibold"
                   />
                 </div>
                 
@@ -6512,7 +6512,7 @@ Trân trọng kính mời Quý phụ huynh và các em học sinh!`;
                   <div className="flex gap-2 text-[10px] font-bold">
                     <button 
                       onClick={() => setEmailStudents(prev => prev.map(s => ({ ...s, checked: true })))}
-                      className="text-[#00A19A] hover:text-violet-800 bg-[#00A19A]/5 px-2.5 py-1 rounded-none border border-slate-300 transition-colors cursor-pointer"
+                      className="text-[#00A19A] hover:text-teal-800 bg-[#00A19A]/5 px-2.5 py-1 rounded-none border border-slate-300 transition-colors cursor-pointer"
                     >
                       Chọn tất cả
                     </button>
@@ -7154,7 +7154,7 @@ Trân trọng kính mời Quý phụ huynh và các em học sinh!`;
 
                   {/* Letter Title */}
                   <div className="text-center my-4">
-                    <h2 className="text-indigo-950 uppercase mb-2" style={{ fontFamily: "'Times New Roman', Times, serif", fontSize: "18pt", fontWeight: "bold", letterSpacing: "1px" }}>
+                    <h2 className="text-teal-800 uppercase mb-2" style={{ fontFamily: "'Times New Roman', Times, serif", fontSize: "18pt", fontWeight: "bold", letterSpacing: "1px" }}>
                       {isInvitation ? (studentCampusConfig?.title || "THƯ MỜI") : isCommitment ? (studentCampusConfig?.title || "BẢN CAM KẾT HỌC TẬP") : (studentCampusConfig?.title || "THƯ CHÚC MỪNG")}
                     </h2>
                   </div>
@@ -7376,7 +7376,7 @@ Trân trọng kính mời Quý phụ huynh và các em học sinh!`;
 
                       {/* Page Title */}
                       <div className="text-center my-6">
-                        <h2 className="text-indigo-950 uppercase mb-4" style={{ fontFamily: "'Times New Roman', Times, serif", fontSize: "18pt", fontWeight: "bold", letterSpacing: "1px" }}>
+                        <h2 className="text-teal-800 uppercase mb-4" style={{ fontFamily: "'Times New Roman', Times, serif", fontSize: "18pt", fontWeight: "bold", letterSpacing: "1px" }}>
                           DANH MỤC HỒ SƠ NHẬP HỌC
                         </h2>
                       </div>
@@ -7567,7 +7567,7 @@ Trân trọng kính mời Quý phụ huynh và các em học sinh!`;
                         </div>
 
                         <div className="text-center my-6">
-                          <h2 className="text-indigo-950 uppercase mb-2" style={{ fontSize: "18pt", fontWeight: "bold", letterSpacing: "1px" }}>CHI TIẾT ĐÁNH GIÁ</h2>
+                          <h2 className="text-teal-800 uppercase mb-2" style={{ fontSize: "18pt", fontWeight: "bold", letterSpacing: "1px" }}>CHI TIẾT ĐÁNH GIÁ</h2>
                           <h3 className="text-lg font-bold text-slate-700 uppercase">{subject.name}</h3>
                         </div>
 
@@ -7676,7 +7676,7 @@ Trân trọng kính mời Quý phụ huynh và các em học sinh!`;
             </div>
           )}
 
-          <div className="bg-gradient-to-r from-teal-50/30 via-indigo-50/10 to-purple-50/30 p-5 rounded-2xl border border-[#00A19A]/20 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-6 shadow-xs">
+          <div className="bg-gradient-to-r from-teal-50/30 via-indigo-50/10 to-emerald-600/30 p-5 rounded-2xl border border-[#00A19A]/20 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-6 shadow-xs">
             <div className="flex items-center gap-4">
               <div className="w-14 h-14 flex items-center justify-center text-[#00A19A] shadow-inner shrink-0 text-xs font-semibold">
                 <Baby className="w-8 h-8" />
@@ -7689,8 +7689,8 @@ Trân trọng kính mời Quý phụ huynh và các em học sinh!`;
             </div>
             <div className="flex flex-wrap gap-2.5">
               <div className="text-xs font-semibold">
-                <span className="text-[9px] font-black text-purple-400 uppercase tracking-widest block leading-none mb-1">Nhóm tuổi</span>
-                <span className="text-xs font-black text-purple-700">{evalStudent?.grade}</span>
+                <span className="text-[9px] font-black text-teal-700 uppercase tracking-widest block leading-none mb-1">Nhóm tuổi</span>
+                <span className="text-xs font-black text-teal-800">{evalStudent?.grade}</span>
               </div>
               <div className="text-xs font-semibold">
                 <span className="text-[9px] font-black text-emerald-400 uppercase tracking-widest block leading-none mb-1">Khối lớp</span>
@@ -7701,8 +7701,8 @@ Trân trọng kính mời Quý phụ huynh và các em học sinh!`;
                 <span className="text-xs font-black text-blue-700">{evalStudent?.admissionCampus || "Chưa rõ"}</span>
               </div>
               <div className="text-xs font-semibold">
-                <span className="text-[9px] font-black text-indigo-400 uppercase tracking-widest block leading-none mb-1">Giáo viên khảo sát</span>
-                <span className="text-xs font-black text-indigo-700">{assignedTeachers || "Chưa phân công"}</span>
+                <span className="text-[9px] font-black text-teal-700 uppercase tracking-widest block leading-none mb-1">Giáo viên khảo sát</span>
+                <span className="text-xs font-black text-teal-800">{assignedTeachers || "Chưa phân công"}</span>
               </div>
             </div>
           </div>
@@ -7999,11 +7999,11 @@ Trân trọng kính mời Quý phụ huynh và các em học sinh!`;
                 };
 
                 return (
-                  <div className="mt-8 rounded-3xl border border-violet-100 bg-gradient-to-br from-teal-50/20 via-violet-50/10 to-fuchsia-50/20 p-6 space-y-6 shadow-xs">
+                  <div className="mt-8 rounded-3xl border border-teal-200 bg-gradient-to-br from-teal-50/20 via-violet-50/10 to-fuchsia-50/20 p-6 space-y-6 shadow-xs">
                     <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-slate-200/60 pb-4">
                       <div className="flex items-center gap-2">
                         <Sparkles className="w-4 h-4 text-amber-600 animate-pulse" />
-                        <h4 className="text-xs font-black text-violet-700 uppercase tracking-widest">PHÊ DUYỆT 2 BƯỚC XÉT DUYỆT</h4>
+                        <h4 className="text-xs font-black text-teal-800 uppercase tracking-widest">PHÊ DUYỆT 2 BƯỚC XÉT DUYỆT</h4>
                       </div>
                       <div className="flex items-center gap-2 bg-white px-4 py-2 rounded-xl border border-slate-200 shadow-xs self-start sm:self-auto">
                         <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest">
@@ -8233,11 +8233,11 @@ Trân trọng kính mời Quý phụ huynh và các em học sinh!`;
                 const pastAssessments = historyList.filter((h: any) => h.id !== evalStudent?.id);
                 if (pastAssessments.length === 0) return null;
                 return (
-                  <div className="mt-8 rounded-3xl border border-indigo-100 bg-gradient-to-br from-indigo-50/20 via-violet-50/10 to-indigo-50/10 p-6 space-y-5 shadow-xs">
+                  <div className="mt-8 rounded-3xl border border-teal-200 bg-gradient-to-br from-teal-600/20 via-violet-50/10 to-emerald-600/10 p-6 space-y-5 shadow-xs">
                     <div className="flex items-center gap-2 mb-1 pb-3 border-b border-slate-200/60">
-                      <ClipboardList className="w-4 h-4 text-indigo-500" />
-                      <h4 className="text-xs font-black text-indigo-700 uppercase tracking-widest">Lược sử đánh giá mầm non</h4>
-                      <span className="text-[10px] font-bold text-indigo-700 ml-auto text-xs font-semibold">{pastAssessments.length} đợt</span>
+                      <ClipboardList className="w-4 h-4 text-teal-700" />
+                      <h4 className="text-xs font-black text-teal-800 uppercase tracking-widest">Lược sử đánh giá mầm non</h4>
+                      <span className="text-[10px] font-bold text-teal-800 ml-auto text-xs font-semibold">{pastAssessments.length} đợt</span>
                     </div>
                     {loadingHistory ? (
                       <div className="text-xs text-slate-500 py-2">Đang tải lược sử...</div>
@@ -8354,11 +8354,11 @@ Trân trọng kính mời Quý phụ huynh và các em học sinh!`;
             </div>
             <div>
               <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Nhóm tuổi</p>
-              <p className="text-sm font-bold text-purple-700 bg-[#00A19A]/5 px-2 py-0.5 rounded-none border border-slate-300">{probStudent?.grade}</p>
+              <p className="text-sm font-bold text-teal-800 bg-[#00A19A]/5 px-2 py-0.5 rounded-none border border-slate-300">{probStudent?.grade}</p>
             </div>
             <div>
               <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Cơ sở</p>
-              <p className="text-sm font-bold text-indigo-700 bg-[#00A19A]/10 px-2 py-0.5 rounded-none border border-[#00A19A]/20">{probStudent?.admissionCampus || "—"}</p>
+              <p className="text-sm font-bold text-teal-800 bg-[#00A19A]/10 px-2 py-0.5 rounded-none border border-[#00A19A]/20">{probStudent?.admissionCampus || "—"}</p>
             </div>
           </div>
 
@@ -8465,7 +8465,7 @@ Trân trọng kính mời Quý phụ huynh và các em học sinh!`;
                                   onClick={() => setScoreResult(currentScore.result === "BAT_DAU_THE_HIEN" ? "" : "BAT_DAU_THE_HIEN")}
                                   className={`w-5 h-5 rounded-full border transition-all ${
                                     currentScore.result === "BAT_DAU_THE_HIEN"
-                                      ? "bg-[#00A19A]/100 border-indigo-500 shadow-none text-white flex items-center justify-center text-[10px] font-bold mx-auto"
+                                      ? "bg-[#00A19A]/100 border-teal-200 shadow-none text-white flex items-center justify-center text-[10px] font-bold mx-auto"
                                       : "border-slate-300 hover:border-slate-400 bg-white mx-auto block"
                                   }`}
                                 >
@@ -8798,7 +8798,7 @@ Trân trọng kính mời Quý phụ huynh và các em học sinh!`;
                         <td className="py-1.5 px-3 font-bold text-slate-800">{c.fullName}</td>
                         <td className="py-1.5 px-3 text-center text-slate-600">{c.dateOfBirth ? new Date(c.dateOfBirth).toLocaleDateString("vi-VN") : "—"}</td>
                         <td className="py-1.5 px-3 font-semibold text-teal-800">{c.grade || "—"}</td>
-                        <td className="py-1.5 px-3 text-indigo-700 font-semibold">{c.surveyFormType || "—"}</td>
+                        <td className="py-1.5 px-3 text-teal-800 font-semibold">{c.surveyFormType || "—"}</td>
                         <td className="py-1.5 px-3 text-slate-600">{resolveCampusDisplay(c.admissionCampus, handoverCampusCode)}</td>
                       </tr>
                     ))}

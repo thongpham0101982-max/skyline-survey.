@@ -148,11 +148,14 @@ export async function getStudentOrientationRecord(studentId: string) {
             writtenEnglishScore: true,
             oralEnglishScore: true,
             psychologyScore: true,
+            periodId: true,
+            batchId: true,
             period: {
               select: {
                 id: true,
                 code: true,
-                name: true
+                name: true,
+                status: true
               }
             },
             batch: {
@@ -160,6 +163,7 @@ export async function getStudentOrientationRecord(studentId: string) {
                 id: true,
                 batchNumber: true,
                 name: true,
+                status: true,
                 campus: {
                   select: {
                     id: true,
@@ -203,9 +207,44 @@ export async function getStudentOrientationRecord(studentId: string) {
 /**
  * Lưu hoặc cập nhật phiếu định hướng của học sinh
  */
+const ALLOWED_ORIENTATION_COLS = new Set([
+  'academicYearId',
+  'interviewerId',
+  'interviewerName',
+  'interviewDate',
+  'status',
+  'adaptationLevel',
+  'interviewData',
+  'studentStrengths',
+  'studentNeedsSupport',
+  'interviewerGeneralRemark',
+  'parentExpectations',
+  'parentHealthNotes',
+  'parentPersonalityNotes',
+  'parentSpecialRequests',
+  'cooperationCommitment',
+  'parentRepresentativeName',
+  'parentPhone',
+  'proposedEduSystem',
+  'proposedClassPlacement',
+  'admissionConsultantNote',
+  'psychologyReferralStatus',
+  'psychologyReferralReason',
+  'psychologyTeacherId',
+  'psychologyTeacherName',
+  'psychologyData'
+]);
+
 export async function upsertStudentOrientationRecord(data: StudentOrientationData) {
   const pAny = prisma as any;
   const { studentId, ...rest } = data;
+
+  const sanitizedRest: Record<string, any> = {};
+  for (const [k, v] of Object.entries(rest)) {
+    if (ALLOWED_ORIENTATION_COLS.has(k)) {
+      sanitizedRest[k] = v;
+    }
+  }
 
   try {
     const existing = await pAny.studentOrientationRecord.findUnique({
@@ -219,7 +258,7 @@ export async function upsertStudentOrientationRecord(data: StudentOrientationDat
         return await pAny.studentOrientationRecord.update({
           where: { studentId },
           data: {
-            ...rest,
+            ...sanitizedRest,
             updatedAt: now
           }
         });
@@ -228,7 +267,7 @@ export async function upsertStudentOrientationRecord(data: StudentOrientationDat
         const updates: string[] = ['"updatedAt" = ?'];
         const params: any[] = [now.toISOString()];
 
-        for (const [k, v] of Object.entries(rest)) {
+        for (const [k, v] of Object.entries(sanitizedRest)) {
           updates.push(`"${k}" = ?`);
           params.push(v instanceof Date ? v.toISOString() : (v ?? null));
         }
@@ -245,7 +284,7 @@ export async function upsertStudentOrientationRecord(data: StudentOrientationDat
         return await pAny.studentOrientationRecord.create({
           data: {
             studentId,
-            ...rest
+            ...sanitizedRest
           }
         });
       } catch (prismaCreateErr) {
@@ -255,7 +294,7 @@ export async function upsertStudentOrientationRecord(data: StudentOrientationDat
         const placeholders: string[] = ["?", "?", "?", "?"];
         const params: any[] = [id, studentId, now.toISOString(), now.toISOString()];
 
-        for (const [k, v] of Object.entries(rest)) {
+        for (const [k, v] of Object.entries(sanitizedRest)) {
           cols.push(`"${k}"`);
           placeholders.push("?");
           params.push(v instanceof Date ? v.toISOString() : (v ?? null));
@@ -655,6 +694,198 @@ export async function getGdcsCampusList() {
     ];
   }
 }
+
+/**
+ * Danh bạ Email Giáo vụ phụ trách theo Cơ sở trường học
+ */
+export const DEFAULT_GIAOVU_EMAILS: Record<string, string> = {
+  CS1: "giaovu.cs1@skylineschool.edu.vn",
+  CS2: "giaovu.cs2@skylineschool.edu.vn",
+  CS3: "giaovu.cs3@skylineschool.edu.vn",
+  CS4: "giaovu.cs4@skylineschool.edu.vn",
+  CS5: "giaovu.cs5@skylineschool.edu.vn"
+};
+
+/**
+ * Danh bạ Email Tư vấn Tuyển sinh phụ trách theo Cơ sở
+ */
+export const DEFAULT_TUYENSINH_EMAILS: Record<string, string> = {
+  CS1: "tuyensinh.cs1@skylineschool.edu.vn",
+  CS2: "tuyensinh.cs2@skylineschool.edu.vn",
+  CS3: "tuyensinh.cs3@skylineschool.edu.vn",
+  CS4: "tuyensinh.cs4@skylineschool.edu.vn",
+  CS5: "tuyensinh.cs5@skylineschool.edu.vn"
+};
+
+/**
+ * Trích xuất Email Giáo vụ cơ sở tương ứng theo mã hoặc tên cơ sở
+ */
+export function getCampusGiaovuEmail(campusCodeOrName?: string): string {
+  const code = String(campusCodeOrName || "").toUpperCase();
+  if (code.includes("CS5") || code.includes("HỘI AN") || code.includes("HILL")) return DEFAULT_GIAOVU_EMAILS.CS5;
+  if (code.includes("CS4") || code.includes("BEACH")) return DEFAULT_GIAOVU_EMAILS.CS4;
+  if (code.includes("CS3") || code.includes("INTER")) return DEFAULT_GIAOVU_EMAILS.CS3;
+  if (code.includes("CS2") || code.includes("CENTRAL")) return DEFAULT_GIAOVU_EMAILS.CS2;
+  return DEFAULT_GIAOVU_EMAILS.CS1;
+}
+
+/**
+ * Trích xuất Email Tư vấn Tuyển sinh tương ứng theo mã hoặc tên cơ sở
+ */
+export function getCampusTuyensinhEmail(campusCodeOrName?: string): string {
+  const code = String(campusCodeOrName || "").toUpperCase();
+  if (code.includes("CS5") || code.includes("HỘI AN") || code.includes("HILL")) return DEFAULT_TUYENSINH_EMAILS.CS5;
+  if (code.includes("CS4") || code.includes("BEACH")) return DEFAULT_TUYENSINH_EMAILS.CS4;
+  if (code.includes("CS3") || code.includes("INTER")) return DEFAULT_TUYENSINH_EMAILS.CS3;
+  if (code.includes("CS2") || code.includes("CENTRAL")) return DEFAULT_TUYENSINH_EMAILS.CS2;
+  return DEFAULT_TUYENSINH_EMAILS.CS1;
+}
+
+/**
+ * Lấy danh sách toàn bộ Giáo viên đã được phân công chấm điểm hoặc khảo sát học sinh này
+ * (bao gồm GV các môn Tiếng Anh, Toán, Ngữ Văn, Tâm lý, Mầm non...)
+ */
+export async function getStudentAssignedSurveyTeachers(studentId: string) {
+  const pAny = prisma as any;
+  try {
+    const student = await pAny.inputAssessmentStudent.findUnique({
+      where: { id: studentId },
+      select: {
+        id: true,
+        fullName: true,
+        studentCode: true,
+        grade: true,
+        periodId: true,
+        batchId: true,
+        admissionCampus: true,
+        registeredCampus: true,
+        scores: {
+          include: {
+            subject: true
+          }
+        }
+      }
+    });
+
+    if (!student) return [];
+
+    const rawGrade = String(student.grade || "").toLowerCase().replace("khối", "").replace("khoi", "").trim();
+    const teacherMap = new Map<string, any>();
+
+    // 1. Từ StudentAssessmentScore (những GV đã trực tiếp chấm điểm các môn cho HS)
+    if (Array.isArray(student.scores)) {
+      for (const sc of student.scores) {
+        if (!sc.teacherName && !sc.teacherId) continue;
+        const key = sc.teacherId || sc.teacherName;
+        const subjName = sc.subject?.name || "Môn khảo sát";
+        if (!teacherMap.has(key)) {
+          teacherMap.set(key, {
+            teacherId: sc.teacherId || "",
+            teacherName: sc.teacherName,
+            email: "",
+            phone: "",
+            subjects: [subjName],
+            isDirectScorer: true,
+            source: "Đã chấm điểm"
+          });
+        } else {
+          const item = teacherMap.get(key);
+          if (!item.subjects.includes(subjName)) {
+            item.subjects.push(subjName);
+          }
+        }
+      }
+    }
+
+    // 2. Từ InputAssessmentTeacherAssignment (phân công khảo sát kỳ/đợt/khối)
+    if (student.periodId) {
+      const assignments = await pAny.inputAssessmentTeacherAssignment.findMany({
+        where: {
+          periodId: student.periodId,
+          ...(student.batchId ? { OR: [{ batchId: student.batchId }, { batchId: null }] } : {})
+        },
+        include: {
+          user: {
+            include: {
+              teacher: true
+            }
+          },
+          subject: true
+        }
+      });
+
+      for (const a of assignments) {
+        if (!a.user) continue;
+        const aGrade = String(a.grade || "").toLowerCase().replace("khối", "").replace("khoi", "").trim();
+        const gradeMatch = !aGrade || aGrade === "tất cả" || aGrade === rawGrade;
+        if (!gradeMatch) continue;
+
+        const uId = a.user.id;
+        const uName = a.user.fullName || a.user.name || a.user.teacher?.teacherName || "Giáo viên";
+        const uEmail = a.user.teacher?.email || a.user.email || "";
+        const uPhone = a.user.teacher?.phone || "";
+        const subjName = a.subject?.name || "Khảo sát đầu vào";
+
+        let foundKey = "";
+        for (const [k, v] of teacherMap.entries()) {
+          if (v.teacherId === uId || v.teacherName === uName) {
+            foundKey = k;
+            break;
+          }
+        }
+
+        if (foundKey) {
+          const item = teacherMap.get(foundKey);
+          if (uId && !item.teacherId) item.teacherId = uId;
+          if (uEmail && !item.email) item.email = uEmail;
+          if (uPhone && !item.phone) item.phone = uPhone;
+          if (!item.subjects.includes(subjName)) item.subjects.push(subjName);
+        } else {
+          teacherMap.set(uId, {
+            teacherId: uId,
+            teacherName: uName,
+            email: uEmail,
+            phone: uPhone,
+            subjects: [subjName],
+            isDirectScorer: false,
+            source: "Phân công khảo sát"
+          });
+        }
+      }
+    }
+
+    // Lookup missing emails/phones from User & Teacher table for existing keys
+    for (const [, v] of teacherMap.entries()) {
+      if (!v.email && (v.teacherId || v.teacherName)) {
+        try {
+          const u = await pAny.user.findFirst({
+            where: {
+              OR: [
+                ...(v.teacherId ? [{ id: v.teacherId }] : []),
+                { fullName: v.teacherName }
+              ]
+            },
+            include: { teacher: true }
+          });
+          if (u) {
+            v.email = u.teacher?.email || u.email || "";
+            v.phone = u.teacher?.phone || "";
+            if (!v.teacherId) v.teacherId = u.id;
+          }
+        } catch (e) {}
+      }
+    }
+
+    return Array.from(teacherMap.values()).map(t => ({
+      ...t,
+      subjectLabel: t.subjects.join(", ")
+    }));
+  } catch (error) {
+    console.error("Error in getStudentAssignedSurveyTeachers:", error);
+    return [];
+  }
+}
+
 
 
 

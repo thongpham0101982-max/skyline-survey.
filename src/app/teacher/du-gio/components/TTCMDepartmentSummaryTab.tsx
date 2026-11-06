@@ -100,7 +100,7 @@ export function evaluateTeacherProgress(
       key: "EXCEEDED",
       label: "Vượt chỉ tiêu",
       shortLabel: "Vượt chỉ tiêu",
-      badgeClass: "bg-purple-100 text-purple-800 border-purple-200",
+      badgeClass: "bg-teal-50 text-teal-800 border-teal-200",
       hasTarget: true,
       isOverallMet: true,
       isExceeded: true,
@@ -479,8 +479,8 @@ export function TTCMDepartmentSummaryTab({
       }
 
       // Check creator teacher for ASSIGNED slot (người chỉ định tiết dạy cũng ghi nhận tiết dạy)
-      const creatorTeacherId = getAssignedCreatorTeacherId(slot);
-      if (creatorTeacherId && map[creatorTeacherId] && creatorTeacherId !== slot.teacherId) {
+      const creatorTeacherId = null;
+      if (false) {
         const hasEval = slot.registrations?.some(
           (r: any) => r.evaluation !== null && r.evaluation?.reEvaluationStatus !== "DRAFT"
         );
@@ -1192,13 +1192,13 @@ export function TTCMDepartmentSummaryTab({
             <span className="text-[11px] font-black text-slate-400 uppercase tracking-wider">
               Điểm TB & Tỷ Lệ Đạt
             </span>
-            <div className="w-8 h-8 rounded-xl bg-violet-50 text-violet-700 flex items-center justify-center">
+            <div className="w-8 h-8 rounded-xl bg-teal-50 text-teal-800 flex items-center justify-center">
               <Award className="w-4 h-4" />
             </div>
           </div>
           <div className="mt-3">
             <div className="flex items-baseline gap-2">
-              <span className="text-2xl font-black text-violet-950">
+              <span className="text-2xl font-black text-teal-800">
                 {departmentKPIs.avgScore !== null
                   ? Number(departmentKPIs.avgScore).toFixed(1)
                   : "Chưa có"}
@@ -2275,11 +2275,11 @@ export function TTCMDepartmentSummaryTab({
                           </span>
                         </span>
                       </div>
-                      <div className="p-3 bg-purple-50/60 border border-purple-100 rounded-2xl text-center">
-                        <span className="text-[10px] font-black text-purple-700 uppercase block">
+                      <div className="p-3 bg-teal-50/60 border border-teal-200 rounded-2xl text-center">
+                        <span className="text-[10px] font-black text-teal-800 uppercase block">
                           Điểm TB Tiết Dạy
                         </span>
-                        <span className="text-xl font-black text-purple-900">
+                        <span className="text-xl font-black text-teal-800">
                           {s.avgScore !== null ? Number(s.avgScore).toFixed(1) : "-"}
                         </span>
                       </div>

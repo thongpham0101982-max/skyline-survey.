@@ -332,6 +332,50 @@ export async function getThkqAnalyticsData(filters: ThkqFilterParams) {
     const belowSkylineCount = scores.filter(s => s < skylineBenchmark).length
     const perfect10Count = scores.filter(s => s >= 10.0).length
 
+    // Đánh giá mức độ phân hóa (Data Science Statistical Dispersion)
+    let dispersionLevel: "NONE" | "SAMPLE_SMALL" | "HOMOGENEOUS" | "MODERATE" | "HIGH_DISPERSION" = "MODERATE"
+    let dispersionLabel = "Phân hóa vừa"
+    if (scores.length <= 1) {
+      dispersionLevel = "NONE"
+      dispersionLabel = "Mẫu n=1"
+    } else if (scores.length <= 2) {
+      dispersionLevel = "SAMPLE_SMALL"
+      dispersionLabel = "Mẫu n=2"
+    } else if (stdDev < 0.8) {
+      dispersionLevel = "HOMOGENEOUS"
+      dispersionLabel = "Đồng đều cao"
+    } else if (stdDev <= 1.5) {
+      dispersionLevel = "MODERATE"
+      dispersionLabel = "Phân hóa vừa"
+    } else {
+      dispersionLevel = "HIGH_DISPERSION"
+      dispersionLabel = "Phân hóa mạnh"
+    }
+
+    // Khuyến nghị hành động sư phạm dựa trên số liệu (Actionable Pedagogical Recommendation)
+    let pedagogicalNote = "Theo dõi định kỳ"
+    let pedagogicalPriority: "URGENT" | "WARNING" | "GOOD" | "INFO" = "INFO"
+
+    if (below5Count > 0 && stdDev >= 1.5) {
+      pedagogicalNote = "Can thiệp khẩn cấp (Phân cực)"
+      pedagogicalPriority = "URGENT"
+    } else if (below5Count > 0) {
+      pedagogicalNote = "Phụ đạo học sinh dưới chuẩn"
+      pedagogicalPriority = "WARNING"
+    } else if (avgScore >= 8.5 && stdDev < 1.0) {
+      pedagogicalNote = "Chất lượng cao & đồng đều"
+      pedagogicalPriority = "GOOD"
+    } else if (stdDev >= 1.5) {
+      pedagogicalNote = "Dạy học phân hóa đối tượng"
+      pedagogicalPriority = "WARNING"
+    } else if (scores.length <= 2) {
+      pedagogicalNote = "Cần rà soát đủ điểm (Mẫu nhỏ)"
+      pedagogicalPriority = "INFO"
+    }
+
+    const isSingleClassInGrade = gradeScores.length === scores.length
+    const isSingleClassInCampus = campusScores.length === scores.length
+
     classStats.push({
       classId: info.classId,
       className: info.className,
@@ -350,6 +394,12 @@ export async function getThkqAnalyticsData(filters: ThkqFilterParams) {
       campusAvgScore,
       systemAvgScore,
       stdDev,
+      dispersionLevel,
+      dispersionLabel,
+      pedagogicalNote,
+      pedagogicalPriority,
+      isSingleClassInGrade,
+      isSingleClassInCampus,
       deltaCampus: Math.round((avgScore - campusAvgScore) * 100) / 100,
       deltaGrade: Math.round((avgScore - gradeAvgScore) * 100) / 100,
       below5Count,
@@ -573,7 +623,7 @@ export async function getThkqAnalyticsData(filters: ThkqFilterParams) {
   })
 
   // 9. Danh sách Học sinh Trọng tâm (Target Focus Students)
-  let targetStudents: any[] = processedEntries.map(e => {
+  let allTargetCandidates = processedEntries.map(e => {
     const skylineBenchmark = getSkylineBenchmark(e.level, e.grade, e.subjectId)
     const isBelowSkyline = e.score < skylineBenchmark
     const isBelowMoet = e.score < MOET_BENCHMARK
@@ -581,6 +631,7 @@ export async function getThkqAnalyticsData(filters: ThkqFilterParams) {
     const isPsychological = psychologicalStudentIds.has(e.studentId)
     const isPerfect10 = e.score >= 10.0
     const isScore8To10 = e.score >= 8.0 && e.score <= 10.0
+    const isFocusStudent = isBelowMoet || isBelowSkyline || isCommitment || isPsychological || isPerfect10
 
     return {
       id: e.id,
@@ -597,6 +648,7 @@ export async function getThkqAnalyticsData(filters: ThkqFilterParams) {
       subjectId: e.subjectId,
       subjectName: e.subjectName,
       score: e.score,
+      evaluationPeriod: e.evaluationPeriod || "—",
       skylineBenchmark,
       moetBenchmark: MOET_BENCHMARK,
       deltaSkyline: Math.round((e.score - skylineBenchmark) * 100) / 100,
@@ -607,33 +659,39 @@ export async function getThkqAnalyticsData(filters: ThkqFilterParams) {
       isPsychological,
       isPerfect10,
       isScore8To10,
+      isFocusStudent,
       homeroomTeacher: e.homeroomTeacher
     }
   })
 
-  // Lọc theo searchKeyword (Mã HS hoặc Tên HS hoặc Lớp)
+  // Lọc theo searchKeyword trên tập ứng viên
   if (searchKeyword.trim()) {
     const kw = searchKeyword.toLowerCase().trim()
-    targetStudents = targetStudents.filter(
+    allTargetCandidates = allTargetCandidates.filter(
       s =>
         s.studentName.toLowerCase().includes(kw) ||
         s.studentCode.toLowerCase().includes(kw) ||
-        s.className.toLowerCase().includes(kw)
+        s.className.toLowerCase().includes(kw) ||
+        s.subjectName.toLowerCase().includes(kw)
     )
   }
 
-  // Lọc theo scoreRange
-  if (scoreRange === "UNDER_5") {
-    targetStudents = targetStudents.filter(s => s.isBelowMoet)
-  } else if (scoreRange === "UNDER_BENCHMARK") {
-    targetStudents = targetStudents.filter(s => s.isBelowSkyline)
-  } else if (scoreRange === "8_TO_10") {
-    targetStudents = targetStudents.filter(s => s.isScore8To10)
-  } else if (scoreRange === "PERFECT_10") {
-    targetStudents = targetStudents.filter(s => s.isPerfect10)
+  // TÍNH ĐẾM COUNTS TRÊN TOÀN BỘ TẬP ỨNG VIÊN (Trước khi bị lọc bởi targetType/scoreRange)
+  // để các tab phân nhóm luôn hiển thị số lượng chính xác, không bị biến thành 0
+  const countsByTargetGroup = {
+    allFocus: allTargetCandidates.filter(s => s.isFocusStudent).length,
+    belowSkyline: allTargetCandidates.filter(s => s.isBelowSkyline).length,
+    belowMoet: allTargetCandidates.filter(s => s.isBelowMoet).length,
+    commitment: allTargetCandidates.filter(s => s.isCommitment).length,
+    psychological: allTargetCandidates.filter(s => s.isPsychological).length,
+    perfect10: allTargetCandidates.filter(s => s.isPerfect10).length,
+    score8To10: allTargetCandidates.filter(s => s.isScore8To10).length,
+    totalAll: allTargetCandidates.length
   }
 
-  // Lọc theo targetType
+  // Áp dụng bộ lọc targetType và scoreRange
+  let targetStudents = [...allTargetCandidates]
+
   if (targetType === "BELOW_SKYLINE") {
     targetStudents = targetStudents.filter(s => s.isBelowSkyline)
   } else if (targetType === "BELOW_MOET") {
@@ -644,7 +702,41 @@ export async function getThkqAnalyticsData(filters: ThkqFilterParams) {
     targetStudents = targetStudents.filter(s => s.isPsychological)
   } else if (targetType === "PERFECT_10") {
     targetStudents = targetStudents.filter(s => s.isPerfect10)
+  } else if (targetType === "8_TO_10") {
+    targetStudents = targetStudents.filter(s => s.isScore8To10)
+  } else if (targetType === "ALL") {
+    // Nếu targetType là ALL
+    if (scoreRange === "UNDER_5") {
+      targetStudents = targetStudents.filter(s => s.isBelowMoet)
+    } else if (scoreRange === "UNDER_BENCHMARK") {
+      targetStudents = targetStudents.filter(s => s.isBelowSkyline)
+    } else if (scoreRange === "8_TO_10") {
+      targetStudents = targetStudents.filter(s => s.isScore8To10)
+    } else if (scoreRange === "PERFECT_10") {
+      targetStudents = targetStudents.filter(s => s.isPerfect10)
+    } else {
+      // Khi chọn "Tất cả trọng tâm" và không lọc scoreRange đặc biệt:
+      // Ưu tiên hiển thị những học sinh THỰC SỰ thuộc diện trọng tâm / cần can thiệp
+      const focusList = targetStudents.filter(s => s.isFocusStudent)
+      if (focusList.length > 0) {
+        targetStudents = focusList
+      }
+    }
   }
+
+  // Sắp xếp theo thứ tự mức độ khẩn cấp sư phạm (Data Science Urgency Ordering):
+  // 1. Dưới 5.0 (Cần can thiệp gấp)
+  // 2. Dưới chuẩn Sky-Line
+  // 3. Cam kết đầu vào
+  // 4. Theo dõi tâm lý
+  // 5. Điểm số tăng dần (học sinh điểm thấp xếp trước)
+  targetStudents.sort((a, b) => {
+    if (a.isBelowMoet !== b.isBelowMoet) return a.isBelowMoet ? -1 : 1
+    if (a.isBelowSkyline !== b.isBelowSkyline) return a.isBelowSkyline ? -1 : 1
+    if (a.isCommitment !== b.isCommitment) return a.isCommitment ? -1 : 1
+    if (a.isPsychological !== b.isPsychological) return a.isPsychological ? -1 : 1
+    return a.score - b.score
+  })
 
   // 10. Danh sách Môn học thuộc kỳ khảo sát đang chọn
   const periodConfigs = await prisma.subjectGradeConfig.findMany({
@@ -708,12 +800,6 @@ export async function getThkqAnalyticsData(filters: ThkqFilterParams) {
     subjects: periodSubjects,
     targetStudents: targetStudents.slice(0, 500), // Giới hạn 500 HS để tối ưu render ban đầu
     totalTargetStudentsCount: targetStudents.length,
-    countsByTargetGroup: {
-      belowSkyline: targetStudents.filter(s => s.isBelowSkyline).length,
-      belowMoet: targetStudents.filter(s => s.isBelowMoet).length,
-      commitment: targetStudents.filter(s => s.isCommitment).length,
-      psychological: targetStudents.filter(s => s.isPsychological).length,
-      perfect10: targetStudents.filter(s => s.isPerfect10).length
-    }
+    countsByTargetGroup
   }
 }

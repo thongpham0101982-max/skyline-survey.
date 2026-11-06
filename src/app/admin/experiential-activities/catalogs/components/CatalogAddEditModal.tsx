@@ -450,7 +450,7 @@ export function CatalogAddEditModal({
               </h3>
 
               {/* Phân loại danh mục hoạt động */}
-              <div className="space-y-2 p-3.5 rounded-2xl bg-gradient-to-r from-teal-50/70 via-purple-50/50 to-indigo-50/60 border border-teal-200/80">
+              <div className="space-y-2 p-3.5 rounded-2xl bg-gradient-to-r from-teal-50/70 via-purple-50/50 to-emerald-600/60 border border-teal-200/80">
                 <div className="flex items-center justify-between">
                   <label className="text-xs font-black text-slate-800 uppercase tracking-wider flex items-center gap-1.5">
                     <Sparkles className="w-3.5 h-3.5 text-[#00A19A]" />
@@ -458,7 +458,7 @@ export function CatalogAddEditModal({
                   </label>
                   <span className={`text-[10px] font-extrabold px-2 py-0.5 rounded-full ${
                     formData.activityCategory === 'HOAT_DONG_SU_KIEN' 
-                      ? 'bg-purple-100 text-purple-700' 
+                      ? 'bg-teal-50 text-teal-800' 
                       : 'bg-teal-100 text-[#003B3A]'
                   }`}>
                     {formData.activityCategory === 'HOAT_DONG_SU_KIEN' ? 'Chỉ tính vai trò & tham gia' : 'Có thiết lập tiêu chí Rubric'}
@@ -548,7 +548,7 @@ export function CatalogAddEditModal({
                 {/* Chọn Bậc học */}
                 <div>
                   <label className="block text-xs font-bold text-slate-700 mb-2 flex items-center gap-1.5">
-                    <GraduationCap className="w-3.5 h-3.5 text-indigo-600" />
+                    <GraduationCap className="w-3.5 h-3.5 text-teal-800" />
                     <span>Bậc học (chọn 1 hay nhiều bậc học):</span>
                   </label>
                   <div className="flex flex-wrap gap-2">
@@ -561,8 +561,8 @@ export function CatalogAddEditModal({
                           onClick={() => handleToggleEduLevel(opt.value)}
                           className={`px-3 py-1.5 rounded-xl text-xs font-bold transition-all flex items-center gap-1.5 cursor-pointer select-none ${
                             isSelected
-                              ? 'bg-indigo-600 text-white shadow-xs ring-2 ring-indigo-300/40'
-                              : 'bg-white text-slate-700 border border-slate-200 hover:border-indigo-300'
+                              ? 'bg-[#003B3A] text-white shadow-xs ring-2 ring-indigo-300/40'
+                              : 'bg-white text-slate-700 border border-slate-200 hover:border-teal-200'
                           }`}
                         >
                           <span className={`w-3.5 h-3.5 rounded flex items-center justify-center text-[10px] ${isSelected ? 'bg-white/20 text-white' : 'border border-slate-300'}`}>
@@ -952,13 +952,13 @@ export function CatalogAddEditModal({
 
             {/* Section 2: Nhiệm vụ Chuyên môn của GV Phụ trách (GVBM / TCM) */}
             <div className="space-y-4 pt-4 border-t border-slate-100">
-              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 p-3 rounded-2xl bg-gradient-to-r from-indigo-50/80 via-teal-50/70 to-emerald-50/80 border border-indigo-200/80">
+              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 p-3 rounded-2xl bg-gradient-to-r from-teal-600/80 via-teal-50/70 to-emerald-50/80 border border-teal-200/80">
                 <div className="flex items-center gap-2">
-                  <div className="w-7 h-7 rounded-xl bg-indigo-600 text-white flex items-center justify-center font-bold shrink-0">
+                  <div className="w-7 h-7 rounded-xl bg-[#003B3A] text-white flex items-center justify-center font-bold shrink-0">
                     <GraduationCap className="w-4 h-4" />
                   </div>
                   <div>
-                    <h3 className="text-xs font-black uppercase tracking-wider text-indigo-950">
+                    <h3 className="text-xs font-black uppercase tracking-wider text-teal-800">
                       2. Cấu hình Chuyên môn dành cho GV Phụ trách
                     </h3>
                     <p className="text-[11px] text-slate-500 font-medium">
@@ -966,7 +966,7 @@ export function CatalogAddEditModal({
                     </p>
                   </div>
                 </div>
-                <span className="text-[10px] font-black px-2.5 py-1 rounded-full bg-indigo-100 text-indigo-800 self-start sm:self-auto shrink-0 border border-indigo-200">
+                <span className="text-[10px] font-black px-2.5 py-1 rounded-full bg-teal-50 text-teal-800 self-start sm:self-auto shrink-0 border border-teal-200">
                   Nhiệm vụ Chuyên môn
                 </span>
               </div>
@@ -996,7 +996,7 @@ export function CatalogAddEditModal({
               <div>
                 <label className="block text-xs font-bold text-slate-700 mb-1 flex items-center justify-between">
                   <span className="flex items-center gap-1.5">
-                    <Award className="w-3.5 h-3.5 text-indigo-600" />
+                    <Award className="w-3.5 h-3.5 text-teal-800" />
                     <span>1. Yêu cầu cần đạt</span>
                     <span className="text-rose-500">*</span>
                   </span>
@@ -1009,7 +1009,7 @@ export function CatalogAddEditModal({
                   placeholder="Ví dụ: Rèn luyện tính kiên nhẫn, khả năng sáng tạo thẩm mỹ, kỹ năng hợp tác nhóm và ý thức giữ gìn di sản văn hóa..."
                   value={formData.learningOutcomes || ''}
                   onChange={e => setFormData({ ...formData, learningOutcomes: e.target.value })}
-                  className="w-full text-xs font-medium px-3.5 py-2.5 rounded-xl border border-slate-200 focus:outline-hidden focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500/20 transition-all resize-none"
+                  className="w-full text-xs font-medium px-3.5 py-2.5 rounded-xl border border-slate-200 focus:outline-hidden focus:border-teal-200 focus:ring-2 focus:ring-indigo-500/20 transition-all resize-none"
                 />
               </div>
 
@@ -1060,7 +1060,7 @@ export function CatalogAddEditModal({
                       integratedSubjects: e.target.value,
                       primarySubjectName: e.target.value.split(/[,;\/]/)[0]?.trim() || formData.primarySubjectName
                     })}
-                    className="w-full text-xs font-semibold px-3 py-2 rounded-xl border border-slate-200 focus:outline-hidden focus:border-indigo-500 transition-all"
+                    className="w-full text-xs font-semibold px-3 py-2 rounded-xl border border-slate-200 focus:outline-hidden focus:border-teal-200 transition-all"
                   />
                 </div>
 
@@ -1092,8 +1092,8 @@ export function CatalogAddEditModal({
                   onClick={() => setIsEvalConfigModalOpen(true)}
                   className={`flex items-center gap-1.5 text-xs font-bold px-3 py-1.5 rounded-xl border shadow-2xs transition-all cursor-pointer ${
                     formData.activityCategory === 'HOAT_DONG_SU_KIEN'
-                      ? 'text-purple-700 bg-purple-50 hover:bg-purple-100 border-purple-200'
-                      : 'text-indigo-700 bg-indigo-50 hover:bg-indigo-100 border-indigo-200'
+                      ? 'text-teal-800 bg-teal-50 hover:bg-teal-50 border-teal-200'
+                      : 'text-teal-800 bg-teal-50 hover:bg-teal-50 border-teal-200'
                   }`}
                 >
                   <Sliders className="w-3.5 h-3.5" />
@@ -1102,28 +1102,28 @@ export function CatalogAddEditModal({
               </div>
 
               {formData.activityCategory === 'HOAT_DONG_SU_KIEN' ? (
-                <div className="p-4 rounded-2xl bg-purple-50/70 border border-purple-200/80 space-y-2">
+                <div className="p-4 rounded-2xl bg-teal-50/70 border border-teal-200/80 space-y-2">
                   <div className="flex items-center justify-between">
-                    <div className="text-xs font-bold text-purple-950 flex items-center gap-2">
-                      <Users className="w-4 h-4 text-purple-700" />
+                    <div className="text-xs font-bold text-teal-800 flex items-center gap-2">
+                      <Users className="w-4 h-4 text-teal-800" />
                       <span>Chế độ 1: Chỉ ghi nhận tham gia & 6 vai trò học sinh</span>
                     </div>
                     <button
                       type="button"
                       onClick={() => setIsEvalConfigModalOpen(true)}
-                      className="text-xs font-bold text-purple-900 hover:underline px-2.5 py-1 bg-purple-100 rounded-lg border border-purple-300/80 transition-all cursor-pointer"
+                      className="text-xs font-bold text-teal-800 hover:underline px-2.5 py-1 bg-teal-50 rounded-lg border border-teal-300/80 transition-all cursor-pointer"
                     >
                       Cấu hình vai trò
                     </button>
                   </div>
-                  <p className="text-[11px] text-purple-900 leading-relaxed">
+                  <p className="text-[11px] text-teal-800 leading-relaxed">
                     Học sinh tham gia sự kiện sẽ được ghi nhận điểm danh và đánh giá qua 1 trong 6 vai trò chuẩn. Không tính điểm số hay tiêu chí định lượng qua Rubric.
                   </p>
                   <div className="pt-1 flex flex-wrap gap-1">
                     {(formData.evaluationConfig?.rolesList || [
                       'Trưởng nhóm / Điều phối viên', 'Thư ký / Ghi chép', 'Thuyết trình / Báo cáo viên', 'Hậu cần / Kỹ thuật', 'Thành viên tích cực', 'Thành viên tham gia'
                     ]).map((r: string, idx: number) => (
-                      <span key={idx} className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-white text-purple-800 border border-purple-200">
+                      <span key={idx} className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-white text-teal-800 border border-teal-200">
                         {r}
                       </span>
                     ))}

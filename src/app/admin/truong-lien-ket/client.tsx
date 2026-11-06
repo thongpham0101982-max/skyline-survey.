@@ -367,7 +367,7 @@ export function DestinationSchoolsClient({ initialSchools }: { initialSchools: a
                     <td className="px-6 py-4">
                       <div className="flex gap-2">
                         {s.level === "PHO_THONG" ? (
-                          <span className="bg-indigo-50 border border-indigo-100 text-indigo-700 px-3 py-1 rounded-full text-[10px] font-black inline-flex items-center gap-1">
+                          <span className="bg-teal-50 border border-teal-200 text-teal-800 px-3 py-1 rounded-full text-[10px] font-black inline-flex items-center gap-1">
                             <GraduationCap className="w-3.5 h-3.5" />
                             PHỔ THÔNG
                           </span>

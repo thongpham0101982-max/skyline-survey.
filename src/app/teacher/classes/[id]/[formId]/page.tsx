@@ -76,7 +76,7 @@ export default async function TeacherViewResultPage({ params }: any) {
               return (
                 <div key={res.id} className="p-6 hover:bg-slate-50/50 transition-colors text-xs font-semibold">
                   <div className="flex gap-4">
-                    <div className="w-8 h-8 text-indigo-700 flex items-center justify-center font-bold text-sm shrink-0 mt-0.5 text-xs font-semibold">
+                    <div className="w-8 h-8 text-teal-800 flex items-center justify-center font-bold text-sm shrink-0 mt-0.5 text-xs font-semibold">
                       {index + 1}
                     </div>
                     <div className="flex-1 space-y-3">

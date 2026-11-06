@@ -518,11 +518,11 @@ export default function KtdbclParentMeetingAnalyticsClient() {
                                         {kpis.averageCsat}/5.0 ★
                                     </strong>
                                 </div>
-                                <div className="bg-white rounded-2xl p-4 border border-purple-200 bg-purple-50/40 col-span-2">
-                                    <span className="text-[11px] text-purple-800 block">
+                                <div className="bg-white rounded-2xl p-4 border border-teal-200 bg-teal-50/40 col-span-2">
+                                    <span className="text-[11px] text-teal-800 block">
                                         11. Vấn đề lặp lại nhiều lần (Cần lưu ý cải tiến)
                                     </span>
-                                    <strong className="text-xl font-black text-purple-700">
+                                    <strong className="text-xl font-black text-teal-800">
                                         {kpis.recurringIssuesCount} nhóm vấn đề
                                     </strong>
                                 </div>

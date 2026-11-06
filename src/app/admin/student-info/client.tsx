@@ -817,7 +817,7 @@ export function StudentInfoClient({
     if (devAreasLoading) {
       return (
         <div className="flex items-center gap-1.5 py-1 text-slate-400">
-          <Loader2 className="w-3.5 h-3.5 animate-spin text-indigo-500" />
+          <Loader2 className="w-3.5 h-3.5 animate-spin text-teal-700" />
           <span className="text-xs text-slate-500 font-medium">Đang tải dữ liệu tiêu chí...</span>
         </div>
       );
@@ -850,7 +850,7 @@ export function StudentInfoClient({
 
           return (
             <div key={area.id} className="p-2.5 space-y-1.5 text-xs font-semibold">
-              <div className="font-bold text-indigo-700 text-[10px] uppercase tracking-wider">{area.name}</div>
+              <div className="font-bold text-teal-800 text-[10px] uppercase tracking-wider">{area.name}</div>
               <div className="space-y-1">
                 {areaCriteria.map((crit) => {
                   const score = scores[crit.id];
@@ -1183,7 +1183,7 @@ export function StudentInfoClient({
     if (result === "Đạt") return "bg-emerald-50 text-emerald-600 border border-emerald-100";
     if (result === "Đạt - Giao lưu") return "bg-teal-50 text-teal-700 border border-teal-200";
     if (result === "Đạt cam kết") return "bg-amber-50 text-amber-600 border border-amber-100";
-    if (result === "Học thử") return "bg-indigo-50 text-indigo-600 border border-indigo-100";
+    if (result === "Học thử") return "bg-teal-50 text-teal-800 border border-teal-200";
     if (result.includes("Không đạt")) return "bg-rose-50 text-rose-600 border border-rose-100";
     return "bg-blue-50 text-blue-600 border border-blue-100";
   };
@@ -2214,14 +2214,14 @@ export function StudentInfoClient({
               onClick={() => handleTabChange("transfer")}
               className={`flex items-center gap-2 px-4 py-2.5 rounded-xl text-xs font-black transition-all cursor-pointer ${
                 activeTab === "transfer"
-                  ? "bg-gradient-to-r from-amber-500 to-orange-500 text-white shadow-lg shadow-amber-500/30"
+                  ? "bg-gradient-to-r from-amber-500 to-amber-600 text-white shadow-lg shadow-amber-500/30"
                   : "text-white/80 hover:text-white hover:bg-white/10"
               }`}
             >
               <ArrowRightLeft className={`w-4 h-4 ${activeTab === "transfer" ? "text-white" : "text-amber-300"}`} />
               <span>Học sinh Chuyển hệ</span>
               <span className={`px-2 py-0.5 rounded-full text-[10px] font-extrabold ${
-                activeTab === "transfer" ? "bg-white text-orange-700" : "bg-white/20 text-white"
+                activeTab === "transfer" ? "bg-white text-amber-800" : "bg-white/20 text-white"
               }`}>
                 {transferStudentsCount}
               </span>
@@ -2328,7 +2328,7 @@ export function StudentInfoClient({
                       setBatchRetestBatchId("");
                       setIsBatchRetestOpen(true);
                     }}
-                    className="flex items-center gap-1.5 px-3.5 py-2 bg-gradient-to-r from-indigo-600 to-[#00A19A] hover:from-indigo-700 hover:to-[#008B85] text-white rounded-xl text-xs font-bold shadow-sm shadow-indigo-500/20 transition-all active:scale-95 cursor-pointer"
+                    className="flex items-center gap-1.5 px-3.5 py-2 bg-gradient-to-r from-teal-600 to-[#00A19A] hover:from-teal-600 hover:to-[#008B85] text-white rounded-xl text-xs font-bold shadow-sm shadow-indigo-500/20 transition-all active:scale-95 cursor-pointer"
                   >
                     <RefreshCw className="w-4 h-4" />
                     Đăng ký KS lại ({selectedIds.length})
@@ -2379,13 +2379,13 @@ export function StudentInfoClient({
       {subTab === "info" && (
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 animate-in fade-in duration-300">
           {/* Card 1: Tổng số cần khảo sát lại */}
-          <div className="bg-gradient-to-br from-indigo-50/90 via-slate-50 to-indigo-100/50 p-5 rounded-2xl border border-indigo-200/80 shadow-xs hover:shadow-md hover:-translate-y-0.5 flex items-center gap-4 transition-all duration-300">
-            <div className="p-3.5 bg-indigo-600 text-white rounded-2xl shadow-md shadow-indigo-500/20">
+          <div className="bg-gradient-to-br from-teal-600/90 via-slate-50 to-emerald-600/50 p-5 rounded-2xl border border-teal-200/80 shadow-xs hover:shadow-md hover:-translate-y-0.5 flex items-center gap-4 transition-all duration-300">
+            <div className="p-3.5 bg-[#003B3A] text-white rounded-2xl shadow-md shadow-indigo-500/20">
               <RefreshCw className="w-5 h-5" />
             </div>
             <div>
-              <p className="text-[10px] text-indigo-700 font-extrabold uppercase tracking-wider">Tổng cần khảo sát lại</p>
-              <p className="text-2xl font-black text-indigo-950 mt-0.5">{retestStats.total}</p>
+              <p className="text-[10px] text-teal-800 font-extrabold uppercase tracking-wider">Tổng cần khảo sát lại</p>
+              <p className="text-2xl font-black text-teal-800 mt-0.5">{retestStats.total}</p>
             </div>
           </div>
 
@@ -2428,13 +2428,13 @@ export function StudentInfoClient({
       {subTab === "result" && (
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4">
         {/* Card 1: Tổng số */}
-        <div className="bg-gradient-to-br from-indigo-50/90 via-slate-50 to-indigo-100/50 p-5 rounded-2xl border border-indigo-200/80 shadow-xs hover:shadow-md hover:-translate-y-0.5 flex items-center gap-4 transition-all duration-300">
-          <div className="p-3.5 bg-indigo-600 text-white rounded-2xl shadow-md shadow-indigo-500/20">
+        <div className="bg-gradient-to-br from-teal-600/90 via-slate-50 to-emerald-600/50 p-5 rounded-2xl border border-teal-200/80 shadow-xs hover:shadow-md hover:-translate-y-0.5 flex items-center gap-4 transition-all duration-300">
+          <div className="p-3.5 bg-[#003B3A] text-white rounded-2xl shadow-md shadow-indigo-500/20">
             <Users2 className="w-5 h-5" />
           </div>
           <div>
-            <p className="text-[10px] text-indigo-700 font-extrabold uppercase tracking-wider">Tổng số trong bộ lọc</p>
-            <p className="text-2xl font-black text-indigo-950 mt-0.5">{statistics.total}</p>
+            <p className="text-[10px] text-teal-800 font-extrabold uppercase tracking-wider">Tổng số trong bộ lọc</p>
+            <p className="text-2xl font-black text-teal-800 mt-0.5">{statistics.total}</p>
           </div>
         </div>
 
@@ -2834,7 +2834,7 @@ export function StudentInfoClient({
                             </span>
                           </td>
                           <td className="px-4 py-3.5 border-b border-slate-100 text-center text-xs font-semibold">
-                            <span className="px-2 py-0.5 rounded-lg bg-indigo-50 text-indigo-700 border border-indigo-200/60 text-[11px]">
+                            <span className="px-2 py-0.5 rounded-lg bg-teal-50 text-teal-800 border border-teal-200/60 text-[11px]">
                               {s.surveySystem || "—"}
                             </span>
                           </td>
@@ -2893,7 +2893,7 @@ export function StudentInfoClient({
                               </button>
                               <button
                                 onClick={() => openEditModal(s)}
-                                className="p-1.5 text-slate-400 hover:text-indigo-600 hover:bg-indigo-50 border border-slate-200/80 rounded-xl transition-all cursor-pointer shadow-xs active:scale-95"
+                                className="p-1.5 text-slate-400 hover:text-teal-800 hover:bg-teal-50 border border-slate-200/80 rounded-xl transition-all cursor-pointer shadow-xs active:scale-95"
                                 title="Chỉnh sửa"
                               >
                                 <Edit2 className="w-4 h-4" />
@@ -3066,7 +3066,7 @@ export function StudentInfoClient({
                             </button>
                             <button
                               onClick={() => setOrientationTargetStudent(s)}
-                              className="p-1.5 text-purple-600 hover:text-purple-800 hover:bg-purple-50 border border-purple-200 rounded-xl transition-all cursor-pointer shadow-xs active:scale-95"
+                              className="p-1.5 text-teal-800 hover:text-teal-800 hover:bg-teal-50 border border-teal-200 rounded-xl transition-all cursor-pointer shadow-xs active:scale-95"
                               title="Phiếu Định Hướng Đầu Vào (3 Tab)"
                             >
                               <HeartHandshake className="w-4 h-4" />
@@ -3282,7 +3282,7 @@ export function StudentInfoClient({
                               </button>
                               <button
                                 onClick={() => openEditModal(child)}
-                                className="p-1.5 text-slate-400 hover:text-indigo-600 hover:bg-indigo-50 border border-slate-200/80 rounded-xl transition-all cursor-pointer shadow-xs active:scale-95"
+                                className="p-1.5 text-slate-400 hover:text-teal-800 hover:bg-teal-50 border border-slate-200/80 rounded-xl transition-all cursor-pointer shadow-xs active:scale-95"
                                 title="Chỉnh sửa"
                               >
                                 <Edit2 className="w-4 h-4" />
@@ -4887,7 +4887,7 @@ export function StudentInfoClient({
                                   psychColorClass = "text-amber-600 bg-amber-50 border-amber-200/50";
                                   psychBadgeText = "Dấu hiệu nhẹ";
                                 } else if (scNum <= 47) {
-                                  psychColorClass = "text-orange-600 bg-orange-50 border-orange-200/50";
+                                  psychColorClass = "text-amber-700 bg-amber-50 border-amber-200/50";
                                   psychBadgeText = "Dấu hiệu vừa";
                                 } else if (scNum <= 63) {
                                   psychColorClass = "text-rose-600 bg-rose-50 border-rose-200/50";
@@ -4942,10 +4942,10 @@ export function StudentInfoClient({
                                   </div>
 
                                   {/* Literature Card */}
-                                  <div className="bg-indigo-50/30 p-4 rounded-2xl border border-indigo-100 hover:shadow-md hover:scale-[1.02] transition-all duration-300 text-center flex flex-col justify-between h-28">
+                                  <div className="bg-teal-50/30 p-4 rounded-2xl border border-teal-200 hover:shadow-md hover:scale-[1.02] transition-all duration-300 text-center flex flex-col justify-between h-28">
                                     <div className="flex items-center justify-center gap-1.5">
-                                      <BookOpen className="w-3.5 h-3.5 text-indigo-500" />
-                                      <span className="block text-[10px] font-black text-indigo-600 uppercase tracking-widest">Điểm Ngữ văn</span>
+                                      <BookOpen className="w-3.5 h-3.5 text-teal-700" />
+                                      <span className="block text-[10px] font-black text-teal-800 uppercase tracking-widest">Điểm Ngữ văn</span>
                                     </div>
                                     {literatureVal !== null && literatureVal !== undefined && literatureVal !== "" && literatureVal !== "—" ? (
                                       <>
@@ -5080,9 +5080,9 @@ export function StudentInfoClient({
                                   </div>
                                   
                                   {totalScore !== null ? (
-                                    <div className="bg-gradient-to-br from-indigo-50 to-sky-50 p-4 rounded-2xl border border-indigo-150 text-center flex flex-col justify-center items-center">
-                                      <span className="block text-[10px] font-black text-indigo-600 uppercase tracking-widest">Tổng điểm Tiếng Anh</span>
-                                      <span className="text-2xl font-black text-indigo-700 mt-1 block">
+                                    <div className="bg-gradient-to-br from-teal-600 to-sky-50 p-4 rounded-2xl border border-teal-200 text-center flex flex-col justify-center items-center">
+                                      <span className="block text-[10px] font-black text-teal-800 uppercase tracking-widest">Tổng điểm Tiếng Anh</span>
+                                      <span className="text-2xl font-black text-teal-800 mt-1 block">
                                         {totalScore}/100
                                       </span>
                                     </div>
@@ -5095,21 +5095,21 @@ export function StudentInfoClient({
 
                                 {/* 3. Detailed Psychology Section */}
                                 {(psychologyConclusion || psychologyRecommendation) && (
-                                  <div className="bg-gradient-to-br from-violet-50/20 via-indigo-50/10 to-transparent p-5 rounded-2xl border border-violet-100 text-left animate-fade-in">
-                                    <div className="flex items-center gap-2 mb-3.5 border-b border-violet-100/50 pb-2">
-                                      <Brain className="w-4 h-4 text-violet-600 animate-pulse" />
-                                      <h5 className="text-xs font-black text-violet-800 uppercase tracking-wider">Chi tiết Đánh giá Tâm lý</h5>
+                                  <div className="bg-gradient-to-br from-teal-600/20 via-indigo-50/10 to-transparent p-5 rounded-2xl border border-teal-200 text-left animate-fade-in">
+                                    <div className="flex items-center gap-2 mb-3.5 border-b border-teal-100/50 pb-2">
+                                      <Brain className="w-4 h-4 text-teal-800 animate-pulse" />
+                                      <h5 className="text-xs font-black text-teal-800 uppercase tracking-wider">Chi tiết Đánh giá Tâm lý</h5>
                                     </div>
                                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                                       {psychologyConclusion && (
-                                        <div className="bg-white/90 backdrop-blur-sm p-4 rounded-xl border border-violet-100/30 shadow-sm">
-                                          <span className="block text-[9.5px] font-black text-violet-600 uppercase tracking-wider mb-1.5">Chẩn đoán chuyên môn</span>
+                                        <div className="bg-white/90 backdrop-blur-sm p-4 rounded-xl border border-teal-100/30 shadow-sm">
+                                          <span className="block text-[9.5px] font-black text-teal-800 uppercase tracking-wider mb-1.5">Chẩn đoán chuyên môn</span>
                                           <p className="text-xs text-slate-700 font-semibold leading-relaxed whitespace-pre-wrap">{psychologyConclusion}</p>
                                         </div>
                                       )}
                                       {psychologyRecommendation && (
-                                        <div className="bg-white/90 backdrop-blur-sm p-4 rounded-xl border border-violet-100/30 shadow-sm">
-                                          <span className="block text-[9.5px] font-black text-indigo-600 uppercase tracking-wider mb-1.5">Khuyến nghị & Nhận xét</span>
+                                        <div className="bg-white/90 backdrop-blur-sm p-4 rounded-xl border border-teal-100/30 shadow-sm">
+                                          <span className="block text-[9.5px] font-black text-teal-800 uppercase tracking-wider mb-1.5">Khuyến nghị & Nhận xét</span>
                                           <p className="text-xs text-slate-700 font-semibold leading-relaxed whitespace-pre-wrap">{psychologyRecommendation}</p>
                                         </div>
                                       )}
@@ -5245,9 +5245,9 @@ export function StudentInfoClient({
                                   </div>
 
                                   {/* Tiếng Việt / Ngữ Văn */}
-                                  <div className="bg-white p-3.5 rounded-xl border border-indigo-100/90 text-center shadow-2xs hover:shadow-xs transition-shadow">
-                                    <div className="text-[10px] font-bold text-indigo-700 uppercase tracking-wider mb-1.5 flex items-center justify-center gap-1">
-                                      <BookOpen className="w-3.5 h-3.5 text-indigo-600" />
+                                  <div className="bg-white p-3.5 rounded-xl border border-teal-100/90 text-center shadow-2xs hover:shadow-xs transition-shadow">
+                                    <div className="text-[10px] font-bold text-teal-800 uppercase tracking-wider mb-1.5 flex items-center justify-center gap-1">
+                                      <BookOpen className="w-3.5 h-3.5 text-teal-800" />
                                       Tiếng Việt / Văn
                                     </div>
                                     <span className={`text-2xl font-black ${academicDetails.literature !== "—" ? "text-slate-800" : "text-slate-300"}`}>
@@ -5269,9 +5269,9 @@ export function StudentInfoClient({
                                   </div>
 
                                   {/* Tổ hợp / Môn khác */}
-                                  <div className="bg-white p-3.5 rounded-xl border border-purple-100/90 text-center shadow-2xs hover:shadow-xs transition-shadow flex flex-col justify-between">
-                                    <div className="text-[10px] font-bold text-purple-700 uppercase tracking-wider mb-1.5 flex items-center justify-center gap-1">
-                                      <Sparkles className="w-3.5 h-3.5 text-purple-600" />
+                                  <div className="bg-white p-3.5 rounded-xl border border-teal-100/90 text-center shadow-2xs hover:shadow-xs transition-shadow flex flex-col justify-between">
+                                    <div className="text-[10px] font-bold text-teal-800 uppercase tracking-wider mb-1.5 flex items-center justify-center gap-1">
+                                      <Sparkles className="w-3.5 h-3.5 text-teal-800" />
                                       Tổ hợp / Môn khác
                                     </div>
                                     <span className={`text-sm font-black truncate block my-auto ${academicDetails.otherSubjects !== "—" ? "text-slate-800" : "text-slate-300"}`} title={academicDetails.otherSubjects}>
@@ -5520,7 +5520,7 @@ export function StudentInfoClient({
                               </div>
                               <div>
                                 <label className="block text-[10px] font-bold text-slate-400 uppercase tracking-wider">Kết quả học thử</label>
-                                <span className="text-xs font-black text-indigo-700 mt-1 block">
+                                <span className="text-xs font-black text-teal-800 mt-1 block">
                                   {selectedStudent.probationaryResult === "DAT" ? "ĐẠT" : selectedStudent.probationaryResult === "CHUA_DAT" ? "CHƯA ĐẠT" : selectedStudent.probationaryResult || "-"}
                                 </span>
                               </div>
@@ -5907,7 +5907,7 @@ function MoveToBatchModal({
                   setSelectedPeriodId(e.target.value);
                   setSelectedBatchId("");
                 }}
-                className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl text-sm font-semibold text-slate-700 outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 transition-all cursor-pointer"
+                className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl text-sm font-semibold text-slate-700 outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-teal-200 transition-all cursor-pointer"
               >
                 <option value="">-- Chọn Kỳ KS --</option>
                 {periods.map(p => (
@@ -5922,7 +5922,7 @@ function MoveToBatchModal({
                 value={selectedBatchId}
                 onChange={(e) => setSelectedBatchId(e.target.value)}
                 disabled={!selectedPeriodId || availableBatches.length === 0}
-                className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl text-sm font-semibold text-slate-700 outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 transition-all cursor-pointer disabled:opacity-50"
+                className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl text-sm font-semibold text-slate-700 outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-teal-200 transition-all cursor-pointer disabled:opacity-50"
               >
                 <option value="">-- Có thể chọn sau --</option>
                 {availableBatches.map(b => (
@@ -5944,7 +5944,7 @@ function MoveToBatchModal({
           <button
             onClick={handleSubmit}
             disabled={!selectedPeriodId || loading}
-            className="flex items-center gap-2 px-6 py-2.5 bg-indigo-600 hover:bg-indigo-700 text-white text-sm font-bold rounded-xl transition-all shadow-md hover:shadow-lg disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer"
+            className="flex items-center gap-2 px-6 py-2.5 bg-[#003B3A] hover:bg-[#003B3A] text-white text-sm font-bold rounded-xl transition-all shadow-md hover:shadow-lg disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer"
           >
             {loading ? <Loader2 className="w-4 h-4 animate-spin" /> : <RefreshCw className="w-4 h-4" />}
             Xác nhận Chuyển

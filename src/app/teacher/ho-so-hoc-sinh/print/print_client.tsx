@@ -678,7 +678,7 @@ export default function TeacherStudentProfilesPrintPage() {
             <button
               onClick={handleExportZip}
               disabled={isExportingZip || isExportingPDF}
-              className="flex items-center gap-1.5 px-4 py-2 bg-gradient-to-r from-purple-700 via-indigo-600 to-teal-600 hover:from-purple-800 hover:to-indigo-700 text-white rounded-xl shadow-xs transition-all cursor-pointer font-extrabold"
+              className="flex items-center gap-1.5 px-4 py-2 bg-gradient-to-r from-teal-600 via-indigo-600 to-teal-600 hover:from-teal-600 hover:to-emerald-600 text-white rounded-xl shadow-xs transition-all cursor-pointer font-extrabold"
               title="Xuất file nén ZIP: Thư mục theo Lớp, trong lớp là từng file PDF theo Học sinh (Lớp_MaHS_Hovaten.pdf)"
             >
               {isExportingZip ? (
@@ -762,7 +762,7 @@ export default function TeacherStudentProfilesPrintPage() {
             <button
               onClick={handleExportZip}
               disabled={isExportingZip || isExportingPDF}
-              className="shrink-0 px-3 py-1.5 bg-gradient-to-r from-purple-700 to-indigo-600 hover:from-purple-800 hover:to-indigo-700 text-white rounded-lg text-xs font-bold transition-all shadow-xs cursor-pointer flex items-center gap-1.5"
+              className="shrink-0 px-3 py-1.5 bg-gradient-to-r from-teal-600 to-emerald-600 hover:from-teal-600 hover:to-emerald-600 text-white rounded-lg text-xs font-bold transition-all shadow-xs cursor-pointer flex items-center gap-1.5"
             >
               <FolderArchive className="w-3.5 h-3.5" />
               <span>Xuất ZIP Theo Lớp</span>
@@ -1070,8 +1070,8 @@ export default function TeacherStudentProfilesPrintPage() {
                 }
                 if (s === "CAN_CO_GANG") {
                   return (
-                    <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[9px] font-black bg-orange-100 text-orange-900 border border-orange-300">
-                      <span className="w-1.5 h-1.5 rounded-full bg-orange-500"></span>
+                    <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[9px] font-black bg-amber-50 text-amber-800 border border-amber-200">
+                      <span className="w-1.5 h-1.5 rounded-full bg-amber-500"></span>
                       <span>Cần cố gắng (25%)</span>
                     </span>
                   );
@@ -1095,11 +1095,11 @@ export default function TeacherStudentProfilesPrintPage() {
                 <div className="space-y-3 print-section-avoid">
                   <div className="flex items-center justify-between border-b border-slate-200 pb-1.5">
                     <h3 className="section-heading text-xs font-black text-[#003B3A] uppercase tracking-wider flex items-center gap-2">
-                      <div className="w-2.5 h-2.5 rounded-full bg-indigo-500" />
-                      <Compass className="w-4 h-4 text-indigo-500" />
+                      <div className="w-2.5 h-2.5 rounded-full bg-[#003B3A]" />
+                      <Compass className="w-4 h-4 text-teal-700" />
                       <span>II. CỐ VẤN HỌC TẬP &amp; NHẬT KÝ THEO DÕI MỤC TIÊU</span>
                     </h3>
-                    <span className="text-[9px] font-bold text-indigo-800 bg-indigo-50 px-2 py-0.5 rounded border border-indigo-200">
+                    <span className="text-[9px] font-bold text-teal-800 bg-teal-50 px-2 py-0.5 rounded border border-teal-200">
                       Phiếu Đánh Giá Kỳ Cố Vấn Học Tập
                     </span>
                   </div>

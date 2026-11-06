@@ -286,7 +286,7 @@ export async function sendReportForDepartment(
       }
 
       // Check creator teacher for ASSIGNED slot (người chỉ định tiết dạy cũng ghi nhận tiết dạy)
-      if (slot.requestOrigin === "ASSIGNED" && hasEvaluations) {
+      if (false && slot.requestOrigin === "ASSIGNED" && hasEvaluations) {
         const creatorIdMatch = (slot.description || "").match(/\[ASSIGNED:creatorId=([^\]\s:]+)\]/);
         const creatorTeacherId = creatorIdMatch ? creatorIdMatch[1] : null;
         if (creatorTeacherId && teacherStatsMap[creatorTeacherId] && creatorTeacherId !== slot.teacherId) {

@@ -214,7 +214,7 @@ export function TeachingClient({ teachers, classes, subjects, years, departments
       <div className="bg-white rounded-2xl shadow-sm border-2 border-teal-100 flex-1 w-full overflow-hidden">
         <div className="p-4 flex flex-wrap gap-3 justify-between items-center text-xs font-semibold">
           <div className="font-bold text-slate-700 flex items-center">
-            <Layers className="w-5 h-5 mr-2 text-indigo-500"/>
+            <Layers className="w-5 h-5 mr-2 text-teal-700"/>
             Bảng phân công
             <span className="ml-2 text-xs font-normal text-slate-400">({filteredTeachers.length} giáo viên)</span>
           </div>
@@ -253,7 +253,7 @@ export function TeachingClient({ teachers, classes, subjects, years, departments
                 <tr 
                   key={row.teacher.id} 
                   onClick={() => setSelectedTeacherId(row.teacher.id)}
-                  className={`cursor-pointer transition-colors ${selectedTeacherId === row.teacher.id ? 'bg-[#48BFE3]/10 hover:bg-indigo-100' : 'hover:bg-slate-50'}`}
+                  className={`cursor-pointer transition-colors ${selectedTeacherId === row.teacher.id ? 'bg-[#48BFE3]/10 hover:bg-teal-50' : 'hover:bg-slate-50'}`}
                 >
                   <td className="p-2 p-2 font-semibold text-slate-800 border border-slate-200">{row.teacher.teacherName}</td>
                   <td className="p-2 p-2 text-slate-600 border border-slate-200">{row.hk1 || <span className="text-slate-300 italic">Chưa PC</span>}</td>
@@ -269,7 +269,7 @@ export function TeachingClient({ teachers, classes, subjects, years, departments
       <div className="bg-white rounded-2xl shadow-sm border-2 border-blue-100 w-full lg:w-[400px] flex-shrink-0 flex flex-col h-[70vh]">
         <div className="p-4 border-b border-slate-200 bg-[#48BFE3] text-white rounded-t-2xl">
           <h3 className="font-bold flex items-center"><User className="w-5 h-5 mr-2"/> Cài đặt phân công</h3>
-          <p className="text-indigo-100 text-sm mt-1">{selectedTeacher ? selectedTeacher.teacherName : 'Chọn giáo viên bên trái'}</p>
+          <p className="text-teal-700 text-sm mt-1">{selectedTeacher ? selectedTeacher.teacherName : 'Chọn giáo viên bên trái'}</p>
         </div>
 
         {selectedTeacher ? (
@@ -338,7 +338,7 @@ export function TeachingClient({ teachers, classes, subjects, years, departments
                             setNewClasses(filteredClasses.map((c: any) => c.id))
                           }
                         }}
-                        className="text-indigo-600 hover:text-indigo-800 text-[10px] font-bold"
+                        className="text-teal-800 hover:text-teal-800 text-[10px] font-bold"
                       >
                         {newClasses.length === filteredClasses.length ? "Bỏ chọn tất cả" : "Chọn tất cả"}
                       </button>
@@ -391,15 +391,15 @@ export function TeachingClient({ teachers, classes, subjects, years, departments
 
             {/* LIST */}
             <div>
-              <h4 className="font-bold text-slate-700 text-sm mb-3 flex items-center"><BookOpen className="w-4 h-4 mr-2 text-indigo-500"/> Danh sách đã phân công</h4>
+              <h4 className="font-bold text-slate-700 text-sm mb-3 flex items-center"><BookOpen className="w-4 h-4 mr-2 text-teal-700"/> Danh sách đã phân công</h4>
               {selectedTeacherAssigns.length === 0 ? (
                 <div className="text-center text-slate-400 py-6 text-sm italic border-2 border-dashed rounded-xl">Giáo viên chưa có thời khóa biểu</div>
               ) : (
                 <div className="space-y-2">
                   {selectedTeacherAssigns.map((a:any) => (
-                    <div key={a.id} className="flex items-center justify-between p-3 bg-white border border-slate-200 rounded-xl hover:border-indigo-300">
+                    <div key={a.id} className="flex items-center justify-between p-3 bg-white border border-slate-200 rounded-xl hover:border-teal-200">
                       <div>
-                        <div className="font-bold text-indigo-700 text-sm">{a.subjectName}</div>
+                        <div className="font-bold text-teal-800 text-sm">{a.subjectName}</div>
                         <div className="text-xs text-slate-500 flex items-center gap-2 mt-0.5">
                           <span className="font-semibold text-slate-700">{a.className}</span>
                           <span className="bg-slate-100 px-1.5 py-0.5 rounded text-[10px]">HK{a.semester}</span>

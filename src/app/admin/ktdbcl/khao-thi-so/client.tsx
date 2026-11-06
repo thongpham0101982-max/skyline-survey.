@@ -69,11 +69,11 @@ const WORKFLOW_10_STEPS = [
 const ROLE_LABELS: Record<string, { label: string; color: string }> = {
   MATRIX_AUTHOR: {
     label: "Ra Ma trận & Đặc tả",
-    color: "bg-purple-100 text-purple-800 border-purple-200",
+    color: "bg-teal-50 text-teal-800 border-teal-200",
   },
   PAPER_AUTHOR: {
     label: "Soạn đề gốc / LMS Quiz",
-    color: "bg-indigo-100 text-indigo-800 border-indigo-200",
+    color: "bg-teal-50 text-teal-800 border-teal-200",
   },
   PEER_REVIEWER: {
     label: "Phản biện chéo",
@@ -508,8 +508,8 @@ export default function KhaoThiSoAdminClient({ mode }: KhaoThiSoClientProps) {
       <div className="bg-gradient-to-r from-[#003B3A] via-[#0F4C4A] to-[#5B21B6] text-white px-6 py-6 shadow-md">
         <div className="max-w-7xl mx-auto flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4">
           <div>
-            <div className="flex items-center gap-2 text-xs font-semibold uppercase tracking-wider text-purple-200">
-              <Sparkles className="w-3.5 h-3.5 text-purple-300" />
+            <div className="flex items-center gap-2 text-xs font-semibold uppercase tracking-wider text-teal-700">
+              <Sparkles className="w-3.5 h-3.5 text-teal-700" />
               <span>
                 {mode === "teacher"
                   ? "Không gian Giáo viên • Nhiệm vụ Khảo thí được phân công"
@@ -529,7 +529,7 @@ export default function KhaoThiSoAdminClient({ mode }: KhaoThiSoClientProps) {
           {/* Period & Subject Exam Selector */}
           <div className="flex flex-wrap items-center gap-2.5 bg-white/10 backdrop-blur-xs p-2.5 rounded-xl border border-white/15">
             <div className="flex flex-col">
-              <label className="text-[10px] uppercase tracking-wider text-purple-200 font-semibold">
+              <label className="text-[10px] uppercase tracking-wider text-teal-700 font-semibold">
                 Kỳ kiểm tra
               </label>
               <select
@@ -586,7 +586,7 @@ export default function KhaoThiSoAdminClient({ mode }: KhaoThiSoClientProps) {
                   {selectedExam.subjectName} (Khối {selectedExam.gradeLevel})
                 </strong>
               </span>
-              <span className="px-2 py-0.5 rounded-full bg-purple-500/30 border border-purple-300/40 text-purple-100 font-mono text-[10px]">
+              <span className="px-2 py-0.5 rounded-full bg-teal-500/30 border border-teal-300/40 text-teal-700 font-mono text-[10px]">
                 Bước {selectedExam.workflowStep}/10 • Trạng thái: {selectedExam.status}
               </span>
             </div>
@@ -600,7 +600,7 @@ export default function KhaoThiSoAdminClient({ mode }: KhaoThiSoClientProps) {
                     onClick={() => setActiveTab(st.tab)}
                     className={`text-left px-2.5 py-1.5 rounded-lg border text-[10px] font-medium transition-all flex items-center justify-between gap-1 ${
                       isCurrent
-                        ? "bg-purple-600 text-white border-purple-300 shadow-sm font-bold"
+                        ? "bg-[#003B3A] text-white border-teal-400 shadow-sm font-bold"
                         : isDone
                         ? "bg-emerald-500/20 text-emerald-100 border-emerald-400/30 hover:bg-emerald-500/30"
                         : "bg-white/5 text-white/60 border-white/10 hover:bg-white/10"
@@ -666,7 +666,7 @@ export default function KhaoThiSoAdminClient({ mode }: KhaoThiSoClientProps) {
                 <div className="text-2xl font-bold text-slate-900 mt-1">
                   {kpis.totalSubjectExams || 0}
                 </div>
-                <div className="text-[11px] text-purple-700 font-medium mt-1">
+                <div className="text-[11px] text-teal-800 font-medium mt-1">
                   Trong {kpis.totalPeriods || 0} đợt (có Thi bù)
                 </div>
               </div>
@@ -707,7 +707,7 @@ export default function KhaoThiSoAdminClient({ mode }: KhaoThiSoClientProps) {
 
               <div className="bg-white p-4 rounded-xl border border-slate-200 shadow-2xs">
                 <div className="text-[11px] text-slate-500 font-medium">Phiếu OMR đã quét</div>
-                <div className="text-2xl font-bold text-purple-700 mt-1">
+                <div className="text-2xl font-bold text-teal-800 mt-1">
                   {kpis.omrSheetsTotal || 0}
                 </div>
                 <div className="text-[11px] text-amber-700 font-medium mt-1">
@@ -717,7 +717,7 @@ export default function KhaoThiSoAdminClient({ mode }: KhaoThiSoClientProps) {
 
               <div className="bg-white p-4 rounded-xl border border-slate-200 shadow-2xs">
                 <div className="text-[11px] text-slate-500 font-medium">Đồng bộ Sổ điểm</div>
-                <div className="text-2xl font-bold text-indigo-700 mt-1">
+                <div className="text-2xl font-bold text-teal-800 mt-1">
                   {kpis.lockedExamsCount || 0}/{kpis.totalSubjectExams || 0}
                 </div>
                 <div className="text-[11px] text-slate-500 mt-1">
@@ -776,8 +776,8 @@ export default function KhaoThiSoAdminClient({ mode }: KhaoThiSoClientProps) {
                       return (
                         <tr
                           key={ex.id}
-                          className={`hover:bg-purple-50/40 transition-colors ${
-                            selectedExam?.id === ex.id ? "bg-purple-50/60" : ""
+                          className={`hover:bg-teal-50/40 transition-colors ${
+                            selectedExam?.id === ex.id ? "bg-teal-50/60" : ""
                           }`}
                         >
                           <td className="py-3 px-4">
@@ -789,7 +789,7 @@ export default function KhaoThiSoAdminClient({ mode }: KhaoThiSoClientProps) {
                             </div>
                           </td>
                           <td className="py-3 px-4">
-                            <span className="px-2 py-0.5 rounded-md font-semibold text-[11px] bg-purple-100 text-purple-800 border border-purple-200">
+                            <span className="px-2 py-0.5 rounded-md font-semibold text-[11px] bg-teal-50 text-teal-800 border border-teal-200">
                               {ex.examFormat}
                             </span>
                           </td>
@@ -806,7 +806,7 @@ export default function KhaoThiSoAdminClient({ mode }: KhaoThiSoClientProps) {
                           </td>
                           <td className="py-3 px-4">
                             {ex.examFormat === "LMS_MOODLE" ? (
-                              <span className="text-indigo-700 font-semibold">
+                              <span className="text-teal-800 font-semibold">
                                 Quiz #{ex.moodleQuizId || "N/A"} ({ex.moodleSyncStatus})
                               </span>
                             ) : hasOfficialPaper ? (
@@ -853,7 +853,7 @@ export default function KhaoThiSoAdminClient({ mode }: KhaoThiSoClientProps) {
                                 setSelectedExamId(ex.id);
                                 setActiveTab("grading");
                               }}
-                              className="px-2.5 py-1 rounded-lg bg-purple-600 hover:bg-purple-700 text-white font-semibold"
+                              className="px-2.5 py-1 rounded-lg bg-[#003B3A] hover:bg-[#003B3A] text-white font-semibold"
                             >
                               Chấm & Duyệt
                             </button>
@@ -897,12 +897,12 @@ export default function KhaoThiSoAdminClient({ mode }: KhaoThiSoClientProps) {
                 </div>
 
                 {showNewPeriodForm && (
-                  <div className="p-4 rounded-xl bg-purple-50/60 border border-purple-200 space-y-3 text-xs">
+                  <div className="p-4 rounded-xl bg-teal-50/60 border border-teal-200 space-y-3 text-xs">
                     <div className="flex items-center justify-between">
-                      <div className="font-bold text-purple-950">
+                      <div className="font-bold text-teal-800">
                         Khởi tạo Kỳ kiểm tra định kỳ hoặc Đợt kiểm tra bù
                       </div>
-                      <span className="px-2 py-0.5 rounded bg-purple-100 text-purple-800 font-semibold text-[10px]">
+                      <span className="px-2 py-0.5 rounded bg-teal-50 text-teal-800 font-semibold text-[10px]">
                         Tự sinh mã: KT-[Loại+HK]-[Năm học]
                       </span>
                     </div>
@@ -1068,7 +1068,7 @@ export default function KhaoThiSoAdminClient({ mode }: KhaoThiSoClientProps) {
                                   gradeLevels: "1,2,3,4,5",
                                 })
                               }
-                              className="px-2 py-0.5 rounded border border-slate-300 bg-white hover:bg-purple-50 text-slate-700 font-semibold"
+                              className="px-2 py-0.5 rounded border border-slate-300 bg-white hover:bg-teal-50 text-slate-700 font-semibold"
                             >
                               Tiểu học (1-5)
                             </button>
@@ -1080,7 +1080,7 @@ export default function KhaoThiSoAdminClient({ mode }: KhaoThiSoClientProps) {
                                   gradeLevels: "6,7,8,9",
                                 })
                               }
-                              className="px-2 py-0.5 rounded border border-slate-300 bg-white hover:bg-purple-50 text-slate-700 font-semibold"
+                              className="px-2 py-0.5 rounded border border-slate-300 bg-white hover:bg-teal-50 text-slate-700 font-semibold"
                             >
                               THCS (6-9)
                             </button>
@@ -1092,7 +1092,7 @@ export default function KhaoThiSoAdminClient({ mode }: KhaoThiSoClientProps) {
                                   gradeLevels: "10,11,12",
                                 })
                               }
-                              className="px-2 py-0.5 rounded border border-slate-300 bg-white hover:bg-purple-50 text-slate-700 font-semibold"
+                              className="px-2 py-0.5 rounded border border-slate-300 bg-white hover:bg-teal-50 text-slate-700 font-semibold"
                             >
                               THPT (10-12)
                             </button>
@@ -1105,7 +1105,7 @@ export default function KhaoThiSoAdminClient({ mode }: KhaoThiSoClientProps) {
                                     "1,2,3,4,5,6,7,8,9,10,11,12",
                                 })
                               }
-                              className="px-2 py-0.5 rounded border border-purple-300 bg-purple-50 hover:bg-purple-100 text-purple-800 font-semibold"
+                              className="px-2 py-0.5 rounded border border-teal-400 bg-teal-50 hover:bg-teal-50 text-teal-800 font-semibold"
                             >
                               Tất cả (1-12)
                             </button>
@@ -1150,7 +1150,7 @@ export default function KhaoThiSoAdminClient({ mode }: KhaoThiSoClientProps) {
                                 className={`py-1.5 px-2 rounded-lg border text-xs font-semibold flex items-center justify-center gap-1 transition-all ${
                                   isChecked
                                     ? "bg-[#6D28D9] text-white border-[#6D28D9] shadow-2xs"
-                                    : "bg-slate-50 text-slate-700 border-slate-200 hover:border-purple-300 hover:bg-purple-50/40"
+                                    : "bg-slate-50 text-slate-700 border-slate-200 hover:border-teal-400 hover:bg-teal-50/40"
                                 }`}
                               >
                                 {isChecked && <Check className="w-3 h-3 shrink-0" />}
@@ -1178,7 +1178,7 @@ export default function KhaoThiSoAdminClient({ mode }: KhaoThiSoClientProps) {
                                   code: autoCode,
                                 });
                               }}
-                              className="text-[10px] text-purple-700 font-semibold underline"
+                              className="text-[10px] text-teal-800 font-semibold underline"
                             >
                               Tự sinh lại
                             </button>
@@ -1195,7 +1195,7 @@ export default function KhaoThiSoAdminClient({ mode }: KhaoThiSoClientProps) {
                               code: e.target.value.toUpperCase(),
                             });
                           }}
-                          className="w-full px-2.5 py-1.5 rounded-lg border border-purple-300 bg-purple-50/40 font-mono font-bold text-purple-950"
+                          className="w-full px-2.5 py-1.5 rounded-lg border border-teal-400 bg-teal-50/40 font-mono font-bold text-teal-800"
                         />
                       </div>
 
@@ -1214,7 +1214,7 @@ export default function KhaoThiSoAdminClient({ mode }: KhaoThiSoClientProps) {
                                   name: autoName,
                                 });
                               }}
-                              className="text-[10px] text-purple-700 font-semibold underline"
+                              className="text-[10px] text-teal-800 font-semibold underline"
                             >
                               Theo gợi ý
                             </button>
@@ -1293,13 +1293,13 @@ export default function KhaoThiSoAdminClient({ mode }: KhaoThiSoClientProps) {
                       }}
                       className={`p-3.5 rounded-xl border cursor-pointer transition-all ${
                         selectedPeriodId === p.id
-                          ? "border-purple-600 bg-purple-50/40 shadow-2xs"
+                          ? "border-teal-400 bg-teal-50/40 shadow-2xs"
                           : "border-slate-200 hover:border-slate-300 bg-white"
                       }`}
                     >
                       <div className="flex items-center justify-between">
                         <div className="flex items-center gap-2 flex-wrap">
-                          <span className="font-mono text-[11px] font-bold px-2 py-0.5 rounded bg-purple-100 text-purple-900 border border-purple-200">
+                          <span className="font-mono text-[11px] font-bold px-2 py-0.5 rounded bg-teal-50 text-teal-800 border border-teal-200">
                             {p.code}
                           </span>
                           {p.academicYearName && (
@@ -1503,7 +1503,7 @@ export default function KhaoThiSoAdminClient({ mode }: KhaoThiSoClientProps) {
                         <span className="font-bold text-slate-900 text-sm">
                           {ex.subjectName} • Khối {ex.gradeLevel}
                         </span>
-                        <span className="px-2 py-0.5 rounded bg-purple-100 text-purple-800 font-bold text-[10px]">
+                        <span className="px-2 py-0.5 rounded bg-teal-50 text-teal-800 font-bold text-[10px]">
                           {ex.examFormat}
                         </span>
                       </div>
@@ -1532,7 +1532,7 @@ export default function KhaoThiSoAdminClient({ mode }: KhaoThiSoClientProps) {
             </p>
             <button
               onClick={() => setActiveTab("periods")}
-              className="px-4 py-2 rounded-xl bg-[#6D28D9] hover:bg-purple-800 text-white text-xs font-semibold inline-flex items-center gap-1.5"
+              className="px-4 py-2 rounded-xl bg-[#6D28D9] hover:bg-[#003B3A] text-white text-xs font-semibold inline-flex items-center gap-1.5"
             >
               <Plus className="w-3.5 h-3.5" />
               <span>Chuyển sang thiết lập Kỳ kiểm tra & Môn thi</span>
@@ -1674,7 +1674,7 @@ export default function KhaoThiSoAdminClient({ mode }: KhaoThiSoClientProps) {
                           "Đã giao nhiệm vụ và đồng bộ sang Sổ Giáo Viên!"
                         )
                       }
-                      className="w-full py-1.5 px-3 rounded-lg bg-[#6D28D9] hover:bg-purple-800 text-white font-semibold flex items-center justify-center gap-1.5"
+                      className="w-full py-1.5 px-3 rounded-lg bg-[#6D28D9] hover:bg-[#003B3A] text-white font-semibold flex items-center justify-center gap-1.5"
                     >
                       <Send className="w-3.5 h-3.5" />
                       <span>Giao nhiệm vụ</span>
@@ -1903,7 +1903,7 @@ export default function KhaoThiSoAdminClient({ mode }: KhaoThiSoClientProps) {
               <div className="flex flex-wrap items-center justify-between gap-3">
                 <div>
                   <h3 className="font-bold text-slate-900 text-base flex items-center gap-2">
-                    <Globe className="w-4 h-4 text-indigo-600" />
+                    <Globe className="w-4 h-4 text-teal-800" />
                     <span>D. Liên kết & Thẩm định Quiz trên Moodle LMS</span>
                   </h3>
                   <p className="text-xs text-slate-500">
@@ -1928,7 +1928,7 @@ export default function KhaoThiSoAdminClient({ mode }: KhaoThiSoClientProps) {
                         setLmsVerifyReport(res.verificationReport);
                       }
                     }}
-                    className="px-3.5 py-2 rounded-xl bg-indigo-600 hover:bg-indigo-700 text-white text-xs font-semibold flex items-center gap-1.5"
+                    className="px-3.5 py-2 rounded-xl bg-[#003B3A] hover:bg-[#003B3A] text-white text-xs font-semibold flex items-center gap-1.5"
                   >
                     <ShieldCheck className="w-4 h-4" />
                     <span>Thẩm định cấu hình Moodle Quiz</span>
@@ -1936,7 +1936,7 @@ export default function KhaoThiSoAdminClient({ mode }: KhaoThiSoClientProps) {
                 </div>
               </div>
 
-              <div className="grid grid-cols-1 md:grid-cols-4 gap-3 text-xs bg-indigo-50/50 p-3.5 rounded-xl border border-indigo-100">
+              <div className="grid grid-cols-1 md:grid-cols-4 gap-3 text-xs bg-teal-50/50 p-3.5 rounded-xl border border-teal-200">
                 <div>
                   <span className="text-slate-500 block">Moodle Course ID:</span>
                   <strong className="font-mono text-slate-900">
@@ -1951,7 +1951,7 @@ export default function KhaoThiSoAdminClient({ mode }: KhaoThiSoClientProps) {
                 </div>
                 <div>
                   <span className="text-slate-500 block">Trạng thái thẩm định LMS:</span>
-                  <strong className="text-indigo-700">{selectedExam.moodleSyncStatus}</strong>
+                  <strong className="text-teal-800">{selectedExam.moodleSyncStatus}</strong>
                 </div>
                 <div>
                   <span className="text-slate-500 block">Người thẩm định:</span>
@@ -2017,7 +2017,7 @@ export default function KhaoThiSoAdminClient({ mode }: KhaoThiSoClientProps) {
                         "Đã trộn lại 4 mã đề (101, 102, 103, 104) và bảng đáp án!"
                       )
                     }
-                    className="px-3 py-1.5 rounded-xl bg-purple-600 hover:bg-purple-700 text-white text-xs font-semibold flex items-center gap-1.5"
+                    className="px-3 py-1.5 rounded-xl bg-[#003B3A] hover:bg-[#003B3A] text-white text-xs font-semibold flex items-center gap-1.5"
                   >
                     <Shuffle className="w-3.5 h-3.5" />
                     <span>Trộn 4 Mã đề (101-104)</span>
@@ -2115,7 +2115,7 @@ export default function KhaoThiSoAdminClient({ mode }: KhaoThiSoClientProps) {
                           className="p-3 rounded-xl border border-slate-200 bg-slate-50/70 text-xs space-y-2"
                         >
                           <div className="flex items-center justify-between border-b border-slate-200 pb-1.5">
-                            <span className="font-bold text-purple-900">
+                            <span className="font-bold text-teal-800">
                               MÃ ĐỀ {v.variantCode}
                             </span>
                             <span className="font-mono text-[10px] text-slate-500">
@@ -2334,7 +2334,7 @@ export default function KhaoThiSoAdminClient({ mode }: KhaoThiSoClientProps) {
                         • Đăng ký: <strong>{sess.totalRegistered}</strong> • Có mặt:{" "}
                         <strong className="text-emerald-700">{sess.presentCount}</strong> • Vắng:{" "}
                         <strong className="text-red-600">{sess.absentCount}</strong> • Số bài thu:{" "}
-                        <strong className="text-purple-700">{sess.collectedPapers}</strong>
+                        <strong className="text-teal-800">{sess.collectedPapers}</strong>
                       </div>
                       {sess.proctors?.some((p: any) => p.conflictWarning) && (
                         <div className="mt-1.5 inline-flex items-center gap-1.5 px-2.5 py-1 rounded bg-red-50 border border-red-200 text-red-700 text-xs font-semibold">
@@ -2387,7 +2387,7 @@ export default function KhaoThiSoAdminClient({ mode }: KhaoThiSoClientProps) {
                       <tbody className="divide-y divide-slate-100">
                         {sess.roster?.map((r: any) => (
                           <tr key={r.id}>
-                            <td className="py-2 px-3 font-mono font-bold text-purple-800">
+                            <td className="py-2 px-3 font-mono font-bold text-teal-800">
                               {r.candidateNumber}
                             </td>
                             <td className="py-2 px-3 font-medium text-slate-900">
@@ -2469,7 +2469,7 @@ export default function KhaoThiSoAdminClient({ mode }: KhaoThiSoClientProps) {
               <div className="flex flex-wrap items-center justify-between gap-3 border-b border-slate-100 pb-3">
                 <div>
                   <h3 className="font-bold text-slate-900 text-base flex items-center gap-2">
-                    <ScanLine className="w-4 h-4 text-purple-600" />
+                    <ScanLine className="w-4 h-4 text-teal-800" />
                     <span>
                       G1. Nhận diện & Rà soát Phiếu trả lời Trắc nghiệm OMR (SBD • Mã đề • Đáp án)
                     </span>
@@ -2490,15 +2490,15 @@ export default function KhaoThiSoAdminClient({ mode }: KhaoThiSoClientProps) {
 
               {selectedExam.omrBatches?.map((batch: any) => (
                 <div key={batch.id} className="space-y-3">
-                  <div className="flex flex-wrap items-center justify-between gap-2 p-3 rounded-xl bg-purple-50/60 border border-purple-200 text-xs">
+                  <div className="flex flex-wrap items-center justify-between gap-2 p-3 rounded-xl bg-teal-50/60 border border-teal-200 text-xs">
                     <div>
-                      <span className="font-bold text-purple-950">{batch.batchName}</span> •
+                      <span className="font-bold text-teal-800">{batch.batchName}</span> •
                       Tổng số phiếu: <strong>{batch.totalSheets}</strong> • Đã khớp chuẩn:{" "}
                       <strong className="text-emerald-700">{batch.recognizedSheets}</strong> •
                       Cần rà soát:{" "}
                       <strong className="text-amber-700">{batch.flaggedSheets}</strong>
                     </div>
-                    <span className="px-2.5 py-0.5 rounded-full bg-purple-200 text-purple-900 font-bold text-[10px]">
+                    <span className="px-2.5 py-0.5 rounded-full bg-teal-50 text-teal-800 font-bold text-[10px]">
                       {batch.status}
                     </span>
                   </div>
@@ -2532,7 +2532,7 @@ export default function KhaoThiSoAdminClient({ mode }: KhaoThiSoClientProps) {
                                 flags.length > 0 ? "bg-amber-50/50" : "hover:bg-slate-50"
                               }
                             >
-                              <td className="py-2.5 px-3 font-mono font-bold text-purple-800">
+                              <td className="py-2.5 px-3 font-mono font-bold text-teal-800">
                                 {sh.candidateNumber}
                               </td>
                               <td className="py-2.5 px-3 font-semibold text-slate-900">
@@ -2644,7 +2644,7 @@ export default function KhaoThiSoAdminClient({ mode }: KhaoThiSoClientProps) {
                             {r.studentName}
                           </td>
                           <td className="py-2.5 px-3 font-mono">{r.variantCode}</td>
-                          <td className="py-2.5 px-3 font-mono font-semibold text-purple-700">
+                          <td className="py-2.5 px-3 font-mono font-semibold text-teal-800">
                             {r.mcqScore?.toFixed(2)}
                           </td>
                           <td className="py-2.5 px-3">
@@ -2787,7 +2787,7 @@ export default function KhaoThiSoAdminClient({ mode }: KhaoThiSoClientProps) {
                   <div className="text-slate-500 font-medium">
                     2. Số kết quả Chấm OMR / LMS + Tự luận
                   </div>
-                  <div className="text-2xl font-bold text-purple-700 mt-1">
+                  <div className="text-2xl font-bold text-teal-800 mt-1">
                     {selectedExam.results?.length || 0} bản ghi
                   </div>
                 </div>
@@ -2822,7 +2822,7 @@ export default function KhaoThiSoAdminClient({ mode }: KhaoThiSoClientProps) {
                   <tbody className="divide-y divide-slate-100">
                     {selectedExam.results?.map((r: any) => (
                       <tr key={r.id} className="hover:bg-slate-50">
-                        <td className="py-2.5 px-3 font-mono font-bold text-purple-800">
+                        <td className="py-2.5 px-3 font-mono font-bold text-teal-800">
                           {r.candidateNumber}
                         </td>
                         <td className="py-2.5 px-3 font-bold text-slate-900">

@@ -30,7 +30,7 @@ export function TrackingTimeline({ events, className = "" }: TrackingTimelinePro
           dotBg = "bg-[#003B3A] border-[#003B3A]"
         } else if (ev.type === "MONTHLY_REVIEW") {
           iconNode = <Calendar className="w-3.5 h-3.5 text-white" />
-          dotBg = "bg-indigo-600 border-indigo-600"
+          dotBg = "bg-[#003B3A] border-teal-200"
         } else if (ev.type === "TERMINATED") {
           iconNode = <CheckCircle2 className="w-3.5 h-3.5 text-white" />
           dotBg = "bg-emerald-600 border-emerald-600"

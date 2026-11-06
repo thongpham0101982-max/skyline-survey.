@@ -1,0 +1,1066 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Hướng dẫn Tích hợp API Sky-Line SSM v1.0 | Sổ cái Học thuật</title>
+  <style>
+    :root {
+      --deep-pine: #003B3A;
+      --deep-pine-dark: #002827;
+      --brand-teal: #00A19A;
+      --brand-teal-light: #E6F6F5;
+      --teal-hover: #008B85;
+      --bg-ledger: #F8FAFC;
+      --card-bg: #FFFFFF;
+      --border-subtle: #E2E8F0;
+      --border-light: #F1F5F9;
+      --text-main: #0F172A;
+      --text-muted: #64748B;
+      --emerald: #059669;
+      --emerald-bg: #ECFDF5;
+      --amber: #D97706;
+      --amber-bg: #FFFBEB;
+      --rose: #E11D48;
+      --rose-bg: #FFF1F2;
+      --sky: #0284C7;
+      --sky-bg: #F0F9FF;
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+      background-color: var(--bg-ledger);
+      color: var(--text-main);
+      line-height: 1.6;
+      font-size: 14px;
+    }
+
+    .tabular-nums {
+      font-variant-numeric: tabular-nums;
+    }
+
+    .container {
+      max-width: 1240px;
+      margin: 0 auto;
+      padding: 24px 20px 80px;
+    }
+
+    .masthead {
+      background: var(--card-bg);
+      border-left: 5px solid var(--deep-pine);
+      border-radius: 8px;
+      border-top: 1px solid var(--border-subtle);
+      border-right: 1px solid var(--border-subtle);
+      border-bottom: 1px solid var(--border-subtle);
+      padding: 24px 28px;
+      margin-bottom: 24px;
+      display: flex;
+      flex-wrap: wrap;
+      justify-content: space-between;
+      align-items: center;
+      gap: 16px;
+      box-shadow: 0 1px 3px rgba(0,0,0,0.02);
+    }
+
+    .brand-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      background: var(--deep-pine);
+      color: #fff;
+      font-size: 11px;
+      font-weight: 700;
+      padding: 4px 10px;
+      border-radius: 4px;
+      letter-spacing: 0.5px;
+      margin-bottom: 8px;
+    }
+
+    .title {
+      font-size: 22px;
+      font-weight: 800;
+      color: var(--text-main);
+      letter-spacing: -0.5px;
+    }
+
+    .subtitle {
+      font-size: 13px;
+      color: var(--text-muted);
+      margin-top: 4px;
+    }
+
+    .meta-pills {
+      display: flex;
+      gap: 10px;
+      flex-wrap: wrap;
+    }
+
+    .pill {
+      background: var(--bg-ledger);
+      border: 1px solid var(--border-subtle);
+      padding: 6px 12px;
+      border-radius: 6px;
+      font-size: 12px;
+      color: var(--text-main);
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+
+    .pill strong {
+      color: var(--deep-pine);
+    }
+
+    .nav-strip {
+      display: flex;
+      gap: 8px;
+      margin-bottom: 24px;
+      overflow-x: auto;
+      padding-bottom: 4px;
+      border-bottom: 1px solid var(--border-subtle);
+    }
+
+    .nav-btn {
+      background: transparent;
+      border: none;
+      padding: 10px 16px;
+      font-size: 13px;
+      font-weight: 600;
+      color: var(--text-muted);
+      cursor: pointer;
+      border-radius: 6px 6px 0 0;
+      position: relative;
+      white-space: nowrap;
+      transition: all 0.15s ease;
+    }
+
+    .nav-btn:hover {
+      color: var(--deep-pine);
+      background: rgba(0, 59, 58, 0.04);
+    }
+
+    .nav-btn.active {
+      color: var(--deep-pine);
+      background: var(--card-bg);
+      border-top: 1px solid var(--border-subtle);
+      border-left: 1px solid var(--border-subtle);
+      border-right: 1px solid var(--border-subtle);
+      border-bottom: 2px solid var(--deep-pine);
+    }
+
+    .tab-pane {
+      display: none;
+    }
+
+    .tab-pane.active {
+      display: block;
+    }
+
+    .card {
+      background: var(--card-bg);
+      border: 1px solid var(--border-subtle);
+      border-radius: 8px;
+      padding: 24px;
+      margin-bottom: 24px;
+      box-shadow: 0 1px 2px rgba(0,0,0,0.02);
+    }
+
+    .card-header {
+      border-bottom: 1px solid var(--border-light);
+      padding-bottom: 14px;
+      margin-bottom: 18px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+
+    .card-title {
+      font-size: 16px;
+      font-weight: 700;
+      color: var(--deep-pine);
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .alert {
+      border-radius: 6px;
+      padding: 14px 16px;
+      margin-bottom: 16px;
+      font-size: 13px;
+      display: flex;
+      align-items: flex-start;
+      gap: 12px;
+      line-height: 1.5;
+    }
+
+    .alert-amber {
+      background: var(--amber-bg);
+      border: 1px solid #FDE68A;
+      color: #92400E;
+    }
+
+    .alert-teal {
+      background: var(--brand-teal-light);
+      border: 1px solid #99F6E4;
+      color: var(--deep-pine);
+    }
+
+    .alert-rose {
+      background: var(--rose-bg);
+      border: 1px solid #FECDD3;
+      color: #9F1239;
+    }
+
+    .ledger-table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 12.5px;
+      margin: 12px 0 20px;
+    }
+
+    .ledger-table th {
+      background: #F8FAFC;
+      color: var(--text-muted);
+      font-weight: 600;
+      text-align: left;
+      padding: 10px 14px;
+      border-bottom: 1px solid var(--border-subtle);
+      border-top: 1px solid var(--border-subtle);
+    }
+
+    .ledger-table td {
+      padding: 12px 14px;
+      border-bottom: 1px solid var(--border-light);
+      color: var(--text-main);
+      vertical-align: top;
+    }
+
+    .ledger-table tr:hover td {
+      background: #FAFCFD;
+    }
+
+    .badge {
+      display: inline-flex;
+      align-items: center;
+      padding: 2px 8px;
+      border-radius: 4px;
+      font-size: 11px;
+      font-weight: 600;
+      font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+    }
+
+    .badge-get {
+      background: var(--sky-bg);
+      color: var(--sky);
+      border: 1px solid #BAE6FD;
+    }
+
+    .badge-post {
+      background: var(--emerald-bg);
+      color: var(--emerald);
+      border: 1px solid #A7F3D0;
+    }
+
+    .badge-patch {
+      background: var(--amber-bg);
+      color: var(--amber);
+      border: 1px solid #FDE68A;
+    }
+
+    .badge-perm {
+      background: #F1F5F9;
+      color: #475569;
+      border: 1px solid var(--border-subtle);
+    }
+
+    .code-box {
+      background: #0F172A;
+      color: #F8FAFC;
+      border-radius: 6px;
+      padding: 16px;
+      font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+      font-size: 12px;
+      line-height: 1.5;
+      overflow-x: auto;
+      margin: 12px 0 18px;
+      position: relative;
+    }
+
+    .copy-btn {
+      position: absolute;
+      top: 10px;
+      right: 10px;
+      background: rgba(255, 255, 255, 0.15);
+      color: #fff;
+      border: none;
+      padding: 4px 8px;
+      border-radius: 4px;
+      font-size: 11px;
+      cursor: pointer;
+      font-weight: 600;
+      transition: background 0.15s;
+    }
+
+    .copy-btn:hover {
+      background: var(--brand-teal);
+    }
+
+    .grid-2 {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 16px;
+    }
+
+    @media (max-width: 768px) {
+      .grid-2 {
+        grid-template-columns: 1fr;
+      }
+      .masthead {
+        flex-direction: column;
+        align-items: flex-start;
+      }
+    }
+
+    .step-num {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      width: 22px;
+      height: 22px;
+      background: var(--deep-pine);
+      color: #fff;
+      border-radius: 50%;
+      font-size: 11px;
+      font-weight: bold;
+      margin-right: 6px;
+    }
+  </style>
+</head>
+<body>
+
+<div class="container">
+  <!-- Masthead -->
+  <header class="masthead">
+    <div>
+      <div class="brand-badge">SKY-LINE SQMS | ACADEMIC INTEGRATION</div>
+      <h1 class="title">Tài liệu Hướng dẫn Tích hợp API Sky-Line SSM</h1>
+      <p class="subtitle">API kết nối dữ liệu Học sinh, Sổ điểm, Phân công giảng dạy và Kết quả khảo sát (Phiên bản 1.0)</p>
+    </div>
+    <div class="meta-pills">
+      <div class="pill">Phiên bản: <strong class="tabular-nums">1.0.0</strong></div>
+      <div class="pill">Cơ chế: <strong>Bearer API Key (SHA-256)</strong></div>
+      <div class="pill">Giao thức: <strong>HTTPS / JSON</strong></div>
+    </div>
+  </header>
+
+  <!-- Navigation Tabs -->
+  <nav class="nav-strip">
+    <button class="nav-btn active" onclick="switchTab('tab-overview')">1. Tổng quan & Xác thực</button>
+    <button class="nav-btn" onclick="switchTab('tab-security')">2. Phân quyền & Scope</button>
+    <button class="nav-btn" onclick="switchTab('tab-endpoints')">3. Danh mục Endpoints</button>
+    <button class="nav-btn" onclick="switchTab('tab-business')">4. Nghiệp vụ SSM cốt lõi</button>
+    <button class="nav-btn" onclick="switchTab('tab-curl-n8n')">5. Hướng dẫn cURL & n8n</button>
+    <button class="nav-btn" onclick="switchTab('tab-errors')">6. Bảng tra cứu Mã lỗi</button>
+    <button class="nav-btn" onclick="switchTab('tab-access-logs')">7. Dữ liệu truy cập (Logs)</button>
+  </nav>
+
+  <!-- TAB 1: TỔNG QUAN & XÁC THỰC -->
+  <div id="tab-overview" class="tab-pane active">
+    <div class="card">
+      <div class="card-header">
+        <h2 class="card-title">1. Cơ chế Xác thực & Quản lý Khóa API</h2>
+      </div>
+
+      <div class="alert alert-teal">
+        <div>
+          <strong>Nguyên tắc Vận hành Bảo mật:</strong> Mọi yêu cầu gửi đến API đều bắt buộc thông qua giao thức an toàn HTTPS và chứng thực qua header tiêu chuẩn <code>Authorization: Bearer &lt;API_KEY&gt;</code>.
+        </div>
+      </div>
+
+      <p style="margin-bottom: 14px;">
+        Hệ thống Sky-Line SSM triển khai cơ chế sinh khóa và lưu trữ chuẩn mật mã học:
+      </p>
+
+      <ul style="padding-left: 20px; line-height: 1.8; color: var(--text-main); margin-bottom: 20px;">
+        <li><strong>Sinh khóa mật mã (CSPRNG):</strong> Khóa được sinh tự động bằng hàm sinh số ngẫu nhiên mật mã của Node.js (<code>crypto.randomBytes(24)</code>) với định dạng <code>sky_live_...</code>.</li>
+        <li><strong>Lưu trữ bản băm một chiều (Hash-only):</strong> Máy chủ chỉ lưu bản băm <strong>SHA-256</strong> (<code>keyHash</code>) và tiền tố công khai đã che (<code>keyPrefix</code>). <em>Tuyệt đối không lưu khóa thô trên máy chủ.</em></li>
+        <li><strong>Hiển thị một lần duy nhất:</strong> Khóa đầy đủ chỉ hiển thị 01 lần lúc tạo trong giao diện <strong>Admin → Cài đặt hệ thống → Kết nối API</strong>. Quản trị viên phải sao chép và lưu trữ an toàn ngay tại thời điểm đó.</li>
+        <li><strong>Hỗ trợ đa khóa (Key Rotation):</strong> Mỗi ứng dụng có thể sở hữu nhiều khóa đồng thời để thực hiện thay khóa định kỳ hoặc chuyển tiếp hệ thống mà không gây gián đoạn dịch vụ.</li>
+        <li><strong>Thu hồi tức thời:</strong> Khi nhấn thu hồi (Revoke), khóa bị vô hiệu hóa ngay lập tức đối với tất cả các request tiếp theo.</li>
+      </ul>
+
+      <h3 style="font-size: 14px; font-weight: 700; margin-bottom: 8px;">Cấu trúc Header Yêu cầu Tiêu chuẩn</h3>
+      <div class="code-box">
+        <button class="copy-btn" onclick="copyCode(this)">Sao chép</button>
+GET /api/v1/students HTTP/1.1
+Host: ssm.skylineschool.edu.vn
+Authorization: Bearer sky_live_a1b2c3d4e5f60718293a4b5c6d7e8f9012345678
+Accept: application/json
+Content-Type: application/json
+      </div>
+    </div>
+  </div>
+
+  <!-- TAB 2: PHÂN QUYỀN & SCOPE -->
+  <div id="tab-security" class="tab-pane">
+    <div class="card">
+      <div class="card-header">
+        <h2 class="card-title">2. Phân quyền & Giới hạn Phạm vi Dữ liệu (Anti-IDOR)</h2>
+      </div>
+
+      <div class="alert alert-amber">
+        <div>
+          <strong>Nguyên tắc Mặc định từ chối (Default Deny):</strong> Ứng dụng chỉ được phép thao tác trên các tài nguyên và trường dữ liệu khi đã được Quản trị viên cấp quyền rõ ràng trong hệ thống.
+        </div>
+      </div>
+
+      <h3 style="font-size: 14px; font-weight: 700; margin-bottom: 8px;">Bảng Danh mục Quyền API (8 Quyền cơ bản)</h3>
+      <table class="ledger-table">
+        <thead>
+          <tr>
+            <th>Mã quyền (Scope)</th>
+            <th>Loại</th>
+            <th>Mô tả chức năng</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td><span class="badge badge-perm">students:read</span></td>
+            <td>Đọc</td>
+            <td>Tra cứu danh sách và xem chi tiết hồ sơ học sinh trong phạm vi cơ sở/lớp được cấp.</td>
+          </tr>
+          <tr>
+            <td><span class="badge badge-perm">students:write</span></td>
+            <td>Ghi</td>
+            <td>Thêm mới học sinh hoặc cập nhật thông tin học sinh (có kiểm soát trường được phép).</td>
+          </tr>
+          <tr>
+            <td><span class="badge badge-perm">grades:read</span></td>
+            <td>Đọc</td>
+            <td>Xem điểm số thành phần và tổng kết theo môn học, kỳ đánh giá trong phạm vi cơ sở.</td>
+          </tr>
+          <tr>
+            <td><span class="badge badge-perm">grades:write</span></td>
+            <td>Ghi</td>
+            <td>Nhập điểm thi hoặc cập nhật điểm (bắt buộc tuân thủ khóa sổ điểm của nhà trường).</td>
+          </tr>
+          <tr>
+            <td><span class="badge badge-perm">assignments:read</span></td>
+            <td>Đọc</td>
+            <td>Xem danh sách phân công giảng dạy của giáo viên bộ môn và chủ nhiệm.</td>
+          </tr>
+          <tr>
+            <td><span class="badge badge-perm">assignments:write</span></td>
+            <td>Ghi</td>
+            <td>Tạo mới hoặc điều chỉnh phân công giảng dạy cho giáo viên.</td>
+          </tr>
+          <tr>
+            <td><span class="badge badge-perm">survey-results:read</span></td>
+            <td>Đọc</td>
+            <td>Tra cứu kết quả và ý kiến phản hồi khảo sát giáo dục từ học sinh/phụ huynh.</td>
+          </tr>
+          <tr>
+            <td><span class="badge badge-perm">survey-results:write</span></td>
+            <td>Ghi</td>
+            <td>Gửi phản hồi khảo sát (mặc định lưu bản nộp, không được tự ý duyệt).</td>
+          </tr>
+        </tbody>
+      </table>
+
+      <h3 style="font-size: 14px; font-weight: 700; margin-top: 24px; margin-bottom: 8px;">Cơ chế Chống Truy cập Chéo Cơ sở (Anti-IDOR)</h3>
+      <p style="color: var(--text-main); margin-bottom: 12px;">
+        Phạm vi cơ sở (<code>allowedCampusIds</code>) và lớp (<code>allowedClassIds</code>) được lưu trữ và kiểm soát độc lập trên máy chủ:
+      </p>
+      <ul style="padding-left: 20px; line-height: 1.8; color: var(--text-muted);">
+        <li>Các tham số truy vấn <code>campusId</code>, <code>classId</code> từ client gửi lên <strong>chỉ dùng để lọc dữ liệu</strong>, không được chấp nhận làm bằng chứng mở rộng quyền.</li>
+        <li>Nếu một ứng dụng chỉ được cấp quyền cơ sở <em>Sky-Line Riverside</em> mà cố tình gửi request truy vấn học sinh thuộc cơ sở <em>Sky-Line Central</em>, hệ thống sẽ chặn ngay lập tức với mã lỗi <code>403 ACCESS_DENIED_SCOPE</code>.</li>
+      </ul>
+    </div>
+  </div>
+
+  <!-- TAB 3: DANH MỤC ENDPOINTS -->
+  <div id="tab-endpoints" class="tab-pane">
+    <div class="card">
+      <div class="card-header">
+        <h2 class="card-title">3. Danh mục Endpoints API Phiên bản 1</h2>
+      </div>
+
+      <table class="ledger-table">
+        <thead>
+          <tr>
+            <th style="width: 100px;">Phương thức</th>
+            <th style="width: 280px;">Đường dẫn (Endpoint)</th>
+            <th style="width: 180px;">Quyền yêu cầu</th>
+            <th>Mục đích nghiệp vụ</th>
+          </tr>
+        </thead>
+        <tbody>
+          <!-- Students -->
+          <tr>
+            <td><span class="badge badge-get">GET</span></td>
+            <td><code>/api/v1/students</code></td>
+            <td><span class="badge badge-perm">students:profile:read</span></td>
+            <td>Danh sách học sinh có phân trang (<code>page</code>, <code>limit</code>), lọc theo năm học, cơ sở, lớp.</td>
+          </tr>
+          <tr>
+            <td><span class="badge badge-get">GET</span></td>
+            <td><code>/api/v1/students/:id</code></td>
+            <td><span class="badge badge-perm">students:profile:read</span></td>
+            <td>Chi tiết học sinh theo ID hoặc Mã học sinh (SĐT/Email PHHS tự động che nếu thiếu <code>students:contact:read</code>).</td>
+          </tr>
+          <tr>
+            <td><span class="badge badge-get">GET</span></td>
+            <td><code>/api/v1/students/:id/grades</code></td>
+            <td><span class="badge badge-perm">grades:read</span></td>
+            <td>Bảng điểm chi tiết & tổng kết học kỳ của từng học sinh (kiểm soát phạm vi cơ sở/lớp).</td>
+          </tr>
+          <tr>
+            <td><span class="badge badge-post">POST</span></td>
+            <td><code>/api/v1/students</code></td>
+            <td><span class="badge badge-perm">students:profile:write</span></td>
+            <td>Tạo hồ sơ học sinh mới. Chống tạo trùng khi gửi lại yêu cầu (Idempotency).</td>
+          </tr>
+          <tr>
+            <td><span class="badge badge-patch">PATCH</span></td>
+            <td><code>/api/v1/students/:id</code></td>
+            <td><span class="badge badge-perm">students:profile:write</span></td>
+            <td>Cập nhật hồ sơ học sinh (kiểm soát phiên bản chống ghi đè dữ liệu mới).</td>
+          </tr>
+
+          <!-- Teachers -->
+          <tr>
+            <td><span class="badge badge-get">GET</span></td>
+            <td><code>/api/v1/teachers</code></td>
+            <td><span class="badge badge-perm">teachers:directory:read</span></td>
+            <td>Danh bạ giáo viên toàn trường (lọc theo cơ sở, tổ chuyên môn, trạng thái). SĐT cá nhân tự động che giấu.</td>
+          </tr>
+          <tr>
+            <td><span class="badge badge-get">GET</span></td>
+            <td><code>/api/v1/teachers/:id</code></td>
+            <td><span class="badge badge-perm">teachers:directory:read</span></td>
+            <td>Chi tiết hồ sơ giáo viên theo ID hoặc mã GV (teacherCode).</td>
+          </tr>
+          <tr>
+            <td><span class="badge badge-get">GET</span></td>
+            <td><code>/api/v1/teachers/:id/assignments</code></td>
+            <td><span class="badge badge-perm">teachers:assignments:read</span></td>
+            <td>Lịch phân công giảng dạy (danh sách lớp, môn, số tiết theo học kỳ) của giáo viên.</td>
+          </tr>
+          <tr>
+            <td><span class="badge badge-post">POST</span></td>
+            <td><code>/api/v1/teachers</code></td>
+            <td><span class="badge badge-perm">teachers:profile:write</span></td>
+            <td>Thêm mới hoặc đồng bộ giáo viên vào hệ thống, liên kết tài khoản nội bộ.</td>
+          </tr>
+          <tr>
+            <td><span class="badge badge-patch">PATCH</span></td>
+            <td><code>/api/v1/teachers/:id</code></td>
+            <td><span class="badge badge-perm">teachers:profile:write</span></td>
+            <td>Cập nhật chức vụ, email trường, tổ chuyên môn, môn phụ trách của giáo viên.</td>
+          </tr>
+
+          <!-- Grades -->
+          <tr>
+            <td><span class="badge badge-get">GET</span></td>
+            <td><code>/api/v1/grades</code></td>
+            <td><span class="badge badge-perm">grades:read</span></td>
+            <td>Tra cứu sổ điểm theo môn, lớp, kỳ đánh giá trong phạm vi cho phép.</td>
+          </tr>
+          <tr>
+            <td><span class="badge badge-post">POST</span></td>
+            <td><code>/api/v1/grades</code></td>
+            <td><span class="badge badge-perm">grades:write</span></td>
+            <td>Nhập điểm môn học. Kiểm tra thang điểm 0–10 và kiểm tra khóa sổ điểm.</td>
+          </tr>
+          <tr>
+            <td><span class="badge badge-patch">PATCH</span></td>
+            <td><code>/api/v1/grades/:id</code></td>
+            <td><span class="badge badge-perm">grades:write</span></td>
+            <td>Sửa điểm môn học. Chặn khi kỳ đã khóa; lưu vết trước/sau vào AuditLog.</td>
+          </tr>
+
+          <!-- Assignments -->
+          <tr>
+            <td><span class="badge badge-get">GET</span></td>
+            <td><code>/api/v1/assignments</code></td>
+            <td><span class="badge badge-perm">assignments:read</span></td>
+            <td>Danh sách phân công giảng dạy theo giáo viên, lớp, môn học.</td>
+          </tr>
+          <tr>
+            <td><span class="badge badge-post">POST</span></td>
+            <td><code>/api/v1/assignments</code></td>
+            <td><span class="badge badge-perm">assignments:write</span></td>
+            <td>Tạo phân công giảng dạy mới. Tự động kiểm tra trùng lặp phân công.</td>
+          </tr>
+          <tr>
+            <td><span class="badge badge-patch">PATCH</span></td>
+            <td><code>/api/v1/assignments/:id</code></td>
+            <td><span class="badge badge-perm">assignments:write</span></td>
+            <td>Điều chỉnh giáo viên hoặc học kỳ cho phân công giảng dạy.</td>
+          </tr>
+
+          <!-- Survey Results -->
+          <tr>
+            <td><span class="badge badge-get">GET</span></td>
+            <td><code>/api/v1/survey-results</code></td>
+            <td><span class="badge badge-perm">survey-results:read</span></td>
+            <td>Xem kết quả khảo sát giáo dục theo đợt và lớp học.</td>
+          </tr>
+          <tr>
+            <td><span class="badge badge-post">POST</span></td>
+            <td><code>/api/v1/survey-results</code></td>
+            <td><span class="badge badge-perm">survey-results:write</span></td>
+            <td>Gửi phản hồi khảo sát. Mặc định trạng thái SUBMITTED (không tự duyệt).</td>
+          </tr>
+          <tr>
+            <td><span class="badge badge-patch">PATCH</span></td>
+            <td><code>/api/v1/survey-results/:id</code></td>
+            <td><span class="badge badge-perm">survey-results:write</span></td>
+            <td>Sửa câu trả lời khảo sát. Từ chối thao tác tự duyệt qua API.</td>
+          </tr>
+
+          <!-- Access Logs -->
+          <tr>
+            <td><span class="badge badge-get">GET</span></td>
+            <td><code>/api/v1/access-logs</code></td>
+            <td><span class="badge badge-perm">Khóa API hợp lệ</span></td>
+            <td>Tra cứu dữ liệu truy cập và lịch sử gọi API của ứng dụng (duration, status, errors).</td>
+          </tr>
+        </tbody>
+      </table>
+
+      <div class="alert alert-teal" style="margin-top: 16px;">
+        <strong>Chính sách Bảo toàn Dữ liệu:</strong> Theo đúng quy chuẩn an toàn phiên bản 1, hệ thống <strong>chưa mở bất kỳ API xóa dữ liệu (DELETE)</strong> nào cho các đối tác tích hợp ngoài.
+      </div>
+    </div>
+  </div>
+
+  <!-- TAB 4: NGHIỆP VỤ SSM CỐT LÕI -->
+  <div id="tab-business" class="tab-pane">
+    <div class="card">
+      <div class="card-header">
+        <h2 class="card-title">4. Quy chuẩn Nghiệp vụ Giáo dục Sky-Line SSM</h2>
+      </div>
+
+      <div class="grid-2">
+        <div style="border: 1px solid var(--border-subtle); padding: 18px; border-radius: 6px; background: #fff;">
+          <h3 style="font-size: 14px; font-weight: 700; color: var(--deep-pine); margin-bottom: 8px;">
+            1. Kiểm soát Khóa sổ điểm (GradebookLock)
+          </h3>
+          <p style="color: var(--text-muted); font-size: 13px; line-height: 1.6;">
+            Khi Ban Khảo thí & ĐBCL đã thực hiện chốt sổ điểm của một kỳ (ví dụ: KSĐN, GK1, CK1...), bản ghi tương ứng trong bảng <code>GradebookLock</code> sẽ chuyển sang trạng thái khóa.
+            Mọi yêu cầu thêm mới hoặc cập nhật điểm qua API sẽ bị từ chối với lỗi <code>403 GRADEBOOK_LOCKED</code>.
+          </p>
+        </div>
+
+        <div style="border: 1px solid var(--border-subtle); padding: 18px; border-radius: 6px; background: #fff;">
+          <h3 style="font-size: 14px; font-weight: 700; color: var(--deep-pine); margin-bottom: 8px;">
+            2. Thang điểm Chuẩn hóa (0.0 đến 10.0)
+          </h3>
+          <p style="color: var(--text-muted); font-size: 13px; line-height: 1.6;">
+            Cả điểm tổng kết (<code>compositeScore</code>) và các điểm thành phần trong <code>componentScores</code> (JSON) đều bắt buộc nằm trong khoảng số thực từ 0 đến 10. Nếu gửi điểm vượt quá thang hoặc sai định dạng số, hệ thống sẽ trả về mã lỗi <code>400 INVALID_SCORE_RANGE</code>.
+          </p>
+        </div>
+
+        <div style="border: 1px solid var(--border-subtle); padding: 18px; border-radius: 6px; background: #fff;">
+          <h3 style="font-size: 14px; font-weight: 700; color: var(--deep-pine); margin-bottom: 8px;">
+            3. Khảo sát Không Tự ý Phê duyệt (Approval Isolation)
+          </h3>
+          <p style="color: var(--text-muted); font-size: 13px; line-height: 1.6;">
+            Kết quả khảo sát gửi qua API chỉ được ghi nhận ở trạng thái nộp bài (<code>SUBMITTED</code>). Việc xét duyệt (<code>APPROVED</code>) là quy trình chuyên môn nội bộ dành riêng cho Hội đồng Sư phạm Sky-Line. Nếu API gửi kèm trạng thái <code>APPROVED</code>, hệ thống sẽ từ chối <code>403 UNAUTHORIZED_STATUS_TRANSITION</code>.
+          </p>
+        </div>
+
+        <div style="border: 1px solid var(--border-subtle); padding: 18px; border-radius: 6px; background: #fff;">
+          <h3 style="font-size: 14px; font-weight: 700; color: var(--deep-pine); margin-bottom: 8px;">
+            4. Khóa Lạc quan & Chống Ghi đè (Optimistic Locking)
+          </h3>
+          <p style="color: var(--text-muted); font-size: 13px; line-height: 1.6;">
+            Các endpoint <code>PATCH</code> hỗ trợ tham số <code>expectedVersion</code>. Nếu dữ liệu trên máy chủ đã bị người dùng khác sửa đổi trước khi request đến, máy chủ sẽ trả về lỗi <code>409 VERSION_CONFLICT</code> để yêu cầu hệ thống gọi API đồng bộ lại bản mới nhất trước khi cập nhật.
+          </p>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- TAB 5: HƯỚNG DẪN CURL & N8N -->
+  <div id="tab-curl-n8n" class="tab-pane">
+    <div class="card">
+      <div class="card-header">
+        <h2 class="card-title">5. Hướng dẫn Tích hợp bằng cURL & Quy trình n8n</h2>
+      </div>
+
+      <h3 style="font-size: 14px; font-weight: 700; margin-bottom: 6px; color: var(--deep-pine);">
+        5.1. Ví dụ cURL Thực tế
+      </h3>
+
+      <p style="font-size: 13px; color: var(--text-muted); margin-bottom: 6px;">
+        Nhập điểm môn học cho học sinh (Đảm bảo tuân thủ khóa sổ điểm):
+      </p>
+      <div class="code-box">
+        <button class="copy-btn" onclick="copyCode(this)">Sao chép</button>
+curl -X POST "https://ssm.skylineschool.edu.vn/api/v1/grades" \
+  -H "Authorization: Bearer sky_live_9a8b7c6d5e4f3a2b1c0d9e8f7a6b5c4d3e2f1a0b" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "studentId": "std_cuid_12345",
+    "subjectId": "sub_toan_k10",
+    "classId": "cl_grade10a1_2026",
+    "academicYearId": "ay_2026_2027",
+    "evaluationPeriod": "KSĐN",
+    "compositeScore": 8.5,
+    "componentScores": {
+      "tx1": 8.0,
+      "tx2": 9.0,
+      "gk": 8.5
+    },
+    "remark": "Tư duy toán học tốt, nộp bài đầy đủ"
+  }'
+      </div>
+
+      <h3 style="font-size: 14px; font-weight: 700; margin-top: 24px; margin-bottom: 8px; color: var(--deep-pine);">
+        5.2. Cấu hình Quy trình Tự động hóa với n8n
+      </h3>
+
+      <div style="background: var(--bg-ledger); border: 1px solid var(--border-subtle); padding: 18px; border-radius: 6px;">
+        <p style="font-size: 13px; margin-bottom: 12px; font-weight: 600;">
+          Các bước thiết lập Node "HTTP Request" trong workflow n8n:
+        </p>
+
+        <div style="margin-bottom: 12px; font-size: 13px;">
+          <span class="step-num">1</span> <strong>Tạo Credential Header Auth:</strong>
+          <ul style="padding-left: 28px; margin-top: 4px; color: var(--text-muted);">
+            <li>Credential Type: <code>Header Auth</code></li>
+            <li>Name: <code>Header: Authorization</code></li>
+            <li>Value: <code>Bearer sky_live_YOUR_API_KEY</code></li>
+          </ul>
+        </div>
+
+        <div style="margin-bottom: 12px; font-size: 13px;">
+          <span class="step-num">2</span> <strong>Thiết lập HTTP Request Node:</strong>
+          <ul style="padding-left: 28px; margin-top: 4px; color: var(--text-muted);">
+            <li>Method: <code>POST</code></li>
+            <li>URL: <code>https://ssm.skylineschool.edu.vn/api/v1/grades</code></li>
+            <li>Authentication: Chọn Credential vừa tạo ở Bước 1</li>
+            <li>Send Body: <code>true</code> (Body Content Type: <code>JSON</code>)</li>
+            <li>Specify Body: <code>Using Fields Below</code> để map các biến từ file Excel OMR quét được.</li>
+          </ul>
+        </div>
+
+        <div style="font-size: 13px;">
+          <span class="step-num">3</span> <strong>Xử lý ngoại lệ an toàn:</strong>
+          <p style="padding-left: 28px; margin-top: 4px; color: var(--text-muted);">
+            Bật tùy chọn <code>Never Error (Continue on Fail)</code> để khi gặp mã lỗi <code>GRADEBOOK_LOCKED</code> (Sổ điểm bị khóa), n8n sẽ tự động rẽ nhánh gửi cảnh báo ngay về kênh Telegram / Slack của Tổ Quản trị Khảo thí.
+          </p>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- TAB 6: MÃ LỖI & SỰ CỐ -->
+  <div id="tab-errors" class="tab-pane">
+    <div class="card">
+      <div class="card-header">
+        <h2 class="card-title">6. Bảng tra cứu Mã lỗi & Xử lý sự cố</h2>
+      </div>
+
+      <p style="color: var(--text-muted); font-size: 13px; margin-bottom: 14px;">
+        Mọi phản hồi lỗi đều kèm theo trường <code>requestId</code> để đội ngũ CNTT Sky-Line có thể tra cứu chính xác sự cố trong nhật ký hệ thống:
+      </p>
+
+      <table class="ledger-table">
+        <thead>
+          <tr>
+            <th style="width: 80px;">HTTP</th>
+            <th style="width: 220px;">Mã lỗi nghiệp vụ</th>
+            <th>Nguyên nhân & Cách khắc phục</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td><strong class="tabular-nums" style="color: var(--rose);">401</strong></td>
+            <td><code>UNAUTHORIZED</code></td>
+            <td>Thiếu header <code>Authorization: Bearer &lt;TOKEN&gt;</code> hoặc gửi token rỗng.</td>
+          </tr>
+          <tr>
+            <td><strong class="tabular-nums" style="color: var(--rose);">401</strong></td>
+            <td><code>INVALID_API_KEY</code></td>
+            <td>Khóa API không tồn tại hoặc sai định dạng băm trên hệ thống máy chủ.</td>
+          </tr>
+          <tr>
+            <td><strong class="tabular-nums" style="color: var(--rose);">401</strong></td>
+            <td><code>KEY_EXPIRED</code></td>
+            <td>Khóa API đã hết hạn sử dụng. Vui lòng vào trang quản trị để sinh khóa mới.</td>
+          </tr>
+          <tr>
+            <td><strong class="tabular-nums" style="color: var(--rose);">401</strong></td>
+            <td><code>KEY_REVOKED</code></td>
+            <td>Khóa API đã bị thu hồi bởi quản trị viên.</td>
+          </tr>
+          <tr>
+            <td><strong class="tabular-nums" style="color: var(--amber);">403</strong></td>
+            <td><code>PERMISSION_DENIED</code></td>
+            <td>Ứng dụng chưa được cấp quyền tương ứng (ví dụ: cần <code>grades:write</code> nhưng chỉ có <code>grades:read</code>).</td>
+          </tr>
+          <tr>
+            <td><strong class="tabular-nums" style="color: var(--amber);">403</strong></td>
+            <td><code>ACCESS_DENIED_SCOPE</code></td>
+            <td>Vi phạm biên giới dữ liệu. Ứng dụng cố gắng truy cập học sinh hoặc lớp thuộc cơ sở ngoài phạm vi cho phép.</td>
+          </tr>
+          <tr>
+            <td><strong class="tabular-nums" style="color: var(--amber);">403</strong></td>
+            <td><code>GRADEBOOK_LOCKED</code></td>
+            <td>Sổ điểm môn học và kỳ đánh giá đã bị khóa bởi Ban Khảo thí & ĐBCL.</td>
+          </tr>
+          <tr>
+            <td><strong class="tabular-nums" style="color: var(--amber);">403</strong></td>
+            <td><code>UNAUTHORIZED_STATUS_TRANSITION</code></td>
+            <td>Từ chối thao tác tự duyệt kết quả khảo sát qua API tích hợp.</td>
+          </tr>
+          <tr>
+            <td><strong class="tabular-nums" style="color: var(--text-main);">400</strong></td>
+            <td><code>UNKNOWN_FIELDS</code></td>
+            <td>Body chứa các trường dữ liệu nằm ngoài danh sách cho phép (Whitelist protection).</td>
+          </tr>
+          <tr>
+            <td><strong class="tabular-nums" style="color: var(--text-main);">400</strong></td>
+            <td><code>INVALID_SCORE_RANGE</code></td>
+            <td>Điểm số gửi lên không nằm trong thang điểm quy định từ 0.0 đến 10.0.</td>
+          </tr>
+          <tr>
+            <td><strong class="tabular-nums" style="color: var(--sky);">409</strong></td>
+            <td><code>VERSION_CONFLICT</code></td>
+            <td>Dữ liệu đã bị thay đổi bởi phiên làm việc khác trước khi yêu cầu này tới máy chủ.</td>
+          </tr>
+          <tr>
+            <td><strong class="tabular-nums" style="color: var(--amber);">429</strong></td>
+            <td><code>RATE_LIMIT_EXCEEDED</code></td>
+            <td>Ứng dụng vượt quá giới hạn tần suất yêu cầu trên phút (<code>rateLimitRpm</code>).</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  <!-- TAB 7: DỮ LIỆU TRUY CẬP (ACCESS LOGS) -->
+  <div id="tab-access-logs" class="tab-pane">
+    <div class="card">
+      <div class="card-header">
+        <h2 class="card-title">7. Hướng dẫn Kết nối API Lấy Dữ liệu Truy cập & Nhật ký (Access Logs)</h2>
+      </div>
+
+      <div class="alert alert-teal">
+        <div>
+          <strong>Mục đích Sử dụng:</strong> Cho phép các hệ thống giám sát tập trung (SIEM), ứng dụng tích hợp đối tác hoặc quy trình tự động n8n truy xuất lịch sử các lượt gọi API, theo dõi độ trễ mạng (latency), mã trạng thái HTTP và thông tin lỗi để chủ động phát hiện sự cố.
+        </div>
+      </div>
+
+      <h3 style="font-size: 14px; font-weight: 700; color: var(--deep-pine); margin-bottom: 8px;">
+        7.1. Cấu trúc Endpoint Truy vấn Dữ liệu Truy cập
+      </h3>
+
+      <div style="margin-bottom: 14px;">
+        <span class="badge badge-get">GET</span>
+        <code style="font-size: 13px; font-weight: bold; margin-left: 8px;">/api/v1/access-logs</code>
+      </div>
+
+      <table class="ledger-table">
+        <thead>
+          <tr>
+            <th style="width: 140px;">Tham số (Query)</th>
+            <th style="width: 90px;">Kiểu</th>
+            <th style="width: 90px;">Mặc định</th>
+            <th>Mô tả chi tiết</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td><code>page</code></td>
+            <td>Integer</td>
+            <td>1</td>
+            <td>Số thứ tự trang cần lấy dữ liệu (phân trang).</td>
+          </tr>
+          <tr>
+            <td><code>limit</code></td>
+            <td>Integer</td>
+            <td>20</td>
+            <td>Số bản ghi nhật ký mỗi trang (tối đa 100 bản ghi/lần).</td>
+          </tr>
+          <tr>
+            <td><code>statusCode</code></td>
+            <td>Integer</td>
+            <td>—</td>
+            <td>Lọc chính xác theo mã HTTP (ví dụ: <code>403</code>, <code>400</code>, <code>500</code>, <code>200</code>).</td>
+          </tr>
+          <tr>
+            <td><code>method</code></td>
+            <td>String</td>
+            <td>—</td>
+            <td>Lọc theo phương thức gọi: <code>GET</code>, <code>POST</code>, <code>PATCH</code>.</td>
+          </tr>
+          <tr>
+            <td><code>endpoint</code></td>
+            <td>String</td>
+            <td>—</td>
+            <td>Lọc theo tiền tố endpoint (ví dụ: <code>/api/v1/grades</code>).</td>
+          </tr>
+          <tr>
+            <td><code>from</code></td>
+            <td>ISO Date</td>
+            <td>—</td>
+            <td>Thời điểm bắt đầu ghi nhận (ví dụ: <code>2026-11-01T00:00:00Z</code>).</td>
+          </tr>
+          <tr>
+            <td><code>to</code></td>
+            <td>ISO Date</td>
+            <td>—</td>
+            <td>Thời điểm kết thúc ghi nhận (ví dụ: <code>2026-11-05T23:59:59Z</code>).</td>
+          </tr>
+        </tbody>
+      </table>
+
+      <div class="alert alert-amber" style="margin-top: 10px;">
+        <strong>Nguyên tắc Bảo mật Biên giới Ứng dụng:</strong> API chỉ trả về lịch sử truy cập của <em>chính ứng dụng</em> đang sở hữu khóa API xác thực trong request. Không một ứng dụng nào có thể xem nhật ký gọi của ứng dụng khác.
+      </div>
+
+      <h3 style="font-size: 14px; font-weight: 700; color: var(--deep-pine); margin-top: 24px; margin-bottom: 8px;">
+        7.2. Lệnh cURL Mẫu
+      </h3>
+
+      <p style="font-size: 13px; color: var(--text-muted); margin-bottom: 6px;">
+        <strong>Ví dụ 1:</strong> Lấy 20 lượt gọi API gần nhất:
+      </p>
+      <div class="code-box">
+        <button class="copy-btn" onclick="copyCode(this)">Sao chép</button>
+curl -X GET "https://ssm.skylineschool.edu.vn/api/v1/access-logs?page=1&limit=20" \
+  -H "Authorization: Bearer sky_live_9a8b7c6d5e4f3a2b1c0d9e8f7a6b5c4d3e2f1a0b" \
+  -H "Accept: application/json"
+      </div>
+
+      <p style="font-size: 13px; color: var(--text-muted); margin-top: 14px; margin-bottom: 6px;">
+        <strong>Ví dụ 2:</strong> Lọc các request bị lỗi phân quyền (HTTP 403) để điều tra phạm vi dữ liệu:
+      </p>
+      <div class="code-box">
+        <button class="copy-btn" onclick="copyCode(this)">Sao chép</button>
+curl -X GET "https://ssm.skylineschool.edu.vn/api/v1/access-logs?statusCode=403&limit=50" \
+  -H "Authorization: Bearer sky_live_9a8b7c6d5e4f3a2b1c0d9e8f7a6b5c4d3e2f1a0b" \
+  -H "Accept: application/json"
+      </div>
+
+      <h3 style="font-size: 14px; font-weight: 700; color: var(--deep-pine); margin-top: 24px; margin-bottom: 8px;">
+        7.3. Cấu trúc Phản hồi JSON Mẫu
+      </h3>
+      <div class="code-box">
+        <button class="copy-btn" onclick="copyCode(this)">Sao chép</button>
+{
+  "success": true,
+  "data": [
+    {
+      "id": "log_clz123456789",
+      "requestId": "req_8df84050-fc89-408b-9e45-12cf3456789a",
+      "endpoint": "/api/v1/grades",
+      "method": "POST",
+      "statusCode": 201,
+      "ipAddress": "118.69.182.10",
+      "durationMs": 42,
+      "requestSummary": "Recorded grade for student HS2026-00129",
+      "errorMessage": null,
+      "createdAt": "2026-11-05T08:30:15.000Z"
+    },
+    {
+      "id": "log_clz123456790",
+      "requestId": "req_9ea14160-aa21-428c-9b11-23df4567890b",
+      "endpoint": "/api/v1/students/std_central_99",
+      "method": "GET",
+      "statusCode": 403,
+      "ipAddress": "118.69.182.10",
+      "durationMs": 15,
+      "requestSummary": null,
+      "errorMessage": "Scope violation: Student belongs to unauthorized campus",
+      "createdAt": "2026-11-05T08:35:22.000Z"
+    }
+  ],
+  "meta": {
+    "requestId": "req_f8b19283-bc92-4112-98ab-33ee78901234",
+    "timestamp": "2026-11-05T08:40:00.000Z",
+    "pagination": {
+      "total": 142,
+      "page": 1,
+      "limit": 20,
+      "totalPages": 8
+    },
+    "application": {
+      "id": "app_riverside_lms",
+      "name": "Riverside LMS Integration"
+    }
+  }
+}
+      </div>
+
+      <h3 style="font-size: 14px; font-weight: 700; color: var(--deep-pine); margin-top: 24px; margin-bottom: 8px;">
+        7.4. Thiết lập Cảnh báo Tự động với n8n
+      </h3>
+
+      <div style="background: var(--bg-ledger); border: 1px solid var(--border-subtle); padding: 18px; border-radius: 6px;">
+        <ol style="padding-left: 20px; line-height: 1.8; color: var(--text-main); font-size: 13px;">
+          <li><strong>Cron / Schedule Trigger:</strong> Chạy định kỳ mỗi 15 phút hoặc 1 giờ.</li>
+          <li><strong>HTTP Request Node:</strong> Gọi <code>GET /api/v1/access-logs?statusCode=500&from={{ $now.minus({ minutes: 15 }).toISO() }}</code> kèm Bearer API Key.</li>
+          <li><strong>IF Node:</strong> Kiểm tra nếu mảng <code>$json.data.length &gt; 0</code> (có lỗi máy chủ nội bộ hoặc khóa sổ điểm).</li>
+          <li><strong>Telegram / Discord / Slack Node:</strong> Gửi thông báo chi tiết: <code>Cảnh báo tích hợp: Có {{ $json.data.length }} lỗi gọi API trong 15 phút qua. Request ID gần nhất: {{ $json.data[0].requestId }}</code>.</li>
+        </ol>
+      </div>
+
+      <h3 style="font-size: 14px; font-weight: 700; color: var(--deep-pine); margin-top: 24px; margin-bottom: 8px;">
+        7.5. Xem Dữ liệu Truy cập Trực quan trên Giao diện Quản trị
+      </h3>
+      <p style="font-size: 13px; color: var(--text-muted); line-height: 1.6;">
+        Ngoài phương thức kết nối qua API ở trên, Quản trị viên Sky-Line có thể tra cứu nhanh trực tiếp trên giao diện:
+      </p>
+      <ul style="padding-left: 20px; line-height: 1.8; color: var(--text-main); font-size: 13px; margin-top: 6px;">
+        <li>Truy cập <strong>Hệ thống → Kết nối API</strong>.</li>
+        <li>Tìm ứng dụng cần kiểm tra và bấm nút <strong>"Nhật ký truy cập"</strong>.</li>
+        <li>Bảng hiển thị 50 yêu cầu gần nhất với mã trạng thái màu chuẩn (Xanh lá 2xx, Vàng 3xx, Đỏ 4xx/5xx), thời gian phản hồi (ms) và mã định danh <code>requestId</code> tra cứu.</li>
+      </ul>
+    </div>
+  </div>
+
+  <!-- Footer -->
+  <footer style="margin-top: 40px; padding-top: 20px; border-top: 1px solid var(--border-subtle); text-align: center; color: var(--text-muted); font-size: 12px;">
+    Hệ thống Quản lý Giáo dục Sky-Line School (SSM) &bull; Bản quyền thuộc Hệ thống Giáo dục Sky-Line &bull; Hỗ trợ kỹ thuật: <strong>ktdbcl@skylineschool.edu.vn</strong>
+  </footer>
+</div>
+
+<script>
+  function switchTab(tabId) {
+    document.querySelectorAll('.tab-pane').forEach(el => el.classList.remove('active'));
+    document.querySelectorAll('.nav-btn').forEach(el => el.classList.remove('active'));
+    
+    const target = document.getElementById(tabId);
+    if (target) target.classList.add('active');
+    
+    event.currentTarget.classList.add('active');
+  }
+
+  function copyCode(btn) {
+    const codeBlock = btn.parentElement;
+    const text = codeBlock.innerText.replace("Sao chép", "").trim();
+    navigator.clipboard.writeText(text).then(() => {
+      btn.innerText = "Đã chép!";
+      btn.style.background = "#059669";
+      setTimeout(() => {
+        btn.innerText = "Sao chép";
+        btn.style.background = "";
+      }, 2000);
+    });
+  }
+</script>
+
+</body>
+</html>

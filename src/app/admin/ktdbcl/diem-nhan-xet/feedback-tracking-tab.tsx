@@ -508,16 +508,16 @@ export function FeedbackTrackingTab({
         </div>
 
         {/* Card 4: Forwarded to GVBM */}
-        <div className="bg-white p-4 rounded-2xl border border-indigo-100 shadow-xs flex flex-col justify-between relative overflow-hidden">
-          <div className="flex items-center justify-between text-indigo-600">
+        <div className="bg-white p-4 rounded-2xl border border-teal-200 shadow-xs flex flex-col justify-between relative overflow-hidden">
+          <div className="flex items-center justify-between text-teal-800">
             <span className="text-[11px] font-bold uppercase tracking-wider">Đã Chuyển GVBM</span>
-            <div className="p-2 bg-indigo-50 rounded-xl text-indigo-600">
+            <div className="p-2 bg-teal-50 rounded-xl text-teal-800">
               <Send className="w-4 h-4" />
             </div>
           </div>
           <div className="mt-2">
             <div className="flex items-baseline gap-2">
-              <span className="text-2xl font-black text-indigo-700">
+              <span className="text-2xl font-black text-teal-800">
                 {summary.gvbmForwardCount}
               </span>
               <span className="text-xs font-medium text-slate-400">lượt</span>
@@ -625,7 +625,7 @@ export function FeedbackTrackingTab({
                           <span className="text-[10px] font-semibold text-teal-500">({cStat.homeroomRemarkPct}%)</span>
                         </div>
                       </td>
-                      <td className="py-3 px-4 text-center font-bold text-indigo-700">
+                      <td className="py-3 px-4 text-center font-bold text-teal-800">
                         {cStat.gvbmForwardCount}
                       </td>
                       <td className="py-3 px-4 text-center">
@@ -727,7 +727,7 @@ export function FeedbackTrackingTab({
                           <span className="text-[10px] font-semibold text-slate-400">({cls.homeroomRemarkPct}%)</span>
                         </span>
                       </td>
-                      <td className="py-3 px-4 text-center font-bold text-indigo-700">
+                      <td className="py-3 px-4 text-center font-bold text-teal-800">
                         {cls.gvbmForwardCount}
                       </td>
                       <td className="py-3 px-4 text-center">
@@ -790,7 +790,7 @@ export function FeedbackTrackingTab({
                     </div>
                   </th>
                   <th className="py-3.5 px-4 min-w-[200px]">
-                    <div className="flex items-center gap-1 text-indigo-700">
+                    <div className="flex items-center gap-1 text-teal-800">
                       <Send className="w-3.5 h-3.5" />
                       <span>3. Chuyển tiếp GVBM</span>
                     </div>
@@ -921,12 +921,12 @@ export function FeedbackTrackingTab({
                       {/* 3. GVBM Forward */}
                       <td className="py-3.5 px-4">
                         {item.hasGvbmForward ? (
-                          <div className="space-y-1 bg-indigo-50/50 p-2.5 rounded-xl border border-indigo-100/70">
+                          <div className="space-y-1 bg-teal-50/50 p-2.5 rounded-xl border border-teal-100/70">
                             <div className="flex items-center justify-between">
-                              <span className="font-bold text-indigo-900 text-xs">
+                              <span className="font-bold text-teal-800 text-xs">
                                 {item.forwardedGvbm?.subjectName || "Môn học"}
                               </span>
-                              <span className="text-[10px] text-indigo-600 font-semibold bg-indigo-100/80 px-1.5 py-0.5 rounded">
+                              <span className="text-[10px] text-teal-800 font-semibold bg-teal-100/80 px-1.5 py-0.5 rounded">
                                 {item.forwardedGvbm?.teacherName || "GVBM"}
                               </span>
                             </div>
@@ -1103,9 +1103,9 @@ export function FeedbackTrackingTab({
                     {/* Forwarded note to GVBM if any */}
                     {selectedTimelineItem.hasGvbmForward && (
                       <div className="mt-3 p-3 bg-white/80 rounded-xl border border-teal-200/60 space-y-1">
-                        <div className="flex items-center justify-between font-bold text-indigo-900 text-[11px]">
+                        <div className="flex items-center justify-between font-bold text-teal-800 text-[11px]">
                           <span>Chuyển tiếp đến GVBM: {selectedTimelineItem.forwardedGvbm?.teacherName}</span>
-                          <span className="bg-indigo-50 text-indigo-700 px-2 py-0.5 rounded font-mono text-[10px]">
+                          <span className="bg-teal-50 text-teal-800 px-2 py-0.5 rounded font-mono text-[10px]">
                             Môn {selectedTimelineItem.forwardedGvbm?.subjectName}
                           </span>
                         </div>

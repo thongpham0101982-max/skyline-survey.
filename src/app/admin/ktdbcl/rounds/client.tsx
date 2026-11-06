@@ -25,7 +25,7 @@ const getRoundIconAndColor = (code: string, name: string) => {
     return { Icon: Award, bg: "bg-rose-50 text-rose-600 border-rose-100/50" }
   }
   if (cleanCode.includes("QUOC_TE") || cleanName.includes("quốc tế")) {
-    return { Icon: Globe, bg: "bg-violet-50 text-violet-600 border-violet-100/50" }
+    return { Icon: Globe, bg: "bg-teal-50 text-teal-800 border-teal-100/50" }
   }
   return { Icon: Flag, bg: "bg-teal-50 text-[#48BFE3] border-teal-100/50" }
 }

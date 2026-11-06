@@ -203,7 +203,7 @@ export default function TeacherAnnouncementsPage() {
           onClick={() => setActiveWorkspaceMode("NOTIFICATION_CENTER")}
           className={`flex items-center gap-2 px-4 py-2.5 rounded-xl text-xs font-black transition-all cursor-pointer ${
             activeWorkspaceMode === "NOTIFICATION_CENTER"
-              ? "bg-[#5B2D8B] text-white shadow-sm"
+              ? "bg-[#003B3A] text-white shadow-sm"
               : "text-slate-600 hover:bg-slate-100"
           }`}
         >
@@ -335,7 +335,7 @@ export default function TeacherAnnouncementsPage() {
                         id: `transfer-${tr.id}`,
                         type: "SYSTEM",
                         author: "Hệ thống Luân chuyển Học sinh",
-                        avatarColor: "bg-orange-100 text-orange-600",
+                        avatarColor: "bg-amber-50 text-amber-700",
                         avatarIcon: ArrowLeftRight,
                         content: tr.type === "IN" 
                           ? `📢 BẢN TIN LUÂN CHUYỂN: Học sinh ${selectedStudent?.studentName} đã chính thức LUÂN CHUYỂN ĐẾN lớp ${selectedStudent?.className} từ trường ${tr.destinationSchool || "N/A"} vào ngày ${new Date(tr.transferDate).toLocaleDateString('vi-VN')}. Lý do: ${tr.reason || "Không có"}.`

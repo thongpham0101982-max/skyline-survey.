@@ -321,7 +321,7 @@ export default function AdminQualityCoordinationClient({ user }: Props) {
   return (
     <div className="min-h-screen bg-slate-50/80 pb-14">
       {toastMessage && (
-        <div className="fixed bottom-5 right-5 z-50 flex items-center gap-2 rounded-xl bg-[#6E3D89] px-4 py-3 text-xs font-bold text-white shadow-lg">
+        <div className="fixed bottom-5 right-5 z-50 flex items-center gap-2 rounded-xl bg-[#003B3A] px-4 py-3 text-xs font-bold text-white shadow-lg">
           <CheckCircle2 className="h-4 w-4 shrink-0" />
           <span>{toastMessage}</span>
         </div>
@@ -332,7 +332,7 @@ export default function AdminQualityCoordinationClient({ user }: Props) {
         <div className="mx-auto max-w-7xl">
           <div className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
             <div>
-              <div className="flex items-center gap-2 text-xs font-bold uppercase tracking-wider text-[#6E3D89]">
+              <div className="flex items-center gap-2 text-xs font-bold uppercase tracking-wider text-[#003B3A]">
                 <span>Đảm bảo chất lượng (KT&ĐBCL)</span>
                 <span>/</span>
                 <span>Chất lượng Phối hợp Giáo dục</span>
@@ -342,7 +342,7 @@ export default function AdminQualityCoordinationClient({ user }: Props) {
               </h1>
               <p className="mt-0.5 text-xs text-slate-500">
                 Phân quyền hiện tại:{' '}
-                <strong className="text-[#6E3D89]">
+                <strong className="text-[#003B3A]">
                   {adminGovernanceType === 'TECHNICAL_ADMIN'
                     ? 'Admin Kỹ thuật (Quản trị cấu hình & bảo mật nội dung riêng tư)'
                     : 'Admin Nghiệp vụ KT&ĐBCL (Giám sát chất lượng, NPS & Cải tiến)'}
@@ -367,7 +367,7 @@ export default function AdminQualityCoordinationClient({ user }: Props) {
               </button>
               <button
                 onClick={() => setShowImpModal(true)}
-                className="inline-flex items-center gap-1.5 rounded-xl bg-[#6E3D89] px-3.5 py-2 text-xs font-bold text-white hover:bg-[#5B3172]"
+                className="inline-flex items-center gap-1.5 rounded-xl bg-[#003B3A] px-3.5 py-2 text-xs font-bold text-white hover:bg-[#5B3172]"
               >
                 <Target className="h-4 w-4" />
                 Giao Nhiệm vụ Cải tiến
@@ -379,7 +379,7 @@ export default function AdminQualityCoordinationClient({ user }: Props) {
           <div className="mt-4 rounded-2xl border border-slate-200 bg-slate-50/70 p-3">
             <div className="mb-2 flex items-center justify-between">
               <span className="flex items-center gap-1.5 text-[11px] font-bold uppercase text-slate-600">
-                <Filter className="h-3.5 w-3.5 text-[#6E3D89]" />
+                <Filter className="h-3.5 w-3.5 text-[#003B3A]" />
                 Bộ lọc đa chiều (12 tiêu chí)
               </span>
               <button
@@ -400,7 +400,7 @@ export default function AdminQualityCoordinationClient({ user }: Props) {
                     status: '',
                   })
                 }
-                className="text-[11px] font-semibold text-[#6E3D89] hover:underline"
+                className="text-[11px] font-semibold text-[#003B3A] hover:underline"
               >
                 Đặt lại bộ lọc
               </button>
@@ -659,20 +659,20 @@ export default function AdminQualityCoordinationClient({ user }: Props) {
             </div>
           </div>
 
-          <div className="rounded-xl border border-purple-200 bg-purple-50/40 p-3 shadow-xs">
-            <div className="text-[10px] font-bold uppercase text-[#6E3D89]">
+          <div className="rounded-xl border border-teal-200 bg-teal-50/40 p-3 shadow-xs">
+            <div className="text-[10px] font-bold uppercase text-[#003B3A]">
               9. NPS GVCN
             </div>
-            <div className="mt-1 text-lg font-extrabold tabular-nums text-[#6E3D89]">
+            <div className="mt-1 text-lg font-extrabold tabular-nums text-[#003B3A]">
               {kpis.npsGvcnEligible && kpis.npsGvcn !== null ? kpis.npsGvcn : '—'}
             </div>
           </div>
 
-          <div className="rounded-xl border border-purple-200 bg-purple-50/40 p-3 shadow-xs">
-            <div className="text-[10px] font-bold uppercase text-[#6E3D89]">
+          <div className="rounded-xl border border-teal-200 bg-teal-50/40 p-3 shadow-xs">
+            <div className="text-[10px] font-bold uppercase text-[#003B3A]">
               10. NPS GVBM
             </div>
-            <div className="mt-1 text-lg font-extrabold tabular-nums text-[#6E3D89]">
+            <div className="mt-1 text-lg font-extrabold tabular-nums text-[#003B3A]">
               {kpis.npsGvbmEligible && kpis.npsGvbm !== null ? kpis.npsGvbm : '—'}
             </div>
           </div>
@@ -680,8 +680,8 @@ export default function AdminQualityCoordinationClient({ user }: Props) {
 
         {/* Empty State Notice when no real data exists yet (Section D1 Rule) */}
         {dashboard && !dashboard.hasData && (
-          <div className="mt-4 rounded-2xl border border-dashed border-purple-200 bg-white p-6 text-center">
-            <Activity className="mx-auto h-8 w-8 text-[#6E3D89]" />
+          <div className="mt-4 rounded-2xl border border-dashed border-teal-200 bg-white p-6 text-center">
+            <Activity className="mx-auto h-8 w-8 text-[#003B3A]" />
             <h3 className="mt-2 text-sm font-bold text-slate-800">
               Trạng thái Dữ liệu Thực: Chưa có phát sinh trong phạm vi bộ lọc hiện tại
             </h3>
@@ -705,7 +705,7 @@ export default function AdminQualityCoordinationClient({ user }: Props) {
               onClick={() => setActiveTab(t.id as any)}
               className={`rounded-xl px-4 py-2 text-xs font-bold transition ${
                 activeTab === t.id
-                  ? 'bg-[#6E3D89] text-white shadow-xs'
+                  ? 'bg-[#003B3A] text-white shadow-xs'
                   : 'bg-white text-slate-600 hover:bg-slate-100'
               }`}
             >
@@ -733,7 +733,7 @@ export default function AdminQualityCoordinationClient({ user }: Props) {
                       className="flex items-center justify-between rounded-xl border border-slate-100 bg-slate-50 px-3.5 py-2.5 text-xs"
                     >
                       <span className="font-semibold text-slate-800">{item.label}</span>
-                      <span className="rounded-full bg-purple-100 px-2.5 py-0.5 font-mono font-bold text-[#6E3D89]">
+                      <span className="rounded-full bg-teal-50 px-2.5 py-0.5 font-mono font-bold text-[#003B3A]">
                         {item.count} hồ sơ
                       </span>
                     </div>
@@ -750,9 +750,9 @@ export default function AdminQualityCoordinationClient({ user }: Props) {
                 Công thức chuẩn: NPS = %Promoters (9–10) – %Detractors (0–6). Không lấy trung bình cộng điểm NPS các lớp.
               </p>
               <div className="mt-4 grid grid-cols-2 gap-3 text-xs">
-                <div className="rounded-xl border border-purple-100 bg-purple-50/50 p-3.5">
-                  <div className="font-semibold text-[#6E3D89]">NPS Khối GVCN</div>
-                  <div className="mt-1 text-2xl font-extrabold text-[#6E3D89]">
+                <div className="rounded-xl border border-teal-200 bg-teal-50/50 p-3.5">
+                  <div className="font-semibold text-[#003B3A]">NPS Khối GVCN</div>
+                  <div className="mt-1 text-2xl font-extrabold text-[#003B3A]">
                     {npsAnalytics?.gvcnMetrics?.isEligibleToPublish
                       ? npsAnalytics.gvcnMetrics.npsScore
                       : 'Chưa đủ mẫu (<5)'}
@@ -820,7 +820,7 @@ export default function AdminQualityCoordinationClient({ user }: Props) {
                         PRIORITY_CONFIG[c.priority] || PRIORITY_CONFIG.NORMAL;
                       return (
                         <tr key={c.id} className="hover:bg-slate-50">
-                          <td className="px-4 py-3 font-mono font-bold text-[#6E3D89]">
+                          <td className="px-4 py-3 font-mono font-bold text-[#003B3A]">
                             {c.caseCode}
                           </td>
                           <td className="px-4 py-3">
@@ -828,7 +828,7 @@ export default function AdminQualityCoordinationClient({ user }: Props) {
                             <div className="text-[11px] text-slate-500">Lớp {c.className}</div>
                           </td>
                           <td className="max-w-sm px-4 py-3">
-                            <span className="rounded bg-purple-50 px-2 py-0.5 text-[10px] font-semibold text-[#6E3D89]">
+                            <span className="rounded bg-teal-50 px-2 py-0.5 text-[10px] font-semibold text-[#003B3A]">
                               {c.categoryLabel}
                             </span>
                             <div className="mt-1 font-semibold text-slate-900">{c.title}</div>
@@ -924,7 +924,7 @@ export default function AdminQualityCoordinationClient({ user }: Props) {
                       className="flex flex-wrap items-center justify-between gap-3 rounded-xl border border-slate-200 p-4 text-xs"
                     >
                       <div>
-                        <span className="font-mono font-bold text-[#6E3D89]">{p.code}</span>
+                        <span className="font-mono font-bold text-[#003B3A]">{p.code}</span>
                         <h4 className="mt-0.5 font-bold text-slate-900">{p.title}</h4>
                         <p className="mt-0.5 text-[11px] text-slate-500">
                           Học kỳ: {p.semester} • Phạm vi: {p.targetScope} • Ngưỡng mẫu tối thiểu:{' '}
@@ -936,7 +936,7 @@ export default function AdminQualityCoordinationClient({ user }: Props) {
                         </p>
                       </div>
                       <div className="flex flex-col items-end gap-1.5">
-                        <span className="rounded-full bg-purple-100 px-2.5 py-0.5 text-[10px] font-bold text-[#6E3D89]">
+                        <span className="rounded-full bg-teal-50 px-2.5 py-0.5 text-[10px] font-bold text-[#003B3A]">
                           {p.status}
                         </span>
                         <button
@@ -1008,7 +1008,7 @@ export default function AdminQualityCoordinationClient({ user }: Props) {
                             </div>
                           </td>
                           <td className="px-4 py-3">
-                            <span className="rounded bg-purple-100 px-2 py-0.5 text-[10px] font-bold text-[#6E3D89]">
+                            <span className="rounded bg-teal-50 px-2 py-0.5 text-[10px] font-bold text-[#003B3A]">
                               {t.roleType}
                             </span>
                           </td>
@@ -1028,7 +1028,7 @@ export default function AdminQualityCoordinationClient({ user }: Props) {
                               ? `${t.promotersPct}% / ${t.detractorsPct}%`
                               : 'Ẩn bảo mật mẫu nhỏ'}
                           </td>
-                          <td className="px-4 py-3 font-mono text-sm font-extrabold text-[#6E3D89]">
+                          <td className="px-4 py-3 font-mono text-sm font-extrabold text-[#003B3A]">
                             {t.isEligibleToPublish ? t.npsScore : 'Chưa đủ mẫu (<5)'}
                           </td>
                           <td className="px-4 py-3 font-mono font-bold text-teal-800">
@@ -1051,8 +1051,8 @@ export default function AdminQualityCoordinationClient({ user }: Props) {
           <div className="mt-4 space-y-4">
             {/* Human-in-the-loop AI Suggestions (Phase 4) */}
             {aiSuggestions.length > 0 && (
-              <div className="rounded-2xl border border-purple-200 bg-purple-50/50 p-5">
-                <div className="flex items-center gap-2 text-xs font-bold uppercase text-[#6E3D89]">
+              <div className="rounded-2xl border border-teal-200 bg-teal-50/50 p-5">
+                <div className="flex items-center gap-2 text-xs font-bold uppercase text-[#003B3A]">
                   <Sparkles className="h-4 w-4" />
                   <span>
                     Gợi ý Phân tích Chủ đề & Hành động Cải tiến (Dựa trên dữ liệu xác thực – Cần thẩm định)
@@ -1062,7 +1062,7 @@ export default function AdminQualityCoordinationClient({ user }: Props) {
                   {aiSuggestions.map((sug: any) => (
                     <div
                       key={sug.suggestedCode}
-                      className="rounded-xl border border-purple-200 bg-white p-4 text-xs shadow-2xs"
+                      className="rounded-xl border border-teal-200 bg-white p-4 text-xs shadow-2xs"
                     >
                       <div className="font-bold text-slate-900">{sug.suggestedTitle}</div>
                       <p className="mt-1 text-slate-600">
@@ -1088,7 +1088,7 @@ export default function AdminQualityCoordinationClient({ user }: Props) {
                             });
                             setShowImpModal(true);
                           }}
-                          className="rounded-lg bg-[#6E3D89] px-3 py-1.5 font-bold text-white"
+                          className="rounded-lg bg-[#003B3A] px-3 py-1.5 font-bold text-white"
                         >
                           Thẩm định & Tạo nhiệm vụ cải tiến
                         </button>
@@ -1128,7 +1128,7 @@ export default function AdminQualityCoordinationClient({ user }: Props) {
                     ) : (
                       improvements.map((imp) => (
                         <tr key={imp.id} className="hover:bg-slate-50">
-                          <td className="px-4 py-3 font-mono font-bold text-[#6E3D89]">
+                          <td className="px-4 py-3 font-mono font-bold text-[#003B3A]">
                             {imp.issueCode}
                           </td>
                           <td className="max-w-xs px-4 py-3">
@@ -1157,7 +1157,7 @@ export default function AdminQualityCoordinationClient({ user }: Props) {
                             {imp.recurrenceCount} kỳ
                           </td>
                           <td className="px-4 py-3">
-                            <span className="rounded-full bg-purple-100 px-2.5 py-0.5 text-[10px] font-bold text-[#6E3D89]">
+                            <span className="rounded-full bg-teal-50 px-2.5 py-0.5 text-[10px] font-bold text-[#003B3A]">
                               {imp.status}
                             </span>
                           </td>
@@ -1214,9 +1214,9 @@ export default function AdminQualityCoordinationClient({ user }: Props) {
               </ul>
             </div>
 
-            <div className="rounded-2xl border border-purple-200 bg-purple-50/40 p-5 shadow-xs">
-              <div className="flex items-center gap-2 text-sm font-bold text-[#6E3D89]">
-                <ShieldCheck className="h-4 w-4 text-[#6E3D89]" />
+            <div className="rounded-2xl border border-teal-200 bg-teal-50/40 p-5 shadow-xs">
+              <div className="flex items-center gap-2 text-sm font-bold text-[#003B3A]">
+                <ShieldCheck className="h-4 w-4 text-[#003B3A]" />
                 <span>2. Admin Nghiệp vụ KT&ĐBCL (QA Business Admin)</span>
               </div>
               <p className="mt-1 text-xs text-slate-600">
@@ -1312,7 +1312,7 @@ export default function AdminQualityCoordinationClient({ user }: Props) {
                 </button>
                 <button
                   type="submit"
-                  className="rounded-xl bg-[#6E3D89] px-4 py-2 font-bold text-white"
+                  className="rounded-xl bg-[#003B3A] px-4 py-2 font-bold text-white"
                 >
                   Tạo & Đồng bộ phân công
                 </button>
@@ -1402,7 +1402,7 @@ export default function AdminQualityCoordinationClient({ user }: Props) {
                 </button>
                 <button
                   type="submit"
-                  className="rounded-xl bg-[#6E3D89] px-4 py-2 font-bold text-white"
+                  className="rounded-xl bg-[#003B3A] px-4 py-2 font-bold text-white"
                 >
                   Giao nhiệm vụ cải tiến
                 </button>

@@ -387,6 +387,15 @@ export function StudentOrientationReportModal({
     proposedPlacementRecommendation = orientationData.proposedPlacementRecommendation
   }
 
+  // Parse dữ liệu khảo sát & đánh giá tâm lý học đường (psychologyData) ở phạm vi toàn modal
+  let parsedPsych: any = null
+  const rawPsych = orientationData?.psychologyData || (studentInfo || student)?.orientationRecord?.psychologyData
+  if (rawPsych) {
+    try {
+      parsedPsych = typeof rawPsych === "string" ? JSON.parse(rawPsych) : rawPsych
+    } catch (e) {}
+  }
+
   // Parse điểm và nhận xét chuyên môn của tất cả các môn khảo sát thực tế tại Sky-Line
   const parseScores = () => {
     const res: Array<{ subject: string; teacherName: string; score: string | number; remark: string }> = []
@@ -1254,13 +1263,6 @@ export function StudentOrientationReportModal({
 
               {/* KẾT QUẢ KHẢO SÁT & ĐÁNH GIÁ TÂM LÝ HỌC ĐƯỜNG CHI TIẾT (NẾU CÓ) */}
               {(() => {
-                const rawPsych = orientationData?.psychologyData
-                let parsedPsych: any = null
-                if (rawPsych) {
-                  try {
-                    parsedPsych = typeof rawPsych === "string" ? JSON.parse(rawPsych) : rawPsych
-                  } catch (e) {}
-                }
                 const hasPsych = parsedPsych || (orientationData?.psychologyReferralStatus && orientationData.psychologyReferralStatus !== "NONE")
                 if (!hasPsych) return null
 
@@ -1282,10 +1284,16 @@ export function StudentOrientationReportModal({
                           3.1. Chi Tiết Khảo Sát &amp; Đánh Giá Tâm Lý Học Đường
                         </h3>
                       </div>
-                      <div className="flex items-center gap-2 text-[9.5px]">
+                      <div className="flex flex-wrap items-center gap-2 text-[9.5px]">
                         <span className="font-bold text-teal-900">
-                          GV Tâm lý phụ trách: {orientationData?.psychologyTeacherName || parsedPsych?.assessedBy || "Tổ Tâm lý Học đường"}
+                          GV Tâm lý phụ trách: {parsedPsych?.digitalSignature?.signedBy || orientationData?.psychologyTeacherName || parsedPsych?.assessedBy || "Tổ Tâm lý Học đường"}
                         </span>
+                        {parsedPsych?.digitalSignature?.isSigned && (
+                          <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-emerald-100 text-emerald-800 border border-emerald-300 font-extrabold text-[9px]">
+                            <ShieldCheck size={11} className="text-emerald-700" />
+                            <span>Đã ký điện tử ({parsedPsych.digitalSignature.signedAtFormatted || "Xác thực"})</span>
+                          </span>
+                        )}
                         {parsedPsych?.totalScore !== undefined && (
                           <span className="px-2 py-0.5 rounded-full bg-teal-800 text-white font-black tabular-nums">
                             Tổng điểm: {parsedPsych.totalScore}/80đ ({parsedPsych?.evaluation?.level || "Đã đánh giá"})
@@ -1384,16 +1392,34 @@ export function StudentOrientationReportModal({
               {/* REPORT FOOTER SIGNATURES */}
               <div className="print-section pt-2 border-t border-slate-300 text-xs">
                 <div className="grid grid-cols-3 gap-3 text-center">
-                  <div className="space-y-10">
+                  <div className="flex flex-col items-center justify-between min-h-[90px]">
                     <span className="text-[9.5px] font-black uppercase text-slate-600 block">
                       GIÁO VIÊN KHẢO SÁT / ĐỊNH HƯỚNG
                     </span>
-                    <div>
-                      <strong className="text-slate-900 text-[11px] block font-bold">
-                        {orientationData?.interviewerName || verificationInfo?.verifiedBy || "Giáo viên thực hiện"}
-                      </strong>
-                      <span className="text-[9px] text-slate-400 italic block">Ký và ghi rõ họ tên</span>
-                    </div>
+                    {parsedPsych?.digitalSignature?.isSigned ? (
+                      <div className="p-1.5 rounded-lg border-2 border-emerald-600 bg-emerald-50/60 text-center w-full max-w-[190px] shadow-2xs my-1">
+                        <div className="text-[8px] font-black uppercase tracking-wider text-emerald-800 flex items-center justify-center gap-1">
+                          <ShieldCheck size={11} className="text-emerald-700" />
+                          <span>KÝ ĐIỆN TỬ SQMS</span>
+                        </div>
+                        <div className="text-[10.5px] font-black text-[#003B3A] my-0.5 truncate">
+                          {parsedPsych.digitalSignature.signedBy}
+                        </div>
+                        <div className="text-[7.5px] text-slate-500 font-mono">
+                          {parsedPsych.digitalSignature.signedAtFormatted || "Đã xác thực"}
+                        </div>
+                        <div className="text-[7px] text-emerald-700 font-mono truncate mt-0.5">
+                          {parsedPsych.digitalSignature.signatureHash || "SQMS-VERIFIED"}
+                        </div>
+                      </div>
+                    ) : (
+                      <div className="pt-6">
+                        <strong className="text-slate-900 text-[11px] block font-bold">
+                          {orientationData?.interviewerName || orientationData?.psychologyTeacherName || sData?.signatureName || verificationInfo?.verifiedBy || "Giáo viên thực hiện"}
+                        </strong>
+                        <span className="text-[9px] text-slate-400 italic block">Ký và ghi rõ họ tên</span>
+                      </div>
+                    )}
                   </div>
 
                   <div className="space-y-10">

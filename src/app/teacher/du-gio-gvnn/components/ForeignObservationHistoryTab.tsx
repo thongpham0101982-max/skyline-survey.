@@ -48,7 +48,7 @@ const RATING_CONFIG: Record<string, { label: string; shortLabel: string; badgeCl
   "4": {
     label: "4 - Strong Practice",
     shortLabel: "Strong Practice",
-    badgeClass: "bg-purple-100 text-purple-900 border-purple-300",
+    badgeClass: "bg-teal-50 text-teal-800 border-teal-400",
     score: 4
   },
   "3": {
@@ -87,8 +87,8 @@ const OVERALL_RATING_STYLES: Record<string, { label: string; icon: string; badge
   "Strong Practice": {
     label: "Strong Practice (Thực hành xuất sắc)",
     icon: "🌟",
-    badgeClass: "bg-purple-100 text-purple-900 border-purple-300 ring-1 ring-purple-400/30",
-    bgSoft: "bg-purple-50"
+    badgeClass: "bg-teal-50 text-teal-800 border-teal-400 ring-1 ring-purple-400/30",
+    bgSoft: "bg-teal-50"
   },
   "Effective": {
     label: "Effective (Hiệu quả / Đạt chuẩn)",
@@ -361,7 +361,7 @@ export function ForeignObservationHistoryTab({
             <button
               type="button"
               onClick={onOpenWalkthroughForm}
-              className="px-4 py-2.5 rounded-xl bg-indigo-600 hover:bg-indigo-700 text-white font-black text-xs flex items-center gap-2 shadow-md shadow-indigo-700/20 transition-all cursor-pointer hover:scale-105 active:scale-95"
+              className="px-4 py-2.5 rounded-xl bg-[#003B3A] hover:bg-[#003B3A] text-white font-black text-xs flex items-center gap-2 shadow-md shadow-indigo-700/20 transition-all cursor-pointer hover:scale-105 active:scale-95"
             >
               <Sparkles className="w-4 h-4" />
               <span>{t.newObservationBtn}</span>
@@ -376,10 +376,10 @@ export function ForeignObservationHistoryTab({
         <div className="bg-white rounded-2xl p-5 border border-slate-200/90 shadow-xs flex flex-col justify-between gap-3 border-t-4 border-t-indigo-600">
           <div className="flex items-center justify-between">
             <span className="text-xs font-black text-slate-500 uppercase tracking-wider flex items-center gap-1.5">
-              <ClipboardList className="w-4 h-4 text-indigo-600" />
+              <ClipboardList className="w-4 h-4 text-teal-800" />
               {t.kpiTotalTitle}
             </span>
-            <span className="px-2 py-0.5 rounded-full bg-indigo-50 text-indigo-800 text-[11px] font-black border border-indigo-200">
+            <span className="px-2 py-0.5 rounded-full bg-teal-50 text-teal-800 text-[11px] font-black border border-teal-200">
               ESL Walkthrough
             </span>
           </div>
@@ -388,7 +388,7 @@ export function ForeignObservationHistoryTab({
             <span className="text-sm font-bold text-slate-400">{t.kpiTotalUnit}</span>
           </div>
           <p className="text-[11px] text-slate-500 font-medium">
-            {t.kpiAvgScoreLabel} <strong className="text-indigo-700 font-black">{stats.avgScore}</strong>/4.00
+            {t.kpiAvgScoreLabel} <strong className="text-teal-800 font-black">{stats.avgScore}</strong>/4.00
           </p>
         </div>
 
@@ -399,12 +399,12 @@ export function ForeignObservationHistoryTab({
               <span>🌟</span>
               {t.kpiStrongTitle}
             </span>
-            <span className="px-2 py-0.5 rounded-full bg-purple-50 text-purple-800 text-[11px] font-black border border-purple-200">
+            <span className="px-2 py-0.5 rounded-full bg-teal-50 text-teal-800 text-[11px] font-black border border-teal-200">
               {stats.total > 0 ? Math.round((stats.strongCount / stats.total) * 100) : 0}%
             </span>
           </div>
           <div className="flex items-baseline gap-2">
-            <span className="text-3xl font-black text-purple-900">{stats.strongCount}</span>
+            <span className="text-3xl font-black text-teal-800">{stats.strongCount}</span>
             <span className="text-sm font-bold text-slate-400">{t.kpiStrongUnit}</span>
           </div>
           <p className="text-[11px] text-slate-500 font-medium">
@@ -506,7 +506,7 @@ export function ForeignObservationHistoryTab({
               type="button"
               onClick={() => setFilterRole("host")}
               className={`px-3 py-1.5 rounded-xl text-xs font-black transition-all cursor-pointer flex items-center gap-1 ${
-                filterRole === "host" ? "bg-white text-indigo-800 shadow-xs" : "text-slate-500 hover:text-indigo-800"
+                filterRole === "host" ? "bg-white text-teal-800 shadow-xs" : "text-slate-500 hover:text-teal-800"
               }`}
             >
               <span>{lang === "en" ? "🏫 As Host Teacher" : "🏫 Tôi được dự"}</span>
@@ -521,7 +521,7 @@ export function ForeignObservationHistoryTab({
         <div className="flex flex-wrap items-center gap-2.5 pt-2 border-t border-slate-100">
           {/* Campus Filter */}
           <div className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-slate-50 rounded-xl border border-slate-200 text-xs font-bold text-slate-700">
-            <Building2 className="w-3.5 h-3.5 text-indigo-600" />
+            <Building2 className="w-3.5 h-3.5 text-teal-800" />
             <span className="text-slate-400">{lang === "en" ? "Campus:" : "Cơ sở:"}</span>
             <select
               value={filterCampus}
@@ -539,7 +539,7 @@ export function ForeignObservationHistoryTab({
 
           {/* Rating Filter */}
           <div className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-slate-50 rounded-xl border border-slate-200 text-xs font-bold text-slate-700">
-            <Award className="w-3.5 h-3.5 text-purple-600" />
+            <Award className="w-3.5 h-3.5 text-teal-800" />
             <span className="text-slate-400">{lang === "en" ? "Rating:" : "Xếp loại:"}</span>
             <select
               value={filterRating}
@@ -602,7 +602,7 @@ export function ForeignObservationHistoryTab({
       {/* Main Data Table */}
       {filteredSlots.length === 0 ? (
         <div className="bg-white rounded-3xl border border-dashed border-slate-300 p-12 text-center space-y-3">
-          <div className="w-14 h-14 rounded-2xl bg-indigo-50 text-indigo-600 flex items-center justify-center mx-auto">
+          <div className="w-14 h-14 rounded-2xl bg-teal-50 text-teal-800 flex items-center justify-center mx-auto">
             <ClipboardList className="w-7 h-7" />
           </div>
           <h4 className="font-extrabold text-slate-800 text-base">{t.emptyRecordsTitle}</h4>
@@ -613,7 +613,7 @@ export function ForeignObservationHistoryTab({
             <button
               type="button"
               onClick={onOpenWalkthroughForm}
-              className="mt-2 px-4 py-2 rounded-xl bg-indigo-600 text-white font-bold text-xs shadow-md shadow-indigo-600/30 hover:bg-indigo-700 transition cursor-pointer"
+              className="mt-2 px-4 py-2 rounded-xl bg-[#003B3A] text-white font-bold text-xs shadow-md shadow-indigo-600/30 hover:bg-[#003B3A] transition cursor-pointer"
             >
               {t.newObservationBtn}
             </button>
@@ -651,7 +651,7 @@ export function ForeignObservationHistoryTab({
                   return (
                     <tr
                       key={slot.id}
-                      className="hover:bg-indigo-50/20 transition-all duration-200"
+                      className="hover:bg-teal-50/20 transition-all duration-200"
                     >
                       {/* TT */}
                       <td className="p-4 text-center font-black text-slate-400">
@@ -696,7 +696,7 @@ export function ForeignObservationHistoryTab({
                             {slot.topic || (lang === "en" ? "International English Walkthrough" : "Dự giờ GVNN ESL")}
                           </p>
                           <div className="flex items-center gap-1 flex-wrap text-[10px]">
-                            <span className="px-2 py-0.5 rounded-md bg-indigo-50 text-indigo-800 font-bold border border-indigo-200/60">
+                            <span className="px-2 py-0.5 rounded-md bg-teal-50 text-teal-800 font-bold border border-teal-200/60">
                               {slot.subjectName || (lang === "en" ? "English (ESL)" : "Tiếng Anh (ESL)")}
                             </span>
                             <span className="text-slate-400">•</span>
@@ -741,7 +741,7 @@ export function ForeignObservationHistoryTab({
                           <button
                             type="button"
                             onClick={() => setSelectedSlotForModal(slot)}
-                            className="px-3 py-1.5 bg-indigo-50 hover:bg-indigo-100 text-indigo-700 rounded-xl text-xs font-black transition-all flex items-center gap-1 cursor-pointer border border-indigo-200"
+                            className="px-3 py-1.5 bg-teal-50 hover:bg-teal-50 text-teal-800 rounded-xl text-xs font-black transition-all flex items-center gap-1 cursor-pointer border border-teal-200"
                             title={lang === "en" ? "View walkthrough observation details" : "Xem chi tiết phiếu đánh giá Walkthrough"}
                           >
                             <Eye className="w-3.5 h-3.5" />
@@ -887,7 +887,7 @@ function WalkthroughDetailModal({
         <div className="p-5 sm:p-6 bg-gradient-to-r from-slate-900 via-indigo-950 to-slate-900 text-white flex items-center justify-between gap-4 border-b border-white/10 shrink-0">
           <div className="space-y-1">
             <div className="flex items-center gap-2 flex-wrap">
-              <span className="px-2.5 py-0.5 rounded-full bg-indigo-500/30 text-indigo-300 border border-indigo-400/40 text-[10px] font-black uppercase tracking-wider">
+              <span className="px-2.5 py-0.5 rounded-full bg-teal-500/30 text-teal-700 border border-teal-400/40 text-[10px] font-black uppercase tracking-wider">
                 SY2026-2027 • Official Walkthrough
               </span>
               <span className="px-2.5 py-0.5 rounded-full bg-white/15 text-white text-[10px] font-bold">
@@ -922,15 +922,15 @@ function WalkthroughDetailModal({
         {/* Modal Scrollable Content */}
         <div className="p-5 sm:p-7 overflow-y-auto space-y-6 text-xs text-slate-700">
           {/* Guiding Principle Banner */}
-          <div className="p-3.5 rounded-2xl bg-indigo-50/70 border border-indigo-200 text-indigo-950 flex items-center gap-3">
-            <div className="p-2 rounded-xl bg-indigo-100 text-indigo-700 shrink-0">
+          <div className="p-3.5 rounded-2xl bg-teal-50/70 border border-teal-200 text-teal-800 flex items-center gap-3">
+            <div className="p-2 rounded-xl bg-teal-50 text-teal-800 shrink-0">
               <Sparkles className="w-4 h-4" />
             </div>
             <div>
-              <span className="text-[10px] font-black uppercase tracking-wider text-indigo-700 block">
+              <span className="text-[10px] font-black uppercase tracking-wider text-teal-800 block">
                 {isEn ? "Observation approach" : "Observation approach / Phương pháp tiếp cận dự giờ"}
               </span>
-              <p className="text-xs font-bold italic text-indigo-950">
+              <p className="text-xs font-bold italic text-teal-800">
                 {isEn
                   ? "Focus on evidence and impact on students."
                   : "Focus on evidence and impact on students. (Tập trung vào minh chứng thực tế và tác động đến học sinh)."}
@@ -1060,7 +1060,7 @@ function WalkthroughDetailModal({
           {/* Section 2: 20 Pedagogical Indicators grouped in Sections A-E */}
           <div className="space-y-4">
             <h4 className="font-black text-slate-900 text-sm flex items-center gap-2">
-              <Award className="w-4 h-4 text-indigo-600" />
+              <Award className="w-4 h-4 text-teal-800" />
               <span>
                 {isEn
                   ? "Classroom Walkthrough Rubric (20 Indicators)"
@@ -1087,11 +1087,11 @@ function WalkthroughDetailModal({
                       const ratingCfg = RATING_CONFIG[scoreData.rating] || RATING_CONFIG["3"];
 
                       return (
-                        <div key={ind.id} className="p-3.5 rounded-2xl bg-white border border-slate-200 space-y-2 hover:border-indigo-300 transition">
+                        <div key={ind.id} className="p-3.5 rounded-2xl bg-white border border-slate-200 space-y-2 hover:border-teal-200 transition">
                           <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
                             <div className="space-y-0.5 flex-1">
                               <div className="flex items-center gap-2">
-                                <span className="px-2 py-0.5 rounded-md bg-indigo-50 text-indigo-800 text-[10px] font-black border border-indigo-200 shrink-0">
+                                <span className="px-2 py-0.5 rounded-md bg-teal-50 text-teal-800 text-[10px] font-black border border-teal-200 shrink-0">
                                   #{ind.id}
                                 </span>
                                 <span className="font-extrabold text-slate-900 text-xs">{ind.text}</span>
@@ -1138,7 +1138,7 @@ function WalkthroughDetailModal({
           {/* Section F: Teacher Voice & Curriculum Feedback */}
           <div className="space-y-3 pt-2">
             <h4 className="font-black text-slate-900 text-sm flex items-center gap-2">
-              <MessageSquare className="w-4 h-4 text-indigo-600" />
+              <MessageSquare className="w-4 h-4 text-teal-800" />
               <span>
                 {isEn
                   ? "Section F: Teacher Voice & Curriculum Feedback"
@@ -1187,7 +1187,7 @@ function WalkthroughDetailModal({
           {/* Section G: Observation Summary & Actions */}
           <div className="space-y-3 pt-2">
             <h4 className="font-black text-slate-900 text-sm flex items-center gap-2">
-              <ClipboardList className="w-4 h-4 text-indigo-600" />
+              <ClipboardList className="w-4 h-4 text-teal-800" />
               <span>
                 {isEn
                   ? "Section G: Observation Summary & Action Plan"
@@ -1221,16 +1221,16 @@ function WalkthroughDetailModal({
                 </p>
               </div>
 
-              <div className="p-4 rounded-2xl bg-indigo-50/70 border border-indigo-200 space-y-1">
-                <span className="font-black text-indigo-900 text-xs flex items-center gap-1.5">
-                  <Sparkles className="w-4 h-4 text-indigo-600" />
+              <div className="p-4 rounded-2xl bg-teal-50/70 border border-teal-200 space-y-1">
+                <span className="font-black text-teal-800 text-xs flex items-center gap-1.5">
+                  <Sparkles className="w-4 h-4 text-teal-800" />
                   <span>
                     {isEn
                       ? "Agreed follow-up actions & support"
                       : "Agreed follow-up actions / Kế hoạch hành động thống nhất"}
                   </span>
                 </span>
-                <p className="text-xs text-indigo-950 font-medium whitespace-pre-line leading-relaxed">
+                <p className="text-xs text-teal-800 font-medium whitespace-pre-line leading-relaxed">
                   {summary.agreedActions || evalObj?.generalComment || notRecordedText}
                 </p>
               </div>
@@ -1283,7 +1283,7 @@ function WalkthroughDetailModal({
             <button
               type="button"
               onClick={onClose}
-              className="px-5 py-2 rounded-xl bg-indigo-600 hover:bg-indigo-700 text-white font-bold text-xs transition cursor-pointer shadow-xs"
+              className="px-5 py-2 rounded-xl bg-[#003B3A] hover:bg-[#003B3A] text-white font-bold text-xs transition cursor-pointer shadow-xs"
             >
               {isEn ? "Close" : "Đóng"}
             </button>

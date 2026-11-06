@@ -58,7 +58,7 @@ const checkIsGiaoLuuStudent = (student: any, transfer?: any) => {
 
 
 // --- REALTIME VISUAL DASHBOARD COMPONENT ---
-const PIE_COLORS = ["#00A19A", "#10B981", "#F59E0B", "#6366F1", "#0284C7", "#EC4899", "#8B5CF6", "#F43F5E"];
+const PIE_COLORS = ["#00A19A", "#10B981", "#F59E0B", "#6366F1", "#0284C7", "#EC4899", "#2DD4BF", "#F43F5E"];
 
 function RealtimeTransferDashboard({
   transfers,
@@ -448,22 +448,22 @@ function RealtimeTransferDashboard({
 
             {/* Card: Giao lưu (Only for IN) */}
             {activeTab === "IN" && (
-              <div className="bg-white p-5 rounded-2xl border border-purple-200/80 shadow-xs hover:shadow-md transition-all group flex flex-col justify-between relative overflow-hidden">
-                <div className="absolute top-0 right-0 w-24 h-24 bg-purple-500/5 rounded-full blur-xl group-hover:bg-purple-500/10 transition-all"></div>
+              <div className="bg-white p-5 rounded-2xl border border-teal-200/80 shadow-xs hover:shadow-md transition-all group flex flex-col justify-between relative overflow-hidden">
+                <div className="absolute top-0 right-0 w-24 h-24 bg-teal-500/5 rounded-full blur-xl group-hover:bg-teal-500/10 transition-all"></div>
                 <div className="flex justify-between items-start">
-                  <span className="text-[11px] font-extrabold text-purple-700 uppercase tracking-wider">HS Nhập: Giao lưu</span>
-                  <div className="p-2 bg-purple-50 text-purple-600 rounded-xl group-hover:scale-110 transition-transform">
+                  <span className="text-[11px] font-extrabold text-teal-800 uppercase tracking-wider">HS Nhập: Giao lưu</span>
+                  <div className="p-2 bg-teal-50 text-teal-800 rounded-xl group-hover:scale-110 transition-transform">
                     <Sparkles className="w-4 h-4" />
                   </div>
                 </div>
                 <div className="mt-3">
                   <div className="flex items-baseline gap-2">
-                    <span className="text-3xl font-black text-purple-700 tracking-tight">{totalInGiaoLuu}</span>
-                    <span className="text-xs font-semibold text-purple-500/80">học sinh</span>
+                    <span className="text-3xl font-black text-teal-800 tracking-tight">{totalInGiaoLuu}</span>
+                    <span className="text-xs font-semibold text-teal-700/80">học sinh</span>
                   </div>
-                  <div className="mt-2.5 pt-2 border-t border-purple-100 flex items-center justify-between text-[11px]">
-                    <span className="text-purple-700 font-medium">Tỷ lệ trong tổng nhập:</span>
-                    <span className="font-extrabold text-purple-600 bg-purple-50 px-2 py-0.5 rounded-full border border-purple-200/60">
+                  <div className="mt-2.5 pt-2 border-t border-teal-200 flex items-center justify-between text-[11px]">
+                    <span className="text-teal-800 font-medium">Tỷ lệ trong tổng nhập:</span>
+                    <span className="font-extrabold text-teal-800 bg-teal-50 px-2 py-0.5 rounded-full border border-teal-200/60">
                       {totalIn > 0 ? Math.round((totalInGiaoLuu / totalIn) * 100) : 0}%
                     </span>
                   </div>
@@ -627,7 +627,7 @@ function RealtimeTransferDashboard({
             <div className="bg-white p-5 rounded-2xl border border-slate-200/80 shadow-xs space-y-4">
               <div className="flex items-center justify-between border-b border-slate-100 pb-3">
                 <div className="flex items-center gap-2">
-                  <div className="p-2 bg-indigo-50 text-indigo-600 rounded-xl">
+                  <div className="p-2 bg-teal-50 text-teal-800 rounded-xl">
                     <PieIcon className="w-4 h-4" />
                   </div>
                   <div>
@@ -1763,7 +1763,7 @@ export function StudentTransfersClient() {
                             </span>
                           </div>
                           <div className="w-full bg-slate-100 rounded-full h-1.5 overflow-hidden">
-                            <div className="bg-indigo-500 h-full" style={{ width: (outStats.totalOut > 0 ? (t.count / outStats.totalOut) * 100 : 0) + "%" }}></div>
+                            <div className="bg-[#003B3A] h-full" style={{ width: (outStats.totalOut > 0 ? (t.count / outStats.totalOut) * 100 : 0) + "%" }}></div>
                           </div>
                         </div>
                       )) : (
@@ -1804,7 +1804,7 @@ export function StudentTransfersClient() {
                   <div className="bg-white border border-slate-100 p-5 rounded-2xl space-y-4 shadow-xs">
                     <div className="border-b border-slate-50 pb-2">
                       <h4 className="text-xs font-black text-slate-850 uppercase tracking-wider flex items-center gap-2">
-                        <Activity className="w-4 h-4 text-indigo-600" />
+                        <Activity className="w-4 h-4 text-teal-800" />
                         Phân tích tại Đà Nẵng
                       </h4>
                       <p className="text-[10px] text-slate-400 font-bold mt-1">Chi tiết trong số {outStats.totalDaNang} HS chuyển đến Đà Nẵng</p>
@@ -1858,7 +1858,7 @@ export function StudentTransfersClient() {
 
                     {/* 2. Trường Tư thục cụ thể */}
                     <div className="space-y-3 pt-3 border-t border-slate-100">
-                      <h5 className="text-[10px] font-black text-indigo-700 uppercase tracking-widest flex items-center justify-between">
+                      <h5 className="text-[10px] font-black text-teal-800 uppercase tracking-widest flex items-center justify-between">
                         <span>Biểu đồ tỷ lệ các trường Tư thục</span>
                         <span className="text-[9px] font-semibold text-slate-400 normal-case">(Trong {outStats.privateDaNang} HS chuyển Tư thục)</span>
                       </h5>
@@ -1874,7 +1874,7 @@ export function StudentTransfersClient() {
                               </span>
                             </div>
                             <div className="w-full bg-slate-50 rounded-full h-1.5 overflow-hidden">
-                              <div className="bg-indigo-500 h-full" style={{ width: item.pct + "%" }}></div>
+                              <div className="bg-[#003B3A] h-full" style={{ width: item.pct + "%" }}></div>
                             </div>
                           </div>
                         )) : (
@@ -1915,7 +1915,7 @@ export function StudentTransfersClient() {
           <button
             onClick={() => setActiveTab("CHANGE_CLASS")}
             className={`flex items-center px-6 py-4 text-sm font-bold rounded-2xl transition-all whitespace-nowrap ${activeTab === "CHANGE_CLASS"
-                ? "bg-[#00A19A]/10 text-[#00A19A] border-b-4 border-indigo-500 shadow-sm"
+                ? "bg-[#00A19A]/10 text-[#00A19A] border-b-4 border-teal-200 shadow-sm"
                 : "text-slate-500 hover:bg-slate-50 hover:text-slate-800"
               }`}
           >
@@ -1944,7 +1944,7 @@ export function StudentTransfersClient() {
                     <>
                       <button
                         onClick={() => setShowBatchEditModal(true)}
-                        className="px-4 py-2 bg-indigo-50 text-indigo-700 border border-indigo-200 font-bold rounded-2xl hover:bg-indigo-100 transition-all flex items-center shadow-sm text-xs animate-in fade-in slide-in-from-left duration-200 mr-2"
+                        className="px-4 py-2 bg-teal-50 text-teal-800 border border-teal-200 font-bold rounded-2xl hover:bg-teal-50 transition-all flex items-center shadow-sm text-xs animate-in fade-in slide-in-from-left duration-200 mr-2"
                       >
                         <Edit className="w-4 h-4 mr-1.5" /> Chỉnh sửa hàng loạt ({selectedOutTransferIds.length})
                       </button>
@@ -1965,7 +1965,7 @@ export function StudentTransfersClient() {
                   <button
                     onClick={() => fileInputRef.current?.click()}
                     disabled={importing}
-                    className="px-4 py-2 bg-indigo-50 text-indigo-700 border border-indigo-200 font-bold rounded-2xl hover:bg-indigo-100 transition-all flex items-center shadow-sm text-xs disabled:opacity-50"
+                    className="px-4 py-2 bg-teal-50 text-teal-800 border border-teal-200 font-bold rounded-2xl hover:bg-teal-50 transition-all flex items-center shadow-sm text-xs disabled:opacity-50"
                   >
                     {importing ? <Loader2 className="w-4 h-4 animate-spin mr-1" /> : null} Import File Excel
                   </button>
@@ -2158,7 +2158,7 @@ export function StudentTransfersClient() {
                           <span className={`px-2 py-0.5 rounded text-[10px] border ${t.transferCategory === 'DOMESTIC' ? 'bg-amber-50 text-amber-700 border-amber-250' :
                               t.transferCategory === 'ABROAD' ? 'bg-sky-50 text-sky-700 border-sky-250' :
                                 t.transferCategory === 'GRADUATED' ? 'bg-emerald-50 text-emerald-700 border-emerald-250' :
-                                  'bg-indigo-50 text-indigo-700 border-indigo-250'
+                                  'bg-teal-50 text-teal-800 border-teal-200'
                             }`}>
                             {t.transferCategory === "DOMESTIC" ? "Chuyển trường VN" : t.transferCategory === "ABROAD" ? "Du học" : t.transferCategory === "GRADUATED" ? "Tốt nghiệp THPT" : "Bảo lưu"}
                           </span>
@@ -2241,7 +2241,7 @@ export function StudentTransfersClient() {
             ) : (
               <div className="p-16 text-center text-xs font-semibold">
                 <div className="w-20 h-20 bg-white rounded-full flex items-center justify-center mx-auto mb-4 shadow-sm border border-slate-100">
-                  <ArrowRightLeft className="w-8 h-8 text-indigo-300" />
+                  <ArrowRightLeft className="w-8 h-8 text-teal-700" />
                 </div>
                 <h3 className="text-xl font-bold text-slate-700 mb-2">Chưa có dữ liệu chuyển lớp</h3>
                 <p className="text-slate-500 font-medium">Bấm "Tạo phiếu Chuyển lớp" để thêm mới.</p>
@@ -2390,7 +2390,7 @@ export function StudentTransfersClient() {
                                     <div className="flex items-center gap-1.5 flex-wrap">
                                       <span>{req.fullName}</span>
                                       {req.isGiaoLuu && (
-                                        <span className="px-1.5 py-0.5 rounded-full text-[9px] font-extrabold bg-purple-100 text-purple-700 border border-purple-200 shrink-0" title="Học sinh diện Giao lưu">
+                                        <span className="px-1.5 py-0.5 rounded-full text-[9px] font-extrabold bg-teal-50 text-teal-800 border border-teal-200 shrink-0" title="Học sinh diện Giao lưu">
                                           Giao lưu
                                         </span>
                                       )}
@@ -2403,7 +2403,7 @@ export function StudentTransfersClient() {
                                     {req.admissionCampus}
                                   </td>
                                   <td className="px-4 py-3.5">
-                                    <span className={`px-2 py-0.5 rounded text-[10px] font-bold border ${req.isPreschool ? 'bg-pink-50 text-pink-700 border-pink-250' : 'bg-indigo-50 text-indigo-700 border-indigo-250'
+                                    <span className={`px-2 py-0.5 rounded text-[10px] font-bold border ${req.isPreschool ? 'bg-pink-50 text-pink-700 border-pink-250' : 'bg-teal-50 text-teal-800 border-teal-200'
                                       }`}>
                                       {req.isPreschool ? "Mầm non" : "Khối " + req.grade}
                                     </span>
@@ -2469,9 +2469,9 @@ export function StudentTransfersClient() {
                     <div className="flex items-center gap-2">
                       <h3 className="text-sm font-bold text-slate-500 uppercase tracking-wider">Lịch sử học sinh Chuyển đến</h3>
                       {historyFilterType === "GIAO_LUU" && (
-                        <span className="px-2 py-0.5 rounded-full text-xs font-bold bg-purple-100 text-purple-700 border border-purple-200 flex items-center gap-1">
+                        <span className="px-2 py-0.5 rounded-full text-xs font-bold bg-teal-50 text-teal-800 border border-teal-200 flex items-center gap-1">
                           <Sparkles className="w-3 h-3" /> Đang lọc: Học sinh Giao lưu
-                          <button onClick={() => setHistoryFilterType("ALL")} className="hover:text-purple-900 ml-1 font-bold">×</button>
+                          <button onClick={() => setHistoryFilterType("ALL")} className="hover:text-teal-800 ml-1 font-bold">×</button>
                         </span>
                       )}
                     </div>
@@ -2535,7 +2535,7 @@ export function StudentTransfersClient() {
                                   <div className="flex items-center gap-1.5 flex-wrap">
                                     <span>{t.student?.studentName}</span>
                                     {checkIsGiaoLuuStudent(t.student, t) && (
-                                      <span className="px-1.5 py-0.5 rounded-full text-[9px] font-extrabold bg-purple-100 text-purple-700 border border-purple-200 shrink-0" title="Học sinh diện Giao lưu">
+                                      <span className="px-1.5 py-0.5 rounded-full text-[9px] font-extrabold bg-teal-50 text-teal-800 border border-teal-200 shrink-0" title="Học sinh diện Giao lưu">
                                         Giao lưu
                                       </span>
                                     )}
@@ -2822,21 +2822,21 @@ function TransferOutModal({ activeSubTab, initialData, onClose, onSaved }: { act
                 <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
                   <div>
                     <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-2">Năm học</label>
-                    <select required className="w-full bg-white border border-slate-200 rounded-xl px-4 py-3 font-medium outline-none focus:border-indigo-500 focus:ring-4 focus:ring-indigo-100 transition-all text-xs font-semibold text-slate-800" value={form.academicYearId} onChange={e => setForm({ ...form, academicYearId: e.target.value })}>
+                    <select required className="w-full bg-white border border-slate-200 rounded-xl px-4 py-3 font-medium outline-none focus:border-teal-200 focus:ring-4 focus:ring-indigo-100 transition-all text-xs font-semibold text-slate-800" value={form.academicYearId} onChange={e => setForm({ ...form, academicYearId: e.target.value })}>
                       <option value="">Chọn năm học</option>
                       {options.years.filter((y: any) => !y.isOff).map(y => <option key={y.id} value={y.id}>{y.name}</option>)}
                     </select>
                   </div>
                   <div>
                     <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-2">Cơ sở</label>
-                    <select required className="w-full bg-white border border-slate-200 rounded-xl px-4 py-3 font-medium outline-none focus:border-indigo-500 focus:ring-4 focus:ring-indigo-100 transition-all text-xs font-semibold text-slate-800" value={form.campusId} onChange={e => setForm({ ...form, campusId: e.target.value })}>
+                    <select required className="w-full bg-white border border-slate-200 rounded-xl px-4 py-3 font-medium outline-none focus:border-teal-200 focus:ring-4 focus:ring-indigo-100 transition-all text-xs font-semibold text-slate-800" value={form.campusId} onChange={e => setForm({ ...form, campusId: e.target.value })}>
                       <option value="">Chọn cơ sở</option>
                       {options.campuses.map(c => <option key={c.id} value={c.id}>{c.campusName}</option>)}
                     </select>
                   </div>
                   <div>
                     <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-2">Lớp học</label>
-                    <select required className="w-full bg-white border border-slate-200 rounded-xl px-4 py-3 font-medium outline-none focus:border-indigo-500 focus:ring-4 focus:ring-indigo-100 transition-all text-xs font-semibold text-slate-800" value={form.classId} onChange={e => setForm({ ...form, classId: e.target.value })}>
+                    <select required className="w-full bg-white border border-slate-200 rounded-xl px-4 py-3 font-medium outline-none focus:border-teal-200 focus:ring-4 focus:ring-indigo-100 transition-all text-xs font-semibold text-slate-800" value={form.classId} onChange={e => setForm({ ...form, classId: e.target.value })}>
                       <option value="">Chọn lớp học</option>
                       {filteredClasses.map(c => <option key={c.id} value={c.id}>{c.className}</option>)}
                     </select>
@@ -2914,11 +2914,11 @@ function TransferOutModal({ activeSubTab, initialData, onClose, onSaved }: { act
             <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
               <div>
                 <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-2">Ngày chuyển</label>
-                <input required type="date" className="w-full bg-white border border-slate-200 rounded-xl px-4 py-3 font-medium outline-none focus:border-indigo-500 focus:ring-4 focus:ring-indigo-100 transition-all text-xs font-semibold text-slate-800" value={form.transferDate} onChange={e => setForm({ ...form, transferDate: e.target.value })} />
+                <input required type="date" className="w-full bg-white border border-slate-200 rounded-xl px-4 py-3 font-medium outline-none focus:border-teal-200 focus:ring-4 focus:ring-indigo-100 transition-all text-xs font-semibold text-slate-800" value={form.transferDate} onChange={e => setForm({ ...form, transferDate: e.target.value })} />
               </div>
               <div>
                 <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-2">Kỳ học</label>
-                <select required className="w-full bg-white border border-slate-200 rounded-xl px-4 py-3 font-medium outline-none focus:border-indigo-500 focus:ring-4 focus:ring-indigo-100 transition-all text-xs font-semibold text-slate-800" value={form.semester} onChange={e => setForm({ ...form, semester: e.target.value })}>
+                <select required className="w-full bg-white border border-slate-200 rounded-xl px-4 py-3 font-medium outline-none focus:border-teal-200 focus:ring-4 focus:ring-indigo-100 transition-all text-xs font-semibold text-slate-800" value={form.semester} onChange={e => setForm({ ...form, semester: e.target.value })}>
                   <option value="">Chọn kỳ</option>
                   <option value="HK1">Học kỳ 1</option>
                   <option value="HK2">Học kỳ 2</option>
@@ -2927,7 +2927,7 @@ function TransferOutModal({ activeSubTab, initialData, onClose, onSaved }: { act
               </div>
               <div>
                 <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-2">Diện chuyển</label>
-                <select required className="w-full bg-white border border-slate-200 rounded-xl px-4 py-3 font-medium outline-none focus:border-indigo-500 focus:ring-4 focus:ring-indigo-100 transition-all text-xs font-semibold text-slate-800" value={form.transferCategory} onChange={e => setForm({ ...form, transferCategory: e.target.value })}>
+                <select required className="w-full bg-white border border-slate-200 rounded-xl px-4 py-3 font-medium outline-none focus:border-teal-200 focus:ring-4 focus:ring-indigo-100 transition-all text-xs font-semibold text-slate-800" value={form.transferCategory} onChange={e => setForm({ ...form, transferCategory: e.target.value })}>
                   <option value="">Chọn diện</option>
                   <option value="DOMESTIC">Chuyển trường VN</option>
                   <option value="ABROAD">Du học</option>
@@ -2945,7 +2945,7 @@ function TransferOutModal({ activeSubTab, initialData, onClose, onSaved }: { act
                     type="text"
                     list="destination-schools-list"
                     placeholder="Tên trường"
-                    className="w-full bg-white border border-slate-200 rounded-xl px-4 py-3 font-medium outline-none focus:border-indigo-500 focus:ring-4 focus:ring-indigo-100 transition-all text-xs font-semibold text-slate-800"
+                    className="w-full bg-white border border-slate-200 rounded-xl px-4 py-3 font-medium outline-none focus:border-teal-200 focus:ring-4 focus:ring-indigo-100 transition-all text-xs font-semibold text-slate-800"
                     value={form.destinationSchool}
                     onChange={e => {
                       const val = e.target.value;
@@ -2969,7 +2969,7 @@ function TransferOutModal({ activeSubTab, initialData, onClose, onSaved }: { act
                 </div>
                 <div>
                   <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-2">Loại hình</label>
-                  <select className="w-full bg-white border border-slate-200 rounded-xl px-4 py-3 font-medium outline-none focus:border-indigo-500 focus:ring-4 focus:ring-indigo-100 transition-all text-xs font-semibold text-slate-800" value={form.destinationType} onChange={e => setForm({ ...form, destinationType: e.target.value })}>
+                  <select className="w-full bg-white border border-slate-200 rounded-xl px-4 py-3 font-medium outline-none focus:border-teal-200 focus:ring-4 focus:ring-indigo-100 transition-all text-xs font-semibold text-slate-800" value={form.destinationType} onChange={e => setForm({ ...form, destinationType: e.target.value })}>
                     <option value="">Chọn loại</option>
                     <option value="PRIVATE">Tư thục</option>
                     <option value="PUBLIC">Công lập</option>
@@ -2978,7 +2978,7 @@ function TransferOutModal({ activeSubTab, initialData, onClose, onSaved }: { act
                 </div>
                 <div>
                   <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-2">Tỉnh/TP</label>
-                  <select className="w-full bg-white border border-slate-200 rounded-xl px-4 py-3 font-medium outline-none focus:border-indigo-500 focus:ring-4 focus:ring-indigo-100 transition-all text-xs font-semibold text-slate-800" value={form.destinationProvince} onChange={e => setForm({ ...form, destinationProvince: e.target.value })}>
+                  <select className="w-full bg-white border border-slate-200 rounded-xl px-4 py-3 font-medium outline-none focus:border-teal-200 focus:ring-4 focus:ring-indigo-100 transition-all text-xs font-semibold text-slate-800" value={form.destinationProvince} onChange={e => setForm({ ...form, destinationProvince: e.target.value })}>
                     <option value="">Chọn Tỉnh/TP</option>
                     {provinces.map(p => <option key={p} value={p}>{p}</option>)}
                   </select>
@@ -2989,7 +2989,7 @@ function TransferOutModal({ activeSubTab, initialData, onClose, onSaved }: { act
             {form.transferCategory === "ABROAD" && (
               <div className="p-5 bg-slate-50/55 rounded-2xl border border-slate-200">
                 <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-2">Quốc gia theo học</label>
-                <select className="w-full bg-white border border-slate-200 rounded-xl px-4 py-3 font-medium outline-none focus:border-indigo-500 focus:ring-4 focus:ring-indigo-100 transition-all text-xs font-semibold text-slate-800" value={form.destinationCountry} onChange={e => setForm({ ...form, destinationCountry: e.target.value })}>
+                <select className="w-full bg-white border border-slate-200 rounded-xl px-4 py-3 font-medium outline-none focus:border-teal-200 focus:ring-4 focus:ring-indigo-100 transition-all text-xs font-semibold text-slate-800" value={form.destinationCountry} onChange={e => setForm({ ...form, destinationCountry: e.target.value })}>
                   <option value="">Chọn Quốc gia</option>
                   {COUNTRIES.map(c => <option key={c} value={c}>{c}</option>)}
                 </select>
@@ -3000,18 +3000,18 @@ function TransferOutModal({ activeSubTab, initialData, onClose, onSaved }: { act
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 p-5 bg-slate-50/55 rounded-2xl border border-slate-200">
                 <div>
                   <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-2">Từ ngày</label>
-                  <input required type="date" className="w-full bg-white border border-slate-200 rounded-xl px-4 py-3 font-medium outline-none focus:border-indigo-500 focus:ring-4 focus:ring-indigo-100 transition-all text-xs font-semibold text-slate-800" value={form.reserveStartDate} onChange={e => setForm({ ...form, reserveStartDate: e.target.value })} />
+                  <input required type="date" className="w-full bg-white border border-slate-200 rounded-xl px-4 py-3 font-medium outline-none focus:border-teal-200 focus:ring-4 focus:ring-indigo-100 transition-all text-xs font-semibold text-slate-800" value={form.reserveStartDate} onChange={e => setForm({ ...form, reserveStartDate: e.target.value })} />
                 </div>
                 <div>
                   <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-2">Đến ngày</label>
-                  <input required type="date" className="w-full bg-white border border-slate-200 rounded-xl px-4 py-3 font-medium outline-none focus:border-indigo-500 focus:ring-4 focus:ring-indigo-100 transition-all text-xs font-semibold text-slate-800" value={form.reserveEndDate} onChange={e => setForm({ ...form, reserveEndDate: e.target.value })} />
+                  <input required type="date" className="w-full bg-white border border-slate-200 rounded-xl px-4 py-3 font-medium outline-none focus:border-teal-200 focus:ring-4 focus:ring-indigo-100 transition-all text-xs font-semibold text-slate-800" value={form.reserveEndDate} onChange={e => setForm({ ...form, reserveEndDate: e.target.value })} />
                 </div>
               </div>
             )}
 
             <div>
               <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-2">Lý do chuyển</label>
-              <textarea placeholder="Nhập lý do chi tiết..." rows={3} className="w-full bg-white border border-slate-200 rounded-xl px-4 py-3 font-medium outline-none focus:border-indigo-500 focus:ring-4 focus:ring-indigo-100 transition-all text-xs font-semibold text-slate-800" value={form.reason} onChange={e => setForm({ ...form, reason: e.target.value })} />
+              <textarea placeholder="Nhập lý do chi tiết..." rows={3} className="w-full bg-white border border-slate-200 rounded-xl px-4 py-3 font-medium outline-none focus:border-teal-200 focus:ring-4 focus:ring-indigo-100 transition-all text-xs font-semibold text-slate-800" value={form.reason} onChange={e => setForm({ ...form, reason: e.target.value })} />
             </div>
 
             <div className="pt-4 border-t border-slate-100 flex justify-end gap-3">
@@ -3131,7 +3131,7 @@ function ChangeClassModal({ activeSubTab, onClose, onSaved }: { activeSubTab: "g
       <div className="bg-white rounded-3xl shadow-xl w-full max-w-4xl overflow-hidden flex flex-col max-h-[90vh]">
         <div className="flex items-center justify-between p-6 text-xs font-semibold">
           <h2 className="text-xl font-bold text-slate-900 flex items-center">
-            <ArrowRightLeft className="w-5 h-5 mr-3 text-indigo-500" />
+            <ArrowRightLeft className="w-5 h-5 mr-3 text-teal-700" />
             Tạo phiếu Chuyển lớp
           </h2>
           <button onClick={onClose} className="p-2 hover:bg-slate-200 rounded-full transition-colors text-slate-500">
@@ -3147,21 +3147,21 @@ function ChangeClassModal({ activeSubTab, onClose, onSaved }: { activeSubTab: "g
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
               <div>
                 <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-2">Năm học</label>
-                <select required className="w-full bg-white border border-slate-200 rounded-xl px-4 py-3 font-medium outline-none focus:border-indigo-500 focus:ring-4 focus:ring-indigo-100 transition-all text-xs font-semibold text-slate-800" value={form.academicYearId} onChange={e => setForm({ ...form, academicYearId: e.target.value })}>
+                <select required className="w-full bg-white border border-slate-200 rounded-xl px-4 py-3 font-medium outline-none focus:border-teal-200 focus:ring-4 focus:ring-indigo-100 transition-all text-xs font-semibold text-slate-800" value={form.academicYearId} onChange={e => setForm({ ...form, academicYearId: e.target.value })}>
                   <option value="">Chọn năm học</option>
                   {options.years.filter((y: any) => !y.isOff).map(y => <option key={y.id} value={y.id}>{y.name}</option>)}
                 </select>
               </div>
               <div>
                 <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-2">Cơ sở</label>
-                <select required className="w-full bg-white border border-slate-200 rounded-xl px-4 py-3 font-medium outline-none focus:border-indigo-500 focus:ring-4 focus:ring-indigo-100 transition-all text-xs font-semibold text-slate-800" value={form.campusId} onChange={e => setForm({ ...form, campusId: e.target.value })}>
+                <select required className="w-full bg-white border border-slate-200 rounded-xl px-4 py-3 font-medium outline-none focus:border-teal-200 focus:ring-4 focus:ring-indigo-100 transition-all text-xs font-semibold text-slate-800" value={form.campusId} onChange={e => setForm({ ...form, campusId: e.target.value })}>
                   <option value="">Chọn cơ sở</option>
                   {options.campuses.map(c => <option key={c.id} value={c.id}>{c.campusName}</option>)}
                 </select>
               </div>
               <div>
                 <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-2">Lớp hiện tại</label>
-                <select required className="w-full bg-white border border-slate-200 rounded-xl px-4 py-3 font-medium outline-none focus:border-indigo-500 focus:ring-4 focus:ring-indigo-100 transition-all text-xs font-semibold text-slate-800" value={form.classId} onChange={e => setForm({ ...form, classId: e.target.value })}>
+                <select required className="w-full bg-white border border-slate-200 rounded-xl px-4 py-3 font-medium outline-none focus:border-teal-200 focus:ring-4 focus:ring-indigo-100 transition-all text-xs font-semibold text-slate-800" value={form.classId} onChange={e => setForm({ ...form, classId: e.target.value })}>
                   <option value="">Chọn lớp hiện tại</option>
                   {filteredClasses.map(c => <option key={c.id} value={c.id}>{c.className}</option>)}
                 </select>
@@ -3174,7 +3174,7 @@ function ChangeClassModal({ activeSubTab, onClose, onSaved }: { activeSubTab: "g
               </div>
               <div>
                 <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-2">Học sinh</label>
-                <select required className="w-full bg-white border border-slate-200 rounded-xl px-4 py-3 font-medium outline-none focus:border-indigo-500 focus:ring-4 focus:ring-indigo-100 transition-all text-xs font-semibold text-slate-800" value={form.studentId} onChange={e => setForm({ ...form, studentId: e.target.value })}>
+                <select required className="w-full bg-white border border-slate-200 rounded-xl px-4 py-3 font-medium outline-none focus:border-teal-200 focus:ring-4 focus:ring-indigo-100 transition-all text-xs font-semibold text-slate-800" value={form.studentId} onChange={e => setForm({ ...form, studentId: e.target.value })}>
                   <option value="">Chọn học sinh</option>
                   {students.map(s => <option key={s.id} value={s.id}>{s.studentName} ({s.studentCode})</option>)}
                 </select>
@@ -3190,14 +3190,14 @@ function ChangeClassModal({ activeSubTab, onClose, onSaved }: { activeSubTab: "g
               <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
                 <div>
                   <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-2">Cơ sở chuyển đến</label>
-                  <select required className="w-full bg-white border border-slate-200 rounded-xl px-4 py-3 font-medium outline-none focus:border-indigo-500 focus:ring-4 focus:ring-indigo-100 transition-all text-xs font-semibold text-slate-800" value={form.destCampusId} onChange={e => setForm({ ...form, destCampusId: e.target.value })}>
+                  <select required className="w-full bg-white border border-slate-200 rounded-xl px-4 py-3 font-medium outline-none focus:border-teal-200 focus:ring-4 focus:ring-indigo-100 transition-all text-xs font-semibold text-slate-800" value={form.destCampusId} onChange={e => setForm({ ...form, destCampusId: e.target.value })}>
                     <option value="">Chọn cơ sở đến</option>
                     {options.campuses.map(c => <option key={c.id} value={c.id}>{c.campusName}</option>)}
                   </select>
                 </div>
                 <div>
                   <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-2">Lớp chuyển đến</label>
-                  <select required className="w-full bg-white border border-slate-200 rounded-xl px-4 py-3 font-medium outline-none focus:border-indigo-500 focus:ring-4 focus:ring-indigo-100 transition-all text-xs font-semibold text-slate-800" value={form.destClassId} onChange={e => setForm({ ...form, destClassId: e.target.value })}>
+                  <select required className="w-full bg-white border border-slate-200 rounded-xl px-4 py-3 font-medium outline-none focus:border-teal-200 focus:ring-4 focus:ring-indigo-100 transition-all text-xs font-semibold text-slate-800" value={form.destClassId} onChange={e => setForm({ ...form, destClassId: e.target.value })}>
                     <option value="">Chọn lớp đến</option>
                     {filteredDestClasses.map(c => <option key={c.id} value={c.id}>{c.className}</option>)}
                   </select>
@@ -3210,14 +3210,14 @@ function ChangeClassModal({ activeSubTab, onClose, onSaved }: { activeSubTab: "g
                 </div>
                 <div>
                   <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-2">Ngày chuyển lớp</label>
-                  <input required type="date" className="w-full bg-white border border-slate-200 rounded-xl px-4 py-3 font-medium outline-none focus:border-indigo-500 focus:ring-4 focus:ring-indigo-100 transition-all text-xs font-semibold text-slate-800" value={form.transferDate} onChange={e => setForm({ ...form, transferDate: e.target.value })} />
+                  <input required type="date" className="w-full bg-white border border-slate-200 rounded-xl px-4 py-3 font-medium outline-none focus:border-teal-200 focus:ring-4 focus:ring-indigo-100 transition-all text-xs font-semibold text-slate-800" value={form.transferDate} onChange={e => setForm({ ...form, transferDate: e.target.value })} />
                 </div>
               </div>
             </div>
 
             <div>
               <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-2">Lý do chuyển lớp</label>
-              <textarea placeholder="Nhập lý do chi tiết..." rows={3} className="w-full bg-white border border-slate-200 rounded-xl px-4 py-3 font-medium outline-none focus:border-indigo-500 focus:ring-4 focus:ring-indigo-100 transition-all text-xs font-semibold text-slate-800" value={form.reason} onChange={e => setForm({ ...form, reason: e.target.value })} />
+              <textarea placeholder="Nhập lý do chi tiết..." rows={3} className="w-full bg-white border border-slate-200 rounded-xl px-4 py-3 font-medium outline-none focus:border-teal-200 focus:ring-4 focus:ring-indigo-100 transition-all text-xs font-semibold text-slate-800" value={form.reason} onChange={e => setForm({ ...form, reason: e.target.value })} />
             </div>
 
             <div className="pt-4 border-t border-slate-100 flex justify-end gap-3">
@@ -3533,7 +3533,7 @@ function TransferInModal({
                 <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 animate-in fade-in duration-200">
                   <div>
                     <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-2">Họ và tên học sinh</label>
-                    <input required type="text" className="w-full bg-white border border-slate-200 rounded-xl px-4 py-3 font-medium outline-none focus:border-indigo-500 focus:ring-4 focus:ring-indigo-100 transition-all text-xs font-semibold text-slate-800" value={form.studentName} onChange={e => setForm({ ...form, studentName: e.target.value })} placeholder="Nhập họ và tên..." />
+                    <input required type="text" className="w-full bg-white border border-slate-200 rounded-xl px-4 py-3 font-medium outline-none focus:border-teal-200 focus:ring-4 focus:ring-indigo-100 transition-all text-xs font-semibold text-slate-800" value={form.studentName} onChange={e => setForm({ ...form, studentName: e.target.value })} placeholder="Nhập họ và tên..." />
                   </div>
                   <div>
                     <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-2">Mã KS (Khảo sát)</label>
@@ -3541,7 +3541,7 @@ function TransferInModal({
                   </div>
                   <div>
                     <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-2">Mã HS</label>
-                    <input required type="text" className="w-full bg-white border border-slate-200 rounded-xl px-4 py-3 font-medium outline-none focus:border-indigo-500 focus:ring-4 focus:ring-indigo-100 transition-all text-xs font-semibold text-slate-800" value={form.studentCode} onChange={e => setForm({ ...form, studentCode: e.target.value })} placeholder="Nhập mã HS mới..." />
+                    <input required type="text" className="w-full bg-white border border-slate-200 rounded-xl px-4 py-3 font-medium outline-none focus:border-teal-200 focus:ring-4 focus:ring-indigo-100 transition-all text-xs font-semibold text-slate-800" value={form.studentCode} onChange={e => setForm({ ...form, studentCode: e.target.value })} placeholder="Nhập mã HS mới..." />
                   </div>
                 </div>
               ) : (
@@ -3553,7 +3553,7 @@ function TransferInModal({
               <div className="grid grid-cols-1 sm:grid-cols-4 gap-4 mt-4">
                 <div>
                   <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-2">Năm học</label>
-                  <select required className="w-full bg-white border border-slate-200 rounded-xl px-4 py-3 font-medium outline-none focus:border-indigo-500 focus:ring-4 focus:ring-indigo-100 transition-all text-xs font-semibold text-slate-800" value={form.academicYearId} onChange={e => {
+                  <select required className="w-full bg-white border border-slate-200 rounded-xl px-4 py-3 font-medium outline-none focus:border-teal-200 focus:ring-4 focus:ring-indigo-100 transition-all text-xs font-semibold text-slate-800" value={form.academicYearId} onChange={e => {
                     const yId = e.target.value;
                     setForm({ ...form, academicYearId: yId, classId: "" });
                     const currentPeriodObj = periods.find(p => p.id === selectedPeriod);
@@ -3569,7 +3569,7 @@ function TransferInModal({
                 </div>
                 <div>
                   <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-2">Kỳ học</label>
-                  <select required className="w-full bg-white border border-slate-200 rounded-xl px-4 py-3 font-medium outline-none focus:border-indigo-500 focus:ring-4 focus:ring-indigo-100 transition-all text-xs font-semibold text-slate-800" value={form.semester} onChange={e => setForm({ ...form, semester: e.target.value })}>
+                  <select required className="w-full bg-white border border-slate-200 rounded-xl px-4 py-3 font-medium outline-none focus:border-teal-200 focus:ring-4 focus:ring-indigo-100 transition-all text-xs font-semibold text-slate-800" value={form.semester} onChange={e => setForm({ ...form, semester: e.target.value })}>
                     <option value="HK1">Học kỳ 1</option>
                     <option value="HK2">Học kỳ 2</option>
                     <option value="SUMMER">Trong hè</option>
@@ -3577,14 +3577,14 @@ function TransferInModal({
                 </div>
                 <div>
                   <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-2">Cơ sở</label>
-                  <select required className="w-full bg-white border border-slate-200 rounded-xl px-4 py-3 font-medium outline-none focus:border-indigo-500 focus:ring-4 focus:ring-indigo-100 transition-all text-xs font-semibold text-slate-800" value={form.campusId} onChange={e => setForm({ ...form, campusId: e.target.value })}>
+                  <select required className="w-full bg-white border border-slate-200 rounded-xl px-4 py-3 font-medium outline-none focus:border-teal-200 focus:ring-4 focus:ring-indigo-100 transition-all text-xs font-semibold text-slate-800" value={form.campusId} onChange={e => setForm({ ...form, campusId: e.target.value })}>
                     <option value="">Chọn cơ sở</option>
                     {options.campuses.map(c => <option key={c.id} value={c.id}>{c.campusName}</option>)}
                   </select>
                 </div>
                 <div>
                   <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-2">Lớp học</label>
-                  <select required className="w-full bg-white border border-slate-200 rounded-xl px-4 py-3 font-medium outline-none focus:border-indigo-500 focus:ring-4 focus:ring-indigo-100 transition-all text-xs font-semibold text-slate-800" value={form.classId} onChange={e => setForm({ ...form, classId: e.target.value })}>
+                  <select required className="w-full bg-white border border-slate-200 rounded-xl px-4 py-3 font-medium outline-none focus:border-teal-200 focus:ring-4 focus:ring-indigo-100 transition-all text-xs font-semibold text-slate-800" value={form.classId} onChange={e => setForm({ ...form, classId: e.target.value })}>
                     <option value="">Chọn lớp học</option>
                     {filteredClasses.map(c => <option key={c.id} value={c.id}>{c.className}</option>)}
                   </select>
@@ -3600,13 +3600,13 @@ function TransferInModal({
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mt-4">
                 <div>
                   <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-2">Ngày nhập học</label>
-                  <input required type="date" className="w-full bg-white border border-slate-200 rounded-xl px-4 py-3 font-medium outline-none focus:border-indigo-500 focus:ring-4 focus:ring-indigo-100 transition-all text-xs font-semibold text-slate-800" value={form.transferDate} onChange={e => setForm({ ...form, transferDate: e.target.value })} />
+                  <input required type="date" className="w-full bg-white border border-slate-200 rounded-xl px-4 py-3 font-medium outline-none focus:border-teal-200 focus:ring-4 focus:ring-indigo-100 transition-all text-xs font-semibold text-slate-800" value={form.transferDate} onChange={e => setForm({ ...form, transferDate: e.target.value })} />
                 </div>
               </div>
 
               <div>
                 <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-2">Ghi chú thêm</label>
-                <input type="text" placeholder="Nhập ghi chú chi tiết (nếu có)..." className="w-full bg-white border border-slate-200 rounded-xl px-4 py-3 font-medium outline-none focus:border-indigo-500 focus:ring-4 focus:ring-indigo-100 transition-all text-xs font-semibold text-slate-800" value={form.reason} onChange={e => setForm({ ...form, reason: e.target.value })} />
+                <input type="text" placeholder="Nhập ghi chú chi tiết (nếu có)..." className="w-full bg-white border border-slate-200 rounded-xl px-4 py-3 font-medium outline-none focus:border-teal-200 focus:ring-4 focus:ring-indigo-100 transition-all text-xs font-semibold text-slate-800" value={form.reason} onChange={e => setForm({ ...form, reason: e.target.value })} />
               </div>
             </div>
 
@@ -3614,7 +3614,7 @@ function TransferInModal({
               <button type="button" onClick={onClose} className="px-6 py-3 bg-slate-100 text-slate-600 font-bold rounded-xl hover:bg-slate-200 transition-colors">
                 Hủy
               </button>
-              <button disabled={saving} type="button" onClick={() => handleSubmit(null)} className="px-6 py-3 bg-indigo-50 text-indigo-500 font-bold rounded-xl border border-indigo-100 hover:bg-indigo-100 transition-colors flex items-center">
+              <button disabled={saving} type="button" onClick={() => handleSubmit(null)} className="px-6 py-3 bg-teal-50 text-teal-700 font-bold rounded-xl border border-teal-200 hover:bg-teal-50 transition-colors flex items-center">
                 {saving && <Loader2 className="w-4 h-4 mr-2 animate-spin" />}
                 Lưu phiếu
               </button>
@@ -3732,7 +3732,7 @@ export function BatchEditOutModal({ ids, transfers, onClose, onSaved }: { ids: s
         {/* Header */}
         <div className="px-6 py-5 border-b border-slate-100 flex items-center justify-between">
           <h2 className="text-base font-extrabold text-slate-850 flex items-center gap-2">
-            <School className="w-5 h-5 text-indigo-600" />
+            <School className="w-5 h-5 text-teal-800" />
             Chỉnh sửa phiếu Chuyển đi hàng loạt ({ids.length})
           </h2>
           <button type="button" onClick={onClose} className="w-8 h-8 rounded-full hover:bg-slate-100 text-slate-400 hover:text-slate-600 flex items-center justify-center transition-colors cursor-pointer">
@@ -3742,8 +3742,8 @@ export function BatchEditOutModal({ ids, transfers, onClose, onSaved }: { ids: s
 
         <form onSubmit={handleSave} className="p-6 overflow-y-auto space-y-6 flex-1 text-slate-800">
           {/* Target students card list */}
-          <div className="bg-indigo-50/50 border border-indigo-100/50 p-4 rounded-2xl">
-            <label className="block text-[10px] font-black text-indigo-700 uppercase tracking-wider mb-1.5">Danh sách học sinh được chọn ({ids.length})</label>
+          <div className="bg-teal-50/50 border border-teal-100/50 p-4 rounded-2xl">
+            <label className="block text-[10px] font-black text-teal-800 uppercase tracking-wider mb-1.5">Danh sách học sinh được chọn ({ids.length})</label>
             <p className="text-xs font-semibold text-slate-650 leading-relaxed max-h-16 overflow-y-auto custom-scrollbar">
               {selectedNames}
             </p>
@@ -3757,7 +3757,7 @@ export function BatchEditOutModal({ ids, transfers, onClose, onSaved }: { ids: s
                   type="checkbox"
                   checked={updateFields.date}
                   onChange={e => setUpdateFields({ ...updateFields, date: e.target.checked })}
-                  className="rounded border-slate-300 text-indigo-600 focus:ring-indigo-500 w-4 h-4"
+                  className="rounded border-slate-300 text-teal-800 focus:ring-indigo-500 w-4 h-4"
                 />
                 <span className="text-xs font-black text-slate-700 uppercase tracking-wider">Cập nhật Ngày chuyển & Kỳ học</span>
               </label>
@@ -3772,7 +3772,7 @@ export function BatchEditOutModal({ ids, transfers, onClose, onSaved }: { ids: s
                     required
                     value={form.transferDate}
                     onChange={e => setForm({ ...form, transferDate: e.target.value })}
-                    className="w-full bg-slate-50/50 border border-slate-200 focus:border-indigo-500 rounded-xl px-4 py-3 text-xs font-semibold text-slate-800 outline-none"
+                    className="w-full bg-slate-50/50 border border-slate-200 focus:border-teal-200 rounded-xl px-4 py-3 text-xs font-semibold text-slate-800 outline-none"
                   />
                 </div>
                 <div>
@@ -3780,7 +3780,7 @@ export function BatchEditOutModal({ ids, transfers, onClose, onSaved }: { ids: s
                   <select
                     value={form.semester}
                     onChange={e => setForm({ ...form, semester: e.target.value })}
-                    className="w-full bg-slate-50/50 border border-slate-200 focus:border-indigo-500 rounded-xl px-4 py-3 text-xs font-semibold text-slate-800 outline-none cursor-pointer"
+                    className="w-full bg-slate-50/50 border border-slate-200 focus:border-teal-200 rounded-xl px-4 py-3 text-xs font-semibold text-slate-800 outline-none cursor-pointer"
                   >
                     <option value="HK1">Học kỳ 1</option>
                     <option value="HK2">Học kỳ 2</option>
@@ -3799,7 +3799,7 @@ export function BatchEditOutModal({ ids, transfers, onClose, onSaved }: { ids: s
                   type="checkbox"
                   checked={updateFields.category}
                   onChange={e => setUpdateFields({ ...updateFields, category: e.target.checked })}
-                  className="rounded border-slate-300 text-indigo-600 focus:ring-indigo-500 w-4 h-4"
+                  className="rounded border-slate-300 text-teal-800 focus:ring-indigo-500 w-4 h-4"
                 />
                 <span className="text-xs font-black text-slate-700 uppercase tracking-wider">Cập nhật Diện chuyển & Nơi đến</span>
               </label>
@@ -3812,7 +3812,7 @@ export function BatchEditOutModal({ ids, transfers, onClose, onSaved }: { ids: s
                   <select
                     value={form.transferCategory}
                     onChange={e => setForm({ ...form, transferCategory: e.target.value })}
-                    className="w-full bg-slate-50/50 border border-slate-200 focus:border-indigo-500 rounded-xl px-4 py-3 text-xs font-semibold text-slate-800 outline-none cursor-pointer"
+                    className="w-full bg-slate-50/50 border border-slate-200 focus:border-teal-200 rounded-xl px-4 py-3 text-xs font-semibold text-slate-800 outline-none cursor-pointer"
                   >
                     <option value="DOMESTIC">Chuyển trường VN</option>
                     <option value="ABROAD">Du học</option>
@@ -3925,7 +3925,7 @@ export function BatchEditOutModal({ ids, transfers, onClose, onSaved }: { ids: s
                   type="checkbox"
                   checked={updateFields.reason}
                   onChange={e => setUpdateFields({ ...updateFields, reason: e.target.checked })}
-                  className="rounded border-slate-300 text-indigo-600 focus:ring-indigo-500 w-4 h-4"
+                  className="rounded border-slate-300 text-teal-800 focus:ring-indigo-500 w-4 h-4"
                 />
                 <span className="text-xs font-black text-slate-700 uppercase tracking-wider">Cập nhật Lý do chuyển trường</span>
               </label>
@@ -3939,7 +3939,7 @@ export function BatchEditOutModal({ ids, transfers, onClose, onSaved }: { ids: s
                   value={form.reason}
                   onChange={e => setForm({ ...form, reason: e.target.value })}
                   placeholder="Nhập lý do chuyển đi chung..."
-                  className="w-full bg-slate-50/50 border border-slate-200 focus:border-indigo-500 rounded-xl px-4 py-3 text-xs font-semibold text-slate-800 outline-none resize-none"
+                  className="w-full bg-slate-50/50 border border-slate-200 focus:border-teal-200 rounded-xl px-4 py-3 text-xs font-semibold text-slate-800 outline-none resize-none"
                 />
               </div>
             )}

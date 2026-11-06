@@ -15,7 +15,6 @@ export const SIDEBAR_TRANSLATIONS: SidebarTranslations = {
     KTDBCL: { vi: "Khảo thí & ĐBCL", en: "Testing & Quality Assurance" },
     SPECIAL_SUBJECTS: { vi: "Môn học đặc thù Sky-Line", en: "Special Subjects Management" },
     EXPERIENTIAL: { vi: "Hoạt động trải nghiệm", en: "Experiential Activities" },
-    LEARNING_RESOURCES: { vi: "Học liệu", en: "Learning Resources" },
     TRAINING: { vi: "Quản lý Đào tạo", en: "Academic Management" },
     STUDENT_LOOKUP: { vi: "Tra cứu Học sinh", en: "Student Lookup" },
     ALUMNI_MANAGEMENT: { vi: "Quản lý Cựu học sinh (Alumni)", en: "Sky-Line Alumni Management" },
@@ -88,7 +87,7 @@ export const SIDEBAR_TRANSLATIONS: SidebarTranslations = {
     SPEC_SUB_ASSIGNMENTS: { vi: "4. Phân công giảng dạy", en: "4. Teaching Assignments" },
     SPEC_SUB_CXXH: { vi: "5. Giám sát GD Cảm xúc (1–9)", en: "5. Monitor Emotion Education (1–9)" },
     SPEC_SUB_GDGT: { vi: "6. Giám sát GD Giới tính (6–9)", en: "6. Monitor Sex Education (6–9)" },
-    SPEC_SUB_FIN_EDU: { vi: "7. Giám sát GD Tài chính (2–9)", en: "7. Monitor Financial Education (2–9)" },
+    SPEC_SUB_FIN_EDU: { vi: "7. Giám sát GD Tài chính (1–9)", en: "7. Monitor Financial Education (1–9)" },
     SPEC_SUB_GDHN: { vi: "8. Giám sát GD Hướng nghiệp (6–12)", en: "8. Monitor Career Guidance (6–12)" },
 
     // EXPERIENTIAL
@@ -98,12 +97,7 @@ export const SIDEBAR_TRANSLATIONS: SidebarTranslations = {
     EXP_ACT_THEMES: { vi: "3. Chủ đề giáo dục", en: "3. Educational Themes" },
     EXP_ACT_REPORTS: { vi: "4. Dashboard Giám sát Tiến độ", en: "4. Progress Dashboard" },
 
-    // LEARNING RESOURCES
-    TEXTBOOKS: { vi: "Sách giáo khoa", en: "Textbooks" },
-    TEXTBOOK_LIST: { vi: "Thư viện SGK", en: "Textbook Library" },
-    TEXTBOOK_MY_BOOKS: { vi: "Học liệu của tôi", en: "My Resources" },
-    TEXTBOOK_CATEGORIES: { vi: "Bộ sách & NXB", en: "Curricula & Publishers" },
-    TEXTBOOK_SOURCES: { vi: "Nguồn Whitelist", en: "Whitelisted Sources" },
+    // PARENT MEETING
     NAMEPLATES_PHHS: { vi: "In bảng tên Họp PHHS", en: "Parent Meeting Nameplates" },
 
     // TRAINING
@@ -198,7 +192,6 @@ export const SIDEBAR_TRANSLATIONS: SidebarTranslations = {
     input_assessments: { vi: "Khảo sát đầu vào", en: "Entrance Assessment" },
     input_assessments_k12: { vi: "Khảo sát đầu vào (K-12)", en: "Entrance Assessment (K-12)" },
     input_assessments_preschool: { vi: "Khảo sát đầu vào (Mầm non)", en: "Entrance Assessment (Preschool)" },
-    subject_textbooks: { vi: "Học liệu – SGK", en: "Textbooks & Resources" },
     subject_experiential: { vi: "Sổ theo dõi Hoạt động trải nghiệm", en: "Experiential Activity Log" },
     subject_gradebook: { vi: "Sổ điểm – Nhận xét (CT Bộ)", en: "MOET Gradebook & Remarks" },
     subject_intl_gradebook: { vi: "Sổ điểm CTQT", en: "International Gradebook" },
@@ -212,7 +205,19 @@ export const SIDEBAR_TRANSLATIONS: SidebarTranslations = {
     obs_ai_growth: { vi: "AI Growth – Đổi mới", en: "AI Growth – Lesson Innovation" },
     obs_ai_growth_tag: { vi: "Mới", en: "New" },
     obs_preschool: { vi: "Khối Mầm non", en: "Preschool Observation" },
-    obs_foreign: { vi: "Giáo viên nước ngoài", en: "Foreign Teacher Observation" },
+    obs_foreign: { vi: "Tiếng Anh – Chương trình Song ngữ", en: "English – Bilingual Program" },
+    group_01: { vi: "01. Tổng quan & Nhiệm vụ", en: "01. Overview & Tasks" },
+    group_02: { vi: "02. Hồ sơ & Đồng hành Học sinh", en: "02. Student Records & Companion" },
+    group_03: { vi: "03. Chủ nhiệm & Phát triển Lớp học", en: "03. Homeroom & Class Growth" },
+    group_04: { vi: "04. Cố vấn Học tập", en: "04. Academic Advisory" },
+    group_05: { vi: "05. Khảo thí & Đánh giá", en: "05. Testing & Assessment" },
+    group_06: { vi: "06. Các môn đặc thù Sky-Line", en: "06. Sky-Line Special Subjects" },
+    group_07: { vi: "07. Chất lượng & Tiến bộ Học tập", en: "07. Quality & Academic Progress" },
+    group_08: { vi: "08. Hỗ trợ & Bồi dưỡng Học tập", en: "08. Academic Support & Tutoring" },
+    group_09: { vi: "09. Hoạt động Trải nghiệm", en: "09. Experiential Activities" },
+    group_10: { vi: "10. Dự giờ & Phát triển Chuyên môn", en: "10. Observation & Professional Growth" },
+    group_11: { vi: "11. Phối hợp Gia đình – Nhà trường", en: "11. Family – School Partnership" },
+    group_12: { vi: "12. Tiện ích & Chữ ký số", en: "12. Utilities & Digital Signature" },
   },
   parentNav: {
     overview: { vi: "Tổng quan", en: "Overview" },

@@ -36,68 +36,86 @@ export interface SkylineCharacterOption {
   name: string;
   roleTitle: string;
   emoji: string;
+  buddySpecies: string;
   weaponOrGear: string;
   auraGradient: string;
   borderCls: string;
   badgeBgCls: string;
   description: string;
+  cartoonRhyme: string;
+  educationalLesson: string;
 }
 
 export const SKYLINE_CHARACTERS: SkylineCharacterOption[] = [
   {
     id: "SKYLINE_EXPLORER",
-    name: "Chiến Binh Chim Sky-Line",
-    roleTitle: "Nhà Thám Hiểm Đảo Xanh",
-    emoji: "🧭",
-    weaponOrGear: "La Bàn Vàng & Khiên Ngọc",
+    name: "Chim Non Bồ Câu Sky-Line",
+    roleTitle: "Bạn Nhỏ Khám Phá Đồng Tiền",
+    emoji: "🐣",
+    buddySpecies: "Bồ câu non mũ vàng",
+    weaponOrGear: "Mũ Học Sinh Vàng & Kính Lúp Sao",
     auraGradient: "from-teal-500 via-sky-500 to-emerald-500",
     borderCls: "border-teal-400",
     badgeBgCls: "bg-teal-600 text-white",
-    description: "Nhanh nhẹn, thông thái, luôn dẫn đầu khám phá mọi vùng đất tài chính."
+    description: "Vui tươi, lễ phép, dẫn các em làm quen đồng tiền Việt Nam và biết ơn công sức lao động của ba mẹ.",
+    cartoonRhyme: "Đồng tiền từ sức mẹ cha, bé ngoan trân quý giữ nhà yên vui!",
+    educationalLesson: "Nhận biết tờ tiền Việt Nam và hiểu tiền đến từ lao động chân chính."
   },
   {
     id: "GOLDEN_SHIELD_KNIGHT",
-    name: "Hiệp Sĩ Khiên Vàng",
-    roleTitle: "Hộ Vệ Ngân Sách & Tiết Kiệm",
-    emoji: "🛡️",
-    weaponOrGear: "Khiên Vàng Bất Bại & Heo Đất",
-    auraGradient: "from-amber-400 via-yellow-500 to-orange-500",
+    name: "Bé Heo Hồng Ống Đất",
+    roleTitle: "Hiệp Sĩ Giữ Tiền & Nuôi Ước Mơ",
+    emoji: "🐷",
+    buddySpecies: "Heo đất hồng vương miện",
+    weaponOrGear: "Vương Miện Xu Vàng & Ví Khóa Kéo",
+    auraGradient: "from-amber-400 via-pink-400 to-amber-600",
     borderCls: "border-amber-400",
     badgeBgCls: "bg-amber-500 text-slate-950",
-    description: "Bảo vệ ví xu an toàn trước cám dỗ mua sắm và kiên trì xây tổ ước mơ."
+    description: "Giúp em vuốt phẳng đồng tiền, cất gọn vào ví và đút heo đất mỗi ngày để nuôi ước mơ đẹp.",
+    cartoonRhyme: "Tiền phẳng em cất gọn gàng, mỗi ngày một chút heo vàng lớn nhanh!",
+    educationalLesson: "Giữ gìn đồng tiền sạch đẹp và rèn thói quen tiết kiệm mỗi ngày."
   },
   {
     id: "WISE_SCHOLAR",
-    name: "Pháp Sư Thông Thái",
-    roleTitle: "Bậc Thầy Tính Toán & Kiểm Toán",
-    emoji: "🔮",
-    weaponOrGear: "Kính Soi Quảng Cáo & Sổ Kim Cương",
-    auraGradient: "from-indigo-500 via-purple-500 to-pink-500",
-    borderCls: "border-purple-400",
-    badgeBgCls: "bg-purple-600 text-white",
-    description: "Tinh tường phát hiện mọi chiêu trò quảng cáo và cân đối sổ sách chuẩn xác."
+    name: "Thỏ Trắng Thông Thái",
+    roleTitle: "Khách Hàng Nhí Mua Sắm Ngoan",
+    emoji: "🐰",
+    buddySpecies: "Thỏ trắng đeo kính tròn",
+    weaponOrGear: "Giỏ Siêu Thị Xanh & Đồng Hồ 3 Giây",
+    auraGradient: "from-sky-500 via-teal-500 to-emerald-500",
+    borderCls: "border-sky-400",
+    badgeBgCls: "bg-sky-600 text-white",
+    description: "Cùng em phân biệt thứ Cần và thứ Muốn, dừng lại nghĩ 3 giây trước khi mua và xếp hàng lịch sự.",
+    cartoonRhyme: "Cần thì mua trước bé ơi, nghĩ ba giây kỹ mỉm cười thật ngoan!",
+    educationalLesson: "Phân biệt Cần – Muốn, xem giá và ứng xử văn minh khi đi mua sắm."
   },
   {
     id: "ECO_HERO",
-    name: "Siêu Anh Hùng Xanh",
-    roleTitle: "Đại Sứ Sống Xanh & Nhân Ái",
-    emoji: "🦸",
-    weaponOrGear: "Áo Choàng Lá Xanh & Trái Tim Ấm",
+    name: "Gấu Mật Ấm Áp",
+    roleTitle: "Đại Sứ Sẻ Chia & Tiết Kiệm Việc Nhỏ",
+    emoji: "🐻",
+    buddySpecies: "Gấu nâu choàng khăn lá",
+    weaponOrGear: "Áo Choàng Lá Xanh & Hộp Quà Yêu Thương",
     auraGradient: "from-emerald-500 via-green-500 to-lime-500",
     borderCls: "border-emerald-400",
     badgeBgCls: "bg-emerald-600 text-white",
-    description: "Giải cứu ngôi làng khỏi lãng phí điện nước và lan tỏa đồng tiền hạnh phúc."
+    description: "Nhắc em tắt đèn, khóa vòi nước, giữ gìn đồ dùng học tập và biết san sẻ yêu thương với bạn bè.",
+    cartoonRhyme: "Tắt đèn, khóa nước, giữ đồ – sẻ chia yêu thương, điểm mười tặng em!",
+    educationalLesson: "Tiết kiệm điện nước, bảo quản đồ dùng và biết chia sẻ với mọi người."
   },
   {
     id: "FUTURE_CAPTAIN",
-    name: "Thuyền Trưởng Tương Lai",
-    roleTitle: "Thủ Lĩnh Dự Án Khởi Nghiệp Nhí",
-    emoji: "🚀",
-    weaponOrGear: "Đôi Cánh Phản Lực 3D & Huy Hiệu Sao",
-    auraGradient: "from-sky-500 via-blue-600 to-cyan-400",
-    borderCls: "border-sky-400",
-    badgeBgCls: "bg-blue-600 text-white",
-    description: "Dẫn dắt các kế hoạch mua sắm, hội chợ và dự án tài chính sáng tạo."
+    name: "Sóc Nâu Chăm Chỉ",
+    roleTitle: "Nhà Quản Lý Tài Chính Nhí",
+    emoji: "🐿️",
+    buddySpecies: "Sóc nâu ba chiếc hũ",
+    weaponOrGear: "Ba Chiếc Hũ Hạt Dẻ & Sổ Kế Hoạch Nhí",
+    auraGradient: "from-amber-500 via-teal-600 to-cyan-500",
+    borderCls: "border-teal-400",
+    badgeBgCls: "bg-teal-700 text-white",
+    description: "Hướng dẫn em chia tiền vào 3 chiếc hũ: Cần thiết – Tiết kiệm – Chia sẻ và ghi nhật ký tài chính nhí.",
+    cartoonRhyme: "Ba chiếc hũ nhỏ xinh xinh: Cần dùng, Tiết kiệm, Nghĩa tình sẻ chia!",
+    educationalLesson: "Lập kế hoạch chi tiêu đầu tiên và làm chủ 3 chiếc hũ tài chính."
   }
 ];
 
@@ -828,6 +846,213 @@ const SIZE_MAP = {
   xl: "w-36 h-36"
 };
 
+/**
+ * Illustrated Children's Cartoon SVG Mascot Avatar for each of the 5 companions
+ */
+export function SkylineCartoonAvatar({
+  characterId = "SKYLINE_EXPLORER",
+  mood = "EXPLORER",
+  reducedMotion = false,
+  className = "w-full h-full"
+}: {
+  characterId?: string;
+  mood?: BirdMood;
+  reducedMotion?: boolean;
+  className?: string;
+}) {
+  const character = getCharacterById(characterId);
+  const animCls = !reducedMotion && mood === "CELEBRATE" ? "animate-bounce" : "";
+
+  if (character.id === "GOLDEN_SHIELD_KNIGHT") {
+    // Bé Heo Hồng Ống Đất (Adorable Pink Piggy Bank with Golden Coin Crown)
+    return (
+      <svg
+        viewBox="0 0 120 120"
+        className={`${className} ${animCls}`}
+        role="img"
+        aria-label={character.name}
+      >
+        <circle cx="60" cy="60" r="54" fill="#FFF1F2" />
+        <circle cx="60" cy="60" r="46" fill="#FFE4E6" opacity="0.7" />
+        {/* Cute Piggy Ears */}
+        <path d="M26 42 Q18 20 38 30 Z" fill="#FB7185" stroke="#E11D48" strokeWidth="2.5" />
+        <path d="M94 42 Q102 20 82 30 Z" fill="#FB7185" stroke="#E11D48" strokeWidth="2.5" />
+        {/* Golden Crown & Coin Slot */}
+        <polygon points="44,26 52,14 60,23 68,14 76,26" fill="#FACC15" stroke="#D97706" strokeWidth="2" />
+        <circle cx="60" cy="20" r="5" fill="#FDE047" stroke="#B45309" strokeWidth="1.5" />
+        {/* Chubby Pink Head */}
+        <ellipse cx="60" cy="65" rx="35" ry="31" fill="#FDA4AF" stroke="#E11D48" strokeWidth="3" />
+        <rect x="50" y="36" width="20" height="4" rx="2" fill="#9F1239" />
+        {/* Sparkling Eyes */}
+        <circle cx="45" cy="56" r="6" fill="#0F172A" />
+        <circle cx="75" cy="56" r="6" fill="#0F172A" />
+        <circle cx="43" cy="54" r="2.2" fill="#FFFFFF" />
+        <circle cx="73" cy="54" r="2.2" fill="#FFFFFF" />
+        {/* Rosy Cheeks */}
+        <ellipse cx="34" cy="66" rx="6" ry="3.8" fill="#F43F5E" opacity="0.65" />
+        <ellipse cx="86" cy="66" rx="6" ry="3.8" fill="#F43F5E" opacity="0.65" />
+        {/* Piggy Snout */}
+        <ellipse cx="60" cy="67" rx="13" ry="9.5" fill="#FB7185" stroke="#BE123C" strokeWidth="2" />
+        <circle cx="55.5" cy="67" r="2.5" fill="#881337" />
+        <circle cx="64.5" cy="67" r="2.5" fill="#881337" />
+        {/* Cheerful Smile */}
+        <path d="M51 80 Q60 88 69 80" fill="none" stroke="#881337" strokeWidth="3" strokeLinecap="round" />
+      </svg>
+    );
+  }
+
+  if (character.id === "WISE_SCHOLAR") {
+    // Thỏ Trắng Thông Thái (Cute White Bunny with Long Ears & Smart Glasses)
+    return (
+      <svg
+        viewBox="0 0 120 120"
+        className={`${className} ${animCls}`}
+        role="img"
+        aria-label={character.name}
+      >
+        <circle cx="60" cy="60" r="54" fill="#F0F9FF" />
+        <circle cx="60" cy="60" r="46" fill="#E0F2FE" opacity="0.8" />
+        {/* Long Bunny Ears */}
+        <ellipse cx="44" cy="27" rx="8.5" ry="20" transform="rotate(-10 44 27)" fill="#FFFFFF" stroke="#0284C7" strokeWidth="2.8" />
+        <ellipse cx="44" cy="28" rx="4.5" ry="13" transform="rotate(-10 44 28)" fill="#FDA4AF" />
+        <ellipse cx="76" cy="27" rx="8.5" ry="20" transform="rotate(10 76 27)" fill="#FFFFFF" stroke="#0284C7" strokeWidth="2.8" />
+        <ellipse cx="76" cy="28" rx="4.5" ry="13" transform="rotate(10 76 28)" fill="#FDA4AF" />
+        {/* Fluffy Bunny Head */}
+        <ellipse cx="60" cy="69" rx="33" ry="28" fill="#FFFFFF" stroke="#0284C7" strokeWidth="3" />
+        {/* Smart Round Glasses */}
+        <circle cx="46" cy="62" r="9.5" fill="#E0F2FE" fillOpacity="0.45" stroke="#0369A1" strokeWidth="2.5" />
+        <circle cx="74" cy="62" r="9.5" fill="#E0F2FE" fillOpacity="0.45" stroke="#0369A1" strokeWidth="2.5" />
+        <line x1="55.5" y1="62" x2="64.5" y2="62" stroke="#0369A1" strokeWidth="2.5" />
+        {/* Sparkling Eyes */}
+        <circle cx="46" cy="62" r="5" fill="#0F172A" />
+        <circle cx="74" cy="62" r="5" fill="#0F172A" />
+        <circle cx="44.5" cy="60" r="2" fill="#FFFFFF" />
+        <circle cx="72.5" cy="60" r="2" fill="#FFFFFF" />
+        {/* Rosy Cheeks & Pink Nose */}
+        <ellipse cx="34" cy="72" rx="5.5" ry="3.5" fill="#FB7185" opacity="0.6" />
+        <ellipse cx="86" cy="72" rx="5.5" ry="3.5" fill="#FB7185" opacity="0.6" />
+        <polygon points="56,70 64,70 60,75" fill="#F43F5E" />
+        <path d="M53 78 Q60 84 67 78" fill="none" stroke="#0F172A" strokeWidth="2.5" strokeLinecap="round" />
+        {/* Cute Teal Bowtie */}
+        <polygon points="48,93 60,98 48,103" fill="#0D9488" />
+        <polygon points="72,93 60,98 72,103" fill="#0D9488" />
+        <circle cx="60" cy="98" r="3.5" fill="#FACC15" />
+      </svg>
+    );
+  }
+
+  if (character.id === "ECO_HERO") {
+    // Gấu Mật Ấm Áp (Cheerful Honey Bear with Green Leaf Cape)
+    return (
+      <svg
+        viewBox="0 0 120 120"
+        className={`${className} ${animCls}`}
+        role="img"
+        aria-label={character.name}
+      >
+        <circle cx="60" cy="60" r="54" fill="#ECFDF5" />
+        <circle cx="60" cy="60" r="46" fill="#D1FAE5" opacity="0.75" />
+        {/* Round Bear Ears */}
+        <circle cx="34" cy="36" r="12" fill="#D97706" stroke="#92400E" strokeWidth="2.8" />
+        <circle cx="34" cy="36" r="6.5" fill="#FDE68A" />
+        <circle cx="86" cy="36" r="12" fill="#D97006" stroke="#92400E" strokeWidth="2.8" />
+        <circle cx="86" cy="36" r="6.5" fill="#FDE68A" />
+        {/* Green Eco Collar/Cape */}
+        <path d="M28 86 Q60 108 92 86 L98 106 Q60 116 22 106 Z" fill="#10B981" stroke="#047857" strokeWidth="2.5" />
+        {/* Warm Honey Bear Head */}
+        <ellipse cx="60" cy="64" rx="34" ry="30" fill="#F59E0B" stroke="#92400E" strokeWidth="3" />
+        {/* Sprout Leaf on Top */}
+        <path d="M60 34 Q60 22 70 20 Q68 30 60 34" fill="#22C55E" stroke="#15803D" strokeWidth="2" />
+        <path d="M60 34 Q58 24 49 23 Q51 31 60 34" fill="#4ADE80" stroke="#15803D" strokeWidth="2" />
+        {/* Eyes */}
+        <circle cx="46" cy="56" r="5.8" fill="#0F172A" />
+        <circle cx="74" cy="56" r="5.8" fill="#0F172A" />
+        <circle cx="44" cy="54" r="2.2" fill="#FFFFFF" />
+        <circle cx="72" cy="54" r="2.2" fill="#FFFFFF" />
+        {/* Cream Snout & Smile */}
+        <ellipse cx="60" cy="69" rx="14" ry="11" fill="#FEF3C7" stroke="#B45309" strokeWidth="2" />
+        <ellipse cx="60" cy="65" rx="5.5" ry="4" fill="#78350F" />
+        <path d="M53 73 Q60 79 67 73" fill="none" stroke="#78350F" strokeWidth="2.6" strokeLinecap="round" />
+        {/* Rosy Cheeks */}
+        <ellipse cx="36" cy="66" rx="5.5" ry="3.5" fill="#FB7185" opacity="0.65" />
+        <ellipse cx="84" cy="66" rx="5.5" ry="3.5" fill="#FB7185" opacity="0.65" />
+      </svg>
+    );
+  }
+
+  if (character.id === "FUTURE_CAPTAIN") {
+    // Sóc Nâu Chăm Chỉ (Lively Acorn Squirrel with Sky-Line Star Visor)
+    return (
+      <svg
+        viewBox="0 0 120 120"
+        className={`${className} ${animCls}`}
+        role="img"
+        aria-label={character.name}
+      >
+        <circle cx="60" cy="60" r="54" fill="#FEFCE8" />
+        <circle cx="60" cy="60" r="46" fill="#FEF08A" opacity="0.55" />
+        {/* Fluffy Squirrel Tail */}
+        <path d="M84 85 Q112 68 102 42 Q94 26 82 44 Q92 60 78 78 Z" fill="#B45309" stroke="#9A3412" strokeWidth="2.5" />
+        {/* Perky Squirrel Ears */}
+        <polygon points="32,42 26,20 45,32" fill="#B45309" stroke="#9A3412" strokeWidth="2.5" />
+        <polygon points="88,42 94,20 75,32" fill="#B45309" stroke="#9A3412" strokeWidth="2.5" />
+        {/* Head */}
+        <ellipse cx="58" cy="66" rx="32" ry="28" fill="#F59E0B" stroke="#9A3412" strokeWidth="3" />
+        {/* Sky-Line Teal Captain Cap */}
+        <path d="M32 45 Q58 26 84 45 Z" fill="#0D9488" stroke="#115E59" strokeWidth="2.5" />
+        <circle cx="58" cy="38" r="4" fill="#FACC15" />
+        {/* Eyes */}
+        <circle cx="45" cy="59" r="5.8" fill="#0F172A" />
+        <circle cx="71" cy="59" r="5.8" fill="#0F172A" />
+        <circle cx="43.5" cy="57" r="2.2" fill="#FFFFFF" />
+        <circle cx="69.5" cy="57" r="2.2" fill="#FFFFFF" />
+        {/* Cheeks & Cute Buck Tooth Smile */}
+        <ellipse cx="35" cy="69" rx="5.5" ry="3.5" fill="#F43F5E" opacity="0.6" />
+        <ellipse cx="81" cy="69" rx="5.5" ry="3.5" fill="#F43F5E" opacity="0.6" />
+        <ellipse cx="58" cy="72" rx="12" ry="9" fill="#FEF3C7" />
+        <circle cx="58" cy="67" r="3.5" fill="#7C2D12" />
+        <rect x="55" y="74" width="6" height="5" rx="1" fill="#FFFFFF" stroke="#7C2D12" strokeWidth="1.5" />
+        <path d="M49 73 Q58 80 67 73" fill="none" stroke="#7C2D12" strokeWidth="2.4" strokeLinecap="round" />
+      </svg>
+    );
+  }
+
+  // Default: SKYLINE_EXPLORER — Chim Non Bồ Câu Sky-Line (Baby Pigeon with Yellow Student Cap & Coin Star)
+  return (
+    <svg
+      viewBox="0 0 120 120"
+      className={`${className} ${animCls}`}
+      role="img"
+      aria-label={character.name}
+    >
+      <circle cx="60" cy="60" r="54" fill="#F0FDFA" />
+      <circle cx="60" cy="62" r="46" fill="#CCFBF1" opacity="0.75" />
+      {/* Cute Flapping Wings */}
+      <ellipse cx="23" cy="68" rx="10" ry="16" transform="rotate(20 23 68)" fill="#38BDF8" stroke="#0284C7" strokeWidth="2.5" />
+      <ellipse cx="97" cy="68" rx="10" ry="16" transform="rotate(-20 97 68)" fill="#38BDF8" stroke="#0284C7" strokeWidth="2.5" />
+      {/* Chubby Baby Bird Body */}
+      <ellipse cx="60" cy="67" rx="33" ry="30" fill="#FFFFFF" stroke="#0D9488" strokeWidth="3" />
+      <ellipse cx="60" cy="77" rx="24" ry="16" fill="#E0F2FE" />
+      {/* Cheerful Yellow School Cap */}
+      <path d="M34 44 Q60 22 86 44 Z" fill="#FACC15" stroke="#D97706" strokeWidth="2.5" />
+      <ellipse cx="60" cy="44" rx="28" ry="5" fill="#F59E0B" />
+      <circle cx="60" cy="29" r="4" fill="#0D9488" stroke="#FFFFFF" strokeWidth="1.5" />
+      {/* Big Sparkling Cartoon Eyes */}
+      <circle cx="46" cy="56" r="6.5" fill="#0F172A" />
+      <circle cx="74" cy="56" r="6.5" fill="#0F172A" />
+      <circle cx="44" cy="53.5" r="2.5" fill="#FFFFFF" />
+      <circle cx="72" cy="53.5" r="2.5" fill="#FFFFFF" />
+      {/* Rosy Cheeks */}
+      <ellipse cx="35" cy="64" rx="5.5" ry="3.5" fill="#FB7185" opacity="0.65" />
+      <ellipse cx="85" cy="64" rx="5.5" ry="3.5" fill="#FB7185" opacity="0.65" />
+      {/* Golden Beak */}
+      <polygon points="53,60 67,60 60,70" fill="#F59E0B" stroke="#D97706" strokeWidth="1.5" />
+      {/* Red neckerchief */}
+      <polygon points="45,86 75,86 60,97" fill="#EF4444" stroke="#B91C1C" strokeWidth="1.5" />
+    </svg>
+  );
+}
+
 export function SkylineBirdCharacter({
   mood = "EXPLORER",
   size = "md",
@@ -837,7 +1062,6 @@ export function SkylineBirdCharacter({
   characterId,
   className = ""
 }: SkylineBirdCharacterProps) {
-  const [imgFallback, setImgFallback] = React.useState(false);
   const character = getCharacterById(characterId);
 
   const accessoryEmoji =
@@ -864,34 +1088,12 @@ export function SkylineBirdCharacter({
           !reducedMotion ? "transition-transform duration-500 hover:scale-105" : ""
         }`}
       >
-        {!imgFallback ? (
-          <img
-            src="/images/skyline-bird-mascot.jpg"
-            alt={character.name}
-            onError={() => setImgFallback(true)}
-            className={`w-full h-full object-cover ${
-              !reducedMotion && mood === "CELEBRATE" ? "animate-bounce" : ""
-            }`}
-          />
-        ) : (
-          <svg
-            viewBox="0 0 120 120"
-            className={`w-full h-full p-1.5 ${
-              !reducedMotion && mood === "CELEBRATE" ? "animate-bounce" : ""
-            }`}
-            role="img"
-            aria-label={character.name}
-          >
-            <circle cx="60" cy="62" r="46" fill="#E0F2FE" opacity="0.65" />
-            <ellipse cx="60" cy="65" rx="33" ry="30" fill="#FFFFFF" stroke="#0EA5E9" strokeWidth="3" />
-            <ellipse cx="60" cy="74" rx="28" ry="18" fill="#38BDF8" />
-            <circle cx="48" cy="52" r="6.5" fill="#0F172A" />
-            <circle cx="72" cy="52" r="6.5" fill="#0F172A" />
-            <circle cx="46" cy="50" r="2.3" fill="#FFFFFF" />
-            <circle cx="70" cy="50" r="2.3" fill="#FFFFFF" />
-            <polygon points="54,56 66,56 60,65" fill="#F59E0B" stroke="#D97706" strokeWidth="1" />
-          </svg>
-        )}
+        <SkylineCartoonAvatar
+          characterId={character.id}
+          mood={mood}
+          reducedMotion={reducedMotion}
+          className="w-full h-full p-0.5"
+        />
 
         {/* Role / Character Gear Badge */}
         <span
@@ -917,6 +1119,11 @@ export function SkylineBirdCharacter({
             <span>{character.name} nhắn nhủ:</span>
           </div>
           <p>{speechText}</p>
+          {character.cartoonRhyme && (
+            <p className="mt-1 text-[11px] font-semibold text-amber-800 bg-amber-50 border border-amber-200 rounded-lg px-2 py-0.5">
+              🎶 &ldquo;{character.cartoonRhyme}&rdquo;
+            </p>
+          )}
         </div>
       )}
     </div>
@@ -1002,6 +1209,317 @@ export function Skyline3DShieldBadge({
           Khiên Chặng {periodIndex}
         </span>
       )}
+    </div>
+  );
+}
+
+export interface StageVisualMeta {
+  periodIndex: number;
+  skyGradient: string;
+  hillPrimary: string;
+  hillSecondary: string;
+  mainIcon: string;
+  subIcons: [string, string];
+  gameGenreBadge: string;
+  sceneCaption: string;
+  accentBgCls: string;
+}
+
+const STAGE_VISUAL_META_MAP: Record<number, Omit<StageVisualMeta, "periodIndex">> = {
+  1: {
+    skyGradient: "from-amber-200 via-sky-200 to-teal-200",
+    hillPrimary: "#10B981",
+    hillSecondary: "#059669",
+    mainIcon: "🪙",
+    subIcons: ["🏛️", "✨"],
+    gameGenreBadge: "🎮 Khám phá Đồng xu",
+    sceneCaption: "Cổng Thị Trấn & Kho Báu Xu",
+    accentBgCls: "bg-amber-500 text-slate-950"
+  },
+  2: {
+    skyGradient: "from-sky-200 via-cyan-100 to-emerald-200",
+    hillPrimary: "#14B8A6",
+    hillSecondary: "#0D9488",
+    mainIcon: "🎒",
+    subIcons: ["🧭", "⛺"],
+    gameGenreBadge: "🎒 Game Soạn Ba Lô",
+    sceneCaption: "Trạm Ba Lô Cần & Muốn",
+    accentBgCls: "bg-teal-600 text-white"
+  },
+  3: {
+    skyGradient: "from-emerald-200 via-teal-100 to-amber-200",
+    hillPrimary: "#059669",
+    hillSecondary: "#047857",
+    mainIcon: "🌳",
+    subIcons: ["🏺", "🪙"],
+    gameGenreBadge: "🪺 Game 3 Chiếc Hũ",
+    sceneCaption: "Cây Đại Thụ Ba Chiếc Hũ",
+    accentBgCls: "bg-emerald-600 text-white"
+  },
+  4: {
+    skyGradient: "from-teal-200 via-emerald-100 to-sky-200",
+    hillPrimary: "#22C55E",
+    hillSecondary: "#15803D",
+    mainIcon: "🏡",
+    subIcons: ["💡", "💧"],
+    gameGenreBadge: "🦸 Game Hiệp Sĩ Xanh",
+    sceneCaption: "Ngôi Làng Tiết Kiệm Xanh",
+    accentBgCls: "bg-emerald-700 text-white"
+  },
+  5: {
+    skyGradient: "from-amber-200 via-orange-100 to-sky-200",
+    hillPrimary: "#0EA5E9",
+    hillSecondary: "#0284C7",
+    mainIcon: "📓",
+    subIcons: ["🔎", "🪙"],
+    gameGenreBadge: "🔎 Game Thám Tử Xu",
+    sceneCaption: "Lều Nhật Ký Đồng Xu",
+    accentBgCls: "bg-sky-600 text-white"
+  },
+  6: {
+    skyGradient: "from-rose-200 via-amber-100 to-teal-200",
+    hillPrimary: "#F59E0B",
+    hillSecondary: "#D97706",
+    mainIcon: "🏪",
+    subIcons: ["🧺", "🏷️"],
+    gameGenreBadge: "🏪 Game Quầy Hàng",
+    sceneCaption: "Quầy Hàng Chim Xanh",
+    accentBgCls: "bg-amber-500 text-white"
+  },
+  7: {
+    skyGradient: "from-sky-200 via-indigo-100 to-amber-200",
+    hillPrimary: "#0D9488",
+    hillSecondary: "#0F766E",
+    mainIcon: "🛠️",
+    subIcons: ["👩‍⚕️", "🌾"],
+    gameGenreBadge: "🌟 Game Nghề Nghiệp",
+    sceneCaption: "Quảng Trường Nghề Quý",
+    accentBgCls: "bg-teal-700 text-white"
+  },
+  8: {
+    skyGradient: "from-pink-200 via-rose-100 to-amber-200",
+    hillPrimary: "#10B981",
+    hillSecondary: "#059669",
+    mainIcon: "💝",
+    subIcons: ["🎁", "🌈"],
+    gameGenreBadge: "💝 Game Sẻ Chia",
+    sceneCaption: "Vườn Cây Sẻ Chia",
+    accentBgCls: "bg-rose-500 text-white"
+  },
+  9: {
+    skyGradient: "from-cyan-200 via-sky-100 to-teal-200",
+    hillPrimary: "#0284C7",
+    hillSecondary: "#0369A1",
+    mainIcon: "🛒",
+    subIcons: ["🥛", "🍎"],
+    gameGenreBadge: "🛒 Game Siêu Thị",
+    sceneCaption: "Siêu Thị Hải Âu Thông Thái",
+    accentBgCls: "bg-sky-600 text-white"
+  },
+  10: {
+    skyGradient: "from-amber-200 via-rose-200 to-sky-200",
+    hillPrimary: "#E11D48",
+    hillSecondary: "#BE123C",
+    mainIcon: "🎪",
+    subIcons: ["🎈", "🎡"],
+    gameGenreBadge: "🎪 Dự Án Hội Chợ",
+    sceneCaption: "Hội Chợ Tài Chính Nhí",
+    accentBgCls: "bg-amber-500 text-slate-950"
+  },
+  11: {
+    skyGradient: "from-yellow-200 via-amber-100 to-emerald-200",
+    hillPrimary: "#16A34A",
+    hillSecondary: "#15803D",
+    mainIcon: "🐷",
+    subIcons: ["🪺", "🌟"],
+    gameGenreBadge: "🐷 Game Nuôi Heo Đất",
+    sceneCaption: "Đồi Tổ Ấm & Heo Đất Vàng",
+    accentBgCls: "bg-amber-500 text-slate-950"
+  },
+  12: {
+    skyGradient: "from-sky-200 via-teal-100 to-emerald-600",
+    hillPrimary: "#0D9488",
+    hillSecondary: "#115E59",
+    mainIcon: "📋",
+    subIcons: ["🗺️", "✅"],
+    gameGenreBadge: "📋 Game Lập Kế Hoạch",
+    sceneCaption: "Trạm Kế Hoạch Mua Sắm",
+    accentBgCls: "bg-teal-600 text-white"
+  },
+  13: {
+    skyGradient: "from-emerald-200 via-lime-100 to-teal-200",
+    hillPrimary: "#15803D",
+    hillSecondary: "#166534",
+    mainIcon: "♻️",
+    subIcons: ["🧸", "📚"],
+    gameGenreBadge: "♻️ Game Tái Chế Xanh",
+    sceneCaption: "Xưởng Tái Chế & Đổi Đồ Cũ",
+    accentBgCls: "bg-emerald-600 text-white"
+  },
+  14: {
+    skyGradient: "from-teal-600 via-amber-100 to-sky-200",
+    hillPrimary: "#0284C7",
+    hillSecondary: "#0369A1",
+    mainIcon: "📺",
+    subIcons: ["🕵️", "💡"],
+    gameGenreBadge: "🕵️ Game Tỉnh Táo Quảng Cáo",
+    sceneCaption: "Phố Quảng Cáo Rực Rỡ",
+    accentBgCls: "bg-[#003B3A] text-white"
+  },
+  15: {
+    skyGradient: "from-amber-300 via-yellow-200 to-emerald-200",
+    hillPrimary: "#D97706",
+    hillSecondary: "#0F766E",
+    mainIcon: "🏆",
+    subIcons: ["👑", "🎆"],
+    gameGenreBadge: "👑 Tổng Kết Vinh Danh",
+    sceneCaption: "Đài Vinh Danh Tài Chính Nhí",
+    accentBgCls: "bg-amber-400 text-slate-950"
+  }
+};
+
+const STAGE_CARTOON_BUDDY_IDS: Record<number, string> = {
+  1: "SKYLINE_EXPLORER",
+  2: "SKYLINE_EXPLORER",
+  3: "ECO_HERO",
+  4: "GOLDEN_SHIELD_KNIGHT",
+  5: "WISE_SCHOLAR",
+  6: "WISE_SCHOLAR",
+  7: "WISE_SCHOLAR",
+  8: "WISE_SCHOLAR",
+  9: "GOLDEN_SHIELD_KNIGHT",
+  10: "GOLDEN_SHIELD_KNIGHT",
+  11: "ECO_HERO",
+  12: "FUTURE_CAPTAIN",
+  13: "ECO_HERO",
+  14: "FUTURE_CAPTAIN",
+  15: "FUTURE_CAPTAIN"
+};
+
+export function getStageVisualMeta(periodIndex: number): StageVisualMeta {
+  const normalized = ((Math.max(1, periodIndex) - 1) % 15) + 1;
+  const meta = STAGE_VISUAL_META_MAP[normalized] || STAGE_VISUAL_META_MAP[1];
+  return {
+    periodIndex,
+    ...meta
+  };
+}
+
+export function getStageCartoonBuddy(periodIndex: number): SkylineCharacterOption {
+  const normalized = ((Math.max(1, periodIndex) - 1) % 15) + 1;
+  return getCharacterById(STAGE_CARTOON_BUDDY_IDS[normalized] || "SKYLINE_EXPLORER");
+}
+
+/**
+ * Illustrated Gamified Scene Banner for each Stage Card (Chặng 1 -> Chặng 15)
+ */
+export function StageGameIllustrationBanner({
+  periodIndex,
+  isLocked = false,
+  isCompleted = false,
+  isCurrent = false,
+  compact = false
+}: {
+  periodIndex: number;
+  isLocked?: boolean;
+  isCompleted?: boolean;
+  isCurrent?: boolean;
+  compact?: boolean;
+}) {
+  const meta = getStageVisualMeta(periodIndex);
+  const buddy = getStageCartoonBuddy(periodIndex);
+
+  return (
+    <div
+      className={`relative w-full ${
+        compact ? "h-20" : "h-24"
+      } rounded-xl overflow-hidden border ${
+        isLocked
+          ? "border-slate-300 grayscale-[35%]"
+          : isCurrent
+          ? "border-amber-400 shadow-sm"
+          : isCompleted
+          ? "border-emerald-400"
+          : "border-teal-200"
+      } bg-gradient-to-br ${meta.skyGradient} select-none`}
+    >
+      {/* Illustrated Cartoon Island Landscape SVG Background */}
+      <svg
+        viewBox="0 0 260 95"
+        preserveAspectRatio="none"
+        className="absolute inset-0 w-full h-full pointer-events-none"
+        aria-hidden="true"
+      >
+        {/* Warm Sun & Clouds */}
+        <circle cx="222" cy="22" r="14" fill="#FDE047" opacity="0.85" />
+        <circle cx="222" cy="22" r="20" fill="#FEF08A" opacity="0.35" />
+        <ellipse cx="48" cy="20" rx="18" ry="6" fill="#FFFFFF" opacity="0.75" />
+        <ellipse cx="58" cy="18" rx="12" ry="5" fill="#FFFFFF" opacity="0.85" />
+        <ellipse cx="152" cy="15" rx="15" ry="5" fill="#FFFFFF" opacity="0.65" />
+
+        {/* Distant Island Hills */}
+        <path
+          d="M0 72 Q65 42 135 66 T260 58 L260 95 L0 95 Z"
+          fill={meta.hillPrimary}
+          opacity="0.45"
+        />
+        {/* Foreground Island Hills & Winding Adventure Path */}
+        <path
+          d="M0 80 Q85 56 170 74 T260 68 L260 95 L0 95 Z"
+          fill={meta.hillSecondary}
+          opacity="0.68"
+        />
+        <path
+          d="M25 95 Q95 72 130 68 T220 95"
+          fill="none"
+          stroke="#FDE68A"
+          strokeWidth="5"
+          strokeDasharray="6 4"
+          opacity="0.85"
+        />
+      </svg>
+
+      {/* Top-left Game Genre Pill */}
+      <div className="absolute top-1.5 left-1.5 z-10">
+        <span
+          className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-extrabold shadow-xs ${meta.accentBgCls}`}
+        >
+          {meta.gameGenreBadge}
+        </span>
+      </div>
+
+      {/* Top-right Completed Shield / Trophy Indicator */}
+      {isCompleted && (
+        <div
+          className="absolute top-1.5 right-1.5 z-10 px-1.5 py-0.5 rounded-full bg-emerald-600 text-white text-[10px] font-black shadow-xs flex items-center gap-0.5"
+          title="Đã hoàn thành và nhận Khiên Danh Dự"
+        >
+          <span>🛡️</span>
+          <span>🚩</span>
+        </div>
+      )}
+
+      {/* Center Illustrated Game Scene Artwork Badge + Cartoon Buddy */}
+      <div className="relative z-10 h-full flex items-center justify-center pt-3">
+        <div className="flex items-center gap-2">
+          <div
+            className="w-9 h-9 rounded-full bg-white border-2 border-teal-300 shadow-xs overflow-hidden flex items-center justify-center"
+            title={`Bạn đồng hành: ${buddy.name}`}
+          >
+            <SkylineCartoonAvatar
+              characterId={buddy.id}
+              reducedMotion
+              className="w-full h-full"
+            />
+          </div>
+          <div className="w-12 h-12 rounded-2xl bg-white border-2 border-amber-300 shadow-md flex items-center justify-center text-2xl group-hover:scale-110 transition-transform">
+            {meta.mainIcon}
+          </div>
+          <span className="w-7 h-7 rounded-xl bg-white/85 backdrop-blur-xs border border-white shadow-xs flex items-center justify-center text-sm">
+            {meta.subIcons[1]}
+          </span>
+        </div>
+      </div>
     </div>
   );
 }

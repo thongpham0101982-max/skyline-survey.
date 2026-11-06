@@ -4,6 +4,7 @@ import { useState, useEffect, useMemo, Suspense } from "react"
 import { useSearchParams } from "next/navigation"
 import SklPsychStatsDashboard from "@/components/advisory/SklPsychStatsDashboard"
 import AdvisoryJourneyTab from "@/components/advisory/AdvisoryJourneyTab"
+import UnifiedStudentProgressMatrix from "@/components/advisory/UnifiedStudentProgressMatrix"
 import * as XLSX from "xlsx"
 import { 
   Compass,
@@ -74,7 +75,7 @@ export default function AdminAdvisoryDashboard() {
 
 function AdminAdvisoryDashboardContent() {
   const searchParams = useSearchParams()
-  const [activeTab, setActiveTab] = useState<"presets" | "dashboard" | "journey" | "consultations" | "requests" | "skl_psych">("presets")
+  const [activeTab, setActiveTab] = useState<"presets" | "dashboard" | "journey" | "consultations" | "requests" | "skl_psych" | "progress_matrix">("progress_matrix")
 
   // Đồng bộ tab từ URL searchParams (?tab=consultations / ?tab=dashboard / ?tab=presets)
   useEffect(() => {
@@ -91,6 +92,8 @@ function AdminAdvisoryDashboardContent() {
       setActiveTab("skl_psych")
     } else if (tab === "journey") {
       setActiveTab("journey")
+    } else if (tab === "progress_matrix" || tab === "tien-do") {
+      setActiveTab("progress_matrix")
     }
   }, [searchParams])
 
@@ -495,13 +498,13 @@ function AdminAdvisoryDashboardContent() {
         color = "text-emerald-700 bg-emerald-50 border-emerald-200"
       } else if (item.key === "SO_THICH") {
         icon = Sparkles
-        color = "text-purple-700 bg-purple-50 border-purple-200"
+        color = "text-teal-800 bg-teal-50 border-teal-200"
       } else if (item.key === "PHAM_CHAT") {
         icon = Award
         color = "text-amber-700 bg-amber-50 border-amber-200"
       } else if (item.key === "KY_NANG") {
         icon = Rocket
-        color = "text-indigo-700 bg-indigo-50 border-indigo-200"
+        color = "text-teal-800 bg-teal-50 border-teal-200"
       } else if (item.key === "THOI_QUEN") {
         icon = Clock
         color = "text-amber-700 bg-amber-50 border-amber-200"
@@ -510,7 +513,7 @@ function AdminAdvisoryDashboardContent() {
         color = "text-rose-700 bg-rose-50 border-rose-200"
       } else if (item.key === "DINH_HUONG") {
         icon = Rocket
-        color = "text-purple-700 bg-purple-50 border-purple-200"
+        color = "text-teal-800 bg-teal-50 border-teal-200"
       }
       return {
         ...item,
@@ -1050,10 +1053,22 @@ function AdminAdvisoryDashboardContent() {
           </button>
 
           <button
+            onClick={() => setActiveTab("progress_matrix")}
+            className={`px-4 py-2 rounded-xl text-xs font-black transition-all flex items-center gap-2 cursor-pointer ${
+              activeTab === "progress_matrix"
+                ? "bg-white text-[#003B3A] shadow-md ring-2 ring-teal-300"
+                : "bg-white/15 text-white hover:bg-white/25"
+            }`}
+          >
+            <Target className="w-4 h-4 text-teal-500" />
+            <span>Theo dõi tiến độ & Tiến bộ học sinh</span>
+          </button>
+
+          <button
             onClick={() => setActiveTab("skl_psych")}
             className={`px-4 py-2 rounded-xl text-xs font-black transition-all flex items-center gap-2 cursor-pointer ${
               activeTab === "skl_psych"
-                ? "bg-[#5B2D8B] text-white border border-purple-300/60 shadow-md"
+                ? "bg-[#003B3A] text-white border border-teal-300/60 shadow-md"
                 : "bg-white/15 text-white hover:bg-white/25"
             }`}
           >
@@ -1123,10 +1138,22 @@ function AdminAdvisoryDashboardContent() {
           </button>
 
           <button
+            onClick={() => setActiveTab("progress_matrix")}
+            className={`px-4 py-2 rounded-xl text-xs font-black transition-all flex items-center gap-2 cursor-pointer ${
+              activeTab === "progress_matrix"
+                ? "bg-white text-[#003B3A] shadow-md ring-2 ring-teal-300"
+                : "bg-white/15 text-white hover:bg-white/25"
+            }`}
+          >
+            <Target className="w-4 h-4 text-teal-500" />
+            <span>Theo dõi tiến độ & Tiến bộ học sinh</span>
+          </button>
+
+          <button
             onClick={() => setActiveTab("skl_psych")}
             className={`px-4 py-2.5 rounded-xl text-xs font-black transition-all flex items-center gap-2 ${
               activeTab === "skl_psych"
-                ? "bg-[#5B2D8B] text-white border border-purple-300/60 shadow-lg"
+                ? "bg-[#003B3A] text-white border border-teal-300/60 shadow-lg"
                 : "text-teal-100 hover:bg-white/10"
             }`}
           >
@@ -1158,6 +1185,21 @@ function AdminAdvisoryDashboardContent() {
 
       {/* ========================================================================= */}
       {/* ========================================================================= */}
+      {/* TAB PROGRESS_MATRIX: THEO DÕI TIẾN ĐỘ & TIẾN BỘ HỌC SINH (MỤC VIII & XI) */}
+      {activeTab === "progress_matrix" && (
+        <UnifiedStudentProgressMatrix
+          role="ADMIN"
+          schoolYear={selectedAcademicYearId || "2025-2026"}
+          semester="HK1"
+          defaultCampusId={selectedCampusId || "ALL"}
+          campusesList={campuses.map((cp: any) => ({
+            id: cp.id,
+            campusName: cp.campusName || cp.name || "Cơ sở",
+            campusCode: cp.campusCode,
+          }))}
+        />
+      )}
+
       {/* TAB JOURNEY: LỘ TRÌNH CỐ VẤN & ĐỒNG HÀNH HỌC SINH TOÀN TRƯỜNG (8 GIAI ĐOẠN + NHẮC VIỆC THÔNG MINH) */}
       {activeTab === "journey" && (
         <AdvisoryJourneyTab
@@ -1496,11 +1538,11 @@ function AdminAdvisoryDashboardContent() {
               </div>
 
               <div className="bg-white border border-slate-200 rounded-3xl p-5 shadow-xs space-y-1">
-                <span className="text-[10px] font-black uppercase text-purple-600">GVCN ĐÁNH GIÁ & PHHS KÝ</span>
-                <p className="text-2xl font-black text-purple-700">
+                <span className="text-[10px] font-black uppercase text-teal-800">GVCN ĐÁNH GIÁ & PHHS KÝ</span>
+                <p className="text-2xl font-black text-teal-800">
                   {dashboardData.metrics.reviewedByTeacherCount} <span className="text-xs font-normal text-slate-500">Đã nhận xét</span>
                 </p>
-                <p className="text-[11px] text-purple-800 font-bold">PHHS đã ký: {dashboardData.metrics.parentSignedCount} gia đình</p>
+                <p className="text-[11px] text-teal-800 font-bold">PHHS đã ký: {dashboardData.metrics.parentSignedCount} gia đình</p>
               </div>
             </div>
           )}
@@ -1666,7 +1708,7 @@ function AdminAdvisoryDashboardContent() {
                                 <p className="text-[10px] text-emerald-700 font-extrabold">
                                   ✓ GVCN: {cls.reviewedByTeacherCount || 0}
                                 </p>
-                                <p className="text-[10px] text-purple-700 font-extrabold">
+                                <p className="text-[10px] text-teal-800 font-extrabold">
                                   ✓ PHHS: {cls.parentSignedCount || 0}
                                 </p>
                               </td>
@@ -1815,7 +1857,7 @@ function AdminAdvisoryDashboardContent() {
                                   <p className={`text-[10px] font-black ${st.hasTeacherNotes ? "text-emerald-700" : "text-slate-400"}`}>
                                     {st.hasTeacherNotes ? "✓ GVCN đã nhận xét" : "Chưa có nhận xét"}
                                   </p>
-                                  <p className={`text-[10px] font-black ${st.parentSigned ? "text-purple-700" : "text-slate-400"}`}>
+                                  <p className={`text-[10px] font-black ${st.parentSigned ? "text-teal-800" : "text-slate-400"}`}>
                                     {st.parentSigned ? "Gia đình đã ký" : "Gia đình chưa ký"}
                                   </p>
                                 </td>
@@ -2112,7 +2154,7 @@ function AdminAdvisoryDashboardContent() {
 
                 <button
                   onClick={() => setIsTeacherPdfModalOpen(true)}
-                  className="px-4 py-2 rounded-xl bg-purple-600 text-white text-xs font-black hover:bg-purple-700 transition-all shadow-xs flex items-center gap-1.5"
+                  className="px-4 py-2 rounded-xl bg-[#003B3A] text-white text-xs font-black hover:bg-[#003B3A] transition-all shadow-xs flex items-center gap-1.5"
                   title="Xuất bản đẹp PDF theo từng Giáo viên phụ trách"
                 >
                   <Printer className="w-3.5 h-3.5" />
@@ -2159,14 +2201,14 @@ function AdminAdvisoryDashboardContent() {
               </div>
 
               <div className="bg-white border border-slate-200 rounded-3xl p-5 shadow-xs space-y-1">
-                <span className="text-[10px] font-black uppercase text-purple-600 flex items-center gap-1.5">
-                  <Clock className="w-3.5 h-3.5 text-purple-600" />
+                <span className="text-[10px] font-black uppercase text-teal-800 flex items-center gap-1.5">
+                  <Clock className="w-3.5 h-3.5 text-teal-800" />
                   <span>TỔNG LƯỢT TƯ VẤN</span>
                 </span>
-                <p className="text-2xl font-black text-purple-700">
+                <p className="text-2xl font-black text-teal-800">
                   {consultationSummaryData.metrics.totalSessions} <span className="text-xs font-normal text-slate-500">phiên gặp</span>
                 </p>
-                <p className="text-[11px] text-purple-800 font-bold">Đã lưu trong Sổ quan sát GVCN</p>
+                <p className="text-[11px] text-teal-800 font-bold">Đã lưu trong Sổ quan sát GVCN</p>
               </div>
             </div>
           )}
@@ -2350,7 +2392,7 @@ function AdminAdvisoryDashboardContent() {
                           </div>
                           <div>
                             <span className="text-slate-400 text-[10px] block">Tổng số buổi</span>
-                            <span className="font-extrabold text-purple-700">{campus.totalSessions} buổi</span>
+                            <span className="font-extrabold text-teal-800">{campus.totalSessions} buổi</span>
                           </div>
                         </div>
 
@@ -2418,7 +2460,7 @@ function AdminAdvisoryDashboardContent() {
                                 <span className="text-emerald-600 font-extrabold">0 HS (100%)</span>
                               )}
                             </td>
-                            <td className="p-3 text-center text-purple-700 font-extrabold">{grade.totalSessions} buổi</td>
+                            <td className="p-3 text-center text-teal-800 font-extrabold">{grade.totalSessions} buổi</td>
                             <td className="p-3 text-center">
                               {grade.consultedPercent >= 80 ? (
                                 <span className="px-2.5 py-0.5 rounded-full bg-emerald-100 text-emerald-800 text-[10px] font-black inline-flex items-center gap-1">
@@ -2606,17 +2648,17 @@ function AdminAdvisoryDashboardContent() {
                               </span>
                             )}
                           </td>
-                          <td className="p-3 text-center font-extrabold text-purple-700">
+                          <td className="p-3 text-center font-extrabold text-teal-800">
                             {cls.totalSessions} buổi
                           </td>
                           <td className="p-3 text-center">
                             <div className="flex items-center justify-center gap-1.5">
                               <button
                                 onClick={() => openTeacherPdfReport(cls.classId)}
-                                className="px-2.5 py-1.5 rounded-xl bg-purple-50 hover:bg-purple-100 text-purple-800 text-xs font-black transition-all border border-purple-200 inline-flex items-center gap-1 shadow-2xs hover:shadow-xs"
+                                className="px-2.5 py-1.5 rounded-xl bg-teal-50 hover:bg-teal-50 text-teal-800 text-xs font-black transition-all border border-teal-200 inline-flex items-center gap-1 shadow-2xs hover:shadow-xs"
                                 title="Xuất bản đẹp PDF theo Giáo viên phụ trách lớp này"
                               >
-                                <Printer className="w-3.5 h-3.5 text-purple-600" />
+                                <Printer className="w-3.5 h-3.5 text-teal-800" />
                                 <span>Xuất PDF GV</span>
                               </button>
                               <button
@@ -2689,7 +2731,7 @@ function AdminAdvisoryDashboardContent() {
                               </span>
                             )}
                           </td>
-                          <td className="p-3 text-center font-extrabold text-purple-700">
+                          <td className="p-3 text-center font-extrabold text-teal-800">
                             {st.sessionCount} buổi
                           </td>
                           <td className="p-3">
@@ -2798,7 +2840,7 @@ function AdminAdvisoryDashboardContent() {
 
                 <button
                   onClick={() => openTeacherPdfReport(selectedConsultationClass.classId)}
-                  className="px-3 py-1.5 rounded-xl bg-purple-600 hover:bg-purple-700 text-white text-xs font-black transition-all flex items-center gap-1.5 shadow-xs"
+                  className="px-3 py-1.5 rounded-xl bg-[#003B3A] hover:bg-[#003B3A] text-white text-xs font-black transition-all flex items-center gap-1.5 shadow-xs"
                   title="Xuất bản in đẹp PDF theo Giáo viên phụ trách"
                 >
                   <Printer className="w-3.5 h-3.5" />
@@ -3473,7 +3515,7 @@ function AdminAdvisoryDashboardContent() {
                               </div>
                               <div>
                                 <span className={`inline-block px-2 py-0.5 rounded-md text-[10px] font-bold ${
-                                  st.parentSigned ? "bg-purple-50 text-purple-800 border border-purple-200" : "bg-slate-50 text-slate-400 border border-slate-200"
+                                  st.parentSigned ? "bg-teal-50 text-teal-800 border border-teal-200" : "bg-slate-50 text-slate-400 border border-slate-200"
                                 }`}>
                                   {st.parentSigned ? "✓ PHHS đã ký" : "PHHS chưa ký"}
                                 </span>
@@ -3777,10 +3819,10 @@ function AdminAdvisoryDashboardContent() {
             HOC_TAP: { label: "Học tập", color: "bg-emerald-100 text-emerald-900 border-emerald-200" },
             SUC_KHOE: { label: "Sức khỏe & Thói quen", color: "bg-teal-100 text-teal-900 border-teal-200" },
             SO_THICH: { label: "Sở thích & Năng khiếu", color: "bg-pink-100 text-pink-900 border-pink-200" },
-            PHAM_CHAT: { label: "Phẩm chất & Đạo đức", color: "bg-purple-100 text-purple-900 border-purple-200" },
+            PHAM_CHAT: { label: "Phẩm chất & Đạo đức", color: "bg-teal-50 text-teal-800 border-teal-200" },
             KY_NANG: { label: "Kỹ năng", color: "bg-sky-100 text-sky-900 border-sky-200" },
             THOI_QUEN: { label: "Thói quen", color: "bg-blue-100 text-blue-900 border-blue-200" },
-            KY_NANG_CAM_XUC: { label: "Kỹ năng cảm xúc", color: "bg-indigo-100 text-indigo-900 border-indigo-200" },
+            KY_NANG_CAM_XUC: { label: "Kỹ năng cảm xúc", color: "bg-teal-50 text-teal-800 border-teal-200" },
             DINH_HUONG: { label: "Định hướng phát triển", color: "bg-amber-100 text-amber-900 border-amber-200" }
           };
           return map[cat] || { label: cat.replace(/_/g, " "), color: "bg-teal-100 text-teal-900 border-teal-200" };
@@ -4040,9 +4082,9 @@ function AdminAdvisoryDashboardContent() {
                   </div>
 
                   {/* Parent */}
-                  <div className="p-4 rounded-2xl bg-purple-50 border border-purple-200 space-y-1.5 text-purple-950">
+                  <div className="p-4 rounded-2xl bg-teal-50 border border-teal-200 space-y-1.5 text-teal-800">
                     <div className="flex items-center justify-between">
-                      <span className="text-[10px] font-black uppercase text-purple-800 tracking-wider">2. Phụ huynh đồng hành</span>
+                      <span className="text-[10px] font-black uppercase text-teal-800 tracking-wider">2. Phụ huynh đồng hành</span>
                       <span className={`px-2 py-0.5 rounded-full text-[9px] font-black ${selectedStudentDetail.parentSigned ? "bg-emerald-100 text-emerald-800" : "bg-slate-200 text-slate-600"}`}>
                         {selectedStudentDetail.parentSigned ? "✓ Đã ký" : "Chưa ký"}
                       </span>
@@ -4090,17 +4132,17 @@ function AdminAdvisoryDashboardContent() {
         <div className="fixed inset-0 bg-black/60 backdrop-blur-xs z-50 flex items-center justify-center p-4">
           <div className="bg-white rounded-3xl max-w-4xl w-full max-h-[90vh] flex flex-col shadow-2xl border border-slate-200 overflow-hidden animate-in zoom-in-95 duration-200">
             {/* Modal Header */}
-            <div className="p-5 bg-gradient-to-r from-purple-800 to-indigo-900 text-white flex items-center justify-between shrink-0">
+            <div className="p-5 bg-gradient-to-r from-teal-600 to-emerald-600 text-white flex items-center justify-between shrink-0">
               <div className="space-y-1">
                 <div className="flex items-center gap-2">
                   <div className="w-8 h-8 rounded-xl bg-white/20 flex items-center justify-center">
-                    <Printer className="w-4 h-4 text-purple-200" />
+                    <Printer className="w-4 h-4 text-teal-700" />
                   </div>
                   <h3 className="text-base font-black uppercase tracking-wide">
                     XUẤT BẢN ĐẸP PDF THEO TỪNG GIÁO VIÊN PHỤ TRÁCH
                   </h3>
                 </div>
-                <p className="text-xs text-purple-200 font-medium">
+                <p className="text-xs text-teal-700 font-medium">
                   Định dạng A4 chuẩn Ban Giám Hiệu • Có ma trận tiến độ, danh sách học sinh, nhật ký tư vấn & khung chữ ký
                 </p>
               </div>
@@ -4122,7 +4164,7 @@ function AdminAdvisoryDashboardContent() {
                   placeholder="Tìm theo tên Giáo viên, Lớp học hoặc Cơ sở..."
                   value={teacherPdfSearchTerm}
                   onChange={e => setTeacherPdfSearchTerm(e.target.value)}
-                  className="w-full pl-9 pr-3 py-2 rounded-xl bg-white text-slate-800 text-xs font-bold border border-slate-300 outline-none focus:border-purple-600 focus:ring-1 focus:ring-purple-600"
+                  className="w-full pl-9 pr-3 py-2 rounded-xl bg-white text-slate-800 text-xs font-bold border border-slate-300 outline-none focus:border-teal-400 focus:ring-1 focus:ring-purple-600"
                 />
               </div>
 
@@ -4130,7 +4172,7 @@ function AdminAdvisoryDashboardContent() {
                 <button
                   type="button"
                   onClick={() => openTeacherPdfReport(undefined, true)}
-                  className="px-4 py-2 rounded-xl bg-purple-700 hover:bg-purple-800 text-white text-xs font-black transition-all flex items-center gap-1.5 shadow-xs"
+                  className="px-4 py-2 rounded-xl bg-[#003B3A] hover:bg-[#003B3A] text-white text-xs font-black transition-all flex items-center gap-1.5 shadow-xs"
                   title="Xuất trọn bộ tài liệu cho toàn bộ các Giáo viên phụ trách đang lọc"
                 >
                   <Printer className="w-3.5 h-3.5" />
@@ -4167,13 +4209,13 @@ function AdminAdvisoryDashboardContent() {
                       return (
                         <div
                           key={cls.classId || idx}
-                          className="bg-white rounded-2xl p-4 border border-slate-200 hover:border-purple-300 hover:shadow-md transition-all flex flex-col justify-between space-y-3"
+                          className="bg-white rounded-2xl p-4 border border-slate-200 hover:border-teal-400 hover:shadow-md transition-all flex flex-col justify-between space-y-3"
                         >
                           <div>
                             <div className="flex items-start justify-between gap-2 mb-2">
                               <div>
                                 <h4 className="font-black text-sm text-[#003B3A] flex items-center gap-1.5">
-                                  <UserCheck className="w-4 h-4 text-purple-600 shrink-0" />
+                                  <UserCheck className="w-4 h-4 text-teal-800 shrink-0" />
                                   <span>{cls.homeroomTeacherName}</span>
                                 </h4>
                                 <p className="text-[11px] text-slate-500 font-bold mt-0.5">
@@ -4207,15 +4249,15 @@ function AdminAdvisoryDashboardContent() {
                           </div>
 
                           <div className="pt-2 border-t border-slate-100 flex items-center justify-between">
-                            <span className="text-[11px] text-purple-700 font-bold">
+                            <span className="text-[11px] text-teal-800 font-bold">
                               {cls.totalSessions} buổi tư vấn ghi nhận
                             </span>
                             <button
                               type="button"
                               onClick={() => openTeacherPdfReport(cls.classId)}
-                              className="px-3 py-1.5 rounded-xl bg-purple-50 hover:bg-purple-100 text-purple-800 text-xs font-black transition-all border border-purple-200 flex items-center gap-1.5 shadow-2xs hover:shadow-xs"
+                              className="px-3 py-1.5 rounded-xl bg-teal-50 hover:bg-teal-50 text-teal-800 text-xs font-black transition-all border border-teal-200 flex items-center gap-1.5 shadow-2xs hover:shadow-xs"
                             >
-                              <Printer className="w-3.5 h-3.5 text-purple-600" />
+                              <Printer className="w-3.5 h-3.5 text-teal-800" />
                               <span>Xuất PDF Giáo Viên</span>
                             </button>
                           </div>

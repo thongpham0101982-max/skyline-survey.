@@ -822,13 +822,13 @@ export function ObservationMonthlyTimelineTab({
               <span className="text-[10.5px] font-black text-slate-400 uppercase tracking-wider">
                 Tuần Cao Điểm Nhất
               </span>
-              <div className="w-8 h-8 rounded-xl bg-indigo-50 text-indigo-700 flex items-center justify-center font-bold">
+              <div className="w-8 h-8 rounded-xl bg-teal-50 text-teal-800 flex items-center justify-center font-bold">
                 <Activity className="w-4 h-4" />
               </div>
             </div>
             <div className="mt-3">
               <div className="flex items-baseline gap-2">
-                <span className="text-lg sm:text-xl font-black text-indigo-900">
+                <span className="text-lg sm:text-xl font-black text-teal-800">
                   {clumpingAnalysis.peakWeek?.shortLabel || "Chưa có"}
                 </span>
                 <span className="text-xs text-slate-400 font-bold">

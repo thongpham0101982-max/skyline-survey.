@@ -133,7 +133,7 @@ export function MemberWorkspacePanel({
         {/* Header thông tin tài khoản thực */}
         <div className="px-6 py-5 bg-gradient-to-r from-slate-900 via-violet-950 to-slate-900 text-white flex items-start justify-between gap-4">
           <div className="flex items-center gap-4">
-            <div className="w-14 h-14 rounded-2xl bg-violet-600 border-2 border-violet-300 text-white font-black text-xl flex items-center justify-center shrink-0">
+            <div className="w-14 h-14 rounded-2xl bg-teal-500 border-2 border-teal-200 text-white font-black text-xl flex items-center justify-center shrink-0">
               {String(member.fullName || "U")
                 .trim()
                 .split(" ")
@@ -143,13 +143,13 @@ export function MemberWorkspacePanel({
             <div>
               <div className="flex items-center gap-2 flex-wrap">
                 <h2 className="text-lg font-extrabold text-white">{member.fullName}</h2>
-                <span className="px-2.5 py-0.5 rounded-full text-[11px] font-bold bg-violet-500/30 text-violet-200 border border-violet-400/40">
+                <span className="px-2.5 py-0.5 rounded-full text-[11px] font-bold bg-teal-500/30 text-teal-700 border border-teal-400/40">
                   {member.role}
                 </span>
               </div>
               <div className="text-xs text-slate-300 flex items-center gap-3 mt-1 flex-wrap">
                 <span className="inline-flex items-center gap-1">
-                  <Mail className="w-3.5 h-3.5 text-violet-300" />
+                  <Mail className="w-3.5 h-3.5 text-teal-700" />
                   {member.email}
                 </span>
                 {member.teacher?.departmentRel?.name && (
@@ -203,7 +203,7 @@ export function MemberWorkspacePanel({
             <button
               type="button"
               onClick={() => onAssignToMember(member.id, memberGroups[0]?.id || null)}
-              className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-xl text-xs font-bold bg-violet-600 hover:bg-violet-700 text-white shadow-2xs transition-colors cursor-pointer"
+              className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-xl text-xs font-bold bg-teal-500 hover:bg-teal-500 text-white shadow-2xs transition-colors cursor-pointer"
             >
               <Plus className="w-4 h-4" />
               Giao việc cho thành viên
@@ -275,12 +275,12 @@ export function MemberWorkspacePanel({
               }
               className={`p-3 rounded-xl border text-left transition-all cursor-pointer ${
                 activeFilter === "PENDING_REVIEW"
-                  ? "border-violet-500 bg-violet-50"
-                  : "border-slate-200 bg-white hover:border-violet-300"
+                  ? "border-teal-200 bg-teal-50"
+                  : "border-slate-200 bg-white hover:border-teal-200"
               }`}
             >
               <div className="text-[11px] font-bold text-slate-500">Chờ duyệt</div>
-              <div className="text-2xl font-black text-violet-700 mt-0.5">
+              <div className="text-2xl font-black text-teal-800 mt-0.5">
                 {pendingReviewTasks.length}
               </div>
             </button>
@@ -290,14 +290,14 @@ export function MemberWorkspacePanel({
           <div>
             <div className="flex items-center justify-between mb-3">
               <h3 className="text-sm font-extrabold text-slate-900 flex items-center gap-2">
-                <Calendar className="w-4 h-4 text-violet-600" />
+                <Calendar className="w-4 h-4 text-teal-800" />
                 Nhiệm vụ, Kế hoạch & Mốc bàn giao ({filteredTasks.length})
               </h3>
               {activeFilter !== "ALL" && (
                 <button
                   type="button"
                   onClick={() => setActiveFilter("ALL")}
-                  className="text-xs font-bold text-violet-600 hover:underline cursor-pointer"
+                  className="text-xs font-bold text-teal-800 hover:underline cursor-pointer"
                 >
                   Hiển thị tất cả
                 </button>
@@ -316,7 +316,7 @@ export function MemberWorkspacePanel({
                   return (
                     <div
                       key={t.id}
-                      className="p-4 rounded-xl border border-slate-200 hover:border-violet-300 bg-white shadow-2xs transition-all space-y-2.5"
+                      className="p-4 rounded-xl border border-slate-200 hover:border-teal-200 bg-white shadow-2xs transition-all space-y-2.5"
                     >
                       <div className="flex items-start justify-between gap-2">
                         <div>
@@ -326,7 +326,7 @@ export function MemberWorkspacePanel({
                           <button
                             type="button"
                             onClick={() => onSelectTask(t)}
-                            className="text-sm font-bold text-slate-900 hover:text-violet-700 text-left cursor-pointer"
+                            className="text-sm font-bold text-slate-900 hover:text-teal-800 text-left cursor-pointer"
                           >
                             {t.title}
                           </button>
@@ -336,7 +336,7 @@ export function MemberWorkspacePanel({
                             wfStatus === "COMPLETED"
                               ? "bg-emerald-50 text-emerald-700 border border-emerald-200"
                               : wfStatus === "PENDING_REVIEW"
-                              ? "bg-violet-50 text-violet-700 border border-violet-200"
+                              ? "bg-teal-50 text-teal-800 border border-teal-200"
                               : isOverdue
                               ? "bg-rose-50 text-rose-700 border border-rose-200"
                               : "bg-sky-50 text-sky-700 border border-sky-200"
@@ -437,7 +437,7 @@ export function MemberWorkspacePanel({
                         href={ev.link}
                         target="_blank"
                         rel="noreferrer"
-                        className="text-violet-600 hover:underline inline-flex items-center gap-1 text-[11px] mt-0.5 break-all"
+                        className="text-teal-800 hover:underline inline-flex items-center gap-1 text-[11px] mt-0.5 break-all"
                       >
                         {ev.link} <ExternalLink className="w-3 h-3 shrink-0" />
                       </a>

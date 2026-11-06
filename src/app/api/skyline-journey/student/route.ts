@@ -9,7 +9,7 @@ import {
 
 export const dynamic = "force-dynamic";
 
-export async function GET() {
+export async function GET(req: NextRequest) {
   try {
     const session = await getStudentSession();
     if (!session || !session.studentId) {
@@ -19,7 +19,8 @@ export async function GET() {
       );
     }
 
-    const overview = await getStudentJourneyOverview(session.studentId);
+    const gradeParam = req.nextUrl?.searchParams?.get("grade") || undefined;
+    const overview = await getStudentJourneyOverview(session.studentId, gradeParam);
     return NextResponse.json(overview);
   } catch (error: any) {
     console.error("[GET /api/skyline-journey/student] Error:", error);
@@ -85,7 +86,8 @@ export async function POST(req: NextRequest) {
     const result = await submitStudentStageAction(session.studentId, {
       lessonCode,
       actionPayload: body?.actionPayload || {},
-      studentReflection: body?.studentReflection
+      studentReflection: body?.studentReflection,
+      durationSeconds: Number(body?.durationSeconds || 0)
     });
 
     const updatedOverview = await getStudentJourneyOverview(session.studentId);

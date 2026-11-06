@@ -28,6 +28,10 @@ import {
 } from "lucide-react";
 import Link from "next/link";
 import toast from "react-hot-toast";
+import {
+  getSpecialSubjectGrades,
+  SPECIAL_SUBJECT_SCOPE_LABELS
+} from "@/lib/specialSubjectsPortfolio";
 
 export default function SpecialSubjectsAssignmentsPage() {
   const [loading, setLoading] = useState(true);
@@ -52,8 +56,10 @@ export default function SpecialSubjectsAssignmentsPage() {
   const [selectedSubjectId, setSelectedSubjectId] = useState("ALL");
   const [selectedCampus, setSelectedCampus] = useState("ALL");
   const [selectedGrade, setSelectedGrade] = useState("ALL");
+  const [selectedEducationSystem, setSelectedEducationSystem] = useState("ALL");
   const [selectedDepartment, setSelectedDepartment] = useState("ALL");
   const [academicYearId, setAcademicYearId] = useState("");
+  const [academicYearName, setAcademicYearName] = useState("2026-2027");
 
   // Modal allocate state
   const [isModalOpen, setIsModalOpen] = useState(false);
@@ -67,6 +73,9 @@ export default function SpecialSubjectsAssignmentsPage() {
   const [allocDepartmentId, setAllocDepartmentId] = useState("ALL");
   const [allocTeacherId, setAllocTeacherId] = useState("");
   const [allocCampusId, setAllocCampusId] = useState("ALL");
+  const [allocGrade, setAllocGrade] = useState("ALL");
+  const [allocEducationSystem, setAllocEducationSystem] = useState("ALL");
+  const [allocVersionCode, setAllocVersionCode] = useState("v1.0");
   const [selectedClassIds, setSelectedClassIds] = useState<string[]>([]);
   const [sendNotificationEmail, setSendNotificationEmail] = useState(true);
   const [submitting, setSubmitting] = useState(false);
@@ -106,6 +115,7 @@ export default function SpecialSubjectsAssignmentsPage() {
           if (optJson.departments) setDepartments(optJson.departments);
           if (optJson.campuses && optJson.campuses.length > 0) setCampuses(optJson.campuses);
           if (optJson.activeAcademicYear?.id) setAcademicYearId(optJson.activeAcademicYear.id);
+          if (optJson.activeAcademicYear?.name) setAcademicYearName(optJson.activeAcademicYear.name);
         }
       } catch (err) {
         console.error(err);
@@ -117,7 +127,7 @@ export default function SpecialSubjectsAssignmentsPage() {
   const fetchAssignments = async () => {
     try {
       setLoading(true);
-      const url = `/api/special-subjects/assignments?campusId=${selectedCampus}&grade=${selectedGrade}${
+      const url = `/api/special-subjects/assignments?campusId=${selectedCampus}&grade=${selectedGrade}&educationSystem=${selectedEducationSystem}${
         selectedSubjectId !== "ALL" ? `&subjectId=${selectedSubjectId}` : ""
       }${selectedDepartment !== "ALL" ? `&departmentId=${selectedDepartment}` : ""}`;
       const res = await fetch(url);
@@ -139,7 +149,7 @@ export default function SpecialSubjectsAssignmentsPage() {
 
   useEffect(() => {
     fetchAssignments();
-  }, [selectedCampus, selectedGrade, selectedSubjectId, selectedDepartment]);
+  }, [selectedCampus, selectedGrade, selectedEducationSystem, selectedSubjectId, selectedDepartment]);
 
   const openAllocateModal = async () => {
     setIsModalOpen(true);
@@ -187,6 +197,8 @@ export default function SpecialSubjectsAssignmentsPage() {
           subjectId: selectedSubjectId !== "ALL" ? selectedSubjectId : allocSubjectId || undefined,
           campusId: selectedCampus,
           grade: selectedGrade,
+          educationSystem: selectedEducationSystem,
+          versionCode: allocVersionCode,
           classIds: specificClassIds,
           academicYearId: academicYearId || undefined,
           semester: 1,
@@ -378,6 +390,9 @@ export default function SpecialSubjectsAssignmentsPage() {
           subjectId: allocSubjectId,
           teacherId: modalMode === "SPECIFIC_TEACHER" ? allocTeacherId : undefined,
           classIds: selectedClassIds,
+          grade: allocGrade,
+          educationSystem: allocEducationSystem,
+          versionCode: allocVersionCode,
           academicYearId: academicYearId || undefined,
           semester: 1,
           sendNotificationEmail
@@ -529,6 +544,40 @@ export default function SpecialSubjectsAssignmentsPage() {
     }
   };
 
+  // Special subject grade scoping helpers
+  const currentSelectedSubject = useMemo(() => {
+    return availableSubjects.find(s => s.id === selectedSubjectId);
+  }, [availableSubjects, selectedSubjectId]);
+
+  const mainAllowedGrades = useMemo(() => {
+    if (!currentSelectedSubject || selectedSubjectId === "ALL") {
+      return ["1", "2", "3", "4", "5", "6", "7", "8", "9", "10", "11", "12"];
+    }
+    return getSpecialSubjectGrades(currentSelectedSubject.code);
+  }, [currentSelectedSubject, selectedSubjectId]);
+
+  // If grade filter is set to a grade that is not valid for the selected subject, reset to ALL
+  useEffect(() => {
+    if (selectedGrade !== "ALL" && !mainAllowedGrades.includes(selectedGrade)) {
+      setSelectedGrade("ALL");
+    }
+  }, [mainAllowedGrades, selectedGrade]);
+
+  const allocSubject = useMemo(() => {
+    return (subjects.length > 0 ? subjects : availableSubjects).find(s => s.id === allocSubjectId);
+  }, [subjects, availableSubjects, allocSubjectId]);
+
+  const allocAllowedGrades = useMemo(() => {
+    if (!allocSubject) return ["1", "2", "3", "4", "5", "6", "7", "8", "9", "10", "11", "12"];
+    return getSpecialSubjectGrades(allocSubject.code);
+  }, [allocSubject]);
+
+  useEffect(() => {
+    if (allocGrade !== "ALL" && !allocAllowedGrades.includes(allocGrade)) {
+      setAllocGrade("ALL");
+    }
+  }, [allocAllowedGrades, allocGrade]);
+
   // Filter teachers inside modal based on selected department
   const modalFilteredTeachers = useMemo(() => {
     if (allocDepartmentId === "ALL") return teachers;
@@ -541,11 +590,20 @@ export default function SpecialSubjectsAssignmentsPage() {
     return teachers.filter(t => t.departmentId === editDepartmentId);
   }, [teachers, editDepartmentId]);
 
-  // Filter classes inside modal based on campus
+  // Filter classes inside modal strictly based on campus, subject grade scope, and grade selector
   const modalFilteredClasses = useMemo(() => {
-    if (allocCampusId === "ALL") return classes;
-    return classes.filter(c => c.campusId === allocCampusId);
-  }, [classes, allocCampusId]);
+    return classes.filter(c => {
+      if (allocCampusId !== "ALL" && c.campusId !== allocCampusId) return false;
+      const cGrade = String(c.grade || "");
+      if (!allocAllowedGrades.includes(cGrade)) return false;
+      if (allocGrade !== "ALL" && cGrade !== allocGrade) return false;
+      if (allocSubject?.code === "FIN_EDU" && cGrade === "1") {
+        const cSys = String(c.educationSystem || "").toUpperCase();
+        if (cSys !== "S" && cSys !== "HNS") return false;
+      }
+      return true;
+    });
+  }, [classes, allocCampusId, allocGrade, allocAllowedGrades, allocSubject]);
 
   return (
     <div className="p-3 md:p-4 w-full max-w-[1600px] mx-auto space-y-3.5">
@@ -624,6 +682,15 @@ export default function SpecialSubjectsAssignmentsPage() {
             </select>
           </div>
 
+          {currentSelectedSubject?.code && (
+            <div className="hidden xl:block">
+              <label className="block text-[11px] font-semibold text-slate-500 uppercase tracking-wider mb-1">Phạm vi khối</label>
+              <span className="inline-block text-xs font-bold text-teal-900 bg-teal-100/70 border border-teal-300/80 rounded-lg px-2.5 py-1.5 tabular-nums">
+                {SPECIAL_SUBJECT_SCOPE_LABELS[currentSelectedSubject.code] || `Khối ${mainAllowedGrades.join(", ")}`}
+              </span>
+            </div>
+          )}
+
           <div>
             <label className="block text-[11px] font-semibold text-slate-500 uppercase tracking-wider mb-1">Tổ chuyên môn</label>
             <select
@@ -658,8 +725,8 @@ export default function SpecialSubjectsAssignmentsPage() {
               onChange={(e) => setSelectedGrade(e.target.value)}
               className="text-xs font-medium border border-slate-200 rounded-lg px-3 py-1.5 bg-slate-50 focus:bg-white focus:outline-none focus:ring-2 focus:ring-teal-500 cursor-pointer"
             >
-              <option value="ALL">Tất cả khối</option>
-              {["1", "2", "3", "4", "5", "6", "7", "8", "9", "10", "11", "12"].map(g => (
+              <option value="ALL">Tất cả khối {selectedSubjectId !== "ALL" ? `(${mainAllowedGrades.length} khối)` : ""}</option>
+              {mainAllowedGrades.map(g => (
                 <option key={g} value={g}>Khối {g}</option>
               ))}
             </select>
@@ -1104,7 +1171,14 @@ export default function SpecialSubjectsAssignmentsPage() {
                 <div className="space-y-3">
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                     <div>
-                      <label className="block font-semibold text-slate-700 mb-1">Môn học đặc thù *</label>
+                      <div className="flex items-center justify-between mb-1">
+                        <label className="block font-semibold text-slate-700">Môn học đặc thù *</label>
+                        {allocSubject?.code && (
+                          <span className="text-[10px] font-bold text-teal-800 bg-teal-50 border border-teal-200 px-2 py-0.5 rounded-full">
+                            {SPECIAL_SUBJECT_SCOPE_LABELS[allocSubject.code] || `Khối ${allocAllowedGrades.join(", ")}`}
+                          </span>
+                        )}
+                      </div>
                       <select
                         value={allocSubjectId}
                         onChange={(e) => setAllocSubjectId(e.target.value)}
@@ -1112,7 +1186,9 @@ export default function SpecialSubjectsAssignmentsPage() {
                         required
                       >
                         {subjects.map(s => (
-                          <option key={s.id} value={s.id}>{s.name} ({s.code})</option>
+                          <option key={s.id} value={s.id}>
+                            {s.name} ({s.code}) - {SPECIAL_SUBJECT_SCOPE_LABELS[s.code] || `Khối ${getSpecialSubjectGrades(s.code).join(", ")}`}
+                          </option>
                         ))}
                       </select>
                     </div>
@@ -1196,12 +1272,22 @@ export default function SpecialSubjectsAssignmentsPage() {
                           <option key={c.code} value={c.code}>{c.name}</option>
                         ))}
                       </select>
+                      <select
+                        value={allocGrade}
+                        onChange={(e) => setAllocGrade(e.target.value)}
+                        className="border border-slate-200 rounded-lg px-2 py-0.5 text-[11px] bg-slate-50 cursor-pointer"
+                      >
+                        <option value="ALL">Tất cả khối ({allocAllowedGrades.length} khối)</option>
+                        {allocAllowedGrades.map(g => (
+                          <option key={g} value={g}>Khối {g}</option>
+                        ))}
+                      </select>
                       <button
                         type="button"
                         onClick={() => handleSelectAllFiltered(modalFilteredClasses)}
                         className="text-[11px] font-bold text-teal-700 hover:underline cursor-pointer"
                       >
-                        Chọn tất cả
+                        Chọn tất cả ({modalFilteredClasses.length})
                       </button>
                     </div>
                   </div>

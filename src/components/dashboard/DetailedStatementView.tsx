@@ -252,6 +252,8 @@ export function DetailedStatementView({
     observedValidCount,
     taughtSurpriseCount,
     observedSurpriseCount,
+    taughtAssignedCount,
+    observedAssignedCount,
     taughtPhoThong,
     taughtMamNon,
     taughtGVNN,
@@ -267,6 +269,8 @@ export function DetailedStatementView({
     let oValid = 0;
     let tSurprise = 0;
     let oSurprise = 0;
+    let tAssigned = 0;
+    let oAssigned = 0;
 
     let tPT = 0;
     let tMN = 0;
@@ -286,18 +290,20 @@ export function DetailedStatementView({
       const cat = getSlotCategory(slot);
       const catLabel = cat === "PHO_THONG" ? "Khối Phổ thông" : cat === "MAM_NON" ? "Khối Mầm non" : "GV Nước ngoài";
       const increment = slot.isDoublePeriod ? 2 : 1;
-      const isSurprise = slot.requestOrigin === "PRESCHOOL_SURPRISE" || (slot.description || "").toLowerCase().includes("đột xuất");
+      const isSurprise = slot.requestOrigin === "PRESCHOOL_SURPRISE" || slot.requestOrigin === "SURPRISE" || (slot.description || "").toLowerCase().includes("đột xuất");
+      const isAssigned = slot.requestOrigin === "ASSIGNED" || (slot.description || "").toLowerCase().includes("chỉ định") || (slot.topic || "").toLowerCase().includes("chỉ định");
       const slotCampus = slot.campusName || slot.teacher?.campus?.campusName || homeCampusName;
 
       // TEACHER IS HOST (DẠY)
       if (slot.teacherId === selectedTeacher?.id) {
-        const approvedRegs = (slot.registrations || []).filter((r: any) => r.isApproved || isSurprise);
+        const approvedRegs = (slot.registrations || []).filter((r: any) => r.isApproved || isSurprise || isAssigned);
         const completedEvaluations = approvedRegs.filter((r: any) => r.evaluation && r.evaluation.reEvaluationStatus !== "DRAFT");
         const isValid = completedEvaluations.length > 0;
 
         if (isValid) {
           tValid += increment;
           if (isSurprise) tSurprise += increment;
+          if (isAssigned) tAssigned += increment;
           if (cat === "PHO_THONG") tPT += increment;
           else if (cat === "MAM_NON") tMN += increment;
           else tESL += increment;
@@ -320,6 +326,7 @@ export function DetailedStatementView({
           role: "DẠY",
           periodCount: increment,
           isSurprise,
+          isAssigned,
           subject: slot.subjectName,
           className: slot.className || `${slot.grade || ""}`,
           topic: slot.topic,
@@ -342,11 +349,12 @@ export function DetailedStatementView({
       const myReg = (slot.registrations || []).find((r: any) => r.teacherId === selectedTeacher?.id);
       if (myReg) {
         const hasEval = myReg.evaluation && myReg.evaluation.reEvaluationStatus !== "DRAFT";
-        const isValid = myReg.isApproved && hasEval;
+        const isValid = (myReg.isApproved || isSurprise || isAssigned) && hasEval;
 
         if (isValid) {
           oValid += increment;
           if (isSurprise) oSurprise += increment;
+          if (isAssigned) oAssigned += increment;
           if (cat === "PHO_THONG") oPT += increment;
           else if (cat === "MAM_NON") oMN += increment;
           else oESL += increment;
@@ -368,6 +376,7 @@ export function DetailedStatementView({
           role: "DỰ",
           periodCount: increment,
           isSurprise,
+          isAssigned,
           subject: slot.subjectName,
           className: slot.className || `${slot.grade || ""}`,
           topic: slot.topic,
@@ -394,6 +403,8 @@ export function DetailedStatementView({
       observedValidCount: oValid,
       taughtSurpriseCount: tSurprise,
       observedSurpriseCount: oSurprise,
+      taughtAssignedCount: tAssigned,
+      observedAssignedCount: oAssigned,
       taughtPhoThong: tPT,
       taughtMamNon: tMN,
       taughtGVNN: tESL,
@@ -663,6 +674,11 @@ export function DetailedStatementView({
                       +{taughtSurpriseCount} ĐX
                     </span>
                   )}
+                  {taughtAssignedCount > 0 && (
+                    <span className="text-[10px] text-teal-800 font-bold bg-teal-50 px-1 rounded border border-teal-200">
+                      +{taughtAssignedCount} CĐ
+                    </span>
+                  )}
                 </div>
               </div>
 
@@ -677,6 +693,11 @@ export function DetailedStatementView({
                   {observedSurpriseCount > 0 && (
                     <span className="text-[10px] text-amber-700 font-bold bg-amber-50 px-1 rounded border border-amber-200">
                       +{observedSurpriseCount} ĐX
+                    </span>
+                  )}
+                  {observedAssignedCount > 0 && (
+                    <span className="text-[10px] text-teal-800 font-bold bg-teal-50 px-1 rounded border border-teal-200">
+                      +{observedAssignedCount} CĐ
                     </span>
                   )}
                 </div>
@@ -803,7 +824,7 @@ export function DetailedStatementView({
                                 ? "bg-blue-50 text-blue-700 border-blue-200"
                                 : r.category === "MAM_NON"
                                 ? "bg-pink-50 text-pink-700 border-pink-200"
-                                : "bg-purple-50 text-purple-700 border-purple-200"
+                                : "bg-teal-50 text-teal-800 border-teal-200"
                             }`}
                           >
                             {r.category === "PHO_THONG" ? "Phổ thông" : r.category === "MAM_NON" ? "Mầm non" : "GVNN"}
@@ -829,11 +850,18 @@ export function DetailedStatementView({
                         </td>
                         <td className="py-2.5 px-3 text-slate-800">
                           <div className="font-semibold text-slate-900">{r.topic}</div>
-                          {r.isSurprise && (
-                            <span className="inline-block mt-0.5 text-[9px] text-amber-700 font-bold bg-amber-50 px-1 rounded border border-amber-200">
-                              Đột xuất
-                            </span>
-                          )}
+                          <div className="flex items-center gap-1 mt-0.5 flex-wrap">
+                            {r.isSurprise && (
+                              <span className="inline-block text-[9px] text-amber-700 font-bold bg-amber-50 px-1 rounded border border-amber-200">
+                                Đột xuất
+                              </span>
+                            )}
+                            {r.isAssigned && (
+                              <span className="inline-block text-[9px] text-teal-800 font-bold bg-teal-50 px-1 rounded border border-teal-200">
+                                Chỉ định
+                              </span>
+                            )}
+                          </div>
                         </td>
                         <td className="py-2.5 px-3 text-xs text-slate-600">
                           {r.person}
@@ -929,7 +957,7 @@ export function DetailedStatementView({
                                   <div className="p-2.5 rounded-lg bg-slate-50 border border-slate-200 space-y-2">
                                     <div>
                                       <span className="font-bold text-slate-900 flex items-center gap-1.5 mb-1 text-[11.5px]">
-                                        <BookOpen className="w-3.5 h-3.5 text-indigo-600" />
+                                        <BookOpen className="w-3.5 h-3.5 text-teal-800" />
                                         <span>Nhận xét chung của TCM</span>
                                       </span>
                                       <p className="text-slate-700 text-[11.5px] leading-relaxed">

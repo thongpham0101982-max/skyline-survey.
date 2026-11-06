@@ -723,7 +723,7 @@ export function PhanCongK12Client({
     if (s.includes("HNS")) return "bg-amber-50 text-amber-700 border-amber-200"
     if (s.includes("HNG")) return "bg-teal-50 text-[#00736E] border-teal-200"
     if (s.includes("SB")) return "bg-emerald-50 text-emerald-700 border-emerald-200"
-    if (s.includes("MNS") || s.includes("MNG")) return "bg-purple-50 text-purple-700 border-purple-200"
+    if (s.includes("MNS") || s.includes("MNG")) return "bg-teal-50 text-teal-800 border-teal-200"
     return "bg-slate-100 text-slate-700 border-slate-200"
   }
 
@@ -1397,7 +1397,7 @@ export function PhanCongK12Client({
                                           </span>
                                         ))}
                                         {insight.combinationSummary && (
-                                          <span className="inline-flex items-center px-2 py-0.5 rounded-md bg-indigo-50 border border-indigo-200 text-[10px] font-bold text-indigo-700">
+                                          <span className="inline-flex items-center px-2 py-0.5 rounded-md bg-teal-50 border border-teal-200 text-[10px] font-bold text-teal-800">
                                             {insight.combinationSummary}
                                           </span>
                                         )}

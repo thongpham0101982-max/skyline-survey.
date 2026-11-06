@@ -1963,7 +1963,7 @@ export function ImportKQHTClient({
                     <button 
                       type="button" 
                       onClick={() => handleToggleAllSubjects(true)}
-                      className="text-indigo-600 font-semibold hover:underline"
+                      className="text-teal-800 font-semibold hover:underline"
                     >
                       Tất cả
                     </button>
@@ -1988,7 +1988,7 @@ export function ImportKQHTClient({
                         className={"flex items-start gap-2.5 p-2 rounded-xl border text-xs font-semibold transition-all " + 
                           (!isMapped 
                             ? "border-slate-100 bg-slate-50/50 text-slate-400 cursor-not-allowed" 
-                            : (isChecked ? "border-indigo-500 bg-indigo-50/20 text-indigo-700 cursor-pointer" : "border-slate-200 text-slate-500 hover:bg-slate-50 cursor-pointer")
+                            : (isChecked ? "border-teal-200 bg-teal-50/20 text-teal-800 cursor-pointer" : "border-slate-200 text-slate-500 hover:bg-slate-50 cursor-pointer")
                           )}
                       >
                         <input 
@@ -2020,7 +2020,7 @@ export function ImportKQHTClient({
             {excelSubjects.length > 0 && (
               <div ref={section2Ref} className="bg-white border border-slate-200/80 p-6 rounded-2xl shadow-sm scroll-mt-6">
                 <h3 className="text-sm font-bold text-slate-800 mb-4 flex items-center gap-2">
-                  <BookOpen className="w-4 h-4 text-indigo-500" />
+                  <BookOpen className="w-4 h-4 text-teal-700" />
                   2. Ánh xạ Môn học từ Excel vào Database
                 </h3>
 
@@ -2041,7 +2041,7 @@ export function ImportKQHTClient({
                             <select
                               value={item.mappedSubjectCode || ""}
                               onChange={(e) => handleMapSubject(item.excelHeader, e.target.value)}
-                              className="w-full bg-slate-50 border border-slate-200 rounded-lg px-2 py-1 text-xs outline-none focus:border-indigo-500 font-medium"
+                              className="w-full bg-slate-50 border border-slate-200 rounded-lg px-2 py-1 text-xs outline-none focus:border-teal-200 font-medium"
                             >
                               <option value="">-- Chưa ánh xạ (Bỏ qua môn này) --</option>
                               {dbSubjects.map(sub => (
@@ -2085,7 +2085,7 @@ export function ImportKQHTClient({
                           <strong>📊 DEBUG COLUMNS:</strong> CodeCol: <span className="font-bold text-teal-600">{debugInfo.studentCodeCol}</span> | NameCol: <span className="font-bold text-teal-600">{debugInfo.studentNameCol}</span> | DobCol: <span className="font-bold text-teal-600">{debugInfo.dobCol}</span> | AcadCol: <span className="font-bold text-amber-600">{debugInfo.academicRatingCol}</span> | CondCol: <span className="font-bold text-amber-600">{debugInfo.conductRatingCol}</span> | StartCol: <span className="font-bold text-teal-600">{debugInfo.startCol}</span> | FirstRow: <span className="font-bold text-teal-600">{debugInfo.firstStudentRowIndex}</span> | SubjectsCount: <span className="font-bold text-teal-600">{debugInfo.subjectsCount}</span>
                         </div>
                         <div>
-                          <strong>🏆 FIRST STUDENT RATINGS:</strong> Academic: <span className="font-bold text-indigo-600">{JSON.stringify(activeSheetData.students[0]?.academicRating)}</span> | Conduct: <span className="font-bold text-indigo-600">{JSON.stringify(activeSheetData.students[0]?.conductRating)}</span> | Notes: <span className="font-bold text-indigo-600">{JSON.stringify(activeSheetData.students[0]?.notes)}</span>
+                          <strong>🏆 FIRST STUDENT RATINGS:</strong> Academic: <span className="font-bold text-teal-800">{JSON.stringify(activeSheetData.students[0]?.academicRating)}</span> | Conduct: <span className="font-bold text-teal-800">{JSON.stringify(activeSheetData.students[0]?.conductRating)}</span> | Notes: <span className="font-bold text-teal-800">{JSON.stringify(activeSheetData.students[0]?.notes)}</span>
                         </div>
                         <div className="overflow-x-auto whitespace-nowrap bg-white border border-slate-100 p-1.5 rounded-lg text-slate-500">
                           <strong>👤 FIRST STUDENT CELLS (0-9):</strong> {JSON.stringify(debugInfo.firstRowCells)}
@@ -2141,9 +2141,9 @@ export function ImportKQHTClient({
 
                         {/* Dynamic Excel Subject Columns (Only active mapped & selected subjects) */}
                         {activeExcelSubjects.map(item => (
-                          <th key={item.excelHeader} className="p-3 text-center bg-indigo-50/40 text-indigo-900 border-x border-slate-100 font-bold">
+                          <th key={item.excelHeader} className="p-3 text-center bg-teal-50/40 text-teal-800 border-x border-slate-100 font-bold">
                             {item.excelHeader}
-                            <div className="text-[10px] font-normal text-indigo-600">({item.mappedSubjectCode})</div>
+                            <div className="text-[10px] font-normal text-teal-800">({item.mappedSubjectCode})</div>
                           </th>
                         ))}
 
@@ -2163,10 +2163,10 @@ export function ImportKQHTClient({
                               <th className="p-3 text-center bg-teal-50/50 text-teal-900">Buổi nghỉ (P/K)</th>
                             )}
                             {importReward && (
-                              <th className="p-3 text-center bg-purple-50/50 text-purple-900">Danh hiệu</th>
+                              <th className="p-3 text-center bg-teal-50/50 text-teal-800">Danh hiệu</th>
                             )}
                             {importPromotion && semester === "CN" && (
-                              <th className="p-3 text-center bg-purple-50/50 text-purple-900">Lên lớp</th>
+                              <th className="p-3 text-center bg-teal-50/50 text-teal-800">Lên lớp</th>
                             )}
                             <th className="p-3 text-center">Ghi chú</th>
                           </>
@@ -2176,7 +2176,7 @@ export function ImportKQHTClient({
                               <th className="p-3 text-center bg-amber-50/50 text-amber-900">Đánh giá KQGD</th>
                             )}
                             {importReward && (
-                              <th className="p-3 text-center bg-purple-50/50 text-purple-900">Khen thưởng</th>
+                              <th className="p-3 text-center bg-teal-50/50 text-teal-800">Khen thưởng</th>
                             )}
                             <th className="p-3 text-center">Ghi chú</th>
                           </>
@@ -2235,7 +2235,7 @@ export function ImportKQHTClient({
                                   <td className="p-3 text-center text-slate-800 font-bold bg-amber-50/10">{s.conductRating || "-"}</td>
                                 )}
                                 {importConductRating && semester === "CN" && (
-                                  <td className="p-3 text-center text-indigo-700 font-bold bg-amber-50/10">{s.rewardUnexpected || "-"}</td>
+                                  <td className="p-3 text-center text-teal-800 font-bold bg-amber-50/10">{s.rewardUnexpected || "-"}</td>
                                 )}
                                 {importAbsences && (
                                   <td className="p-3 text-center text-slate-600 font-semibold whitespace-nowrap bg-teal-50/10">
@@ -2243,10 +2243,10 @@ export function ImportKQHTClient({
                                   </td>
                                 )}
                                 {importReward && (
-                                  <td className="p-3 text-center text-purple-700 font-bold bg-purple-50/10">{s.reward || "-"}</td>
+                                  <td className="p-3 text-center text-teal-800 font-bold bg-teal-50/10">{s.reward || "-"}</td>
                                 )}
                                 {importPromotion && semester === "CN" && (
-                                  <td className="p-3 text-center bg-purple-50/10">
+                                  <td className="p-3 text-center bg-teal-50/10">
                                     {s.promoted ? (
                                       <span className="text-emerald-700 font-bold bg-emerald-50 px-2 py-0.5 rounded-full border border-emerald-200">Được lên lớp</span>
                                     ) : (
@@ -2262,7 +2262,7 @@ export function ImportKQHTClient({
                                   <td className="p-3 text-center text-slate-800 font-bold bg-amber-50/10">{s.academicRating || "-"}</td>
                                 )}
                                 {importReward && (
-                                  <td className="p-3 text-center text-purple-700 font-bold bg-purple-50/10">{s.reward || "-"}</td>
+                                  <td className="p-3 text-center text-teal-800 font-bold bg-teal-50/10">{s.reward || "-"}</td>
                                 )}
                                 <td className="p-3 text-center text-slate-500 max-w-xs truncate" title={s.notes}>{s.notes || "-"}</td>
                               </>
@@ -2393,7 +2393,7 @@ export function ImportKQHTClient({
               <button
                 type="button"
                 onClick={() => router.push("/admin/ktdbcl/students")}
-                className="bg-indigo-600 hover:bg-indigo-700 text-white font-bold text-xs py-2.5 px-4 rounded-xl flex items-center gap-1.5 shadow-sm transition-all cursor-pointer"
+                className="bg-[#003B3A] hover:bg-[#003B3A] text-white font-bold text-xs py-2.5 px-4 rounded-xl flex items-center gap-1.5 shadow-sm transition-all cursor-pointer"
               >
                 <Users className="w-4 h-4" />
                 Xem Danh sách Học sinh
@@ -2433,7 +2433,7 @@ export function ImportKQHTClient({
             </div>
             <div className="bg-slate-50 border border-slate-200/60 p-4 rounded-xl">
               <label className="block text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-1">Điểm môn học đã lưu</label>
-              <div className="text-2xl font-black text-indigo-650">{importResult.scoresCount} điểm số</div>
+              <div className="text-2xl font-black text-teal-800">{importResult.scoresCount} điểm số</div>
             </div>
             <div className="bg-slate-50 border border-slate-200/60 p-4 rounded-xl">
               <label className="block text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-1">Đánh giá tổng hợp đã lưu</label>

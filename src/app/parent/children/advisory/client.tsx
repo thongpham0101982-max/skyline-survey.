@@ -28,8 +28,6 @@ import TriPartyWorkflowBanner from "@/components/advisory/TriPartyWorkflowBanner
 import ParentExchangeWidget from "@/components/advisory/ParentExchangeWidget"
 import ParentProgressTrackingTable from "@/components/advisory/ParentProgressTrackingTable"
 import ParentGvbmAdvisorySection from "@/components/advisory/ParentGvbmAdvisorySection"
-import HollandAdvisoryOverviewCard from "@/components/advisory/HollandAdvisoryOverviewCard"
-import SklPsychCatalogHub from "@/components/advisory/SklPsychCatalogHub"
 import { AcademicComparisonWidget } from "@/components/advisory/AcademicComparisonWidget"
 
 export default function ParentAdvisoryClient({
@@ -51,16 +49,14 @@ export default function ParentAdvisoryClient({
   const [termEvals, setTermEvals] = useState<any[]>([])
 
   const [activeTab, setActiveTab] = useState<
-    "goals" | "tracking" | "evaluations" | "consultations" | "gvbm_advisory" | "skl_psych"
+    "goals" | "tracking" | "evaluations" | "consultations" | "gvbm_advisory"
   >("goals")
 
   useEffect(() => {
     if (typeof window !== "undefined") {
       const params = new URLSearchParams(window.location.search)
       const tabParam = (params.get("tab") || "").toLowerCase()
-      if (tabParam === "skl_psych" || tabParam === "holland" || tabParam === "psych") {
-        setActiveTab("skl_psych")
-      } else if (tabParam === "tracking") {
+      if (tabParam === "tracking") {
         setActiveTab("tracking")
       } else if (tabParam === "evaluations") {
         setActiveTab("evaluations")
@@ -265,9 +261,9 @@ export default function ParentAdvisoryClient({
         : idx === 2
         ? {
             border: "border-slate-200/80",
-            badgeBg: "bg-purple-50 border-purple-200/70",
-            badgeText: "text-purple-700",
-            numberBadge: "bg-purple-600 text-white"
+            badgeBg: "bg-teal-50 border-teal-200/70",
+            badgeText: "text-teal-800",
+            numberBadge: "bg-[#003B3A] text-white"
           }
         : {
             border: "border-slate-200/80",
@@ -485,60 +481,66 @@ export default function ParentAdvisoryClient({
             }}
           />
 
-          {/* 3B. BÁO CÁO KHẢO SÁT HOLLAND (SKL_PSYCH v2.6.1) ĐÃ CÔNG BỐ CHO PHỤ HUYNH */}
-          {selectedStudentId && activeTab !== "skl_psych" && (
-            <div className="space-y-2">
-              <HollandAdvisoryOverviewCard
-                studentId={selectedStudentId}
-                studentName={student.studentName || selectedStudent.studentName || "Con"}
-                academicYearId={academicYearId}
-                mode="PARENT"
-              />
-              <div className="flex justify-end">
+          {/* 3B. THANH THAO TÁC PHỐI HỢP GIA ĐÌNH ⇄ NHÀ TRƯỜNG (MỤC X) */}
+          {selectedStudentId && (
+            <div className="flex flex-wrap items-center justify-between gap-2 bg-white p-3 rounded-xl border border-slate-200 shadow-2xs">
+              <div className="flex flex-wrap items-center gap-2">
+                <span className="text-xs font-bold text-[#003B3A] mr-1">Phối hợp Gia đình ⇄ Nhà trường:</span>
                 <button
                   type="button"
-                  onClick={() => setActiveTab("skl_psych")}
-                  className="px-4 py-2 rounded-xl bg-[#5B2D8B] hover:bg-[#4A2273] text-white text-xs font-black flex items-center gap-2 shadow-xs transition-all cursor-pointer"
+                  onClick={() => setActiveTab("consultations")}
+                  className="px-3 py-1.5 rounded-lg bg-[#003B3A] hover:bg-[#00524F] text-white text-xs font-bold inline-flex items-center gap-1.5 cursor-pointer"
                 >
-                  <Sparkles className="w-3.5 h-3.5 text-amber-300" />
-                  <span>Mở Trọn Bộ 5 Công Cụ Hướng Nghiệp • SKL_PSYCH (DISC • EPI • HOLLAND • EQ • MBTI) →</span>
+                  <MessageSquareText className="w-3.5 h-3.5 text-teal-300" />
+                  <span>Gửi ý kiến</span>
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setActiveTab("consultations")}
+                  className="px-3 py-1.5 rounded-lg border border-teal-200 bg-teal-50 hover:bg-teal-100 text-[#008B85] text-xs font-bold inline-flex items-center gap-1.5 cursor-pointer"
+                >
+                  <CheckCircle2 className="w-3.5 h-3.5" />
+                  <span>Cập nhật quan sát tại nhà</span>
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setActiveTab("consultations")}
+                  className="px-3 py-1.5 rounded-lg border border-slate-200 bg-slate-50 hover:bg-slate-100 text-slate-700 text-xs font-bold inline-flex items-center gap-1.5 cursor-pointer"
+                >
+                  <Users className="w-3.5 h-3.5 text-[#008B85]" />
+                  <span>Đề nghị trao đổi</span>
                 </button>
               </div>
             </div>
           )}
 
-          {/* 4. SLEEK SEGMENTED TAB BAR */}
+          {/* 4. SLEEK SEGMENTED TAB BAR (MỤC X - 5 TAB CHUẨN PHHS) */}
           <div className="bg-white rounded-xl p-1 border border-slate-200/80 shadow-2xs flex flex-wrap items-center gap-1">
             {[
               {
                 id: "goals",
-                label: "1. Phiếu Mục Tiêu & Tiến Độ Tổng Hợp",
-                icon: FileText
+                label: "1. Tổng quan & Mục tiêu",
+                icon: Compass
               },
               {
                 id: "tracking",
-                label: `2. Bảng Tiến Độ 1:1 & Check-in (${trackingLogs.length + consultations.length})`,
+                label: `2. Mục tiêu & Kế hoạch (${allGoals.length})`,
                 icon: Target
               },
               {
-                id: "evaluations",
-                label: "3. Đánh Giá Định Kỳ (Rubric)",
-                icon: Award
-              },
-              {
                 id: "consultations",
-                label: `4. Phối Hợp Gia Đình ⇄ CVHT (${consultations.length})`,
+                label: `3. Con tự đánh giá & Phản hồi (${consultations.length})`,
                 icon: MessageSquareText
               },
               {
                 id: "gvbm_advisory",
-                label: "5. Tư Vấn & Đồng Hành Học Tập (GVBM)",
+                label: "4. Giáo viên đồng hành",
                 icon: BookOpen
               },
               {
-                id: "skl_psych",
-                label: "6. Hướng Nghiệp • SKL_PSYCH (5 Bộ Công Cụ)",
-                icon: Sparkles
+                id: "evaluations",
+                label: "5. Kết quả tiến bộ",
+                icon: Award
               }
             ].map(tab => {
               const Icon = tab.icon
@@ -1251,19 +1253,6 @@ export default function ParentAdvisoryClient({
                 homeroomTeacherName={homeroomTeacherName}
                 primaryColor={campusTheme.primaryColor}
                 darkColor={campusTheme.darkColor}
-              />
-            </div>
-          )}
-
-          {/* ========================================================================= */}
-          {/* TAB 6: HƯỚNG NGHIỆP • SKL_PSYCH (5 BỘ CÔNG CỤ TÂM LÝ & HƯỚNG NGHIỆP) */}
-          {/* ========================================================================= */}
-          {activeTab === "skl_psych" && selectedStudentId && (
-            <div className="space-y-4">
-              <SklPsychCatalogHub
-                studentId={selectedStudentId}
-                academicYearId={academicYearId}
-                viewerRole="PARENT"
               />
             </div>
           )}

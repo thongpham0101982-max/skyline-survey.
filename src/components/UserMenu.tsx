@@ -2,7 +2,7 @@
 "use client";
 
 import { useState } from "react";
-import { LogOut, KeyRound, ChevronDown, CheckCircle2, GraduationCap, LayoutDashboard } from "lucide-react";
+import { LogOut, KeyRound, ChevronDown, CheckCircle2, GraduationCap, LayoutDashboard, PenTool } from "lucide-react";
 import { signOut } from "next-auth/react";
 import { ChangePasswordModal } from "./ChangePasswordModal";
 import Link from "next/link";
@@ -54,14 +54,24 @@ export function UserMenu({ session, permissionModules }: UserMenuProps) {
                     const isTeach = ["TEACHER", "GV_MN", "GVNN", "GV", "GIAO_VIEN"].includes(userRole) || userRole === "ADMIN" || userRole === "SUPER_ADMIN";
                     if (!isTeach) return null;
                     return (
-                      <Link
-                        href="/teacher"
-                        onClick={() => setIsOpen(false)}
-                        className="w-full flex items-center gap-2 px-3 py-2 rounded-xl text-xs font-medium text-[#1E8B87] bg-teal-50/70 hover:bg-teal-100/90 transition-all text-left mb-1"
-                      >
-                        <GraduationCap className="w-4 h-4 text-[#1E8B87] shrink-0" />
-                        <span>Giao diện Giáo viên</span>
-                      </Link>
+                      <>
+                        <Link
+                          href="/teacher"
+                          onClick={() => setIsOpen(false)}
+                          className="w-full flex items-center gap-2 px-3 py-2 rounded-xl text-xs font-medium text-[#1E8B87] bg-teal-50/70 hover:bg-teal-100/90 transition-all text-left mb-1"
+                        >
+                          <GraduationCap className="w-4 h-4 text-[#1E8B87] shrink-0" />
+                          <span>Giao diện Giáo viên</span>
+                        </Link>
+                        <Link
+                          href="/teacher/profile/chu-ky-so"
+                          onClick={() => setIsOpen(false)}
+                          className="w-full flex items-center gap-2 px-3 py-2 rounded-xl text-xs font-medium text-slate-700 hover:text-[#003B3A] hover:bg-slate-100/80 transition-all text-left mb-1"
+                        >
+                          <PenTool className="w-4 h-4 text-[#00A19A] shrink-0" />
+                          <span>Chữ ký số của tôi</span>
+                        </Link>
+                      </>
                     );
                   })()}
 

@@ -214,19 +214,54 @@ export function StudentOrientationModal({
   // GĐCS Directives & Actions State
   const [gdcsDecision, setGdcsDecision] = useState<"TIEP_NHAN_CHUAN" | "TIEP_NHAN_DONG_HANH" | "TAM_HOAN_DANH_GIA">("TIEP_NHAN_CHUAN")
   const [gdcsGeneralNote, setGdcsGeneralNote] = useState("")
-  const [gdcsDelegateTeacher, setGdcsDelegateTeacher] = useState(false)
-  const [gdcsDelegatedTeacherName, setGdcsDelegatedTeacherName] = useState("")
-  const [gdcsDelegatedTeacherId, setGdcsDelegatedTeacherId] = useState("")
-  const [gdcsDelegationNote, setGdcsDelegationNote] = useState("")
-  const [gdcsScheduleMeeting, setGdcsScheduleMeeting] = useState(false)
-  const [gdcsMeetingTime, setGdcsMeetingTime] = useState("")
-  const [gdcsMeetingLocation, setGdcsMeetingLocation] = useState("")
-  const [gdcsMeetingParticipants, setGdcsMeetingParticipants] = useState("")
-  const [gdcsMeetingAgenda, setGdcsMeetingAgenda] = useState("")
+
+  // 1. Gặp trực tiếp PHHS
   const [gdcsDirectParentMeeting, setGdcsDirectParentMeeting] = useState(false)
   const [gdcsParentMeetingTime, setGdcsParentMeetingTime] = useState("")
-  const [gdcsParentMeetingLocation, setGdcsParentMeetingLocation] = useState("")
+  const [gdcsParentMeetingLocation, setGdcsParentMeetingLocation] = useState("Phòng Giám đốc Cơ sở")
+  const [gdcsParentMeetingRepresentative, setGdcsParentMeetingRepresentative] = useState("")
+  const [gdcsParentMeetingPhone, setGdcsParentMeetingPhone] = useState("")
   const [gdcsParentMeetingContent, setGdcsParentMeetingContent] = useState("")
+  const [gdcsParentMeetingOutcome, setGdcsParentMeetingOutcome] = useState("SCHEDULED")
+  const [gdcsParentMeetingGdcsNote, setGdcsParentMeetingGdcsNote] = useState("")
+
+  // 2. Hẹn lịch làm việc / Hội chẩn chuyên môn
+  const [gdcsScheduleMeeting, setGdcsScheduleMeeting] = useState(false)
+  const [gdcsMeetingTime, setGdcsMeetingTime] = useState("")
+  const [gdcsMeetingLocation, setGdcsMeetingLocation] = useState("Phòng Hội đồng Chuyên môn Cơ sở")
+  const [gdcsMeetingParticipants, setGdcsMeetingParticipants] = useState("GĐCS, Ban KT&ĐBCL, Ban Tư vấn Tuyển sinh, Giáo vụ cơ sở, GV Tâm lý")
+  const [gdcsMeetingAgenda, setGdcsMeetingAgenda] = useState("")
+  const [sendingMeetingEmail, setSendingMeetingEmail] = useState(false)
+  const [meetingEmailToast, setMeetingEmailToast] = useState("")
+
+  // 3. Ủy quyền Giáo viên
+  const [gdcsDelegateTeacher, setGdcsDelegateTeacher] = useState(false)
+  const [delegationTeacherTab, setDelegationTeacherTab] = useState<"SURVEY_ASSIGNED" | "DEPARTMENT">("SURVEY_ASSIGNED")
+  const [assignedSurveyTeachers, setAssignedSurveyTeachers] = useState<any[]>([])
+  const [selectedDelegationDeptCode, setSelectedDelegationDeptCode] = useState("")
+  const [delegationDeptTeachers, setDelegationDeptTeachers] = useState<any[]>([])
+  const [loadingDelegationDeptTeachers, setLoadingDelegationDeptTeachers] = useState(false)
+  const [gdcsDelegatedTeacherName, setGdcsDelegatedTeacherName] = useState("")
+  const [gdcsDelegatedTeacherId, setGdcsDelegatedTeacherId] = useState("")
+  const [gdcsDelegatedTeacherEmail, setGdcsDelegatedTeacherEmail] = useState("")
+  const [gdcsDelegationDuration, setGdcsDelegationDuration] = useState("4 tuần đầu năm học")
+  const [gdcsDelegationNote, setGdcsDelegationNote] = useState("")
+  const [sendingDelegationEmail, setSendingDelegationEmail] = useState(false)
+  const [delegationEmailToast, setDelegationEmailToast] = useState("")
+
+  // Kết quả trao đổi của GV được ủy quyền (Feedback)
+  const [delegationFeedback, setDelegationFeedback] = useState<any>(null)
+  const [isDelegationFeedbackModalOpen, setIsDelegationFeedbackModalOpen] = useState(false)
+  const [savingDelegationFeedback, setSavingDelegationFeedback] = useState(false)
+  const [delegationFeedbackToast, setDelegationFeedbackToast] = useState("")
+  const [fbFormDate, setFbFormDate] = useState(() => new Date().toISOString().slice(0, 16))
+  const [fbFormMeetingType, setFbFormMeetingType] = useState<"DIRECT" | "PHONE" | "ONLINE">("DIRECT")
+  const [fbFormParentRep, setFbFormParentRep] = useState("")
+  const [fbFormParentPhone, setFbFormParentPhone] = useState("")
+  const [fbFormAgreementContent, setFbFormAgreementContent] = useState("")
+  const [fbFormConsentLevel, setFbFormConsentLevel] = useState<"HIGH" | "SUPPORT_NEEDED" | "CONCERNED">("HIGH")
+  const [fbFormFollowUpPlan, setFbFormFollowUpPlan] = useState("")
+  const [fbFormAdditionalNote, setFbFormAdditionalNote] = useState("")
 
   // GV phụ trách định hướng được phân công tự động
   const [assignedOrientationTeachers, setAssignedOrientationTeachers] = useState<any[]>([])
@@ -328,6 +363,9 @@ export function StudentOrientationModal({
             const sDetail = rData?.student || record?.student || null
             if (rData?.assignedOrientationTeachers && isMounted) {
               setAssignedOrientationTeachers(rData.assignedOrientationTeachers)
+            }
+            if (rData?.assignedSurveyTeachers && isMounted) {
+              setAssignedSurveyTeachers(rData.assignedSurveyTeachers)
             }
             if (rData?.assignedOrientationTeacher?.teacherName) {
               autoAssignedTeacherName = rData.assignedOrientationTeacher.teacherName
@@ -518,25 +556,53 @@ export function StudentOrientationModal({
                 const parsed = JSON.parse(record.admissionConsultantNote)
                 if (parsed.gdcsDecision) setGdcsDecision(parsed.gdcsDecision)
                 if (parsed.gdcsGeneralNote !== undefined) setGdcsGeneralNote(parsed.gdcsGeneralNote)
-                if (parsed.delegateTeacher !== undefined) setGdcsDelegateTeacher(!!parsed.delegateTeacher)
-                if (parsed.delegatedTeacherName) setGdcsDelegatedTeacherName(parsed.delegatedTeacherName)
-                if (parsed.delegatedTeacherId) setGdcsDelegatedTeacherId(parsed.delegatedTeacherId)
-                if (parsed.delegationNote) setGdcsDelegationNote(parsed.delegationNote)
+                
+                // 1. Gặp trực tiếp PHHS
+                if (parsed.directParentMeeting !== undefined) setGdcsDirectParentMeeting(!!parsed.directParentMeeting)
+                if (parsed.parentMeetingTime) setGdcsParentMeetingTime(parsed.parentMeetingTime)
+                if (parsed.parentMeetingLocation) setGdcsParentMeetingLocation(parsed.parentMeetingLocation)
+                setGdcsParentMeetingRepresentative(parsed.parentMeetingRepresentative || record.parentRepresentativeName || "")
+                setGdcsParentMeetingPhone(parsed.parentMeetingPhone || record.parentPhone || student.parentPhone || "")
+                if (parsed.parentMeetingContent) setGdcsParentMeetingContent(parsed.parentMeetingContent)
+                if (parsed.parentMeetingOutcome) setGdcsParentMeetingOutcome(parsed.parentMeetingOutcome)
+                if (parsed.parentMeetingGdcsNote) setGdcsParentMeetingGdcsNote(parsed.parentMeetingGdcsNote)
+
+                // 2. Hẹn lịch làm việc / Hội chẩn
                 if (parsed.scheduleMeeting !== undefined) setGdcsScheduleMeeting(!!parsed.scheduleMeeting)
                 if (parsed.meetingTime) setGdcsMeetingTime(parsed.meetingTime)
                 if (parsed.meetingLocation) setGdcsMeetingLocation(parsed.meetingLocation)
                 if (parsed.meetingParticipants) setGdcsMeetingParticipants(parsed.meetingParticipants)
                 if (parsed.meetingAgenda) setGdcsMeetingAgenda(parsed.meetingAgenda)
-                if (parsed.directParentMeeting !== undefined) setGdcsDirectParentMeeting(!!parsed.directParentMeeting)
-                if (parsed.parentMeetingTime) setGdcsParentMeetingTime(parsed.parentMeetingTime)
-                if (parsed.parentMeetingLocation) setGdcsParentMeetingLocation(parsed.parentMeetingLocation)
-                if (parsed.parentMeetingContent) setGdcsParentMeetingContent(parsed.parentMeetingContent)
+
+                // 3. Ủy quyền Giáo viên
+                if (parsed.delegateTeacher !== undefined) setGdcsDelegateTeacher(!!parsed.delegateTeacher)
+                if (parsed.delegatedTeacherName) setGdcsDelegatedTeacherName(parsed.delegatedTeacherName)
+                if (parsed.delegatedTeacherId) setGdcsDelegatedTeacherId(parsed.delegatedTeacherId)
+                if (parsed.delegatedTeacherEmail) setGdcsDelegatedTeacherEmail(parsed.delegatedTeacherEmail)
+                if (parsed.delegationDuration) setGdcsDelegationDuration(parsed.delegationDuration)
+                if (parsed.delegationNote) setGdcsDelegationNote(parsed.delegationNote)
+                
+                // Feedback ủy quyền
+                if (parsed.delegationFeedback) {
+                  setDelegationFeedback(parsed.delegationFeedback)
+                  if (parsed.delegationFeedback.feedbackDate) setFbFormDate(parsed.delegationFeedback.feedbackDate.slice(0, 16))
+                  if (parsed.delegationFeedback.meetingType) setFbFormMeetingType(parsed.delegationFeedback.meetingType)
+                  if (parsed.delegationFeedback.parentRepresentative) setFbFormParentRep(parsed.delegationFeedback.parentRepresentative)
+                  if (parsed.delegationFeedback.parentPhone) setFbFormParentPhone(parsed.delegationFeedback.parentPhone)
+                  if (parsed.delegationFeedback.agreementContent) setFbFormAgreementContent(parsed.delegationFeedback.agreementContent)
+                  if (parsed.delegationFeedback.parentConsentLevel) setFbFormConsentLevel(parsed.delegationFeedback.parentConsentLevel)
+                  if (parsed.delegationFeedback.followUpPlan) setFbFormFollowUpPlan(parsed.delegationFeedback.followUpPlan)
+                  if (parsed.delegationFeedback.additionalNote) setFbFormAdditionalNote(parsed.delegationFeedback.additionalNote)
+                }
               } else {
                 setGdcsGeneralNote(record.admissionConsultantNote)
               }
             } catch (e) {
               setGdcsGeneralNote(record.admissionConsultantNote)
             }
+          } else {
+            setGdcsParentMeetingRepresentative(record.parentRepresentativeName || "")
+            setGdcsParentMeetingPhone(record.parentPhone || student.parentPhone || "")
           }
         } else if (resolvedTeacherName) {
           setInterviewerName(resolvedTeacherName)
@@ -550,6 +616,9 @@ export function StudentOrientationModal({
             const pData = await pRes.json()
             if (pData?.success && isMounted) {
               setDepartments(pData.departments || [])
+              if (pData.assignedSurveyTeachers) {
+                setAssignedSurveyTeachers(pData.assignedSurveyTeachers)
+              }
               setSelectedDeptCode(pData.selectedDepartmentCode || "TO_TLHN")
               const teachers = pData.assignedTeachers || pData.tlhnTeachers || []
               setAssignedPsychTeachers(teachers)
@@ -1008,22 +1077,174 @@ export function StudentOrientationModal({
     return JSON.stringify({
       gdcsDecision,
       gdcsGeneralNote,
-      delegateTeacher: gdcsDelegateTeacher,
-      delegatedTeacherName: gdcsDelegatedTeacherName,
-      delegatedTeacherId: gdcsDelegatedTeacherId,
-      delegationNote: gdcsDelegationNote,
+      // 1. Gặp trực tiếp PHHS
+      directParentMeeting: gdcsDirectParentMeeting,
+      parentMeetingTime: gdcsParentMeetingTime,
+      parentMeetingLocation: gdcsParentMeetingLocation,
+      parentMeetingRepresentative: gdcsParentMeetingRepresentative,
+      parentMeetingPhone: gdcsParentMeetingPhone,
+      parentMeetingContent: gdcsParentMeetingContent,
+      parentMeetingOutcome: gdcsParentMeetingOutcome,
+      parentMeetingGdcsNote: gdcsParentMeetingGdcsNote,
+      // 2. Hẹn lịch làm việc / Hội chẩn
       scheduleMeeting: gdcsScheduleMeeting,
       meetingTime: gdcsMeetingTime,
       meetingLocation: gdcsMeetingLocation,
       meetingParticipants: gdcsMeetingParticipants,
       meetingAgenda: gdcsMeetingAgenda,
-      directParentMeeting: gdcsDirectParentMeeting,
-      parentMeetingTime: gdcsParentMeetingTime,
-      parentMeetingLocation: gdcsParentMeetingLocation,
-      parentMeetingContent: gdcsParentMeetingContent,
+      // 3. Ủy quyền Giáo viên
+      delegateTeacher: gdcsDelegateTeacher,
+      delegatedTeacherName: gdcsDelegatedTeacherName,
+      delegatedTeacherId: gdcsDelegatedTeacherId,
+      delegatedTeacherEmail: gdcsDelegatedTeacherEmail,
+      delegationDuration: gdcsDelegationDuration,
+      delegationNote: gdcsDelegationNote,
+      delegationFeedback: delegationFeedback || undefined,
       notifiedConsultant: true,
       notifiedTeacher: gdcsDelegateTeacher
     })
+  }
+
+  // Lấy danh sách GV theo Tổ Chuyên Môn để ủy quyền
+  const fetchDeptTeachersForDelegation = async (deptCode: string) => {
+    setSelectedDelegationDeptCode(deptCode)
+    if (!deptCode) {
+      setDelegationDeptTeachers([])
+      return
+    }
+    try {
+      setLoadingDelegationDeptTeachers(true)
+      const res = await fetch(`/api/admin/orientation/psychology-referral?action=getDepartmentTeachers&departmentId=${encodeURIComponent(deptCode)}`)
+      const data = await res.json()
+      if (data.success && Array.isArray(data.teachers)) {
+        setDelegationDeptTeachers(data.teachers)
+      } else {
+        setDelegationDeptTeachers([])
+      }
+    } catch (e) {
+      console.error(e)
+      setDelegationDeptTeachers([])
+    } finally {
+      setLoadingDelegationDeptTeachers(false)
+    }
+  }
+
+  // GĐCS gửi Email Ủy quyền cho Giáo viên
+  const handleSendDelegationEmail = async () => {
+    if (!gdcsDelegatedTeacherEmail && !gdcsDelegatedTeacherId) {
+      alert("Vui lòng chọn hoặc nhập Giáo viên được ủy quyền kèm Email liên hệ.")
+      return
+    }
+    try {
+      setSendingDelegationEmail(true)
+      setDelegationEmailToast("")
+      const res = await fetch("/api/admin/orientation/psychology-referral", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          action: "sendDelegationEmail",
+          studentId: student.id,
+          teacherId: gdcsDelegatedTeacherId,
+          teacherName: gdcsDelegatedTeacherName,
+          teacherEmail: gdcsDelegatedTeacherEmail,
+          delegationDuration: gdcsDelegationDuration,
+          delegationNote: gdcsDelegationNote,
+          parentRepresentative: gdcsParentMeetingRepresentative || parentRepresentativeName,
+          parentPhone: gdcsParentMeetingPhone || parentPhone,
+          directorName: verifierName || "Ban Giám Đốc Cơ Sở"
+        })
+      })
+      const data = await res.json()
+      if (data.success) {
+        setDelegationEmailToast(data.message || "Đã gửi Email ủy quyền thành công cho Giáo viên!")
+        setTimeout(() => setDelegationEmailToast(""), 6000)
+      } else {
+        alert(data.error || "Không thể gửi email ủy quyền.")
+      }
+    } catch (e: any) {
+      alert(e.message || "Lỗi khi gửi email ủy quyền.")
+    } finally {
+      setSendingDelegationEmail(false)
+    }
+  }
+
+  // GĐCS gửi Email Thông báo Lịch làm việc / Hội chẩn cho Ban Tư vấn & Giáo vụ
+  const handleSendMeetingEmail = async () => {
+    if (!gdcsMeetingTime) {
+      alert("Vui lòng nhập Ngày & Giờ làm việc trước khi gửi email thông báo.")
+      return
+    }
+    try {
+      setSendingMeetingEmail(true)
+      setMeetingEmailToast("")
+      const res = await fetch("/api/admin/orientation/psychology-referral", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          action: "sendMeetingScheduleEmail",
+          studentId: student.id,
+          meetingTime: gdcsMeetingTime,
+          meetingLocation: gdcsMeetingLocation,
+          meetingParticipants: gdcsMeetingParticipants,
+          meetingAgenda: gdcsMeetingAgenda,
+          directorName: verifierName || "Ban Giám Đốc Cơ Sở"
+        })
+      })
+      const data = await res.json()
+      if (data.success) {
+        setMeetingEmailToast(data.message || "Đã gửi Email thông báo lịch làm việc cho Ban Tư vấn & Giáo vụ!")
+        setTimeout(() => setMeetingEmailToast(""), 6000)
+      } else {
+        alert(data.error || "Không thể gửi email thông báo lịch làm việc.")
+      }
+    } catch (e: any) {
+      alert(e.message || "Lỗi khi gửi email lịch làm việc.")
+    } finally {
+      setSendingMeetingEmail(false)
+    }
+  }
+
+  // Lưu Modal Kết quả Ủy quyền
+  const handleSaveDelegationFeedbackModal = async (e: React.FormEvent) => {
+    e.preventDefault()
+    if (!fbFormAgreementContent.trim()) {
+      alert("Vui lòng nhập nội dung cam kết thỏa thuận với PHHS.")
+      return
+    }
+    try {
+      setSavingDelegationFeedback(true)
+      setDelegationFeedbackToast("")
+      const res = await fetch("/api/admin/orientation/psychology-referral", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          action: "saveDelegationFeedback",
+          studentId: student.id,
+          feedbackDate: new Date(fbFormDate).toISOString(),
+          meetingType: fbFormMeetingType,
+          parentRepresentative: fbFormParentRep || parentRepresentativeName,
+          parentPhone: fbFormParentPhone || parentPhone,
+          agreementContent: fbFormAgreementContent,
+          parentConsentLevel: fbFormConsentLevel,
+          followUpPlan: fbFormFollowUpPlan,
+          additionalNote: fbFormAdditionalNote,
+          reporterName: verifierName || "Ban Giám Đốc Cơ Sở"
+        })
+      })
+      const data = await res.json()
+      if (data.success) {
+        setDelegationFeedback(data.data)
+        setDelegationFeedbackToast("Đã lưu kết quả trao đổi với PHHS thành công!")
+        setIsDelegationFeedbackModalOpen(false)
+        markDirty()
+      } else {
+        alert(data.error || "Không thể lưu kết quả trao đổi.")
+      }
+    } catch (e: any) {
+      alert(e.message || "Lỗi khi lưu kết quả.")
+    } finally {
+      setSavingDelegationFeedback(false)
+    }
   }
 
   // Lưu dữ liệu phiếu định hướng (hỗ trợ cả lưu thủ công & tự động lưu nháp)
@@ -1322,13 +1543,13 @@ export function StudentOrientationModal({
       if (score <= 15) return { level: "Bình thường", suggestion: "Ổn định, thích nghi tốt", color: "text-emerald-700", bg: "bg-emerald-50", border: "border-emerald-200" }
       if (score <= 31) return { level: "Dấu hiệu nhẹ", suggestion: "Theo dõi - hỗ trợ tâm lý học đường", color: "text-teal-700", bg: "bg-teal-50", border: "border-teal-200" }
       if (score <= 47) return { level: "Dấu hiệu vừa", suggestion: "Quan sát sâu, tư vấn cá nhân", color: "text-amber-700", bg: "bg-amber-50", border: "border-amber-200" }
-      if (score <= 63) return { level: "Nguy cơ cao", suggestion: "Đánh giá chuyên sâu, can thiệp định kỳ", color: "text-orange-700", bg: "bg-orange-50", border: "border-orange-200" }
+      if (score <= 63) return { level: "Nguy cơ cao", suggestion: "Đánh giá chuyên sâu, can thiệp định kỳ", color: "text-amber-800", bg: "bg-amber-50", border: "border-amber-200" }
       return { level: "Nguy cơ rất cao", suggestion: "Cần can thiệp chuyên môn, phối hợp phụ huynh", color: "text-rose-700", bg: "bg-rose-50", border: "border-rose-200" }
     }
     if (score <= 15) return { level: "Bình thường", suggestion: "Có thể theo học bình thường", color: "text-emerald-700", bg: "bg-emerald-50", border: "border-emerald-200" }
     if (score <= 31) return { level: "Dấu hiệu nhẹ", suggestion: "Theo dõi - hỗ trợ thích nghi", color: "text-teal-700", bg: "bg-teal-50", border: "border-teal-200" }
     if (score <= 47) return { level: "Dấu hiệu vừa", suggestion: "Quan sát sâu, can thiệp nhẹ nếu cần", color: "text-amber-700", bg: "bg-amber-50", border: "border-amber-200" }
-    if (score <= 63) return { level: "Nguy cơ cao", suggestion: "Cần đánh giá chuyên sâu và can thiệp", color: "text-orange-700", bg: "bg-orange-50", border: "border-orange-200" }
+    if (score <= 63) return { level: "Nguy cơ cao", suggestion: "Cần đánh giá chuyên sâu và can thiệp", color: "text-amber-800", bg: "bg-amber-50", border: "border-amber-200" }
     return { level: "Nguy cơ rất cao", suggestion: "Cần can thiệp chuyên môn sớm (bảo đảm an toàn và hỗ trợ)", color: "text-rose-700", bg: "bg-rose-50", border: "border-rose-200" }
   }
 
@@ -3039,6 +3260,666 @@ export function StudentOrientationModal({
                     </select>
                   </div>
 
+                  {/* THÔNG TIN XIN Ý KIẾN CHỈ ĐẠO CỦA GV TÂM LÝ (NẾU CÓ) */}
+                  {psychologyData?.gdcsDirectiveRequest?.needGdcsDirective && (
+                    <div className="p-2.5 bg-amber-50/80 rounded-xl border border-amber-200 text-[11px] space-y-1">
+                      <div className="font-bold text-amber-900 flex items-center gap-1.5">
+                        <AlertTriangle className="w-3.5 h-3.5 text-amber-600 shrink-0" />
+                        <span>GV Tâm lý xin ý kiến chỉ đạo:</span>
+                      </div>
+                      <div className="text-slate-700 italic pl-5">
+                        &quot;{psychologyData.gdcsDirectiveRequest.directiveTopic || psychologyData.gdcsDirectiveRequest.topic || psychologyData.conclusion}&quot;
+                      </div>
+                      <div className="text-[10.5px] text-slate-600 pl-5">
+                        • Đề xuất mong muốn: <strong className="text-amber-800">{
+                          psychologyData.gdcsDirectiveRequest.proposedAction === "DIRECT_PARENT_MEETING" ? "1. Trao đổi trực tiếp PHHS" :
+                          psychologyData.gdcsDirectiveRequest.proposedAction === "SCHEDULE_MEETING" ? "2. Hẹn lịch làm việc / Hội chẩn" : "3. Ủy quyền Giáo viên"
+                        }</strong>
+                      </div>
+                    </div>
+                  )}
+
+                  {/* 3 HÌNH THỨC PHẢN HỒI CHỈ ĐẠO CỦA GĐCS - CHỌN 1 TRONG 3 */}
+                  <div className="space-y-2 pt-1 border-t border-teal-200">
+                    <label className="font-bold text-[#083d39] block text-[11px] uppercase tracking-wide">
+                      Phương án chỉ đạo của GĐCS (Chọn 1 trong 3 trường hợp):
+                    </label>
+                    <div className="grid grid-cols-1 sm:grid-cols-3 gap-1.5">
+                      <button
+                        type="button"
+                        onClick={() => {
+                          const nextVal = !gdcsDirectParentMeeting;
+                          setGdcsDirectParentMeeting(nextVal);
+                          if (nextVal) {
+                            setGdcsScheduleMeeting(false);
+                            setGdcsDelegateTeacher(false);
+                          }
+                          markDirty();
+                        }}
+                        className={`flex items-center gap-1.5 p-2 rounded-lg border cursor-pointer transition-all text-[11px] text-left ${
+                          gdcsDirectParentMeeting ? "bg-white border-teal-500 font-bold text-[#083d39] shadow-2xs ring-1 ring-teal-500" : "bg-white/60 border-slate-200 text-slate-600 hover:bg-white"
+                        }`}
+                      >
+                        <span className={`w-3.5 h-3.5 rounded-full border flex items-center justify-center shrink-0 ${gdcsDirectParentMeeting ? "border-teal-600 bg-teal-600" : "border-slate-300"}`}>
+                          {gdcsDirectParentMeeting && <span className="w-1.5 h-1.5 rounded-full bg-white" />}
+                        </span>
+                        <span>1. Trao đổi trực tiếp PHHS</span>
+                      </button>
+
+                      <button
+                        type="button"
+                        onClick={() => {
+                          const nextVal = !gdcsScheduleMeeting;
+                          setGdcsScheduleMeeting(nextVal);
+                          if (nextVal) {
+                            setGdcsDirectParentMeeting(false);
+                            setGdcsDelegateTeacher(false);
+                          }
+                          markDirty();
+                        }}
+                        className={`flex items-center gap-1.5 p-2 rounded-lg border cursor-pointer transition-all text-[11px] text-left ${
+                          gdcsScheduleMeeting ? "bg-white border-teal-500 font-bold text-[#083d39] shadow-2xs ring-1 ring-teal-500" : "bg-white/60 border-slate-200 text-slate-600 hover:bg-white"
+                        }`}
+                      >
+                        <span className={`w-3.5 h-3.5 rounded-full border flex items-center justify-center shrink-0 ${gdcsScheduleMeeting ? "border-teal-600 bg-teal-600" : "border-slate-300"}`}>
+                          {gdcsScheduleMeeting && <span className="w-1.5 h-1.5 rounded-full bg-white" />}
+                        </span>
+                        <span>2. Hẹn lịch làm việc / Hội chẩn</span>
+                      </button>
+
+                      <button
+                        type="button"
+                        onClick={() => {
+                          const nextVal = !gdcsDelegateTeacher;
+                          setGdcsDelegateTeacher(nextVal);
+                          if (nextVal) {
+                            setGdcsDirectParentMeeting(false);
+                            setGdcsScheduleMeeting(false);
+                          }
+                          markDirty();
+                        }}
+                        className={`flex items-center gap-1.5 p-2 rounded-lg border cursor-pointer transition-all text-[11px] text-left ${
+                          gdcsDelegateTeacher ? "bg-white border-teal-500 font-bold text-[#083d39] shadow-2xs ring-1 ring-teal-500" : "bg-white/60 border-slate-200 text-slate-600 hover:bg-white"
+                        }`}
+                      >
+                        <span className={`w-3.5 h-3.5 rounded-full border flex items-center justify-center shrink-0 ${gdcsDelegateTeacher ? "border-teal-600 bg-teal-600" : "border-slate-300"}`}>
+                          {gdcsDelegateTeacher && <span className="w-1.5 h-1.5 rounded-full bg-white" />}
+                        </span>
+                        <span>3. Ủy quyền Giáo viên</span>
+                      </button>
+                    </div>
+
+                    {/* 1. Chi tiết Trao đổi trực tiếp PHHS */}
+                    {gdcsDirectParentMeeting && (
+                      <div className="p-3 bg-white rounded-xl border border-teal-200 space-y-3 text-[11px] shadow-2xs">
+                        <div className="flex items-center justify-between border-b border-teal-100 pb-2">
+                          <div className="font-bold text-[#083d39] flex items-center gap-1.5 text-xs">
+                            <Users className="w-4 h-4 text-teal-600" />
+                            <span>1. Gặp & Trao đổi trực tiếp với Phụ huynh học sinh (PHHS)</span>
+                          </div>
+                          <span className="text-[10.5px] text-teal-700 bg-teal-50 px-2 py-0.5 rounded font-medium">
+                            GĐCS trực tiếp làm việc
+                          </span>
+                        </div>
+
+                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
+                          <div>
+                            <label className="text-slate-600 font-semibold block mb-1">
+                              Thời gian hẹn gặp PHHS (*):
+                            </label>
+                            <input
+                              type="datetime-local"
+                              value={gdcsParentMeetingTime}
+                              onChange={e => { setGdcsParentMeetingTime(e.target.value); markDirty(); }}
+                              className="w-full p-2 rounded-lg border border-slate-200 text-slate-800 text-xs outline-none focus:border-teal-500 font-medium tabular-nums"
+                            />
+                          </div>
+                          <div>
+                            <label className="text-slate-600 font-semibold block mb-1">
+                              Địa điểm gặp mặt:
+                            </label>
+                            <input
+                              type="text"
+                              value={gdcsParentMeetingLocation}
+                              onChange={e => { setGdcsParentMeetingLocation(e.target.value); markDirty(); }}
+                              placeholder="Phòng Giám đốc Cơ sở..."
+                              className="w-full p-2 rounded-lg border border-slate-200 text-slate-800 text-xs outline-none focus:border-teal-500"
+                            />
+                          </div>
+                        </div>
+
+                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
+                          <div>
+                            <label className="text-slate-600 font-semibold block mb-1">
+                              Người đại diện PHHS làm việc:
+                            </label>
+                            <input
+                              type="text"
+                              value={gdcsParentMeetingRepresentative}
+                              onChange={e => { setGdcsParentMeetingRepresentative(e.target.value); markDirty(); }}
+                              placeholder="Họ tên Cha/Mẹ..."
+                              className="w-full p-2 rounded-lg border border-slate-200 text-slate-800 text-xs outline-none focus:border-teal-500"
+                            />
+                          </div>
+                          <div>
+                            <label className="text-slate-600 font-semibold block mb-1">
+                              Số điện thoại liên hệ:
+                            </label>
+                            <input
+                              type="text"
+                              value={gdcsParentMeetingPhone}
+                              onChange={e => { setGdcsParentMeetingPhone(e.target.value); markDirty(); }}
+                              placeholder="Số điện thoại PHHS..."
+                              className="w-full p-2 rounded-lg border border-slate-200 text-slate-800 text-xs outline-none focus:border-teal-500 font-mono tabular-nums"
+                            />
+                          </div>
+                        </div>
+
+                        <div>
+                          <label className="text-slate-600 font-semibold block mb-1">
+                            Trạng thái / Tiến độ buổi gặp PHHS:
+                          </label>
+                          <div className="grid grid-cols-3 gap-1.5">
+                            {[
+                              { id: "SCHEDULED", label: "Đã lên lịch hẹn (Chờ gặp)" },
+                              { id: "COMPLETED_AGREED", label: "Đã gặp & Thống nhất cam kết" },
+                              { id: "RESCHEDULED", label: "PH xin dời lịch hẹn" }
+                            ].map(opt => (
+                              <button
+                                key={opt.id}
+                                type="button"
+                                onClick={() => { setGdcsParentMeetingOutcome(opt.id); markDirty(); }}
+                                className={`p-1.5 rounded-lg text-[10.5px] font-semibold border transition-all cursor-pointer ${
+                                  gdcsParentMeetingOutcome === opt.id
+                                    ? "bg-teal-50 border-teal-500 text-[#003B3A] shadow-2xs font-bold"
+                                    : "bg-slate-50 border-slate-200 text-slate-600 hover:bg-white"
+                                }`}
+                              >
+                                {opt.label}
+                              </button>
+                            ))}
+                          </div>
+                        </div>
+
+                        <div>
+                          <label className="text-slate-600 font-semibold block mb-1">
+                            Nội dung trao đổi & Thỏa thuận cam kết giữa Gia đình & Nhà trường (*):
+                          </label>
+                          <textarea
+                            rows={3}
+                            value={gdcsParentMeetingContent}
+                            onChange={e => { setGdcsParentMeetingContent(e.target.value); markDirty(); }}
+                            placeholder="Ghi rõ nội dung định hướng tiếp nhận, cam kết đồng hành nề nếp, thỏa thuận về thời gian theo dõi..."
+                            className="w-full p-2 rounded-lg border border-slate-200 text-slate-800 text-xs outline-none focus:border-teal-500"
+                          />
+                        </div>
+
+                        <div>
+                          <label className="text-slate-600 font-semibold block mb-1">
+                            Ghi chú riêng của Giám Đốc Cơ Sở:
+                          </label>
+                          <input
+                            type="text"
+                            value={gdcsParentMeetingGdcsNote}
+                            onChange={e => { setGdcsParentMeetingGdcsNote(e.target.value); markDirty(); }}
+                            placeholder="Lưu ý về tâm lý, định hướng lớp, giáo viên chủ nhiệm thích hợp..."
+                            className="w-full p-2 rounded-lg border border-slate-200 text-slate-800 text-xs outline-none focus:border-teal-500"
+                          />
+                        </div>
+                      </div>
+                    )}
+
+                    {/* 2. Chi tiết Hẹn lịch làm việc / Hội chẩn chuyên môn */}
+                    {gdcsScheduleMeeting && (
+                      <div className="p-3 bg-white rounded-xl border border-teal-200 space-y-3 text-[11px] shadow-2xs">
+                        <div className="flex items-center justify-between border-b border-teal-100 pb-2">
+                          <div className="font-bold text-[#083d39] flex items-center gap-1.5 text-xs">
+                            <Calendar className="w-4 h-4 text-teal-600" />
+                            <span>2. Lịch Làm Việc & Hội Chẩn Chuyên Môn Nhà Trường</span>
+                          </div>
+                          <span className="text-[10.5px] text-teal-700 bg-teal-50 px-2 py-0.5 rounded font-medium">
+                            Tư vấn & Giáo vụ nhận thông báo email
+                          </span>
+                        </div>
+
+                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
+                          <div>
+                            <label className="text-slate-600 font-semibold block mb-1">
+                              Thời gian làm việc / Hội chẩn (*):
+                            </label>
+                            <input
+                              type="datetime-local"
+                              value={gdcsMeetingTime}
+                              onChange={e => { setGdcsMeetingTime(e.target.value); markDirty(); }}
+                              className="w-full p-2 rounded-lg border border-slate-200 text-slate-800 text-xs outline-none focus:border-teal-500 font-medium tabular-nums"
+                            />
+                          </div>
+                          <div>
+                            <label className="text-slate-600 font-semibold block mb-1">
+                              Địa điểm làm việc:
+                            </label>
+                            <input
+                              type="text"
+                              value={gdcsMeetingLocation}
+                              onChange={e => { setGdcsMeetingLocation(e.target.value); markDirty(); }}
+                              placeholder="Phòng Hội đồng Chuyên môn Cơ sở..."
+                              className="w-full p-2 rounded-lg border border-slate-200 text-slate-800 text-xs outline-none focus:border-teal-500"
+                            />
+                          </div>
+                        </div>
+
+                        <div>
+                          <div className="flex items-center justify-between mb-1">
+                            <label className="text-slate-600 font-semibold">
+                              Thành phần tham gia hội chẩn:
+                            </label>
+                            <span className="text-[10.5px] text-slate-400">Bấm chọn nhanh hoặc tự nhập</span>
+                          </div>
+                          <div className="flex flex-wrap gap-1 mb-1.5">
+                            {["GĐCS", "Ban KT&ĐBCL", "Ban Tư vấn Tuyển sinh", "Giáo vụ cơ sở", "GV Tâm lý học đường", "GV Chủ nhiệm / TCM"].map(role => (
+                              <button
+                                key={role}
+                                type="button"
+                                onClick={() => {
+                                  const parts = gdcsMeetingParticipants ? gdcsMeetingParticipants.split(",").map(p => p.trim()) : [];
+                                  if (!parts.includes(role)) {
+                                    const next = [...parts, role].filter(Boolean).join(", ");
+                                    setGdcsMeetingParticipants(next);
+                                    markDirty();
+                                  }
+                                }}
+                                className="px-2 py-0.5 bg-slate-100 hover:bg-teal-50 hover:text-teal-800 text-slate-600 rounded text-[10px] font-semibold border border-slate-200 transition-all cursor-pointer"
+                              >
+                                + {role}
+                              </button>
+                            ))}
+                          </div>
+                          <input
+                            type="text"
+                            value={gdcsMeetingParticipants}
+                            onChange={e => { setGdcsMeetingParticipants(e.target.value); markDirty(); }}
+                            placeholder="GĐCS, Ban KT&ĐBCL, Ban Tư vấn Tuyển sinh, Giáo vụ cơ sở, GV Tâm lý..."
+                            className="w-full p-2 rounded-lg border border-slate-200 text-slate-800 text-xs outline-none focus:border-teal-500"
+                          />
+                        </div>
+
+                        <div>
+                          <label className="text-slate-600 font-semibold block mb-1">
+                            Nội dung & Mục tiêu buổi hội chẩn (*):
+                          </label>
+                          <textarea
+                            rows={2}
+                            value={gdcsMeetingAgenda}
+                            onChange={e => { setGdcsMeetingAgenda(e.target.value); markDirty(); }}
+                            placeholder="Nội dung chuyên môn cần hội chẩn, định hướng xếp lớp và kế hoạch phối hợp..."
+                            className="w-full p-2 rounded-lg border border-slate-200 text-slate-800 text-xs outline-none focus:border-teal-500"
+                          />
+                        </div>
+
+                        {/* NÚT GỬI EMAIL CHO TƯ VẤN & GIÁO VỤ */}
+                        <div className="pt-2 border-t border-teal-100 flex flex-wrap items-center justify-between gap-2">
+                          <span className="text-[10.5px] text-slate-500 italic">
+                            Hệ thống sẽ gửi email tự động kèm liên kết hồ sơ học sinh đến Tư vấn & Giáo vụ.
+                          </span>
+
+                          <button
+                            type="button"
+                            onClick={handleSendMeetingEmail}
+                            disabled={sendingMeetingEmail || !gdcsMeetingTime}
+                            className="px-3.5 py-1.5 bg-[#003B3A] hover:bg-[#002b2a] text-white rounded-lg text-xs font-bold flex items-center gap-1.5 shadow-2xs transition-all cursor-pointer disabled:opacity-50"
+                          >
+                            {sendingMeetingEmail ? (
+                              <>
+                                <div className="w-3 h-3 border-2 border-white border-t-transparent rounded-full animate-spin" />
+                                <span>Đang gửi mail...</span>
+                              </>
+                            ) : (
+                              <>
+                                <Mail className="w-3.5 h-3.5 text-teal-300" />
+                                <span>Gửi Email Lịch Làm Việc (Tư vấn & Giáo vụ)</span>
+                              </>
+                            )}
+                          </button>
+                        </div>
+
+                        {meetingEmailToast && (
+                          <div className="p-2 bg-emerald-50 border border-emerald-200 rounded-lg text-emerald-800 text-[11px] font-semibold flex items-center gap-1.5 animate-in fade-in">
+                            <Check className="w-3.5 h-3.5 text-emerald-600 shrink-0" />
+                            <span>{meetingEmailToast}</span>
+                          </div>
+                        )}
+                      </div>
+                    )}
+
+                    {/* 3. Chi tiết Ủy quyền Giáo viên */}
+                    {gdcsDelegateTeacher && (
+                      <div className="p-3 bg-white rounded-xl border border-teal-200 space-y-3 text-[11px] shadow-2xs">
+                        <div className="flex items-center justify-between border-b border-teal-100 pb-2">
+                          <div className="font-bold text-[#083d39] flex items-center gap-1.5 text-xs">
+                            <UserCheck className="w-4 h-4 text-teal-600" />
+                            <span>3. Ủy quyền Giáo viên Đồng hành & Phối hợp PHHS</span>
+                          </div>
+                          <span className="text-[10.5px] text-teal-700 bg-teal-50 px-2 py-0.5 rounded font-medium">
+                            GV nhận mail & tiến hành trao đổi PHHS
+                          </span>
+                        </div>
+
+                        {/* NGUỒN CHỌN GIÁO VIÊN: TAB 1 (GV ĐÃ KHẢO SÁT) VÀ TAB 2 (CHỌN THEO TCM) */}
+                        <div className="space-y-2">
+                          <div className="flex items-center justify-between">
+                            <label className="text-slate-700 font-bold block text-xs">
+                              Chọn Giáo viên được ủy quyền:
+                            </label>
+                            {/* Toggle 2 Tab Chọn GV */}
+                            <div className="inline-flex p-0.5 bg-slate-100 rounded-lg border border-slate-200">
+                              <button
+                                type="button"
+                                onClick={() => setDelegationTeacherTab("SURVEY_ASSIGNED")}
+                                className={`px-2.5 py-1 rounded-md text-[10.5px] font-bold transition-all cursor-pointer ${
+                                  delegationTeacherTab === "SURVEY_ASSIGNED"
+                                    ? "bg-white text-[#003B3A] shadow-2xs"
+                                    : "text-slate-600 hover:text-slate-900"
+                                }`}
+                              >
+                                Danh sách GV phân công khảo sát ({assignedSurveyTeachers.length})
+                              </button>
+                              <button
+                                type="button"
+                                onClick={() => setDelegationTeacherTab("DEPARTMENT")}
+                                className={`px-2.5 py-1 rounded-md text-[10.5px] font-bold transition-all cursor-pointer ${
+                                  delegationTeacherTab === "DEPARTMENT"
+                                    ? "bg-white text-[#003B3A] shadow-2xs"
+                                    : "text-slate-600 hover:text-slate-900"
+                                }`}
+                              >
+                                Chọn theo Tổ Chuyên Môn (TCM)
+                              </button>
+                            </div>
+                          </div>
+
+                          {/* Tab 1: Danh sách GV đã phân công khảo sát học sinh này */}
+                          {delegationTeacherTab === "SURVEY_ASSIGNED" && (
+                            <div className="space-y-1.5 bg-[#f8fafc] p-2.5 rounded-xl border border-slate-200">
+                              <div className="text-[10.5px] text-slate-500 font-medium">
+                                Danh sách các Giáo viên đã chấm điểm hoặc được phân công khảo sát học sinh này:
+                              </div>
+                              {assignedSurveyTeachers.length === 0 ? (
+                                <div className="text-[11px] text-slate-400 italic py-2 text-center">
+                                  Chưa có giáo viên nào trong danh sách phân công khảo sát kỳ này. Hãy chọn theo tab Tổ Chuyên Môn.
+                                </div>
+                              ) : (
+                                <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 max-h-48 overflow-y-auto pr-1">
+                                  {assignedSurveyTeachers.map((t: any, idx: number) => {
+                                    const isSelected = gdcsDelegatedTeacherId === t.teacherId || (gdcsDelegatedTeacherName && gdcsDelegatedTeacherName === t.teacherName);
+                                    return (
+                                      <div
+                                        key={t.teacherId || idx}
+                                        onClick={() => {
+                                          setGdcsDelegatedTeacherId(t.teacherId || "");
+                                          setGdcsDelegatedTeacherName(t.teacherName || "");
+                                          setGdcsDelegatedTeacherEmail(t.email || "");
+                                          markDirty();
+                                        }}
+                                        className={`p-2 rounded-lg border text-left cursor-pointer transition-all flex items-start justify-between gap-2 ${
+                                          isSelected
+                                            ? "bg-white border-teal-500 ring-2 ring-teal-500/30 shadow-2xs"
+                                            : "bg-white/80 border-slate-200 hover:bg-white hover:border-slate-300"
+                                        }`}
+                                      >
+                                        <div className="space-y-0.5">
+                                          <div className="font-bold text-xs text-[#003B3A] flex items-center gap-1.5">
+                                            <span>{t.teacherName}</span>
+                                            {isSelected && <span className="text-[9px] bg-teal-100 text-teal-800 px-1 rounded font-bold">Đang chọn</span>}
+                                          </div>
+                                          <div className="text-[10.5px] text-teal-700 font-medium">
+                                            {t.subjectLabel || t.subjects?.join(", ") || "GV Khảo sát"}
+                                          </div>
+                                          <div className="text-[10px] text-slate-500 truncate max-w-[190px]">
+                                            {t.email || "Chưa có email"}
+                                          </div>
+                                        </div>
+                                        <div className={`w-4 h-4 rounded-full border mt-0.5 flex items-center justify-center shrink-0 ${
+                                          isSelected ? "border-teal-600 bg-teal-600" : "border-slate-300"
+                                        }`}>
+                                          {isSelected && <span className="w-1.5 h-1.5 rounded-full bg-white" />}
+                                        </div>
+                                      </div>
+                                    );
+                                  })}
+                                </div>
+                              )}
+                            </div>
+                          )}
+
+                          {/* Tab 2: Chọn theo Tổ Chuyên Môn (TCM) */}
+                          {delegationTeacherTab === "DEPARTMENT" && (
+                            <div className="space-y-2 bg-[#f8fafc] p-2.5 rounded-xl border border-slate-200">
+                              <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                                <div>
+                                  <label className="text-[10.5px] font-semibold text-slate-600 block mb-1">
+                                    Chọn Tổ Chuyên Môn / Bộ phận:
+                                  </label>
+                                  <select
+                                    value={selectedDelegationDeptCode}
+                                    onChange={e => fetchDeptTeachersForDelegation(e.target.value)}
+                                    className="w-full text-xs p-2 rounded-lg border border-slate-200 bg-white text-slate-800 outline-none focus:border-teal-500 font-medium"
+                                  >
+                                    <option value="">-- Chọn Tổ Chuyên Môn --</option>
+                                    {departments.map((d: any) => (
+                                      <option key={d.id || d.code} value={d.code || d.id}>
+                                        {d.name} ({d.code})
+                                      </option>
+                                    ))}
+                                  </select>
+                                </div>
+
+                                <div>
+                                  <label className="text-[10.5px] font-semibold text-slate-600 block mb-1">
+                                    Chọn Giáo viên thuộc Tổ:
+                                  </label>
+                                  {loadingDelegationDeptTeachers ? (
+                                    <div className="p-2 text-xs text-slate-400 italic">Đang tải GV thuộc tổ...</div>
+                                  ) : (
+                                    <select
+                                      value={gdcsDelegatedTeacherId}
+                                      onChange={e => {
+                                        const chosenId = e.target.value;
+                                        setGdcsDelegatedTeacherId(chosenId);
+                                        const found = delegationDeptTeachers.find((t: any) => t.teacherId === chosenId || t.userId === chosenId);
+                                        if (found) {
+                                          setGdcsDelegatedTeacherName(found.teacherName);
+                                          setGdcsDelegatedTeacherEmail(found.teacherEmail || "");
+                                        }
+                                        markDirty();
+                                      }}
+                                      className="w-full text-xs p-2 rounded-lg border border-slate-200 bg-white text-slate-800 outline-none focus:border-teal-500 font-medium"
+                                    >
+                                      <option value="">-- Chọn Giáo viên ủy quyền --</option>
+                                      {delegationDeptTeachers.map((t: any) => (
+                                        <option key={t.teacherId || t.userId} value={t.teacherId || t.userId}>
+                                          {t.teacherName} {t.position ? `(${t.position})` : ""} - {t.teacherEmail || ""}
+                                        </option>
+                                      ))}
+                                    </select>
+                                  )}
+                                </div>
+                              </div>
+                            </div>
+                          )}
+                        </div>
+
+                        {/* HIỂN THỊ THÔNG TIN GV ĐƯỢC CHỌN & EMAIL */}
+                        <div className="p-2.5 bg-teal-50/60 rounded-xl border border-teal-200 grid grid-cols-1 sm:grid-cols-2 gap-2">
+                          <div>
+                            <span className="text-[10px] text-teal-800 font-bold block uppercase tracking-wide">
+                              Giáo viên được chỉ định ủy quyền:
+                            </span>
+                            <input
+                              type="text"
+                              value={gdcsDelegatedTeacherName}
+                              onChange={e => { setGdcsDelegatedTeacherName(e.target.value); markDirty(); }}
+                              placeholder="Họ và tên Giáo viên..."
+                              className="w-full p-1.5 rounded-lg border border-teal-300 text-slate-900 text-xs font-bold outline-none bg-white"
+                            />
+                          </div>
+                          <div>
+                            <span className="text-[10px] text-teal-800 font-bold block uppercase tracking-wide">
+                              Địa chỉ Email Giáo viên nhận thư ủy quyền (*):
+                            </span>
+                            <input
+                              type="email"
+                              value={gdcsDelegatedTeacherEmail}
+                              onChange={e => { setGdcsDelegatedTeacherEmail(e.target.value); markDirty(); }}
+                              placeholder="email.gv@skylineschool.edu.vn..."
+                              className="w-full p-1.5 rounded-lg border border-teal-300 text-slate-900 text-xs outline-none bg-white font-mono"
+                            />
+                          </div>
+                        </div>
+
+                        {/* THỜI HẠN ỦY QUYỀN & NHIỆM VỤ */}
+                        <div className="space-y-2">
+                          <div>
+                            <label className="text-slate-600 font-semibold block mb-1">
+                              Thời hạn ủy quyền đồng hành:
+                            </label>
+                            <div className="flex flex-wrap gap-1.5">
+                              {["4 tuần đầu năm học", "Học kỳ 1", "Cả năm học 2026-2027", "Theo dõi đặc biệt (2 tháng)"].map(dur => (
+                                <button
+                                  key={dur}
+                                  type="button"
+                                  onClick={() => { setGdcsDelegationDuration(dur); markDirty(); }}
+                                  className={`px-2.5 py-1 rounded-lg text-[10.5px] font-semibold border transition-all cursor-pointer ${
+                                    gdcsDelegationDuration === dur
+                                      ? "bg-teal-600 border-teal-600 text-white shadow-2xs"
+                                      : "bg-slate-50 border-slate-200 text-slate-600 hover:bg-white"
+                                  }`}
+                                >
+                                  {dur}
+                                </button>
+                              ))}
+                            </div>
+                          </div>
+
+                          <div>
+                            <label className="text-slate-600 font-semibold block mb-1">
+                              Nhiệm vụ ủy quyền & Mục tiêu theo dõi đồng hành (*):
+                            </label>
+                            <textarea
+                              rows={2}
+                              value={gdcsDelegationNote}
+                              onChange={e => { setGdcsDelegationNote(e.target.value); markDirty(); }}
+                              placeholder="Chủ động liên hệ PHHS, trao đổi kết quả khảo sát, thỏa thuận cam kết nề nếp và kế hoạch phối hợp..."
+                              className="w-full p-2 rounded-lg border border-slate-200 text-slate-800 text-xs outline-none focus:border-teal-500"
+                            />
+                          </div>
+                        </div>
+
+                        {/* ACTION GỬI EMAIL ỦY QUYỀN */}
+                        <div className="pt-2 border-t border-teal-100 flex flex-wrap items-center justify-between gap-2">
+                          <span className="text-[10.5px] text-slate-500 italic">
+                            Giáo viên sẽ nhận email kèm thông tin PHHS và đường dẫn mở form nhập kết quả trao đổi.
+                          </span>
+
+                          <button
+                            type="button"
+                            onClick={handleSendDelegationEmail}
+                            disabled={sendingDelegationEmail || !gdcsDelegatedTeacherEmail}
+                            className="px-3.5 py-1.5 bg-[#003B3A] hover:bg-[#002b2a] text-white rounded-lg text-xs font-bold flex items-center gap-1.5 shadow-2xs transition-all cursor-pointer disabled:opacity-50"
+                          >
+                            {sendingDelegationEmail ? (
+                              <>
+                                <div className="w-3 h-3 border-2 border-white border-t-transparent rounded-full animate-spin" />
+                                <span>Đang gửi mail ủy quyền...</span>
+                              </>
+                            ) : (
+                              <>
+                                <Mail className="w-3.5 h-3.5 text-teal-300" />
+                                <span>Gửi Email Ủy Quyền Cho Giáo Viên</span>
+                              </>
+                            )}
+                          </button>
+                        </div>
+
+                        {delegationEmailToast && (
+                          <div className="p-2 bg-emerald-50 border border-emerald-200 rounded-lg text-emerald-800 text-[11px] font-semibold flex items-center gap-1.5 animate-in fade-in">
+                            <Check className="w-3.5 h-3.5 text-emerald-600 shrink-0" />
+                            <span>{delegationEmailToast}</span>
+                          </div>
+                        )}
+
+                        {/* KHỐI KẾT QUẢ ỦY QUYỀN (FORM NHẬP KẾT QUẢ TRAO ĐỔI VỚI PHHS) */}
+                        <div className="mt-3 p-3 bg-slate-50 rounded-xl border border-slate-200 space-y-2">
+                          <div className="flex items-center justify-between">
+                            <div className="font-bold text-xs text-[#003B3A] flex items-center gap-1.5">
+                              <FileCheck className="w-4 h-4 text-teal-600" />
+                              <span>Kết quả ủy quyền (Nội dung GV trao đổi với PHHS)</span>
+                            </div>
+                            <button
+                              type="button"
+                              onClick={() => {
+                                if (delegationFeedback) {
+                                  if (delegationFeedback.feedbackDate) setFbFormDate(delegationFeedback.feedbackDate.slice(0, 16));
+                                  if (delegationFeedback.meetingType) setFbFormMeetingType(delegationFeedback.meetingType);
+                                  if (delegationFeedback.parentRepresentative) setFbFormParentRep(delegationFeedback.parentRepresentative);
+                                  if (delegationFeedback.parentPhone) setFbFormParentPhone(delegationFeedback.parentPhone);
+                                  if (delegationFeedback.agreementContent) setFbFormAgreementContent(delegationFeedback.agreementContent);
+                                  if (delegationFeedback.parentConsentLevel) setFbFormConsentLevel(delegationFeedback.parentConsentLevel);
+                                  if (delegationFeedback.followUpPlan) setFbFormFollowUpPlan(delegationFeedback.followUpPlan);
+                                  if (delegationFeedback.additionalNote) setFbFormAdditionalNote(delegationFeedback.additionalNote);
+                                } else {
+                                  setFbFormParentRep(gdcsParentMeetingRepresentative || parentRepresentativeName || "");
+                                  setFbFormParentPhone(gdcsParentMeetingPhone || parentPhone || "");
+                                }
+                                setIsDelegationFeedbackModalOpen(true);
+                              }}
+                              className="px-2.5 py-1 bg-white hover:bg-teal-50 text-teal-800 border border-teal-300 rounded-lg text-[10.5px] font-bold shadow-2xs transition-all flex items-center gap-1 cursor-pointer"
+                            >
+                              <FileText className="w-3 h-3 text-teal-600" />
+                              <span>{delegationFeedback ? "Cập nhật kết quả trao đổi" : "Nhập kết quả ủy quyền"}</span>
+                            </button>
+                          </div>
+
+                          {delegationFeedback ? (
+                            <div className="p-2.5 bg-white rounded-lg border border-teal-200 space-y-1.5 text-[11px]">
+                              <div className="flex flex-wrap items-center justify-between gap-2 border-b border-slate-100 pb-1.5">
+                                <div className="flex items-center gap-2">
+                                  <span className={`px-2 py-0.5 rounded text-[10px] font-bold ${
+                                    delegationFeedback.parentConsentLevel === "HIGH" ? "bg-emerald-50 text-emerald-800 border border-emerald-200" :
+                                    delegationFeedback.parentConsentLevel === "SUPPORT_NEEDED" ? "bg-amber-50 text-amber-800 border border-amber-200" :
+                                    "bg-rose-50 text-rose-800 border border-rose-200"
+                                  }`}>
+                                    {delegationFeedback.parentConsentLevel === "HIGH" ? "Đồng thuận cao" :
+                                     delegationFeedback.parentConsentLevel === "SUPPORT_NEEDED" ? "Cần tiếp tục hỗ trợ" : "Còn băn khoăn"}
+                                  </span>
+                                  <span className="text-slate-600">
+                                    Hình thức: <strong>{delegationFeedback.meetingType === "DIRECT" ? "Trực tiếp" : delegationFeedback.meetingType === "PHONE" ? "Điện thoại" : "Trực tuyến"}</strong>
+                                  </span>
+                                </div>
+                                <span className="text-slate-500 tabular-nums text-[10px]">
+                                  Ngày: {delegationFeedback.feedbackDate ? new Date(delegationFeedback.feedbackDate).toLocaleDateString("vi-VN") : "Hôm nay"}
+                                </span>
+                              </div>
+
+                              <div className="text-slate-700 italic bg-slate-50 p-2 rounded border border-slate-100">
+                                &quot;{delegationFeedback.agreementContent}&quot;
+                              </div>
+
+                              {delegationFeedback.followUpPlan && (
+                                <div className="text-[10.5px] text-slate-600">
+                                  • Kế hoạch đồng hành: <span className="text-slate-800 font-medium">{delegationFeedback.followUpPlan}</span>
+                                </div>
+                              )}
+                            </div>
+                          ) : (
+                            <div className="p-2 bg-white/70 rounded-lg border border-dashed border-slate-200 text-center text-[10.5px] text-slate-400 italic">
+                              Chưa ghi nhận kết quả trao đổi từ Giáo viên được ủy quyền. GĐCS hoặc GV có thể bấm &quot;Nhập kết quả ủy quyền&quot; để cập nhật.
+                            </div>
+                          )}
+                        </div>
+                      </div>
+                    )}
+                  </div>
+
                   <div>
                     <label className="font-bold text-slate-700 block mb-1 text-[11px]">
                       Ghi chú chỉ đạo của Ban Giám Đốc Cơ Sở:
@@ -3430,7 +4311,7 @@ export function StudentOrientationModal({
                       <span><strong className="px-1.5 py-0.5 rounded bg-emerald-100 text-emerald-800">0</strong> Không có biểu hiện</span>
                       <span><strong className="px-1.5 py-0.5 rounded bg-teal-100 text-teal-800">1</strong> Biểu hiện rất nhẹ</span>
                       <span><strong className="px-1.5 py-0.5 rounded bg-amber-100 text-amber-800">2</strong> Thỉnh thoảng / Nhẹ</span>
-                      <span><strong className="px-1.5 py-0.5 rounded bg-orange-100 text-orange-800">3</strong> Thường xuyên / Rõ</span>
+                      <span><strong className="px-1.5 py-0.5 rounded bg-amber-50 text-amber-800">3</strong> Thường xuyên / Rõ</span>
                       <span><strong className="px-1.5 py-0.5 rounded bg-rose-100 text-rose-800">4</strong> Rất thường xuyên / Ảnh hưởng rõ</span>
                     </div>
                   </div>
@@ -3658,6 +4539,203 @@ export function StudentOrientationModal({
               </div>
             </div>
 
+          </div>
+        </div>
+      )}
+
+      {/* MODAL GHI NHẬN KẾT QUẢ ỦY QUYỀN TRAO ĐỔI VỚI PHHS */}
+      {isDelegationFeedbackModalOpen && (
+        <div className="fixed inset-0 z-[230] flex items-center justify-center p-3 sm:p-4 bg-slate-900/70 backdrop-blur-xs overflow-y-auto animate-in fade-in duration-200">
+          <div className="bg-white w-full max-w-2xl rounded-2xl shadow-2xl border border-teal-200 flex flex-col max-h-[92vh] overflow-hidden">
+            {/* Header */}
+            <div className="px-5 py-3.5 bg-[#003B3A] text-white flex items-center justify-between border-b-2 border-[#00A19A]">
+              <div className="flex items-center gap-2">
+                <FileCheck className="w-5 h-5 text-teal-300" />
+                <div>
+                  <h3 className="font-extrabold text-sm sm:text-base text-white">
+                    Kết Quả Ủy Quyền Trao Đổi Với Phụ Huynh Học Sinh
+                  </h3>
+                  <div className="text-[11px] text-teal-200">
+                    Học sinh: <strong className="text-white">{student?.fullName}</strong> ({student?.studentCode})
+                  </div>
+                </div>
+              </div>
+              <button
+                type="button"
+                onClick={() => setIsDelegationFeedbackModalOpen(false)}
+                className="p-1 text-teal-200 hover:text-white hover:bg-white/10 rounded-lg transition-all cursor-pointer"
+              >
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+
+            {/* Body */}
+            <form onSubmit={handleSaveDelegationFeedbackModal} className="p-5 overflow-y-auto space-y-4 text-xs">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                <div>
+                  <label className="font-bold text-slate-700 block mb-1">
+                    Thời gian trao đổi (*):
+                  </label>
+                  <input
+                    type="datetime-local"
+                    value={fbFormDate}
+                    onChange={e => setFbFormDate(e.target.value)}
+                    required
+                    className="w-full p-2 rounded-lg border border-slate-300 focus:border-teal-500 font-medium tabular-nums text-slate-800"
+                  />
+                </div>
+                <div>
+                  <label className="font-bold text-slate-700 block mb-1">
+                    Hình thức trao đổi (*):
+                  </label>
+                  <div className="grid grid-cols-3 gap-1">
+                    {[
+                      { id: "DIRECT", label: "Trực tiếp" },
+                      { id: "PHONE", label: "Điện thoại" },
+                      { id: "ONLINE", label: "Trực tuyến" }
+                    ].map(f => (
+                      <button
+                        key={f.id}
+                        type="button"
+                        onClick={() => setFbFormMeetingType(f.id as any)}
+                        className={`p-1.5 rounded-lg font-semibold border text-center transition-all cursor-pointer ${
+                          fbFormMeetingType === f.id
+                            ? "bg-teal-50 border-teal-600 text-[#003B3A] shadow-2xs font-bold"
+                            : "bg-slate-50 border-slate-200 text-slate-600 hover:bg-white"
+                        }`}
+                      >
+                        {f.label}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+              </div>
+
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                <div>
+                  <label className="font-bold text-slate-700 block mb-1">
+                    Người đại diện PHHS đã trao đổi (*):
+                  </label>
+                  <input
+                    type="text"
+                    value={fbFormParentRep}
+                    onChange={e => setFbFormParentRep(e.target.value)}
+                    placeholder="Họ tên cha/mẹ..."
+                    required
+                    className="w-full p-2 rounded-lg border border-slate-300 focus:border-teal-500 text-slate-800"
+                  />
+                </div>
+                <div>
+                  <label className="font-bold text-slate-700 block mb-1">
+                    Số điện thoại PHHS:
+                  </label>
+                  <input
+                    type="text"
+                    value={fbFormParentPhone}
+                    onChange={e => setFbFormParentPhone(e.target.value)}
+                    placeholder="Số điện thoại..."
+                    className="w-full p-2 rounded-lg border border-slate-300 focus:border-teal-500 text-slate-800 font-mono"
+                  />
+                </div>
+              </div>
+
+              <div>
+                <label className="font-bold text-slate-700 block mb-1">
+                  Mức độ đồng thuận của Phụ huynh học sinh (*):
+                </label>
+                <div className="grid grid-cols-3 gap-2">
+                  {[
+                    { id: "HIGH", label: "Đồng thuận cao", desc: "Yên tâm gửi gắm, cam kết phối hợp" },
+                    { id: "SUPPORT_NEEDED", label: "Cần tiếp tục hỗ trợ", desc: "Cần GVCN theo sát thích ứng" },
+                    { id: "CONCERNED", label: "Còn băn khoăn", desc: "Có điểm chưa thống nhất" }
+                  ].map(opt => (
+                    <button
+                      key={opt.id}
+                      type="button"
+                      onClick={() => setFbFormConsentLevel(opt.id as any)}
+                      className={`p-2 rounded-xl border text-left transition-all cursor-pointer ${
+                        fbFormConsentLevel === opt.id
+                          ? opt.id === "HIGH" ? "bg-emerald-50 border-emerald-500 text-emerald-900 ring-1 ring-emerald-500" :
+                            opt.id === "SUPPORT_NEEDED" ? "bg-amber-50 border-amber-500 text-amber-900 ring-1 ring-amber-500" :
+                            "bg-rose-50 border-rose-500 text-rose-900 ring-1 ring-rose-500"
+                          : "bg-slate-50 border-slate-200 text-slate-600 hover:bg-white"
+                      }`}
+                    >
+                      <div className="font-bold text-[11px]">{opt.label}</div>
+                      <div className="text-[10px] opacity-80">{opt.desc}</div>
+                    </button>
+                  ))}
+                </div>
+              </div>
+
+              <div>
+                <label className="font-bold text-slate-700 block mb-1">
+                  Nội dung trao đổi & Thỏa thuận cam kết phối hợp giáo dục (*):
+                </label>
+                <textarea
+                  rows={3}
+                  value={fbFormAgreementContent}
+                  onChange={e => setFbFormAgreementContent(e.target.value)}
+                  required
+                  placeholder="Ghi rõ nội dung thỏa thuận nề nếp, cam kết của gia đình..."
+                  className="w-full p-2.5 rounded-lg border border-slate-300 focus:border-teal-500 text-slate-800 leading-relaxed"
+                />
+              </div>
+
+              <div>
+                <label className="font-bold text-slate-700 block mb-1">
+                  Kế hoạch đồng hành tiếp theo trong các tuần đầu năm học:
+                </label>
+                <input
+                  type="text"
+                  value={fbFormFollowUpPlan}
+                  onChange={e => setFbFormFollowUpPlan(e.target.value)}
+                  placeholder="Ví dụ: Định kỳ thứ 6 hàng tuần báo cáo tình hình thích ứng..."
+                  className="w-full p-2 rounded-lg border border-slate-300 focus:border-teal-500 text-slate-800"
+                />
+              </div>
+
+              <div>
+                <label className="font-bold text-slate-700 block mb-1">
+                  Ghi chú thêm:
+                </label>
+                <input
+                  type="text"
+                  value={fbFormAdditionalNote}
+                  onChange={e => setFbFormAdditionalNote(e.target.value)}
+                  placeholder="Ghi chú thêm nếu có..."
+                  className="w-full p-2 rounded-lg border border-slate-300 focus:border-teal-500 text-slate-800"
+                />
+              </div>
+
+              {/* Footer Modal */}
+              <div className="pt-3 border-t border-slate-100 flex items-center justify-end gap-2">
+                <button
+                  type="button"
+                  onClick={() => setIsDelegationFeedbackModalOpen(false)}
+                  className="px-3.5 py-1.5 border border-slate-200 text-slate-600 rounded-xl font-bold hover:bg-slate-50 transition-all cursor-pointer"
+                >
+                  Đóng
+                </button>
+                <button
+                  type="submit"
+                  disabled={savingDelegationFeedback}
+                  className="px-4 py-1.5 bg-[#003B3A] hover:bg-[#002b2a] text-white rounded-xl font-bold flex items-center gap-1.5 shadow-2xs transition-all cursor-pointer disabled:opacity-50"
+                >
+                  {savingDelegationFeedback ? (
+                    <>
+                      <div className="w-3.5 h-3.5 border-2 border-white border-t-transparent rounded-full animate-spin" />
+                      <span>Đang lưu...</span>
+                    </>
+                  ) : (
+                    <>
+                      <Save className="w-3.5 h-3.5 text-teal-300" />
+                      <span>Lưu Kết Quả Trao Đổi</span>
+                    </>
+                  )}
+                </button>
+              </div>
+            </form>
           </div>
         </div>
       )}

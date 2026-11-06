@@ -418,9 +418,9 @@ export default function TeacherKtdbclConnectPage() {
         </Link>
         <Link
           href="/teacher/du-gio"
-          className="px-3 py-1.5 rounded-lg bg-slate-50 hover:bg-indigo-50 border border-slate-200 text-slate-700 hover:text-indigo-700 transition-colors flex items-center gap-1"
+          className="px-3 py-1.5 rounded-lg bg-slate-50 hover:bg-teal-50 border border-slate-200 text-slate-700 hover:text-teal-800 transition-colors flex items-center gap-1"
         >
-          <BookOpen className="w-3.5 h-3.5 text-indigo-600" /> Dự giờ K-12
+          <BookOpen className="w-3.5 h-3.5 text-teal-800" /> Dự giờ K-12
         </Link>
         <Link
           href="/teacher/ai-growth"

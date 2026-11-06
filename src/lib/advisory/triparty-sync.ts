@@ -266,7 +266,138 @@ export async function ensureTriPartyTables() {
       "updatedById" TEXT,
       "updatedByName" TEXT,
       "updatedAt" DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP
-    );`
+    );`,
+    `CREATE TABLE IF NOT EXISTS "StudentGoalMeta" (
+      "goalId" TEXT NOT NULL PRIMARY KEY,
+      "studentId" TEXT NOT NULL,
+      "academicYearId" TEXT NOT NULL DEFAULT '',
+      "term" TEXT NOT NULL DEFAULT 'HK1',
+      "basisText" TEXT,
+      "baselineValue" TEXT,
+      "targetValue" TEXT,
+      "deadlineDate" TEXT,
+      "actionPlanText" TEXT,
+      "assigneeName" TEXT,
+      "updateMilestone" TEXT,
+      "currentResultText" TEXT,
+      "evidenceText" TEXT,
+      "progressUpdatedAt" DATETIME,
+      "companionTeacherId" TEXT,
+      "companionTeacherName" TEXT,
+      "advisorComment" TEXT,
+      "nextStepNote" TEXT,
+      "progressOutcome" TEXT NOT NULL DEFAULT 'INSUFFICIENT_DATA',
+      "evaluatedById" TEXT,
+      "evaluatedByName" TEXT,
+      "evaluatedTerm" TEXT,
+      "historyJson" TEXT NOT NULL DEFAULT '[]',
+      "updatedAt" DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP
+    );`,
+    `CREATE INDEX IF NOT EXISTS "idx_goal_meta_student" ON "StudentGoalMeta" ("studentId", "academicYearId");`,
+    `CREATE TABLE IF NOT EXISTS "AdvisoryConsultationMeta" (
+      "consultationId" TEXT NOT NULL PRIMARY KEY,
+      "studentId" TEXT NOT NULL,
+      "academicYearId" TEXT NOT NULL DEFAULT '',
+      "term" TEXT NOT NULL DEFAULT 'HK1',
+      "linkedGoalIdsJson" TEXT NOT NULL DEFAULT '[]',
+      "actionAssignee" TEXT,
+      "nextFollowUpDate" TEXT,
+      "consultationStatus" TEXT NOT NULL DEFAULT 'COMPLETED',
+      "studentFeedbackStatus" TEXT NOT NULL DEFAULT 'NOT_REQUESTED',
+      "advisorProcessStatus" TEXT NOT NULL DEFAULT 'NONE',
+      "updatedAt" DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP
+    );`,
+    `CREATE INDEX IF NOT EXISTS "idx_consult_meta_student" ON "AdvisoryConsultationMeta" ("studentId", "academicYearId");`,
+    `CREATE TABLE IF NOT EXISTS "StudentAdvisoryFeedback" (
+      "id" TEXT NOT NULL PRIMARY KEY,
+      "studentId" TEXT NOT NULL,
+      "classId" TEXT,
+      "academicYearId" TEXT NOT NULL DEFAULT '',
+      "term" TEXT NOT NULL DEFAULT 'HK1',
+      "feedbackType" TEXT NOT NULL DEFAULT 'POST_CONSULTATION',
+      "consultationId" TEXT,
+      "goalId" TEXT,
+      "goalCategory" TEXT,
+      "postConsultFeeling" TEXT,
+      "listenedAndRespectedScore" INTEGER NOT NULL DEFAULT 5,
+      "understoodNextSteps" INTEGER NOT NULL DEFAULT 1,
+      "goalAndActionSuitability" TEXT NOT NULL DEFAULT 'PHU_HOP',
+      "supportRequestText" TEXT,
+      "wantsMoreDiscussion" INTEGER NOT NULL DEFAULT 0,
+      "actionsTakenText" TEXT,
+      "resultsAndEvidenceText" TEXT,
+      "difficultiesText" TEXT,
+      "supportNeededText" TEXT,
+      "adjustmentProposalText" TEXT,
+      "shareWithParent" INTEGER NOT NULL DEFAULT 1,
+      "studentStatus" TEXT NOT NULL DEFAULT 'SUBMITTED',
+      "advisorProcessStatus" TEXT NOT NULL DEFAULT 'PENDING',
+      "needsAttention" INTEGER NOT NULL DEFAULT 0,
+      "advisorReplyText" TEXT,
+      "advisorResolutionAction" TEXT,
+      "assignedSupportTeacherId" TEXT,
+      "assignedSupportTeacherName" TEXT,
+      "nextConsultDate" TEXT,
+      "processedById" TEXT,
+      "processedByName" TEXT,
+      "processedAt" DATETIME,
+      "createdAt" DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+      "updatedAt" DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP
+    );`,
+    `CREATE INDEX IF NOT EXISTS "idx_adv_feedback_student" ON "StudentAdvisoryFeedback" ("studentId", "academicYearId", "feedbackType");`,
+    `CREATE INDEX IF NOT EXISTS "idx_adv_feedback_class" ON "StudentAdvisoryFeedback" ("classId", "advisorProcessStatus");`,
+    `CREATE TABLE IF NOT EXISTS "OrientationAdvisoryRecord" (
+      "id" TEXT NOT NULL PRIMARY KEY,
+      "studentId" TEXT NOT NULL,
+      "classId" TEXT,
+      "academicYearId" TEXT NOT NULL DEFAULT '',
+      "activeAssessmentId" TEXT NOT NULL,
+      "hollandCode" TEXT,
+      "scoresJson" TEXT NOT NULL DEFAULT '{}',
+      "topGroupsJson" TEXT NOT NULL DEFAULT '[]',
+      "surveyBatch" TEXT NOT NULL DEFAULT 'Đợt 1',
+      "surveyDate" DATETIME,
+      "workflowStatus" TEXT NOT NULL DEFAULT 'CHO_PHAN_CONG',
+      "assignedById" TEXT,
+      "assignedByName" TEXT,
+      "assignedTlhnTeacherId" TEXT,
+      "assignedTlhnTeacherName" TEXT,
+      "assignmentPrompt" TEXT,
+      "expectedOutcome" TEXT,
+      "dueDate" DATETIME,
+      "acceptedAt" DATETIME,
+      "rejectReason" TEXT,
+      "tlhnDiscussionNotes" TEXT,
+      "studentInterestsAndStrengths" TEXT,
+      "studentConcernsAndAspirations" TEXT,
+      "proposedDevelopmentGoals" TEXT,
+      "agreedGoalId" TEXT,
+      "agreedGoalText" TEXT,
+      "linkedSpecialSubjectsJson" TEXT NOT NULL DEFAULT '[]',
+      "tlhnEvidenceAndNextSteps" TEXT,
+      "isPublishedToParent" INTEGER NOT NULL DEFAULT 0,
+      "notifiedCoordinator" INTEGER NOT NULL DEFAULT 0,
+      "completedAt" DATETIME,
+      "createdAt" DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+      "updatedAt" DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+      UNIQUE("studentId", "academicYearId")
+    );`,
+    `CREATE INDEX IF NOT EXISTS "idx_orient_record_student" ON "OrientationAdvisoryRecord" ("studentId", "academicYearId");`,
+    `CREATE INDEX IF NOT EXISTS "idx_orient_record_tlhn" ON "OrientationAdvisoryRecord" ("assignedTlhnTeacherId", "workflowStatus");`
+  ]
+
+  const alterStatements = [
+    `ALTER TABLE "SubjectTeacherAdvisoryTask" ADD COLUMN "companionType" TEXT NOT NULL DEFAULT 'GVBM'`,
+    `ALTER TABLE "SubjectTeacherAdvisoryTask" ADD COLUMN "goalId" TEXT`,
+    `ALTER TABLE "SubjectTeacherAdvisoryTask" ADD COLUMN "goalTitle" TEXT`,
+    `ALTER TABLE "SubjectTeacherAdvisoryTask" ADD COLUMN "goalCategory" TEXT`,
+    `ALTER TABLE "SubjectTeacherAdvisoryTask" ADD COLUMN "expectedOutcome" TEXT`,
+    `ALTER TABLE "SubjectTeacherAdvisoryTask" ADD COLUMN "acceptDeadline" DATETIME`,
+    `ALTER TABLE "SubjectTeacherAdvisoryTask" ADD COLUMN "updateMilestone" TEXT`,
+    `ALTER TABLE "SubjectTeacherAdvisoryTask" ADD COLUMN "executionLogJson" TEXT NOT NULL DEFAULT '[]'`,
+    `ALTER TABLE "SubjectTeacherAdvisoryTask" ADD COLUMN "evidenceAndProposal" TEXT`,
+    `ALTER TABLE "SubjectTeacherAdvisoryTask" ADD COLUMN "declineReason" TEXT`,
+    `ALTER TABLE "SubjectTeacherAdvisoryTask" ADD COLUMN "supplementRequestNote" TEXT`
   ]
 
   for (const sql of ddlStatements) {
@@ -274,6 +405,13 @@ export async function ensureTriPartyTables() {
       await prisma.$executeRawUnsafe(sql)
     } catch (err) {
       console.error("[TriPartySync] DDL warning:", err)
+    }
+  }
+  for (const sql of alterStatements) {
+    try {
+      await prisma.$executeRawUnsafe(sql)
+    } catch {
+      // Column already exists
     }
   }
   tablesInitialized = true

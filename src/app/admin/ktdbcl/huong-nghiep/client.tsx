@@ -397,7 +397,7 @@ export function CareerGuidanceClient({
                     </td>
                     <td className="py-3 px-4">
                       {r.surveyResult ? (
-                        <span className="px-2 py-1 bg-violet-50 text-violet-700 rounded-md font-semibold border border-violet-200 block text-center">
+                        <span className="px-2 py-1 bg-teal-50 text-teal-800 rounded-md font-semibold border border-teal-200 block text-center">
                           {r.surveyResult}
                         </span>
                       ) : (

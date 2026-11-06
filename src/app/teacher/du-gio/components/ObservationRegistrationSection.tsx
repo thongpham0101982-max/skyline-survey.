@@ -1215,10 +1215,10 @@ export function ObservationRegistrationSection(props: any) {
         {/* Card 3: Đã đánh giá */}
         <div 
           onClick={onViewEvaluations}
-          className="bg-white rounded-2xl border border-slate-200/80 p-4 sm:p-5 shadow-2xs flex items-center justify-between gap-3 cursor-pointer hover:border-purple-300 hover:shadow-xs transition-all group"
+          className="bg-white rounded-2xl border border-slate-200/80 p-4 sm:p-5 shadow-2xs flex items-center justify-between gap-3 cursor-pointer hover:border-teal-400 hover:shadow-xs transition-all group"
         >
           <div className="flex items-center gap-3">
-            <div className="w-11 h-11 rounded-2xl bg-purple-50 text-purple-600 flex items-center justify-center border border-purple-100 group-hover:scale-105 transition-transform shrink-0">
+            <div className="w-11 h-11 rounded-2xl bg-teal-50 text-teal-800 flex items-center justify-center border border-teal-200 group-hover:scale-105 transition-transform shrink-0">
               <FileText className="w-5 h-5" />
             </div>
             <div>
@@ -1230,7 +1230,7 @@ export function ObservationRegistrationSection(props: any) {
               </div>
             </div>
           </div>
-          <div className="w-7 h-7 rounded-xl bg-slate-50 group-hover:bg-purple-50 text-slate-400 group-hover:text-purple-600 flex items-center justify-center transition-colors shrink-0">
+          <div className="w-7 h-7 rounded-xl bg-slate-50 group-hover:bg-teal-50 text-slate-400 group-hover:text-teal-800 flex items-center justify-center transition-colors shrink-0">
             <ChevronRight className="w-4 h-4" />
           </div>
         </div>
@@ -1238,7 +1238,7 @@ export function ObservationRegistrationSection(props: any) {
         {/* Card 4: Điểm TB tháng */}
         <div className="bg-white rounded-2xl border border-slate-200/80 p-4 sm:p-5 shadow-2xs flex items-center justify-between gap-3">
           <div className="flex items-center gap-3">
-            <div className="w-11 h-11 rounded-2xl bg-orange-50 text-orange-500 flex items-center justify-center border border-orange-100 shrink-0">
+            <div className="w-11 h-11 rounded-2xl bg-amber-50 text-amber-700 flex items-center justify-center border border-amber-200 shrink-0">
               <BarChart3 className="w-5 h-5" />
             </div>
             <div>
@@ -1323,11 +1323,11 @@ export function ObservationRegistrationSection(props: any) {
             onClick={() => setCreationMode("ASSIGNED")}
             className={`flex items-center justify-center gap-2 px-5 py-2.5 rounded-xl text-xs font-black transition-all cursor-pointer ${
               creationMode === "ASSIGNED"
-                ? "bg-purple-700 text-white shadow-md shadow-purple-900/20 scale-[1.01]"
+                ? "bg-[#003B3A] text-white shadow-md shadow-purple-900/20 scale-[1.01]"
                 : "bg-white text-slate-700 hover:bg-slate-50 border border-slate-200"
             }`}
           >
-            <UserCheck className="w-4 h-4 text-purple-300" />
+            <UserCheck className="w-4 h-4 text-teal-700" />
             <span>Chỉ định dự giờ</span>
           </button>
         )}
@@ -1344,7 +1344,7 @@ export function ObservationRegistrationSection(props: any) {
             <div className="flex items-center gap-3 border-b border-slate-100 pb-4">
               <div className={`w-10 h-10 rounded-2xl flex items-center justify-center shrink-0 ${
                 creationMode === "ASSIGNED"
-                  ? "bg-purple-50 text-purple-700 border border-purple-200"
+                  ? "bg-teal-50 text-teal-800 border border-teal-200"
                   : creationMode === "CAMPUS_SCHEDULE"
                   ? "bg-teal-50 text-[#007068] border border-teal-200"
                   : "bg-teal-50 text-[#00A19A] border border-teal-100"
@@ -1354,7 +1354,7 @@ export function ObservationRegistrationSection(props: any) {
                 ) : creationMode === "CAMPUS_SCHEDULE" ? (
                   <Building2 className="w-5 h-5 text-[#007068]" />
                 ) : creationMode === "ASSIGNED" ? (
-                  <UserCheck className="w-5 h-5 text-purple-700" />
+                  <UserCheck className="w-5 h-5 text-teal-800" />
                 ) : (
                   <Calendar className="w-5 h-5" />
                 )}
@@ -1477,7 +1477,7 @@ export function ObservationRegistrationSection(props: any) {
                           return (
                             <span className={`text-[10px] font-black px-2 py-0.5 rounded-full border ${
                               isInter
-                                ? "bg-indigo-50 text-indigo-800 border-indigo-200"
+                                ? "bg-teal-50 text-teal-800 border-teal-200"
                                 : "bg-emerald-50 text-emerald-800 border-emerald-200"
                             }`}>
                               {isInter ? "🔵 Liên cơ sở" : "🟢 Nội bộ CS"}
@@ -1890,7 +1890,7 @@ export function ObservationRegistrationSection(props: any) {
                   surpriseQuota.isExceeded && !surpriseQuota.isUnlimited
                     ? "bg-rose-50/90 border-rose-200 text-rose-950 shadow-xs"
                     : surpriseQuota.isUnlimited
-                    ? "bg-gradient-to-r from-blue-50/90 via-indigo-50/70 to-teal-50/80 border-indigo-200/90 text-slate-800 shadow-xs"
+                    ? "bg-gradient-to-r from-blue-50/90 via-indigo-50/70 to-teal-50/80 border-teal-200/90 text-slate-800 shadow-xs"
                     : "bg-gradient-to-r from-teal-50/90 via-emerald-50/60 to-cyan-50/80 border-teal-200/90 text-slate-800 shadow-xs"
                 }`}>
                   <div className="flex flex-col md:flex-row md:items-center justify-between gap-3">
@@ -1899,7 +1899,7 @@ export function ObservationRegistrationSection(props: any) {
                         surpriseQuota.isExceeded && !surpriseQuota.isUnlimited
                           ? "bg-rose-200 text-rose-800"
                           : surpriseQuota.isUnlimited
-                          ? "bg-indigo-200/80 text-indigo-700"
+                          ? "bg-teal-200/80 text-teal-800"
                           : "bg-teal-200/70 text-[#00A19A]"
                       }`}>
                         <Target className="w-5 h-5" />
@@ -1916,7 +1916,7 @@ export function ObservationRegistrationSection(props: any) {
                             surpriseQuota.isExceeded && !surpriseQuota.isUnlimited
                               ? "bg-rose-600 text-white"
                               : surpriseQuota.isUnlimited
-                              ? "bg-indigo-600 text-white"
+                              ? "bg-[#003B3A] text-white"
                               : "bg-[#00A19A] text-white"
                           }`}>
                             {surpriseQuota.isUnlimited ? "✨ Không giới hạn đột xuất" : "Tối đa 50% chỉ tiêu"}
@@ -1925,7 +1925,7 @@ export function ObservationRegistrationSection(props: any) {
                         <p className="text-[11px] font-medium text-slate-600 mt-1">
                           {surpriseQuota.isUnlimited ? (
                             <>
-                              Chỉ tiêu quy định: <strong className="text-slate-800 font-bold">{surpriseQuota.monthlyTarget} tiết/tháng</strong> • Dự giờ đột xuất: <strong className="text-indigo-600 font-black">Không hạn chế số tiết</strong> (Dành cho {surpriseQuota.roleName})
+                              Chỉ tiêu quy định: <strong className="text-slate-800 font-bold">{surpriseQuota.monthlyTarget} tiết/tháng</strong> • Dự giờ đột xuất: <strong className="text-teal-800 font-black">Không hạn chế số tiết</strong> (Dành cho {surpriseQuota.roleName})
                             </>
                           ) : (
                             <>
@@ -1939,7 +1939,7 @@ export function ObservationRegistrationSection(props: any) {
                     <div className="flex flex-col sm:items-end gap-1.5 shrink-0 pl-12 md:pl-0">
                       <div className="flex items-center gap-2 text-xs font-black">
                         {surpriseQuota.isUnlimited ? (
-                          <span className="text-indigo-700 font-bold">
+                          <span className="text-teal-800 font-bold">
                             Đã thực hiện: {surpriseQuota.currentSurpriseCount} tiết đột xuất
                           </span>
                         ) : (
@@ -1967,7 +1967,7 @@ export function ObservationRegistrationSection(props: any) {
                       )}
                       <div className="text-[11px] font-bold">
                         {surpriseQuota.isUnlimited ? (
-                          <span className="text-indigo-700 font-bold">⚡ Cấp quản lý linh hoạt thực hiện đột xuất</span>
+                          <span className="text-teal-800 font-bold">⚡ Cấp quản lý linh hoạt thực hiện đột xuất</span>
                         ) : surpriseQuota.isExceeded ? (
                           <span className="text-rose-600 font-black">⚠️ Đã đạt giới hạn tối đa 50% chỉ tiêu</span>
                         ) : (
@@ -1990,28 +1990,28 @@ export function ObservationRegistrationSection(props: any) {
 
               {/* CO-OBSERVATION: BỘ LỌC VÀ CẢNH BÁO PHIÊN DỰ GIỜ ĐỘT XUẤT CÙNG TIẾT */}
               {loadingExistingSlot && (
-                <div className="p-3.5 rounded-2xl bg-indigo-50/70 border border-indigo-200 text-indigo-800 text-xs flex items-center gap-2 animate-pulse">
-                  <Loader2 className="w-4 h-4 animate-spin text-indigo-600 shrink-0" />
+                <div className="p-3.5 rounded-2xl bg-teal-50/70 border border-teal-200 text-teal-800 text-xs flex items-center gap-2 animate-pulse">
+                  <Loader2 className="w-4 h-4 animate-spin text-teal-800 shrink-0" />
                   <span className="font-semibold">Đang tự động kiểm tra phiên dự giờ của giáo viên trong cùng tiết học...</span>
                 </div>
               )}
 
               {existingSurpriseSlot && !dismissDuplicateNotice && !joinExistingSlot && (
-                <div className="p-5 sm:p-6 rounded-3xl bg-gradient-to-br from-indigo-50/95 via-sky-50/80 to-teal-50/90 border-2 border-indigo-300 shadow-sm flex flex-col gap-4 text-slate-800 animate-in fade-in slide-in-from-top-2 duration-300">
+                <div className="p-5 sm:p-6 rounded-3xl bg-gradient-to-br from-teal-600/95 via-sky-50/80 to-teal-50/90 border-2 border-teal-200 shadow-sm flex flex-col gap-4 text-slate-800 animate-in fade-in slide-in-from-top-2 duration-300">
                   <div className="flex items-start gap-3.5">
-                    <div className="w-11 h-11 rounded-2xl bg-indigo-600 text-white flex items-center justify-center shrink-0 shadow-md">
+                    <div className="w-11 h-11 rounded-2xl bg-[#003B3A] text-white flex items-center justify-center shrink-0 shadow-md">
                       <Users className="w-6 h-6" />
                     </div>
                     <div className="flex-1">
                       <div className="flex items-center gap-2 flex-wrap">
-                        <span className="px-2.5 py-0.5 rounded-full text-[10px] font-black bg-indigo-600 text-white uppercase tracking-wider">
+                        <span className="px-2.5 py-0.5 rounded-full text-[10px] font-black bg-[#003B3A] text-white uppercase tracking-wider">
                           Phát hiện phiên dự giờ cùng tiết học
                         </span>
-                        <span className="text-[11px] font-bold text-indigo-700 bg-indigo-100/80 px-2 py-0.5 rounded-full border border-indigo-200">
+                        <span className="text-[11px] font-bold text-teal-800 bg-teal-100/80 px-2 py-0.5 rounded-full border border-teal-200">
                           ⚡ Gộp phiên (Co-observation)
                         </span>
                       </div>
-                      <h5 className="text-sm sm:text-base font-black text-indigo-950 mt-1.5 leading-snug">
+                      <h5 className="text-sm sm:text-base font-black text-teal-800 mt-1.5 leading-snug">
                         “Đã tồn tại phiên dự giờ của giáo viên này trong cùng tiết học. Bạn có muốn tham gia phiên dự giờ hiện có?”
                       </h5>
                       <p className="text-xs text-slate-600 mt-1 leading-relaxed">
@@ -2021,7 +2021,7 @@ export function ObservationRegistrationSection(props: any) {
                   </div>
 
                   {/* Chi tiết phiên hiện có */}
-                  <div className="p-4 sm:p-5 rounded-2xl bg-white/95 border border-indigo-100 shadow-2xs space-y-3">
+                  <div className="p-4 sm:p-5 rounded-2xl bg-white/95 border border-teal-200 shadow-2xs space-y-3">
                     <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 text-xs">
                       <div className="bg-slate-50/80 p-2.5 rounded-xl border border-slate-100">
                         <span className="text-slate-400 font-bold uppercase text-[10px] block">Môn & Bài dạy</span>
@@ -2045,13 +2045,13 @@ export function ObservationRegistrationSection(props: any) {
 
                     <div className="pt-2.5 border-t border-slate-100 flex items-center justify-between flex-wrap gap-2 text-xs">
                       <div className="flex items-center gap-1.5 flex-wrap">
-                        <User className="w-3.5 h-3.5 text-indigo-600 shrink-0" />
+                        <User className="w-3.5 h-3.5 text-teal-800 shrink-0" />
                         <span className="text-slate-500 font-semibold">Người tham gia dự giờ:</span>
-                        <span className="font-bold text-indigo-950">
+                        <span className="font-bold text-teal-800">
                           {existingSurpriseSlot.participants?.map((p: any) => `${p.teacherName} (${p.position || "Cán bộ"})`).join(", ") || "Đang dự"}
                         </span>
                       </div>
-                      <span className="text-[11px] font-bold text-indigo-700 bg-indigo-50 px-2.5 py-0.5 rounded-full border border-indigo-200">
+                      <span className="text-[11px] font-bold text-teal-800 bg-teal-50 px-2.5 py-0.5 rounded-full border border-teal-200">
                         {existingSurpriseSlot.participantCount} người tham gia
                       </span>
                     </div>
@@ -3137,18 +3137,18 @@ export function ObservationRegistrationSection(props: any) {
                     ) : creationMode === "OBSERVER_REQUEST" ? (
 
             /* ===== FORM 2: GVBM XIN ĐĂNG KÝ DỰ GIỜ ===== */
-            <form onSubmit={handleRequestSubmit} className="flex flex-col gap-4 text-xs font-semibold bg-indigo-50/30 p-5 rounded-2xl border border-indigo-100/80">
-              <div className="bg-indigo-500/10 border border-indigo-200/70 rounded-xl p-3.5 flex items-start gap-3">
-                <Info className="w-4 h-4 text-indigo-600 shrink-0 mt-0.5" />
-                <p className="text-xs font-medium text-indigo-950 leading-relaxed">
-                  <span className="font-extrabold text-indigo-900">Đề xuất xin dự giờ:</span> Chọn Tổ chuyên môn & Giáo viên dạy, cùng Cơ sở, Khối lớp và Tiết học mong muốn. Yêu cầu sẽ được gửi tới Giáo viên dạy để xem xét phê duyệt.
+            <form onSubmit={handleRequestSubmit} className="flex flex-col gap-4 text-xs font-semibold bg-teal-50/30 p-5 rounded-2xl border border-teal-100/80">
+              <div className="bg-teal-500/10 border border-teal-200/70 rounded-xl p-3.5 flex items-start gap-3">
+                <Info className="w-4 h-4 text-teal-800 shrink-0 mt-0.5" />
+                <p className="text-xs font-medium text-teal-800 leading-relaxed">
+                  <span className="font-extrabold text-teal-800">Đề xuất xin dự giờ:</span> Chọn Tổ chuyên môn & Giáo viên dạy, cùng Cơ sở, Khối lớp và Tiết học mong muốn. Yêu cầu sẽ được gửi tới Giáo viên dạy để xem xét phê duyệt.
                 </p>
               </div>
 
               {/* Group 1: Tổ chuyên môn & Giáo viên dạy */}
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-3.5">
                 <div className="flex flex-col gap-1.5">
-                  <label className="text-[11px] font-black text-indigo-900 uppercase tracking-wide">1. Chọn Tổ chuyên môn</label>
+                  <label className="text-[11px] font-black text-teal-800 uppercase tracking-wide">1. Chọn Tổ chuyên môn</label>
                   <select
                     value={reqDeptId}
                     onChange={e => {
@@ -3171,7 +3171,7 @@ export function ObservationRegistrationSection(props: any) {
                         }
                       }
                     }}
-                    className="w-full text-xs font-bold p-3 rounded-xl border border-indigo-200 focus:ring-2 focus:ring-indigo-500 focus:border-transparent outline-none bg-white text-slate-800"
+                    className="w-full text-xs font-bold p-3 rounded-xl border border-teal-200 focus:ring-2 focus:ring-indigo-500 focus:border-transparent outline-none bg-white text-slate-800"
                   >
                     <option value="">Tất cả các Tổ chuyên môn</option>
                     {departments.map((d: any) => (
@@ -3181,10 +3181,10 @@ export function ObservationRegistrationSection(props: any) {
                 </div>
 
                 <div className="flex flex-col gap-1.5">
-                  <label className="text-[11px] font-black text-indigo-900 uppercase tracking-wide flex items-center justify-between">
+                  <label className="text-[11px] font-black text-teal-800 uppercase tracking-wide flex items-center justify-between">
                     <span>2. Chọn Giáo viên dạy *</span>
                     {filteredTeachersForRequest.length > 0 && (
-                      <span className="text-[10px] text-indigo-600 font-semibold lowercase">
+                      <span className="text-[10px] text-teal-800 font-semibold lowercase">
                         ({filteredTeachersForRequest.length} giáo viên)
                       </span>
                     )}
@@ -3218,7 +3218,7 @@ export function ObservationRegistrationSection(props: any) {
                       }
                     }}
                     required
-                    className="w-full text-xs font-bold p-3 rounded-xl border border-indigo-200 focus:ring-2 focus:ring-indigo-500 focus:border-transparent outline-none bg-white text-slate-800"
+                    className="w-full text-xs font-bold p-3 rounded-xl border border-teal-200 focus:ring-2 focus:ring-indigo-500 focus:border-transparent outline-none bg-white text-slate-800"
                   >
                     <option value="">-- Chọn Giáo viên dạy --</option>
                     {filteredTeachersForRequest.map((t: any) => {
@@ -3253,7 +3253,7 @@ export function ObservationRegistrationSection(props: any) {
                 }
 
                 return (
-                  <div className="p-3.5 bg-gradient-to-r from-emerald-50 via-teal-50 to-indigo-50 border border-teal-200/90 rounded-2xl shadow-xs flex flex-col sm:flex-row sm:items-center justify-between gap-3 animate-in fade-in duration-200">
+                  <div className="p-3.5 bg-gradient-to-r from-emerald-50 via-teal-50 to-emerald-600 border border-teal-200/90 rounded-2xl shadow-xs flex flex-col sm:flex-row sm:items-center justify-between gap-3 animate-in fade-in duration-200">
                     <div className="flex flex-col gap-1">
                       <div className="flex flex-wrap items-center gap-2">
                         <span className="text-xs font-black text-slate-900 flex items-center gap-1.5">
@@ -3263,7 +3263,7 @@ export function ObservationRegistrationSection(props: any) {
                         <span className="px-2 py-0.5 bg-white border border-teal-200 text-teal-800 rounded-md font-extrabold text-[11px]">
                           Mã NV: {selTeacher.teacherCode || "N/A"}
                         </span>
-                        <span className="px-2 py-0.5 bg-white border border-indigo-200 text-indigo-800 rounded-md font-extrabold text-[11px]">
+                        <span className="px-2 py-0.5 bg-white border border-teal-200 text-teal-800 rounded-md font-extrabold text-[11px]">
                           Tổ CM: {deptName}
                         </span>
                         {campusObj?.campusName && (
@@ -3291,12 +3291,12 @@ export function ObservationRegistrationSection(props: any) {
               {/* Group 2: Môn học & Chủ đề/Tên bài dạy */}
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-3.5">
                 <div className="flex flex-col gap-1.5">
-                  <label className="text-[11px] font-black text-indigo-900 uppercase tracking-wide">3. Chọn Môn học *</label>
+                  <label className="text-[11px] font-black text-teal-800 uppercase tracking-wide">3. Chọn Môn học *</label>
                   <select
                     value={reqSubjectId}
                     onChange={e => setReqSubjectId(e.target.value)}
                     required
-                    className="w-full text-xs font-bold p-3 rounded-xl border border-indigo-200 focus:ring-2 focus:ring-indigo-500 focus:border-transparent outline-none bg-white text-slate-800"
+                    className="w-full text-xs font-bold p-3 rounded-xl border border-teal-200 focus:ring-2 focus:ring-indigo-500 focus:border-transparent outline-none bg-white text-slate-800"
                   >
                     <option value="">-- Chọn môn học --</option>
                     {subjects.map((s: any) => (
@@ -3313,14 +3313,14 @@ export function ObservationRegistrationSection(props: any) {
                 </div>
 
                 <div className="flex flex-col gap-1.5">
-                  <label className="text-[11px] font-black text-indigo-900 uppercase tracking-wide">4. Tên bài dạy / Chủ đề dự giờ *</label>
+                  <label className="text-[11px] font-black text-teal-800 uppercase tracking-wide">4. Tên bài dạy / Chủ đề dự giờ *</label>
                   <input
                     type="text"
                     placeholder="Ví dụ: Cấp số cộng, Sự nảy mầm của hạt..."
                     value={reqTopic}
                     onChange={e => setReqTopic(e.target.value)}
                     required
-                    className="w-full text-xs font-bold p-3 rounded-xl border border-indigo-200 focus:ring-2 focus:ring-indigo-500 focus:border-transparent outline-none bg-white text-slate-800"
+                    className="w-full text-xs font-bold p-3 rounded-xl border border-teal-200 focus:ring-2 focus:ring-indigo-500 focus:border-transparent outline-none bg-white text-slate-800"
                   />
                 </div>
               </div>
@@ -3328,12 +3328,12 @@ export function ObservationRegistrationSection(props: any) {
               {/* Group 3: Cơ sở & Cấp học */}
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-3.5">
                 <div className="flex flex-col gap-1.5">
-                  <label className="text-[11px] font-black text-indigo-900 uppercase tracking-wide">5. Chọn Cơ sở *</label>
+                  <label className="text-[11px] font-black text-teal-800 uppercase tracking-wide">5. Chọn Cơ sở *</label>
                   <select
                     value={reqCampusId}
                     onChange={e => { setReqCampusId(e.target.value); setReqClassId(""); }}
                     required
-                    className="w-full text-xs font-bold p-3 rounded-xl border border-indigo-200 focus:ring-2 focus:ring-indigo-500 focus:border-transparent outline-none bg-white text-slate-800"
+                    className="w-full text-xs font-bold p-3 rounded-xl border border-teal-200 focus:ring-2 focus:ring-indigo-500 focus:border-transparent outline-none bg-white text-slate-800"
                   >
                     <option value="">-- Chọn cơ sở --</option>
                     {campuses.map((c: any) => (
@@ -3343,12 +3343,12 @@ export function ObservationRegistrationSection(props: any) {
                 </div>
 
                 <div className="flex flex-col gap-1.5">
-                  <label className="text-[11px] font-black text-indigo-900 uppercase tracking-wide">6. Chọn Cấp học *</label>
+                  <label className="text-[11px] font-black text-teal-800 uppercase tracking-wide">6. Chọn Cấp học *</label>
                   <select
                     value={reqLevel}
                     onChange={e => { setReqLevel(e.target.value); setReqGrade(""); setReqClassId(""); }}
                     required
-                    className="w-full text-xs font-bold p-3 rounded-xl border border-indigo-200 focus:ring-2 focus:ring-indigo-500 focus:border-transparent outline-none bg-white text-slate-800"
+                    className="w-full text-xs font-bold p-3 rounded-xl border border-teal-200 focus:ring-2 focus:ring-indigo-500 focus:border-transparent outline-none bg-white text-slate-800"
                   >
                     <option value="">-- Chọn cấp học --</option>
                     <option value="Mầm non">Mầm non</option>
@@ -3362,13 +3362,13 @@ export function ObservationRegistrationSection(props: any) {
               {/* Group 4: Khối & Lớp */}
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-3.5">
                 <div className="flex flex-col gap-1.5">
-                  <label className="text-[11px] font-black text-indigo-900 uppercase tracking-wide">7. Chọn Khối lớp *</label>
+                  <label className="text-[11px] font-black text-teal-800 uppercase tracking-wide">7. Chọn Khối lớp *</label>
                   <select
                     value={reqGrade}
                     onChange={e => { setReqGrade(e.target.value); setReqClassId(""); }}
                     required
                     disabled={!reqLevel}
-                    className="w-full text-xs font-bold p-3 rounded-xl border border-indigo-200 focus:ring-2 focus:ring-indigo-500 focus:border-transparent outline-none bg-white text-slate-800 disabled:opacity-50"
+                    className="w-full text-xs font-bold p-3 rounded-xl border border-teal-200 focus:ring-2 focus:ring-indigo-500 focus:border-transparent outline-none bg-white text-slate-800 disabled:opacity-50"
                   >
                     <option value="">-- Chọn khối học --</option>
                     {getGradesForLevel(reqLevel).map((g: any) => (
@@ -3378,7 +3378,7 @@ export function ObservationRegistrationSection(props: any) {
                 </div>
 
                 <div className="flex flex-col gap-1.5">
-                  <label className="text-[11px] font-black text-indigo-900 uppercase tracking-wide">8. Chọn Lớp học *</label>
+                  <label className="text-[11px] font-black text-teal-800 uppercase tracking-wide">8. Chọn Lớp học *</label>
                   <select
                     value={reqClassId}
                     onChange={e => {
@@ -3406,7 +3406,7 @@ export function ObservationRegistrationSection(props: any) {
                     }}
                     required
                     disabled={!reqCampusId && !reqGrade && !reqLevel}
-                    className="w-full text-xs font-bold p-3 rounded-xl border border-indigo-200 focus:ring-2 focus:ring-indigo-500 focus:border-transparent outline-none bg-white text-slate-800 disabled:opacity-50"
+                    className="w-full text-xs font-bold p-3 rounded-xl border border-teal-200 focus:ring-2 focus:ring-indigo-500 focus:border-transparent outline-none bg-white text-slate-800 disabled:opacity-50"
                   >
                     <option value="">
                       {filteredReqClasses.length > 0
@@ -3430,45 +3430,45 @@ export function ObservationRegistrationSection(props: any) {
               {/* Group 5: Tiết & Ngày */}
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-3.5">
                 <div className="flex flex-col gap-1.5">
-                  <label className="text-[11px] font-black text-indigo-900 uppercase tracking-wide">9. Tiết học dự *</label>
+                  <label className="text-[11px] font-black text-teal-800 uppercase tracking-wide">9. Tiết học dự *</label>
                   <select
                     value={reqPeriod}
                     onChange={e => setReqPeriod(e.target.value)}
                     required
-                    className="w-full text-xs font-bold p-3 rounded-xl border border-indigo-200 focus:ring-2 focus:ring-indigo-500 focus:border-transparent outline-none bg-white text-slate-800"
+                    className="w-full text-xs font-bold p-3 rounded-xl border border-teal-200 focus:ring-2 focus:ring-indigo-500 focus:border-transparent outline-none bg-white text-slate-800"
                   >
                     {periodOptions.map((p: any) => <option key={p} value={p}>{p}</option>)}
                   </select>
                 </div>
 
                 <div className="flex flex-col gap-1.5">
-                  <label className="text-[11px] font-black text-indigo-900 uppercase tracking-wide">10. Ngày dạy dự kiến *</label>
+                  <label className="text-[11px] font-black text-teal-800 uppercase tracking-wide">10. Ngày dạy dự kiến *</label>
                   <input
                     type="date"
                     value={reqDate}
                     min={minAllowedDate}
                     onChange={e => setReqDate(e.target.value)}
                     required
-                    className="w-full text-xs font-bold p-2.5 rounded-xl border border-indigo-200 focus:ring-2 focus:ring-indigo-500 focus:border-transparent outline-none bg-white text-slate-800"
+                    className="w-full text-xs font-bold p-2.5 rounded-xl border border-teal-200 focus:ring-2 focus:ring-indigo-500 focus:border-transparent outline-none bg-white text-slate-800"
                   />
                 </div>
               </div>
 
               <div className="flex flex-col gap-1.5">
-                <label className="text-[11px] font-black text-indigo-900 uppercase tracking-wide">11. Ghi chú / Lời nhắn tới GV dạy</label>
+                <label className="text-[11px] font-black text-teal-800 uppercase tracking-wide">11. Ghi chú / Lời nhắn tới GV dạy</label>
                 <textarea
                   placeholder="Ghi chú thêm về nội dung bài dạy cần quan sát, yêu cầu hỗ trợ..."
                   rows={2}
                   value={reqNotes}
                   onChange={e => setReqNotes(e.target.value)}
-                  className="w-full text-xs font-medium p-3 rounded-xl border border-indigo-200 focus:ring-2 focus:ring-indigo-500 outline-none bg-white text-slate-800 resize-none"
+                  className="w-full text-xs font-medium p-3 rounded-xl border border-teal-200 focus:ring-2 focus:ring-indigo-500 outline-none bg-white text-slate-800 resize-none"
                 />
               </div>
 
               <button
                 type="submit"
                 disabled={submitting}
-                className="w-full mt-2 py-3.5 bg-gradient-to-r from-indigo-600 to-violet-600 hover:from-indigo-700 hover:to-violet-700 disabled:from-slate-400 disabled:to-slate-400 text-white font-extrabold rounded-xl transition-all shadow-md shadow-indigo-600/25 text-xs flex items-center justify-center gap-2.5 cursor-pointer disabled:cursor-not-allowed"
+                className="w-full mt-2 py-3.5 bg-gradient-to-r from-teal-600 to-emerald-600 hover:from-teal-600 hover:to-emerald-600 disabled:from-slate-400 disabled:to-slate-400 text-white font-extrabold rounded-xl transition-all shadow-md shadow-indigo-600/25 text-xs flex items-center justify-center gap-2.5 cursor-pointer disabled:cursor-not-allowed"
               >
                 {submitting ? (
                   <>
@@ -3488,18 +3488,18 @@ export function ObservationRegistrationSection(props: any) {
             </form>
           ) : creationMode === "ASSIGNED" ? (
             /* ===== FORM 4: CHỈ ĐỊNH DỰ GIỜ (BGH/GĐCS, QLCM, TTCM) ===== */
-            <form onSubmit={handleAssignedFormSubmit} className="flex flex-col gap-5 text-xs font-semibold bg-purple-50/20 p-5 sm:p-6 rounded-3xl border border-purple-100 shadow-sm animate-in fade-in duration-300">
+            <form onSubmit={handleAssignedFormSubmit} className="flex flex-col gap-5 text-xs font-semibold bg-teal-50/20 p-5 sm:p-6 rounded-3xl border border-teal-200 shadow-sm animate-in fade-in duration-300">
               
               {/* Banner Hướng dẫn nghiệp vụ */}
-              <div className="bg-gradient-to-r from-purple-500/10 via-purple-500/5 to-indigo-500/10 border border-purple-200 rounded-2xl p-4 flex items-start gap-3.5">
-                <div className="size-8 rounded-xl bg-purple-100 text-purple-700 flex items-center justify-center shrink-0">
+              <div className="bg-gradient-to-r from-teal-600/10 via-purple-500/5 to-emerald-600/10 border border-teal-200 rounded-2xl p-4 flex items-start gap-3.5">
+                <div className="size-8 rounded-xl bg-teal-50 text-teal-800 flex items-center justify-center shrink-0">
                   <UserCheck className="size-4" />
                 </div>
                 <div className="space-y-1">
-                  <h4 className="font-black text-purple-900 text-xs uppercase tracking-wide">
+                  <h4 className="font-black text-teal-800 text-xs uppercase tracking-wide">
                     Chỉ định dự giờ chuyên môn
                   </h4>
-                  <p className="text-[11px] font-medium text-purple-950 leading-relaxed">
+                  <p className="text-[11px] font-medium text-teal-800 leading-relaxed">
                     Cán bộ quản lý (BGH/GĐCS, QLCM, TTCM) chủ động tạo lượt dự giờ cho giáo viên và phân công người dự. <strong>Lượt dự giờ này không yêu cầu giáo viên được dự phê duyệt</strong> và có hiệu lực ngay khi lưu thành công.
                   </p>
                 </div>
@@ -3546,7 +3546,7 @@ export function ObservationRegistrationSection(props: any) {
                       }}
                       className={`py-2.5 px-3 rounded-xl font-bold text-xs transition-all border cursor-pointer ${
                         assignedLevel === "Phổ thông K-12"
-                          ? "bg-purple-700 text-white border-purple-700 shadow-sm"
+                          ? "bg-[#003B3A] text-white border-teal-400 shadow-sm"
                           : "bg-white text-slate-600 border-slate-200 hover:bg-slate-50"
                       }`}
                     >
@@ -3608,7 +3608,7 @@ export function ObservationRegistrationSection(props: any) {
                 <div className="flex flex-col gap-1.5">
                   <label className="text-[11px] font-black text-slate-700 uppercase tracking-wide flex items-center justify-between">
                     <span>4. Lớp học *</span>
-                    <span className="text-[10px] text-purple-600 font-bold">
+                    <span className="text-[10px] text-teal-800 font-bold">
                       Map theo cơ sở ({availableClassesForAssigned.length} lớp)
                     </span>
                   </label>
@@ -3651,7 +3651,7 @@ export function ObservationRegistrationSection(props: any) {
                 <div className="flex flex-col gap-1.5">
                   <label className="text-[11px] font-black text-slate-700 uppercase tracking-wide flex items-center justify-between">
                     <span>5. Tổ chuyên môn</span>
-                    <span className="text-[10px] text-purple-600 font-bold">
+                    <span className="text-[10px] text-teal-800 font-bold">
                       {levelFilteredAssignedDepts.length} {assignedLevel === "Mầm non" ? "TCM/BGH Mầm non" : "TCM Phổ thông"}
                     </span>
                   </label>
@@ -3671,15 +3671,15 @@ export function ObservationRegistrationSection(props: any) {
                 </div>
 
                 <div className="flex flex-col gap-1.5">
-                  <label className="text-[11px] font-black text-purple-900 uppercase tracking-wide flex items-center justify-between">
+                  <label className="text-[11px] font-black text-teal-800 uppercase tracking-wide flex items-center justify-between">
                     <span>6. Giáo viên được dự (Chỉ định) *</span>
-                    <span className="text-[10px] text-purple-600 font-semibold lowercase">Không cần GV duyệt</span>
+                    <span className="text-[10px] text-teal-800 font-semibold lowercase">Không cần GV duyệt</span>
                   </label>
                   <select
                     value={assignedTeacherId}
                     onChange={e => setAssignedTeacherId(e.target.value)}
                     required
-                    className="w-full text-xs font-bold p-3 rounded-xl border-2 border-purple-300 focus:ring-2 focus:ring-purple-500 outline-none bg-white text-slate-800 shadow-2xs"
+                    className="w-full text-xs font-bold p-3 rounded-xl border-2 border-teal-400 focus:ring-2 focus:ring-purple-500 outline-none bg-white text-slate-800 shadow-2xs"
                   >
                     <option value="">-- Chọn giáo viên được dự --</option>
                     {(teachers || [])
@@ -3769,10 +3769,10 @@ export function ObservationRegistrationSection(props: any) {
               </div>
 
               {/* Nhóm 5: Người dự (Multi-select có chọn TCM phụ trách và tìm kiếm theo Tên/Mã GV) */}
-              <div className="flex flex-col gap-3 p-4 bg-purple-50/50 rounded-2xl border-2 border-purple-200/90 shadow-2xs">
+              <div className="flex flex-col gap-3 p-4 bg-teal-50/50 rounded-2xl border-2 border-teal-200/90 shadow-2xs">
                 <div className="flex items-center justify-between flex-wrap gap-2">
-                  <label className="text-[11px] font-black text-purple-950 uppercase tracking-wide flex items-center gap-1.5">
-                    <Users className="size-4 text-purple-600" />
+                  <label className="text-[11px] font-black text-teal-800 uppercase tracking-wide flex items-center gap-1.5">
+                    <Users className="size-4 text-teal-800" />
                     <span>10. Người dự (Phân công cán bộ/GV đi dự) *</span>
                   </label>
                   <div className="flex items-center gap-2">
@@ -3781,14 +3781,14 @@ export function ObservationRegistrationSection(props: any) {
                       <button
                         type="button"
                         onClick={() => setAssignedObserverIds(prev => [...prev, currentTeacher.id])}
-                        className="px-2.5 py-1 rounded-lg bg-white text-purple-700 hover:bg-purple-100 border border-purple-300 text-[11px] font-bold transition-all shadow-2xs cursor-pointer flex items-center gap-1"
+                        className="px-2.5 py-1 rounded-lg bg-white text-teal-800 hover:bg-teal-50 border border-teal-400 text-[11px] font-bold transition-all shadow-2xs cursor-pointer flex items-center gap-1"
                         title="Tự thêm mình vào danh sách tham gia dự giờ"
                       >
-                        <UserCheck className="size-3.5 text-purple-600" />
+                        <UserCheck className="size-3.5 text-teal-800" />
                         <span>+ Phân công tôi đi dự</span>
                       </button>
                     )}
-                    <span className="text-[10px] font-black px-2.5 py-1 rounded-full bg-purple-200/80 text-purple-900 border border-purple-300/80">
+                    <span className="text-[10px] font-black px-2.5 py-1 rounded-full bg-teal-200/80 text-teal-800 border border-teal-300/80">
                       {assignedObserverIds.length > 0 ? `Đã phân công ${assignedObserverIds.length} người` : "Chưa chọn người dự"}
                     </span>
                   </div>
@@ -3796,7 +3796,7 @@ export function ObservationRegistrationSection(props: any) {
 
                 {/* Danh sách người dự đã chọn */}
                 {assignedObserverIds.length > 0 && (
-                  <div className="p-3 bg-white rounded-xl border border-purple-200/80 space-y-1.5 shadow-2xs">
+                  <div className="p-3 bg-white rounded-xl border border-teal-200/80 space-y-1.5 shadow-2xs">
                     <div className="flex items-center justify-between text-[11px] text-slate-500 font-bold">
                       <span>Danh sách cán bộ / giáo viên được phân công dự ({assignedObserverIds.length}):</span>
                       {assignedObserverIds.length >= 2 && (
@@ -3819,11 +3819,11 @@ export function ObservationRegistrationSection(props: any) {
                             key={id}
                             className={`inline-flex items-center gap-2 px-3 py-1.5 rounded-xl border text-xs font-bold transition-all shadow-2xs ${
                               isMe
-                                ? "bg-purple-100 text-purple-950 border-purple-300 ring-2 ring-purple-300/50"
-                                : "bg-white text-slate-800 border-purple-200 hover:border-purple-300"
+                                ? "bg-teal-50 text-teal-800 border-teal-400 ring-2 ring-purple-300/50"
+                                : "bg-white text-slate-800 border-teal-200 hover:border-teal-400"
                             }`}
                           >
-                            <span className="size-2 rounded-full bg-purple-500 shrink-0" />
+                            <span className="size-2 rounded-full bg-teal-500 shrink-0" />
                             <div className="flex flex-col text-left">
                               <span className="font-black text-slate-900 leading-tight">
                                 {obsTeacher?.teacherName || "Cán bộ"} {isMe ? "(Tôi)" : ""}
@@ -3851,14 +3851,14 @@ export function ObservationRegistrationSection(props: any) {
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5 pt-1">
                   {/* Cột 1: Chọn TCM */}
                   <div className="flex flex-col gap-1">
-                    <label className="text-[10px] font-black text-purple-900 uppercase tracking-wide flex items-center gap-1">
-                      <Filter className="size-3 text-purple-600" />
+                    <label className="text-[10px] font-black text-teal-800 uppercase tracking-wide flex items-center gap-1">
+                      <Filter className="size-3 text-teal-800" />
                       <span>1. Chọn Tổ chuyên môn</span>
                     </label>
                     <select
                       value={observerFilterDeptId}
                       onChange={e => setObserverFilterDeptId(e.target.value)}
-                      className="w-full text-xs font-bold p-2.5 rounded-xl border border-purple-200 bg-white text-slate-800 focus:ring-2 focus:ring-purple-500 outline-none shadow-2xs"
+                      className="w-full text-xs font-bold p-2.5 rounded-xl border border-teal-200 bg-white text-slate-800 focus:ring-2 focus:ring-purple-500 outline-none shadow-2xs"
                     >
                       <option value="">-- Chọn Tổ chuyên môn --</option>
                       {levelFilteredAssignedDepts.map((d: any) => (
@@ -3871,16 +3871,16 @@ export function ObservationRegistrationSection(props: any) {
 
                   {/* Cột 2: Gõ tên Giáo viên hoặc Mã GV */}
                   <div className="flex flex-col gap-1">
-                    <label className="text-[10px] font-black text-purple-900 uppercase tracking-wide flex items-center justify-between">
+                    <label className="text-[10px] font-black text-teal-800 uppercase tracking-wide flex items-center justify-between">
                       <span className="flex items-center gap-1">
-                        <Search className="size-3 text-purple-600" />
+                        <Search className="size-3 text-teal-800" />
                         <span>2. Gõ tên Giáo viên hoặc Mã GV</span>
                       </span>
                       {observerSearchQuery && (
                         <button
                           type="button"
                           onClick={() => setObserverSearchQuery("")}
-                          className="text-[10px] text-slate-400 hover:text-purple-700 font-bold cursor-pointer"
+                          className="text-[10px] text-slate-400 hover:text-teal-800 font-bold cursor-pointer"
                         >
                           Xóa tìm kiếm
                         </button>
@@ -3893,7 +3893,7 @@ export function ObservationRegistrationSection(props: any) {
                         placeholder="Gõ tên GV hoặc mã GV (VD: Nam, GV012)..."
                         value={observerSearchQuery}
                         onChange={e => setObserverSearchQuery(e.target.value)}
-                        className="w-full text-xs font-bold pl-8.5 pr-8 py-2.5 rounded-xl border border-purple-200 bg-white text-slate-800 focus:ring-2 focus:ring-purple-500 outline-none shadow-2xs placeholder:font-normal placeholder:text-slate-400"
+                        className="w-full text-xs font-bold pl-8.5 pr-8 py-2.5 rounded-xl border border-teal-200 bg-white text-slate-800 focus:ring-2 focus:ring-purple-500 outline-none shadow-2xs placeholder:font-normal placeholder:text-slate-400"
                       />
                       {observerSearchQuery && (
                         <button
@@ -3927,7 +3927,7 @@ export function ObservationRegistrationSection(props: any) {
                         if (observerSearchQuery) setObserverSearchQuery("");
                       }
                     }}
-                    className="w-full text-xs font-bold p-3 rounded-xl border-2 border-dashed border-purple-300 hover:border-purple-500 focus:ring-2 focus:ring-purple-500 outline-none bg-white text-slate-800 transition-all cursor-pointer shadow-2xs"
+                    className="w-full text-xs font-bold p-3 rounded-xl border-2 border-dashed border-teal-400 hover:border-teal-400 focus:ring-2 focus:ring-purple-500 outline-none bg-white text-slate-800 transition-all cursor-pointer shadow-2xs"
                   >
                     <option value="">
                       {!observerFilterDeptId && !observerSearchQuery.trim()
@@ -3967,9 +3967,9 @@ export function ObservationRegistrationSection(props: any) {
                   <label className="text-[11px] font-black text-slate-700 uppercase tracking-wide">
                     12. Hình thức dự giờ
                   </label>
-                  <div className="p-2.5 rounded-xl bg-purple-50 border border-purple-200 flex items-center justify-between">
-                    <span className="font-black text-purple-900 text-xs">Chỉ định dự giờ</span>
-                    <span className="px-2 py-0.5 rounded text-[10px] font-bold bg-purple-200 text-purple-800">
+                  <div className="p-2.5 rounded-xl bg-teal-50 border border-teal-200 flex items-center justify-between">
+                    <span className="font-black text-teal-800 text-xs">Chỉ định dự giờ</span>
+                    <span className="px-2 py-0.5 rounded text-[10px] font-bold bg-teal-50 text-teal-800">
                       Tự động gán (ASSIGNED)
                     </span>
                   </div>
@@ -4028,7 +4028,7 @@ export function ObservationRegistrationSection(props: any) {
                       }}
                       className={`w-full sm:w-auto px-4 py-2 rounded-xl text-xs font-bold transition-all cursor-pointer ${
                         assignedForceNew
-                          ? "bg-purple-700 text-white shadow-xs"
+                          ? "bg-[#003B3A] text-white shadow-xs"
                           : "bg-white text-slate-700 border border-slate-300 hover:bg-slate-50"
                       }`}
                     >
@@ -4039,7 +4039,7 @@ export function ObservationRegistrationSection(props: any) {
               )}
 
               {/* Nút hành động Submit */}
-              <div className="flex items-center justify-end gap-3 pt-3 border-t border-purple-100">
+              <div className="flex items-center justify-end gap-3 pt-3 border-t border-teal-200">
                 <button
                   type="button"
                   onClick={props.onClose}
@@ -4051,7 +4051,7 @@ export function ObservationRegistrationSection(props: any) {
                 <button
                   type="submit"
                   disabled={assignedSubmitting}
-                  className="px-7 py-3 rounded-xl bg-gradient-to-r from-purple-700 via-purple-600 to-indigo-700 hover:from-purple-800 hover:to-indigo-800 text-white font-extrabold text-xs transition-all shadow-md shadow-purple-900/20 flex items-center gap-2 cursor-pointer disabled:opacity-60 disabled:cursor-not-allowed"
+                  className="px-7 py-3 rounded-xl bg-gradient-to-r from-teal-600 via-purple-600 to-emerald-600 hover:from-teal-600 hover:to-emerald-600 text-white font-extrabold text-xs transition-all shadow-md shadow-purple-900/20 flex items-center gap-2 cursor-pointer disabled:opacity-60 disabled:cursor-not-allowed"
                 >
                   {assignedSubmitting ? (
                     <>
@@ -4060,7 +4060,7 @@ export function ObservationRegistrationSection(props: any) {
                     </>
                   ) : (
                     <>
-                      <CheckCircle2 className="size-4 text-purple-200" />
+                      <CheckCircle2 className="size-4 text-teal-700" />
                       <span>{assignedJoinExisting ? "Xác nhận gộp vào phiên hiện có" : "Lưu Chỉ Định Dự Giờ"}</span>
                     </>
                   )}

@@ -45,6 +45,15 @@ interface SheetResult {
   warnings: string[];
 }
 
+function getCellTextAndError(ws: xlsx.WorkSheet, rZero: number, cZero: number) {
+  const addr = xlsx.utils.encode_cell({ r: rZero, c: cZero });
+  const cell = ws[addr];
+  if (!cell) return { text: "", isError: false };
+  const rawW = cell.w != null ? String(cell.w).trim() : (cell.v != null ? String(cell.v).trim() : "");
+  const isError = cell.t === "e" || rawW.startsWith("#REF!") || rawW.startsWith("#VALUE!") || rawW.startsWith("#NAME?");
+  return { text: rawW, isError };
+}
+
 function parseWorkbook(wb: xlsx.WorkBook): { results: SheetResult[]; globalErrors: string[] } {
   const results: SheetResult[] = [];
   const globalErrors: string[] = [];
@@ -55,24 +64,27 @@ function parseWorkbook(wb: xlsx.WorkBook): { results: SheetResult[]; globalError
 
     const gradeStr = match[1];
     const ws = wb.Sheets[sheetName];
-    const rows = xlsx.utils.sheet_to_json(ws, { header: 1 }) as any[][];
+    const range = ws["!ref"] ? xlsx.utils.decode_range(ws["!ref"]) : { s: { r: 0, c: 0 }, e: { r: 0, c: 0 } };
 
     const errors: string[] = [];
     const warnings: string[] = [];
 
+    // Detect whether column B (c=1) is Chủ đề (standard KHỐI 1S..5S layout where Col A is blank)
+    const headerB = getCellTextAndError(ws, 1, 1).text.toLowerCase();
+    const colOffset = headerB.includes("chủ đề") || headerB === "" ? 1 : 0;
+
     // Row 0 usually contains MÃ MÔN
     let subjectCode = "FIN_EDU";
-    if (rows[0] && rows[0][1]) {
-      const codeCandidate = String(rows[0][1]).trim();
-      if (codeCandidate.startsWith("TC")) subjectCode = "FIN_EDU";
-      else if (codeCandidate.startsWith("GT")) subjectCode = "GDGT";
-      else if (codeCandidate.startsWith("CX")) subjectCode = "CXXH";
-      else if (codeCandidate.startsWith("HN")) subjectCode = "GDHN";
-    }
+    const row0Text = `${getCellTextAndError(ws, 0, 0).text} ${getCellTextAndError(ws, 0, 1).text} ${getCellTextAndError(ws, 0, 2).text}`;
+    if (row0Text.includes("TC")) subjectCode = "FIN_EDU";
+    else if (row0Text.includes("GT")) subjectCode = "GDGT";
+    else if (row0Text.includes("CX")) subjectCode = "CXXH";
+    else if (row0Text.includes("HN")) subjectCode = "GDHN";
 
     const topicsMap = new Map<string, { topicCode: string; topicName: string; lessonsMap: Map<string, ParsedLesson> }>();
     let currentTopicName = "";
     let currentTopicCode = "";
+    let currentTopicIndex = 0;
     let currentLessonName = "";
     let currentLessonCode = "";
 
@@ -81,60 +93,66 @@ function parseWorkbook(wb: xlsx.WorkBook): { results: SheetResult[]; globalError
     const seenCriteriaCodes = new Set<string>();
     const seenDescMap = new Map<string, string>();
 
-    for (let i = 3; i < rows.length; i++) {
-      const r = rows[i] || [];
-      const topic = r[0] != null ? String(r[0]).trim() : "";
-      const lesson = r[1] != null ? String(r[1]).trim() : "";
-      const desc = r[2] != null ? String(r[2]).trim() : "";
-      const muc = r[3] != null ? String(r[3]).trim() : "";
-      const stdCode = r[4] != null ? String(r[4]).trim() : "";
-      const guideDoc = r[5] != null ? String(r[5]).trim() : "";
+    for (let r = 3; r <= range.e.r; r++) {
+      const excelRow = r + 1;
+      const cTopic = getCellTextAndError(ws, r, colOffset + 0);
+      const cLesson = getCellTextAndError(ws, r, colOffset + 1);
+      const cDesc = getCellTextAndError(ws, r, colOffset + 2);
+      const cMuc = getCellTextAndError(ws, r, colOffset + 3);
+      const cStdCode = getCellTextAndError(ws, r, colOffset + 4);
+      const cGuide = getCellTextAndError(ws, r, colOffset + 5);
+      const cHieu = getCellTextAndError(ws, r, colOffset + 6);
+      const cBiet = getCellTextAndError(ws, r, colOffset + 7);
+      const cVanDung = getCellTextAndError(ws, r, colOffset + 8);
+      const cRawTopicCode = getCellTextAndError(ws, r, colOffset + 14);
+      const cRawLessonCode = getCellTextAndError(ws, r, colOffset + 15);
 
-      // Parse competencies (Columns 6, 7, 8)
+      const topic = cTopic.text;
+      const lesson = cLesson.text;
+      const desc = cDesc.text;
+      const muc = cMuc.text;
+      const stdCode = cStdCode.text;
+      const guideDoc = cGuide.text;
+
+      if (!stdCode && !desc) continue;
+
+      // Parse competencies (Hiểu / Biết / Vận dụng)
       const compList: string[] = [];
-      if (r[6] && String(r[6]).trim().toLowerCase() === "x") compList.push("Hiểu");
-      if (r[7] && String(r[7]).trim().toLowerCase() === "x") compList.push("Biết");
-      if (r[8] && String(r[8]).trim().toLowerCase() === "x") compList.push("Vận dụng");
+      if (cHieu.text.toLowerCase() === "x") compList.push("Hiểu");
+      if (cBiet.text.toLowerCase() === "x") compList.push("Biết");
+      if (cVanDung.text.toLowerCase() === "x") compList.push("Vận dụng");
 
-      if (compList.length === 0 && (stdCode || desc)) {
-        warnings.push(`Dòng ${i + 1}: Tiêu chuẩn "${stdCode || "N/A"}" thiếu phân loại nhóm năng lực (Hiểu/Biết/Vận dụng)`);
+      if (compList.length === 0) {
+        warnings.push(`Dòng ${excelRow}: Tiêu chuẩn "${stdCode || "N/A"}" thiếu phân loại nhóm năng lực (Hiểu/Biết/Vận dụng)`);
       }
 
       const competency = compList.length > 0 ? compList.join(", ") : "Vận dụng";
 
-      const topicCode = r[14] != null ? String(r[14]).trim() : "";
-      const lessonCode = r[15] != null ? String(r[15]).trim() : "";
+      // Check Mức vs Năng lực consistency (Mức 1 <-> Hiểu, Mức 2 <-> Biết, Mức 3 <-> Vận dụng)
+      const expectedByMuc: Record<string, string> = { "Mức 1": "Hiểu", "Mức 2": "Biết", "Mức 3": "Vận dụng" };
+      if (muc && expectedByMuc[muc] && competency !== expectedByMuc[muc]) {
+        warnings.push(
+          `Dòng ${excelRow} (Cần rà soát): Tiêu chuẩn "${stdCode}" ghi ${muc} nhưng đánh dấu tại cột "${competency}" (giữ nguyên theo nguồn)`
+        );
+      }
+
+      if (cRawTopicCode.isError) {
+        warnings.push(`Dòng ${excelRow}: Cột Mã chủ đề bị lỗi công thức ${cRawTopicCode.text} — đã khôi phục theo nhóm chủ đề phía trên`);
+      }
+      if (cRawLessonCode.isError) {
+        warnings.push(`Dòng ${excelRow}: Cột Mã bài học bị lỗi công thức ${cRawLessonCode.text} — đã khôi phục theo bài học phía trên`);
+      }
 
       if (topic) {
-        currentTopicName = topic.replace(/\r\n/g, " ").replace(/\n/g, " ").trim();
+        currentTopicIndex++;
+        currentTopicName = topic
+          .replace(/\r\n/g, " ")
+          .replace(/\n/g, " ")
+          .trim()
+          .replace(/^Chủ đề\s*(\d+)\s*:\s*/i, "Chủ đề $1. ");
         const m = currentTopicName.match(/Chủ\s*đề\s*(\d+)/i);
-        if (m) {
-          currentTopicCode = `TC0${gradeStr}S.${String(m[1]).padStart(2, "0")}`;
-        }
-      }
-      if (topicCode && !currentTopicCode) currentTopicCode = topicCode;
-      if (lesson) currentLessonName = lesson.replace(/\r\n/g, " ").replace(/\n/g, " ").trim();
-      if (lessonCode) currentLessonCode = lessonCode;
-
-      if (!stdCode && !desc) continue;
-
-      if (!stdCode) {
-        errors.push(`Dòng ${i + 1}: Thiếu mã tiêu chuẩn`);
-      } else if (seenCriteriaCodes.has(stdCode)) {
-        warnings.push(`Dòng ${i + 1}: Mã tiêu chuẩn trùng lặp "${stdCode}"`);
-      } else {
-        seenCriteriaCodes.add(stdCode);
-      }
-
-      if (!desc) {
-        errors.push(`Dòng ${i + 1}: Thiếu mô tả yêu cầu cần đạt`);
-      } else {
-        const cleanDesc = desc.trim().toLowerCase();
-        if (seenDescMap.has(cleanDesc)) {
-          warnings.push(`Dòng ${i + 1}: Tiêu chuẩn "${stdCode}" có mô tả trùng với "${seenDescMap.get(cleanDesc)}"`);
-        } else {
-          seenDescMap.set(cleanDesc, stdCode);
-        }
+        const topicNum = m ? Number(m[1]) : currentTopicIndex;
+        currentTopicCode = `TC0${gradeStr}S.${String(topicNum).padStart(2, "0")}`;
       }
 
       const tCode = currentTopicCode || `TC0${gradeStr}S.01`;
@@ -149,31 +167,52 @@ function parseWorkbook(wb: xlsx.WorkBook): { results: SheetResult[]; globalError
       }
 
       const topicObj = topicsMap.get(tCode)!;
-      const lCode = currentLessonCode || `${tCode}.${String(lessonCounter + 1).padStart(4, "0")}`;
-      const lName = currentLessonName || `Bài học ${lessonCounter + 1}`;
 
-      if (!topicObj.lessonsMap.has(lCode)) {
+      // Start a new lesson whenever the Lesson column is non-empty (merged cell group header)
+      // Never use #REF! or #VALUE! from Column Q as a key!
+      if (lesson || !currentLessonCode) {
         lessonCounter++;
-        topicObj.lessonsMap.set(lCode, {
+        currentLessonName = (lesson || `Bài học ${lessonCounter}`).replace(/\r\n/g, " ").replace(/\n/g, " ").trim();
+        currentLessonCode = `${tCode}.${String(lessonCounter).padStart(4, "0")}`;
+
+        topicObj.lessonsMap.set(currentLessonCode, {
           lessonIndex: lessonCounter,
-          lessonCode: lCode,
-          lessonName: lName,
-          isProject: lName.toLowerCase().includes("dự án") || lName.toLowerCase().includes("gian hàng"),
+          lessonCode: currentLessonCode,
+          lessonName: currentLessonName,
+          isProject: currentLessonName.toLowerCase().includes("dự án") || currentLessonName.toLowerCase().includes("gian hàng") || currentLessonName.toLowerCase().includes("nhà quản lí tài chính nhí"),
           criteria: []
         });
       }
 
-      const lessonObj = topicObj.lessonsMap.get(lCode)!;
+      if (!stdCode) {
+        errors.push(`Dòng ${excelRow}: Thiếu mã tiêu chuẩn`);
+      } else if (seenCriteriaCodes.has(stdCode)) {
+        warnings.push(`Dòng ${excelRow}: Mã tiêu chuẩn trùng lặp "${stdCode}"`);
+      } else {
+        seenCriteriaCodes.add(stdCode);
+      }
+
+      if (!desc) {
+        errors.push(`Dòng ${excelRow}: Thiếu mô tả yêu cầu cần đạt`);
+      } else {
+        const cleanDesc = desc.trim().toLowerCase();
+        if (seenDescMap.has(cleanDesc)) {
+          warnings.push(`Dòng ${excelRow}: Tiêu chuẩn "${stdCode}" có mô tả trùng với "${seenDescMap.get(cleanDesc)}"`);
+        } else {
+          seenDescMap.set(cleanDesc, stdCode);
+        }
+      }
+
+      criteriaCounter++;
+      const lessonObj = topicObj.lessonsMap.get(currentLessonCode)!;
       lessonObj.criteria.push({
-        criterionIndex: lessonObj.criteria.length + 1,
-        sourceCode: stdCode || `TC0${gradeStr}S.GEN_${criteriaCounter + 1}`,
+        criterionIndex: criteriaCounter,
+        sourceCode: stdCode || `TC0${gradeStr}S.GEN_${criteriaCounter}`,
         description: desc,
         programLevel: muc || null,
         guideDoc: guideDoc || null,
         competencyGroup: competency
       });
-
-      criteriaCounter++;
     }
 
     const topicsArr: ParsedTopic[] = [];
@@ -469,10 +508,12 @@ export async function POST(req: NextRequest) {
             continue; // Skip the destructive replace logic below
           }
 
-          // Grade Config
+          // Grade Config (Grade 1 has unconfigured duration/periods = 0 per source Excel KHỐI 1S)
+          const cfgTotalPeriods = grade === "1" ? 0 : totalLessons;
+          const cfgPeriodMinutes = grade === "1" ? 0 : 35;
           await client.execute({
             sql: `INSERT INTO "SpecialSubjectGradeConfig" (id, versionId, grade, totalPeriods, periodMinutes, overallGoal, evalCycle, evalScaleType, summaryFormula, isLocked, createdAt, updatedAt)
-                  VALUES (?, ?, ?, ?, 35, ?, 'PER_LESSON', 'TOT_HOAN_THANH_CAN_CO_GANG', 'MOST_FREQUENT', 0, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP)
+                  VALUES (?, ?, ?, ?, ?, ?, 'PER_LESSON', 'TOT_HOAN_THANH_CAN_CO_GANG', 'MOST_FREQUENT', 0, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP)
                   ON CONFLICT(versionId, grade) DO UPDATE SET
                     totalPeriods = excluded.totalPeriods,
                     periodMinutes = excluded.periodMinutes,
@@ -485,53 +526,37 @@ export async function POST(req: NextRequest) {
               gradeConfigId,
               versionId,
               grade,
-              totalLessons,
-              `Chương trình Giáo dục tài chính cá nhân Lớp ${grade}: Phát triển năng lực tiêu dùng thông minh, quản lí tiền cá nhân và trách nhiệm xã hội.`
+              cfgTotalPeriods,
+              cfgPeriodMinutes,
+              `Chương trình Giáo dục tài chính cá nhân Lớp ${grade}S (TC0${grade}S): Phát triển năng lực tiêu dùng thông minh, quản lí tiền cá nhân và trách nhiệm xã hội.`
             ]
           });
 
-          // Clean existing for clean atomic replace
-          const existingLessons = await client.execute({
-            sql: `SELECT id FROM "SpecialLesson" WHERE versionId = ? AND grade = ?;`,
-            args: [versionId, grade]
-          });
-
-          for (const lRow of existingLessons.rows) {
-            const lId = String(lRow.id);
-            const crits = await client.execute({
-              sql: `SELECT id FROM "SpecialAssessmentCriterion" WHERE lessonId = ?;`,
-              args: [lId]
-            });
-            for (const cRow of crits.rows) {
-              await client.execute({
-                sql: `DELETE FROM "SpecialRubricLevel" WHERE criterionId = ?;`,
-                args: [String(cRow.id)]
-              });
-            }
-            await client.execute({
-              sql: `DELETE FROM "SpecialAssessmentCriterion" WHERE lessonId = ?;`,
-              args: [lId]
-            });
-          }
-
-          await client.execute({
-            sql: `DELETE FROM "SpecialLesson" WHERE versionId = ? AND grade = ?;`,
-            args: [versionId, grade]
-          });
-          await client.execute({
-            sql: `DELETE FROM "SpecialTopic" WHERE versionId = ? AND grade = ?;`,
-            args: [versionId, grade]
-          });
-
-          // Insert Topics, Lessons, Criteria, Rubrics
+          // Safe idempotent upsert of Topics, Lessons, Criteria, Rubrics (preserves SpecialGradeEntry foreign keys!)
+          const validTopicIds: string[] = [];
+          const validCriterionIds: string[] = [];
           let topicSort = 0;
+
           for (const top of topics) {
             topicSort++;
             const topicId = `top_fin_g${grade}_${topicSort}`;
+            validTopicIds.push(topicId);
+
+            await client.execute({
+              sql: `DELETE FROM "SpecialTopic" WHERE versionId = ? AND grade = ? AND code = ? AND id != ?;`,
+              args: [versionId, grade, top.topicCode, topicId]
+            });
 
             await client.execute({
               sql: `INSERT INTO "SpecialTopic" (id, versionId, grade, code, name, sortOrder, createdAt, updatedAt)
-                    VALUES (?, ?, ?, ?, ?, ?, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP);`,
+                    VALUES (?, ?, ?, ?, ?, ?, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP)
+                    ON CONFLICT(id) DO UPDATE SET
+                      versionId = excluded.versionId,
+                      grade = excluded.grade,
+                      code = excluded.code,
+                      name = excluded.name,
+                      sortOrder = excluded.sortOrder,
+                      updatedAt = CURRENT_TIMESTAMP;`,
               args: [topicId, versionId, grade, top.topicCode, top.topicName, topicSort]
             });
 
@@ -542,7 +567,19 @@ export async function POST(req: NextRequest) {
 
               await client.execute({
                 sql: `INSERT INTO "SpecialLesson" (id, versionId, topicId, grade, periodIndex, lessonName, objectives, requirements, isProject, projectMinPeriods, status, createdAt, updatedAt)
-                      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'ACTIVE', CURRENT_TIMESTAMP, CURRENT_TIMESTAMP);`,
+                      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'ACTIVE', CURRENT_TIMESTAMP, CURRENT_TIMESTAMP)
+                      ON CONFLICT(id) DO UPDATE SET
+                        versionId = excluded.versionId,
+                        topicId = excluded.topicId,
+                        grade = excluded.grade,
+                        periodIndex = excluded.periodIndex,
+                        lessonName = excluded.lessonName,
+                        objectives = excluded.objectives,
+                        requirements = excluded.requirements,
+                        isProject = excluded.isProject,
+                        projectMinPeriods = excluded.projectMinPeriods,
+                        status = 'ACTIVE',
+                        updatedAt = CURRENT_TIMESTAMP;`,
                 args: [
                   lessonId,
                   versionId,
@@ -559,9 +596,22 @@ export async function POST(req: NextRequest) {
 
               for (const crit of les.criteria) {
                 const criterionId = `crit_fin_g${grade}_${crit.sourceCode.replace(/\./g, "_")}`;
+                validCriterionIds.push(criterionId);
+
                 await client.execute({
                   sql: `INSERT INTO "SpecialAssessmentCriterion" (id, gradeConfigId, lessonId, competencyGroup, programLevel, code, name, description, weight, sortOrder, createdAt, updatedAt)
-                        VALUES (?, ?, ?, ?, ?, ?, ?, ?, 1.0, ?, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP);`,
+                        VALUES (?, ?, ?, ?, ?, ?, ?, ?, 1.0, ?, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP)
+                        ON CONFLICT(id) DO UPDATE SET
+                          gradeConfigId = excluded.gradeConfigId,
+                          lessonId = excluded.lessonId,
+                          competencyGroup = excluded.competencyGroup,
+                          programLevel = excluded.programLevel,
+                          code = excluded.code,
+                          name = excluded.name,
+                          description = excluded.description,
+                          weight = excluded.weight,
+                          sortOrder = excluded.sortOrder,
+                          updatedAt = CURRENT_TIMESTAMP;`,
                   args: [
                     criterionId,
                     gradeConfigId,
@@ -575,23 +625,43 @@ export async function POST(req: NextRequest) {
                   ]
                 });
 
-                await client.execute({
-                  sql: `INSERT INTO "SpecialRubricLevel" (id, criterionId, levelCode, levelName, description, numericValue, sortOrder, createdAt, updatedAt)
-                        VALUES (?, ?, 'TOT', 'Tốt', 'Hoàn thành tốt tiêu chí', 3, 1, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP);`,
-                  args: [`rub_${criterionId}_TOT`, criterionId]
-                });
-                await client.execute({
-                  sql: `INSERT INTO "SpecialRubricLevel" (id, criterionId, levelCode, levelName, description, numericValue, sortOrder, createdAt, updatedAt)
-                        VALUES (?, ?, 'DAT', 'Đạt', 'Hoàn thành tiêu chí', 2, 2, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP);`,
-                  args: [`rub_${criterionId}_DAT`, criterionId]
-                });
-                await client.execute({
-                  sql: `INSERT INTO "SpecialRubricLevel" (id, criterionId, levelCode, levelName, description, numericValue, sortOrder, createdAt, updatedAt)
-                        VALUES (?, ?, 'CAN_CO_GANG', 'Cần cố gắng', 'Cần cố gắng thêm', 1, 3, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP);`,
-                  args: [`rub_${criterionId}_CCG`, criterionId]
-                });
+                const rubricDefs = [
+                  { suffix: "TOT", code: "TOT", name: "Tốt", desc: "Hoàn thành tốt tiêu chí", val: 3, sort: 1 },
+                  { suffix: "DAT", code: "DAT", name: "Đạt", desc: "Hoàn thành tiêu chí", val: 2, sort: 2 },
+                  { suffix: "CCG", code: "CAN_CO_GANG", name: "Cần cố gắng", desc: "Cần cố gắng thêm", val: 1, sort: 3 }
+                ];
+                for (const rDef of rubricDefs) {
+                  await client.execute({
+                    sql: `INSERT INTO "SpecialRubricLevel" (id, criterionId, levelCode, levelName, description, numericValue, sortOrder, createdAt, updatedAt)
+                          VALUES (?, ?, ?, ?, ?, ?, ?, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP)
+                          ON CONFLICT(id) DO UPDATE SET
+                            criterionId = excluded.criterionId,
+                            levelCode = excluded.levelCode,
+                            levelName = excluded.levelName,
+                            description = excluded.description,
+                            numericValue = excluded.numericValue,
+                            sortOrder = excluded.sortOrder,
+                            updatedAt = CURRENT_TIMESTAMP;`,
+                    args: [`rub_${criterionId}_${rDef.suffix}`, criterionId, rDef.code, rDef.name, rDef.desc, rDef.val, rDef.sort]
+                  });
+                }
               }
             }
+          }
+
+          if (validTopicIds.length > 0) {
+            const ph = validTopicIds.map(() => "?").join(", ");
+            await client.execute({
+              sql: `DELETE FROM "SpecialTopic" WHERE versionId = ? AND grade = ? AND id NOT IN (${ph});`,
+              args: [versionId, grade, ...validTopicIds]
+            });
+          }
+          if (validCriterionIds.length > 0) {
+            const ph = validCriterionIds.map(() => "?").join(", ");
+            await client.execute({
+              sql: `DELETE FROM "SpecialAssessmentCriterion" WHERE gradeConfigId = ? AND id NOT IN (${ph});`,
+              args: [gradeConfigId, ...validCriterionIds]
+            });
           }
         }
       }

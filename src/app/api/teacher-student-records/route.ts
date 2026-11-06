@@ -214,6 +214,131 @@ export async function GET(req: Request) {
       return NextResponse.json(enrichedStudents)
     }
 
+
+    if (action === "getHomeroomAchievementsReport") {
+      const classId = searchParams.get("classId");
+      const academicYearId = searchParams.get("academicYearId");
+
+      // Tìm các lớp chủ nhiệm của GV này nếu không truyền classId cụ thể
+      let targetClassIds: string[] = [];
+      if (classId && classId !== "all") {
+        targetClassIds = [classId];
+      } else {
+        const homeroomClasses = await prisma.class.findMany({
+          where: {
+            OR: [
+              { homeroomTeacherId: teacher.id },
+              { homeroomTeacherId: { contains: teacher.id } }
+            ],
+            ...(academicYearId && academicYearId !== "all" ? { academicYearId } : {})
+          },
+          select: { id: true }
+        });
+        targetClassIds = homeroomClasses.map(c => c.id);
+      }
+
+      if (targetClassIds.length === 0) {
+        return NextResponse.json({
+          reportRows: [],
+          stats: { total: 0, gold: 0, silver: 0, bronze: 0, consolation: 0, studentCount: 0 }
+        });
+      }
+
+      // Query achievements của các học sinh thuộc targetClassIds
+      const studentAchievements = await prisma.studentAchievement.findMany({
+        where: {
+          student: {
+            classId: { in: targetClassIds }
+          },
+          ...(academicYearId && academicYearId !== "all" ? {
+            achievement: {
+              academicYearId: academicYearId
+            }
+          } : {})
+        },
+        include: {
+          student: {
+            include: {
+              class: true,
+              campus: true
+            }
+          },
+          achievement: {
+            include: {
+              academicYear: true,
+              teacher: true,
+              exam: {
+                include: {
+                  round: true,
+                  category: true
+                }
+              }
+            }
+          }
+        },
+        orderBy: {
+          createdAt: "desc"
+        }
+      });
+
+      const reportRows = studentAchievements.map(sa => {
+        const ach = sa.achievement;
+        const student = sa.student;
+        return {
+          id: sa.id,
+          achievementId: ach?.id,
+          achievementName: ach?.name || "Giải thưởng / Khen thưởng",
+          type: ach?.type || "CA_NHAN",
+          category: ach?.category || "GIAI_THUONG",
+          level: ach?.level || "KHAC",
+          academicYearName: ach?.academicYear?.name || "N/A",
+          academicYearId: ach?.academicYearId,
+          teacherName: ach?.teacherName || ach?.teacher?.teacherName || "Chưa xác định",
+          examName: ach?.exam?.name || "Ngoài hệ thống",
+          studentId: student?.id,
+          studentCode: student?.studentCode || "",
+          studentName: student?.studentName || "",
+          className: student?.class?.className || "N/A",
+          classId: student?.classId,
+          campusName: student?.campus?.campusName || "N/A",
+          grade: student?.class?.grade || "N/A"
+        };
+      });
+
+      // Thống kê
+      const uniqueStudentIds = new Set(reportRows.map(r => r.studentId).filter(Boolean));
+      let gold = 0;
+      let silver = 0;
+      let bronze = 0;
+      let consolation = 0;
+
+      reportRows.forEach(r => {
+        const lvl = (r.level || "").toUpperCase();
+        const name = (r.achievementName || "").toLowerCase();
+        if (lvl === "VANG" || lvl === "NHAT" || lvl === "1" || name.includes("vàng") || name.includes("nhất")) {
+          gold++;
+        } else if (lvl === "BAC" || lvl === "NHI" || lvl === "2" || name.includes("bạc") || name.includes("nhì")) {
+          silver++;
+        } else if (lvl === "DONG" || lvl === "BA" || lvl === "3" || name.includes("đồng") || name.includes("ba")) {
+          bronze++;
+        } else {
+          consolation++;
+        }
+      });
+
+      return NextResponse.json({
+        reportRows,
+        stats: {
+          total: reportRows.length,
+          gold,
+          silver,
+          bronze,
+          consolation,
+          studentCount: uniqueStudentIds.size
+        }
+      });
+    }
+
     if (action === "getAssignedClasses") {
       const subject = searchParams.get("subject")
       const academicYearId = searchParams.get("academicYearId")
@@ -1365,6 +1490,8 @@ export async function GET(req: Request) {
             include: {
               achievement: {
                 include: {
+                  academicYear: true,
+                  teacher: true,
                   exam: {
                     include: {
                       round: true,

@@ -35,7 +35,9 @@ import {
   Trophy,
   TrendingUp,
   QrCode,
-  LayoutDashboard
+  LayoutDashboard,
+  KeyRound,
+  PenTool
 } from "lucide-react"
 
 export const APP_CATEGORIES = [
@@ -66,6 +68,8 @@ export const APP_CATEGORIES = [
       { code: "CAMPUSES", name: "Quản lý Cơ sở", icon: Building2, href: "/admin/campuses", requiresAdmin: true },
       { code: "PARENTS", name: "Tài khoản PHHS", icon: UserPlus, href: "/admin/parents" },
       { code: "STUDENT_PORTAL_CONFIG", name: "Cổng ảnh học sinh", icon: Globe, href: "/admin/student-portal", requiresAdmin: true },
+      { code: "API_INTEGRATIONS", name: "Kết nối API", icon: KeyRound, href: "/admin/api-integrations", requiresAdmin: true },
+      { code: "DIGITAL_SIGNATURES", name: "Cấu hình Chữ ký số", icon: PenTool, href: "/admin/chu-ky-so", requiresAdmin: true },
     ]
   },
   {
@@ -125,6 +129,7 @@ export const APP_CATEGORIES = [
           { code: "KTDBCL_HPH_MEETINGS", name: "2. Quản lý Lịch họp & Phê duyệt", href: "/admin/ktdbcl/hop-phu-huynh?tab=meetings" },
           { code: "KTDBCL_HPH_FEEDBACK", name: "3. Giám sát Ý kiến & SLA", href: "/admin/ktdbcl/hop-phu-huynh?tab=feedback" },
           { code: "KTDBCL_HPH_MINUTES", name: "4. Duyệt Biên bản & Nhiệm vụ", href: "/admin/ktdbcl/hop-phu-huynh?tab=minutes" },
+          { code: "NAMEPLATES_PHHS", name: "5. In bảng tên Họp PHHS", href: "/teacher/bang-ten-phhs" },
         ]
       },
       {
@@ -220,7 +225,7 @@ export const APP_CATEGORIES = [
           { code: "SPEC_SUB_ASSIGNMENTS", name: "4. Phân công giảng dạy", href: "/admin/special-subjects/assignments" },
           { code: "SPEC_SUB_CXXH", name: "5. Giám sát GD Cảm xúc (1–9)", href: "/admin/special-subjects/monitor?subject=CXXH" },
           { code: "SPEC_SUB_GDGT", name: "6. Giám sát GD Giới tính (6–9)", href: "/admin/special-subjects/monitor?subject=GDGT" },
-          { code: "SPEC_SUB_FIN_EDU", name: "7. Giám sát GD Tài chính (2–9)", href: "/admin/special-subjects/monitor?subject=FIN_EDU" },
+          { code: "SPEC_SUB_FIN_EDU", name: "7. Giám sát GD Tài chính (1–9)", href: "/admin/special-subjects/monitor?subject=FIN_EDU" },
           { code: "SPEC_SUB_GDHN", name: "8. Giám sát GD Hướng nghiệp (6–12)", href: "/admin/special-subjects/monitor?subject=GDHN" },
         ]
       }
@@ -243,32 +248,6 @@ export const APP_CATEGORIES = [
           { code: "EXP_ACT_THEMES", name: "3. Chủ đề giáo dục", href: "/admin/experiential-activities/catalogs?tab=themes" },
           { code: "EXP_ACT_REPORTS", name: "4. Dashboard Giám sát Tiến độ", href: "/admin/experiential-activities/reports" }
         ]
-      }
-    ]
-  },
-  {
-    id: "LEARNING_RESOURCES",
-    name: "Học liệu",
-    color: "teal",
-    icon: BookOpen,
-    modules: [
-      {
-        code: "TEXTBOOKS",
-        name: "Sách giáo khoa",
-        icon: BookOpen,
-        href: "/learning-resources/textbooks",
-        subModules: [
-          { code: "TEXTBOOK_LIST", name: "Thư viện SGK", href: "/learning-resources/textbooks" },
-          { code: "TEXTBOOK_MY_BOOKS", name: "Học liệu của tôi", href: "/learning-resources/textbooks?tab=my-books" },
-          { code: "TEXTBOOK_CATEGORIES", name: "Bộ sách & NXB", href: "/learning-resources/textbooks/categories" },
-          { code: "TEXTBOOK_SOURCES", name: "Nguồn Whitelist", href: "/learning-resources/textbooks/sources" }
-        ]
-      },
-      {
-        code: "NAMEPLATES_PHHS",
-        name: "In bảng tên Họp PHHS",
-        icon: QrCode,
-        href: "/learning-resources/nameplates"
       }
     ]
   },

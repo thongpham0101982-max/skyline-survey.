@@ -302,7 +302,7 @@ export function CatalogEvaluationConfigModal({
                 </h2>
                 <span className={`text-[10px] font-black px-2.5 py-0.5 rounded-full uppercase tracking-wider ${
                   isEventActivity 
-                    ? 'bg-purple-100 text-purple-800 border border-purple-200' 
+                    ? 'bg-teal-50 text-teal-800 border border-teal-200' 
                     : 'bg-teal-100 text-[#003B3A] border border-teal-200'
                 }`}>
                   {isEventActivity ? 'Hoạt động sự kiện' : 'Trải nghiệm / Dự án'}
@@ -392,12 +392,12 @@ export function CatalogEvaluationConfigModal({
 
           {/* --- CHẾ ĐỘ 1: CHỈ GHI NHẬN THAM GIA --- */}
           {mode === 'PARTICIPATION_ONLY' && (
-            <div className="p-4 rounded-2xl bg-purple-50/60 border border-purple-200/80 space-y-3 animate-in fade-in duration-200">
-              <div className="flex items-center gap-2 text-purple-900 font-extrabold text-xs">
-                <Users className="w-4 h-4 text-purple-600" />
+            <div className="p-4 rounded-2xl bg-teal-50/60 border border-teal-200/80 space-y-3 animate-in fade-in duration-200">
+              <div className="flex items-center gap-2 text-teal-800 font-extrabold text-xs">
+                <Users className="w-4 h-4 text-teal-800" />
                 <span>Quy cách vận hành Chế độ 1: Ghi nhận Tham gia & Vai trò</span>
               </div>
-              <ul className="text-xs text-purple-800/90 space-y-1.5 list-disc pl-4 font-medium">
+              <ul className="text-xs text-teal-800/90 space-y-1.5 list-disc pl-4 font-medium">
                 <li><strong>Điểm danh:</strong> Ghi nhận tình trạng Có mặt, Vắng có phép, Vắng không phép, Miễn tham gia.</li>
                 <li><strong>Vai trò học sinh:</strong> Đánh giá mức độ tích cực thông qua vai trò đảm nhận trong sự kiện.</li>
                 <li><strong>Nhận xét:</strong> Giáo viên nhập nhận xét hoặc đính kèm ảnh/minh chứng khen ngợi.</li>
@@ -617,7 +617,7 @@ export function CatalogEvaluationConfigModal({
                   <span className={`px-2.5 py-0.5 rounded-full text-[11px] font-black border ${
                     selectedRoles.length === 6 
                       ? 'bg-teal-100 text-[#003B3A] border-teal-300' 
-                      : 'bg-indigo-50 text-indigo-700 border-indigo-200'
+                      : 'bg-teal-50 text-teal-800 border-teal-200'
                   }`}>
                     {selectedRoles.length === 6 ? 'Đủ 6 vai trò chuẩn' : `Đã chọn: ${selectedRoles.length}/${availableRoles.length} vai trò`}
                   </span>

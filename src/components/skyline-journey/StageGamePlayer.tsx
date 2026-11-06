@@ -7,6 +7,7 @@ import {
   SkylineBirdCharacter,
   SkylineMusicController,
   Skyline3DShieldBadge,
+  StageGameIllustrationBanner,
   playSkylineSfx,
   speakVietnameseText,
   startSkylineBgm,
@@ -58,6 +59,11 @@ export function StageGamePlayer({
   const [latestStagesList, setLatestStagesList] = useState<StudentStageView[]>(allStages);
   const [transitionProgress, setTransitionProgress] = useState<number>(0);
   const [practicalNote, setPracticalNote] = useState<string>(stage.studentReflection || "");
+  const [elapsedSeconds, setElapsedSeconds] = useState<number>(0);
+  const [completedDurationSec, setCompletedDurationSec] = useState<number | null>(
+    () => stage.worldState?.durationSeconds || null
+  );
+  const [speedBonusPoints, setSpeedBonusPoints] = useState<number>(0);
 
   // --- Mechanic A State: BACKPACK_BUILDER ---
   const [activeContextIdx, setActiveContextIdx] = useState(0);
@@ -212,7 +218,26 @@ export function StageGamePlayer({
       }
     );
     setSelectedSurpriseOptionId(stage.savedActionPayload?.selectedSurpriseOptionId || "");
+    setElapsedSeconds(0);
+    setCompletedDurationSec(stage.worldState?.durationSeconds || null);
+    setSpeedBonusPoints(0);
   }, [stage.lessonCode]);
+
+  // Live stage timer while student is exploring or playing the stage
+  useEffect(() => {
+    if (loopStep === "CONSEQUENCE_FEEDBACK" || loopStep === "STAGE_TRANSITION") return;
+    const timer = setInterval(() => {
+      setElapsedSeconds((prev) => prev + 1);
+    }, 1000);
+    return () => clearInterval(timer);
+  }, [loopStep, stage.lessonCode]);
+
+  const formatTimerMmSs = (sec: number) => {
+    const s = Math.max(0, Math.round(sec));
+    const m = Math.floor(s / 60);
+    const rem = s % 60;
+    return `${m < 10 ? `0${m}` : m}:${rem < 10 ? `0${rem}` : rem}`;
+  };
 
   const nextStageInJourney = useMemo(() => {
     const list = latestStagesList.length > 0 ? latestStagesList : allStages;
@@ -387,6 +412,7 @@ export function StageGamePlayer({
     }
 
     try {
+      const submittedDurSec = Math.max(5, elapsedSeconds);
       const res = await fetch("/api/skyline-journey/student", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -394,7 +420,8 @@ export function StageGamePlayer({
           action: "SUBMIT_STAGE",
           lessonCode: stage.lessonCode,
           actionPayload: currentActionPayload,
-          studentReflection: practicalNote
+          studentReflection: practicalNote,
+          durationSeconds: submittedDurSec
         })
       });
 
@@ -409,6 +436,8 @@ export function StageGamePlayer({
 
       const vResult: StageValidationResult = data.validation;
       setValidationResult(vResult);
+      setCompletedDurationSec(Number(data.durationSeconds || submittedDurSec));
+      setSpeedBonusPoints(Number(data.speedBonusPoints || 0));
       setNewRewards(data.newRewardsGranted || []);
       setLoopStep("CONSEQUENCE_FEEDBACK");
 
@@ -1304,7 +1333,7 @@ export function StageGamePlayer({
       const entries = cfg.diaryEntries || [];
       return (
         <div className="space-y-6">
-          <div className="bg-gradient-to-r from-indigo-700 via-sky-700 to-teal-600 text-white rounded-3xl p-5 shadow-lg flex flex-wrap items-center justify-between gap-4">
+          <div className="bg-gradient-to-r from-teal-600 via-sky-700 to-teal-600 text-white rounded-3xl p-5 shadow-lg flex flex-wrap items-center justify-between gap-4">
             <div>
               <span className="text-xs uppercase font-bold bg-white/20 px-3 py-1 rounded-full">
                 📓 Sổ Nhật Ký Đồng Xu Của Chim Sky-Line
@@ -1406,7 +1435,7 @@ export function StageGamePlayer({
       const boards = cfg.adBillboards || [];
       return (
         <div className="space-y-6">
-          <div className="bg-gradient-to-r from-purple-700 via-fuchsia-600 to-amber-500 text-white rounded-3xl p-5 shadow-lg">
+          <div className="bg-gradient-to-r from-teal-600 via-fuchsia-600 to-amber-500 text-white rounded-3xl p-5 shadow-lg">
             <span className="text-xs uppercase font-bold bg-white/20 px-3 py-1 rounded-full">
               🔍 Phố Quảng Cáo Rực Rỡ • Ví hiện có: {cfg.startingCoins} Xu
             </span>
@@ -1421,7 +1450,7 @@ export function StageGamePlayer({
               return (
                 <div
                   key={b.id}
-                  className="bg-white border-2 border-purple-200 rounded-3xl p-5 flex flex-col justify-between shadow-sm"
+                  className="bg-white border-2 border-teal-200 rounded-3xl p-5 flex flex-col justify-between shadow-sm"
                 >
                   <div>
                     <div className="flex items-center justify-between">
@@ -1724,8 +1753,20 @@ export function StageGamePlayer({
             </button>
           </div>
 
-          <div className="text-amber-700 font-extrabold flex items-center gap-1">
-            <span>🪶 Thưởng chặng: +{stage.feathersReward} Lông vũ</span>
+          <div className="flex flex-wrap items-center gap-3 text-xs font-extrabold tabular-nums">
+            <span className="px-2.5 py-1 rounded-full bg-teal-50 text-teal-800 border border-teal-200 flex items-center gap-1">
+              <span>⏱️ Thời gian:</span>
+              <span>
+                {formatTimerMmSs(
+                  loopStep === "CONSEQUENCE_FEEDBACK" || loopStep === "STAGE_TRANSITION"
+                    ? completedDurationSec || elapsedSeconds
+                    : elapsedSeconds
+                )}
+              </span>
+            </span>
+            <span className="text-amber-700 flex items-center gap-1">
+              <span>🪶 Thưởng chặng: +{stage.feathersReward} Lông vũ</span>
+            </span>
           </div>
         </div>
 
@@ -1766,15 +1807,26 @@ export function StageGamePlayer({
           {loopStep === "MISSION_BRIEF" && (
             <div className="space-y-6">
               {/* Mascot Story Brief Card */}
-              <div className="bg-gradient-to-br from-sky-50 via-teal-50 to-amber-50 border-2 border-teal-200 rounded-3xl p-6 shadow-sm">
-                <SkylineBirdCharacter
-                  mood="EXPLORER"
-                  size="lg"
-                  reducedMotion={reducedMotion}
-                  characterId={characterId}
-                  badgeLabel={`Khối ${grade}`}
-                  speechText={stage.interactive.storyBrief}
-                />
+              <div className="bg-gradient-to-br from-sky-50 via-teal-50 to-amber-50 border-2 border-teal-200 rounded-3xl p-6 shadow-sm space-y-4">
+                <div className="grid grid-cols-1 lg:grid-cols-12 gap-4 items-center">
+                  <div className="lg:col-span-8">
+                    <SkylineBirdCharacter
+                      mood="EXPLORER"
+                      size="lg"
+                      reducedMotion={reducedMotion}
+                      characterId={characterId}
+                      badgeLabel={`Khối ${grade}`}
+                      speechText={stage.interactive.storyBrief}
+                    />
+                  </div>
+                  <div className="lg:col-span-4">
+                    <StageGameIllustrationBanner
+                      periodIndex={stage.periodIndex}
+                      isCompleted={stage.flagPlanted || stage.autoChallengePassed}
+                      isCurrent={true}
+                    />
+                  </div>
+                </div>
 
                 {stage.teacherGuidance && (
                   <div className="mt-4 p-3.5 rounded-2xl bg-white border border-teal-300 text-xs text-teal-900">
@@ -1818,7 +1870,7 @@ export function StageGamePlayer({
                   }}
                   className="px-6 py-3.5 rounded-2xl bg-gradient-to-r from-teal-600 to-emerald-600 hover:from-teal-500 hover:to-emerald-500 text-white font-extrabold text-base shadow-lg flex items-center gap-2 transition"
                 >
-                  <span>🏫 Rung chuông vào Lớp học Tài chính 3D & Bắt đầu thực hành</span>
+                  <span>🏫 Rung chuông vào Tiết học Tài chính & Bắt đầu thực hành</span>
                   <span>→</span>
                 </button>
               </div>
@@ -1890,17 +1942,17 @@ export function StageGamePlayer({
 
               {/* Practical / Open Situation Reflection Box for HYBRID_TEACHER stages (or optional sharing) */}
               {stage.interactive.practicalPrompt && (
-                <div className="bg-indigo-50/80 border-2 border-indigo-200 rounded-3xl p-5 space-y-2">
+                <div className="bg-teal-50/80 border-2 border-teal-200 rounded-3xl p-5 space-y-2">
                   <div className="flex items-center justify-between">
-                    <label className="font-extrabold text-indigo-950 text-sm sm:text-base flex items-center gap-2">
+                    <label className="font-extrabold text-teal-800 text-sm sm:text-base flex items-center gap-2">
                       <span>✍️</span>
                       <span>Nhiệm vụ thực hành / Liên hệ thực tế (Thầy/Cô sẽ xem và xác nhận):</span>
                     </label>
-                    <span className="text-xs font-bold px-2.5 py-1 rounded-full bg-indigo-200 text-indigo-900">
+                    <span className="text-xs font-bold px-2.5 py-1 rounded-full bg-teal-50 text-teal-800">
                       Cần giáo viên xác nhận
                     </span>
                   </div>
-                  <p className="text-xs sm:text-sm text-indigo-900 font-medium">
+                  <p className="text-xs sm:text-sm text-teal-800 font-medium">
                     {stage.interactive.practicalPrompt}
                   </p>
                   <textarea
@@ -1908,7 +1960,7 @@ export function StageGamePlayer({
                     value={practicalNote}
                     onChange={(e) => setPracticalNote(e.target.value)}
                     placeholder="Em hãy gõ vài dòng chia sẻ cách làm hoặc ý tưởng của em tại đây nhé (ít nhất 5 ký tự)..."
-                    className="w-full p-3.5 rounded-2xl border-2 border-indigo-300 bg-white text-slate-900 text-sm font-medium focus:outline-none focus:border-indigo-500"
+                    className="w-full p-3.5 rounded-2xl border-2 border-teal-200 bg-white text-slate-900 text-sm font-medium focus:outline-none focus:border-teal-200"
                   />
                 </div>
               )}
@@ -1926,7 +1978,7 @@ export function StageGamePlayer({
                   type="button"
                   onClick={handleSubmitAction}
                   disabled={submitting}
-                  className="px-7 py-3.5 rounded-2xl bg-gradient-to-r from-amber-500 to-orange-500 hover:from-amber-400 hover:to-orange-400 text-slate-950 font-black text-base shadow-lg transition flex items-center gap-2"
+                  className="px-7 py-3.5 rounded-2xl bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-400 hover:to-amber-600 text-slate-950 font-black text-base shadow-lg transition flex items-center gap-2"
                 >
                   <span>{submitting ? "⏳ Đang kiểm tra hệ quả..." : "✨ Quan sát hệ quả & Hoàn thành chặng!"}</span>
                 </button>
@@ -1981,7 +2033,7 @@ export function StageGamePlayer({
                 className={`rounded-3xl p-6 border-4 shadow-md ${
                   validationResult.autoChallengePassed
                     ? "bg-gradient-to-br from-emerald-50 via-teal-50 to-amber-50 border-emerald-400"
-                    : "bg-gradient-to-br from-amber-50 to-orange-50 border-amber-400"
+                    : "bg-gradient-to-br from-amber-50 to-amber-600 border-amber-400"
                 }`}
               >
                 <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
@@ -1993,7 +2045,7 @@ export function StageGamePlayer({
                     speechText={validationResult.feedbackSummary}
                   />
 
-                  <div className="text-right shrink-0 flex items-center gap-3">
+                  <div className="text-right shrink-0 flex flex-wrap items-center gap-2.5 tabular-nums">
                     {validationResult.autoChallengePassed && (
                       <div className="px-3.5 py-2 rounded-2xl bg-amber-50 border-2 border-amber-400 shadow-sm text-center">
                         <div className="text-[11px] text-amber-800 font-bold">Khiên đạt được</div>
@@ -2002,10 +2054,21 @@ export function StageGamePlayer({
                         </div>
                       </div>
                     )}
-                    <div className="inline-block px-4 py-2 rounded-2xl bg-white border-2 border-teal-300 shadow-sm">
-                      <div className="text-xs text-slate-500 font-bold">Mức độ hoàn thành</div>
+                    <div className="px-3.5 py-2 rounded-2xl bg-sky-50 border-2 border-sky-300 shadow-sm text-center">
+                      <div className="text-[11px] text-sky-800 font-bold">Thời gian hoàn thành</div>
+                      <div className="text-lg font-black text-sky-700">
+                        ⏱️ {formatTimerMmSs(completedDurationSec || elapsedSeconds)}
+                      </div>
+                      {speedBonusPoints > 0 && (
+                        <div className="text-[10px] font-extrabold text-emerald-700">
+                          +{speedBonusPoints}đ thưởng tốc độ
+                        </div>
+                      )}
+                    </div>
+                    <div className="inline-block px-4 py-2 rounded-2xl bg-white border-2 border-teal-300 shadow-sm text-center">
+                      <div className="text-xs text-slate-500 font-bold">Điểm bài học</div>
                       <div className="text-2xl font-black text-teal-700">
-                        {validationResult.scorePercent}%
+                        {validationResult.scorePercent} đ
                       </div>
                     </div>
                   </div>
@@ -2068,7 +2131,7 @@ export function StageGamePlayer({
                   </div>
                   <div className="p-3 rounded-2xl bg-white border border-slate-200">
                     <div className="text-xs text-slate-500">3. Xác nhận thực hành</div>
-                    <div className="font-extrabold text-indigo-700 text-sm mt-0.5">
+                    <div className="font-extrabold text-teal-800 text-sm mt-0.5">
                       {stage.interactive.evaluationMode === "HYBRID_TEACHER"
                         ? stage.teacherConfirmed
                           ? "✅ Đã được GV xác nhận"
@@ -2297,7 +2360,7 @@ export function StageGamePlayer({
                             playSkylineSfx("WELCOME", muted);
                             onNavigateToStage(nextStageInJourney);
                           }}
-                          className="px-6 py-3.5 rounded-2xl bg-gradient-to-r from-amber-500 via-orange-500 to-amber-500 hover:from-amber-400 hover:to-orange-400 text-slate-950 font-black text-sm sm:text-base shadow-xl flex items-center gap-2 transition transform hover:scale-105 cursor-pointer"
+                          className="px-6 py-3.5 rounded-2xl bg-gradient-to-r from-amber-500 via-orange-500 to-amber-500 hover:from-amber-400 hover:to-amber-600 text-slate-950 font-black text-sm sm:text-base shadow-xl flex items-center gap-2 transition transform hover:scale-105 cursor-pointer"
                         >
                           <span>🎮 Vào ngay Chặng {nextStageInJourney.periodIndex}</span>
                           <span>→</span>

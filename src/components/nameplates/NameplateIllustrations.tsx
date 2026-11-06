@@ -523,12 +523,12 @@ export function FrontSideArtwork({
       >
         <defs>
           <linearGradient id={`front-right-wave-${palette.id}`} x1="0%" y1="0%" x2="100%" y2="100%">
-            <stop offset="0%" stopColor={isPurpleFamily ? '#8B5CF6' : '#1BA8BC'} />
+            <stop offset="0%" stopColor={isPurpleFamily ? '#2DD4BF' : '#1BA8BC'} />
             <stop offset="52%" stopColor={isPurpleFamily ? '#6D28D9' : '#0E869E'} />
             <stop offset="100%" stopColor={isPurpleFamily ? '#4C1D95' : '#085E73'} />
           </linearGradient>
           <linearGradient id={`front-right-soft-${palette.id}`} x1="0%" y1="0%" x2="100%" y2="100%">
-            <stop offset="0%" stopColor={isPurpleFamily ? '#EDE9FE' : '#E0F5F9'} stopOpacity="0.92" />
+            <stop offset="0%" stopColor={isPurpleFamily ? '#F0FDFA' : '#E0F5F9'} stopOpacity="0.92" />
             <stop offset="100%" stopColor={isPurpleFamily ? '#C4B5FD' : '#9CE0EC'} stopOpacity="0.96" />
           </linearGradient>
           <linearGradient id="gold-star-grad" x1="0%" y1="0%" x2="100%" y2="100%">
@@ -610,7 +610,7 @@ export function FrontSideArtwork({
           />
           <path
             d="M 24 98 C 40 72, 68 54, 95 48 C 78 76, 52 94, 24 98 Z"
-            fill={isPurpleFamily ? '#7C3AED' : '#0E869E'}
+            fill={isPurpleFamily ? '#003B3A' : '#0E869E'}
             opacity="0.9"
           />
         </g>
@@ -733,7 +733,7 @@ export function BackSideArtwork({
       >
         <defs>
           <linearGradient id={`back-right-wave-${palette.id}`} x1="0%" y1="0%" x2="100%" y2="100%">
-            <stop offset="0%" stopColor={isPurpleFamily ? '#8B5CF6' : '#22B8CF'} />
+            <stop offset="0%" stopColor={isPurpleFamily ? '#2DD4BF' : '#22B8CF'} />
             <stop offset="55%" stopColor={isPurpleFamily ? '#6D28D9' : '#0E869E'} />
             <stop offset="100%" stopColor={isPurpleFamily ? '#4C1D95' : '#085E73'} />
           </linearGradient>

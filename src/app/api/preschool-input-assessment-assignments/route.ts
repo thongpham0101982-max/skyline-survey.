@@ -3,6 +3,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/db";
 import { auth } from "@/lib/auth";
 import { sendEmail } from "@/lib/mail";
+import { getCampusGiaovuEmail } from "@/lib/orientation/service";
 
 export async function GET(req: NextRequest) {
   const session = await auth();
@@ -363,6 +364,7 @@ export async function POST(req: NextRequest) {
         try {
           const mailRes = await sendEmail({
             to: targetEmail,
+            cc: ["ktdbcl@skylineschool.edu.vn", getCampusGiaovuEmail(gradeLabel)].filter(Boolean),
             subject: `[Sky-line SMS - Mầm Non] Phân công Khảo sát Năng lực Đầu vào - Bé ${gradeLabel}`,
             html: emailHtml,
             replyTo: "ktdbcl@skylineschool.edu.vn"

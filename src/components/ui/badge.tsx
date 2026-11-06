@@ -3,23 +3,23 @@ import { cva, type VariantProps } from "class-variance-authority"
 import { cn } from "@/lib/utils"
 
 const badgeVariants = cva(
-  "inline-flex items-center gap-1.5 rounded-full px-2.5 py-0.5 text-xs font-medium tracking-normal transition-colors border select-none",
+  "inline-flex items-center gap-1.5 rounded-md px-2.5 py-0.5 text-xs font-semibold tracking-tight transition-colors border select-none tabular-nums",
   {
     variants: {
       variant: {
-        default: "border-sky-200/70 bg-sky-50 text-sky-700",
-        primary: "border-[#003B3A]/30 bg-[#003B3A]/10 text-[#003B3A]",
-        pine: "border-[#003B3A]/30 bg-[#003B3A]/10 text-[#003B3A]",
-        skyline: "border-sky-200/80 bg-sky-50 text-[#0284C7]",
-        accent: "border-amber-200/70 bg-amber-50 text-amber-700",
-        success: "border-emerald-200/70 bg-emerald-50 text-emerald-700",
-        destructive: "border-rose-200/70 bg-rose-50 text-rose-700",
-        error: "border-rose-200/70 bg-rose-50 text-rose-700",
-        warning: "border-amber-200/70 bg-amber-50 text-amber-700",
-        info: "border-sky-200/70 bg-sky-50 text-sky-700",
-        information: "border-sky-200/70 bg-sky-50 text-sky-700",
-        neutral: "border-slate-200/80 bg-slate-100 text-slate-700",
-        secondary: "border-slate-200/80 bg-slate-50 text-slate-600",
+        default: "border-[#CCFBF1] bg-[#F0FDFA] text-[#00736E]",
+        primary: "border-[#003B3A]/25 bg-[#003B3A]/10 text-[#003B3A]",
+        pine: "border-[#003B3A]/25 bg-[#003B3A]/10 text-[#003B3A]",
+        skyline: "border-[#CCFBF1] bg-[#F0FDFA] text-[#00736E]",
+        accent: "border-amber-200/80 bg-amber-50 text-amber-800",
+        success: "border-emerald-200/80 bg-emerald-50 text-emerald-700",
+        destructive: "border-rose-200/80 bg-rose-50 text-rose-700",
+        error: "border-rose-200/80 bg-rose-50 text-rose-700",
+        warning: "border-amber-200/80 bg-amber-50 text-amber-800",
+        info: "border-sky-200/80 bg-sky-50 text-sky-700",
+        information: "border-sky-200/80 bg-sky-50 text-sky-700",
+        neutral: "border-slate-200 bg-slate-100 text-slate-700",
+        secondary: "border-slate-200 bg-slate-50 text-slate-600",
         outline: "border-slate-200 bg-transparent text-slate-600",
       },
     },

@@ -38,8 +38,10 @@ export function formatEmailSubject(rawSubject?: string): string {
 
   let s = rawSubject.trim();
 
-  // 1. Direct replacement of any variant of Sky-Line SIS
+  // 1. Direct replacement of any variant of Sky-Line SIS / SSM & remove duplicate prefixes
   s = s.replace(/\[Sky-?Line\s+SIS\]/gi, "[Sky-line SMS]");
+  s = s.replace(/\[Sky-?Line\s+SSM\]/gi, "[Sky-line SMS]");
+  s = s.replace(/\[Sky-?Line\s+SMS\]\s*\[Sky-?Line\s+(?:SIS|SSM|SMS)\]/gi, "[Sky-line SMS]");
 
   // 2. Standardize known subsystem prefixes to [Sky-line SMS - ...]
   s = s.replace(/\[Sky-?line\s*[-–]?\s*Dự\s*Giờ\s*Đột\s*Xuất\]/gi, "[Sky-line SMS - Dự Giờ Đột Xuất]");

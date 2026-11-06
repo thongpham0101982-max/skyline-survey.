@@ -48,12 +48,35 @@ export default async function AdminPreschoolObservationPage(props: {
     )
   }
 
+  const currentTeacherId = refDataResult.currentTeacher?.id;
+  const loadedSlots = slotsResult.success ? (slotsResult.slots || []) : [];
+  const myPersonalSlots = currentTeacherId
+    ? loadedSlots.filter((s: any) => 
+        s.teacherId === currentTeacherId || 
+        s.registrations?.some((r: any) => r.teacherId === currentTeacherId) ||
+        (s.topic && s.topic.includes(currentTeacherId))
+      )
+    : [];
+
+  const role = (session.user as any)?.role || "TEACHER";
+  const upperRole = (role || "").toUpperCase().trim();
+  const teacherPos = (refDataResult.currentTeacher?.position || "").toLowerCase().trim();
+  const isManager = ["ADMIN", "SUPER_ADMIN", "BAN_DHCM", "BGH", "BGH_MN", "TTCM", "TPCM", "TBP", "GDCS", "TO_TRUONG"].includes(upperRole) ||
+    teacherPos.includes("tổ trưởng") || teacherPos.includes("tổ phó") || teacherPos.includes("trưởng bộ phận") || teacherPos.includes("giám đốc") || teacherPos.includes("bgh");
+
+  const requestedMode = searchParams.mode?.toLowerCase();
+  const initialViewMode = requestedMode === "personal" || requestedMode === "teacher" 
+    ? "TEACHER" 
+    : isManager 
+    ? "ADMIN" 
+    : "TEACHER";
+
   return (
     <ObservationClient
       isAdminPage={true}
-      initialViewMode="ADMIN"
+      initialViewMode={initialViewMode}
       isPreschoolPage={true}
-      initialSlots={slotsResult.success ? (slotsResult.slots || []) : []}
+      initialSlots={loadedSlots}
       currentTeacher={refDataResult.currentTeacher}
       subjects={refDataResult.subjects || []}
       departments={refDataResult.departments || []}
@@ -65,7 +88,7 @@ export default async function AdminPreschoolObservationPage(props: {
       academicYears={refDataResult.academicYears || []}
       selectedYearId={refDataResult.selectedYearId || undefined}
       initialReceivedEvaluations={refDataResult.myReceivedEvaluations || []}
-      initialPersonalSlots={refDataResult.myPersonalSlots || []}
+      initialPersonalSlots={myPersonalSlots}
     />
-  )
+  );
 }

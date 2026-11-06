@@ -1149,6 +1149,14 @@ export async function GET(req: any) {
             },
             include: {
                 batch: { select: { id: true, name: true, status: true } },
+                orientationRecord: {
+                    select: {
+                        id: true,
+                        status: true,
+                        updatedAt: true,
+                        interviewerName: true
+                    }
+                },
                 scores: {
                     where: { subjectId: subjectId || undefined },
                     include: { subject: true }
@@ -1338,6 +1346,14 @@ export async function GET(req: any) {
                 },
                 include: {
                     batch: { select: { id: true, name: true, status: true } },
+                    orientationRecord: {
+                        select: {
+                            id: true,
+                            status: true,
+                            updatedAt: true,
+                            interviewerName: true
+                        }
+                    },
                 scores: {
                         where: { subjectId: subjectId || undefined },
                         include: { subject: true }
@@ -1529,8 +1545,46 @@ export async function POST(req: any) {
             comments: JSON.stringify(comments || []),
             teacherId: finalTeacherId,
             teacherName: finalTeacherName
+        },
+        include: {
+            subject: true
         }
     });
+
+    // Đồng bộ điểm sang InputAssessmentStudent (mathScore, literatureScore, writtenEnglishScore, oralEnglishScore) để liên thông với Phiếu Định Hướng & Báo cáo A4
+    try {
+        const scoresArr = Array.isArray(scores) ? scores : [];
+        const firstNumericStr = scoresArr.find((v: any) => v !== null && v !== undefined && String(v).trim() !== "" && !isNaN(parseFloat(String(v).replace(",", "."))));
+        if (firstNumericStr !== undefined) {
+            const numVal = parseFloat(String(firstNumericStr).replace(",", "."));
+            if (Number.isFinite(numVal)) {
+                const subNameNorm = String(record.subject?.name || "").toLowerCase().normalize("NFC");
+                const subCodeNorm = String(record.subject?.code || "").toLowerCase();
+                const studentScoreUpdate: any = {};
+
+                if (subNameNorm.includes("toán") || subCodeNorm.includes("toa")) {
+                    studentScoreUpdate.mathScore = numVal;
+                } else if (subNameNorm.includes("ngữ văn") || subNameNorm.includes("tiếng việt") || subCodeNorm.includes("nva") || subCodeNorm.includes("tvi")) {
+                    studentScoreUpdate.literatureScore = numVal;
+                } else if (subNameNorm.includes("tiếng anh") || subCodeNorm.includes("eng") || subCodeNorm.includes("esl")) {
+                    if (subNameNorm.includes("vấn đáp")) {
+                        studentScoreUpdate.oralEnglishScore = numVal;
+                    } else {
+                        studentScoreUpdate.writtenEnglishScore = numVal;
+                    }
+                }
+
+                if (Object.keys(studentScoreUpdate).length > 0) {
+                    await prisma.inputAssessmentStudent.update({
+                        where: { id: studentId },
+                        data: studentScoreUpdate
+                    });
+                }
+            }
+        }
+    } catch (syncErr) {
+        console.error("Sync score to InputAssessmentStudent error:", syncErr);
+    }
 
     return NextResponse.json(record);
   } catch (error: any) {

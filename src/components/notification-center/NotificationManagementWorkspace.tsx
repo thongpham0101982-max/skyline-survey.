@@ -495,13 +495,13 @@ export function NotificationManagementWorkspace({
     <div className="space-y-5 font-sans text-slate-800">
       {/* 1. TOP BANNER & NAVIGATION TABS */}
       {!embeddedInKhaoThiSo && (
-        <div className="bg-gradient-to-r from-[#4C1D95] via-[#5B2D8B] to-[#003B3A] rounded-3xl p-6 text-white shadow-lg flex flex-col md:flex-row md:items-center justify-between gap-4">
+        <div className="bg-gradient-to-r from-[#4C1D95] via-[#003B3A] to-[#003B3A] rounded-3xl p-6 text-white shadow-lg flex flex-col md:flex-row md:items-center justify-between gap-4">
           <div className="flex items-center gap-3.5">
             <div className="w-12 h-12 rounded-2xl bg-white/15 border border-white/25 flex items-center justify-center shrink-0">
-              <Bell className="w-6 h-6 text-purple-200" />
+              <Bell className="w-6 h-6 text-teal-700" />
             </div>
             <div>
-              <span className="text-[10px] font-black uppercase tracking-widest px-2.5 py-0.5 rounded-full bg-white/15 text-purple-100 border border-white/20">
+              <span className="text-[10px] font-black uppercase tracking-widest px-2.5 py-0.5 rounded-full bg-white/15 text-teal-700 border border-white/20">
                 {workspaceRole === "KTDBCL"
                   ? "BAN KHẢO THÍ & ĐẢM BẢO CHẤT LƯỢNG"
                   : "CÔNG TÁC GIÁO VIÊN CHỦ NHIỆM & BỘ MÔN"}
@@ -509,7 +509,7 @@ export function NotificationManagementWorkspace({
               <h1 className="text-lg sm:text-xl font-black mt-1">
                 Trung tâm Thông báo &amp; Liên lạc Sky-Line SSM
               </h1>
-              <p className="text-xs text-purple-100/90 font-medium mt-0.5">
+              <p className="text-xs text-teal-700/90 font-medium mt-0.5">
                 Phát hành thông báo khảo thí, lịch kiểm tra, hướng dẫn học tập và theo dõi tỷ lệ đọc / xác nhận theo thời gian thực
               </p>
             </div>
@@ -519,7 +519,7 @@ export function NotificationManagementWorkspace({
             <button
               type="button"
               onClick={() => setSubTab("COMPOSER")}
-              className="px-4 py-2.5 rounded-xl bg-white text-[#4C1D95] hover:bg-purple-50 text-xs font-extrabold shadow-sm flex items-center gap-1.5 cursor-pointer transition"
+              className="px-4 py-2.5 rounded-xl bg-white text-[#4C1D95] hover:bg-teal-50 text-xs font-extrabold shadow-sm flex items-center gap-1.5 cursor-pointer transition"
             >
               <Plus className="w-4 h-4" />
               <span>Tạo Thông báo mới</span>
@@ -536,8 +536,8 @@ export function NotificationManagementWorkspace({
             onClick={() => setSubTab("LIST")}
             className={`px-3.5 py-2 rounded-xl text-xs font-extrabold flex items-center gap-1.5 transition cursor-pointer ${
               subTab === "LIST"
-                ? "bg-[#5B2D8B] text-white shadow-xs"
-                : "text-slate-600 hover:bg-purple-50 hover:text-[#5B2D8B]"
+                ? "bg-[#003B3A] text-white shadow-xs"
+                : "text-slate-600 hover:bg-teal-50 hover:text-[#003B3A]"
             }`}
           >
             <Bell className="w-3.5 h-3.5" />
@@ -549,8 +549,8 @@ export function NotificationManagementWorkspace({
             onClick={() => setSubTab("COMPOSER")}
             className={`px-3.5 py-2 rounded-xl text-xs font-extrabold flex items-center gap-1.5 transition cursor-pointer ${
               subTab === "COMPOSER"
-                ? "bg-[#5B2D8B] text-white shadow-xs"
-                : "text-slate-600 hover:bg-purple-50 hover:text-[#5B2D8B]"
+                ? "bg-[#003B3A] text-white shadow-xs"
+                : "text-slate-600 hover:bg-teal-50 hover:text-[#003B3A]"
             }`}
           >
             <Plus className="w-3.5 h-3.5" />
@@ -563,8 +563,8 @@ export function NotificationManagementWorkspace({
               onClick={() => setSubTab("AUTOMATION")}
               className={`px-3.5 py-2 rounded-xl text-xs font-extrabold flex items-center gap-1.5 transition cursor-pointer ${
                 subTab === "AUTOMATION"
-                  ? "bg-[#5B2D8B] text-white shadow-xs"
-                  : "text-slate-600 hover:bg-purple-50 hover:text-[#5B2D8B]"
+                  ? "bg-[#003B3A] text-white shadow-xs"
+                  : "text-slate-600 hover:bg-teal-50 hover:text-[#003B3A]"
               }`}
             >
               <Zap className="w-3.5 h-3.5" />
@@ -577,8 +577,8 @@ export function NotificationManagementWorkspace({
             onClick={() => setSubTab("DASHBOARD")}
             className={`px-3.5 py-2 rounded-xl text-xs font-extrabold flex items-center gap-1.5 transition cursor-pointer ${
               subTab === "DASHBOARD"
-                ? "bg-[#5B2D8B] text-white shadow-xs"
-                : "text-slate-600 hover:bg-purple-50 hover:text-[#5B2D8B]"
+                ? "bg-[#003B3A] text-white shadow-xs"
+                : "text-slate-600 hover:bg-teal-50 hover:text-[#003B3A]"
             }`}
           >
             <BarChart3 className="w-3.5 h-3.5" />
@@ -686,7 +686,7 @@ export function NotificationManagementWorkspace({
                   <button
                     type="button"
                     onClick={() => setSubTab("COMPOSER")}
-                    className="px-4 py-2 rounded-xl bg-[#5B2D8B] text-white text-xs font-extrabold"
+                    className="px-4 py-2 rounded-xl bg-[#003B3A] text-white text-xs font-extrabold"
                   >
                     + Tạo thông báo đầu tiên
                   </button>
@@ -709,12 +709,12 @@ export function NotificationManagementWorkspace({
                       onClick={() => setSelectedNotifId(n.id)}
                       className={`p-4 rounded-2xl border transition cursor-pointer space-y-2 ${
                         active
-                          ? "bg-purple-50/80 border-[#6D28D9] shadow-sm ring-1 ring-[#6D28D9]/30"
-                          : "bg-white border-slate-200 hover:border-purple-300"
+                          ? "bg-teal-50/80 border-[#6D28D9] shadow-sm ring-1 ring-[#6D28D9]/30"
+                          : "bg-white border-slate-200 hover:border-teal-400"
                       }`}
                     >
                       <div className="flex items-center justify-between gap-2 flex-wrap">
-                        <span className="text-[10px] font-black uppercase px-2 py-0.5 rounded bg-purple-100 text-[#5B2D8B]">
+                        <span className="text-[10px] font-black uppercase px-2 py-0.5 rounded bg-teal-50 text-[#003B3A]">
                           {n.code} • {n.category}
                         </span>
                         <span
@@ -749,9 +749,9 @@ export function NotificationManagementWorkspace({
                             {n.sentSuccessCount}/{n.totalRecipients}
                           </span>
                         </div>
-                        <div className="bg-purple-50/70 rounded-lg p-1.5 text-center">
-                          <span className="text-purple-600 block">Đã đọc</span>
-                          <span className="text-[#5B2D8B] font-black">
+                        <div className="bg-teal-50/70 rounded-lg p-1.5 text-center">
+                          <span className="text-teal-800 block">Đã đọc</span>
+                          <span className="text-[#003B3A] font-black">
                             {n.readCount} ({readRate}%)
                           </span>
                         </div>
@@ -776,7 +776,7 @@ export function NotificationManagementWorkspace({
                   <div className="flex flex-col sm:flex-row sm:items-start justify-between gap-3 pb-4 border-b border-slate-100">
                     <div className="space-y-1">
                       <div className="flex items-center gap-2 flex-wrap">
-                        <span className="text-[10px] font-black uppercase px-2.5 py-0.5 rounded-full bg-purple-100 text-[#5B2D8B]">
+                        <span className="text-[10px] font-black uppercase px-2.5 py-0.5 rounded-full bg-teal-50 text-[#003B3A]">
                           {selectedDetail.notification.code}
                         </span>
                         <span className="text-[10px] font-bold px-2.5 py-0.5 rounded-full bg-slate-100 text-slate-700">
@@ -801,7 +801,7 @@ export function NotificationManagementWorkspace({
                           type="button"
                           disabled={submitting}
                           onClick={() => handleWorkflowTransition("PUBLISH")}
-                          className="px-3.5 py-2 rounded-xl bg-[#5B2D8B] hover:bg-[#4C1D95] text-white text-xs font-extrabold cursor-pointer"
+                          className="px-3.5 py-2 rounded-xl bg-[#003B3A] hover:bg-[#4C1D95] text-white text-xs font-extrabold cursor-pointer"
                         >
                           Phát hành ngay
                         </button>
@@ -875,7 +875,7 @@ export function NotificationManagementWorkspace({
                   <div className="space-y-2.5">
                     <div className="flex items-center justify-between">
                       <h4 className="text-xs font-black text-slate-800 uppercase tracking-wide flex items-center gap-1.5">
-                        <Users className="w-4 h-4 text-[#5B2D8B]" />
+                        <Users className="w-4 h-4 text-[#003B3A]" />
                         <span>
                           Theo dõi Gửi – Đọc – Xác nhận ({selectedDetail.recipients?.length || 0} người nhận)
                         </span>
@@ -923,7 +923,7 @@ export function NotificationManagementWorkspace({
                               </td>
                               <td className="p-2.5 text-center">
                                 {r.isAcknowledged ? (
-                                  <span className="text-purple-700 font-extrabold">✓ Đã xác nhận</span>
+                                  <span className="text-teal-800 font-extrabold">✓ Đã xác nhận</span>
                                 ) : (
                                   <span className="text-slate-400">-</span>
                                 )}
@@ -939,7 +939,7 @@ export function NotificationManagementWorkspace({
                   {Array.isArray(selectedDetail.responses) && selectedDetail.responses.length > 0 && (
                     <div className="space-y-2.5 pt-3 border-t border-slate-100">
                       <h4 className="text-xs font-black text-slate-800 uppercase tracking-wide flex items-center gap-1.5">
-                        <MessageSquare className="w-4 h-4 text-[#5B2D8B]" />
+                        <MessageSquare className="w-4 h-4 text-[#003B3A]" />
                         <span>Phản hồi từ PHHS / Học sinh ({selectedDetail.responses.length})</span>
                       </h4>
                       <div className="space-y-2 max-h-52 overflow-y-auto">
@@ -969,7 +969,7 @@ export function NotificationManagementWorkspace({
                               <button
                                 type="button"
                                 onClick={() => handleReplyToParentResponse(resp.id)}
-                                className="px-3 py-1 rounded-lg bg-[#5B2D8B] text-white text-xs font-bold"
+                                className="px-3 py-1 rounded-lg bg-[#003B3A] text-white text-xs font-bold"
                               >
                                 Trả lời
                               </button>
@@ -1009,7 +1009,7 @@ export function NotificationManagementWorkspace({
               <select
                 onChange={(e) => handleApplyTemplate(e.target.value)}
                 defaultValue=""
-                className="px-3 py-1.5 rounded-xl border border-purple-200 bg-purple-50 text-[#5B2D8B] text-xs font-extrabold"
+                className="px-3 py-1.5 rounded-xl border border-teal-200 bg-teal-50 text-[#003B3A] text-xs font-extrabold"
               >
                 <option value="" disabled>
                   ✨ Chọn mẫu thông báo chuẩn...
@@ -1102,15 +1102,15 @@ export function NotificationManagementWorkspace({
             </div>
 
             {/* 2. Liên kết nghiệp vụ Khảo thí & Lớp học */}
-            <div className="p-4 rounded-2xl bg-purple-50/60 border border-purple-200/80 space-y-3">
+            <div className="p-4 rounded-2xl bg-teal-50/60 border border-teal-200/80 space-y-3">
               <div className="flex items-center justify-between gap-2 flex-wrap">
-                <span className="text-xs font-black text-[#5B2D8B] uppercase">
+                <span className="text-xs font-black text-[#003B3A] uppercase">
                   Liên kết Kỳ kiểm tra &amp; Phạm vi Lớp / Môn học
                 </span>
                 <button
                   type="button"
                   onClick={handleAutoPullExamSchedule}
-                  className="px-3 py-1.5 rounded-xl bg-[#5B2D8B] text-white text-[11px] font-extrabold flex items-center gap-1.5 cursor-pointer"
+                  className="px-3 py-1.5 rounded-xl bg-[#003B3A] text-white text-[11px] font-extrabold flex items-center gap-1.5 cursor-pointer"
                 >
                   <Sparkles className="w-3.5 h-3.5" />
                   <span>Tự động lấy Lịch, Phòng, Giờ thi từ SSM</span>
@@ -1190,8 +1190,8 @@ export function NotificationManagementWorkspace({
                         }
                         className={`px-2.5 py-1 rounded-lg text-xs font-bold transition cursor-pointer ${
                           checked
-                            ? "bg-[#5B2D8B] text-white"
-                            : "bg-slate-100 text-slate-700 hover:bg-purple-100"
+                            ? "bg-[#003B3A] text-white"
+                            : "bg-slate-100 text-slate-700 hover:bg-teal-50"
                         }`}
                       >
                         {cls.className}
@@ -1251,7 +1251,7 @@ export function NotificationManagementWorkspace({
                         requireAcknowledge: e.target.checked,
                       }))
                     }
-                    className="rounded text-[#5B2D8B]"
+                    className="rounded text-[#003B3A]"
                   />
                   <span>Yêu cầu Phụ huynh / Học sinh bấm &ldquo;Xác nhận đã xem&rdquo;</span>
                 </label>
@@ -1266,7 +1266,7 @@ export function NotificationManagementWorkspace({
                         allowReply: e.target.checked,
                       }))
                     }
-                    className="rounded text-[#5B2D8B]"
+                    className="rounded text-[#003B3A]"
                   />
                   <span>Cho phép Phụ huynh / Học sinh gửi phản hồi hỏi đáp</span>
                 </label>
@@ -1325,7 +1325,7 @@ export function NotificationManagementWorkspace({
                 type="button"
                 disabled={submitting}
                 onClick={() => handleSubmitComposer("PUBLISH")}
-                className="px-5 py-2.5 rounded-xl bg-[#5B2D8B] hover:bg-[#4C1D95] text-white text-xs font-extrabold shadow-sm flex items-center gap-1.5 cursor-pointer"
+                className="px-5 py-2.5 rounded-xl bg-[#003B3A] hover:bg-[#4C1D95] text-white text-xs font-extrabold shadow-sm flex items-center gap-1.5 cursor-pointer"
               >
                 <Send className="w-3.5 h-3.5" />
                 <span>Phát hành thông báo</span>
@@ -1337,7 +1337,7 @@ export function NotificationManagementWorkspace({
           <div className="lg:col-span-5 space-y-3">
             <div className="bg-white rounded-2xl border border-slate-200 p-3 flex items-center justify-between">
               <span className="text-xs font-black text-slate-700 flex items-center gap-1.5">
-                <Eye className="w-4 h-4 text-[#5B2D8B]" />
+                <Eye className="w-4 h-4 text-[#003B3A]" />
                 <span>Xem trước hiển thị (Live Preview)</span>
               </span>
               <div className="flex items-center gap-1 bg-slate-100 p-1 rounded-xl">
@@ -1346,7 +1346,7 @@ export function NotificationManagementWorkspace({
                   onClick={() => setPreviewDevice("MOBILE")}
                   className={`px-2.5 py-1 rounded-lg text-[11px] font-bold flex items-center gap-1 cursor-pointer ${
                     previewDevice === "MOBILE"
-                      ? "bg-[#5B2D8B] text-white"
+                      ? "bg-[#003B3A] text-white"
                       : "text-slate-600"
                   }`}
                 >
@@ -1358,7 +1358,7 @@ export function NotificationManagementWorkspace({
                   onClick={() => setPreviewDevice("DESKTOP")}
                   className={`px-2.5 py-1 rounded-lg text-[11px] font-bold flex items-center gap-1 cursor-pointer ${
                     previewDevice === "DESKTOP"
-                      ? "bg-[#5B2D8B] text-white"
+                      ? "bg-[#003B3A] text-white"
                       : "text-slate-600"
                   }`}
                 >
@@ -1373,13 +1373,13 @@ export function NotificationManagementWorkspace({
                 previewDevice === "MOBILE" ? "max-w-[370px]" : "w-full"
               }`}
             >
-              <div className="bg-white rounded-3xl border-2 border-purple-200 shadow-lg overflow-hidden">
-                <div className="bg-gradient-to-r from-[#5B2D8B] to-[#003B3A] p-4 text-white space-y-1">
+              <div className="bg-white rounded-3xl border-2 border-teal-200 shadow-lg overflow-hidden">
+                <div className="bg-gradient-to-r from-[#003B3A] to-[#003B3A] p-4 text-white space-y-1">
                   <div className="flex items-center justify-between">
                     <span className="text-[10px] font-black uppercase px-2 py-0.5 rounded bg-white/15">
                       {composerForm.senderUnit}
                     </span>
-                    <span className="text-[10px] font-bold text-purple-200">Vừa xong</span>
+                    <span className="text-[10px] font-bold text-teal-700">Vừa xong</span>
                   </div>
                   <h3 className="text-sm font-black leading-snug">
                     {composerForm.title || "Tiêu đề thông báo sẽ hiển thị tại đây..."}
@@ -1397,11 +1397,11 @@ export function NotificationManagementWorkspace({
                   />
 
                   {composerForm.requireAcknowledge && (
-                    <div className="p-3 rounded-xl bg-purple-50 border border-purple-200 flex items-center justify-between">
-                      <span className="text-[11px] font-bold text-[#5B2D8B]">
+                    <div className="p-3 rounded-xl bg-teal-50 border border-teal-200 flex items-center justify-between">
+                      <span className="text-[11px] font-bold text-[#003B3A]">
                         Yêu cầu xác nhận đã đọc
                       </span>
-                      <span className="px-3 py-1 rounded-lg bg-[#5B2D8B] text-white text-[11px] font-extrabold">
+                      <span className="px-3 py-1 rounded-lg bg-[#003B3A] text-white text-[11px] font-extrabold">
                         Xác nhận đã xem
                       </span>
                     </div>
@@ -1420,7 +1420,7 @@ export function NotificationManagementWorkspace({
         <div className="bg-white rounded-3xl border border-slate-200 p-6 shadow-xs space-y-5">
           <div>
             <h2 className="text-base font-black text-slate-900 flex items-center gap-2">
-              <Zap className="w-5 h-5 text-[#5B2D8B]" />
+              <Zap className="w-5 h-5 text-[#003B3A]" />
               <span>Tự động hóa Thông báo Khảo thí (Event-Based Notification Engine)</span>
             </h2>
             <p className="text-xs text-slate-500 mt-0.5">
@@ -1564,7 +1564,7 @@ export function NotificationManagementWorkspace({
               <button
                 type="submit"
                 disabled={submitting}
-                className="px-5 py-2.5 rounded-xl bg-[#5B2D8B] hover:bg-[#4C1D95] text-white text-xs font-extrabold shadow-sm flex items-center gap-2 cursor-pointer"
+                className="px-5 py-2.5 rounded-xl bg-[#003B3A] hover:bg-[#4C1D95] text-white text-xs font-extrabold shadow-sm flex items-center gap-2 cursor-pointer"
               >
                 <Zap className="w-4 h-4" />
                 <span>Kích hoạt Sự kiện &amp; Phát hành Thông báo</span>
@@ -1610,7 +1610,7 @@ export function NotificationManagementWorkspace({
                   {
                     label: "1. Thông báo phát hành",
                     val: dashboardData.kpis.totalPublishedNotifications,
-                    color: "text-[#5B2D8B] bg-purple-50 border-purple-200",
+                    color: "text-[#003B3A] bg-teal-50 border-teal-200",
                   },
                   {
                     label: "2. Tổng người nhận",
@@ -1640,7 +1640,7 @@ export function NotificationManagementWorkspace({
                   {
                     label: "7. Đã xác nhận",
                     val: dashboardData.kpis.acknowledgedCount,
-                    color: "text-indigo-800 bg-indigo-50 border-indigo-200",
+                    color: "text-teal-800 bg-teal-50 border-teal-200",
                   },
                   {
                     label: "8. Chưa xác nhận",
@@ -1650,7 +1650,7 @@ export function NotificationManagementWorkspace({
                   {
                     label: "9. Tỷ lệ Đã đọc",
                     val: `${dashboardData.kpis.readRate}%`,
-                    color: "text-[#5B2D8B] bg-purple-100/70 border-purple-300",
+                    color: "text-[#003B3A] bg-teal-100/70 border-teal-400",
                   },
                   {
                     label: "10. Tỷ lệ Xác nhận",
@@ -1679,14 +1679,14 @@ export function NotificationManagementWorkspace({
                       <div key={c.campusId} className="space-y-1">
                         <div className="flex justify-between text-xs font-bold">
                           <span>{c.campusName}</span>
-                          <span className="text-[#5B2D8B]">
+                          <span className="text-[#003B3A]">
                             Đọc: {c.readRate}% • Xác nhận: {c.acknowledgeRate}% ({c.readCount}/
                             {c.totalRecipients})
                           </span>
                         </div>
                         <div className="h-2.5 rounded-full bg-slate-100 overflow-hidden">
                           <div
-                            className="h-full bg-gradient-to-r from-[#5B2D8B] to-[#00A19A] rounded-full"
+                            className="h-full bg-gradient-to-r from-[#003B3A] to-[#00A19A] rounded-full"
                             style={{ width: `${Math.min(100, c.readRate)}%` }}
                           />
                         </div>
@@ -1719,7 +1719,7 @@ export function NotificationManagementWorkspace({
                           >
                             Đọc: {cls.readRate}% ({cls.readCount}/{cls.totalRecipients})
                           </span>
-                          <span className="text-purple-700">XN: {cls.acknowledgeRate}%</span>
+                          <span className="text-teal-800">XN: {cls.acknowledgeRate}%</span>
                         </div>
                       </div>
                     ))}

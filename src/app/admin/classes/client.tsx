@@ -543,9 +543,9 @@ export function AdminClassesClient({ initialClasses, campuses, academicYears, te
   };
 
   const getEduBadgeColor = (code: string) => {
-    if (code === "HNG") return "bg-purple-100 text-purple-700"
+    if (code === "HNG") return "bg-teal-50 text-teal-800"
     if (code === "SB") return "bg-teal-100 text-teal-700"
-    if (code === "HNS") return "bg-orange-100 text-orange-700"
+    if (code === "HNS") return "bg-amber-50 text-amber-800"
     if (code === "MNS") return "bg-rose-100 text-rose-700"
     if (code === "MNG") return "bg-emerald-100 text-emerald-700"
     return "bg-slate-100 text-slate-600"
@@ -594,7 +594,7 @@ export function AdminClassesClient({ initialClasses, campuses, academicYears, te
           </select>
         </div>
         <div className="flex items-center gap-2">
-          <BookOpen className="w-5 h-5 text-indigo-600" />
+          <BookOpen className="w-5 h-5 text-teal-800" />
           <label className="font-semibold text-slate-700 text-sm">Khối học:</label>
           <select value={selectedGrade} onChange={e => setSelectedGrade(e.target.value)}
             className="border rounded-lg p-2 text-sm min-w-[120px] outline-none focus:ring-2 focus:ring-indigo-300">
@@ -604,7 +604,7 @@ export function AdminClassesClient({ initialClasses, campuses, academicYears, te
         </div>
 
         <div className="flex items-center gap-2">
-          <Layers className="w-5 h-5 text-purple-600" />
+          <Layers className="w-5 h-5 text-teal-800" />
           <label className="font-semibold text-slate-700 text-sm">Hệ học:</label>
           <select value={selectedEduSystem} onChange={e => setSelectedEduSystem(e.target.value)}
             className="border rounded-lg p-2 text-sm min-w-[120px] outline-none focus:ring-2 focus:ring-purple-300">
@@ -617,8 +617,8 @@ export function AdminClassesClient({ initialClasses, campuses, academicYears, te
           {(() => {
             const totalGL = filteredClasses.reduce((acc: number, cur: any) => acc + (cur.giaoLuuCount || 0), 0);
             return totalGL > 0 ? (
-              <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full bg-purple-50 text-purple-700 border border-purple-200 text-xs font-bold shadow-2xs" title="Tổng số học sinh diện Giao lưu trong các lớp đang lọc">
-                <span className="w-2 h-2 rounded-full bg-purple-500 animate-pulse"></span>
+              <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full bg-teal-50 text-teal-800 border border-teal-200 text-xs font-bold shadow-2xs" title="Tổng số học sinh diện Giao lưu trong các lớp đang lọc">
+                <span className="w-2 h-2 rounded-full bg-teal-500 animate-pulse"></span>
                 {totalGL} HS Giao lưu
               </span>
             ) : null;
@@ -691,9 +691,9 @@ export function AdminClassesClient({ initialClasses, campuses, academicYears, te
                <tr key={c.id} className={"hover:bg-slate-50 transition-colors " + (selectedIds.includes(c.id) ? "bg-blue-50/50" : "")}>
                  <td className="p-2 p-2 text-center border border-slate-200"><input type="checkbox" className="w-4 h-4 rounded text-blue-600" checked={selectedIds.includes(c.id)} onChange={e => handleSelectRow(c.id, e.target.checked)} /></td>
                  <td className="p-2 p-2 text-slate-400 text-center border border-slate-200">{(classPage - 1) * CLASS_PAGE_SIZE + i + 1}</td>
-                 <td className="p-2 p-2 border border-slate-200"><span className="flex items-center gap-1.5"><Building2 className="w-3.5 h-3.5 text-indigo-500" /><span className="text-slate-700">{c.campus}</span></span></td>
+                 <td className="p-2 p-2 border border-slate-200"><span className="flex items-center gap-1.5"><Building2 className="w-3.5 h-3.5 text-teal-700" /><span className="text-slate-700">{c.campus}</span></span></td>
                  <td className="p-2 p-2 border border-slate-200">
-                   {c.level ? (<span className={"text-xs px-2 py-1 rounded-full font-medium " + (["tiểu học", "tieu hoc"].includes(c.level.toLowerCase()) ? "bg-amber-50 text-amber-700" : ["thcs"].includes(c.level.toLowerCase()) ? "bg-blue-50 text-blue-700" : ["thpt"].includes(c.level.toLowerCase()) ? "bg-purple-50 text-purple-700" : ["mầm non", "nhà trẻ", "mẫu giáo bé", "mẫu giáo nhỡ", "mẫu giáo lớn"].includes(c.level.toLowerCase()) ? "bg-emerald-50 text-emerald-700" : "bg-slate-100 text-slate-600")}>{["mầm non", "nhà trẻ", "mẫu giáo bé", "mẫu giáo nhỡ", "mẫu giáo lớn"].includes(c.level.toLowerCase()) ? "Mầm non" : c.level}</span>) : <span className="text-slate-300">--</span>}
+                   {c.level ? (<span className={"text-xs px-2 py-1 rounded-full font-medium " + (["tiểu học", "tieu hoc"].includes(c.level.toLowerCase()) ? "bg-amber-50 text-amber-700" : ["thcs"].includes(c.level.toLowerCase()) ? "bg-blue-50 text-blue-700" : ["thpt"].includes(c.level.toLowerCase()) ? "bg-teal-50 text-teal-800" : ["mầm non", "nhà trẻ", "mẫu giáo bé", "mẫu giáo nhỡ", "mẫu giáo lớn"].includes(c.level.toLowerCase()) ? "bg-emerald-50 text-emerald-700" : "bg-slate-100 text-slate-600")}>{["mầm non", "nhà trẻ", "mẫu giáo bé", "mẫu giáo nhỡ", "mẫu giáo lớn"].includes(c.level.toLowerCase()) ? "Mầm non" : c.level}</span>) : <span className="text-slate-300">--</span>}
                  </td>
                                    {activeTab === "mam-non" ? (
                     <>
@@ -726,8 +726,8 @@ export function AdminClassesClient({ initialClasses, campuses, academicYears, te
                         <Users className="w-3.5 h-3.5 mr-1.5 text-slate-500" /> {c.studentCount}
                       </span>
                       {c.giaoLuuCount > 0 && (
-                        <span className="inline-flex items-center gap-1 text-[10px] font-bold text-purple-700 bg-purple-50 border border-purple-200/80 rounded-md px-1.5 py-0.2 w-max" title="Học sinh giao lưu">
-                          <span className="w-1.5 h-1.5 rounded-full bg-purple-500"></span>
+                        <span className="inline-flex items-center gap-1 text-[10px] font-bold text-teal-800 bg-teal-50 border border-teal-200/80 rounded-md px-1.5 py-0.2 w-max" title="Học sinh giao lưu">
+                          <span className="w-1.5 h-1.5 rounded-full bg-teal-500"></span>
                           {c.chinhKhoaCount} CK • {c.giaoLuuCount} GL
                         </span>
                       )}
@@ -786,7 +786,7 @@ export function AdminClassesClient({ initialClasses, campuses, academicYears, te
              </div>
              <form onSubmit={handleSaveEdit} className="p-5 space-y-4">
                 <div><label className="block text-sm font-semibold text-slate-700 mb-1">Tên lớp</label><input type="text" required value={editModal.className} onChange={e => setEditModal({...editModal, className: e.target.value})} className="w-full border rounded-xl p-2.5 outline-none focus:ring-2 focus:ring-blue-500 text-sm"/></div>
-                <div><label className="block text-sm font-semibold text-slate-700 mb-1">Cơ sở</label><select required value={editModal.campusId} disabled={isCampusLocked} onChange={e => !isCampusLocked && setEditModal({...editModal, campusId: e.target.value})} className={`w-full border rounded-xl p-2.5 outline-none text-sm ${isCampusLocked ? "bg-[#48BFE3]/10 border-indigo-200 text-indigo-700 cursor-not-allowed" : "focus:ring-2 focus:ring-blue-500 border-slate-200"}`}>{campuses.map((cp: any) => <option key={cp.id} value={cp.id}>{cp.campusName}</option>)}</select></div>
+                <div><label className="block text-sm font-semibold text-slate-700 mb-1">Cơ sở</label><select required value={editModal.campusId} disabled={isCampusLocked} onChange={e => !isCampusLocked && setEditModal({...editModal, campusId: e.target.value})} className={`w-full border rounded-xl p-2.5 outline-none text-sm ${isCampusLocked ? "bg-[#48BFE3]/10 border-teal-200 text-teal-800 cursor-not-allowed" : "focus:ring-2 focus:ring-blue-500 border-slate-200"}`}>{campuses.map((cp: any) => <option key={cp.id} value={cp.id}>{cp.campusName}</option>)}</select></div>
                 <div className="grid grid-cols-2 gap-4">
                   <div><label className="block text-sm font-semibold text-slate-700 mb-1">Bậc học</label><select required value={editModal.level} onChange={e => setEditModal({...editModal, level: e.target.value, grade: ""})} className="w-full border rounded-xl p-2.5 outline-none focus:ring-2 focus:ring-blue-500 text-sm"><option value="">Chọn bậc</option>{(activeTab === "mam-non" ? MN_LEVELS : K12_LEVELS).filter(l => l.value).map(l => <option key={l.value} value={l.value}>{l.label}</option>)}</select></div>
                   <div><label className="block text-sm font-semibold text-slate-700 mb-1">"Khối học"</label><select required value={editModal.grade} onChange={e => setEditModal({...editModal, grade: e.target.value})} className="w-full border rounded-xl p-2.5 outline-none focus:ring-2 focus:ring-blue-500 text-sm"><option value="">Chọn khối</option>{getGradesList(editModal.level, activeTab).map(g => <option key={g} value={g}>{g}</option>)}</select></div>
@@ -868,7 +868,7 @@ export function AdminClassesClient({ initialClasses, campuses, academicYears, te
                 </div>
                 <div>
                   <label className="block text-sm font-semibold text-slate-700 mb-1">Cơ sở <span className="text-red-500">*</span></label>
-                  <select required value={createModal.campusId} disabled={isCampusLocked} onChange={e => !isCampusLocked && setCreateModal({...createModal, campusId: e.target.value})} className={`w-full border rounded-xl p-2.5 outline-none text-sm ${isCampusLocked ? "bg-[#48BFE3]/10 border-indigo-200 text-indigo-700 cursor-not-allowed" : "focus:ring-2 focus:ring-blue-500 border-slate-200"}`}>
+                  <select required value={createModal.campusId} disabled={isCampusLocked} onChange={e => !isCampusLocked && setCreateModal({...createModal, campusId: e.target.value})} className={`w-full border rounded-xl p-2.5 outline-none text-sm ${isCampusLocked ? "bg-[#48BFE3]/10 border-teal-200 text-teal-800 cursor-not-allowed" : "focus:ring-2 focus:ring-blue-500 border-slate-200"}`}>
                     {campuses.map((cp: any) => <option key={cp.id} value={cp.id}>{cp.campusName}</option>)}
                   </select>
                 </div>
@@ -1127,7 +1127,7 @@ export function AdminClassesClient({ initialClasses, campuses, academicYears, te
       <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4">
         <div className="bg-white rounded-2xl shadow-2xl w-full max-w-5xl max-h-[90vh] flex flex-col overflow-hidden text-xs">
           {/* Header */}
-          <div className="flex items-center justify-between px-6 py-4 bg-gradient-to-r from-indigo-600 to-indigo-800 text-white rounded-t-2xl">
+          <div className="flex items-center justify-between px-6 py-4 bg-gradient-to-r from-teal-600 to-emerald-600 text-white rounded-t-2xl">
             <div className="flex items-center gap-3">
               <Copy className="w-5 h-5" />
               <h2 className="text-base font-bold tracking-tight">Sao chép học sinh sang năm học mới</h2>
@@ -1141,7 +1141,7 @@ export function AdminClassesClient({ initialClasses, campuses, academicYears, te
           <div className="flex-1 overflow-y-auto p-6 bg-slate-50 flex flex-col md:flex-row gap-6 min-h-0">
             {/* Column 1: Nguồn */}
             <div className="flex-1 bg-white rounded-xl border border-slate-200/80 p-4 flex flex-col min-h-[400px]">
-              <h3 className="text-sm font-bold text-slate-800 mb-3 pb-2 border-b border-slate-100 flex items-center gap-1.5 text-indigo-700">
+              <h3 className="text-sm font-bold text-slate-800 mb-3 pb-2 border-b border-slate-100 flex items-center gap-1.5 text-teal-800">
                 <Building2 className="w-4 h-4" /> Nguồn (Năm học cũ)
               </h3>
               
@@ -1178,7 +1178,7 @@ export function AdminClassesClient({ initialClasses, campuses, academicYears, te
               {/* Student list */}
               <div className="flex-grow border border-slate-200 rounded-xl overflow-hidden flex flex-col bg-slate-50/50 min-h-[220px]">
                 {copyStudentLoading ? (
-                  <div className="flex-grow flex items-center justify-center gap-2 text-indigo-600 text-xs font-bold">
+                  <div className="flex-grow flex items-center justify-center gap-2 text-teal-800 text-xs font-bold">
                     <Loader2 className="w-4 h-4 animate-spin" /> Đang tải danh sách học sinh...
                   </div>
                 ) : !copyStudentSourceClass ? (
@@ -1197,19 +1197,19 @@ export function AdminClassesClient({ initialClasses, campuses, academicYears, te
                         <input type="checkbox"
                           checked={copyStudentSelectedIds.length === copyStudentSourceStudents.length}
                           onChange={e => setCopyStudentSelectedIds(e.target.checked ? copyStudentSourceStudents.map(s => s.id) : [])}
-                          className="w-3.5 h-3.5 rounded border-slate-300 text-indigo-600 cursor-pointer" />
+                          className="w-3.5 h-3.5 rounded border-slate-300 text-teal-800 cursor-pointer" />
                         <span>Chọn tất cả ({copyStudentSourceStudents.length})</span>
                       </label>
-                      <span>Đang chọn: <strong className="text-indigo-600">{copyStudentSelectedIds.length}</strong></span>
+                      <span>Đang chọn: <strong className="text-teal-800">{copyStudentSelectedIds.length}</strong></span>
                     </div>
                     <div className="overflow-y-auto flex-grow max-h-[250px] divide-y divide-slate-100 bg-white">
                       {copyStudentSourceStudents.map((s: any) => {
                         const isChecked = copyStudentSelectedIds.includes(s.id);
                         return (
-                          <label key={s.id} className={`flex items-center gap-3 px-3 py-2 hover:bg-slate-50 transition-colors cursor-pointer ${isChecked ? "bg-indigo-50/20" : ""}`}>
+                          <label key={s.id} className={`flex items-center gap-3 px-3 py-2 hover:bg-slate-50 transition-colors cursor-pointer ${isChecked ? "bg-teal-50/20" : ""}`}>
                             <input type="checkbox" checked={isChecked}
                               onChange={e => setCopyStudentSelectedIds(e.target.checked ? [...copyStudentSelectedIds, s.id] : copyStudentSelectedIds.filter(id => id !== s.id))}
-                              className="w-3.5 h-3.5 rounded border-slate-300 text-indigo-600 cursor-pointer" />
+                              className="w-3.5 h-3.5 rounded border-slate-300 text-teal-800 cursor-pointer" />
                             <div className="text-xs">
                               <div className="font-bold text-slate-800">{s.studentName}</div>
                               <div className="text-slate-400 font-medium font-mono text-[10px] mt-0.5">{s.studentCode}</div>
@@ -1289,7 +1289,7 @@ export function AdminClassesClient({ initialClasses, campuses, academicYears, te
               {!copyStudentResult?.success && (
                 <button onClick={handleCopyStudentExecute}
                   disabled={!copyStudentTargetClass || copyStudentSelectedIds.length === 0 || copyStudentLoading}
-                  className="flex items-center gap-2 px-5 py-2 text-sm font-bold text-white bg-indigo-600 hover:bg-indigo-700 disabled:opacity-50 rounded-xl transition-colors shadow-sm">
+                  className="flex items-center gap-2 px-5 py-2 text-sm font-bold text-white bg-[#003B3A] hover:bg-[#003B3A] disabled:opacity-50 rounded-xl transition-colors shadow-sm">
                   {copyStudentLoading ? <Loader2 className="w-4 h-4 animate-spin" /> : <Copy className="w-4 h-4" />}
                   Sao chép {copyStudentSelectedIds.length} học sinh
                 </button>
@@ -1306,7 +1306,7 @@ export function AdminClassesClient({ initialClasses, campuses, academicYears, te
       <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4">
         <div className="bg-white rounded-2xl shadow-2xl w-full max-w-4xl max-h-[90vh] flex flex-col overflow-hidden">
           {/* Header */}
-          <div className="flex items-center justify-between px-6 py-4 bg-gradient-to-r from-violet-600 to-violet-800 text-white rounded-t-2xl">
+          <div className="flex items-center justify-between px-6 py-4 bg-gradient-to-r from-teal-600 to-emerald-600 text-white rounded-t-2xl">
             <div className="flex items-center gap-3">
               <ClipboardCheck className="w-5 h-5" />
               <h2 className="text-base font-bold tracking-tight">Sao chép phân công giảng dạy sang năm học mới</h2>
@@ -1337,7 +1337,7 @@ export function AdminClassesClient({ initialClasses, campuses, academicYears, te
                 </select>
               </div>
               <button onClick={handleCopyAssignPreview} disabled={!copyAssignSourceYear || !copyAssignTargetYear || copyAssignLoading}
-                className="flex items-center gap-2 px-4 py-2 bg-violet-600 hover:bg-violet-700 disabled:opacity-50 text-white font-semibold rounded-lg text-sm transition-colors">
+                className="flex items-center gap-2 px-4 py-2 bg-teal-500 hover:bg-teal-500 disabled:opacity-50 text-white font-semibold rounded-lg text-sm transition-colors">
                 {copyAssignLoading ? <Loader2 className="w-4 h-4 animate-spin" /> : <RefreshCw className="w-4 h-4" />}
                 Kiểm tra
               </button>
@@ -1364,7 +1364,7 @@ export function AdminClassesClient({ initialClasses, campuses, academicYears, te
               </div>
             )}
             {copyAssignLoading && (
-              <div className="flex items-center justify-center h-32 gap-3 text-violet-600">
+              <div className="flex items-center justify-center h-32 gap-3 text-teal-800">
                 <Loader2 className="w-6 h-6 animate-spin" />
                 <span className="text-sm font-semibold">Đang kiểm tra phân công...</span>
               </div>
@@ -1372,7 +1372,7 @@ export function AdminClassesClient({ initialClasses, campuses, academicYears, te
             {copyAssignPreview.length > 0 && !copyAssignLoading && (
               <>
                 <div className="flex items-center gap-4 mb-3 text-sm font-bold text-slate-700">
-                  <span>Tổng: <span className="text-violet-600">{copyAssignPreview.length}</span> phân công</span>
+                  <span>Tổng: <span className="text-teal-800">{copyAssignPreview.length}</span> phân công</span>
                   <span>Sẽ sao chép: <span className="text-emerald-600">{copyAssignPreview.filter(a => !a.isDuplicate && a.hasTargetClass).length}</span></span>
                   <span>Trùng (bỏ qua): <span className="text-amber-600">{copyAssignPreview.filter(a => a.isDuplicate).length}</span></span>
                   <span>Chưa có lớp đích: <span className="text-rose-600">{copyAssignPreview.filter(a => !a.isDuplicate && !a.hasTargetClass).length}</span></span>
@@ -1395,7 +1395,7 @@ export function AdminClassesClient({ initialClasses, campuses, academicYears, te
                           <td className="px-3 py-2.5 text-slate-600">{a.subjectName}</td>
                           <td className="px-3 py-2.5 text-slate-600">{a.className}</td>
                           <td className="px-3 py-2.5 text-center">
-                            <span className={`inline-flex items-center gap-1 text-xs font-bold px-2.5 py-1 rounded-md ${a.semester === 1 ? "bg-blue-50 text-blue-700 border border-blue-200/60" : "bg-orange-50 text-orange-700 border border-orange-200/60"}`}>
+                            <span className={`inline-flex items-center gap-1 text-xs font-bold px-2.5 py-1 rounded-md ${a.semester === 1 ? "bg-blue-50 text-blue-700 border border-blue-200/60" : "bg-amber-50 text-amber-800 border border-amber-200/60"}`}>
                               HK{a.semester}
                             </span>
                           </td>
@@ -1427,7 +1427,7 @@ export function AdminClassesClient({ initialClasses, campuses, academicYears, te
               {!copyAssignResult?.success && (
                 <button onClick={handleCopyAssignExecute}
                   disabled={copyAssignPreview.filter((a: any) => !a.isDuplicate && a.hasTargetClass).length === 0 || copyAssignLoading}
-                  className="flex items-center gap-2 px-5 py-2 text-sm font-bold text-white bg-violet-600 hover:bg-violet-700 disabled:opacity-50 rounded-xl transition-colors shadow-sm">
+                  className="flex items-center gap-2 px-5 py-2 text-sm font-bold text-white bg-teal-500 hover:bg-teal-500 disabled:opacity-50 rounded-xl transition-colors shadow-sm">
                   {copyAssignLoading ? <Loader2 className="w-4 h-4 animate-spin" /> : <ClipboardCheck className="w-4 h-4" />}
                   Sao chép {copyAssignPreview.filter((a: any) => !a.isDuplicate && a.hasTargetClass).length} phân công
                 </button>

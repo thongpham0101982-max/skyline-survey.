@@ -20,10 +20,10 @@ const PRESET_COLORS = [
   { name: 'Hổ phách (Amber)', tagColor: '#d97706', badgeCls: 'bg-amber-50 text-amber-900 border-amber-200/80', borderCls: 'border-amber-400' },
   { name: 'Xanh dương (Blue)', tagColor: '#2563eb', badgeCls: 'bg-blue-50 text-blue-900 border-blue-200/80', borderCls: 'border-blue-400' },
   { name: 'Xanh lá (Emerald)', tagColor: '#059669', badgeCls: 'bg-emerald-50 text-emerald-900 border-emerald-200/80', borderCls: 'border-emerald-400' },
-  { name: 'Cam rực rỡ (Orange)', tagColor: '#ea580c', badgeCls: 'bg-orange-50 text-orange-900 border-orange-200/80', borderCls: 'border-orange-400' },
+  { name: 'Cam rực rỡ (Orange)', tagColor: '#B45309', badgeCls: 'bg-amber-50 text-amber-800 border-amber-200/80', borderCls: 'border-amber-200' },
   { name: 'Xanh Teal Skyline', tagColor: '#0d9488', badgeCls: 'bg-teal-50 text-[#003B3A] border-teal-200/80', borderCls: 'border-teal-400' },
-  { name: 'Tím chàm (Indigo)', tagColor: '#4f46e5', badgeCls: 'bg-indigo-50 text-indigo-900 border-indigo-200/80', borderCls: 'border-indigo-400' },
-  { name: 'Tím hoa cà (Purple)', tagColor: '#7c3aed', badgeCls: 'bg-purple-50 text-purple-900 border-purple-200/80', borderCls: 'border-purple-400' },
+  { name: 'Tím chàm (Indigo)', tagColor: '#00736E', badgeCls: 'bg-teal-50 text-teal-800 border-teal-200/80', borderCls: 'border-teal-200' },
+  { name: 'Tím hoa cà (Purple)', tagColor: '#003B3A', badgeCls: 'bg-teal-50 text-teal-800 border-teal-200/80', borderCls: 'border-teal-400' },
   { name: 'Xanh Cyan (Cyan)', tagColor: '#0891b2', badgeCls: 'bg-cyan-50 text-cyan-900 border-cyan-200/80', borderCls: 'border-cyan-400' },
   { name: 'Xanh Chanh (Lime)', tagColor: '#65a30d', badgeCls: 'bg-lime-50 text-lime-900 border-lime-200/80', borderCls: 'border-lime-400' },
   { name: 'Hồng phấn (Fuchsia)', tagColor: '#c026d3', badgeCls: 'bg-fuchsia-50 text-fuchsia-900 border-fuchsia-200/80', borderCls: 'border-fuchsia-400' },
@@ -217,10 +217,10 @@ export function CatalogThemeManagementView({
           <div>
             <div className="flex items-center gap-2">
               <h2 className="text-lg font-black text-slate-800 tracking-tight flex items-center gap-2">
-                <Sparkles className="w-5 h-5 text-purple-600" />
+                <Sparkles className="w-5 h-5 text-teal-800" />
                 <span>Quản Lý Danh Mục Chủ Đề Giáo Dục</span>
               </h2>
-              <span className="px-2.5 py-0.5 rounded-full text-[11px] font-black bg-purple-50 text-purple-700 border border-purple-200">
+              <span className="px-2.5 py-0.5 rounded-full text-[11px] font-black bg-teal-50 text-teal-800 border border-teal-200">
                 {themes.length} chủ đề
               </span>
             </div>
@@ -242,7 +242,7 @@ export function CatalogThemeManagementView({
 
           <button
             onClick={handleOpenAdd}
-            className="flex items-center gap-1.5 px-4 py-2 rounded-xl text-xs font-bold text-white bg-gradient-to-r from-purple-700 to-indigo-600 hover:brightness-105 shadow-md shadow-purple-600/20 transition-all cursor-pointer"
+            className="flex items-center gap-1.5 px-4 py-2 rounded-xl text-xs font-bold text-white bg-gradient-to-r from-teal-600 to-emerald-600 hover:brightness-105 shadow-md shadow-purple-600/20 transition-all cursor-pointer"
           >
             <Plus className="w-4 h-4" />
             <span>Thêm chủ đề mới</span>
@@ -252,10 +252,10 @@ export function CatalogThemeManagementView({
 
       {/* Form Thêm / Sửa Chủ đề (Inline Collapse) */}
       {isEditing && (
-        <div className="bg-white p-5 rounded-3xl border-2 border-purple-300 shadow-md animate-in slide-in-from-top-2 duration-200">
+        <div className="bg-white p-5 rounded-3xl border-2 border-teal-400 shadow-md animate-in slide-in-from-top-2 duration-200">
           <div className="flex items-center justify-between border-b border-slate-100 pb-3 mb-4">
             <div className="flex items-center gap-2">
-              <div className="w-7 h-7 rounded-xl bg-purple-100 text-purple-700 flex items-center justify-center font-bold">
+              <div className="w-7 h-7 rounded-xl bg-teal-50 text-teal-800 flex items-center justify-center font-bold">
                 {editId ? <Edit3 className="w-3.5 h-3.5" /> : <Plus className="w-3.5 h-3.5" />}
               </div>
               <h3 className="text-sm font-extrabold text-slate-800">
@@ -328,7 +328,7 @@ export function CatalogThemeManagementView({
                       onClick={() => setSelectedColorIdx(idx)}
                       className={`p-2 rounded-xl border text-left flex items-center gap-2 transition-all cursor-pointer ${
                         isSelected
-                          ? 'border-purple-600 bg-purple-50/70 shadow-xs ring-2 ring-purple-500/20'
+                          ? 'border-teal-400 bg-teal-50/70 shadow-xs ring-2 ring-purple-500/20'
                           : 'border-slate-200 hover:border-slate-300 bg-white'
                       }`}
                     >
@@ -361,7 +361,7 @@ export function CatalogThemeManagementView({
               <button
                 type="submit"
                 disabled={saving}
-                className="px-5 py-2 rounded-xl text-xs font-bold text-white bg-purple-600 hover:bg-purple-700 shadow-md shadow-purple-600/20 transition-all cursor-pointer flex items-center gap-1.5"
+                className="px-5 py-2 rounded-xl text-xs font-bold text-white bg-[#003B3A] hover:bg-[#003B3A] shadow-md shadow-purple-600/20 transition-all cursor-pointer flex items-center gap-1.5"
               >
                 <Check className="w-4 h-4" />
                 <span>{saving ? 'Đang lưu...' : (editId ? 'Cập nhật chủ đề' : 'Thêm chủ đề')}</span>
@@ -407,7 +407,7 @@ export function CatalogThemeManagementView({
             {loading ? (
               <tr>
                 <td colSpan={7} className="py-12 text-center text-slate-400">
-                  <RefreshCw className="w-6 h-6 animate-spin mx-auto mb-2 text-purple-600" />
+                  <RefreshCw className="w-6 h-6 animate-spin mx-auto mb-2 text-teal-800" />
                   Đang tải danh mục chủ đề...
                 </td>
               </tr>
@@ -432,7 +432,7 @@ export function CatalogThemeManagementView({
                         {theme.name}
                       </div>
                       {theme.isSystem && (
-                        <span className="text-[10px] text-purple-700 font-semibold">
+                        <span className="text-[10px] text-teal-800 font-semibold">
                           Chủ đề chuẩn Skyline
                         </span>
                       )}
@@ -463,7 +463,7 @@ export function CatalogThemeManagementView({
                         <button
                           type="button"
                           onClick={() => handleOpenEdit(theme)}
-                          className="p-1.5 rounded-lg text-slate-500 hover:text-purple-700 hover:bg-purple-50 transition-colors cursor-pointer"
+                          className="p-1.5 rounded-lg text-slate-500 hover:text-teal-800 hover:bg-teal-50 transition-colors cursor-pointer"
                           title="Chỉnh sửa chủ đề"
                         >
                           <Edit3 className="w-3.5 h-3.5" />

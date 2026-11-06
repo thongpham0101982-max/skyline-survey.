@@ -74,7 +74,7 @@ export default async function AdminLayout({ children }: { children: React.ReactN
   }
 
   return (
-    <div className="flex min-h-dvh text-xs font-semibold">
+    <div className="admin-layout-wrapper flex min-h-dvh text-xs font-medium text-slate-800 bg-[#F8FAFC]">
       <Sidebar 
         role="ADMIN" 
         permissionModules={readableModules} 
@@ -82,9 +82,9 @@ export default async function AdminLayout({ children }: { children: React.ReactN
         taskCount={taskCount} 
         isTTCM={isTTCM} 
       />
-      <main className="flex-1 flex flex-col relative min-w-0 overflow-hidden bg-slate-50/50">
+      <main className="flex-1 flex flex-col relative min-w-0 overflow-hidden bg-[#F8FAFC]">
         {/* Top Header */}
-        <header className="h-16 border-b border-slate-200/90 bg-white/90 backdrop-blur-md sticky top-0 z-30 flex items-center justify-between px-4 sm:px-6 shrink-0 shadow-xs">
+        <header className="h-16 border-b border-slate-200 bg-white/95 backdrop-blur-md sticky top-0 z-30 flex items-center justify-between px-4 sm:px-6 shrink-0 shadow-2xs">
           <div className="flex items-center gap-3">
             <MobileMenuTrigger />
             <div className="flex items-center gap-2.5">
@@ -94,20 +94,22 @@ export default async function AdminLayout({ children }: { children: React.ReactN
                 className="h-7 w-auto object-contain md:hidden" 
               />
               <div className="flex flex-col">
-                <span className="text-xs md:text-sm font-black text-slate-800 tracking-tight flex items-center gap-1.5">
-                  <span className="text-[#0284C7] font-semibold uppercase tracking-wide">SQMS</span>
-                  <span className="hidden md:inline text-xs font-bold text-slate-400">• Quản trị</span>
+                <span className="text-xs md:text-sm font-bold text-slate-900 tracking-tight flex items-center gap-2">
+                  <span className="inline-flex items-center px-2 py-0.5 rounded-md bg-[#003B3A] text-white text-[11px] font-bold tracking-normal">
+                    SQMS
+                  </span>
+                  <span className="hidden md:inline text-xs font-semibold text-slate-600">Quản trị hệ thống</span>
                 </span>
-                <span className="md:hidden text-[9px] text-[#00A19A] font-medium leading-none">SQMS</span>
+                <span className="md:hidden text-[9px] text-[#00736E] font-semibold leading-none mt-0.5">Quản trị</span>
               </div>
             </div>
             {isTeacherUser && (
               <Link 
                 href="/teacher" 
-                className="hidden sm:flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-teal-50 border border-teal-200 text-[#00A19A] hover:bg-teal-100/80 font-bold text-xs transition-all shadow-xs shrink-0"
+                className="hidden sm:flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-[#F0FDFA] border border-[#CCFBF1] text-[#00736E] hover:bg-[#CCFBF1]/60 font-semibold text-xs transition-all shrink-0"
               >
                 <GraduationCap className="w-4 h-4 text-[#00A19A]" />
-                <span>Giao diện Giáo viên</span>
+                <span>Không gian Giáo viên</span>
               </Link>
             )}
 
@@ -121,7 +123,7 @@ export default async function AdminLayout({ children }: { children: React.ReactN
             <UserMenu session={session} permissionModules={readableModules} />
           </div>
         </header>
-        <div className="p-3.5 sm:p-6 md:p-8 pb-24 md:pb-12 flex-1 overflow-x-auto overflow-y-auto text-xs font-semibold">
+        <div className="p-3.5 sm:p-6 md:p-8 pb-24 md:pb-12 flex-1 overflow-x-auto overflow-y-auto text-xs font-medium text-slate-800">
           {children}
         </div>
         

@@ -35,6 +35,7 @@ import { Badge } from "@/components/ui/badge"
 import { KPICard } from "@/components/KPICard"
 import { UserWelcomeCard } from "@/components/UserWelcomeCard"
 import DeadlineCountdownBanner from "@/components/shared/DeadlineCountdownBanner"
+import { TeacherClassKpiSpotlight } from "@/components/teacher/TeacherClassKpiSpotlight"
 import { useCampusTheme, CampusThemeType, CAMPUS_THEMES, resolveCampusTheme } from "@/hooks/useCampusTheme"
 
 interface MetricData {
@@ -380,17 +381,6 @@ export default function TeacherDashboard() {
       badgeVariant: "skyline"
     },
     {
-      id: "admin-digital-library",
-      groupId: "UTILITIES",
-      groupName: "Học liệu & Khảo sát",
-      title: "Thư viện Số & Kế hoạch Bài dạy",
-      desc: "Kho học liệu dùng chung của Tổ, giáo án điện tử và ngân hàng câu hỏi khảo sát.",
-      href: "/teacher/digital-library",
-      icon: BookOpen,
-      badgeText: "Học liệu số",
-      badgeVariant: "accent"
-    },
-    {
       id: "admin-grading",
       groupId: "GVBM",
       groupName: "Điều hành Chuyên môn",
@@ -404,7 +394,7 @@ export default function TeacherDashboard() {
     {
       id: "admin-surveys",
       groupId: "UTILITIES",
-      groupName: "Học liệu & Khảo sát",
+      groupName: "Tiện ích & Khảo sát",
       title: "Khảo sát Nhà trường",
       desc: "Tham gia các phiếu khảo sát ý kiến định kỳ của Nhà trường dành cho cán bộ, giáo viên.",
       href: "/teacher/surveys",
@@ -444,7 +434,7 @@ export default function TeacherDashboard() {
         { id: "ALL" as const, label: `Tất cả (${managerActionItems.length})` },
         { id: "GVBM" as const, label: "Điều hành Tổ CM" },
         { id: "GVCN" as const, label: "Quản lý Học sinh" },
-        { id: "UTILITIES" as const, label: "Học liệu & Khảo sát" }
+        { id: "UTILITIES" as const, label: "Tiện ích & Khảo sát" }
       ]
     }
     return [
@@ -466,7 +456,7 @@ export default function TeacherDashboard() {
             campusTheme.type === "HILL"
               ? "bg-[#AE882E] text-white"
               : campusTheme.type === "GLOBAL"
-              ? "bg-[#6E3D89] text-white"
+              ? "bg-[#003B3A] text-white"
               : "bg-[#00A19A] text-white"
           }`}
           title={`Biên chế: ${campusTheme.name}`}
@@ -565,6 +555,9 @@ export default function TeacherDashboard() {
         isRefreshing={refreshing}
         showAcademicYear={false}
       />
+
+      {/* KHỐI NỔI BẬT: KPIS LỚP PHỤ TRÁCH (TÍN NHIỆM PHHS & KHẢO SÁT HỌC SINH) */}
+      <TeacherClassKpiSpotlight />
 
       {/* 2. BANNER ĐẾM NGƯỢC HẠN CHỐT CHUẨN HỆ THỐNG */}
       <DeadlineCountdownBanner
@@ -1242,7 +1235,7 @@ export default function TeacherDashboard() {
               href="/teacher/ho-so-hoc-sinh"
               className="flex flex-col items-center gap-1 p-1.5 text-slate-600 hover:text-rose-600 transition-colors"
             >
-              <Users className="w-5 h-5 text-purple-500" />
+              <Users className="w-5 h-5 text-teal-700" />
               <span className="text-[10px] font-bold">Hồ sơ HS</span>
             </Link>
           </>

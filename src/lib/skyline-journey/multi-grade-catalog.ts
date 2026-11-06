@@ -2285,679 +2285,687 @@ export const TC05S_STAGES: TC02SStageDefinition[] = [
 ];
 
 // ============================================================================
-// KHỐI 1: ĐẢO TÀI CHÍNH THÔNG THÁI 1S (MÃ TC01S) - 5 VÙNG, 15 CHẶNG
+// KHỐI 1: ĐẢO HOẠT HÌNH TÀI CHÍNH NHÍ 1S (MÃ TC01S) - 4 CHỦ ĐỀ, 15 BÀI HỌC, 46 TIÊU CHUẨN
 // ============================================================================
 
 export const TC01S_ZONES: TC02SZoneDefinition[] = [
   {
     zoneOrder: 1,
-    topicId: "topic_g1_1",
+    topicId: "spec_top_fin_g1_01",
     topicCode: "TC01S.01",
-    officialTopicName: "Làm quen với tiền",
-    creativeZoneName: "Vùng 1: Vườn Hoa Đồng Xu Tí Hon",
+    officialTopicName: "Chủ đề 1. Làm quen với tiền",
+    creativeZoneName: "Vùng 1: Khu Vườn Chim Non & Đồng Xu Lấp Lánh 🐣",
     themeColor: "#0d9488",
     accentColor: "#2dd4bf",
-    landscapeSubtitle: "Làm quen với đồng tiền quanh em, lợi ích của tiền và cách giữ gìn đồng tiền phẳng phiu.",
+    landscapeSubtitle: "Cùng Chim Non Bồ Câu Sky-Line và Bé Heo Hồng nhận biết tờ tiền Việt Nam, hiểu tiền đến từ lao động của ba mẹ và giữ tiền phẳng phiu.",
     badgeCode: "BADGE_TC01S_ZONE1",
     badgeName: "Bạn Nhỏ Yêu Quý Đồng Tiền"
   },
   {
     zoneOrder: 2,
-    topicId: "topic_g1_2",
+    topicId: "spec_top_fin_g1_02",
     topicCode: "TC01S.02",
-    officialTopicName: "Chi tiêu thông minh",
-    creativeZoneName: "Vùng 2: Siêu Thị Tí Hon Vui Vẻ",
+    officialTopicName: "Chủ đề 2. Chi tiêu thông minh",
+    creativeZoneName: "Vùng 2: Siêu Thị Tí Hon Của Thỏ Trắng Thông Thái 🐰",
     themeColor: "#0284c7",
     accentColor: "#38bdf8",
-    landscapeSubtitle: "Phân biệt Cần và Muốn, nghĩ trước khi mua và tập làm người mua sắm thông thái.",
+    landscapeSubtitle: "Cùng Thỏ Trắng Thông Thái phân biệt điều em Cần hay em Muốn, dừng lại nghĩ 3 giây trước khi mua và trải nghiệm Siêu thị tí hon.",
     badgeCode: "BADGE_TC01S_ZONE2",
     badgeName: "Khách Hàng Nhí Thông Thái"
   },
   {
     zoneOrder: 3,
-    topicId: "topic_g1_3",
+    topicId: "spec_top_fin_g1_03",
     topicCode: "TC01S.03",
-    officialTopicName: "Tiết kiệm mỗi ngày",
-    creativeZoneName: "Vùng 3: Ngôi Làng Ống Heo Siêu Năng Lực",
+    officialTopicName: "Chủ đề 3. Tiết kiệm mỗi ngày",
+    creativeZoneName: "Vùng 3: Ngôi Làng Ống Heo Hồng & Gấu Mật Xanh 🐷",
     themeColor: "#059669",
     accentColor: "#34d399",
-    landscapeSubtitle: "Khám phá siêu năng lực tiết kiệm, nuôi ống heo ước mơ và tiết kiệm từ việc nhỏ mỗi ngày.",
+    landscapeSubtitle: "Cùng Bé Heo Hồng và Gấu Mật đánh thức siêu năng lực tiết kiệm, nuôi ước mơ trong ống heo, tiết kiệm điện nước và ghi nhật ký tiết kiệm.",
     badgeCode: "BADGE_TC01S_ZONE3",
     badgeName: "Siêu Anh Hùng Tiết Kiệm Nhí"
   },
   {
     zoneOrder: 4,
-    topicId: "topic_g1_4",
+    topicId: "spec_top_fin_g1_04",
     topicCode: "TC01S.04",
-    officialTopicName: "Em làm chủ đồng tiền",
-    creativeZoneName: "Vùng 4: Đồi Yêu Thương & Kế Hoạch Đầu Tiên",
-    themeColor: "#7c3aed",
-    accentColor: "#a78bfa",
-    landscapeSubtitle: "Biết chia sẻ yêu thương, lập kế hoạch chi tiêu đầu tiên và tập làm nhà quản lí tài chính nhí.",
-    badgeCode: "BADGE_TC01S_ZONE4",
-    badgeName: "Nhà Quản Lí Nhí Đáng Yêu"
-  },
-  {
-    zoneOrder: 5,
-    topicId: "topic_g1_5",
-    topicCode: "TC01S.05",
-    officialTopicName: "Dự án cuối khóa",
-    creativeZoneName: "Vùng 5: Quảng Trường Ngày Hội Tài Chính Nhí",
+    officialTopicName: "Chủ đề 4. Em làm chủ đồng tiền",
+    creativeZoneName: "Vùng 4: Đồi Ba Chiếc Hũ Của Sóc Nâu Chăm Chỉ 🐿️",
     themeColor: "#d97706",
     accentColor: "#fbbf24",
-    landscapeSubtitle: "Tổng kết kiến thức Khối 1 trong Ngày hội Tài chính nhí sôi động.",
-    badgeCode: "BADGE_TC01S_ZONE5",
-    badgeName: "Ngôi Sao Ngày Hội Tài Chính Khối 1"
+    landscapeSubtitle: "Cùng Gấu Mật và Sóc Nâu biết chia sẻ yêu thương, lập kế hoạch chi tiêu đầu tiên với 3 chiếc hũ và trở thành Nhà quản lí tài chính nhí!",
+    badgeCode: "BADGE_TC01S_ZONE4",
+    badgeName: "Nhà Quản Lí Tài Chính Nhí Khối 1"
   }
 ];
 
 export const TC01S_STAGES: TC02SStageDefinition[] = [
   {
     periodIndex: 1,
-    lessonId: "les_fin_g1_p01",
+    lessonId: "spec_les_fin_g1_p01",
     lessonCode: "TC01S.01.0001",
-    lessonName: "Tiền quanh em – Tiền đến từ đâu?",
-    topicId: "topic_g1_1",
+    lessonName: "1. Tiền quanh em",
+    topicId: "spec_top_fin_g1_01",
     topicCode: "TC01S.01",
-    officialTopicName: "Làm quen với tiền",
-    creativeZoneName: "Vùng 1: Vườn Hoa Đồng Xu Tí Hon",
+    officialTopicName: "Chủ đề 1. Làm quen với tiền",
+    creativeZoneName: "Vùng 1: Khu Vườn Chim Non & Đồng Xu Lấp Lánh 🐣",
     isProject: false,
     feathersReward: 3,
     mapCoordinates: { x: 10, y: 80 },
     criteria: [
-      { code: "TC01S.01.0001.01", level: "Mức 1", competencyGroup: "Hiểu", description: "Nhận biết được đồng tiền xuất hiện quanh em và tiền có được nhờ bố mẹ, người lớn làm việc chăm chỉ." },
-      { code: "TC01S.01.0001.02", level: "Mức 2", competencyGroup: "Biết", description: "Biết yêu quý và trân trọng công sức lao động của bố mẹ." }
+      { code: "TC01S.01.0001.01", level: "Mức 1", competencyGroup: "Hiểu", description: "Nhận biết được tờ tiền Việt Nam qua màu sắc, con số mệnh giá và hình ảnh trên tờ tiền." },
+      { code: "TC01S.01.0001.02", level: "Mức 1", competencyGroup: "Hiểu", description: "Nêu được tiền xuất hiện trong các hoạt động mua bán hằng ngày quanh em." },
+      { code: "TC01S.01.0001.03", level: "Mức 2", competencyGroup: "Biết", description: "Phân biệt được tờ tiền thật với giấy màu, thẻ đồ chơi hoặc lá cây." },
+      { code: "TC01S.01.0001.04", level: "Mức 1", competencyGroup: "Hiểu", description: "Biết gọi đúng tên một số mệnh giá tiền quen thuộc khi đi cùng người lớn." }
     ],
     interactive: buildBackpackInteractive({
-      storyBrief: "Chào các bạn nhỏ Lớp 1! Chú chim Sky-Line đố em: Tiền đến từ đâu nhỉ? Hãy chọn đúng những việc làm tạo ra đồng tiền chân chính nhé!",
-      worldLocationName: "Cổng Vườn Hoa Đồng Xu",
-      mascotGuideTip: "Bố mẹ phải đi làm chăm chỉ mỗi ngày mới có tiền nuôi chúng mình ăn học đấy!",
-      parentCompanionTip: "Kể ngắn gọn cho con nghe công việc hằng ngày của bố mẹ để con hiểu tiền từ đâu mà có.",
+      storyBrief: "🐣 Chim Non Bồ Câu Sky-Line vẫy cánh chào em: 'Cúc cu! Quanh chúng mình có những tờ tiền Việt Nam thật đẹp. Em hãy giúp Chim Non phân biệt đâu là tiền thật dùng trong cuộc sống và đâu chỉ là đồ chơi nhé!'",
+      worldLocationName: "Cổng Vườn Hoa Đồng Xu Của Chim Non",
+      mascotGuideTip: "🎶 Vè Chim Non: 'Nhìn số, nhìn màu trên tờ tiền – Mua bánh, mua vở khắp mọi miền!'",
+      parentCompanionTip: "Cho con quan sát 2–3 tờ tiền mệnh giá nhỏ (1.000đ, 2.000đ, 5.000đ) để con nhận biết con số và màu sắc.",
       mode: "NEED_VS_WANT",
-      context1Title: "Tiền đến từ đâu?",
-      context1Subtitle: "Chọn nguồn tạo ra tiền đúng đắn (Nhóm A) và điều không đúng (Nhóm B)",
-      groupAName: "Nhờ làm việc chăm chỉ 💼",
-      groupBName: "Không tự nhiên mà có 🚫",
+      context1Title: "Làm quen với tiền quanh em",
+      context1Subtitle: "Giúp Chim Non 🐣 xếp đúng Tiền thật & hoạt động dùng tiền (Nhóm A) và Đồ chơi không phải tiền (Nhóm B)",
+      groupAName: "Tiền thật & Hoạt động quanh em 🪙",
+      groupBName: "Đồ chơi / Không phải tiền 🍂",
       items1: [
-        { id: "g1_s1_1", name: "Bố mẹ đi làm việc chăm chỉ mỗi ngày", emoji: "👩‍🏫", correctGroup: "GROUP_A", contextReason: "Lao động chăm chỉ giúp tạo ra thu nhập chân chính." },
-        { id: "g1_s1_2", name: "Bác nông dân trồng lúa, trồng rau bán ở chợ", emoji: "🌾", correctGroup: "GROUP_A", contextReason: "Công sức lao động tạo ra sản phẩm và tiền." },
-        { id: "g1_s1_3", name: "Tiền tự mọc trên cây ngoài công viên", emoji: "🌳", correctGroup: "GROUP_B", contextReason: "Tiền không bao giờ tự mọc trên cây." }
+        { id: "g1_s1_1", name: "Tờ tiền Việt Nam có in con số mệnh giá và Quốc huy", emoji: "💵", correctGroup: "GROUP_A", contextReason: "Đây là đồng tiền Việt Nam hợp pháp dùng trong cuộc sống." },
+        { id: "g1_s1_2", name: "Mẹ dùng tiền trả cô bán rau ở chợ buổi sáng", emoji: "🥬", correctGroup: "GROUP_A", contextReason: "Tiền xuất hiện trong hoạt động mua bán hằng ngày quanh em." },
+        { id: "g1_s1_3", name: "Lá cây rụng ngoài sân trường", emoji: "🍃", correctGroup: "GROUP_B", contextReason: "Lá cây chỉ dùng khi chơi đồ hàng, không mua hàng thật được." },
+        { id: "g1_s1_4", name: "Hình vẽ tờ tiền cắt từ giấy màu thủ công", emoji: "✂️", correctGroup: "GROUP_B", contextReason: "Giấy màu tự cắt chỉ là đồ chơi, không phải tiền thật." }
       ],
-      questionPrompt: "Vì tiền có được từ công sức làm việc của bố mẹ, em nên làm gì?",
-      correctOptionText: "Biết ơn bố mẹ, giữ gìn đồ dùng học tập và không đòi mua đồ lãng phí.",
-      correctFeedback: "Giỏi lắm bạn nhỏ Lớp 1 ơi! Em rất ngoan và hiểu chuyện!",
-      wrongOptionText: "Đòi mua thật nhiều đồ chơi mỗi ngày.",
-      wrongFeedback: "Hãy thương bố mẹ làm việc vất vả và tiêu tiền thật ngoan nhé!"
+      questionPrompt: "🐣 Chim Non đố em: Khi nhìn vào tờ tiền Việt Nam, em thấy những đặc điểm gì giúp nhận biết mệnh giá?",
+      correctOptionText: "Trên tờ tiền có in rõ con số mệnh giá, chữ viết, hình ảnh đặc trưng và màu sắc riêng của từng tờ tiền.",
+      correctFeedback: "🎉 Hoan hô! Chim Non Bồ Câu vỗ cánh khen em tinh mắt lắm!",
+      wrongOptionText: "Tờ tiền nào cũng trắng tinh không có chữ hay số gì cả.",
+      wrongFeedback: "Hãy nhìn kỹ nhé: trên mỗi tờ tiền đều có con số mệnh giá và màu sắc rất rõ ràng đấy!"
     })
   },
   {
     periodIndex: 2,
-    lessonId: "les_fin_g1_p02",
+    lessonId: "spec_les_fin_g1_p02",
     lessonCode: "TC01S.01.0002",
-    lessonName: "Tiền giúp ích gì?",
-    topicId: "topic_g1_1",
+    lessonName: "2. Tiền đến từ đâu?",
+    topicId: "spec_top_fin_g1_01",
     topicCode: "TC01S.01",
-    officialTopicName: "Làm quen với tiền",
-    creativeZoneName: "Vùng 1: Vườn Hoa Đồng Xu Tí Hon",
+    officialTopicName: "Chủ đề 1. Làm quen với tiền",
+    creativeZoneName: "Vùng 1: Khu Vườn Chim Non & Đồng Xu Lấp Lánh 🐣",
     isProject: false,
     feathersReward: 3,
     mapCoordinates: { x: 16, y: 75 },
     criteria: [
-      { code: "TC01S.01.0002.01", level: "Mức 1", competencyGroup: "Hiểu", description: "Kể được những lợi ích của tiền trong sinh hoạt hằng ngày: mua thức ăn, quần áo, sách vở." },
-      { code: "TC01S.01.0002.02", level: "Mức 1", competencyGroup: "Hiểu", description: "Phân biệt được việc cần dùng tiền và niềm vui miễn phí bên gia đình." }
+      { code: "TC01S.01.0002.01", level: "Mức 1", competencyGroup: "Hiểu", description: "Hiểu được tiền không tự nhiên mà có mà do con người lao động, làm việc tạo ra." },
+      { code: "TC01S.01.0002.02", level: "Mức 1", competencyGroup: "Hiểu", description: "Kể được công việc hằng ngày của bố mẹ hoặc người thân để kiếm tiền nuôi gia đình." },
+      { code: "TC01S.01.0002.03", level: "Mức 2", competencyGroup: "Biết", description: "Thể hiện lòng biết ơn đối với công sức lao động của bố mẹ, người lớn." }
     ],
     interactive: buildBackpackInteractive({
-      storyBrief: "Tiền giúp ích rất nhiều cho cuộc sống của chúng mình, nhưng có những niềm vui tuyệt vời chẳng tốn đồng nào! Hãy cùng chim Sky-Line phân loại nhé!",
-      worldLocationName: "Đồi Nắng Ban Mai",
-      mascotGuideTip: "Mua bánh mì, sách vở thì cần tiền; còn ôm bố mẹ hay tưới hoa cùng ông bà là niềm vui không cần tiền!",
-      parentCompanionTip: "Cùng con kể 3 điều ấm áp trong gia đình không cần mua bằng tiền.",
-      mode: "MONEY_VS_NO_MONEY",
-      context1Title: "Việc cần dùng tiền và Niềm vui không cần tiền",
-      context1Subtitle: "Xếp vào giỏ phù hợp nhé",
-      groupAName: "Tiền giúp mua đồ dùng cần thiết 🪙",
-      groupBName: "Niềm vui miễn phí không tốn tiền 💖",
+      storyBrief: "🐣 Chim Non Bồ Câu dẫn em tới Quảng Trường Nghề Nghiệp Đáng Quý: 'Em có biết tiền trong ví của bố mẹ từ đâu mà có không? Hãy chọn những việc làm chân chính tạo ra đồng tiền nhé!'",
+      worldLocationName: "Quảng Trường Nghề Nghiệp Đáng Quý",
+      mascotGuideTip: "🎶 Vè Chim Non: 'Đồng tiền từ sức mẹ cha – Đi làm chăm chỉ nuôi nhà ấm êm!'",
+      parentCompanionTip: "Kể ngắn gọn cho con nghe công việc hằng ngày của bố mẹ để con hiểu giá trị của lao động.",
+      mode: "NEED_VS_WANT",
+      context1Title: "Tiền đến từ đâu nhỉ?",
+      context1Subtitle: "Xếp nguồn tạo ra tiền đúng đắn (Nhóm A) và điều không có thật (Nhóm B)",
+      groupAName: "Nhờ lao động chăm chỉ 💼",
+      groupBName: "Không tự nhiên mà có 🚫",
       items1: [
-        { id: "g1_s2_1", name: "Mua hộp sữa và bánh mì ăn sáng", emoji: "🥛", correctGroup: "GROUP_A", contextReason: "Cần trả tiền khi mua thức ăn ở cửa hàng." },
-        { id: "g1_s2_2", name: "Mua tập vở và bút chì tới lớp", emoji: "✏️", correctGroup: "GROUP_A", contextReason: "Cần dùng tiền để mua đồ dùng học tập." },
-        { id: "g1_s2_3", name: "Chúc bố mẹ ngủ ngon và ôm bố mẹ", emoji: "🤗", correctGroup: "GROUP_B", contextReason: "Tình yêu thương gia đình hoàn toàn miễn phí!" },
-        { id: "g1_s2_4", name: "Tập thể dục buổi sáng dưới ánh nắng", emoji: "☀️", correctGroup: "GROUP_B", contextReason: "Vận động khỏe mạnh ngoài sân không tốn tiền." }
+        { id: "g1_s2_1", name: "Bố mẹ đi làm việc chăm chỉ mỗi ngày ở cơ quan, trường học, nhà máy", emoji: "👩‍🏫", correctGroup: "GROUP_A", contextReason: "Bố mẹ lao động tạo ra giá trị và nhận lương, thu nhập." },
+        { id: "g1_s2_2", name: "Bác nông dân trồng lúa, trồng rau quả sạch đem bán", emoji: "🌾", correctGroup: "GROUP_A", contextReason: "Công sức lao động vất vả tạo ra sản phẩm và thu nhập." },
+        { id: "g1_s2_3", name: "Tiền tự mọc trên cành cây như lá mùa xuân", emoji: "🌳", correctGroup: "GROUP_B", contextReason: "Tiền không bao giờ tự mọc trên cây." },
+        { id: "g1_s2_4", name: "Ngồi không ước phép thuật là túi tự đầy tiền", emoji: "🪄", correctGroup: "GROUP_B", contextReason: "Tiền chỉ có được từ lao động chân chính." }
       ],
-      questionPrompt: "Tiền giúp ích gì cho gia đình em mỗi ngày?",
-      correctOptionText: "Giúp trao đổi, mua lương thực, quần áo, sách vở và chăm sóc sức khỏe cho cả nhà.",
-      correctFeedback: "Đúng rồi! Bạn nhỏ Lớp 1 giỏi quá!",
-      wrongOptionText: "Tiền chỉ dùng để gấp máy bay giấy.",
-      wrongFeedback: "Không được gấp tiền đâu nhé, tiền dùng để mua những thứ cần thiết cho cuộc sống!"
+      questionPrompt: "🐣 Vì tiền có được từ mồ hôi và công sức làm việc của bố mẹ, em nên làm gì?",
+      correctOptionText: "Yêu thương, biết ơn bố mẹ, giữ gìn đồ dùng học tập và không đòi mua đồ chơi lãng phí.",
+      correctFeedback: "🌟 Tuyệt vời! Chim Non tặng em ngôi sao Biết Ơn vì em rất thương bố mẹ!",
+      wrongOptionText: "Khóc nhè đòi mua đồ chơi đắt tiền mỗi ngày.",
+      wrongFeedback: "Hãy thương bố mẹ làm việc vất vả và tiêu dùng thật ngoan nhé!"
     })
   },
   {
     periodIndex: 3,
-    lessonId: "les_fin_g1_p03",
+    lessonId: "spec_les_fin_g1_p03",
     lessonCode: "TC01S.01.0003",
-    lessonName: "Em giữ gìn đồng tiền",
-    topicId: "topic_g1_1",
+    lessonName: "3. Tiền giúp ích gì?",
+    topicId: "spec_top_fin_g1_01",
     topicCode: "TC01S.01",
-    officialTopicName: "Làm quen với tiền",
-    creativeZoneName: "Vùng 1: Vườn Hoa Đồng Xu Tí Hon",
+    officialTopicName: "Chủ đề 1. Làm quen với tiền",
+    creativeZoneName: "Vùng 1: Khu Vườn Chim Non & Đồng Xu Lấp Lánh 🐣",
     isProject: false,
     feathersReward: 3,
-    badgeCode: "BADGE_TC01S_ZONE1",
-    badgeName: "Bạn Nhỏ Yêu Quý Đồng Tiền",
     mapCoordinates: { x: 22, y: 70 },
     criteria: [
-      { code: "TC01S.01.0003.01", level: "Mức 1", competencyGroup: "Hiểu", description: "Biết cách cất giữ đồng tiền phẳng phiu trong ví hoặc ống heo." },
-      { code: "TC01S.01.0003.02", level: "Mức 2", competencyGroup: "Biết", description: "Không vò nhàu, không vẽ bậy hoặc làm rách tiền." }
+      { code: "TC01S.01.0003.01", level: "Mức 1", competencyGroup: "Hiểu", description: "Nêu được lợi ích của tiền trong sinh hoạt: mua thức ăn, quần áo, sách vở, khám chữa bệnh." },
+      { code: "TC01S.01.0003.02", level: "Mức 2", competencyGroup: "Biết", description: "Phân biệt được những thứ mua được bằng tiền và những niềm vui, tình cảm không cần mua bằng tiền." },
+      { code: "TC01S.01.0003.03", level: "Mức 2", competencyGroup: "Biết", description: "Biết dùng tiền vào những mục đích tốt đẹp, có ích cho bản thân và gia đình." }
     ],
     interactive: buildBackpackInteractive({
-      storyBrief: "Làm sao để đồng tiền luôn sạch đẹp, phẳng phiu nhỉ? Hãy chọn những việc làm đúng để nhận Huy hiệu Bạn Nhỏ Yêu Quý Đồng Tiền nhé!",
-      worldLocationName: "Ngôi Nhà Ví Nhỏ Xinh",
-      mascotGuideTip: "Chúng mình vuốt phẳng tờ tiền rồi cất vào ví hoặc heo đất, không vẽ bậy lên tiền nhé!",
-      parentCompanionTip: "Tặng con một chiếc ví nhỏ hoặc phong bao gọn gàng để con tập vuốt phẳng tờ tiền.",
-      mode: "NEED_VS_WANT",
-      context1Title: "Cách giữ gìn đồng tiền sạch đẹp",
-      context1Subtitle: "Chọn việc nên làm (Nhóm A) và việc không nên làm (Nhóm B)",
-      groupAName: "Giữ tiền sạch đẹp, phẳng phiu 👍",
-      groupBName: "Làm hỏng, làm bẩn tiền 👎",
+      storyBrief: "🐻 Bạn Gấu Mật Ấm Áp mỉm cười chào em: 'Tiền giúp gia đình mình mua thức ăn, áo ấm, sách vở. Nhưng có những niềm vui ấm áp chẳng tốn đồng xu nào! Hãy cùng Gấu Mật phân loại nhé!'",
+      worldLocationName: "Đồi Nắng Ấm Của Gấu Mật",
+      mascotGuideTip: "🎶 Vè Gấu Mật: 'Bánh mì, sách vở cần tiền – Nụ cười, cái ôm ấm liền tim ta!'",
+      parentCompanionTip: "Cùng con kể 3 niềm vui miễn phí mỗi tối trong gia đình (đọc truyện, ôm chúc ngủ ngon, tập thể dục).",
+      mode: "MONEY_VS_NO_MONEY",
+      context1Title: "Tiền giúp ích gì và Niềm vui nào không tốn tiền?",
+      context1Subtitle: "Cùng Gấu Mật 🐻 xếp vào giỏ phù hợp nhé",
+      groupAName: "Cần dùng tiền để mua 🪙",
+      groupBName: "Niềm vui miễn phí không tốn tiền 💖",
       items1: [
-        { id: "g1_s3_1", name: "Vuốt phẳng tờ tiền rồi cất ngay ngắn vào ví nhỏ", emoji: "👛", correctGroup: "GROUP_A", contextReason: "Giúp tờ tiền luôn sạch đẹp và không bị rơi." },
-        { id: "g1_s3_2", name: "Bỏ tiền thưởng vào ống heo tiết kiệm ở góc học tập", emoji: "🐷", correctGroup: "GROUP_A", contextReason: "Bảo quản tiền an toàn, sạch sẽ." },
-        { id: "g1_s3_3", name: "Dùng bút màu vẽ hình lên tờ tiền hoặc vò tròn trong túi quần", emoji: "🖍️", correctGroup: "GROUP_B", contextReason: "Làm bẩn và hỏng tờ tiền Việt Nam." }
+        { id: "g1_s3_1", name: "Mua hộp sữa tươi và bánh mì ăn sáng", emoji: "🥛", correctGroup: "GROUP_A", contextReason: "Cần trả tiền khi mua lương thực, thực phẩm." },
+        { id: "g1_s3_2", name: "Mua sách vở, bút chì và đồng phục đi học", emoji: "🎒", correctGroup: "GROUP_A", contextReason: "Tiền giúp mua đồ dùng học tập và quần áo." },
+        { id: "g1_s3_3", name: "Vòng tay ấm áp ôm bố mẹ và chúc ngủ ngon", emoji: "🤗", correctGroup: "GROUP_B", contextReason: "Tình yêu thương gia đình vô giá và hoàn toàn miễn phí!" },
+        { id: "g1_s3_4", name: "Cùng ông bà tưới cây, ngắm hoa nở ngoài hiên nhà", emoji: "🌻", correctGroup: "GROUP_B", contextReason: "Niềm vui bên người thân và thiên nhiên không tốn tiền." }
       ],
-      questionPrompt: "Khi người lớn mừng tuổi hoặc thưởng tiền cho em, em nên làm gì?",
-      correctOptionText: "Nhận bằng hai tay, lễ phép cảm ơn và cất tiền phẳng phiu vào ví hoặc ống heo.",
-      correctFeedback: "Tuyệt vời! Em đã nhận được Huy hiệu Bạn Nhỏ Yêu Quý Đồng Tiền!",
-      wrongOptionText: "Vứt tờ tiền xuống sàn nhà.",
-      wrongFeedback: "Hãy trân trọng và giữ gìn đồng tiền thật cẩn thận nhé!"
+      questionPrompt: "🐻 Gấu Mật hỏi em: Tiền giúp ích gì cho cuộc sống hằng ngày của gia đình em?",
+      correctOptionText: "Tiền giúp trao đổi, mua thức ăn, quần áo, sách vở, đóng học phí và chăm sóc sức khỏe.",
+      correctFeedback: "🐻 Gấu Mật vỗ tay khen em! Em hiểu rất rõ lợi ích của đồng tiền!",
+      wrongOptionText: "Tiền chỉ dùng để gấp máy bay giấy ném chơi.",
+      wrongFeedback: "Không gấp tiền làm đồ chơi đâu nhé, tiền giúp mua những điều thiết yếu cho cuộc sống!"
     })
   },
   {
     periodIndex: 4,
-    lessonId: "les_fin_g1_p04",
-    lessonCode: "TC01S.02.0001",
-    lessonName: "Điều em cần hay em muốn?",
-    topicId: "topic_g1_2",
-    topicCode: "TC01S.02",
-    officialTopicName: "Chi tiêu thông minh",
-    creativeZoneName: "Vùng 2: Siêu Thị Tí Hon Vui Vẻ",
+    lessonId: "spec_les_fin_g1_p04",
+    lessonCode: "TC01S.01.0004",
+    lessonName: "4. Em giữ gìn đồng tiền",
+    topicId: "spec_top_fin_g1_01",
+    topicCode: "TC01S.01",
+    officialTopicName: "Chủ đề 1. Làm quen với tiền",
+    creativeZoneName: "Vùng 1: Khu Vườn Chim Non & Đồng Xu Lấp Lánh 🐣",
     isProject: false,
     feathersReward: 3,
+    badgeCode: "BADGE_TC01S_ZONE1",
+    badgeName: "Bạn Nhỏ Yêu Quý Đồng Tiền",
     mapCoordinates: { x: 28, y: 65 },
     criteria: [
-      { code: "TC01S.02.0001.01", level: "Mức 1", competencyGroup: "Hiểu", description: "Phân biệt được đồ vật Cần thiết và đồ vật chỉ là Mong muốn thích thú." },
-      { code: "TC01S.02.0001.02", level: "Mức 2", competencyGroup: "Biết", description: "Ưu tiên chọn đồ Cần thiết trước." }
+      { code: "TC01S.01.0004.01", level: "Mức 1", competencyGroup: "Hiểu", description: "Biết vì sao phải giữ gìn đồng tiền sạch đẹp, phẳng phiu." },
+      { code: "TC01S.01.0004.02", level: "Mức 2", competencyGroup: "Biết", description: "Nhận biết các hành vi làm hỏng tiền cần tránh (vò nhàu, vẽ bậy, cắt rách, để ướt)." },
+      { code: "TC01S.01.0004.03", level: "Mức 3", competencyGroup: "Vận dụng", description: "Thực hành vuốt phẳng tờ tiền và cất gọn vào ví nhỏ, phong bao hoặc ống heo." }
     ],
     interactive: buildBackpackInteractive({
-      storyBrief: "Chim Sky-Line chuẩn bị đi học lớp 1! Hãy giúp chim chọn đúng những món đồ CẦN THIẾT để đi học và tách riêng những món đồ chơi chỉ là MUỐN THÊM nhé!",
-      worldLocationName: "Trạm Ba Lô Lớp Một",
-      mascotGuideTip: "Đi học thì cần sách vở, bút chì, bình nước; còn đồ chơi kẹo ngọt thì để sau nhé!",
-      parentCompanionTip: "Hỏi con 'Món này con Cần hay chỉ Muốn?' mỗi khi đi nhà sách.",
+      storyBrief: "🐷 Bé Heo Hồng Ống Đất đội vương miện vàng xuất hiện: 'Ủn ỉn! Tờ tiền sạch đẹp, phẳng phiu mới vui làm sao! Em hãy giúp Bé Heo Hồng chọn cách giữ gìn đồng tiền đúng chuẩn nhé!'",
+      worldLocationName: "Ngôi Nhà Ví Nhỏ Của Bé Heo Hồng",
+      mascotGuideTip: "🎶 Vè Heo Hồng: 'Tiền phẳng em cất vào bao – Không vò, không vẽ, tự hào bé ngoan!'",
+      parentCompanionTip: "Hướng dẫn con thực hành vuốt phẳng tờ tiền lẻ và xếp ngay ngắn theo thứ tự mệnh giá vào ví nhỏ.",
       mode: "NEED_VS_WANT",
-      context1Title: "Chuẩn bị ba lô đến trường",
-      context1Subtitle: "Xếp đồ vào ngăn CẦN THIẾT hoặc ngăn MUỐN THÊM",
-      groupAName: "Đồ CẦN THIẾT đi học 🎒",
-      groupBName: "Đồ MUỐN THÊM chưa cần ngay 🎈",
+      context1Title: "Em giữ gìn đồng tiền như thế nào?",
+      context1Subtitle: "Cùng Bé Heo Hồng 🐷 chọn việc nên làm (Nhóm A) và việc làm hỏng tiền cần tránh (Nhóm B)",
+      groupAName: "Giữ tiền sạch đẹp, phẳng phiu 👍",
+      groupBName: "Làm nhàu, làm bẩn tiền 👎",
       items1: [
-        { id: "g1_s4_1", name: "Hộp bút chì và tẩy", emoji: "✏️", correctGroup: "GROUP_A", contextReason: "Cần thiết để viết bài trên lớp." },
-        { id: "g1_s4_2", name: "Bình nước cá nhân", emoji: "🍼", correctGroup: "GROUP_A", contextReason: "Cần thiết để uống nước suốt buổi học." },
-        { id: "g1_s4_3", name: "Đồ chơi siêu nhân phát nhạc", emoji: "🤖", correctGroup: "GROUP_B", contextReason: "Chỉ là mong muốn vui chơi, không mang tới lớp." },
-        { id: "g1_s4_4", name: "Kẹo bông gòn khổng lồ", emoji: "🍭", correctGroup: "GROUP_B", contextReason: "Chỉ là sở thích ăn vặt." }
+        { id: "g1_s4_1", name: "Vuốt phẳng tờ tiền rồi cất ngay ngắn vào ví nhỏ hoặc phong bao", emoji: "👛", correctGroup: "GROUP_A", contextReason: "Giúp tờ tiền luôn phẳng phiu, không bị rơi mất." },
+        { id: "g1_s4_2", name: "Đút tiền thưởng nhẹ nhàng vào bụng Bé Heo Đất nơi khô ráo", emoji: "🐷", correctGroup: "GROUP_A", contextReason: "Giữ tiền an toàn và rèn thói quen tiết kiệm." },
+        { id: "g1_s4_3", name: "Lấy bút sáp màu vẽ râu, vẽ hình lên tờ tiền", emoji: "🖍️", correctGroup: "GROUP_B", contextReason: "Vẽ bậy làm bẩn tờ tiền Việt Nam." },
+        { id: "g1_s4_4", name: "Vò tròn tờ tiền nhét bừa vào túi quần khi giặt đồ", emoji: "👖", correctGroup: "GROUP_B", contextReason: "Làm nhàu nát và ướt hỏng tờ tiền." }
       ],
-      questionPrompt: "Khi đi mua sắm, chúng mình nên chọn mua đồ nào trước?",
-      correctOptionText: "Mua đồ CẦN THIẾT trước, còn đồ MUỐN THÊM thì suy nghĩ kỹ hoặc để dành sau.",
-      correctFeedback: "Giỏi quá! Em đã phân biệt rất rõ Cần và Muốn!",
-      wrongOptionText: "Mua hết đồ chơi trước rồi thiếu đồ đi học.",
-      wrongFeedback: "Nhớ ưu tiên đồ Cần thiết cho việc học và sức khỏe trước nhé!"
+      questionPrompt: "🐷 Bé Heo Hồng hỏi: Khi ông bà, bố mẹ mừng tuổi hoặc thưởng tiền cho em, em ứng xử thế nào?",
+      correctOptionText: "Em nhận bằng hai tay, lễ phép nói lời cảm ơn, rồi vuốt phẳng cất vào ví hoặc ống heo.",
+      correctFeedback: "🏅 Xuất sắc! Em đã hoàn thành Chủ đề 1 và nhận Huy hiệu Bạn Nhỏ Yêu Quý Đồng Tiền!",
+      wrongOptionText: "Cầm tiền gấp làm tàu thủy thả vào chậu nước.",
+      wrongFeedback: "Nhớ giữ đồng tiền luôn khô ráo, sạch đẹp và phẳng phiu nhé!"
     })
   },
   {
     periodIndex: 5,
-    lessonId: "les_fin_g1_p05",
-    lessonCode: "TC01S.02.0002",
-    lessonName: "Nghĩ trước khi mua",
-    topicId: "topic_g1_2",
+    lessonId: "spec_les_fin_g1_p05",
+    lessonCode: "TC01S.02.0005",
+    lessonName: "5. Điều em cần hay em muốn?",
+    topicId: "spec_top_fin_g1_02",
     topicCode: "TC01S.02",
-    officialTopicName: "Chi tiêu thông minh",
-    creativeZoneName: "Vùng 2: Siêu Thị Tí Hon Vui Vẻ",
+    officialTopicName: "Chủ đề 2. Chi tiêu thông minh",
+    creativeZoneName: "Vùng 2: Siêu Thị Tí Hon Của Thỏ Trắng Thông Thái 🐰",
     isProject: false,
     feathersReward: 3,
     mapCoordinates: { x: 34, y: 60 },
     criteria: [
-      { code: "TC01S.02.0002.01", level: "Mức 1", competencyGroup: "Hiểu", description: "Biết dừng lại suy nghĩ xem ở nhà đã có món đồ đó chưa và ví có đủ tiền không trước khi mua." }
+      { code: "TC01S.02.0005.01", level: "Mức 1", competencyGroup: "Hiểu", description: "Hiểu khái niệm đồ vật Cần thiết (cho ăn uống, học tập, sức khỏe) và đồ vật Mong muốn (theo sở thích nhất thời)." },
+      { code: "TC01S.02.0005.02", level: "Mức 2", competencyGroup: "Biết", description: "Phân loại được các món đồ quen thuộc của học sinh lớp 1 vào nhóm Cần hoặc Muốn." },
+      { code: "TC01S.02.0005.03", level: "Mức 2", competencyGroup: "Biết", description: "Biết ưu tiên chọn đồ Cần thiết trước khi nghĩ đến đồ Muốn." }
     ],
     interactive: buildBackpackInteractive({
-      storyBrief: "Trước khi mua một món đồ, chim Sky-Line luôn dừng lại 3 giây để suy nghĩ! Hãy giúp chim chọn những suy nghĩ thông minh trước khi mua hàng nhé!",
-      worldLocationName: "Trạm Đèn Xanh Suy Nghĩ",
-      mascotGuideTip: "Hãy tự hỏi: 'Ở nhà mình đã có món này chưa nhỉ? Mình có đủ tiền không?'",
-      parentCompanionTip: "Tập cho con trò chơi 'Đèn vàng suy nghĩ 5 giây' trước khi bỏ đồ vào giỏ siêu thị.",
+      storyBrief: "🐰 Thỏ Trắng Thông Thái đeo kính tròn vẫy tai chào em: 'Chào bạn nhỏ Lớp 1! Hôm nay Thỏ Trắng soạn ba lô đi học. Em hãy giúp Thỏ Trắng tách riêng đồ CẦN THIẾT và đồ chỉ là MUỐN THÊM nhé!'",
+      worldLocationName: "Trạm Ba Lô Của Thỏ Trắng Thông Thái",
+      mascotGuideTip: "🎶 Vè Thỏ Trắng: 'Sách vở, áo ấm là CẦN – Đồ chơi, kẹo ngọt để phần sau nha!'",
+      parentCompanionTip: "Khi đi siêu thị cùng con, hãy đố vui: 'Món này thuộc đội CẦN hay đội MUỐN của bạn Thỏ Trắng nhỉ?'",
       mode: "NEED_VS_WANT",
-      context1Title: "Nghĩ trước khi mua",
-      context1Subtitle: "Xếp thói quen suy nghĩ kỹ (Nhóm A) và mua vội vàng (Nhóm B)",
-      groupAName: "Nghĩ kỹ trước khi mua 💡",
-      groupBName: "Mua vội không suy nghĩ ⚠️",
+      context1Title: "Đội CẦN THIẾT hay Đội MUỐN THÊM?",
+      context1Subtitle: "Cùng Thỏ Trắng 🐰 xếp đồ vào đúng ngăn ba lô nhé",
+      groupAName: "Đồ em CẦN THIẾT 🎒",
+      groupBName: "Đồ em MUỐN THÊM 🎈",
       items1: [
-        { id: "g1_s5_1", name: "Nhớ lại xem ở nhà đã có hộp màu còn nguyên chưa rồi mới quyết định", emoji: "🖍️", correctGroup: "GROUP_A", contextReason: "Tránh mua trùng món đồ ở nhà vẫn còn dùng tốt." },
-        { id: "g1_s5_2", name: "Xem giá tiền món đồ có vừa với số tiền trong ví không", emoji: "👛", correctGroup: "GROUP_A", contextReason: "Đảm bảo mua đúng khả năng chi trả." },
-        { id: "g1_s5_3", name: "Thấy món gì lấp lánh là đòi mua ngay không cần xem giá", emoji: "✨", correctGroup: "GROUP_B", contextReason: "Mua vội vàng dễ gây lãng phí." }
+        { id: "g1_s5_1", name: "Hộp bút chì, thước kẻ và tẩy để viết bài", emoji: "✏️", correctGroup: "GROUP_A", contextReason: "Đồ dùng học tập thiết yếu mỗi ngày đến trường." },
+        { id: "g1_s5_2", name: "Bình nước ấm mang theo đi học", emoji: "🍼", correctGroup: "GROUP_A", contextReason: "Cần thiết để bảo vệ sức khỏe của em." },
+        { id: "g1_s5_3", name: "Rô-bốt biến hình phát nhạc nhấp nháy", emoji: "🤖", correctGroup: "GROUP_B", contextReason: "Đồ chơi giải trí thuộc nhóm Mong muốn." },
+        { id: "g1_s5_4", name: "Kẹo bông gòn bảy sắc cầu vồng", emoji: "🍭", correctGroup: "GROUP_B", contextReason: "Món quà vặt theo sở thích nhất thời." }
       ],
-      questionPrompt: "Nếu ở nhà em đã có 2 cục tẩy còn mới nguyên, khi thấy cục tẩy hình quả dâu ở tiệm sách em nên làm gì?",
-      correctOptionText: "Không mua thêm nữa vì ở nhà đã có đủ tẩy dùng rồi, để dành tiền cho việc cần thiết khác.",
-      correctFeedback: "Đúng rồi! Biết nghĩ trước khi mua giúp em tiết kiệm được bao nhiêu đồng xu quý giá!",
-      wrongOptionText: "Mua thêm thật nhiều tẩy về chất đầy bàn.",
-      wrongFeedback: "Mua quá nhiều đồ giống nhau mà không dùng hết sẽ gây lãng phí đấy!"
+      questionPrompt: "🐰 Thỏ Trắng hỏi: Khi số tiền trong ví có hạn, chúng mình nên chọn mua nhóm nào trước?",
+      correctOptionText: "Ưu tiên mua những món đồ CẦN THIẾT cho việc học và sức khỏe trước.",
+      correctFeedback: "🐰 Thỏ Trắng nhảy chân sáo khen em! Em phân biệt Cần và Muốn chuẩn xác lắm!",
+      wrongOptionText: "Mua hết kẹo và đồ chơi trước, thiếu bút vở tính sau.",
+      wrongFeedback: "Nhớ lời Thỏ Trắng nhé: Đồ Cần thiết luôn phải được ưu tiên số 1!"
     })
   },
   {
     periodIndex: 6,
-    lessonId: "les_fin_g1_p06",
-    lessonCode: "TC01S.02.0003",
-    lessonName: "Em là người mua sắm thông thái",
-    topicId: "topic_g1_2",
+    lessonId: "spec_les_fin_g1_p06",
+    lessonCode: "TC01S.02.0006",
+    lessonName: "6. Nghĩ trước khi mua",
+    topicId: "spec_top_fin_g1_02",
     topicCode: "TC01S.02",
-    officialTopicName: "Chi tiêu thông minh",
-    creativeZoneName: "Vùng 2: Siêu Thị Tí Hon Vui Vẻ",
+    officialTopicName: "Chủ đề 2. Chi tiêu thông minh",
+    creativeZoneName: "Vùng 2: Siêu Thị Tí Hon Của Thỏ Trắng Thông Thái 🐰",
     isProject: false,
     feathersReward: 3,
     mapCoordinates: { x: 40, y: 55 },
     criteria: [
-      { code: "TC01S.02.0003.01", level: "Mức 2", competencyGroup: "Biết", description: "Biết xem giá, chọn món đồ tốt, vừa túi tiền và nói lời lịch sự với cô bán hàng." }
+      { code: "TC01S.02.0006.01", level: "Mức 1", competencyGroup: "Hiểu", description: "Biết dừng lại đặt câu hỏi trước khi quyết định mua một món đồ." },
+      { code: "TC01S.02.0006.02", level: "Mức 2", competencyGroup: "Biết", description: "Kiểm tra xem ở nhà đã có món đồ đó chưa và số tiền hiện có có đủ không." },
+      { code: "TC01S.02.0006.03", level: "Mức 3", competencyGroup: "Vận dụng", description: "Biết kiềm chế không đòi mua món đồ trùng lặp hoặc vượt quá số tiền cho phép." }
+    ],
+    interactive: buildBackpackInteractive({
+      storyBrief: "🐰 Thỏ Trắng giơ chiếc Đồng Hồ 3 Giây lên: 'Bí quyết của Thỏ Trắng là luôn dừng lại 3 giây để NGHĨ TRƯỚC KHI MUA! Em hãy chọn những suy nghĩ thông thái cùng Thỏ Trắng nhé!'",
+      worldLocationName: "Trạm Đèn Vàng 3 Giây Suy Nghĩ",
+      mascotGuideTip: "🎶 Vè Thỏ Trắng: 'Một giây ngẫm: Cần thật không? Hai giây nhớ: Nhà còn không? Ba giây nhìn giá mới thông thái nè!'",
+      parentCompanionTip: "Dạy con quy tắc 'Đếm 1–2–3 cùng Thỏ Trắng' trước khi bỏ bất kỳ món đồ chơi nào vào giỏ hàng.",
+      mode: "NEED_VS_WANT",
+      context1Title: "3 giây Nghĩ trước khi mua cùng Thỏ Trắng",
+      context1Subtitle: "Xếp thói quen Nghĩ kỹ trước khi mua (Nhóm A) và Mua vội vàng (Nhóm B)",
+      groupAName: "Nghĩ kỹ trước khi mua 💡",
+      groupBName: "Mua vội không suy nghĩ ⚠️",
+      items1: [
+        { id: "g1_s6_1", name: "Nhớ lại xem ở nhà hộp bút màu 12 cây vẫn còn mới nguyên nên không mua thêm", emoji: "🖍️", correctGroup: "GROUP_A", contextReason: "Tránh mua trùng lặp gây lãng phí." },
+        { id: "g1_s6_2", name: "Nhìn bảng giá và đếm số xu trong ví xem có đủ tiền trả không", emoji: "🏷️", correctGroup: "GROUP_A", contextReason: "Mua sắm phù hợp với số tiền mình có." },
+        { id: "g1_s6_3", name: "Thấy món đồ dán nhãn lấp lánh là đòi lấy ngay không cần hỏi giá", emoji: "✨", correctGroup: "GROUP_B", contextReason: "Mua theo cảm xúc vội vàng dễ làm hết sạch tiền." }
+      ],
+      questionPrompt: "🐰 Ở nhà em đã có 2 cục tẩy thơm còn nguyên vẹn. Khi đi nhà sách thấy cục tẩy hình kem ốc quế, em làm gì?",
+      correctOptionText: "Dừng lại 3 giây, nhớ rằng ở nhà đã có đủ tẩy nên mỉm cười không mua thêm để tiết kiệm tiền.",
+      correctFeedback: "🎉 Hoan hô! Thỏ Trắng tặng em huy hiệu Đồng Hồ Vàng vì biết nghĩ kỹ trước khi mua!",
+      wrongOptionText: "Đòi mua thêm 5 cục tẩy nữa về xếp đầy bàn.",
+      wrongFeedback: "Mua nhiều tẩy quá dùng không hết sẽ bị khô cứng và lãng phí đấy!"
+    })
+  },
+  {
+    periodIndex: 7,
+    lessonId: "spec_les_fin_g1_p07",
+    lessonCode: "TC01S.02.0007",
+    lessonName: "7. Em là người mua sắm thông thái",
+    topicId: "spec_top_fin_g1_02",
+    topicCode: "TC01S.02",
+    officialTopicName: "Chủ đề 2. Chi tiêu thông minh",
+    creativeZoneName: "Vùng 2: Siêu Thị Tí Hon Của Thỏ Trắng Thông Thái 🐰",
+    isProject: false,
+    feathersReward: 3,
+    mapCoordinates: { x: 46, y: 50 },
+    criteria: [
+      { code: "TC01S.02.0007.01", level: "Mức 1", competencyGroup: "Hiểu", description: "Biết các bước cơ bản của người mua sắm thông thái: xem tên hàng, xem giá, kiểm tra chất lượng." },
+      { code: "TC01S.02.0007.02", level: "Mức 2", competencyGroup: "Biết", description: "Biết xếp hàng trật tự, thanh toán đủ tiền và nói lời cảm ơn lịch sự với người bán hàng." },
+      { code: "TC01S.02.0007.03", level: "Mức 3", competencyGroup: "Vận dụng", description: "Chọn được món đồ học tập chất lượng, đúng giá trong ngân sách cho trước." }
     ],
     interactive: buildShopInteractive({
-      storyBrief: "Em có 10 Xu để mua đồ dùng học tập. Hãy chọn ít nhất 2 món đồ cần thiết và giữ lại tối thiểu 2 Xu tiền thừa nhé!",
+      storyBrief: "🐰 Thỏ Trắng đưa em tới Quầy Văn Phòng Phẩm Lớp Một: 'Em có 10 Xu! Hãy giúp Thỏ Trắng chọn ít nhất 2 món đồ dùng học tập cần thiết, bền đẹp và giữ lại ít nhất 2 Xu tiền thừa nhé!'",
       worldLocationName: "Quầy Văn Phòng Phẩm Lớp Một",
-      mascotGuideTip: "Em có 10 Xu! Hãy chọn Vở (4 Xu) và Bút chì (3 Xu) để vừa đủ đồ học, vừa còn dư 3 Xu nhé!",
-      parentCompanionTip: "Cho con tự cầm tiền lẻ thanh toán một món đồ nhỏ và nói lời cảm ơn cô thu ngân.",
+      mascotGuideTip: "🎶 Vè Thỏ Trắng: 'Xem giá, chọn đồ bền lâu – Xếp hàng, cảm ơn từng câu dịu dàng!' (Gợi ý: Chọn Vở 4 Xu + Bút chì 3 Xu nhé!)",
+      parentCompanionTip: "Cho con tự tay đưa tiền lẻ và nhận tiền thừa tại quầy thu ngân nhà sách dưới sự quan sát của bố mẹ.",
       budgetCoins: 10,
       minRequiredEssentialCount: 2,
       minTotalItems: 2,
       maxTotalItems: 3,
       targetChangeCoins: 2,
       products: [
-        { id: "g1_s6_1", name: "Quyển vở ô ly lớp 1", emoji: "📓", price: 4, tag: "ESSENTIAL", qualityNote: "Cần thiết để tập viết chữ đẹp" },
-        { id: "g1_s6_2", name: "Bút chì gỗ 2B", emoji: "✏️", price: 3, tag: "ESSENTIAL", qualityNote: "Bền đẹp, vừa tay học sinh lớp 1" },
-        { id: "g1_s6_3", name: "Thước kẻ 15cm", emoji: "📏", price: 1, tag: "USEFUL", qualityNote: "Giá hợp lý, hữu ích" },
-        { id: "g1_s6_4", name: "Đồ chơi ô tô điều khiển đắt tiền", emoji: "🚗", price: 9, tag: "LUXURY", qualityNote: "Hết sạch tiền mua vở và bút" }
+        { id: "g1_s7_1", name: "Quyển vở ô ly trắng mịn Lớp 1", emoji: "📓", price: 4, tag: "ESSENTIAL", qualityNote: "Giấy dày đẹp, cần thiết để tập viết" },
+        { id: "g1_s7_2", name: "Bút chì gỗ 2B bền chắc", emoji: "✏️", price: 3, tag: "ESSENTIAL", qualityNote: "Ngòi êm, vừa tay học sinh lớp 1" },
+        { id: "g1_s7_3", name: "Thước kẻ nhựa trong 15cm", emoji: "📏", price: 1, tag: "USEFUL", qualityNote: "Giá hợp lý, kẻ dòng thẳng tắp" },
+        { id: "g1_s7_4", name: "Đồ chơi xe đua phát sáng đắt đỏ", emoji: "🏎️", price: 9, tag: "LUXURY", qualityNote: "Tốn gần hết ví, không còn tiền mua vở bút" }
       ],
-      politePrompt: "Khi nhận đồ và tiền thừa từ cô bán hàng, em nói như thế nào?",
-      politeCorrectText: "Em nhận bằng hai tay, kiểm tra tiền thừa và lễ phép nói: 'Con cảm ơn cô ạ!'",
-      politeCorrectFeedback: "Đáng yêu quá! Em vừa mua sắm thông thái vừa rất lễ phép!",
-      politeWrongText: "Giật lấy túi đồ rồi chạy đi ngay.",
-      politeWrongFeedback: "Người mua sắm văn minh luôn biết nói lời cảm ơn lễ phép nhé!"
+      politePrompt: "🐰 Khi tới quầy thu ngân đông người và nhận lại tiền thừa từ cô bán hàng, em làm thế nào?",
+      politeCorrectText: "Em xếp hàng ngay ngắn tới lượt, nhận hàng cùng tiền thừa bằng hai tay và nói: 'Con cảm ơn cô ạ!'",
+      politeCorrectFeedback: "🌟 Thỏ Trắng khen em vừa tính toán giỏi vừa là khách hàng nhí lịch sự số 1!",
+      politeWrongText: "Chen ngang lên trước và giật lấy túi đồ chạy đi.",
+      politeWrongFeedback: "Người mua sắm thông thái luôn xếp hàng văn minh và lễ phép cảm ơn nhé!"
     })
   },
   {
-    periodIndex: 7,
-    lessonId: "les_fin_g1_p07",
-    lessonCode: "TC01S.02.0004",
-    lessonName: "Siêu thị tí hon",
-    topicId: "topic_g1_2",
+    periodIndex: 8,
+    lessonId: "spec_les_fin_g1_p08",
+    lessonCode: "TC01S.02.0008",
+    lessonName: "8. Siêu thị tí hon",
+    topicId: "spec_top_fin_g1_02",
     topicCode: "TC01S.02",
-    officialTopicName: "Chi tiêu thông minh",
-    creativeZoneName: "Vùng 2: Siêu Thị Tí Hon Vui Vẻ",
+    officialTopicName: "Chủ đề 2. Chi tiêu thông minh",
+    creativeZoneName: "Vùng 2: Siêu Thị Tí Hon Của Thỏ Trắng Thông Thái 🐰",
     isProject: false,
     feathersReward: 4,
     badgeCode: "BADGE_TC01S_ZONE2",
     badgeName: "Khách Hàng Nhí Thông Thái",
-    mapCoordinates: { x: 46, y: 50 },
+    mapCoordinates: { x: 52, y: 45 },
     criteria: [
-      { code: "TC01S.02.0004.01", level: "Mức 2", competencyGroup: "Vận dụng", description: "Thực hành đi siêu thị tí hon với số tiền 12 Xu, mua đúng đồ cần thiết cho bữa sáng và tiết kiệm tiền thừa." }
+      { code: "TC01S.02.0008.01", level: "Mức 2", competencyGroup: "Vận dụng", description: "Thực hành đóng vai mua sắm tại Siêu thị tí hon đúng mục tiêu và ngân sách." },
+      { code: "TC01S.02.0008.02", level: "Mức 2", competencyGroup: "Vận dụng", description: "Tính nhẩm tổng tiền các món đã chọn và tiền thừa sau khi thanh toán." },
+      { code: "TC01S.02.0008.03", level: "Mức 2", competencyGroup: "Vận dụng", description: "Thực hiện giao tiếp văn minh, lịch sự trong hoạt động mua bán tại Siêu thị tí hon." }
     ],
     interactive: buildShopInteractive({
-      storyBrief: "Chào mừng đến Siêu Thị Tí Hon! Mẹ giao cho em 12 Xu để mua bữa sáng lành mạnh và đồ dùng cần thiết. Hãy mua ít nhất 2 món thiết yếu và tiết kiệm ít nhất 2 Xu nhé!",
+      storyBrief: "🐰🛒 Chào mừng em đến với SIÊU THỊ TÍ HON của Thỏ Trắng! Mẹ giao cho em 12 Xu để mua bữa sáng bổ dưỡng. Hãy chọn ít nhất 2 món thiết yếu và tiết kiệm tối thiểu 2 Xu tiền thừa đút cho Bé Heo Hồng nhé!",
       worldLocationName: "Siêu Thị Tí Hon Vui Vẻ",
-      mascotGuideTip: "Chọn Hộp sữa tươi (4 Xu) + Bánh mì dinh dưỡng (5 Xu) là tốn 9 Xu, còn dư 3 Xu bỏ ống heo!",
-      parentCompanionTip: "Chơi trò bán hàng Siêu thị tí hon tại nhà cùng con vào dịp cuối tuần.",
+      mascotGuideTip: "🎶 Gợi ý của Thỏ Trắng: Chọn Hộp sữa tươi (4 Xu) + Bánh mì trứng (5 Xu) = 9 Xu, còn dư 3 Xu bỏ ống heo!",
+      parentCompanionTip: "Bày trò chơi 'Siêu thị tí hon' ở phòng khách với 4–5 món đồ dán giá từ 1 đến 5 Xu để con thực hành.",
       budgetCoins: 12,
       minRequiredEssentialCount: 2,
       minTotalItems: 2,
       maxTotalItems: 3,
       targetChangeCoins: 2,
       products: [
-        { id: "g1_s7_1", name: "Hộp sữa tươi tiệt trùng", emoji: "🥛", price: 4, tag: "ESSENTIAL", qualityNote: "Tốt cho sức khỏe buổi sáng" },
-        { id: "g1_s7_2", name: "Bánh mì trứng dinh dưỡng", emoji: "🥪", price: 5, tag: "ESSENTIAL", qualityNote: "Đủ năng lượng đến trường" },
-        { id: "g1_s7_3", name: "Quả chuối chín tươi ngon", emoji: "🍌", price: 1, tag: "USEFUL", qualityNote: "Bổ sung vitamin tốt cho cơ thể" },
-        { id: "g1_s7_4", name: "Túi kẹo dẻo màu sắc khổng lồ", emoji: "🍬", price: 9, tag: "IMPULSE", qualityNote: "Không thay thế được bữa sáng và tốn nhiều tiền" }
+        { id: "g1_s8_1", name: "Hộp sữa tươi tiệt trùng giàu canxi", emoji: "🥛", price: 4, tag: "ESSENTIAL", qualityNote: "Giúp bé cao lớn khỏe mạnh" },
+        { id: "g1_s8_2", name: "Bánh mì kẹp trứng dinh dưỡng", emoji: "🥪", price: 5, tag: "ESSENTIAL", qualityNote: "Đủ năng lượng học tập suốt buổi sáng" },
+        { id: "g1_s8_3", name: "Quả táo đỏ tươi ngon", emoji: "🍎", price: 1, tag: "USEFUL", qualityNote: "Giàu vitamin, giá chỉ 1 Xu" },
+        { id: "g1_s8_4", name: "Hộp kẹo nổ khổng lồ nhiều phẩm màu", emoji: "🍬", price: 9, tag: "IMPULSE", qualityNote: "Không thay thế được bữa sáng và quá đắt" }
       ],
-      politePrompt: "Khi đi Siêu thị tí hon, làm sao để không mua quá số tiền 12 Xu đang có?",
-      politeCorrectText: "Cộng nhẩm giá từng món khi bỏ vào giỏ và chỉ chọn những món cần thiết trong phạm vi 12 Xu.",
-      politeCorrectFeedback: "Hoan hô! Em đã chinh phục Vùng 2 và nhận Huy hiệu Khách Hàng Nhí Thông Thái!",
-      politeWrongText: "Cứ nhặt đầy giỏ hàng mà không cần nhìn bảng giá.",
-      politeWrongFeedback: "Nhớ nhìn giá từng món để không vượt quá số tiền trong ví nhé!"
-    })
-  },
-  {
-    periodIndex: 8,
-    lessonId: "les_fin_g1_p08",
-    lessonCode: "TC01S.03.0001",
-    lessonName: "Tiết kiệm là siêu năng lực",
-    topicId: "topic_g1_3",
-    topicCode: "TC01S.03",
-    officialTopicName: "Tiết kiệm mỗi ngày",
-    creativeZoneName: "Vùng 3: Ngôi Làng Ống Heo Siêu Năng Lực",
-    isProject: false,
-    feathersReward: 3,
-    mapCoordinates: { x: 52, y: 45 },
-    criteria: [
-      { code: "TC01S.03.0001.01", level: "Mức 1", competencyGroup: "Hiểu", description: "Hiểu tiết kiệm là để dành tiền và đồ dùng cho những việc có ích sau này." }
-    ],
-    interactive: buildBackpackInteractive({
-      storyBrief: "Tiết kiệm chính là một siêu năng lực giúp chúng mình thực hiện được những điều tuyệt vời! Hãy chọn những hành động thể hiện siêu năng lực tiết kiệm nhé!",
-      worldLocationName: "Trạm Siêu Năng Lực Xanh",
-      mascotGuideTip: "Mỗi đồng xu cất vào heo đất hôm nay sẽ giúp em mua được cuốn sách hay vào ngày mai!",
-      parentCompanionTip: "Gọi mỗi lần con bỏ ống heo là 'nạp năng lượng tiết kiệm' để tạo hứng thú cho con.",
-      mode: "NEED_VS_WANT",
-      context1Title: "Hành động nào thể hiện Siêu năng lực tiết kiệm?",
-      context1Subtitle: "Xếp vào nhóm Siêu năng lực tiết kiệm (Nhóm A) hoặc Lãng phí (Nhóm B)",
-      groupAName: "Siêu năng lực Tiết kiệm 🌟",
-      groupBName: "Thói quen Lãng phí ⚠️",
-      items1: [
-        { id: "g1_s8_1", name: "Cất tiền thừa sau khi mua đồ học tập vào heo đất", emoji: "🐷", correctGroup: "GROUP_A", contextReason: "Tích tiểu thành đại mỗi ngày." },
-        { id: "g1_s8_2", name: "Dùng hết từng trang vở, không xé giấy gấp đồ chơi", emoji: "📒", correctGroup: "GROUP_A", contextReason: "Tiết kiệm đồ dùng học tập." },
-        { id: "g1_s8_3", name: "Mở vòi nước chảy tràn ra sàn mà không khóa lại", emoji: "🚰", correctGroup: "GROUP_B", contextReason: "Gây lãng phí nước sạch." }
-      ],
-      questionPrompt: "Vì sao tiết kiệm được gọi là siêu năng lực của học sinh ngoan?",
-      correctOptionText: "Vì tiết kiệm giúp chúng mình luôn có tiền dự trữ cho việc cần thiết và bảo vệ nguồn tài nguyên quanh em.",
-      correctFeedback: "Xuất sắc! Siêu năng lực tiết kiệm của em đã được kích hoạt!",
-      wrongOptionText: "Vì tiết kiệm là không bao giờ giúp đỡ ai.",
-      wrongFeedback: "Tiết kiệm là tránh lãng phí để dùng vào việc có ích và giúp đỡ mọi người!"
+      politePrompt: "🐰 Trong Siêu thị tí hon, làm sao để em biết mình không mua vượt quá 12 Xu?",
+      politeCorrectText: "Em xem giá từng món, cộng nhẩm trước khi bỏ vào giỏ và kiểm tra lại tiền thừa khi thanh toán.",
+      politeCorrectFeedback: "🏆 Chúc mừng em hoàn thành Chủ đề 2 và nhận Huy hiệu Khách Hàng Nhí Thông Thái của Thỏ Trắng!",
+      politeWrongText: "Cứ nhặt thật nhiều đồ vào giỏ không cần nhìn giá.",
+      politeWrongFeedback: "Nhớ nhìn giá và cộng nhẩm cùng Thỏ Trắng để chi tiêu đúng ngân sách 12 Xu nhé!"
     })
   },
   {
     periodIndex: 9,
-    lessonId: "les_fin_g1_p09",
-    lessonCode: "TC01S.03.0002",
-    lessonName: "Ước mơ trong ống heo",
-    topicId: "topic_g1_3",
+    lessonId: "spec_les_fin_g1_p09",
+    lessonCode: "TC01S.03.0009",
+    lessonName: "9. Tiết kiệm là siêu năng lực",
+    topicId: "spec_top_fin_g1_03",
     topicCode: "TC01S.03",
-    officialTopicName: "Tiết kiệm mỗi ngày",
-    creativeZoneName: "Vùng 3: Ngôi Làng Ống Heo Siêu Năng Lực",
+    officialTopicName: "Chủ đề 3. Tiết kiệm mỗi ngày",
+    creativeZoneName: "Vùng 3: Ngôi Làng Ống Heo Hồng & Gấu Mật Xanh 🐷",
     isProject: false,
     feathersReward: 3,
     mapCoordinates: { x: 58, y: 40 },
     criteria: [
-      { code: "TC01S.03.0002.01", level: "Mức 2", competencyGroup: "Biết", description: "Chọn được một ước mơ nhỏ phù hợp và tập bỏ ống heo đều đặn." }
+      { code: "TC01S.03.0009.01", level: "Mức 1", competencyGroup: "Hiểu", description: "Hiểu tiết kiệm là để dành tiền bạc, thời gian và đồ dùng cho những việc có ích." },
+      { code: "TC01S.03.0009.02", level: "Mức 1", competencyGroup: "Hiểu", description: "Nhận biết ích lợi của thói quen tiết kiệm đối với bản thân và gia đình." },
+      { code: "TC01S.03.0009.03", level: "Mức 2", competencyGroup: "Biết", description: "Phân biệt được hành vi tiết kiệm và hành vi tiêu xài lãng phí." }
     ],
-    interactive: buildNestInteractive({
-      storyBrief: "Trong chiếc ống heo nhỏ chứa đựng ước mơ của em! Hãy chọn một món quà ước mơ vừa sức và tập để dành mỗi tuần nhé!",
-      worldLocationName: "Đồi Ống Heo Hồng",
-      mascotGuideTip: "Chỉ cần để dành 2–3 Xu mỗi tuần, chẳng mấy chốc ống heo sẽ giúp em chạm tới ước mơ!",
-      parentCompanionTip: "Cùng con dán hình món đồ con mơ ước (như cuốn truyện tranh) lên bụng chú heo đất.",
-      mode: "DREAM_TARGET",
-      totalCoins: 15,
-      dreamTargets: [
-        { id: "g1_dream_1", name: "Cuốn truyện cổ tích có tranh màu đẹp (10 Xu)", emoji: "絵本", targetCoins: 10, suggestedWeeklySave: 2, weeksToGoal: 5 },
-        { id: "g1_dream_2", name: "Hộp bút sáp màu 12 màu tươi sáng (12 Xu)", emoji: "🖍️", targetCoins: 12, suggestedWeeklySave: 3, weeksToGoal: 4 },
-        { id: "g1_dream_3", name: "Chậu cây sen đá nhỏ đặt góc bàn học (9 Xu)", emoji: "🪴", targetCoins: 9, suggestedWeeklySave: 3, weeksToGoal: 3 }
+    interactive: buildBackpackInteractive({
+      storyBrief: "🐷 Bé Heo Hồng khoác áo choàng lấp lánh reo vang: 'Tiết kiệm chính là một SIÊU NĂNG LỰC đấy các bạn Lớp 1 ơi! Mỗi đồng xu nhỏ gom lại sẽ tạo nên điều kỳ diệu! Hãy chọn các hành động mang Siêu năng lực tiết kiệm nhé!'",
+      worldLocationName: "Đài Năng Lượng Của Bé Heo Hồng",
+      mascotGuideTip: "🎶 Vè Heo Hồng: 'Mỗi ngày tiết kiệm một xu – Gom thành năng lực vi vu ước mơ!'",
+      parentCompanionTip: "Gọi mỗi lần con bỏ ống heo là 'nạp siêu năng lực cho Bé Heo Hồng' để con hào hứng.",
+      mode: "NEED_VS_WANT",
+      context1Title: "Kích hoạt Siêu năng lực Tiết kiệm!",
+      context1Subtitle: "Cùng Bé Heo Hồng 🐷 xếp vào nhóm Siêu năng lực Tiết kiệm (Nhóm A) và Lãng phí (Nhóm B)",
+      groupAName: "Siêu năng lực Tiết kiệm 🌟",
+      groupBName: "Thói quen Lãng phí ⚠️",
+      items1: [
+        { id: "g1_s9_1", name: "Cất tiền thừa sau khi mua vở vào bụng Bé Heo Đất", emoji: "🐷", correctGroup: "GROUP_A", contextReason: "Tích tiểu thành đại, nuôi lớn quỹ tiết kiệm." },
+        { id: "g1_s9_2", name: "Viết hết từng trang vở, không xé giấy trắng gấp máy bay", emoji: "📒", correctGroup: "GROUP_A", contextReason: "Tiết kiệm giấy vở và bảo vệ cây xanh." },
+        { id: "g1_s9_3", name: "Lấy thức ăn quá nhiều rồi bỏ thừa mứa trên đĩa", emoji: "🍽️", correctGroup: "GROUP_B", contextReason: "Lãng phí thức ăn và công sức người nấu." },
+        { id: "g1_s9_4", name: "Có tiền là mua kẹo ăn hết ngay trong một buổi", emoji: "🍬", correctGroup: "GROUP_B", contextReason: "Không để dành được đồng xu nào cho việc cần thiết." }
       ],
-      twistPrompt: "Khi ống heo sắp đủ tiền mua cuốn truyện mơ ước, em đi ngang qua hàng kẹo bông và hơi thèm. Em làm gì?",
-      twistCorrectText: "Nhớ tới cuốn truyện mơ ước trong ống heo nên kiềm chế không mua kẹo bông để tuần này đủ tiền mua truyện!",
-      twistCorrectFeedback: "Hoan hô! Em thật kiên trì bảo vệ ước mơ trong ống heo của mình!",
-      twistWrongText: "Đập vỡ ống heo ngay lập tức để lấy tiền ăn kẹo.",
-      twistWrongFeedback: "Hãy kiên nhẫn thêm chút nữa để thực hiện được ước mơ đẹp nhé!"
+      questionPrompt: "🐷 Bé Heo Hồng hỏi: Vì sao tiết kiệm lại được gọi là 'Siêu năng lực' của học sinh Lớp 1?",
+      correctOptionText: "Vì tiết kiệm giúp những đồng xu nhỏ gom lại thành khoản tiền lớn để thực hiện ước mơ và giúp đỡ mọi người.",
+      correctFeedback: "⚡ Tuyệt vời! Siêu năng lực tiết kiệm của em và Bé Heo Hồng đã tỏa sáng!",
+      wrongOptionText: "Vì tiết kiệm là cất giấu hết đồ dùng không cho ai mượn bao giờ.",
+      wrongFeedback: "Tiết kiệm là tránh lãng phí để dùng vào việc có ích và biết sẻ chia đúng lúc nhé!"
     })
   },
   {
     periodIndex: 10,
-    lessonId: "les_fin_g1_p10",
-    lessonCode: "TC01S.03.0003",
-    lessonName: "Tiết kiệm từ việc nhỏ",
-    topicId: "topic_g1_3",
+    lessonId: "spec_les_fin_g1_p10",
+    lessonCode: "TC01S.03.0010",
+    lessonName: "10. Ước mơ trong ống heo",
+    topicId: "spec_top_fin_g1_03",
     topicCode: "TC01S.03",
-    officialTopicName: "Tiết kiệm mỗi ngày",
-    creativeZoneName: "Vùng 3: Ngôi Làng Ống Heo Siêu Năng Lực",
+    officialTopicName: "Chủ đề 3. Tiết kiệm mỗi ngày",
+    creativeZoneName: "Vùng 3: Ngôi Làng Ống Heo Hồng & Gấu Mật Xanh 🐷",
     isProject: false,
     feathersReward: 3,
     mapCoordinates: { x: 64, y: 35 },
     criteria: [
-      { code: "TC01S.03.0003.01", level: "Mức 2", competencyGroup: "Vận dụng", description: "Biết tắt đèn, khóa nước, giữ đồ dùng và biết việc nào cần nhờ người lớn giúp." }
+      { code: "TC01S.03.0010.01", level: "Mức 1", competencyGroup: "Hiểu", description: "Biết đặt ra một mục tiêu tiết kiệm nhỏ, phù hợp với lứa tuổi lớp 1." },
+      { code: "TC01S.03.0010.02", level: "Mức 2", competencyGroup: "Biết", description: "Hiểu rằng cần kiên trì bỏ ống heo từng chút một để đạt tới ước mơ." },
+      { code: "TC01S.03.0010.03", level: "Mức 3", competencyGroup: "Vận dụng", description: "Tính được số tuần cần để dành để nuôi ống heo chạm tới món quà mơ ước." }
     ],
-    interactive: buildVillageInteractive({
-      storyBrief: "Tiết kiệm bắt đầu từ những việc nhỏ nhất quanh em! Hãy giúp ngôi làng khóa vòi nước, giữ gìn đồ dùng và gọi người lớn khi ổ điện bị hỏng nhé!",
-      worldLocationName: "Ngôi Làng Việc Nhỏ Xanh Tươi",
-      mascotGuideTip: "Khóa vòi nước, cất bút màu thì em tự làm được; còn sửa quạt điện hay ống nước vỡ thì phải nhờ người lớn nhé!",
-      parentCompanionTip: "Khen ngợi con mỗi khi con tự giác đóng nắp bút màu và tắt đèn khi ra khỏi phòng.",
-      nodes: [
-        {
-          id: "g1_v10_1",
-          title: "Khóa vòi nước sau khi rửa tay xong",
-          emoji: "🚰",
-          category: "WATER",
-          brokenStateText: "Vòi nước đang chảy nhỏ giọt",
-          fixedStateText: "Đã khóa vòi nước gọn gàng",
-          correctActor: "SELF_ACTION",
-          explanation: "Em tự tay khóa vòi nước sau mỗi lần rửa tay."
-        },
-        {
-          id: "g1_v10_2",
-          title: "Đóng nắp bút sáp và xếp gọn vào hộp sau khi vẽ",
-          emoji: "🖍️",
-          category: "REUSE",
-          brokenStateText: "Bút màu đang vương vãi dưới sàn dễ gãy",
-          fixedStateText: "Đã cất bút màu ngay ngắn vào hộp",
-          correctActor: "SELF_ACTION",
-          explanation: "Giữ gìn đồ dùng học tập bền lâu chính là tiết kiệm từ việc nhỏ."
-        },
-        {
-          id: "g1_v10_3",
-          title: "Ổ cắm điện trên tường bị lỏng và xẹt tia lửa",
-          emoji: "⚡",
-          category: "ENERGY",
-          brokenStateText: "Ổ cắm điện bị lỏng rất nguy hiểm!",
-          fixedStateText: "Đã tránh xa và gọi bố mẹ/thầy cô tới kiểm tra an toàn",
-          correctActor: "ADULT_HELP",
-          explanation: "Học sinh lớp 1 tuyệt đối không tự chạm vào ổ điện hỏng mà phải gọi người lớn!"
-        },
-        {
-          id: "g1_v10_4",
-          title: "Bóng đèn trên trần nhà cao bị nhấp nháy",
-          emoji: "💡",
-          category: "ENERGY",
-          brokenStateText: "Bóng đèn trên cao bị hỏng",
-          fixedStateText: "Đã báo người lớn dùng thang kiểm tra và thay bóng đèn",
-          correctActor: "ADULT_HELP",
-          explanation: "Việc ở trên cao và liên quan đến điện cần người lớn thực hiện."
-        }
-      ]
+    interactive: buildNestInteractive({
+      storyBrief: "🐷 Bé Heo Hồng lắc lư cái bụng tròn: 'Trong bụng tớ đang ấp ủ ước mơ của em đấy! Hãy chọn 1 món quà ước mơ vừa sức và tính xem mỗi tuần đút mấy Xu để Bé Heo Hồng biến ước mơ thành sự thật nhé!'",
+      worldLocationName: "Đồi Ống Heo Ước Mơ",
+      mascotGuideTip: "🎶 Vè Heo Hồng: 'Ước mơ nho nhỏ trong tim – Mỗi tuần góp nhặt, chẳng tìm đâu xa!'",
+      parentCompanionTip: "Cùng con vẽ hoặc dán hình món đồ con mơ ước lên cạnh ống heo ở góc học tập.",
+      mode: "DREAM_TARGET",
+      totalCoins: 15,
+      dreamTargets: [
+        { id: "g1_dream_1", name: "Cuốn truyện cổ tích tranh màu (10 Xu)", emoji: "📘", targetCoins: 10, suggestedWeeklySave: 2, weeksToGoal: 5 },
+        { id: "g1_dream_2", name: "Hộp bút sáp 12 màu tươi sáng (12 Xu)", emoji: "🖍️", targetCoins: 12, suggestedWeeklySave: 3, weeksToGoal: 4 },
+        { id: "g1_dream_3", name: "Chậu cây sen đá nhỏ xinh (9 Xu)", emoji: "🪴", targetCoins: 9, suggestedWeeklySave: 3, weeksToGoal: 3 }
+      ],
+      twistPrompt: "🐷 Khi Bé Heo Hồng chỉ còn thiếu 2 Xu nữa là đủ tiền mua cuốn truyện cổ tích, em thấy xe bán đồ chơi dạo đi qua. Em sẽ làm gì?",
+      twistCorrectText: "Em mỉm cười lắc đầu với đồ chơi vặt, đút 2 Xu vào bụng Bé Heo Hồng để hoàn thành ước mơ mua truyện cổ tích!",
+      twistCorrectFeedback: "🎉 Hoan hô! Bé Heo Hồng nhảy múa chúc mừng em đã kiên trì chạm tới ước mơ!",
+      twistWrongText: "Lấy hết tiền trong ống heo ra mua đồ chơi nhựa dùng một lúc rồi hỏng.",
+      twistWrongFeedback: "Hãy kiên trì thêm một chút cùng Bé Heo Hồng để thực hiện ước mơ đẹp nhé!"
     })
   },
   {
     periodIndex: 11,
-    lessonId: "les_fin_g1_p11",
-    lessonCode: "TC01S.03.0004",
-    lessonName: "Nhật ký tiết kiệm",
-    topicId: "topic_g1_3",
+    lessonId: "spec_les_fin_g1_p11",
+    lessonCode: "TC01S.03.0011",
+    lessonName: "11. Tiết kiệm từ việc nhỏ",
+    topicId: "spec_top_fin_g1_03",
     topicCode: "TC01S.03",
-    officialTopicName: "Tiết kiệm mỗi ngày",
-    creativeZoneName: "Vùng 3: Ngôi Làng Ống Heo Siêu Năng Lực",
+    officialTopicName: "Chủ đề 3. Tiết kiệm mỗi ngày",
+    creativeZoneName: "Vùng 3: Ngôi Làng Ống Heo Hồng & Gấu Mật Xanh 🐷",
     isProject: false,
-    feathersReward: 4,
-    badgeCode: "BADGE_TC01S_ZONE3",
-    badgeName: "Siêu Anh Hùng Tiết Kiệm Nhí",
+    feathersReward: 3,
     mapCoordinates: { x: 70, y: 30 },
     criteria: [
-      { code: "TC01S.03.0004.01", level: "Mức 2", competencyGroup: "Biết", description: "Theo dõi số xu đã chi và số xu còn lại để bỏ vào ống heo tiết kiệm." }
+      { code: "TC01S.03.0011.01", level: "Mức 1", competencyGroup: "Hiểu", description: "Nhận biết tiết kiệm điện, nước, giấy vở và bảo quản đồ dùng cũng chính là tiết kiệm tiền cho gia đình." },
+      { code: "TC01S.03.0011.02", level: "Mức 2", competencyGroup: "Biết", description: "Phân biệt được việc nhỏ em tự làm được và việc liên quan tới điện/trên cao cần nhờ người lớn." },
+      { code: "TC01S.03.0011.03", level: "Mức 3", competencyGroup: "Vận dụng", description: "Thực hiện tắt đèn, khóa vòi nước, đậy nắp bút màu và giữ gìn sách vở hằng ngày." }
     ],
-    interactive: buildDiaryAdInteractive({
-      storyBrief: "Hãy cùng chim Sky-Line ghi Nhật ký tiết kiệm đầu tiên nhé! Em có 12 Xu, sau các khoản chi nhỏ trong tuần, hãy tính xem còn lại bao nhiêu Xu để bỏ ống heo và đánh dấu món nào chưa cần thiết nhé!",
-      worldLocationName: "Lều Nhật Ký Ống Heo",
-      mascotGuideTip: "Em có 12 Xu, đã tiêu 3 + 2 + 2 + 1 = 8 Xu, vậy còn lại 4 Xu bỏ vào ống heo đấy!",
-      parentCompanionTip: "Cho con tô màu một ngôi sao vào cuốn sổ nhỏ mỗi ngày con thực hành tiết kiệm.",
-      mode: "COIN_DIARY",
-      startingCoins: 12,
-      diaryEntries: [
-        { id: "g1_d11_1", itemName: "Mua quyển vở tập tô chữ", emoji: "📓", cost: 3, isNecessary: true, note: "Đồ dùng học tập cần thiết" },
-        { id: "g1_d11_2", itemName: "Mua kẹo mút hình siêu nhân", emoji: "🍭", cost: 2, isNecessary: false, note: "Ăn vặt chưa cần thiết" },
-        { id: "g1_d11_3", itemName: "Mua cục tẩy trắng", emoji: "🧼", cost: 2, isNecessary: true, note: "Cần thiết khi viết bài" },
-        { id: "g1_d11_4", itemName: "Mua bong bóng xà phòng", emoji: "🫧", cost: 1, isNecessary: false, note: "Đồ chơi theo hứng nhất thời" }
+    interactive: buildVillageInteractive({
+      storyBrief: "🐻 Bạn Gấu Mật Ấm Áp choàng khăn lá xanh vẫy gọi: 'Tiết kiệm bắt đầu từ những việc nhỏ xíu quanh mình! Hãy cùng Gấu Mật khóa vòi nước, cất bút màu và nhớ gọi người lớn khi ổ điện bị hỏng để đảm bảo an toàn nhé!'",
+      worldLocationName: "Ngôi Làng Xanh Của Gấu Mật",
+      mascotGuideTip: "🎶 Vè Gấu Mật: 'Khóa nước, cất bút tự tay – Việc cao, ổ điện gọi ngay người nhà!'",
+      parentCompanionTip: "Giao cho con nhiệm vụ 'Đội trưởng Gấu Mật' kiểm tra vòi nước đã khóa chặt chưa sau khi rửa tay.",
+      nodes: [
+        {
+          id: "g1_v11_1",
+          title: "Khóa vòi nước sau khi rửa tay",
+          emoji: "🚰",
+          category: "WATER",
+          brokenStateText: "Vòi nước đang chảy rỉ rả lãng phí",
+          fixedStateText: "Đã tự tay khóa vòi nước chặt",
+          correctActor: "SELF_ACTION",
+          explanation: "Học sinh lớp 1 hoàn toàn tự khóa vòi nước được sau khi rửa tay."
+        },
+        {
+          id: "g1_v11_2",
+          title: "Đóng nắp bút màu và xếp vào hộp sau giờ vẽ",
+          emoji: "🖍️",
+          category: "REUSE",
+          brokenStateText: "Bút màu mở nắp vương vãi dễ khô mực",
+          fixedStateText: "Đã đóng nắp và cất gọn vào hộp",
+          correctActor: "SELF_ACTION",
+          explanation: "Giữ đồ dùng bền lâu giúp bố mẹ không tốn tiền mua mới."
+        },
+        {
+          id: "g1_v11_3",
+          title: "Ổ cắm điện trên tường bị lỏng và xẹt tia lửa",
+          emoji: "⚡",
+          category: "ENERGY",
+          brokenStateText: "Ổ điện bị lỏng nguy hiểm!",
+          fixedStateText: "Đã đứng xa và gọi bố mẹ/thầy cô kiểm tra",
+          correctActor: "ADULT_HELP",
+          explanation: "Trẻ em tuyệt đối không tự chạm vào ổ điện hỏng mà phải báo người lớn!"
+        },
+        {
+          id: "g1_v11_4",
+          title: "Bóng đèn trên trần nhà cao bị nhấp nháy",
+          emoji: "💡",
+          category: "ENERGY",
+          brokenStateText: "Đèn trên trần cao bị hỏng",
+          fixedStateText: "Đã nhờ người lớn kiểm tra và sửa đèn",
+          correctActor: "ADULT_HELP",
+          explanation: "Thiết bị điện ở trên cao phải nhờ người lớn xử lý an toàn."
+        }
       ]
     })
   },
   {
     periodIndex: 12,
-    lessonId: "les_fin_g1_p12",
-    lessonCode: "TC01S.04.0001",
-    lessonName: "Biết chia sẻ yêu thương",
-    topicId: "topic_g1_4",
-    topicCode: "TC01S.04",
-    officialTopicName: "Em làm chủ đồng tiền",
-    creativeZoneName: "Vùng 4: Đồi Yêu Thương & Kế Hoạch Đầu Tiên",
-    isProject: false,
-    feathersReward: 3,
-    mapCoordinates: { x: 76, y: 25 },
-    criteria: [
-      { code: "TC01S.04.0001.01", level: "Mức 2", competencyGroup: "Biết", description: "Hiểu niềm vui khi chia sẻ đồ dùng, sách truyện hoặc một phần tiền nhỏ giúp đỡ bạn bè." }
-    ],
-    interactive: buildBackpackInteractive({
-      storyBrief: "Đồng tiền và đồ dùng sẽ càng thêm ấm áp khi chúng mình biết chia sẻ yêu thương! Hãy chọn những việc làm nhân ái nhé!",
-      worldLocationName: "Vườn Hoa Chia Sẻ Yêu Thương",
-      mascotGuideTip: "Chia sẻ một cây bút chì hay tặng lại truyện tranh cũ cho bạn đều mang lại niềm vui lớn!",
-      parentCompanionTip: "Cùng con soạn những cuốn truyện tranh con đã đọc xong để tặng tủ sách lớp học.",
-      mode: "NEED_VS_WANT",
-      context1Title: "Hành động biết chia sẻ yêu thương",
-      context1Subtitle: "Xếp hành động nhân ái (Nhóm A) và ích kỷ, lãng phí (Nhóm B)",
-      groupAName: "Biết chia sẻ yêu thương 💖",
-      groupBName: "Chưa biết chia sẻ ⚠️",
-      items1: [
-        { id: "g1_s12_1", name: "Tặng truyện tranh còn mới cho Tủ sách dùng chung của lớp", emoji: "📚", correctGroup: "GROUP_A", contextReason: "Giúp nhiều bạn cùng được đọc sách hay." },
-        { id: "g1_s12_2", name: "Trích 2 Xu từ heo đất ủng hộ bạn nhỏ vùng khó khăn", emoji: "💝", correctGroup: "GROUP_A", contextReason: "Lan tỏa yêu thương từ những đồng xu nhỏ." },
-        { id: "g1_s12_3", name: "Thấy bạn quên bút chì nhưng nhất quyết không cho mượn dù mình có 3 cây", emoji: "🙅", correctGroup: "GROUP_B", contextReason: "Chưa biết quan tâm giúp đỡ bạn bè." }
-      ],
-      questionPrompt: "Khi biết chia sẻ với bạn bè và người gặp khó khăn, em cảm thấy thế nào?",
-      correctOptionText: "Em cảm thấy rất vui, hạnh phúc vì đã mang lại nụ cười cho người khác.",
-      correctFeedback: "Trái tim của em thật ấm áp! Chim Sky-Line rất tự hào về em!",
-      wrongOptionText: "Không bao giờ chia sẻ với ai.",
-      wrongFeedback: "Chia sẻ yêu thương sẽ làm niềm vui của chúng mình nhân đôi đấy!"
-    })
-  },
-  {
-    periodIndex: 13,
-    lessonId: "les_fin_g1_p13",
-    lessonCode: "TC01S.04.0002",
-    lessonName: "Kế hoạch chi tiêu đầu tiên",
-    topicId: "topic_g1_4",
-    topicCode: "TC01S.04",
-    officialTopicName: "Em làm chủ đồng tiền",
-    creativeZoneName: "Vùng 4: Đồi Yêu Thương & Kế Hoạch Đầu Tiên",
-    isProject: false,
-    feathersReward: 3,
-    mapCoordinates: { x: 82, y: 20 },
-    criteria: [
-      { code: "TC01S.04.0002.01", level: "Mức 2", competencyGroup: "Biết", description: "Biết chia số tiền nhỏ thành 3 chiếc hũ: Chi tiêu cần thiết, Tiết kiệm và Chia sẻ." }
-    ],
-    interactive: buildNestInteractive({
-      storyBrief: "Hãy lập Kế hoạch chi tiêu đầu tiên của học sinh Lớp 1 nhé! Em có 10 Xu, hãy chia vào 3 chiếc hũ: Chi tiêu cần thiết, Tiết kiệm ống heo và Chia sẻ yêu thương!",
-      worldLocationName: "Cây Đại Thụ Ba Chiếc Hũ Nhỏ",
-      mascotGuideTip: "Em hãy chia đủ 10 Xu vào 3 hũ: Hũ Cần thiết (4–6 Xu), Hũ Tiết kiệm (2–4 Xu) và Hũ Chia sẻ (1–3 Xu)!",
-      parentCompanionTip: "Làm cùng con 3 chiếc hũ nhựa nhỏ dán nhãn Cần – Tiết kiệm – Chia sẻ tại bàn học.",
-      mode: "ALLOCATE_JARS",
-      totalCoins: 10,
-      jars: [
-        { id: "g1_jar_need", name: "Hũ Chi tiêu cần thiết", emoji: "🎒", minCoins: 4, maxCoins: 6, description: "Mua bút, tẩy, vở học tập" },
-        { id: "g1_jar_save", name: "Hũ Tiết kiệm ống heo", emoji: "🐷", minCoins: 2, maxCoins: 4, description: "Để dành cho ước mơ nhỏ" },
-        { id: "g1_jar_share", name: "Hũ Chia sẻ yêu thương", emoji: "💝", minCoins: 1, maxCoins: 3, description: "Giúp đỡ bạn bè và làm việc tốt" }
-      ],
-      twistPrompt: "Khi đã chia 10 Xu vào 3 chiếc hũ, nếu muốn mua đồ dùng học tập em lấy ở hũ nào?",
-      twistCorrectText: "Lấy đúng ở Hũ Chi tiêu cần thiết và giữ nguyên Hũ Tiết kiệm cùng Hũ Chia sẻ.",
-      twistCorrectFeedback: "Giỏi lắm! Em đã lập được kế hoạch chi tiêu đầu tiên thật rõ ràng!",
-      twistWrongText: "Đổ chung cả 3 hũ ra tiêu hết một lần.",
-      twistWrongFeedback: "Giữ đúng từng hũ giúp kế hoạch của em thành công nhé!"
-    })
-  },
-  {
-    periodIndex: 14,
-    lessonId: "les_fin_g1_p14",
-    lessonCode: "TC01S.04.0003",
-    lessonName: "Nhà quản lí tài chính nhí",
-    topicId: "topic_g1_4",
-    topicCode: "TC01S.04",
-    officialTopicName: "Em làm chủ đồng tiền",
-    creativeZoneName: "Vùng 4: Đồi Yêu Thương & Kế Hoạch Đầu Tiên",
+    lessonId: "spec_les_fin_g1_p12",
+    lessonCode: "TC01S.03.0012",
+    lessonName: "12. Nhật ký tiết kiệm",
+    topicId: "spec_top_fin_g1_03",
+    topicCode: "TC01S.03",
+    officialTopicName: "Chủ đề 3. Tiết kiệm mỗi ngày",
+    creativeZoneName: "Vùng 3: Ngôi Làng Ống Heo Hồng & Gấu Mật Xanh 🐷",
     isProject: false,
     feathersReward: 4,
-    badgeCode: "BADGE_TC01S_ZONE4",
-    badgeName: "Nhà Quản Lí Nhí Đáng Yêu",
-    mapCoordinates: { x: 88, y: 15 },
+    badgeCode: "BADGE_TC01S_ZONE3",
+    badgeName: "Siêu Anh Hùng Tiết Kiệm Nhí",
+    mapCoordinates: { x: 76, y: 25 },
     criteria: [
-      { code: "TC01S.04.0003.01", level: "Mức 2", competencyGroup: "Vận dụng", description: "Biết kết hợp giữ gìn tiền, chọn mua đồ tốt không mắc bẫy quảng cáo hào nhoáng." }
+      { code: "TC01S.03.0012.01", level: "Mức 1", competencyGroup: "Hiểu", description: "Hiểu tác dụng của việc ghi chép hoặc đánh dấu Nhật ký tiết kiệm mỗi tuần." },
+      { code: "TC01S.03.0012.02", level: "Mức 2", competencyGroup: "Biết", description: "Nhận ra được khoản chi nào là cần thiết và khoản nào có thể cắt giảm để tăng tiền tiết kiệm." },
+      { code: "TC01S.03.0012.03", level: "Mức 3", competencyGroup: "Vận dụng", description: "Tính được số xu còn lại bỏ vào ống heo sau các khoản chi trong tuần." }
     ],
     interactive: buildDiaryAdInteractive({
-      storyBrief: "Nhà quản lí tài chính nhí Lớp 1 không bị đánh lừa bởi quảng cáo hào nhoáng đâu nhé! Với 10 Xu trong ví, hãy chọn món đồ học tập thật tốt thay vì món đồ chơi quảng cáo phóng đại!",
-      worldLocationName: "Trạm Nhà Quản Lí Nhí",
-      mascotGuideTip: "Hãy bấm vào lời quảng cáo phóng đại và chọn hộp bút chì màu chất lượng tốt vừa túi tiền nhé!",
-      parentCompanionTip: "Khen ngợi khi con biết tự nhận xét một món đồ có thực sự tốt và cần thiết hay không.",
-      mode: "AD_DETECTIVE",
+      storyBrief: "🐿️ Bạn Sóc Nâu Chăm Chỉ mở cuốn sổ nhỏ: 'Chào em! Sóc Nâu có 12 Xu trong tuần này. Hãy cùng Sóc Nâu tính tổng số xu đã tiêu, số xu còn lại bỏ vào ống heo và đánh dấu món nào chưa cần thiết nhé!'",
+      worldLocationName: "Lều Nhật Ký Của Sóc Nâu",
+      mascotGuideTip: "🎶 Vè Sóc Nâu: 'Mười hai xu nhỏ đầu tuần – Tiêu tám còn bốn, góp phần heo ngoan!' (3 + 2 + 2 + 1 = 8 Xu, còn 4 Xu nhé!)",
+      parentCompanionTip: "Làm một bảng 'Nhật ký tiết kiệm' dán sticker ngôi sao mỗi ngày con tiết kiệm điện nước hoặc bỏ ống heo.",
+      mode: "COIN_DIARY",
       startingCoins: 12,
-      adBudgetCoins: 10,
-      ads: [
-        {
-          id: "g1_ad_1",
-          title: "Bút Thần Kỳ Tự Viết Bài Không Cần Học – Giá 11 Xu!",
-          emoji: "🪄",
-          price: 11,
-          qualityBadge: "Quảng cáo phóng đại, vượt quá 10 Xu trong ví",
-          hypePhrases: ["Tự viết chữ không cần học", "Phép thuật thần kỳ"],
-          isBestChoice: false,
-          explanation: "Không có cây bút nào tự viết bài thay em được, và giá 11 Xu cũng vượt quá ngân sách!"
-        },
-        {
-          id: "g1_ad_2",
-          title: "Bộ bút chì và gọt bút chì Sky-Line bền đẹp – Giá 7 Xu",
-          emoji: "✏️",
-          price: 7,
-          qualityBadge: "Đúng đồ học tập cần thiết, vừa túi tiền, còn dư 3 Xu tiết kiệm",
-          hypePhrases: ["Gỗ tốt bền đẹp"],
-          isBestChoice: true,
-          explanation: "Nhà quản lí tài chính nhí chọn món đồ bền đẹp, đúng nhu cầu và còn tiết kiệm được 3 Xu!"
-        }
+      diaryEntries: [
+        { id: "g1_d12_1", itemName: "Mua quyển vở tập viết chữ đẹp", emoji: "📓", cost: 3, isNecessary: true, note: "Đồ dùng học tập cần thiết" },
+        { id: "g1_d12_2", itemName: "Mua kẹo dẻo hình khủng long", emoji: "🍬", cost: 2, isNecessary: false, note: "Quà vặt chưa cần thiết" },
+        { id: "g1_d12_3", itemName: "Mua cục tẩy trắng", emoji: "🧼", cost: 2, isNecessary: true, note: "Cần thiết khi làm bài" },
+        { id: "g1_d12_4", itemName: "Mua đồ chơi bong bóng xà phòng", emoji: "🫧", cost: 1, isNecessary: false, note: "Mua theo hứng nhất thời" }
       ]
     })
   },
   {
+    periodIndex: 13,
+    lessonId: "spec_les_fin_g1_p13",
+    lessonCode: "TC01S.04.0013",
+    lessonName: "13. Biết chia sẻ yêu thương",
+    topicId: "spec_top_fin_g1_04",
+    topicCode: "TC01S.04",
+    officialTopicName: "Chủ đề 4. Em làm chủ đồng tiền",
+    creativeZoneName: "Vùng 4: Đồi Ba Chiếc Hũ Của Sóc Nâu Chăm Chỉ 🐿️",
+    isProject: false,
+    feathersReward: 3,
+    mapCoordinates: { x: 82, y: 20 },
+    criteria: [
+      { code: "TC01S.04.0013.01", level: "Mức 1", competencyGroup: "Hiểu", description: "Hiểu rằng đồng tiền và đồ dùng mang lại niềm vui lớn hơn khi biết chia sẻ, giúp đỡ người khác." },
+      { code: "TC01S.04.0013.02", level: "Mức 2", competencyGroup: "Biết", description: "Nêu được những cách chia sẻ phù hợp với học sinh lớp 1 (cho bạn mượn bút, tặng sách cũ, góp quỹ Kế hoạch nhỏ)." },
+      { code: "TC01S.04.0013.03", level: "Mức 3", competencyGroup: "Vận dụng", description: "Thực hiện hành động chia sẻ chân thành, lễ phép và tôn trọng bạn bè." }
+    ],
+    interactive: buildBackpackInteractive({
+      storyBrief: "🐻 Bạn Gấu Mật Ấm Áp ôm hộp quà trái tim mỉm cười: 'Khi chúng mình biết chia sẻ yêu thương, niềm vui sẽ nhân đôi đấy! Hãy cùng Gấu Mật chọn những việc làm nhân ái của học sinh Lớp 1 nhé!'",
+      worldLocationName: "Vườn Hoa Sẻ Chia Của Gấu Mật",
+      mascotGuideTip: "🎶 Vè Gấu Mật: 'Cho bạn mượn bút, tặng quà – Sẻ chia ấm áp, chan hòa yêu thương!'",
+      parentCompanionTip: "Cùng con soạn những cuốn truyện thiếu nhi còn mới để quyên góp cho Tủ sách Nhân ái của trường.",
+      mode: "NEED_VS_WANT",
+      context1Title: "Trái tim ấm áp biết chia sẻ yêu thương",
+      context1Subtitle: "Cùng Gấu Mật 🐻 xếp hành động Biết chia sẻ (Nhóm A) và Ích kỷ/Chưa biết chia sẻ (Nhóm B)",
+      groupAName: "Biết chia sẻ yêu thương 💖",
+      groupBName: "Chưa biết quan tâm chia sẻ ⚠️",
+      items1: [
+        { id: "g1_s13_1", name: "Tặng truyện tranh đã đọc xong còn mới cho Tủ sách lớp học", emoji: "📚", correctGroup: "GROUP_A", contextReason: "Giúp các bạn trong lớp cùng được đọc sách hay." },
+        { id: "g1_s13_2", name: "Trích 2 Xu từ heo đất ủng hộ các bạn nhỏ vùng lũ lụt", emoji: "💝", correctGroup: "GROUP_A", contextReason: "Biết dùng tiền tiết kiệm để giúp đỡ người khó khăn." },
+        { id: "g1_s13_3", name: "Vui vẻ cho bạn cùng bàn mượn bút chì khi bạn lỡ quên", emoji: "✏️", correctGroup: "GROUP_A", contextReason: "Quan tâm, giúp đỡ bạn bè trong lớp." },
+        { id: "g1_s13_4", name: "Giấu hết đồ chơi và sách truyện không cho ai chạm vào", emoji: "🙅", correctGroup: "GROUP_B", contextReason: "Chưa biết mở lòng sẻ chia cùng bạn bè." }
+      ],
+      questionPrompt: "🐻 Gấu Mật hỏi: Khi em chia sẻ sách truyện hoặc giúp đỡ bạn bè, điều tuyệt vời gì sẽ xảy ra?",
+      correctOptionText: "Cả người nhận và chính em đều cảm thấy vui vẻ, ấm áp và gắn kết tình bạn đẹp.",
+      correctFeedback: "💖 Gấu Mật ôm em thật chặt! Trái tim nhân ái của em thật đáng quý!",
+      wrongOptionText: "Chia sẻ làm mình mất hết niềm vui.",
+      wrongFeedback: "Cho đi yêu thương luôn làm niềm vui của chúng mình lớn thêm gấp bội đấy!"
+    })
+  },
+  {
+    periodIndex: 14,
+    lessonId: "spec_les_fin_g1_p14",
+    lessonCode: "TC01S.04.0014",
+    lessonName: "14. Kế hoạch chi tiêu đầu tiên",
+    topicId: "spec_top_fin_g1_04",
+    topicCode: "TC01S.04",
+    officialTopicName: "Chủ đề 4. Em làm chủ đồng tiền",
+    creativeZoneName: "Vùng 4: Đồi Ba Chiếc Hũ Của Sóc Nâu Chăm Chỉ 🐿️",
+    isProject: false,
+    feathersReward: 3,
+    mapCoordinates: { x: 88, y: 15 },
+    criteria: [
+      { code: "TC01S.04.0014.01", level: "Mức 1", competencyGroup: "Hiểu", description: "Biết ý nghĩa của 3 chiếc hũ tài chính đầu tiên: Hũ Cần thiết, Hũ Tiết kiệm và Hũ Chia sẻ." },
+      { code: "TC01S.04.0014.02", level: "Mức 2", competencyGroup: "Biết", description: "Biết sắp xếp thứ tự ưu tiên trước khi sử dụng số tiền mình có." },
+      { code: "TC01S.04.0014.03", level: "Mức 3", competencyGroup: "Vận dụng", description: "Thực hành chia 10 Xu vào 3 chiếc hũ hợp lý theo kế hoạch chi tiêu đầu tiên." }
+    ],
+    interactive: buildNestInteractive({
+      storyBrief: "🐿️ Bạn Sóc Nâu Chăm Chỉ mang ra 3 chiếc hũ hạt dẻ xinh xắn: 'Em có 10 Xu! Hãy cùng Sóc Nâu lập Kế hoạch chi tiêu đầu tiên bằng cách chia đủ 10 Xu vào 3 chiếc hũ: Cần thiết – Tiết kiệm – Chia sẻ nhé!'",
+      worldLocationName: "Cây Đại Thụ Ba Chiếc Hũ Của Sóc Nâu",
+      mascotGuideTip: "🎶 Vè Sóc Nâu: 'Ba chiếc hũ nhỏ xinh xinh: Cần dùng (4–6 Xu), Tiết kiệm (2–4 Xu), Nghĩa tình sẻ chia (1–3 Xu)!'",
+      parentCompanionTip: "Làm 3 chiếc hũ trong suốt dán hình Sóc Nâu, Heo Hồng, Gấu Mật để con tập chia tiền thưởng.",
+      mode: "ALLOCATE_JARS",
+      totalCoins: 10,
+      jars: [
+        { id: "g1_jar_need", name: "Hũ Chi tiêu cần thiết", emoji: "🎒", minCoins: 4, maxCoins: 6, description: "Mua bút chì, vở, đồ dùng học tập" },
+        { id: "g1_jar_save", name: "Hũ Tiết kiệm ống heo", emoji: "🐷", minCoins: 2, maxCoins: 4, description: "Để dành nuôi ước mơ nhỏ" },
+        { id: "g1_jar_share", name: "Hũ Chia sẻ yêu thương", emoji: "💝", minCoins: 1, maxCoins: 3, description: "Ủng hộ bạn khó khăn & mua quà tặng người thân" }
+      ],
+      twistPrompt: "🐿️ Sóc Nâu đố em: Sau khi đã chia 10 Xu vào 3 chiếc hũ, khi cần mua bút chì mới đi học, em lấy xu từ chiếc hũ nào?",
+      twistCorrectText: "Em lấy đúng ở Hũ Chi tiêu cần thiết và giữ nguyên Hũ Tiết kiệm cùng Hũ Chia sẻ.",
+      twistCorrectFeedback: "🐿️ Sóc Nâu vỗ tay khen ngợi! Kế hoạch chi tiêu đầu tiên của em chuẩn xác 100%!",
+      twistWrongText: "Đổ cả 3 hũ ra trộn lẫn rồi tiêu hết sạch.",
+      twistWrongFeedback: "Giữ đúng mục đích từng chiếc hũ mới là bí quyết của kế hoạch chi tiêu nhé!"
+    })
+  },
+  {
     periodIndex: 15,
-    lessonId: "les_fin_g1_p15",
-    lessonCode: "TC01S.05.0001",
-    lessonName: "Ngày hội tài chính nhí",
-    topicId: "topic_g1_5",
-    topicCode: "TC01S.05",
-    officialTopicName: "Dự án cuối khóa",
-    creativeZoneName: "Vùng 5: Quảng Trường Ngày Hội Tài Chính Nhí",
+    lessonId: "spec_les_fin_g1_p15",
+    lessonCode: "TC01S.04.0015",
+    lessonName: "15. Nhà quản lí tài chính nhí",
+    topicId: "spec_top_fin_g1_04",
+    topicCode: "TC01S.04",
+    officialTopicName: "Chủ đề 4. Em làm chủ đồng tiền",
+    creativeZoneName: "Vùng 4: Đồi Ba Chiếc Hũ Của Sóc Nâu Chăm Chỉ 🐿️",
     isProject: true,
     feathersReward: 5,
     badgeCode: "BADGE_TC01S_CHAMPION",
-    badgeName: "Ngôi Sao Ngày Hội Tài Chính Khối 1",
+    badgeName: "Nhà Quản Lí Tài Chính Nhí Khối 1",
     mapCoordinates: { x: 94, y: 10 },
     criteria: [
-      { code: "TC01S.05.0001.01", level: "Mức 3", competencyGroup: "Vận dụng", description: "Vận dụng kiến thức đã học để phân bổ tiền hợp lý trong Ngày hội Tài chính nhí (Chi tiêu – Tiết kiệm – Chia sẻ)." }
+      { code: "TC01S.04.0015.01", level: "Mức 2", competencyGroup: "Biết", description: "Tổng hợp được các thói quen tốt của Nhà quản lí tài chính nhí: giữ tiền sạch đẹp, mua đồ cần thiết, chăm tiết kiệm và biết sẻ chia." },
+      { code: "TC01S.04.0015.02", level: "Mức 3", competencyGroup: "Vận dụng", description: "Phân bổ hợp lý ngân sách 15 Xu vào các hoạt động Chi tiêu cần thiết – Tiết kiệm – Chia sẻ." },
+      { code: "TC01S.04.0015.03", level: "Mức 3", competencyGroup: "Vận dụng", description: "Tự tin chia sẻ kế hoạch quản lí đồng tiền nhỏ của bản thân với thầy cô và gia đình." }
     ],
     interactive: buildDiaryAdInteractive({
       evaluationMode: "HYBRID_TEACHER",
-      storyBrief: "CHẶNG 15 TỔNG KẾT – NGÀY HỘI TÀI CHÍNH NHÍ LỚP 1! Em có 15 Xu tham gia Ngày hội. Hãy phân bổ hợp lý vào Chi tiêu cần thiết – Tiết kiệm ống heo (ít nhất 4 Xu) – Chia sẻ yêu thương (ít nhất 2 Xu) để nhận Huy hiệu Ngôi Sao Ngày Hội Tài Chính Khối 1 nhé!",
-      worldLocationName: "Quảng Trường Ngày Hội Tài Chính Nhí",
-      mascotGuideTip: "Trong 15 Xu: hãy dành ít nhất 4 Xu Tiết kiệm và ít nhất 2 Xu Chia sẻ yêu thương nhé!",
-      practicalPrompt: "Em hãy chia sẻ điều em thích nhất trong Ngày hội Tài chính nhí và ước mơ tiết kiệm của em nhé!",
-      parentCompanionTip: "Chúc mừng con hoàn thành 15 chặng Đảo Tài Chính Lớp 1! Hãy cùng con tổng kết ống heo nhỏ ở nhà.",
+      storyBrief: "🏆🐿️🐣🐷🐰🐻 CHẶNG 15 VỀ ĐÍCH: NHÀ QUẢN LÍ TÀI CHÍNH NHÍ! Cả 5 người bạn hoạt hình (Chim Non, Heo Hồng, Thỏ Trắng, Gấu Mật, Sóc Nâu) cùng cổ vũ em! Với 15 Xu, hãy phân bổ hợp lý: Tiết kiệm ít nhất 4 Xu, Chia sẻ ít nhất 2 Xu để nhận Vương Miện Nhà Quản Lí Tài Chính Nhí Khối 1 nhé!",
+      worldLocationName: "Đài Vinh Danh Biệt Đội Hoạt Hình Sky-Line",
+      mascotGuideTip: "🎶 Đồng ca 5 bạn nhỏ: 'Giữ tiền sạch – Mua đồ cần – Chăm tiết kiệm – Biết sẻ chia!' (Nhớ dành >= 4 Xu Tiết kiệm & >= 2 Xu Chia sẻ nhé!)",
+      practicalPrompt: "Em hãy kể 1 việc tốt về giữ gìn đồng tiền, tiết kiệm hoặc chia sẻ mà em đã làm được cùng gia đình nhé!",
+      parentCompanionTip: "Chúc mừng con hoàn thành trọn vẹn 15 bài học Khối 1 (TC01S)! Bố mẹ hãy trao cho con một cái ôm tự hào nhé!",
       mode: "MASTER_FINANCE_CAPSTONE",
       startingCoins: 15,
       diaryEntries: [
-        { id: "g1_cap_1", itemName: "Mua sách truyện & đồ dùng học tập tại Ngày hội", emoji: "📚", cost: 8, isNecessary: true, note: "Khoản chi học tập bổ ích" },
-        { id: "g1_cap_2", itemName: "Bỏ ống heo tiết kiệm", emoji: "🐷", cost: 5, isNecessary: true, note: "Tích lũy cho ước mơ nhỏ" },
-        { id: "g1_cap_3", itemName: "Góp quỹ Chia sẻ yêu thương cùng các bạn", emoji: "💝", cost: 2, isNecessary: true, note: "Giúp đỡ bạn nhỏ khó khăn" }
+        { id: "g1_cap_1", itemName: "Mua sách truyện & đồ dùng học tập cần thiết", emoji: "📚", cost: 8, isNecessary: true, note: "Chi tiêu thông minh cùng Thỏ Trắng 🐰" },
+        { id: "g1_cap_2", itemName: "Đút ống heo tiết kiệm nuôi ước mơ", emoji: "🐷", cost: 5, isNecessary: true, note: "Tiết kiệm mỗi ngày cùng Heo Hồng 🐷" },
+        { id: "g1_cap_3", itemName: "Góp quỹ Chia sẻ yêu thương giúp bạn", emoji: "💝", cost: 2, isNecessary: true, note: "Chia sẻ ấm áp cùng Gấu Mật 🐻" }
       ],
       capstoneChallenge: {
         totalBudget: 15,
         minSaveCoins: 4,
         minShareCoins: 2,
-        surpriseQuestion: "Trong Ngày hội Tài chính nhí, điều gì làm nên một Ngôi Sao Tài Chính Lớp 1?",
+        surpriseQuestion: "🌟 Biệt đội 5 bạn hoạt hình Sky-Line hỏi em: Điều gì tạo nên một Nhà Quản Lí Tài Chính Nhí Lớp 1 xuất sắc?",
         surpriseOptions: [
           {
             id: "g1_proj_right",
-            text: "Biết giữ gìn đồng tiền sạch đẹp, mua đồ cần thiết, chăm chỉ tiết kiệm mỗi ngày và biết chia sẻ yêu thương!",
+            text: "Biết ơn bố mẹ, giữ tiền phẳng phiu, ưu tiên mua đồ Cần thiết, chăm chỉ tiết kiệm ống heo và biết chia sẻ yêu thương!",
             isCorrect: true,
-            feedback: "CHÚC MỪNG NGÔI SAO NGÀY HỘI TÀI CHÍNH KHỐI 1! Em đã hoàn thành xuất sắc cả 15 chặng phiêu lưu!"
+            feedback: "🎆 CHÚC MỪNG NHÀ QUẢN LÍ TÀI CHÍNH NHÍ KHỐI 1! Chim Non, Heo Hồng, Thỏ Trắng, Gấu Mật và Sóc Nâu vô cùng tự hào về em!"
           },
           {
             id: "g1_proj_wrong",
-            text: "Tiêu hết sạch tiền mua kẹo và đồ chơi ngay từ đầu ngày hội.",
+            text: "Tiêu hết sạch tiền mua đồ chơi và kẹo ngọt ngay từ ngày đầu tiên.",
             isCorrect: false,
-            feedback: "Ngôi sao tài chính luôn nhớ để dành tiền tiết kiệm và chia sẻ yêu thương nhé!"
+            feedback: "Nhà quản lí tài chính nhí luôn nhớ dành phần Tiết kiệm và Chia sẻ yêu thương nhé!"
           }
         ]
       }

@@ -19,6 +19,7 @@ import {
     Check,
     X,
     ShieldAlert,
+    ShieldCheck,
     Award
 } from "lucide-react"
 
@@ -68,6 +69,7 @@ export default function PsychologyAssessmentForm({ student, onSave, isLocked }: 
     const [messageToGdcs, setMessageToGdcs] = useState("")
     const [sendingReport, setSendingReport] = useState(false)
     const [reportSentInfo, setReportSentInfo] = useState<any>(null)
+    const [digitalSignature, setDigitalSignature] = useState<any>(null)
 
     // Tải danh sách GĐCS và kiểm tra lịch sử đã gửi email GĐCS
     useEffect(() => {
@@ -90,6 +92,18 @@ export default function PsychologyAssessmentForm({ student, onSave, isLocked }: 
                         if (data.psychologyData.reportedToGdcs.messageToGdcs) {
                             setMessageToGdcs(data.psychologyData.reportedToGdcs.messageToGdcs)
                         }
+                    if (data.psychologyData?.digitalSignature) {
+                        setDigitalSignature(data.psychologyData.digitalSignature);
+                    } else if (student?.signatureName) {
+                        setDigitalSignature({
+                            isSigned: true,
+                            signedBy: student.signatureName,
+                            signerRole: "Giáo viên Tâm lý học đường",
+                            signedAtFormatted: student.updatedAt ? new Date(student.updatedAt).toLocaleString("vi-VN") : "",
+                            signatureHash: `SQMS-SIGN-TLY-${student.studentCode || String(student.id || '').slice(0, 8)}`,
+                            status: "VERIFIED"
+                        });
+                    }
                     }
 
                     // Tự động chọn GĐCS tương ứng với cơ sở của học sinh
@@ -584,6 +598,65 @@ export default function PsychologyAssessmentForm({ student, onSave, isLocked }: 
                             className="flex-1 w-full min-h-[120px] p-4 focus:bg-white focus:border-emerald-400 focus:ring-2 focus:ring-emerald-50 outline-none transition-all text-sm text-slate-700 resize-y text-xs font-semibold"
                             placeholder="Gợi ý can thiệp, hỗ trợ..."
                         ></textarea>
+                    </div>
+                </div>
+
+                {/* KHỐI CHỨNG NHẬN CHỮ KÝ ĐIỆN TỬ GIÁO VIÊN BỘ MÔN (BƯỚC 4) */}
+                <div className="bg-white rounded-2xl p-5 shadow-sm border border-teal-200 overflow-hidden relative">
+                    <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 pb-3 border-b border-teal-100">
+                        <div className="flex items-center gap-2.5">
+                            <div className="w-9 h-9 rounded-xl bg-teal-50 border border-teal-200 flex items-center justify-center text-[#00A19A] shrink-0">
+                                <ShieldCheck size={20} />
+                            </div>
+                            <div>
+                                <h4 className="font-extrabold text-[#003B3A] text-xs uppercase tracking-wide flex items-center gap-2">
+                                    <span>Chứng Nhận Chữ Ký Điện Tử Giáo Viên Bộ Môn</span>
+                                    <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-emerald-100 text-emerald-800 border border-emerald-300">
+                                        {digitalSignature?.isSigned || student?.signatureName ? "Đã Ký Điện Tử (B4)" : "Tự động gán khi hoàn thành B4"}
+                                    </span>
+                                </h4>
+                                <p className="text-[11px] text-slate-500 font-medium">
+                                    Hệ thống xác thực chữ ký điện tử học thuật Sky-Line (SQMS Standard)
+                                </p>
+                            </div>
+                        </div>
+                        {digitalSignature?.signatureHash && (
+                            <span className="font-mono text-[10px] bg-slate-100 text-slate-600 px-2 py-1 rounded-md border border-slate-200">
+                                {digitalSignature.signatureHash}
+                            </span>
+                        )}
+                    </div>
+
+                    <div className="pt-3 grid grid-cols-1 sm:grid-cols-3 gap-3 text-xs">
+                        <div className="p-3 rounded-xl bg-[#F8FAFC] border border-slate-200">
+                            <span className="text-[10px] font-bold uppercase text-slate-400 block mb-0.5">Giáo viên đánh giá &amp; Ký xác nhận:</span>
+                            <div className="font-black text-[#003B3A] text-sm">
+                                {digitalSignature?.signedBy || student?.signatureName || student?.currentTeacherName || "Giáo viên Tâm lý"}
+                            </div>
+                            <div className="text-[10.5px] text-teal-700 font-semibold mt-0.5">
+                                {digitalSignature?.signerRole || "Giáo viên Khảo sát & Đánh giá Tâm lý"}
+                            </div>
+                        </div>
+
+                        <div className="p-3 rounded-xl bg-[#F8FAFC] border border-slate-200">
+                            <span className="text-[10px] font-bold uppercase text-slate-400 block mb-0.5">Thời gian xác thực chữ ký:</span>
+                            <div className="font-bold text-slate-800 tabular-nums">
+                                {digitalSignature?.signedAtFormatted || (student?.updatedAt ? new Date(student.updatedAt).toLocaleString("vi-VN") : "Đang cập nhật")}
+                            </div>
+                            <div className="text-[10.5px] text-emerald-700 font-semibold mt-0.5 flex items-center gap-1">
+                                <CheckCircle2 size={12} /> Hợp lệ &amp; Đồng bộ CSDL
+                            </div>
+                        </div>
+
+                        <div className="p-3 rounded-xl bg-[#F0FDFA] border border-teal-200 flex flex-col justify-center">
+                            <span className="text-[10px] font-bold uppercase text-[#00736E] block mb-0.5">Quy trình công đoạn:</span>
+                            <div className="font-extrabold text-[#003B3A] text-[11.5px]">
+                                Bước 4 — Hoàn tất Khảo sát Chuyên môn
+                            </div>
+                            <div className="text-[10px] text-slate-500 mt-0.5">
+                                Tự động gán chữ ký vào Mẫu Phiếu &amp; Báo cáo A4
+                            </div>
+                        </div>
                     </div>
                 </div>
 

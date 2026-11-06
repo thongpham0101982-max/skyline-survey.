@@ -455,11 +455,11 @@ export function TeacherProgressPdfModal({
     #teacher-progress-report-pdf .text-amber-900 { color: #78350f !important; }
     #teacher-progress-report-pdf .text-amber-800 { color: #92400e !important; }
     #teacher-progress-report-pdf .text-amber-700 { color: #b45309 !important; }
-    #teacher-progress-report-pdf .text-indigo-950 { color: #1e1b4b !important; }
-    #teacher-progress-report-pdf .text-indigo-900 { color: #312e81 !important; }
-    #teacher-progress-report-pdf .text-indigo-800 { color: #3730a3 !important; }
-    #teacher-progress-report-pdf .text-indigo-700 { color: #4338ca !important; }
-    #teacher-progress-report-pdf .text-indigo-600 { color: #4f46e5 !important; }
+    #teacher-progress-report-pdf .text-teal-800 { color: #1e1b4b !important; }
+    #teacher-progress-report-pdf .text-teal-800 { color: #312e81 !important; }
+    #teacher-progress-report-pdf .text-teal-800 { color: #3730a3 !important; }
+    #teacher-progress-report-pdf .text-teal-800 { color: #4338ca !important; }
+    #teacher-progress-report-pdf .text-teal-800 { color: #00736E !important; }
     #teacher-progress-report-pdf .text-teal-900 { color: #134e4a !important; }
     #teacher-progress-report-pdf .text-teal-800 { color: #115e59 !important; }
     #teacher-progress-report-pdf .text-teal-700 { color: #0f766e !important; }
@@ -471,16 +471,16 @@ export function TeacherProgressPdfModal({
     #teacher-progress-report-pdf .text-rose-800 { color: #9f1239 !important; }
     #teacher-progress-report-pdf .text-rose-700 { color: #be123c !important; }
     #teacher-progress-report-pdf .text-rose-600 { color: #e11d48 !important; }
-    #teacher-progress-report-pdf .text-purple-900 { color: #581c87 !important; }
-    #teacher-progress-report-pdf .text-purple-700 { color: #7e22ce !important; }
-    #teacher-progress-report-pdf .text-purple-600 { color: #9333ea !important; }
+    #teacher-progress-report-pdf .text-teal-800 { color: #581c87 !important; }
+    #teacher-progress-report-pdf .text-teal-800 { color: #7e22ce !important; }
+    #teacher-progress-report-pdf .text-teal-800 { color: #00736E !important; }
     /* Background Colors (HEX) */
     #teacher-progress-report-pdf .bg-white { background-color: #ffffff !important; }
     #teacher-progress-report-pdf .bg-slate-50,
     #teacher-progress-report-pdf .bg-slate-50\\/60 { background-color: #f8fafc !important; }
     #teacher-progress-report-pdf .bg-slate-100 { background-color: #f1f5f9 !important; }
-    #teacher-progress-report-pdf .bg-indigo-50\\/60,
-    #teacher-progress-report-pdf .bg-indigo-50\\/70 { background-color: #eef2ff !important; }
+    #teacher-progress-report-pdf .bg-teal-50\\/60,
+    #teacher-progress-report-pdf .bg-teal-50\\/70 { background-color: #eef2ff !important; }
     #teacher-progress-report-pdf .bg-teal-50\\/70,
     #teacher-progress-report-pdf .bg-teal-50\\/30 { background-color: #f0fdfa !important; }
     #teacher-progress-report-pdf .bg-rose-50\\/60 { background-color: #fff1f2 !important; }
@@ -494,9 +494,9 @@ export function TeacherProgressPdfModal({
     #teacher-progress-report-pdf .border-slate-200,
     #teacher-progress-report-pdf .border-slate-200\\/80 { border-color: #e2e8f0 !important; }
     #teacher-progress-report-pdf .border-amber-200\\/80 { border-color: #fde68a !important; }
-    #teacher-progress-report-pdf .border-indigo-200\\/80 { border-color: #c7d2fe !important; }
+    #teacher-progress-report-pdf .border-teal-200\\/80 { border-color: #c7d2fe !important; }
     #teacher-progress-report-pdf .border-teal-200\\/80 { border-color: #99f6e4 !important; }
-    #teacher-progress-report-pdf .border-purple-200\\/80 { border-color: #e9d5ff !important; }
+    #teacher-progress-report-pdf .border-teal-200\\/80 { border-color: #e9d5ff !important; }
     #teacher-progress-report-pdf .border-emerald-200\\/80 { border-color: #a7f3d0 !important; }
   `
 
@@ -1150,12 +1150,12 @@ export function TeacherProgressPdfModal({
                 <div className="text-[9px] text-amber-700 font-semibold">{commitmentRate}% tổng số ca</div>
               </div>
 
-              <div className="text-center p-2 rounded-xl bg-white border border-indigo-200/80 shadow-2xs">
-                <div className="text-[10px] text-indigo-900 font-extrabold uppercase">ĐG Định kỳ Tuần ({activeMonth})</div>
-                <div className="text-lg font-black text-indigo-700 mt-0.5">
+              <div className="text-center p-2 rounded-xl bg-white border border-teal-200/80 shadow-2xs">
+                <div className="text-[10px] text-teal-800 font-extrabold uppercase">ĐG Định kỳ Tuần ({activeMonth})</div>
+                <div className="text-lg font-black text-teal-800 mt-0.5">
                   {weeklyEvaluatedStudents}<span className="text-xs font-bold text-slate-400">/{totalActive || totalStudents}</span>
                 </div>
-                <div className="text-[9px] text-indigo-600 font-semibold">{totalWeeklyEvalLogs} lượt ĐG tuần</div>
+                <div className="text-[9px] text-teal-800 font-semibold">{totalWeeklyEvalLogs} lượt ĐG tuần</div>
               </div>
 
               <div className="text-center p-2 rounded-xl bg-white border border-teal-200/80 shadow-2xs">
@@ -1166,12 +1166,12 @@ export function TeacherProgressPdfModal({
                 <div className="text-[9px] text-teal-700 font-bold">{monthlyEvalRate}% HS đang TD</div>
               </div>
 
-              <div className="text-center p-2 rounded-xl bg-white border border-purple-200/80 shadow-2xs">
-                <div className="text-[10px] text-purple-900 font-extrabold uppercase">GV Đánh giá Định kỳ</div>
-                <div className="text-lg font-black text-purple-700 mt-0.5">
+              <div className="text-center p-2 rounded-xl bg-white border border-teal-200/80 shadow-2xs">
+                <div className="text-[10px] text-teal-800 font-extrabold uppercase">GV Đánh giá Định kỳ</div>
+                <div className="text-lg font-black text-teal-800 mt-0.5">
                   {teachersWithEvalInMonth}<span className="text-xs font-bold text-slate-400">/{teacherPeriodicStats.length} GV</span>
                 </div>
-                <div className="text-[9px] text-purple-600 font-semibold">{totalEvaluations} lượt ĐG năm</div>
+                <div className="text-[9px] text-teal-800 font-semibold">{totalEvaluations} lượt ĐG năm</div>
               </div>
 
               <div className="text-center p-2 rounded-xl bg-white border border-emerald-200/80 shadow-2xs">
@@ -1205,7 +1205,7 @@ export function TeacherProgressPdfModal({
                     <th className="border border-slate-300 px-1.5 py-1.5 text-center">Đã xong</th>
                     <th className="border border-slate-300 px-1.5 py-1.5 text-center">Số GV</th>
                     {weeksList.map((w, idx) => (
-                      <th key={idx} className="border border-slate-300 px-1.5 py-1.5 text-center bg-indigo-50/60 text-indigo-950">
+                      <th key={idx} className="border border-slate-300 px-1.5 py-1.5 text-center bg-teal-50/60 text-teal-800">
                         ĐG {w}
                       </th>
                     ))}
@@ -1233,7 +1233,7 @@ export function TeacherProgressPdfModal({
                         <td className="border border-slate-300 px-1.5 py-1 text-center font-semibold text-slate-700">{c.teachers.size}</td>
                         {c.weekEvaluatedCounts.map((wCnt, wIdx) => (
                           <td key={wIdx} className="border border-slate-300 px-1.5 py-1 text-center font-semibold">
-                            <span className={wCnt > 0 ? "text-indigo-700 font-extrabold" : "text-slate-400"}>
+                            <span className={wCnt > 0 ? "text-teal-800 font-extrabold" : "text-slate-400"}>
                               {wCnt}/{c.active}
                             </span>
                           </td>
@@ -1293,7 +1293,7 @@ export function TeacherProgressPdfModal({
                     <th className="border border-slate-300 px-1.5 py-1.5 text-center">Đang TD</th>
                     <th className="border border-slate-300 px-1.5 py-1.5 text-center">Đã xong</th>
                     {weeksList.map((w, idx) => (
-                      <th key={idx} className="border border-slate-300 px-1.5 py-1.5 text-center bg-indigo-50/60 text-indigo-950">
+                      <th key={idx} className="border border-slate-300 px-1.5 py-1.5 text-center bg-teal-50/60 text-teal-800">
                         {w}
                       </th>
                     ))}
@@ -1320,7 +1320,7 @@ export function TeacherProgressPdfModal({
                         <td className="border border-slate-300 px-1.5 py-1 text-center font-bold text-[#135E5B]">{tch.terminated}</td>
                         {tch.weekEvaluatedCounts.map((wCnt, wIdx) => (
                           <td key={wIdx} className="border border-slate-300 px-1.5 py-1 text-center">
-                            <span className={wCnt > 0 ? "font-extrabold text-indigo-700" : "text-slate-400"}>
+                            <span className={wCnt > 0 ? "font-extrabold text-teal-800" : "text-slate-400"}>
                               {wCnt}/{tch.active}
                             </span>
                           </td>
@@ -1360,7 +1360,7 @@ export function TeacherProgressPdfModal({
               <div className="mb-6">
                 <h2 className="text-[11px] font-black uppercase text-slate-900 tracking-wider mb-1.5 flex items-center justify-between border-b border-slate-300 pb-1">
                   <span className="flex items-center gap-1.5">
-                    <Calendar className="w-3.5 h-3.5 text-indigo-700" />
+                    <Calendar className="w-3.5 h-3.5 text-teal-800" />
                     III. Sổ Theo dõi Chi tiết Kết quả Đánh giá Học sinh Định kỳ theo Tuần ({activeMonth})
                   </span>
                   <span className="text-[9px] font-semibold text-slate-500 normal-case">
@@ -1376,7 +1376,7 @@ export function TeacherProgressPdfModal({
                       <th className="border border-slate-300 px-2 py-1.5">GV / Chuyên viên</th>
                       <th className="border border-slate-300 px-1.5 py-1.5 text-center">Diện</th>
                       {weeksList.map((w, idx) => (
-                        <th key={idx} className="border border-slate-300 px-1.5 py-1.5 text-center bg-indigo-50/70 text-indigo-950">
+                        <th key={idx} className="border border-slate-300 px-1.5 py-1.5 text-center bg-teal-50/70 text-teal-800">
                           {w}
                         </th>
                       ))}
@@ -1471,7 +1471,7 @@ export function TeacherProgressPdfModal({
                                 ✓ Đã ĐG ({evaluatedWeeksCount}T &amp; Tháng)
                               </span>
                             ) : evaluatedWeeksCount > 0 ? (
-                              <span className="font-bold text-indigo-700 text-[8.5px]">
+                              <span className="font-bold text-teal-800 text-[8.5px]">
                                 Đã ĐG {evaluatedWeeksCount}/{weeksList.length} tuần
                               </span>
                             ) : hasMonthEval ? (
@@ -1578,7 +1578,7 @@ export function TeacherProgressPdfModal({
                               </td>
                             )
                           })}
-                          <td className="border border-slate-300 px-1 py-1 text-center font-black text-indigo-800">
+                          <td className="border border-slate-300 px-1 py-1 text-center font-black text-teal-800">
                             {evaluatedMonthsCount}/10
                           </td>
                           <td className="border border-slate-300 px-1.5 py-1 text-center">

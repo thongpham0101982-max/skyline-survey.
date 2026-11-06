@@ -537,7 +537,7 @@ export default function ActivityResultInput() {
                     👶 Mầm non (Quan sát tiến bộ)
                   </span>
                 ) : isEventActivity ? (
-                  <span className="text-[11px] font-black text-purple-800 bg-purple-100 px-2.5 py-0.5 rounded-lg border border-purple-200">
+                  <span className="text-[11px] font-black text-teal-800 bg-teal-50 px-2.5 py-0.5 rounded-lg border border-teal-200">
                     🎪 Sự kiện (Vai trò & Điểm danh)
                   </span>
                 ) : (
@@ -587,10 +587,10 @@ export default function ActivityResultInput() {
               <>
                 <button
                   onClick={() => setShowProgressModal(true)}
-                  className="px-3.5 py-2.5 bg-indigo-50 hover:bg-indigo-100 border border-indigo-200 text-indigo-700 text-xs font-black rounded-xl shadow-2xs transition-all flex items-center gap-1.5"
+                  className="px-3.5 py-2.5 bg-teal-50 hover:bg-teal-50 border border-teal-200 text-teal-800 text-xs font-black rounded-xl shadow-2xs transition-all flex items-center gap-1.5"
                   title="Theo dõi tiến độ nộp và gửi email nhắc nhở GVCN / CC GĐCS"
                 >
-                  <Mail className="w-3.5 h-3.5 text-indigo-600" />
+                  <Mail className="w-3.5 h-3.5 text-teal-800" />
                   <span>Tiến độ & Nhắc nhở</span>
                 </button>
 
@@ -804,9 +804,9 @@ export default function ActivityResultInput() {
           <div className="flex items-center gap-2 shrink-0 flex-wrap justify-end">
             <button
               onClick={() => setShowBulkModal(true)}
-              className="px-3.5 py-2 bg-indigo-50 hover:bg-indigo-100 text-indigo-700 text-xs font-black rounded-xl border border-indigo-200 flex items-center gap-1.5 transition-all"
+              className="px-3.5 py-2 bg-teal-50 hover:bg-teal-50 text-teal-800 text-xs font-black rounded-xl border border-teal-200 flex items-center gap-1.5 transition-all"
             >
-              <Sparkles className="w-3.5 h-3.5 text-indigo-600" />
+              <Sparkles className="w-3.5 h-3.5 text-teal-800" />
               <span>Chấm hàng loạt ({selectedIds.size})</span>
             </button>
 
@@ -920,7 +920,7 @@ export default function ActivityResultInput() {
                     const ratingBadge = getRatingBadgeProps(st.finalResult);
 
                     return (
-                      <tr key={st.id} className={`hover:bg-teal-50/20 transition-colors ${isSelected ? 'bg-indigo-50/30' : ''}`}>
+                      <tr key={st.id} className={`hover:bg-teal-50/20 transition-colors ${isSelected ? 'bg-teal-50/30' : ''}`}>
                         <td className="py-3 px-3 text-center">
                           <input
                             type="checkbox"
@@ -965,7 +965,7 @@ export default function ActivityResultInput() {
                             onChange={e => updateStudent(st.id, { roles: [e.target.value] })}
                             className={`py-1 px-2 border rounded-lg text-xs font-bold outline-none ${
                               isModeParticipation
-                                ? 'bg-purple-50 border-purple-200 text-purple-900 font-extrabold'
+                                ? 'bg-teal-50 border-teal-200 text-teal-800 font-extrabold'
                                 : 'bg-slate-50 border-slate-200 text-slate-700'
                             }`}
                           >
@@ -1073,7 +1073,7 @@ export default function ActivityResultInput() {
                                       onClick={() => handleSetScore(st.id, crit.id, lvl)}
                                       className={`w-6 h-6 rounded text-[11px] font-black transition-all flex items-center justify-center cursor-pointer ${
                                         isLevelActive
-                                          ? lvl === 4 ? 'bg-purple-600 text-white shadow-xs'
+                                          ? lvl === 4 ? 'bg-[#003B3A] text-white shadow-xs'
                                             : lvl === 3 ? 'bg-emerald-600 text-white shadow-xs'
                                             : lvl === 2 ? 'bg-sky-600 text-white shadow-xs'
                                             : 'bg-amber-500 text-white shadow-xs'
@@ -1113,7 +1113,7 @@ export default function ActivityResultInput() {
                           <td className="py-3 px-3 text-center border-l border-slate-200 whitespace-nowrap">
                             {st.finalResult && st.finalResult !== 'CHUA_DANH_GIA' ? (
                               <span className={`inline-flex items-center gap-1 px-3 py-1 rounded-full text-xs font-black border ${
-                                st.finalResult === 'TOT' ? 'bg-purple-50 text-purple-700 border-purple-200' :
+                                st.finalResult === 'TOT' ? 'bg-teal-50 text-teal-800 border-teal-200' :
                                 st.finalResult === 'DAT' ? 'bg-emerald-50 text-emerald-700 border-emerald-200' :
                                 'bg-amber-50 text-amber-700 border-amber-200'
                               }`}>
@@ -1510,7 +1510,7 @@ export default function ActivityResultInput() {
                                 <td className="py-2 px-2 text-center border-r border-slate-200">
                                   {level ? (
                                     <span className={`inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-black ${
-                                      level === 4 ? 'bg-purple-100 text-purple-800' :
+                                      level === 4 ? 'bg-teal-50 text-teal-800' :
                                       level === 3 ? 'bg-emerald-100 text-emerald-800' :
                                       level === 2 ? 'bg-sky-100 text-sky-800' :
                                       'bg-amber-100 text-amber-800'

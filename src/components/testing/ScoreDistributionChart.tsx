@@ -71,7 +71,7 @@ export function ScoreDistributionChart({
                       ? "bg-blue-500 text-white"
                       : b.range === "8.0-8.9"
                       ? "bg-emerald-500 text-white"
-                      : "bg-purple-600 text-white"
+                      : "bg-[#003B3A] text-white"
                   }`}
                   title={`${b.label}: ${b.count} học sinh (${b.percentage}%)`}
                 >
@@ -99,7 +99,7 @@ export function ScoreDistributionChart({
         </div>
         <div className="p-2 bg-slate-50 rounded-lg">
           <span className="text-slate-500 block text-[11px]">Tỷ lệ Giỏi/Xuất sắc</span>
-          <strong className="font-mono text-purple-700 text-sm">{stats.excellentRate.toFixed(1)}%</strong>
+          <strong className="font-mono text-teal-800 text-sm">{stats.excellentRate.toFixed(1)}%</strong>
         </div>
       </div>
     </div>

@@ -38,23 +38,24 @@ const nextConfig = {
     '/api/**': ['./dev.db', './prisma/dev.db'],
     '/**': ['./dev.db', './prisma/dev.db'],
   },
+  async redirects() {
+    return [
+      {
+        source: "/learning-resources/nameplates",
+        destination: "/teacher/bang-ten-phhs",
+        permanent: true,
+      },
+      {
+        source: "/learning-resources/:path*",
+        destination: "/teacher",
+        permanent: true,
+      },
+    ];
+  },
   async headers() {
     return [
       {
-        source: "/api/learning-resources/textbooks/:id/file",
-        headers: [
-          {
-            key: "Content-Security-Policy",
-            value: "frame-ancestors 'self' https://ssm.skylineschool.edu.vn http://localhost:3000 http://192.168.10.239:3000 https://*.skylineschool.edu.vn",
-          },
-          {
-            key: "Access-Control-Allow-Origin",
-            value: "*",
-          },
-        ],
-      },
-      {
-        source: "/((?!api/learning-resources).*)",
+        source: "/:path*",
         headers: [
           {
             key: "X-Frame-Options",
@@ -71,15 +72,6 @@ const nextConfig = {
           {
             key: "Permissions-Policy",
             value: "camera=(self), microphone=(), geolocation=(self)",
-          },
-        ],
-      },
-      {
-        source: "/learning-resources/:path*",
-        headers: [
-          {
-            key: "Cache-Control",
-            value: "no-store, no-cache, must-revalidate, proxy-revalidate, max-age=0",
           },
         ],
       },

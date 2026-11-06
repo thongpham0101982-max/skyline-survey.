@@ -60,10 +60,10 @@ export function CategoriesClient() {
       <div className="bg-white rounded-xl shadow-sm border-2 border-rose-100 overflow-hidden">
         <div className="flex items-center justify-between text-xs font-semibold">
           <h3 className="font-bold text-slate-800 flex items-center gap-2">
-            <BookOpen className="w-5 h-5 text-indigo-500" />
+            <BookOpen className="w-5 h-5 text-teal-700" />
             Danh muc Mon Khao sat ({items.length})
           </h3>
-          <button onClick={openNew} className="flex items-center gap-1.5 text-white hover:bg-indigo-700 text-sm font-medium shadow-sm text-xs font-semibold">
+          <button onClick={openNew} className="flex items-center gap-1.5 text-white hover:bg-[#003B3A] text-sm font-medium shadow-sm text-xs font-semibold">
             <Plus className="w-4 h-4" /> Thêm moi
           </button>
         </div>
@@ -87,9 +87,9 @@ export function CategoriesClient() {
               </thead>
               <tbody>
                 {items.map((item, i) => (
-                  <tr key={item.id} className="hover:bg-indigo-50/30 transition-colors text-xs font-semibold">
+                  <tr key={item.id} className="hover:bg-teal-50/30 transition-colors text-xs font-semibold">
                     <td className="p-2 p-2 text-slate-500 border border-slate-200">{i + 1}</td>
-                    <td className="p-2 p-2 font-mono font-bold text-indigo-700 border border-slate-200">{item.code}</td>
+                    <td className="p-2 p-2 font-mono font-bold text-teal-800 border border-slate-200">{item.code}</td>
                     <td className="p-2 p-2 font-medium text-slate-800 border border-slate-200">{item.name}</td>
                     <td className="p-2 p-2 text-slate-600 border border-slate-200">
                       {item.subjectType ? (
@@ -103,7 +103,7 @@ export function CategoriesClient() {
                     </td>
                     <td className="p-2 p-2 text-center border border-slate-200">
                       <div className="flex gap-1 justify-center">
-                        <button onClick={() => openEdit(item)} className="p-1.5 text-slate-400 hover:text-indigo-600 hover:bg-indigo-50 text-xs font-semibold"><Pencil className="w-3.5 h-3.5" /></button>
+                        <button onClick={() => openEdit(item)} className="p-1.5 text-slate-400 hover:text-teal-800 hover:bg-teal-50 text-xs font-semibold"><Pencil className="w-3.5 h-3.5" /></button>
                         <button onClick={() => deleteItem(item.id)} className="p-1.5 text-slate-400 hover:text-red-500 hover:bg-red-50 text-xs font-semibold"><Trash2 className="w-3.5 h-3.5" /></button>
                       </div>
                     </td>
@@ -126,19 +126,19 @@ export function CategoriesClient() {
               <div>
                 <label className="block text-sm font-semibold text-slate-700 mb-1.5">Ma mon *</label>
                 <input required disabled={!!editingId} value={form.code} onChange={e => setForm({...form, code: e.target.value})}
-                  className="w-full border border-slate-300 rounded-xl px-4 py-2.5 outline-none focus:border-indigo-500 disabled:bg-slate-100 font-mono"
+                  className="w-full border border-slate-300 rounded-xl px-4 py-2.5 outline-none focus:border-teal-200 disabled:bg-slate-100 font-mono"
                   placeholder="VD: TAM_LY, TA_VIET, TOAN" />
               </div>
               <div>
                 <label className="block text-sm font-semibold text-slate-700 mb-1.5">Ten mon *</label>
                 <input required value={form.name} onChange={e => setForm({...form, name: e.target.value})}
-                  className="w-full border border-slate-300 rounded-xl px-4 py-2.5 outline-none focus:border-indigo-500"
+                  className="w-full border border-slate-300 rounded-xl px-4 py-2.5 outline-none focus:border-teal-200"
                   placeholder="VD: Tam ly, Tieng Anh (viet), Toan" />
               </div>
               <div>
                 <label className="block text-sm font-semibold text-slate-700 mb-1.5">Loai mon</label>
                 <select value={form.subjectType} onChange={e => setForm({...form, subjectType: e.target.value})}
-                  className="w-full border border-slate-300 rounded-xl px-4 py-2.5 outline-none focus:border-indigo-500 bg-white">
+                  className="w-full border border-slate-300 rounded-xl px-4 py-2.5 outline-none focus:border-teal-200 bg-white">
                   <option value="">-- Chon loai --</option>
                   <option value="Viet">Viet</option>
                   <option value="Van dap">Van dap</option>
@@ -148,7 +148,7 @@ export function CategoriesClient() {
               </div>
               <div className="pt-4 flex justify-end gap-3">
                 <button type="button" onClick={() => setIsFormOpen(false)} className="px-5 py-2.5 text-slate-600 hover:bg-slate-100 rounded-xl font-medium">Hủy</button>
-                <button type="submit" className="hover:bg-indigo-700 text-white font-medium shadow-sm text-xs font-semibold">Lưu</button>
+                <button type="submit" className="hover:bg-[#003B3A] text-white font-medium shadow-sm text-xs font-semibold">Lưu</button>
               </div>
             </form>
           </div>

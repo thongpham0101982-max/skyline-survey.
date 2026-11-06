@@ -9,11 +9,11 @@ function getCategoryBadgeStyle(catName: string) {
   if (name.includes("phổ thông") || name.includes("pt"))
     return "bg-sky-50 text-sky-700 border-sky-200"
   if (name.includes("quốc tế"))
-    return "bg-indigo-50 text-indigo-700 border-indigo-200"
+    return "bg-teal-50 text-teal-800 border-teal-200"
   if (name.includes("định kì") || name.includes("kiểm tra"))
     return "bg-emerald-50 text-emerald-700 border-emerald-200"
   if (name.includes("khảo sát") || name.includes("đbcl"))
-    return "bg-violet-50 text-violet-700 border-violet-200"
+    return "bg-teal-50 text-teal-800 border-teal-200"
   return "bg-slate-100 text-slate-700 border-slate-200"
 }
 
@@ -55,6 +55,7 @@ import {
   LayoutGrid,
   ChevronLeft,
   ChevronRight,
+  HelpCircle,
 } from "lucide-react"
 import {
   deleteTask,
@@ -83,6 +84,7 @@ import {
   QaSmartReminderModal,
   QaCapaActionModal,
 } from "./components/QaGovernanceModals"
+import { QaGuideModal } from "./components/QaGuideModal"
 import {
   WORKFLOW_STATUS_LABELS,
   type QaWorkspaceViewMode,
@@ -115,7 +117,7 @@ const PROGRESS_OPTIONS = [
 const PRIORITY_OPTIONS = [
   { value: "LOW", label: "Thấp", color: "text-slate-500 bg-slate-100" },
   { value: "MEDIUM", label: "Bình thường", color: "text-blue-700 bg-blue-50" },
-  { value: "HIGH", label: "Ưu tiên cao", color: "text-orange-700 bg-orange-100" },
+  { value: "HIGH", label: "Ưu tiên cao", color: "text-amber-800 bg-amber-50" },
   {
     value: "URGENT",
     label: "Khẩn cấp",
@@ -158,6 +160,7 @@ export function TasksClient({
 
   const [showAnalyticsModal, setShowAnalyticsModal] = useState(false)
   const [showReminderModal, setShowReminderModal] = useState(false)
+  const [showGuideModal, setShowGuideModal] = useState(false)
   const [recentReminders, setRecentReminders] = useState<any[]>(
     initialRecentReminders || []
   )
@@ -922,7 +925,7 @@ export function TasksClient({
       {/* TOP HEADER BAR — QA WORKSPACE | KT&ĐBCL */}
       <div className="bg-white p-5 rounded-3xl border border-slate-200/80 shadow-xs flex flex-col xl:flex-row xl:items-center justify-between gap-4">
         <div className="flex items-center gap-4">
-          <div className="w-12 h-12 rounded-2xl bg-violet-600 text-white flex items-center justify-center shadow-sm shrink-0">
+          <div className="w-12 h-12 rounded-2xl bg-teal-500 text-white flex items-center justify-center shadow-sm shrink-0">
             <ClipboardList className="w-6 h-6" />
           </div>
           <div>
@@ -930,7 +933,7 @@ export function TasksClient({
               <h1 className="text-xl sm:text-2xl font-extrabold text-slate-900 tracking-tight">
                 QA Workspace | KT&ĐBCL
               </h1>
-              <span className="text-xs px-2.5 py-0.5 bg-violet-100 text-violet-800 rounded-full font-extrabold">
+              <span className="text-xs px-2.5 py-0.5 bg-teal-50 text-teal-800 rounded-full font-extrabold">
                 {stats.total} nhiệm vụ
               </span>
               <span className="text-xs px-2.5 py-0.5 bg-emerald-100 text-emerald-800 rounded-full font-extrabold">
@@ -982,7 +985,7 @@ export function TasksClient({
                   onClick={() => setViewMode(m.id)}
                   className={`flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-extrabold transition-all whitespace-nowrap cursor-pointer ${
                     active
-                      ? "bg-violet-600 text-white shadow-xs"
+                      ? "bg-teal-500 text-white shadow-xs"
                       : "text-slate-600 hover:text-slate-900"
                   }`}
                 >
@@ -997,9 +1000,9 @@ export function TasksClient({
           <button
             type="button"
             onClick={() => setShowAssistantPanel(true)}
-            className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-2xl bg-violet-50 hover:bg-violet-100 text-violet-800 border border-violet-200 font-extrabold text-xs transition-all cursor-pointer"
+            className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-2xl bg-teal-50 hover:bg-teal-50 text-teal-800 border border-teal-200 font-extrabold text-xs transition-all cursor-pointer"
           >
-            <Sparkles className="w-4 h-4 text-violet-600" />
+            <Sparkles className="w-4 h-4 text-teal-800" />
             QA Assistant
           </button>
 
@@ -1011,6 +1014,17 @@ export function TasksClient({
           >
             <BarChart3 className="w-4 h-4 text-teal-600" />
             Báo cáo
+          </button>
+
+          {/* Nút Hướng dẫn Vận hành QA Workspace */}
+          <button
+            type="button"
+            onClick={() => setShowGuideModal(true)}
+            className="inline-flex items-center gap-1.5 px-3 py-2 rounded-2xl bg-teal-50 hover:bg-teal-100 text-[#003B3A] border border-teal-200/90 font-extrabold text-xs cursor-pointer shadow-2xs hover:shadow-xs transition-all"
+            title="Sổ tay quy chuẩn vận hành và hướng dẫn phân hệ QA Workspace"
+          >
+            <HelpCircle className="w-4 h-4 text-[#00A19A]" />
+            Hướng dẫn
           </button>
 
           {/* Nút Nhắc việc thông minh & Việc định kỳ (Mục VII) */}
@@ -1040,11 +1054,11 @@ export function TasksClient({
             </button>
           )}
 
-          {/* Nút hành động chính dùng màu tím thương hiệu SSM (#6D28D9 / bg-violet-600) */}
+          {/* Nút hành động chính dùng màu tím thương hiệu SSM (#6D28D9 / bg-teal-500) */}
           <button
             type="button"
             onClick={() => handleOpenNewAssignment()}
-            className="inline-flex items-center gap-1.5 bg-violet-600 hover:bg-violet-700 text-white px-4 py-2 rounded-2xl transition-all shadow-xs font-extrabold text-xs cursor-pointer"
+            className="inline-flex items-center gap-1.5 bg-teal-500 hover:bg-teal-500 text-white px-4 py-2 rounded-2xl transition-all shadow-xs font-extrabold text-xs cursor-pointer"
           >
             <Plus className="w-4 h-4" />
             Giao việc mới
@@ -1056,14 +1070,14 @@ export function TasksClient({
       <div className="bg-white p-3.5 rounded-2xl border border-slate-200/80 shadow-2xs flex flex-wrap items-center justify-between gap-3">
         <div className="flex items-center gap-1.5 overflow-x-auto pb-0.5">
           <span className="text-[11px] font-extrabold text-slate-400 uppercase tracking-wider shrink-0 mr-1 flex items-center gap-1">
-            <Layers className="w-3.5 h-3.5 text-violet-600" /> Phạm vi:
+            <Layers className="w-3.5 h-3.5 text-teal-800" /> Phạm vi:
           </span>
           <button
             type="button"
             onClick={() => setSelectedTeamFilter("ALL")}
             className={`px-3 py-1.5 rounded-xl font-extrabold text-xs whitespace-nowrap transition-all cursor-pointer ${
               selectedTeamFilter === "ALL"
-                ? "bg-violet-600 text-white shadow-2xs"
+                ? "bg-teal-500 text-white shadow-2xs"
                 : "bg-slate-100 text-slate-600 hover:bg-slate-200"
             }`}
           >
@@ -1088,7 +1102,7 @@ export function TasksClient({
                 }
                 className={`px-3 py-1.5 rounded-xl font-extrabold text-xs whitespace-nowrap transition-all cursor-pointer ${
                   isSelected
-                    ? "bg-violet-600 text-white shadow-2xs"
+                    ? "bg-teal-500 text-white shadow-2xs"
                     : "bg-slate-100 text-slate-600 hover:bg-slate-200"
                 }`}
               >
@@ -1124,8 +1138,8 @@ export function TasksClient({
             }
             className={`px-3 py-1.5 rounded-xl font-extrabold text-xs whitespace-nowrap transition-all flex items-center gap-1 cursor-pointer ${
               selectedTeamFilter === "PENDING_REVIEW"
-                ? "bg-violet-700 text-white"
-                : "bg-violet-50 text-violet-700 hover:bg-violet-100"
+                ? "bg-teal-500 text-white"
+                : "bg-teal-50 text-teal-800 hover:bg-teal-50"
             }`}
           >
             <ShieldCheck className="w-3.5 h-3.5" /> Chờ duyệt ({stats.pendingReview})
@@ -1134,8 +1148,8 @@ export function TasksClient({
 
         {/* Chọn Tổ chuyên môn mặc định, Tìm kiếm nhanh & lọc năm học / ưu tiên */}
         <div className="flex items-center gap-2 flex-wrap">
-          <div className="inline-flex items-center gap-1.5 bg-violet-50 border border-violet-200 rounded-xl px-2.5 py-1">
-            <span className="text-[11px] font-extrabold text-violet-800 whitespace-nowrap">
+          <div className="inline-flex items-center gap-1.5 bg-teal-50 border border-teal-200 rounded-xl px-2.5 py-1">
+            <span className="text-[11px] font-extrabold text-teal-800 whitespace-nowrap">
               Tổ chuyên môn:
             </span>
             <select
@@ -1144,7 +1158,7 @@ export function TasksClient({
                 setSelectedDepartment(e.target.value)
                 setModalMemberDeptFilter(e.target.value)
               }}
-              className="bg-transparent text-xs font-extrabold text-violet-900 outline-none cursor-pointer"
+              className="bg-transparent text-xs font-extrabold text-teal-800 outline-none cursor-pointer"
             >
               {(roles && roles.length > 0
                 ? roles
@@ -1161,7 +1175,7 @@ export function TasksClient({
               <button
                 type="button"
                 onClick={() => handleSetDefaultDepartment(selectedDepartment)}
-                className="px-2 py-0.5 rounded-lg bg-violet-600 hover:bg-violet-700 text-white text-[10px] font-extrabold whitespace-nowrap cursor-pointer"
+                className="px-2 py-0.5 rounded-lg bg-teal-500 hover:bg-teal-500 text-white text-[10px] font-extrabold whitespace-nowrap cursor-pointer"
                 title="Đặt Tổ chuyên môn này làm mặc định khi mở QA Workspace"
               >
                 Đặt mặc định
@@ -1182,7 +1196,7 @@ export function TasksClient({
               value={searchQuery}
               onChange={e => setSearchQuery(e.target.value)}
               placeholder="Tìm tên việc, người nhận, nhóm..."
-              className="w-full pl-8 pr-3 py-1.5 bg-slate-50 border border-slate-200 rounded-xl text-xs focus:border-violet-600 outline-none"
+              className="w-full pl-8 pr-3 py-1.5 bg-slate-50 border border-slate-200 rounded-xl text-xs focus:border-teal-200 outline-none"
             />
           </div>
           <select
@@ -1322,17 +1336,17 @@ export function TasksClient({
                   filterProgress === "PENDING_REVIEW" ? "ALL" : "PENDING_REVIEW"
                 )
               }
-              className="p-3.5 rounded-2xl border border-violet-200 bg-violet-50/70 cursor-pointer flex items-center justify-between"
+              className="p-3.5 rounded-2xl border border-teal-200 bg-teal-50/70 cursor-pointer flex items-center justify-between"
             >
               <div>
-                <div className="text-xl font-black text-violet-950">
+                <div className="text-xl font-black text-teal-800">
                   {stats.pendingReview}
                 </div>
-                <div className="text-xs font-bold text-violet-800">
+                <div className="text-xs font-bold text-teal-800">
                   Chờ duyệt (Chưa tính hoàn thành)
                 </div>
               </div>
-              <ShieldCheck className="w-5 h-5 text-violet-600" />
+              <ShieldCheck className="w-5 h-5 text-teal-800" />
             </div>
 
             <div
@@ -1419,7 +1433,7 @@ export function TasksClient({
                           </td>
                           <td className="p-3 space-y-1">
                             {t.taskGroup?.name && (
-                              <div className="text-[10px] font-extrabold text-violet-700 bg-violet-50 border border-violet-200 px-2 py-0.5 rounded-md w-fit">
+                              <div className="text-[10px] font-extrabold text-teal-800 bg-teal-50 border border-teal-200 px-2 py-0.5 rounded-md w-fit">
                                 {t.taskGroup.name}
                               </div>
                             )}
@@ -1446,7 +1460,7 @@ export function TasksClient({
                               <button
                                 type="button"
                                 onClick={() => setDetailTask(t)}
-                                className="font-bold text-slate-900 hover:text-violet-700 text-left cursor-pointer"
+                                className="font-bold text-slate-900 hover:text-teal-800 text-left cursor-pointer"
                               >
                                 {t.title}
                               </button>
@@ -1476,7 +1490,7 @@ export function TasksClient({
                                 onClick={() =>
                                   setSelectedMemberId(t.assignedToUser.id)
                                 }
-                                className="font-bold text-violet-700 hover:underline flex items-center gap-1 cursor-pointer"
+                                className="font-bold text-teal-800 hover:underline flex items-center gap-1 cursor-pointer"
                               >
                                 <User className="w-3.5 h-3.5" />
                                 {t.assignedToUser.fullName}
@@ -1516,7 +1530,7 @@ export function TasksClient({
                                 wfStatus === "COMPLETED"
                                   ? "bg-emerald-100 text-emerald-800"
                                   : wfStatus === "PENDING_REVIEW"
-                                  ? "bg-violet-100 text-violet-800"
+                                  ? "bg-teal-50 text-teal-800"
                                   : wfStatus === "NEEDS_REVISION"
                                   ? "bg-amber-100 text-amber-800"
                                   : wfStatus === "IN_PROGRESS"
@@ -1532,7 +1546,7 @@ export function TasksClient({
                               <button
                                 type="button"
                                 onClick={() => setDetailTask(t)}
-                                className="p-1.5 text-violet-600 hover:bg-violet-50 rounded-lg font-bold cursor-pointer"
+                                className="p-1.5 text-teal-800 hover:bg-teal-50 rounded-lg font-bold cursor-pointer"
                                 title="Mở chi tiết & nghiệm thu"
                               >
                                 <MessageSquare className="w-4 h-4" />
@@ -1602,8 +1616,8 @@ export function TasksClient({
               key: "PENDING_REVIEW",
               match: ["PENDING_REVIEW"],
               title: "Chờ duyệt nghiệm thu",
-              color: "border-violet-300 bg-violet-50/40",
-              badge: "bg-violet-600 text-white",
+              color: "border-teal-200 bg-teal-50/40",
+              badge: "bg-teal-500 text-white",
             },
             {
               key: "NEEDS_REVISION",
@@ -1647,7 +1661,7 @@ export function TasksClient({
                       <div
                         key={t.id}
                         onClick={() => setDetailTask(t)}
-                        className="p-3.5 bg-white rounded-xl border border-slate-200 shadow-2xs hover:border-violet-400 transition-all cursor-pointer space-y-2"
+                        className="p-3.5 bg-white rounded-xl border border-slate-200 shadow-2xs hover:border-teal-200 transition-all cursor-pointer space-y-2"
                       >
                         <div className="flex items-center justify-between gap-1 flex-wrap">
                           <span className="text-[10px] font-bold px-2 py-0.5 rounded bg-slate-100 text-slate-700">
@@ -1690,7 +1704,7 @@ export function TasksClient({
           <div className="flex items-center justify-between flex-wrap gap-3">
             <div>
               <h3 className="font-extrabold text-base text-slate-900 flex items-center gap-2">
-                <Calendar className="w-5 h-5 text-violet-600" />
+                <Calendar className="w-5 h-5 text-teal-800" />
                 Lịch Điều hành & Mốc Bàn giao Nhiệm vụ — Tháng{" "}
                 {calendarMonth.getMonth() + 1}/{calendarMonth.getFullYear()}
               </h3>
@@ -1769,7 +1783,7 @@ export function TasksClient({
                   key={idx}
                   className={`min-h-[104px] rounded-xl border p-2 flex flex-col justify-between ${
                     isToday
-                      ? "border-violet-500 bg-violet-50/20"
+                      ? "border-teal-200 bg-teal-50/20"
                       : "border-slate-200 bg-white"
                   }`}
                 >
@@ -1777,14 +1791,14 @@ export function TasksClient({
                     <span
                       className={`text-xs font-extrabold ${
                         isToday
-                          ? "w-6 h-6 rounded-full bg-violet-600 text-white flex items-center justify-center"
+                          ? "w-6 h-6 rounded-full bg-teal-500 text-white flex items-center justify-center"
                           : "text-slate-700"
                       }`}
                     >
                       {cell.date.getDate()}
                     </span>
                     {cell.tasks.length > 0 && (
-                      <span className="text-[10px] font-bold text-violet-700">
+                      <span className="text-[10px] font-bold text-teal-800">
                         {cell.tasks.length} việc
                       </span>
                     )}
@@ -1800,7 +1814,7 @@ export function TasksClient({
                             ? "bg-emerald-100 text-emerald-900"
                             : t.deadlineInfo?.isOverdue
                             ? "bg-rose-100 text-rose-900"
-                            : "bg-violet-100 text-violet-900"
+                            : "bg-teal-50 text-teal-800"
                         }`}
                       >
                         {t.title}
@@ -1921,7 +1935,13 @@ export function TasksClient({
         onSaved={() => window.location.reload()}
       />
 
-      {/* 8. Modal Quản lý Nhóm, Điều phối viên, Thành viên & Phân quyền (Mục III) */}
+      {/* 8. Modal Sổ tay Vận hành & Hướng dẫn QA Workspace Ban KT&ĐBCL */}
+      <QaGuideModal
+        isOpen={showGuideModal}
+        onClose={() => setShowGuideModal(false)}
+      />
+
+      {/* 9. Modal Quản lý Nhóm, Điều phối viên, Thành viên & Phân quyền (Mục III) */}
       {showCategoryManager && (
         <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-sm flex items-center justify-center z-50 p-4">
           <div className="bg-white rounded-3xl shadow-2xl max-w-3xl w-full max-h-[92vh] flex flex-col overflow-hidden border border-slate-200">
@@ -1948,17 +1968,17 @@ export function TasksClient({
                   onClick={() => setCatTab("groups")}
                   className={`flex-1 py-2 px-3 rounded-lg text-xs font-extrabold transition-all flex items-center justify-center gap-1.5 ${
                     catTab === "groups"
-                      ? "bg-white text-violet-700 shadow-xs"
+                      ? "bg-white text-teal-800 shadow-xs"
                       : "text-slate-600 hover:text-slate-900"
                   }`}
                 >
-                  <Users className="w-4 h-4 text-violet-600" /> 1. Nhóm & Điều phối viên ({taskGroupsList.length})
+                  <Users className="w-4 h-4 text-teal-800" /> 1. Nhóm & Điều phối viên ({taskGroupsList.length})
                 </button>
                 <button
                   onClick={() => setCatTab("categories")}
                   className={`flex-1 py-2 px-3 rounded-lg text-xs font-extrabold transition-all flex items-center justify-center gap-1.5 ${
                     catTab === "categories"
-                      ? "bg-white text-violet-700 shadow-xs"
+                      ? "bg-white text-teal-800 shadow-xs"
                       : "text-slate-600 hover:text-slate-900"
                   }`}
                 >
@@ -1968,11 +1988,11 @@ export function TasksClient({
                   onClick={() => setCatTab("settings")}
                   className={`flex-1 py-2 px-3 rounded-lg text-xs font-extrabold transition-all flex items-center justify-center gap-1.5 ${
                     catTab === "settings"
-                      ? "bg-white text-violet-700 shadow-xs"
+                      ? "bg-white text-teal-800 shadow-xs"
                       : "text-slate-600 hover:text-slate-900"
                   }`}
                 >
-                  <Settings className="w-4 h-4 text-purple-600" /> 3. Phân quyền Workspace
+                  <Settings className="w-4 h-4 text-teal-800" /> 3. Phân quyền Workspace
                 </button>
               </div>
             </div>
@@ -1981,15 +2001,15 @@ export function TasksClient({
             {catTab === "groups" && (
               <div className="p-5 overflow-y-auto space-y-4 flex-1">
                 {/* Bộ lọc Tổ chuyên môn mặc định cho danh sách nhân sự */}
-                <div className="p-3 bg-violet-50/70 border border-violet-200 rounded-2xl flex flex-wrap items-center justify-between gap-2 text-xs">
-                  <div className="font-extrabold text-violet-900">
+                <div className="p-3 bg-teal-50/70 border border-teal-200 rounded-2xl flex flex-wrap items-center justify-between gap-2 text-xs">
+                  <div className="font-extrabold text-teal-800">
                     Lọc nhân sự theo Tổ chuyên môn (Mặc định: {defaultDepartment})
                   </div>
                   <div className="flex items-center gap-2">
                     <select
                       value={modalMemberDeptFilter}
                       onChange={e => setModalMemberDeptFilter(e.target.value)}
-                      className="border border-violet-300 rounded-xl px-2.5 py-1.5 bg-white font-extrabold text-violet-900"
+                      className="border border-teal-200 rounded-xl px-2.5 py-1.5 bg-white font-extrabold text-teal-800"
                     >
                       {(roles && roles.length > 0
                         ? roles
@@ -2008,7 +2028,7 @@ export function TasksClient({
                           onClick={() =>
                             handleSetDefaultDepartment(modalMemberDeptFilter)
                           }
-                          className="px-2.5 py-1.5 rounded-xl bg-violet-600 text-white font-extrabold cursor-pointer"
+                          className="px-2.5 py-1.5 rounded-xl bg-teal-500 text-white font-extrabold cursor-pointer"
                         >
                           Đặt làm Tổ mặc định
                         </button>
@@ -2037,7 +2057,7 @@ export function TasksClient({
                       />
                     </div>
                     <div>
-                      <label className="block font-bold text-violet-800 mb-1">
+                      <label className="block font-bold text-teal-800 mb-1">
                         1. Chọn Tổ CM *
                       </label>
                       <select
@@ -2046,7 +2066,7 @@ export function TasksClient({
                           setGroupDeptInput(e.target.value)
                           setModalMemberDeptFilter(e.target.value)
                         }}
-                        className="w-full border border-violet-300 rounded-xl p-2 bg-violet-50 font-extrabold text-violet-900"
+                        className="w-full border border-teal-200 rounded-xl p-2 bg-teal-50 font-extrabold text-teal-800"
                       >
                         {(roles && roles.length > 0
                           ? roles
@@ -2101,7 +2121,7 @@ export function TasksClient({
                     <div className="flex items-center justify-between flex-wrap gap-2">
                       <label className="font-bold text-slate-700">
                         3. Chọn thành viên tham gia nhóm từ Tổ{" "}
-                        <span className="text-violet-700 font-extrabold">
+                        <span className="text-teal-800 font-extrabold">
                           {groupDeptInput === "ALL" ? "Toàn trường" : groupDeptInput}
                         </span>{" "}
                         ({groupMemberIdsInput.length} thành viên đã chọn)
@@ -2119,7 +2139,7 @@ export function TasksClient({
                               Array.from(new Set([...prev, ...deptUserIds]))
                             )
                           }}
-                          className="text-[11px] font-bold text-violet-700 hover:underline cursor-pointer"
+                          className="text-[11px] font-bold text-teal-800 hover:underline cursor-pointer"
                         >
                           + Chọn tất cả nhân sự Tổ này
                         </button>
@@ -2156,7 +2176,7 @@ export function TasksClient({
                               }
                               className={`px-2.5 py-1 rounded-lg text-xs font-semibold transition-all cursor-pointer flex items-center gap-1 ${
                                 selected
-                                  ? "bg-violet-600 text-white shadow-2xs"
+                                  ? "bg-teal-500 text-white shadow-2xs"
                                   : "bg-slate-100 hover:bg-slate-200 text-slate-700"
                               }`}
                             >
@@ -2190,7 +2210,7 @@ export function TasksClient({
                       type="button"
                       disabled={savingGroup}
                       onClick={handleSaveTaskGroup}
-                      className="px-4 py-1.5 rounded-xl bg-violet-600 hover:bg-violet-700 text-white text-xs font-extrabold cursor-pointer"
+                      className="px-4 py-1.5 rounded-xl bg-teal-500 hover:bg-teal-500 text-white text-xs font-extrabold cursor-pointer"
                     >
                       {groupEditId ? "Lưu cập nhật nhóm" : "+ Tạo nhóm mới"}
                     </button>
@@ -2222,7 +2242,7 @@ export function TasksClient({
                           <div>
                             <div className="font-extrabold text-sm text-slate-900 flex items-center gap-2">
                               <span>{g.name}</span>
-                              <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-violet-50 text-violet-700 border border-violet-200">
+                              <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-teal-50 text-teal-800 border border-teal-200">
                                 Tổ CM: {g.department || defaultDepartment}
                               </span>
                             </div>
@@ -2241,7 +2261,7 @@ export function TasksClient({
                                 )
                                 handleOpenAssignModal(g)
                               }}
-                              className="px-3 py-1.5 rounded-xl bg-violet-50 text-violet-700 border border-violet-200 text-xs font-bold cursor-pointer"
+                              className="px-3 py-1.5 rounded-xl bg-teal-50 text-teal-800 border border-teal-200 text-xs font-bold cursor-pointer"
                             >
                               Chọn Tổ CM & Gán thành viên ({members.length})
                             </button>
@@ -2281,7 +2301,7 @@ export function TasksClient({
                             onChange={e =>
                               setModalMemberDeptFilter(e.target.value)
                             }
-                            className="p-1.5 border border-violet-300 rounded-lg bg-violet-50 text-violet-900 font-extrabold"
+                            className="p-1.5 border border-teal-200 rounded-lg bg-teal-50 text-teal-800 font-extrabold"
                           >
                             {(roles && roles.length > 0
                               ? roles
@@ -2363,7 +2383,7 @@ export function TasksClient({
                     <button
                       type="button"
                       onClick={handleSaveCategory}
-                      className="bg-violet-600 text-white rounded-xl font-bold px-4 py-2"
+                      className="bg-teal-500 text-white rounded-xl font-bold px-4 py-2"
                     >
                       {catEditId ? "Cập nhật" : "+ Thêm danh mục"}
                     </button>
@@ -2392,8 +2412,8 @@ export function TasksClient({
             {/* TAB 3: PHÂN QUYỀN WORKSPACE */}
             {catTab === "settings" && (
               <div className="p-5 overflow-y-auto space-y-4 flex-1 text-xs">
-                <div className="p-4 bg-violet-50/70 border border-violet-200 rounded-2xl space-y-2.5">
-                  <div className="font-extrabold text-violet-950">
+                <div className="p-4 bg-teal-50/70 border border-teal-200 rounded-2xl space-y-2.5">
+                  <div className="font-extrabold text-teal-800">
                     Tổ chuyên môn mặc định của QA Workspace
                   </div>
                   <p className="text-[11px] text-slate-600">
@@ -2408,7 +2428,7 @@ export function TasksClient({
                           defaultDepartment: e.target.value,
                         })
                       }
-                      className="border border-violet-300 rounded-xl px-3 py-2 bg-white font-extrabold text-violet-900"
+                      className="border border-teal-200 rounded-xl px-3 py-2 bg-white font-extrabold text-teal-800"
                     >
                       {(roles && roles.length > 0
                         ? roles
@@ -2471,7 +2491,7 @@ export function TasksClient({
                     type="button"
                     disabled={savingSettings}
                     onClick={handleSaveDepartmentSettings}
-                    className="px-5 py-2.5 rounded-xl bg-violet-600 text-white font-extrabold cursor-pointer"
+                    className="px-5 py-2.5 rounded-xl bg-teal-500 text-white font-extrabold cursor-pointer"
                   >
                     {savingSettings ? "Đang lưu..." : "Lưu Cấu hình Phân quyền"}
                   </button>
@@ -2488,7 +2508,7 @@ export function TasksClient({
                       <h3 className="font-extrabold text-sm text-slate-900">
                         Phân công Thành viên vào Nhóm
                       </h3>
-                      <p className="text-xs text-violet-700 font-bold">
+                      <p className="text-xs text-teal-800 font-bold">
                         {selectedGroupForAssign.name}
                       </p>
                     </div>
@@ -2500,12 +2520,12 @@ export function TasksClient({
                     </button>
                   </div>
 
-                  <div className="flex items-center justify-between gap-2 text-xs bg-violet-50 border border-violet-200 rounded-xl px-3 py-2">
-                    <span className="font-bold text-violet-900">Tổ chuyên môn:</span>
+                  <div className="flex items-center justify-between gap-2 text-xs bg-teal-50 border border-teal-200 rounded-xl px-3 py-2">
+                    <span className="font-bold text-teal-800">Tổ chuyên môn:</span>
                     <select
                       value={modalMemberDeptFilter}
                       onChange={e => setModalMemberDeptFilter(e.target.value)}
-                      className="bg-white border border-violet-300 rounded-lg px-2 py-1 font-extrabold text-violet-900"
+                      className="bg-white border border-teal-200 rounded-lg px-2 py-1 font-extrabold text-teal-800"
                     >
                       {(roles && roles.length > 0
                         ? roles
@@ -2556,7 +2576,7 @@ export function TasksClient({
                               type="checkbox"
                               checked={isSelected}
                               readOnly
-                              className="w-4 h-4 rounded text-violet-600"
+                              className="w-4 h-4 rounded text-teal-800"
                             />
                           </div>
                         )
@@ -2572,7 +2592,7 @@ export function TasksClient({
                     <button
                       onClick={handleSaveGroupAssignment}
                       disabled={savingGroup}
-                      className="bg-violet-600 text-white px-5 py-2 rounded-xl text-xs font-bold"
+                      className="bg-teal-500 text-white px-5 py-2 rounded-xl text-xs font-bold"
                     >
                       {savingGroup
                         ? "Đang lưu..."

@@ -21,7 +21,7 @@ export function SyncButton({ syncAction }: { syncAction: any }) {
        <button 
           onClick={handleSync}
           disabled={loading || done}
-          className={`flex items-center gap-2 px-6 py-3 rounded-2xl font-bold transition-all ${done ? 'bg-emerald-100 text-emerald-600' : 'bg-slate-900 text-white hover:bg-indigo-600'}`}
+          className={`flex items-center gap-2 px-6 py-3 rounded-2xl font-bold transition-all ${done ? 'bg-emerald-100 text-emerald-600' : 'bg-slate-900 text-white hover:bg-[#003B3A]'}`}
        >
           {loading ? <Loader2 className="w-5 h-5 animate-spin" /> : done ? <CheckCircle2 className="w-5 h-5" /> : <RefreshCcw className="w-5 h-5" />}
           {loading ? "Đang xử lý..." : done ? "Đã hoàn thành" : "Đồng bộ Ngay"}

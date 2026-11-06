@@ -30,7 +30,7 @@ export const ROLE_GROUPS = [
     id: "ADMIN_EXEC",
     label: "👑 Quản trị & Điều hành",
     codes: ["ADMIN", "TB_DHCM", "GDCS"],
-    color: "border-purple-200 text-purple-700 bg-purple-50/50"
+    color: "border-teal-200 text-teal-800 bg-teal-50/50"
   },
   {
     id: "ACADEMIC",
@@ -490,7 +490,7 @@ export function RolesClient({ initialRoles }: any) {
   };
 
   const colorStyles: Record<string, { bg: string, text: string, border: string, btn: string }> = {
-    violet: { bg: "bg-violet-50/80", text: "text-violet-800", border: "border-violet-200", btn: "hover:bg-violet-100 text-violet-700" },
+    violet: { bg: "bg-teal-50/80", text: "text-teal-800", border: "border-teal-200", btn: "hover:bg-teal-50 text-teal-800" },
     blue: { bg: "bg-blue-50/80", text: "text-blue-800", border: "border-blue-200", btn: "hover:bg-blue-100 text-blue-700" },
     sky: { bg: "bg-sky-50/80", text: "text-sky-800", border: "border-sky-200", btn: "hover:bg-sky-100 text-sky-700" },
     emerald: { bg: "bg-emerald-50/80", text: "text-emerald-800", border: "border-emerald-200", btn: "hover:bg-emerald-100 text-emerald-700" },
@@ -725,10 +725,10 @@ export function RolesClient({ initialRoles }: any) {
                 <span className="w-px bg-slate-200 my-1 mx-0.5"></span>
 
                 {/* Academic & Management */}
-                <button onClick={() => applyPreset('TB_DHCM')} className="px-2.5 py-1.5 border border-purple-200 text-purple-800 bg-purple-50/80 hover:bg-purple-100 rounded-lg text-xs font-bold transition-colors cursor-pointer">
+                <button onClick={() => applyPreset('TB_DHCM')} className="px-2.5 py-1.5 border border-teal-200 text-teal-800 bg-teal-50/80 hover:bg-teal-50 rounded-lg text-xs font-bold transition-colors cursor-pointer">
                   Trưởng Ban ĐHCM
                 </button>
-                <button onClick={() => applyPreset('TBP')} className="px-2.5 py-1.5 border border-indigo-200 text-indigo-800 bg-indigo-50/80 hover:bg-indigo-100 rounded-lg text-xs font-bold transition-colors cursor-pointer">
+                <button onClick={() => applyPreset('TBP')} className="px-2.5 py-1.5 border border-teal-200 text-teal-800 bg-teal-50/80 hover:bg-teal-50 rounded-lg text-xs font-bold transition-colors cursor-pointer">
                   Trưởng Bộ Phận (TBP)
                 </button>
                 <button onClick={() => applyPreset('TTCM')} className="px-2.5 py-1.5 border border-amber-200 text-amber-800 bg-amber-50/80 hover:bg-amber-100 rounded-lg text-xs font-bold transition-colors cursor-pointer">
@@ -740,7 +740,7 @@ export function RolesClient({ initialRoles }: any) {
                 <button onClick={() => applyPreset('KTDBCL')} className="px-2.5 py-1.5 border border-cyan-200 text-cyan-800 bg-cyan-50/80 hover:bg-cyan-100 rounded-lg text-xs font-bold transition-colors cursor-pointer">
                   Khảo Thí & ĐBCL
                 </button>
-                <button onClick={() => applyPreset('BGH_MN')} className="px-2.5 py-1.5 border border-purple-200 text-purple-700 bg-purple-50/60 hover:bg-purple-100 rounded-lg text-xs font-bold transition-colors cursor-pointer">
+                <button onClick={() => applyPreset('BGH_MN')} className="px-2.5 py-1.5 border border-teal-200 text-teal-800 bg-teal-50/60 hover:bg-teal-50 rounded-lg text-xs font-bold transition-colors cursor-pointer">
                   BGH Mầm non
                 </button>
                 <button onClick={() => applyPreset('GIAO_VU')} className="px-2.5 py-1.5 border border-blue-200 text-blue-700 bg-blue-50/60 hover:bg-blue-100 rounded-lg text-xs font-bold transition-colors cursor-pointer">

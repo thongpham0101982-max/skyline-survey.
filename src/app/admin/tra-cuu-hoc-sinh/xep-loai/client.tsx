@@ -243,13 +243,13 @@ export default function XepLoaiClient() {
           onClick={() => { setSelectedRating(selectedRating === "XUAT_SAC" ? "all" : "XUAT_SAC"); setPage(1); }}
           className={`p-4 rounded-2xl border transition cursor-pointer shadow-xs ${
             selectedRating === "XUAT_SAC"
-              ? "bg-purple-50/80 border-purple-400 ring-2 ring-purple-400/30"
-              : "bg-white border-slate-200/80 hover:border-purple-300"
+              ? "bg-teal-50/80 border-teal-400 ring-2 ring-purple-400/30"
+              : "bg-white border-slate-200/80 hover:border-teal-400"
           }`}
         >
           <div className="flex items-center justify-between mb-2">
-            <span className="text-[11px] font-extrabold text-purple-700 uppercase tracking-wider">Xuất sắc</span>
-            <Sparkles className="w-4 h-4 text-purple-500" />
+            <span className="text-[11px] font-extrabold text-teal-800 uppercase tracking-wider">Xuất sắc</span>
+            <Sparkles className="w-4 h-4 text-teal-700" />
           </div>
           <div className="text-2xl font-extrabold text-slate-800">{distribution.XUAT_SAC}</div>
           <div className="text-[11px] text-slate-400 mt-1 font-medium">Học sinh đạt chuẩn</div>
@@ -416,8 +416,8 @@ export default function XepLoaiClient() {
               onClick={() => { setActiveTab("honor"); setPage(1); }}
               className={`px-3.5 py-1.5 rounded-xl text-xs font-bold transition flex items-center gap-1.5 ${
                 activeTab === "honor"
-                  ? "bg-purple-700 text-white shadow-xs"
-                  : "bg-purple-50 text-purple-700 hover:bg-purple-100"
+                  ? "bg-[#003B3A] text-white shadow-xs"
+                  : "bg-teal-50 text-teal-800 hover:bg-teal-50"
               }`}
             >
               <Trophy className="w-3.5 h-3.5" />
@@ -510,7 +510,7 @@ export default function XepLoaiClient() {
                         <span
                           className={`inline-block px-2.5 py-1 rounded-full text-xs font-bold ${
                             isTop
-                              ? "bg-purple-100 text-purple-800 border border-purple-200"
+                              ? "bg-teal-50 text-teal-800 border border-teal-200"
                               : isGood
                               ? "bg-emerald-100 text-emerald-800 border border-emerald-200"
                               : isLow

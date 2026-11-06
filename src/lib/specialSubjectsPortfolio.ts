@@ -111,6 +111,33 @@ export const SPECIAL_SUBJECTS_CATALOG_META: Record<
   },
 };
 
+export const SPECIAL_SUBJECT_GRADES: Record<string, string[]> = {
+  CXXH: ["1", "2", "3", "4", "5", "6", "7", "8", "9"],
+  FIN_EDU: ["1", "2", "3", "4", "5", "6", "7", "8", "9"],
+  GDGT: ["6", "7", "8", "9"],
+  GDHN: ["6", "7", "8", "9", "10", "11", "12"]
+};
+
+export const SPECIAL_SUBJECT_SCOPE_LABELS: Record<string, string> = {
+  CXXH: "Khối 1–9 (Tiểu học & THCS)",
+  FIN_EDU: "Khối 1–9 (Tiểu học & THCS)",
+  GDGT: "Khối 6–9 (THCS)",
+  GDHN: "Khối 6–12 (THCS & THPT)"
+};
+
+export function getSpecialSubjectGrades(subjectCode?: string): string[] {
+  const code = (subjectCode || "").toUpperCase().trim();
+  if (code === "GDHN") return ["6", "7", "8", "9", "10", "11", "12"];
+  if (code === "GDGT") return ["6", "7", "8", "9"];
+  if (code === "CXXH" || code === "FIN_EDU") return ["1", "2", "3", "4", "5", "6", "7", "8", "9"];
+  return ["1", "2", "3", "4", "5", "6", "7", "8", "9", "10", "11", "12"];
+}
+
+export function isGradeApplicableForSubject(grade: string | number, subjectCode?: string): boolean {
+  const g = String(grade || "").replace(/\D/g, "");
+  return getSpecialSubjectGrades(subjectCode).includes(g);
+}
+
 export function formatSpecialEvalLabel(rawResult?: string | null): string {
   if (!rawResult) return "Chưa đánh giá";
   const norm = String(rawResult).toUpperCase().trim();

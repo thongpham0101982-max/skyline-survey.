@@ -387,7 +387,7 @@ export function StudentsClient({ exams, campuses, classes, academicYears }: Stud
               value={selectedExam}
               onChange={(e) => setSelectedExam(e.target.value)}
               disabled={filteredExams.length === 0}
-              className="w-full border border-slate-200 rounded-lg px-3 py-2.5 text-xs outline-none bg-slate-50 focus:bg-white focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500/20 font-semibold text-slate-700 transition-all cursor-pointer shadow-sm disabled:opacity-50 disabled:cursor-not-allowed"
+              className="w-full border border-slate-200 rounded-lg px-3 py-2.5 text-xs outline-none bg-slate-50 focus:bg-white focus:border-teal-200 focus:ring-2 focus:ring-indigo-500/20 font-semibold text-slate-700 transition-all cursor-pointer shadow-sm disabled:opacity-50 disabled:cursor-not-allowed"
             >
               <option value="">-- Chọn kỳ thi --</option>
               {filteredExams.length === 0 ? (
@@ -411,7 +411,7 @@ export function StudentsClient({ exams, campuses, classes, academicYears }: Stud
                 setSelectedCampus(e.target.value)
                 setSelectedClass("")
               }}
-              className="w-full border border-slate-200 rounded-lg px-3 py-2.5 text-xs outline-none bg-slate-50 focus:bg-white focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500/20 font-semibold text-slate-700 transition-all cursor-pointer shadow-sm"
+              className="w-full border border-slate-200 rounded-lg px-3 py-2.5 text-xs outline-none bg-slate-50 focus:bg-white focus:border-teal-200 focus:ring-2 focus:ring-indigo-500/20 font-semibold text-slate-700 transition-all cursor-pointer shadow-sm"
             >
               <option value="">-- Chọn cơ sở --</option>
               {campuses.map((c) => (
@@ -431,7 +431,7 @@ export function StudentsClient({ exams, campuses, classes, academicYears }: Stud
                 setSelectedGrade(e.target.value)
                 setSelectedClass("")
               }}
-              className="w-full border border-slate-200 rounded-lg px-3 py-2.5 text-xs outline-none bg-slate-50 focus:bg-white focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500/20 font-semibold text-slate-700 transition-all cursor-pointer shadow-sm"
+              className="w-full border border-slate-200 rounded-lg px-3 py-2.5 text-xs outline-none bg-slate-50 focus:bg-white focus:border-teal-200 focus:ring-2 focus:ring-indigo-500/20 font-semibold text-slate-700 transition-all cursor-pointer shadow-sm"
             >
               <option value="">-- Chọn khối --</option>
               {allowedGrades.map((g) => (
@@ -449,7 +449,7 @@ export function StudentsClient({ exams, campuses, classes, academicYears }: Stud
               value={selectedClass}
               onChange={(e) => setSelectedClass(e.target.value)}
               disabled={!showAllRegistered && filteredClasses.length === 0}
-              className="w-full border border-slate-200 rounded-lg px-3 py-2.5 text-xs outline-none bg-slate-50 focus:bg-white focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500/20 font-semibold text-slate-700 transition-all cursor-pointer shadow-sm disabled:opacity-50 disabled:cursor-not-allowed"
+              className="w-full border border-slate-200 rounded-lg px-3 py-2.5 text-xs outline-none bg-slate-50 focus:bg-white focus:border-teal-200 focus:ring-2 focus:ring-indigo-500/20 font-semibold text-slate-700 transition-all cursor-pointer shadow-sm disabled:opacity-50 disabled:cursor-not-allowed"
             >
               <option value="">-- Chọn lớp --</option>
               {showAllRegistered ? (
@@ -488,12 +488,12 @@ export function StudentsClient({ exams, campuses, classes, academicYears }: Stud
               </div>
 
               <div className="bg-white rounded-2xl p-4 border border-slate-200/80 shadow-xs flex items-center gap-3 animate-fade-in">
-                <div className="w-9 h-9 rounded-xl bg-indigo-50 text-indigo-600 flex items-center justify-center border border-indigo-100/50">
+                <div className="w-9 h-9 rounded-xl bg-teal-50 text-teal-800 flex items-center justify-center border border-teal-100/50">
                   <Users className="w-5 h-5" />
                 </div>
                 <div>
                   <div className="text-[10px] text-slate-400 font-bold uppercase tracking-wider">HS Đăng Ký theo Bộ lọc</div>
-                  <div className="text-base font-black text-indigo-600 mt-0.5">{currentFilteredCount}</div>
+                  <div className="text-base font-black text-teal-800 mt-0.5">{currentFilteredCount}</div>
                 </div>
               </div>
 
@@ -693,8 +693,8 @@ export function StudentsClient({ exams, campuses, classes, academicYears }: Stud
                           </div>
                           <span className="truncate max-w-[220px]">{student.studentName}</span>
                           {student.studentType === "GIAO_LUU" && (
-                            <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[9.5px] font-black bg-purple-100 text-purple-700 border border-purple-200 shrink-0" title="Học sinh giao lưu">
-                              <Sparkles className="w-2.5 h-2.5 text-purple-600" />
+                            <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[9.5px] font-black bg-teal-50 text-teal-800 border border-teal-200 shrink-0" title="Học sinh giao lưu">
+                              <Sparkles className="w-2.5 h-2.5 text-teal-800" />
                               Giao lưu
                             </span>
                           )}
@@ -741,7 +741,7 @@ export function StudentsClient({ exams, campuses, classes, academicYears }: Stud
         {filteredStudents.length > 0 && (
           <div className="bg-slate-50/80 border-t border-slate-100 px-6 py-4 flex flex-col sm:flex-row items-center justify-between gap-4 mt-auto rounded-b-2xl">
             <p className="text-xs font-bold text-slate-500">
-              Hiển thị <strong className="text-indigo-700">{(currentPage - 1) * rowsPerPage + 1}</strong> đến <strong className="text-indigo-700">{Math.min(currentPage * rowsPerPage, filteredStudents.length)}</strong> trong tổng số <strong className="text-slate-800">{filteredStudents.length}</strong> học sinh
+              Hiển thị <strong className="text-teal-800">{(currentPage - 1) * rowsPerPage + 1}</strong> đến <strong className="text-teal-800">{Math.min(currentPage * rowsPerPage, filteredStudents.length)}</strong> trong tổng số <strong className="text-slate-800">{filteredStudents.length}</strong> học sinh
             </p>
             <div className="flex items-center gap-1">
               {Array.from({ length: totalPages }, (_, i) => i + 1)
@@ -755,7 +755,7 @@ export function StudentsClient({ exams, campuses, classes, academicYears }: Stud
                       onClick={() => setCurrentPage(p)}
                       className={`w-7 h-7 mx-0.5 flex items-center justify-center rounded-md text-xs font-bold transition-all ${
                         currentPage === p
-                          ? 'bg-indigo-600 text-white shadow-sm'
+                          ? 'bg-[#003B3A] text-white shadow-sm'
                           : 'text-slate-600 hover:bg-slate-100 hover:text-slate-900'
                       }`}
                     >

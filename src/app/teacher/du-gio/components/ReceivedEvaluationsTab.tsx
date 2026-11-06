@@ -658,7 +658,7 @@ export function ReceivedEvaluationsTab({
             onClick={() => setSelectedEvalRole("TEACHER")}
             className={`px-3 py-1.5 rounded-xl text-xs font-black transition-all cursor-pointer flex items-center gap-1 ${
               selectedEvalRole === "TEACHER"
-                ? "bg-gradient-to-r from-amber-600 to-orange-600 text-white shadow-xs"
+                ? "bg-gradient-to-r from-amber-600 to-amber-600 text-white shadow-xs"
                 : "bg-amber-50 hover:bg-amber-100 text-amber-900 border border-amber-200"
             }`}
           >
@@ -801,7 +801,7 @@ export function ReceivedEvaluationsTab({
               <Info className="w-3 h-3 text-slate-300" />
             </div>
             <div className="flex items-baseline gap-2 flex-wrap">
-              <p className="text-3xl font-black text-indigo-700 tracking-tight">{activeEvalsCount}</p>
+              <p className="text-3xl font-black text-teal-800 tracking-tight">{activeEvalsCount}</p>
               {surpriseTotalCount > 0 && selectedOriginType === "ALL" && (
                 <span className="text-[11px] font-black text-rose-600 bg-rose-50 border border-rose-200 px-2 py-0.5 rounded-full shadow-2xs">
                   ⚡ {surpriseTotalCount} đột xuất
@@ -809,7 +809,7 @@ export function ReceivedEvaluationsTab({
               )}
             </div>
           </div>
-          <div className="w-12 h-12 rounded-2xl bg-indigo-50 text-indigo-600 flex items-center justify-center border border-indigo-100 shadow-2xs">
+          <div className="w-12 h-12 rounded-2xl bg-teal-50 text-teal-800 flex items-center justify-center border border-teal-200 shadow-2xs">
             <Users className="w-6 h-6" />
           </div>
         </div>

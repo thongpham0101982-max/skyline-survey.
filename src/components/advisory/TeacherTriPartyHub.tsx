@@ -682,25 +682,25 @@ export default function TeacherTriPartyHub({
         </div>
 
         {/* CỘT 4: PHIẾU TỰ PHẢN TƯ CỦA HỌC SINH & PHẢN HỒI CVHT */}
-        <div className="p-4 rounded-2xl bg-indigo-50/40 border border-indigo-200/80 space-y-3">
+        <div className="p-4 rounded-2xl bg-teal-50/40 border border-teal-200/80 space-y-3">
           <div className="flex items-center justify-between gap-2">
-            <span className="text-xs font-black text-indigo-950 uppercase flex items-center gap-1.5">
-              <Feather className="w-4 h-4 text-indigo-600" />
+            <span className="text-xs font-black text-teal-800 uppercase flex items-center gap-1.5">
+              <Feather className="w-4 h-4 text-teal-800" />
               <span>4. Phiếu Tự Phản Tư Của Học Sinh ({reflections.length})</span>
             </span>
-            <span className="text-[10px] font-bold text-indigo-800 bg-white px-2.5 py-0.5 rounded-full border border-indigo-200">
+            <span className="text-[10px] font-bold text-teal-800 bg-white px-2.5 py-0.5 rounded-full border border-teal-200">
               {reflections.filter(r => r.shareWithParent).length} chia sẻ PHHS
             </span>
           </div>
 
           {reflections.length === 0 ? (
-            <div className="p-4 rounded-xl bg-white border border-dashed border-indigo-200 text-center text-xs text-slate-400">
+            <div className="p-4 rounded-xl bg-white border border-dashed border-teal-200 text-center text-xs text-slate-400">
               Học sinh chưa gửi phiếu tự phản tư cá nhân nào.
             </div>
           ) : (
             <div className="space-y-2.5 max-h-48 overflow-y-auto pr-1">
               {reflections.slice(0, 5).map(ref => (
-                <div key={ref.id} className="p-3 rounded-xl bg-white border border-indigo-200/80 text-xs space-y-1.5">
+                <div key={ref.id} className="p-3 rounded-xl bg-white border border-teal-200/80 text-xs space-y-1.5">
                   <div className="flex items-center justify-between gap-2">
                     <span className="text-[10px] font-black text-slate-500">
                       {ref.createdAt ? new Date(ref.createdAt).toLocaleDateString("vi-VN") : "—"} • {ref.selfRating || 5}/5⭐
@@ -734,7 +734,7 @@ export default function TeacherTriPartyHub({
                         value={reflectionFeedbackText}
                         onChange={e => setReflectionFeedbackText(e.target.value)}
                         placeholder="Nhập lời nhận xét, khích lệ của CVHT cho phiếu tự phản tư..."
-                        className="w-full p-2 rounded-lg border border-indigo-300 text-xs font-medium"
+                        className="w-full p-2 rounded-lg border border-teal-200 text-xs font-medium"
                       />
                       <div className="flex justify-end gap-1.5">
                         <button
@@ -762,7 +762,7 @@ export default function TeacherTriPartyHub({
                           setReplyingReflectionId(ref.id)
                           setReflectionFeedbackText(ref.advisorFeedback || "")
                         }}
-                        className="text-[11px] font-extrabold text-indigo-800 hover:underline cursor-pointer"
+                        className="text-[11px] font-extrabold text-teal-800 hover:underline cursor-pointer"
                       >
                         {ref.advisorFeedback ? "Sửa nhận xét" : "+ Nhận xét phiếu phản tư"}
                       </button>

@@ -16,8 +16,8 @@ function PositionBadge({ position, positions }: { position?: string | null, posi
         if (pos === "NV") return <span key={pos} className="inline-flex items-center px-1.5 py-0.5 rounded-md bg-cyan-50 text-cyan-700 text-[10px] font-black border border-cyan-200">NV</span>;
         if (pos === "TTCM") return <span key={pos} className="inline-flex items-center px-1.5 py-0.5 rounded-md bg-amber-50 text-amber-700 text-[10px] font-black border border-amber-200">TTCM</span>;
         if (pos === "TPTCM") return <span key={pos} className="inline-flex items-center px-1.5 py-0.5 rounded-md bg-teal-50 text-teal-700 text-[10px] font-black border border-teal-200">TPTCM</span>;
-        if (pos === "TBP") return <span key={pos} className="inline-flex items-center px-1.5 py-0.5 rounded-md bg-indigo-50 text-indigo-700 text-[10px] font-black border border-indigo-200">TBP</span>;
-        if (pos === "TB_DHCM" || pos === "Ban ĐHCM" || pos === "QLCM") return <span key={pos} className="inline-flex items-center px-1.5 py-0.5 rounded-md bg-purple-50 text-purple-700 text-[10px] font-black border border-purple-200">Ban ĐHCM</span>;
+        if (pos === "TBP") return <span key={pos} className="inline-flex items-center px-1.5 py-0.5 rounded-md bg-teal-50 text-teal-800 text-[10px] font-black border border-teal-200">TBP</span>;
+        if (pos === "TB_DHCM" || pos === "Ban ĐHCM" || pos === "QLCM") return <span key={pos} className="inline-flex items-center px-1.5 py-0.5 rounded-md bg-teal-50 text-teal-800 text-[10px] font-black border border-teal-200">Ban ĐHCM</span>;
         if (pos === "GĐCS" || pos === "GDCS") return <span key={pos} className="inline-flex items-center px-1.5 py-0.5 rounded-md bg-rose-50 text-rose-700 text-[10px] font-black border border-rose-200">GĐCS</span>;
         return <span key={pos} className="inline-flex items-center px-1.5 py-0.5 rounded-md bg-slate-100 text-slate-600 text-[10px] font-bold">{pos || "GV"}</span>;
       })}
@@ -348,9 +348,9 @@ export function TeacherManagerClient({
             <p className="text-[10px] text-slate-400 mt-1.5 uppercase tracking-wider font-bold">On</p>
           </div>
         </div>
-        <div className="bg-white border border-slate-100 rounded-2xl p-6 flex items-center gap-4 hover:border-violet-500/30 hover:shadow-lg hover:-translate-y-0.5 transition-all duration-300 shadow-sm border-l-4 border-l-violet-600">
+        <div className="bg-white border border-slate-100 rounded-2xl p-6 flex items-center gap-4 hover:border-teal-500/30 hover:shadow-lg hover:-translate-y-0.5 transition-all duration-300 shadow-sm border-l-4 border-l-violet-600">
           <div className="w-12 h-12 flex items-center justify-center flex-shrink-0 text-xs font-semibold">
-            <Building2 className="w-6 h-6 text-violet-600" />
+            <Building2 className="w-6 h-6 text-teal-800" />
           </div>
           <div>
             <p className="text-2xl font-black text-slate-800 leading-none">{(departments || []).length}</p>
@@ -377,7 +377,7 @@ export function TeacherManagerClient({
         if (blocks.length === 0) return null;
         const blockColors = {
           "Mầm Non": { bg: "bg-amber-500", text: "text-amber-700", light: "bg-amber-50", border: "border-amber-200", ring: "ring-amber-200" },
-          "Phổ thông": { bg: "bg-indigo-500", text: "text-indigo-700", light: "bg-indigo-50", border: "border-indigo-200", ring: "ring-indigo-200" },
+          "Phổ thông": { bg: "bg-[#003B3A]", text: "text-teal-800", light: "bg-teal-50", border: "border-teal-200", ring: "ring-indigo-200" },
           "Điều hành": { bg: "bg-teal-500", text: "text-teal-700", light: "bg-teal-50", border: "border-teal-200", ring: "ring-teal-200" },
           "Hỗ trợ người học": { bg: "bg-rose-500", text: "text-rose-700", light: "bg-rose-50", border: "border-rose-200", ring: "ring-rose-200" },
         };
@@ -529,12 +529,12 @@ export function TeacherManagerClient({
             </div>
           </div>
           <div className="mt-4">
-            <label className="block text-xs font-black text-indigo-600 mb-2 uppercase tracking-wider">🏢 Bộ Phận Phụ Trách (TBP)</label>
-            <div className="flex flex-wrap gap-2 p-3.5 bg-indigo-50/20 border border-indigo-100 rounded-2xl">
+            <label className="block text-xs font-black text-teal-800 mb-2 uppercase tracking-wider">🏢 Bộ Phận Phụ Trách (TBP)</label>
+            <div className="flex flex-wrap gap-2 p-3.5 bg-teal-50/20 border border-teal-200 rounded-2xl">
               {ACADEMIC_DIVISIONS.map((div) => {
                 const isChecked = (newForm.divisionCodes || []).includes(div.code);
                 return (
-                  <label key={div.code} className={`flex items-center gap-2 cursor-pointer px-3 py-1.5 rounded-xl border text-xs font-bold transition-all select-none ${isChecked ? "bg-indigo-600 text-white border-indigo-600 shadow-xs" : "bg-white border-slate-200 text-slate-700 hover:bg-indigo-50"}`}>
+                  <label key={div.code} className={`flex items-center gap-2 cursor-pointer px-3 py-1.5 rounded-xl border text-xs font-bold transition-all select-none ${isChecked ? "bg-[#003B3A] text-white border-teal-200 shadow-xs" : "bg-white border-slate-200 text-slate-700 hover:bg-teal-50"}`}>
                     <input
                       type="checkbox"
                       checked={isChecked}
@@ -836,11 +836,11 @@ export function TeacherManagerClient({
 
                       <td className="p-2 p-2 border border-slate-200">
                         {isEditing ? (
-                          <div className="flex flex-col gap-1 max-h-36 overflow-y-auto p-1.5 border border-indigo-200 rounded-xl bg-indigo-50/20 text-xs min-w-[180px]">
+                          <div className="flex flex-col gap-1 max-h-36 overflow-y-auto p-1.5 border border-teal-200 rounded-xl bg-teal-50/20 text-xs min-w-[180px]">
                             {ACADEMIC_DIVISIONS.map((div: any) => {
                               const isChecked = (editForm.divisionCodes || []).includes(div.code);
                               return (
-                                <label key={div.code} className="flex items-center gap-1.5 cursor-pointer font-bold text-slate-700 text-[11px] hover:bg-indigo-50/50 p-1 rounded-md select-none">
+                                <label key={div.code} className="flex items-center gap-1.5 cursor-pointer font-bold text-slate-700 text-[11px] hover:bg-teal-50/50 p-1 rounded-md select-none">
                                   <input
                                     type="checkbox"
                                     checked={isChecked}
@@ -865,7 +865,7 @@ export function TeacherManagerClient({
                               {t.divisionCodes.map((dCode: string) => {
                                 const div = ACADEMIC_DIVISIONS.find((x: any) => x.code === dCode);
                                 return (
-                                  <span key={dCode} className="inline-flex items-center gap-1 px-2 py-0.5 rounded-lg text-[10px] font-black bg-indigo-50 text-indigo-700 border border-indigo-200 shadow-2xs">
+                                  <span key={dCode} className="inline-flex items-center gap-1 px-2 py-0.5 rounded-lg text-[10px] font-black bg-teal-50 text-teal-800 border border-teal-200 shadow-2xs">
                                     🏢 {div?.shortName || div?.name || dCode}
                                   </span>
                                 );

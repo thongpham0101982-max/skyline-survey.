@@ -189,17 +189,17 @@ export function PsychologicalEvaluationLogTab({
     <div className="space-y-5">
       {/* 4 KPI Metric Cards: Synchronized with Screenshot 2 */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3.5">
-        <div className="bg-gradient-to-br from-purple-900 to-indigo-900 text-white p-5 rounded-3xl shadow-sm space-y-2">
+        <div className="bg-gradient-to-br from-teal-600 to-emerald-600 text-white p-5 rounded-3xl shadow-sm space-y-2">
           <div className="flex justify-between items-start">
             <div>
-              <p className="text-[11px] font-bold text-purple-200 uppercase tracking-wider">HS Đánh giá / Theo dõi Tâm lý</p>
+              <p className="text-[11px] font-bold text-teal-700 uppercase tracking-wider">HS Đánh giá / Theo dõi Tâm lý</p>
               <p className="text-3xl font-black text-white mt-1">{stats.total}</p>
             </div>
-            <div className="p-3 bg-white/10 rounded-2xl backdrop-blur-xs text-purple-200">
+            <div className="p-3 bg-white/10 rounded-2xl backdrop-blur-xs text-teal-700">
               <Brain className="h-5 w-5" />
             </div>
           </div>
-          <p className="text-[10px] text-purple-200/80 font-medium">Học sinh lớp phân công giảng dạy & chủ nhiệm có dữ liệu đánh giá / hỗ trợ Tâm lý</p>
+          <p className="text-[10px] text-teal-700/80 font-medium">Học sinh lớp phân công giảng dạy & chủ nhiệm có dữ liệu đánh giá / hỗ trợ Tâm lý</p>
         </div>
 
         <div className="bg-gradient-to-br from-rose-50 to-amber-50 border border-rose-200/80 p-5 rounded-3xl shadow-xs">
@@ -228,7 +228,7 @@ export function PsychologicalEvaluationLogTab({
           <p className="text-[10px] text-emerald-600 mt-2 font-semibold">Các chỉ số tâm lý phát triển bình thường theo đánh giá GV</p>
         </div>
 
-        <div className="bg-gradient-to-br from-sky-50 to-indigo-50 border border-sky-200/80 p-5 rounded-3xl shadow-xs">
+        <div className="bg-gradient-to-br from-sky-50 to-emerald-600 border border-sky-200/80 p-5 rounded-3xl shadow-xs">
           <div className="flex justify-between items-start">
             <div>
               <p className="text-[11px] font-black text-sky-700 uppercase tracking-wider">Đang theo dõi / Hỗ trợ</p>
@@ -341,7 +341,7 @@ export function PsychologicalEvaluationLogTab({
         <div className="overflow-x-auto">
           <table className="w-full text-left border-collapse min-w-[1000px]">
             <thead>
-              <tr className="bg-gradient-to-r from-purple-950 via-indigo-950 to-slate-900 text-white text-[11px] font-black uppercase tracking-wider">
+              <tr className="bg-gradient-to-r from-teal-600 via-indigo-950 to-slate-900 text-white text-[11px] font-black uppercase tracking-wider">
                 <th className="py-3.5 px-4 text-center w-12">STT</th>
                 <th className="py-3.5 px-4 min-w-[200px]">Học sinh</th>
                 <th className="py-3.5 px-4 min-w-[140px]">Lớp & Cơ sở</th>
@@ -356,7 +356,7 @@ export function PsychologicalEvaluationLogTab({
               {filteredStudents.length === 0 ? (
                 <tr>
                   <td colSpan={8} className="py-14 text-center text-slate-400 space-y-2">
-                    <Brain className="h-10 w-10 text-purple-300 mx-auto opacity-70" />
+                    <Brain className="h-10 w-10 text-teal-700 mx-auto opacity-70" />
                     <p className="font-bold text-slate-600 text-sm">Không có học sinh đánh giá tâm lý nào phù hợp bộ lọc</p>
                     <p className="text-xs text-slate-400">Dữ liệu được lấy trực tiếp từ Danh sách Hỗ trợ Tâm lý từ Admin theo các lớp Thầy/Cô phụ trách.</p>
                   </td>
@@ -374,7 +374,7 @@ export function PsychologicalEvaluationLogTab({
                   return (
                     <tr
                       key={item.id || idx}
-                      className="hover:bg-purple-50/40 transition-colors group"
+                      className="hover:bg-teal-50/40 transition-colors group"
                     >
                       {/* 1. STT */}
                       <td className="py-3.5 px-4 text-center font-bold text-slate-400">
@@ -384,14 +384,14 @@ export function PsychologicalEvaluationLogTab({
                       {/* 2. Học sinh */}
                       <td className="py-3.5 px-4">
                         <div className="flex items-center gap-3">
-                          <div className="w-9 h-9 rounded-xl bg-gradient-to-br from-purple-500 to-indigo-600 text-white font-black text-xs flex items-center justify-center shrink-0 shadow-xs">
+                          <div className="w-9 h-9 rounded-xl bg-gradient-to-br from-teal-600 to-emerald-600 text-white font-black text-xs flex items-center justify-center shrink-0 shadow-xs">
                             {(item.studentName || "H").charAt(0).toUpperCase()}
                           </div>
                           <div>
-                            <div className="font-bold text-slate-900 group-hover:text-purple-700 transition-colors">
+                            <div className="font-bold text-slate-900 group-hover:text-teal-800 transition-colors">
                               {item.studentName}
                             </div>
-                            <div className="font-mono text-[10px] text-purple-600 font-semibold flex items-center gap-1.5 mt-0.5">
+                            <div className="font-mono text-[10px] text-teal-800 font-semibold flex items-center gap-1.5 mt-0.5">
                               <span>{item.studentCode}</span>
                               {item.gender && (
                                 <>
@@ -422,7 +422,7 @@ export function PsychologicalEvaluationLogTab({
                       {/* 4. GV / Chuyên viên tham vấn: Đồng bộ Screenshot 1 */}
                       <td className="py-3.5 px-4">
                         <div className="space-y-0.5">
-                          <span className="font-bold text-indigo-900 bg-indigo-50/80 px-2.5 py-1 rounded-lg border border-indigo-100/80 inline-block text-[11px]">
+                          <span className="font-bold text-teal-800 bg-teal-50/80 px-2.5 py-1 rounded-lg border border-teal-100/80 inline-block text-[11px]">
                             {item.counselorName}
                           </span>
                           {item.counselorRole && (
@@ -466,8 +466,8 @@ export function PsychologicalEvaluationLogTab({
                             CẦN THEO DÕI
                           </span>
                         ) : isWeekly ? (
-                          <span className="px-2.5 py-1 rounded-full bg-violet-100 text-violet-800 font-black text-[10px] border border-violet-200/70 inline-flex items-center gap-1.5">
-                            <span className="w-1.5 h-1.5 rounded-full bg-violet-500 animate-pulse" />
+                          <span className="px-2.5 py-1 rounded-full bg-teal-50 text-teal-800 font-black text-[10px] border border-teal-200/70 inline-flex items-center gap-1.5">
+                            <span className="w-1.5 h-1.5 rounded-full bg-teal-500 animate-pulse" />
                             TIẾP TỤC THEO TUẦN
                           </span>
                         ) : isStable ? (
@@ -476,8 +476,8 @@ export function PsychologicalEvaluationLogTab({
                             ĐÃ ỔN ĐỊNH
                           </span>
                         ) : (
-                          <span className="px-2.5 py-1 rounded-full bg-purple-100 text-purple-800 font-black text-[10px] border border-purple-200 inline-flex items-center gap-1.5">
-                            <span className="w-1.5 h-1.5 rounded-full bg-purple-500 animate-pulse" />
+                          <span className="px-2.5 py-1 rounded-full bg-teal-50 text-teal-800 font-black text-[10px] border border-teal-200 inline-flex items-center gap-1.5">
+                            <span className="w-1.5 h-1.5 rounded-full bg-teal-500 animate-pulse" />
                             {item.status || "TIẾP TỤC THEO DÕI"}
                           </span>
                         )}
@@ -489,10 +489,10 @@ export function PsychologicalEvaluationLogTab({
                           <button
                             type="button"
                             onClick={() => handleOpenDetail(item)}
-                            className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-purple-600 hover:bg-purple-700 text-white text-xs font-bold transition-all shadow-xs hover:shadow-md cursor-pointer hover:scale-105"
+                            className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-[#003B3A] hover:bg-[#003B3A] text-white text-xs font-bold transition-all shadow-xs hover:shadow-md cursor-pointer hover:scale-105"
                             title="Xem tiến trình đánh giá 10 tháng"
                           >
-                            <Compass className="h-3.5 w-3.5 text-purple-200" />
+                            <Compass className="h-3.5 w-3.5 text-teal-700" />
                             <span>Chi tiết</span>
                           </button>
                           <button

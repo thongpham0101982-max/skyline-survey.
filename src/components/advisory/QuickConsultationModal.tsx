@@ -388,7 +388,7 @@ export default function QuickConsultationModal({
               <div className="p-4 rounded-2xl bg-white border border-slate-200 shadow-xs space-y-2">
                 <div className="flex items-center justify-between">
                   <span className="text-xs font-black uppercase text-slate-500 flex items-center gap-1">
-                    <Award className="w-3.5 h-3.5 text-indigo-600" /> Chỉ số Tăng trưởng (SGSI)
+                    <Award className="w-3.5 h-3.5 text-teal-800" /> Chỉ số Tăng trưởng (SGSI)
                   </span>
                   <span className={`text-[10px] font-black px-2 py-0.5 rounded-md border ${sgsiData.tierBadgeClass}`}>
                     {sgsiData.ratingTier}
@@ -554,23 +554,23 @@ export default function QuickConsultationModal({
 
             {/* 4. Khung AI Suggestions (Chỉ hiện ở mode Cố vấn học tập thường) */}
             {!isAdmissionMode && showAiPanel && (
-              <div className="p-4 rounded-2xl bg-gradient-to-br from-indigo-50 via-white to-amber-50 border border-indigo-200 shadow-xs space-y-3 animate-in fade-in">
-                <div className="flex items-center justify-between pb-2 border-b border-indigo-100">
-                  <span className="text-xs font-black text-indigo-950 flex items-center gap-1.5">
+              <div className="p-4 rounded-2xl bg-gradient-to-br from-teal-600 via-white to-amber-50 border border-teal-200 shadow-xs space-y-3 animate-in fade-in">
+                <div className="flex items-center justify-between pb-2 border-b border-teal-200">
+                  <span className="text-xs font-black text-teal-800 flex items-center gap-1.5">
                     <Sparkles className="w-4 h-4 text-amber-500 fill-amber-500" />
                     <span>{isAdmissionMode ? "Dự thảo Sky-Line AI Admission" : "Gợi Ý Từ AI Advisor"}</span>
                   </span>
                   <button
                     onClick={() => setShowAiPanel(false)}
-                    className="text-indigo-400 hover:text-indigo-700 text-xs font-bold cursor-pointer"
+                    className="text-teal-700 hover:text-teal-800 text-xs font-bold cursor-pointer"
                   >
                     Đóng
                   </button>
                 </div>
 
                 {loadingAi ? (
-                  <div className="py-4 text-center text-xs text-indigo-600 font-medium">
-                    <RefreshCw className="w-4 h-4 animate-spin mx-auto mb-1 text-indigo-600" />
+                  <div className="py-4 text-center text-xs text-teal-800 font-medium">
+                    <RefreshCw className="w-4 h-4 animate-spin mx-auto mb-1 text-teal-800" />
                     <span>{isAdmissionMode ? "Đang tổng hợp hồ sơ đầu vào..." : "Đang phân tích số liệu học thuật..."}</span>
                   </div>
                 ) : isAdmissionMode && aiAdmissionSummary ? (
@@ -614,16 +614,16 @@ export default function QuickConsultationModal({
 
                     {/* 4. Hành động & Xếp lớp */}
                     {(aiAdmissionSummary.khuyenNghiXepLop || aiAdmissionSummary.deXuatHoTroBanDau) && (
-                      <div className="p-2.5 bg-white rounded-xl border border-indigo-200 space-y-1 shadow-2xs">
+                      <div className="p-2.5 bg-white rounded-xl border border-teal-200 space-y-1 shadow-2xs">
                         <div className="flex items-center justify-between">
-                          <span className="text-[10.5px] font-black text-indigo-800 uppercase">🤝 4. Xếp lớp &amp; Giải pháp</span>
+                          <span className="text-[10.5px] font-black text-teal-800 uppercase">🤝 4. Xếp lớp &amp; Giải pháp</span>
                           <button
                             type="button"
                             onClick={() => {
                               const act = `Xếp lớp: ${aiAdmissionSummary.khuyenNghiXepLop} • Hỗ trợ: ${aiAdmissionSummary.deXuatHoTroBanDau || "Theo dõi tuần đầu"}`
                               handleApplyAiAction(act, 14)
                             }}
-                            className="text-[10px] text-indigo-700 font-bold hover:underline cursor-pointer"
+                            className="text-[10px] text-teal-800 font-bold hover:underline cursor-pointer"
                           >
                             Tạo việc cần làm +
                           </button>
@@ -654,32 +654,32 @@ export default function QuickConsultationModal({
                 ) : aiSuggestions ? (
                   <div className="space-y-3 text-xs">
                     <div>
-                      <span className="font-bold text-indigo-950 block mb-1">Câu hỏi gợi mở cho phiên:</span>
+                      <span className="font-bold text-teal-800 block mb-1">Câu hỏi gợi mở cho phiên:</span>
                       <div className="space-y-1">
                         {aiSuggestions.questions?.map((q: string, i: number) => (
                           <div
                             key={i}
                             onClick={() => handleApplyAiQuestion(q)}
-                            className="p-2 rounded-xl bg-white hover:bg-indigo-100/60 border border-indigo-100 cursor-pointer transition-all text-slate-800 text-[11px] leading-snug flex items-start justify-between gap-1 group"
+                            className="p-2 rounded-xl bg-white hover:bg-teal-100/60 border border-teal-200 cursor-pointer transition-all text-slate-800 text-[11px] leading-snug flex items-start justify-between gap-1 group"
                           >
                             <span>{q}</span>
-                            <span className="text-[10px] text-indigo-600 font-bold opacity-0 group-hover:opacity-100 shrink-0">Chèn +</span>
+                            <span className="text-[10px] text-teal-800 font-bold opacity-0 group-hover:opacity-100 shrink-0">Chèn +</span>
                           </div>
                         ))}
                       </div>
                     </div>
 
                     <div>
-                      <span className="font-bold text-indigo-950 block mb-1">Hành động gợi ý cho HS:</span>
+                      <span className="font-bold text-teal-800 block mb-1">Hành động gợi ý cho HS:</span>
                       <div className="space-y-1">
                         {aiSuggestions.actionPlan?.map((act: any, i: number) => (
                           <div
                             key={i}
                             onClick={() => handleApplyAiAction(act.actionText, act.deadlineDays)}
-                            className="p-2 rounded-xl bg-white hover:bg-indigo-100/60 border border-indigo-100 cursor-pointer transition-all text-slate-800 text-[11px] flex items-center justify-between gap-1 group"
+                            className="p-2 rounded-xl bg-white hover:bg-teal-100/60 border border-teal-200 cursor-pointer transition-all text-slate-800 text-[11px] flex items-center justify-between gap-1 group"
                           >
                             <span>• {act.actionText}</span>
-                            <span className="text-[10px] text-indigo-600 font-bold opacity-0 group-hover:opacity-100 shrink-0">Áp dụng +</span>
+                            <span className="text-[10px] text-teal-800 font-bold opacity-0 group-hover:opacity-100 shrink-0">Áp dụng +</span>
                           </div>
                         ))}
                       </div>
@@ -698,7 +698,7 @@ export default function QuickConsultationModal({
               /* GIAO DIỆN CHUẨN HÓA 5 CHIỀU ĐỊNH HƯỚNG ĐẦU VÀO (SKY-LINE AI ADMISSION) */
               <div className="space-y-3.5">
                 {/* Header trạng thái */}
-                <div className="flex items-center justify-between p-3 rounded-xl bg-gradient-to-r from-teal-50 via-emerald-50 to-indigo-50 border border-teal-200/80">
+                <div className="flex items-center justify-between p-3 rounded-xl bg-gradient-to-r from-teal-50 via-emerald-50 to-emerald-600 border border-teal-200/80">
                   <div className="flex items-center gap-2">
                     <Sparkles className="w-4 h-4 text-amber-500 fill-amber-500 shrink-0" />
                     <div>
@@ -779,12 +779,12 @@ export default function QuickConsultationModal({
                 </div>
 
                 {/* 4. Đề xuất xếp lớp & Giải pháp tiếp nhận ban đầu */}
-                <div className="p-3 rounded-xl bg-indigo-50/50 border border-indigo-200/80 space-y-1.5">
+                <div className="p-3 rounded-xl bg-teal-50/50 border border-teal-200/80 space-y-1.5">
                   <div className="flex items-center justify-between">
-                    <label className="text-xs font-black text-indigo-900 uppercase tracking-wider flex items-center gap-1.5">
+                    <label className="text-xs font-black text-teal-800 uppercase tracking-wider flex items-center gap-1.5">
                       <span>🤝 4. Đề xuất xếp lớp &amp; Giải pháp tiếp nhận ban đầu:</span>
                     </label>
-                    <span className="text-[10px] text-indigo-700 font-bold bg-white px-2 py-0.5 rounded border border-indigo-200">
+                    <span className="text-[10px] text-teal-800 font-bold bg-white px-2 py-0.5 rounded border border-teal-200">
                       Khuyến nghị phân lớp
                     </span>
                   </div>
@@ -793,17 +793,17 @@ export default function QuickConsultationModal({
                     value={admissionPlacement}
                     onChange={e => setAdmissionPlacement(e.target.value)}
                     placeholder="Đề xuất khối lớp, hệ học và phương án giáo viên đồng hành trong 2 tuần đầu..."
-                    className="w-full px-3 py-2 rounded-xl bg-white border border-indigo-200 text-xs font-medium focus:ring-2 focus:ring-indigo-600 focus:outline-none"
+                    className="w-full px-3 py-2 rounded-xl bg-white border border-teal-200 text-xs font-medium focus:ring-2 focus:ring-indigo-600 focus:outline-none"
                   />
                 </div>
 
                 {/* 5. Nội dung cần tiếp tục xác minh (nếu có) */}
-                <div className="p-3 rounded-xl bg-purple-50/50 border border-purple-200/80 space-y-1.5">
+                <div className="p-3 rounded-xl bg-teal-50/50 border border-teal-200/80 space-y-1.5">
                   <div className="flex items-center justify-between">
-                    <label className="text-xs font-black text-purple-900 uppercase tracking-wider flex items-center gap-1.5">
+                    <label className="text-xs font-black text-teal-800 uppercase tracking-wider flex items-center gap-1.5">
                       <span>🔍 5. Nội dung cần tiếp tục xác minh / Phối hợp PHHS:</span>
                     </label>
-                    <span className="text-[10px] text-purple-700 font-bold bg-white px-2 py-0.5 rounded border border-purple-200">
+                    <span className="text-[10px] text-teal-800 font-bold bg-white px-2 py-0.5 rounded border border-teal-200">
                       Theo dõi thêm
                     </span>
                   </div>
@@ -812,7 +812,7 @@ export default function QuickConsultationModal({
                     value={admissionVerification}
                     onChange={e => setAdmissionVerification(e.target.value)}
                     placeholder="Ghi nhận thông tin cần xác minh thêm từ gia đình (thói quen, sức khỏe, lịch sử học tập)..."
-                    className="w-full px-3 py-2 rounded-xl bg-white border border-purple-200 text-xs font-medium focus:ring-2 focus:ring-purple-600 focus:outline-none"
+                    className="w-full px-3 py-2 rounded-xl bg-white border border-teal-200 text-xs font-medium focus:ring-2 focus:ring-teal-600 focus:outline-none"
                   />
                 </div>
               </div>
@@ -1067,7 +1067,7 @@ export default function QuickConsultationModal({
                     onClick={() => setReferType("PSYCHOLOGICAL")}
                     className={`p-2.5 rounded-xl text-xs font-bold border transition-all cursor-pointer ${
                       referType === "PSYCHOLOGICAL"
-                        ? "bg-purple-600 text-white border-purple-700 shadow-xs"
+                        ? "bg-[#003B3A] text-white border-teal-400 shadow-xs"
                         : "bg-slate-50 text-slate-600 border-slate-200"
                     }`}
                   >

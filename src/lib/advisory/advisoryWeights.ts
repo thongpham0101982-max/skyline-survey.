@@ -136,9 +136,9 @@ export function getGradeCategoryWeights(gradeInput?: string, classInput?: string
     },
     {
       key: "DINH_HUONG",
-      label: "4. Mục tiêu định hướng & Hướng nghiệp",
+      label: "4. Định hướng phát triển",
       weight: 20,
-      description: "Định hướng ngành nghề, du học, săn học bổng và hồ sơ ngoại khóa"
+      description: "Khám phá sở thích (Holland RIASEC), định hướng ngành nghề, tổ hợp môn, du học và hoạt động trải nghiệm"
     }
   ]
 }
@@ -391,5 +391,103 @@ export function calculateAdvisoryEvaluation(
     classificationLabel,
     classificationColor,
     categories: categoriesResult
+  }
+}
+
+
+export function normalizeGoalCategory(catInput?: string): string {
+  const c = String(catInput || "").toUpperCase().trim();
+  if (c.includes("HOC_TAP") || c.includes("HỌC TẬP") || c.includes("ACADEMIC")) return "HOC_TAP";
+  if (c.includes("SUC_KHOE") || c.includes("SỨC KHỎE") || c.includes("HEALTH")) return "SUC_KHOE";
+  if (c.includes("SO_THICH") || c.includes("SỞ THÍCH") || c.includes("HOBBY")) return "SO_THICH";
+  if (c.includes("PHAM_CHAT") || c.includes("PHẨM CHẤT") || c.includes("MORAL")) return "PHAM_CHAT";
+  if (c.includes("KY_NANG") && (c.includes("CAM_XUC") || c.includes("CẢM XÚC") || c.includes("SEL"))) return "KY_NANG_CAM_XUC";
+  if (c.includes("KY_NANG") || c.includes("KỸ NĂNG") || c.includes("SKILL")) return "KY_NANG";
+  if (c.includes("THOI_QUEN") || c.includes("THÓI QUEN") || c.includes("HABIT")) return "THOI_QUEN";
+  if (c.includes("DINH_HUONG") || c.includes("ĐỊNH HƯỚNG") || c.includes("CAREER") || c.includes("ORIENTATION")) return "DINH_HUONG";
+  return c || "HOC_TAP";
+}
+
+export function getStandardCategoryMeta(key: string): {
+  key: string;
+  label: string;
+  colorClass: string;
+  badgeClass: string;
+  description: string;
+} {
+  const norm = normalizeGoalCategory(key);
+  switch (norm) {
+    case "HOC_TAP":
+      return {
+        key: "HOC_TAP",
+        label: "Mục tiêu học tập",
+        colorClass: "text-[#00A19A]",
+        badgeClass: "bg-teal-50 text-teal-800 border-teal-200",
+        description: "Kết quả học tập, điểm số, chứng chỉ và tự học"
+      };
+    case "SUC_KHOE":
+      return {
+        key: "SUC_KHOE",
+        label: "Sức khỏe & Thể chất",
+        colorClass: "text-emerald-700",
+        badgeClass: "bg-emerald-50 text-emerald-800 border-emerald-200",
+        description: "Thể lực, dinh dưỡng, an toàn và thói quen sinh hoạt"
+      };
+    case "SO_THICH":
+      return {
+        key: "SO_THICH",
+        label: "Sở thích & Năng khiếu",
+        colorClass: "text-[#00736E]",
+        badgeClass: "bg-teal-50 text-teal-800 border-teal-200",
+        description: "Năng khiếu, nghệ thuật, thể thao và sáng tạo"
+      };
+    case "PHAM_CHAT":
+      return {
+        key: "PHAM_CHAT",
+        label: "Phẩm chất & Đạo đức",
+        colorClass: "text-[#003B3A]",
+        badgeClass: "bg-slate-100 text-slate-800 border-slate-300",
+        description: "Kỷ luật, trung thực, trách nhiệm và lòng biết ơn"
+      };
+    case "KY_NANG":
+      return {
+        key: "KY_NANG",
+        label: "Mục tiêu kỹ năng",
+        colorClass: "text-teal-700",
+        badgeClass: "bg-teal-50 text-teal-800 border-teal-200",
+        description: "Giao tiếp, làm việc nhóm, tự phục vụ và giải quyết vấn đề"
+      };
+    case "THOI_QUEN":
+      return {
+        key: "THOI_QUEN",
+        label: "Mục tiêu thói quen",
+        colorClass: "text-amber-700",
+        badgeClass: "bg-amber-50 text-amber-800 border-amber-200",
+        description: "Quản lý thời gian, đọc sách và nề nếp bản thân"
+      };
+    case "KY_NANG_CAM_XUC":
+      return {
+        key: "KY_NANG_CAM_XUC",
+        label: "Kỹ năng cảm xúc xã hội (SEL)",
+        colorClass: "text-[#00736E]",
+        badgeClass: "bg-teal-50 text-teal-800 border-teal-200",
+        description: "Nhận biết cảm xúc, kiểm soát hành vi và thấu cảm"
+      };
+    case "DINH_HUONG":
+      return {
+        key: "DINH_HUONG",
+        label: "Định hướng & Hướng nghiệp",
+        colorClass: "text-[#003B3A]",
+        badgeClass: "bg-teal-50 text-teal-800 border-teal-200",
+        description: "Khám phá bản thân, định hướng ngành nghề và mục tiêu tương lai"
+      };
+    default:
+      return {
+        key: norm,
+        label: norm,
+        colorClass: "text-slate-700",
+        badgeClass: "bg-slate-100 text-slate-700 border-slate-200",
+        description: "Mục tiêu đồng hành"
+      };
   }
 }

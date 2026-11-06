@@ -1408,7 +1408,7 @@ export function SupportClient({
     }
     if (nameLower.includes("lý") || nameLower.includes("tâm") || nameLower.includes("psychology")) {
       return (
-        <span className="px-2.5 py-1 rounded-md bg-purple-50 text-purple-700 border border-purple-200/60 font-bold text-[11px] inline-block">
+        <span className="px-2.5 py-1 rounded-md bg-teal-50 text-teal-800 border border-teal-200/60 font-bold text-[11px] inline-block">
           Tâm lý
         </span>
       )
@@ -1757,7 +1757,7 @@ export function SupportClient({
               onClick={() => setSelectedCommitmentSubjects([])}
               className={`px-3.5 py-1.5 rounded-xl text-xs font-bold transition-all flex items-center gap-1.5 ${
                 selectedCommitmentSubjects.length === 0
-                  ? "bg-indigo-600 text-white shadow-sm"
+                  ? "bg-[#003B3A] text-white shadow-sm"
                   : "bg-white text-slate-600 border border-slate-200 hover:bg-slate-50"
               }`}
             >
@@ -1781,7 +1781,7 @@ export function SupportClient({
                   }}
                   className={`px-3.5 py-1.5 rounded-xl text-xs font-bold transition-all flex items-center gap-1.5 ${
                     isActive
-                      ? "bg-indigo-600 text-white shadow-sm ring-2 ring-indigo-300"
+                      ? "bg-[#003B3A] text-white shadow-sm ring-2 ring-indigo-300"
                       : "bg-white text-slate-600 border border-slate-200 hover:bg-slate-50"
                   }`}
                 >
@@ -1838,7 +1838,7 @@ export function SupportClient({
                     <div className="flex items-center justify-between pb-1.5 border-b border-slate-100 text-[10px] font-bold">
                       <button
                         onClick={() => setSelectedCommitmentSubjects(uniqueCommitmentSubjects)}
-                        className="text-indigo-600 hover:text-indigo-800 underline"
+                        className="text-teal-800 hover:text-teal-800 underline"
                       >
                         Chọn tất cả
                       </button>
@@ -1866,7 +1866,7 @@ export function SupportClient({
                                     prev.includes(sub) ? prev.filter(s => s !== sub) : [...prev, sub]
                                   )
                                 }}
-                                className="rounded text-indigo-600 focus:ring-indigo-500 h-3.5 w-3.5"
+                                className="rounded text-teal-800 focus:ring-indigo-500 h-3.5 w-3.5"
                               />
                               <span>{sub}</span>
                             </div>
@@ -1924,7 +1924,7 @@ export function SupportClient({
                     <div className="flex items-center justify-between pb-1.5 border-b border-slate-100 text-[10px] font-bold">
                       <button
                         onClick={() => setSelectedCommitmentGrades(uniqueCommitmentGrades)}
-                        className="text-indigo-600 hover:text-indigo-800 underline"
+                        className="text-teal-800 hover:text-teal-800 underline"
                       >
                         Chọn tất cả
                       </button>
@@ -1952,7 +1952,7 @@ export function SupportClient({
                                     prev.includes(g) ? prev.filter(item => item !== g) : [...prev, g]
                                   )
                                 }}
-                                className="rounded text-indigo-600 focus:ring-indigo-500 h-3.5 w-3.5"
+                                className="rounded text-teal-800 focus:ring-indigo-500 h-3.5 w-3.5"
                               />
                               <span>{g}</span>
                             </div>
@@ -2058,7 +2058,7 @@ export function SupportClient({
           {/* Data Table */}
           {commitmentLoading ? (
             <div className="flex flex-col items-center justify-center py-20 bg-white border border-slate-200/60 rounded-2xl">
-              <RefreshCw className="h-8 w-8 text-indigo-500 animate-spin mb-3" />
+              <RefreshCw className="h-8 w-8 text-teal-700 animate-spin mb-3" />
               <span className="text-xs font-bold text-slate-400">Đang tải danh sách học sinh cam kết theo môn...</span>
             </div>
           ) : (() => {
@@ -2126,7 +2126,7 @@ export function SupportClient({
                                 rowLevel === "Tiểu học" 
                                   ? "bg-sky-50 text-sky-700 border-sky-200" 
                                   : rowLevel === "Trung học" 
-                                  ? "bg-purple-50 text-purple-700 border-purple-200" 
+                                  ? "bg-teal-50 text-teal-800 border-teal-200" 
                                   : "bg-rose-50 text-rose-700 border-rose-200"
                               }`}>
                                 {rowLevel}
@@ -2141,7 +2141,7 @@ export function SupportClient({
                               <span className="font-extrabold text-slate-800 text-[12px]">{row.className}</span>
                             </td>
                             <td className="px-4 py-3.5">
-                              <span className="text-[11px] text-indigo-600 font-bold">
+                              <span className="text-[11px] text-teal-800 font-bold">
                                 {row.campusName ? (row.campusName.includes("CS") ? row.campusName : row.campusName) : (row.className && row.className.includes("CS") ? "CS" + row.className.split("CS")[1].split(/[_ -]/)[0] : "CS1")}
                               </span>
                             </td>
@@ -2195,7 +2195,7 @@ export function SupportClient({
                                   </>
                                 )}
                                 {isPsychology && row.psychologyScore !== null && (
-                                  <span className="px-2 py-0.5 rounded-md font-black text-[10px] bg-purple-100 text-purple-800 border-2 border-purple-300 shadow-2xs">
+                                  <span className="px-2 py-0.5 rounded-md font-black text-[10px] bg-teal-50 text-teal-800 border-2 border-teal-400 shadow-2xs">
                                     Tâm lý: {row.psychologyScore} ★
                                   </span>
                                 )}
@@ -2251,7 +2251,7 @@ export function SupportClient({
                         onClick={() => setCommitmentPage(pageNum)}
                         className={`w-8 h-8 rounded-lg border flex items-center justify-center transition-all ${
                           commitmentPage === pageNum
-                            ? "bg-indigo-600 border-indigo-600 text-white font-extrabold shadow-sm"
+                            ? "bg-[#003B3A] border-teal-200 text-white font-extrabold shadow-sm"
                             : "border-slate-200 bg-white hover:bg-slate-50 text-slate-600"
                         }`}
                       >
@@ -2275,7 +2275,7 @@ export function SupportClient({
       )}      {/* Loading state indicator */}
       {loading && (
         <div className="flex items-center justify-center py-20">
-          <RefreshCw className="h-8 w-8 text-indigo-600 animate-spin" />
+          <RefreshCw className="h-8 w-8 text-teal-800 animate-spin" />
         </div>
       )}
 
@@ -2399,7 +2399,7 @@ export function SupportClient({
                       <tr key={group.teacherId} className="hover:bg-slate-50 transition-colors">
                         <td className="px-6 py-4 whitespace-nowrap">
                           <div className="flex items-center gap-3">
-                            <div className="h-9 w-9 rounded-full bg-gradient-to-tr from-indigo-500 to-purple-500 text-white flex items-center justify-center font-bold text-sm shadow-xs border border-white">
+                            <div className="h-9 w-9 rounded-full bg-gradient-to-tr from-teal-600 to-emerald-600 text-white flex items-center justify-center font-bold text-sm shadow-xs border border-white">
                               {group.teacherName.charAt(0).toUpperCase()}
                             </div>
                             <div>
@@ -2423,7 +2423,7 @@ export function SupportClient({
                                 className={`px-2 py-0.5 rounded-md text-xs font-semibold border ${
                                   activeTab === "academic"
                                     ? "bg-blue-50 text-blue-700 border-blue-200"
-                                    : "bg-purple-50 text-purple-700 border-purple-200"
+                                    : "bg-teal-50 text-teal-800 border-teal-200"
                                 }`}
                               >
                                 {sub}
@@ -2435,13 +2435,13 @@ export function SupportClient({
                         <td className="px-6 py-4 whitespace-nowrap">
                           <div className="flex flex-wrap gap-1.5">
                             {group.pendingCount > 0 && (
-                              <span className="px-2.5 py-0.5 rounded-full text-xs font-bold bg-orange-100 text-orange-800 border border-orange-200 inline-flex items-center gap-1">
-                                <Bell className="h-3 w-3 text-orange-600 animate-bounce fill-orange-600" />
+                              <span className="px-2.5 py-0.5 rounded-full text-xs font-bold bg-amber-50 text-amber-800 border border-amber-200 inline-flex items-center gap-1">
+                                <Bell className="h-3 w-3 text-amber-700 animate-bounce fill-orange-600" />
                                 {group.pendingCount} Chờ duyệt
                               </span>
                             )}
                             {group.approvedCount > 0 && (
-                              <span className="px-2.5 py-0.5 rounded-full text-xs font-bold bg-indigo-100 text-indigo-800 border border-indigo-200">
+                              <span className="px-2.5 py-0.5 rounded-full text-xs font-bold bg-teal-50 text-teal-800 border border-teal-200">
                                 {group.approvedCount} Đang bồi dưỡng
                               </span>
                             )}
@@ -2462,7 +2462,7 @@ export function SupportClient({
                           <div className="flex items-center justify-center gap-1.5">
                             <button
                               onClick={() => setSelectedTeacherForDetail(group)}
-                              className="bg-indigo-50 hover:bg-indigo-100 text-indigo-700 font-bold py-1.5 px-3 rounded-lg text-xs transition-colors border border-indigo-200/50 shadow-xs"
+                              className="bg-teal-50 hover:bg-teal-50 text-teal-800 font-bold py-1.5 px-3 rounded-lg text-xs transition-colors border border-teal-200/50 shadow-xs"
                             >
                               Chi tiết
                             </button>
@@ -2499,7 +2499,7 @@ export function SupportClient({
                 setAssignNotes("")
                 setIsAssignModalOpen(true)
               }}
-              className="bg-indigo-600 hover:bg-indigo-700 text-white py-2 px-4 rounded-lg font-medium text-sm flex items-center gap-2 shadow-sm transition-all"
+              className="bg-[#003B3A] hover:bg-[#003B3A] text-white py-2 px-4 rounded-lg font-medium text-sm flex items-center gap-2 shadow-sm transition-all"
             >
               <Plus className="h-4 w-4" />
               Thêm Phân công GVPT
@@ -2534,7 +2534,7 @@ export function SupportClient({
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap">
                         <span className={`px-2.5 py-1 rounded-full text-xs font-bold ${
-                          a.target?.supportType === "ACADEMIC" ? "bg-blue-100 text-blue-800" : "bg-purple-100 text-purple-800"
+                          a.target?.supportType === "ACADEMIC" ? "bg-blue-100 text-blue-800" : "bg-teal-50 text-teal-800"
                         }`}>
                           {a.target?.supportType === "ACADEMIC" ? "Văn hóa" : "Tâm lý"}
                         </span>
@@ -2575,7 +2575,7 @@ export function SupportClient({
             <button
               onClick={() => setReportSubTab("student")}
               className={`px-4 py-2 text-xs font-bold rounded-md transition-colors ${
-                reportSubTab === "student" ? "bg-white text-indigo-600 shadow-sm" : "text-slate-600 hover:bg-slate-100"
+                reportSubTab === "student" ? "bg-white text-teal-800 shadow-sm" : "text-slate-600 hover:bg-slate-100"
               }`}
             >
               Theo học sinh
@@ -2583,7 +2583,7 @@ export function SupportClient({
             <button
               onClick={() => setReportSubTab("grade")}
               className={`px-4 py-2 text-xs font-bold rounded-md transition-colors ${
-                reportSubTab === "grade" ? "bg-white text-indigo-600 shadow-sm" : "text-slate-600 hover:bg-slate-100"
+                reportSubTab === "grade" ? "bg-white text-teal-800 shadow-sm" : "text-slate-600 hover:bg-slate-100"
               }`}
             >
               Theo khối
@@ -2591,7 +2591,7 @@ export function SupportClient({
             <button
               onClick={() => setReportSubTab("class")}
               className={`px-4 py-2 text-xs font-bold rounded-md transition-colors ${
-                reportSubTab === "class" ? "bg-white text-indigo-600 shadow-sm" : "text-slate-600 hover:bg-slate-100"
+                reportSubTab === "class" ? "bg-white text-teal-800 shadow-sm" : "text-slate-600 hover:bg-slate-100"
               }`}
             >
               Theo lớp
@@ -2599,7 +2599,7 @@ export function SupportClient({
             <button
               onClick={() => setReportSubTab("subject")}
               className={`px-4 py-2 text-xs font-bold rounded-md transition-colors ${
-                reportSubTab === "subject" ? "bg-white text-indigo-600 shadow-sm" : "text-slate-600 hover:bg-slate-100"
+                reportSubTab === "subject" ? "bg-white text-teal-800 shadow-sm" : "text-slate-600 hover:bg-slate-100"
               }`}
             >
               Theo môn học
@@ -2607,7 +2607,7 @@ export function SupportClient({
             <button
               onClick={() => setReportSubTab("teacher")}
               className={`px-4 py-2 text-xs font-bold rounded-md transition-colors ${
-                reportSubTab === "teacher" ? "bg-white text-indigo-600 shadow-sm" : "text-slate-600 hover:bg-slate-100"
+                reportSubTab === "teacher" ? "bg-white text-teal-800 shadow-sm" : "text-slate-600 hover:bg-slate-100"
               }`}
             >
               Theo giáo viên
@@ -2615,7 +2615,7 @@ export function SupportClient({
             <button
               onClick={() => setReportSubTab("campus")}
               className={`px-4 py-2 text-xs font-bold rounded-md transition-colors ${
-                reportSubTab === "campus" ? "bg-white text-indigo-600 shadow-sm" : "text-slate-600 hover:bg-slate-100"
+                reportSubTab === "campus" ? "bg-white text-teal-800 shadow-sm" : "text-slate-600 hover:bg-slate-100"
               }`}
             >
               Theo cơ sở
@@ -2623,7 +2623,7 @@ export function SupportClient({
             <button
               onClick={() => setReportSubTab("system")}
               className={`px-4 py-2 text-xs font-bold rounded-md transition-colors ${
-                reportSubTab === "system" ? "bg-white text-indigo-600 shadow-sm" : "text-slate-600 hover:bg-slate-100"
+                reportSubTab === "system" ? "bg-white text-teal-800 shadow-sm" : "text-slate-600 hover:bg-slate-100"
               }`}
             >
               Toàn hệ thống
@@ -2666,7 +2666,7 @@ export function SupportClient({
                       <td className="px-6 py-4">{t.student?.class?.className}</td>
                       <td className="px-6 py-4">
                         <span className={`px-2.5 py-1 rounded text-xs font-semibold ${
-                          t.supportType === "ACADEMIC" ? "bg-blue-50 text-blue-700 border border-blue-200" : "bg-purple-50 text-purple-700 border border-purple-200"
+                          t.supportType === "ACADEMIC" ? "bg-blue-50 text-blue-700 border border-blue-200" : "bg-teal-50 text-teal-800 border border-teal-200"
                         }`}>
                           {t.supportType === "ACADEMIC" ? t.reason : "Tâm lý học đường"}
                         </span>
@@ -2706,11 +2706,11 @@ export function SupportClient({
                         <td className="px-6 py-4 font-bold text-slate-800">{item.name}</td>
                         <td className="px-6 py-4 text-center font-extrabold text-slate-900">{item.totalCount}</td>
                         <td className="px-6 py-4 text-center font-semibold text-blue-600 bg-blue-50/30">{item.academicCount}</td>
-                        <td className="px-6 py-4 text-center font-semibold text-purple-600 bg-purple-50/30">{item.psychologyCount}</td>
+                        <td className="px-6 py-4 text-center font-semibold text-teal-800 bg-teal-50/30">{item.psychologyCount}</td>
                         <td className="px-6 py-4 text-xs font-semibold">
                           <div className="flex flex-wrap gap-1.5">
-                            {item.pendingCount > 0 && <span className="px-2 py-0.5 rounded bg-orange-100 text-orange-800 border border-orange-200">Chờ duyệt: {item.pendingCount}</span>}
-                            {item.approvedCount > 0 && <span className="px-2 py-0.5 rounded bg-indigo-100 text-indigo-800 border border-indigo-200">Đang bồi dưỡng: {item.approvedCount}</span>}
+                            {item.pendingCount > 0 && <span className="px-2 py-0.5 rounded bg-amber-50 text-amber-800 border border-amber-200">Chờ duyệt: {item.pendingCount}</span>}
+                            {item.approvedCount > 0 && <span className="px-2 py-0.5 rounded bg-teal-50 text-teal-800 border border-teal-200">Đang bồi dưỡng: {item.approvedCount}</span>}
                             {item.pendingTerminationCount > 0 && <span className="px-2 py-0.5 rounded bg-amber-100 text-amber-800 border border-amber-200 animate-pulse">Chờ kết thúc: {item.pendingTerminationCount}</span>}
                             {item.terminatedCount > 0 && <span className="px-2 py-0.5 rounded bg-emerald-100 text-emerald-800 border border-emerald-200">Đã kết thúc: {item.terminatedCount}</span>}
                           </div>
@@ -2755,11 +2755,11 @@ export function SupportClient({
                         <td className="px-6 py-4 font-bold text-slate-800">{c.className}</td>
                         <td className="px-6 py-4 text-center font-extrabold text-slate-900">{classTargets.length}</td>
                         <td className="px-6 py-4 text-center font-semibold text-blue-600 bg-blue-50/30">{acadCount}</td>
-                        <td className="px-6 py-4 text-center font-semibold text-purple-600 bg-purple-50/30">{psyCount}</td>
+                        <td className="px-6 py-4 text-center font-semibold text-teal-800 bg-teal-50/30">{psyCount}</td>
                         <td className="px-6 py-4 text-xs font-semibold">
                           <div className="flex flex-wrap gap-1.5">
-                            {pending > 0 && <span className="px-2 py-0.5 rounded bg-orange-100 text-orange-800 border border-orange-200">Chờ duyệt: {pending}</span>}
-                            {approved > 0 && <span className="px-2 py-0.5 rounded bg-indigo-100 text-indigo-800 border border-indigo-200">Đang bồi dưỡng: {approved}</span>}
+                            {pending > 0 && <span className="px-2 py-0.5 rounded bg-amber-50 text-amber-800 border border-amber-200">Chờ duyệt: {pending}</span>}
+                            {approved > 0 && <span className="px-2 py-0.5 rounded bg-teal-50 text-teal-800 border border-teal-200">Đang bồi dưỡng: {approved}</span>}
                             {pendingTerm > 0 && <span className="px-2 py-0.5 rounded bg-amber-100 text-amber-800 border border-amber-200 animate-pulse">Chờ kết thúc: {pendingTerm}</span>}
                             {term > 0 && <span className="px-2 py-0.5 rounded bg-emerald-100 text-emerald-800 border border-emerald-200">Đã kết thúc: {term}</span>}
                           </div>
@@ -2806,11 +2806,11 @@ export function SupportClient({
                         <td className="px-6 py-4 font-semibold text-slate-800">{sub.subjectName}</td>
                         <td className="px-6 py-4 text-center font-extrabold text-slate-900">{subTargets.length}</td>
                         <td className="px-6 py-4 text-center font-semibold text-blue-600 bg-blue-50/30">{subTargets.length}</td>
-                        <td className="px-6 py-4 text-center font-semibold text-purple-600 bg-purple-50/30">0</td>
+                        <td className="px-6 py-4 text-center font-semibold text-teal-800 bg-teal-50/30">0</td>
                         <td className="px-6 py-4 text-xs font-semibold">
                           <div className="flex flex-wrap gap-1.5">
-                            {pending > 0 && <span className="px-2 py-0.5 rounded bg-orange-100 text-orange-800 border border-orange-200">Chờ duyệt: {pending}</span>}
-                            {approved > 0 && <span className="px-2 py-0.5 rounded bg-indigo-100 text-indigo-800 border border-indigo-200">Đang bồi dưỡng: {approved}</span>}
+                            {pending > 0 && <span className="px-2 py-0.5 rounded bg-amber-50 text-amber-800 border border-amber-200">Chờ duyệt: {pending}</span>}
+                            {approved > 0 && <span className="px-2 py-0.5 rounded bg-teal-50 text-teal-800 border border-teal-200">Đang bồi dưỡng: {approved}</span>}
                             {pendingTerm > 0 && <span className="px-2 py-0.5 rounded bg-amber-100 text-amber-800 border border-amber-200 animate-pulse">Chờ kết thúc: {pendingTerm}</span>}
                             {term > 0 && <span className="px-2 py-0.5 rounded bg-emerald-100 text-emerald-800 border border-emerald-200">Đã kết thúc: {term}</span>}
                           </div>
@@ -2858,11 +2858,11 @@ export function SupportClient({
                         <td className="px-6 py-4 font-bold text-slate-800">{t.teacherName}</td>
                         <td className="px-6 py-4 text-center font-extrabold text-slate-900">{teacherTargets.length}</td>
                         <td className="px-6 py-4 text-center font-semibold text-blue-600 bg-blue-50/30">{acadCount}</td>
-                        <td className="px-6 py-4 text-center font-semibold text-purple-600 bg-purple-50/30">{psyCount}</td>
+                        <td className="px-6 py-4 text-center font-semibold text-teal-800 bg-teal-50/30">{psyCount}</td>
                         <td className="px-6 py-4 text-xs font-semibold">
                           <div className="flex flex-wrap gap-1.5">
-                            {pending > 0 && <span className="px-2 py-0.5 rounded bg-orange-100 text-orange-800 border border-orange-200">Chờ duyệt: {pending}</span>}
-                            {approved > 0 && <span className="px-2 py-0.5 rounded bg-indigo-100 text-indigo-800 border border-indigo-200">Đang bồi dưỡng: {approved}</span>}
+                            {pending > 0 && <span className="px-2 py-0.5 rounded bg-amber-50 text-amber-800 border border-amber-200">Chờ duyệt: {pending}</span>}
+                            {approved > 0 && <span className="px-2 py-0.5 rounded bg-teal-50 text-teal-800 border border-teal-200">Đang bồi dưỡng: {approved}</span>}
                             {pendingTerm > 0 && <span className="px-2 py-0.5 rounded bg-amber-100 text-amber-800 border border-amber-200 animate-pulse">Chờ kết thúc: {pendingTerm}</span>}
                             {term > 0 && <span className="px-2 py-0.5 rounded bg-emerald-100 text-emerald-800 border border-emerald-200">Đã kết thúc: {term}</span>}
                           </div>
@@ -2907,11 +2907,11 @@ export function SupportClient({
                         <td className="px-6 py-4 font-bold text-slate-800">{c.campusName}</td>
                         <td className="px-6 py-4 text-center font-extrabold text-slate-900">{campusTargets.length}</td>
                         <td className="px-6 py-4 text-center font-semibold text-blue-600 bg-blue-50/30">{acadCount}</td>
-                        <td className="px-6 py-4 text-center font-semibold text-purple-600 bg-purple-50/30">{psyCount}</td>
+                        <td className="px-6 py-4 text-center font-semibold text-teal-800 bg-teal-50/30">{psyCount}</td>
                         <td className="px-6 py-4 text-xs font-semibold">
                           <div className="flex flex-wrap gap-1.5">
-                            {pending > 0 && <span className="px-2 py-0.5 rounded bg-orange-100 text-orange-800 border border-orange-200">Chờ duyệt: {pending}</span>}
-                            {approved > 0 && <span className="px-2 py-0.5 rounded bg-indigo-100 text-indigo-800 border border-indigo-200">Đang bồi dưỡng: {approved}</span>}
+                            {pending > 0 && <span className="px-2 py-0.5 rounded bg-amber-50 text-amber-800 border border-amber-200">Chờ duyệt: {pending}</span>}
+                            {approved > 0 && <span className="px-2 py-0.5 rounded bg-teal-50 text-teal-800 border border-teal-200">Đang bồi dưỡng: {approved}</span>}
                             {pendingTerm > 0 && <span className="px-2 py-0.5 rounded bg-amber-100 text-amber-800 border border-amber-200 animate-pulse">Chờ kết thúc: {pendingTerm}</span>}
                             {term > 0 && <span className="px-2 py-0.5 rounded bg-emerald-100 text-emerald-800 border border-emerald-200">Đã kết thúc: {term}</span>}
                           </div>
@@ -2935,13 +2935,13 @@ export function SupportClient({
               </div>
               <div className="bg-white p-5 border rounded-xl shadow-sm text-center">
                 <div className="text-slate-500 text-xs uppercase font-bold tracking-wider">Tổng hỗ trợ Tâm lý</div>
-                <div className="text-4xl font-extrabold text-purple-600 mt-2">
+                <div className="text-4xl font-extrabold text-teal-800 mt-2">
                   {targets.filter(t => t.supportType === "PSYCHOLOGICAL").length}
                 </div>
               </div>
               <div className="bg-white p-5 border rounded-xl shadow-sm text-center">
                 <div className="text-slate-500 text-xs uppercase font-bold tracking-wider font-bold">Đang hoạt động</div>
-                <div className="text-4xl font-extrabold text-indigo-600 mt-2">
+                <div className="text-4xl font-extrabold text-teal-800 mt-2">
                   {targets.filter(t => t.terminationStatus === "ACTIVE").length}
                 </div>
               </div>
@@ -2959,7 +2959,7 @@ export function SupportClient({
             <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 border-b pb-4 mb-6">
               <div>
                 <h3 className="text-lg font-bold text-slate-800 flex items-center gap-2">
-                  <BarChart3 className="h-5 w-5 text-indigo-600" />
+                  <BarChart3 className="h-5 w-5 text-teal-800" />
                   Biểu đồ Tiến bộ của Học sinh theo Tháng
                 </h3>
                 <p className="text-xs text-slate-500 mt-1">
@@ -3085,7 +3085,7 @@ export function SupportClient({
                   </div>
                 </div>
 
-                <div className="bg-indigo-50 border border-indigo-100 rounded-lg p-3 mt-4 text-[11px] text-indigo-800 leading-relaxed font-medium">
+                <div className="bg-teal-50 border border-teal-200 rounded-lg p-3 mt-4 text-[11px] text-teal-800 leading-relaxed font-medium">
                   💡 Thầy/cô có thể hover (di chuột) lên từng cột trong biểu đồ để xem chi tiết số lượng và tỷ lệ % phân loại học sinh trong tháng đó.
                 </div>
               </div>
@@ -3100,9 +3100,9 @@ export function SupportClient({
       {isSyncModalOpen && (
         <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-xs flex items-center justify-center p-4 z-50 animate-fade-in">
           <div className="bg-white rounded-xl shadow-2xl max-w-4xl w-full max-h-[85vh] overflow-hidden flex flex-col">
-            <div className="px-6 py-4 border-b flex justify-between items-center bg-indigo-50">
+            <div className="px-6 py-4 border-b flex justify-between items-center bg-teal-50">
               <h2 className="text-lg font-bold text-slate-800 flex items-center gap-2">
-                <RefreshCw className="h-5 w-5 text-indigo-600" />
+                <RefreshCw className="h-5 w-5 text-teal-800" />
                 Đồng bộ nhanh từ Khảo sát đầu vào
               </h2>
               <button onClick={() => setIsSyncModalOpen(false)}>
@@ -3218,7 +3218,7 @@ export function SupportClient({
               {syncCandidates.length > 0 && (
                 <button
                   onClick={handleSyncAdmission}
-                  className="bg-indigo-600 hover:bg-indigo-700 text-white py-2 px-4 rounded-lg text-sm font-medium shadow-sm transition-all"
+                  className="bg-[#003B3A] hover:bg-[#003B3A] text-white py-2 px-4 rounded-lg text-sm font-medium shadow-sm transition-all"
                 >
                   Xác nhận thêm bồi dưỡng
                 </button>
@@ -3232,9 +3232,9 @@ export function SupportClient({
       {isAddTargetModalOpen && (
         <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-xs flex items-center justify-center p-4 z-50">
           <div className="bg-white rounded-xl shadow-2xl max-w-lg w-full overflow-hidden flex flex-col">
-            <div className="px-6 py-4 border-b flex justify-between items-center bg-indigo-50">
+            <div className="px-6 py-4 border-b flex justify-between items-center bg-teal-50">
               <h2 className="text-lg font-bold text-slate-800 flex items-center gap-2">
-                <Plus className="h-5 w-5 text-indigo-600" />
+                <Plus className="h-5 w-5 text-teal-800" />
                 Thêm đối tượng bồi dưỡng thủ công
               </h2>
               <button onClick={() => setIsAddTargetModalOpen(false)}>
@@ -3325,7 +3325,7 @@ export function SupportClient({
               </button>
               <button
                 onClick={handleSaveTarget}
-                className="bg-indigo-600 hover:bg-indigo-700 text-white py-2 px-4 rounded-lg text-sm font-medium shadow-sm transition-all"
+                className="bg-[#003B3A] hover:bg-[#003B3A] text-white py-2 px-4 rounded-lg text-sm font-medium shadow-sm transition-all"
               >
                 Xác nhận lưu
               </button>
@@ -3338,9 +3338,9 @@ export function SupportClient({
       {isBulkApproveModalOpen && (
         <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-xs flex items-center justify-center p-4 z-50">
           <div className="bg-white rounded-xl shadow-2xl max-w-lg w-full overflow-hidden flex flex-col">
-            <div className="px-6 py-4 border-b flex justify-between items-center bg-indigo-50">
+            <div className="px-6 py-4 border-b flex justify-between items-center bg-teal-50">
               <h2 className="text-lg font-bold text-slate-800 flex items-center gap-2">
-                <CheckCircle2 className="h-5 w-5 text-indigo-600" />
+                <CheckCircle2 className="h-5 w-5 text-teal-800" />
                 Duyệt Đề xuất bồi dưỡng
               </h2>
               <button onClick={() => setIsBulkApproveModalOpen(false)}>
@@ -3358,7 +3358,7 @@ export function SupportClient({
                       if (selectedDuyetIds.length === allPendingIds.length && allPendingIds.length > 0) setSelectedDuyetIds([])
                       else setSelectedDuyetIds(allPendingIds)
                     }}
-                    className="text-indigo-600 text-xs hover:underline"
+                    className="text-teal-800 text-xs hover:underline"
                   >
                     Chọn tất cả
                   </button>
@@ -3375,7 +3375,7 @@ export function SupportClient({
                             if (e.target.checked) setSelectedDuyetIds([...selectedDuyetIds, t.id])
                             else setSelectedDuyetIds(selectedDuyetIds.filter(id => id !== t.id))
                           }}
-                          className="mt-1 w-4 h-4 text-indigo-600 rounded border-slate-300 focus:ring-indigo-500"
+                          className="mt-1 w-4 h-4 text-teal-800 rounded border-slate-300 focus:ring-indigo-500"
                         />
                         <div className="flex-1">
                           <div className="font-bold text-sm text-slate-800">{t.student?.studentName} <span className="text-slate-500 font-normal">({t.student?.studentCode})</span></div>
@@ -3421,9 +3421,9 @@ export function SupportClient({
       {isAssignModalOpen && (
         <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-xs flex items-center justify-center p-4 z-50">
           <div className="bg-white rounded-xl shadow-2xl max-w-lg w-full overflow-hidden flex flex-col">
-            <div className="px-6 py-4 border-b flex justify-between items-center bg-indigo-50">
+            <div className="px-6 py-4 border-b flex justify-between items-center bg-teal-50">
               <h2 className="text-lg font-bold text-slate-800 flex items-center gap-2">
-                <CheckCircle2 className="h-5 w-5 text-indigo-600" />
+                <CheckCircle2 className="h-5 w-5 text-teal-800" />
                 Phân công Giáo viên phụ trách
               </h2>
               <button onClick={() => setIsAssignModalOpen(false)}>
@@ -3485,7 +3485,7 @@ export function SupportClient({
               </button>
               <button
                 onClick={handleSaveAssignment}
-                className="bg-indigo-600 hover:bg-indigo-700 text-white py-2 px-4 rounded-lg text-sm font-bold shadow-sm transition-all"
+                className="bg-[#003B3A] hover:bg-[#003B3A] text-white py-2 px-4 rounded-lg text-sm font-bold shadow-sm transition-all"
               >
                 Lưu Phân công
               </button>
@@ -3498,9 +3498,9 @@ export function SupportClient({
       {isConfigModalOpen && (
         <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-xs flex items-center justify-center p-4 z-50">
           <div className="bg-white rounded-xl shadow-2xl max-w-md w-full overflow-hidden flex flex-col">
-            <div className="px-6 py-4 border-b flex justify-between items-center bg-indigo-50">
+            <div className="px-6 py-4 border-b flex justify-between items-center bg-teal-50">
               <h2 className="text-lg font-bold text-slate-800 flex items-center gap-2">
-                <Sliders className="h-5 w-5 text-indigo-600" />
+                <Sliders className="h-5 w-5 text-teal-800" />
                 Thiết lập Quy định Kết quả
               </h2>
               <button onClick={() => setIsConfigModalOpen(false)}>
@@ -3564,7 +3564,7 @@ export function SupportClient({
               </button>
               <button
                 onClick={handleSaveConfig}
-                className="bg-indigo-600 hover:bg-indigo-700 text-white py-2 px-4 rounded-lg text-sm font-medium shadow-sm transition-all"
+                className="bg-[#003B3A] hover:bg-[#003B3A] text-white py-2 px-4 rounded-lg text-sm font-medium shadow-sm transition-all"
               >
                 Xác nhận lưu
               </button>
@@ -3577,7 +3577,7 @@ export function SupportClient({
       {isDuyetModalOpen && (
         <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-xs flex items-center justify-center p-4 z-50">
           <div className="bg-white rounded-xl shadow-2xl max-w-md w-full overflow-hidden flex flex-col">
-            <div className="px-6 py-4 border-b flex justify-between items-center bg-indigo-50">
+            <div className="px-6 py-4 border-b flex justify-between items-center bg-teal-50">
               <h2 className="text-lg font-bold text-slate-800">
                 Phê duyệt Kết thúc Bồi dưỡng
               </h2>
@@ -3661,13 +3661,13 @@ export function SupportClient({
               <div className="relative border-l-2 border-slate-200 pl-6 space-y-6">
                 {selectedTargetForTimeline.evaluations.map((ev: any) => (
                   <div key={ev.id} className="relative">
-                    <span className="absolute -left-[31px] top-0.5 bg-indigo-600 rounded-full h-4 w-4 border-2 border-white flex items-center justify-center shadow-xs"></span>
+                    <span className="absolute -left-[31px] top-0.5 bg-[#003B3A] rounded-full h-4 w-4 border-2 border-white flex items-center justify-center shadow-xs"></span>
                     <div className="text-xs text-slate-400 font-medium">
                       {new Date(ev.createdAt).toLocaleDateString("vi-VN")} - {ev.periodType === "WEEK" ? "Đánh giá Tuần" : "Đánh giá Tháng"}
                     </div>
                     <div className="font-bold text-slate-800 text-sm mt-0.5">{ev.periodName}</div>
                     <div className="bg-slate-50 p-3 rounded-lg border border-slate-200 mt-2">
-                      <div className="text-xs font-bold text-indigo-700">Mức độ tiến bộ: {ev.trackingLevel}</div>
+                      <div className="text-xs font-bold text-teal-800">Mức độ tiến bộ: {ev.trackingLevel}</div>
                       <p className="text-slate-600 text-xs mt-1.5 leading-relaxed">{ev.comment}</p>
                     </div>
                   </div>
@@ -3696,10 +3696,10 @@ export function SupportClient({
           <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-xs flex items-center justify-center p-4 z-50 animate-fade-in">
             <div className="bg-white rounded-xl shadow-2xl max-w-5xl w-full overflow-hidden flex flex-col max-h-[85vh] animate-scale-in">
               {/* Modal Header */}
-              <div className="px-6 py-4 border-b flex justify-between items-center bg-indigo-50/50">
+              <div className="px-6 py-4 border-b flex justify-between items-center bg-teal-50/50">
                 <div>
                   <h2 className="text-lg font-bold text-slate-800 flex items-center gap-2">
-                    <Users className="h-5 w-5 text-indigo-600" />
+                    <Users className="h-5 w-5 text-teal-800" />
                     Đề xuất hỗ trợ {activeTab === "academic" ? "Học tập" : "Tâm lý"} từ Giáo viên: {selectedTeacherForDetail.teacherName}
                   </h2>
                   <p className="text-xs text-slate-500 mt-0.5">
@@ -3827,7 +3827,7 @@ export function SupportClient({
                           ? "bg-amber-100 text-amber-800 animate-pulse"
                           : isUnapproved
                           ? "bg-blue-50 text-blue-600 border border-blue-200"
-                          : "bg-indigo-100 text-indigo-800"
+                          : "bg-teal-50 text-teal-800"
 
                         const statusText = t.terminationStatus === "TERMINATED"
                           ? "Đã kết thúc"
@@ -3880,7 +3880,7 @@ export function SupportClient({
                             <td className="px-4 py-3 whitespace-nowrap">
                               <div className="flex flex-col gap-1">
                                 <span className={`px-2 py-0.5 rounded text-[10px] font-bold w-fit ${
-                                  t.supportType === "ACADEMIC" ? "bg-blue-100 text-blue-800" : "bg-purple-100 text-purple-800"
+                                  t.supportType === "ACADEMIC" ? "bg-blue-100 text-blue-800" : "bg-teal-50 text-teal-800"
                                 }`}>
                                   {t.supportType === "ACADEMIC" ? "Bồi dưỡng học tập" : "Hỗ trợ Tâm lý"}
                                 </span>
@@ -3895,7 +3895,7 @@ export function SupportClient({
                               {assignedTeachers.length > 0 ? (
                                 <div className="flex flex-wrap gap-1 max-w-[150px]">
                                   {assignedTeachers.map((name, index) => (
-                                    <span key={index} className="px-1.5 py-0.5 rounded text-[10px] font-bold bg-indigo-50 text-indigo-700 border border-indigo-200">
+                                    <span key={index} className="px-1.5 py-0.5 rounded text-[10px] font-bold bg-teal-50 text-teal-800 border border-teal-200">
                                       {name}
                                     </span>
                                   ))}
@@ -3948,7 +3948,7 @@ export function SupportClient({
 
                                 <button
                                   onClick={() => setSelectedTargetForTimeline(t)}
-                                  className="border border-indigo-200 bg-indigo-50 hover:bg-indigo-100 text-indigo-700 font-bold py-1 px-2.5 rounded text-[10px]"
+                                  className="border border-teal-200 bg-teal-50 hover:bg-teal-50 text-teal-800 font-bold py-1 px-2.5 rounded text-[10px]"
                                 >
                                   Timeline
                                 </button>
@@ -4118,7 +4118,7 @@ export function SupportClient({
                             </div>
                           </div>
                           <div className="text-right">
-                            <span className="font-mono text-[11px] text-indigo-600 font-semibold">{t.email || "Chưa có email"}</span>
+                            <span className="font-mono text-[11px] text-teal-800 font-semibold">{t.email || "Chưa có email"}</span>
                           </div>
                         </div>
                       )

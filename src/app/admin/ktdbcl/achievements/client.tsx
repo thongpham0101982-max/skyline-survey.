@@ -224,7 +224,7 @@ export function AchievementsClient({
           </div>
 
           {creatingCat && (
-            <div className="bg-white border-2 border-indigo-200 rounded-2xl p-6 shadow-md shadow-indigo-50 animate-fade-in">
+            <div className="bg-white border-2 border-teal-200 rounded-2xl p-6 shadow-md shadow-indigo-50 animate-fade-in">
               <h3 className="font-bold text-slate-800 text-base mb-4 flex items-center gap-2">
                 <Trophy className="w-5 h-5 text-[#48BFE3]" />
                 Thêm Loại Thành Tích Mới
@@ -418,7 +418,7 @@ export function AchievementsClient({
           </div>
 
           {creatingLvl && (
-            <div className="bg-white border-2 border-indigo-200 rounded-2xl p-6 shadow-md shadow-indigo-50 animate-fade-in">
+            <div className="bg-white border-2 border-teal-200 rounded-2xl p-6 shadow-md shadow-indigo-50 animate-fade-in">
               <h3 className="font-bold text-slate-800 text-base mb-4 flex items-center gap-2">
                 <Medal className="w-5 h-5 text-[#48BFE3]" />
                 Thêm Mức giải Mới
@@ -515,7 +515,7 @@ export function AchievementsClient({
                   return (
                     <div key={lvl.id} className="flex flex-col p-6 hover:bg-slate-50/50 transition-colors group">
                       <div className="flex items-start gap-4">
-                        <div className="w-10 h-10 bg-indigo-50 text-indigo-600 rounded-xl flex items-center justify-center flex-shrink-0">
+                        <div className="w-10 h-10 bg-teal-50 text-teal-800 rounded-xl flex items-center justify-center flex-shrink-0">
                           <Medal className="w-5 h-5" />
                         </div>
                         <div className="flex-1 min-w-0">

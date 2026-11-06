@@ -599,7 +599,7 @@ export function CatalogAllocateModal({
               </div>
               <div>
                 <span className="text-slate-400 block text-[10px] font-semibold uppercase">Môn chủ trì & Phối hợp:</span>
-                <span className="font-bold text-indigo-700">
+                <span className="font-bold text-teal-800">
                   {catalogItem.meta?.primarySubjectName || '—'}
                   {catalogItem.meta?.coopSubjectNames ? ` + ${catalogItem.meta.coopSubjectNames}` : ''}
                 </span>

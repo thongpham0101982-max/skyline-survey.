@@ -56,7 +56,7 @@ const SUBJECT_COLORS: Record<string, string> = {
   "STEM": "#D1FAE5", // Emerald
   "Khoa học": "#D1FAE5",
   "Mỹ thuật": "#FDE68A", // Amber
-  "Âm nhạc": "#FED7AA", // Orange
+  "Âm nhạc": "#FDE68A", // Orange
   "GDTC": "#CFFAFE", // Cyan
   "Lịch sử": "#E9D5FF", // Purple
   "Địa lý": "#E9D5FF"
@@ -701,7 +701,7 @@ export default function TimetableClient({ initialData }: { initialData: any }) {
           <button
             onClick={handleRunAutoScheduler}
             disabled={isAutoScheduling}
-            className="px-4 py-2.5 bg-gradient-to-r from-amber-500 to-orange-600 hover:from-amber-600 hover:to-orange-700 text-white text-xs font-black rounded-xl shadow-md transition-all flex items-center gap-2 cursor-pointer disabled:opacity-50"
+            className="px-4 py-2.5 bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-600 hover:to-amber-600 text-white text-xs font-black rounded-xl shadow-md transition-all flex items-center gap-2 cursor-pointer disabled:opacity-50"
             title="Tự động xếp TKB cho tất cả các lớp dựa trên Phân công giảng dạy & 10 Quy tắc Ràng buộc"
           >
             <Sparkles className="w-4 h-4 animate-spin-slow" />
@@ -710,7 +710,7 @@ export default function TimetableClient({ initialData }: { initialData: any }) {
 
           <button
             onClick={() => setShowAudits(!showAudits)}
-            className="px-3.5 py-2.5 bg-indigo-600 hover:bg-indigo-700 text-white text-xs font-black rounded-xl shadow-xs transition-all flex items-center gap-1.5 cursor-pointer"
+            className="px-3.5 py-2.5 bg-[#003B3A] hover:bg-[#003B3A] text-white text-xs font-black rounded-xl shadow-xs transition-all flex items-center gap-1.5 cursor-pointer"
           >
             <CheckCircle className="w-4 h-4" />
             Rà soát 10 Quy tắc ({constraintAudits.filter(a => a.passed).length}/10)
@@ -799,7 +799,7 @@ export default function TimetableClient({ initialData }: { initialData: any }) {
           onClick={() => setMainViewMode("ASSIGNMENTS" as any)}
           className={`px-4 py-2.5 rounded-xl text-xs font-black transition-all flex items-center gap-2 cursor-pointer ${
             (mainViewMode as any) === "ASSIGNMENTS"
-              ? "bg-indigo-600 text-white shadow-md"
+              ? "bg-[#003B3A] text-white shadow-md"
               : "text-slate-600 hover:bg-slate-100"
           }`}
         >
@@ -848,10 +848,10 @@ export default function TimetableClient({ initialData }: { initialData: any }) {
         </div>
 
         {showAudits && (
-          <div className="bg-white p-5 rounded-2xl border border-indigo-200 shadow-md space-y-3 animate-in fade-in zoom-in duration-200">
+          <div className="bg-white p-5 rounded-2xl border border-teal-200 shadow-md space-y-3 animate-in fade-in zoom-in duration-200">
             <div className="flex items-center justify-between border-b border-slate-150 pb-2">
-              <h3 className="font-black text-xs text-indigo-900 uppercase tracking-wide flex items-center gap-2">
-                <CheckCircle className="w-4 h-4 text-indigo-600" />
+              <h3 className="font-black text-xs text-teal-800 uppercase tracking-wide flex items-center gap-2">
+                <CheckCircle className="w-4 h-4 text-teal-800" />
                 Báo cáo Rà soát 10 Quy tắc Ràng buộc & Di chuyển Liên Cơ sở (CS1 - CS5)
               </h3>
               <button onClick={() => setShowAudits(false)} className="text-slate-400 hover:text-slate-600">
@@ -906,7 +906,7 @@ export default function TimetableClient({ initialData }: { initialData: any }) {
               activeLevel === "TRUNG_HOC" ? "bg-white text-[#003B3A] shadow-xs" : "text-slate-600 hover:bg-slate-200/60"
             }`}
           >
-            <Layers className="w-4 h-4 text-indigo-600" />
+            <Layers className="w-4 h-4 text-teal-800" />
             Trung học (Khối 6 - 12)
           </button>
           <button
@@ -1041,13 +1041,13 @@ export default function TimetableClient({ initialData }: { initialData: any }) {
                                 {slot?.weekType === "SPLIT" ? (
                                   <div className="flex flex-col gap-0.5 text-[9px]">
                                     <span className="bg-amber-100 text-amber-900 px-1 rounded truncate">C: {slot.subjectName}</span>
-                                    <span className="bg-indigo-100 text-indigo-900 px-1 rounded truncate">L: {slot.altSubjectName || "-"}</span>
+                                    <span className="bg-teal-50 text-teal-800 px-1 rounded truncate">L: {slot.altSubjectName || "-"}</span>
                                   </div>
                                 ) : (
                                   <span>
                                     {slot?.subjectName || <span className="text-slate-300 font-normal italic text-[10px]">+ Môn</span>}
                                     {slot?.weekType === "EVEN" && <span className="text-[9px] text-amber-800 block font-bold">(Chẵn)</span>}
-                                    {slot?.weekType === "ODD" && <span className="text-[9px] text-indigo-800 block font-bold">(Lẻ)</span>}
+                                    {slot?.weekType === "ODD" && <span className="text-[9px] text-teal-800 block font-bold">(Lẻ)</span>}
                                   </span>
                                 )}
                               </td>
@@ -1102,7 +1102,7 @@ export default function TimetableClient({ initialData }: { initialData: any }) {
                 activeTab === "TEACHERS" ? "bg-white text-[#003B3A] shadow-xs" : "text-slate-600"
               }`}
             >
-              <UserCheck className="w-4 h-4 text-indigo-600" />
+              <UserCheck className="w-4 h-4 text-teal-800" />
               Giáo viên ({teachers.length})
             </button>
           </div>
@@ -1153,13 +1153,13 @@ export default function TimetableClient({ initialData }: { initialData: any }) {
                   key={t.id}
                   draggable
                   onDragStart={e => handleDragStart(e, "TEACHER", t)}
-                  className="p-3 rounded-2xl bg-indigo-50/50 hover:bg-indigo-50 border border-indigo-100 font-bold text-xs text-indigo-950 shadow-xs hover:shadow-md transition-all cursor-grab active:cursor-grabbing flex items-center justify-between gap-2"
+                  className="p-3 rounded-2xl bg-teal-50/50 hover:bg-teal-50 border border-teal-200 font-bold text-xs text-teal-800 shadow-xs hover:shadow-md transition-all cursor-grab active:cursor-grabbing flex items-center justify-between gap-2"
                 >
                   <div>
-                    <p className="font-extrabold text-indigo-950">{t.teacherName}</p>
-                    <p className="text-[9px] text-indigo-600 mt-0.5">Mã: {t.teacherCode} • {t.departmentRel?.name || "Bộ môn"}</p>
+                    <p className="font-extrabold text-teal-800">{t.teacherName}</p>
+                    <p className="text-[9px] text-teal-800 mt-0.5">Mã: {t.teacherCode} • {t.departmentRel?.name || "Bộ môn"}</p>
                   </div>
-                  <span className="text-[9px] font-bold bg-indigo-100 px-2 py-0.5 rounded-full text-indigo-800 shrink-0">GV</span>
+                  <span className="text-[9px] font-bold bg-teal-50 px-2 py-0.5 rounded-full text-teal-800 shrink-0">GV</span>
                 </div>
               ))}
             </div>
@@ -1286,7 +1286,7 @@ export default function TimetableClient({ initialData }: { initialData: any }) {
                                     {assignedSlot.teacherName || "Chưa xếp GV"}
                                   </div>
                                   {assignedSlot.weekType && assignedSlot.weekType !== "ALL" && (
-                                    <div className="text-[10px] font-black text-indigo-700 bg-indigo-50 px-1.5 py-0.5 rounded">
+                                    <div className="text-[10px] font-black text-teal-800 bg-teal-50 px-1.5 py-0.5 rounded">
                                       {assignedSlot.weekType === "EVEN" ? "Tuần Chẵn" : assignedSlot.weekType === "ODD" ? "Tuần Lẻ" : "Thay đổi"}
                                     </div>
                                   )}
@@ -1431,7 +1431,7 @@ export default function TimetableClient({ initialData }: { initialData: any }) {
           <div className="flex items-center justify-between border-b border-slate-150 pb-4">
             <div>
               <h2 className="text-base font-black text-slate-850 uppercase tracking-wide flex items-center gap-2">
-                <Layers className="w-5 h-5 text-indigo-600" />
+                <Layers className="w-5 h-5 text-teal-800" />
                 PHÂN CÔNG GIÁO VIÊN THEO LỚP HỌC
               </h2>
               <p className="text-xs text-slate-500 font-semibold mt-0.5">
@@ -1443,7 +1443,7 @@ export default function TimetableClient({ initialData }: { initialData: any }) {
               <select
                 value={selectedAssignmentClassId}
                 onChange={e => setSelectedAssignmentClassId(e.target.value)}
-                className="w-full bg-slate-50 border border-slate-300 rounded-xl px-3 py-2 text-xs font-bold text-slate-800 outline-none focus:border-indigo-500"
+                className="w-full bg-slate-50 border border-slate-300 rounded-xl px-3 py-2 text-xs font-bold text-slate-800 outline-none focus:border-teal-200"
               >
                 <option value="">-- Chọn Lớp học để xem --</option>
                 {displayClasses.map((c: any) => (
@@ -1466,9 +1466,9 @@ export default function TimetableClient({ initialData }: { initialData: any }) {
                   const slotsCount = slots.filter(s => s.classId === selectedAssignmentClassId && s.subjectName === sub.subjectName).length
 
                   return (
-                    <div key={sub.id} className="p-4 rounded-2xl border border-slate-200 bg-indigo-50/30 space-y-3">
+                    <div key={sub.id} className="p-4 rounded-2xl border border-slate-200 bg-teal-50/30 space-y-3">
                       <div className="flex items-center justify-between">
-                        <span className="text-xs font-black text-indigo-950">{sub.subjectName}</span>
+                        <span className="text-xs font-black text-teal-800">{sub.subjectName}</span>
                         <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-emerald-100 text-emerald-800">
                           Đã xếp: {slotsCount} tiết
                         </span>
@@ -1491,7 +1491,7 @@ export default function TimetableClient({ initialData }: { initialData: any }) {
                               }
                             }
                           }}
-                          className="w-full bg-white border border-slate-300 rounded-xl px-2.5 py-2 text-xs font-bold text-slate-800 outline-none focus:border-indigo-500"
+                          className="w-full bg-white border border-slate-300 rounded-xl px-2.5 py-2 text-xs font-bold text-slate-800 outline-none focus:border-teal-200"
                         >
                           <option value="">-- Chọn GV Phụ trách --</option>
                           {teachers.map((t: any) => (
@@ -1638,7 +1638,7 @@ export default function TimetableClient({ initialData }: { initialData: any }) {
                                     {assignedSlot.className}
                                   </div>
                                   {assignedSlot.weekType && assignedSlot.weekType !== "ALL" && (
-                                    <div className="text-[10px] font-black text-indigo-700 bg-indigo-50 px-1.5 py-0.5 rounded">
+                                    <div className="text-[10px] font-black text-teal-800 bg-teal-50 px-1.5 py-0.5 rounded">
                                       {assignedSlot.weekType === "EVEN" ? "Tuần Chẵn" : assignedSlot.weekType === "ODD" ? "Tuần Lẻ" : "Thay đổi"}
                                     </div>
                                   )}
@@ -1823,8 +1823,8 @@ export default function TimetableClient({ initialData }: { initialData: any }) {
 
             {/* Alternate Subject & Teacher for SPLIT week mode */}
             {editWeekType === "SPLIT" && (
-              <div className="space-y-3 p-3 rounded-2xl bg-indigo-50/50 border border-indigo-200">
-                <span className="text-[10px] font-black text-indigo-900 uppercase tracking-wider block">
+              <div className="space-y-3 p-3 rounded-2xl bg-teal-50/50 border border-teal-200">
+                <span className="text-[10px] font-black text-teal-800 uppercase tracking-wider block">
                   2. Môn học & GV Tuần Lẻ
                 </span>
 

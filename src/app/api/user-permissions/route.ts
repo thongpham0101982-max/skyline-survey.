@@ -3,7 +3,7 @@ export const revalidate = 0
 
 import { NextResponse } from "next/server"
 import { auth } from "@/lib/auth"
-import { getRoleReadableModules, getDefaultRouteForRole } from "@/lib/permissions"
+import { getRoleReadableModules } from "@/lib/permissions"
 
 export async function GET() {
   try {
@@ -26,8 +26,14 @@ export async function GET() {
 
     const upperRole = roleCode.toUpperCase().trim()
     const readableModules = await getRoleReadableModules(roleCode)
-    let defaultRoute = await getDefaultRouteForRole(roleCode)
-    if (["TEACHER", "GV_MN", "GVNN", "GV", "GIAO_VIEN"].includes(upperRole)) {
+    
+    // Yêu cầu: "khi login sẽ trực tiếp đến trang Tổng quan cá nhân, là trang mặc định home"
+    let defaultRoute = "/teacher"
+    if (upperRole === "STUDENT") {
+      defaultRoute = "/hocsinh/hs-khaosat/danh-sach"
+    } else if (upperRole === "PARENT") {
+      defaultRoute = "/parent"
+    } else {
       defaultRoute = "/teacher"
     }
 

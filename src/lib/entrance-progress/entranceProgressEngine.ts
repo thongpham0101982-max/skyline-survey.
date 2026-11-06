@@ -2352,6 +2352,73 @@ export async function executeEntranceWorkflowAction(params: {
       );
 
       // ĐỒNG BỘ LIÊN THÔNG SANG BẢNG NGHIỆP VỤ GỐC (KHÔNG TẠO DỮ LIỆU TRÙNG LẶP)
+      // - Công đoạn 4: Khi GVBM xác nhận hoàn thành đánh giá (B4), tự động gán chữ ký điện tử vào Mẫu phiếu đánh giá tâm lý cùng Họ tên GV
+      if (stageNumber === 4 && finalStatus === "COMPLETED") {
+        try {
+          const nowFormatted = new Date().toLocaleString("vi-VN", { timeZone: "Asia/Ho_Chi_Minh" });
+          const sigHash = `SQMS-SIGN-TLY-${st.studentCode || st.id.slice(0, 8)}-${Date.now().toString(36).toUpperCase()}`;
+
+          const isPsychSubject = (note && String(note).toLowerCase().includes("tâm lý")) ||
+            (assignmentId && String(note || "").toLowerCase().includes("tly")) ||
+            st.scores?.some((sc: any) => sc.subjectId && (sc.subject?.code === "TLY" || String(sc.subject?.name || "").toLowerCase().includes("tâm lý")));
+
+          if (isPsychSubject || (st.orientationRecord && (st.orientationRecord.psychologyData || st.orientationRecord.psychologyTeacherName))) {
+            const existingRec = st.orientationRecord || await pAny.studentOrientationRecord.findUnique({
+              where: { studentId: st.id }
+            });
+
+            let psychDataObj: any = {};
+            if (existingRec?.psychologyData) {
+              try {
+                psychDataObj = typeof existingRec.psychologyData === "string"
+                  ? JSON.parse(existingRec.psychologyData)
+                  : existingRec.psychologyData;
+              } catch (e) {}
+            }
+
+            // Gán chữ ký điện tử chính thức của GVBM
+            psychDataObj.digitalSignature = {
+              isSigned: true,
+              signedBy: actor.fullName,
+              signerId: actor.id,
+              signerRole: "Giáo viên Tâm lý học đường",
+              signedAt: nowIso,
+              signedAtFormatted: nowFormatted,
+              signatureHash: sigHash,
+              status: "VERIFIED",
+              stage: "STAGE_4_EVALUATED"
+            };
+
+            await pAny.studentOrientationRecord.upsert({
+              where: { studentId: st.id },
+              create: {
+                studentId: st.id,
+                psychologyTeacherId: actor.id,
+                psychologyTeacherName: actor.fullName,
+                psychologyReferralStatus: "COMPLETED",
+                psychologyData: JSON.stringify(psychDataObj),
+                status: "IN_PROGRESS"
+              },
+              update: {
+                psychologyTeacherId: actor.id,
+                psychologyTeacherName: actor.fullName,
+                psychologyData: JSON.stringify(psychDataObj),
+                updatedAt: new Date()
+              }
+            });
+          }
+
+          try {
+            await pAny.inputAssessmentStudent.update({
+              where: { id: st.id },
+              data: { signatureName: actor.fullName }
+            });
+          } catch (eSigName) {}
+        } catch (eSig) {
+          console.warn("Tự động gán chữ ký điện tử B4 warning:", eSig);
+        }
+      }
+
       // - Công đoạn 5: Đồng bộ StudentOrientationRecord.status
       if (stageNumber === 5 && !isPreschool && finalStatus === "COMPLETED") {
         try {

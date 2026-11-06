@@ -16,7 +16,7 @@ const getCategoryIconAndColor = (code: string, name: string) => {
     return { Icon: Cpu, bg: "bg-gradient-to-br from-amber-500 to-yellow-500 text-white shadow-md shadow-amber-500/20", badge: "bg-amber-50 text-amber-700 border-amber-200" }
   }
   if (cleanCode.includes("HOC_THUAT") || cleanCode.includes("ACADEMIC") || cleanName.includes("học thuật") || cleanName.includes("học tập")) {
-    return { Icon: BookOpen, bg: "bg-gradient-to-br from-blue-600 to-indigo-600 text-white shadow-md shadow-blue-500/20", badge: "bg-blue-50 text-blue-700 border-blue-200" }
+    return { Icon: BookOpen, bg: "bg-gradient-to-br from-blue-600 to-emerald-600 text-white shadow-md shadow-blue-500/20", badge: "bg-blue-50 text-blue-700 border-blue-200" }
   }
   if (cleanCode.includes("KY_NANG") || cleanCode.includes("SKILL") || cleanName.includes("kỹ năng")) {
     return { Icon: Lightbulb, bg: "bg-gradient-to-br from-emerald-500 to-teal-600 text-white shadow-md shadow-emerald-500/20", badge: "bg-emerald-50 text-emerald-700 border-emerald-200" }
@@ -135,15 +135,15 @@ export function CategoriesClient({ initialCategories, academicYears }: ExamCateg
       {/* 4 Summary Vibrant KPI Cards */}
       <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-4 no-print">
         {/* Card 1: Tổng danh mục */}
-        <div className="bg-gradient-to-br from-indigo-50/90 via-slate-50 to-indigo-100/60 p-5 rounded-2xl border border-indigo-200/80 shadow-xs hover:shadow-md hover:-translate-y-0.5 transition-all duration-300 group">
+        <div className="bg-gradient-to-br from-teal-600/90 via-slate-50 to-emerald-600/60 p-5 rounded-2xl border border-teal-200/80 shadow-xs hover:shadow-md hover:-translate-y-0.5 transition-all duration-300 group">
           <div className="flex items-center justify-between mb-3">
-            <div className="p-3 bg-indigo-600 text-white rounded-xl shadow-md shadow-indigo-500/20 group-hover:scale-110 transition-transform">
+            <div className="p-3 bg-[#003B3A] text-white rounded-xl shadow-md shadow-indigo-500/20 group-hover:scale-110 transition-transform">
               <Tag className="w-5 h-5" />
             </div>
           </div>
-          <div className="text-[10px] font-extrabold text-indigo-800 uppercase tracking-wider block mb-1">Tổng số danh mục</div>
-          <div className="text-3xl font-black text-indigo-950 leading-none">{displayCategories.length}</div>
-          <div className="text-[10px] text-indigo-600/80 font-bold mt-1.5">danh mục kỳ thi</div>
+          <div className="text-[10px] font-extrabold text-teal-800 uppercase tracking-wider block mb-1">Tổng số danh mục</div>
+          <div className="text-3xl font-black text-teal-800 leading-none">{displayCategories.length}</div>
+          <div className="text-[10px] text-teal-800/80 font-bold mt-1.5">danh mục kỳ thi</div>
         </div>
 
         {/* Card 2: Tổng số Kỳ thi */}
