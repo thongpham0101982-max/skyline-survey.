@@ -70,6 +70,7 @@ export const APP_CATEGORIES = [
       { code: "STUDENT_PORTAL_CONFIG", name: "Cổng ảnh học sinh", icon: Globe, href: "/admin/student-portal", requiresAdmin: true },
       { code: "API_INTEGRATIONS", name: "Kết nối API", icon: KeyRound, href: "/admin/api-integrations", requiresAdmin: true },
       { code: "DIGITAL_SIGNATURES", name: "Cấu hình Chữ ký số", icon: PenTool, href: "/admin/chu-ky-so", requiresAdmin: true },
+      { code: "SKYLINE_CONNECT_ADMIN", name: "Quản trị Sky-Line Connect", icon: Sparkles, href: "/admin/skyline-connect" },
     ]
   },
   {

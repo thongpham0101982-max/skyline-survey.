@@ -16,7 +16,7 @@ import {
   Search, Calendar, MapPin, CheckCircle, AlertTriangle, GraduationCap,
   Layers, School, Building2, RotateCcw, RefreshCw, Trash2,
   ChevronLeft, ChevronRight, Maximize2, Minimize2,
-  Camera, Upload, ChevronDown, X, LayoutList, Check,
+  Camera, Upload, ChevronDown, X, LayoutList, Check, Plus, CheckCircle2, Clock, XCircle,
   Phone, Mail, Activity, BookMarked, FolderArchive, FolderDown, Sliders
 } from "lucide-react"
 import StudentProfileCoverA4 from "@/components/student/StudentProfileCoverA4"

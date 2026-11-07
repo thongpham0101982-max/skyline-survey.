@@ -38,6 +38,7 @@ export const SIDEBAR_TRANSLATIONS: SidebarTranslations = {
     CAMPUSES: { vi: "Quản lý Cơ sở", en: "Campus Management" },
     PARENTS: { vi: "Tài khoản PHHS", en: "Parent Accounts" },
     STUDENT_PORTAL_CONFIG: { vi: "Cổng ảnh học sinh", en: "Student Photo Portal" },
+    SKYLINE_CONNECT_ADMIN: { vi: "Quản trị Sky-Line Connect", en: "Sky-Line Connect Administration" },
 
     // KTDBCL
     KTDBCL_CONNECT: { vi: "KT&ĐBCL Connect", en: "QA & Testing Connect" },
@@ -204,6 +205,12 @@ export const SIDEBAR_TRANSLATIONS: SidebarTranslations = {
     obs_preschool: { vi: "Khối Mầm non", en: "Preschool Observation" },
     obs_foreign: { vi: "Tiếng Anh – Chương trình Song ngữ", en: "English – Bilingual Program" },
     group_01: { vi: "01. Tổng quan & Nhiệm vụ", en: "01. Overview & Tasks" },
+    skyline_connect: { vi: "Sky-Line Connect", en: "Sky-Line Connect" },
+    slc_wall: { vi: "Bức tường ý tưởng AI", en: "AI Idea Wall" },
+    slc_explore: { vi: "Khám phá sáng tạo", en: "Creative Explore" },
+    slc_groups_projects: { vi: "Nhóm & Dự án", en: "Groups & Projects" },
+    slc_hall_of_fame: { vi: "Bảng vàng sáng tạo", en: "Hall of Fame" },
+    slc_my_space: { vi: "Không gian của tôi", en: "My Space" },
     group_02: { vi: "02. Hồ sơ & Đồng hành Học sinh", en: "02. Student Records & Companion" },
     group_03: { vi: "03. Chủ nhiệm & Phát triển Lớp học", en: "03. Homeroom & Class Growth" },
     group_04: { vi: "04. Cố vấn Học tập", en: "04. Academic Advisory" },
