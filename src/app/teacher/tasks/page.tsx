@@ -287,6 +287,34 @@ function getDeadlineStatusInfo(task: SSMTask): {
 }
 
 /**
+ * Làm sạch chuỗi mô tả nhiệm vụ nếu phát hiện còn sót mảnh JSON chuyển tiếp GVBM
+ */
+function formatTaskDescriptionForDisplay(desc?: string): string {
+  if (!desc) return ""
+  if (desc.includes('"subjectName"') || desc.includes('"forwardedAt"')) {
+    const subjMatch = desc.match(/"subjectName"\s*:\s*"([^"]*)"/)
+    const teacherMatch = desc.match(/"teacherName"\s*:\s*"([^"]*)"/)
+    const msgMatch = desc.match(/"message"\s*:\s*"([^"]*)"/)
+    const subjectName = subjMatch?.[1]?.trim() || ""
+    const teacherName = teacherMatch?.[1]?.trim() || ""
+    const message = msgMatch?.[1]?.trim() || ""
+
+    const targetInfo = [
+      subjectName ? `Môn ${subjectName}` : "",
+      teacherName ? `GVBM ${teacherName}` : "",
+    ]
+      .filter(Boolean)
+      .join(" • ")
+
+    if (message) {
+      return `Chuyển tiếp từ GVCN${targetInfo ? ` (${targetInfo})` : ""}: "${message}"`
+    }
+    return `Chuyển tiếp từ GVCN${targetInfo ? ` (${targetInfo})` : ""}: Cần phối hợp giải đáp chuyên môn môn học.`
+  }
+  return desc
+}
+
+/**
  * Nút thao tác chính riêng biệt cho từng loại nhiệm vụ (Mục 3.E)
  */
 function getTaskPrimaryActionLabel(task: SSMTask): string {
@@ -1172,7 +1200,7 @@ export default function TeacherTasksPage() {
 
             {task.description && (
               <p className="text-[13px] text-slate-600 line-clamp-2 leading-relaxed">
-                {task.description}
+                {formatTaskDescriptionForDisplay(task.description)}
               </p>
             )}
           </div>
@@ -2902,7 +2930,7 @@ export default function TeacherTasksPage() {
 
             {selectedTask.description && (
               <div className="p-3 rounded-xl bg-slate-50 border border-slate-200/70 text-xs text-slate-700 leading-relaxed">
-                {selectedTask.description}
+                {formatTaskDescriptionForDisplay(selectedTask.description)}
               </div>
             )}
 
