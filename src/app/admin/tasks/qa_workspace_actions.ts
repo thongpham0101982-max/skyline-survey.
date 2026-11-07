@@ -576,7 +576,11 @@ export async function transitionTaskWorkflow(
       metaUpdate.resultSummary = payload.resultSummary
     }
     if (payload.evidenceLinks !== undefined) {
-      metaUpdate.evidenceLinks = payload.evidenceLinks
+      metaUpdate.evidenceLinks = payload.evidenceLinks.map((item: any, idx: number) =>
+        typeof item === "string"
+          ? { id: `ev_${idx + 1}`, title: item, url: item, type: "URL" as const }
+          : item
+      )
     }
     if (toStatus === "PENDING_REVIEW") {
       metaUpdate.submittedForReviewAt = nowIso
@@ -805,13 +809,37 @@ export async function getTaskFullGovernanceDetails(taskId: string) {
       getQaTaskAuditLogs(taskId),
     ])
 
+    const qaMeta = metaMap.get(taskId) || null
+    const deadlineInfo = qaMeta
+      ? computeTaskDeadlineStatus({
+          workflowStatus: qaMeta.workflowStatus,
+          endDate: task.endDate,
+          reviewDueDate: qaMeta.reviewDueDate,
+          completedAt: task.completedAt,
+          submittedForReviewAt: qaMeta.submittedForReviewAt,
+          checklist: qaMeta.checklist,
+        })
+      : null
+    const checklistStats = computeChecklistMetrics(qaMeta?.checklist || [])
+
     return {
       success: true,
-      qaMeta: metaMap.get(taskId) || null,
+      qaMeta,
+      metadata: qaMeta,
+      deadlineInfo,
+      checklistStats,
       auditLogs,
     }
   } catch (err: any) {
-    return { success: false, error: err?.message, qaMeta: null, auditLogs: [] }
+    return {
+      success: false,
+      error: err?.message,
+      qaMeta: null,
+      metadata: null,
+      deadlineInfo: null,
+      checklistStats: computeChecklistMetrics([]),
+      auditLogs: [],
+    }
   }
 }
 
@@ -827,7 +855,7 @@ export async function triggerApprovedRecurringTasks() {
 
     const pAny = prisma as any
     if (typeof pAny.$queryRawUnsafe !== "function") {
-      return { success: true, generatedCount: 0 }
+      return { success: true, generatedCount: 0, spawnedCount: 0, skippedCount: 0 }
     }
 
     const rows: any[] = await pAny.$queryRawUnsafe(
@@ -835,6 +863,7 @@ export async function triggerApprovedRecurringTasks() {
     )
 
     let generatedCount = 0
+    let skippedCount = 0
     const now = new Date()
 
     for (const r of rows || []) {
@@ -855,6 +884,7 @@ export async function triggerApprovedRecurringTasks() {
         periodInstanceKey
       )
       if (existingInst && existingInst.length > 0) {
+        skippedCount++
         continue // Đã phát hành kỳ này, chống sinh trùng!
       }
 
@@ -908,9 +938,20 @@ export async function triggerApprovedRecurringTasks() {
     }
 
     if (generatedCount > 0) revalidatePath("/admin/tasks")
-    return { success: true, generatedCount }
+    return {
+      success: true,
+      generatedCount,
+      spawnedCount: generatedCount,
+      skippedCount,
+    }
   } catch (err: any) {
-    return { success: false, error: err?.message, generatedCount: 0 }
+    return {
+      success: false,
+      error: err?.message,
+      generatedCount: 0,
+      spawnedCount: 0,
+      skippedCount: 0,
+    }
   }
 }
 

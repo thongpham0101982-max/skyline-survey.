@@ -151,11 +151,18 @@ export function TaskDetailPanel({
   const [auditLogs, setAuditLogs] = useState<any[]>([])
 
   // Workflow transition form states
+  const normalizeEvidenceLinks = (raw: any): string[] => {
+    if (!Array.isArray(raw)) return []
+    return raw
+      .map((item: any) => (typeof item === "string" ? item : item?.url || item?.title || ""))
+      .filter(Boolean)
+  }
+
   const [resultSummaryInput, setResultSummaryInput] = useState(
     task.qaMeta?.resultSummary || task.staffNote || ""
   )
   const [evidenceLinksInput, setEvidenceLinksInput] = useState<string[]>(
-    task.qaMeta?.evidenceLinks || []
+    normalizeEvidenceLinks(task.qaMeta?.evidenceLinks)
   )
   const [newEvidenceUrl, setNewEvidenceUrl] = useState("")
   const [reviewCommentInput, setReviewCommentInput] = useState(
@@ -223,15 +230,19 @@ export function TaskDetailPanel({
       setAttachments(collabRes.attachments)
     }
     if (govRes.success) {
-      setQaMeta(govRes.metadata)
-      setDeadlineInfo(govRes.deadlineInfo)
-      setChecklistStats(govRes.checklistStats)
+      const resolvedMeta = govRes.metadata || govRes.qaMeta || task.qaMeta || null
+      setQaMeta(resolvedMeta)
+      setDeadlineInfo(govRes.deadlineInfo || task.deadlineInfo || null)
+      setChecklistStats(
+        govRes.checklistStats ||
+          task.checklistStats || { totalSteps: 0, completedSteps: 0, percent: 0 }
+      )
       setAuditLogs(govRes.auditLogs || [])
-      setResultSummaryInput(govRes.metadata?.resultSummary || task.staffNote || "")
-      setEvidenceLinksInput(govRes.metadata?.evidenceLinks || [])
-      setReviewCommentInput(govRes.metadata?.reviewComment || "")
-      if (govRes.metadata?.reviewRating) {
-        setReviewRatingInput(govRes.metadata.reviewRating)
+      setResultSummaryInput(resolvedMeta?.resultSummary || task.staffNote || "")
+      setEvidenceLinksInput(normalizeEvidenceLinks(resolvedMeta?.evidenceLinks))
+      setReviewCommentInput(resolvedMeta?.reviewComment || "")
+      if (resolvedMeta?.reviewRating) {
+        setReviewRatingInput(resolvedMeta.reviewRating as any)
       }
     }
     setLoading(false)
@@ -810,7 +821,7 @@ export function TaskDetailPanel({
               <div className="bg-white p-4 rounded-xl border border-slate-200 space-y-3">
                 <div className="flex items-center justify-between">
                   <h4 className="text-xs font-extrabold uppercase tracking-wider text-slate-500">
-                    2. Lộ trình thực hiện & Tiến độ Checklist ({checklistStats.completedSteps}/{checklistStats.totalSteps} bước — {checklistStats.percent}%)
+                    2. Lộ trình thực hiện & Tiến độ Checklist ({checklistStats?.completedSteps ?? 0}/{checklistStats?.totalSteps ?? 0} bước — {checklistStats?.percent ?? 0}%)
                   </h4>
                   <span className="text-[11px] font-semibold text-slate-500">
                     Tách biệt khỏi đánh giá chất lượng

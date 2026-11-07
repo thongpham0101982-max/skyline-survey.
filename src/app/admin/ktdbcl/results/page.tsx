@@ -11,10 +11,10 @@ export const metadata = {
 export default async function ResultsPage({ searchParams }: { searchParams: Promise<{ tab?: string }> }) {
   const session = await getAdminSession()
   const params = await searchParams
-  const initialTab = (params?.tab === 'reports' || params?.tab === 'profiles') ? params.tab : 'input'
+  const initialTab = (params?.tab === 'reports' || params?.tab === 'profiles' || params?.tab === 'requests') ? params.tab : 'input'
 
   // Active tab for ExamTabs navigation
-  const activeNavTab = params?.tab === 'reports' ? 'reports' : params?.tab === 'profiles' ? 'profiles' : 'results'
+  const activeNavTab = params?.tab === 'reports' ? 'reports' : params?.tab === 'profiles' ? 'profiles' : params?.tab === 'requests' ? 'requests' : 'results'
 
   // Concurrently fetch all independent datasets with Promise.all
   const [
@@ -78,7 +78,7 @@ export default async function ResultsPage({ searchParams }: { searchParams: Prom
         classes={classes}
         achievementCategories={achievementCategories}
         achievementLevels={achievementLevels}
-        initialTab={initialTab as 'input' | 'reports' | 'profiles'}
+        initialTab={initialTab as 'input' | 'reports' | 'profiles' | 'requests'}
       />
     </div>
   )

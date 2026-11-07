@@ -97,7 +97,7 @@ export function AiObservationPopupTrigger({
         <div className="flex items-center gap-3 shrink-0">
           {activeQuest ? (
             <a
-              href="/teacher/ai-growth"
+              href="/teacher/du-gio"
               className="px-5 py-2.5 rounded-2xl bg-white/10 hover:bg-white/20 text-white font-bold text-xs border border-white/20 flex items-center gap-2 transition-all"
             >
               <Award className="w-4 h-4 text-amber-400" /> Xem Hành Trình Của Tôi

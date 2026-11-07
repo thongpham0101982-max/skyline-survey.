@@ -281,7 +281,33 @@ export async function GET(req: Request) {
         }
       });
 
-      const reportRows = studentAchievements.map(sa => {
+      // Query additional achievement requests (PENDING / REJECTED)
+      let pendingRequests: any[] = [];
+      try {
+        pendingRequests = await prisma.studentAchievementRequest.findMany({
+          where: {
+            classId: { in: targetClassIds },
+            ...(academicYearId && academicYearId !== "all" ? { academicYearId } : {}),
+            status: { in: ["PENDING", "REJECTED"] }
+          },
+          include: {
+            student: {
+              include: {
+                class: true,
+                campus: true
+              }
+            },
+            academicYear: true
+          },
+          orderBy: {
+            createdAt: "desc"
+          }
+        });
+      } catch (err) {
+        console.error("Error fetching achievement requests:", err);
+      }
+
+      const officialRows = studentAchievements.map(sa => {
         const ach = sa.achievement;
         const student = sa.student;
         return {
@@ -301,9 +327,45 @@ export async function GET(req: Request) {
           className: student?.class?.className || "N/A",
           classId: student?.classId,
           campusName: student?.campus?.campusName || "N/A",
-          grade: student?.class?.grade || "N/A"
+          grade: student?.class?.grade || "N/A",
+          status: "APPROVED",
+          statusLabel: "Đã duyệt",
+          isRequest: false
         };
       });
+
+      const requestRows = pendingRequests.map(req => {
+        const student = req.student;
+        return {
+          id: `req_${req.id}`,
+          requestId: req.id,
+          achievementId: req.achievementId,
+          achievementName: req.achievementName,
+          type: req.type || "CA_NHAN",
+          category: req.category || "GIAI_THUONG",
+          level: req.level || "KHAC",
+          academicYearName: req.academicYear?.name || "N/A",
+          academicYearId: req.academicYearId,
+          teacherName: req.coachTeacher || req.teacherName || "Chưa xác định",
+          examName: req.examName || "Ngoài hệ thống",
+          studentId: student?.id,
+          studentCode: student?.studentCode || "",
+          studentName: student?.studentName || "",
+          className: student?.class?.className || "N/A",
+          classId: req.classId || student?.classId,
+          campusName: student?.campus?.campusName || "N/A",
+          grade: student?.class?.grade || "N/A",
+          status: req.status, // "PENDING" | "REJECTED"
+          statusLabel: req.status === "PENDING" ? "Chờ duyệt" : "Từ chối",
+          evidenceUrl: req.evidenceUrl,
+          note: req.note,
+          reviewNote: req.reviewNote,
+          createdAt: req.createdAt,
+          isRequest: true
+        };
+      });
+
+      const reportRows = [...requestRows, ...officialRows];
 
       // Thống kê
       const uniqueStudentIds = new Set(reportRows.map(r => r.studentId).filter(Boolean));
@@ -326,10 +388,13 @@ export async function GET(req: Request) {
         }
       });
 
+      const pendingCount = pendingRequests.filter(r => r.status === "PENDING").length;
+
       return NextResponse.json({
         reportRows,
         stats: {
           total: reportRows.length,
+          pendingCount,
           gold,
           silver,
           bronze,
@@ -1482,10 +1547,10 @@ export async function GET(req: Request) {
       }
 
       try {
-        // Fetch achievements across all records for this studentCode
+        // Fetch achievements across all records for this studentCode (including official and pending requests)
         let achievements: any[] = []
         try {
-          achievements = await prisma.studentAchievement.findMany({
+          const official = await prisma.studentAchievement.findMany({
             where: { studentId: { in: allStudentIdsForCode } },
             include: {
               achievement: {
@@ -1502,6 +1567,58 @@ export async function GET(req: Request) {
               }
             }
           })
+
+          const officialList = official.map((sa: any) => ({
+            ...sa,
+            status: "APPROVED",
+            statusLabel: "Đã duyệt",
+            isRequest: false
+          }))
+
+          let pendingRequests: any[] = []
+          try {
+            pendingRequests = await prisma.studentAchievementRequest.findMany({
+              where: {
+                studentId: { in: allStudentIdsForCode },
+                status: { in: ["PENDING", "REJECTED"] }
+              },
+              include: {
+                academicYear: true
+              },
+              orderBy: { createdAt: "desc" }
+            })
+          } catch (rErr) {
+            console.error("Error fetching student pending requests:", rErr)
+          }
+
+          const requestList = pendingRequests.map((req: any) => ({
+            id: `req_${req.id}`,
+            requestId: req.id,
+            studentId: req.studentId,
+            achievementId: req.achievementId,
+            status: req.status,
+            statusLabel: req.status === "PENDING" ? "Chờ duyệt" : "Từ chối",
+            isRequest: true,
+            evidenceUrl: req.evidenceUrl,
+            note: req.note,
+            reviewNote: req.reviewNote,
+            createdAt: req.createdAt,
+            achievement: {
+              id: req.achievementId || `req_ach_${req.id}`,
+              name: req.achievementName,
+              type: req.type || "CA_NHAN",
+              category: req.category || "GIAI_THUONG",
+              level: req.level || "KHAC",
+              academicYearId: req.academicYearId,
+              academicYear: req.academicYear,
+              teacherName: req.coachTeacher || req.teacherName,
+              exam: {
+                name: req.examName
+              }
+            }
+          }))
+
+          achievements = [...requestList, ...officialList]
         } catch (err) {
           console.error("Error fetching achievements:", err)
         }
@@ -2888,6 +3005,113 @@ export async function POST(req: Request) {
         where: { id }
       })
       return NextResponse.json({ success: true })
+    }
+
+    // --- CÁC HÀNH ĐỘNG XÉT DUYỆT BỔ SUNG THÀNH TÍCH HỌC SINH (GVCN & ADMIN) ---
+    if (action === "requestAchievementAddition") {
+      const {
+        studentId,
+        academicYearId,
+        classId,
+        examName,
+        achievementName,
+        type,
+        category,
+        level,
+        coachTeacher,
+        evidenceUrl,
+        note
+      } = body;
+
+      if (!studentId || !examName || !achievementName) {
+        return NextResponse.json({ error: "Vui lòng nhập đầy đủ thông tin: Học sinh, Tên cuộc thi và Thành tích đạt được." }, { status: 400 });
+      }
+
+      // Xác định thông tin học sinh
+      const studentRec = await prisma.student.findUnique({
+        where: { id: studentId },
+        select: { classId: true, academicYearId: true }
+      });
+
+      const effectiveClassId = classId || studentRec?.classId || null;
+      const effectiveYearId = academicYearId || studentRec?.academicYearId;
+
+      if (!effectiveYearId) {
+        return NextResponse.json({ error: "Không tìm thấy năm học của học sinh." }, { status: 400 });
+      }
+
+      const newRequest = await prisma.studentAchievementRequest.create({
+        data: {
+          studentId,
+          academicYearId: effectiveYearId,
+          classId: effectiveClassId,
+          teacherId: teacher.id,
+          teacherName: teacher.teacherName,
+          examName: String(examName).trim(),
+          achievementName: String(achievementName).trim(),
+          type: type || "CA_NHAN",
+          category: category || "GIAI_THUONG",
+          level: level || "KHUYEN_KHICH",
+          coachTeacher: coachTeacher ? String(coachTeacher).trim() : null,
+          evidenceUrl: evidenceUrl ? String(evidenceUrl).trim() : null,
+          note: note ? String(note).trim() : null,
+          status: "PENDING"
+        }
+      });
+
+      return NextResponse.json({ success: true, request: newRequest });
+    }
+
+    if (action === "updateAchievementRequest") {
+      const {
+        requestId,
+        examName,
+        achievementName,
+        type,
+        category,
+        level,
+        coachTeacher,
+        evidenceUrl,
+        note
+      } = body;
+
+      if (!requestId) return NextResponse.json({ error: "Missing requestId" }, { status: 400 });
+
+      const existing = await prisma.studentAchievementRequest.findUnique({ where: { id: requestId } });
+      if (!existing) return NextResponse.json({ error: "Yêu cầu không tồn tại" }, { status: 404 });
+      if (existing.status !== "PENDING") {
+        return NextResponse.json({ error: "Chỉ có thể cập nhật yêu cầu đang ở trạng thái Chờ duyệt" }, { status: 400 });
+      }
+
+      const updated = await prisma.studentAchievementRequest.update({
+        where: { id: requestId },
+        data: {
+          ...(examName ? { examName: String(examName).trim() } : {}),
+          ...(achievementName ? { achievementName: String(achievementName).trim() } : {}),
+          ...(type ? { type } : {}),
+          ...(category ? { category } : {}),
+          ...(level ? { level } : {}),
+          coachTeacher: coachTeacher !== undefined ? (coachTeacher ? String(coachTeacher).trim() : null) : existing.coachTeacher,
+          evidenceUrl: evidenceUrl !== undefined ? (evidenceUrl ? String(evidenceUrl).trim() : null) : existing.evidenceUrl,
+          note: note !== undefined ? (note ? String(note).trim() : null) : existing.note
+        }
+      });
+
+      return NextResponse.json({ success: true, request: updated });
+    }
+
+    if (action === "deleteAchievementRequest") {
+      const { requestId } = body;
+      if (!requestId) return NextResponse.json({ error: "Missing requestId" }, { status: 400 });
+
+      const existing = await prisma.studentAchievementRequest.findUnique({ where: { id: requestId } });
+      if (!existing) return NextResponse.json({ error: "Yêu cầu không tồn tại" }, { status: 404 });
+      if (existing.status !== "PENDING") {
+        return NextResponse.json({ error: "Chỉ có thể hủy yêu cầu đang ở trạng thái Chờ duyệt" }, { status: 400 });
+      }
+
+      await prisma.studentAchievementRequest.delete({ where: { id: requestId } });
+      return NextResponse.json({ success: true });
     }
 
     return NextResponse.json({ error: "Invalid action" }, { status: 400 })

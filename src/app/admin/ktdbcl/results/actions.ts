@@ -565,3 +565,141 @@ export async function upsertExamResultsAction(
 
   revalidatePath("/admin/ktdbcl/results");
 }
+
+
+// 7. Lấy danh sách yêu cầu bổ sung thành tích học sinh do GVCN đề xuất
+export async function getAchievementRequestsAction(filters: {
+  academicYearId?: string;
+  campusId?: string;
+  classId?: string;
+  status?: string;
+}) {
+  const session = await getAdminSession();
+  if (!session.userId) return [];
+
+  const where: any = {};
+  if (filters.academicYearId && filters.academicYearId !== "all") {
+    where.academicYearId = filters.academicYearId;
+  }
+  if (filters.status && filters.status !== "all") {
+    where.status = filters.status;
+  }
+  if (filters.classId && filters.classId !== "all") {
+    where.classId = filters.classId;
+  }
+
+  const requests = await prisma.studentAchievementRequest.findMany({
+    where,
+    include: {
+      student: {
+        include: {
+          class: true,
+          campus: true
+        }
+      },
+      academicYear: true,
+      teacher: true
+    },
+    orderBy: {
+      createdAt: "desc"
+    }
+  });
+
+  return requests.filter(r => {
+    if (filters.campusId && filters.campusId !== "all" && r.student?.campusId !== filters.campusId) {
+      return false;
+    }
+    return true;
+  });
+}
+
+// 8. Xét duyệt yêu cầu bổ sung thành tích (Admin duyệt & xác nhận -> Bổ sung chính thức vào Hồ sơ học sinh)
+export async function reviewAchievementRequestAction(data: {
+  requestId: string;
+  status: "APPROVED" | "REJECTED";
+  reviewNote?: string;
+}) {
+  const session = await getAdminSession();
+  if (!session.userId || !session.isFullAccess) {
+    throw new Error("Forbidden: Bạn không có quyền thực hiện thao tác này.");
+  }
+
+  const { requestId, status, reviewNote } = data;
+  if (!requestId || !status) throw new Error("Thiếu thông tin xét duyệt");
+
+  const req = await prisma.studentAchievementRequest.findUnique({
+    where: { id: requestId },
+    include: { student: true }
+  });
+
+  if (!req) throw new Error("Không tìm thấy yêu cầu xét duyệt");
+
+  if (status === "APPROVED") {
+    // Transaction: Tạo bản ghi Achievement chính thức + StudentAchievement và cập nhật status request
+    await prisma.$transaction(async (tx) => {
+      // 1. Tạo Achievement chính thức
+      const ach = await tx.achievement.create({
+        data: {
+          name: req.achievementName,
+          type: req.type,
+          category: req.category,
+          level: req.level,
+          academicYearId: req.academicYearId,
+          teacherName: req.coachTeacher || req.teacherName || null,
+          students: {
+            create: {
+              studentId: req.studentId
+            }
+          }
+        }
+      });
+
+      // 2. Cập nhật trạng thái request thành ĐÃ DUYỆT (APPROVED)
+      await tx.studentAchievementRequest.update({
+        where: { id: requestId },
+        data: {
+          status: "APPROVED",
+          reviewedBy: session.fullName || "Ban Quản lý Chuyên môn",
+          reviewedAt: new Date(),
+          reviewNote: reviewNote || "Đã phê duyệt và xác nhận bổ sung vào Hồ sơ học sinh",
+          achievementId: ach.id
+        }
+      });
+    });
+  } else {
+    // REJECTED
+    await prisma.studentAchievementRequest.update({
+      where: { id: requestId },
+      data: {
+        status: "REJECTED",
+        reviewedBy: session.fullName || "Ban Quản lý Chuyên môn",
+        reviewedAt: new Date(),
+        reviewNote: reviewNote || "Từ chối yêu cầu bổ sung thành tích"
+      }
+    });
+  }
+
+  revalidatePath("/admin/ktdbcl/results");
+  revalidatePath("/teacher/ho-so-hoc-sinh");
+  return { success: true };
+}
+
+// 9. Thống kê số lượng yêu cầu bổ sung thành tích
+export async function getAchievementRequestStatsAction(academicYearId?: string) {
+  const session = await getAdminSession();
+  if (!session.userId) return { total: 0, pending: 0, approved: 0, rejected: 0 };
+
+  const where: any = {};
+  if (academicYearId && academicYearId !== "all") {
+    where.academicYearId = academicYearId;
+  }
+
+  const [total, pending, approved, rejected] = await Promise.all([
+    prisma.studentAchievementRequest.count({ where }),
+    prisma.studentAchievementRequest.count({ where: { ...where, status: "PENDING" } }),
+    prisma.studentAchievementRequest.count({ where: { ...where, status: "APPROVED" } }),
+    prisma.studentAchievementRequest.count({ where: { ...where, status: "REJECTED" } })
+  ]);
+
+  return { total, pending, approved, rejected };
+}

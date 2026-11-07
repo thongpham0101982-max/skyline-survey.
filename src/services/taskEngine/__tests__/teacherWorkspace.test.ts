@@ -614,4 +614,65 @@ describe("Sổ Giáo Viên & Sky-Line Task Assistant — Comprehensive Verificat
     expect(reminderRes.digestSent).toBe(false)
     expect(reminderRes.skippedReason).toBe("USER_PROFILE_NOT_FOUND")
   })
+
+  it("7. Giải mã JSON [GVBM_FORWARD:{...}] trong Ý kiến PHHS: không hiển thị chuỗi JSON thô và phân tách đúng nhiệm vụ GVCN / GVBM", async () => {
+    const now = new Date()
+    mockPrisma.academicConsultationLog.findMany.mockResolvedValue([
+      {
+        id: "log-forward-other-gvbm",
+        studentId: "hs-1",
+        teacherId: "teacher-01", // GVCN là teacher-01 chuyển tiếp cho GVBM Ngữ Văn (teacher-99)
+        difficulties: "[GradePeriod: GK1] Ý KIẾN PHHS: Nhờ cô môn Văn hướng dẫn thêm kỹ năng nghị luận xã hội.",
+        content: "",
+        nextActions:
+          '[ACKNOWLEDGED] [GVBM_FORWARD:{"subjectId":"cmnmxagiy0007yiyoqmq5vy2p","subjectName":"Ngữ Văn","teacherId":"cmspfizyf000513c5uuz0p1vv","teacherName":"Nguyễn Thị Lan Hương","message":"","forwardedAt":"2026-09-23T09:40:11.033Z"}]',
+        createdAt: now,
+        student: {
+          studentName: "Vũ Nguyễn Mai Khanh",
+          classId: "class-10a1",
+          class: { className: "12.1_CS1" },
+        },
+      },
+      {
+        id: "log-forward-to-me",
+        studentId: "hs-2",
+        teacherId: "teacher-hr-other",
+        difficulties: "[GradePeriod: GK1] Ý KIẾN PHHS: Cháu còn lúng túng phần Hình học không gian.",
+        content: "",
+        nextActions:
+          '[ACKNOWLEDGED] [GVBM_FORWARD:{"subjectId":"sub-math","subjectName":"Toán học","teacherId":"teacher-01","teacherName":"Nguyễn Văn Minh","message":"Nhờ thầy hỗ trợ thêm bài tập cho em","forwardedAt":"2026-09-23T09:40:11.033Z"}]',
+        createdAt: now,
+        student: {
+          studentName: "Lê Hoàng Nam",
+          classId: "class-10a2",
+          class: { className: "10A2" },
+        },
+      },
+    ])
+
+    const { tasks } = await aggregateTeacherTasks("user-gv-01")
+
+    // 1. Đối với log chuyển cho GVBM khác (teacher-99): teacher-01 (GVCN) chỉ thấy trạng thái WAITING chờ GVBM phản hồi, không bị gán nhầm task GVBM
+    const wrongGvbmTask = tasks.find((t) => t.taskId === "ykph-gvbm-log-forward-other-gvbm")
+    expect(wrongGvbmTask).toBeUndefined()
+
+    const gvcnWaitingTask = tasks.find((t) => t.taskId === "ykph-gvcn-log-forward-other-gvbm")
+    expect(gvcnWaitingTask).toBeDefined()
+    expect(gvcnWaitingTask!.status).toBe("WAITING")
+    expect(gvcnWaitingTask!.description).toContain("Nguyễn Thị Lan Hương")
+    expect(gvcnWaitingTask!.description).toContain("Ngữ Văn")
+    expect(gvcnWaitingTask!.description).not.toContain('"subjectName"')
+    expect(gvcnWaitingTask!.description).not.toContain("forwardedAt")
+
+    // 2. Đối với log chuyển đúng cho teacher-01 làm GVBM: hiển thị mô tả rõ ràng, không chứa JSON thô
+    const myGvbmTask = tasks.find((t) => t.taskId === "ykph-gvbm-log-forward-to-me")
+    expect(myGvbmTask).toBeDefined()
+    expect(myGvbmTask!.status).toBe("NEW")
+    expect(myGvbmTask!.title).toContain("Môn Toán học")
+    expect(myGvbmTask!.description).toContain("Nhờ thầy hỗ trợ thêm bài tập cho em")
+    expect(myGvbmTask!.description).toContain("Cháu còn lúng túng phần Hình học không gian.")
+    expect(myGvbmTask!.description).not.toContain('"subjectId"')
+    expect(myGvbmTask!.description).not.toContain("forwardedAt")
+    expect(myGvbmTask!.deepLink).toContain("subjectId=sub-math")
+  })
 })

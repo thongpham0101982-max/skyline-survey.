@@ -977,20 +977,38 @@ export async function aggregateTeacherTasks(
   // ============================================================================
   try {
     // 6.1. Ý kiến PHHS gửi qua Sổ điểm / Sổ liên lạc (AcademicConsultationLog)
-    const parentOpinionLogs = await prisma.academicConsultationLog.findMany({
-      where: {
+    const opinionOrConditions: any[] = []
+    if (homeroomClassIds.length > 0) {
+      opinionOrConditions.push({
         difficulties: { contains: "Ý KIẾN PHHS:" },
-        OR: [
-          ...(homeroomClassIds.length > 0 ? [{ student: { classId: { in: homeroomClassIds } } }] : []),
-          ...(teacherId ? [{ teacherId }] : []),
-        ],
-      },
-      include: {
-        student: { include: { class: true } },
-      },
-      orderBy: { meetingDate: "desc" },
-      take: 30,
-    }).catch(() => [])
+        student: { classId: { in: homeroomClassIds } },
+      })
+    }
+    if (teacherId) {
+      opinionOrConditions.push({
+        difficulties: { contains: "Ý KIẾN PHHS:" },
+        teacherId,
+      })
+      opinionOrConditions.push({
+        nextActions: { contains: teacherId },
+      })
+    }
+
+    const parentOpinionLogs =
+      opinionOrConditions.length > 0
+        ? await prisma.academicConsultationLog
+            .findMany({
+              where: {
+                OR: opinionOrConditions,
+              },
+              include: {
+                student: { include: { class: true } },
+              },
+              orderBy: { meetingDate: "desc" },
+              take: 30,
+            })
+            .catch(() => [])
+        : []
 
     for (const log of parentOpinionLogs) {
       const content = log.content || ""
@@ -998,30 +1016,105 @@ export async function aggregateTeacherTasks(
       const hasGvcnReply = content.includes("Ý KIẾN GVCN:")
       const isAcknowledged = nextActions.includes("[ACKNOWLEDGED]")
       const hasForward = nextActions.includes("[GVBM_FORWARD:")
-      const hasGvbmReply = nextActions.includes("[GVBM_RESPONSE:")
+      const hasGvbmReply =
+        nextActions.includes("[GVBM_RESPONSE:") || nextActions.includes("[GVBM_RESPONDED]")
 
-      const isHomeroomTeacherForStudent =
+      const cleanParentText = (log.difficulties || "")
+        .replace(/\[GradePeriod:[^\]]+\]\s*/g, "")
+        .replace(/^Ý KIẾN PHHS:\s*/i, "")
+        .replace("Ý KIẾN PHHS:", "")
+        .trim()
+
+      // Giải mã thông tin chuyển tiếp GVBM (hỗ trợ cả JSON [GVBM_FORWARD:{...}], mảng JSON [{...}], và định dạng cũ [GVBM_FORWARD:teacherId:note])
+      let forwardedGvbm: {
+        subjectId?: string
+        subjectName?: string
+        teacherId?: string
+        teacherName?: string
+        message?: string
+        forwardedAt?: string
+      } | null = null
+
+      if (hasForward) {
+        const jsonObjMatch = nextActions.match(/\[GVBM_FORWARD:(\{[\s\S]*?\})\]/)
+        const jsonArrMatch = !jsonObjMatch ? nextActions.match(/\[GVBM_FORWARD:(\[[\s\S]*?\])\]/) : null
+        if (jsonObjMatch) {
+          try {
+            forwardedGvbm = JSON.parse(jsonObjMatch[1])
+          } catch {}
+        } else if (jsonArrMatch) {
+          try {
+            const arr = JSON.parse(jsonArrMatch[1])
+            if (Array.isArray(arr) && arr.length > 0) {
+              forwardedGvbm =
+                arr.find((item: any) => teacherId && item?.teacherId === teacherId) ||
+                arr[arr.length - 1]
+            }
+          } catch {}
+        }
+
+        if (!forwardedGvbm && nextActions.includes('"subjectName"')) {
+          const subjIdMatch = nextActions.match(/"subjectId"\s*:\s*"([^"]*)"/)
+          const subjNameMatch = nextActions.match(/"subjectName"\s*:\s*"([^"]*)"/)
+          const tIdMatch = nextActions.match(/"teacherId"\s*:\s*"([^"]*)"/)
+          const tNameMatch = nextActions.match(/"teacherName"\s*:\s*"([^"]*)"/)
+          const msgMatch = nextActions.match(/"message"\s*:\s*"([^"]*)"/)
+          forwardedGvbm = {
+            subjectId: subjIdMatch?.[1] || undefined,
+            subjectName: subjNameMatch?.[1] || undefined,
+            teacherId: tIdMatch?.[1] || undefined,
+            teacherName: tNameMatch?.[1] || undefined,
+            message: msgMatch?.[1] || "",
+          }
+        }
+
+        if (!forwardedGvbm) {
+          const legacyMatch = nextActions.match(/\[GVBM_FORWARD:([^:\]]+):([^\]]*)\]/)
+          if (legacyMatch && !legacyMatch[1].trim().startsWith("{")) {
+            forwardedGvbm = {
+              teacherId: legacyMatch[1].trim(),
+              message: legacyMatch[2].trim(),
+            }
+          }
+        }
+      }
+
+      const isHomeroomTeacherForStudent = Boolean(
         log.student?.classId && homeroomClassIds.includes(log.student.classId)
-      const isForwardedToThisTeacher =
-        teacherId && log.teacherId === teacherId && hasForward && !hasGvbmReply
+      )
+      const isForwardedToThisTeacher = Boolean(
+        teacherId &&
+          hasForward &&
+          !hasGvbmReply &&
+          (forwardedGvbm?.teacherId
+            ? forwardedGvbm.teacherId === teacherId
+            : log.teacherId === teacherId)
+      )
 
-      // Trường hợp 1: GVCN chưa phản hồi hoặc chưa xác nhận hoàn thành
-      if (isHomeroomTeacherForStudent && !hasGvcnReply && !isAcknowledged) {
-        const cleanParentText = (log.difficulties || "")
-          .replace(/\[GradePeriod:[^\]]+\]\s*/g, "")
-          .replace("Ý KIẾN PHHS:", "")
-          .trim()
+      // Trường hợp 1: GVCN chưa phản hồi hoặc đã chuyển tiếp sang GVBM và đang chờ GVBM phản hồi
+      const isWaitingGvbmForHomeroom =
+        isHomeroomTeacherForStudent && hasForward && !hasGvbmReply && !isForwardedToThisTeacher
+      if ((isHomeroomTeacherForStudent && !hasGvcnReply && !isAcknowledged) || isWaitingGvbmForHomeroom) {
+        const forwardedTargetLabel = forwardedGvbm?.teacherName
+          ? `GVBM ${forwardedGvbm.teacherName}${forwardedGvbm.subjectName ? ` (${forwardedGvbm.subjectName})` : ""}`
+          : "Giáo viên bộ môn"
+
+        const gvcnDescription = isWaitingGvbmForHomeroom
+          ? `Đã chuyển tiếp đến ${forwardedTargetLabel}${forwardedGvbm?.message ? ` — Lời nhắn: "${forwardedGvbm.message}"` : ""}.${cleanParentText ? ` Nội dung ý kiến PHHS: "${cleanParentText}"` : ""}`
+          : cleanParentText || "Phụ huynh gửi ý kiến trao đổi cần GVCN tiếp nhận và phản hồi."
 
         addTask({
           taskId: `ykph-gvcn-${log.id}`,
           taskType: "PARENT_OPINION_GVCN_REPLY",
           sourceModule: "Y_KIEN_PHHS",
           sourceId: log.id,
-          title: `Phản hồi ý kiến Phụ huynh em ${log.student?.studentName || "Học sinh"} (${log.student?.class?.className || ""})`,
-          description: cleanParentText || "Phụ huynh gửi ý kiến trao đổi cần GVCN tiếp nhận và phản hồi.",
-          priority: "URGENT",
+          title: isWaitingGvbmForHomeroom
+            ? `[Chờ GVBM phản hồi] Ý kiến Phụ huynh em ${log.student?.studentName || "Học sinh"} (${log.student?.class?.className || ""})`
+            : `Phản hồi ý kiến Phụ huynh em ${log.student?.studentName || "Học sinh"} (${log.student?.class?.className || ""})`,
+          description: gvcnDescription,
+          priority: isWaitingGvbmForHomeroom ? "NORMAL" : "URGENT",
           status: hasForward && !hasGvbmReply ? "WAITING" : "NEW",
-          deadline: "Trong 24h",
+          deadline: isWaitingGvbmForHomeroom ? "Chờ GVBM phản hồi" : "Trong 24h",
           deadlineDate: todayEnd.toISOString(),
           assignedUserId: userId,
           deepLink: `/teacher/diem-lop-chu-nhiem?classId=${log.student?.classId || ""}`,
@@ -1031,14 +1124,18 @@ export async function aggregateTeacherTasks(
             badgeColor: "rose",
             classId: log.student?.classId,
             className: log.student?.class?.className,
+            subjectId: forwardedGvbm?.subjectId || undefined,
+            subjectName: forwardedGvbm?.subjectName || undefined,
             studentId: log.studentId,
             studentName: log.student?.studentName,
             approvalStatus: hasForward && !hasGvbmReply ? "PENDING_APPROVAL" : "DRAFT",
-            approverRole: hasForward && !hasGvbmReply ? "Giáo viên bộ môn" : undefined,
+            approverRole: hasForward && !hasGvbmReply ? forwardedTargetLabel : undefined,
             completionConditions: [
               {
                 code: "PARENT_REPLY",
-                label: "Gửi phản hồi chính thức hoặc xác nhận đã giải quyết ý kiến PHHS",
+                label: isWaitingGvbmForHomeroom
+                  ? `Phối hợp ${forwardedTargetLabel} phản hồi ý kiến PHHS`
+                  : "Gửi phản hồi chính thức hoặc xác nhận đã giải quyết ý kiến PHHS",
                 currentValue: 0,
                 targetValue: 1,
                 isMet: false,
@@ -1048,32 +1145,53 @@ export async function aggregateTeacherTasks(
         })
       }
 
-      // Trường hợp 2: GVCN chuyển tiếp ý kiến PHHS sang cho GVBM xử lý chuyên môn
+      // Trường hợp 2: GVCN chuyển tiếp ý kiến PHHS sang cho đúng GVBM phụ trách môn xử lý chuyên môn
       if (isForwardedToThisTeacher) {
-        const forwardMatch = nextActions.match(/\[GVBM_FORWARD:[^:]*:([^\]]+)\]/)
-        const forwardNote = forwardMatch ? forwardMatch[1] : "Cần GVBM phối hợp giải đáp chuyên môn môn học."
+        const gvcnNote = (forwardedGvbm?.message || "").trim()
+        const subjectLabel = forwardedGvbm?.subjectName ? ` (Môn ${forwardedGvbm.subjectName})` : ""
+        const forwardDescription = gvcnNote
+          ? `Chuyển tiếp từ GVCN${subjectLabel}: "${gvcnNote}"${cleanParentText ? ` • Ý kiến PHHS: "${cleanParentText}"` : ""}`
+          : cleanParentText
+          ? `Chuyển tiếp từ GVCN${subjectLabel} • Ý kiến PHHS: "${cleanParentText}"`
+          : `Chuyển tiếp từ GVCN${subjectLabel}: Cần GVBM phối hợp giải đáp chuyên môn môn học.`
+
+        const deepLinkParams = new URLSearchParams()
+        if (log.student?.classId) deepLinkParams.set("classId", log.student.classId)
+        if (forwardedGvbm?.subjectId) deepLinkParams.set("subjectId", forwardedGvbm.subjectId)
+        if (log.studentId) deepLinkParams.set("studentId", log.studentId)
 
         addTask({
           taskId: `ykph-gvbm-${log.id}`,
           taskType: "PARENT_OPINION_GVBM_RESPONSE",
           sourceModule: "Y_KIEN_PHHS",
           sourceId: log.id,
-          title: `Phối hợp trả lời ý kiến PHHS em ${log.student?.studentName || "Học sinh"} (${log.student?.class?.className || ""})`,
-          description: `Chuyển tiếp từ GVCN: "${forwardNote}"`,
+          title: `Phối hợp trả lời ý kiến PHHS em ${log.student?.studentName || "Học sinh"} (${log.student?.class?.className || ""})${forwardedGvbm?.subjectName ? ` - Môn ${forwardedGvbm.subjectName}` : ""}`,
+          description: forwardDescription,
           priority: "HIGH",
           status: "NEW",
           deadline: "Hôm nay",
           deadlineDate: todayEnd.toISOString(),
           assignedUserId: userId,
-          deepLink: `/teacher/so-diem-nhan-xet?classId=${log.student?.classId || ""}`,
+          deepLink: `/teacher/so-diem-nhan-xet${deepLinkParams.toString() ? `?${deepLinkParams.toString()}` : ""}`,
           createdAt: log.createdAt.toISOString(),
           metadata: {
             moduleLabel: "Ý kiến PHHS (GVBM)",
             badgeColor: "rose",
             classId: log.student?.classId,
             className: log.student?.class?.className,
+            subjectId: forwardedGvbm?.subjectId || undefined,
+            subjectName: forwardedGvbm?.subjectName || undefined,
             studentId: log.studentId,
             studentName: log.student?.studentName,
+            completionConditions: [
+              {
+                code: "GVBM_OPINION_REPLY",
+                label: `Gửi phản hồi chuyên môn${forwardedGvbm?.subjectName ? ` môn ${forwardedGvbm.subjectName}` : ""} cho GVCN tại Sổ điểm & Nhận xét`,
+                currentValue: 0,
+                targetValue: 1,
+                isMet: false,
+              },
+            ],
           },
         })
       }

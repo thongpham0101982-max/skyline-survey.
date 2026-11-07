@@ -423,12 +423,6 @@ export default function TeacherKtdbclConnectPage() {
           <BookOpen className="w-3.5 h-3.5 text-teal-800" /> Dự giờ K-12
         </Link>
         <Link
-          href="/teacher/ai-growth"
-          className="px-3 py-1.5 rounded-lg bg-slate-50 hover:bg-amber-50 border border-slate-200 text-slate-700 hover:text-amber-700 transition-colors flex items-center gap-1"
-        >
-          <Sparkles className="w-3.5 h-3.5 text-amber-500" /> AI Growth – Đổi mới tiết dạy
-        </Link>
-        <Link
           href="/teacher/ho-so-hoc-sinh"
           className="px-3 py-1.5 rounded-lg bg-slate-50 hover:bg-sky-50 border border-slate-200 text-slate-700 hover:text-sky-700 transition-colors flex items-center gap-1"
         >

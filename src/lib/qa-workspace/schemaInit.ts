@@ -490,12 +490,14 @@ export async function getRecentQaReminders(limit = 50): Promise<QaReminderLogIte
       recipientUserId: String(r.recipientUserId),
       recipientName: r.recipientName ? String(r.recipientName) : null,
       recipientRoleType: (r.recipientRoleType as any) || "ASSIGNEE",
+      recipientRole: (r.recipientRoleType as any) || "ASSIGNEE",
       reminderType: r.reminderType as any,
       dedupKey: String(r.dedupKey),
       channel: String(r.channel || "IN_APP"),
       title: String(r.title),
       message: String(r.message),
       createdAt: String(r.createdAt),
+      sentAt: String(r.createdAt),
     }))
   } catch {
     return []

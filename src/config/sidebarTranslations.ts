@@ -161,7 +161,6 @@ export const SIDEBAR_TRANSLATIONS: SidebarTranslations = {
 
     // OBSERVATION
     DU_GIO_K12: { vi: "Khối Phổ thông", en: "K-12 Observation" },
-    AI_GROWTH: { vi: "AI Growth – Đổi mới Tiết dạy", en: "AI Growth – Lesson Innovation" },
     DU_GIO_MAM_NON: { vi: "Khối Mầm non", en: "Preschool Observation" },
     DU_GIO_GVNN: { vi: "Tiếng Anh – Chương trình Song ngữ", en: "English – Bilingual Program" },
     TONG_HOP_DU_GIO: { vi: "Tổng hợp kết quả", en: "Observation Summary" },
@@ -202,8 +201,6 @@ export const SIDEBAR_TRANSLATIONS: SidebarTranslations = {
 
     observation_section: { vi: "Dự giờ & PTCM", en: "Observation & Growth" },
     obs_k12: { vi: "Khối Phổ thông", en: "K-12 Observation" },
-    obs_ai_growth: { vi: "AI Growth – Đổi mới", en: "AI Growth – Lesson Innovation" },
-    obs_ai_growth_tag: { vi: "Mới", en: "New" },
     obs_preschool: { vi: "Khối Mầm non", en: "Preschool Observation" },
     obs_foreign: { vi: "Tiếng Anh – Chương trình Song ngữ", en: "English – Bilingual Program" },
     group_01: { vi: "01. Tổng quan & Nhiệm vụ", en: "01. Overview & Tasks" },

@@ -87,6 +87,7 @@ model Teacher {
 
   academicYearTargets        TeacherAcademicYearTarget[]
   achievements               Achievement[]
+  achievementRequests        StudentAchievementRequest[]
   activityRecords            ActivityRecord[]
   learningSupportAssignments LearningSupportAssignment[]
   academicConsultationLogs   AcademicConsultationLog[]
@@ -163,6 +164,7 @@ model AcademicYear {
   examCategories                  ExamCategory[]
   examRounds                      ExamRound[]
   achievements                    Achievement[]
+  achievementRequests             StudentAchievementRequest[]
   achievementCategories           AchievementCategory[]
   achievementLevels               AchievementLevel[]
   activityRecords                 ActivityRecord[]
@@ -217,6 +219,7 @@ model Class {
   ctqtCompetencyEntries  CtqtCompetencyEntry[]
   specialAssignments     SpecialTeachingAssignment[]
   signableDocuments      SignableDocument[]
+  achievementRequests    StudentAchievementRequest[]
 
   @@index([campusId])
   @@index([academicYearId])
@@ -260,6 +263,7 @@ model Student {
   //  user           User?               @relation(fields: [userId], references: [id], onDelete: SetNull)
   exams                  ExamStudent[]
   achievements           StudentAchievement[]
+  achievementRequests    StudentAchievementRequest[]
   careerOrientations     StudentCareerOrientation[]
   projectExperiences     StudentProjectExperience[]
   learningCommitments    StudentLearningCommitment[]
@@ -1536,12 +1540,53 @@ model Achievement {
   examId         String?
   exam           Exam?                @relation(fields: [examId], references: [id], onDelete: Cascade)
   students       StudentAchievement[]
+  achievementRequests StudentAchievementRequest[]
   createdAt      DateTime             @default(now())
   updatedAt      DateTime             @updatedAt
 
   @@index([academicYearId])
   @@index([teacherId])
   @@index([examId])
+}
+
+
+model StudentAchievementRequest {
+  id              String       @id @default(cuid())
+  studentId       String
+  student         Student      @relation(fields: [studentId], references: [id], onDelete: Cascade)
+  academicYearId  String
+  academicYear    AcademicYear @relation(fields: [academicYearId], references: [id], onDelete: Cascade)
+  classId         String?
+  class           Class?       @relation(fields: [classId], references: [id], onDelete: SetNull)
+  teacherId       String?
+  teacher         Teacher?     @relation(fields: [teacherId], references: [id], onDelete: SetNull)
+  teacherName     String?
+
+  examName        String
+  achievementName String
+  type            String       @default("CA_NHAN")
+  category        String       @default("GIAI_THUONG")
+  level           String       @default("KHUYEN_KHICH")
+  coachTeacher    String?
+  evidenceUrl     String?
+  note            String?
+
+  status          String       @default("PENDING")
+  reviewedBy      String?
+  reviewedAt      DateTime?
+  reviewNote      String?
+
+  achievementId   String?
+  achievement     Achievement? @relation(fields: [achievementId], references: [id], onDelete: SetNull)
+
+  createdAt       DateTime     @default(now())
+  updatedAt       DateTime     @updatedAt
+
+  @@index([studentId])
+  @@index([academicYearId])
+  @@index([classId])
+  @@index([teacherId])
+  @@index([status])
 }
 
 model StudentAchievement {
@@ -5881,5 +5926,803 @@ model SignatureAuditLog {
   @@index([createdAt])
   @@map("signature_audit_logs")
 }
+
+// =============================================================================
+// SKY-LINE CONNECT (V2.0) — BỨC TƯỜNG Ý TƯỞNG AI & MẠNG XÃ HỘI SÁNG TẠO GIÁO VIÊN
+// =============================================================================
+
+model SlcFeatureConfig {
+  id                   String   @id @default(cuid())
+  key                  String   @unique @default("DEFAULT")
+  isEnabled            Boolean  @default(true)
+  pilotMode            Boolean  @default(false)
+  allowedCampusIdsJson String   @default("[\"ALL\"]")
+  allowedUserIdsJson   String   @default("[]")
+  allowedRolesJson     String   @default("[\"ALL\"]")
+  maxImageSizeMb       Int      @default(10)
+  maxDocSizeMb         Int      @default(25)
+  maxFilesPerPost      Int      @default(5)
+  allowedMimeTypesJson String   @default("[\"image/jpeg\",\"image/png\",\"image/webp\",\"image/gif\",\"application/pdf\",\"application/vnd.openxmlformats-officedocument.wordprocessingml.document\",\"application/vnd.openxmlformats-officedocument.presentationml.presentation\",\"application/vnd.openxmlformats-officedocument.spreadsheetml.sheet\"]")
+  workingDaysJson      String   @default("[1,2,3,4,5]")
+  holidaysJson         String   @default("[]")
+  updatedById          String?
+  createdAt            DateTime @default(now())
+  updatedAt            DateTime @updatedAt
+
+  @@map("slc_feature_configs")
+}
+
+model SlcUserRoleAssignment {
+  id           String   @id @default(cuid())
+  userId       String
+  userName     String?
+  userEmail    String?
+  role         String   // COORDINATOR | EVIDENCE_VERIFIER | EXPERT_REVIEWER | AWARD_FINALIZER | COMMUNITY_ADMIN
+  scopeType    String   @default("SYSTEM") // SYSTEM | CAMPUS | SUBJECT | GROUP | PERIOD
+  scopeId      String   @default("ALL")
+  isActive     Boolean  @default(true)
+  assignedById String?
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  @@unique([userId, role, scopeType, scopeId])
+  @@index([userId, isActive])
+  @@index([role, scopeType, scopeId, isActive])
+  @@map("slc_user_role_assignments")
+}
+
+model SlcCommunityProfile {
+  id                     String   @id @default(cuid())
+  userId                 String   @unique
+  teacherId              String?
+  fullName               String?
+  avatarUrl              String?
+  coverImageUrl          String?
+  bio                    String?
+  campusId               String?
+  campusName             String?
+  mainSubject            String?
+  gradeLevelsJson        String   @default("[]")
+  specialtiesJson        String   @default("[]")
+  interestsJson          String   @default("[]")
+  notifyOnMention        Boolean  @default(true)
+  notifyOnReply          Boolean  @default(true)
+  notifyOnInvite         Boolean  @default(true)
+  notifyOnFollowedUpdate Boolean  @default(true)
+  digestMode             String   @default("IMMEDIATE") // IMMEDIATE | DAILY | OFF
+  createdAt              DateTime @default(now())
+  updatedAt              DateTime @updatedAt
+
+  @@index([campusId])
+  @@map("slc_community_profiles")
+}
+
+model SlcTag {
+  id          String   @id @default(cuid())
+  code        String   @unique
+  name        String
+  category    String   @default("TOPIC") // SUBJECT | GRADE | TOPIC | PURPOSE | AI_TOOL
+  description String?
+  isActive    Boolean  @default(true)
+  sortOrder   Int      @default(0)
+  usageCount  Int      @default(0)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  @@index([category, isActive, sortOrder])
+  @@map("slc_tags")
+}
+
+model SlcGroup {
+  id            String           @id @default(cuid())
+  name          String
+  slug          String           @unique
+  description   String?
+  coverImageUrl String?
+  visibility    String           @default("PUBLIC") // PUBLIC | CAMPUS | PRIVATE
+  campusId      String?
+  campusName    String?
+  subjectCode   String?
+  gradeLevel    String?
+  ownerId       String
+  ownerName     String
+  status        String           @default("ACTIVE") // ACTIVE | ARCHIVED
+  memberCount   Int              @default(1)
+  createdAt     DateTime         @default(now())
+  updatedAt     DateTime         @updatedAt
+  members       SlcGroupMember[]
+
+  @@index([status, visibility])
+  @@index([campusId])
+  @@index([ownerId])
+  @@map("slc_groups")
+}
+
+model SlcGroupMember {
+  id           String    @id @default(cuid())
+  groupId      String
+  userId       String
+  userName     String
+  userAvatar   String?
+  campusName   String?
+  role         String    @default("MEMBER") // OWNER | MODERATOR | MEMBER
+  status       String    @default("APPROVED") // PENDING | APPROVED | REJECTED
+  joinNote     String?
+  approvedById String?
+  joinedAt     DateTime? @default(now())
+  createdAt    DateTime  @default(now())
+  updatedAt    DateTime  @updatedAt
+  group        SlcGroup  @relation(fields: [groupId], references: [id], onDelete: Cascade)
+
+  @@unique([groupId, userId])
+  @@index([userId, status])
+  @@map("slc_group_members")
+}
+
+model SlcPost {
+  id                       String            @id @default(cuid())
+  authorId                 String
+  authorName               String
+  authorAvatar             String?
+  authorRole               String?           @default("Giáo viên")
+  campusId                 String?
+  campusName               String?
+  mainSubject              String?
+  postType                 String            @default("IDEA") // GENERAL | IDEA | AI_PRODUCT | PROJECT | EXPERIENCE
+  title                    String?
+  summary                  String?
+  content                  String
+  coverImageUrl            String?
+  visibility               String            @default("SYSTEM") // SYSTEM | CAMPUS | GROUP
+  groupId                  String?
+  status                   String            @default("PUBLISHED") // DRAFT | PUBLISHED | ARCHIVED | HIDDEN_MODERATION
+  subjectCodesJson         String            @default("[]")
+  gradeLevelsJson          String            @default("[]")
+  purposeTagsJson          String            @default("[]")
+  tagsJson                 String            @default("[]")
+  mentionedUserIdsJson     String            @default("[]")
+  hasStudentDataPiiChecked Boolean           @default(true)
+  sharedFromPostId         String?
+  linkedIdeaId             String?
+  linkedProductId          String?
+  linkedProjectId          String?
+  isEditorialFeatured      Boolean           @default(false)
+  featuredSlot             Int?              // 1 (chính), 2, 3 (phụ)
+  featuredLabel            String?
+  isPinned                 Boolean           @default(false)
+  pinnedById               String?
+  pinnedAt                 DateTime?
+  reactionCount            Int               @default(0)
+  commentCount             Int               @default(0)
+  saveCount                Int               @default(0)
+  shareCount               Int               @default(0)
+  reachCount               Int               @default(0)
+  publishedAt              DateTime          @default(now())
+  createdAt                DateTime          @default(now())
+  updatedAt                DateTime          @updatedAt
+  revisions                SlcPostRevision[]
+  comments                 SlcComment[]
+  attachments              SlcAttachment[]
+
+  @@index([status, visibility, publishedAt, id])
+  @@index([authorId, status])
+  @@index([groupId, status])
+  @@index([campusId, status])
+  @@index([postType, status, publishedAt])
+  @@index([isEditorialFeatured, featuredSlot])
+  @@map("slc_posts")
+}
+
+model SlcPostRevision {
+  id            String   @id @default(cuid())
+  postId        String
+  editorId      String
+  editorName    String
+  versionNumber Int      @default(1)
+  title         String?
+  content       String
+  postType      String
+  visibility    String
+  snapshotJson  String   @default("{}")
+  changeNote    String?
+  createdAt     DateTime @default(now())
+  post          SlcPost  @relation(fields: [postId], references: [id], onDelete: Cascade)
+
+  @@index([postId, versionNumber])
+  @@map("slc_post_revisions")
+}
+
+model SlcAttachment {
+  id             String   @id @default(cuid())
+  postId         String?
+  commentId      String?
+  productId      String?
+  evidenceId     String?
+  uploaderId     String
+  fileName       String
+  safeFileName   String
+  mimeType       String
+  fileSize       Int      @default(0)
+  fileUrl        String
+  attachmentType String   @default("IMAGE") // IMAGE | DOCUMENT | VIDEO_LINK | EXTERNAL_LINK
+  isDeleted      Boolean  @default(false)
+  createdAt      DateTime @default(now())
+  post           SlcPost? @relation(fields: [postId], references: [id], onDelete: Cascade)
+
+  @@index([postId, isDeleted])
+  @@index([commentId, isDeleted])
+  @@index([productId, isDeleted])
+  @@map("slc_attachments")
+}
+
+model SlcIdea {
+  id                  String   @id @default(cuid())
+  postId              String   @unique
+  authorId            String
+  authorName          String
+  campusId            String?
+  campusName          String?
+  title               String
+  problemStatement    String?
+  proposedSolution    String
+  beneficiaries       String?
+  aiSupportStep       String?  // AI hỗ trợ ở bước nào?
+  feedbackQuestions   String?  // Mong đồng nghiệp góp ý điều gì?
+  usageCautionNote    String?  // Lưu ý sử dụng do tác giả viết
+  subjectCodesJson    String   @default("[]")
+  gradeLevelsJson     String   @default("[]")
+  tagsJson            String   @default("[]")
+  status              String   @default("NEW_PROPOSED") // NEW_PROPOSED | SEEKING_COLLABORATORS | PROJECT_OPENED | ARCHIVED
+  visibility          String   @default("SYSTEM") // SYSTEM | CAMPUS | GROUP
+  groupId             String?
+  avgRating           Float    @default(0)
+  validRatingCount    Int      @default(0)
+  collaboratorIdsJson String   @default("[]")
+  linkedProjectId     String?
+  linkedProductId     String?
+  createdAt           DateTime @default(now())
+  updatedAt           DateTime @updatedAt
+
+  @@index([status, visibility, createdAt])
+  @@index([authorId])
+  @@index([campusId])
+  @@map("slc_ideas")
+}
+
+model SlcProduct {
+  id                    String                  @id @default(cuid())
+  postId                String?                 @unique
+  authorId              String
+  authorName            String
+  campusId              String?
+  campusName            String?
+  groupId               String?
+  linkedIdeaId          String?
+  linkedProjectId       String?
+  name                  String
+  coverImageUrl         String?
+  utilitySummary        String                  // Công dụng chính
+  description           String
+  productUrl            String?                 // Link HTTPS
+  guideText             String?                 // Hướng dẫn sử dụng
+  usageCautionNote      String?                 // Lưu ý sử dụng
+  currentVersion        String                  @default("1.0")
+  majorVersion          Int                     @default(1)
+  subjectCodesJson      String                  @default("[]")
+  gradeLevelsJson       String                  @default("[]")
+  tagsJson              String                  @default("[]")
+  pricingType           String                  @default("FREE") // FREE | PAID | FREEMIUM
+  accountRequirement    String                  @default("NONE") // NONE | SCHOOL_EMAIL | PERSONAL_ACCOUNT | API_KEY
+  status                String                  @default("READY") // TRIAL | READY | MAINTENANCE | DISCONTINUED
+  visibility            String                  @default("SYSTEM") // SYSTEM | CAMPUS | GROUP
+  openLinkCount         Int                     @default(0)
+  avgRating             Float                   @default(0)
+  validRatingCount      Int                     @default(0)
+  selfAppliedCount      Int                     @default(0)
+  verifiedEvidenceCount Int                     @default(0)
+  collaboratorIdsJson   String                  @default("[]")
+  createdAt             DateTime                @default(now())
+  updatedAt             DateTime                @updatedAt
+  versions              SlcProductVersion[]
+  applications          SlcProductApplication[]
+
+  @@index([status, visibility, createdAt])
+  @@index([authorId])
+  @@index([campusId])
+  @@map("slc_products")
+}
+
+model SlcProductVersion {
+  id                      String     @id @default(cuid())
+  productId               String
+  version                 String
+  majorVersion            Int        @default(1)
+  releaseNotes            String
+  productUrl              String?
+  sourceCommentId         String?    // Liên kết bình luận nguồn góp ý
+  contributorUserId       String?
+  contributorName         String?
+  contributorOptOutPublic Boolean    @default(false) // Người góp ý có thể bỏ nhắc tên công khai
+  reopenEvaluation        Boolean    @default(false)
+  createdById             String
+  createdAt               DateTime   @default(now())
+  product                 SlcProduct @relation(fields: [productId], references: [id], onDelete: Cascade)
+
+  @@index([productId, createdAt])
+  @@index([sourceCommentId])
+  @@map("slc_product_versions")
+}
+
+model SlcProject {
+  id                   String               @id @default(cuid())
+  postId               String?              @unique
+  ownerId              String
+  ownerName            String
+  campusId             String?
+  campusName           String?
+  groupId              String?
+  linkedIdeaId         String?
+  linkedProductIdsJson String               @default("[]")
+  title                String
+  goal                 String
+  description          String
+  coverImageUrl        String?
+  neededRolesJson      String               @default("[]")
+  subjectCodesJson     String               @default("[]")
+  gradeLevelsJson      String               @default("[]")
+  tagsJson             String               @default("[]")
+  status               String               @default("SEEKING_COLLABORATORS") // SEEKING_COLLABORATORS | IN_PROGRESS | HAS_PRODUCT | PAUSED
+  visibility           String               @default("SYSTEM") // SYSTEM | CAMPUS | GROUP
+  memberCount          Int                  @default(1)
+  createdAt            DateTime             @default(now())
+  updatedAt            DateTime             @updatedAt
+  members              SlcProjectMember[]
+  progressUpdates      SlcProjectProgress[]
+
+  @@index([status, visibility, createdAt])
+  @@index([ownerId])
+  @@index([campusId])
+  @@map("slc_projects")
+}
+
+model SlcProjectMember {
+  id                  String     @id @default(cuid())
+  projectId           String
+  userId              String
+  userName            String
+  userAvatar          String?
+  campusName          String?
+  roleName            String     @default("Cộng sự chuyên môn")
+  memberRole          String     @default("CO_AUTHOR") // LEAD | CO_AUTHOR | CONTRIBUTOR
+  status              String     @default("PENDING_REQUEST") // PENDING_REQUEST | INVITED | APPROVED | REJECTED | LEFT
+  requestMessage      String?
+  contributionSummary String?
+  approvedById        String?
+  approvedAt          DateTime?
+  createdAt           DateTime   @default(now())
+  updatedAt           DateTime   @updatedAt
+  project             SlcProject @relation(fields: [projectId], references: [id], onDelete: Cascade)
+
+  @@unique([projectId, userId])
+  @@index([userId, status])
+  @@index([projectId, status])
+  @@map("slc_project_members")
+}
+
+model SlcProjectProgress {
+  id                String     @id @default(cuid())
+  projectId         String
+  authorId          String
+  authorName        String
+  title             String
+  content           String
+  milestoneStatus   String     @default("IN_PROGRESS")
+  attachmentIdsJson String     @default("[]")
+  createdAt         DateTime   @default(now())
+  project           SlcProject @relation(fields: [projectId], references: [id], onDelete: Cascade)
+
+  @@index([projectId, createdAt])
+  @@map("slc_project_progresses")
+}
+
+model SlcReaction {
+  id           String   @id @default(cuid())
+  targetType   String   // POST | COMMENT
+  targetId     String
+  postId       String?
+  commentId    String?
+  userId       String
+  userName     String
+  reactionType String   @default("USEFUL") // USEFUL | LOVE | INSPIRED | SUPPORT
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  @@unique([targetType, targetId, userId])
+  @@index([targetType, targetId])
+  @@index([userId])
+  @@map("slc_reactions")
+}
+
+model SlcComment {
+  id                      String    @id @default(cuid())
+  postId                  String
+  authorId                String
+  authorName              String
+  authorAvatar            String?
+  authorRole              String?   @default("Giáo viên")
+  campusName              String?
+  parentId                String?   // Cấp 1 (null) hoặc ID bình luận cấp 1 (giới hạn 2 cấp hiển thị)
+  replyToCommentId        String?
+  replyToUserId           String?
+  replyToUserName         String?
+  depth                   Int       @default(0) // 0 hoặc 1
+  content                 String
+  mentionedUserIdsJson    String    @default("[]")
+  attachmentIdsJson       String    @default("[]")
+  isEdited                Boolean   @default(false)
+  editedAt                DateTime?
+  isDeleted               Boolean   @default(false)
+  deletedAt               DateTime?
+  status                  String    @default("ACTIVE") // ACTIVE | HIDDEN_MODERATION | DELETED
+  isPinned                Boolean   @default(false)
+  pinnedAt                DateTime?
+  pinnedById              String?
+  feedbackStatus          String    @default("NONE") // NONE | RECEIVED | IN_PROGRESS | APPLIED | NOT_IMPLEMENTED
+  feedbackReason          String?
+  feedbackUpdatedAt       DateTime?
+  feedbackUpdatedById     String?
+  linkedProductVersionId  String?
+  contributorAcknowledged Boolean   @default(false)
+  contributorOptOutPublic Boolean   @default(false)
+  reactionCount           Int       @default(0)
+  clientRequestId         String?
+  createdAt               DateTime  @default(now())
+  updatedAt               DateTime  @updatedAt
+  post                    SlcPost   @relation(fields: [postId], references: [id], onDelete: Cascade)
+
+  @@unique([authorId, clientRequestId])
+  @@index([postId, parentId, isPinned, createdAt, id])
+  @@index([authorId])
+  @@map("slc_comments")
+}
+
+model SlcSavedItem {
+  id         String   @id @default(cuid())
+  userId     String
+  targetType String   // POST | IDEA | PRODUCT | PROJECT
+  targetId   String
+  postId     String?
+  createdAt  DateTime @default(now())
+
+  @@unique([userId, targetType, targetId])
+  @@index([userId, createdAt])
+  @@map("slc_saved_items")
+}
+
+model SlcFollow {
+  id                String   @id @default(cuid())
+  followerId        String
+  targetType        String   // USER | POST | GROUP | PROJECT
+  targetId          String
+  muteNotifications Boolean  @default(false)
+  createdAt         DateTime @default(now())
+
+  @@unique([followerId, targetType, targetId])
+  @@index([targetType, targetId])
+  @@index([followerId])
+  @@map("slc_follows")
+}
+
+model SlcRating {
+  id                   String              @id @default(cuid())
+  targetType           String              // IDEA | PRODUCT
+  targetId             String
+  reviewerId           String
+  reviewerName         String
+  reviewerCampusId     String?
+  stars                Int                 // 1..5
+  starLabel            String?
+  criteriaTagsJson     String              @default("[]") // Tiết kiệm thời gian | Dễ sử dụng | Hỗ trợ bài dạy | Thu hút HS | Cần cải tiến
+  reviewText           String?
+  confirmedExperienced Boolean             @default(false)
+  productVersion       String?
+  majorVersion         Int                 @default(1)
+  isValid              Boolean             @default(true)
+  invalidReason        String?
+  invalidatedAt        DateTime?
+  revisionCount        Int                 @default(1)
+  lastRevisedAt        DateTime            @default(now())
+  createdAt            DateTime            @default(now())
+  updatedAt            DateTime            @updatedAt
+  revisions            SlcRatingRevision[]
+
+  @@unique([targetType, targetId, reviewerId])
+  @@index([targetType, targetId, isValid])
+  @@index([reviewerId])
+  @@map("slc_ratings")
+}
+
+model SlcRatingRevision {
+  id                   String    @id @default(cuid())
+  ratingId             String
+  targetType           String    // IDEA | PRODUCT
+  targetId             String
+  reviewerId           String
+  reviewerName         String?
+  stars                Int
+  criteriaTagsJson     String    @default("[]")
+  reviewText           String?
+  confirmedExperienced Boolean   @default(false)
+  productVersion       String?
+  majorVersion         Int       @default(1)
+  isValidAtCreation    Boolean   @default(true)
+  createdAt            DateTime  @default(now())
+  rating               SlcRating @relation(fields: [ratingId], references: [id], onDelete: Cascade)
+
+  @@index([targetType, targetId, createdAt])
+  @@index([reviewerId, targetType, targetId, createdAt])
+  @@map("slc_rating_revisions")
+}
+
+model SlcProductApplication {
+  id                  String     @id @default(cuid())
+  productId           String
+  productVersion      String?
+  applicantId         String
+  applicantName       String
+  campusId            String?
+  campusName          String?
+  appliedAt           DateTime
+  subjectOrTask       String
+  gradeLevel          String?
+  howApplied          String
+  observedResult      String
+  evidenceText        String?
+  evidenceUrlsJson    String     @default("[]")
+  hasStudentPiiRedacted Boolean  @default(true)
+  verificationStatus  String     @default("SELF_DECLARED") // SELF_DECLARED | PENDING_VERIFICATION | VERIFIED | SUPPLEMENT_REQUESTED | REJECTED
+  verifierId          String?
+  verifierName        String?
+  verificationReason  String?
+  verifiedAt          DateTime?
+  submittedAt         DateTime   @default(now())
+  createdAt           DateTime   @default(now())
+  updatedAt           DateTime   @updatedAt
+  product             SlcProduct @relation(fields: [productId], references: [id], onDelete: Cascade)
+
+  @@index([productId, verificationStatus, submittedAt])
+  @@index([applicantId, productId, submittedAt])
+  @@map("slc_product_applications")
+}
+
+model SlcExpertEvaluation {
+  id              String    @id @default(cuid())
+  periodId        String    @default("GLOBAL")
+  targetType      String    // IDEA | PRODUCT
+  targetId        String
+  expertId        String
+  expertName      String
+  assignedById    String?
+  assignedAt      DateTime  @default(now())
+  status          String    @default("ASSIGNED") // ASSIGNED | SUBMITTED | RECUSED
+  criterion1Score Float?    // 1..5 (Ý tưởng: Thiết thực | Sản phẩm: Đúng mục đích)
+  criterion2Score Float?    // 1..5 (Ý tưởng: Khả thi | Sản phẩm: Dễ sử dụng)
+  criterion3Score Float?    // 1..5 (Ý tưởng: Giá trị giáo dục | Sản phẩm: Giá trị ứng dụng)
+  averageStars    Float?    // (c1 + c2 + c3) / 3
+  comments        String?
+  submittedAt     DateTime?
+  createdAt       DateTime  @default(now())
+  updatedAt       DateTime  @updatedAt
+
+  @@unique([periodId, targetType, targetId, expertId])
+  @@index([targetType, targetId, status])
+  @@index([expertId, status])
+  @@map("slc_expert_evaluations")
+}
+
+model SlcAwardRuleSet {
+  id                     String   @id @default(cuid())
+  code                   String   @unique
+  name                   String
+  version                Int      @default(1)
+  periodType             String   @default("MONTHLY") // MONTHLY | YEARLY
+  minRatingsIdea         Int      @default(5)         // Tháng: 5, Năm: 10
+  minRatingsProduct      Int      @default(5)         // Tháng: 5, Năm: 10
+  minVerifiedAppsProduct Int      @default(3)         // Tháng: 3, Năm: 5
+  minExpertReviewers     Int      @default(2)
+  bayesianM              Float    @default(5.0)
+  bayesianPrior          Float    @default(3.5)
+  capVerifiedApps        Int      @default(10)        // Tháng: 10, Năm: 20
+  ideaWeightC            Float    @default(0.60)
+  ideaWeightE            Float    @default(0.40)
+  productWeightC         Float    @default(0.50)
+  productWeightE         Float    @default(0.20)
+  productWeightU         Float    @default(0.30)
+  isLocked               Boolean  @default(false)
+  createdById            String?
+  createdAt              DateTime @default(now())
+  updatedAt              DateTime @updatedAt
+
+  @@index([periodType, version])
+  @@map("slc_award_rule_sets")
+}
+
+model SlcAwardPeriod {
+  id                  String               @id @default(cuid())
+  code                String               @unique
+  name                String
+  academicYearId      String
+  academicYearName    String
+  periodType          String               @default("MONTHLY") // MONTHLY | YEARLY
+  month               Int?                 // 1..12 for MONTHLY, null for YEARLY
+  audienceScope       String               @default("SYSTEM")  // SYSTEM | CAMPUS | GROUP
+  audienceScopeId     String               @default("ALL")
+  startDateUtc        DateTime             // [startDateUtc, endDateUtc)
+  endDateUtc          DateTime
+  reviewDeadlineUtc   DateTime
+  status              String               @default("DRAFT")   // DRAFT | OPEN | DATA_LOCKED | REVIEWING | FINALIZED
+  ruleSetId           String
+  ruleSetSnapshotJson String               @default("{}")
+  finalizedAt         DateTime?
+  finalizedById       String?
+  finalizedByName     String?
+  lockToken           String?
+  createdAt           DateTime             @default(now())
+  updatedAt           DateTime             @updatedAt
+  nominations         SlcAwardNomination[]
+  snapshots           SlcAwardSnapshot[]
+
+  @@index([academicYearId, periodType, audienceScope, status])
+  @@map("slc_award_periods")
+}
+
+model SlcAwardNomination {
+  id                   String         @id @default(cuid())
+  periodId             String
+  targetType           String         // IDEA | PRODUCT
+  targetId             String
+  nominatorId          String
+  isReEntry            Boolean        @default(false)
+  improvementSummary   String?
+  coordinatorConfirmed Boolean        @default(true)
+  confirmedById        String?
+  confirmedAt          DateTime?
+  hasConcludedViolation Boolean       @default(false)
+  violationNote        String?
+  status               String         @default("REGISTERED") // REGISTERED | ELIGIBLE | INELIGIBLE | DISQUALIFIED
+  registeredAt         DateTime       @default(now())
+  updatedAt            DateTime       @updatedAt
+  period               SlcAwardPeriod @relation(fields: [periodId], references: [id], onDelete: Cascade)
+
+  @@unique([periodId, targetType, targetId])
+  @@index([targetType, targetId])
+  @@map("slc_award_nominations")
+}
+
+model SlcAwardSnapshot {
+  id                     String         @id @default(cuid())
+  periodId               String
+  snapshotType           String         @default("PROVISIONAL") // PROVISIONAL | REVIEW | OFFICIAL | AMENDMENT
+  parentSnapshotId       String?
+  amendmentReason        String?
+  targetType             String         // IDEA | PRODUCT
+  targetId               String
+  targetTitle            String
+  targetCoverImage       String?
+  authorId               String
+  authorName             String
+  campusId               String?
+  campusName             String?
+  subjectCodesJson       String         @default("[]")
+  gradeLevelsJson        String         @default("[]")
+  isEligible             Boolean        @default(false)
+  ineligibleReasonsJson  String         @default("[]")
+  validRatingCountN      Int            @default(0)
+  avgRatingR             Float          @default(0)
+  scoreC                 Float          @default(0)
+  expertCount            Int            @default(0)
+  avgExpertStars         Float?
+  scoreE                 Float?
+  verifiedAppsCountA     Int            @default(0)
+  scoreU                 Float?
+  totalScoreRaw          Float?
+  rank                   Int?
+  isTied                 Boolean        @default(false)
+  calculationDetailsJson String         @default("{}")
+  createdById            String?
+  createdAt              DateTime       @default(now())
+  period                 SlcAwardPeriod @relation(fields: [periodId], references: [id], onDelete: Cascade)
+
+  @@index([periodId, snapshotType, targetType, rank])
+  @@index([targetType, targetId])
+  @@map("slc_award_snapshots")
+}
+
+model SlcCommunityBadge {
+  id             String   @id @default(cuid())
+  idempotencyKey String   @unique
+  userId         String
+  userName       String
+  periodId       String
+  periodName     String
+  targetType     String   // IDEA | PRODUCT
+  targetId       String
+  targetTitle    String
+  badgeCode      String
+  badgeTitle     String
+  rank           Int
+  awardedAt      DateTime @default(now())
+
+  @@unique([periodId, targetType, targetId, userId])
+  @@index([userId, awardedAt])
+  @@map("slc_community_badges")
+}
+
+model SlcContentReport {
+  id                   String    @id @default(cuid())
+  reporterId           String
+  reporterName         String
+  targetType           String    // POST | COMMENT | IDEA | PRODUCT | PROJECT
+  targetId             String
+  postId               String?
+  reasonCategory       String    // PII_STUDENT | INAPPROPRIATE | COPYRIGHT | SPAM | INACCURATE | OTHER
+  description          String
+  status               String    @default("RECEIVED") // RECEIVED | UNDER_REVIEW | CONCLUDED | NOTIFIED | APPEAL_REQUESTED | APPEAL_RESOLVED
+  isSevereTempHidden   Boolean   @default(false)
+  tempHiddenById       String?
+  tempHiddenReason     String?
+  tempHiddenAt         DateTime?
+  conclusion           String?   // NO_VIOLATION | NEEDS_EDIT | HIDE_CONTENT | DISQUALIFY_PERIOD
+  conclusionNote       String?
+  reviewedById         String?
+  reviewedByName       String?
+  concludedAt          DateTime?
+  appealText           String?
+  appealedAt           DateTime?
+  appealResolutionNote String?
+  appealResolvedById   String?
+  appealResolvedAt     DateTime?
+  createdAt            DateTime  @default(now())
+  updatedAt            DateTime  @updatedAt
+
+  @@index([status, createdAt])
+  @@index([targetType, targetId])
+  @@map("slc_content_reports")
+}
+
+model SlcAuditLog {
+  id          String   @id @default(cuid())
+  actorId     String
+  actorName   String
+  actorRole   String
+  action      String
+  targetType  String
+  targetId    String
+  detailsJson String   @default("{}")
+  createdAt   DateTime @default(now())
+
+  @@index([targetType, targetId])
+  @@index([actorId])
+  @@index([createdAt])
+  @@map("slc_audit_logs")
+}
+
+model SlcNotificationLog {
+  id             String   @id @default(cuid())
+  idempotencyKey String   @unique
+  recipientId    String
+  actorId        String
+  eventType      String
+  targetType     String
+  targetId       String
+  title          String
+  message        String
+  deepLink       String?
+  createdAt      DateTime @default(now())
+
+  @@index([recipientId, createdAt])
+  @@map("slc_notification_logs")
+}
+
 
 

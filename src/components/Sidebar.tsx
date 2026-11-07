@@ -314,7 +314,6 @@ function SidebarContent({ role, permissionModules, actualRole, taskCount = 0, is
         setExpandedTeacherGroups(prev => ({ ...prev, GROUP_07: true }));
       } else if (
         pathname.startsWith("/teacher/du-gio") ||
-        pathname.startsWith("/teacher/ai-growth") ||
         pathname.includes("skyline-journey")
       ) {
         setExpandedTeacherGroups(prev => ({ ...prev, GROUP_10: true }));
@@ -1466,33 +1465,6 @@ function SidebarContent({ role, permissionModules, actualRole, taskCount = 0, is
                       <Globe className="w-4 h-4" />
                     </div>
                     {!isCollapsed && <span className="break-words leading-tight py-0.5">{lang === "en" ? "English – Bilingual Program" : "Tiếng Anh – Chương trình Song ngữ"}</span>}
-                  </Link>
-
-                  {/* AI Growth – Đổi mới */}
-                  <Link
-                    href="/teacher/ai-growth"
-                    onClick={() => setIsOpen(false)}
-                    className={`group relative flex items-center ${isCollapsed ? "justify-center px-2" : "px-3"} py-2 rounded-xl transition-all duration-300 text-xs font-medium ${
-                      pathname.startsWith("/teacher/ai-growth")
-                        ? "bg-gradient-to-r from-amber-500/20 via-amber-500/10 to-transparent border border-amber-500/40 text-white shadow-md shadow-black/10"
-                        : "text-white/75 hover:text-white hover:bg-white/10 hover:translate-x-1"
-                    }`}
-                  >
-                    <div className={`w-7 h-7 shrink-0 rounded-lg flex items-center justify-center transition-all ${isCollapsed ? "mx-auto" : "mr-2.5"} ${
-                      pathname.startsWith("/teacher/ai-growth")
-                        ? "bg-amber-500/25 border border-amber-400/50 text-amber-300 shadow-[0_0_8px_rgba(245,158,11,0.25)]"
-                        : "bg-white/5 border border-white/10 text-amber-300/80 group-hover:text-amber-300 group-hover:scale-110"
-                    }`}>
-                      <Sparkles className="w-4 h-4" />
-                    </div>
-                    {!isCollapsed && (
-                      <div className="flex items-center justify-between flex-1 min-w-0">
-                        <span className="break-words leading-tight py-0.5">{lang === "en" ? "AI Growth – Innovation" : "AI Growth – Đổi mới"}</span>
-                        <span className="text-[9px] bg-amber-500/20 text-amber-300 px-1.5 py-0.5 rounded-full font-bold ml-1 shrink-0">
-                          {lang === "en" ? "New" : "Mới"}
-                        </span>
-                      </div>
-                    )}
                   </Link>
 
                   {/* Hành trình Sky-Line */}

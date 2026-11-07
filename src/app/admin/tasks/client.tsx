@@ -1470,11 +1470,11 @@ export function TasksClient({
                                 Sản phẩm: {t.qaMeta.deliverables}
                               </div>
                             )}
-                            {t.checklistStats?.totalSteps > 0 && (
+                            {(t.checklistStats?.totalSteps ?? 0) > 0 && (
                               <div className="text-[10px] font-semibold text-teal-700 mt-0.5">
-                                Checklist: {t.checklistStats.completedSteps}/
-                                {t.checklistStats.totalSteps} bước (
-                                {t.checklistStats.percent}%)
+                                Checklist: {t.checklistStats?.completedSteps ?? 0}/
+                                {t.checklistStats?.totalSteps ?? 0} bước (
+                                {t.checklistStats?.percent ?? 0}%)
                               </div>
                             )}
                             {blockers.length > 0 && (

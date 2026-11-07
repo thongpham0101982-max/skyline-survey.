@@ -578,8 +578,6 @@ export function StudentOrientationReportModal({
     year: "numeric"
   })
 
-  const sData = studentInfo || student
-
   // Parse dữ liệu quyết định và chỉ đạo của Hội đồng Tuyển sinh / GĐCS (loại bỏ chuỗi lịch sử thô)
   const gdcsData = React.useMemo(() => {
     const raw = sData?.directorNote || orientationData?.admissionConsultantNote

@@ -156,6 +156,94 @@ export default function TeacherStudentProfilePage() {
     consolation: 0,
     studentCount: 0
   });
+
+  // Achievement Addition Request Modal State
+  const [isAddAchModalOpen, setIsAddAchModalOpen] = useState(false);
+  const [isSubmittingAch, setIsSubmittingAch] = useState(false);
+  const [addAchForm, setAddAchForm] = useState({
+    studentId: "",
+    examName: "",
+    achievementName: "",
+    type: "CA_NHAN",
+    category: "GIAI_THUONG",
+    level: "KHUYEN_KHICH",
+    coachTeacher: "",
+    evidenceUrl: "",
+    note: ""
+  });
+
+  const handleOpenAddAchModal = (presetStudentId?: string) => {
+    setAddAchForm({
+      studentId: presetStudentId || selectedStudent?.id || (students[0]?.id) || "",
+      examName: "",
+      achievementName: "",
+      type: "CA_NHAN",
+      category: "GIAI_THUONG",
+      level: "KHUYEN_KHICH",
+      coachTeacher: "",
+      evidenceUrl: "",
+      note: ""
+    });
+    setIsAddAchModalOpen(true);
+  };
+
+  const handleCreateAchievementRequest = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!addAchForm.studentId || !addAchForm.examName.trim() || !addAchForm.achievementName.trim()) {
+      alert("Vui lòng chọn học sinh và nhập đầy đủ Tên cuộc thi, Tên giải thưởng!");
+      return;
+    }
+
+    try {
+      setIsSubmittingAch(true);
+      const res = await fetch("/api/teacher-student-records?action=requestAchievementAddition", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          ...addAchForm,
+          academicYearId: yearId,
+          classId: selectedStudent?.classId || students[0]?.classId
+        })
+      });
+
+      const data = await res.json();
+      if (!res.ok) {
+        throw new Error(data.error || "Gửi yêu cầu thất bại");
+      }
+
+      alert("Gửi yêu cầu bổ sung thành tích thành công! Trạng thái: Chờ duyệt. Admin KT&ĐBCL sẽ xét duyệt và xác nhận kết quả để đưa vào Hồ sơ học sinh.");
+      setIsAddAchModalOpen(false);
+      loadClassAchievements();
+      if (selectedStudent?.id) {
+        fetchStudentDetail(selectedStudent.id);
+      }
+    } catch (err: any) {
+      alert("Lỗi: " + (err.message || err));
+    } finally {
+      setIsSubmittingAch(false);
+    }
+  };
+
+  const handleDeleteAchievementRequest = async (requestId: string) => {
+    if (!confirm("Bạn có chắc chắn muốn hủy yêu cầu bổ sung thành tích này?")) return;
+    try {
+      const res = await fetch("/api/teacher-student-records?action=deleteAchievementRequest", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ requestId })
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || "Hủy yêu cầu thất bại");
+      alert("Đã hủy yêu cầu thành công!");
+      loadClassAchievements();
+      if (selectedStudent?.id) {
+        fetchStudentDetail(selectedStudent.id);
+      }
+    } catch (err: any) {
+      alert("Lỗi: " + (err.message || err));
+    }
+  };
+
   const [loadingClassAch, setLoadingClassAch] = useState(false);
   const [achCategoryFilter, setAchCategoryFilter] = useState("");
   const [achLevelFilter, setAchLevelFilter] = useState("");
@@ -3221,6 +3309,16 @@ return (
 
                             {achViewMode === "CLASS_REPORT" && (
                               <div className="flex items-center gap-1.5">
+                                
+                                <button
+                                  type="button"
+                                  onClick={() => handleOpenAddAchModal()}
+                                  className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-black bg-[#003B3A] hover:bg-[#002827] text-white shadow-xs transition-all cursor-pointer"
+                                  title="Gửi yêu cầu bổ sung thành tích cho học sinh lớp chủ nhiệm"
+                                >
+                                  <Plus className="w-3.5 h-3.5" />
+                                  <span>Yêu cầu Bổ sung thành tích HS</span>
+                                </button>
                                 <button
                                   type="button"
                                   onClick={handleExportClassAchievementsExcel}
@@ -3248,7 +3346,7 @@ return (
                         {achViewMode === "CLASS_REPORT" && (
                           <div className="space-y-4">
                             {/* Academic Ledger KPI Strip */}
-                            <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-2.5">
+                            <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-7 gap-2.5">
                               {/* Total */}
                               <div className="bg-white border border-slate-200/90 rounded-xl p-3 shadow-2xs">
                                 <span className="block text-[11px] font-bold text-slate-500">Tổng thành tích lớp</span>
@@ -3304,6 +3402,19 @@ return (
                                   {classAchStats.consolation}
                                 </span>
                                 <span className="text-[10px] text-teal-700 font-semibold">thành tích khác</span>
+                              </div>
+
+                              
+                              {/* Pending Review Ratio */}
+                              <div className="bg-amber-50/90 border border-amber-300 rounded-xl p-3 shadow-2xs">
+                                <div className="flex items-center justify-between">
+                                  <span className="text-[11px] font-bold text-amber-900">Chờ xét duyệt</span>
+                                  <Clock className="w-3.5 h-3.5 text-amber-600" />
+                                </div>
+                                <span className="text-xl font-black text-amber-900 font-mono tabular-nums leading-tight block mt-1">
+                                  {classAchStats.pendingCount || 0}
+                                </span>
+                                <span className="text-[10px] text-amber-800/80 font-semibold">yêu cầu bổ sung</span>
                               </div>
 
                               {/* Student Ratio */}
@@ -3404,7 +3515,8 @@ return (
                                         <th className="py-3 px-3 text-center">Mức giải</th>
                                         <th className="py-3 px-3">GV Bồi dưỡng</th>
                                         <th className="py-3 px-3 text-center">Năm học</th>
-                                        <th className="py-3 px-3 text-center w-24">Thao tác</th>
+                                        <th className="py-3 px-3 text-center">Trạng thái</th>
+                                        <th className="py-3 px-3 text-center w-28">Thao tác</th>
                                       </tr>
                                     </thead>
                                     <tbody className="divide-y divide-slate-100 text-xs font-semibold text-slate-700">
@@ -3486,6 +3598,25 @@ return (
                                                 Xem hồ sơ
                                               </button>
                                             </td>
+
+                                            <td className="py-3.5 px-4 text-center">
+                                              {item.status === "PENDING" || item.isRequest ? (
+                                                <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-[10.5px] font-black bg-amber-50 text-amber-700 border border-amber-200">
+                                                  <Clock className="w-3 h-3 text-amber-600" />
+                                                  <span>Chờ duyệt</span>
+                                                </span>
+                                              ) : item.status === "REJECTED" ? (
+                                                <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-[10.5px] font-black bg-rose-50 text-rose-700 border border-rose-200" title={item.reviewNote || "Từ chối"}>
+                                                  <XCircle className="w-3 h-3 text-rose-600" />
+                                                  <span>Từ chối</span>
+                                                </span>
+                                              ) : (
+                                                <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-[10.5px] font-black bg-emerald-50 text-emerald-700 border border-emerald-200">
+                                                  <CheckCircle2 className="w-3 h-3 text-emerald-600" />
+                                                  <span>Đã duyệt</span>
+                                                </span>
+                                              )}
+                                            </td>
                                           </tr>
                                         );
                                       })}
@@ -3515,6 +3646,21 @@ return (
                               </button>
                             </div>
 
+                            
+                              <div className="flex items-center justify-between gap-3 mb-3">
+                                <h5 className="text-xs font-black text-slate-800 uppercase tracking-wide">
+                                  Hồ sơ Thành tích của {selectedStudent?.studentName}
+                                </h5>
+                                <button
+                                  type="button"
+                                  onClick={() => handleOpenAddAchModal(selectedStudent?.id)}
+                                  className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-black bg-[#003B3A] hover:bg-[#002827] text-white shadow-xs transition-all cursor-pointer"
+                                >
+                                  <Plus className="w-3.5 h-3.5" />
+                                  <span>Yêu cầu Bổ sung thành tích</span>
+                                </button>
+                              </div>
+
                             {(!selectedStudent.achievements || selectedStudent.achievements.length === 0) ? (
                               <div className="bg-slate-50/50 border border-slate-200/80 rounded-2xl py-14 text-center text-slate-400 space-y-2 shadow-2xs">
                                 <Award className="w-12 h-12 mx-auto opacity-20 text-slate-400 mb-1" />
@@ -3533,6 +3679,7 @@ return (
                                         <th className="py-3.5 px-4">Kỳ thi / Cuộc thi</th>
                                         <th className="py-3.5 px-4">Lĩnh vực</th>
                                         <th className="py-3.5 px-4 text-center">Cấp độ / Hạng giải</th>
+                                        <th className="py-3.5 px-4 text-center">Trạng thái</th>
                                       </tr>
                                     </thead>
                                     <tbody className="divide-y divide-slate-100 text-xs font-semibold text-slate-700">
@@ -3866,6 +4013,215 @@ return (
           initialMode="PROGRESS_ANALYSIS"
         />
       )}
+
+      {/* Modal Yêu cầu Bổ sung Thành tích Học sinh */}
+      {isAddAchModalOpen && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-xs p-4 animate-in fade-in duration-200">
+          <div className="bg-white rounded-2xl max-w-xl w-full p-6 shadow-2xl border border-slate-200 space-y-4 max-h-[90vh] overflow-y-auto">
+            <div className="flex items-center justify-between border-b border-slate-100 pb-3">
+              <div className="flex items-center gap-2.5">
+                <div className="w-9 h-9 rounded-xl bg-teal-50 border border-teal-200 flex items-center justify-center text-[#00A19A]">
+                  <Trophy className="w-5 h-5" />
+                </div>
+                <div>
+                  <h3 className="text-base font-black text-[#003B3A]">
+                    Yêu cầu Bổ sung Thành tích Học sinh
+                  </h3>
+                  <p className="text-xs text-slate-500 font-medium">
+                    Đề xuất kết quả thi / giải thưởng để Admin xét duyệt và bổ sung vào Hồ sơ học sinh
+                  </p>
+                </div>
+              </div>
+              <button
+                type="button"
+                onClick={() => setIsAddAchModalOpen(false)}
+                className="p-1.5 text-slate-400 hover:text-slate-600 rounded-lg hover:bg-slate-100 cursor-pointer"
+              >
+                <X className="w-4 h-4" />
+              </button>
+            </div>
+
+            <form onSubmit={handleCreateAchievementRequest} className="space-y-4 text-xs font-semibold">
+              {/* Chọn học sinh */}
+              <div className="space-y-1">
+                <label className="text-slate-700 font-bold block">
+                  Học sinh được đề xuất <span className="text-rose-500">*</span>
+                </label>
+                <select
+                  value={addAchForm.studentId}
+                  onChange={e => setAddAchForm(prev => ({ ...prev, studentId: e.target.value }))}
+                  required
+                  className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs font-bold text-slate-800 focus:outline-none focus:border-[#00A19A] focus:bg-white"
+                >
+                  <option value="">-- Chọn học sinh trong lớp --</option>
+                  {students.map(st => (
+                    <option key={st.id} value={st.id}>
+                      {st.studentName} ({st.studentCode}) - Lớp {st.className || selectedStudent?.className}
+                    </option>
+                  ))}
+                </select>
+              </div>
+
+              {/* Tên kỳ thi / cuộc thi */}
+              <div className="space-y-1">
+                <label className="text-slate-700 font-bold block">
+                  Kỳ thi / Cuộc thi <span className="text-rose-500">*</span>
+                </label>
+                <input
+                  type="text"
+                  required
+                  value={addAchForm.examName}
+                  onChange={e => setAddAchForm(prev => ({ ...prev, examName: e.target.value }))}
+                  placeholder="Vd: Cuộc thi lập trình Robot ENJOY A.I. 2026, HKPĐ cấp Thành phố..."
+                  className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs font-medium text-slate-800 focus:outline-none focus:border-[#00A19A] focus:bg-white"
+                />
+              </div>
+
+              {/* Tên thành tích & Mức giải */}
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                <div className="space-y-1">
+                  <label className="text-slate-700 font-bold block">
+                    Tên Giải thưởng / Thành tích <span className="text-rose-500">*</span>
+                  </label>
+                  <input
+                    type="text"
+                    required
+                    value={addAchForm.achievementName}
+                    onChange={e => setAddAchForm(prev => ({ ...prev, achievementName: e.target.value }))}
+                    placeholder="Vd: Giải Nhất, Top 10, Huy chương Vàng..."
+                    className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs font-medium text-slate-800 focus:outline-none focus:border-[#00A19A] focus:bg-white"
+                  />
+                </div>
+
+                <div className="space-y-1">
+                  <label className="text-slate-700 font-bold block">
+                    Mức giải / Hạng giải <span className="text-rose-500">*</span>
+                  </label>
+                  <select
+                    value={addAchForm.level}
+                    onChange={e => setAddAchForm(prev => ({ ...prev, level: e.target.value }))}
+                    className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs font-bold text-slate-800 focus:outline-none focus:border-[#00A19A] focus:bg-white"
+                  >
+                    <option value="NHAT">Giải Nhất</option>
+                    <option value="NHI">Giải Nhì</option>
+                    <option value="BA">Giải Ba</option>
+                    <option value="VANG">Huy chương Vàng</option>
+                    <option value="BAC">Huy chương Bạc</option>
+                    <option value="DONG">Huy chương Đồng</option>
+                    <option value="KHUYEN_KHICH">Khuyến khích</option>
+                    <option value="TOP_RANK">Xếp hạng / Top rank</option>
+                    <option value="KHAC">Khác</option>
+                  </select>
+                </div>
+              </div>
+
+              {/* Loại hình & Danh mục */}
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                <div className="space-y-1">
+                  <label className="text-slate-700 font-bold block">
+                    Hình thức tham gia
+                  </label>
+                  <select
+                    value={addAchForm.type}
+                    onChange={e => setAddAchForm(prev => ({ ...prev, type: e.target.value }))}
+                    className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs font-bold text-slate-800 focus:outline-none focus:border-[#00A19A] focus:bg-white"
+                  >
+                    <option value="CA_NHAN">Cá nhân</option>
+                    <option value="DONG_DOI">Đồng đội / Tập thể</option>
+                  </select>
+                </div>
+
+                <div className="space-y-1">
+                  <label className="text-slate-700 font-bold block">
+                    Loại hình thành tích
+                  </label>
+                  <select
+                    value={addAchForm.category}
+                    onChange={e => setAddAchForm(prev => ({ ...prev, category: e.target.value }))}
+                    className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs font-bold text-slate-800 focus:outline-none focus:border-[#00A19A] focus:bg-white"
+                  >
+                    <option value="GIAI_THUONG">Giải thưởng</option>
+                    <option value="HUY_CHUONG">Huy chương</option>
+                    <option value="CHUNG_NHAN">Chứng nhận</option>
+                    <option value="KHAC">Lĩnh vực khác</option>
+                  </select>
+                </div>
+              </div>
+
+              {/* GV bồi dưỡng & Minh chứng */}
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                <div className="space-y-1">
+                  <label className="text-slate-700 font-bold block">
+                    Giáo viên Bồi dưỡng / Hướng dẫn
+                  </label>
+                  <input
+                    type="text"
+                    value={addAchForm.coachTeacher}
+                    onChange={e => setAddAchForm(prev => ({ ...prev, coachTeacher: e.target.value }))}
+                    placeholder="Vd: Thầy Nguyễn Văn A..."
+                    className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs font-medium text-slate-800 focus:outline-none focus:border-[#00A19A] focus:bg-white"
+                  />
+                </div>
+
+                <div className="space-y-1">
+                  <label className="text-slate-700 font-bold block">
+                    Đường dẫn Minh chứng (nếu có)
+                  </label>
+                  <input
+                    type="url"
+                    value={addAchForm.evidenceUrl}
+                    onChange={e => setAddAchForm(prev => ({ ...prev, evidenceUrl: e.target.value }))}
+                    placeholder="https://drive.google.com/..."
+                    className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs font-medium text-slate-800 focus:outline-none focus:border-[#00A19A] focus:bg-white"
+                  />
+                </div>
+              </div>
+
+              {/* Ghi chú */}
+              <div className="space-y-1">
+                <label className="text-slate-700 font-bold block">
+                  Ghi chú đề xuất (nếu có)
+                </label>
+                <textarea
+                  rows={2}
+                  value={addAchForm.note}
+                  onChange={e => setAddAchForm(prev => ({ ...prev, note: e.target.value }))}
+                  placeholder="Thông tin chi tiết về vòng thi, cơ cấu giải, hoặc lý do đề xuất..."
+                  className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs font-medium text-slate-800 focus:outline-none focus:border-[#00A19A] focus:bg-white resize-none"
+                />
+              </div>
+
+              <div className="flex items-center justify-end gap-2.5 pt-3 border-t border-slate-100">
+                <button
+                  type="button"
+                  onClick={() => setIsAddAchModalOpen(false)}
+                  className="px-4 py-2 text-xs font-bold text-slate-600 hover:bg-slate-100 rounded-xl transition-colors cursor-pointer"
+                >
+                  Hủy
+                </button>
+                <button
+                  type="submit"
+                  disabled={isSubmittingAch}
+                  className="px-5 py-2 text-xs font-bold text-white bg-[#003B3A] hover:bg-[#002827] rounded-xl shadow-md transition-all cursor-pointer flex items-center gap-1.5 disabled:opacity-50"
+                >
+                  {isSubmittingAch ? (
+                    <>
+                      <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                      <span>Đang gửi yêu cầu...</span>
+                    </>
+                  ) : (
+                    <>
+                      <Send className="w-3.5 h-3.5" />
+                      <span>Gửi yêu cầu Bổ sung</span>
+                    </>
+                  )}
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
       <StudentProfileSectionConfigModal
         isOpen={isConfigModalOpen}
         onClose={() => setIsConfigModalOpen(false)}
