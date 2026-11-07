@@ -46,8 +46,16 @@ export default function TeacherPublicProfilePage() {
         <>
           <header className="bg-white rounded-2xl border border-[#E2E8F0] border-l-4 border-l-[#123E4A] p-5 space-y-4">
             <div className="flex items-start gap-4">
-              <div className="w-14 h-14 rounded-2xl bg-[#123E4A] text-white text-xl font-extrabold flex items-center justify-center">
-                {(profile?.fullName || "G").charAt(0).toUpperCase()}
+              <div className="w-14 h-14 rounded-2xl overflow-hidden bg-[#123E4A] text-white text-xl font-extrabold flex items-center justify-center shrink-0">
+                {profile?.avatarUrl ? (
+                  <img
+                    src={profile.avatarUrl}
+                    alt={profile?.fullName || "Avatar"}
+                    className="w-full h-full object-cover"
+                  />
+                ) : (
+                  (profile?.fullName || "G").charAt(0).toUpperCase()
+                )}
               </div>
               <div>
                 <h1 className="text-xl font-extrabold text-[#123E4A]">{profile?.fullName}</h1>

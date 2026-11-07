@@ -1,10 +1,10 @@
-
 "use client";
 
-import { useState } from "react";
-import { LogOut, KeyRound, ChevronDown, CheckCircle2, GraduationCap, LayoutDashboard, PenTool } from "lucide-react";
+import { useState, useEffect } from "react";
+import { LogOut, KeyRound, ChevronDown, CheckCircle2, GraduationCap, LayoutDashboard, PenTool, Camera } from "lucide-react";
 import { signOut } from "next-auth/react";
 import { ChangePasswordModal } from "./ChangePasswordModal";
+import { AvatarUploadModal } from "./AvatarUploadModal";
 import Link from "next/link";
 
 interface UserMenuProps {
@@ -15,8 +15,37 @@ interface UserMenuProps {
 export function UserMenu({ session, permissionModules }: UserMenuProps) {
   const [isOpen, setIsOpen] = useState(false);
   const [isModalOpen, setIsModalOpen] = useState(false);
+  const [isAvatarModalOpen, setIsAvatarModalOpen] = useState(false);
+  const [avatarUrl, setAvatarUrl] = useState<string | null>(null);
 
-  const initial = session?.user?.name ? session.user.name.charAt(0).toUpperCase() : 'U';
+  const initial = session?.user?.name ? session.user.name.charAt(0).toUpperCase() : "U";
+
+  useEffect(() => {
+    let active = true;
+    if (session?.user?.id) {
+      fetch("/api/user/avatar")
+        .then((res) => (res.ok ? res.json() : null))
+        .then((data) => {
+          if (active && data?.avatarUrl !== undefined) {
+            setAvatarUrl(data.avatarUrl || null);
+          }
+        })
+        .catch(() => {});
+    }
+
+    const handleAvatarEvent = (e: Event) => {
+      const customEvent = e as CustomEvent<{ avatarUrl: string | null }>;
+      if (customEvent.detail !== undefined) {
+        setAvatarUrl(customEvent.detail.avatarUrl || null);
+      }
+    };
+
+    window.addEventListener("ssm:avatar-updated", handleAvatarEvent);
+    return () => {
+      active = false;
+      window.removeEventListener("ssm:avatar-updated", handleAvatarEvent);
+    };
+  }, [session?.user?.id]);
 
   return (
     <>
@@ -27,8 +56,16 @@ export function UserMenu({ session, permissionModules }: UserMenuProps) {
             onClick={() => setIsOpen(!isOpen)}
             className="flex items-center gap-2 cursor-pointer group"
           >
-            <div className="relative w-9 h-9 rounded-full bg-gradient-to-tr from-[#135E5B] to-[#1E8B87] text-white flex items-center justify-center font-bold text-sm shadow-md border-2 border-white group-hover:scale-105 transition-transform">
-              {initial}
+            <div className="relative w-9 h-9 rounded-full overflow-hidden bg-gradient-to-tr from-[#003B3A] to-[#00A19A] text-white flex items-center justify-center font-bold text-sm shadow-md border-2 border-white group-hover:scale-105 transition-transform">
+              {avatarUrl ? (
+                <img
+                  src={avatarUrl}
+                  alt={session?.user?.name || "Avatar"}
+                  className="w-full h-full object-cover"
+                />
+              ) : (
+                initial
+              )}
             </div>
             <ChevronDown className="w-4 h-4 text-slate-400 transition-transform group-hover:text-slate-600" />
           </div>
@@ -36,14 +73,33 @@ export function UserMenu({ session, permissionModules }: UserMenuProps) {
           {isOpen && (
             <>
               <div className="fixed inset-0 z-40" onClick={() => setIsOpen(false)} />
-              <div className="absolute right-0 mt-3 w-60 bg-white rounded-2xl shadow-[0_10px_30px_rgba(0,0,0,0.08)] border border-slate-100 p-1.5 z-50 animate-in fade-in slide-in-from-top-2 duration-200">
+              <div className="absolute right-0 mt-3 w-64 bg-white rounded-2xl shadow-[0_10px_30px_rgba(0,0,0,0.08)] border border-slate-100 p-1.5 z-50 animate-in fade-in slide-in-from-top-2 duration-200">
                 <div className="px-3.5 py-3 border-b border-slate-100/80 mb-1 flex items-center gap-3">
-                  <div className="w-9 h-9 rounded-full bg-gradient-to-tr from-[#135E5B] to-[#1E8B87] text-white flex items-center justify-center font-bold text-sm shrink-0">
-                    {initial}
-                  </div>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setIsOpen(false);
+                      setIsAvatarModalOpen(true);
+                    }}
+                    title="Nhấn để đổi ảnh đại diện"
+                    className="relative w-10 h-10 rounded-full overflow-hidden bg-gradient-to-tr from-[#003B3A] to-[#00A19A] text-white flex items-center justify-center font-bold text-sm shrink-0 group/avatar cursor-pointer border border-slate-200"
+                  >
+                    {avatarUrl ? (
+                      <img
+                        src={avatarUrl}
+                        alt={session?.user?.name || "Avatar"}
+                        className="w-full h-full object-cover"
+                      />
+                    ) : (
+                      initial
+                    )}
+                    <span className="absolute inset-0 bg-slate-900/50 opacity-0 group-hover/avatar:opacity-100 transition-opacity flex items-center justify-center">
+                      <Camera className="w-4 h-4 text-white" />
+                    </span>
+                  </button>
                   <div className="flex flex-col min-w-0">
                     <p className="text-xs font-extrabold text-slate-800 truncate leading-tight">{session?.user?.name || "Người dùng"}</p>
-                    <p className="text-[10px] font-bold text-slate-400 truncate mt-1">{session?.user?.email || ""}</p>
+                    <p className="text-[10px] font-bold text-slate-400 truncate mt-1 tabular-nums">{session?.user?.email || ""}</p>
                   </div>
                 </div>
 
@@ -109,12 +165,26 @@ export function UserMenu({ session, permissionModules }: UserMenuProps) {
                       </Link>
                     );
                   })()}
+
                   <button
+                    type="button"
+                    onClick={() => {
+                      setIsOpen(false);
+                      setIsAvatarModalOpen(true);
+                    }}
+                    className="w-full flex items-center gap-2 px-3 py-2 rounded-xl text-xs font-medium text-slate-700 hover:text-[#003B3A] hover:bg-slate-100/80 transition-all text-left cursor-pointer"
+                  >
+                    <Camera className="w-4 h-4 text-[#00A19A] shrink-0" />
+                    <span>Đổi ảnh đại diện</span>
+                  </button>
+
+                  <button
+                    type="button"
                     onClick={() => {
                       setIsOpen(false);
                       setIsModalOpen(true);
                     }}
-                    className="w-full flex items-center gap-2 px-3 py-2.5 rounded-xl text-xs font-medium text-slate-600 hover:text-[#48BFE3] hover:bg-[#48BFE3]/5 transition-all text-left"
+                    className="w-full flex items-center gap-2 px-3 py-2 rounded-xl text-xs font-medium text-slate-600 hover:text-[#003B3A] hover:bg-slate-100/80 transition-all text-left cursor-pointer"
                   >
                     <KeyRound className="w-4 h-4 text-slate-400 shrink-0" />
                     <span>Đổi mật khẩu</span>
@@ -123,6 +193,7 @@ export function UserMenu({ session, permissionModules }: UserMenuProps) {
                   <div className="border-t border-slate-100/60 my-1" />
                   
                   <button
+                    type="button"
                     onClick={async () => {
                       try {
                         await signOut({ redirect: false })
@@ -132,7 +203,7 @@ export function UserMenu({ session, permissionModules }: UserMenuProps) {
                         window.location.href = "/login"
                       }
                     }}
-                    className="w-full flex items-center gap-2 px-3 py-2.5 rounded-xl text-xs font-medium text-rose-600 hover:bg-rose-50/50 hover:text-rose-700 transition-all text-left"
+                    className="w-full flex items-center gap-2 px-3 py-2.5 rounded-xl text-xs font-medium text-rose-600 hover:bg-rose-50/50 hover:text-rose-700 transition-all text-left cursor-pointer"
                   >
                     <LogOut className="w-4 h-4 text-rose-500 shrink-0" />
                     <span>Đăng xuất</span>
@@ -143,6 +214,15 @@ export function UserMenu({ session, permissionModules }: UserMenuProps) {
           )}
         </div>
       </div>
+
+      <AvatarUploadModal
+        isOpen={isAvatarModalOpen}
+        onClose={() => setIsAvatarModalOpen(false)}
+        userName={session?.user?.name || "Giáo viên"}
+        userEmail={session?.user?.email || ""}
+        currentAvatarUrl={avatarUrl}
+        onAvatarUpdated={(newUrl) => setAvatarUrl(newUrl)}
+      />
 
       <ChangePasswordModal 
         isOpen={isModalOpen} 

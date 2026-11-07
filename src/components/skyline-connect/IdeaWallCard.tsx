@@ -247,8 +247,16 @@ export function IdeaWallCard({
               href={`/teacher/skyline-connect/profile/${item.authorId}`}
               className="relative shrink-0 group"
             >
-              <div className="w-10 h-10 rounded-full bg-gradient-to-br from-[#123E4A] to-[#159EAA] text-white text-sm font-extrabold flex items-center justify-center shadow-xs group-hover:opacity-95 transition-opacity">
-                {(item.authorName || "G").charAt(0).toUpperCase()}
+              <div className="w-10 h-10 rounded-full overflow-hidden bg-gradient-to-br from-[#123E4A] to-[#159EAA] text-white text-sm font-extrabold flex items-center justify-center shadow-xs group-hover:opacity-95 transition-opacity">
+                {item.authorAvatar ? (
+                  <img
+                    src={item.authorAvatar}
+                    alt={item.authorName || "Avatar"}
+                    className="w-full h-full object-cover"
+                  />
+                ) : (
+                  (item.authorName || "G").charAt(0).toUpperCase()
+                )}
               </div>
               <span className="w-3 h-3 rounded-full bg-emerald-500 border-2 border-white absolute -bottom-0.5 -right-0.5" />
             </Link>
@@ -777,8 +785,16 @@ export function IdeaWallCard({
 
       <div className="p-4 flex flex-col gap-2.5 flex-1">
         <div className="flex items-center gap-2">
-          <div className="w-8 h-8 rounded-full bg-[#123E4A] text-white text-xs font-bold flex items-center justify-center shrink-0">
-            {(item.authorName || "G").charAt(0).toUpperCase()}
+          <div className="w-8 h-8 rounded-full overflow-hidden bg-[#123E4A] text-white text-xs font-bold flex items-center justify-center shrink-0">
+            {item.authorAvatar ? (
+              <img
+                src={item.authorAvatar}
+                alt={item.authorName || "Avatar"}
+                className="w-full h-full object-cover"
+              />
+            ) : (
+              (item.authorName || "G").charAt(0).toUpperCase()
+            )}
           </div>
           <div className="min-w-0 flex-1">
             <div className="text-xs font-bold text-slate-800 truncate">{item.authorName}</div>
