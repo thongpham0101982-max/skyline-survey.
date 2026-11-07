@@ -562,6 +562,7 @@ function PostDetailContent() {
           totalCommentCount={post.activeCommentCount || 0}
           isCompactPreview={false}
           highlightCommentId={highlightCommentId}
+          teachers={data.catalogs?.teachers || []}
         />
       </article>
 

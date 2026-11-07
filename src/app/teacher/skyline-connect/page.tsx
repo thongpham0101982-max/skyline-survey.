@@ -21,6 +21,8 @@ import {
   LayoutList,
   LayoutGrid,
   SlidersHorizontal,
+  Bell,
+  AtSign,
 } from "lucide-react";
 import { SkylineConnectSubNav } from "@/components/skyline-connect/SkylineConnectSubNav";
 import {
@@ -200,6 +202,8 @@ function SkylineConnectWallContent() {
           setSearch(val);
           setPage(1);
         }}
+        initialNotifications={feedData?.notificationsData?.notifications}
+        initialUnreadCount={feedData?.notificationsData?.unreadCount}
       />
 
       {/* 2. Facebook 3-Column Social Workspace */}
@@ -398,6 +402,72 @@ function SkylineConnectWallContent() {
             viewMode === "feed" ? "max-w-[680px] mx-auto" : ""
           }`}
         >
+          {/* 0. Prominent @Tag Notification Banner when Teacher is Tagged */}
+          {feedData?.notificationsData?.unreadMentions &&
+            feedData.notificationsData.unreadMentions.length > 0 && (
+              <div className="bg-gradient-to-r from-[#123E4A] to-[#003B3A] text-white rounded-2xl p-4 shadow-md border border-[#159EAA]/50 space-y-2.5 animate-in fade-in duration-200">
+                <div className="flex items-center justify-between gap-2 flex-wrap">
+                  <div className="flex items-center gap-2">
+                    <span className="w-8 h-8 rounded-xl bg-[#159EAA]/30 border border-[#5EEAD4]/50 flex items-center justify-center shrink-0">
+                      <Bell className="w-4 h-4 text-[#5EEAD4]" />
+                    </span>
+                    <div>
+                      <div className="text-xs sm:text-sm font-extrabold flex items-center gap-1.5">
+                        <span>Thông báo: Đồng nghiệp vừa nhắc đến (@Tag) Thầy/Cô!</span>
+                        <span className="px-2 py-0.5 rounded-full bg-rose-500 text-white text-[10px] font-bold tabular-nums">
+                          {feedData.notificationsData.unreadMentions.length} mới
+                        </span>
+                      </div>
+                      <p className="text-[11px] text-teal-100/85">
+                        Nhấn vào thông báo bên dưới để xem bài viết hoặc bình luận đang nhắc đến Thầy/Cô
+                      </p>
+                    </div>
+                  </div>
+                </div>
+
+                <div className="space-y-1.5">
+                  {feedData.notificationsData.unreadMentions.slice(0, 3).map((notif: any) => (
+                    <div
+                      key={notif.id}
+                      className="p-2.5 rounded-xl bg-white/10 hover:bg-white/15 border border-white/15 flex items-center justify-between gap-3 transition-colors"
+                    >
+                      <div className="flex items-center gap-2 min-w-0">
+                        <AtSign className="w-4 h-4 text-[#5EEAD4] shrink-0" />
+                        <div className="min-w-0">
+                          <div className="text-xs font-bold text-white truncate">
+                            {notif.title}
+                          </div>
+                          <div className="text-[11px] text-teal-100 truncate">
+                            {notif.message}
+                          </div>
+                        </div>
+                      </div>
+                      <div className="flex items-center gap-1.5 shrink-0">
+                        {notif.link && (
+                          <Link
+                            href={notif.link}
+                            onClick={async () => {
+                              await fetch("/api/skyline-connect", {
+                                method: "POST",
+                                headers: { "Content-Type": "application/json" },
+                                body: JSON.stringify({
+                                  action: "markNotificationRead",
+                                  notificationId: notif.id,
+                                }),
+                              }).catch(() => null);
+                            }}
+                            className="px-3 py-1 rounded-lg bg-[#159EAA] hover:bg-[#11828C] text-white text-xs font-bold transition-colors"
+                          >
+                            Xem ngay →
+                          </Link>
+                        )}
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+
           {/* 1. Facebook "Bạn đang nghĩ gì?" Composer Card */}
           <div className="bg-white rounded-2xl border border-[#E2E8F0] p-4 shadow-2xs">
             <div className="flex items-center gap-3">
@@ -749,6 +819,7 @@ function SkylineConnectWallContent() {
                     currentUserId={currentUserId}
                     currentUserName={currentUserName}
                     layoutMode={viewMode}
+                    teachers={catalogs.teachers || []}
                     onEditPost={(postToEdit) =>
                       handleOpenComposer({
                         id: postToEdit.id,
@@ -763,6 +834,7 @@ function SkylineConnectWallContent() {
                         gradeLevels: postToEdit.gradeLevels,
                         purposeTags: postToEdit.purposeTags,
                         tags: postToEdit.tags,
+                        mentionedUserIds: postToEdit.mentionedUserIds || [],
                         productUrl: postToEdit.linkedProduct?.productUrl,
                         version: postToEdit.linkedProduct?.currentVersion,
                         productStatus: postToEdit.linkedProduct?.status,

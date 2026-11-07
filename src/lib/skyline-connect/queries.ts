@@ -171,6 +171,7 @@ export async function querySlcWallFeed(ctx: SlcUserContext, params: WallFilterPa
     const gradeLevels = safeJsonParse<string[]>(post.gradeLevelsJson, [])
     const purposeTags = safeJsonParse<string[]>(post.purposeTagsJson, [])
     const tags = safeJsonParse<string[]>(post.tagsJson, [])
+    const mentionedUserIds = safeJsonParse<string[]>(post.mentionedUserIdsJson, [])
 
     const isSaved =
       savedPostIds.has(post.id) ||
@@ -193,6 +194,7 @@ export async function querySlcWallFeed(ctx: SlcUserContext, params: WallFilterPa
       gradeLevels,
       purposeTags,
       tags,
+      mentionedUserIds,
       linkedIdea,
       linkedProduct,
       linkedProject,

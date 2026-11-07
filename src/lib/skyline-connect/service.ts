@@ -287,7 +287,8 @@ export async function dispatchSlcNotification(params: {
           title: params.title,
           message: params.message,
           link: params.deepLink,
-          type: "INFORMATION",
+          type: params.eventType === "MENTION" ? "ACTION_REQUIRED" : "INFORMATION",
+          priority: params.eventType === "MENTION" ? "HIGH" : "NORMAL",
           category: "SKYLINE_CONNECT",
           sourceModule: "SKYLINE_CONNECT",
           sourceId: params.targetId,
@@ -302,6 +303,190 @@ export async function dispatchSlcNotification(params: {
     }
     return { sent: false, reason: "ERROR" }
   }
+}
+
+/**
+ * Tự động phân giải danh sách userId được @nhắc tên trong văn bản (kết hợp cả danh sách chọn từ gợi ý @
+ * lẫn việc gõ trực tiếp @Tên Giáo Viên hoặc @MãGV trong nội dung bài đăng/bình luận).
+ */
+export async function resolveMentionedUserIds(
+  text: string,
+  explicitUserIds?: string[],
+  excludeUserId?: string
+): Promise<string[]> {
+  const resultIds = new Set<string>(
+    (explicitUserIds || []).filter((uid) => Boolean(uid) && uid !== excludeUserId)
+  )
+
+  if (text && text.includes("@")) {
+    const lowerText = text.toLowerCase()
+    const [teachers, staffUsers] = await Promise.all([
+      prisma.teacher
+        .findMany({
+          where: { status: "ACTIVE" },
+          select: { userId: true, teacherName: true, teacherCode: true },
+          take: 500,
+        })
+        .catch(() => []),
+      prisma.user
+        .findMany({
+          where: { status: "ACTIVE", role: { notIn: ["PARENT", "STUDENT"] } },
+          select: { id: true, fullName: true },
+          take: 500,
+        })
+        .catch(() => []),
+    ])
+
+    for (const t of teachers) {
+      if (!t.userId || t.userId === excludeUserId) continue
+      const nameLower = (t.teacherName || "").trim().toLowerCase()
+      const codeLower = (t.teacherCode || "").trim().toLowerCase()
+      if (
+        (nameLower && lowerText.includes(`@${nameLower}`)) ||
+        (codeLower && lowerText.includes(`@${codeLower}`))
+      ) {
+        resultIds.add(t.userId)
+      }
+    }
+
+    for (const u of staffUsers) {
+      if (!u.id || u.id === excludeUserId) continue
+      const nameLower = (u.fullName || "").trim().toLowerCase()
+      if (nameLower && lowerText.includes(`@${nameLower}`)) {
+        resultIds.add(u.id)
+      }
+    }
+  }
+
+  return Array.from(resultIds)
+}
+
+/**
+ * Truy vấn danh sách thông báo Sky-Line Connect của người dùng hiện tại (gồm cả thông báo được @Tag).
+ */
+export async function getSlcUserNotifications(ctx: SlcUserContext, limit = 25) {
+  await ensureSlcSchema()
+  const pAny = prisma as any
+
+  const [ssmNotifications, slcLogs] = await Promise.all([
+    prisma.notification
+      .findMany({
+        where: {
+          userId: ctx.userId,
+          OR: [{ category: "SKYLINE_CONNECT" }, { sourceModule: "SKYLINE_CONNECT" }],
+        },
+        orderBy: { createdAt: "desc" },
+        take: limit,
+      })
+      .catch(() => []),
+    pAny.slcNotificationLog
+      ?.findMany({
+        where: { recipientId: ctx.userId },
+        orderBy: { createdAt: "desc" },
+        take: limit,
+      })
+      .catch(() => []) ?? [],
+  ])
+
+  // Map slcLogs by targetId + title for eventType enrichment
+  const logByKey = new Map<string, any>()
+  for (const log of slcLogs) {
+    logByKey.set(`${log.targetId}::${log.title}`, log)
+  }
+
+  const combined: Array<{
+    id: string
+    notificationDbId?: string
+    eventType: string
+    title: string
+    message: string
+    deepLink: string
+    isRead: boolean
+    createdAt: Date | string
+  }> = []
+
+  const seenKeys = new Set<string>()
+
+  for (const n of ssmNotifications) {
+    const key = `${n.sourceId || ""}::${n.title}`
+    const matchedLog = logByKey.get(key)
+    seenKeys.add(key)
+    combined.push({
+      id: n.id,
+      notificationDbId: n.id,
+      eventType:
+        matchedLog?.eventType ||
+        (n.title.toLowerCase().includes("nhắc") ? "MENTION" : "GENERAL"),
+      title: n.title,
+      message: n.message,
+      deepLink: n.link || matchedLog?.deepLink || "/teacher/skyline-connect",
+      isRead: Boolean(n.isRead),
+      createdAt: n.createdAt,
+    })
+  }
+
+  for (const log of slcLogs) {
+    const key = `${log.targetId || ""}::${log.title}`
+    if (seenKeys.has(key)) continue
+    combined.push({
+      id: log.id,
+      eventType: log.eventType || "GENERAL",
+      title: log.title,
+      message: log.message,
+      deepLink: log.deepLink || "/teacher/skyline-connect",
+      isRead: false,
+      createdAt: log.createdAt,
+    })
+  }
+
+  combined.sort(
+    (a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
+  )
+
+  const notifications = combined.slice(0, limit)
+  const unreadCount = notifications.filter((n) => !n.isRead).length
+  const unreadMentions = notifications.filter(
+    (n) => !n.isRead && n.eventType === "MENTION"
+  )
+
+  return {
+    notifications,
+    unreadCount,
+    unreadMentions,
+  }
+}
+
+/**
+ * Đánh dấu đã đọc một hoặc toàn bộ thông báo Sky-Line Connect của giáo viên.
+ */
+export async function markSlcNotificationRead(
+  ctx: SlcUserContext,
+  notificationId?: string | "ALL"
+) {
+  if (!notificationId || notificationId === "ALL") {
+    await prisma.notification
+      .updateMany({
+        where: {
+          userId: ctx.userId,
+          isRead: false,
+          OR: [{ category: "SKYLINE_CONNECT" }, { sourceModule: "SKYLINE_CONNECT" }],
+        },
+        data: { isRead: true },
+      })
+      .catch(() => null)
+  } else {
+    await prisma.notification
+      .updateMany({
+        where: {
+          id: notificationId,
+          userId: ctx.userId,
+        },
+        data: { isRead: true },
+      })
+      .catch(() => null)
+  }
+
+  return getSlcUserNotifications(ctx, 25)
 }
 
 /**
@@ -376,52 +561,120 @@ export async function getSlcCatalogs(ctx: SlcUserContext) {
   await ensureSlcSchema()
   const pAny = prisma as any
 
-  const [campuses, academicYears, dbSubjects, customTags, groups, awardPeriods, ruleSets] =
-    await Promise.all([
-      prisma.campus
-        .findMany({
-          where: { status: "ACTIVE" },
-          select: { id: true, campusCode: true, campusName: true },
-          orderBy: { campusName: "asc" },
-        })
-        .catch(() => []),
-      prisma.academicYear
-        .findMany({
-          where: { isOff: false },
-          select: { id: true, name: true, startDate: true, endDate: true, status: true },
-          orderBy: { startDate: "desc" },
-        })
-        .catch(() => []),
-      prisma.subject
-        .findMany({
-          where: { status: "ACTIVE" },
-          select: { id: true, subjectCode: true, subjectName: true, level: true },
-          orderBy: { subjectName: "asc" },
-        })
-        .catch(() => []),
-      pAny.slcTag
-        ?.findMany({
-          where: { isActive: true },
-          orderBy: [{ sortOrder: "asc" }, { usageCount: "desc" }],
-        })
-        .catch(() => []) ?? [],
-      pAny.slcGroup
-        ?.findMany({
-          where: { status: "ACTIVE" },
-          orderBy: { createdAt: "desc" },
-        })
-        .catch(() => []) ?? [],
-      pAny.slcAwardPeriod
-        ?.findMany({
-          orderBy: [{ startDateUtc: "desc" }],
-        })
-        .catch(() => []) ?? [],
-      pAny.slcAwardRuleSet
-        ?.findMany({
-          orderBy: [{ version: "desc" }],
-        })
-        .catch(() => []) ?? [],
-    ])
+  const [
+    campuses,
+    academicYears,
+    dbSubjects,
+    customTags,
+    groups,
+    awardPeriods,
+    ruleSets,
+    activeTeachers,
+    staffUsers,
+  ] = await Promise.all([
+    prisma.campus
+      .findMany({
+        where: { status: "ACTIVE" },
+        select: { id: true, campusCode: true, campusName: true },
+        orderBy: { campusName: "asc" },
+      })
+      .catch(() => []),
+    prisma.academicYear
+      .findMany({
+        where: { isOff: false },
+        select: { id: true, name: true, startDate: true, endDate: true, status: true },
+        orderBy: { startDate: "desc" },
+      })
+      .catch(() => []),
+    prisma.subject
+      .findMany({
+        where: { status: "ACTIVE" },
+        select: { id: true, subjectCode: true, subjectName: true, level: true },
+        orderBy: { subjectName: "asc" },
+      })
+      .catch(() => []),
+    pAny.slcTag
+      ?.findMany({
+        where: { isActive: true },
+        orderBy: [{ sortOrder: "asc" }, { usageCount: "desc" }],
+      })
+      .catch(() => []) ?? [],
+    pAny.slcGroup
+      ?.findMany({
+        where: { status: "ACTIVE" },
+        orderBy: { createdAt: "desc" },
+      })
+      .catch(() => []) ?? [],
+    pAny.slcAwardPeriod
+      ?.findMany({
+        orderBy: [{ startDateUtc: "desc" }],
+      })
+      .catch(() => []) ?? [],
+    pAny.slcAwardRuleSet
+      ?.findMany({
+        orderBy: [{ version: "desc" }],
+      })
+      .catch(() => []) ?? [],
+    prisma.teacher
+      .findMany({
+        where: { status: "ACTIVE" },
+        include: {
+          campus: { select: { campusName: true } },
+          mainSubjectRel: { select: { subjectName: true } },
+        },
+        orderBy: { teacherName: "asc" },
+        take: 500,
+      })
+      .catch(() => []),
+    prisma.user
+      .findMany({
+        where: {
+          status: "ACTIVE",
+          role: { notIn: ["PARENT", "STUDENT"] },
+        },
+        select: { id: true, fullName: true, email: true, role: true },
+        orderBy: { fullName: "asc" },
+        take: 500,
+      })
+      .catch(() => []),
+  ])
+
+  const teacherMap = new Map<
+    string,
+    {
+      userId: string
+      teacherName: string
+      teacherCode?: string
+      campusName?: string
+      subjectName?: string
+      email?: string
+    }
+  >()
+
+  for (const t of activeTeachers) {
+    if (!t.userId) continue
+    teacherMap.set(t.userId, {
+      userId: t.userId,
+      teacherName: t.teacherName,
+      teacherCode: t.teacherCode,
+      campusName: (t as any).campus?.campusName || undefined,
+      subjectName: (t as any).mainSubjectRel?.subjectName || undefined,
+      email: t.email || undefined,
+    })
+  }
+
+  for (const u of staffUsers) {
+    if (!u.id || teacherMap.has(u.id)) continue
+    teacherMap.set(u.id, {
+      userId: u.id,
+      teacherName: u.fullName,
+      email: u.email,
+      campusName: "Hệ thống Sky-Line",
+      subjectName: u.role === "ADMIN" ? "Quản trị" : "Giáo viên",
+    })
+  }
+
+  const teachers = Array.from(teacherMap.values())
 
   const subjects =
     dbSubjects.length > 0
@@ -432,6 +685,7 @@ export async function getSlcCatalogs(ctx: SlcUserContext) {
     campuses,
     academicYears,
     subjects,
+    teachers,
     grades: [...SLC_DEFAULT_GRADES],
     purposes: [...SLC_DEFAULT_PURPOSES],
     customTags,
@@ -562,8 +816,10 @@ export async function createOrUpdateSlcPost(
   const gradeLevelsJson = JSON.stringify(input.gradeLevels || [])
   const purposeTagsJson = JSON.stringify(input.purposeTags || [])
   const tagsJson = JSON.stringify(input.tags || [])
-  const mentionedUserIds = Array.from(new Set(input.mentionedUserIds || [])).filter(
-    (uid) => uid && uid !== ctx.userId
+  const mentionedUserIds = await resolveMentionedUserIds(
+    cleanContent,
+    input.mentionedUserIds,
+    ctx.userId
   )
   const mentionedUserIdsJson = JSON.stringify(mentionedUserIds)
 
@@ -724,6 +980,25 @@ export async function createOrUpdateSlcPost(
         linkedProjectId,
       },
     })
+
+    if (status === "PUBLISHED" && mentionedUserIds.length > 0) {
+      for (const mentionedUid of mentionedUserIds) {
+        await dispatchSlcNotification({
+          idempotencyKey: `post_mention:${updatedPost.id}:${mentionedUid}`,
+          recipientId: mentionedUid,
+          actorId: ctx.userId,
+          eventType: "MENTION",
+          targetType: "POST",
+          targetId: updatedPost.id,
+          postId: updatedPost.id,
+          title: "Nhắc tên (@Tag) trên Sky-Line Connect",
+          message: `${ctx.fullName} đã nhắc đến Thầy/Cô trong bài "${
+            cleanTitle || existingPost.title || "Chia sẻ chuyên môn"
+          }".`,
+          deepLink: `/teacher/skyline-connect/posts/${updatedPost.id}`,
+        })
+      }
+    }
 
     return updatedPost
   }
@@ -1312,8 +1587,10 @@ export async function createSlcComment(
     effectiveParentId = targetParent.depth === 0 ? targetParent.id : targetParent.parentId
   }
 
-  const mentionedUserIds = Array.from(new Set(input.mentionedUserIds || [])).filter(
-    (uid) => uid && uid !== ctx.userId
+  const mentionedUserIds = await resolveMentionedUserIds(
+    cleanContent,
+    input.mentionedUserIds,
+    ctx.userId
   )
 
   const createdComment = await pAny.slcComment.create({

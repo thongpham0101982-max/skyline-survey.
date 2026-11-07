@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import {
   X,
   Sparkles,
@@ -16,6 +16,8 @@ import {
   Building2,
   FileText,
   Trash2,
+  AtSign,
+  UserPlus,
 } from "lucide-react";
 
 export interface ComposerInitialData {
@@ -32,6 +34,7 @@ export interface ComposerInitialData {
   gradeLevels?: string[];
   purposeTags?: string[];
   tags?: string[];
+  mentionedUserIds?: string[];
   problemStatement?: string;
   proposedSolution?: string;
   beneficiaries?: string;
@@ -72,6 +75,14 @@ interface PostComposerModalProps {
     grades?: Array<{ code: string; name: string }>;
     purposes?: Array<{ code: string; name: string }>;
     groups?: Array<{ id: string; name: string; isMember?: boolean }>;
+    teachers?: Array<{
+      userId: string;
+      teacherName: string;
+      teacherCode: string;
+      campusName?: string | null;
+      subjectName?: string | null;
+      email?: string | null;
+    }>;
   };
 }
 
@@ -132,6 +143,23 @@ export function PostComposerModal({
     "SEEKING_COLLABORATORS" | "IN_PROGRESS" | "HAS_PRODUCT" | "PAUSED"
   >(initialData?.projectStatus || "SEEKING_COLLABORATORS");
 
+  // @Mention / Tagging state
+  const [taggedTeachers, setTaggedTeachers] = useState<
+    Array<{
+      userId: string;
+      teacherName: string;
+      teacherCode?: string;
+      campusName?: string | null;
+      subjectName?: string | null;
+    }>
+  >([]);
+  const [mentionQuery, setMentionQuery] = useState<string | null>(null);
+  const [mentionStartIndex, setMentionStartIndex] = useState<number>(-1);
+  const [mentionSelectedIndex, setMentionSelectedIndex] = useState<number>(0);
+  const [tagSearchInput, setTagSearchInput] = useState("");
+  const [tagDropdownOpen, setTagDropdownOpen] = useState(false);
+  const contentTextareaRef = useRef<HTMLTextAreaElement>(null);
+
   // Attachments & revision note
   const [attachments, setAttachments] = useState<
     Array<{
@@ -183,10 +211,103 @@ export function PostComposerModal({
       setAttachments(initialData?.attachments || []);
       setChangeNote("");
       setErrorMsg(null);
+      setMentionQuery(null);
+      setTagSearchInput("");
+      setTagDropdownOpen(false);
+      const initMentionIds = initialData?.mentionedUserIds || [];
+      if (initMentionIds.length > 0 && catalogs?.teachers) {
+        setTaggedTeachers(
+          catalogs.teachers.filter((t) => initMentionIds.includes(t.userId))
+        );
+      } else {
+        setTaggedTeachers([]);
+      }
     }
-  }, [isOpen, initialData]);
+  }, [isOpen, initialData, catalogs?.teachers]);
 
   if (!isOpen) return null;
+
+  const allTeachers = catalogs?.teachers || [];
+  const matchingInlineTeachers =
+    mentionQuery !== null
+      ? allTeachers
+          .filter((t) => {
+            const q = mentionQuery.trim().toLowerCase();
+            if (!q) return true;
+            return (
+              t.teacherName.toLowerCase().includes(q) ||
+              (t.teacherCode || "").toLowerCase().includes(q) ||
+              (t.subjectName || "").toLowerCase().includes(q) ||
+              (t.campusName || "").toLowerCase().includes(q)
+            );
+          })
+          .slice(0, 6)
+      : [];
+
+  const matchingPickerTeachers = allTeachers
+    .filter((t) => {
+      if (taggedTeachers.some((sel) => sel.userId === t.userId)) return false;
+      const q = tagSearchInput.trim().toLowerCase();
+      if (!q) return true;
+      return (
+        t.teacherName.toLowerCase().includes(q) ||
+        (t.teacherCode || "").toLowerCase().includes(q) ||
+        (t.subjectName || "").toLowerCase().includes(q) ||
+        (t.campusName || "").toLowerCase().includes(q)
+      );
+    })
+    .slice(0, 8);
+
+  const handleContentChangeWithMention = (
+    e: React.ChangeEvent<HTMLTextAreaElement>
+  ) => {
+    const val = e.target.value;
+    setContent(val);
+
+    const cursorPos = e.target.selectionStart ?? val.length;
+    const textBeforeCursor = val.slice(0, cursorPos);
+    const lastAtIdx = textBeforeCursor.lastIndexOf("@");
+
+    if (lastAtIdx !== -1) {
+      const charBeforeAt = lastAtIdx > 0 ? textBeforeCursor[lastAtIdx - 1] : " ";
+      if (charBeforeAt === " " || charBeforeAt === "\n" || lastAtIdx === 0) {
+        const afterAt = textBeforeCursor.slice(lastAtIdx + 1);
+        if (!afterAt.includes("\n") && afterAt.length <= 28) {
+          setMentionQuery(afterAt);
+          setMentionStartIndex(lastAtIdx);
+          setMentionSelectedIndex(0);
+          return;
+        }
+      }
+    }
+    setMentionQuery(null);
+  };
+
+  const handleSelectInlineMention = (teacher: {
+    userId: string;
+    teacherName: string;
+    teacherCode?: string;
+    campusName?: string | null;
+    subjectName?: string | null;
+  }) => {
+    if (mentionStartIndex >= 0) {
+      const el = contentTextareaRef.current;
+      const cursorPos = el?.selectionStart ?? content.length;
+      const before = content.slice(0, mentionStartIndex);
+      const after = content.slice(cursorPos);
+      const inserted = `@${teacher.teacherName} `;
+      const nextText = `${before}${inserted}${after}`;
+      setContent(nextText);
+    } else {
+      setContent((prev) => `${prev}${prev.endsWith(" ") || !prev ? "" : " "}@${teacher.teacherName} `);
+    }
+
+    setTaggedTeachers((prev) =>
+      prev.some((p) => p.userId === teacher.userId) ? prev : [...prev, teacher]
+    );
+    setMentionQuery(null);
+    setTimeout(() => contentTextareaRef.current?.focus(), 20);
+  };
 
   const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const files = e.target.files;
@@ -271,6 +392,7 @@ export function PostComposerModal({
           gradeLevels,
           purposeTags,
           tags,
+          mentionedUserIds: taggedTeachers.map((t) => t.userId),
           hasStudentDataPiiChecked: piiChecked,
           problemStatement: problemStatement.trim(),
           proposedSolution: content.trim(),
@@ -516,22 +638,216 @@ export function PostComposerModal({
             </div>
           )}
 
-          {/* 4. Nội dung chính */}
-          <div>
-            <label className="block text-xs font-bold text-slate-700 mb-1">
-              {postType === "IDEA"
-                ? "Giải pháp đề xuất & cách thực hiện *"
-                : postType === "GENERAL"
-                ? "Nội dung chia sẻ *"
-                : "Mô tả chi tiết & hướng dẫn áp dụng *"}
-            </label>
-            <textarea
-              rows={4}
-              value={content}
-              onChange={(e) => setContent(e.target.value)}
-              placeholder="Thầy/Cô muốn chia sẻ điều gì? Có thể @nhắc tên đồng nghiệp, mô tả quy trình thực hiện, prompt mẫu hoặc kinh nghiệm thực tế..."
-              className="w-full rounded-xl border border-slate-200 p-3.5 text-sm leading-relaxed focus:outline-none focus:border-[#159EAA]"
-            />
+          {/* 4. Nội dung chính + @Tag Giáo viên */}
+          <div className="space-y-3">
+            <div className="relative">
+              <div className="flex items-center justify-between mb-1">
+                <label className="block text-xs font-bold text-slate-700">
+                  {postType === "IDEA"
+                    ? "Giải pháp đề xuất & cách thực hiện *"
+                    : postType === "GENERAL"
+                    ? "Nội dung chia sẻ *"
+                    : "Mô tả chi tiết & hướng dẫn áp dụng *"}
+                </label>
+                <span className="text-[11px] font-semibold text-[#159EAA]">
+                  Mẹo: Gõ <strong>@</strong> để tag tên giáo viên
+                </span>
+              </div>
+
+              {/* Floating @Mention Autocomplete Dropdown when typing @ in post body */}
+              {mentionQuery !== null && matchingInlineTeachers.length > 0 && (
+                <div className="absolute left-0 right-0 bottom-full mb-1.5 z-50 bg-white rounded-2xl border border-[#159EAA]/40 shadow-xl overflow-hidden max-w-md">
+                  <div className="px-3 py-1.5 bg-[#F0FDFA] border-b border-[#99F6E4]/60 text-[11px] font-bold text-[#123E4A] flex items-center justify-between">
+                    <span className="flex items-center gap-1">
+                      <AtSign className="w-3.5 h-3.5 text-[#159EAA]" />
+                      <span>Chọn giáo viên để nhắc tên (@Tag)</span>
+                    </span>
+                    <span className="text-[10px] text-slate-500">↑↓ di chuyển • Enter chọn</span>
+                  </div>
+                  <div className="max-h-48 overflow-y-auto divide-y divide-slate-100">
+                    {matchingInlineTeachers.map((teacher, idx) => {
+                      const active = idx === mentionSelectedIndex;
+                      return (
+                        <button
+                          key={teacher.userId}
+                          type="button"
+                          onClick={() => handleSelectInlineMention(teacher)}
+                          onMouseEnter={() => setMentionSelectedIndex(idx)}
+                          className={`w-full px-3 py-2 text-left flex items-center justify-between gap-2 transition-colors cursor-pointer ${
+                            active ? "bg-[#E6F4F5]" : "hover:bg-slate-50"
+                          }`}
+                        >
+                          <div className="flex items-center gap-2.5 min-w-0">
+                            <div className="w-7 h-7 rounded-full bg-[#123E4A] text-white text-xs font-bold flex items-center justify-center shrink-0">
+                              {(teacher.teacherName || "G").charAt(0).toUpperCase()}
+                            </div>
+                            <div className="min-w-0">
+                              <div className="text-xs font-bold text-slate-900 truncate">
+                                {teacher.teacherName}
+                              </div>
+                              <div className="text-[10px] text-slate-500 truncate">
+                                {[teacher.subjectName, teacher.campusName]
+                                  .filter(Boolean)
+                                  .join(" • ") || "Giáo viên Sky-Line"}
+                              </div>
+                            </div>
+                          </div>
+                          <span className="text-[10px] font-semibold px-2 py-0.5 rounded-full bg-white border border-slate-200 text-[#159EAA] shrink-0">
+                            @Tag
+                          </span>
+                        </button>
+                      );
+                    })}
+                  </div>
+                </div>
+              )}
+
+              <textarea
+                ref={contentTextareaRef}
+                rows={4}
+                value={content}
+                onChange={handleContentChangeWithMention}
+                onKeyDown={(e) => {
+                  if (mentionQuery !== null && matchingInlineTeachers.length > 0) {
+                    if (e.key === "ArrowDown") {
+                      e.preventDefault();
+                      setMentionSelectedIndex((p) => (p + 1) % matchingInlineTeachers.length);
+                      return;
+                    }
+                    if (e.key === "ArrowUp") {
+                      e.preventDefault();
+                      setMentionSelectedIndex(
+                        (p) =>
+                          (p - 1 + matchingInlineTeachers.length) % matchingInlineTeachers.length
+                      );
+                      return;
+                    }
+                    if (e.key === "Enter" || e.key === "Tab") {
+                      e.preventDefault();
+                      const chosen =
+                        matchingInlineTeachers[mentionSelectedIndex] ||
+                        matchingInlineTeachers[0];
+                      if (chosen) handleSelectInlineMention(chosen);
+                      return;
+                    }
+                    if (e.key === "Escape") {
+                      e.preventDefault();
+                      setMentionQuery(null);
+                      return;
+                    }
+                  }
+                }}
+                placeholder="Thầy/Cô muốn chia sẻ điều gì? Gõ @ để nhắc tên đồng nghiệp, mô tả quy trình thực hiện, prompt mẫu hoặc kinh nghiệm thực tế..."
+                className="w-full rounded-xl border border-slate-200 p-3.5 text-sm leading-relaxed focus:outline-none focus:border-[#159EAA]"
+              />
+            </div>
+
+            {/* Facebook-style "Gắn thẻ đồng nghiệp (@Tag giáo viên)" Bar */}
+            <div className="p-3 rounded-xl bg-[#F0FDFA]/70 border border-[#99F6E4] space-y-2">
+              <div className="flex items-center justify-between gap-2 flex-wrap">
+                <div className="flex items-center gap-1.5 text-xs font-bold text-[#123E4A]">
+                  <UserPlus className="w-4 h-4 text-[#159EAA]" />
+                  <span>Gắn thẻ đồng nghiệp (@Tag giáo viên)</span>
+                  <span className="text-[11px] font-normal text-slate-500">
+                    — Giáo viên được tag sẽ nhận Notification ngay
+                  </span>
+                </div>
+              </div>
+
+              {/* Selected Teacher Chips */}
+              {taggedTeachers.length > 0 && (
+                <div className="flex items-center gap-1.5 flex-wrap">
+                  {taggedTeachers.map((t) => (
+                    <span
+                      key={t.userId}
+                      className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-white text-[#123E4A] border border-[#159EAA] text-xs font-bold shadow-2xs"
+                    >
+                      <span className="text-[#159EAA]">@</span>
+                      <span>{t.teacherName}</span>
+                      {t.campusName && (
+                        <span className="text-[10px] font-normal text-slate-500">
+                          ({t.campusName})
+                        </span>
+                      )}
+                      <button
+                        type="button"
+                        onClick={() =>
+                          setTaggedTeachers((prev) =>
+                            prev.filter((item) => item.userId !== t.userId)
+                          )
+                        }
+                        className="text-slate-400 hover:text-rose-600 ml-0.5 cursor-pointer"
+                        aria-label={`Bỏ gắn thẻ ${t.teacherName}`}
+                      >
+                        <X className="w-3.5 h-3.5" />
+                      </button>
+                    </span>
+                  ))}
+                </div>
+              )}
+
+              {/* Search & Pick Teacher Input */}
+              <div className="relative">
+                <div className="flex items-center gap-2 bg-white rounded-xl border border-slate-200 px-3 py-1.5 focus-within:border-[#159EAA]">
+                  <AtSign className="w-4 h-4 text-[#159EAA] shrink-0" />
+                  <input
+                    type="text"
+                    value={tagSearchInput}
+                    onFocus={() => setTagDropdownOpen(true)}
+                    onChange={(e) => {
+                      setTagSearchInput(e.target.value);
+                      setTagDropdownOpen(true);
+                    }}
+                    placeholder="Nhập tên, mã GV, bộ môn hoặc cơ sở để chọn giáo viên cần @Tag..."
+                    className="w-full text-xs font-medium text-slate-800 placeholder:text-slate-400 focus:outline-none"
+                  />
+                  {tagDropdownOpen && (
+                    <button
+                      type="button"
+                      onClick={() => setTagDropdownOpen(false)}
+                      className="text-[11px] font-semibold text-slate-400 hover:text-slate-600 cursor-pointer shrink-0"
+                    >
+                      Đóng
+                    </button>
+                  )}
+                </div>
+
+                {tagDropdownOpen && matchingPickerTeachers.length > 0 && (
+                  <div className="mt-1.5 max-h-44 overflow-y-auto rounded-xl bg-white border border-slate-200 shadow-lg divide-y divide-slate-100">
+                    {matchingPickerTeachers.map((t) => (
+                      <button
+                        key={t.userId}
+                        type="button"
+                        onClick={() => {
+                          setTaggedTeachers((prev) =>
+                            prev.some((p) => p.userId === t.userId) ? prev : [...prev, t]
+                          );
+                          setTagSearchInput("");
+                        }}
+                        className="w-full px-3 py-2 text-left hover:bg-[#F0FDFA] flex items-center justify-between gap-2 transition-colors cursor-pointer"
+                      >
+                        <div className="flex items-center gap-2 min-w-0">
+                          <div className="w-6 h-6 rounded-full bg-[#123E4A] text-white text-[11px] font-bold flex items-center justify-center shrink-0">
+                            {(t.teacherName || "G").charAt(0).toUpperCase()}
+                          </div>
+                          <div className="min-w-0">
+                            <span className="text-xs font-bold text-slate-800">
+                              {t.teacherName}
+                            </span>
+                            <span className="text-[11px] text-slate-500 ml-1.5">
+                              {[t.subjectName, t.campusName].filter(Boolean).join(" • ")}
+                            </span>
+                          </div>
+                        </div>
+                        <span className="text-[11px] font-bold text-[#159EAA] shrink-0">
+                          + Gắn thẻ
+                        </span>
+                      </button>
+                    ))}
+                  </div>
+                )}
+              </div>
+            </div>
           </div>
 
           {/* 5. Trường chuyên biệt theo loại bài (Progressive Disclosure) */}

@@ -30,6 +30,7 @@ interface IdeaWallCardProps {
   currentUserId: string;
   currentUserName?: string;
   layoutMode?: "feed" | "grid";
+  teachers?: any[];
   onEditPost?: (item: any) => void;
   onOpenRatingModal?: (item: any, mode: "RATING" | "APPLICATION" | "REPORT") => void;
   onJoinProject?: (projectId: string, title: string) => void;
@@ -71,6 +72,7 @@ export function IdeaWallCard({
   currentUserId,
   currentUserName,
   layoutMode = "feed",
+  teachers = [],
   onEditPost,
   onOpenRatingModal,
   onJoinProject,
@@ -109,6 +111,28 @@ export function IdeaWallCard({
     item.linkedIdea?.problemStatement ||
     "";
   const isLongDescription = descriptionText.length > (layoutMode === "feed" ? 280 : 140);
+
+  const taggedTeacherItems = (item.mentionedUserIds || [])
+    .map((uid: string) => teachers.find((t: any) => t.userId === uid))
+    .filter(Boolean);
+
+  const renderTextWithMentions = (raw: string) => {
+    if (!raw) return null;
+    const parts = raw.split(/(@[\p{L}\p{N}_]+(?:\s+[\p{L}\p{N}_]+){0,3})/gu);
+    return parts.map((part, idx) => {
+      if (part.startsWith("@")) {
+        return (
+          <span
+            key={idx}
+            className="inline-flex items-center px-1.5 py-0.5 mx-0.5 rounded-md bg-[#E6F4F5] text-[#123E4A] font-bold"
+          >
+            {part}
+          </span>
+        );
+      }
+      return <React.Fragment key={idx}>{part}</React.Fragment>;
+    });
+  };
 
   const formatTimeAgo = (iso?: string) => {
     if (!iso) return "Vừa xong";
@@ -267,6 +291,21 @@ export function IdeaWallCard({
                     📌 {item.editorialLabel || "Biên tập chọn"}
                   </span>
                 )}
+
+                {taggedTeacherItems.length > 0 && (
+                  <span className="text-xs text-slate-600 inline-flex items-center gap-1 flex-wrap">
+                    <span>— cùng với</span>
+                    {taggedTeacherItems.map((t: any) => (
+                      <Link
+                        key={t.userId}
+                        href={`/teacher/skyline-connect/profile/${t.userId}`}
+                        className="inline-flex items-center px-2 py-0.5 rounded-full bg-[#E6F4F5] text-[#123E4A] font-bold hover:underline"
+                      >
+                        @{t.teacherName}
+                      </Link>
+                    ))}
+                  </span>
+                )}
               </div>
 
               <div className="flex items-center gap-1.5 text-xs text-slate-500 mt-0.5 flex-wrap">
@@ -367,7 +406,9 @@ export function IdeaWallCard({
 
           {descriptionText && (
             <div className="text-[15px] text-slate-800 leading-relaxed whitespace-pre-line">
-              <p className={expandedText ? "" : "line-clamp-4"}>{descriptionText}</p>
+              <p className={expandedText ? "" : "line-clamp-4"}>
+                {renderTextWithMentions(descriptionText)}
+              </p>
               {isLongDescription && (
                 <button
                   type="button"
@@ -685,6 +726,7 @@ export function IdeaWallCard({
               totalCommentCount={commentCount}
               isCompactPreview={true}
               autoFocusInput={focusCommentInput}
+              teachers={teachers}
               onCommentCountChange={(cnt) => setCommentCount(cnt)}
             />
           </div>
@@ -815,6 +857,7 @@ export function IdeaWallCard({
             totalCommentCount={commentCount}
             isCompactPreview={true}
             autoFocusInput={focusCommentInput}
+            teachers={teachers}
             onCommentCountChange={(cnt) => setCommentCount(cnt)}
           />
         )}

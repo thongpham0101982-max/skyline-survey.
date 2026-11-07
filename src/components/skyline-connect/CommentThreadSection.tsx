@@ -12,7 +12,18 @@ import {
   CornerDownRight,
   AlertCircle,
   GitBranch,
+  AtSign,
+  X,
 } from "lucide-react";
+
+export interface SlcTeacherDirectoryItem {
+  userId: string;
+  teacherName: string;
+  teacherCode?: string;
+  campusName?: string;
+  subjectName?: string;
+  email?: string;
+}
 
 interface CommentItem {
   id: string;
@@ -56,6 +67,7 @@ interface CommentThreadSectionProps {
   isCompactPreview?: boolean;
   autoFocusInput?: boolean;
   highlightCommentId?: string | null;
+  teachers?: SlcTeacherDirectoryItem[];
   onCommentCountChange?: (newCount: number) => void;
 }
 
@@ -100,6 +112,7 @@ export function CommentThreadSection({
   isCompactPreview = false,
   autoFocusInput = false,
   highlightCommentId = null,
+  teachers = [],
   onCommentCountChange,
 }: CommentThreadSectionProps) {
   const [comments, setComments] = useState<CommentItem[]>(initialComments);
@@ -109,6 +122,10 @@ export function CommentThreadSection({
   const [loadingMore, setLoadingMore] = useState(false);
 
   const [draftText, setDraftText] = useState("");
+  const [mentionedUsers, setMentionedUsers] = useState<SlcTeacherDirectoryItem[]>([]);
+  const [mentionQuery, setMentionQuery] = useState<string | null>(null);
+  const [mentionHighlightIdx, setMentionHighlightIdx] = useState(0);
+
   const [replyingTo, setReplyingTo] = useState<{ id: string; authorName: string } | null>(null);
   const [editingCommentId, setEditingCommentId] = useState<string | null>(null);
   const [editContent, setEditContent] = useState("");
@@ -135,6 +152,69 @@ export function CommentThreadSection({
       inputRef.current.focus();
     }
   }, [autoFocusInput]);
+
+  // Filter teachers matching @query
+  const filteredMentionTeachers = React.useMemo(() => {
+    if (mentionQuery === null) return [];
+    const q = mentionQuery.trim().toLowerCase();
+    return teachers
+      .filter((t) => {
+        if (!t.userId || t.userId === currentUserId) return false;
+        if (!q) return true;
+        return (
+          (t.teacherName || "").toLowerCase().includes(q) ||
+          (t.teacherCode || "").toLowerCase().includes(q) ||
+          (t.campusName || "").toLowerCase().includes(q) ||
+          (t.subjectName || "").toLowerCase().includes(q)
+        );
+      })
+      .slice(0, 8);
+  }, [mentionQuery, teachers, currentUserId]);
+
+  const handleDraftChange = (val: string) => {
+    setDraftText(val);
+    // Check if user is typing @name at the end or before cursor
+    const match = val.match(/(?:^|\s)@([^\s@]{0,35})$/);
+    if (match) {
+      setMentionQuery(match[1] || "");
+      setMentionHighlightIdx(0);
+    } else {
+      setMentionQuery(null);
+    }
+  };
+
+  const handleSelectMentionTeacher = (teacher: SlcTeacherDirectoryItem) => {
+    // Replace trailing @query with @TeacherName
+    const replaced = draftText.replace(
+      /(^|\s)@([^\s@]{0,35})$/,
+      `$1@${teacher.teacherName} `
+    );
+    const nextText =
+      replaced !== draftText
+        ? replaced
+        : `${draftText}${draftText.endsWith(" ") || !draftText ? "" : " "}@${
+            teacher.teacherName
+          } `;
+
+    setDraftText(nextText);
+    setMentionQuery(null);
+    if (!mentionedUsers.some((u) => u.userId === teacher.userId)) {
+      setMentionedUsers((prev) => [...prev, teacher]);
+    }
+    inputRef.current?.focus();
+  };
+
+  const handleTriggerMentionButton = () => {
+    if (mentionQuery !== null) {
+      setMentionQuery(null);
+      return;
+    }
+    const next = `${draftText}${draftText && !draftText.endsWith(" ") ? " " : ""}@`;
+    setDraftText(next);
+    setMentionQuery("");
+    setMentionHighlightIdx(0);
+    inputRef.current?.focus();
+  };
 
   const loadComments = async (targetPage = 1, targetSort = sortOrder, append = false) => {
     setLoadingMore(true);
@@ -181,6 +261,7 @@ export function CommentThreadSection({
           postId,
           content: trimmed,
           parentCommentId: replyingTo?.id || null,
+          mentionedUserIds: mentionedUsers.map((u) => u.userId),
           clientRequestId: pendingRequestId,
         }),
       });
@@ -191,6 +272,8 @@ export function CommentThreadSection({
 
       // Clear draft only after success, and generate a fresh clientRequestId for the next comment
       setDraftText("");
+      setMentionedUsers([]);
+      setMentionQuery(null);
       setReplyingTo(null);
       setPendingRequestId(`req_${postId}_${Date.now()}_${Math.random().toString(36).slice(2, 8)}`);
       if (onCommentCountChange && typeof data.commentCount === "number") {
@@ -208,6 +291,31 @@ export function CommentThreadSection({
   };
 
   const handleKeyDown = (e: React.KeyboardEvent<HTMLTextAreaElement>) => {
+    if (mentionQuery !== null && filteredMentionTeachers.length > 0) {
+      if (e.key === "ArrowDown") {
+        e.preventDefault();
+        setMentionHighlightIdx((i) => (i + 1) % filteredMentionTeachers.length);
+        return;
+      }
+      if (e.key === "ArrowUp") {
+        e.preventDefault();
+        setMentionHighlightIdx(
+          (i) => (i - 1 + filteredMentionTeachers.length) % filteredMentionTeachers.length
+        );
+        return;
+      }
+      if (e.key === "Enter" && !e.ctrlKey && !e.metaKey) {
+        e.preventDefault();
+        handleSelectMentionTeacher(filteredMentionTeachers[mentionHighlightIdx]);
+        return;
+      }
+      if (e.key === "Escape") {
+        e.preventDefault();
+        setMentionQuery(null);
+        return;
+      }
+    }
+
     if ((e.ctrlKey || e.metaKey) && e.key === "Enter") {
       e.preventDefault();
       handleSubmitComment();
@@ -361,6 +469,25 @@ export function CommentThreadSection({
     return `${diffDays} ngày`;
   };
 
+  // Highlight @mentions in comment text
+  const renderFormattedContent = (text: string) => {
+    if (!text || !text.includes("@")) return text;
+    const parts = text.split(/(@[\p{L}\p{N}_]+(?:\s+[\p{L}\p{N}_]+){0,3})/gu);
+    return parts.map((part, idx) => {
+      if (part.startsWith("@") && part.length > 1) {
+        return (
+          <span
+            key={idx}
+            className="inline-block px-1.5 py-0.2 rounded-md bg-[#E6F4F5] text-[#123E4A] font-bold"
+          >
+            {part}
+          </span>
+        );
+      }
+      return <React.Fragment key={idx}>{part}</React.Fragment>;
+    });
+  };
+
   const renderSingleComment = (c: CommentItem, isReply = false) => {
     const isCommentAuthor = c.authorId === currentUserId;
     const isAuthorOfPost = c.authorId === postAuthorId;
@@ -448,11 +575,11 @@ export function CommentThreadSection({
                   }`}
                 >
                   {c.replyToUserName && !c.isDeleted && (
-                    <span className="font-semibold text-[#159EAA] mr-1">
+                    <span className="inline-block px-1.5 py-0.2 rounded-md bg-[#E6F4F5] text-[#123E4A] font-bold mr-1">
                       @{c.replyToUserName}
                     </span>
                   )}
-                  {c.isDeleted ? "Bình luận đã được xóa" : c.content}
+                  {c.isDeleted ? "Bình luận đã được xóa" : renderFormattedContent(c.content)}
                 </p>
               )}
 
@@ -590,7 +717,7 @@ export function CommentThreadSection({
   };
 
   return (
-    <div className="space-y-3 pt-2.5">
+    <div className="space-y-3 pt-2.5 relative">
       {!isCompactPreview && (
         <div className="flex items-center justify-between text-xs pb-1">
           <span className="font-bold text-slate-700 tabular-nums">
@@ -658,32 +785,110 @@ export function CommentThreadSection({
         </div>
       )}
 
-      {/* Facebook-style Pill Comment Composer Bar */}
-      <div className="flex items-start gap-2">
-        <div className="w-8 h-8 rounded-full bg-[#123E4A] text-white text-xs font-bold flex items-center justify-center shrink-0 mt-0.5">
-          {(currentUserName || "G").charAt(0).toUpperCase()}
+      {/* Tagged Colleagues Pills */}
+      {mentionedUsers.length > 0 && (
+        <div className="flex items-center gap-1.5 flex-wrap pl-10">
+          <span className="text-[11px] font-semibold text-slate-500 flex items-center gap-0.5">
+            <AtSign className="w-3 h-3 text-[#159EAA]" />
+            <span>Đang tag:</span>
+          </span>
+          {mentionedUsers.map((u) => (
+            <span
+              key={u.userId}
+              className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-[#E6F4F5] text-[#123E4A] border border-[#99F6E4] text-[11px] font-bold"
+            >
+              <span>@{u.teacherName}</span>
+              <button
+                type="button"
+                onClick={() =>
+                  setMentionedUsers((prev) => prev.filter((item) => item.userId !== u.userId))
+                }
+                className="text-slate-500 hover:text-rose-600 cursor-pointer"
+              >
+                <X className="w-3 h-3" />
+              </button>
+            </span>
+          ))}
         </div>
-        <div className="flex-1 flex items-center gap-1.5 bg-[#F0F2F5] focus-within:bg-white focus-within:ring-2 focus-within:ring-[#159EAA]/30 border border-transparent focus-within:border-[#159EAA] rounded-2xl px-3.5 py-1.5 transition-all">
-          <textarea
-            ref={inputRef}
-            rows={1}
-            value={draftText}
-            onChange={(e) => setDraftText(e.target.value)}
-            onKeyDown={handleKeyDown}
-            disabled={sending}
-            placeholder="Viết bình luận đóng góp, đặt câu hỏi hoặc gợi ý cải tiến... (Ctrl+Enter để gửi)"
-            className="flex-1 bg-transparent text-[13px] text-slate-800 placeholder:text-slate-500 focus:outline-none resize-none py-0.5"
-          />
-          <button
-            type="button"
-            onClick={handleSubmitComment}
-            disabled={sending || !draftText.trim()}
-            className="p-1.5 rounded-full text-[#159EAA] hover:bg-teal-50 disabled:text-slate-400 disabled:hover:bg-transparent transition-colors cursor-pointer shrink-0"
-            aria-label="Gửi bình luận"
-            title="Gửi bình luận (Ctrl+Enter)"
-          >
-            <Send className="w-4 h-4" />
-          </button>
+      )}
+
+      {/* Facebook-style Pill Comment Composer Bar with @Mention Autocomplete */}
+      <div className="relative">
+        {/* @Mention Autocomplete Popup */}
+        {mentionQuery !== null && filteredMentionTeachers.length > 0 && (
+          <div className="absolute bottom-full left-10 mb-1.5 z-40 w-72 sm:w-80 rounded-2xl bg-white border border-slate-200 shadow-xl overflow-hidden">
+            <div className="px-3 py-1.5 bg-[#F8FAFC] border-b border-slate-100 text-[11px] font-bold text-[#123E4A] flex items-center justify-between">
+              <span>Chọn giáo viên để @Tag nhắc tên</span>
+              <button
+                type="button"
+                onClick={() => setMentionQuery(null)}
+                className="text-slate-400 hover:text-slate-700 cursor-pointer"
+              >
+                <X className="w-3.5 h-3.5" />
+              </button>
+            </div>
+            <div className="max-h-52 overflow-y-auto divide-y divide-slate-100">
+              {filteredMentionTeachers.map((t, idx) => (
+                <button
+                  key={t.userId}
+                  type="button"
+                  onClick={() => handleSelectMentionTeacher(t)}
+                  className={`w-full text-left px-3 py-2 flex items-center gap-2.5 text-xs transition-colors cursor-pointer ${
+                    idx === mentionHighlightIdx
+                      ? "bg-[#F0FDFA] text-[#123E4A]"
+                      : "hover:bg-slate-50 text-slate-700"
+                  }`}
+                >
+                  <div className="w-7 h-7 rounded-full bg-[#123E4A] text-white text-[11px] font-bold flex items-center justify-center shrink-0">
+                    {(t.teacherName || "G").charAt(0).toUpperCase()}
+                  </div>
+                  <div className="min-w-0 flex-1">
+                    <div className="font-bold text-slate-900 truncate">{t.teacherName}</div>
+                    <div className="text-[10px] text-slate-500 truncate">
+                      {[t.subjectName, t.campusName, t.teacherCode].filter(Boolean).join(" • ")}
+                    </div>
+                  </div>
+                </button>
+              ))}
+            </div>
+          </div>
+        )}
+
+        <div className="flex items-start gap-2">
+          <div className="w-8 h-8 rounded-full bg-[#123E4A] text-white text-xs font-bold flex items-center justify-center shrink-0 mt-0.5">
+            {(currentUserName || "G").charAt(0).toUpperCase()}
+          </div>
+          <div className="flex-1 flex items-center gap-1 bg-[#F0F2F5] focus-within:bg-white focus-within:ring-2 focus-within:ring-[#159EAA]/30 border border-transparent focus-within:border-[#159EAA] rounded-2xl px-3 py-1.5 transition-all">
+            <textarea
+              ref={inputRef}
+              rows={1}
+              value={draftText}
+              onChange={(e) => handleDraftChange(e.target.value)}
+              onKeyDown={handleKeyDown}
+              disabled={sending}
+              placeholder="Viết bình luận... Gõ @ để tag tên đồng nghiệp (Ctrl+Enter để gửi)"
+              className="flex-1 bg-transparent text-[13px] text-slate-800 placeholder:text-slate-500 focus:outline-none resize-none py-0.5"
+            />
+            <button
+              type="button"
+              onClick={handleTriggerMentionButton}
+              className="p-1.5 rounded-full text-slate-500 hover:text-[#159EAA] hover:bg-teal-50 transition-colors cursor-pointer shrink-0"
+              title="Gắn thẻ (@Tag) tên giáo viên"
+              aria-label="Tag giáo viên"
+            >
+              <AtSign className="w-4 h-4" />
+            </button>
+            <button
+              type="button"
+              onClick={handleSubmitComment}
+              disabled={sending || !draftText.trim()}
+              className="p-1.5 rounded-full text-[#159EAA] hover:bg-teal-50 disabled:text-slate-400 disabled:hover:bg-transparent transition-colors cursor-pointer shrink-0"
+              aria-label="Gửi bình luận"
+              title="Gửi bình luận (Ctrl+Enter)"
+            >
+              <Send className="w-4 h-4" />
+            </button>
+          </div>
         </div>
       </div>
 

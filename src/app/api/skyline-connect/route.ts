@@ -32,6 +32,8 @@ import {
   createOrProcessContentReport,
   updateSlcCommunityProfile,
   handleSlcAdminAction,
+  getSlcUserNotifications,
+  markSlcNotificationRead,
   safeJsonParse,
 } from "@/lib/skyline-connect/service";
 import {
@@ -164,7 +166,10 @@ export async function GET(req: NextRequest) {
         pageSize: Number(searchParams.get("pageSize") || 12),
       });
 
-      const catalogs = await getSlcCatalogs(ctx);
+      const [catalogs, notificationsData] = await Promise.all([
+        getSlcCatalogs(ctx),
+        getSlcUserNotifications(ctx, 25),
+      ]);
 
       // Load active award period preview for right sidebar if available
       let hallOfFamePreview: any = null;
@@ -177,6 +182,7 @@ export async function GET(req: NextRequest) {
         ...feed,
         catalogs,
         hallOfFamePreview,
+        notificationsData,
         currentUser: {
           userId: ctx.userId,
           fullName: ctx.fullName,
@@ -188,6 +194,11 @@ export async function GET(req: NextRequest) {
           permissions: catalogs.userPermissions,
         },
       });
+    }
+
+    if (action === "notifications") {
+      const data = await getSlcUserNotifications(ctx, 30);
+      return NextResponse.json(data);
     }
 
     if (action === "detail") {
@@ -518,6 +529,11 @@ export async function POST(req: NextRequest) {
     if (action === "adminAction") {
       const result = await handleSlcAdminAction(ctx, body);
       return NextResponse.json({ ok: true, result });
+    }
+
+    if (action === "markNotificationRead") {
+      const data = await markSlcNotificationRead(ctx, body.notificationId);
+      return NextResponse.json({ ok: true, ...data });
     }
 
     return NextResponse.json(
