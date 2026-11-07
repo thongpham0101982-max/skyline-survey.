@@ -184,6 +184,21 @@ export function normalizeTaskMetadataRow(
   }
 }
 
+export const QA_META_SELECT_COLUMNS = `
+  "taskId", "workflowStatus", "assignmentMode", "workspaceCardKey",
+  "coordinatorUserId", "reviewerUserId", "requiresApproval",
+  CAST("reviewDueDate" AS TEXT) AS "reviewDueDate",
+  CAST("submittedForReviewAt" AS TEXT) AS "submittedForReviewAt",
+  CAST("reviewedAt" AS TEXT) AS "reviewedAt",
+  "reviewComment", "reviewRating", "deliverables", "completionCriteria",
+  "requiredEvidences", "resultSummary", "evidenceLinksJson", "checklistJson",
+  "currentStepLabel", "nextStepLabel", "scopeMetaJson", "sourceModule",
+  "sourceRecordId", "sourceUrl", "externalSyncKey", "batchCode",
+  "recurrenceRuleJson", "recurrenceTemplateId", "recurrenceInstanceKey",
+  "statusReason", "version",
+  CAST("updatedAt" AS TEXT) AS "updatedAt"
+`
+
 export async function getQaMetadataMapForTasks(
   tasks: Array<{ id: string; progress?: string | null; acceptanceStatus?: string | null }>
 ): Promise<Map<string, QaTaskMetadataRecord>> {
@@ -197,7 +212,7 @@ export async function getQaMetadataMapForTasks(
       const ids = tasks.map((t) => t.id)
       const placeholders = ids.map(() => "?").join(",")
       const rows: any[] = await pAny.$queryRawUnsafe(
-        `SELECT * FROM "qa_task_metadata" WHERE "taskId" IN (${placeholders})`,
+        `SELECT ${QA_META_SELECT_COLUMNS} FROM "qa_task_metadata" WHERE "taskId" IN (${placeholders})`,
         ...ids
       )
       const rowByTaskId = new Map<string, any>()
@@ -231,7 +246,7 @@ export async function upsertQaTaskMetadata(
 
   try {
     const existingRows: any[] = await pAny.$queryRawUnsafe(
-      `SELECT * FROM "qa_task_metadata" WHERE "taskId" = ? LIMIT 1`,
+      `SELECT ${QA_META_SELECT_COLUMNS} FROM "qa_task_metadata" WHERE "taskId" = ? LIMIT 1`,
       meta.taskId
     )
     const existing = existingRows?.[0] || null
@@ -406,7 +421,7 @@ export async function getQaTaskAuditLogs(taskId: string): Promise<QaTaskAuditLog
   if (typeof pAny.$queryRawUnsafe !== "function") return []
   try {
     const rows: any[] = await pAny.$queryRawUnsafe(
-      `SELECT * FROM "qa_task_audit_logs" WHERE "taskId" = ? ORDER BY "createdAt" DESC LIMIT 100`,
+      `SELECT "id", "taskId", "actorUserId", "actorName", "actorRole", "action", "fromStatus", "toStatus", "reason", "changesJson", CAST("createdAt" AS TEXT) AS "createdAt" FROM "qa_task_audit_logs" WHERE "taskId" = ? ORDER BY "createdAt" DESC LIMIT 100`,
       taskId
     )
     return (rows || []).map((r) => ({
@@ -481,7 +496,7 @@ export async function getRecentQaReminders(limit = 50): Promise<QaReminderLogIte
   if (typeof pAny.$queryRawUnsafe !== "function") return []
   try {
     const rows: any[] = await pAny.$queryRawUnsafe(
-      `SELECT * FROM "qa_task_reminders" ORDER BY "createdAt" DESC LIMIT ?`,
+      `SELECT "id", "taskId", "recipientUserId", "recipientName", "recipientRoleType", "reminderType", "dedupKey", "channel", "title", "message", CAST("createdAt" AS TEXT) AS "createdAt" FROM "qa_task_reminders" ORDER BY "createdAt" DESC LIMIT ?`,
       limit
     )
     return (rows || []).map((r) => ({

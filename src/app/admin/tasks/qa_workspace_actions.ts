@@ -10,6 +10,7 @@ import {
   getQaMetadataMapForTasks,
   getQaTaskAuditLogs,
   getRecentQaReminders,
+  QA_META_SELECT_COLUMNS,
   recordQaReminderIfNotExists,
   upsertQaTaskMetadata,
 } from "@/lib/qa-workspace/schemaInit"
@@ -859,7 +860,7 @@ export async function triggerApprovedRecurringTasks() {
     }
 
     const rows: any[] = await pAny.$queryRawUnsafe(
-      `SELECT * FROM "qa_task_metadata" WHERE "assignmentMode" = 'RECURRING' AND "recurrenceRuleJson" IS NOT NULL`
+      `SELECT ${QA_META_SELECT_COLUMNS} FROM "qa_task_metadata" WHERE "assignmentMode" = 'RECURRING' AND "recurrenceRuleJson" IS NOT NULL`
     )
 
     let generatedCount = 0
