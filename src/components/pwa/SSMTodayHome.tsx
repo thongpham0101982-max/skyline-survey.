@@ -1,5 +1,6 @@
 "use client"
 import { QuickActionFab } from "@/components/pwa/QuickActionFab";
+import { SkylineConnectOverviewWidget } from "@/components/teacher/SkylineConnectOverviewWidget";
 
 import React, { useState, useEffect, useCallback } from "react"
 import Link from "next/link"
@@ -315,6 +316,11 @@ export function SSMTodayHome() {
             <ChevronRight className="w-4 h-4" />
           </div>
         </button>
+      </div>
+
+      {/* 2.8 CÓ GÌ MỚI TRÊN SKY-LINE CONNECT? */}
+      <div className="px-4 mt-4">
+        <SkylineConnectOverviewWidget compact />
       </div>
 
       {/* 3. VIỆC CỦA TÔI (MY TASKS SECTION) */}

@@ -36,6 +36,7 @@ import { KPICard } from "@/components/KPICard"
 import { UserWelcomeCard } from "@/components/UserWelcomeCard"
 import DeadlineCountdownBanner from "@/components/shared/DeadlineCountdownBanner"
 import { TeacherClassKpiSpotlight } from "@/components/teacher/TeacherClassKpiSpotlight"
+import { SkylineConnectOverviewWidget } from "@/components/teacher/SkylineConnectOverviewWidget"
 import { useCampusTheme, CampusThemeType, CAMPUS_THEMES, resolveCampusTheme } from "@/hooks/useCampusTheme"
 
 interface MetricData {
@@ -558,6 +559,9 @@ export default function TeacherDashboard() {
 
       {/* KHỐI NỔI BẬT: KPIS LỚP PHỤ TRÁCH (TÍN NHIỆM PHHS & KHẢO SÁT HỌC SINH) */}
       <TeacherClassKpiSpotlight />
+
+      {/* KHỐI GỌN: CÓ GÌ MỚI TRÊN SKY-LINE CONNECT? */}
+      <SkylineConnectOverviewWidget />
 
       {/* 2. BANNER ĐẾM NGƯỢC HẠN CHỐT CHUẨN HỆ THỐNG */}
       <DeadlineCountdownBanner

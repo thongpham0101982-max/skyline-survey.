@@ -3512,3 +3512,602 @@ export async function createOrProcessContentReport(
 
   throw new Error("Hành động kiểm duyệt không hợp lệ.")
 }
+
+/**
+ * Cập nhật hồ sơ cộng đồng & tùy chọn thông báo trong "Không gian của tôi".
+ */
+export async function updateSlcCommunityProfile(
+  ctx: SlcUserContext,
+  input: {
+    bio?: string
+    avatarUrl?: string | null
+    coverImageUrl?: string | null
+    specialties?: string[]
+    interests?: string[]
+    notifyOnMention?: boolean
+    notifyOnReply?: boolean
+    notifyOnInvite?: boolean
+    notifyOnFollowedUpdate?: boolean
+    digestMode?: "IMMEDIATE" | "DAILY_DIGEST" | "OFF"
+  }
+) {
+  await ensureSlcSchema()
+  const pAny = prisma as any
+
+  const data: Record<string, any> = {
+    fullName: ctx.fullName,
+    campusId: ctx.campusId,
+    campusName: ctx.campusName,
+    mainSubject: ctx.mainSubjectName,
+  }
+
+  if (input.bio !== undefined) data.bio = sanitizeRichText(input.bio)
+  if (input.avatarUrl !== undefined) data.avatarUrl = input.avatarUrl
+  if (input.coverImageUrl !== undefined) data.coverImageUrl = input.coverImageUrl
+  if (input.specialties !== undefined) data.specialtiesJson = JSON.stringify(input.specialties)
+  if (input.interests !== undefined) data.interestsJson = JSON.stringify(input.interests)
+  if (input.notifyOnMention !== undefined) data.notifyOnMention = Boolean(input.notifyOnMention)
+  if (input.notifyOnReply !== undefined) data.notifyOnReply = Boolean(input.notifyOnReply)
+  if (input.notifyOnInvite !== undefined) data.notifyOnInvite = Boolean(input.notifyOnInvite)
+  if (input.notifyOnFollowedUpdate !== undefined)
+    data.notifyOnFollowedUpdate = Boolean(input.notifyOnFollowedUpdate)
+  if (input.digestMode !== undefined) data.digestMode = input.digestMode
+
+  return pAny.slcCommunityProfile.upsert({
+    where: { userId: ctx.userId },
+    update: data,
+    create: {
+      userId: ctx.userId,
+      ...data,
+    },
+  })
+}
+
+/**
+ * Quản lý Nhóm chuyên môn (Tạo nhóm, xin vào nhóm, duyệt thành viên, ghim bài trong nhóm).
+ */
+export async function handleSlcGroupAction(
+  ctx: SlcUserContext,
+  input: {
+    action: "CREATE_GROUP" | "JOIN_GROUP" | "APPROVE_MEMBER" | "LEAVE_GROUP"
+    groupId?: string
+    name?: string
+    description?: string
+    groupType?: string
+    visibility?: "PUBLIC_INTERNAL" | "PRIVATE"
+    campusId?: string | null
+    subjectCode?: string | null
+    gradeBand?: string | null
+    targetUserId?: string
+  }
+) {
+  await ensureSlcSchema()
+  const pAny = prisma as any
+
+  if (input.action === "CREATE_GROUP") {
+    const cleanName = sanitizeRichText(input.name)
+    if (!cleanName) throw new Error("Vui lòng nhập tên nhóm chuyên môn.")
+    const slug = `${cleanName
+      .toLowerCase()
+      .normalize("NFD")
+      .replace(/[\u0300-\u036f]/g, "")
+      .replace(/[^a-z0-9]+/g, "-")
+      .replace(/(^-|-$)/g, "")}-${Date.now().toString(36)}`
+
+    const group = await pAny.slcGroup.create({
+      data: {
+        name: cleanName,
+        slug,
+        description: sanitizeRichText(input.description),
+        groupType: input.groupType || "SUBJECT",
+        visibility: input.visibility || "PUBLIC_INTERNAL",
+        campusId: input.campusId || ctx.campusId,
+        subjectCode: input.subjectCode || ctx.mainSubjectCode,
+        gradeBand: input.gradeBand || null,
+        ownerId: ctx.userId,
+        ownerName: ctx.fullName,
+        memberCount: 1,
+      },
+    })
+
+    await pAny.slcGroupMember.create({
+      data: {
+        groupId: group.id,
+        userId: ctx.userId,
+        userName: ctx.fullName,
+        userRole: ctx.systemRole,
+        campusName: ctx.campusName,
+        role: "OWNER",
+        status: "APPROVED",
+        joinedAt: new Date(),
+      },
+    })
+
+    return group
+  }
+
+  if (!input.groupId) throw new Error("Thiếu mã nhóm.")
+  const group = await pAny.slcGroup.findUnique({ where: { id: input.groupId } })
+  if (!group) throw new Error("Không tìm thấy nhóm.")
+
+  if (input.action === "JOIN_GROUP") {
+    const status = group.visibility === "PUBLIC_INTERNAL" ? "APPROVED" : "PENDING"
+    const member = await pAny.slcGroupMember.upsert({
+      where: { groupId_userId: { groupId: group.id, userId: ctx.userId } },
+      update: {
+        status,
+        joinedAt: status === "APPROVED" ? new Date() : null,
+      },
+      create: {
+        groupId: group.id,
+        userId: ctx.userId,
+        userName: ctx.fullName,
+        userRole: ctx.systemRole,
+        campusName: ctx.campusName,
+        role: "MEMBER",
+        status,
+        joinedAt: status === "APPROVED" ? new Date() : null,
+      },
+    })
+
+    const count = await pAny.slcGroupMember.count({
+      where: { groupId: group.id, status: "APPROVED" },
+    })
+    await pAny.slcGroup.update({
+      where: { id: group.id },
+      data: { memberCount: count },
+    })
+
+    return member
+  }
+
+  if (input.action === "APPROVE_MEMBER") {
+    if (
+      group.ownerId !== ctx.userId &&
+      !ctx.moderatedGroupIds.includes(group.id) &&
+      !isSuperOrCommunityAdmin(ctx)
+    ) {
+      throw new Error("Chỉ quản trị viên nhóm mới có quyền duyệt thành viên.")
+    }
+    if (!input.targetUserId) throw new Error("Thiếu mã thành viên cần duyệt.")
+    const updated = await pAny.slcGroupMember.update({
+      where: { groupId_userId: { groupId: group.id, userId: input.targetUserId } },
+      data: { status: "APPROVED", joinedAt: new Date() },
+    })
+    const count = await pAny.slcGroupMember.count({
+      where: { groupId: group.id, status: "APPROVED" },
+    })
+    await pAny.slcGroup.update({
+      where: { id: group.id },
+      data: { memberCount: count },
+    })
+    return updated
+  }
+
+  if (input.action === "LEAVE_GROUP") {
+    await pAny.slcGroupMember
+      .delete({
+        where: { groupId_userId: { groupId: group.id, userId: ctx.userId } },
+      })
+      .catch(() => null)
+    const count = await pAny.slcGroupMember.count({
+      where: { groupId: group.id, status: "APPROVED" },
+    })
+    await pAny.slcGroup.update({
+      where: { id: group.id },
+      data: { memberCount: Math.max(1, count) },
+    })
+    return { left: true }
+  }
+
+  throw new Error("Thao tác nhóm không hợp lệ.")
+}
+
+/**
+ * Ghi nhận cập nhật tiến độ của Dự án (SlcProjectProgress).
+ */
+export async function addSlcProjectProgress(
+  ctx: SlcUserContext,
+  input: {
+    projectId: string
+    title: string
+    content: string
+    milestoneStatus?: string
+    linkedProductId?: string | null
+  }
+) {
+  await ensureSlcSchema()
+  const pAny = prisma as any
+  const project = await pAny.slcProject.findUnique({ where: { id: input.projectId } })
+  if (!project) throw new Error("Không tìm thấy dự án.")
+
+  const member = await pAny.slcProjectMember.findUnique({
+    where: { projectId_userId: { projectId: project.id, userId: ctx.userId } },
+  })
+  if (
+    project.ownerId !== ctx.userId &&
+    member?.status !== "APPROVED" &&
+    !isSuperOrCommunityAdmin(ctx)
+  ) {
+    throw new Error("Chỉ thành viên dự án mới có thể cập nhật tiến độ.")
+  }
+
+  const progress = await pAny.slcProjectProgress.create({
+    data: {
+      projectId: project.id,
+      authorId: ctx.userId,
+      authorName: ctx.fullName,
+      title: sanitizeRichText(input.title),
+      content: sanitizeRichText(input.content),
+      milestoneStatus: input.milestoneStatus || "IN_PROGRESS",
+      linkedProductId: input.linkedProductId || null,
+    },
+  })
+
+  if (input.milestoneStatus === "HAS_PRODUCT" || input.linkedProductId) {
+    await pAny.slcProject.update({
+      where: { id: project.id },
+      data: { status: "HAS_PRODUCT" },
+    })
+  }
+
+  return progress
+}
+
+/**
+ * Xử lý các tác vụ Quản trị Sky-Line Connect (/admin/skyline-connect):
+ * - Bật/tắt Feature Flag
+ * - Ghim bài / Chọn "Dấu ấn sáng tạo tháng" (editorialFeaturedRank: 1, 2, 3) — tách biệt với danh hiệu giải thưởng!
+ * - Quản lý Nhãn (SlcTag)
+ * - Phân quyền chuyên môn (SlcUserRoleAssignment)
+ * - Tạo Kỳ Bảng vàng (SlcAwardPeriod) và Quy chế version hóa (SlcAwardRuleSet)
+ * - Chặn sửa trọng số quy chế khi kỳ đang mở hoặc đã chốt!
+ */
+export async function handleSlcAdminAction(
+  ctx: SlcUserContext,
+  input: {
+    subAction:
+      | "UPDATE_FEATURE_CONFIG"
+      | "SET_EDITORIAL_SPOTLIGHT"
+      | "UPSERT_TAG"
+      | "ASSIGN_ROLE"
+      | "REVOKE_ROLE"
+      | "CREATE_RULE_SET"
+      | "UPDATE_RULE_SET"
+      | "CREATE_AWARD_PERIOD"
+      | "UPDATE_PERIOD_STATUS"
+      | "CONFIRM_REENTRY_NOMINATION"
+    payload: Record<string, any>
+  }
+) {
+  await ensureSlcSchema()
+  const pAny = prisma as any
+
+  const isAdmin = isSuperOrCommunityAdmin(ctx)
+  const isCoordinator = hasSlcRoleInScope(ctx, "COORDINATOR")
+  const isFinalizer = hasSlcRoleInScope(ctx, "AWARD_FINALIZER")
+
+  if (!isAdmin && !isCoordinator && !isFinalizer) {
+    throw new Error("PERMISSION_DENIED: Thầy/Cô không có quyền thực hiện thao tác quản trị này.")
+  }
+
+  const { subAction, payload } = input
+
+  if (subAction === "UPDATE_FEATURE_CONFIG") {
+    if (!isAdmin) throw new Error("Chỉ Quản trị viên hệ thống mới có thể thay đổi cấu hình Feature Flag.")
+    const updated = await pAny.slcFeatureConfig.upsert({
+      where: { key: "DEFAULT" },
+      update: {
+        isEnabled: payload.isEnabled ?? true,
+        pilotMode: payload.pilotMode ?? false,
+        allowedCampusIdsJson: JSON.stringify(payload.allowedCampusIds || ["ALL"]),
+        allowedUserIdsJson: JSON.stringify(payload.allowedUserIds || []),
+        allowedRolesJson: JSON.stringify(payload.allowedRoles || ["ALL"]),
+        updatedBy: ctx.userId,
+      },
+      create: {
+        key: "DEFAULT",
+        isEnabled: payload.isEnabled ?? true,
+        pilotMode: payload.pilotMode ?? false,
+        allowedCampusIdsJson: JSON.stringify(payload.allowedCampusIds || ["ALL"]),
+        allowedUserIdsJson: JSON.stringify(payload.allowedUserIds || []),
+        allowedRolesJson: JSON.stringify(payload.allowedRoles || ["ALL"]),
+        updatedBy: ctx.userId,
+      },
+    })
+    await recordSlcAuditLog(ctx, "UPDATE_FEATURE_CONFIG", "FEATURE_CONFIG", "DEFAULT", payload)
+    return updated
+  }
+
+  if (subAction === "SET_EDITORIAL_SPOTLIGHT") {
+    // Phân biệt nội dung biên tập chọn ("Dấu ấn sáng tạo tháng") với sản phẩm đạt giải; không tự gắn danh hiệu cho bài được ghim!
+    const postId = String(payload.postId || "")
+    const rank = payload.editorialFeaturedRank ? Number(payload.editorialFeaturedRank) : null
+    const isPinned = Boolean(payload.isPinned)
+    const label = payload.editorialLabel ? sanitizeRichText(payload.editorialLabel) : null
+
+    if (rank && [1, 2, 3].includes(rank)) {
+      await pAny.slcPost.updateMany({
+        where: { editorialFeaturedRank: rank },
+        data: { editorialFeaturedRank: null },
+      })
+    }
+
+    const updated = await pAny.slcPost.update({
+      where: { id: postId },
+      data: {
+        isPinned,
+        editorialFeaturedRank: rank,
+        editorialLabel: label,
+      },
+    })
+    await recordSlcAuditLog(ctx, "SET_EDITORIAL_SPOTLIGHT", "POST", postId, {
+      isPinned,
+      editorialFeaturedRank: rank,
+      editorialLabel: label,
+    })
+    return updated
+  }
+
+  if (subAction === "UPSERT_TAG") {
+    const slug = String(payload.slug || payload.name || "")
+      .toLowerCase()
+      .normalize("NFD")
+      .replace(/[\u0300-\u036f]/g, "")
+      .replace(/[^a-z0-9]+/g, "-")
+      .replace(/(^-|-$)/g, "")
+    const tag = await pAny.slcTag.upsert({
+      where: { slug },
+      update: {
+        name: sanitizeRichText(payload.name),
+        category: payload.category || "TOPIC",
+        isActive: payload.isActive ?? true,
+      },
+      create: {
+        slug,
+        name: sanitizeRichText(payload.name),
+        category: payload.category || "TOPIC",
+        isActive: true,
+      },
+    })
+    await recordSlcAuditLog(ctx, "UPSERT_TAG", "TAG", tag.id, payload)
+    return tag
+  }
+
+  if (subAction === "ASSIGN_ROLE") {
+    if (!isAdmin) throw new Error("Chỉ Quản trị viên mới có quyền cấp vai trò chuyên môn.")
+    const created = await pAny.slcUserRoleAssignment.upsert({
+      where: {
+        userId_role_scopeType_scopeId: {
+          userId: payload.userId,
+          role: payload.role,
+          scopeType: payload.scopeType || "SYSTEM",
+          scopeId: payload.scopeId || "ALL",
+        },
+      },
+      update: {
+        isActive: true,
+        assignedBy: ctx.userId,
+      },
+      create: {
+        userId: payload.userId,
+        role: payload.role,
+        scopeType: payload.scopeType || "SYSTEM",
+        scopeId: payload.scopeId || "ALL",
+        isActive: true,
+        assignedBy: ctx.userId,
+      },
+    })
+    await recordSlcAuditLog(ctx, "ASSIGN_SLC_ROLE", "USER_ROLE", created.id, payload)
+    return created
+  }
+
+  if (subAction === "REVOKE_ROLE") {
+    if (!isAdmin) throw new Error("Chỉ Quản trị viên mới có quyền thu hồi vai trò chuyên môn.")
+    const updated = await pAny.slcUserRoleAssignment.update({
+      where: { id: payload.roleAssignmentId },
+      data: { isActive: false },
+    })
+    await recordSlcAuditLog(ctx, "REVOKE_SLC_ROLE", "USER_ROLE", updated.id, payload)
+    return updated
+  }
+
+  if (subAction === "CREATE_RULE_SET") {
+    if (!isAdmin && !isFinalizer) throw new Error("Không có quyền tạo bộ quy chế xét giải.")
+    const latest = await pAny.slcAwardRuleSet.findFirst({ orderBy: { version: "desc" } })
+    const nextVersion = (latest?.version || 0) + 1
+    const base =
+      payload.periodType === "YEARLY" ? DEFAULT_YEARLY_RULE_PARAMS : DEFAULT_MONTHLY_RULE_PARAMS
+
+    const created = await pAny.slcAwardRuleSet.create({
+      data: {
+        version: nextVersion,
+        name: sanitizeRichText(payload.name || `Quy chế Bảng vàng v${nextVersion}`),
+        periodType: payload.periodType || "MONTHLY",
+        minRatingsIdea: Number(payload.minRatingsIdea ?? base.minRatingsIdea),
+        minRatingsProduct: Number(payload.minRatingsProduct ?? base.minRatingsProduct),
+        minVerifiedAppsProduct: Number(
+          payload.minVerifiedAppsProduct ?? base.minVerifiedAppsProduct
+        ),
+        minExpertReviewers: Number(payload.minExpertReviewers ?? base.minExpertReviewers),
+        bayesianM: Number(payload.bayesianM ?? base.bayesianM),
+        bayesianPrior: Number(payload.bayesianPrior ?? base.bayesianPrior),
+        capVerifiedApps: Number(payload.capVerifiedApps ?? base.capVerifiedApps),
+        ideaWeightC: Number(payload.ideaWeightC ?? base.ideaWeightC),
+        ideaWeightE: Number(payload.ideaWeightE ?? base.ideaWeightE),
+        productWeightC: Number(payload.productWeightC ?? base.productWeightC),
+        productWeightE: Number(payload.productWeightE ?? base.productWeightE),
+        productWeightU: Number(payload.productWeightU ?? base.productWeightU),
+        isLocked: false,
+        createdById: ctx.userId,
+      },
+    })
+    await recordSlcAuditLog(ctx, "CREATE_AWARD_RULE_SET", "AWARD_RULE_SET", created.id, payload)
+    return created
+  }
+
+  if (subAction === "UPDATE_RULE_SET") {
+    const existingRule = await pAny.slcAwardRuleSet.findUnique({
+      where: { id: payload.ruleSetId },
+      include: { periods: true },
+    })
+    if (!existingRule) throw new Error("Không tìm thấy bộ quy chế.")
+
+    const hasActiveOrFinalizedPeriod =
+      existingRule.isLocked ||
+      existingRule.periods?.some((p: any) =>
+        ["OPEN", "DATA_LOCKED", "REVIEWING", "FINALIZED"].includes(p.status)
+      )
+    if (hasActiveOrFinalizedPeriod) {
+      throw new Error(
+        "RULE_SET_LOCKED: Không được sửa trọng số hoặc tham số của bộ quy chế đang gắn với kỳ đang mở hoặc đã chốt. Vui lòng tạo phiên bản quy chế mới."
+      )
+    }
+
+    const updated = await pAny.slcAwardRuleSet.update({
+      where: { id: existingRule.id },
+      data: {
+        name: payload.name ? sanitizeRichText(payload.name) : existingRule.name,
+        ideaWeightC: payload.ideaWeightC ?? existingRule.ideaWeightC,
+        ideaWeightE: payload.ideaWeightE ?? existingRule.ideaWeightE,
+        productWeightC: payload.productWeightC ?? existingRule.productWeightC,
+        productWeightE: payload.productWeightE ?? existingRule.productWeightE,
+        productWeightU: payload.productWeightU ?? existingRule.productWeightU,
+      },
+    })
+    await recordSlcAuditLog(ctx, "UPDATE_AWARD_RULE_SET", "AWARD_RULE_SET", updated.id, payload)
+    return updated
+  }
+
+  if (subAction === "CREATE_AWARD_PERIOD") {
+    const periodType = payload.periodType || "MONTHLY"
+    const yearNumber = Number(payload.yearNumber || new Date().getFullYear())
+    const monthNumber = periodType === "MONTHLY" ? Number(payload.monthNumber || new Date().getMonth() + 1) : null
+    const audienceScope = payload.audienceScope || "SYSTEM"
+    const audienceScopeId = payload.audienceScopeId || "ALL"
+
+    let startDateUtc: Date
+    let endDateUtc: Date
+    if (payload.startDateUtc && payload.endDateUtc) {
+      startDateUtc = new Date(payload.startDateUtc)
+      endDateUtc = new Date(payload.endDateUtc)
+    } else if (periodType === "MONTHLY" && monthNumber) {
+      const bounds = getVietnamMonthBoundsUtc(yearNumber, monthNumber)
+      startDateUtc = bounds.startUtc
+      endDateUtc = bounds.endUtc
+    } else {
+      startDateUtc = new Date(Date.UTC(yearNumber, 7, 1, -7, 0, 0, 0))
+      endDateUtc = new Date(Date.UTC(yearNumber + 1, 5, 1, -7, 0, 0, 0))
+    }
+
+    // Check overlapping periods of same type & audienceScope
+    const existingPeriods = await pAny.slcAwardPeriod.findMany({
+      where: {
+        periodType,
+        audienceScope,
+        audienceScopeId,
+      },
+    })
+    for (const ep of existingPeriods) {
+      if (
+        doPeriodRangesOverlap(
+          { startUtc: startDateUtc, endUtc: endDateUtc },
+          { startUtc: new Date(ep.startDateUtc), endUtc: new Date(ep.endDateUtc) }
+        )
+      ) {
+        throw new Error(
+          `Kỳ xét giải bị chồng lấn thời gian với kỳ "${ep.name}" cùng phạm vi.`
+        )
+      }
+    }
+
+    const reviewDeadlineUtc = calculateReviewDeadlineUtc(endDateUtc, { workingDaysCount: 3 })
+
+    // Ensure ruleSet exists and lock it once attached to an OPEN period
+    let ruleSetId = payload.ruleSetId
+    let ruleSetSnapshot =
+      periodType === "YEARLY" ? DEFAULT_YEARLY_RULE_PARAMS : DEFAULT_MONTHLY_RULE_PARAMS
+
+    if (!ruleSetId) {
+      const createdRule = await pAny.slcAwardRuleSet.create({
+        data: {
+          version: Math.floor(Date.now() / 1000),
+          name: `Quy chế ${periodType === "YEARLY" ? "Năm học" : "Tháng"} mặc định`,
+          periodType,
+          ...ruleSetSnapshot,
+          isLocked: true,
+          createdById: ctx.userId,
+        },
+      })
+      ruleSetId = createdRule.id
+    } else {
+      await pAny.slcAwardRuleSet
+        .update({
+          where: { id: ruleSetId },
+          data: { isLocked: true },
+        })
+        .catch(() => null)
+    }
+
+    const code =
+      payload.code ||
+      (periodType === "MONTHLY"
+        ? `SLC-M-${yearNumber}-${String(monthNumber).padStart(2, "0")}-${audienceScope}`
+        : `SLC-Y-${yearNumber}-${audienceScope}`)
+
+    const name =
+      payload.name ||
+      (periodType === "MONTHLY"
+        ? `Tháng ${monthNumber} • Năm học ${payload.academicYearName || "2026–2027"}`
+        : `Năm học ${payload.academicYearName || "2026–2027"}`)
+
+    const period = await pAny.slcAwardPeriod.create({
+      data: {
+        code,
+        name: sanitizeRichText(name),
+        periodType,
+        monthNumber,
+        yearNumber,
+        academicYearId: payload.academicYearId || null,
+        academicYearName: payload.academicYearName || "2026–2027",
+        audienceScope,
+        audienceScopeId,
+        startDateUtc,
+        endDateUtc,
+        reviewDeadlineUtc,
+        status: payload.status || "OPEN",
+        ruleSetId,
+        ruleSetSnapshotJson: JSON.stringify(ruleSetSnapshot),
+      },
+    })
+
+    await recordSlcAuditLog(ctx, "CREATE_AWARD_PERIOD", "AWARD_PERIOD", period.id, payload)
+    return period
+  }
+
+  if (subAction === "UPDATE_PERIOD_STATUS") {
+    const updated = await pAny.slcAwardPeriod.update({
+      where: { id: payload.periodId },
+      data: { status: payload.status },
+    })
+    await recordSlcAuditLog(ctx, "UPDATE_PERIOD_STATUS", "AWARD_PERIOD", updated.id, payload)
+    return updated
+  }
+
+  if (subAction === "CONFIRM_REENTRY_NOMINATION") {
+    const updated = await pAny.slcAwardNomination.update({
+      where: { id: payload.nominationId },
+      data: {
+        coordinatorConfirmed: Boolean(payload.confirmed),
+        coordinatorNote: sanitizeRichText(payload.note),
+        confirmedById: ctx.userId,
+        confirmedAt: new Date(),
+      },
+    })
+    await recordSlcAuditLog(ctx, "CONFIRM_REENTRY_NOMINATION", "AWARD_NOMINATION", updated.id, payload)
+    return updated
+  }
+
+  throw new Error("Tác vụ quản trị không hợp lệ.")
+}
+
