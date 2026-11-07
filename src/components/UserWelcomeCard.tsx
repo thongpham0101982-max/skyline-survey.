@@ -10,9 +10,11 @@ import {
   School,
   BookOpen,
   RefreshCw,
-  Sparkles
+  Sparkles,
+  Camera
 } from "lucide-react"
 import { ChangePasswordModal } from "./ChangePasswordModal"
+import { AvatarUploadModal } from "./AvatarUploadModal"
 import { resolveCampusTheme, CampusTheme } from "@/hooks/useCampusTheme"
 
 // Làm sạch dữ liệu chuỗi chức danh / bộ môn (loại bỏ chuỗi rỗng kiểu "||", "[]", "-", "|")
@@ -137,8 +139,37 @@ export function UserWelcomeCard({
 }: UserWelcomeCardProps) {
   const { data: session } = useSession()
   const [isPasswordModalOpen, setIsPasswordModalOpen] = useState(false)
+  const [isAvatarModalOpen, setIsAvatarModalOpen] = useState(false)
+  const [avatarUrl, setAvatarUrl] = useState<string | null>(null)
   const [currentDateStr, setCurrentDateStr] = useState("")
   const [isExpanded, setIsExpanded] = useState(!compact)
+
+  useEffect(() => {
+    let active = true
+    if (session?.user?.id) {
+      fetch("/api/user/avatar")
+        .then((res) => (res.ok ? res.json() : null))
+        .then((data) => {
+          if (active && data?.avatarUrl !== undefined) {
+            setAvatarUrl(data.avatarUrl || null)
+          }
+        })
+        .catch(() => {})
+    }
+
+    const handleAvatarEvent = (e: Event) => {
+      const customEvent = e as CustomEvent<{ avatarUrl: string | null }>
+      if (customEvent.detail !== undefined) {
+        setAvatarUrl(customEvent.detail.avatarUrl || null)
+      }
+    }
+
+    window.addEventListener("ssm:avatar-updated", handleAvatarEvent)
+    return () => {
+      active = false
+      window.removeEventListener("ssm:avatar-updated", handleAvatarEvent)
+    }
+  }, [session?.user?.id])
 
   const campusTheme = resolveCampusTheme(campusCode || campusName)
   const effectiveUserName = customUserName || session?.user?.name || "Thầy/Cô"
@@ -195,14 +226,28 @@ export function UserWelcomeCard({
             {/* Left: Avatar + Greeting + Badges */}
             <div className="flex items-center gap-3 min-w-0 flex-wrap sm:flex-nowrap">
               <div className="relative shrink-0">
-                <div
-                  className="w-9 h-9 sm:w-10 sm:h-10 rounded-xl text-white flex items-center justify-center font-bold text-sm sm:text-base shadow-xs border border-white"
+                <button
+                  type="button"
+                  onClick={() => setIsAvatarModalOpen(true)}
+                  title="Nhấn để tải lên / đổi ảnh đại diện"
+                  className="relative w-9 h-9 sm:w-10 sm:h-10 rounded-xl overflow-hidden text-white flex items-center justify-center font-bold text-sm sm:text-base shadow-xs border border-white group/avatar cursor-pointer"
                   style={{ background: campusTheme.heroBadgeGradient }}
                 >
-                  {effectiveInitial}
-                </div>
+                  {avatarUrl ? (
+                    <img
+                      src={avatarUrl}
+                      alt={effectiveUserName}
+                      className="w-full h-full object-cover"
+                    />
+                  ) : (
+                    effectiveInitial
+                  )}
+                  <span className="absolute inset-0 bg-slate-900/50 opacity-0 group-hover/avatar:opacity-100 transition-opacity flex items-center justify-center">
+                    <Camera className="w-3.5 h-3.5 text-white" />
+                  </span>
+                </button>
                 <span
-                  className="absolute -bottom-0.5 -right-0.5 w-2.5 h-2.5 bg-emerald-500 border-2 border-white rounded-full"
+                  className="absolute -bottom-0.5 -right-0.5 w-2.5 h-2.5 bg-emerald-500 border-2 border-white rounded-full pointer-events-none"
                   title="Đang trực tuyến"
                 />
               </div>
@@ -269,14 +314,24 @@ export function UserWelcomeCard({
               )}
 
               {showPasswordChange && (
-                <button
-                  type="button"
-                  onClick={() => setIsPasswordModalOpen(true)}
-                  className="bg-white/95 hover:bg-white border border-slate-200/80 hover:border-slate-300 rounded-xl px-2.5 py-1.5 flex items-center gap-1.5 text-xs font-semibold text-slate-700 shadow-2xs transition-all cursor-pointer active:scale-95"
-                >
-                  <KeyRound className="w-3.5 h-3.5 text-[#00A19A]" />
-                  <span className="hidden sm:inline">Đổi mật khẩu</span>
-                </button>
+                <>
+                  <button
+                    type="button"
+                    onClick={() => setIsAvatarModalOpen(true)}
+                    className="bg-white/95 hover:bg-white border border-slate-200/80 hover:border-slate-300 rounded-xl px-2.5 py-1.5 flex items-center gap-1.5 text-xs font-semibold text-slate-700 shadow-2xs transition-all cursor-pointer active:scale-95"
+                  >
+                    <Camera className="w-3.5 h-3.5 text-[#00A19A]" />
+                    <span className="hidden sm:inline">Đổi ảnh đại diện</span>
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setIsPasswordModalOpen(true)}
+                    className="bg-white/95 hover:bg-white border border-slate-200/80 hover:border-slate-300 rounded-xl px-2.5 py-1.5 flex items-center gap-1.5 text-xs font-semibold text-slate-700 shadow-2xs transition-all cursor-pointer active:scale-95"
+                  >
+                    <KeyRound className="w-3.5 h-3.5 text-[#00A19A]" />
+                    <span className="hidden sm:inline">Đổi mật khẩu</span>
+                  </button>
+                </>
               )}
 
               <button
@@ -368,16 +423,30 @@ export function UserWelcomeCard({
           {/* Hàng 2: Avatar & Lời chào */}
           <div className="flex items-start sm:items-center gap-3.5 sm:gap-4 mb-3">
             <div className="relative shrink-0">
-              <div
-                className="w-12 h-12 sm:w-14 sm:h-14 rounded-2xl text-white flex items-center justify-center font-extrabold text-lg sm:text-xl shadow-md border-2 border-white ring-1 ring-slate-900/5"
+              <button
+                type="button"
+                onClick={() => setIsAvatarModalOpen(true)}
+                title="Nhấn để tải lên / đổi ảnh đại diện"
+                className="relative w-12 h-12 sm:w-14 sm:h-14 rounded-2xl overflow-hidden text-white flex items-center justify-center font-extrabold text-lg sm:text-xl shadow-md border-2 border-white ring-1 ring-slate-900/5 group/avatar cursor-pointer"
                 style={{
                   background: campusTheme.heroBadgeGradient
                 }}
               >
-                {effectiveInitial}
-              </div>
+                {avatarUrl ? (
+                  <img
+                    src={avatarUrl}
+                    alt={effectiveUserName}
+                    className="w-full h-full object-cover"
+                  />
+                ) : (
+                  effectiveInitial
+                )}
+                <span className="absolute inset-0 bg-slate-900/50 opacity-0 group-hover/avatar:opacity-100 transition-opacity flex items-center justify-center">
+                  <Camera className="w-5 h-5 text-white" />
+                </span>
+              </button>
               <span
-                className="absolute -bottom-0.5 -right-0.5 w-3.5 h-3.5 bg-emerald-500 border-2 border-white rounded-full shadow-2xs"
+                className="absolute -bottom-0.5 -right-0.5 w-3.5 h-3.5 bg-emerald-500 border-2 border-white rounded-full shadow-2xs pointer-events-none"
                 title="Đang trực tuyến"
               />
             </div>
@@ -471,17 +540,28 @@ export function UserWelcomeCard({
               </button>
             )}
 
-            {/* Nút Đổi Mật Khẩu */}
+            {/* Nút Đổi Ảnh Đại Diện & Đổi Mật Khẩu */}
             {showPasswordChange && (
-              <button
-                type="button"
-                onClick={() => setIsPasswordModalOpen(true)}
-                className="bg-white/95 hover:bg-white border border-slate-200/80 hover:border-slate-300 rounded-full px-3 py-1.5 flex items-center gap-1.5 text-xs font-semibold text-slate-700 shadow-2xs transition-all cursor-pointer group active:scale-95"
-              >
-                <KeyRound className="w-3.5 h-3.5 text-[#00A19A] group-hover:rotate-12 transition-transform" />
-                <span>Đổi mật khẩu</span>
-                <ChevronRight className="w-3 h-3 text-slate-400 group-hover:translate-x-0.5 transition-transform" />
-              </button>
+              <>
+                <button
+                  type="button"
+                  onClick={() => setIsAvatarModalOpen(true)}
+                  className="bg-white/95 hover:bg-white border border-slate-200/80 hover:border-slate-300 rounded-full px-3 py-1.5 flex items-center gap-1.5 text-xs font-semibold text-slate-700 shadow-2xs transition-all cursor-pointer group active:scale-95"
+                >
+                  <Camera className="w-3.5 h-3.5 text-[#00A19A] group-hover:scale-110 transition-transform" />
+                  <span>Đổi ảnh đại diện</span>
+                  <ChevronRight className="w-3 h-3 text-slate-400 group-hover:translate-x-0.5 transition-transform" />
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setIsPasswordModalOpen(true)}
+                  className="bg-white/95 hover:bg-white border border-slate-200/80 hover:border-slate-300 rounded-full px-3 py-1.5 flex items-center gap-1.5 text-xs font-semibold text-slate-700 shadow-2xs transition-all cursor-pointer group active:scale-95"
+                >
+                  <KeyRound className="w-3.5 h-3.5 text-[#00A19A] group-hover:rotate-12 transition-transform" />
+                  <span>Đổi mật khẩu</span>
+                  <ChevronRight className="w-3 h-3 text-slate-400 group-hover:translate-x-0.5 transition-transform" />
+                </button>
+              </>
             )}
 
             {customActions}
@@ -499,6 +579,15 @@ export function UserWelcomeCard({
         </div>
       </div>
       )}
+
+      <AvatarUploadModal
+        isOpen={isAvatarModalOpen}
+        onClose={() => setIsAvatarModalOpen(false)}
+        userName={effectiveUserName}
+        userEmail={cleanTeacherCode || session?.user?.email || ""}
+        currentAvatarUrl={avatarUrl}
+        onAvatarUpdated={(newUrl) => setAvatarUrl(newUrl)}
+      />
 
       {showPasswordChange && (
         <ChangePasswordModal
