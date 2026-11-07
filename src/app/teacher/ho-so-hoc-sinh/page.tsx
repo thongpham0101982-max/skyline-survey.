@@ -160,6 +160,10 @@ export default function TeacherStudentProfilePage() {
   // Achievement Addition Request Modal State
   const [isAddAchModalOpen, setIsAddAchModalOpen] = useState(false);
   const [isSubmittingAch, setIsSubmittingAch] = useState(false);
+  const [examCategories, setExamCategories] = useState<any[]>([]);
+  const [allExams, setAllExams] = useState<any[]>([]);
+  const [selectedExamCatId, setSelectedExamCatId] = useState<string>("ALL");
+  const [isCustomExam, setIsCustomExam] = useState<boolean>(false);
   const [addAchForm, setAddAchForm] = useState({
     studentId: "",
     examName: "",
@@ -172,7 +176,23 @@ export default function TeacherStudentProfilePage() {
     note: ""
   });
 
+  const fetchExamDirectory = async () => {
+    try {
+      const res = await fetch("/api/teacher-student-records?action=getExamCategoriesAndExams");
+      if (res.ok) {
+        const data = await res.json();
+        if (data.examCategories) setExamCategories(data.examCategories);
+        if (data.exams) setAllExams(data.exams);
+      }
+    } catch (e) {
+      console.error("Error fetching exam directory:", e);
+    }
+  };
+
   const handleOpenAddAchModal = (presetStudentId?: string) => {
+    fetchExamDirectory();
+    setSelectedExamCatId("ALL");
+    setIsCustomExam(false);
     setAddAchForm({
       studentId: presetStudentId || selectedStudent?.id || (students[0]?.id) || "",
       examName: "",
@@ -186,6 +206,11 @@ export default function TeacherStudentProfilePage() {
     });
     setIsAddAchModalOpen(true);
   };
+
+  const filteredAvailableExams = useMemo(() => {
+    if (selectedExamCatId === "ALL") return allExams;
+    return allExams.filter(e => e.categoryId === selectedExamCatId);
+  }, [allExams, selectedExamCatId]);
 
   const handleCreateAchievementRequest = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -247,6 +272,7 @@ export default function TeacherStudentProfilePage() {
   const [loadingClassAch, setLoadingClassAch] = useState(false);
   const [achCategoryFilter, setAchCategoryFilter] = useState("");
   const [achLevelFilter, setAchLevelFilter] = useState("");
+  const [achExamCatFilter, setAchExamCatFilter] = useState("");
   const [achSearchQuery, setAchSearchQuery] = useState("");
 
   const loadClassAchievements = async () => {
@@ -259,6 +285,8 @@ export default function TeacherStudentProfilePage() {
         const data = await res.json();
         setClassAchReport(data.reportRows || []);
         setClassAchStats(data.stats || { total: 0, gold: 0, silver: 0, bronze: 0, consolation: 0, studentCount: 0 });
+        if (data.examCategories && data.examCategories.length > 0) setExamCategories(data.examCategories);
+        if (data.exams && data.exams.length > 0) setAllExams(data.exams);
       }
     } catch (e) {
       console.error("Error loading class achievements:", e);
@@ -310,6 +338,12 @@ export default function TeacherStudentProfilePage() {
   const filteredClassAchievements = useMemo(() => {
     return classAchReport.filter((row: any) => {
       if (achCategoryFilter && row.category !== achCategoryFilter) return false;
+      if (achExamCatFilter) {
+        const rowExamName = (row.examName || "").toLowerCase();
+        const matchedExam = allExams.find(e => e.name.toLowerCase() === rowExamName);
+        const examCatName = matchedExam?.category?.name || "";
+        if (examCatName !== achExamCatFilter) return false;
+      }
       if (achLevelFilter) {
         const lvl = (row.level || "").toUpperCase();
         const achName = (row.achievementName || "").toLowerCase();
@@ -328,7 +362,7 @@ export default function TeacherStudentProfilePage() {
       }
       return true;
     });
-  }, [classAchReport, achCategoryFilter, achLevelFilter, achSearchQuery]);
+  }, [classAchReport, achCategoryFilter, achExamCatFilter, achLevelFilter, achSearchQuery, allExams]);
 
   const loadConfigs = async () => {
     try {
@@ -3471,15 +3505,32 @@ return (
                                 <option value="OTHER">Khuyến khích / Top rank</option>
                               </select>
 
-                              {(achSearchQuery || achCategoryFilter || achLevelFilter) && (
+                              {/* Exam Category Filter */}
+                              {examCategories.length > 0 && (
+                                <select
+                                  value={achExamCatFilter}
+                                  onChange={e => setAchExamCatFilter(e.target.value)}
+                                  className="border border-slate-200 bg-white rounded-lg px-2.5 py-1.5 text-xs font-semibold text-slate-700 outline-none focus:border-[#00A19A]"
+                                >
+                                  <option value="">-- Tất cả danh mục kỳ thi --</option>
+                                  {examCategories.map(cat => (
+                                    <option key={cat.id} value={cat.name}>
+                                      {cat.name}
+                                    </option>
+                                  ))}
+                                </select>
+                              )}
+
+                              {(achSearchQuery || achCategoryFilter || achLevelFilter || achExamCatFilter) && (
                                 <button
                                   type="button"
                                   onClick={() => {
                                     setAchSearchQuery("");
                                     setAchCategoryFilter("");
                                     setAchLevelFilter("");
+                                    setAchExamCatFilter("");
                                   }}
-                                  className="text-xs font-bold text-slate-500 hover:text-slate-800 px-2 py-1 rounded-md hover:bg-slate-200/60 transition-colors"
+                                  className="text-xs font-bold text-slate-500 hover:text-slate-800 px-2 py-1 rounded-md hover:bg-slate-200/60 transition-colors cursor-pointer"
                                 >
                                   Đặt lại
                                 </button>
@@ -4081,19 +4132,126 @@ return (
                 </select>
               </div>
 
-              {/* Tên kỳ thi / cuộc thi */}
-              <div className="space-y-1">
-                <label className="text-slate-700 font-bold block">
-                  Kỳ thi / Cuộc thi <span className="text-rose-500">*</span>
-                </label>
-                <input
-                  type="text"
-                  required
-                  value={addAchForm.examName}
-                  onChange={e => setAddAchForm(prev => ({ ...prev, examName: e.target.value }))}
-                  placeholder="Vd: Cuộc thi lập trình Robot ENJOY A.I. 2026, HKPĐ cấp Thành phố..."
-                  className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs font-medium text-slate-800 focus:outline-none focus:border-[#00A19A] focus:bg-white"
-                />
+              {/* Danh mục Kỳ thi & Kỳ thi / Cuộc thi */}
+              <div className="bg-slate-50/80 p-3.5 rounded-xl border border-slate-200/90 space-y-3">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                  {/* Danh mục Kỳ thi */}
+                  <div className="space-y-1">
+                    <label className="text-slate-700 font-bold block text-[11.5px]">
+                      Danh mục Kỳ thi
+                    </label>
+                    <select
+                      value={selectedExamCatId}
+                      onChange={e => setSelectedExamCatId(e.target.value)}
+                      className="w-full px-3 py-2 bg-white border border-slate-200 rounded-xl text-xs font-bold text-slate-800 focus:outline-none focus:border-[#00A19A]"
+                    >
+                      <option value="ALL">-- Tất cả Danh mục ({allExams.length} kỳ thi) --</option>
+                      {examCategories.map(cat => (
+                        <option key={cat.id} value={cat.id}>
+                          {cat.name} ({allExams.filter(e => e.categoryId === cat.id).length})
+                        </option>
+                      ))}
+                    </select>
+                  </div>
+
+                  {/* Kỳ thi / Cuộc thi */}
+                  <div className="space-y-1">
+                    <div className="flex items-center justify-between">
+                      <label className="text-slate-700 font-bold block text-[11.5px]">
+                        Kỳ thi / Cuộc thi <span className="text-rose-500">*</span>
+                      </label>
+                      <button
+                        type="button"
+                        onClick={() => {
+                          const nextState = !isCustomExam;
+                          setIsCustomExam(nextState);
+                          if (nextState) {
+                            setAddAchForm(prev => ({ ...prev, examName: "" }));
+                          }
+                        }}
+                        className="text-[10.5px] font-bold text-[#00A19A] hover:underline cursor-pointer"
+                      >
+                        {isCustomExam ? "← Chọn từ danh mục" : "✨ Nhập kỳ thi khác"}
+                      </button>
+                    </div>
+
+                    {!isCustomExam ? (
+                      <select
+                        value={addAchForm.examName}
+                        onChange={e => {
+                          const val = e.target.value;
+                          if (val === "__CUSTOM__") {
+                            setIsCustomExam(true);
+                            setAddAchForm(prev => ({ ...prev, examName: "" }));
+                            return;
+                          }
+                          const found = allExams.find(ex => ex.name === val);
+                          setAddAchForm(prev => ({ ...prev, examName: val }));
+                          if (found?.categoryId && selectedExamCatId === "ALL") {
+                            setSelectedExamCatId(found.categoryId);
+                          }
+                        }}
+                        required
+                        className="w-full px-3 py-2 bg-white border border-slate-200 rounded-xl text-xs font-bold text-slate-800 focus:outline-none focus:border-[#00A19A]"
+                      >
+                        <option value="">-- Chọn Kỳ thi ({filteredAvailableExams.length}) --</option>
+                        {selectedExamCatId === "ALL" ? (
+                          examCategories.map(cat => {
+                            const catExams = allExams.filter(e => e.categoryId === cat.id);
+                            if (catExams.length === 0) return null;
+                            return (
+                              <optgroup key={cat.id} label={`📁 ${cat.name}`}>
+                                {catExams.map(ex => (
+                                  <option key={ex.id} value={ex.name}>
+                                    {ex.name}
+                                  </option>
+                                ))}
+                              </optgroup>
+                            );
+                          })
+                        ) : (
+                          filteredAvailableExams.map(ex => (
+                            <option key={ex.id} value={ex.name}>
+                              {ex.name}
+                            </option>
+                          ))
+                        )}
+                        <option value="__CUSTOM__">✨ Nhập kỳ thi ngoài danh mục hệ thống...</option>
+                      </select>
+                    ) : (
+                      <input
+                        type="text"
+                        required
+                        autoFocus
+                        value={addAchForm.examName}
+                        onChange={e => setAddAchForm(prev => ({ ...prev, examName: e.target.value }))}
+                        placeholder="Nhập tên kỳ thi ngoài hệ thống..."
+                        className="w-full px-3 py-2 bg-white border border-teal-300 rounded-xl text-xs font-semibold text-slate-800 focus:outline-none focus:border-[#00A19A] ring-2 ring-teal-50"
+                      />
+                    )}
+                  </div>
+                </div>
+
+                {/* Badge thông tin kỳ thi đang chọn */}
+                {addAchForm.examName && addAchForm.examName !== "__CUSTOM__" && !isCustomExam && (
+                  <div className="flex items-center gap-2 px-3 py-1.5 bg-teal-50/70 rounded-lg border border-teal-100 text-[11px] text-[#003B3A]">
+                    <Sparkles className="w-3.5 h-3.5 text-[#00A19A] shrink-0" />
+                    <span className="font-semibold text-slate-600">Kỳ thi hệ thống Sky-Line:</span>
+                    <span className="font-bold text-[#003B3A] truncate">{addAchForm.examName}</span>
+                  </div>
+                )}
+                {isCustomExam && (
+                  <div className="flex items-center justify-between px-3 py-1.5 bg-amber-50/80 rounded-lg border border-amber-200/60 text-[10.5px] text-amber-800">
+                    <span>💡 Kỳ thi ngoài danh mục sẽ được chuyển Admin KT&ĐBCL xác thực khi phê duyệt.</span>
+                    <button
+                      type="button"
+                      onClick={() => setIsCustomExam(false)}
+                      className="text-[#00A19A] font-bold hover:underline shrink-0 ml-2"
+                    >
+                      Chọn từ danh mục
+                    </button>
+                  </div>
+                )}
               </div>
 
               {/* Tên thành tích & Mức giải */}

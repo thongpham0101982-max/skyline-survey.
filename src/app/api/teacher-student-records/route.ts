@@ -390,8 +390,45 @@ export async function GET(req: Request) {
 
       const pendingCount = pendingRequests.filter(r => r.status === "PENDING").length;
 
+      // Lấy danh mục kỳ thi và danh sách kỳ thi trong hệ thống để GVCN chọn nhanh
+      let examCategories: any[] = [];
+      let exams: any[] = [];
+      try {
+        examCategories = await prisma.examCategory.findMany({
+          select: {
+            id: true,
+            name: true,
+            code: true,
+            description: true
+          },
+          orderBy: { name: "asc" }
+        });
+
+        exams = await prisma.exam.findMany({
+          select: {
+            id: true,
+            name: true,
+            code: true,
+            categoryId: true,
+            academicYearId: true,
+            category: {
+              select: {
+                id: true,
+                name: true,
+                code: true
+              }
+            }
+          },
+          orderBy: { name: "asc" }
+        });
+      } catch (errEx) {
+        console.error("Error fetching exams/categories in homeroom report:", errEx);
+      }
+
       return NextResponse.json({
         reportRows,
+        examCategories,
+        exams,
         stats: {
           total: reportRows.length,
           pendingCount,
@@ -402,6 +439,42 @@ export async function GET(req: Request) {
           studentCount: uniqueStudentIds.size
         }
       });
+    }
+
+    if (action === "getExamCategoriesAndExams") {
+      try {
+        const examCategories = await prisma.examCategory.findMany({
+          select: {
+            id: true,
+            name: true,
+            code: true,
+            description: true
+          },
+          orderBy: { name: "asc" }
+        });
+
+        const exams = await prisma.exam.findMany({
+          select: {
+            id: true,
+            name: true,
+            code: true,
+            categoryId: true,
+            academicYearId: true,
+            category: {
+              select: {
+                id: true,
+                name: true,
+                code: true
+              }
+            }
+          },
+          orderBy: { name: "asc" }
+        });
+
+        return NextResponse.json({ examCategories, exams });
+      } catch (e: any) {
+        return NextResponse.json({ error: e.message, examCategories: [], exams: [] }, { status: 500 });
+      }
     }
 
     if (action === "getAssignedClasses") {
