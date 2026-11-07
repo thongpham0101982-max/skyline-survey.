@@ -220,7 +220,7 @@ export function RatingAndApplicationModal({
                   {stars} sao — {currentStarDesc.label}
                 </div>
                 <div className="text-xs text-slate-500 mt-0.5">
-                  {currentStarDesc.description}
+                  {currentStarDesc.desc}
                 </div>
               </div>
 

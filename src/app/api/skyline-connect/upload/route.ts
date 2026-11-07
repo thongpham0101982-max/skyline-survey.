@@ -39,9 +39,9 @@ export async function POST(req: NextRequest) {
     }
 
     const validation = validateUploadFile({
-      fileName: file.name,
+      name: file.name,
       mimeType: file.type,
-      fileSize: file.size,
+      sizeBytes: file.size,
     });
 
     if (!validation.valid) {
@@ -51,6 +51,8 @@ export async function POST(req: NextRequest) {
       );
     }
 
+    const safeFileName = validation.safeFileName || `${Date.now()}_attachment.bin`;
+
     // Store in private storage directory (NOT directly served without permission check)
     const storageDir = path.join(process.cwd(), ".slc_private_uploads");
     if (!fs.existsSync(storageDir)) {
@@ -59,7 +61,7 @@ export async function POST(req: NextRequest) {
 
     const bytes = await file.arrayBuffer();
     const buffer = Buffer.from(bytes);
-    const diskPath = path.join(storageDir, validation.safeFileName);
+    const diskPath = path.join(storageDir, safeFileName);
     fs.writeFileSync(diskPath, buffer);
 
     const pAny = prisma as any;
@@ -69,7 +71,7 @@ export async function POST(req: NextRequest) {
         commentId,
         uploaderId: ctx.userId,
         fileName: file.name,
-        safeFileName: validation.safeFileName,
+        safeFileName,
         mimeType: file.type.toLowerCase(),
         fileSize: file.size,
         fileUrl: "", // Updated right below with protected endpoint URL

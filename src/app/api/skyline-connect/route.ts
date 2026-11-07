@@ -462,7 +462,10 @@ export async function POST(req: NextRequest) {
     }
 
     if (action === "projectAction") {
-      const result = await handleProjectCollaboration(ctx, body);
+      const result = await handleProjectCollaboration(ctx, {
+        ...body,
+        action: body.subAction || body.collabAction || body.projectActionType || body.action,
+      });
       return NextResponse.json({ ok: true, result });
     }
 
@@ -472,7 +475,10 @@ export async function POST(req: NextRequest) {
     }
 
     if (action === "groupAction") {
-      const result = await handleSlcGroupAction(ctx, body);
+      const result = await handleSlcGroupAction(ctx, {
+        ...body,
+        action: body.subAction || body.groupActionType || body.action,
+      });
       return NextResponse.json({ ok: true, result });
     }
 
@@ -497,7 +503,10 @@ export async function POST(req: NextRequest) {
     }
 
     if (action === "reportAction") {
-      const report = await createOrProcessContentReport(ctx, body);
+      const report = await createOrProcessContentReport(ctx, {
+        ...body,
+        action: body.subAction || body.reportActionType || body.action,
+      });
       return NextResponse.json({ ok: true, report });
     }
 

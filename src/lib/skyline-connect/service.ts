@@ -3112,7 +3112,7 @@ export async function finalizeSlcAwardPeriod(ctx: SlcUserContext, periodId: stri
   let createdBadgesCount = 0
 
   for (const item of allRanked) {
-    const c = item.candidate
+    const c = item.candidate as any
     await pAny.slcAwardSnapshot.create({
       data: {
         periodId: period.id,
@@ -3993,8 +3993,8 @@ export async function handleSlcAdminAction(
       endDateUtc = new Date(payload.endDateUtc)
     } else if (periodType === "MONTHLY" && monthNumber) {
       const bounds = getVietnamMonthBoundsUtc(yearNumber, monthNumber)
-      startDateUtc = bounds.startUtc
-      endDateUtc = bounds.endUtc
+      startDateUtc = bounds.startDateUtc
+      endDateUtc = bounds.endDateUtc
     } else {
       startDateUtc = new Date(Date.UTC(yearNumber, 7, 1, -7, 0, 0, 0))
       endDateUtc = new Date(Date.UTC(yearNumber + 1, 5, 1, -7, 0, 0, 0))
@@ -4011,8 +4011,10 @@ export async function handleSlcAdminAction(
     for (const ep of existingPeriods) {
       if (
         doPeriodRangesOverlap(
-          { startUtc: startDateUtc, endUtc: endDateUtc },
-          { startUtc: new Date(ep.startDateUtc), endUtc: new Date(ep.endDateUtc) }
+          startDateUtc,
+          endDateUtc,
+          new Date(ep.startDateUtc),
+          new Date(ep.endDateUtc)
         )
       ) {
         throw new Error(
@@ -4031,10 +4033,10 @@ export async function handleSlcAdminAction(
     if (!ruleSetId) {
       const createdRule = await pAny.slcAwardRuleSet.create({
         data: {
+          ...ruleSetSnapshot,
           version: Math.floor(Date.now() / 1000),
           name: `Quy chế ${periodType === "YEARLY" ? "Năm học" : "Tháng"} mặc định`,
           periodType,
-          ...ruleSetSnapshot,
           isLocked: true,
           createdById: ctx.userId,
         },

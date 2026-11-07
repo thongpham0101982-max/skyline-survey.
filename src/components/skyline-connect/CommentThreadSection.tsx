@@ -8,7 +8,6 @@ import {
   Edit3,
   Trash2,
   CheckCircle2,
-  Clock,
   Sparkles,
   CornerDownRight,
   AlertCircle,
@@ -50,6 +49,7 @@ interface CommentThreadSectionProps {
   postId: string;
   postAuthorId: string;
   currentUserId: string;
+  currentUserName?: string;
   linkedProductId?: string | null;
   initialComments?: CommentItem[];
   totalCommentCount?: number;
@@ -93,6 +93,7 @@ export function CommentThreadSection({
   postId,
   postAuthorId,
   currentUserId,
+  currentUserName,
   linkedProductId,
   initialComments = [],
   totalCommentCount = 0,
@@ -198,7 +199,9 @@ export function CommentThreadSection({
       await loadComments(1, sortOrder, false);
     } catch (err: any) {
       // Preserve draftText on error so user can retry with same pendingRequestId (idempotent!)
-      setErrorMsg(err?.message || "Gửi bình luận chưa thành công. Bản nháp của Thầy/Cô đã được giữ lại.");
+      setErrorMsg(
+        err?.message || "Gửi bình luận chưa thành công. Bản nháp của Thầy/Cô đã được giữ lại."
+      );
     } finally {
       setSending(false);
     }
@@ -351,11 +354,11 @@ export function CommentThreadSection({
     if (!iso) return "Vừa xong";
     const diffMin = Math.floor((Date.now() - new Date(iso).getTime()) / 60000);
     if (diffMin < 1) return "Vừa xong";
-    if (diffMin < 60) return `${diffMin} phút trước`;
+    if (diffMin < 60) return `${diffMin} phút`;
     const diffHours = Math.floor(diffMin / 60);
-    if (diffHours < 24) return `${diffHours} giờ trước`;
+    if (diffHours < 24) return `${diffHours} giờ`;
     const diffDays = Math.floor(diffHours / 24);
-    return `${diffDays} ngày trước`;
+    return `${diffDays} ngày`;
   };
 
   const renderSingleComment = (c: CommentItem, isReply = false) => {
@@ -368,105 +371,112 @@ export function CommentThreadSection({
     const isHighlighted = highlightCommentId === c.id;
 
     return (
-      <div
-        key={c.id}
-        id={`comment-${c.id}`}
-        className={`rounded-xl p-2.5 transition-colors ${
-          isHighlighted
-            ? "bg-teal-50/90 border border-[#159EAA]"
-            : isReply
-            ? "bg-white/90 border border-slate-100"
-            : "bg-[#F8FAFC] border border-slate-200/70"
-        }`}
-      >
-        <div className="flex items-start gap-2.5">
-          <div className="w-7 h-7 rounded-full bg-[#123E4A] text-white text-xs font-bold flex items-center justify-center shrink-0">
+      <div key={c.id} id={`comment-${c.id}`} className="group">
+        <div className="flex items-start gap-2">
+          {/* Avatar */}
+          <div
+            className={`${
+              isReply ? "w-7 h-7 text-[11px]" : "w-8 h-8 text-xs"
+            } rounded-full bg-gradient-to-br from-[#123E4A] to-[#159EAA] text-white font-bold flex items-center justify-center shrink-0 mt-0.5 shadow-2xs`}
+          >
             {(c.authorName || "G").charAt(0).toUpperCase()}
           </div>
 
           <div className="flex-1 min-w-0">
-            <div className="flex items-center justify-between gap-1.5 flex-wrap">
+            {/* Facebook-style Rounded Comment Bubble */}
+            <div
+              className={`inline-block max-w-full rounded-2xl px-3.5 py-2 relative ${
+                isHighlighted
+                  ? "bg-teal-50 border border-[#159EAA]"
+                  : "bg-[#F0F2F5] hover:bg-[#EBEDF0] transition-colors"
+              }`}
+            >
               <div className="flex items-center gap-1.5 flex-wrap">
-                <span className="text-xs font-bold text-slate-800">{c.authorName}</span>
+                <span className="text-[13px] font-bold text-slate-900 leading-tight">
+                  {c.authorName}
+                </span>
                 {isAuthorOfPost && (
-                  <span className="text-[10px] font-semibold px-1.5 py-0.5 rounded bg-[#123E4A]/10 text-[#123E4A]">
+                  <span className="text-[10px] font-semibold px-1.5 py-0.5 rounded-md bg-[#123E4A]/10 text-[#123E4A]">
                     Tác giả
                   </span>
                 )}
                 {c.isPinned && (
-                  <span className="inline-flex items-center gap-0.5 text-[10px] font-semibold px-1.5 py-0.5 rounded bg-amber-50 text-amber-800 border border-amber-200">
+                  <span className="inline-flex items-center gap-0.5 text-[10px] font-semibold px-1.5 py-0.5 rounded-md bg-amber-100/80 text-amber-800">
                     <Pin className="w-2.5 h-2.5" />
                     <span>Đã ghim</span>
                   </span>
                 )}
-                <span className="text-[11px] text-slate-400 tabular-nums">
-                  • {formatTimeAgo(c.createdAt)}
-                </span>
-                {c.isEdited && !c.isDeleted && (
-                  <span className="text-[10px] italic text-slate-400">(Đã chỉnh sửa)</span>
+                {fbBadge && !c.isDeleted && (
+                  <span
+                    className={`inline-flex items-center gap-1 text-[10px] font-semibold px-2 py-0.5 rounded-full border ${fbBadge.bg} ${fbBadge.text} ${fbBadge.border}`}
+                  >
+                    <CheckCircle2 className="w-2.5 h-2.5" />
+                    <span>{fbBadge.label}</span>
+                  </span>
                 )}
               </div>
 
-              {fbBadge && !c.isDeleted && (
-                <span
-                  className={`inline-flex items-center gap-1 text-[10px] font-semibold px-2 py-0.5 rounded-full border ${fbBadge.bg} ${fbBadge.text} ${fbBadge.border}`}
+              {editingCommentId === c.id ? (
+                <div className="mt-1.5 space-y-1.5 min-w-[240px]">
+                  <textarea
+                    rows={2}
+                    value={editContent}
+                    onChange={(e) => setEditContent(e.target.value)}
+                    className="w-full rounded-xl border border-slate-300 p-2 text-xs bg-white focus:outline-none focus:border-[#159EAA]"
+                  />
+                  <div className="flex items-center gap-1.5">
+                    <button
+                      type="button"
+                      onClick={() => handleEditSave(c.id)}
+                      className="px-2.5 py-1 rounded-lg bg-[#159EAA] text-white text-[11px] font-semibold cursor-pointer"
+                    >
+                      Lưu
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => setEditingCommentId(null)}
+                      className="px-2.5 py-1 rounded-lg bg-white text-slate-600 text-[11px] font-semibold border border-slate-200 cursor-pointer"
+                    >
+                      Hủy
+                    </button>
+                  </div>
+                </div>
+              ) : (
+                <p
+                  className={`text-[13px] mt-0.5 leading-snug break-words ${
+                    c.isDeleted ? "italic text-slate-400" : "text-slate-800"
+                  }`}
                 >
-                  <CheckCircle2 className="w-2.5 h-2.5" />
-                  <span>{fbBadge.label}</span>
-                </span>
+                  {c.replyToUserName && !c.isDeleted && (
+                    <span className="font-semibold text-[#159EAA] mr-1">
+                      @{c.replyToUserName}
+                    </span>
+                  )}
+                  {c.isDeleted ? "Bình luận đã được xóa" : c.content}
+                </p>
+              )}
+
+              {/* Floating Reaction Pill on Bubble Corner (like Facebook) */}
+              {!c.isDeleted && (c.reactionCount || 0) > 0 && (
+                <div className="absolute -bottom-2 right-2 inline-flex items-center gap-1 px-1.5 py-0.5 rounded-full bg-white shadow-xs border border-slate-200 text-[10px] font-bold text-slate-700 tabular-nums">
+                  <span className="w-3.5 h-3.5 rounded-full bg-[#159EAA] text-white inline-flex items-center justify-center">
+                    <ThumbsUp className="w-2 h-2 fill-white" />
+                  </span>
+                  <span>{c.reactionCount}</span>
+                </div>
               )}
             </div>
 
-            {editingCommentId === c.id ? (
-              <div className="mt-1.5 space-y-1.5">
-                <textarea
-                  rows={2}
-                  value={editContent}
-                  onChange={(e) => setEditContent(e.target.value)}
-                  className="w-full rounded-lg border border-slate-300 p-2 text-xs bg-white"
-                />
-                <div className="flex items-center gap-1.5">
-                  <button
-                    type="button"
-                    onClick={() => handleEditSave(c.id)}
-                    className="px-2.5 py-1 rounded-lg bg-[#159EAA] text-white text-[11px] font-semibold cursor-pointer"
-                  >
-                    Lưu
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => setEditingCommentId(null)}
-                    className="px-2.5 py-1 rounded-lg bg-slate-100 text-slate-600 text-[11px] font-semibold cursor-pointer"
-                  >
-                    Hủy
-                  </button>
-                </div>
-              </div>
-            ) : (
-              <p
-                className={`text-xs mt-1 leading-relaxed break-words ${
-                  c.isDeleted ? "italic text-slate-400" : "text-slate-700"
-                }`}
-              >
-                {c.replyToUserName && !c.isDeleted && (
-                  <span className="font-semibold text-[#159EAA] mr-1">
-                    @{c.replyToUserName}
-                  </span>
-                )}
-                {c.isDeleted ? "Bình luận đã được xóa" : c.content}
-              </p>
-            )}
-
             {/* Attachments (hidden if comment isDeleted) */}
             {!c.isDeleted && c.attachments && c.attachments.length > 0 && (
-              <div className="flex flex-wrap gap-1.5 mt-1.5">
+              <div className="flex flex-wrap gap-1.5 mt-1 pl-1">
                 {c.attachments.map((att) => (
                   <a
                     key={att.id}
                     href={att.fileUrl}
                     target="_blank"
                     rel="noopener noreferrer"
-                    className="inline-flex items-center gap-1 px-2 py-1 rounded-md bg-white border border-slate-200 text-[11px] text-[#159EAA] hover:underline"
+                    className="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg bg-[#F0F2F5] hover:bg-slate-200 text-[11px] text-[#123E4A] font-medium"
                   >
                     <span>📎 {att.fileName}</span>
                   </a>
@@ -474,18 +484,17 @@ export function CommentThreadSection({
               </div>
             )}
 
-            {/* Comment Actions */}
+            {/* Facebook-style Sub-Bubble Action Links (Thích • Phản hồi • Thời gian) */}
             {!c.isDeleted && (
-              <div className="flex items-center gap-3 mt-1.5 flex-wrap text-[11px] text-slate-500">
+              <div className="flex items-center gap-3 mt-1 pl-2 flex-wrap text-[11px] text-slate-500">
                 <button
                   type="button"
                   onClick={() => handleToggleCommentReaction(c.id)}
-                  className={`inline-flex items-center gap-1 font-medium hover:text-[#159EAA] cursor-pointer tabular-nums ${
-                    c.userReaction ? "text-[#159EAA] font-bold" : ""
+                  className={`font-bold hover:underline cursor-pointer tabular-nums ${
+                    c.userReaction ? "text-[#159EAA]" : "text-slate-600"
                   }`}
                 >
-                  <ThumbsUp className="w-3 h-3" />
-                  <span>Hữu ích {c.reactionCount ? `(${c.reactionCount})` : ""}</span>
+                  Hữu ích
                 </button>
 
                 <button
@@ -494,11 +503,14 @@ export function CommentThreadSection({
                     setReplyingTo({ id: c.id, authorName: c.authorName });
                     inputRef.current?.focus();
                   }}
-                  className="inline-flex items-center gap-1 font-medium hover:text-[#123E4A] cursor-pointer"
+                  className="font-bold text-slate-600 hover:underline cursor-pointer"
                 >
-                  <CornerDownRight className="w-3 h-3" />
-                  <span>Trả lời</span>
+                  Phản hồi
                 </button>
+
+                <span className="text-slate-400 tabular-nums">{formatTimeAgo(c.createdAt)}</span>
+
+                {c.isEdited && <span className="text-slate-400">• Đã chỉnh sửa</span>}
 
                 {isCommentAuthor && (
                   <>
@@ -508,18 +520,16 @@ export function CommentThreadSection({
                         setEditingCommentId(c.id);
                         setEditContent(c.content);
                       }}
-                      className="inline-flex items-center gap-0.5 hover:text-slate-800 cursor-pointer"
+                      className="hover:text-slate-800 hover:underline cursor-pointer"
                     >
-                      <Edit3 className="w-3 h-3" />
-                      <span>Sửa</span>
+                      Sửa
                     </button>
                     <button
                       type="button"
                       onClick={() => handleDelete(c.id)}
-                      className="inline-flex items-center gap-0.5 hover:text-rose-600 cursor-pointer"
+                      className="hover:text-rose-600 hover:underline cursor-pointer"
                     >
-                      <Trash2 className="w-3 h-3" />
-                      <span>Xóa</span>
+                      Xóa
                     </button>
                   </>
                 )}
@@ -528,10 +538,9 @@ export function CommentThreadSection({
                   <button
                     type="button"
                     onClick={() => handleTogglePin(c.id)}
-                    className="inline-flex items-center gap-0.5 hover:text-amber-700 cursor-pointer"
+                    className="hover:text-amber-700 hover:underline cursor-pointer"
                   >
-                    <Pin className="w-3 h-3" />
-                    <span>{c.isPinned ? "Bỏ ghim" : "Ghim"}</span>
+                    {c.isPinned ? "Bỏ ghim" : "Ghim"}
                   </button>
                 )}
 
@@ -540,7 +549,7 @@ export function CommentThreadSection({
                     value={c.feedbackStatus || "NONE"}
                     onChange={(e) => handleFeedbackStatus(c.id, e.target.value as any)}
                     aria-label="Đánh dấu trạng thái góp ý"
-                    className="text-[11px] bg-white border border-slate-200 rounded-md px-1.5 py-0.5 text-slate-600 font-medium cursor-pointer"
+                    className="text-[11px] bg-transparent hover:bg-slate-100 rounded px-1 py-0.5 text-slate-600 font-semibold cursor-pointer focus:outline-none"
                   >
                     <option value="NONE">Đánh dấu góp ý...</option>
                     <option value="RECEIVED">✓ Đã tiếp nhận</option>
@@ -555,35 +564,37 @@ export function CommentThreadSection({
                     type="button"
                     onClick={() => {
                       setVersionSourceComment(c);
-                      setNewVersionNotes(`Cải tiến sản phẩm theo góp ý của ${c.authorName}: ${c.content}`);
+                      setNewVersionNotes(
+                        `Cải tiến sản phẩm theo góp ý của ${c.authorName}: ${c.content}`
+                      );
                     }}
-                    className="inline-flex items-center gap-1 text-[#159EAA] hover:underline font-semibold cursor-pointer"
+                    className="inline-flex items-center gap-0.5 text-[#159EAA] hover:underline font-semibold cursor-pointer"
                   >
                     <GitBranch className="w-3 h-3" />
-                    <span>Cập nhật bản mới từ góp ý</span>
+                    <span>Cập nhật bản mới</span>
                   </button>
                 )}
               </div>
             )}
+
+            {/* 2nd-level Replies */}
+            {c.replies && c.replies.length > 0 && (
+              <div className="mt-2 pl-3 border-l-2 border-slate-200/80 space-y-2.5">
+                {c.replies.map((rep) => renderSingleComment(rep, true))}
+              </div>
+            )}
           </div>
         </div>
-
-        {/* 2nd-level Replies */}
-        {c.replies && c.replies.length > 0 && (
-          <div className="mt-2 pl-6 border-l-2 border-slate-200/80 space-y-2">
-            {c.replies.map((rep) => renderSingleComment(rep, true))}
-          </div>
-        )}
       </div>
     );
   };
 
   return (
-    <div className="space-y-2.5 pt-2 border-t border-slate-100">
+    <div className="space-y-3 pt-2.5">
       {!isCompactPreview && (
-        <div className="flex items-center justify-between text-xs">
+        <div className="flex items-center justify-between text-xs pb-1">
           <span className="font-bold text-slate-700 tabular-nums">
-            Thảo luận & Đóng góp chuyên môn ({totalCommentCount})
+            Bình luận & Góp ý ({totalCommentCount})
           </span>
           <div className="flex items-center gap-1">
             <button
@@ -628,29 +639,14 @@ export function CommentThreadSection({
         </div>
       )}
 
-      {/* Existing comments list */}
-      {comments.length > 0 && (
-        <div className="space-y-2">
-          {comments.map((c) => renderSingleComment(c, false))}
-        </div>
-      )}
-
-      {hasMore && (
-        <button
-          type="button"
-          onClick={() => loadComments(page + 1, sortOrder, true)}
-          disabled={loadingMore}
-          className="text-xs font-semibold text-[#159EAA] hover:underline cursor-pointer"
-        >
-          {loadingMore ? "Đang tải thêm bình luận..." : "Xem thêm bình luận đóng góp →"}
-        </button>
-      )}
-
       {/* Reply banner */}
       {replyingTo && (
-        <div className="flex items-center justify-between px-3 py-1.5 rounded-lg bg-teal-50 border border-teal-200 text-xs text-[#123E4A]">
-          <span>
-            Đang trả lời <strong>{replyingTo.authorName}</strong>
+        <div className="flex items-center justify-between px-3 py-1.5 rounded-xl bg-[#F0FDFA] border border-[#99F6E4] text-xs text-[#123E4A]">
+          <span className="inline-flex items-center gap-1">
+            <CornerDownRight className="w-3.5 h-3.5 text-[#159EAA]" />
+            <span>
+              Đang phản hồi <strong>{replyingTo.authorName}</strong>
+            </span>
           </span>
           <button
             type="button"
@@ -662,29 +658,52 @@ export function CommentThreadSection({
         </div>
       )}
 
-      {/* Comment Composer Bar */}
-      <div className="flex items-end gap-2">
-        <textarea
-          ref={inputRef}
-          rows={1}
-          value={draftText}
-          onChange={(e) => setDraftText(e.target.value)}
-          onKeyDown={handleKeyDown}
-          disabled={sending}
-          placeholder="Viết bình luận đóng góp, đặt câu hỏi hoặc đề xuất cải tiến... (Ctrl+Enter để gửi)"
-          className="flex-1 rounded-xl border border-slate-200 bg-[#F8FAFC] focus:bg-white px-3 py-2 text-xs text-slate-800 focus:outline-none focus:border-[#159EAA] resize-none"
-        />
+      {/* Facebook-style Pill Comment Composer Bar */}
+      <div className="flex items-start gap-2">
+        <div className="w-8 h-8 rounded-full bg-[#123E4A] text-white text-xs font-bold flex items-center justify-center shrink-0 mt-0.5">
+          {(currentUserName || "G").charAt(0).toUpperCase()}
+        </div>
+        <div className="flex-1 flex items-center gap-1.5 bg-[#F0F2F5] focus-within:bg-white focus-within:ring-2 focus-within:ring-[#159EAA]/30 border border-transparent focus-within:border-[#159EAA] rounded-2xl px-3.5 py-1.5 transition-all">
+          <textarea
+            ref={inputRef}
+            rows={1}
+            value={draftText}
+            onChange={(e) => setDraftText(e.target.value)}
+            onKeyDown={handleKeyDown}
+            disabled={sending}
+            placeholder="Viết bình luận đóng góp, đặt câu hỏi hoặc gợi ý cải tiến... (Ctrl+Enter để gửi)"
+            className="flex-1 bg-transparent text-[13px] text-slate-800 placeholder:text-slate-500 focus:outline-none resize-none py-0.5"
+          />
+          <button
+            type="button"
+            onClick={handleSubmitComment}
+            disabled={sending || !draftText.trim()}
+            className="p-1.5 rounded-full text-[#159EAA] hover:bg-teal-50 disabled:text-slate-400 disabled:hover:bg-transparent transition-colors cursor-pointer shrink-0"
+            aria-label="Gửi bình luận"
+            title="Gửi bình luận (Ctrl+Enter)"
+          >
+            <Send className="w-4 h-4" />
+          </button>
+        </div>
+      </div>
+
+      {/* Existing comments list */}
+      {comments.length > 0 && (
+        <div className="space-y-2.5 pt-1">
+          {comments.map((c) => renderSingleComment(c, false))}
+        </div>
+      )}
+
+      {hasMore && (
         <button
           type="button"
-          onClick={handleSubmitComment}
-          disabled={sending || !draftText.trim()}
-          className="inline-flex items-center gap-1 px-3 py-2 rounded-xl bg-[#159EAA] hover:bg-[#11828C] text-white text-xs font-bold transition-colors cursor-pointer disabled:opacity-50 shrink-0"
-          aria-label="Gửi bình luận"
+          onClick={() => loadComments(page + 1, sortOrder, true)}
+          disabled={loadingMore}
+          className="text-xs font-bold text-slate-600 hover:underline pl-10 cursor-pointer"
         >
-          <Send className="w-3.5 h-3.5" />
-          <span>{sending ? "Đang gửi..." : "Gửi"}</span>
+          {loadingMore ? "Đang tải thêm bình luận..." : "Xem thêm bình luận trước đó..."}
         </button>
-      </div>
+      )}
 
       {/* Modal: Link comment to new Product Version */}
       {versionSourceComment && (
@@ -698,7 +717,8 @@ export function CommentThreadSection({
               <span>Phát hành phiên bản mới từ góp ý đồng nghiệp</span>
             </h4>
             <p className="text-slate-600">
-              Ghi nhận đóng góp của <strong>{versionSourceComment.authorName}</strong> trên lịch sử phiên bản sản phẩm (giáo viên góp ý vẫn giữ quyền chấm sao độc lập).
+              Ghi nhận đóng góp của <strong>{versionSourceComment.authorName}</strong> trên lịch sử
+              phiên bản sản phẩm (giáo viên góp ý vẫn giữ quyền chấm sao độc lập).
             </p>
             <div>
               <label className="block font-bold text-slate-700 mb-1">Số phiên bản mới *</label>
