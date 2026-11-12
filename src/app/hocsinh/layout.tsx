@@ -20,7 +20,8 @@ import {
   Globe,
   Camera,
   GraduationCap,
-  Award
+  Award,
+  Calendar
 } from "lucide-react"
 import { LanguageSwitcher, VietnamFlag, UKFlag } from "@/components/LanguageSwitcher"
 
@@ -111,6 +112,14 @@ export default function HocSinhLayout({ children }: { children: React.ReactNode 
       labelVi: "Tổng quan",
       labelEn: "Overview",
       icon: LayoutDashboard,
+      iconColor: "text-teal-300",
+      activeClass: "bg-white/20 text-white border border-[#135E5B]/30"
+    },
+    {
+      href: "/hocsinh/portal/thoi-khoa-bieu",
+      labelVi: "Thời khóa biểu",
+      labelEn: "Timetable",
+      icon: Calendar,
       iconColor: "text-teal-300",
       activeClass: "bg-white/20 text-white border border-[#135E5B]/30"
     },

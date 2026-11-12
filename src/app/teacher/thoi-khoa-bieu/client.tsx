@@ -1,1179 +1,530 @@
 "use client"
-// @ts-nocheck
 
-import { useState, useMemo } from "react"
+import React, { useMemo, useState } from "react"
 import Link from "next/link"
-import { 
-  Calendar, Clock, BookOpen, Users, Building2, Filter, Sparkles, 
-  CheckCircle, Search, Grid, List, RotateCcw, Sun, Moon,
-  ChevronRight, AlertCircle, ArrowRight, Shield, Layers
-} from "lucide-react"
+import { Printer } from "lucide-react"
+import { fetchTeacherPortalScheduleAction } from "./actions"
+import type { DayOfWeekCode, EffectivePeriodItem } from "@/lib/timetable/types"
 
-interface TimetableSlotItem {
-  id: string
-  academicYearId?: string | null
-  campusId?: string | null
-  level: string
-  grade: string
-  classId?: string | null
-  className: string
-  dayOfWeek: string
-  session: string
-  periodNumber: number
-  subjectId?: string | null
-  subjectName?: string | null
-  teacherId?: string | null
-  teacherName?: string | null
-  weekType: string
-  altSubjectName?: string | null
-  altTeacherName?: string | null
-  colorCode?: string | null
-}
-
-interface TeacherTimetableProps {
-  initialData: {
-    success: boolean
-    campuses: any[]
-    selectedCampusId: string
-    classes: any[]
-    subjects: any[]
-    teachers: any[]
-    timetableSlots: TimetableSlotItem[]
-    academicYear?: any
-    currentTeacher?: any
-  }
-  mySlots?: TimetableSlotItem[]
-}
-
-const DAYS_OF_WEEK = [
-  { key: "MONDAY", label: "Thứ 2", short: "T2" },
-  { key: "TUESDAY", label: "Thứ 3", short: "T3" },
-  { key: "WEDNESDAY", label: "Thứ 4", short: "T4" },
-  { key: "THURSDAY", label: "Thứ 5", short: "T5" },
-  { key: "FRIDAY", label: "Thứ 6", short: "T6" }
+const WORKING_DAYS: Array<{ code: DayOfWeekCode; label: string }> = [
+  { code: "MONDAY", label: "Thứ Hai" },
+  { code: "TUESDAY", label: "Thứ Ba" },
+  { code: "WEDNESDAY", label: "Thứ Tư" },
+  { code: "THURSDAY", label: "Thứ Năm" },
+  { code: "FRIDAY", label: "Thứ Sáu" },
+  { code: "SATURDAY", label: "Thứ Bảy" },
 ]
 
-const PERIODS = [1, 2, 3, 4]
+interface TeacherTimetablePortalProps {
+  currentTeacher: {
+    id: string
+    teacherCode: string
+    teacherName: string
+  } | null
+  initialWeekDate: string
+  initialMySchedule: {
+    weekDates: Record<DayOfWeekCode, string>
+    items: EffectivePeriodItem[]
+    campusesInvolved: Array<{ id: string; name: string }>
+  }
+  campuses: Array<{ id: string; displayName: string }>
+  classes: Array<{
+    id: string
+    className: string
+    grade: string
+    level: string
+    campusId: string
+  }>
+  teachers: Array<{
+    id: string
+    teacherCode: string
+    teacherName: string
+    departmentName: string
+  }>
+}
 
-export default function TeacherTimetableLookupClient({ initialData, mySlots = [] }: TeacherTimetableProps) {
-  const [activeTab, setActiveTab] = useState<"MY_SCHEDULE" | "CLASS_LOOKUP" | "TEACHER_LOOKUP" | "SCHOOL_MATRIX">("MY_SCHEDULE")
-  const [lookupCampusId, setLookupCampusId] = useState<string>("")
-  const [lookupClassId, setLookupClassId] = useState<string>("")
-  const [lookupDept, setLookupDept] = useState<string>("ALL")
-  const [lookupTeacherId, setLookupTeacherId] = useState<string>("")
-  const [lookupSearchQuery, setLookupSearchQuery] = useState<string>("")
-  const [viewMode, setViewMode] = useState<"GRID" | "LIST">("GRID")
-  
-  // Filter States for Personal Schedule
-  const [filterDay, setFilterDay] = useState("all")
-  const [filterSession, setFilterSession] = useState("all")
-  const [filterPeriod, setFilterPeriod] = useState("all")
-  const [filterSubject, setFilterSubject] = useState("all")
-  const [filterClass, setFilterClass] = useState("all")
-  const [filterWeekType, setFilterWeekType] = useState("all")
-  const [searchQuery, setSearchQuery] = useState("")
+export default function TeacherTimetableLookupClient({
+  currentTeacher,
+  initialWeekDate,
+  initialMySchedule,
+  campuses,
+  classes,
+  teachers,
+}: TeacherTimetablePortalProps) {
+  const [activeTab, setActiveTab] = useState<"MY_SCHEDULE" | "CLASS_LOOKUP" | "COLLEAGUE_LOOKUP">(
+    currentTeacher ? "MY_SCHEDULE" : "CLASS_LOOKUP"
+  )
+  const [weekDate, setWeekDate] = useState<string>(initialWeekDate)
+  const [loading, setLoading] = useState(false)
 
-  // Filter States for Full School Matrix
-  const [matrixCampusId, setMatrixCampusId] = useState(initialData.selectedCampusId || "")
-  const [matrixLevel, setMatrixLevel] = useState("TIEU_HOC")
+  // Personal schedule state
+  const [mySchedule, setMySchedule] = useState(initialMySchedule)
 
-  const currentTeacher = initialData.currentTeacher
+  // Class lookup state
+  const [selectedCampusId, setSelectedCampusId] = useState<string>(campuses[0]?.id || "ALL")
+  const [selectedClassId, setSelectedClassId] = useState<string>(classes[0]?.id || "")
+  const [classSchedule, setClassSchedule] = useState<{
+    weekParity: string
+    weekDates: Record<DayOfWeekCode, string>
+    items: EffectivePeriodItem[]
+  } | null>(null)
 
-  // Raw personal slots
-  const allMySlots = useMemo(() => {
-    if (mySlots && mySlots.length > 0) return mySlots
-    const tId = currentTeacher?.id
-    const tName = currentTeacher?.teacherName
-    if (!tId && !tName) return initialData.timetableSlots || []
-    return (initialData.timetableSlots || []).filter(s => 
-      (tId && s.teacherId === tId) || (tName && s.teacherName === tName)
+  // Colleague lookup state
+  const [colleagueSearch, setColleagueSearch] = useState("")
+  const [selectedColleagueId, setSelectedColleagueId] = useState<string>(
+    teachers[0]?.id || ""
+  )
+  const [colleagueSchedule, setColleagueSchedule] = useState<{
+    weekDates: Record<DayOfWeekCode, string>
+    items: EffectivePeriodItem[]
+    campusesInvolved: Array<{ id: string; name: string }>
+  } | null>(null)
+
+  const filteredClasses = useMemo(() => {
+    if (!selectedCampusId || selectedCampusId === "ALL") return classes
+    return classes.filter((c) => c.campusId === selectedCampusId)
+  }, [classes, selectedCampusId])
+
+  const filteredTeachers = useMemo(() => {
+    if (!colleagueSearch.trim()) return teachers
+    const q = colleagueSearch.trim().toLowerCase()
+    return teachers.filter(
+      (t) =>
+        t.teacherName.toLowerCase().includes(q) ||
+        t.teacherCode.toLowerCase().includes(q) ||
+        t.departmentName.toLowerCase().includes(q)
     )
-  }, [mySlots, initialData.timetableSlots, currentTeacher])
+  }, [colleagueSearch, teachers])
 
-  // Filtered personal slots
-  const filteredMySlots = useMemo(() => {
-    return allMySlots.filter(slot => {
-      if (filterDay !== "all" && slot.dayOfWeek !== filterDay) return false
-      if (filterSession !== "all" && slot.session !== filterSession) return false
-      if (filterPeriod !== "all" && String(slot.periodNumber) !== filterPeriod) return false
-      if (filterSubject !== "all" && slot.subjectName !== filterSubject) return false
-      if (filterClass !== "all" && slot.className !== filterClass) return false
-      if (filterWeekType !== "all" && slot.weekType !== filterWeekType && slot.weekType !== "ALL") return false
-      if (searchQuery) {
-        const q = searchQuery.toLowerCase()
-        const matchSub = (slot.subjectName || "").toLowerCase().includes(q)
-        const matchCls = (slot.className || "").toLowerCase().includes(q)
-        if (!matchSub && !matchCls) return false
-      }
-      return true
-    })
-  }, [allMySlots, filterDay, filterSession, filterPeriod, filterSubject, filterClass, filterWeekType, searchQuery])
-
-  // Subject Stats Aggregation
-  const subjectSummary = useMemo(() => {
-    const map = new Map<string, { subjectName: string; totalPeriods: number; classNames: Set<string>; slots: TimetableSlotItem[] }>()
-    allMySlots.forEach(slot => {
-      const sName = slot.subjectName || "Chưa phân môn"
-      if (!map.has(sName)) {
-        map.set(sName, { subjectName: sName, totalPeriods: 0, classNames: new Set(), slots: [] })
-      }
-      const item = map.get(sName)!
-      item.totalPeriods += 1
-      if (slot.className) item.classNames.add(slot.className)
-      item.slots.push(slot)
-    })
-    return Array.from(map.values())
-  }, [allMySlots])
-
-  // List of unique subjects taught by teacher
-  const uniqueSubjects = useMemo(() => {
-    return Array.from(new Set(allMySlots.map(s => s.subjectName).filter(Boolean)))
-  }, [allMySlots])
-
-  // List of unique classes taught by teacher
-  const uniqueClasses = useMemo(() => {
-    return Array.from(new Set(allMySlots.map(s => s.className).filter(Boolean)))
-  }, [allMySlots])
-
-  // Filtered classes by Campus in Teacher page lookup
-  const campusFilteredClasses = useMemo(() => {
-    if (!Array.isArray(initialData.classes)) return []
-    if (!lookupCampusId) return initialData.classes
-    return initialData.classes.filter((c: any) => c.campusId === lookupCampusId || !c.campusId)
-  }, [initialData.classes, lookupCampusId])
-
-  // Active selected class object in Teacher page lookup
-  const selectedClassObj = useMemo(() => {
-    if (lookupClassId) {
-      return initialData.classes.find((c: any) => c.id === lookupClassId || c.className === lookupClassId) || null
-    }
-    if (campusFilteredClasses.length > 0) {
-      return campusFilteredClasses[0]
-    }
-    return null
-  }, [initialData.classes, lookupClassId, campusFilteredClasses])
-
-  // Class Weekly Schedule Matrix & Stats in Teacher page lookup
-  const { classWeeklyMatrix, classScheduleStats } = useMemo(() => {
-    const matrix: Record<string, any> = {}
-    const slotsList: any[] = []
-    if (!selectedClassObj) return { classWeeklyMatrix: matrix, classScheduleStats: { totalPeriods: 0, slotsList } }
-
-    const targetClassId = selectedClassObj.id
-    const targetClassName = (selectedClassObj.className || "").trim().toLowerCase()
-
-    ;(initialData.timetableSlots || []).forEach((s: any) => {
-      const idMatch = s.classId && s.classId === targetClassId
-      const nameMatch = s.className && s.className.trim().toLowerCase() === targetClassName
-
-      if (idMatch || nameMatch) {
-        const key = `${s.dayOfWeek}_${s.session}_${s.periodNumber}`
-        matrix[key] = s
-        
-        const dayObj = DAYS_OF_WEEK.find(d => d.key === s.dayOfWeek)
-        slotsList.push({
-          ...s,
-          dayLabel: dayObj?.label || s.dayOfWeek,
-          sessionLabel: s.session === "MORNING" ? "Sáng" : "Chiều"
+  const loadForCurrentTab = async (
+    tab: "MY_SCHEDULE" | "CLASS_LOOKUP" | "COLLEAGUE_LOOKUP",
+    targetWeek: string,
+    overrideTargetId?: string
+  ) => {
+    setLoading(true)
+    try {
+      if (tab === "MY_SCHEDULE" && currentTeacher) {
+        const res = await fetchTeacherPortalScheduleAction({
+          mode: "TEACHER",
+          targetId: currentTeacher.id,
+          weekDate: targetWeek,
         })
-      }
-    })
-
-    return {
-      classWeeklyMatrix: matrix,
-      classScheduleStats: {
-        totalPeriods: slotsList.length,
-        slotsList
-      }
-    }
-  }, [selectedClassObj, initialData.timetableSlots])
-
-  // Unique Departments for filter dropdown in Teacher page
-  const uniqueDepartments = useMemo(() => {
-    if (!Array.isArray(initialData.teachers)) return []
-    const set = new Set<string>()
-    initialData.teachers.forEach((t: any) => {
-      const deptName = t.departmentRel?.name || t.departmentName
-      if (deptName && typeof deptName === 'string') {
-        set.add(deptName.trim())
-      }
-    })
-    return Array.from(set)
-  }, [initialData.teachers])
-
-  // Filtered teachers by department
-  const deptFilteredTeachers = useMemo(() => {
-    if (!Array.isArray(initialData.teachers)) return []
-    let list = initialData.teachers
-    if (lookupDept !== "ALL") {
-      list = list.filter((t: any) => {
-        const dName = (t.departmentRel?.name || t.departmentName || "").trim()
-        return dName === lookupDept
-      })
-    }
-    if (lookupSearchQuery) {
-      const q = lookupSearchQuery.toLowerCase()
-      list = list.filter((t: any) => 
-        (t.teacherName || "").toLowerCase().includes(q) ||
-        (t.teacherCode || "").toLowerCase().includes(q)
-      )
-    }
-    return list
-  }, [initialData.teachers, lookupDept, lookupSearchQuery])
-
-  // Active selected teacher object
-  const selectedTeacherObj = useMemo(() => {
-    if (lookupTeacherId) {
-      return initialData.teachers.find((t: any) => t.id === lookupTeacherId) || null
-    }
-    if (deptFilteredTeachers.length > 0) {
-      return deptFilteredTeachers[0]
-    }
-    return null
-  }, [initialData.teachers, lookupTeacherId, deptFilteredTeachers])
-
-  // Teacher Weekly Schedule Matrix & Stats
-  const { teacherWeeklyMatrix, teacherScheduleStats } = useMemo(() => {
-    const matrix: Record<string, any> = {}
-    const slotsList: any[] = []
-    if (!selectedTeacherObj) return { teacherWeeklyMatrix: matrix, teacherScheduleStats: { totalPeriods: 0, slotsList } }
-
-    const tId = selectedTeacherObj.id
-    const tName = (selectedTeacherObj.teacherName || "").trim().toLowerCase()
-
-    ;(initialData.timetableSlots || []).forEach((s: any) => {
-      const idMatch = s.teacherId && s.teacherId === tId
-      const nameMatch = s.teacherName && s.teacherName.trim().toLowerCase() === tName
-
-      if (idMatch || nameMatch) {
-        const key = `${s.dayOfWeek}_${s.session}_${s.periodNumber}`
-        matrix[key] = s
-        
-        const dayObj = DAYS_OF_WEEK.find(d => d.key === s.dayOfWeek)
-        slotsList.push({
-          ...s,
-          dayLabel: dayObj?.label || s.dayOfWeek,
-          sessionLabel: s.session === "MORNING" ? "Sáng" : "Chiều"
+        if (res.success && res.mode === "TEACHER") {
+          setMySchedule(res.teacherSchedule)
+        }
+      } else if (tab === "CLASS_LOOKUP") {
+        const cId = overrideTargetId ?? selectedClassId
+        if (!cId) return
+        const res = await fetchTeacherPortalScheduleAction({
+          mode: "CLASS",
+          targetId: cId,
+          weekDate: targetWeek,
         })
+        if (res.success && res.mode === "CLASS") {
+          setClassSchedule({
+            weekParity: res.classSchedule.weekParity,
+            weekDates: res.classSchedule.weekDates,
+            items: res.classSchedule.items,
+          })
+        }
+      } else if (tab === "COLLEAGUE_LOOKUP") {
+        const tId = overrideTargetId ?? selectedColleagueId
+        if (!tId) return
+        const res = await fetchTeacherPortalScheduleAction({
+          mode: "TEACHER",
+          targetId: tId,
+          weekDate: targetWeek,
+        })
+        if (res.success && res.mode === "TEACHER") {
+          setColleagueSchedule(res.teacherSchedule)
+        }
       }
-    })
-
-    return {
-      teacherWeeklyMatrix: matrix,
-      teacherScheduleStats: {
-        totalPeriods: slotsList.length,
-        slotsList
-      }
+    } finally {
+      setLoading(false)
     }
-  }, [selectedTeacherObj, initialData.timetableSlots])
-
-  const resetFilters = () => {
-    setFilterDay("all")
-    setFilterSession("all")
-    setFilterPeriod("all")
-    setFilterSubject("all")
-    setFilterClass("all")
-    setFilterWeekType("all")
-    setSearchQuery("")
   }
 
-  // School Matrix classes filter
-  const matrixClasses = useMemo(() => {
-    let classes = initialData.classes || []
-    if (matrixCampusId) classes = classes.filter(c => c.campusId === matrixCampusId)
-    if (matrixLevel === "TIEU_HOC") {
-      classes = classes.filter(c => ["Tiểu học", "Mầm non", "TIEU_HOC"].includes(c.level))
-    } else if (matrixLevel === "TRUNG_HOC") {
-      classes = classes.filter(c => ["THCS", "THPT", "TRUNG_HOC"].includes(c.level))
+  const activeItems =
+    activeTab === "MY_SCHEDULE"
+      ? mySchedule.items
+      : activeTab === "CLASS_LOOKUP"
+      ? classSchedule?.items || []
+      : colleagueSchedule?.items || []
+
+  const activeWeekDates =
+    activeTab === "MY_SCHEDULE"
+      ? mySchedule.weekDates
+      : activeTab === "CLASS_LOOKUP"
+      ? classSchedule?.weekDates || mySchedule.weekDates
+      : colleagueSchedule?.weekDates || mySchedule.weekDates
+
+  const maxMorning = Math.max(
+    4,
+    ...activeItems.filter((i) => i.session === "MORNING").map((i) => i.periodNumber)
+  )
+  const maxAfternoon = Math.max(
+    4,
+    ...activeItems.filter((i) => i.session === "AFTERNOON").map((i) => i.periodNumber)
+  )
+
+  const periodRows = useMemo(() => {
+    const rows: Array<{ session: "MORNING" | "AFTERNOON"; periodNumber: number; label: string }> = []
+    for (let p = 1; p <= maxMorning; p++) {
+      rows.push({ session: "MORNING", periodNumber: p, label: `Sáng • Tiết ${p}` })
     }
-    return classes
-  }, [initialData.classes, matrixCampusId, matrixLevel])
+    for (let p = 1; p <= maxAfternoon; p++) {
+      rows.push({ session: "AFTERNOON", periodNumber: p, label: `Chiều • Tiết ${p}` })
+    }
+    return rows
+  }, [maxAfternoon, maxMorning])
+
+  const cellMap = useMemo(() => {
+    const map = new Map<string, EffectivePeriodItem[]>()
+    for (const item of activeItems) {
+      const k = `${item.dayOfWeek}_${item.session}_${item.periodNumber}`
+      const arr = map.get(k) || []
+      arr.push(item)
+      map.set(k, arr)
+    }
+    return map
+  }, [activeItems])
+
+  const activeTeachingCount = activeItems.filter((i) => !i.isCancelledByLeave).length
+  const substitutedCount = activeItems.filter((i) => i.isSubstituted).length
 
   return (
-    <div className="space-y-4 max-w-7xl mx-auto pb-10 font-sans text-slate-800">
-      {/* Compact Header Banner */}
-      <div className="group/card bg-gradient-to-r from-[#003B3A] via-[#004D4A] to-[#48BFE3] rounded-3xl p-4 sm:p-5 text-white shadow-lg relative overflow-hidden">
-        {/* Ảnh minh họa trường học Sky-Line khớp khung phải & mờ dần */}
-        <div
-          className="hidden sm:block absolute top-0 right-0 bottom-0 sm:w-[54%] md:w-[48%] z-0 pointer-events-none select-none overflow-hidden"
-          style={{
-            WebkitMaskImage:
-              "linear-gradient(to right, transparent 0%, rgba(0,0,0,0.12) 15%, rgba(0,0,0,0.45) 40%, rgba(0,0,0,0.8) 75%, rgba(0,0,0,0.95) 100%)",
-            maskImage:
-              "linear-gradient(to right, transparent 0%, rgba(0,0,0,0.12) 15%, rgba(0,0,0,0.45) 40%, rgba(0,0,0,0.8) 75%, rgba(0,0,0,0.95) 100%)"
-          }}
+    <div className="min-h-screen bg-[#F8FAFC] text-slate-800 space-y-4 pb-10">
+      {/* Masthead */}
+      <div className="bg-white rounded-2xl border border-[#E2E8F0] border-l-4 border-l-[#003B3A] px-5 py-4 shadow-xs flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+        <div>
+          <h1 className="text-base sm:text-lg font-bold text-[#003B3A] tracking-tight">
+            Thời khóa biểu & Lịch giảng dạy thực tế
+          </h1>
+          <p className="text-xs text-slate-600 mt-0.5">
+            Tổng hợp tự động lịch giảng dạy liên cấp (Tiểu học, Trung học, Hill), liên cơ sở, đồng
+            giảng và ngoại lệ dạy thay theo tuần
+          </p>
+        </div>
+        <button
+          type="button"
+          onClick={() => window.print()}
+          className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-xl bg-white border border-[#E2E8F0] text-[#003B3A] text-xs font-semibold hover:bg-[#F8FAFC] transition-colors print:hidden cursor-pointer"
         >
-          <img
-            src="/images/skyline-campus-banner.png"
-            alt="Sky-Line Campus"
-            className="w-full h-full object-cover object-[center_65%] opacity-35 mix-blend-luminosity"
-          />
-        </div>
-        <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4 relative z-10">
-          <div className="flex items-center gap-3">
-            <div className="w-10 h-10 rounded-xl bg-white/15 border border-white/20 flex items-center justify-center text-teal-200 shrink-0 shadow-sm">
-              <Calendar className="w-5 h-5" />
-            </div>
-            <div>
-              <div className="flex items-center gap-2">
-                <h1 className="text-base sm:text-lg font-black tracking-tight text-white">Thời khóa biểu Giảng dạy</h1>
-                <span className="bg-emerald-400/25 text-emerald-200 text-[10px] font-black px-2 py-0.5 rounded-full border border-emerald-300/30 uppercase tracking-wider">
-                  SQMS
-                </span>
-              </div>
-              <p className="text-xs text-teal-100/90 font-medium">
-                Tra cứu phân công tiết dạy gọn gàng, khoa học & chuẩn xác
-              </p>
-            </div>
-          </div>
-
-          {/* Compact Tab Mode Switcher */}
-          <div className="flex flex-wrap items-center bg-black/25 p-1 rounded-xl border border-white/15 shrink-0 gap-1">
-            <button
-              onClick={() => setActiveTab("MY_SCHEDULE")}
-              className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-bold transition-all cursor-pointer ${
-                activeTab === "MY_SCHEDULE"
-                  ? "bg-white text-[#003B3A] shadow-sm font-black"
-                  : "text-teal-100 hover:text-white hover:bg-white/10"
-              }`}
-            >
-              <Sparkles className="w-3.5 h-3.5" />
-              Lịch của tôi ({allMySlots.length})
-            </button>
-            <button
-              onClick={() => setActiveTab("CLASS_LOOKUP")}
-              className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-bold transition-all cursor-pointer ${
-                activeTab === "CLASS_LOOKUP"
-                  ? "bg-white text-[#003B3A] shadow-sm font-black"
-                  : "text-teal-100 hover:text-white hover:bg-white/10"
-              }`}
-            >
-              <Layers className="w-3.5 h-3.5" />
-              Theo Lớp
-            </button>
-            <button
-              onClick={() => setActiveTab("TEACHER_LOOKUP")}
-              className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-bold transition-all cursor-pointer ${
-                activeTab === "TEACHER_LOOKUP"
-                  ? "bg-white text-[#003B3A] shadow-sm font-black"
-                  : "text-teal-100 hover:text-white hover:bg-white/10"
-              }`}
-            >
-              <Users className="w-3.5 h-3.5" />
-              Theo GV
-            </button>
-            <button
-              onClick={() => setActiveTab("SCHOOL_MATRIX")}
-              className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-bold transition-all cursor-pointer ${
-                activeTab === "SCHOOL_MATRIX"
-                  ? "bg-white text-[#003B3A] shadow-sm font-black"
-                  : "text-teal-100 hover:text-white hover:bg-white/10"
-              }`}
-            >
-              <Building2 className="w-3.5 h-3.5" />
-              Toàn trường
-            </button>
-          </div>
-        </div>
-
-        {/* Inline Stats Badges Row */}
-        {activeTab === "MY_SCHEDULE" && (
-          <div className="flex flex-wrap items-center gap-2 mt-3.5 pt-3 border-t border-white/15 text-xs font-bold">
-            <span className="bg-white/15 px-3 py-1 rounded-lg border border-white/20 text-white flex items-center gap-1.5">
-              <Clock className="w-3.5 h-3.5 text-amber-300" />
-              <span>Tổng: <strong className="text-amber-300 font-black">{allMySlots.length}</strong> tiết / tuần</span>
-            </span>
-            <span className="bg-white/15 px-3 py-1 rounded-lg border border-white/20 text-white flex items-center gap-1.5">
-              <BookOpen className="w-3.5 h-3.5 text-teal-200" />
-              <span><strong className="text-teal-200 font-black">{uniqueSubjects.length}</strong> môn học</span>
-            </span>
-            <span className="bg-white/15 px-3 py-1 rounded-lg border border-white/20 text-white flex items-center gap-1.5">
-              <Users className="w-3.5 h-3.5 text-emerald-300" />
-              <span><strong className="text-emerald-300 font-black">{uniqueClasses.length}</strong> lớp học</span>
-            </span>
-          </div>
-        )}
+          <Printer className="w-3.5 h-3.5" />
+          In lịch tuần
+        </button>
       </div>
 
-      {/* ===== TAB 1: PERSONAL TEACHING SCHEDULE ===== */}
-      {activeTab === "MY_SCHEDULE" && (
-        <div className="space-y-4">
-          {/* Compact Filter Bar */}
-          <div className="bg-white rounded-2xl p-4 shadow-xs border border-slate-200 space-y-3">
-            <div className="flex items-center justify-between gap-2 border-b border-slate-100 pb-2.5">
-              <div className="flex items-center gap-2">
-                <Filter className="w-4 h-4 text-[#48BFE3]" />
-                <h3 className="font-extrabold text-xs text-slate-800 uppercase tracking-wider">Bộ lọc Tra cứu Tiết dạy</h3>
-              </div>
-
-              <div className="flex items-center gap-2">
-                <div className="flex items-center bg-slate-100 p-1 rounded-lg border border-slate-200">
-                  <button
-                    onClick={() => setViewMode("GRID")}
-                    className={`flex items-center gap-1 px-2.5 py-1 rounded-md text-xs font-bold transition-all cursor-pointer ${
-                      viewMode === "GRID" ? "bg-white text-[#48BFE3] shadow-xs" : "text-slate-500 hover:text-slate-800"
-                    }`}
-                  >
-                    <Grid className="w-3.5 h-3.5" />
-                    <span className="hidden sm:inline">Ma trận</span> Tuần
-                  </button>
-                  <button
-                    onClick={() => setViewMode("LIST")}
-                    className={`flex items-center gap-1 px-2.5 py-1 rounded-md text-xs font-bold transition-all cursor-pointer ${
-                      viewMode === "LIST" ? "bg-white text-[#48BFE3] shadow-xs" : "text-slate-500 hover:text-slate-800"
-                    }`}
-                  >
-                    <List className="w-3.5 h-3.5" />
-                    Thống kê Môn
-                  </button>
-                </div>
-
-                <button
-                  onClick={resetFilters}
-                  className="flex items-center gap-1 px-2.5 py-1 bg-slate-100 hover:bg-slate-200 text-slate-600 font-bold text-xs rounded-lg transition cursor-pointer"
-                >
-                  <RotateCcw className="w-3.5 h-3.5" />
-                  <span className="hidden sm:inline">Đặt lại</span>
-                </button>
-              </div>
-            </div>
-
-            {/* Compact Filter Dropdowns Grid */}
-            <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-2.5">
-              <div className="space-y-1">
-                <label className="text-[10px] font-extrabold text-slate-400 uppercase tracking-wider">Lọc theo Thứ</label>
-                <select
-                  value={filterDay}
-                  onChange={e => setFilterDay(e.target.value)}
-                  className="w-full text-xs font-bold py-1.5 px-2.5 rounded-lg border border-slate-200 bg-slate-50 focus:bg-white focus:ring-1 focus:ring-[#48BFE3] outline-none text-slate-800"
-                >
-                  <option value="all">Tất cả các thứ</option>
-                  {DAYS_OF_WEEK.map(d => <option key={d.key} value={d.key}>{d.label}</option>)}
-                </select>
-              </div>
-
-              <div className="space-y-1">
-                <label className="text-[10px] font-extrabold text-slate-400 uppercase tracking-wider">Lọc theo Buổi</label>
-                <select
-                  value={filterSession}
-                  onChange={e => setFilterSession(e.target.value)}
-                  className="w-full text-xs font-bold py-1.5 px-2.5 rounded-lg border border-slate-200 bg-slate-50 focus:bg-white focus:ring-1 focus:ring-[#48BFE3] outline-none text-slate-800"
-                >
-                  <option value="all">Tất cả các buổi</option>
-                  <option value="MORNING">Buổi Sáng</option>
-                  <option value="AFTERNOON">Buổi Chiều</option>
-                </select>
-              </div>
-
-              <div className="space-y-1">
-                <label className="text-[10px] font-extrabold text-slate-400 uppercase tracking-wider">Lọc theo Tiết</label>
-                <select
-                  value={filterPeriod}
-                  onChange={e => setFilterPeriod(e.target.value)}
-                  className="w-full text-xs font-bold py-1.5 px-2.5 rounded-lg border border-slate-200 bg-slate-50 focus:bg-white focus:ring-1 focus:ring-[#48BFE3] outline-none text-slate-800"
-                >
-                  <option value="all">Tất cả tiết dạy</option>
-                  {[1, 2, 3, 4].map(p => <option key={p} value={String(p)}>Tiết {p}</option>)}
-                </select>
-              </div>
-
-              <div className="space-y-1">
-                <label className="text-[10px] font-extrabold text-slate-400 uppercase tracking-wider">Lọc theo Môn</label>
-                <select
-                  value={filterSubject}
-                  onChange={e => setFilterSubject(e.target.value)}
-                  className="w-full text-xs font-bold py-1.5 px-2.5 rounded-lg border border-slate-200 bg-slate-50 focus:bg-white focus:ring-1 focus:ring-[#48BFE3] outline-none text-slate-800"
-                >
-                  <option value="all">Tất cả môn học</option>
-                  {uniqueSubjects.map(s => <option key={s} value={s}>{s}</option>)}
-                </select>
-              </div>
-
-              <div className="space-y-1">
-                <label className="text-[10px] font-extrabold text-slate-400 uppercase tracking-wider">Lọc theo Lớp</label>
-                <select
-                  value={filterClass}
-                  onChange={e => setFilterClass(e.target.value)}
-                  className="w-full text-xs font-bold py-1.5 px-2.5 rounded-lg border border-slate-200 bg-slate-50 focus:bg-white focus:ring-1 focus:ring-[#48BFE3] outline-none text-slate-800"
-                >
-                  <option value="all">Tất cả lớp học</option>
-                  {uniqueClasses.map(c => <option key={c} value={c}>{c}</option>)}
-                </select>
-              </div>
-
-              <div className="space-y-1">
-                <label className="text-[10px] font-extrabold text-slate-400 uppercase tracking-wider">Cấu hình Tuần</label>
-                <select
-                  value={filterWeekType}
-                  onChange={e => setFilterWeekType(e.target.value)}
-                  className="w-full text-xs font-bold py-1.5 px-2.5 rounded-lg border border-slate-200 bg-slate-50 focus:bg-white focus:ring-1 focus:ring-[#48BFE3] outline-none text-slate-800"
-                >
-                  <option value="all">Tất cả các tuần</option>
-                  <option value="EVEN">Tuần Chẵn</option>
-                  <option value="ODD">Tuần Lẻ</option>
-                </select>
-              </div>
-            </div>
-          </div>
-
-          {/* VIEW 1: WEEKLY SCHEDULE MATRIX GRID (COMPACT SCIENTIFIC) */}
-          {viewMode === "GRID" && (
-            <div className="bg-white rounded-2xl shadow-xs border border-slate-200 overflow-hidden">
-              <div className="px-4 py-2.5 bg-slate-50 border-b border-slate-200 flex items-center justify-between">
-                <div className="flex items-center gap-2">
-                  <Grid className="w-4 h-4 text-[#48BFE3]" />
-                  <span className="font-black text-xs uppercase tracking-wider text-slate-800">
-                    Ma trận Lịch dạy Tuần (Thứ 2 - Thứ 6)
-                  </span>
-                </div>
-                <span className="text-[11px] font-extrabold text-slate-500">
-                  Hiển thị <strong className="text-[#48BFE3]">{filteredMySlots.length}</strong> / {allMySlots.length} tiết
-                </span>
-              </div>
-
-              <div className="overflow-x-auto">
-                <table className="w-full border-collapse min-w-[650px] text-xs">
-                  <thead>
-                    <tr className="bg-slate-100 border-b border-slate-200 text-slate-700 font-black uppercase text-[11px]">
-                      <th className="py-2 px-2 text-center border-r border-slate-200 w-16">Buổi</th>
-                      <th className="py-2 px-2 text-center border-r border-slate-200 w-14">Tiết</th>
-                      {DAYS_OF_WEEK.map(day => (
-                        <th key={day.key} className="py-2 px-3 text-center border-r border-slate-200 last:border-r-0 font-black">
-                          {day.label}
-                        </th>
-                      ))}
-                    </tr>
-                  </thead>
-                  <tbody className="divide-y divide-slate-200">
-                    {/* MORNING SESSION */}
-                    {PERIODS.map((period, pIdx) => (
-                      <tr key={`morning-${period}`} className="hover:bg-slate-50/60 transition-colors">
-                        {pIdx === 0 && (
-                          <td rowSpan={4} className="py-2 px-1 text-center border-r border-slate-200 bg-amber-50/50 text-amber-900 font-extrabold text-[11px]">
-                            <div className="flex flex-col items-center gap-0.5">
-                              <Sun className="w-3.5 h-3.5 text-amber-500" />
-                              <span>SÁNG</span>
-                            </div>
-                          </td>
-                        )}
-                        <td className="py-2 px-1 text-center border-r border-slate-200 font-bold text-slate-600 bg-slate-50 text-xs">
-                          Tiết {period}
-                        </td>
-                        {DAYS_OF_WEEK.map(day => {
-                          const slot = filteredMySlots.find(s => s.dayOfWeek === day.key && s.session === "MORNING" && s.periodNumber === period)
-                          return (
-                            <td key={day.key} className="p-1.5 border-r border-slate-200 last:border-r-0 h-14 align-top">
-                              {slot ? (
-                                <div 
-                                  className="h-full p-2 rounded-lg border border-slate-300/80 flex flex-col justify-between shadow-xs transition-all hover:scale-[1.02] hover:shadow-md hover:border-teal-500/60"
-                                  style={{
-                                    backgroundColor: (slot.colorCode || "#48BFE3") + "12",
-                                    borderColor: slot.colorCode || "#48BFE3"
-                                  }}
-                                >
-                                  <div>
-                                    <div className="flex items-center justify-between gap-1">
-                                      <span className="font-black text-xs text-slate-900 truncate">{slot.className}</span>
-                                      {slot.weekType !== "ALL" && (
-                                        <span className="text-[9px] font-black px-1.5 py-0.2 rounded bg-white/90 text-slate-700 border border-slate-200">
-                                          {slot.weekType === "EVEN" ? "T.Chẵn" : "T.Lẻ"}
-                                        </span>
-                                      )}
-                                    </div>
-                                    <p className="font-bold text-xs text-[#003B3A] mt-0.5 truncate">{slot.subjectName || "Chưa môn"}</p>
-                                  </div>
-                                  <div className="flex items-center justify-end pt-1">
-                                    <Link
-                                      href="/teacher/du-gio"
-                                      className="text-[10px] font-bold text-slate-500 hover:text-[#48BFE3] flex items-center gap-0.5 transition-colors"
-                                      title="Đăng ký tiết dạy này"
-                                    >
-                                      <span>Tiết dạy</span>
-                                      <ArrowRight className="w-3 h-3" />
-                                    </Link>
-                                  </div>
-                                </div>
-                              ) : (
-                                <div className="h-full rounded-lg border border-slate-200/80 bg-slate-50/50 flex items-center justify-center text-slate-300 text-xs font-semibold hover:border-slate-300 hover:bg-slate-100/50 transition-all">-</div>
-                              )}
-                            </td>
-                          )
-                        })}
-                      </tr>
-                    ))}
-
-                    {/* AFTERNOON SESSION */}
-                    {PERIODS.map((period, pIdx) => (
-                      <tr key={`afternoon-${period}`} className="hover:bg-slate-50/60 transition-colors">
-                        {pIdx === 0 && (
-                          <td rowSpan={4} className="py-2 px-1 text-center border-r border-slate-200 bg-sky-50/50 text-sky-900 font-extrabold text-[11px]">
-                            <div className="flex flex-col items-center gap-0.5">
-                              <Moon className="w-3.5 h-3.5 text-sky-500" />
-                              <span>CHIỀU</span>
-                            </div>
-                          </td>
-                        )}
-                        <td className="py-2 px-1 text-center border-r border-slate-200 font-bold text-slate-600 bg-slate-50 text-xs">
-                          Tiết {period}
-                        </td>
-                        {DAYS_OF_WEEK.map(day => {
-                          const slot = filteredMySlots.find(s => s.dayOfWeek === day.key && s.session === "AFTERNOON" && s.periodNumber === period)
-                          return (
-                            <td key={day.key} className="p-1.5 border-r border-slate-200 last:border-r-0 h-14 align-top">
-                              {slot ? (
-                                <div 
-                                  className="h-full p-2 rounded-lg border border-slate-300/80 flex flex-col justify-between shadow-xs transition-all hover:scale-[1.02] hover:shadow-md hover:border-teal-500/60"
-                                  style={{
-                                    backgroundColor: (slot.colorCode || "#48BFE3") + "12",
-                                    borderColor: slot.colorCode || "#48BFE3"
-                                  }}
-                                >
-                                  <div>
-                                    <div className="flex items-center justify-between gap-1">
-                                      <span className="font-black text-xs text-slate-900 truncate">{slot.className}</span>
-                                      {slot.weekType !== "ALL" && (
-                                        <span className="text-[9px] font-black px-1.5 py-0.2 rounded bg-white/90 text-slate-700 border border-slate-200">
-                                          {slot.weekType === "EVEN" ? "T.Chẵn" : "T.Lẻ"}
-                                        </span>
-                                      )}
-                                    </div>
-                                    <p className="font-bold text-xs text-[#003B3A] mt-0.5 truncate">{slot.subjectName || "Chưa môn"}</p>
-                                  </div>
-                                  <div className="flex items-center justify-end pt-1">
-                                    <Link
-                                      href="/teacher/du-gio"
-                                      className="text-[10px] font-bold text-slate-500 hover:text-[#48BFE3] flex items-center gap-0.5 transition-colors"
-                                      title="Đăng ký tiết dạy này"
-                                    >
-                                      <span>Tiết dạy</span>
-                                      <ArrowRight className="w-3 h-3" />
-                                    </Link>
-                                  </div>
-                                </div>
-                              ) : (
-                                <div className="h-full rounded-lg border border-slate-200/80 bg-slate-50/50 flex items-center justify-center text-slate-300 text-xs font-semibold hover:border-slate-300 hover:bg-slate-100/50 transition-all">-</div>
-                              )}
-                            </td>
-                          )
-                        })}
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
-              </div>
-            </div>
+      {/* Navigation & Week Selector Bar */}
+      <div className="bg-white rounded-2xl border border-[#E2E8F0] p-3 shadow-xs flex flex-wrap items-center justify-between gap-3 print:hidden">
+        <div className="flex flex-wrap items-center gap-1">
+          {currentTeacher && (
+            <button
+              type="button"
+              onClick={() => {
+                setActiveTab("MY_SCHEDULE")
+                loadForCurrentTab("MY_SCHEDULE", weekDate)
+              }}
+              className={`px-3.5 py-2 rounded-xl text-xs font-semibold transition-colors cursor-pointer ${
+                activeTab === "MY_SCHEDULE"
+                  ? "bg-[#003B3A] text-white"
+                  : "text-slate-600 hover:text-[#003B3A] hover:bg-[#F8FAFC]"
+              }`}
+            >
+              Lịch dạy của tôi ({currentTeacher.teacherCode})
+            </button>
           )}
+          <button
+            type="button"
+            onClick={() => {
+              setActiveTab("CLASS_LOOKUP")
+              loadForCurrentTab("CLASS_LOOKUP", weekDate, selectedClassId)
+            }}
+            className={`px-3.5 py-2 rounded-xl text-xs font-semibold transition-colors cursor-pointer ${
+              activeTab === "CLASS_LOOKUP"
+                ? "bg-[#003B3A] text-white"
+                : "text-slate-600 hover:text-[#003B3A] hover:bg-[#F8FAFC]"
+            }`}
+          >
+            Tra cứu theo lớp
+          </button>
+          <button
+            type="button"
+            onClick={() => {
+              setActiveTab("COLLEAGUE_LOOKUP")
+              loadForCurrentTab("COLLEAGUE_LOOKUP", weekDate, selectedColleagueId)
+            }}
+            className={`px-3.5 py-2 rounded-xl text-xs font-semibold transition-colors cursor-pointer ${
+              activeTab === "COLLEAGUE_LOOKUP"
+                ? "bg-[#003B3A] text-white"
+                : "text-slate-600 hover:text-[#003B3A] hover:bg-[#F8FAFC]"
+            }`}
+          >
+            Tra cứu lịch đồng nghiệp
+          </button>
+        </div>
 
-          {/* VIEW 2: SUBJECT QUOTA & DETAILED LIST VIEW */}
-          {viewMode === "LIST" && (
-            <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
-              {/* Summary Cards by Subject */}
-              <div className="lg:col-span-1 space-y-3">
-                <h3 className="font-black text-xs uppercase tracking-wider text-slate-800 flex items-center gap-2">
-                  <BookOpen className="w-4 h-4 text-[#48BFE3]" />
-                  <span>Thống kê theo Môn giảng dạy</span>
-                </h3>
+        <div className="flex flex-wrap items-center gap-2 tabular-nums">
+          <label className="text-xs font-semibold text-slate-600">Tuần đang xem:</label>
+          <input
+            type="date"
+            value={weekDate}
+            disabled={loading}
+            onChange={(e) => {
+              const nextDate = e.target.value
+              setWeekDate(nextDate)
+              if (nextDate) loadForCurrentTab(activeTab, nextDate)
+            }}
+            className="rounded-xl border border-[#E2E8F0] bg-[#F8FAFC] px-3 py-1.5 text-xs font-medium text-slate-800 focus:border-[#00A19A] focus:outline-none tabular-nums"
+          />
+        </div>
+      </div>
 
-                {subjectSummary.map((sub, idx) => (
-                  <div key={idx} className="bg-white rounded-xl p-4 border border-slate-200 shadow-xs space-y-2">
-                    <div className="flex items-center justify-between">
-                      <h4 className="font-black text-sm text-slate-900">{sub.subjectName}</h4>
-                      <span className="bg-[#48BFE3] text-white font-black text-xs px-2.5 py-0.5 rounded-full shadow-2xs">
-                        {sub.totalPeriods} tiết / tuần
-                      </span>
-                    </div>
+      {/* Contextual Lookup Pickers */}
+      {activeTab === "CLASS_LOOKUP" && (
+        <div className="bg-white rounded-2xl border border-[#E2E8F0] p-4 shadow-xs grid grid-cols-1 sm:grid-cols-2 gap-3 print:hidden">
+          <div>
+            <label className="block text-[11px] font-semibold text-slate-600 mb-1">
+              Cơ sở đào tạo
+            </label>
+            <select
+              value={selectedCampusId}
+              onChange={(e) => {
+                const cId = e.target.value
+                setSelectedCampusId(cId)
+                const firstCls = classes.find((c) => cId === "ALL" || c.campusId === cId)
+                if (firstCls) {
+                  setSelectedClassId(firstCls.id)
+                  loadForCurrentTab("CLASS_LOOKUP", weekDate, firstCls.id)
+                }
+              }}
+              className="w-full rounded-xl border border-[#E2E8F0] bg-[#F8FAFC] px-3 py-2 text-xs font-medium text-slate-800 focus:border-[#00A19A] focus:outline-none"
+            >
+              <option value="ALL">Tất cả cơ sở</option>
+              {campuses.map((c) => (
+                <option key={c.id} value={c.id}>
+                  {c.displayName}
+                </option>
+              ))}
+            </select>
+          </div>
+          <div>
+            <label className="block text-[11px] font-semibold text-slate-600 mb-1">
+              Lớp học (chỉ hiển thị lịch Đã ban hành có hiệu lực)
+            </label>
+            <select
+              value={selectedClassId}
+              onChange={(e) => {
+                const clsId = e.target.value
+                setSelectedClassId(clsId)
+                loadForCurrentTab("CLASS_LOOKUP", weekDate, clsId)
+              }}
+              className="w-full rounded-xl border border-[#E2E8F0] bg-[#F8FAFC] px-3 py-2 text-xs font-medium text-slate-800 focus:border-[#00A19A] focus:outline-none tabular-nums"
+            >
+              {filteredClasses.map((c) => (
+                <option key={c.id} value={c.id}>
+                  Lớp {c.className} (Khối {c.grade} • {c.level})
+                </option>
+              ))}
+            </select>
+          </div>
+        </div>
+      )}
 
-                    <div className="text-xs font-semibold text-slate-600 space-y-1">
-                      <p>Danh sách lớp phụ trách: <span className="font-bold text-slate-900">{Array.from(sub.classNames).join(", ") || "N/A"}</span></p>
-                    </div>
+      {activeTab === "COLLEAGUE_LOOKUP" && (
+        <div className="bg-white rounded-2xl border border-[#E2E8F0] p-4 shadow-xs grid grid-cols-1 sm:grid-cols-2 gap-3 print:hidden">
+          <div>
+            <label className="block text-[11px] font-semibold text-slate-600 mb-1">
+              Tìm nhanh theo họ tên, mã giáo viên hoặc tổ bộ môn
+            </label>
+            <input
+              type="text"
+              value={colleagueSearch}
+              onChange={(e) => setColleagueSearch(e.target.value)}
+              placeholder="Nhập tên hoặc mã GV..."
+              className="w-full rounded-xl border border-[#E2E8F0] bg-[#F8FAFC] px-3 py-2 text-xs text-slate-800 focus:border-[#00A19A] focus:outline-none"
+            />
+          </div>
+          <div>
+            <label className="block text-[11px] font-semibold text-slate-600 mb-1">
+              Chọn giáo viên
+            </label>
+            <select
+              value={selectedColleagueId}
+              onChange={(e) => {
+                const tId = e.target.value
+                setSelectedColleagueId(tId)
+                loadForCurrentTab("COLLEAGUE_LOOKUP", weekDate, tId)
+              }}
+              className="w-full rounded-xl border border-[#E2E8F0] bg-[#F8FAFC] px-3 py-2 text-xs font-medium text-slate-800 focus:border-[#00A19A] focus:outline-none tabular-nums"
+            >
+              {filteredTeachers.map((t) => (
+                <option key={t.id} value={t.id}>
+                  [{t.teacherCode}] {t.teacherName} {t.departmentName ? `— ${t.departmentName}` : ""}
+                </option>
+              ))}
+            </select>
+          </div>
+        </div>
+      )}
 
-                    <div className="pt-2 border-t border-slate-100 flex flex-wrap gap-1">
-                      {sub.slots.map((s, sIdx) => {
-                        const dayText = DAYS_OF_WEEK.find(d => d.key === s.dayOfWeek)?.short || s.dayOfWeek
-                        return (
-                          <span key={sIdx} className="bg-slate-100 text-slate-800 text-[10px] font-bold px-2 py-0.5 rounded border border-slate-200">
-                            {dayText} ({s.session === "MORNING" ? "Sáng" : "Chiều"} - T{s.periodNumber}): {s.className}
-                          </span>
-                        )
-                      })}
-                    </div>
+      {/* Compact Summary Strip */}
+      <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 tabular-nums">
+        <div className="bg-white rounded-2xl border border-[#E2E8F0] p-3.5 shadow-xs">
+          <div className="text-[11px] font-semibold text-slate-500">Tổng số tiết thực tế / tuần</div>
+          <div className="text-lg font-bold text-[#003B3A] mt-0.5">{activeTeachingCount} tiết</div>
+        </div>
+        <div className="bg-white rounded-2xl border border-[#E2E8F0] p-3.5 shadow-xs">
+          <div className="text-[11px] font-semibold text-slate-500">Cơ sở tham gia giảng dạy</div>
+          <div className="text-sm font-bold text-[#00736E] mt-1">
+            {activeTab === "MY_SCHEDULE"
+              ? mySchedule.campusesInvolved.map((c) => c.name).join(" • ") || "Chưa phát sinh tiết"
+              : activeTab === "COLLEAGUE_LOOKUP"
+              ? colleagueSchedule?.campusesInvolved.map((c) => c.name).join(" • ") || "—"
+              : "Lịch chuẩn theo lớp"}
+          </div>
+        </div>
+        <div className="bg-white rounded-2xl border border-[#E2E8F0] p-3.5 shadow-xs">
+          <div className="text-[11px] font-semibold text-slate-500">Điều chỉnh / Dạy thay trong tuần</div>
+          <div
+            className={`text-lg font-bold mt-0.5 ${
+              substitutedCount > 0 ? "text-[#D97706]" : "text-[#059669]"
+            }`}
+          >
+            {substitutedCount} tiết thay đổi
+          </div>
+        </div>
+      </div>
+
+      {/* Main Academic Ledger Timetable Grid */}
+      <div className="bg-white rounded-2xl border border-[#E2E8F0] shadow-xs overflow-hidden overflow-x-auto">
+        <table className="w-full text-left border-collapse">
+          <thead>
+            <tr className="bg-[#003B3A] border-b border-[#003B3A]">
+              <th className="sticky left-0 z-10 bg-[#003B3A] py-2.5 px-3 text-[11px] font-semibold text-white whitespace-nowrap w-32">
+                Buổi & Tiết
+              </th>
+              {WORKING_DAYS.map((d) => (
+                <th
+                  key={d.code}
+                  className="py-2.5 px-3 text-[11px] font-semibold text-teal-100 whitespace-nowrap min-w-[175px]"
+                >
+                  <div>{d.label}</div>
+                  <div className="text-[10px] font-normal text-[#5EEAD4] tabular-nums">
+                    {activeWeekDates[d.code] || ""}
                   </div>
-                ))}
-              </div>
-
-              {/* Detailed Slot Cards List */}
-              <div className="lg:col-span-2 space-y-3">
-                <h3 className="font-black text-xs uppercase tracking-wider text-slate-800 flex items-center gap-2">
-                  <List className="w-4 h-4 text-[#48BFE3]" />
-                  <span>Danh sách Tiết dạy Chi tiết ({filteredMySlots.length})</span>
-                </h3>
-
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                  {filteredMySlots.map((slot) => {
-                    const dayText = DAYS_OF_WEEK.find(d => d.key === slot.dayOfWeek)?.label || slot.dayOfWeek
+                </th>
+              ))}
+            </tr>
+          </thead>
+          <tbody className="divide-y divide-[#E2E8F0] text-xs bg-white tabular-nums">
+            {periodRows.map((pr, idx) => {
+              const isAfternoonStart =
+                pr.session === "AFTERNOON" && pr.periodNumber === 1 && idx > 0
+              return (
+                <tr
+                  key={`${pr.session}_${pr.periodNumber}`}
+                  className={`transition-colors align-middle hover:bg-[#F8FAFC] ${
+                    isAfternoonStart ? "border-t-2 border-t-[#003B3A]/25" : ""
+                  }`}
+                >
+                  <td className="sticky left-0 z-10 bg-white py-3 px-3 align-middle font-semibold text-[#003B3A] border-r border-[#E2E8F0] whitespace-nowrap">
+                    {pr.label}
+                  </td>
+                  {WORKING_DAYS.map((d) => {
+                    const cells = cellMap.get(`${d.code}_${pr.session}_${pr.periodNumber}`) || []
                     return (
-                      <div key={slot.id} className="bg-white rounded-xl p-4 border border-slate-200 shadow-xs space-y-2.5 hover:shadow-md transition-all">
-                        <div className="flex items-center justify-between border-b border-slate-100 pb-2">
-                          <span className="bg-emerald-50 text-[#003B3A] font-black text-xs px-2.5 py-0.5 rounded-md border border-emerald-200 uppercase">
-                            {dayText} - {slot.session === "MORNING" ? "Sáng" : "Chiều"}
-                          </span>
-                          <span className="bg-amber-100 text-amber-900 font-black text-xs px-2.5 py-0.5 rounded-md border border-amber-200">
-                            Tiết {slot.periodNumber}
-                          </span>
-                        </div>
+                      <td
+                        key={d.code}
+                        className="py-2.5 px-3 align-top border-r border-[#F1F5F9] last:border-r-0"
+                      >
+                        {cells.length === 0 ? (
+                          <span className="text-slate-300 text-[11px]">—</span>
+                        ) : (
+                          <div className="space-y-1.5">
+                            {cells.map((item, cIdx) => (
+                              <div
+                                key={`${item.slotId || cIdx}_${item.classId}`}
+                                className={`rounded-xl border p-2.5 ${
+                                  item.isCancelledByLeave
+                                    ? "bg-rose-50/60 border-rose-200 line-through opacity-75"
+                                    : item.isSubstituted
+                                    ? "bg-amber-50/60 border-amber-200"
+                                    : "bg-[#F8FAFC] border-[#E2E8F0]"
+                                }`}
+                              >
+                                <div className="flex items-start justify-between gap-1">
+                                  <span className="font-semibold text-slate-900">
+                                    {item.subjectName || "Tiết học"}
+                                  </span>
+                                  <span className="text-[10px] font-semibold text-[#00736E] whitespace-nowrap">
+                                    {item.startTime}–{item.endTime}
+                                  </span>
+                                </div>
 
-                        <div>
-                          <h4 className="font-black text-sm text-slate-900">{slot.subjectName || "Chưa xếp môn"}</h4>
-                          <p className="text-xs font-extrabold text-[#48BFE3] mt-0.5">Lớp: {slot.className}</p>
-                        </div>
+                                <div className="text-[11px] text-slate-600 mt-1 space-y-0.5">
+                                  <div>
+                                    Lớp:{" "}
+                                    <span className="font-bold text-[#003B3A]">
+                                      {item.className}
+                                    </span>{" "}
+                                    • {item.campusName}
+                                  </div>
+                                  {activeTab === "CLASS_LOOKUP" && item.teacherName && (
+                                    <div>
+                                      GV: {item.teacherName}{" "}
+                                      {item.teacherCode ? `(${item.teacherCode})` : ""}
+                                    </div>
+                                  )}
+                                  {item.coTeacherName && (
+                                    <div className="text-slate-500">
+                                      Đồng giảng: {item.coTeacherName}
+                                    </div>
+                                  )}
+                                  {item.assistantTeacherName && (
+                                    <div className="text-slate-500">
+                                      Trợ giảng: {item.assistantTeacherName}
+                                    </div>
+                                  )}
+                                  {item.roomName && (
+                                    <div className="text-[#00736E] font-medium">
+                                      Phòng: {item.roomName}
+                                    </div>
+                                  )}
+                                  {item.isSubstituted && (
+                                    <div className="text-[#D97706] font-semibold">
+                                      {item.isCancelledByLeave
+                                        ? `Báo nghỉ: ${item.substitutionReason || ""}`
+                                        : `Điều chỉnh ngày (${item.substitutionAction})`}
+                                    </div>
+                                  )}
+                                </div>
 
-                        <div className="text-xs font-medium text-slate-600 space-y-0.5">
-                          <p>Cấp / Khối: <span className="font-bold text-slate-800">{slot.level === "TIEU_HOC" ? "Tiểu học" : "Trung học"} ({slot.grade})</span></p>
-                          <p>Tuần áp dụng: <span className="font-bold text-slate-800">{slot.weekType === "ALL" ? "Tất cả các tuần" : slot.weekType === "EVEN" ? "Tuần Chẵn" : "Tuần Lẻ"}</span></p>
-                        </div>
-
-                        <div className="pt-2 border-t border-slate-100 flex justify-end">
-                          <Link
-                            href="/teacher/du-gio"
-                            className="text-xs font-bold text-[#48BFE3] hover:text-[#003B3A] flex items-center gap-1"
-                          >
-                            <span>Đăng ký tiết dạy</span>
-                            <ArrowRight className="w-3.5 h-3.5" />
-                          </Link>
-                        </div>
-                      </div>
+                                {item.slotId && !item.isCancelledByLeave && (
+                                  <div className="mt-1.5 pt-1 border-t border-slate-200/70 print:hidden">
+                                    <Link
+                                      href={`/teacher/du-gio?tkbSlotId=${item.slotId}&tkbDate=${item.date}`}
+                                      className="text-[11px] font-semibold text-[#008B85] hover:underline"
+                                    >
+                                      {activeTab === "MY_SCHEDULE"
+                                        ? "Mở đăng ký dự giờ tiết này"
+                                        : "Đề xuất dự giờ tiết này"}
+                                    </Link>
+                                  </div>
+                                )}
+                              </div>
+                            ))}
+                          </div>
+                        )}
+                      </td>
                     )
                   })}
-                </div>
-              </div>
-            </div>
-          )}
-        </div>
-      )}
-
-      {/* ===== TAB 2: CLASS SCHEDULE LOOKUP ===== */}
-      {activeTab === "CLASS_LOOKUP" && (
-        <div className="bg-white rounded-2xl p-4 sm:p-5 shadow-xs border border-slate-200 space-y-5">
-          {/* FILTER CONTROLS */}
-          <div className="bg-slate-50 p-4 rounded-xl border border-slate-200 grid grid-cols-1 md:grid-cols-12 gap-3 items-center">
-            <div className="md:col-span-5 space-y-1">
-              <label className="text-xs font-black text-slate-700 uppercase tracking-wide flex items-center gap-1.5">
-                <Building2 className="w-3.5 h-3.5 text-[#48BFE3]" />
-                1. Chọn Cơ Sở
-              </label>
-              <select
-                value={lookupCampusId}
-                onChange={e => {
-                  setLookupCampusId(e.target.value);
-                  setLookupClassId("");
-                }}
-                className="w-full bg-white border border-slate-300 rounded-lg px-3 py-2 text-xs font-bold text-slate-800 outline-none focus:border-[#48BFE3] transition-all"
-              >
-                <option value="">-- Tất cả Cơ sở --</option>
-                {initialData.campuses.map((c: any) => (
-                  <option key={c.id} value={c.id}>{c.campusName}</option>
-                ))}
-              </select>
-            </div>
-
-            <div className="md:col-span-7 space-y-1">
-              <label className="text-xs font-black text-slate-700 uppercase tracking-wide flex items-center gap-1.5">
-                <Layers className="w-3.5 h-3.5 text-[#48BFE3]" />
-                2. Chọn Lớp Học Cần Tra Cứu TKB
-              </label>
-              <select
-                value={lookupClassId}
-                onChange={e => setLookupClassId(e.target.value)}
-                className="w-full bg-white border border-slate-300 rounded-lg px-3 py-2 text-xs font-bold text-slate-800 outline-none focus:border-[#48BFE3] transition-all"
-              >
-                <option value="">-- Chọn Lớp học trong danh sách --</option>
-                {campusFilteredClasses.map((cls: any) => (
-                  <option key={cls.id} value={cls.id}>
-                    {cls.className?.startsWith("Lớp") ? cls.className : `Lớp ${cls.className}`} - {cls.level || cls.grade || "Khối"}
-                  </option>
-                ))}
-              </select>
-            </div>
-          </div>
-
-          {/* CLASS INFO BADGE */}
-          {selectedClassObj ? (
-            <div className="space-y-4">
-              <div className="bg-gradient-to-r from-[#003B3A] to-[#48BFE3] text-white p-4 rounded-xl shadow-xs flex flex-col sm:flex-row sm:items-center justify-between gap-3">
-                <div className="flex items-center gap-3">
-                  <div className="w-10 h-10 rounded-xl bg-white/20 flex items-center justify-center font-black text-lg text-white">
-                    {selectedClassObj.className?.charAt(0) || "L"}
-                  </div>
-                  <div>
-                    <h2 className="text-sm font-black uppercase tracking-wide flex items-center gap-2">
-                      {selectedClassObj.className?.startsWith("Lớp") ? selectedClassObj.className : `Lớp ${selectedClassObj.className}`}
-                      <span className="text-[10px] bg-white/20 px-2 py-0.5 rounded-md normal-case">
-                        {selectedClassObj.level || selectedClassObj.grade || "Cấp học"}
-                      </span>
-                    </h2>
-                    <p className="text-xs text-teal-100 font-medium mt-0.5">
-                      Cơ sở: <strong className="text-white">{initialData.campuses.find((c: any) => c.id === selectedClassObj.campusId)?.campusName || "Tất cả Cơ sở"}</strong>
-                    </p>
-                  </div>
-                </div>
-
-                <div className="bg-white/15 px-3 py-1.5 rounded-lg text-right">
-                  <div className="text-[10px] text-teal-100 uppercase font-black">Tổng tiết học / tuần</div>
-                  <div className="text-sm font-black text-white">{classScheduleStats.totalPeriods} tiết</div>
-                </div>
-              </div>
-
-              {/* WEEKLY TIMETABLE TABLE MATRIX FOR CLASS */}
-              <div className="overflow-x-auto border border-slate-200 rounded-xl shadow-2xs">
-                <table className="w-full text-left text-xs border-collapse">
-                  <thead>
-                    <tr className="bg-[#003B3A] text-white font-black uppercase text-[11px] tracking-wider">
-                      <th className="p-2 text-center w-20 border-r border-teal-800">Buổi</th>
-                      <th className="p-2 text-center w-16 border-r border-teal-800">Tiết</th>
-                      {DAYS_OF_WEEK.map(d => (
-                        <th key={d.key} className="p-2 text-center border-r border-teal-800 min-w-[130px]">
-                          {d.label}
-                        </th>
-                      ))}
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {[1, 2, 3, 4].map((period, idx) => (
-                      <tr key={`morning-${period}`} className={idx % 2 === 0 ? "bg-white" : "bg-slate-50/70"}>
-                        {idx === 0 && (
-                          <td rowSpan={4} className="p-2 font-black text-center border-r border-slate-200 bg-amber-50/50 text-amber-900 uppercase tracking-wide text-xs">
-                            SÁNG
-                          </td>
-                        )}
-                        <td className="p-2 font-bold text-center border-r border-slate-200 text-slate-600 bg-slate-50">
-                          Tiết {period}
-                        </td>
-                        {DAYS_OF_WEEK.map(d => {
-                          const assignedSlot = classWeeklyMatrix[`${d.key}_MORNING_${period}`];
-                          return (
-                            <td key={d.key} className="p-1.5 border-r border-slate-200 text-center vertical-top">
-                              {assignedSlot ? (
-                                <div
-                                  style={{ backgroundColor: (assignedSlot.colorCode || "#48BFE3") + "15", borderColor: assignedSlot.colorCode || "#48BFE3" }}
-                                  className="p-2 rounded-lg border shadow-2xs space-y-0.5 text-slate-900 font-bold"
-                                >
-                                  <div className="text-xs font-black uppercase text-[#003B3A]">
-                                    {assignedSlot.subjectName}
-                                  </div>
-                                  <div className="text-[11px] text-slate-700 font-medium">
-                                    {assignedSlot.teacherName || "Chưa xếp GV"}
-                                  </div>
-                                </div>
-                              ) : (
-                                <div className="py-1 px-2 rounded-md border border-slate-200/70 bg-slate-50/40 text-slate-300 text-xs font-medium inline-block">-</div>
-                              )}
-                            </td>
-                          );
-                        })}
-                      </tr>
-                    ))}
-                    {[1, 2, 3, 4].map((period, idx) => (
-                      <tr key={`afternoon-${period}`} className={idx % 2 === 0 ? "bg-white" : "bg-slate-50/70"}>
-                        {idx === 0 && (
-                          <td rowSpan={4} className="p-2 font-black text-center border-r border-slate-200 bg-sky-50/50 text-sky-900 uppercase tracking-wide text-xs">
-                            CHIỀU
-                          </td>
-                        )}
-                        <td className="p-2 font-bold text-center border-r border-slate-200 text-slate-600 bg-slate-50">
-                          Tiết {period}
-                        </td>
-                        {DAYS_OF_WEEK.map(d => {
-                          const assignedSlot = classWeeklyMatrix[`${d.key}_AFTERNOON_${period}`];
-                          return (
-                            <td key={d.key} className="p-1.5 border-r border-slate-200 text-center vertical-top">
-                              {assignedSlot ? (
-                                <div
-                                  style={{ backgroundColor: (assignedSlot.colorCode || "#48BFE3") + "15", borderColor: assignedSlot.colorCode || "#48BFE3" }}
-                                  className="p-2 rounded-lg border shadow-2xs space-y-0.5 text-slate-900 font-bold"
-                                >
-                                  <div className="text-xs font-black uppercase text-[#003B3A]">
-                                    {assignedSlot.subjectName}
-                                  </div>
-                                  <div className="text-[11px] text-slate-700 font-medium">
-                                    {assignedSlot.teacherName || "Chưa xếp GV"}
-                                  </div>
-                                </div>
-                              ) : (
-                                <div className="py-1 px-2 rounded-md border border-slate-200/70 bg-slate-50/40 text-slate-300 text-xs font-medium inline-block">-</div>
-                              )}
-                            </td>
-                          );
-                        })}
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
-              </div>
-            </div>
-          ) : (
-            <div className="bg-slate-50 border border-dashed border-slate-300 rounded-xl p-8 text-center text-slate-400 font-semibold text-xs space-y-1">
-              <Building2 className="w-7 h-7 mx-auto text-slate-300" />
-              <p>Vui lòng chọn Cơ sở và Lớp học ở trên để tra cứu thời khóa biểu.</p>
-            </div>
-          )}
-        </div>
-      )}
-
-      {/* ===== TAB 3: TEACHER SCHEDULE LOOKUP ===== */}
-      {activeTab === "TEACHER_LOOKUP" && (
-        <div className="bg-white rounded-2xl p-4 sm:p-5 shadow-xs border border-slate-200 space-y-5">
-          {/* FILTER CONTROLS */}
-          <div className="bg-slate-50 p-4 rounded-xl border border-slate-200 grid grid-cols-1 md:grid-cols-12 gap-3 items-center">
-            <div className="md:col-span-5 space-y-1">
-              <label className="text-xs font-black text-slate-700 uppercase tracking-wide flex items-center gap-1.5">
-                <Filter className="w-3.5 h-3.5 text-[#48BFE3]" />
-                1. Tổ Chuyên Môn
-              </label>
-              <select
-                value={lookupDept}
-                onChange={e => {
-                  setLookupDept(e.target.value);
-                  setLookupTeacherId("");
-                }}
-                className="w-full bg-white border border-slate-300 rounded-lg px-3 py-2 text-xs font-bold text-slate-800 outline-none focus:border-[#48BFE3] transition-all"
-              >
-                <option value="ALL">-- Tất cả Tổ chuyên môn --</option>
-                {uniqueDepartments.map(d => (
-                  <option key={d} value={d}>{d}</option>
-                ))}
-              </select>
-            </div>
-
-            <div className="md:col-span-7 space-y-1">
-              <label className="text-xs font-black text-slate-700 uppercase tracking-wide flex items-center gap-1.5">
-                <Search className="w-3.5 h-3.5 text-[#48BFE3]" />
-                2. Chọn / Tìm Giáo Viên
-              </label>
-              <div className="flex gap-2">
-                <select
-                  value={lookupTeacherId}
-                  onChange={e => setLookupTeacherId(e.target.value)}
-                  className="flex-1 bg-white border border-slate-300 rounded-lg px-3 py-2 text-xs font-bold text-slate-800 outline-none focus:border-[#48BFE3] transition-all"
-                >
-                  <option value="">-- Chọn Giáo viên trong danh sách --</option>
-                  {deptFilteredTeachers.map((t: any) => (
-                    <option key={t.id} value={t.id}>
-                      {t.teacherName} {t.teacherCode ? `(${t.teacherCode})` : ''}
-                    </option>
-                  ))}
-                </select>
-
-                <input
-                  type="text"
-                  placeholder="Hoặc gõ tên GV..."
-                  value={lookupSearchQuery}
-                  onChange={e => setLookupSearchQuery(e.target.value)}
-                  className="w-40 bg-white border border-slate-300 rounded-lg px-3 py-2 text-xs font-bold text-slate-800 outline-none focus:border-[#48BFE3] transition-all"
-                />
-              </div>
-            </div>
-          </div>
-
-          {/* TEACHER INFO BADGE */}
-          {selectedTeacherObj ? (
-            <div className="space-y-4">
-              <div className="bg-gradient-to-r from-[#003B3A] to-[#48BFE3] text-white p-4 rounded-xl shadow-xs flex flex-col sm:flex-row sm:items-center justify-between gap-3">
-                <div className="flex items-center gap-3">
-                  <div className="w-10 h-10 rounded-xl bg-white/20 flex items-center justify-center font-black text-lg text-white">
-                    {selectedTeacherObj.teacherName?.charAt(0) || "GV"}
-                  </div>
-                  <div>
-                    <h2 className="text-sm font-black uppercase tracking-wide flex items-center gap-2">
-                      {selectedTeacherObj.teacherName}
-                      <span className="text-[10px] bg-white/20 px-2 py-0.5 rounded-md normal-case">
-                        {selectedTeacherObj.teacherCode || "GV"}
-                      </span>
-                    </h2>
-                    <p className="text-xs text-teal-100 font-medium mt-0.5">
-                      Tổ chuyên môn: <strong className="text-white">{selectedTeacherObj.departmentRel?.name || selectedTeacherObj.departmentName || "Tổ chuyên môn"}</strong>
-                    </p>
-                  </div>
-                </div>
-
-                <div className="bg-white/15 px-3 py-1.5 rounded-lg text-right">
-                  <div className="text-[10px] text-teal-100 uppercase font-black">Tổng tiết dạy / tuần</div>
-                  <div className="text-sm font-black text-white">{teacherScheduleStats.totalPeriods} tiết</div>
-                </div>
-              </div>
-
-              {/* WEEKLY TIMETABLE TABLE MATRIX FOR TEACHER */}
-              <div className="overflow-x-auto border border-slate-200 rounded-xl shadow-2xs">
-                <table className="w-full text-left text-xs border-collapse">
-                  <thead>
-                    <tr className="bg-[#003B3A] text-white font-black uppercase text-[11px] tracking-wider">
-                      <th className="p-2 text-center w-20 border-r border-teal-800">Buổi</th>
-                      <th className="p-2 text-center w-16 border-r border-teal-800">Tiết</th>
-                      {DAYS_OF_WEEK.map(d => (
-                        <th key={d.key} className="p-2 text-center border-r border-teal-800 min-w-[130px]">
-                          {d.label}
-                        </th>
-                      ))}
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {[1, 2, 3, 4].map((period, idx) => (
-                      <tr key={`morning-${period}`} className={idx % 2 === 0 ? "bg-white" : "bg-slate-50/70"}>
-                        {idx === 0 && (
-                          <td rowSpan={4} className="p-2 font-black text-center border-r border-slate-200 bg-amber-50/50 text-amber-900 uppercase tracking-wide text-xs">
-                            SÁNG
-                          </td>
-                        )}
-                        <td className="p-2 font-bold text-center border-r border-slate-200 text-slate-600 bg-slate-50">
-                          Tiết {period}
-                        </td>
-                        {DAYS_OF_WEEK.map(d => {
-                          const assignedSlot = teacherWeeklyMatrix[`${d.key}_MORNING_${period}`];
-                          return (
-                            <td key={d.key} className="p-1.5 border-r border-slate-200 text-center vertical-top">
-                              {assignedSlot ? (
-                                <div
-                                  style={{ backgroundColor: (assignedSlot.colorCode || "#48BFE3") + "15", borderColor: assignedSlot.colorCode || "#48BFE3" }}
-                                  className="p-2 rounded-lg border shadow-2xs space-y-0.5 text-slate-900 font-bold"
-                                >
-                                  <div className="text-xs font-black uppercase text-[#003B3A]">
-                                    {assignedSlot.subjectName}
-                                  </div>
-                                  <div className="text-[11px] text-slate-700 font-medium">
-                                    Lớp {assignedSlot.className}
-                                  </div>
-                                </div>
-                              ) : (
-                                <div className="py-1 px-2 rounded-md border border-slate-200/70 bg-slate-50/40 text-slate-300 text-xs font-medium inline-block">-</div>
-                              )}
-                            </td>
-                          );
-                        })}
-                      </tr>
-                    ))}
-                    {[1, 2, 3, 4].map((period, idx) => (
-                      <tr key={`afternoon-${period}`} className={idx % 2 === 0 ? "bg-white" : "bg-slate-50/70"}>
-                        {idx === 0 && (
-                          <td rowSpan={4} className="p-2 font-black text-center border-r border-slate-200 bg-sky-50/50 text-sky-900 uppercase tracking-wide text-xs">
-                            CHIỀU
-                          </td>
-                        )}
-                        <td className="p-2 font-bold text-center border-r border-slate-200 text-slate-600 bg-slate-50">
-                          Tiết {period}
-                        </td>
-                        {DAYS_OF_WEEK.map(d => {
-                          const assignedSlot = teacherWeeklyMatrix[`${d.key}_AFTERNOON_${period}`];
-                          return (
-                            <td key={d.key} className="p-1.5 border-r border-slate-200 text-center vertical-top">
-                              {assignedSlot ? (
-                                <div
-                                  style={{ backgroundColor: (assignedSlot.colorCode || "#48BFE3") + "15", borderColor: assignedSlot.colorCode || "#48BFE3" }}
-                                  className="p-2 rounded-lg border shadow-2xs space-y-0.5 text-slate-900 font-bold"
-                                >
-                                  <div className="text-xs font-black uppercase text-[#003B3A]">
-                                    {assignedSlot.subjectName}
-                                  </div>
-                                  <div className="text-[11px] text-slate-700 font-medium">
-                                    Lớp {assignedSlot.className}
-                                  </div>
-                                </div>
-                              ) : (
-                                <div className="py-1 px-2 rounded-md border border-slate-200/70 bg-slate-50/40 text-slate-300 text-xs font-medium inline-block">-</div>
-                              )}
-                            </td>
-                          );
-                        })}
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
-              </div>
-            </div>
-          ) : (
-            <div className="bg-slate-50 border border-dashed border-slate-300 rounded-xl p-8 text-center text-slate-400 font-semibold text-xs space-y-1">
-              <Search className="w-7 h-7 mx-auto text-slate-300" />
-              <p>Vui lòng chọn Tổ chuyên môn hoặc Giáo viên để tra cứu lịch dạy.</p>
-            </div>
-          )}
-        </div>
-      )}
-
-      {/* ===== TAB 4: FULL SCHOOL TIMETABLE MATRIX ===== */}
-      {activeTab === "SCHOOL_MATRIX" && (
-        <div className="bg-white rounded-2xl p-4 sm:p-5 shadow-xs border border-slate-200 space-y-4">
-          <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 pb-3 border-b border-slate-200">
-            <div>
-              <h3 className="font-black text-sm text-slate-900">Ma trận Thời khóa biểu Toàn trường</h3>
-              <p className="text-xs text-slate-500 mt-0.5">Tra cứu thời khóa biểu các lớp học theo Cơ sở & Cấp học</p>
-            </div>
-
-            <div className="flex items-center gap-2.5 w-full sm:w-auto">
-              <select
-                value={matrixCampusId}
-                onChange={e => setMatrixCampusId(e.target.value)}
-                className="text-xs font-bold py-1.5 px-2.5 rounded-lg border border-slate-200 bg-slate-50 focus:bg-white outline-none text-slate-800"
-              >
-                {initialData.campuses.map(c => <option key={c.id} value={c.id}>{c.campusName}</option>)}
-              </select>
-
-              <select
-                value={matrixLevel}
-                onChange={e => setMatrixLevel(e.target.value)}
-                className="text-xs font-bold py-1.5 px-2.5 rounded-lg border border-slate-200 bg-slate-50 focus:bg-white outline-none text-slate-800"
-              >
-                <option value="TIEU_HOC">Tiểu học (Khối 1 - 5)</option>
-                <option value="TRUNG_HOC">Trung học (Khối 6 - 12)</option>
-              </select>
-            </div>
-          </div>
-
-          <div className="overflow-x-auto border border-slate-200 rounded-xl shadow-2xs">
-            <table className="w-full border-collapse text-xs">
-              <thead>
-                <tr className="bg-slate-100 text-slate-800 font-black uppercase border-b border-slate-200 text-[11px]">
-                  <th className="py-2 px-2 border-r border-slate-200 w-16">Thứ</th>
-                  <th className="py-2 px-2 border-r border-slate-200 w-12">Tiết</th>
-                  {matrixClasses.map(c => (
-                    <th key={c.id} className="py-2 px-2 text-center border-r border-slate-200 last:border-r-0 font-black min-w-[110px]">
-                      {c.className}
-                    </th>
-                  ))}
                 </tr>
-              </thead>
-              <tbody className="divide-y divide-slate-200">
-                {DAYS_OF_WEEK.map(day => (
-                  PERIODS.map((period, pIdx) => (
-                    <tr key={`${day.key}-${period}`} className="hover:bg-slate-50">
-                      {pIdx === 0 && (
-                        <td rowSpan={4} className="py-2 px-1 text-center font-extrabold bg-slate-50 border-r border-slate-200 text-slate-800 text-xs">
-                          {day.short}
-                        </td>
-                      )}
-                      <td className="py-1.5 px-1 text-center font-bold bg-slate-50/50 border-r border-slate-200 text-slate-600">
-                        T{period}
-                      </td>
-                      {matrixClasses.map(c => {
-                        const slot = initialData.timetableSlots.find(s => s.classId === c.id && s.dayOfWeek === day.key && s.periodNumber === period && s.session === "MORNING")
-                        return (
-                          <td key={c.id} className="p-1 border-r border-slate-200 last:border-r-0 text-center">
-                            {slot ? (
-                              <div className="p-1 rounded border text-[11px] font-semibold" style={{ backgroundColor: (slot.colorCode || "#48BFE3") + "15", borderColor: slot.colorCode || "#48BFE3" }}>
-                                <p className="font-extrabold text-slate-900 truncate">{slot.subjectName}</p>
-                                <p className="text-[10px] text-slate-500 truncate">{slot.teacherName}</p>
-                              </div>
-                            ) : (
-                              <div className="py-1 px-2 rounded-md border border-slate-200/70 bg-slate-50/40 text-slate-300 text-xs font-medium inline-block">-</div>
-                            )}
-                          </td>
-                        )
-                      })}
-                    </tr>
-                  ))
-                ))}
-              </tbody>
-            </table>
-          </div>
-        </div>
-      )}
+              )
+            })}
+          </tbody>
+        </table>
+      </div>
     </div>
   )
 }

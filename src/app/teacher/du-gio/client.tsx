@@ -428,6 +428,7 @@ interface ObservationClientProps {
   academicYears?: { id: string; name: string; status: string }[]
   selectedYearId?: string
   initialReceivedEvaluations?: any[]
+  prefillTkb?: any
 }
 
 const CRITERIA_LABELS = [
@@ -803,6 +804,7 @@ export function ObservationClient(props: ObservationClientProps) {
   const [isSearching, setIsSearching] = useState(false)
   const [showCreateModal, setShowCreateModal] = useState(false)
   const [creationMode, setCreationMode] = useState<"TEACHER_OPEN" | "CAMPUS_SCHEDULE" | "OBSERVER_REQUEST" | "SURPRISE" | "ASSIGNED">("TEACHER_OPEN")
+  const [linkedTkbSlotId, setLinkedTkbSlotId] = useState<string>("")
 
   const minAllowedDate = useMemo(() => {
     const now = new Date();
@@ -1466,6 +1468,43 @@ export function ObservationClient(props: ObservationClientProps) {
   useEffect(() => {
     setSlots(initialSlots)
   }, [initialSlots])
+
+  useEffect(() => {
+    if (!props.prefillTkb) return;
+    if (!props.prefillTkb.valid) {
+      setToast({ message: props.prefillTkb.error || "Tiết TKB không hợp lệ để dự giờ.", type: "error" });
+      return;
+    }
+    const s = props.prefillTkb.slot;
+    const dateVal = props.prefillTkb.tkbDate || new Date().toISOString().slice(0, 10);
+    const periodText = `Tiết ${s.periodNumber}`;
+    setLinkedTkbSlotId(s.id);
+    if (currentTeacher?.id && s.teacherId === currentTeacher.id) {
+      setCreationMode("TEACHER_OPEN");
+      if (s.campusId) setNewCampusId(s.campusId);
+      if (s.classId) setNewClassId(s.classId);
+      if (s.className) setNewClassNameText(s.className);
+      if (s.subjectId) setNewSubjectId(s.subjectId);
+      if (s.subjectName) setNewSubjectName(s.subjectName);
+      if (s.level) setNewLevel(s.level);
+      if (s.grade) setNewGrade(`Khối ${s.grade}`);
+      setNewDate(dateVal);
+      setNewStartTime(periodText);
+      setNewEndTime(periodText);
+      setShowCreateModal(true);
+    } else {
+      setCreationMode("OBSERVER_REQUEST");
+      if (s.campusId) setReqCampusId(s.campusId);
+      if (s.teacherId) setReqTeacherId(s.teacherId);
+      if (s.classId) setReqClassId(s.classId);
+      if (s.subjectId) setReqSubjectId(s.subjectId);
+      if (s.level) setReqLevel(s.level);
+      if (s.grade) setReqGrade(`Khối ${s.grade}`);
+      setReqDate(dateVal);
+      setReqPeriod(periodText);
+      setShowCreateModal(true);
+    }
+  }, [props.prefillTkb, currentTeacher?.id]);
 
   useEffect(() => {
     if (newDate) {
@@ -3180,6 +3219,7 @@ export function ObservationClient(props: ObservationClientProps) {
           period: reqPeriod,
           notes: reqNotes,
           academicYearId: filterAcademicYearId,
+          tkbSlotId: linkedTkbSlotId || undefined,
         })
         setSubmitting(false)
         if (res.success) {
@@ -3271,7 +3311,8 @@ export function ObservationClient(props: ObservationClientProps) {
         campusId: newCampusId, campusName: campusNameStr,
         classId: (newClassId && newClassId !== "other") ? newClassId : undefined,
         className: classNameStr,
-        lessonPlanName: newLessonPlanName || undefined, lessonPlanData: newLessonPlanData || undefined
+        lessonPlanName: newLessonPlanName || undefined, lessonPlanData: newLessonPlanData || undefined,
+        tkbSlotId: linkedTkbSlotId || undefined
       });
     }
     setSubmitting(false)

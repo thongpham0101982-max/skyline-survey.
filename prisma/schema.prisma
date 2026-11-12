@@ -2158,34 +2158,267 @@ model SubjectGradeEntry {
 
 
 model TimetableSlot {
-  id               String   @id @default(cuid())
-  academicYearId   String?
-  campusId         String?
-  level            String   @default("TIEU_HOC")
-  grade            String   @default("K1")
-  classId          String?
-  className        String
-  dayOfWeek        String
-  session          String   @default("MORNING")
-  periodNumber     Int      @default(1)
+  id                   String   @id @default(cuid())
+  versionId            String?
+  academicYearId       String?
+  semester             Int?     @default(1)
+  campusId             String?
+  level                String   @default("TIEU_HOC")
+  grade                String   @default("K1")
+  classId              String?
+  className            String
+  dayOfWeek            String
+  session              String   @default("MORNING")
+  periodNumber         Int      @default(1)
 
-  subjectId        String?
-  subjectName      String?
-  teacherId        String?
-  teacherName      String?
+  subjectId            String?
+  subjectName          String?
+  teacherId            String?
+  teacherName          String?
 
-  weekType         String   @default("ALL")
-  altSubjectName   String?
-  altTeacherName   String?
-  colorCode        String?  @default("#3B82F6")
+  roomId               String?
+  roomCode             String?
+  roomName             String?
 
-  status           String   @default("ACTIVE")
-  createdAt        DateTime @default(now())
-  updatedAt        DateTime @updatedAt
+  coTeacherId          String?
+  coTeacherCode        String?
+  coTeacherName        String?
+
+  assistantTeacherId   String?
+  assistantTeacherCode String?
+  assistantTeacherName String?
+
+  weekType             String   @default("ALL")
+  altSubjectId         String?
+  altSubjectName       String?
+  altTeacherId         String?
+  altTeacherCode       String?
+  altTeacherName       String?
+  altRoomId            String?
+  altRoomName          String?
+
+  isLocked             Boolean  @default(false)
+  blockGroupId         String?
+  slotRevision         Int      @default(1)
+  notes                String?
+  updatedById          String?
+  colorCode            String?  @default("#00A19A")
+
+  status               String   @default("ACTIVE")
+  createdAt            DateTime @default(now())
+  updatedAt            DateTime @updatedAt
 
   @@index([campusId])
   @@index([classId])
   @@index([academicYearId])
+  @@index([versionId])
+  @@index([teacherId, dayOfWeek, session, periodNumber])
+  @@index([coTeacherId, dayOfWeek])
+  @@index([assistantTeacherId, dayOfWeek])
+  @@index([altTeacherId, dayOfWeek])
+  @@index([roomId, dayOfWeek, session, periodNumber])
+}
+
+model TimetableVersion {
+  id              String    @id @default(cuid())
+  code            String    @unique
+  name            String
+  academicYearId  String
+  semester        Int       @default(1)
+  scopeGroup      String
+  campusId        String
+  levelCode       String
+  versionNumber   Int       @default(1)
+  status          String    @default("DRAFT")
+  effectiveFrom   String?
+  effectiveTo     String?
+  baseVersionId   String?
+  revision        Int       @default(1)
+  reviewComment   String?
+  notes           String?
+  submittedById   String?
+  submittedByName String?
+  submittedAt     DateTime?
+  approvedById    String?
+  approvedByName  String?
+  approvedAt      DateTime?
+  publishedById   String?
+  publishedByName String?
+  publishedAt     DateTime?
+  returnedById    String?
+  returnedByName  String?
+  returnedAt      DateTime?
+  expiredAt       DateTime?
+  createdById     String?
+  createdByName   String?
+  createdAt       DateTime  @default(now())
+  updatedAt       DateTime  @default(now()) @updatedAt
+
+  @@index([academicYearId, semester, campusId, scopeGroup, status])
+  @@index([campusId, status, effectiveFrom, effectiveTo])
+  @@map("timetable_versions")
+}
+
+model TimetableConfig {
+  id                      String   @id @default(cuid())
+  academicYearId          String
+  semester                Int      @default(1)
+  campusId                String
+  scopeGroup              String
+  levelCode               String   @default("ALL")
+  workingDaysJson         String   @default("[\"MONDAY\",\"TUESDAY\",\"WEDNESDAY\",\"THURSDAY\",\"FRIDAY\"]")
+  morningPeriods          Int      @default(4)
+  afternoonPeriods        Int      @default(4)
+  periodTimesJson         String   @default("[]")
+  cycleWeeks              Int      @default(2)
+  cycleAnchorDate         String?
+  fixedSlotsJson          String   @default("[]")
+  blockRulesJson          String   @default("[]")
+  limitsAndPrioritiesJson String   @default("{}")
+  effectiveFrom           String?
+  effectiveTo             String?
+  status                  String   @default("ACTIVE")
+  updatedById             String?
+  updatedByName           String?
+  createdAt               DateTime @default(now())
+  updatedAt               DateTime @default(now()) @updatedAt
+
+  @@unique([academicYearId, semester, campusId, scopeGroup, levelCode])
+  @@map("timetable_configs")
+}
+
+model TimetableRoom {
+  id                    String   @id @default(cuid())
+  campusId              String
+  roomCode              String
+  roomName              String
+  roomType              String   @default("CLASSROOM")
+  capacity              Int      @default(35)
+  allowedSubjectIdsJson String   @default("[]")
+  assignedClassId       String?
+  effectiveFrom         String?
+  effectiveTo           String?
+  status                String   @default("ACTIVE")
+  notes                 String?
+  createdAt             DateTime @default(now())
+  updatedAt             DateTime @default(now()) @updatedAt
+
+  @@unique([campusId, roomCode])
+  @@index([campusId, roomType, status])
+  @@map("timetable_rooms")
+}
+
+model TimetableBusySlot {
+  id             String   @id @default(cuid())
+  academicYearId String
+  semester       Int      @default(1)
+  targetType     String
+  targetId       String
+  campusId       String?
+  dayOfWeek      String
+  session        String
+  periodNumber   Int
+  startTime      String?
+  endTime        String?
+  weekType       String   @default("ALL")
+  reason         String?
+  effectiveFrom  String?
+  effectiveTo    String?
+  status         String   @default("ACTIVE")
+  createdById    String?
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @default(now()) @updatedAt
+
+  @@index([academicYearId, semester, targetType, targetId, status])
+  @@map("timetable_busy_slots")
+}
+
+model TimetableTravelRule {
+  id               String   @id @default(cuid())
+  academicYearId   String
+  fromCampusId     String
+  toCampusId       String
+  minTravelMinutes Int      @default(40)
+  allowSameSession Boolean  @default(false)
+  allowSameDay     Boolean  @default(true)
+  effectiveFrom    String?
+  effectiveTo      String?
+  notes            String?
+  updatedById      String?
+  createdAt        DateTime @default(now())
+  updatedAt        DateTime @default(now()) @updatedAt
+
+  @@unique([academicYearId, fromCampusId, toCampusId])
+  @@map("timetable_travel_rules")
+}
+
+model TimetableSubstitution {
+  id                    String    @id @default(cuid())
+  academicYearId        String
+  semester              Int       @default(1)
+  campusId              String
+  versionId             String?
+  slotId                String?
+  targetDate            String
+  actionType            String
+  classId               String
+  className             String
+  dayOfWeek             String
+  session               String
+  periodNumber          Int
+  originalSubjectId     String?
+  originalSubjectName   String?
+  originalTeacherId     String?
+  originalTeacherCode   String?
+  originalTeacherName   String?
+  originalRoomId        String?
+  originalRoomName      String?
+  newSubjectId          String?
+  newSubjectName        String?
+  substituteTeacherId   String?
+  substituteTeacherCode String?
+  substituteTeacherName String?
+  newRoomId             String?
+  newRoomName           String?
+  swapTargetDate        String?
+  swapDayOfWeek         String?
+  swapSession           String?
+  swapPeriodNumber      Int?
+  swapSlotId            String?
+  beforeSnapshotJson    String    @default("{}")
+  afterSnapshotJson     String    @default("{}")
+  reason                String
+  status                String    @default("ACTIVE")
+  createdById           String
+  createdByName         String
+  cancelledById         String?
+  cancelledAt           DateTime?
+  createdAt             DateTime  @default(now())
+  updatedAt             DateTime  @default(now()) @updatedAt
+
+  @@index([targetDate, campusId, status])
+  @@index([classId, targetDate, status])
+  @@index([originalTeacherId, targetDate, status])
+  @@index([substituteTeacherId, targetDate, status])
+  @@map("timetable_substitutions")
+}
+
+model TimetableAuditLog {
+  id         String   @id @default(cuid())
+  versionId  String?
+  campusId   String?
+  actorId    String
+  actorName  String
+  actorRole  String
+  action     String
+  summary    String
+  beforeJson String?
+  afterJson  String?
+  createdAt  DateTime @default(now())
+
+  @@index([versionId, createdAt])
+  @@index([campusId, createdAt])
+  @@map("timetable_audit_logs")
 }
 
 

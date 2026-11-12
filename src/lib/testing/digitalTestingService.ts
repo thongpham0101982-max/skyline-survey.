@@ -16,6 +16,7 @@ import {
   generatePrintableOmrSheetHtml,
 } from "@/lib/testing/omrAndShuffleEngine";
 import { verifyMoodleQuizConfiguration, fetchMoodleQuizAttempts } from "@/lib/testing/moodleClient";
+import { checkProctorTimetableConflict } from "@/lib/timetable/effectiveScheduleService";
 
 export interface MatrixCellInput {
   topicId?: string;
@@ -710,6 +711,7 @@ export async function checkProctorScheduleConflict(params: {
   endTime: string;
   slotNumber?: number | null;
   excludeSessionId?: string;
+  campusId?: string | null;
 }): Promise<string | null> {
   const warnings: string[] = [];
 
@@ -746,28 +748,18 @@ export async function checkProctorScheduleConflict(params: {
     }
   }
 
-  // 2. Check TimetableSlot teaching schedule
-  const jsDay = params.examDate.getDay(); // 0=Sun, 1=Mon...
-  const dayOfWeek = String(jsDay === 0 ? 8 : jsDay + 1); // Vietnam "2"=Mon .. "7"=Sat
-
-  if (params.slotNumber) {
-    try {
-      const timetableConflicts = await prisma.timetableSlot.findMany({
-        where: {
-          teacherId: params.teacherId,
-          dayOfWeek,
-          periodNumber: params.slotNumber,
-        },
-        take: 2,
-      });
-      if (timetableConflicts.length > 0) {
-        warnings.push(
-          `Trùng lịch giảng dạy TKB (Thứ ${dayOfWeek}, Tiết ${params.slotNumber} - Lớp ${timetableConflicts[0].className})`
-        );
-      }
-    } catch {
-      // Ignore if TimetableSlot query fails
-    }
+  // 2. Check actual effective Timetable schedule (published versions, week parity, date substitutions, clock overlap & inter-campus travel)
+  try {
+    const tkbWarnings = await checkProctorTimetableConflict({
+      teacherId: params.teacherId,
+      examDate: params.examDate,
+      startTime: params.startTime,
+      endTime: params.endTime,
+      examCampusId: params.campusId || null,
+    });
+    warnings.push(...tkbWarnings);
+  } catch {
+    // Graceful fallback if timetable tables are unavailable
   }
 
   return warnings.length > 0 ? warnings.join("; ") : null;

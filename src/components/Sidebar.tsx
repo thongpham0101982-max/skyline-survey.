@@ -436,7 +436,7 @@ function SidebarContent({ role, permissionModules, actualRole, taskCount = 0, is
                 <div 
                   className={`overflow-hidden transition-all duration-350 ease-in-out space-y-1 ${
                     (expandedCategories[cat.id] ?? hasActiveChild)
-                      ? "max-h-[800px] opacity-100 visible mt-1" 
+                      ? "max-h-[1400px] opacity-100 visible mt-1" 
                       : "max-h-0 opacity-0 invisible"
                   }`}
                 >
@@ -453,14 +453,23 @@ function SidebarContent({ role, permissionModules, actualRole, taskCount = 0, is
                       hoverText: "group-hover:text-[#48BFE3]"
                     };
 
-                    const hasSubModules = !isCollapsed && m.subModules && m.subModules.length > 0;
+                    const rawSubModules = m.subModules || [];
+                    const permittedSubModules = isSuperAdmin
+                      ? rawSubModules
+                      : rawSubModules.filter((sub: any) => permissionModules?.includes(sub.code));
+                    const effectiveSubModules = permittedSubModules.length > 0 ? permittedSubModules : rawSubModules;
+                    const hasSubModules = !isCollapsed && effectiveSubModules.length > 0;
+                    const effectiveHref =
+                      !isSuperAdmin && permittedSubModules.length > 0 && permittedSubModules.length < rawSubModules.length
+                        ? permittedSubModules[0]?.href || m.href
+                        : m.href;
                     const isSubExpanded = expandedSubModules[m.code] ?? (isActive || m.code === "QL_DGNL" || m.code === "COMPETENCY_ASSESSMENT");
 
                     return (
                       <div key={m.code} className="space-y-1 mb-1.5">
                         <div className="flex items-center">
                           <Link 
-                            href={m.href}
+                            href={effectiveHref}
                             onClick={() => {
                               if (!hasSubModules) setIsOpen(false);
                             }}
@@ -510,9 +519,12 @@ function SidebarContent({ role, permissionModules, actualRole, taskCount = 0, is
                         {/* Render SubModules dropdown */}
                         {hasSubModules && isSubExpanded && (
                           <div className="pl-9 pr-1 space-y-1 py-1 border-l-2 border-teal-500/30 ml-4 animate-in fade-in slide-in-from-top-1 duration-200">
-                            {m.subModules.map((sub: any) => {
+                            {effectiveSubModules.map((sub: any) => {
                               const currentTab = searchParams?.get("tab");
-                              const isSubActive = pathname === sub.href || (sub.href?.includes("?") && pathname === sub.href.split("?")[0] && currentTab && sub.href.includes(`tab=${currentTab}`));
+                              const isSubActive =
+                                pathname === sub.href ||
+                                (sub.href && sub.href !== m.href && !sub.href.includes("?") && pathname.startsWith(sub.href + "/")) ||
+                                (sub.href?.includes("?") && pathname === sub.href.split("?")[0] && currentTab && sub.href.includes(`tab=${currentTab}`));
                               return (
                                 <Link
                                   key={sub.code}
@@ -1873,6 +1885,17 @@ function SidebarContent({ role, permissionModules, actualRole, taskCount = 0, is
               >
                 <LayoutDashboard className="w-4 h-4 mr-2.5 text-teal-300 shrink-0" />
                 {!isCollapsed && <span className="whitespace-nowrap overflow-hidden text-ellipsis">{SIDEBAR_TRANSLATIONS.parentNav.overview[lang]}</span>}
+              </Link>
+
+              <Link 
+                href="/parent/thoi-khoa-bieu" 
+                onClick={() => setIsOpen(false)} 
+                className={`group relative flex items-center ${isCollapsed ? 'justify-center px-2' : 'px-3'} py-2.5 rounded-xl transition-all text-xs font-medium ${
+                  pathname.startsWith('/parent/thoi-khoa-bieu') ? "bg-teal-500/35 text-white border border-teal-400/60" : "text-white/85 hover:text-white hover:bg-white/10"
+                }`}
+              >
+                <Calendar className="w-4 h-4 mr-2.5 text-teal-300 shrink-0" />
+                {!isCollapsed && <span className="whitespace-nowrap overflow-hidden text-ellipsis">{SIDEBAR_TRANSLATIONS.parentNav.timetable?.[lang] || (lang === "en" ? "Timetable" : "Thời khóa biểu")}</span>}
               </Link>
 
               <Link 

@@ -8,6 +8,7 @@ import { getObservationData, getObservationSlots } from "./actions"
 import { ObservationClient } from "./client"
 import { isAssignedSlotCreator } from "./utils"
 import { prisma } from "@/lib/db"
+import { verifyTimetableSlotForObservation } from "@/lib/timetable/effectiveScheduleService"
 
 export default async function ObservationPage(props: {
   searchParams: Promise<{ [key: string]: string | undefined }>
@@ -112,9 +113,19 @@ export default async function ObservationPage(props: {
       )
     : [];
 
+  let prefillTkb: any = null;
+  if (searchParams.tkbSlotId) {
+    const verified = await verifyTimetableSlotForObservation({
+      slotId: searchParams.tkbSlotId,
+      targetDateIso: searchParams.tkbDate,
+    });
+    prefillTkb = { ...verified, tkbDate: searchParams.tkbDate || "" };
+  }
+
   return (
     <Suspense fallback={<div className="p-8 text-center text-slate-500 font-medium">Đang tải dữ liệu Dự giờ...</div>}>
       <ObservationClient
+      prefillTkb={prefillTkb}
       isPreschoolPage={false}
       initialSlots={loadedSlots}
       currentTeacher={refDataResult.currentTeacher}

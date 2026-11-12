@@ -1,29 +1,39 @@
-export const dynamic = "force-dynamic"
-export const revalidate = 0
-
-import { auth } from "@/lib/auth"
 import { redirect } from "next/navigation"
-import TimetableClient from "@/app/admin/thoi-khoa-bieu/client"
-import { getTimetableMatrixData } from "@/app/admin/thoi-khoa-bieu/actions"
+import { auth } from "@/lib/auth"
+import { getTimetableOverviewAction } from "./actions"
+import { OverviewClient } from "./OverviewClient"
 
-export default async function TimetablePage(props: {
-  searchParams: Promise<{ campusId?: string; level?: string }>
+export const dynamic = "force-dynamic"
+
+export default async function TimetableOverviewPage(props: {
+  searchParams: Promise<{ [key: string]: string | undefined }>
 }) {
   const session = await auth()
-  if (!session) {
+  if (!session?.user) {
     redirect("/login")
   }
 
-  const searchParams = await props.searchParams
-  const initialData = await getTimetableMatrixData(searchParams.campusId, searchParams.level || "TIEU_HOC")
+  const sp = await props.searchParams
+  const resolvedScopeGroup =
+    sp.scopeGroup ||
+    (sp.level === "TIEU_HOC" || sp.level === "TRUNG_HOC" || sp.level === "HILL"
+      ? sp.level
+      : undefined)
+  const res = await getTimetableOverviewAction({
+    academicYearId: sp.academicYearId,
+    semester: sp.semester ? Number(sp.semester) : undefined,
+    scopeGroup: resolvedScopeGroup as any,
+    campusId: sp.campusId,
+    versionId: sp.versionId,
+  })
 
-  if (!initialData.success) {
+  if (!res.success) {
     return (
-      <div className="p-6 bg-rose-50 border border-rose-200 rounded-2xl text-rose-700 font-bold text-xs">
-        Lỗi nạp dữ liệu Thời khóa biểu: {initialData.error || "Không thể tải ma trận Thời khóa biểu."}
+      <div className="p-6 bg-white rounded-2xl border border-[#E2E8F0] text-xs text-[#E11D48] font-semibold">
+        {res.error}
       </div>
     )
   }
 
-  return <TimetableClient initialData={initialData} />
+  return <OverviewClient initialData={res} />
 }

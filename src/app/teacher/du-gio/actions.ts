@@ -2,6 +2,7 @@
 "use server"
 
 import { buildAssignedCreatorTag, getAssignedCreatorTeacherId, isAssignedSlotCreator } from "./utils"
+import { verifyTimetableSlotForObservation } from "@/lib/timetable/effectiveScheduleService"
 
 function getTeacherResolvedEmail(teacher: any, allowSystemEmail = false): string | null {
   if (!teacher) return null;
@@ -911,12 +912,27 @@ export async function createObservationSlot(data: {
   sendEmailNotif?: boolean
   notifMode?: string
   selectedMemberIds?: string[]
+  tkbSlotId?: string
 }) {
   try {
     invalidateObservationSlotsCache();
     const session = await auth()
     if (!session || !session.user) {
       return { success: false, error: "Unauthorized" }
+    }
+    if (data.tkbSlotId) {
+      const tkbVerify = await verifyTimetableSlotForObservation({
+        slotId: data.tkbSlotId,
+        targetDateIso: data.date,
+      });
+      if (!tkbVerify.valid) {
+        return { success: false, error: tkbVerify.error };
+      }
+      data.classId = tkbVerify.slot.classId;
+      data.className = tkbVerify.slot.className;
+      if (tkbVerify.slot.campusId) data.campusId = tkbVerify.slot.campusId;
+      if (tkbVerify.slot.subjectId) data.subjectId = tkbVerify.slot.subjectId;
+      if (tkbVerify.slot.subjectName) data.subjectName = tkbVerify.slot.subjectName;
     }
 
     const currentTeacher = await prisma.teacher.findUnique({
@@ -3190,12 +3206,27 @@ export async function requestObservationSlot(data: {
   room?: string
   notes?: string
   academicYearId?: string
+  tkbSlotId?: string
 }) {
   try {
     invalidateObservationSlotsCache();
     const session = await auth()
     if (!session || !session.user) {
       return { success: false, error: "Unauthorized" }
+    }
+    if (data.tkbSlotId) {
+      const tkbVerify = await verifyTimetableSlotForObservation({
+        slotId: data.tkbSlotId,
+        targetDateIso: data.date,
+      });
+      if (!tkbVerify.valid) {
+        return { success: false, error: tkbVerify.error };
+      }
+      data.classId = tkbVerify.slot.classId;
+      data.className = tkbVerify.slot.className;
+      if (tkbVerify.slot.teacherId) data.targetTeacherId = tkbVerify.slot.teacherId;
+      if (tkbVerify.slot.subjectId) data.subjectId = tkbVerify.slot.subjectId;
+      if (tkbVerify.slot.subjectName) data.subjectName = tkbVerify.slot.subjectName;
     }
 
     const roleCode = (session.user as any)?.role || "TEACHER";

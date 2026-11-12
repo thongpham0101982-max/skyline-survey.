@@ -50,6 +50,23 @@ export async function getRolePermissions(roleCode: string): Promise<any[]> {
       perms.push({ ...studentInfoPerm, module: "KQKS_K12" })
       perms.push({ ...studentInfoPerm, module: "KQKS_MAM_NON" })
     }
+    const timetablePerm = perms.find((p: any) => p.module === "TIMETABLE")
+    if (timetablePerm) {
+      const timetableSubCodes = [
+        "TIMETABLE_OVERVIEW",
+        "TIMETABLE_CONFIG",
+        "TIMETABLE_QUOTA",
+        "TIMETABLE_SCHEDULE",
+        "TIMETABLE_LOOKUP",
+        "TIMETABLE_ADJUST",
+        "TIMETABLE_PUBLISH",
+      ]
+      for (const sc of timetableSubCodes) {
+        if (!perms.some((p: any) => p.module === sc)) {
+          perms.push({ ...timetablePerm, module: sc })
+        }
+      }
+    }
     return perms
   } catch (err) {
     console.error("Error fetching permissions for role:", roleCode, err)
@@ -216,7 +233,14 @@ export async function hasModulePermission(
     return true
   }
 
-  const moduleList = Array.isArray(modules) ? modules : [modules]
+  const rawModuleList = Array.isArray(modules) ? modules : [modules]
+  const expandedModules = new Set<string>(rawModuleList)
+  for (const mod of rawModuleList) {
+    if (mod.startsWith("TIMETABLE_")) {
+      expandedModules.add("TIMETABLE")
+    }
+  }
+  const moduleList = Array.from(expandedModules)
   const variants = getRoleVariants(roleCode)
   const pAny = prisma as any
 
