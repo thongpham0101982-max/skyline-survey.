@@ -140,11 +140,16 @@ export async function deleteMultipleSubjects(ids: string[]) {
   } catch (e: any) { return { success: false, error: e.message } }
 }
 
-export async function bulkUpdateSubjects(ids: string[], data: { evaluationType?: string; category?: string }) {
+export async function bulkUpdateSubjects(
+  ids: string[],
+  data: { evaluationType?: string; category?: string; level?: string; parentId?: string | null }
+) {
   try {
     const updatePayload: any = {};
     if (data.evaluationType) updatePayload.evaluationType = data.evaluationType;
     if (data.category) updatePayload.category = data.category;
+    if (data.level) updatePayload.level = data.level;
+    if (data.parentId !== undefined) updatePayload.parentId = data.parentId || null;
 
     await prisma.subject.updateMany({
       where: { id: { in: ids } },

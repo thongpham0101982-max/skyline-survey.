@@ -46,7 +46,7 @@ async function main() {
     TIN_HOC: ["Tin học", "TIN HỌC", "TIN HOC", "Tin học / ICT", "ICT", "Tin", "DG_IT0", "CÔNG NGHỆ THÔNG TIN"],
     GTC: ["Giáo dục thể chất", "GIÁO DỤC THỂ CHẤT", "GDTC", "Thể dục", "THỂ DỤC", "DG_TC0"],
     AM_NHAC: ["Âm nhạc", "ÂM NHẠC", "AM NHAC", "Nhạc", "Music", "MUSIC", "DG_AN0"],
-    MI_THUAT: ["Mĩ thuật", "MĨ THUẬT", "Mỹ thuật", "MỸ THUẬT", "MI THUAT", "Art", "ART", "DG_MT0"],
+    MTU: ["MTU", "MI_THUAT", "Mĩ thuật", "MĨ THUẬT", "Mỹ thuật", "MỸ THUẬT", "MI THUAT", "Art", "ART", "DG_MT0"],
     VLI: ["Vật lí", "VẬT LÍ", "Vật lý", "VẬT LÝ", "VAT LI", "Lý", "LÝ", "DG_LI0", "DG_VL0"],
     HHO: ["Hóa học", "HÓA HỌC", "HOA HOC", "Hóa", "HÓA", "DG_HO0", "DG_HH0"],
     SHO: ["Sinh học", "SINH HỌC", "SINH HOC", "Sinh", "SINH", "DG_SI0", "DG_SH0"],

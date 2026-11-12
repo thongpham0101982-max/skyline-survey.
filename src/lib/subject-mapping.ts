@@ -318,12 +318,12 @@ export const SYSTEM_SUBJECTS: SubjectSystemDefinition[] = [
     description: "Môn Âm nhạc (Đánh giá nhận xét)"
   },
   {
-    code: "MI_THUAT",
+    code: "MTU",
     name: "Mĩ thuật",
     category: "MOET",
     evaluationType: "GRADE",
-    aliases: ["mi_thuat", "mtu", "mi thuat", "my thuat", "ve", "mon mi thuat", "art"],
-    assessmentCodes: ["MI_THUAT", "MTU"],
+    aliases: ["mtu", "mi_thuat", "mi thuat", "my thuat", "ve", "mon mi thuat", "mon my thuat", "art"],
+    assessmentCodes: ["MTU", "MI_THUAT", "DG_MT0"],
     description: "Môn Mĩ thuật (Đánh giá nhận xét)"
   },
   {

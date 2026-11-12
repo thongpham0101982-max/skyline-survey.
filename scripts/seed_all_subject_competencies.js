@@ -99,9 +99,9 @@ async function seedAll() {
       ]
     },
     {
-      subjectCode: "MI_THUAT",
+      subjectCode: "MTU",
       subjectName: "Mĩ thuật",
-      aliases: ["MĨ THUẬT", "MỸ THUẬT", "MI THUAT"],
+      aliases: ["MTU", "MI_THUAT", "MĨ THUẬT", "MỸ THUẬT", "MI THUAT"],
       competencies: [
         { code: "NL_MT_QUAN_SAT", name: "Quan sát và nhận thức thẩm mĩ", aliases: ["Quan sát và nhận thức thẩm mĩ", "Quan sát thẩm mĩ"] },
         { code: "NL_MT_SANG_TAO", name: "Sáng tạo và ứng dụng thẩm mĩ", aliases: ["Sáng tạo và ứng dụng thẩm mĩ", "Sáng tạo thẩm mĩ"] },
