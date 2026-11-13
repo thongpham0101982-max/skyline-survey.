@@ -107,6 +107,7 @@ import {
   doDateRangesOverlap,
   doesClassBelongToScope,
   isHillCampus,
+  mapEducationSystemToStudyProgram,
   resolveWeekParity,
 } from "@/lib/timetable/scopeResolver"
 import {
@@ -115,9 +116,19 @@ import {
   verifyClassesBelongToScope,
   verifyEditableVersion,
 } from "@/lib/timetable/rbac"
-import { reconcileQuotasAndAssignments } from "@/lib/timetable/quotaReconciler"
+import {
+  detectHighSchoolTrack,
+  reconcileQuotasAndAssignments,
+  resolveGradeQuotaValue,
+} from "@/lib/timetable/quotaReconciler"
 import { validateTimetable } from "@/lib/timetable/validator"
 import { runAutoScheduler } from "@/lib/timetable/autoScheduler"
+import {
+  buildBulkScopePlacement,
+  evaluateCellDropTarget,
+  makeSlotCellKey,
+  recomputeLiveQuotaItems,
+} from "@/lib/timetable/dragDropHelper"
 import {
   checkProctorTimetableConflict,
   getEffectiveClassWeekSchedule,
@@ -1057,5 +1068,217 @@ describe("SSM Sky-Line Timetable v2 — 8 Acceptance Scenarios", () => {
 
     expect(report.rules.find((r) => r.ruleCode === "R07_FIXED_SLOTS")?.status).toBe("VIOLATED")
     expect(report.rules.find((r) => r.ruleCode === "R08_BLOCK_RULES")?.status).toBe("VIOLATED")
+  })
+
+  it("Scenario 9: resolves THPT combination track quotas (10 TN, 10 XH, 11 TN, 11 XH, 12 TN, 12 XH) including explicit 0 periods", () => {
+    expect(detectHighSchoolTrack("10/1 TN")).toBe("TN")
+    expect(detectHighSchoolTrack("10/2 XH")).toBe("XH")
+    expect(detectHighSchoolTrack("11/1 XH")).toBe("XH")
+    expect(detectHighSchoolTrack("12/1 TN")).toBe("TN")
+    expect(detectHighSchoolTrack("12/2 XH")).toBe("XH")
+    expect(detectHighSchoolTrack("10A1")).toBeNull()
+
+    const taBgdQuota = {
+      id: "q-tabgd",
+      subjectId: "sub-tabgd",
+      academicYearId: "ay-2026",
+      studyProgram: "Hệ S",
+      quota: 0,
+      quotaPrimary: 0,
+      quotaMiddle: 0,
+      quotaHigh: 12,
+      quotaG1: 0, quotaG2: 0, quotaG3: 0, quotaG4: 0, quotaG5: 0,
+      quotaG6: 0, quotaG7: 0, quotaG8: 0, quotaG9: 0,
+      quotaG10: 2, quotaG11: 2, quotaG12: 4,
+      quotaG10TN: 2, quotaG10XH: 2,
+      quotaG11TN: 2, quotaG11XH: 0, // Explicitly 0 in 11 XH even though 11 TN / legacy G11 is 2
+      quotaG12TN: 4, quotaG12XH: 4,
+      specialNoteFlags: "G10TN",
+    }
+
+    expect(resolveGradeQuotaValue(taBgdQuota, 10, "THPT", "10/1 TN")).toBe(2)
+    expect(resolveGradeQuotaValue(taBgdQuota, 10, "THPT", "10/2 XH")).toBe(2)
+    expect(resolveGradeQuotaValue(taBgdQuota, 11, "THPT", "11/1 TN")).toBe(2)
+    expect(resolveGradeQuotaValue(taBgdQuota, 11, "THPT", "11/1 XH")).toBe(0)
+    expect(resolveGradeQuotaValue(taBgdQuota, 12, "THPT", "12/1 TN")).toBe(4)
+    expect(resolveGradeQuotaValue(taBgdQuota, 12, "THPT", "12/2 XH")).toBe(4)
+  })
+
+  it("Scenario 12: unifies education systems into canonical 2-system model (Hệ S & Hệ I)", () => {
+    expect(mapEducationSystemToStudyProgram("HNS")).toBe("Hệ S")
+    expect(mapEducationSystemToStudyProgram("MNS")).toBe("Hệ S")
+    expect(mapEducationSystemToStudyProgram("Hệ S")).toBe("Hệ S")
+
+    expect(mapEducationSystemToStudyProgram("HNG")).toBe("Hệ I")
+    expect(mapEducationSystemToStudyProgram("SB")).toBe("Hệ I")
+    expect(mapEducationSystemToStudyProgram("MNG")).toBe("Hệ I")
+    expect(mapEducationSystemToStudyProgram("Hệ Song Bằng")).toBe("Hệ I")
+    expect(mapEducationSystemToStudyProgram("Hệ S Quốc tế")).toBe("Hệ I")
+    expect(mapEducationSystemToStudyProgram("Hệ I")).toBe("Hệ I")
+  })
+
+  it("Scenario 13: evaluates drag-and-drop conflict preview, live quota counts, and bulk Bộ TKB setup placement", () => {
+    const cfg = makeBaseConfig()
+    const teachersById = new Map([
+      ["gv-1", { id: "gv-1", teacherCode: "GV001", teacherName: "Triệu Thùy Trang" }],
+      ["gv-2", { id: "gv-2", teacherCode: "GV002", teacherName: "Nguyễn Thị Mơ" }],
+    ])
+
+    const classes = [
+      { id: "c1", className: "1.1_CS1", grade: "1", level: "TIEU_HOC", homeroomTeacherId: "gv-1" },
+      { id: "c2", className: "1.2_CS1", grade: "1", level: "TIEU_HOC", homeroomTeacherId: "gv-2" },
+    ]
+
+    const baseQuotas = [
+      {
+        classId: "c1",
+        className: "1.1_CS1",
+        grade: "1",
+        level: "TIEU_HOC",
+        educationSystem: "HNS",
+        studyProgram: "Hệ S",
+        subjectId: "sub-math",
+        subjectCode: "TOAN",
+        subjectName: "Toán học",
+        weeklyQuota: 4,
+        cycleQuota: 8,
+        cycleWeeks: 2,
+        scheduledWeeklyEquivalent: 0,
+        missingWeeklyPeriods: 4,
+        overScheduledWeeklyPeriods: 0,
+        primaryTeacherId: "gv-1",
+        primaryTeacherCode: "GV001",
+        primaryTeacherName: "Triệu Thùy Trang",
+        coTeacherId: null,
+        coTeacherCode: null,
+        coTeacherName: null,
+        assignmentSource: "TEACHING_ASSIGNMENT" as const,
+        status: "UNDER_SCHEDULED" as const,
+      },
+    ]
+
+    // Bulk apply HĐTN across the entire Bộ TKB using Homeroom Teachers & lock
+    const bulk = buildBulkScopePlacement({
+      targetClasses: classes,
+      subjectId: "sub-hdtn",
+      subjectCode: "HDTN",
+      subjectName: "HĐTN/ GDCĐ",
+      dayOfWeek: "MONDAY",
+      session: "MORNING",
+      periodNumber: 1,
+      weekType: "ALL",
+      useHomeroomTeacher: true,
+      lockPlacedSlots: true,
+      overwriteUnlocked: true,
+      currentSlots: [],
+      quotaItems: baseQuotas,
+      teachersById,
+      campusId: "cs1",
+      config: cfg,
+      busySlots: [],
+      externalActiveSlots: [],
+      travelRules: [],
+    })
+
+    expect(bulk.appliedCount).toBe(2)
+    expect(bulk.nextSlots.every((s) => s.isLocked)).toBe(true)
+    expect(bulk.nextSlots.find((s) => s.classId === "c1")?.teacherId).toBe("gv-1")
+    expect(bulk.nextSlots.find((s) => s.classId === "c2")?.teacherId).toBe("gv-2")
+
+    // Suppose gv-1 is also teaching Class 1.2 at MONDAY MORNING Period 2
+    const currentSlots = [
+      ...bulk.nextSlots,
+      {
+        classId: "c2",
+        className: "1.2_CS1",
+        grade: "1",
+        level: "TIEU_HOC",
+        dayOfWeek: "MONDAY",
+        session: "MORNING",
+        periodNumber: 2,
+        subjectId: "sub-math",
+        subjectName: "Toán học",
+        teacherId: "gv-1",
+        teacherCode: "GV001",
+        teacherName: "Triệu Thùy Trang",
+        weekType: "ALL",
+        isLocked: false,
+      },
+    ]
+    const slotByCell = new Map(
+      currentSlots.map((s) => [
+        makeSlotCellKey(s.classId, s.dayOfWeek, s.session, s.periodNumber),
+        s,
+      ])
+    )
+
+    // Dragging Toán học (gv-1) onto c1 MONDAY MORNING P1 (locked) -> BLOCKED
+    const evalLocked = evaluateCellDropTarget({
+      dragged: { kind: "QUOTA_ACTIVITY", item: baseQuotas[0], weekType: "ALL" },
+      targetClass: classes[0],
+      dayOfWeek: "MONDAY",
+      session: "MORNING",
+      periodNumber: 1,
+      currentSlots,
+      slotByCell,
+      quotaItems: baseQuotas,
+      teachersById,
+      campusId: "cs1",
+      config: cfg,
+      busySlots: [],
+      externalActiveSlots: [],
+      travelRules: [],
+      autoLockManual: true,
+    })
+    expect(evalLocked.status).toBe("BLOCKED")
+
+    // Dragging Toán học (gv-1) onto c1 MONDAY MORNING P2 -> CONFLICT (gv-1 teaching 1.2_CS1)
+    const evalConflict = evaluateCellDropTarget({
+      dragged: { kind: "QUOTA_ACTIVITY", item: baseQuotas[0], weekType: "ALL" },
+      targetClass: classes[0],
+      dayOfWeek: "MONDAY",
+      session: "MORNING",
+      periodNumber: 2,
+      currentSlots,
+      slotByCell,
+      quotaItems: baseQuotas,
+      teachersById,
+      campusId: "cs1",
+      config: cfg,
+      busySlots: [],
+      externalActiveSlots: [],
+      travelRules: [],
+      autoLockManual: true,
+    })
+    expect(evalConflict.status).toBe("CONFLICT")
+    expect(evalConflict.reason).toContain("1.2_CS1")
+
+    // Dragging Toán học (gv-1) onto c1 MONDAY MORNING P3 -> VALID & auto-locked
+    const evalValid = evaluateCellDropTarget({
+      dragged: { kind: "QUOTA_ACTIVITY", item: baseQuotas[0], weekType: "ALL" },
+      targetClass: classes[0],
+      dayOfWeek: "MONDAY",
+      session: "MORNING",
+      periodNumber: 3,
+      currentSlots,
+      slotByCell,
+      quotaItems: baseQuotas,
+      teachersById,
+      campusId: "cs1",
+      config: cfg,
+      busySlots: [],
+      externalActiveSlots: [],
+      travelRules: [],
+      autoLockManual: true,
+    })
+    expect(evalValid.status).toBe("VALID")
+    expect(evalValid.resolvedSlot?.isLocked).toBe(true)
+
+    const recomputed = recomputeLiveQuotaItems(baseQuotas, [
+      ...currentSlots,
+      evalValid.resolvedSlot!,
+    ])
+    expect(recomputed[0].scheduledWeeklyEquivalent).toBe(1)
+    expect(recomputed[0].missingWeeklyPeriods).toBe(3)
   })
 })

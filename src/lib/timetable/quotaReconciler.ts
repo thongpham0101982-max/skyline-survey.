@@ -40,6 +40,13 @@ export interface SubjectQuotaRow {
   quotaG10: number
   quotaG11: number
   quotaG12: number
+  quotaG10TN?: number | null
+  quotaG10XH?: number | null
+  quotaG11TN?: number | null
+  quotaG11XH?: number | null
+  quotaG12TN?: number | null
+  quotaG12XH?: number | null
+  specialNoteFlags?: string | null
 }
 
 export interface TeachingAssignmentRow {
@@ -87,12 +94,31 @@ export function isHomeroomDefaultSubject(subject: SubjectRef): boolean {
   return HOMEROOM_SUBJECT_PATTERNS.some((p) => code === p || name.includes(p))
 }
 
+export function detectHighSchoolTrack(className?: string | null): "TN" | "XH" | null {
+  const raw = String(className || "").trim().toUpperCase()
+  if (!raw) return null
+  if (/(?:^|[\s/\-_(.])XH(?:$|[\s/\-_).])|XÃ\s*HỘI|XA\s*HOI|\dXH\b/.test(raw)) return "XH"
+  if (/(?:^|[\s/\-_(.])TN(?:$|[\s/\-_).])|TỰ\s*NHIÊN|TU\s*NHIEN|\dTN\b/.test(raw)) return "TN"
+  return null
+}
+
 export function resolveGradeQuotaValue(
   row: SubjectQuotaRow | undefined,
   gradeNum: number | null,
-  levelNorm: "TH" | "THCS" | "THPT" | "MN" | "OTHER"
+  levelNorm: "TH" | "THCS" | "THPT" | "MN" | "OTHER",
+  className?: string | null
 ): number {
   if (!row) return 0
+  if (gradeNum && (gradeNum === 10 || gradeNum === 11 || gradeNum === 12)) {
+    const track = detectHighSchoolTrack(className)
+    if (track) {
+      const trackKey = `quotaG${gradeNum}${track}` as keyof SubjectQuotaRow
+      const trackVal = row[trackKey]
+      if (trackVal !== null && trackVal !== undefined) {
+        return Number(trackVal) || 0
+      }
+    }
+  }
   if (gradeNum && gradeNum >= 1 && gradeNum <= 12) {
     const key = `quotaG${gradeNum}` as keyof SubjectQuotaRow
     const gradeSpecific = Number(row[key] || 0)
@@ -220,9 +246,10 @@ export function reconcileQuotasAndAssignments(params: {
     for (const sub of params.subjects) {
       const exactQuotaRow =
         quotaMap.get(`${sub.id}::${studyProgram}`) ||
-        quotaMap.get(`${sub.id}::DEFAULT`)
+        quotaMap.get(`${sub.id}::DEFAULT`) ||
+        (studyProgram === "DEFAULT" ? quotaMap.get(`${sub.id}::Hệ S`) : undefined)
 
-      const weeklyQuota = resolveGradeQuotaValue(exactQuotaRow, gradeNum, levelNorm)
+      const weeklyQuota = resolveGradeQuotaValue(exactQuotaRow, gradeNum, levelNorm, cls.className)
       const taRows = taMap.get(`${cls.id}::${sub.id}`) || []
       const ctqtRow = ctqtMap.get(`${cls.id}::${sub.id}`)
       const scheduledWeeklyEquivalent = scheduledMap.get(`${cls.id}::${sub.id}`) || 0

@@ -25,6 +25,7 @@ const ALTER_TIMETABLE_SLOT_COLUMNS = [
   `ALTER TABLE "TimetableSlot" ADD COLUMN "slotRevision" INTEGER NOT NULL DEFAULT 1`,
   `ALTER TABLE "TimetableSlot" ADD COLUMN "notes" TEXT`,
   `ALTER TABLE "TimetableSlot" ADD COLUMN "updatedById" TEXT`,
+  `ALTER TABLE "Subject" ADD COLUMN "isTimetableSchedulable" INTEGER NOT NULL DEFAULT 1`,
 ]
 
 const CREATE_TABLES_AND_INDEXES = [

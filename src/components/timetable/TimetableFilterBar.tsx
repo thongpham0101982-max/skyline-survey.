@@ -1,8 +1,47 @@
 "use client"
 
-import React from "react"
+import React, { useEffect } from "react"
 import type { LevelFilterCode, ScopeGroup } from "@/lib/timetable/types"
 import { VERSION_STATUS_BADGE } from "./TimetableShell"
+
+const SCOPE_FILTER_MEMORY_KEY = "ssm_tkb_scope_filter_memory_v1"
+
+interface RememberedScopeFilter {
+  campusId?: string
+  levelCode?: LevelFilterCode
+  grade?: string
+  classId?: string
+  versionId?: string
+}
+
+function readScopeMemory(yearId: string, semester: number, scopeGroup: ScopeGroup): RememberedScopeFilter | null {
+  if (typeof window === "undefined") return null
+  try {
+    const raw = window.localStorage.getItem(SCOPE_FILTER_MEMORY_KEY)
+    if (!raw) return null
+    const parsed = JSON.parse(raw) as Record<string, RememberedScopeFilter>
+    return parsed[`${yearId}::${semester}::${scopeGroup}`] || null
+  } catch {
+    return null
+  }
+}
+
+function writeScopeMemory(
+  yearId: string,
+  semester: number,
+  scopeGroup: ScopeGroup,
+  value: RememberedScopeFilter
+) {
+  if (typeof window === "undefined" || !yearId || !scopeGroup) return
+  try {
+    const raw = window.localStorage.getItem(SCOPE_FILTER_MEMORY_KEY)
+    const parsed: Record<string, RememberedScopeFilter> = raw ? JSON.parse(raw) : {}
+    parsed[`${yearId}::${semester}::${scopeGroup}`] = value
+    window.localStorage.setItem(SCOPE_FILTER_MEMORY_KEY, JSON.stringify(parsed))
+  } catch {
+    // ignore storage quota errors
+  }
+}
 
 export interface SerializedFilterContext {
   academicYears: Array<{ id: string; name: string; status: string }>
@@ -84,6 +123,26 @@ export function TimetableFilterBar({
   viewedWeekDate,
   extraSlot,
 }: TimetableFilterBarProps) {
+  useEffect(() => {
+    if (!context.selectedYearId || !context.selectedScopeGroup) return
+    writeScopeMemory(context.selectedYearId, context.semester, context.selectedScopeGroup, {
+      campusId: context.selectedCampusId,
+      levelCode: context.selectedLevelCode,
+      grade: context.selectedGrade,
+      classId: context.selectedClassId,
+      versionId: context.selectedVersionId,
+    })
+  }, [
+    context.selectedYearId,
+    context.semester,
+    context.selectedScopeGroup,
+    context.selectedCampusId,
+    context.selectedLevelCode,
+    context.selectedGrade,
+    context.selectedClassId,
+    context.selectedVersionId,
+  ])
+
   const guardAndEmit = (patch: Parameters<TimetableFilterBarProps["onChange"]>[0]) => {
     if (hasUnsavedChanges) {
       const ok = window.confirm(
@@ -107,7 +166,15 @@ export function TimetableFilterBar({
           <select
             value={context.selectedYearId}
             disabled={loading}
-            onChange={(e) => guardAndEmit({ academicYearId: e.target.value, versionId: "" })}
+            onChange={(e) => {
+              const nextYearId = e.target.value
+              const mem = readScopeMemory(nextYearId, context.semester, context.selectedScopeGroup)
+              guardAndEmit({
+                academicYearId: nextYearId,
+                campusId: mem?.campusId || "",
+                versionId: mem?.versionId || "",
+              })
+            }}
             className="w-full rounded-xl border border-[#E2E8F0] bg-[#F8FAFC] px-3 py-2 text-xs font-medium text-slate-800 focus:border-[#00A19A] focus:outline-none tabular-nums"
           >
             {context.academicYears.map((y) => (
@@ -126,9 +193,15 @@ export function TimetableFilterBar({
           <select
             value={context.semester}
             disabled={loading}
-            onChange={(e) =>
-              guardAndEmit({ semester: Number(e.target.value), versionId: "" })
-            }
+            onChange={(e) => {
+              const nextSem = Number(e.target.value)
+              const mem = readScopeMemory(context.selectedYearId, nextSem, context.selectedScopeGroup)
+              guardAndEmit({
+                semester: nextSem,
+                campusId: mem?.campusId || context.selectedCampusId,
+                versionId: mem?.versionId || "",
+              })
+            }}
             className="w-full rounded-xl border border-[#E2E8F0] bg-[#F8FAFC] px-3 py-2 text-xs font-medium text-slate-800 focus:border-[#00A19A] focus:outline-none tabular-nums"
           >
             <option value={1}>Học kỳ 1</option>
@@ -144,16 +217,18 @@ export function TimetableFilterBar({
           <select
             value={context.selectedScopeGroup}
             disabled={loading}
-            onChange={(e) =>
+            onChange={(e) => {
+              const nextScope = e.target.value as ScopeGroup
+              const mem = readScopeMemory(context.selectedYearId, context.semester, nextScope)
               guardAndEmit({
-                scopeGroup: e.target.value as ScopeGroup,
-                campusId: "",
-                levelCode: "ALL",
-                grade: "ALL",
-                classId: "ALL",
-                versionId: "",
+                scopeGroup: nextScope,
+                campusId: mem?.campusId || "",
+                levelCode: mem?.levelCode || "ALL",
+                grade: mem?.grade || "ALL",
+                classId: mem?.classId || "ALL",
+                versionId: mem?.versionId || "",
               })
-            }
+            }}
             className="w-full rounded-xl border border-[#E2E8F0] bg-[#F8FAFC] px-3 py-2 text-xs font-medium text-slate-800 focus:border-[#00A19A] focus:outline-none"
           >
             {context.validScopes.map((sc) => (

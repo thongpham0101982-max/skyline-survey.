@@ -14,10 +14,12 @@ import {
   auditLegacyUnversionedSlots,
   loadScopedWorkspaceContext,
   mapDbSlotToRecord,
+  parseTimetableConfigRow,
 } from "@/lib/timetable/dataLoader"
 import {
   dateIsoToDayOfWeek,
   doDateRangesOverlap,
+  doesClassBelongToScope,
   extractGradeNumber,
   formatCampusDisplayName,
   resolveWeekParity,
@@ -856,7 +858,7 @@ export async function getTimetableQuotaPageAction(filters: TimetableFilterParams
 
 /**
  * Saves grade-accurate weekly quota directly into SubjectQuota (`quotaG1`..`quotaG12`)
- * under the real studyProgram ("Hệ S", "Hệ S Quốc tế", "Hệ Song Bằng", "DEFAULT").
+ * under the canonical 2-system studyProgram ("Hệ S", "Hệ I", or fallback "DEFAULT").
  */
 export async function updateSubjectGradeQuotaAction(payload: {
   academicYearId: string
@@ -997,7 +999,10 @@ export async function getTimetableSchedulerPageAction(filters: TimetableFilterPa
       loadExternalActiveSlots: true,
     })
 
-    const classIds = ws.inScopeClasses.map((c) => c.id)
+    // Load across ALL classes of the active Bộ thời khóa biểu at this campus
+    // so cross-grade conflicts & scope-wide quick apply always have complete context.
+    const scopeClasses = ws.campusAllScopeClasses
+    const classIds = scopeClasses.map((c) => c.id)
 
     const [subjectQuotas, teachingAssignments, ctqtAssignments, versionSlotsRaw] = await Promise.all([
       prisma.subjectQuota.findMany({ where: { academicYearId: ws.selectedYearId } }),
@@ -1038,7 +1043,7 @@ export async function getTimetableSchedulerPageAction(filters: TimetableFilterPa
     )
 
     const quotaItems = reconcileQuotasAndAssignments({
-      classes: ws.inScopeClasses,
+      classes: scopeClasses,
       subjects: ws.subjects,
       teachers: ws.teachers,
       subjectQuotas,
@@ -1049,12 +1054,13 @@ export async function getTimetableSchedulerPageAction(filters: TimetableFilterPa
     })
 
     const teachersById = new Map(ws.teachers.map((t) => [t.id, t]))
+    const campusName = formatCampusDisplayName(ws.selectedCampusObj)
     const validationReport = validateTimetable({
       slots,
       config: ws.config,
       campusId: ws.selectedCampusId,
-      campusName: formatCampusDisplayName(ws.selectedCampusObj),
-      classes: ws.inScopeClasses,
+      campusName,
+      classes: scopeClasses,
       teachersById,
       quotaItems,
       rooms: ws.rooms,
@@ -1066,6 +1072,16 @@ export async function getTimetableSchedulerPageAction(filters: TimetableFilterPa
     return {
       success: true as const,
       filterContext: serializeFilterContext(ws),
+      campusName,
+      allScopeClasses: scopeClasses.map((c) => ({
+        id: c.id,
+        className: c.className,
+        grade: c.grade,
+        level: c.level,
+        educationSystem: c.educationSystem || "",
+        homeroomTeacherId: c.homeroomTeacherId || "",
+        campusId: c.campusId || "",
+      })),
       config: ws.config,
       selectedVersion: ws.selectedVersion
         ? {
@@ -1094,6 +1110,9 @@ export async function getTimetableSchedulerPageAction(filters: TimetableFilterPa
         teacherName: t.teacherName,
       })),
       rooms: ws.rooms,
+      busySlots: ws.busySlots,
+      travelRules: ws.travelRules,
+      externalActiveSlots: ws.externalActiveSlots,
     }
   } catch (err) {
     return formatActionError(err)
@@ -1109,6 +1128,7 @@ export async function createTimetableVersionAction(payload: {
   effectiveFrom?: string | null
   effectiveTo?: string | null
   cloneFromVersionId?: string | null
+  applyRememberedSetup?: boolean
   notes?: string | null
 }) {
   try {
@@ -1140,6 +1160,39 @@ export async function createTimetableVersionAction(payload: {
       .toString(36)
       .slice(-4)
       .toUpperCase()}`
+
+    // Pre-fetch scope config & classes when initializing from remembered Bộ TKB setup
+    const shouldApplyRemembered =
+      !payload.cloneFromVersionId && payload.applyRememberedSetup !== false
+    const [configRow, campusClassesRaw, allTeachersRaw, scopeAssignments] = shouldApplyRemembered
+      ? await Promise.all([
+          prisma.timetableConfig.findFirst({
+            where: {
+              academicYearId: payload.academicYearId,
+              semester: payload.semester,
+              campusId: payload.campusId,
+              scopeGroup: payload.scopeGroup,
+            },
+          }),
+          prisma.class.findMany({
+            where: {
+              academicYearId: payload.academicYearId,
+              campusId: payload.campusId,
+              status: "ACTIVE",
+            },
+          }),
+          prisma.teacher.findMany({
+            where: { status: "ACTIVE" },
+            select: { id: true, teacherName: true },
+          }),
+          prisma.teachingAssignment.findMany({
+            where: {
+              academicYearId: payload.academicYearId,
+              semester: payload.semester,
+            },
+          }),
+        ])
+      : [null, [], [], []]
 
     const created = await prisma.$transaction(async (tx) => {
       const ver = await tx.timetableVersion.create({
@@ -1214,6 +1267,78 @@ export async function createTimetableVersionAction(payload: {
             })
           }
         }
+      } else if (shouldApplyRemembered && campus) {
+        const parsedCfg = parseTimetableConfigRow(configRow, {
+          academicYearId: payload.academicYearId,
+          semester: payload.semester,
+          campusId: payload.campusId,
+          scopeGroup: payload.scopeGroup,
+        })
+        const scopeClasses = campusClassesRaw.filter((c) =>
+          doesClassBelongToScope(c, campus, payload.scopeGroup, "ALL")
+        )
+        if (parsedCfg.fixedSlots.length > 0 && scopeClasses.length > 0) {
+          const teacherNameById = new Map(allTeachersRaw.map((t) => [t.id, t.teacherName]))
+          const assignMap = new Map<string, string>()
+          for (const a of scopeAssignments) {
+            if (a.classId && a.subjectId && a.teacherId) {
+              assignMap.set(`${a.classId}::${a.subjectId}`, a.teacherId)
+            }
+          }
+
+          const seedRows: Array<any> = []
+          const seenCell = new Set<string>()
+          for (const fr of parsedCfg.fixedSlots) {
+            for (const cls of scopeClasses) {
+              if (
+                fr.appliesToGrades &&
+                fr.appliesToGrades.length > 0 &&
+                !fr.appliesToGrades.includes(cls.grade)
+              ) {
+                continue
+              }
+              const cellKey = `${cls.id}::${fr.dayOfWeek}::${fr.session}::${fr.periodNumber}`
+              if (seenCell.has(cellKey)) continue
+              seenCell.add(cellKey)
+
+              let tId: string | null = null
+              if (fr.assignHomeroomTeacher) {
+                tId =
+                  String(cls.homeroomTeacherId || "")
+                    .split(",")[0]
+                    ?.trim() || null
+              } else if (fr.subjectId) {
+                tId = assignMap.get(`${cls.id}::${fr.subjectId}`) || null
+              }
+
+              seedRows.push({
+                versionId: ver.id,
+                academicYearId: ver.academicYearId,
+                semester: ver.semester,
+                campusId: ver.campusId,
+                level: cls.level,
+                grade: cls.grade,
+                classId: cls.id,
+                className: cls.className,
+                dayOfWeek: fr.dayOfWeek,
+                session: fr.session,
+                periodNumber: Number(fr.periodNumber),
+                subjectId: fr.subjectId || null,
+                subjectName: fr.subjectName,
+                teacherId: tId,
+                teacherName: tId ? teacherNameById.get(tId) || null : null,
+                weekType: fr.weekType || "ALL",
+                isLocked: true,
+                colorCode: "#F0FDFA",
+                updatedById: authCtx.actorId,
+              })
+            }
+          }
+
+          if (seedRows.length > 0) {
+            await tx.timetableSlot.createMany({ data: seedRows })
+          }
+        }
       }
 
       return ver
@@ -1231,6 +1356,185 @@ export async function createTimetableVersionAction(payload: {
 
     revalidateTimetablePaths()
     return { success: true as const, version: created }
+  } catch (err) {
+    return formatActionError(err)
+  }
+}
+
+/**
+ * Saves or updates a remembered FixedSlotRule in `TimetableConfig` of the active Bộ thời khóa biểu
+ * directly from the drag-and-drop / bulk-apply scheduler workspace.
+ */
+export async function saveScopeFixedSlotRuleAction(payload: {
+  academicYearId: string
+  semester: number
+  campusId: string
+  scopeGroup: ManageableScopeGroup
+  rule: {
+    subjectId: string
+    subjectCode?: string
+    subjectName: string
+    dayOfWeek: DayOfWeekCode
+    session: "MORNING" | "AFTERNOON"
+    periodNumber: number
+    appliesToGrades?: string[]
+    assignHomeroomTeacher: boolean
+    weekType?: "ALL" | "EVEN" | "ODD"
+  }
+}) {
+  try {
+    const authCtx = await requireTimetablePermission("canUpdate", {
+      subModuleCode: "TIMETABLE_SCHEDULE",
+      campusIds: [payload.campusId],
+      scopeGroup: payload.scopeGroup,
+    })
+    await ensureTimetableSchema()
+
+    const existingRow = await prisma.timetableConfig.findFirst({
+      where: {
+        academicYearId: payload.academicYearId,
+        semester: payload.semester,
+        campusId: payload.campusId,
+        scopeGroup: payload.scopeGroup,
+      },
+    })
+
+    const parsed = parseTimetableConfigRow(existingRow, {
+      academicYearId: payload.academicYearId,
+      semester: payload.semester,
+      campusId: payload.campusId,
+      scopeGroup: payload.scopeGroup,
+    })
+
+    const gradesSorted = (payload.rule.appliesToGrades || []).slice().sort()
+    const gradesKey = gradesSorted.join(",")
+
+    const filteredFixed = parsed.fixedSlots.filter((f) => {
+      const fGradesKey = (f.appliesToGrades || []).slice().sort().join(",")
+      const sameSlotAndTarget =
+        f.dayOfWeek === payload.rule.dayOfWeek &&
+        f.session === payload.rule.session &&
+        Number(f.periodNumber) === Number(payload.rule.periodNumber) &&
+        (fGradesKey === gradesKey || fGradesKey === "" || gradesKey === "")
+      return !sameSlotAndTarget
+    })
+
+    const nextRule: FixedSlotRule = {
+      id: `FX_${Date.now().toString(36).toUpperCase()}`,
+      label: `${payload.rule.subjectName} (${SHORT_DAY_LABELS[payload.rule.dayOfWeek]} ${
+        payload.rule.session === "MORNING" ? "Sáng" : "Chiều"
+      } T${payload.rule.periodNumber})`,
+      subjectId: payload.rule.subjectId,
+      subjectCode: payload.rule.subjectCode,
+      subjectName: payload.rule.subjectName,
+      dayOfWeek: payload.rule.dayOfWeek,
+      session: payload.rule.session,
+      periodNumber: Number(payload.rule.periodNumber),
+      appliesToGrades: gradesSorted.length > 0 ? gradesSorted : undefined,
+      assignHomeroomTeacher: payload.rule.assignHomeroomTeacher,
+      weekType: payload.rule.weekType || "ALL",
+    }
+
+    const nextFixedSlots = [...filteredFixed, nextRule]
+
+    await prisma.timetableConfig.upsert({
+      where: {
+        academicYearId_semester_campusId_scopeGroup_levelCode: {
+          academicYearId: payload.academicYearId,
+          semester: payload.semester,
+          campusId: payload.campusId,
+          scopeGroup: payload.scopeGroup,
+          levelCode: "ALL",
+        },
+      },
+      update: {
+        fixedSlotsJson: JSON.stringify(nextFixedSlots),
+        updatedById: authCtx.actorId,
+        updatedByName: authCtx.actorName,
+      },
+      create: {
+        academicYearId: payload.academicYearId,
+        semester: payload.semester,
+        campusId: payload.campusId,
+        scopeGroup: payload.scopeGroup,
+        levelCode: "ALL",
+        workingDaysJson: JSON.stringify(parsed.workingDays),
+        morningPeriods: parsed.morningPeriods,
+        afternoonPeriods: parsed.afternoonPeriods,
+        periodTimesJson: JSON.stringify(parsed.periodTimes),
+        cycleWeeks: parsed.cycleWeeks,
+        cycleAnchorDate: parsed.cycleAnchorDate,
+        fixedSlotsJson: JSON.stringify(nextFixedSlots),
+        blockRulesJson: JSON.stringify(parsed.blockRules),
+        limitsAndPrioritiesJson: JSON.stringify(parsed.limitsAndPriorities),
+        updatedById: authCtx.actorId,
+        updatedByName: authCtx.actorName,
+      },
+    })
+
+    await appendAuditLog({
+      campusId: payload.campusId,
+      actorId: authCtx.actorId,
+      actorName: authCtx.actorName,
+      actorRole: authCtx.actorRole,
+      action: "REMEMBER_SCOPE_FIXED_SLOT",
+      summary: `Ghi nhớ quy tắc cố định "${nextRule.label}" cho Bộ TKB ${payload.scopeGroup}`,
+      afterJson: nextRule,
+    })
+
+    revalidateTimetablePaths()
+    return { success: true as const, fixedSlots: nextFixedSlots }
+  } catch (err) {
+    return formatActionError(err)
+  }
+}
+
+export async function removeScopeFixedSlotRuleAction(payload: {
+  academicYearId: string
+  semester: number
+  campusId: string
+  scopeGroup: ManageableScopeGroup
+  ruleId: string
+}) {
+  try {
+    const authCtx = await requireTimetablePermission("canUpdate", {
+      subModuleCode: "TIMETABLE_SCHEDULE",
+      campusIds: [payload.campusId],
+      scopeGroup: payload.scopeGroup,
+    })
+    await ensureTimetableSchema()
+
+    const existingRow = await prisma.timetableConfig.findFirst({
+      where: {
+        academicYearId: payload.academicYearId,
+        semester: payload.semester,
+        campusId: payload.campusId,
+        scopeGroup: payload.scopeGroup,
+      },
+    })
+    if (!existingRow) {
+      return { success: true as const, fixedSlots: [] as FixedSlotRule[] }
+    }
+
+    const parsed = parseTimetableConfigRow(existingRow, {
+      academicYearId: payload.academicYearId,
+      semester: payload.semester,
+      campusId: payload.campusId,
+      scopeGroup: payload.scopeGroup,
+    })
+    const nextFixedSlots = parsed.fixedSlots.filter((f) => f.id !== payload.ruleId)
+
+    await prisma.timetableConfig.update({
+      where: { id: existingRow.id },
+      data: {
+        fixedSlotsJson: JSON.stringify(nextFixedSlots),
+        updatedById: authCtx.actorId,
+        updatedByName: authCtx.actorName,
+      },
+    })
+
+    revalidateTimetablePaths()
+    return { success: true as const, fixedSlots: nextFixedSlots }
   } catch (err) {
     return formatActionError(err)
   }

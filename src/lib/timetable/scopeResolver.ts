@@ -328,18 +328,31 @@ export function inferScopeGroupForClass(
 
 export function mapEducationSystemToStudyProgram(educationSystem?: string | null): string {
   const code = String(educationSystem || "").trim().toUpperCase()
-  if (code === "HNS" || code === "HE_S" || code === "HỆ S") return "Hệ S"
   if (
+    code === "HNS" ||
+    code === "MNS" ||
+    code === "HE_S" ||
+    code === "HỆ S" ||
+    code === "S"
+  ) {
+    return "Hệ S"
+  }
+  if (
+    code === "HNI" ||
+    code === "HE_I" ||
+    code === "HỆ I" ||
+    code === "I" ||
     code === "HNG" ||
+    code === "MNG" ||
+    code === "SB" ||
     code === "HNC" ||
     code === "COMPASS" ||
+    code === "SONG_BANG" ||
     code === "HE_S_QUOC_TE" ||
+    code === "HỆ SONG BẰNG" ||
     code === "HỆ S QUỐC TẾ"
   ) {
-    return "Hệ S Quốc tế"
-  }
-  if (code === "SB" || code === "SONG_BANG" || code === "HỆ SONG BẰNG") {
-    return "Hệ Song Bằng"
+    return "Hệ I"
   }
   return "DEFAULT"
 }

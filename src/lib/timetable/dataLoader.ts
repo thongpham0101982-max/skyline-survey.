@@ -144,7 +144,7 @@ export async function loadScopedWorkspaceContext(
 ) {
   await ensureTimetableSchema()
 
-  const [allCampuses, academicYears, subjects, teachers] = await Promise.all([
+  const [allCampuses, academicYears, allSubjects, teachers, rawSchedulableFlags] = await Promise.all([
     prisma.campus.findMany({ orderBy: { campusCode: "asc" } }),
     prisma.academicYear.findMany({ orderBy: [{ startDate: "desc" }, { name: "desc" }] }),
     prisma.subject.findMany({ orderBy: { subjectName: "asc" } }),
@@ -160,7 +160,42 @@ export async function loadScopedWorkspaceContext(
       },
       orderBy: { teacherName: "asc" },
     }),
+    typeof (prisma as any)?.$queryRawUnsafe === "function"
+      ? (prisma as any)
+          .$queryRawUnsafe(`SELECT "id", "isTimetableSchedulable" FROM "Subject"`)
+          .catch(() => [] as any[])
+      : Promise.resolve([] as any[]),
   ])
+
+  const schedulableById = new Map<string, boolean>()
+  if (Array.isArray(rawSchedulableFlags)) {
+    for (const row of rawSchedulableFlags) {
+      if (row?.id) {
+        const val = row.isTimetableSchedulable
+        schedulableById.set(
+          String(row.id),
+          val === undefined || val === null ? true : Boolean(Number(val))
+        )
+      }
+    }
+  }
+
+  const subjects = allSubjects.filter((s: any) => {
+    const catTokens = String(s?.category || "")
+      .split(",")
+      .map((t) => t.trim().toUpperCase())
+      .filter(Boolean)
+    if (catTokens.length > 0 && catTokens.every((t) => t === "KSDV")) {
+      return false
+    }
+    if (typeof s?.isTimetableSchedulable === "boolean") {
+      return s.isTimetableSchedulable
+    }
+    if (schedulableById.has(s.id)) {
+      return schedulableById.get(s.id)!
+    }
+    return true
+  })
 
   const activeYear =
     (filters.academicYearId && academicYears.find((y) => y.id === filters.academicYearId)) ||
@@ -323,7 +358,7 @@ export async function loadScopedWorkspaceContext(
   })
 
   const teacherCodeById = new Map(teachers.map((t) => [t.id, t.teacherCode]))
-  const subjectCodeById = new Map(subjects.map((s) => [s.id, s.subjectCode || ""]))
+  const subjectCodeById = new Map(allSubjects.map((s) => [s.id, s.subjectCode || ""]))
 
   const rooms: RoomInput[] = rawRooms.map((r) => ({
     id: r.id,
