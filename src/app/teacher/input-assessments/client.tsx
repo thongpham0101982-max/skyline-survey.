@@ -19,6 +19,8 @@ import DeadlineCountdownBanner from "@/components/shared/DeadlineCountdownBanner
 import ReportExportDrawer from "@/components/testing/ReportExportDrawer";
 import { StudentOrientationModal } from "@/components/orientation/StudentOrientationModal";
 import { StudentOrientationReportModal } from "@/components/orientation/StudentOrientationReportModal";
+import { PvdhOrientationModal } from "@/components/orientation/PvdhOrientationModal";
+import { GvcnHandoverDrawer } from "@/components/orientation/GvcnHandoverDrawer";
 import { calculateCompositeScore, getColumnMaxScore, parseMaxScores, roundScore } from "@/lib/grading/formula-calculator";
 
 const QUICK_REMARKS = [
@@ -34,6 +36,7 @@ const QUICK_REMARKS = [
 
 export default function TeacherAssessmentsClient({ user }: { user: any }) {
     const searchParams = useSearchParams();
+    const urlType = searchParams.get("type") || "";
     const urlPeriodId = searchParams.get("periodId") || "";
     const urlBatchId = searchParams.get("batchId") || "";
     const urlSubjectId = searchParams.get("subjectId") || "";
@@ -47,6 +50,9 @@ export default function TeacherAssessmentsClient({ user }: { user: any }) {
     const [isChartCollapsed, setIsChartCollapsed] = useState<boolean>(true);
     const [highlightedStudentCode, setHighlightedStudentCode] = useState<string>("");
     const [orientationTargetStudent, setOrientationTargetStudent] = useState<any | null>(null);
+    const [pvdhTargetStudent, setPvdhTargetStudent] = useState<any | null>(null);
+    const [pvdhInitialSection, setPvdhInitialSection] = useState<any>("II_STUDENT");
+    const [isGvcnHandoverOpen, setIsGvcnHandoverOpen] = useState<boolean>(false);
     const [reportTargetStudent, setReportTargetStudent] = useState<any | null>(null);
     const [activeReportOrientationData, setActiveReportOrientationData] = useState<any | null>(null);
     const [reportInitialViewMode, setReportInitialViewMode] = useState<"ALL" | "PSYCHOLOGY_ONLY">("ALL");
@@ -60,10 +66,10 @@ export default function TeacherAssessmentsClient({ user }: { user: any }) {
     const [latestBatchInfo, setLatestBatchInfo] = useState<any>(null);
     const [lastAppliedUrlKey, setLastAppliedUrlKey] = useState<string>("");
 
-    // Luôn ưu tiên áp dụng tham số Deep Link từ URL (?periodId=...&batchId=...&subjectId=...) kể cả khi người dùng bấm từ Chuông thông báo khi đang đứng tại trang
+    // Luôn ưu tiên áp dụng tham số Deep Link từ URL (?type=...&periodId=...&batchId=...&subjectId=...) kể cả khi người dùng bấm từ Chuông thông báo khi đang đứng tại trang
     useEffect(() => {
         if (!Array.isArray(assignments) || assignments.length === 0) return;
-        const currentUrlKey = `${urlPeriodId}__${urlBatchId}__${urlSubjectId}`;
+        const currentUrlKey = `${urlType}__${urlPeriodId}__${urlBatchId}__${urlSubjectId}`;
 
         if ((urlPeriodId || urlBatchId || urlSubjectId) && currentUrlKey !== lastAppliedUrlKey) {
             if (urlPeriodId && assignments.some(a => a.periodId === urlPeriodId)) {
@@ -87,9 +93,16 @@ export default function TeacherAssessmentsClient({ user }: { user: any }) {
             }
         }
 
-        if (!selectedPeriodId) {
+        const typeFilteredAssignments = urlType === "preschool"
+            ? assignments.filter(a => a.isPreschool || a.subjectId === "preschool" || a.subjectId === "preschool-probation")
+            : urlType === "general"
+                ? assignments.filter(a => !(a.isPreschool || a.subjectId === "preschool" || a.subjectId === "preschool-probation"))
+                : assignments;
+        const pool = typeFilteredAssignments.length > 0 ? typeFilteredAssignments : assignments;
+
+        if (!selectedPeriodId || (urlType && currentUrlKey !== lastAppliedUrlKey && !pool.some(a => a.periodId === selectedPeriodId))) {
             const allBatchesMap = new Map();
-            assignments.forEach(a => {
+            pool.forEach(a => {
                 if (a && a.batch && a.period) {
                     const existing = allBatchesMap.get(a.batchId);
                     const assignTime = a.createdAt ? new Date(a.createdAt).getTime() : 0;
@@ -136,13 +149,15 @@ export default function TeacherAssessmentsClient({ user }: { user: any }) {
                 if (activeBatch) {
                     setSelectedPeriodId(activeBatch.periodId);
                     setSelectedBatchId(activeBatch.id);
+                    setLastAppliedUrlKey(currentUrlKey);
                 }
-            } else if (assignments[0]?.periodId) {
-                setSelectedPeriodId(assignments[0].periodId);
+            } else if (pool[0]?.periodId) {
+                setSelectedPeriodId(pool[0].periodId);
                 setSelectedBatchId("all");
+                setLastAppliedUrlKey(currentUrlKey);
             }
         }
-    }, [assignments, selectedPeriodId, urlPeriodId, urlBatchId, urlSubjectId, lastAppliedUrlKey]);
+    }, [assignments, selectedPeriodId, urlType, urlPeriodId, urlBatchId, urlSubjectId, lastAppliedUrlKey]);
 
     useEffect(() => {
         if (!Array.isArray(assignments) || assignments.length === 0) {
@@ -150,24 +165,41 @@ export default function TeacherAssessmentsClient({ user }: { user: any }) {
             return;
         }
 
+        const directAssignments = assignments.filter(a => !String(a?.id || "").startsWith("synthesized_"));
+        const sourceList = directAssignments.length > 0 ? directAssignments : assignments;
+
         const allBatchesMap = new Map();
-        assignments.forEach(a => {
+        sourceList.forEach(a => {
             if (a && a.batch && a.period && (!selectedPeriodId || a.periodId === selectedPeriodId)) {
-                allBatchesMap.set(a.batchId, {
-                    ...a.batch,
-                    periodId: a.periodId,
-                    periodName: a.period.name,
-                    periodCode: a.period.code
-                });
+                const existing = allBatchesMap.get(a.batchId);
+                const assignTime = a.createdAt ? new Date(a.createdAt).getTime() : 0;
+                if (!existing || assignTime > (existing.latestAssignTime || 0)) {
+                    allBatchesMap.set(a.batchId, {
+                        ...a.batch,
+                        periodId: a.periodId,
+                        periodName: a.period.name,
+                        periodCode: a.period.code,
+                        isPreschool: Boolean(a.isPreschool || a.subjectId === "preschool" || a.subjectId === "preschool-probation"),
+                        latestAssignTime: Math.max(assignTime, existing?.latestAssignTime || 0)
+                    });
+                }
             }
         });
         const allBatches = Array.from(allBatchesMap.values());
         
         if (allBatches.length > 0) {
+            if (selectedBatchId && selectedBatchId !== "all") {
+                const selectedBatchObj = allBatches.find((b: any) => b.id === selectedBatchId);
+                if (selectedBatchObj) {
+                    setLatestBatchInfo(selectedBatchObj);
+                    return;
+                }
+            }
+
             const today = new Date();
             today.setHours(0, 0, 0, 0);
             
-            const activeBatch = allBatches.find((b: any) => {
+            let targetBatch = allBatches.find((b: any) => {
                 if (!b.startDate || !b.endDate) return false;
                 const start = new Date(b.startDate);
                 const end = new Date(b.endDate);
@@ -175,38 +207,66 @@ export default function TeacherAssessmentsClient({ user }: { user: any }) {
                 end.setHours(23, 59, 59, 999);
                 return today >= start && today <= end;
             });
+
+            if (!targetBatch) {
+                const sorted = [...allBatches].sort((a: any, b: any) => (b.latestAssignTime || 0) - (a.latestAssignTime || 0));
+                targetBatch = sorted[0];
+            }
             
-            setLatestBatchInfo(activeBatch || null);
+            setLatestBatchInfo(targetBatch || null);
         } else {
-            setLatestBatchInfo(null);
+            const fallbackAssign = sourceList.find(a => a?.period && (!selectedPeriodId || a.periodId === selectedPeriodId)) || sourceList[0];
+            if (fallbackAssign?.period) {
+                setLatestBatchInfo({
+                    id: null,
+                    name: "Tất cả đợt trong kỳ",
+                    periodId: fallbackAssign.periodId,
+                    periodName: fallbackAssign.period.name,
+                    periodCode: fallbackAssign.period.code,
+                    isPreschool: Boolean(fallbackAssign.isPreschool || fallbackAssign.subjectId === "preschool" || fallbackAssign.subjectId === "preschool-probation")
+                });
+            } else {
+                setLatestBatchInfo(null);
+            }
         }
-    }, [assignments, selectedPeriodId]);
+    }, [assignments, selectedPeriodId, selectedBatchId]);
 
     const latestBatchStats = useMemo(() => {
         if (!latestBatchInfo || !Array.isArray(assignments)) return [];
         
-        const batchAssignments = assignments.filter(a => a.batchId === latestBatchInfo.id);
+        const directAssignments = assignments.filter(a => !String(a?.id || "").startsWith("synthesized_"));
+        const sourceList = directAssignments.length > 0 ? directAssignments : assignments;
+
+        const batchAssignments = sourceList.filter(a => {
+            if (latestBatchInfo.periodId && a.periodId !== latestBatchInfo.periodId) return false;
+            if (latestBatchInfo.id) return a.batchId === latestBatchInfo.id;
+            return true;
+        });
         const groups = new Map();
         
         batchAssignments.forEach(a => {
-            const grade = a.grade || "Mầm non";
-            let system = a.educationSystem || "Mầm non";
+            const grade = a.grade || (a.isPreschool ? "Mầm non" : "Tất cả khối");
+            let system = a.educationSystem || (a.isPreschool ? "Mầm non" : "Tất cả hệ");
             if (a.isPreschool) {
                 system = "Mầm non";
             }
+            const subLabel = a.subject?.name || "";
             
             const key = grade + "__" + system;
-            const count = a.studentCount || 0;
+            const count = Number(a.studentCount) || 0;
             
             if (!groups.has(key)) {
-                groups.set(key, { grade, system, count });
+                groups.set(key, { grade, system, count, subjects: subLabel ? [subLabel] : [] });
             } else {
                 const grp = groups.get(key);
                 grp.count = Math.max(grp.count, count);
+                if (subLabel && !grp.subjects.includes(subLabel)) {
+                    grp.subjects.push(subLabel);
+                }
             }
         });
         
-        return Array.from(groups.values()).filter(g => g.count > 0);
+        return Array.from(groups.values());
     }, [assignments, latestBatchInfo]);
 
     const [selectedAssignmentId, setSelectedAssignmentId] = useState<string>("");
@@ -226,6 +286,12 @@ export default function TeacherAssessmentsClient({ user }: { user: any }) {
     const [activeChildDevStudent, setActiveChildDevStudent] = useState<any>(null);
     
     const [students, setStudents] = useState<any[]>([]);
+
+    const latestBatchTotalStudents = useMemo(() => {
+        const sumFromStats = latestBatchStats.reduce((sum, g) => sum + (Number(g.count) || 0), 0);
+        if (sumFromStats > 0) return sumFromStats;
+        return students.length;
+    }, [latestBatchStats, students.length]);
     const [loading, setLoading] = useState(true);
     const [saveStatus, setSaveStatus] = useState<Record<string, string>>({});
     const [stats, setStats] = useState<any>(null);
@@ -477,14 +543,24 @@ export default function TeacherAssessmentsClient({ user }: { user: any }) {
                     return;
                 }
             }
-            const currentValid = availableAssignments.some(a => a.id === selectedAssignmentId);
-            if (!currentValid) {
-                setSelectedAssignmentId(availableAssignments[0].id);
+            const currentObj = availableAssignments.find(a => a.id === selectedAssignmentId);
+            const currentMatchesUrlType = currentObj && (
+                !urlType ||
+                (urlType === "preschool" && Boolean(currentObj.isPreschool || currentObj.subjectId === "preschool" || currentObj.subjectId === "preschool-probation")) ||
+                (urlType === "general" && !Boolean(currentObj.isPreschool || currentObj.subjectId === "preschool" || currentObj.subjectId === "preschool-probation"))
+            );
+            if (!currentObj || !currentMatchesUrlType) {
+                const preferred = urlType === "preschool"
+                    ? availableAssignments.find(a => a.isPreschool || a.subjectId === "preschool" || a.subjectId === "preschool-probation")
+                    : urlType === "general"
+                        ? availableAssignments.find(a => !(a.isPreschool || a.subjectId === "preschool" || a.subjectId === "preschool-probation"))
+                        : null;
+                setSelectedAssignmentId((preferred || availableAssignments[0]).id);
             }
         } else {
             setSelectedAssignmentId("");
         }
-    }, [availableAssignments, selectedAssignmentId, urlSubjectId]);
+    }, [availableAssignments, selectedAssignmentId, urlSubjectId, urlType]);
 
     // Reset tab, search, and page when filters change
     useEffect(() => {
@@ -699,6 +775,13 @@ export default function TeacherAssessmentsClient({ user }: { user: any }) {
         const gClean = rawG.replace("Khối", "").trim();
         const sysClean = String(selectedSystemCode !== "all" ? selectedSystemCode : (currentAssignment.educationSystem || "")).trim();
         const pId = currentAssignment.periodId;
+        const pMeta = `${currentAssignment.period?.code || ""} ${currentAssignment.period?.name || ""}`.toLowerCase();
+        const inferredMilestone =
+            pMeta.includes("hk2") || pMeta.includes("học kỳ 2") || pMeta.includes("hoc ky 2")
+                ? "HK2"
+                : pMeta.includes("hk1") || pMeta.includes("học kỳ 1") || pMeta.includes("hoc ky 1")
+                    ? "HK1"
+                    : "DAU_NAM";
 
         const candidates = gradeConfigs.filter(c => c.subjectId === subId);
         if (candidates.length === 0) return null;
@@ -709,10 +792,12 @@ export default function TeacherAssessmentsClient({ user }: { user: any }) {
         for (const c of candidates) {
             let score = 0;
             const cGrade = String(c.grade || "").replace("Khối", "").trim();
-            const cSys = String(c.educationSystemId || "").trim();
+            const cSys = String(c.educationSystemCode || c.educationSystemId || "").trim();
+            const cSysRaw = String(c.educationSystemId || "").trim();
             const cPeriod = String(c.periodId || "").trim();
 
-            if (cPeriod === pId) score += 4;
+            if (cPeriod === pId) score += 6;
+            else if (cPeriod === inferredMilestone) score += 4;
             else if (cPeriod === "ALL" || !cPeriod) score += 1;
             else continue;
 
@@ -720,8 +805,8 @@ export default function TeacherAssessmentsClient({ user }: { user: any }) {
             else if (cGrade === "ALL" || !cGrade) score += 1;
             else if (gClean !== "") continue;
 
-            if (cSys.toLowerCase() === sysClean.toLowerCase() && sysClean !== "") score += 2;
-            else if (cSys === "ALL" || !cSys) score += 1;
+            if (sysClean !== "" && (cSys.toLowerCase() === sysClean.toLowerCase() || cSysRaw.toLowerCase() === sysClean.toLowerCase())) score += 3;
+            else if (cSys === "ALL" || !cSys || cSysRaw === "ALL") score += 1;
             else if (sysClean !== "") continue;
 
             if (score > bestScore) {
@@ -826,9 +911,21 @@ export default function TeacherAssessmentsClient({ user }: { user: any }) {
         if (isCustomSubject) {
             if (isPreschoolSubject) return st.scoredCount > 0;
             if (isThinkingSkillsSubject) return st.scoreVals?.length >= 1;
-            if (isChildDevSubject) return st.scoreVals?.length >= 1;
+            if (isChildDevSubject) {
+                if (st.tciRecord) {
+                    return st.tciRecord.signatureStatus === "SIGNED" && st.tciRecord.evaluationStatus === "COMPLETED";
+                }
+                return Array.isArray(st.scoreVals) && st.scoreVals.filter((v: any) => v !== "" && v !== null && v !== undefined).length >= 16;
+            }
             if (isPsychSubject) return st.scoreVals?.length >= 7;
             return false;
+        }
+        if (isOrientationSubject) {
+            const pStatus = st.pvdhRecord?.workflowStatus;
+            if (pStatus) {
+                return ["COMPLETED", "SUBMITTED", "VERIFIED_LOCKED"].includes(pStatus);
+            }
+            return Boolean(st.orientationRecord?.id);
         }
         return (st.scores && st.scores.length > 0) || saveStatus[st.id] === "saved";
     };
@@ -912,6 +1009,9 @@ export default function TeacherAssessmentsClient({ user }: { user: any }) {
                 } else if (isPreschoolSubject) {
                     setActivePreschoolStudent(target);
                     setIsPreschoolModalOpen(true);
+                } else if (isOrientationSubject) {
+                    setPvdhInitialSection("II_STUDENT");
+                    setPvdhTargetStudent(target);
                 }
             }
         }
@@ -975,16 +1075,22 @@ export default function TeacherAssessmentsClient({ user }: { user: any }) {
                         <div>
                             <div className="flex items-center gap-2 mb-1">
                                 <span className="text-[10px] font-black tracking-widest text-[#99F6E4] uppercase bg-white/10 px-2 py-0.5 rounded-md border border-white/10">
-                                    CỔNG ĐÁNH GIÁ KHẢO SÁT HỌC SINH
+                                    {isOrientationSubject ? "CỔNG PHỎNG VẤN ĐỊNH HƯỚNG HỌC SINH" : "KHẢO SÁT ĐẦU VÀO • NHẬP KẾT QUẢ THEO PHÂN CÔNG"}
                                 </span>
-                                {academicYear && (
+                                {academicYear && !/^(cm|cl)[a-z0-9]{15,}$/i.test(String(academicYear).trim()) && (
                                     <span className="text-[10px] font-bold text-teal-100/80 bg-teal-900/40 px-2 py-0.5 rounded-md">
                                         Niên khóa {academicYear}
                                     </span>
                                 )}
                             </div>
                             <h1 className="text-xl md:text-2xl font-black tracking-tight text-white">
-                                Nhập Kết Quả Khảo Sát Đầu Vào
+                                {isPreschoolSubject || (urlType === "preschool" && !currentAssignment) || (assignments.length > 0 && assignments.every(a => a.isPreschool))
+                                    ? "Khảo sát & Định hướng Mầm non"
+                                    : isOrientationSubject
+                                      ? "Phỏng vấn định hướng Phổ thông"
+                                      : currentAssignment?.subject?.name
+                                        ? `${currentAssignment.subject.code ? `${currentAssignment.subject.code} – ` : ""}${currentAssignment.subject.name}`
+                                        : "Nhập kết quả theo phân công"}
                             </h1>
                             <div className="flex items-center gap-2 mt-2 flex-wrap text-xs">
                                 <span className="text-teal-100/90 font-medium">Giáo viên phụ trách:</span>
@@ -1026,28 +1132,43 @@ export default function TeacherAssessmentsClient({ user }: { user: any }) {
                 </div>
             </div>
 
-            {/* 2. Notification Banner for Latest Batch */}
+            {/* 2. Notification Banner for Assigned Survey Period, Batch & Student Count */}
             {latestBatchInfo && (
-                <div className="relative overflow-hidden p-4 rounded-2xl bg-gradient-to-r from-amber-500/10 via-orange-500/5 to-amber-500/10 border border-amber-200/80 shadow-xs">
-                    <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
-                        <div className="flex items-center gap-3">
-                            <div className="w-9 h-9 rounded-xl bg-amber-500 text-white flex items-center justify-center shrink-0 shadow-sm">
+                <div className="relative overflow-hidden p-4 sm:p-5 rounded-2xl bg-white border border-slate-200 border-l-4 border-l-[#003B3A] shadow-sm">
+                    <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4">
+                        <div className="flex items-start gap-3.5">
+                            <div className="w-10 h-10 rounded-xl bg-[#003B3A] text-[#5EEAD4] flex items-center justify-center shrink-0 shadow-sm mt-0.5">
                                 <AlertCircle className="w-5 h-5" />
                             </div>
-                            <div className="text-xs text-slate-700 leading-relaxed">
-                                <span className="font-extrabold uppercase text-[10px] tracking-wider bg-amber-100 text-amber-900 px-2 py-0.5 rounded-md border border-amber-300 mr-2">
-                                    Đợt Khảo Sát Mới Nhất
-                                </span>
-                                <strong>{latestBatchInfo.name}</strong> thuộc <strong>{latestBatchInfo.periodName}</strong>. Vui lòng hoàn thành theo tiến độ quy định.
+                            <div className="space-y-1.5">
+                                <div className="flex flex-wrap items-center gap-2">
+                                    <span className="inline-flex items-center px-2.5 py-0.5 rounded-md bg-teal-50 text-[#00736E] border border-teal-200 text-[11px] font-bold">
+                                        Thông báo phân công • {isPreschoolSubject || latestBatchInfo.isPreschool ? "Khảo sát Mầm non" : isOrientationSubject ? "Phỏng vấn định hướng Phổ thông" : "Khảo sát đầu vào theo phân công"}
+                                    </span>
+                                    <span className="inline-flex items-center px-2.5 py-0.5 rounded-md bg-amber-50 text-amber-800 border border-amber-200 text-[11px] font-bold tabular-nums">
+                                        Số lượng: {latestBatchTotalStudents} HS khảo sát
+                                    </span>
+                                </div>
+                                <div className="flex flex-wrap items-center gap-x-5 gap-y-1 text-xs text-slate-700">
+                                    <span>
+                                        Kỳ khảo sát: <strong className="font-bold text-slate-900">{latestBatchInfo.periodName}</strong>
+                                    </span>
+                                    <span>
+                                        Đợt khảo sát: <strong className="font-bold text-[#00736E]">{latestBatchInfo.name}</strong>
+                                    </span>
+                                    <span>
+                                        Số lượng HS khảo sát: <strong className="font-bold text-slate-900 tabular-nums">{latestBatchTotalStudents} học sinh</strong>
+                                    </span>
+                                </div>
                             </div>
                         </div>
 
                         {latestBatchStats && latestBatchStats.length > 0 && (
-                            <div className="flex flex-wrap items-center gap-1.5 self-start sm:self-auto">
-                                <span className="text-[11px] font-bold text-slate-500 mr-1">Phân công:</span>
+                            <div className="flex flex-wrap items-center gap-1.5 self-start lg:self-center">
+                                <span className="text-[11px] font-bold text-slate-500 mr-1">Chi tiết phân công:</span>
                                 {latestBatchStats.map((stat, idx) => (
-                                    <span key={idx} className="inline-flex items-center px-2 py-0.5 rounded-lg bg-amber-100/80 text-amber-900 text-[11px] font-bold border border-amber-200">
-                                        {stat.grade} ({stat.system}): {stat.count} HS
+                                    <span key={idx} className="inline-flex items-center px-2.5 py-1 rounded-lg bg-slate-50 text-slate-800 text-[11px] font-bold border border-slate-200 tabular-nums">
+                                        {stat.grade}{stat.system && stat.system !== stat.grade ? ` (${stat.system})` : ""}{stat.subjects?.length ? ` • ${stat.subjects.join(", ")}` : ""}: <strong className="ml-1 text-[#00736E]">{stat.count} HS</strong>
                                     </span>
                                 ))}
                             </div>
@@ -1366,50 +1487,56 @@ export default function TeacherAssessmentsClient({ user }: { user: any }) {
                                 </button>
                             )}
 
-                            <button
-                                type="button"
-                                onClick={async () => {
-                                    if (!currentAssignment) return;
-                                    try {
-                                        const evaluatedStudents = students.filter((st: any) => {
-                                            const sc = scoresMap[st.id];
-                                            return sc && (sc.score !== "" || sc.comment !== "" || (sc.extraScores && Object.keys(sc.extraScores).length > 0));
-                                        });
-                                        if (evaluatedStudents.length === 0) {
-                                            alert("Vui lòng nhập điểm/nhận xét cho ít nhất 1 học sinh trước khi xác nhận hoàn thành đánh giá.");
-                                            return;
+                            {!isChildDevSubject && (
+                                <button
+                                    type="button"
+                                    onClick={async () => {
+                                        if (!currentAssignment) return;
+                                        try {
+                                            const evaluatedStudents = students.filter((st: any) => {
+                                                return isStudentSaved(st) || 
+                                                    (st.scores && st.scores.length > 0) || 
+                                                    (st.scoreVals && st.scoreVals.some((v: any) => v !== "" && v !== null && v !== undefined)) ||
+                                                    Boolean(st.orientationRecord?.psychologyData) ||
+                                                    Boolean(st.orientationRecord?.id);
+                                            });
+                                            if (evaluatedStudents.length === 0) {
+                                                alert("Vui lòng nhập điểm/nhận xét cho ít nhất 1 học sinh trước khi xác nhận hoàn thành đánh giá.");
+                                                return;
+                                            }
+                                            const res = await fetch("/api/admin/entrance-progress", {
+                                                method: "POST",
+                                                headers: { "Content-Type": "application/json" },
+                                                body: JSON.stringify({
+                                                    action: "CONFIRM",
+                                                    targetScope: "STUDENT",
+                                                    studentIds: evaluatedStudents.map((st: any) => st.id),
+                                                    assignmentId: currentAssignment.id,
+                                                    periodId: selectedPeriodId || currentAssignment.periodId,
+                                                    batchId: currentAssignment.batchId || null,
+                                                    stageNumber: 4,
+                                                    status: "COMPLETED",
+                                                    note: `GV xác nhận hoàn thành đánh giá môn ${currentAssignment?.subject?.name || ""}`,
+                                                }),
+                                            });
+                                            const data = await res.json();
+                                            if (res.ok && data.success) {
+                                                alert(`Đã xác nhận hoàn thành đánh giá (Bước 4) và tự động gán chữ ký điện tử cho ${evaluatedStudents.length} học sinh! Tiến độ nhiệm vụ đã được đồng bộ lên Trung tâm Điều hành.`);
+                                                fetchStudents();
+                                            } else {
+                                                alert(data.error || "Không thể xác nhận hoàn thành đánh giá.");
+                                            }
+                                        } catch (e: any) {
+                                            console.error("Lỗi khi xác nhận hoàn thành đánh giá:", e);
+                                            alert("Lỗi khi xác nhận hoàn thành đánh giá: " + (e?.message || "Lỗi kết nối"));
                                         }
-                                        const res = await fetch("/api/admin/entrance-progress", {
-                                            method: "POST",
-                                            headers: { "Content-Type": "application/json" },
-                                            body: JSON.stringify({
-                                                action: "CONFIRM",
-                                                targetScope: "STUDENT",
-                                                studentIds: evaluatedStudents.map((st: any) => st.id),
-                                                assignmentId: currentAssignment.id,
-                                                periodId: selectedPeriodId || currentAssignment.periodId,
-                                                batchId: currentAssignment.batchId || null,
-                                                stageNumber: 4,
-                                                status: "COMPLETED",
-                                                note: `GV xác nhận hoàn thành đánh giá môn ${currentAssignment?.subject?.name || ""}`,
-                                            }),
-                                        });
-                                        const data = await res.json();
-                                        if (res.ok && data.success) {
-                                            alert(`Đã xác nhận hoàn thành đánh giá (Bước 4) và tự động gán chữ ký điện tử cho ${evaluatedStudents.length} học sinh! Tiến độ nhiệm vụ đã được đồng bộ lên Trung tâm Điều hành.`);
-                                            fetchStudents();
-                                        } else {
-                                            alert(data.error || "Không thể xác nhận hoàn thành đánh giá.");
-                                        }
-                                    } catch (e) {
-                                        alert("Lỗi kết nối khi xác nhận hoàn thành đánh giá.");
-                                    }
-                                }}
-                                className="text-xs font-bold border border-emerald-600 px-3.5 py-1.5 rounded-xl shadow-2xs bg-emerald-600 text-white hover:bg-emerald-700 transition-all flex items-center gap-1.5 cursor-pointer"
-                            >
-                                <CheckCircle2 className="w-4 h-4 text-white" />
-                                <span>Xác nhận hoàn thành đánh giá (B4)</span>
-                            </button>
+                                    }}
+                                    className="text-xs font-bold border border-emerald-600 px-3.5 py-1.5 rounded-xl shadow-2xs bg-emerald-600 text-white hover:bg-emerald-700 transition-all flex items-center gap-1.5 cursor-pointer"
+                                >
+                                    <CheckCircle2 className="w-4 h-4 text-white" />
+                                    <span>Xác nhận hoàn thành đánh giá (B4)</span>
+                                </button>
+                            )}
 
                             <button
                                 type="button"
@@ -1487,24 +1614,35 @@ export default function TeacherAssessmentsClient({ user }: { user: any }) {
                             </button>
                         </div>
 
-                        {/* Search Input */}
-                        <div className="relative w-full sm:w-72">
-                            <Search className="w-3.5 h-3.5 text-slate-400 absolute left-3 top-1/2 -translate-y-1/2 pointer-events-none" />
-                            <input
-                                type="text"
-                                value={searchQuery}
-                                onChange={e => { setSearchQuery(e.target.value); setCurrentPage(1); }}
-                                placeholder="Tìm theo tên hoặc mã HS..."
-                                className="w-full pl-8.5 pr-8 py-1.5 text-xs font-semibold bg-white border border-slate-200 rounded-xl focus:outline-none focus:border-[#00A19A] focus:ring-2 focus:ring-[#00A19A]/15 text-slate-800 placeholder-slate-400 shadow-2xs"
-                            />
-                            {searchQuery && (
-                                <button 
-                                    onClick={() => { setSearchQuery(""); setCurrentPage(1); }}
-                                    className="absolute right-2.5 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 cursor-pointer"
-                                >
-                                    <X className="w-3.5 h-3.5" />
-                                </button>
-                            )}
+                        {/* Search Input & GVCN Handover Inbox */}
+                        <div className="flex flex-wrap items-center gap-2 w-full sm:w-auto">
+                            <button
+                                type="button"
+                                onClick={() => setIsGvcnHandoverOpen(true)}
+                                className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-white hover:bg-[#F0FDFA] text-[#003B3A] border border-[#E2E8F0] hover:border-[#00A19A] text-xs font-semibold transition-colors cursor-pointer"
+                                title="Xem các phiếu phỏng vấn định hướng đã bàn giao cho GVCN"
+                            >
+                                <HeartHandshake className="w-3.5 h-3.5 text-[#008B85]" />
+                                <span>Bàn giao định hướng (GVCN)</span>
+                            </button>
+                            <div className="relative flex-1 sm:w-72">
+                                <Search className="w-3.5 h-3.5 text-slate-400 absolute left-3 top-1/2 -translate-y-1/2 pointer-events-none" />
+                                <input
+                                    type="text"
+                                    value={searchQuery}
+                                    onChange={e => { setSearchQuery(e.target.value); setCurrentPage(1); }}
+                                    placeholder="Tìm theo tên hoặc mã HS..."
+                                    className="w-full pl-8.5 pr-8 py-1.5 text-xs font-semibold bg-white border border-slate-200 rounded-xl focus:outline-none focus:border-[#00A19A] focus:ring-2 focus:ring-[#00A19A]/15 text-slate-800 placeholder-slate-400 shadow-2xs"
+                                />
+                                {searchQuery && (
+                                    <button 
+                                        onClick={() => { setSearchQuery(""); setCurrentPage(1); }}
+                                        className="absolute right-2.5 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 cursor-pointer"
+                                    >
+                                        <X className="w-3.5 h-3.5" />
+                                    </button>
+                                )}
+                            </div>
                         </div>
                     </div>
 
@@ -1546,62 +1684,64 @@ export default function TeacherAssessmentsClient({ user }: { user: any }) {
                             <div className="overflow-x-auto custom-scrollbar" style={{ maxWidth: "100%", width: "100%" }}>
                                 <table className="w-full text-xs text-left border-collapse min-w-max">
                                     {/* Table Head: Solid Opaque Background to Prevent Text Bleed */}
-                                    <thead>
-                                        <tr className="border-b border-teal-100 bg-[#F0FDFA]">
+                                    <thead className="bg-[#003B3A] text-white border-b border-[#003B3A]">
+                                        <tr className="border-b bg-[#F0FDFA] text-[11px] font-semibold">
                                             {/* STT: Sticky Left with Solid Background */}
-                                            <th className="px-3 py-3 w-14 min-w-[56px] text-center font-bold text-[#005854] bg-[#F0FDFA] uppercase tracking-wider text-xs md:sticky md:left-0 z-20 shadow-[2px_0_6px_rgba(0,0,0,0.03)]">
+                                            <th className="px-3 py-3 w-14 min-w-[56px] text-center font-bold text-[#005854] bg-[#F0FDFA] text-xs md:sticky md:left-0 z-20 shadow-[2px_0_6px_rgba(0,0,0,0.03)]">
                                                 STT
                                             </th>
-                                            <th className="px-3 py-3 w-28 min-w-[110px] font-bold text-[#005854] bg-[#F0FDFA] uppercase tracking-wider text-xs text-center whitespace-nowrap">
+                                            <th className="px-3 py-3 w-28 min-w-[110px] font-bold text-[#005854] bg-[#F0FDFA] text-xs text-center whitespace-nowrap">
                                                 Mã HS KS
                                             </th>
-                                            <th className="px-3 py-3 min-w-[170px] font-bold text-[#005854] bg-[#F0FDFA] uppercase tracking-wider text-xs text-left whitespace-nowrap">
+                                            <th className="px-3 py-3 min-w-[170px] font-bold text-[#005854] bg-[#F0FDFA] text-xs text-left whitespace-nowrap">
                                                 Họ và Tên
                                             </th>
-                                            <th className="px-3 py-3 w-16 min-w-[64px] font-bold text-[#005854] bg-[#F0FDFA] uppercase tracking-wider text-xs text-center whitespace-nowrap">
+                                            <th className="px-3 py-3 w-16 min-w-[64px] font-bold text-[#005854] bg-[#F0FDFA] text-xs text-center whitespace-nowrap">
                                                 Khối
                                             </th>
-                                            <th className="px-3 py-3 w-20 min-w-[72px] font-bold text-[#005854] bg-[#F0FDFA] uppercase tracking-wider text-xs text-center whitespace-nowrap">
+                                            <th className="px-3 py-3 w-20 min-w-[72px] font-bold text-[#005854] bg-[#F0FDFA] text-xs text-center whitespace-nowrap">
                                                 Giới tính
                                             </th>
-                                            <th className="px-3 py-3 w-28 min-w-[100px] font-bold text-[#005854] bg-[#F0FDFA] uppercase tracking-wider text-xs text-center whitespace-nowrap">
+                                            <th className="px-3 py-3 w-28 min-w-[100px] font-bold text-[#005854] bg-[#F0FDFA] text-xs text-center whitespace-nowrap">
                                                 Ngày sinh
                                             </th>
-                                            <th className="px-3 py-3 w-24 min-w-[90px] font-bold text-[#005854] bg-[#F0FDFA] uppercase tracking-wider text-xs text-center whitespace-nowrap">
+                                            <th className="px-3 py-3 w-24 min-w-[90px] font-bold text-[#005854] bg-[#F0FDFA] text-xs text-center whitespace-nowrap">
                                                 Hệ KS
                                             </th>
 
                                             {/* Form Column */}
-                                            <th className="px-4 py-3 min-w-[240px] font-bold text-[#005854] bg-[#F0FDFA] uppercase tracking-wider text-xs text-center">
+                                            <th className="px-4 py-3 min-w-[240px] font-bold text-[#005854] bg-[#F0FDFA] text-xs text-center">
                                                 {isOrientationSubject ? "Phiếu Định Hướng (3 Tab)" : isPreschoolProbationSubject ? "Form ĐG Học Thử" : (isPsychSubject || isChildDevSubject || isThinkingSkillsSubject || isPreschoolSubject ? "Form Khảo Sát" : (hideComments ? "Chi Tiết Điểm" : "Chi Tiết Điểm & Nhận Xét"))}
                                             </th>
 
                                             {/* Specialized Columns */}
                                             {(isChildDevSubject || isThinkingSkillsSubject) && (
-                                                <th className="px-4 py-3 font-bold text-[#005854] bg-[#F0FDFA] uppercase tracking-wider text-xs text-left min-w-[240px]">
+                                                <th className="px-4 py-3 font-bold text-[#005854] bg-[#F0FDFA] text-xs text-left min-w-[240px]">
                                                     Nhận xét chung
                                                 </th>
                                             )}
 
                                             {isPsychSubject && (
                                                 <>
-                                                    <th className="px-4 py-3 font-bold text-[#005854] bg-[#F0FDFA] uppercase tracking-wider text-xs text-left min-w-[200px]">
+                                                    <th className="px-4 py-3 font-bold text-[#005854] bg-[#F0FDFA] text-xs text-left min-w-[200px]">
                                                         Kết luận sơ bộ
                                                     </th>
-                                                    <th className="px-4 py-3 font-bold text-[#005854] bg-[#F0FDFA] uppercase tracking-wider text-xs text-left min-w-[200px]">
+                                                    <th className="px-4 py-3 font-bold text-[#005854] bg-[#F0FDFA] text-xs text-left min-w-[200px]">
                                                         Khuyến nghị (Nếu có)
                                                     </th>
                                                 </>
                                             )}
 
                                             {/* Sticky Right: Action/Status with Solid Background and Left Shadow Barrier */}
-                                            <th className="px-4 py-3 w-36 min-w-[140px] text-center font-bold text-[#005854] bg-[#F0FDFA] uppercase tracking-wider text-xs md:sticky md:right-0 z-20 shadow-[-4px_0_8px_rgba(0,0,0,0.06)]">
-                                                Trạng Thái & Lưu
-                                            </th>
+                                            {!isChildDevSubject && (
+                                                <th className="px-4 py-3 w-36 min-w-[140px] text-center font-bold text-[#005854] bg-[#F0FDFA] text-xs md:sticky md:right-0 z-20 shadow-[-4px_0_8px_rgba(0,0,0,0.06)]">
+                                                    Trạng Thái & Lưu
+                                                </th>
+                                            )}
                                         </tr>
                                     </thead>
 
-                                    <tbody className="divide-y divide-slate-100">
+                                    <tbody className="divide-y divide-[#E2E8F0]">
                                         {paginatedStudents.map((st, idx) => {
                                             const serialNumber = (safeCurrentPage - 1) * 10 + idx + 1;
                                             const isSaved = isStudentSaved(st);
@@ -1716,50 +1856,152 @@ export default function TeacherAssessmentsClient({ user }: { user: any }) {
                                                                 )}
                                                             </div>
                                                         ) : isChildDevSubject ? (
-                                                            <div className="flex flex-col items-center justify-center gap-1.5">
-                                                                <button 
-                                                                    onClick={() => { setActiveChildDevStudent(st); setIsChildDevModalOpen(true); }}
-                                                                    className={`px-4 py-1.5 rounded-xl font-bold text-xs flex items-center gap-1.5 transition-all active:scale-95 shadow-2xs cursor-pointer ${
-                                                                        st.scoreVals?.length >= 1
-                                                                            ? "bg-emerald-50 hover:bg-emerald-600 text-emerald-700 hover:text-white border border-emerald-200"
-                                                                            : "bg-teal-50 hover:bg-[#00A19A] text-[#00736E] hover:text-white border border-teal-200"
-                                                                    }`}
-                                                                >
-                                                                    <BookOpen className="w-3.5 h-3.5" /> 
-                                                                    <span>{st.scoreVals?.length >= 1 ? "Xem lại Đánh giá" : "Mở Form Đánh giá"}</span>
-                                                                </button>
-                                                                {st.scoreVals?.length >= 1 ? (
-                                                                    <div className="text-[10px] text-slate-600 flex gap-1.5 font-bold">
-                                                                        <span className="text-emerald-700">Đạt: {st.scoreVals.filter((v: string) => v === "3").length}</span>
-                                                                        <span className="text-slate-300">|</span>
-                                                                        <span className="text-rose-600">K.Đạt: {st.scoreVals.filter((v: string) => v === "2").length}</span>
+                                                            (() => {
+                                                                const tciRec = st.tciRecord;
+                                                                const countEval = tciRec ? Number(tciRec.countEvaluated || 0) : (st.scoreVals?.filter((v: string) => v && v !== "").length || 0);
+                                                                const countDat = tciRec ? Number(tciRec.countDat || 0) : (st.scoreVals?.filter((v: string) => v === "3" || v === "Đạt").length || 0);
+                                                                const countKDat = tciRec ? Number(tciRec.countKhongDat || 0) : (st.scoreVals?.filter((v: string) => v === "2" || v === "Không đạt").length || 0);
+                                                                const countKLam = tciRec ? Number(tciRec.countKhongLam || 0) : (st.scoreVals?.filter((v: string) => v === "1" || v === "Không làm").length || 0);
+                                                                const countChua = Math.max(0, 16 - countEval);
+                                                                const isSignedTci = tciRec?.signatureStatus === "SIGNED";
+                                                                const isPendingResign = tciRec?.signatureStatus === "PENDING_RESIGN";
+                                                                const actionLabel = isSignedTci
+                                                                    ? "Xem phiếu"
+                                                                    : countEval > 0
+                                                                      ? "Tiếp tục"
+                                                                      : "Đánh giá";
+
+                                                                return (
+                                                                    <div className="flex flex-col items-center justify-center gap-1.5 tabular-nums">
+                                                                        <div className="flex flex-wrap items-center justify-center gap-1.5">
+                                                                            <button 
+                                                                                type="button"
+                                                                                onClick={() => { setActiveChildDevStudent(st); setIsChildDevModalOpen(true); }}
+                                                                                className={`px-3.5 py-1.5 rounded-lg font-bold text-xs flex items-center gap-1.5 transition-all cursor-pointer ${
+                                                                                    isSignedTci
+                                                                                        ? "bg-emerald-50 hover:bg-emerald-600 text-emerald-700 hover:text-white border border-emerald-200"
+                                                                                        : countEval > 0
+                                                                                          ? "bg-amber-50 hover:bg-amber-600 text-amber-800 hover:text-white border border-amber-300"
+                                                                                          : "bg-[#003B3A] hover:bg-[#005250] text-white"
+                                                                                }`}
+                                                                            >
+                                                                                <BookOpen className="w-3.5 h-3.5" /> 
+                                                                                <span>{actionLabel}</span>
+                                                                            </button>
+                                                                            {countEval > 0 && (
+                                                                                <button
+                                                                                    type="button"
+                                                                                    onClick={() => {
+                                                                                        const pId = currentAssignment?.periodId || st.periodId || "ALL";
+                                                                                        window.open(`/api/tci/pdf?studentId=${encodeURIComponent(st.id)}&periodId=${encodeURIComponent(pId)}&format=pdf&disposition=attachment`, "_blank");
+                                                                                    }}
+                                                                                    className="px-2.5 py-1.5 rounded-lg border border-slate-200 bg-white hover:bg-slate-50 text-slate-700 font-semibold text-xs flex items-center gap-1 cursor-pointer"
+                                                                                    title="Tải PDF phiếu đánh giá TCI"
+                                                                                >
+                                                                                    <Printer className="w-3.5 h-3.5 text-[#00736E]" />
+                                                                                    <span>Tải PDF</span>
+                                                                                </button>
+                                                                            )}
+                                                                        </div>
+
+                                                                        <div className="flex flex-wrap items-center justify-center gap-1.5 text-[11px]">
+                                                                            <span className="font-bold text-[#003B3A]">
+                                                                                Tiến độ: {countEval}/16
+                                                                            </span>
+                                                                            <span className="text-slate-300">•</span>
+                                                                            {isSignedTci ? (
+                                                                                <span className="px-1.5 py-0.5 rounded bg-emerald-50 text-emerald-700 border border-emerald-200 font-semibold">
+                                                                                    Đã ký
+                                                                                </span>
+                                                                            ) : isPendingResign ? (
+                                                                                <span className="px-1.5 py-0.5 rounded bg-amber-50 text-amber-800 border border-amber-300 font-semibold">
+                                                                                    Cần ký lại (v{tciRec?.resultVersion || 2})
+                                                                                </span>
+                                                                            ) : (
+                                                                                <span className="px-1.5 py-0.5 rounded bg-slate-100 text-slate-600 font-medium">
+                                                                                    Chưa ký
+                                                                                </span>
+                                                                            )}
+                                                                        </div>
+
+                                                                        {countEval > 0 && (
+                                                                            <div className="text-[10px] text-slate-600 flex flex-wrap justify-center gap-1.5 font-semibold">
+                                                                                <span className="text-emerald-700">Đạt: {countDat}/16</span>
+                                                                                <span className="text-slate-300">|</span>
+                                                                                <span className="text-rose-600">K.Đạt: {countKDat}/16</span>
+                                                                                <span className="text-slate-300">|</span>
+                                                                                <span className="text-slate-600">K.Làm: {countKLam}/16</span>
+                                                                                {countChua > 0 && (
+                                                                                    <>
+                                                                                        <span className="text-slate-300">|</span>
+                                                                                        <span className="text-amber-700">Chưa ĐG: {countChua}/16</span>
+                                                                                    </>
+                                                                                )}
+                                                                            </div>
+                                                                        )}
+                                                                        {tciRec?.updatedAt && (
+                                                                            <div className="text-[10px] text-slate-400">
+                                                                                Cập nhật: {new Date(tciRec.updatedAt).toLocaleString("vi-VN", { hour: "2-digit", minute: "2-digit", day: "2-digit", month: "2-digit" })}
+                                                                            </div>
+                                                                        )}
                                                                     </div>
-                                                                ) : (
-                                                                    <span className="text-[10px] text-slate-400 font-medium">Chưa đánh giá</span>
-                                                                )}
-                                                            </div>
+                                                                );
+                                                            })()
                                                         ) : isOrientationSubject ? (
-                                                            // Specialized Orientation Form (3 Tabs + Subject Evaluation)
+                                                            // Phiếu phỏng vấn định hướng HS và trao đổi PHHS (PVDH-01..05)
                                                             <div className="flex flex-col items-center justify-center gap-1.5 py-1">
-                                                                <button 
-                                                                    type="button"
-                                                                    onClick={() => setOrientationTargetStudent(st)}
-                                                                    className="bg-[#003B3A] hover:bg-[#005250] text-white font-bold py-1.5 px-4 rounded-xl shadow-xs flex items-center gap-1.5 transition-all active:scale-95 text-xs cursor-pointer"
-                                                                >
-                                                                    <HeartHandshake className="w-3.5 h-3.5 text-teal-300" /> 
-                                                                    <span>Mở Phiếu Định Hướng &amp; Kết Quả Môn</span>
-                                                                </button>
-                                                                <button
-                                                                    type="button"
-                                                                    onClick={() => {
-                                                                        setReportTargetStudent(st);
-                                                                        setActiveReportOrientationData(null);
-                                                                    }}
-                                                                    className="inline-flex items-center gap-1 text-[11px] font-bold text-[#00736E] hover:text-[#003B3A] hover:underline cursor-pointer"
-                                                                >
-                                                                    <Printer className="w-3 h-3" />
-                                                                    <span>Xem &amp; In Báo Cáo A4</span>
-                                                                </button>
+                                                                <div className="flex flex-wrap items-center justify-center gap-1.5">
+                                                                    <button 
+                                                                        type="button"
+                                                                        onClick={() => {
+                                                                            setPvdhInitialSection("II_STUDENT");
+                                                                            setPvdhTargetStudent(st);
+                                                                        }}
+                                                                        className="bg-[#003B3A] hover:bg-[#005250] text-white font-bold py-1.5 px-3.5 rounded-xl shadow-xs flex items-center gap-1.5 transition-all active:scale-95 text-xs cursor-pointer"
+                                                                    >
+                                                                        <HeartHandshake className="w-3.5 h-3.5 text-[#5EEAD4]" /> 
+                                                                        <span>Nhập định hướng</span>
+                                                                    </button>
+                                                                    <button
+                                                                        type="button"
+                                                                        onClick={() => {
+                                                                            setPvdhInitialSection("PREVIEW");
+                                                                            setPvdhTargetStudent(st);
+                                                                        }}
+                                                                        className="px-2.5 py-1.5 rounded-xl border border-[#E2E8F0] bg-white hover:bg-[#F0FDFA] text-[#00736E] font-semibold text-xs flex items-center gap-1 cursor-pointer"
+                                                                        title="Xem trước phiếu phỏng vấn định hướng A4"
+                                                                    >
+                                                                        <Printer className="w-3.5 h-3.5" />
+                                                                        <span>Xem trước phiếu</span>
+                                                                    </button>
+                                                                    {st.pvdhRecord?.id && (
+                                                                        <button
+                                                                            type="button"
+                                                                            onClick={() => {
+                                                                                const pId = st.periodId || currentAssignment?.periodId || "";
+                                                                                window.open(`/api/pvdh/pdf?studentId=${encodeURIComponent(st.id)}&periodId=${encodeURIComponent(pId)}&format=pdf&disposition=attachment`, "_blank");
+                                                                            }}
+                                                                            className="px-2.5 py-1.5 rounded-xl border border-[#E2E8F0] bg-white hover:bg-slate-50 text-slate-700 font-semibold text-xs flex items-center gap-1 cursor-pointer"
+                                                                            title="Tải PDF phiếu định hướng"
+                                                                        >
+                                                                            <span>Tải PDF</span>
+                                                                        </button>
+                                                                    )}
+                                                                </div>
+                                                                {st.pvdhRecord?.templateCode && (
+                                                                    <div className="text-[11px] text-slate-500 font-medium">
+                                                                        Mẫu <strong className="text-[#003B3A]">{st.pvdhRecord.templateCode}</strong> (v{st.pvdhRecord.versionNumber || "1.0"})
+                                                                    </div>
+                                                                )}
+                                                                {st.orientationRecord?.id && (
+                                                                    <button
+                                                                        type="button"
+                                                                        onClick={() => setOrientationTargetStudent(st)}
+                                                                        className="inline-flex items-center gap-1 text-[11px] font-semibold text-slate-500 hover:text-[#00736E] hover:underline cursor-pointer"
+                                                                    >
+                                                                        <span>Xem dữ liệu định hướng cũ</span>
+                                                                    </button>
+                                                                )}
                                                             </div>
                                                         ) : isPsychSubject ? (
                                                             // Specialized Psychology Display
@@ -2062,9 +2304,29 @@ export default function TeacherAssessmentsClient({ user }: { user: any }) {
 
                                                     {/* Nhận xét chung cho Chuẩn phát triển / Tư duy */}
                                                     {(isChildDevSubject || isThinkingSkillsSubject) && (
-                                                        <td className="px-4 py-3 text-left align-top max-w-[240px] border-b border-slate-100">
+                                                        <td className="px-4 py-3 text-left align-top max-w-[260px] border-b border-slate-100">
                                                             <div className="text-xs text-slate-700 leading-relaxed font-medium italic bg-slate-50 p-2 rounded-lg border border-slate-200/60 max-h-[90px] overflow-y-auto custom-scrollbar">
-                                                                {st.commentVals?.[0] ? `"${st.commentVals[0]}"` : <span className="text-slate-400 italic">Chưa có nhận xét</span>}
+                                                                {(() => {
+                                                                    if (isChildDevSubject) {
+                                                                        const recCmt =
+                                                                            st.tciRecord?.generalComment?.trim() ||
+                                                                            st.tciRecord?.highlightsComment?.trim() ||
+                                                                            st.tciRecord?.supportNeededComment?.trim() ||
+                                                                            st.tciRecord?.teacherRecommendation?.trim() ||
+                                                                            (Array.isArray(st.commentVals)
+                                                                                ? st.commentVals.find(
+                                                                                      (c: any) =>
+                                                                                          c &&
+                                                                                          typeof c === "string" &&
+                                                                                          c.trim() !== "" &&
+                                                                                          !c.includes('"_tciMeta"') &&
+                                                                                          !c.startsWith("Đạt:")
+                                                                                  )
+                                                                                : "");
+                                                                        return recCmt ? `"${recCmt}"` : <span className="text-slate-400 italic">Chưa có nhận xét</span>;
+                                                                    }
+                                                                    return st.commentVals?.[0] ? `"${st.commentVals[0]}"` : <span className="text-slate-400 italic">Chưa có nhận xét</span>;
+                                                                })()}
                                                             </div>
                                                         </td>
                                                     )}
@@ -2093,149 +2355,171 @@ export default function TeacherAssessmentsClient({ user }: { user: any }) {
                                                         </>
                                                     )}
 
-                                                    {/* Sticky Right: Trạng thái & Xác nhận + Mở Phiếu Định Hướng & Kết quả Môn */}
-                                                    <td className="px-4 py-3 text-center bg-white md:sticky md:right-0 z-10 border-b border-slate-100 shadow-[-4px_0_8px_rgba(0,0,0,0.06)] group-hover:bg-[#F0FDFA]/70 transition-colors min-w-[175px]">
-                                                        <div className="flex flex-col items-stretch gap-1.5">
-                                                            {(() => {
-                                                                const isCustomSubject = isPsychSubject || isChildDevSubject || isThinkingSkillsSubject || isPreschoolSubject;
+                                                    {/* Sticky Right: Trạng thái & Xác nhận (Ẩn đối với môn TCI; không hiển thị Phiếu Định Hướng cho GVBM phân công) */}
+                                                    {!isChildDevSubject && (
+                                                        <td className="px-4 py-3 text-center bg-white md:sticky md:right-0 z-10 border-b border-slate-100 shadow-[-4px_0_8px_rgba(0,0,0,0.06)] group-hover:bg-[#F0FDFA]/70 transition-colors min-w-[175px]">
+                                                            <div className="flex flex-col items-stretch gap-1.5">
+                                                                {(() => {
+                                                                    const isCustomSubject = isPsychSubject || isChildDevSubject || isThinkingSkillsSubject || isPreschoolSubject;
 
-                                                                if (isCustomSubject) {
-                                                                    if (isSaved) {
-                                                                        return (
+                                                                    if (isCustomSubject) {
+                                                                        if (isSaved) {
+                                                                            return (
+                                                                                <div className="inline-flex items-center justify-center gap-1.5 px-3 py-1.5 rounded-xl bg-emerald-50 text-emerald-700 border border-emerald-200 text-xs font-bold w-full">
+                                                                                    <CheckCircle2 className="w-4 h-4 text-emerald-600 shrink-0" />
+                                                                                    <span>Đã hoàn thành</span>
+                                                                                </div>
+                                                                            );
+                                                                        } else {
+                                                                            return (
+                                                                                <button
+                                                                                    type="button"
+                                                                                    onClick={() => {
+                                                                                        if (isPsychSubject) { setActivePsychStudent(st); setIsPsychModalOpen(true); }
+                                                                                        else if (isPreschoolSubject) { setActivePreschoolStudent(st); setIsPreschoolModalOpen(true); }
+                                                                                        else if (isThinkingSkillsSubject) { setActiveThinkingSkillsStudent(st); setIsThinkingSkillsModalOpen(true); }
+                                                                                        else if (isChildDevSubject) { setActiveChildDevStudent(st); setIsChildDevModalOpen(true); }
+                                                                                    }}
+                                                                                    className="inline-flex items-center justify-center gap-1.5 px-3 py-1.5 rounded-xl bg-amber-50 hover:bg-amber-100 text-amber-800 border border-amber-200 text-xs font-bold w-full transition-colors cursor-pointer"
+                                                                                >
+                                                                                    <Clock className="w-3.5 h-3.5 text-amber-600 shrink-0" />
+                                                                                    <span>Chờ điền form</span>
+                                                                                </button>
+                                                                            );
+                                                                        }
+                                                                    }
+
+                                                                    if (isOrientationSubject) {
+                                                                        const wf = st.pvdhRecord?.workflowStatus;
+                                                                        if (wf === "VERIFIED_LOCKED") {
+                                                                            return (
+                                                                                <div className="inline-flex items-center justify-center gap-1.5 px-3 py-1.5 rounded-xl bg-emerald-50 text-[#059669] border border-emerald-200 text-xs font-bold w-full">
+                                                                                    <ShieldCheck className="w-3.5 h-3.5 shrink-0" />
+                                                                                    <span>Đã xác nhận</span>
+                                                                                </div>
+                                                                            );
+                                                                        }
+                                                                        if (wf === "COMPLETED" || wf === "SUBMITTED") {
+                                                                            return (
+                                                                                <div className="inline-flex items-center justify-center gap-1.5 px-3 py-1.5 rounded-xl bg-emerald-50 text-[#059669] border border-emerald-200 text-xs font-bold w-full">
+                                                                                    <CheckCircle2 className="w-3.5 h-3.5 shrink-0" />
+                                                                                    <span>Đã hoàn tất</span>
+                                                                                </div>
+                                                                            );
+                                                                        }
+                                                                        if (wf === "RETURNED") {
+                                                                            return (
+                                                                                <div className="inline-flex items-center justify-center gap-1.5 px-3 py-1.5 rounded-xl bg-rose-50 text-[#E11D48] border border-rose-200 text-xs font-bold w-full" title={st.pvdhRecord?.returnReason || ""}>
+                                                                                    <AlertCircle className="w-3.5 h-3.5 shrink-0" />
+                                                                                    <span>Cần bổ sung</span>
+                                                                                </div>
+                                                                            );
+                                                                        }
+                                                                        if (wf === "PARTIAL_COMPLETED" || wf === "DRAFT") {
+                                                                            return (
+                                                                                <div className="inline-flex items-center justify-center gap-1.5 px-3 py-1.5 rounded-xl bg-[#F0FDFA] text-[#00736E] border border-teal-200 text-xs font-bold w-full">
+                                                                                    <Clock className="w-3.5 h-3.5 shrink-0" />
+                                                                                    <span>{wf === "PARTIAL_COMPLETED" ? "Hoàn tất 1 phần" : "Bản nháp"}</span>
+                                                                                </div>
+                                                                            );
+                                                                        }
+                                                                        return st.orientationRecord?.id ? (
                                                                             <div className="inline-flex items-center justify-center gap-1.5 px-3 py-1.5 rounded-xl bg-emerald-50 text-emerald-700 border border-emerald-200 text-xs font-bold w-full">
-                                                                                <CheckCircle2 className="w-4 h-4 text-emerald-600 shrink-0" />
-                                                                                <span>Đã hoàn thành</span>
+                                                                                <CheckCircle2 className="w-3.5 h-3.5 text-emerald-600 shrink-0" />
+                                                                                <span>Đã lưu phiếu cũ</span>
+                                                                            </div>
+                                                                        ) : (
+                                                                            <div className="inline-flex items-center justify-center gap-1.5 px-3 py-1.5 rounded-xl bg-amber-50 text-[#D97706] border border-amber-200 text-xs font-bold w-full">
+                                                                                <Clock className="w-3.5 h-3.5 shrink-0" />
+                                                                                <span>Chưa nhập kết quả</span>
                                                                             </div>
                                                                         );
-                                                                    } else {
-                                                                        return (
-                                                                            <button
-                                                                                type="button"
-                                                                                onClick={() => {
-                                                                                    if (isPsychSubject) { setActivePsychStudent(st); setIsPsychModalOpen(true); }
-                                                                                    else if (isPreschoolSubject) { setActivePreschoolStudent(st); setIsPreschoolModalOpen(true); }
-                                                                                    else if (isThinkingSkillsSubject) { setActiveThinkingSkillsStudent(st); setIsThinkingSkillsModalOpen(true); }
-                                                                                    else if (isChildDevSubject) { setActiveChildDevStudent(st); setIsChildDevModalOpen(true); }
-                                                                                }}
-                                                                                className="inline-flex items-center justify-center gap-1.5 px-3 py-1.5 rounded-xl bg-amber-50 hover:bg-amber-100 text-amber-800 border border-amber-200 text-xs font-bold w-full transition-colors cursor-pointer"
-                                                                            >
-                                                                                <Clock className="w-3.5 h-3.5 text-amber-600 shrink-0" />
-                                                                                <span>Chờ điền form</span>
-                                                                            </button>
-                                                                        );
                                                                     }
-                                                                }
 
-                                                                if (isOrientationSubject) {
-                                                                    return st.orientationRecord?.id ? (
-                                                                        <div className="inline-flex items-center justify-center gap-1.5 px-3 py-1.5 rounded-xl bg-emerald-50 text-emerald-700 border border-emerald-200 text-xs font-bold w-full">
-                                                                            <CheckCircle2 className="w-3.5 h-3.5 text-emerald-600 shrink-0" />
-                                                                            <span>{isPsychSubject ? "Đã lưu phiếu Tâm lý" : "Đã lưu phiếu ĐH"}</span>
-                                                                        </div>
-                                                                    ) : (
-                                                                        <div className="inline-flex items-center justify-center gap-1.5 px-3 py-1.5 rounded-xl bg-amber-50 text-amber-800 border border-amber-200 text-xs font-bold w-full">
-                                                                            <Clock className="w-3.5 h-3.5 text-amber-600 shrink-0" />
-                                                                            <span>{isPsychSubject ? "Chờ đánh giá Tâm lý" : "Chờ định hướng"}</span>
-                                                                        </div>
+                                                                    // Regular subjects: Save Button
+                                                                    return (
+                                                                        <button 
+                                                                            type="button"
+                                                                            onClick={() => saveStudentScore(st)}
+                                                                            disabled={isLocked}
+                                                                            className={`px-3 py-1.5 rounded-xl text-xs font-bold flex items-center justify-center w-full gap-1.5 transition-all shadow-2xs cursor-pointer ${
+                                                                                isLocked 
+                                                                                    ? "bg-slate-200 text-slate-400 cursor-not-allowed border-none" 
+                                                                                    : saveStatus[st.id] === "saved" 
+                                                                                    ? "bg-emerald-600 text-white" 
+                                                                                    : saveStatus[st.id] === "saving" 
+                                                                                    ? "bg-slate-200 text-slate-600" 
+                                                                                    : isDirty 
+                                                                                    ? "bg-[#00A19A] hover:bg-[#008B85] text-white shadow-teal-900/15" 
+                                                                                    : "bg-white border border-slate-200 text-slate-700 hover:bg-slate-50 hover:border-slate-300"
+                                                                            }`}
+                                                                        >
+                                                                            {saveStatus[st.id] === "saved" ? (
+                                                                                <>
+                                                                                    <CheckCircle2 className="w-3.5 h-3.5" />
+                                                                                    <span>Đã lưu</span>
+                                                                                </>
+                                                                            ) : saveStatus[st.id] === "saving" ? (
+                                                                                <>
+                                                                                    <div className="w-3 h-3 border-2 border-slate-600 border-t-transparent rounded-full animate-spin" />
+                                                                                    <span>Lưu...</span>
+                                                                                </>
+                                                                            ) : (
+                                                                                <>
+                                                                                    <Save className="w-3.5 h-3.5" />
+                                                                                    <span>{isDirty ? "Lưu điểm" : "Lưu"}</span>
+                                                                                </>
+                                                                            )}
+                                                                        </button>
                                                                     );
-                                                                }
+                                                                })()}
 
-                                                                // Regular subjects: Save Button
-                                                                return (
-                                                                    <button 
-                                                                        type="button"
-                                                                        onClick={() => saveStudentScore(st)}
-                                                                        disabled={isLocked}
-                                                                        className={`px-3 py-1.5 rounded-xl text-xs font-bold flex items-center justify-center w-full gap-1.5 transition-all shadow-2xs cursor-pointer ${
-                                                                            isLocked 
-                                                                                ? "bg-slate-200 text-slate-400 cursor-not-allowed border-none" 
-                                                                                : saveStatus[st.id] === "saved" 
-                                                                                ? "bg-emerald-600 text-white" 
-                                                                                : saveStatus[st.id] === "saving" 
-                                                                                ? "bg-slate-200 text-slate-600" 
-                                                                                : isDirty 
-                                                                                ? "bg-[#00A19A] hover:bg-[#008B85] text-white shadow-teal-900/15" 
-                                                                                : "bg-white border border-slate-200 text-slate-700 hover:bg-slate-50 hover:border-slate-300"
-                                                                        }`}
-                                                                    >
-                                                                        {saveStatus[st.id] === "saved" ? (
-                                                                            <>
-                                                                                <CheckCircle2 className="w-3.5 h-3.5" />
-                                                                                <span>Đã lưu</span>
-                                                                            </>
-                                                                        ) : saveStatus[st.id] === "saving" ? (
-                                                                            <>
-                                                                                <div className="w-3 h-3 border-2 border-slate-600 border-t-transparent rounded-full animate-spin" />
-                                                                                <span>Lưu...</span>
-                                                                            </>
-                                                                        ) : (
-                                                                            <>
-                                                                                <Save className="w-3.5 h-3.5" />
-                                                                                <span>{isDirty ? "Lưu điểm" : "Lưu"}</span>
-                                                                            </>
-                                                                        )}
-                                                                    </button>
-                                                                );
-                                                            })()}
-
-                                                            {/* Nút Mở trực tiếp Phiếu Định Hướng / Phiếu Đánh Giá Tâm Lý + In Báo cáo A4 */}
-                                                            {!isOrientationSubject && (
-                                                                <div className="flex items-center gap-1">
-                                                                    <button
-                                                                        type="button"
-                                                                        onClick={() => {
-                                                                            if (isPsychSubject) {
+                                                                {/* Chỉ hiển thị nút Phiếu Đánh giá Tâm lý đối với môn Tâm lý (không hiển thị Phiếu Định Hướng ở GVBM phân công) */}
+                                                                {isPsychSubject && (
+                                                                    <div className="flex items-center gap-1">
+                                                                        <button
+                                                                            type="button"
+                                                                            onClick={() => {
                                                                                 setActivePsychStudent(st);
                                                                                 setIsPsychModalOpen(true);
-                                                                            } else {
-                                                                                setOrientationTargetStudent(st);
-                                                                            }
-                                                                        }}
-                                                                        className={`flex-1 px-2.5 py-1.5 rounded-lg text-[11px] font-bold flex items-center justify-center gap-1 border transition-all cursor-pointer ${
-                                                                            st.orientationRecord?.id || (isPsychSubject && st.scoreVals?.length >= 7)
-                                                                                ? "bg-teal-50/90 hover:bg-[#003B3A] text-[#003B3A] hover:text-white border-teal-200 shadow-2xs"
-                                                                                : "bg-[#003B3A] hover:bg-[#005250] text-white border-[#003B3A]"
-                                                                        }`}
-                                                                        title={isPsychSubject ? "Mở Phiếu Đánh Giá Tâm Lý Chi Tiết & Ký điện tử" : "Mở Phiếu Định Hướng Học Sinh & Nhập kết quả Môn"}
-                                                                    >
-                                                                        <HeartHandshake className="w-3 h-3 shrink-0" />
-                                                                        <span className="truncate">
-                                                                            {isPsychSubject
-                                                                                ? (st.orientationRecord?.id || st.scoreVals?.length >= 7 ? "Phiếu Đánh giá Tâm lý (đã lưu)" : "Phiếu Đánh giá Tâm lý")
-                                                                                : (st.orientationRecord?.id ? "Phiếu Định Hướng (đã lưu)" : "Phiếu Định Hướng")}
-                                                                        </span>
-                                                                        {(() => {
-                                                                            const hasDigitalSig = Boolean(
-                                                                                st.signatureName ||
-                                                                                (st.orientationRecord?.psychologyData && String(st.orientationRecord.psychologyData).includes('"isSigned":true'))
-                                                                            );
-                                                                            if (!hasDigitalSig) return null;
-                                                                            return (
-                                                                                <span 
-                                                                                    className="inline-flex items-center gap-0.5 px-1 py-0.2 rounded-full bg-emerald-600 text-white text-[9px] font-extrabold shrink-0 shadow-2xs ml-0.5"
-                                                                                    title="Đã được tự động gán chữ ký điện tử GVBM sau khi xác nhận B4"
-                                                                                >
+                                                                            }}
+                                                                            className={`flex-1 px-2.5 py-1.5 rounded-lg text-[11px] font-bold flex items-center justify-center gap-1 border transition-all cursor-pointer ${
+                                                                                st.orientationRecord?.id || st.scoreVals?.length >= 7
+                                                                                    ? "bg-teal-50/90 hover:bg-[#003B3A] text-[#003B3A] hover:text-white border-teal-200 shadow-2xs"
+                                                                                    : "bg-[#003B3A] hover:bg-[#005250] text-white border-[#003B3A]"
+                                                                            }`}
+                                                                            title="Mở Phiếu Đánh Giá Tâm Lý Chi Tiết & Ký điện tử"
+                                                                        >
+                                                                            <HeartHandshake className="w-3 h-3 shrink-0" />
+                                                                            <span className="truncate">
+                                                                                {st.orientationRecord?.id || st.scoreVals?.length >= 7 ? "Phiếu Đánh giá Tâm lý (đã lưu)" : "Phiếu Đánh giá Tâm lý"}
+                                                                            </span>
+                                                                            {Boolean(
+                                                                                st.orientationRecord?.psychologyData && String(st.orientationRecord.psychologyData).includes('"isSigned":true')
+                                                                            ) && (
+                                                                                <span className="inline-flex items-center gap-0.5 px-1 py-0.2 rounded-full bg-emerald-600 text-white text-[9px] font-extrabold shrink-0 shadow-2xs ml-0.5">
                                                                                     <ShieldCheck className="w-2.5 h-2.5 text-white" />
                                                                                     <span>Đã ký</span>
                                                                                 </span>
-                                                                            );
-                                                                        })()}
-                                                                    </button>
-                                                                    <button
-                                                                        type="button"
-                                                                        onClick={() => {
-                                                                            setReportTargetStudent(st);
-                                                                            setActiveReportOrientationData(null);
-                                                                        }}
-                                                                        className="px-2 py-1.5 rounded-lg border border-slate-200 bg-white hover:bg-teal-50 text-slate-700 hover:text-[#003B3A] text-[11px] font-bold flex items-center justify-center transition-colors cursor-pointer shrink-0"
-                                                                        title={isPsychSubject ? "Xem & In Phiếu Đánh Giá Tâm Lý & Báo cáo Định hướng A4" : "Xem & In Báo cáo Phỏng vấn Định hướng A4"}
-                                                                    >
-                                                                        <Printer className="w-3.5 h-3.5" />
-                                                                    </button>
-                                                                </div>
-                                                            )}
-                                                        </div>
-                                                    </td>
+                                                                            )}
+                                                                        </button>
+                                                                        <button
+                                                                            type="button"
+                                                                            onClick={() => {
+                                                                                setReportTargetStudent(st);
+                                                                                setActiveReportOrientationData(st.orientationRecord || null);
+                                                                                setReportInitialViewMode("PSYCHOLOGY_ONLY");
+                                                                            }}
+                                                                            className="px-2 py-1.5 rounded-lg border border-slate-200 bg-white hover:bg-teal-50 text-slate-700 hover:text-[#003B3A] text-[11px] font-bold flex items-center justify-center transition-colors cursor-pointer shrink-0"
+                                                                            title="Xem & In Phiếu Đánh Giá Tâm Lý A4"
+                                                                        >
+                                                                            <Printer className="w-3.5 h-3.5" />
+                                                                        </button>
+                                                                    </div>
+                                                                )}
+                                                            </div>
+                                                        </td>
+                                                    )}
                                                 </tr>
                                             );
                                         })}
@@ -2439,14 +2723,36 @@ export default function TeacherAssessmentsClient({ user }: { user: any }) {
                 </div>
             )}
 
-            {/* Child Dev Standard Modal */}
+            {/* Child Dev Standard Modal (TCI - 16 Tiêu chí) */}
             {isChildDevSubject && activeChildDevStudent && isChildDevModalOpen && (
                 <div className="fixed inset-0 z-[100] bg-white overflow-y-auto animate-in fade-in">
                     <ChildDevStandardForm 
                         student={activeChildDevStudent}
-                        onSave={async (st: any, scores: any[], comments: any[]) => {
-                            saveStudentScore(st, scores, comments);
-                            setIsChildDevModalOpen(false);
+                        periodId={currentAssignment?.periodId}
+                        onSavedRecord={(updatedRec: any) => {
+                            setStudents((prev) =>
+                                prev.map((s) =>
+                                    s.id === activeChildDevStudent.id
+                                        ? {
+                                              ...s,
+                                              tciRecord: updatedRec,
+                                              commentVals: [
+                                                  updatedRec.generalComment || updatedRec.highlightsComment || "",
+                                              ],
+                                          }
+                                        : s
+                                )
+                            );
+                        }}
+                        hasNextStudent={(() => {
+                            const curIdx = searchedStudents.findIndex((s) => s.id === activeChildDevStudent.id);
+                            return curIdx >= 0 && curIdx < searchedStudents.length - 1;
+                        })()}
+                        onNextStudent={() => {
+                            const curIdx = searchedStudents.findIndex((s) => s.id === activeChildDevStudent.id);
+                            if (curIdx >= 0 && curIdx < searchedStudents.length - 1) {
+                                setActiveChildDevStudent(searchedStudents[curIdx + 1]);
+                            }
                         }}
                         isLocked={isLocked}
                         onClose={() => setIsChildDevModalOpen(false)}
@@ -2555,7 +2861,33 @@ export default function TeacherAssessmentsClient({ user }: { user: any }) {
                 })}
             />
 
-            {/* MODAL PHIẾU ĐỊNH HƯỚNG ĐẦU VÀO (3 TAB + NHẬP ĐIỂM MÔN THEO PHÂN CÔNG) */}
+            {/* MODAL PHIẾU PHỎNG VẤN ĐỊNH HƯỚNG HS & TRAO ĐỔI PHHS (PVDH-01..05) */}
+            {pvdhTargetStudent && (
+                <PvdhOrientationModal
+                    isOpen={!!pvdhTargetStudent}
+                    onClose={() => setPvdhTargetStudent(null)}
+                    student={pvdhTargetStudent}
+                    initialSection={pvdhInitialSection}
+                    onSuccess={() => {
+                        if (typeof fetchStudents === "function") {
+                            fetchStudents();
+                        }
+                    }}
+                />
+            )}
+
+            {/* DRAWER BÀN GIAO PHIẾU ĐỊNH HƯỚNG CHO GVCN */}
+            <GvcnHandoverDrawer
+                isOpen={isGvcnHandoverOpen}
+                onClose={() => setIsGvcnHandoverOpen(false)}
+                onOpenStudentModal={(stu) => {
+                    setIsGvcnHandoverOpen(false);
+                    setPvdhInitialSection("PREVIEW");
+                    setPvdhTargetStudent(stu);
+                }}
+            />
+
+            {/* MODAL PHIẾU ĐỊNH HƯỚNG ĐẦU VÀO CŨ (TƯƠNG THÍCH DỮ LIỆU LỊCH SỬ) */}
             {orientationTargetStudent && (
                 <StudentOrientationModal
                     isOpen={!!orientationTargetStudent}
@@ -2565,6 +2897,7 @@ export default function TeacherAssessmentsClient({ user }: { user: any }) {
                     onOpenReport={(stu, orData) => {
                         setReportTargetStudent(stu);
                         setActiveReportOrientationData(orData);
+                        setReportInitialViewMode(isPsychSubject ? "PSYCHOLOGY_ONLY" : "ALL");
                     }}
                     onSuccess={() => {
                         if (typeof fetchStudents === "function") {
@@ -2586,6 +2919,7 @@ export default function TeacherAssessmentsClient({ user }: { user: any }) {
                     student={reportTargetStudent}
                     orientationData={activeReportOrientationData}
                     initialViewMode={reportInitialViewMode}
+                    onlySubjectMode={isPsychSubject}
                 />
             )}
         </div>

@@ -2,6 +2,8 @@ import { getDefaultAcademicYear } from "@/lib/academicYear"
 import { prisma } from "@/lib/db"
 import { auth } from "@/lib/auth"
 import { CauHinhFileDiemKsdvClient } from "./client"
+import { ensureTciSchema } from "@/lib/tci/schema-init"
+import { ensurePvdhSchema } from "@/lib/pvdh/schema-init"
 
 export const metadata = { title: "Cấu hình File điểm khảo sát đầu vào | Admin" }
 export const dynamic = "force-dynamic"
@@ -30,6 +32,8 @@ export default async function CauHinhFileDiemKsdvPage() {
   ]
 
   try {
+    await ensureTciSchema().catch(() => {})
+    await ensurePvdhSchema().catch(() => {})
     const pAny = prisma as any
     if (pAny) {
       const [

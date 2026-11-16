@@ -1,7 +1,14 @@
 import { NextResponse } from "next/server"
 import { prisma } from "@/lib/db"
 import { auth } from "@/lib/auth"
+import { ensurePvdhSchema, getPvdhDb } from "@/lib/pvdh/schema-init"
 import { buildStudentSpecialSubjectsPortfolio } from "@/lib/specialSubjectsPortfolio"
+import { buildStudentCtqtPortfolio } from "@/lib/ctqt/studentProfilePortfolio"
+import {
+  buildAchievementLabelMaps,
+  resolveAchievementCategoryLabel,
+  resolveAchievementLevelLabel,
+} from "@/lib/achievementFormatters"
 import {
   resolveAdvisoryCaller,
   verifyStudentRelationship,
@@ -57,7 +64,12 @@ export async function GET(req: Request) {
         class: {
           include: {
             campus: true,
-            academicYear: true
+            academicYear: true,
+            ctqtTeachingAssignments: {
+              include: {
+                primaryTeacher: { select: { id: true, teacherName: true } }
+              }
+            }
           }
         },
         campus: true,
@@ -95,6 +107,8 @@ export async function GET(req: Request) {
           include: {
             achievement: {
               include: {
+                academicYear: true,
+                teacher: true,
                 exam: {
                   include: {
                     round: true,
@@ -140,6 +154,12 @@ export async function GET(req: Request) {
             }
           },
           orderBy: { createdAt: "desc" }
+        },
+        ctqtGradeEntries: {
+          orderBy: { updatedAt: "desc" }
+        },
+        ctqtCompetencyEntries: {
+          orderBy: { updatedAt: "desc" }
         },
         learningSupportTargets: {
           include: {
@@ -309,10 +329,18 @@ export async function GET(req: Request) {
               },
               orderBy: { createdAt: "desc" }
             },
+            ctqtGradeEntries: {
+              orderBy: { updatedAt: "desc" }
+            },
+            ctqtCompetencyEntries: {
+              orderBy: { updatedAt: "desc" }
+            },
             achievements: {
               include: {
                 achievement: {
                   include: {
+                    academicYear: true,
+                    teacher: true,
                     exam: {
                       include: {
                         round: true,
@@ -364,6 +392,8 @@ export async function GET(req: Request) {
         const allSubGe: any[] = [...(student.subjectGradeEntries || [])]
         const allCompSum: any[] = [...(student.competencySummaries || [])]
         const allSge: any[] = [...(student.specialGradeEntries || [])]
+        const allCtqtGe: any[] = [...(student.ctqtGradeEntries || [])]
+        const allCtqtCe: any[] = [...(student.ctqtCompetencyEntries || [])]
         const allAch: any[] = [...(student.achievements || [])]
         const allHc: any[] = [...(student.highlightComments || [])]
         const allCo: any[] = [...(student.careerOrientations || [])]
@@ -419,6 +449,20 @@ export async function GET(req: Request) {
               allSge.push(sge)
             }
           })
+          ;((cr as any).ctqtGradeEntries || []).forEach((cge: any) => {
+            const targetYr = student.academicYearId || academicYearId
+            if (targetYr && cge.academicYearId && cge.academicYearId !== targetYr && cge.classId !== student.classId) return
+            if (!allCtqtGe.some((ex: any) => ex.id === cge.id)) {
+              allCtqtGe.push(cge)
+            }
+          })
+          ;((cr as any).ctqtCompetencyEntries || []).forEach((cce: any) => {
+            const targetYr = student.academicYearId || academicYearId
+            if (targetYr && cce.academicYearId && cce.academicYearId !== targetYr && cce.classId !== student.classId) return
+            if (!allCtqtCe.some((ex: any) => ex.id === cce.id)) {
+              allCtqtCe.push(cce)
+            }
+          })
           ;((cr as any).achievements || []).forEach((a: any) => {
             if (!allAch.some((ex: any) => ex.id === a.id || ex.achievementId === a.achievementId)) {
               allAch.push(a)
@@ -458,6 +502,8 @@ export async function GET(req: Request) {
         student.subjectGradeEntries = allSubGe
         student.competencySummaries = allCompSum
         student.specialGradeEntries = allSge
+        student.ctqtGradeEntries = allCtqtGe
+        student.ctqtCompetencyEntries = allCtqtCe
         student.achievements = allAch
         student.highlightComments = allHc
         student.careerOrientations = allCo
@@ -480,16 +526,27 @@ export async function GET(req: Request) {
       }
     }
 
-    // 3. Khảo sát đầu vào (Entrance Survey - K12 & Preschool)
+    // 3. Khảo sát đầu vào (Entrance Survey - K12 & Preschool) — đối chiếu bằng mã ổn định, tuyệt đối không nối qua họ tên
     let entranceSurvey: any = null
     try {
+      const stableSurveyCodes = Array.from(
+        new Set(
+          [
+            student?.studentCode,
+            (student as any)?.vneduCode,
+            (student as any)?.enrollmentCode
+          ]
+            .map(c => String(c || "").trim())
+            .filter(Boolean)
+        )
+      )
       let generalSurvey: any = null
-      if (student?.studentCode) {
+      if (stableSurveyCodes.length > 0) {
         generalSurvey = await prisma.inputAssessmentStudent.findFirst({
           where: {
             OR: [
-              { studentCode: student.studentCode },
-              { enrollmentCode: student.studentCode }
+              { studentCode: { in: stableSurveyCodes } },
+              { enrollmentCode: { in: stableSurveyCodes } }
             ]
           },
           include: {
@@ -499,22 +556,6 @@ export async function GET(req: Request) {
           },
           orderBy: { createdAt: "desc" }
         })
-      }
-
-      if (!generalSurvey && student?.dateOfBirth) {
-        const cleanStudentName = (student?.studentName || "").trim().toLowerCase().replace(/\s+/g, " ")
-        const allPossible = await prisma.inputAssessmentStudent.findMany({
-          where: { dateOfBirth: student.dateOfBirth },
-          include: {
-            scores: { include: { subject: true } },
-            period: true,
-            batch: true
-          }
-        })
-        generalSurvey =
-          allPossible.find(
-            x => (x?.fullName || "").trim().toLowerCase().replace(/\s+/g, " ") === cleanStudentName
-          ) || null
       }
 
       if (generalSurvey) {
@@ -577,8 +618,35 @@ export async function GET(req: Request) {
         const totalEnglishScore =
           !isNaN(wNum) || !isNaN(oNum) ? (isNaN(wNum) ? 0 : wNum) + (isNaN(oNum) ? 0 : oNum) : null
 
+        let pvdhRecordSummary: any = null
+        if (caller.actorRole !== "PARENT" && generalSurvey?.id) {
+          try {
+            await ensurePvdhSchema().catch(() => {})
+            pvdhRecordSummary = await getPvdhDb().pvdhAssessmentRecord.findFirst({
+              where: { studentId: generalSurvey.id, isLatestAttempt: true },
+              select: {
+                id: true,
+                studentId: true,
+                studentCode: true,
+                templateCode: true,
+                versionNumber: true,
+                workflowStatus: true,
+                updatedAt: true
+              }
+            })
+          } catch {}
+        }
+
         entranceSurvey = {
           ...generalSurvey,
+          ...(caller.actorRole === "PARENT"
+            ? {
+                directorNote: undefined,
+                orientationRecord: undefined,
+              }
+            : {
+                pvdhRecord: pvdhRecordSummary,
+              }),
           mathScore,
           literatureScore,
           writtenEnglishScore,
@@ -588,32 +656,21 @@ export async function GET(req: Request) {
           scores: (generalSurvey.scores || []).map((s: any) => ({
             subjectName: s?.subject?.name || s?.subjectName || "",
             scores: safeJsonParse(s?.scores, {}),
-            comments: safeJsonParse(s?.comments, {})
+            comments: caller.actorRole === "PARENT" ? {} : safeJsonParse(s?.comments, {})
           }))
         }
       } else if ((prisma as any).preschoolInputAssessmentStudent) {
         let preschoolSurvey: any = null
-        if (student?.studentCode) {
+        if (stableSurveyCodes.length > 0) {
           preschoolSurvey = await (prisma as any).preschoolInputAssessmentStudent.findFirst({
             where: {
               OR: [
-                { studentCode: student.studentCode },
-                { enrollmentCode: student.studentCode }
+                { studentCode: { in: stableSurveyCodes } },
+                { enrollmentCode: { in: stableSurveyCodes } }
               ]
             },
             include: { period: true, batch: true }
           })
-        }
-        if (!preschoolSurvey && student?.dateOfBirth) {
-          const cleanStudentName = (student?.studentName || "").trim().toLowerCase().replace(/\s+/g, " ")
-          const allPossiblePre = await (prisma as any).preschoolInputAssessmentStudent.findMany({
-            where: { dateOfBirth: student.dateOfBirth },
-            include: { period: true, batch: true }
-          })
-          preschoolSurvey =
-            allPossiblePre.find(
-              (x: any) => (x?.fullName || "").trim().toLowerCase().replace(/\s+/g, " ") === cleanStudentName
-            ) || null
         }
         if (preschoolSurvey) {
           let pScores: any[] = []
@@ -926,6 +983,27 @@ export async function GET(req: Request) {
     const primaryOrientation = student.careerOrientations?.[0] || null
     const primaryCommitment = student.learningCommitments?.[0] || null
 
+    const [achCats360, achLvls360] = await Promise.all([
+      prisma.achievementCategory.findMany({ select: { id: true, code: true, name: true } }).catch(() => []),
+      prisma.achievementLevel.findMany({ select: { id: true, code: true, name: true, categoryId: true } }).catch(() => []),
+    ])
+    const achMaps360 = buildAchievementLabelMaps(achCats360, achLvls360)
+    const enrichedOfficialAchievements = (student.achievements || []).map((sa: any) => {
+      const ach = sa.achievement || sa || {}
+      const categoryLabel = resolveAchievementCategoryLabel(ach.category, achMaps360.categoryMap)
+      const levelLabel = resolveAchievementLevelLabel(ach.level, ach.category, achMaps360.levelMap, achMaps360.categoryMap)
+      return {
+        ...sa,
+        categoryLabel,
+        levelLabel,
+        achievement: {
+          ...ach,
+          categoryLabel,
+          levelLabel,
+        },
+      }
+    })
+
     return NextResponse.json({
       student,
       homeroomTeacherName: resolvedHomeroomTeacherName,
@@ -943,7 +1021,7 @@ export async function GET(req: Request) {
       helpRequests: sanitizedHelpRequests,
       parentExchanges,
       workflowProgress,
-      achievements: [...mappedIntlAchievements, ...(student.achievements || [])],
+      achievements: [...mappedIntlAchievements, ...enrichedOfficialAchievements],
       intlExamResults,
       orientation: primaryOrientation,
       careerOrientation: primaryOrientation,
@@ -958,6 +1036,9 @@ export async function GET(req: Request) {
       competencySummaries: student.competencySummaries || [],
       specialGradeEntries: student.specialGradeEntries || [],
       specialSubjectsPortfolio,
+      ctqtGradeEntries: student.ctqtGradeEntries || [],
+      ctqtCompetencyEntries: student.ctqtCompetencyEntries || [],
+      ctqtPortfolio: buildStudentCtqtPortfolio({ student }),
       transfers,
       learningSupportTargets: student.learningSupportTargets || []
     })

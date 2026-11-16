@@ -530,6 +530,7 @@ model Subject {
   subjectGradeEntries        SubjectGradeEntry[]
   competencies               SubjectCompetency[]
   aliases                    SubjectAlias[]
+  competencySubjectCodes     CompetencySubjectCatalog[]
   competencyAssessments      StudentCompetencyAssessment[]
   competencySummaries        StudentSubjectCompetencySummary[]
   specialSubjects            SpecialSubject[]
@@ -2720,6 +2721,25 @@ model SubjectAlias {
 
   @@unique([aliasPattern])
   @@index([normalizedKey])
+}
+
+model CompetencySubjectCatalog {
+  id             String   @id @default(cuid())
+  dgnlCode       String   @unique
+  dgnlName       String
+  subjectId      String
+  programGroup   String   @default("MOET")
+  mappingType    String   @default("DIRECT")
+  isActive       Boolean  @default(true)
+  displayOrder   Int      @default(0)
+  note           String?
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+
+  subject        Subject  @relation(fields: [subjectId], references: [id], onDelete: Cascade)
+
+  @@index([subjectId])
+  @@index([isActive, displayOrder])
 }
 
 model SubjectCompetencyAlias {
@@ -6185,6 +6205,7 @@ model SlcFeatureConfig {
   allowedMimeTypesJson String   @default("[\"image/jpeg\",\"image/png\",\"image/webp\",\"image/gif\",\"application/pdf\",\"application/vnd.openxmlformats-officedocument.wordprocessingml.document\",\"application/vnd.openxmlformats-officedocument.presentationml.presentation\",\"application/vnd.openxmlformats-officedocument.spreadsheetml.sheet\"]")
   workingDaysJson      String   @default("[1,2,3,4,5]")
   holidaysJson         String   @default("[]")
+  bumpCooldownMinutes  Int      @default(30)
   updatedById          String?
   createdAt            DateTime @default(now())
   updatedAt            DateTime @updatedAt
@@ -6307,25 +6328,36 @@ model SlcPost {
   authorRole               String?           @default("Giáo viên")
   campusId                 String?
   campusName               String?
+  departmentId             String?
+  departmentName           String?
   mainSubject              String?
-  postType                 String            @default("IDEA") // GENERAL | IDEA | AI_PRODUCT | PROJECT | EXPERIENCE
+  postType                 String            @default("IDEA") // GENERAL | IDEA | AI_PRODUCT | SKILL | PROJECT | EXPERIENCE
   title                    String?
   summary                  String?
   content                  String
   coverImageUrl            String?
-  visibility               String            @default("SYSTEM") // SYSTEM | CAMPUS | GROUP
+  videoUrl                 String?
+  demoUrl                  String?
+  topicName                String?
+  visibility               String            @default("SYSTEM") // SYSTEM | CAMPUS | DEPARTMENT | GROUP
   groupId                  String?
-  status                   String            @default("PUBLISHED") // DRAFT | PUBLISHED | ARCHIVED | HIDDEN_MODERATION
+  status                   String            @default("PUBLISHED") // DRAFT | PUBLISHED | ARCHIVED | HIDDEN_MODERATION | DELETED
+  previousStatus           String?
+  deletedAt                DateTime?
+  deletedById              String?
   subjectCodesJson         String            @default("[]")
   gradeLevelsJson          String            @default("[]")
   purposeTagsJson          String            @default("[]")
   tagsJson                 String            @default("[]")
   mentionedUserIdsJson     String            @default("[]")
+  collaboratorIdsJson      String            @default("[]")
+  collaboratorNamesJson    String            @default("[]")
   hasStudentDataPiiChecked Boolean           @default(true)
   sharedFromPostId         String?
   linkedIdeaId             String?
   linkedProductId          String?
   linkedProjectId          String?
+  linkedSkillId            String?
   isEditorialFeatured      Boolean           @default(false)
   featuredSlot             Int?              // 1 (chính), 2, 3 (phụ)
   featuredLabel            String?
@@ -6336,18 +6368,24 @@ model SlcPost {
   commentCount             Int               @default(0)
   saveCount                Int               @default(0)
   shareCount               Int               @default(0)
+  appliedCount             Int               @default(0)
   reachCount               Int               @default(0)
+  lastBumpedAt             DateTime          @default(now())
+  bumpEventsJson           String            @default("[]")
   publishedAt              DateTime          @default(now())
   createdAt                DateTime          @default(now())
   updatedAt                DateTime          @updatedAt
   revisions                SlcPostRevision[]
   comments                 SlcComment[]
   attachments              SlcAttachment[]
+  helpRequests             SlcHelpRequest[]
 
   @@index([status, visibility, publishedAt, id])
+  @@index([status, visibility, lastBumpedAt, id])
   @@index([authorId, status])
   @@index([groupId, status])
   @@index([campusId, status])
+  @@index([departmentId, status])
   @@index([postType, status, publishedAt])
   @@index([isEditorialFeatured, featuredSlot])
   @@map("slc_posts")
@@ -6597,6 +6635,8 @@ model SlcComment {
   replyToUserName         String?
   depth                   Int       @default(0) // 0 hoặc 1
   content                 String
+  contributionType        String    @default("NONE") // NONE | METHOD | MATERIAL | EXPERIMENT | SKILL | CONNECTION
+  linksJson               String    @default("[]")
   mentionedUserIdsJson    String    @default("[]")
   attachmentIdsJson       String    @default("[]")
   isEdited                Boolean   @default(false)
@@ -6611,7 +6651,12 @@ model SlcComment {
   feedbackReason          String?
   feedbackUpdatedAt       DateTime?
   feedbackUpdatedById     String?
+  linkedProjectId         String?
+  developmentItemNote     String?
+  appliedChangeNote       String?
   linkedProductVersionId  String?
+  helpRequestId           String?
+  statusHistoryJson       String    @default("[]")
   contributorAcknowledged Boolean   @default(false)
   contributorOptOutPublic Boolean   @default(false)
   reactionCount           Int       @default(0)
@@ -6963,6 +7008,722 @@ model SlcNotificationLog {
   @@index([recipientId, createdAt])
   @@map("slc_notification_logs")
 }
+
+model SlcHelpRequest {
+  id                 String    @id @default(cuid())
+  postId             String
+  authorId           String
+  authorName         String
+  authorAvatar       String?
+  campusId           String?
+  campusName         String?
+  title              String
+  description        String?
+  supportType        String    @default("EXPERIMENT") // METHOD | MATERIAL | EXPERIMENT | SKILL | CONNECTION
+  subjectCode        String?
+  gradeLevel         String?
+  expectedTimeframe  String?
+  status             String    @default("OPEN") // OPEN | CONNECTED | CLOSED
+  connectedUserId    String?
+  connectedUserName  String?
+  connectedCommentId String?
+  connectedAt        DateTime?
+  createdAt          DateTime  @default(now())
+  updatedAt          DateTime  @updatedAt
+  post               SlcPost   @relation(fields: [postId], references: [id], onDelete: Cascade)
+
+  @@index([postId, status, createdAt])
+  @@index([status, supportType, createdAt])
+  @@index([authorId])
+  @@map("slc_help_requests")
+}
+
+model SlcSkill {
+  id                      String            @id @default(cuid())
+  code                    String            @unique
+  postId                  String?           @unique
+  parentSkillId           String?
+  originalAuthorId        String?
+  originalAuthorName      String?
+  authorId                String
+  authorName              String
+  campusId                String?
+  campusName              String?
+  departmentId            String?
+  departmentName          String?
+  collaboratorsJson       String            @default("[]")
+  name                    String
+  summary                 String
+  description             String
+  purpose                 String
+  workCategory            String            @default("ACTIVITY_DESIGN") // ACTIVITY_DESIGN | MATERIAL_CREATION | TASK_DIFFERENTIATION | STUDENT_SUPPORT | ASSESSMENT_EVAL | custom
+  subjectCode             String
+  subjectName             String
+  gradeLevelsJson         String            @default("[]")
+  topicOrLesson           String?
+  tagsJson                String            @default("[]")
+  prerequisites           String?           // Điều kiện sử dụng / Chuẩn bị gì
+  inputFieldsJson         String            @default("[]")
+  aiSystemPrompt          String            // Hướng dẫn AI
+  workflowStepsJson       String            @default("[]")
+  principlesAndLimits     String?           // Nguyên tắc, giới hạn
+  outputStructure         String?           // Cấu trúc đầu ra
+  evaluationCriteria      String?           // Tiêu chí kiểm tra
+  referencesJson          String            @default("[]")
+  samplePrompt            String?           // Yêu cầu mẫu
+  sampleOutput            String?           // Kết quả minh họa
+  compatiblePlatformsJson String            @default("[\"SSM_INTERNAL\",\"GEMINI\",\"CHATGPT\"]")
+  usageGuide              String?           // Hướng dẫn sử dụng
+  isExecutableOnSsm       Boolean           @default(false)
+  packageAttachmentId     String?
+  packageMetaJson         String            @default("{}")
+  externalUrl             String?
+  currentVersion          String            @default("1.0")
+  publishedVersionId      String?           // Giữ bản đang phát hành hoạt động khi có bản mới chờ duyệt
+  visibility              String            @default("SYSTEM") // DEPARTMENT | CAMPUS | SYSTEM | GROUP
+  groupId                 String?
+  status                  String            @default("DRAFT")  // DRAFT | PENDING_REVIEW | NEEDS_REVISION | APPROVED | PUBLISHED | ARCHIVED | DELETED
+  previousStatus          String?
+  creationSource          String            @default("FORM")   // FORM | AI_ASSISTED | PACKAGE_UPLOAD | SSM_DATA_GROUNDED
+  evidenceBriefId         String?
+  assignedReviewerId      String?
+  assignedReviewerName    String?
+  reviewedById            String?
+  reviewedByName          String?
+  reviewNote              String?
+  reviewedAt              DateTime?
+  publishedAt             DateTime?
+  appliedCount            Int               @default(0)
+  saveCount               Int               @default(0)
+  runCount                Int               @default(0)
+  avgRating               Float             @default(0)
+  validRatingCount        Int               @default(0)
+  deletedAt               DateTime?
+  deletedById             String?
+  createdAt               DateTime          @default(now())
+  updatedAt               DateTime          @updatedAt
+  versions                SlcSkillVersion[]
+  runs                    SlcSkillRun[]
+
+  @@index([status, visibility, workCategory])
+  @@index([subjectCode, status])
+  @@index([authorId, status])
+  @@index([campusId, status])
+  @@index([departmentId, status])
+  @@map("slc_skills")
+}
+
+model SlcSkillVersion {
+  id            String    @id @default(cuid())
+  skillId       String
+  version       String
+  changelog     String
+  snapshotJson  String    @default("{}")
+  status        String    @default("DRAFT") // DRAFT | PENDING_REVIEW | NEEDS_REVISION | APPROVED | PUBLISHED | ARCHIVED
+  reviewerId    String?
+  reviewerName  String?
+  reviewNote    String?
+  reviewedAt    DateTime?
+  createdById   String
+  createdByName String
+  createdAt     DateTime  @default(now())
+  skill         SlcSkill  @relation(fields: [skillId], references: [id], onDelete: Cascade)
+
+  @@index([skillId, createdAt])
+  @@index([skillId, status])
+  @@map("slc_skill_versions")
+}
+
+model SlcSkillWorkCategory {
+  id          String   @id @default(cuid())
+  code        String   @unique
+  name        String
+  description String?
+  sortOrder   Int      @default(0)
+  isActive    Boolean  @default(true)
+  updatedBy   String?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  @@map("slc_skill_work_categories")
+}
+
+model SlcSkillEvidenceBrief {
+  id                     String   @id @default(cuid())
+  teacherId              String?
+  userId                 String
+  userName               String
+  campusId               String?
+  departmentId           String?
+  academicYearId         String
+  academicYearName       String?
+  evaluationPeriod       String
+  classId                String
+  className              String
+  gradeLevel             String
+  subjectId              String?
+  subjectCode            String
+  subjectName            String
+  topicOrLesson          String?
+  sourcesStatusJson      String   @default("[]")
+  deterministicStatsJson String   @default("{}")
+  aiInterpretationJson   String   @default("{}")
+  proposedActionsJson    String   @default("[]")
+  teacherConfirmedJson   String   @default("{}")
+  status                 String   @default("REVIEWED") // REVIEWED | CONFIRMED | DRAFT_GENERATED
+  createdAt              DateTime @default(now())
+  updatedAt              DateTime @updatedAt
+
+  @@index([userId, createdAt])
+  @@index([classId, subjectCode, academicYearId])
+  @@map("slc_skill_evidence_briefs")
+}
+
+model SlcSkillRun {
+  id                      String   @id @default(cuid())
+  skillId                 String
+  skillVersion            String   @default("1.0")
+  runnerUserId            String
+  runnerName              String
+  runnerCampusId          String?
+  academicYearId          String?
+  evaluationPeriod        String?
+  classId                 String?
+  className               String?
+  subjectCode             String?
+  inputValuesJson         String   @default("{}")
+  boundContextSummaryJson String   @default("{}")
+  outputText              String?
+  status                  String   @default("COMPLETED") // PROCESSING | COMPLETED | FAILED
+  errorMessage            String?
+  aiModel                 String?
+  promptTokens            Int      @default(0)
+  completionTokens        Int      @default(0)
+  estimatedCostUsd        Float    @default(0)
+  durationMs              Int      @default(0)
+  clientRequestId         String?
+  createdAt               DateTime @default(now())
+  skill                   SlcSkill @relation(fields: [skillId], references: [id], onDelete: Cascade)
+
+  @@unique([runnerUserId, clientRequestId])
+  @@index([skillId, createdAt])
+  @@index([runnerUserId, createdAt])
+  @@map("slc_skill_runs")
+}
+
+model SlcAppliedConfirmation {
+  id            String   @id @default(cuid())
+  targetType    String   // POST | SKILL | PRODUCT | IDEA
+  targetId      String
+  postId        String?
+  skillId       String?
+  userId        String
+  userName      String
+  campusId      String?
+  campusName    String?
+  classOrGrade  String?
+  subjectCode   String?
+  feedbackText  String?
+  evidenceUrl   String?
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  @@unique([targetType, targetId, userId])
+  @@index([targetType, targetId])
+  @@index([userId, createdAt])
+  @@map("slc_applied_confirmations")
+}
+
+// ==========================================
+// MÔN TCI – BỘ CHUẨN PHÁT TRIỂN TRẺ EM 5–6 TUỔI (KHẢO SÁT ĐẦU VÀO LỚP 1)
+// ==========================================
+
+model TciTemplate {
+  id                String   @id @default(cuid())
+  code              String
+  name              String
+  subjectId         String?
+  subjectCode       String   @default("TCI")
+  subjectName       String   @default("Bộ chuẩn phát triển trẻ em 5–6 tuổi")
+  academicYearId    String?  @default("ALL")
+  periodId          String?  @default("ALL")
+  educationSystemId String?  @default("ALL")
+  grade             String   @default("Khối 1")
+  versionNumber     Int      @default(1)
+  versionCode       String   @default("v1.0")
+  parentTemplateId  String?
+  status            String   @default("DRAFT") // DRAFT | ACTIVE | INACTIVE
+  criteriaJson      String   @default("[]")    // JSON array of 16 TciCriterionConfig
+  footerConfigJson  String   @default("{}")    // JSON of TciFooterConfig
+  exportConfigJson  String   @default("{}")    // JSON of TciExportConfig
+  createdById       String?
+  createdByName     String?
+  updatedById       String?
+  updatedByName     String?
+  activatedAt       DateTime?
+  activatedById     String?
+  createdAt         DateTime @default(now())
+  updatedAt         DateTime @updatedAt
+
+  @@unique([code, versionNumber])
+  @@index([subjectCode, grade, status])
+  @@index([academicYearId, periodId, educationSystemId, grade])
+  @@map("tci_templates")
+}
+
+model TciAssessmentRecord {
+  id                    String    @id @default(cuid())
+  studentId             String
+  studentCode           String?
+  studentName           String?
+  periodId              String    @default("ALL")
+  batchId               String?
+  campusId              String?
+  grade                 String    @default("Khối 1")
+  subjectId             String
+  subjectCode           String    @default("TCI")
+  assignmentId          String?
+  templateId            String
+  templateCode          String    @default("TCI_K1_DEFAULT")
+  templateVersionNumber Int       @default(1)
+  templateVersionCode   String    @default("v1.0")
+  resultVersion         Int       @default(1)
+  isLatestVersion       Boolean   @default(true)
+  previousRecordId      String?
+  assessmentDate        String?
+  assignedTeacherId     String?
+  assignedTeacherName   String?
+  assessorUserId        String?
+  assessorTeacherId     String?
+  assessorName          String?
+  criteriaResultsJson   String    @default("{}") // Map of criterionId -> { status, note, writingSampleText, studentWritingText, updatedAt }
+  countEvaluated        Int       @default(0)
+  countDat              Int       @default(0)
+  countKhongDat         Int       @default(0)
+  countKhongLam         Int       @default(0)
+  countChuaDanhGia      Int       @default(16)
+  generalComment        String?
+  highlightsComment     String?
+  supportNeededComment  String?
+  teacherRecommendation String?
+  evaluationStatus      String    @default("NOT_STARTED") // NOT_STARTED | IN_PROGRESS | PENDING_SIGNATURE | COMPLETED | REOPENED
+  signatureStatus       String    @default("UNSIGNED")    // UNSIGNED | SIGNED | PENDING_RESIGN
+  signatureType         String?                           // CERTIFICATE_CA | TEACHER_SIGNATURE_IMAGE
+  signerUserId          String?
+  signerTeacherId       String?
+  signerName            String?
+  signerRole            String?
+  signatureImageBase64  String?
+  signedAt              DateTime?
+  signedSnapshotJson    String?
+  signedSnapshotHash    String?
+  signedPdfStorageKey   String?
+  signedPdfFileName     String?
+  signedPdfSha256       String?
+  signedPdfSizeBytes    Int?
+  reviewStatus          String    @default("PENDING")     // PENDING | APPROVED | SUPPLEMENT_REQUESTED | REOPENED
+  reviewerUserId        String?
+  reviewerName          String?
+  reviewedAt            DateTime?
+  reviewNote            String?
+  reopenReason          String?
+  reopenedById          String?
+  reopenedByName        String?
+  reopenedAt            DateTime?
+  lockVersion           Int       @default(1)
+  createdAt             DateTime  @default(now())
+  updatedAt             DateTime  @updatedAt
+
+  @@unique([studentId, periodId, subjectCode, resultVersion])
+  @@index([studentId, isLatestVersion])
+  @@index([assignedTeacherId, isLatestVersion])
+  @@index([periodId, evaluationStatus, signatureStatus])
+  @@map("tci_assessment_records")
+}
+
+model TciProductEvidence {
+  id                  String   @id @default(cuid())
+  recordId            String
+  studentId           String
+  periodId            String
+  subjectId           String
+  assignmentId        String?
+  resultVersion       Int      @default(1)
+  criterionId         String   // e.g. TCI_C16 or TCI_C13
+  criterionStt        Int      @default(16)
+  indicatorCode       String   @default("61")
+  fileName            String
+  mimeType            String   // image/jpeg | image/png | image/webp
+  fileSizeBytes       Int
+  widthPx             Int?
+  heightPx            Int?
+  rotationDeg         Int      @default(0) // 0 | 90 | 180 | 270
+  imageDataBase64     String   // Stored oriented/normalized image data URI or base64 for private auth serving & PDF embedding
+  fileSha256          String
+  uploadedByUserId    String
+  uploadedByName      String
+  status              String   @default("ACTIVE") // ACTIVE | DELETED
+  createdAt           DateTime @default(now())
+  updatedAt           DateTime @updatedAt
+
+  @@index([recordId, criterionId, status])
+  @@index([studentId, periodId, resultVersion])
+  @@map("tci_product_evidences")
+}
+
+model TciAuditLog {
+  id            String   @id @default(cuid())
+  entityType    String   // TEMPLATE | ASSESSMENT_RECORD | EVIDENCE | SIGNATURE | REVIEW
+  entityId      String
+  studentId     String?
+  recordId      String?
+  templateId    String?
+  action        String   // CREATE_TEMPLATE | UPDATE_TEMPLATE | ACTIVATE_TEMPLATE | CLONE_TEMPLATE | SAVE_DRAFT | UPLOAD_EVIDENCE | DELETE_EVIDENCE | ROTATE_EVIDENCE | SIGN_COMPLETED | REVIEW_APPROVE | REVIEW_SUPPLEMENT | REOPEN_VERSION | REASSIGN_TEACHER
+  actorUserId   String
+  actorName     String
+  actorRole     String?
+  reason        String?
+  beforeJson    String?
+  afterJson     String?
+  metadataJson  String?
+  createdAt     DateTime @default(now())
+
+  @@index([entityType, entityId, createdAt])
+  @@index([studentId, createdAt])
+  @@index([recordId, createdAt])
+  @@map("tci_audit_logs")
+}
+
+// =============================================================================
+// PHIẾU PHỎNG VẤN ĐỊNH HƯỚNG HS & PHHS (KHỐI 1–12) VÀ CẤU HÌNH FILE ĐIỂM KSDV
+// =============================================================================
+
+model PvdhTemplate {
+  id                   String   @id @default(cuid())
+  code                 String   @unique // PVDH-01 .. PVDH-05
+  name                 String
+  description          String?
+  contentCategory      String   @default("ORIENTATION_INTERVIEW")
+  gradeGroup           String   // KHOI_1 | KHOI_2_3 | KHOI_4_5 | KHOI_6_9 | KHOI_10_12
+  gradesJson           String   @default("[]")      // e.g. ["1"] or ["6","7","8","9"]
+  educationSystemsJson String   @default("[\"ALL\"]")
+  campusIdsJson        String   @default("[\"ALL\"]")
+  periodIdsJson        String   @default("[\"ALL\"]")
+  effectiveFrom        String?
+  effectiveTo          String?
+  priorityOrder        Int      @default(100)
+  status               String   @default("ACTIVE")  // DRAFT | ACTIVE | INACTIVE
+  currentVersionNumber Int      @default(1)
+  currentVersionCode   String   @default("v1.0")
+  sourceNote           String?  @default("Mẫu đề xuất phục vụ triển khai")
+  createdById          String?
+  createdByName        String?
+  updatedById          String?
+  updatedByName        String?
+  createdAt            DateTime @default(now())
+  updatedAt            DateTime @updatedAt
+
+  @@index([status, priorityOrder])
+  @@index([gradeGroup, status])
+  @@map("pvdh_templates")
+}
+
+model PvdhTemplateVersion {
+  id                   String    @id @default(cuid())
+  templateId           String
+  templateCode         String
+  versionNumber        Int       @default(1)
+  versionCode          String    @default("v1.0")
+  status               String    @default("ACTIVE") // DRAFT | ACTIVE | INACTIVE
+  nameSnapshot         String
+  purposeText          String?
+  gradesJson           String    @default("[]")
+  educationSystemsJson String    @default("[\"ALL\"]")
+  campusIdsJson        String    @default("[\"ALL\"]")
+  periodIdsJson        String    @default("[\"ALL\"]")
+  effectiveFrom        String?
+  effectiveTo          String?
+  priorityOrder        Int       @default(100)
+  sectionsJson         String    @default("[]")     // Sections I..V definitions
+  fieldsJson           String    @default("[]")     // Field schemas (fieldKey, label, prompt, section, type, required, conditions, roles, maxLength, exportKey)
+  exportLayoutJson     String    @default("{}")     // Print/PDF layout & signature block settings
+  changeSummary        String?
+  createdById          String?
+  createdByName        String?
+  publishedAt          DateTime?
+  publishedById        String?
+  publishedByName      String?
+  deactivatedAt        DateTime?
+  createdAt            DateTime  @default(now())
+  updatedAt            DateTime  @updatedAt
+
+  @@unique([templateCode, versionNumber])
+  @@index([templateId, status])
+  @@map("pvdh_template_versions")
+}
+
+model PvdhAssessmentRecord {
+  id                       String    @id @default(cuid())
+  studentId                String    // FK -> InputAssessmentStudent.id (stable record key)
+  studentCode              String
+  periodId                 String
+  batchId                  String?
+  campusId                 String?
+  attemptNumber            Int       @default(1)
+  isLatestAttempt          Boolean   @default(true)
+  gradeAtCreation          String
+  educationSystemAtCreation String?  @default("ALL")
+  templateId               String
+  templateVersionId        String
+  templateCode             String    // PVDH-01..05
+  templateVersionNumber    Int       @default(1)
+  templateVersionCode      String    @default("v1.0")
+
+  // Phần I & Phân công theo phần
+  interviewDate            String?
+  studentInterviewerUserId String?
+  studentInterviewerName   String?
+  studentInterviewerTitle  String?
+  studentInterviewDate     String?
+  studentSectionStatus     String    @default("DRAFT") // DRAFT | COMPLETED
+  studentCompletedAt       DateTime?
+
+  parentFullName           String?
+  parentRelationship       String?
+  parentContactChannel     String?
+  parentInterviewerUserId  String?
+  parentInterviewerName    String?
+  parentInterviewerTitle   String?
+  parentInterviewDate      String?
+  parentSectionStatus      String    @default("DRAFT") // DRAFT | COMPLETED
+  parentCompletedAt        DateTime?
+
+  // Phần II: 6 nhóm trao đổi HS ({ [fieldKey]: { responseText, notRecorded, notRecordedReason, updatedBy, updatedAt } })
+  studentResponsesJson     String    @default("{}")
+
+  // Phần III: Ghi nhận giáo viên (4 trường riêng, không điểm số, không chẩn đoán)
+  obsStrengthsInterests    String?
+  obsCommunicationStyle    String?
+  obsParticipationLevel    String?
+  obsSupportNeeds          String?
+  teacherSectionStatus     String    @default("DRAFT") // DRAFT | COMPLETED
+
+  // Phần IV: 5 nhóm trao đổi PHHS ({ [fieldKey]: { responseText, notRecorded, notRecordedReason, updatedBy, updatedAt } })
+  parentResponsesJson      String    @default("{}")
+
+  // Phần V: Thống nhất định hướng và hỗ trợ
+  planStrengthsPriority    String?
+  planGoalsActionsText     String?
+  followUpActionsJson      String    @default("[]") // [{ id, actionContent, owner, dueDate, progressIndicator }]
+  planCoordinator          String?
+  planReviewDate           String?
+  planFurtherTopicsJson    String    @default("[]") // ["KHONG"] xor subset of ["HOC_TAP","TIENG_ANH","THICH_NGHI","TAM_LY_THEO_DE_NGHI","KHAC"]
+  planFurtherOtherText     String?
+  planReferralReason       String?
+  planReferralReceiver     String?
+  planHandoverNotes        String?
+  internalSensitiveNotes   String?
+  orientationSectionStatus String    @default("DRAFT") // DRAFT | COMPLETED
+
+  // Trạng thái quy trình, khóa, chữ ký/xác nhận, mở lại & kiểm soát đồng thời
+  workflowStatus           String    @default("DRAFT") // DRAFT | PARTIAL_COMPLETED | COMPLETED | SUBMITTED | RETURNED | VERIFIED_LOCKED | REOPENED | HANDED_OVER
+  isLocked                 Boolean   @default(false)
+  confirmationType         String?                     // NONE | SYSTEM_CONFIRMATION | SIGNATURE_IMAGE | CERTIFICATE_CA
+  confirmedByUserId        String?
+  confirmedByName          String?
+  confirmedByRole          String?
+  signatureImageBase64     String?
+  confirmedAt              DateTime?
+  confirmedSnapshotJson    String?
+  confirmedSnapshotHash    String?
+  returnReason             String?
+  returnedByUserId         String?
+  returnedByName           String?
+  returnedAt               DateTime?
+  reopenReason             String?
+  reopenedByUserId         String?
+  reopenedByName           String?
+  reopenedAt               DateTime?
+  templateMigrationHistoryJson String @default("[]")
+  publishedForParentSummary String?
+  isPublishedToParent      Boolean   @default(false)
+  lockVersion              Int       @default(1)
+  createdById              String?
+  updatedById              String?
+  createdAt                DateTime  @default(now())
+  updatedAt                DateTime  @updatedAt
+
+  @@unique([studentId, periodId, attemptNumber])
+  @@index([studentId, isLatestAttempt])
+  @@index([periodId, campusId, workflowStatus])
+  @@index([studentInterviewerUserId])
+  @@index([parentInterviewerUserId])
+  @@map("pvdh_assessment_records")
+}
+
+model PvdhReviewHistory {
+  id                String   @id @default(cuid())
+  recordId          String
+  studentId         String
+  action            String   // SUBMIT | RETURN | VERIFY_LOCK | REOPEN | SWITCH_TEMPLATE | HANDOVER
+  fromStatus        String?
+  toStatus          String?
+  reasonOrNote      String?
+  beforeSnapshotJson String?
+  afterSnapshotJson  String?
+  actorUserId       String
+  actorName         String
+  actorRole         String?
+  createdAt         DateTime @default(now())
+
+  @@index([recordId, createdAt])
+  @@index([studentId, createdAt])
+  @@map("pvdh_review_histories")
+}
+
+model PvdhGeneratedDocument {
+  id                    String   @id @default(cuid())
+  recordId              String
+  studentId             String
+  periodId              String
+  templateCode          String
+  templateVersionCode   String
+  attemptNumber         Int      @default(1)
+  documentStatus        String   @default("DRAFT") // DRAFT | CONFIRMED | INVALIDATED
+  format                String   @default("PDF")
+  fileName              String
+  storageKey            String
+  fileSha256            String
+  fileSizeBytes         Int      @default(0)
+  snapshotJson          String
+  generatedByUserId     String
+  generatedByName       String
+  createdAt             DateTime @default(now())
+
+  @@index([recordId, createdAt])
+  @@index([studentId, periodId])
+  @@map("pvdh_generated_documents")
+}
+
+model PvdhHandover {
+  id                    String    @id @default(cuid())
+  recordId              String
+  studentId             String    // InputAssessmentStudent.id
+  enrolledStudentId     String?   // Student.id (sau nhập học)
+  studentCode           String
+  periodId              String
+  campusId              String?
+  targetClassId         String
+  targetClassName       String
+  targetGvcnTeacherId   String?
+  targetGvcnUserId      String?
+  targetGvcnName        String?
+  handoverSnapshotJson  String    // Snapshot bản đã xác nhận tại thời điểm bàn giao
+  includeSensitiveNotes Boolean   @default(false)
+  handoverNote          String?
+  handedOverByUserId    String
+  handedOverByName      String
+  handedOverAt          DateTime  @default(now())
+  receiveStatus         String    @default("PENDING_RECEIPT") // PENDING_RECEIPT | ACKNOWLEDGED | REVOKED
+  acknowledgedByUserId  String?
+  acknowledgedByName    String?
+  acknowledgedAt        DateTime?
+  gvcnFeedbackNote      String?
+  createdAt             DateTime  @default(now())
+  updatedAt             DateTime  @updatedAt
+
+  @@index([recordId])
+  @@index([targetClassId, receiveStatus])
+  @@index([targetGvcnUserId, receiveStatus])
+  @@index([studentCode])
+  @@map("pvdh_handovers")
+}
+
+model PvdhAuditLog {
+  id           String   @id @default(cuid())
+  entityType   String   // TEMPLATE | FILE_CONFIG | RECORD | EXPORT | HANDOVER
+  entityId     String
+  studentId    String?
+  recordId     String?
+  templateCode String?
+  versionCode  String?
+  action       String
+  actorUserId  String
+  actorName    String
+  actorRole    String?
+  summary      String?
+  metadataJson String?
+  createdAt    DateTime @default(now())
+
+  @@index([entityType, entityId, createdAt])
+  @@index([studentId, createdAt])
+  @@map("pvdh_audit_logs")
+}
+
+model KsdvFileTemplate {
+  id                   String    @id @default(cuid())
+  code                 String
+  name                 String
+  resultType           String    // SCORE | RUBRIC | CRITERIA | ORIENTATION
+  contentCategory      String    @default("SUBJECT_SCORE") // SUBJECT_SCORE | SUBJECT_RUBRIC | SUBJECT_CRITERIA | ORIENTATION_INTERVIEW
+  subjectId            String?
+  subjectCode          String
+  subjectName          String
+  academicYearId       String    @default("ALL")
+  periodIdsJson        String    @default("[\"ALL\"]")
+  educationSystemsJson String    @default("[\"ALL\"]")
+  campusIdsJson        String    @default("[\"ALL\"]")
+  gradesJson           String    @default("[\"ALL\"]")
+  effectiveFrom        String?
+  effectiveTo          String?
+  priorityOrder        Int       @default(100)
+  versionNumber        Int       @default(1)
+  versionCode          String    @default("v1.0")
+  status               String    @default("DRAFT") // DRAFT | ACTIVE | INACTIVE
+  schemaConfigJson     String    @default("{}")    // Layer 1: Schema dữ liệu & validation (maxScore, decimals, components, formula, rubric or criteria ref, empty state rules)
+  exportFormat         String    @default("HTML_PDF") // HTML_PDF | XLSX | DOCX
+  pageSize             String    @default("A4")
+  pageOrientation      String    @default("PORTRAIT")
+  copyCount            Int       @default(1)
+  signatureBlocksJson  String    @default("[]")
+  fileNamePattern      String    @default("{subjectCode}_{studentCode}_{periodCode}_v{version}")
+  sampleFileMetaJson   String?
+  sourceVerified       Boolean   @default(true)
+  missingSourceNote    String?
+  createdById          String?
+  createdByName        String?
+  publishedAt          DateTime?
+  createdAt            DateTime  @default(now())
+  updatedAt            DateTime  @updatedAt
+
+  @@unique([code, versionNumber])
+  @@index([subjectCode, status])
+  @@index([resultType, status])
+  @@map("ksdv_file_templates")
+}
+
+model KsdvExportMapping {
+  id                String   @id @default(cuid())
+  fileTemplateId    String
+  fieldKey          String
+  sourcePath        String   // Whitelisted data source path e.g. student.studentCode, result.components[0], pvdh.hs_q1
+  targetFormat      String   @default("HTML_PDF") // HTML_PDF | XLSX | DOCX
+  targetRef         String   // Placeholder {{student_code}}, sheet!B5, table_row:col_C, or section anchor
+  dataType          String   @default("TEXT")     // TEXT | NUMBER | DATE | BOOLEAN | IMAGE_LIST | ACTION_LIST
+  formatPattern     String?                       // dd/MM/yyyy, 0.0, 0.00
+  isRequired        Boolean  @default(false)
+  emptyValuePolicy  String   @default("KEEP_BLANK") // KEEP_BLANK | DASH | EXPLICIT_STATUS_LABEL
+  sortOrder         Int      @default(0)
+  createdAt         DateTime @default(now())
+  updatedAt         DateTime @updatedAt
+
+  @@unique([fileTemplateId, targetFormat, targetRef])
+  @@index([fileTemplateId, sortOrder])
+  @@map("ksdv_export_mappings")
+}
+
+
+
 
 
 

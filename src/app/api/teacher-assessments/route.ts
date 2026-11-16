@@ -1,9 +1,12 @@
 // @ts-nocheck
+// Teacher assessments route
 export const dynamic = "force-dynamic";
 import { NextResponse } from "next/server"
 import { prisma } from "@/lib/db"
 import { auth } from "@/lib/auth"
 import { getSurveyFormAgeGroup, getProbationAgeGroup } from "@/lib/preschool"
+import { ensureTciSchema, getTciDb } from "@/lib/tci/schema-init"
+import { ensurePvdhSchema, getPvdhDb } from "@/lib/pvdh/schema-init"
 
 function matchesPreschoolGrade(stGradeOrAgeGroup, taGrade) {
     const st = (stGradeOrAgeGroup || "").toLowerCase().trim();
@@ -46,12 +49,26 @@ export async function GET(req: any) {
         const academicYearId = searchParams.get("academicYearId");
         const pAny = prisma as any;
         try {
-            const configs = await pAny.inputAssessmentGradeConfig.findMany({
-                where: {
-                    ...(academicYearId ? { academicYearId } : {})
-                }
+            const [configs, eduSystems] = await Promise.all([
+                pAny.inputAssessmentGradeConfig.findMany({
+                    where: {
+                        ...(academicYearId ? { academicYearId } : {})
+                    }
+                }),
+                pAny.educationSystem ? pAny.educationSystem.findMany({
+                    select: { id: true, code: true, name: true }
+                }).catch(() => []) : []
+            ]);
+            const sysById = new Map((eduSystems || []).map((s: any) => [s.id, s]));
+            const enriched = (configs || []).map((c: any) => {
+                const rawSys = c.educationSystemId || "ALL";
+                const resolved: any = sysById.get(rawSys);
+                return {
+                    ...c,
+                    educationSystemCode: resolved?.code || rawSys
+                };
             });
-            return NextResponse.json(configs || []);
+            return NextResponse.json(enriched);
         } catch (e: any) {
             console.error("Error getGradeConfigs in teacher API:", e);
             return NextResponse.json([]);
@@ -822,6 +839,223 @@ export async function GET(req: any) {
             }
         }
 
+        // 4. Tổng hợp phân công Phỏng vấn định hướng (Mầm non & Phổ thông) kèm Kỳ, Đợt, Số lượng HS khảo sát
+        const blockCMClean = (teacher.departmentRel?.blockCM || "").normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase();
+        const deptNameClean = (teacher.departmentRel?.name || "").normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase();
+        const isPreschoolTeacher =
+            ["GV_MN", "BGH_MN", "MN", "MAM_NON", "BGH MAM NON", "BGH_MAM_NON"].includes(sessionRole) ||
+            blockCMClean.includes("mam non") ||
+            deptNameClean.includes("mam non") ||
+            (teacher.departmentAssignments || []).some((da: any) => {
+                const b = (da.department?.blockCM || "").normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase();
+                const n = (da.department?.name || "").normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase();
+                return b.includes("mam non") || n.includes("mam non");
+            });
+
+        let entranceAssignmentsSummary = {
+            hasGeneral: false,
+            hasPreschool: false,
+            isPreschoolTeacher,
+            generalStudentCount: 0,
+            preschoolStudentCount: 0,
+            totalStudentCount: 0,
+            batches: [] as any[]
+        };
+
+        try {
+            const [k12AssignsRaw, preschoolAssignsRaw] = await Promise.all([
+                prisma.inputAssessmentTeacherAssignment.findMany({
+                    where: {
+                        userId: session.user.id,
+                        ...(targetYearId ? { period: { academicYearId: targetYearId } } : {})
+                    },
+                    include: {
+                        subject: true,
+                        batch: true,
+                        period: true
+                    },
+                    orderBy: { createdAt: "desc" }
+                }).catch(() => []),
+                (prisma as any).preschoolInputAssessmentTeacherAssignment.findMany({
+                    where: {
+                        OR: [
+                            { userId: session.user.id },
+                            { delegatedUserId: session.user.id }
+                        ]
+                    },
+                    include: {
+                        batch: true,
+                        period: true
+                    },
+                    orderBy: { createdAt: "desc" }
+                }).catch(() => [])
+            ]);
+
+            const k12Assigns = (k12AssignsRaw || []).filter((a: any) =>
+                a?.batch?.status !== "COMPLETED" &&
+                a?.period?.status !== "COMPLETED" &&
+                a?.period?.status !== "LOCKED"
+            );
+            const preschoolAssigns = (preschoolAssignsRaw || []).filter((a: any) => {
+                if (a?.batch?.status === "COMPLETED") return false;
+                if (a?.period?.status === "COMPLETED" || a?.period?.status === "LOCKED") return false;
+                if (targetYearId && a?.period?.academicYearId && a.period.academicYearId !== targetYearId) return false;
+                return true;
+            });
+
+            const k12PeriodIds = Array.from(new Set(k12Assigns.map((a: any) => a.periodId).filter(Boolean))) as string[];
+            const preschoolPeriodIds = Array.from(new Set(preschoolAssigns.map((a: any) => a.periodId).filter(Boolean))) as string[];
+
+            const [k12Students, preschoolStudents] = await Promise.all([
+                k12PeriodIds.length > 0
+                    ? prisma.inputAssessmentStudent.findMany({
+                        where: { periodId: { in: k12PeriodIds } },
+                        select: { id: true, periodId: true, batchId: true, grade: true, surveyFormType: true }
+                    }).catch(() => [])
+                    : Promise.resolve([]),
+                preschoolPeriodIds.length > 0
+                    ? (prisma as any).preschoolInputAssessmentStudent.findMany({
+                        where: { periodId: { in: preschoolPeriodIds } },
+                        select: { id: true, periodId: true, batchId: true, grade: true, probationaryTeacher: true, admissionResult: true }
+                    }).catch(() => [])
+                    : Promise.resolve([])
+            ]);
+
+            const batchMap = new Map<string, {
+                key: string;
+                periodId: string;
+                periodName: string;
+                batchId: string | null;
+                batchName: string;
+                isPreschool: boolean;
+                latestTime: number;
+                studentIds: Set<string>;
+                subjects: Set<string>;
+                grades: Set<string>;
+            }>();
+
+            const uniqueK12Ids = new Set<string>();
+            for (const a of k12Assigns) {
+                const key = `k12__${a.periodId}__${a.batchId || "all"}`;
+                const assignTime = Math.max(
+                    a.createdAt ? new Date(a.createdAt).getTime() : 0,
+                    a.batch?.startDate ? new Date(a.batch.startDate).getTime() : 0
+                );
+                if (!batchMap.has(key)) {
+                    batchMap.set(key, {
+                        key,
+                        periodId: a.periodId,
+                        periodName: a.period?.name || "Kỳ khảo sát",
+                        batchId: a.batchId || null,
+                        batchName: a.batch?.name || "Tất cả các đợt",
+                        isPreschool: false,
+                        latestTime: assignTime,
+                        studentIds: new Set<string>(),
+                        subjects: new Set<string>(),
+                        grades: new Set<string>()
+                    });
+                } else {
+                    const ex = batchMap.get(key)!;
+                    if (assignTime > ex.latestTime) ex.latestTime = assignTime;
+                }
+                const entry = batchMap.get(key)!;
+                if (a.subject?.name) entry.subjects.add(a.subject.name);
+                if (a.grade) entry.grades.add(String(a.grade).replace(/^Khối\s+/i, "").trim());
+
+                const aGrade = (a.grade || "").toLowerCase().replace("khối", "").trim();
+                const aSys = (a.educationSystem || "").toLowerCase().trim();
+                const matched = k12Students.filter((st: any) => {
+                    if (st.periodId !== a.periodId) return false;
+                    if (a.batchId && st.batchId !== a.batchId) return false;
+                    const stGrade = (st.grade || "").toLowerCase().replace("khối", "").trim();
+                    const stSys = (st.surveyFormType || "").toLowerCase().trim();
+                    const gMatch = !aGrade || aGrade === "tất cả" || stGrade === aGrade;
+                    const sMatch = !aSys || aSys === "tất cả" || !stSys || stSys.includes(aSys) || aSys.includes(stSys);
+                    return gMatch && sMatch;
+                });
+
+                const finalMatched = (matched.length === 0 && a.batchId)
+                    ? k12Students.filter((st: any) => st.periodId === a.periodId && st.batchId === a.batchId)
+                    : matched;
+
+                finalMatched.forEach((st: any) => {
+                    entry.studentIds.add(st.id);
+                    uniqueK12Ids.add(st.id);
+                });
+            }
+
+            const uniquePreschoolIds = new Set<string>();
+            for (const a of preschoolAssigns) {
+                const key = `mn__${a.periodId}__${a.batchId || "all"}`;
+                const assignTime = Math.max(
+                    a.createdAt ? new Date(a.createdAt).getTime() : 0,
+                    a.batch?.startDate ? new Date(a.batch.startDate).getTime() : 0
+                );
+                if (!batchMap.has(key)) {
+                    batchMap.set(key, {
+                        key,
+                        periodId: a.periodId,
+                        periodName: a.period?.name || "Kỳ khảo sát Mầm non",
+                        batchId: a.batchId || null,
+                        batchName: a.batch?.name || "Tất cả các đợt",
+                        isPreschool: true,
+                        latestTime: assignTime,
+                        studentIds: new Set<string>(),
+                        subjects: new Set<string>(["Phỏng vấn định hướng Mầm non"]),
+                        grades: new Set<string>()
+                    });
+                } else {
+                    const ex = batchMap.get(key)!;
+                    if (assignTime > ex.latestTime) ex.latestTime = assignTime;
+                }
+                const entry = batchMap.get(key)!;
+                if (a.grade) entry.grades.add(a.grade);
+
+                const isProbation = a.grade === "Mẫu phiếu học thử" || a.grade === "Học thử";
+                const matched = preschoolStudents.filter((st: any) => {
+                    if (st.periodId !== a.periodId) return false;
+                    if (a.batchId && st.batchId !== a.batchId) return false;
+                    if (isProbation) {
+                        return st.admissionResult === "Học thử" || st.probationaryTeacher === teacher.teacherName;
+                    }
+                    return matchesPreschoolGrade(st.grade || "", a.grade);
+                });
+                matched.forEach((st: any) => {
+                    entry.studentIds.add(st.id);
+                    uniquePreschoolIds.add(st.id);
+                });
+            }
+
+            const allMappedBatches = Array.from(batchMap.values())
+                .sort((a, b) => (b.latestTime || 0) - (a.latestTime || 0))
+                .map(b => ({
+                    key: b.key,
+                    periodId: b.periodId,
+                    periodName: b.periodName,
+                    batchId: b.batchId,
+                    batchName: b.batchName,
+                    isPreschool: b.isPreschool,
+                    studentCount: b.studentIds.size,
+                    subjects: Array.from(b.subjects),
+                    grades: Array.from(b.grades)
+                }));
+
+            const nonEmptyBatches = allMappedBatches.filter(b => b.studentCount > 0);
+            const batchesArray = nonEmptyBatches.length > 0 ? nonEmptyBatches : allMappedBatches;
+
+            entranceAssignmentsSummary = {
+                hasGeneral: k12Assigns.length > 0,
+                hasPreschool: preschoolAssigns.length > 0,
+                isPreschoolTeacher,
+                generalStudentCount: uniqueK12Ids.size,
+                preschoolStudentCount: uniquePreschoolIds.size,
+                totalStudentCount: uniqueK12Ids.size + uniquePreschoolIds.size,
+                batches: batchesArray
+            };
+        } catch (entErr) {
+            console.error("Error computing entranceAssignmentsSummary in getDashboardMetrics:", entErr);
+        }
+
         return NextResponse.json({
             totalClasses: homeroomClassesCount,
             totalStudents: homeroomStudentsCount,
@@ -835,6 +1069,7 @@ export async function GET(req: any) {
             managedDepartmentId,
             managedTeachersCount,
             managedDeptObservedCount,
+            entranceAssignments: entranceAssignmentsSummary,
             campus: teacher.campus ? {
                 id: teacher.campus.id,
                 campusCode: teacher.campus.campusCode,
@@ -1154,7 +1389,10 @@ export async function GET(req: any) {
                         id: true,
                         status: true,
                         updatedAt: true,
-                        interviewerName: true
+                        interviewerName: true,
+                        psychologyReferralStatus: true,
+                        psychologyTeacherName: true,
+                        psychologyData: true
                     }
                 },
                 scores: {
@@ -1375,6 +1613,59 @@ export async function GET(req: any) {
             finalFilteredStudents = Array.from(combinedMap.values());
         }
 
+        // Bổ sung thông tin bản ghi TCI & PVDH (phiếu phỏng vấn định hướng K1-K12)
+        try {
+            await Promise.all([
+                ensureTciSchema().catch(() => {}),
+                ensurePvdhSchema().catch(() => {}),
+            ]);
+            const studentIds = finalFilteredStudents.map((s: any) => s.id).filter(Boolean);
+            if (studentIds.length > 0) {
+                const tciDb = getTciDb();
+                const pvdhDb = getPvdhDb();
+                const [tciRecords, pvdhRecords] = await Promise.all([
+                    tciDb.tciAssessmentRecord.findMany({
+                        where: {
+                            studentId: { in: studentIds },
+                            isLatestVersion: true,
+                        },
+                    }).catch(() => []),
+                    pvdhDb.pvdhAssessmentRecord.findMany({
+                        where: {
+                            studentId: { in: studentIds },
+                            isLatestAttempt: true,
+                        },
+                        select: {
+                            id: true,
+                            studentId: true,
+                            templateCode: true,
+                            versionNumber: true,
+                            workflowStatus: true,
+                            studentSectionStatus: true,
+                            parentSectionStatus: true,
+                            returnReason: true,
+                            updatedAt: true,
+                        },
+                    }).catch(() => []),
+                ]);
+                const tciMap = new Map<string, any>();
+                for (const r of tciRecords) {
+                    tciMap.set(r.studentId, r);
+                }
+                const pvdhMap = new Map<string, any>();
+                for (const r of pvdhRecords) {
+                    pvdhMap.set(r.studentId, r);
+                }
+                finalFilteredStudents = finalFilteredStudents.map((s: any) => ({
+                    ...s,
+                    tciRecord: tciMap.get(s.id) || null,
+                    pvdhRecord: pvdhMap.get(s.id) || null,
+                }));
+            }
+        } catch (tciErr) {
+            console.warn("Could not enrich TCI/PVDH records in getStudents:", tciErr);
+        }
+
         return NextResponse.json(finalFilteredStudents);
     }
 
@@ -1407,6 +1698,32 @@ export async function GET(req: any) {
                 }
             }
         });
+
+        try {
+            await ensureTciSchema();
+            const studentIds = students.map((s: any) => s.id).filter(Boolean);
+            if (studentIds.length > 0) {
+                const tciDb = getTciDb();
+                const tciRecords = await tciDb.tciAssessmentRecord.findMany({
+                    where: {
+                        studentId: { in: studentIds },
+                        isLatestVersion: true,
+                    },
+                });
+                const tciMap = new Map<string, any>();
+                for (const r of tciRecords) {
+                    tciMap.set(r.studentId, r);
+                }
+                return NextResponse.json(
+                    students.map((s: any) => ({
+                        ...s,
+                        tciRecord: tciMap.get(s.id) || null,
+                    }))
+                );
+            }
+        } catch (tciErr) {
+            console.warn("Could not enrich TCI records in getReport:", tciErr);
+        }
         
         return NextResponse.json(students);
     }

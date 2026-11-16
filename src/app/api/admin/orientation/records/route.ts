@@ -9,6 +9,7 @@ import {
 } from "@/lib/orientation/service";
 import { canUserConfirmStage } from "@/lib/entrance-progress/constants";
 import { executeEntranceWorkflowAction } from "@/lib/entrance-progress/entranceProgressEngine";
+import { getAuthenticatedPvdhActor, resolveStudentPvdhAccess } from "@/lib/pvdh/auth-guard";
 
 export const dynamic = "force-dynamic";
 
@@ -23,14 +24,55 @@ export async function GET(request: Request) {
 
     const session = await auth();
     const currentUser = session?.user as any;
+    const actor = await getAuthenticatedPvdhActor();
+    if (!actor) {
+      return NextResponse.json({ success: false, error: "Chưa đăng nhập" }, { status: 401 });
+    }
 
-    const record = await getStudentOrientationRecord(studentId);
-    const assignedOrientation = await getAssignedOrientationTeacher(studentId, currentUser?.id);
+    let effectiveStudentId = studentId;
+    const directCheck = await (prisma as any).inputAssessmentStudent.findUnique({
+      where: { id: studentId },
+      select: { id: true }
+    });
+    if (!directCheck) {
+      // Fallback ổn định: chỉ nối theo studentCode / enrollmentCode (tuyệt đối KHÔNG nối theo họ tên HS)
+      const byCode = await (prisma as any).inputAssessmentStudent.findFirst({
+        where: { OR: [{ studentCode: studentId }, { enrollmentCode: studentId }] },
+        orderBy: { createdAt: "desc" },
+        select: { id: true }
+      });
+      if (byCode?.id) {
+        effectiveStudentId = byCode.id;
+      } else {
+        const profileSt = await prisma.student.findUnique({
+          where: { id: studentId },
+          select: { studentCode: true }
+        });
+        if (profileSt?.studentCode) {
+          const matchedK12 = await (prisma as any).inputAssessmentStudent.findFirst({
+            where: {
+              OR: [
+                { studentCode: profileSt.studentCode },
+                { enrollmentCode: profileSt.studentCode }
+              ]
+            },
+            orderBy: { createdAt: "desc" },
+            select: { id: true }
+          });
+          if (matchedK12?.id) {
+            effectiveStudentId = matchedK12.id;
+          }
+        }
+      }
+    }
+
+    const record = await getStudentOrientationRecord(effectiveStudentId);
+    const assignedOrientation = await getAssignedOrientationTeacher(effectiveStudentId, currentUser?.id);
     let studentInfo = record?.student || null;
 
     if (!studentInfo) {
       studentInfo = await (prisma as any).inputAssessmentStudent.findUnique({
-        where: { id: studentId },
+        where: { id: effectiveStudentId },
         select: {
           id: true,
           fullName: true,
@@ -45,6 +87,10 @@ export async function GET(request: Request) {
           surveyFormType: true,
           admissionCampus: true,
           registeredCampus: true,
+          admissionResult: true,
+          directorNote: true,
+          signatureName: true,
+          updatedAt: true,
           cityName: true,
           districtName: true,
           wardName: true,
@@ -95,6 +141,20 @@ export async function GET(request: Request) {
           }
         }
       });
+    }
+
+    // Kiểm tra phân quyền truy cập mức bản ghi ở phía Server (chống IDOR)
+    if (studentInfo) {
+      const access = await resolveStudentPvdhAccess({
+        actor,
+        student: studentInfo,
+      });
+      if (!access.allowedToRead) {
+        return NextResponse.json(
+          { success: false, error: access.denialReason || "Không có quyền truy cập hồ sơ này." },
+          { status: 403 }
+        );
+      }
     }
 
     // Construir danh sách các môn khảo sát đầu vào theo phân công của Giáo viên hiện tại (và các môn khác của HS)
@@ -465,6 +525,24 @@ export async function POST(request: Request) {
     }
 
     const user = session.user as any;
+    const actor = await getAuthenticatedPvdhActor();
+    if (!actor) {
+      return NextResponse.json({ success: false, error: "Unauthorized" }, { status: 401 });
+    }
+    const checkStu = await (prisma as any).inputAssessmentStudent.findUnique({
+      where: { id: studentId },
+      include: { period: true, batch: { include: { campus: true } } },
+    });
+    if (checkStu) {
+      const access = await resolveStudentPvdhAccess({ actor, student: checkStu });
+      if (!access.canEditStudentPart && !access.canEditParentPart && !access.canReviewLock) {
+        return NextResponse.json(
+          { success: false, error: "Bạn không có quyền ghi dữ liệu định hướng cho hồ sơ này." },
+          { status: 403 }
+        );
+      }
+    }
+
     const record = await upsertStudentOrientationRecord({
       studentId,
       ...orientationRest,

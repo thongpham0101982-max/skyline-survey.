@@ -38,13 +38,17 @@ import {
   EvidenceSource
 } from "@/lib/orientation/criteria-config"
 import { questionsData, defaultQuestions } from "@/lib/orientation/psychologyQuestions"
+import { PvdhOrientationModal } from "./PvdhOrientationModal"
 
 interface StudentOrientationReportModalProps {
   isOpen: boolean
-  onClose: () => void
+  onClose?: () => void
   student: any
   orientationData?: any
   initialViewMode?: "ALL" | "PSYCHOLOGY_ONLY"
+  onlySubjectMode?: boolean
+  embedded?: boolean
+  hideToolbar?: boolean
 }
 
 export function StudentOrientationReportModal({
@@ -52,20 +56,45 @@ export function StudentOrientationReportModal({
   onClose,
   student,
   orientationData: propOrientationData,
-  initialViewMode = "ALL"
+  initialViewMode = "ALL",
+  onlySubjectMode = false,
+  embedded = false,
+  hideToolbar = false
 }: StudentOrientationReportModalProps) {
   const printRef = useRef<HTMLDivElement>(null)
   const [loading, setLoading] = useState(false)
   const [exportingPdf, setExportingPdf] = useState(false)
-  const [reportViewMode, setReportViewMode] = useState<"ALL" | "PSYCHOLOGY_ONLY">(initialViewMode || "ALL")
+  const effectiveMode = onlySubjectMode ? "PSYCHOLOGY_ONLY" : (initialViewMode || "ALL")
+  const [reportViewMode, setReportViewMode] = useState<"ALL" | "PSYCHOLOGY_ONLY" | "PVDH_A4">(effectiveMode)
   const [orientationData, setOrientationData] = useState<any>(propOrientationData || null)
   const [studentInfo, setStudentInfo] = useState<any>(student)
+  const [pvdhState, setPvdhState] = useState<any>(null)
+  const [isPvdhFormOpen, setIsPvdhFormOpen] = useState(false)
+
+  const refreshPvdhState = React.useCallback(() => {
+    const sId = student?.id || ""
+    const sCode = student?.studentCode || ""
+    if (!sId && !sCode) return
+    const qs = new URLSearchParams()
+    if (sId) qs.set("studentId", sId)
+    if (sCode) qs.set("studentCode", sCode)
+    fetch(`/api/pvdh/records?${qs.toString()}`, { cache: "no-store" })
+      .then(r => (r.ok ? r.json() : null))
+      .then(d => {
+        if (d?.success) {
+          setPvdhState(d)
+        }
+      })
+      .catch(() => {})
+  }, [student?.id, student?.studentCode])
 
   useEffect(() => {
-    if (initialViewMode) {
+    if (onlySubjectMode) {
+      setReportViewMode("PSYCHOLOGY_ONLY")
+    } else if (initialViewMode) {
       setReportViewMode(initialViewMode)
     }
-  }, [initialViewMode])
+  }, [initialViewMode, onlySubjectMode, isOpen, student?.id])
 
   // Khởi tạo và fetch dữ liệu nhanh chóng, không làm đơ giao diện
   useEffect(() => {
@@ -81,6 +110,7 @@ export function StudentOrientationReportModal({
     }
 
     let isMounted = true
+    refreshPvdhState()
     const timer = setTimeout(() => {
       if (isMounted) setLoading(false)
     }, 1200)
@@ -148,8 +178,8 @@ export function StudentOrientationReportModal({
       iframe.style.position = "fixed"
       iframe.style.left = "-10000px"
       iframe.style.top = "0"
-      iframe.style.width = "210mm"
-      iframe.style.height = "297mm"
+      iframe.style.width = "1024px"
+      iframe.style.height = "100vh"
       iframe.style.border = "0"
       iframe.style.opacity = "0"
       iframe.style.pointerEvents = "none"
@@ -175,12 +205,32 @@ export function StudentOrientationReportModal({
         <html lang="vi">
           <head>
             <meta charset="utf-8">
+            <meta name="viewport" content="width=1024">
             <title>${pdfTitle}</title>
             ${styles}
             <style>
               @page {
                 size: A4 portrait;
                 margin: 8mm 8mm 8mm 8mm;
+              }
+              @page :left {
+                margin: 8mm 8mm 8mm 8mm;
+              }
+              @page :right {
+                margin: 8mm 8mm 8mm 8mm;
+              }
+              .print-page-break {
+                page-break-after: always !important;
+                break-after: page !important;
+                clear: both !important;
+                display: block !important;
+                height: 0 !important;
+                margin: 0 !important;
+                padding: 0 !important;
+              }
+              .print-no-break {
+                page-break-inside: avoid !important;
+                break-inside: avoid !important;
               }
               *, *:before, *:after {
                 box-sizing: border-box !important;
@@ -226,20 +276,33 @@ export function StudentOrientationReportModal({
                 page-break-inside: auto !important;
                 margin-bottom: 10px !important;
               }
-              table {
+              table, table.print-table {
+                display: table !important;
                 border-collapse: collapse !important;
                 width: 100% !important;
                 max-width: 100% !important;
                 table-layout: fixed !important;
+                margin: 0 !important;
               }
               thead {
                 display: table-header-group !important;
               }
+              tbody {
+                display: table-row-group !important;
+              }
               tr {
+                display: table-row !important;
                 break-inside: avoid !important;
                 page-break-inside: avoid !important;
               }
-              th, td {
+              th, th.print-th {
+                display: table-cell !important;
+                word-break: break-word !important;
+                overflow-wrap: break-word !important;
+                white-space: normal !important;
+              }
+              td, td.print-td {
+                display: table-cell !important;
                 word-break: break-word !important;
                 overflow-wrap: break-word !important;
                 white-space: normal !important;
@@ -412,6 +475,53 @@ export function StudentOrientationReportModal({
     } catch (e) {}
   }
 
+  // Fallback: Nếu chưa có psychologyData trên StudentOrientationRecord nhưng học sinh đã có điểm tâm lý (scoreVals >= 7)
+  if (!parsedPsych) {
+    const candidateStudent = studentInfo || student;
+    const sVals = candidateStudent?.scoreVals || [];
+    const cVals = candidateStudent?.commentVals || [];
+    if (sVals.length >= 7 || candidateStudent?.scores?.[0]?.scores) {
+      let rawScoresJson = sVals;
+      if (rawScoresJson.length === 0 && candidateStudent?.scores?.[0]?.scores) {
+        try {
+          rawScoresJson = JSON.parse(candidateStudent.scores[0].scores);
+        } catch (e) {}
+      }
+      let rawCommentsJson = cVals;
+      if (rawCommentsJson.length === 0 && candidateStudent?.scores?.[0]?.comments) {
+        try {
+          rawCommentsJson = JSON.parse(candidateStudent.scores[0].comments);
+        } catch (e) {}
+      }
+      if (rawScoresJson && rawScoresJson.length >= 7) {
+        const secScores = rawScoresJson.slice(0, 6).map((v: any) => Number(v) || 0);
+        const totScore = Number(rawScoresJson[6]) || secScores.reduce((a: number, b: number) => a + b, 0);
+        const qScores = rawScoresJson.slice(7, 27).map((v: any) => Number(v) || 0);
+        const concl = rawCommentsJson?.[0] || candidateStudent?.scores?.[0]?.comment || "Tất cả tiêu chí đều đạt. Các chỉ số tâm lý phát triển bình thường.";
+        const recom = rawCommentsJson?.[1] || "";
+        const qNotes = rawCommentsJson?.slice(2, 22) || [];
+        
+        parsedPsych = {
+          sectionScores: secScores,
+          totalScore: totScore,
+          scores: qScores,
+          conclusion: concl,
+          recommendation: recom,
+          notes: qNotes,
+          evaluation: {
+            level: totScore <= 15 ? "Bình thường" : totScore <= 31 ? "Dấu hiệu nhẹ" : totScore <= 47 ? "Dấu hiệu vừa" : totScore <= 63 ? "Nguy cơ cao" : "Nguy cơ rất cao",
+            suggestion: totScore <= 15 ? "Ổn định, thích nghi tốt" : "Hỗ trợ học đường"
+          },
+          digitalSignature: {
+            isSigned: Boolean(candidateStudent?.signatureName || candidateStudent?.scores?.[0]?.id),
+            signedBy: candidateStudent?.signatureName || "Giáo viên Tâm lý học đường",
+            signedAt: candidateStudent?.updatedAt || new Date().toISOString()
+          }
+        };
+      }
+    }
+  }
+
   const hasPsych = Boolean(
     parsedPsych ||
     (orientationData?.psychologyReferralStatus && orientationData.psychologyReferralStatus !== "NONE") ||
@@ -469,13 +579,32 @@ export function StudentOrientationReportModal({
         const subName = sc.subject?.name || sc.subjectName || "Môn khảo sát"
         const subCode = String(sc.subject?.code || "").toLowerCase()
         const sNameLower = subName.toLowerCase().normalize("NFC")
+        const isTciSub = subCode.includes("tci") || subCode.includes("cpt") || sNameLower.includes("bộ chuẩn phát triển") || sNameLower.includes("chuẩn phát triển")
         const teacherName = sc.teacherName || sc.user?.fullName || "Giáo viên chấm"
 
+        let tciMetaObj: any = null
+        if (isTciSub && sc.comments) {
+          try {
+            const parsedC = typeof sc.comments === "string" ? JSON.parse(sc.comments) : sc.comments
+            const cArr = Array.isArray(parsedC) ? parsedC : [parsedC]
+            for (const item of cArr) {
+              if (typeof item === "string" && item.includes('"_tciMeta"')) {
+                try {
+                  const m = JSON.parse(item)
+                  if (m?._tciMeta) tciMetaObj = m._tciMeta
+                } catch {}
+              }
+            }
+          } catch {}
+        }
+
         let scoreVal: any = sc.finalScore ?? sc.score ?? sc.scoreComposite ?? "—"
+        let vArrForTci: any[] = []
         if (sc.scores) {
           try {
             const parsed = typeof sc.scores === "string" ? JSON.parse(sc.scores) : sc.scores
             const vArr = Array.isArray(parsed) ? parsed : [parsed]
+            vArrForTci = vArr
             if (subCode.includes("tly") || sNameLower.includes("tâm lý")) {
               const scNum = parseFloat(vArr[6] ?? vArr[20] ?? vArr[0] ?? "0")
               let lvl = "Bình thường"
@@ -484,9 +613,21 @@ export function StudentOrientationReportModal({
               else if (scNum > 47 && scNum <= 63) lvl = "Nguy cơ cao"
               else if (scNum > 63) lvl = "Nguy cơ rất cao"
               scoreVal = `${lvl} (${scNum}đ)`
-            } else if (subCode.includes("tci") || subCode.includes("cpt") || sNameLower.includes("bộ chuẩn phát triển")) {
-              const passedCount = vArr.filter((x: any) => String(x) === "3").length
-              scoreVal = `${passedCount}/${vArr.length} Đạt`
+            } else if (isTciSub) {
+              const passedFromArr = vArr.filter((x: any) => ["3", "Đạt", "DAT"].includes(String(x ?? "").trim())).length
+              const failedFromArr = vArr.filter((x: any) => ["2", "Không đạt", "KHONG_DAT"].includes(String(x ?? "").trim())).length
+              const skippedFromArr = vArr.filter((x: any) => ["1", "Không làm", "KHONG_LAM"].includes(String(x ?? "").trim())).length
+              const passedCount = tciMetaObj?.countDat !== undefined ? Number(tciMetaObj.countDat) : passedFromArr
+              const failedCount = tciMetaObj?.countKhongDat !== undefined ? Number(tciMetaObj.countKhongDat) : failedFromArr
+              const skippedCount = tciMetaObj?.countKhongLam !== undefined ? Number(tciMetaObj.countKhongLam) : skippedFromArr
+              const totalLen = vArr.length > 0 ? vArr.length : 16
+              scoreVal = `${passedCount}/${totalLen} Đạt`
+              if (failedCount > 0 || skippedCount > 0) {
+                const extras: string[] = []
+                if (failedCount > 0) extras.push(`${failedCount} KĐ`)
+                if (skippedCount > 0) extras.push(`${skippedCount} KL`)
+                scoreVal += ` (${extras.join(", ")})`
+              }
             } else if (subCode.includes("nltd") || sNameLower.includes("năng lực tư duy")) {
               const pctVal = vArr.length >= 5 ? vArr[4] : vArr[0]
               scoreVal = (pctVal !== undefined && pctVal !== null && String(pctVal).trim() !== "") ? `${pctVal}%` : "—"
@@ -496,7 +637,7 @@ export function StudentOrientationReportModal({
                 scoreVal = String(firstVal)
                 if (sNameLower.includes("tiếng anh") || subCode.includes("eng") || subCode.includes("esl")) {
                   if (sNameLower.includes("vấn đáp") || sNameLower.includes("nói") || subCode.includes("oral") || subCode.includes("vd")) {
-                    const maxOral = (numGrade && numGrade <= 5 && parseFloat(scoreVal) <= 10) ? 10 : (numGrade && numGrade >= 7 ? 20 : 30)
+                    const maxOral = (numGrade && numGrade <= 5 && parseFloat(scoreVal) <= 10) ? 10 : (numGrade === 1 ? 100 : (numGrade && numGrade >= 7 ? 20 : 30))
                     if (!scoreVal.includes("/")) scoreVal = `${scoreVal}/${maxOral}`
                   } else if (sNameLower.includes("viết") || subCode.includes("written") || subCode.includes("vt")) {
                     const maxWrit = (numGrade && numGrade >= 7) ? 80 : 70
@@ -515,13 +656,32 @@ export function StudentOrientationReportModal({
           try {
             const cArr = typeof sc.comments === "string" ? JSON.parse(sc.comments) : sc.comments
             if (Array.isArray(cArr)) {
-              remarkVal = cArr.filter((c: any) => c && String(c).trim() !== "").join(" | ")
-            } else if (typeof cArr === "string") {
+              const humanComments = cArr.filter(
+                (c: any) => c && typeof c === "string" && c.trim() !== "" && !c.includes('"_tciMeta"')
+              )
+              remarkVal = humanComments.join(" | ")
+            } else if (typeof cArr === "string" && !cArr.includes('"_tciMeta"')) {
               remarkVal = cArr
             }
           } catch {
-            remarkVal = String(sc.comments || "")
+            const rawStr = String(sc.comments || "")
+            if (!rawStr.includes('"_tciMeta"')) remarkVal = rawStr
           }
+        }
+
+        if (!remarkVal && isTciSub) {
+          const pCount = tciMetaObj?.countDat ?? vArrForTci.filter((x: any) => ["3", "Đạt", "DAT"].includes(String(x ?? "").trim())).length
+          const fCount = tciMetaObj?.countKhongDat ?? vArrForTci.filter((x: any) => ["2", "Không đạt", "KHONG_DAT"].includes(String(x ?? "").trim())).length
+          const sCount = tciMetaObj?.countKhongLam ?? vArrForTci.filter((x: any) => ["1", "Không làm", "KHONG_LAM"].includes(String(x ?? "").trim())).length
+          const uCount = Math.max(0, 16 - (pCount + fCount + sCount))
+          const signedDateStr = tciMetaObj?.signedAt ? new Date(tciMetaObj.signedAt).toLocaleDateString("vi-VN") : ""
+          const sigLabel =
+            tciMetaObj?.signatureStatus === "SIGNED"
+              ? `Đã ký xác nhận (${tciMetaObj.signerName || teacherName}${signedDateStr ? ` - ${signedDateStr}` : ""})`
+              : tciMetaObj?.signatureStatus === "PENDING_RESIGN"
+                ? "Chờ ký lại (sau mở khóa)"
+                : "Bản nháp (Chưa ký)"
+          remarkVal = `Đạt: ${pCount}/16 • Không đạt: ${fCount}/16 • Không làm: ${sCount}/16${uCount > 0 ? ` • Chưa ĐG: ${uCount}/16` : ""} — ${sigLabel}`
         }
 
         res.push({
@@ -726,10 +886,18 @@ export function StudentOrientationReportModal({
   const vnSubjectHeaderLabel = gradeNumForHeader <= 5 ? "11. Tiếng Việt (HB)" : "11. Ngữ văn (HB)"
 
   return (
-    <div id="orientation-report-modal-backdrop" className="no-print-backdrop fixed inset-0 z-[260] flex items-center justify-center p-2 sm:p-4 bg-slate-900/60 backdrop-blur-xs overflow-y-auto print:p-0 print:bg-white print:static print:z-auto">
+    <div
+      id={embedded ? "orientation-report-embedded-wrapper" : "orientation-report-modal-backdrop"}
+      className={
+        embedded
+          ? "w-full print:p-0 print:bg-white"
+          : "no-print-backdrop fixed inset-0 z-[260] flex items-center justify-center p-2 sm:p-4 bg-slate-900/60 backdrop-blur-xs overflow-y-auto print:p-0 print:bg-white print:static print:z-auto"
+      }
+    >
       
-      {/* GLOBAL PRINT STYLES FOR DIRECT WINDOW.PRINT() OR CTRL+P */}
-      <style data-ignore-iframe-print="true" dangerouslySetInnerHTML={{ __html: `
+      {/* GLOBAL PRINT STYLES FOR DIRECT WINDOW.PRINT() OR CTRL+P (ONLY IN MODAL MODE) */}
+      {!embedded && (
+        <style data-ignore-iframe-print="true" dangerouslySetInnerHTML={{ __html: `
         @media print {
           @page {
             size: A4 portrait;
@@ -790,20 +958,33 @@ export function StudentOrientationReportModal({
           .no-print, .no-print * {
             display: none !important;
           }
-          table {
+          table, table.print-table {
+            display: table !important;
             border-collapse: collapse !important;
             width: 100% !important;
             max-width: 100% !important;
             table-layout: fixed !important;
+            margin: 0 !important;
           }
           thead {
             display: table-header-group !important;
           }
+          tbody {
+            display: table-row-group !important;
+          }
           tr {
+            display: table-row !important;
             break-inside: avoid !important;
             page-break-inside: avoid !important;
           }
-          th, td {
+          th, th.print-th {
+            display: table-cell !important;
+            word-break: break-word !important;
+            overflow-wrap: break-word !important;
+            white-space: normal !important;
+          }
+          td, td.print-td {
+            display: table-cell !important;
             word-break: break-word !important;
             overflow-wrap: break-word !important;
             white-space: normal !important;
@@ -820,11 +1001,20 @@ export function StudentOrientationReportModal({
           }
         }
       `}} />
+      )}
 
       {/* SCREEN CONTAINER (A4 Wrapper) */}
-      <div id="orientation-report-main-container" className="relative bg-white w-full max-w-[900px] rounded-3xl shadow-2xl border border-slate-200 flex flex-col max-h-[95vh] print:max-h-none print:h-auto print:border-none print:shadow-none print:rounded-none overflow-hidden">
+      <div
+        id="orientation-report-main-container"
+        className={
+          embedded
+            ? "relative bg-white w-full rounded-2xl shadow-2xs border border-slate-200 flex flex-col print:border-none print:shadow-none print:rounded-none overflow-hidden"
+            : "relative bg-white w-full max-w-[900px] rounded-3xl shadow-2xl border border-slate-200 flex flex-col max-h-[95vh] print:max-h-none print:h-auto print:border-none print:shadow-none print:rounded-none overflow-hidden"
+        }
+      >
         
         {/* TOP BAR (HIDDEN IN PRINT) */}
+        {!hideToolbar && (
         <div className="no-print px-5 py-3.5 bg-gradient-to-r from-[#083d39] via-[#0b524d] to-[#0f6b64] text-white flex flex-col sm:flex-row items-center justify-between gap-3 border-b border-teal-800 flex-shrink-0">
           <div className="flex items-center gap-2.5 w-full sm:w-auto">
             <div className="w-8 h-8 rounded-xl bg-teal-600 text-white flex items-center justify-center shadow-sm shrink-0">
@@ -844,8 +1034,8 @@ export function StudentOrientationReportModal({
             </div>
           </div>
 
-          {/* VIEW MODE TOGGLE (NẾU HỌC SINH CÓ DỮ LIỆU TÂM LÝ) */}
-          {hasPsych && (
+          {/* VIEW MODE TOGGLE (CHỈ HIỂN THỊ KHI KHÔNG Ở CHẾ ĐỘ CHUYÊN BIỆT onlySubjectMode) */}
+          {hasPsych && !onlySubjectMode && (
             <div className="flex items-center p-1 bg-black/25 rounded-xl border border-teal-600/70 text-xs font-bold">
               <button
                 type="button"
@@ -875,7 +1065,7 @@ export function StudentOrientationReportModal({
 
           <div className="flex items-center gap-2 w-full sm:w-auto justify-end">
             {/* Phím tắt: nếu đang ở chế độ Toàn diện nhưng muốn chỉ lưu PDF phiếu tâm lý */}
-            {hasPsych && reportViewMode === "ALL" && (
+            {hasPsych && !onlySubjectMode && reportViewMode === "ALL" && (
               <button
                 type="button"
                 onClick={() => {
@@ -919,273 +1109,485 @@ export function StudentOrientationReportModal({
               <Printer className="w-4 h-4" />
               <span>In (A4)</span>
             </button>
-            <button
-              type="button"
-              onClick={onClose}
-              className="p-2 text-teal-200 hover:text-white hover:bg-white/10 rounded-xl transition-all cursor-pointer"
-            >
-              <X className="w-5 h-5" />
-            </button>
+            {!embedded && onClose && (
+              <button
+                type="button"
+                onClick={onClose}
+                className="p-2 text-teal-200 hover:text-white hover:bg-white/10 rounded-xl transition-all cursor-pointer"
+              >
+                <X className="w-5 h-5" />
+              </button>
+            )}
           </div>
         </div>
+        )}
+
+        {/* THANH ĐIỀU PHỐI PHIẾU PHỎNG VẤN ĐỊNH HƯỚNG HS & PHHS (PVDH-01..05) */}
+        {!onlySubjectMode && (
+          <div className="px-4 sm:px-6 py-2.5 bg-[#F0FDFA] border-b border-teal-200/80 flex flex-wrap items-center justify-between gap-2 print:hidden tabular-nums">
+            <div className="flex flex-wrap items-center gap-2 text-xs">
+              <HeartHandshake className="w-4 h-4 text-[#00736E]" />
+              <span className="font-bold text-[#003B3A]">
+                Phiếu phỏng vấn định hướng HS &amp; trao đổi PHHS:
+              </span>
+              {pvdhState?.record ? (
+                <>
+                  <span className="px-2 py-0.5 rounded bg-[#003B3A] text-white text-[11px] font-bold">
+                    {pvdhState.record.templateCode} • v{pvdhState.record.versionNumber || "1.0"}
+                  </span>
+                  <span className="px-2 py-0.5 rounded bg-white border border-teal-200 text-[#00736E] text-[11px] font-semibold">
+                    {pvdhState.record.workflowStatus === "VERIFIED_LOCKED"
+                      ? "Đã xác nhận & khóa"
+                      : pvdhState.record.workflowStatus === "RETURNED"
+                        ? "Trả lại bổ sung"
+                        : pvdhState.record.workflowStatus === "COMPLETED" || pvdhState.record.workflowStatus === "SUBMITTED"
+                          ? "Đã hoàn tất"
+                          : "Bản nháp / Hoàn tất 1 phần"}
+                  </span>
+                </>
+              ) : (
+                <span className="text-slate-600">
+                  {pvdhState?.resolvedTemplate?.templateCode
+                    ? `Mẫu áp dụng: ${pvdhState.resolvedTemplate.templateCode} (Chưa nhập phiếu mới)`
+                    : "Chưa có phiếu định hướng PVDH"}
+                </span>
+              )}
+            </div>
+            <div className="flex flex-wrap items-center gap-1.5">
+              {pvdhState?.record && (
+                <>
+                  <button
+                    type="button"
+                    onClick={() =>
+                      setReportViewMode(prev => (prev === "PVDH_A4" ? "ALL" : "PVDH_A4"))
+                    }
+                    className={`px-3 py-1.5 rounded-xl text-xs font-semibold border transition-colors cursor-pointer ${
+                      reportViewMode === "PVDH_A4"
+                        ? "bg-[#003B3A] text-white border-[#003B3A]"
+                        : "bg-white text-[#003B3A] border-[#E2E8F0] hover:border-[#00A19A]"
+                    }`}
+                  >
+                    {reportViewMode === "PVDH_A4" ? "Quay lại báo cáo tổng hợp" : "Xem phiếu A4 PVDH"}
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      const stId = pvdhState.record.studentId || student?.id || ""
+                      const pId = pvdhState.record.periodId || student?.periodId || ""
+                      window.open(
+                        `/api/pvdh/pdf?studentId=${encodeURIComponent(stId)}&periodId=${encodeURIComponent(pId)}&format=pdf&disposition=attachment`,
+                        "_blank"
+                      )
+                    }}
+                    className="px-3 py-1.5 rounded-xl bg-white hover:bg-slate-50 text-[#00736E] border border-teal-200 text-xs font-semibold inline-flex items-center gap-1 cursor-pointer"
+                  >
+                    <Download className="w-3.5 h-3.5" />
+                    <span>Tải PDF PVDH</span>
+                  </button>
+                </>
+              )}
+              {(pvdhState?.student?.id || student?.id) && (
+                <button
+                  type="button"
+                  onClick={() => setIsPvdhFormOpen(true)}
+                  className="px-3 py-1.5 rounded-xl bg-[#00A19A] hover:bg-[#008B85] text-white text-xs font-bold inline-flex items-center gap-1 cursor-pointer"
+                >
+                  <span>{pvdhState?.record ? "Mở phiếu PVDH" : "Nhập định hướng PVDH"}</span>
+                </button>
+              )}
+            </div>
+          </div>
+        )}
 
         {/* PRINTABLE REPORT CONTENT (MULTI-PAGE A4 CANVAS) */}
         <div
           id="orientation-report-printable"
           ref={printRef}
-          className="flex-1 overflow-y-auto p-6 sm:p-8 text-slate-900 font-sans leading-relaxed print:overflow-visible print:p-0 print:m-0"
+          className={
+            embedded
+              ? "p-4 sm:p-6 text-slate-900 font-sans leading-relaxed print:overflow-visible print:p-0 print:m-0"
+              : "flex-1 overflow-y-auto p-6 sm:p-8 text-slate-900 font-sans leading-relaxed print:overflow-visible print:p-0 print:m-0"
+          }
         >
           {loading ? (
             <div className="py-24 text-center space-y-3">
               <RefreshCw className="w-8 h-8 animate-spin mx-auto text-teal-700" />
               <p className="text-xs font-bold text-slate-500">Đang tổng hợp báo cáo nhận diện...</p>
             </div>
+          ) : reportViewMode === "PVDH_A4" && pvdhState?.record ? (
+            <div className="bg-white rounded-2xl border border-[#E2E8F0] overflow-hidden">
+              <iframe
+                title="Xem trước phiếu phỏng vấn định hướng A4"
+                src={`/api/pvdh/pdf?recordId=${encodeURIComponent(pvdhState.record.id)}&format=html`}
+                className="w-full h-[760px] border-0 bg-white"
+              />
+            </div>
           ) : reportViewMode === "PSYCHOLOGY_ONLY" ? (
-            <div className="space-y-3.5">
-              {/* PSYCHOLOGY REPORT HEADER */}
-              <div className="print-section border-b-2 border-[#003B3A] pb-2.5 flex items-start justify-between gap-4">
-                <div className="space-y-0.5">
-                  <div className="text-[11px] font-black uppercase tracking-widest text-[#003B3A] flex items-center gap-1.5">
-                    <span className="w-2.5 h-2.5 rounded-full bg-[#00A19A] inline-block"></span>
-                    <span>HỆ THỐNG GIÁO DỤC SKY-LINE</span>
-                  </div>
-                  <div className="text-xs font-bold text-slate-800">
-                    Cơ sở: {campusName} &bull; Ban Khảo Thí &amp; ĐBCL
-                  </div>
-                  <div className="text-[10px] text-teal-700 font-semibold">
-                    Bộ phận Khảo sát &amp; Tư vấn Tâm lý Học đường
-                  </div>
-                </div>
-
-                <div className="text-right space-y-0.5">
-                  <span className="text-[10px] font-mono font-bold text-teal-950 block">
-                    Mã hồ sơ: {sData?.studentCode || student?.studentCode || "HS-KSDV"}
-                  </span>
-                  <span className="text-[10px] text-slate-500 block">
-                    Khảo sát tuyển sinh năm học 2026 - 2027
-                  </span>
-                  <span className="text-[10px] text-slate-500 block">
-                    Thời gian lập: {signTime}
-                  </span>
-                </div>
-              </div>
-
-              {/* PSYCHOLOGY REPORT TITLE */}
-              <div className="print-section text-center space-y-0.5 py-1">
-                <h1 className="text-base sm:text-lg font-black text-[#003B3A] uppercase tracking-tight">
-                  PHIẾU KẾT QUẢ KHẢO SÁT &amp; ĐÁNH GIÁ TÂM LÝ HỌC ĐƯỜNG
-                </h1>
-                <p className="text-[11.5px] text-teal-800 font-bold">
-                  Áp dụng cho học sinh {gradeConfig.label || `Khối ${rawGradeClean}`} &bull; Khảo sát tâm lý đầu vào chuyên sâu
-                </p>
-                <p className="text-[9.5px] text-slate-500 italic">
-                  (Biểu mẫu chuyên môn lưu trữ hồ sơ tâm lý và chứng nhận kết quả xét tuyển của Hệ thống Giáo dục Sky-Line)
-                </p>
-              </div>
-
-              {/* PHẦN 1: THÔNG TIN HỌC SINH */}
-              <div className="print-section bg-slate-50 rounded-xl border border-slate-200 p-2.5 text-xs">
-                <div className="text-[10.5px] font-black uppercase text-[#003B3A] mb-1.5 flex items-center gap-1.5">
-                  <User size={13} className="text-[#00A19A]" />
-                  <span>1. THÔNG TIN HỌC SINH ĐƯỢC KHẢO SÁT</span>
-                </div>
-                <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 text-[10.5px]">
-                  <div>
-                    <span className="text-slate-400 block text-[9px] uppercase font-bold">Họ và tên:</span>
-                    <strong className="text-[#003B3A] font-bold text-xs">{sData?.fullName || student?.fullName}</strong>
-                  </div>
-                  <div>
-                    <span className="text-slate-400 block text-[9px] uppercase font-bold">Mã học sinh:</span>
-                    <span className="font-mono font-bold text-slate-800">{sData?.studentCode || student?.studentCode}</span>
-                  </div>
-                  <div>
-                    <span className="text-slate-400 block text-[9px] uppercase font-bold">Ngày sinh / Giới tính:</span>
-                    <span className="font-semibold text-slate-800">
-                      {sData?.dateOfBirth ? new Date(sData.dateOfBirth).toLocaleDateString("vi-VN") : "—"} ({sData?.gender || "Nam"})
-                    </span>
-                  </div>
-                  <div>
-                    <span className="text-slate-400 block text-[9px] uppercase font-bold">Khối / Hệ khảo sát:</span>
-                    <span className="font-semibold text-slate-800">
-                      Khối {rawGradeClean} &bull; {sData?.surveySystem || sData?.surveyFormType || "Hệ HNS"}
-                    </span>
-                  </div>
-                </div>
-              </div>
-
-              {/* PHẦN 2: TỔNG HỢP 6 NHÓM CHỈ SỐ TÂM LÝ */}
-              <div className="print-section space-y-2">
-                <div className="flex items-center justify-between border-b border-teal-200 pb-1">
-                  <div className="flex items-center gap-2">
-                    <Brain size={14} className="text-[#00A19A]" />
-                    <h2 className="text-[11px] font-black uppercase tracking-wider text-[#003B3A]">
-                      2. TỔNG HỢP ĐIỂM SỐ 6 NHÓM TIÊU CHÍ TÂM LÝ
-                    </h2>
-                  </div>
-                  <div className="text-xs">
-                    <span className="text-slate-500 font-medium">Tổng điểm: </span>
-                    <strong className="text-emerald-700 font-black text-sm tabular-nums">
-                      {parsedPsych?.totalScore ?? 0}/80đ
-                    </strong>
-                    <span className="ml-2 px-2 py-0.5 rounded-full bg-emerald-100 text-emerald-800 text-[10px] font-black">
-                      {parsedPsych?.evaluation?.level || "Bình thường"}
-                    </span>
-                  </div>
-                </div>
-
-                <div className="grid grid-cols-2 sm:grid-cols-6 gap-1.5 text-center">
-                  {secLabels.map((sec, idx) => (
-                    <div key={idx} className="p-2 rounded-xl bg-teal-50/60 border border-teal-200">
-                      <span className="text-[8.5px] font-bold text-slate-500 block truncate" title={sec.label}>{sec.label}</span>
-                      <span className="text-xs font-black text-[#003B3A] tabular-nums mt-0.5 block">
-                        {parsedPsych?.sectionScores?.[idx] ?? 0}/{sec.max}đ
-                      </span>
-                    </div>
-                  ))}
-                </div>
-              </div>
-
-              {/* PHẦN 3: BẢNG CHI TIẾT 20 CÂU HỎI KHẢO SÁT TÂM LÝ */}
-              <div className="print-section-flow space-y-1.5">
-                <div className="flex items-center gap-2 border-b border-teal-200 pb-1">
-                  <ClipboardCheck size={14} className="text-[#00A19A]" />
-                  <h2 className="text-[11px] font-black uppercase tracking-wider text-[#003B3A]">
-                    3. KẾT QUẢ ĐÁNH GIÁ CHI TIẾT THEO TỪNG CÂU HỎI KHẢO SÁT
-                  </h2>
-                </div>
-
-                <table className="w-full border-collapse border border-slate-300 text-[9.5px]">
-                  <thead>
-                    <tr className="bg-[#003B3A] text-white font-bold text-center">
-                      <th className="p-1.5 border border-teal-800 w-8">STT</th>
-                      <th className="p-1.5 border border-teal-800 text-left">Nội dung câu hỏi / Tình huống khảo sát</th>
-                      <th className="p-1.5 border border-teal-800 w-24 text-center">Mức điểm</th>
-                      <th className="p-1.5 border border-teal-800 w-44 text-left">Ghi chú quan sát thực tế</th>
+            <div className="space-y-2 text-slate-900 font-sans" style={{ width: "100%", maxWidth: "100%" }}>
+              
+              {/* ===== TRANG 1 (PAGE 1): HEADER + THÔNG TIN + TỔNG HỢP 6 MỤC + 10 CÂU ĐẦU ===== */}
+              <div className="print-section" style={{ width: "100%" }}>
+                {/* 1.1 HEADER TRANG 1 */}
+                <table className="print-table" style={{ width: "100%", borderCollapse: "collapse", borderBottom: "2px solid #003B3A", paddingBottom: "4px", marginBottom: "8px" }}>
+                  <tbody className="divide-y divide-[#E2E8F0] text-xs bg-white">
+                    <tr>
+                      <td className="print-td" style={{ width: "60%", verticalAlign: "top", textAlign: "left" }}>
+                        <div style={{ fontSize: "11px", fontWeight: "900", color: "#003B3A", textTransform: "uppercase", letterSpacing: "0.5px" }}>
+                          HỆ THỐNG GIÁO DỤC SKY-LINE
+                        </div>
+                        <div style={{ fontSize: "10.5px", fontWeight: "bold", color: "#1e293b", marginTop: "1px" }}>
+                          Cơ sở: {campusName} &bull; Ban Khảo Thí &amp; ĐBCL
+                        </div>
+                        <div style={{ fontSize: "9.5px", color: "#00736E", fontWeight: "600" }}>
+                          Bộ phận Khảo sát &amp; Tư vấn Tâm lý Học đường
+                        </div>
+                      </td>
+                      <td className="print-td" style={{ width: "40%", verticalAlign: "top", textAlign: "right" }}>
+                        <div style={{ fontSize: "10.5px", fontFamily: "monospace", fontWeight: "bold", color: "#003B3A" }}>
+                          Mã hồ sơ: {sData?.studentCode || student?.studentCode || "HS-KSDV"}
+                        </div>
+                        <div style={{ fontSize: "9.5px", color: "#64748b" }}>
+                          Khảo sát tuyển sinh năm học 2026 - 2027
+                        </div>
+                        <div style={{ fontSize: "9.5px", color: "#64748b" }}>
+                          Thời gian lập: {signTime}
+                        </div>
+                      </td>
                     </tr>
-                  </thead>
-                  <tbody>
-                    {(() => {
-                      let qCounter = 0;
-                      return psychQuestionsSections.map((sec: any, secIdx: number) => (
-                        <React.Fragment key={secIdx}>
-                          <tr className="bg-slate-100 font-bold text-[#003B3A]">
-                            <td colSpan={4} className="p-1 border border-slate-300 text-[9px] uppercase tracking-wide">
-                              {sec.title}
-                            </td>
-                          </tr>
-                          {sec.questions.map((q: any, qSubIdx: number) => {
-                            const currentQIdx = qCounter++;
-                            const scoreVal = parsedPsych?.scores?.[currentQIdx];
-                            const noteVal = parsedPsych?.notes?.[currentQIdx] || "";
-                            return (
-                              <tr key={qSubIdx} className="hover:bg-teal-50/30 border-b border-slate-200">
-                                <td className="p-1 border border-slate-300 text-center font-bold font-mono">
-                                  {currentQIdx + 1}
-                                </td>
-                                <td className="p-1 border border-slate-300 leading-tight">
-                                  {q.text}
-                                </td>
-                                <td className="p-1 border border-slate-300 text-center font-bold tabular-nums">
-                                  {scoreVal !== undefined && scoreVal >= 0 ? (
-                                    <span className="px-1.5 py-0.5 rounded bg-emerald-50 text-emerald-800 border border-emerald-200">
-                                      {scoreVal} / 4đ
-                                    </span>
-                                  ) : (
-                                    <span className="text-slate-400">—</span>
-                                  )}
-                                </td>
-                                <td className="p-1 border border-slate-300 text-slate-700 italic">
-                                  {noteVal || "—"}
-                                </td>
-                              </tr>
-                            );
-                          })}
-                        </React.Fragment>
-                      ));
-                    })()}
                   </tbody>
                 </table>
-              </div>
 
-              {/* PHẦN 4: KẾT LUẬN SƠ BỘ & KHUYẾN NGHỊ */}
-              <div className="print-section grid grid-cols-1 sm:grid-cols-2 gap-2.5 text-xs">
-                <div className="p-2.5 bg-amber-50/50 rounded-xl border border-amber-200">
-                  <span className="font-black uppercase text-amber-900 text-[9px] block">
-                    4.1. KẾT LUẬN SƠ BỘ CỦA GIÁO VIÊN TÂM LÝ:
-                  </span>
-                  <p className="text-slate-800 mt-1 leading-relaxed text-[10px]">
-                    {parsedPsych?.conclusion || orientationData?.psychologyReferralReason || "Tất cả tiêu chí đều đạt. Các chỉ số tâm lý phát triển bình thường."}
-                  </p>
-                </div>
-
-                <div className="p-2.5 bg-emerald-50/50 rounded-xl border border-emerald-200">
-                  <span className="font-black uppercase text-emerald-900 text-[9px] block">
-                    4.2. KHUYẾN NGHỊ HỖ TRỢ DÀNH CHO PHỤ HUYNH &amp; NHÀ TRƯỜNG:
-                  </span>
-                  <p className="text-slate-800 mt-1 leading-relaxed text-[10px]">
-                    {parsedPsych?.recommendation || parsedPsych?.evaluation?.suggestion || "Tiếp tục tạo môi trường khuyến khích học sinh giao tiếp tự tin, đồng hành cùng nhà trường trong giai đoạn đầu nhập học."}
-                  </p>
-                </div>
-              </div>
-
-              {/* PHẦN 5: CHỨNG NHẬN KÝ ĐIỆN TỬ VÀ XÁC THỰC SQMS */}
-              <div className="print-section pt-3 border-t-2 border-slate-300 text-xs">
-                <div className="grid grid-cols-3 gap-3 text-center">
-                  <div className="flex flex-col items-center justify-between min-h-[100px]">
-                    <span className="text-[9.5px] font-black uppercase text-slate-600 block">
-                      GIÁO VIÊN KHẢO SÁT &amp; ĐÁNH GIÁ TÂM LÝ
-                    </span>
-                    <div className="p-2 rounded-xl border-2 border-emerald-600 bg-emerald-50/80 text-center w-full max-w-[210px] shadow-2xs my-1">
-                      <div className="text-[8px] font-black uppercase tracking-wider text-emerald-800 flex items-center justify-center gap-1">
-                        <ShieldCheck size={12} className="text-emerald-700" />
-                        <span>CHỨNG NHẬN KÝ ĐIỆN TỬ SQMS</span>
-                      </div>
-                      <div className="text-[11px] font-black text-[#003B3A] my-0.5 truncate">
-                        {signerName}
-                      </div>
-                      <div className="text-[8px] text-slate-500 font-mono">
-                        Thời gian: {signTime}
-                      </div>
-                      <div className="text-[7.5px] text-emerald-700 font-mono truncate mt-0.5">
-                        Mã xác thực: {signHash}
-                      </div>
-                      <div className="text-[7px] text-emerald-800 font-bold mt-0.5">
-                        ✓ ĐÃ KÝ ĐIỆN TỬ VÀ ĐỒNG BỘ CSDL
-                      </div>
-                    </div>
+                {/* 1.2 TIÊU ĐỀ BÁO CÁO */}
+                <div style={{ textAlign: "center", marginBottom: "8px" }}>
+                  <h1 style={{ fontSize: "14.5px", fontWeight: "900", color: "#003B3A", textTransform: "uppercase", margin: 0, letterSpacing: "0.5px" }}>
+                    PHIẾU KẾT QUẢ KHẢO SÁT &amp; ĐÁNH GIÁ TÂM LÝ HỌC ĐƯỜNG
+                  </h1>
+                  <div style={{ fontSize: "10.5px", fontWeight: "bold", color: "#00736E", marginTop: "1px" }}>
+                    Áp dụng cho học sinh {gradeConfig.label || `Khối ${rawGradeClean}`} &bull; Khảo sát tâm lý đầu vào chuyên sâu
                   </div>
-
-                  <div className="space-y-12">
-                    <span className="text-[9.5px] font-black uppercase text-slate-600 block">
-                      BAN KHẢO THÍ &amp; ĐBCL (QLCM)
-                    </span>
-                    <div>
-                      <strong className="text-slate-900 text-[11px] block font-bold">
-                        {verificationInfo?.verifiedBy || verificationInfo?.verifierName || "Ban Chuyên môn Cơ sở"}
-                      </strong>
-                      <span className="text-[9px] text-slate-400 italic block">
-                        Ký xác nhận lưu hồ sơ
-                      </span>
-                    </div>
-                  </div>
-
-                  <div className="space-y-12">
-                    <span className="text-[9.5px] font-black uppercase text-slate-600 block">
-                      GIÁM ĐỐC CƠ SỞ / HỘI ĐỒNG TUYỂN SINH
-                    </span>
-                    <div>
-                      <strong className="text-slate-900 text-[11px] block font-bold">
-                        {sData?.signatureName || (campusName && campusName !== "Sky-Line" ? `GĐCS ${campusName}` : "Hội đồng Tuyển sinh")}
-                      </strong>
-                      <span className="text-[9px] text-slate-400 italic block">Phê duyệt kết quả</span>
-                    </div>
+                  <div style={{ fontSize: "9px", fontStyle: "italic", color: "#64748b" }}>
+                    (Biểu mẫu chuyên môn lưu trữ hồ sơ tâm lý và chứng nhận kết quả xét tuyển Hệ thống Sky-Line)
                   </div>
                 </div>
 
-                <div className="text-center text-[8.5px] text-slate-400 italic pt-3 border-t border-slate-100 mt-2">
-                  Hệ thống Quản lý Khảo sát &amp; Định hướng Sky-Line (SQMS) &bull; Khảo sát tâm lý đầu vào chuyên sâu &bull; Mã hồ sơ: {sData?.studentCode || student?.studentCode}
+                {/* 1.3 MỤC 1: THÔNG TIN HỌC SINH (BẢNG TABLE 4 CỘT) */}
+                <div style={{ marginBottom: "8px" }}>
+                  <div style={{ fontSize: "10px", fontWeight: "900", textTransform: "uppercase", color: "#003B3A", marginBottom: "3px" }}>
+                    1. THÔNG TIN HỌC SINH ĐƯỢC KHẢO SÁT
+                  </div>
+                  <table className="print-table" style={{ width: "100%", borderCollapse: "collapse", border: "1px solid #cbd5e1", fontSize: "9.5px", backgroundColor: "#f8fafc" }}>
+                    <tbody className="divide-y divide-[#E2E8F0] text-xs bg-white">
+                      <tr>
+                        <td className="print-td" style={{ width: "25%", padding: "4px 6px", border: "1px solid #cbd5e1" }}>
+                          <span style={{ fontSize: "8.5px", color: "#64748b", textTransform: "uppercase", display: "block", fontWeight: "bold" }}>Họ và tên:</span>
+                          <strong style={{ color: "#003B3A", fontSize: "10.5px" }}>{sData?.fullName || student?.fullName}</strong>
+                        </td>
+                        <td className="print-td" style={{ width: "25%", padding: "4px 6px", border: "1px solid #cbd5e1" }}>
+                          <span style={{ fontSize: "8.5px", color: "#64748b", textTransform: "uppercase", display: "block", fontWeight: "bold" }}>Mã học sinh:</span>
+                          <span style={{ fontFamily: "monospace", fontWeight: "bold", color: "#1e293b" }}>{sData?.studentCode || student?.studentCode}</span>
+                        </td>
+                        <td className="print-td" style={{ width: "25%", padding: "4px 6px", border: "1px solid #cbd5e1" }}>
+                          <span style={{ fontSize: "8.5px", color: "#64748b", textTransform: "uppercase", display: "block", fontWeight: "bold" }}>Ngày sinh / Giới tính:</span>
+                          <span style={{ color: "#1e293b", fontWeight: "600" }}>
+                            {sData?.dateOfBirth ? new Date(sData.dateOfBirth).toLocaleDateString("vi-VN") : "—"} ({sData?.gender || "Nam"})
+                          </span>
+                        </td>
+                        <td className="print-td" style={{ width: "25%", padding: "4px 6px", border: "1px solid #cbd5e1" }}>
+                          <span style={{ fontSize: "8.5px", color: "#64748b", textTransform: "uppercase", display: "block", fontWeight: "bold" }}>Khối / Hệ khảo sát:</span>
+                          <span style={{ color: "#1e293b", fontWeight: "600" }}>
+                            Khối {rawGradeClean} &bull; {sData?.surveySystem || sData?.surveyFormType || "Hệ HNS"}
+                          </span>
+                        </td>
+                      </tr>
+                    </tbody>
+                  </table>
+                </div>
+
+                {/* 1.4 MỤC 2: TỔNG HỢP ĐIỂM SỐ 6 NHÓM TIÊU CHÍ (BẢNG TABLE 6 CỘT) */}
+                <div style={{ marginBottom: "8px" }}>
+                  <table className="print-table" style={{ width: "100%", borderCollapse: "collapse", marginBottom: "3px" }}>
+                    <tbody className="divide-y divide-[#E2E8F0] text-xs bg-white">
+                      <tr>
+                        <td className="print-td" style={{ textAlign: "left", verticalAlign: "middle" }}>
+                          <span style={{ fontSize: "10px", fontWeight: "900", textTransform: "uppercase", color: "#003B3A" }}>
+                            2. TỔNG HỢP ĐIỂM SỐ 6 NHÓM TIÊU CHÍ TÂM LÝ
+                          </span>
+                        </td>
+                        <td className="print-td" style={{ textAlign: "right", verticalAlign: "middle", fontSize: "10px" }}>
+                          <span style={{ color: "#475569" }}>Tổng điểm: </span>
+                          <strong style={{ color: "#059669", fontSize: "11.5px", fontWeight: "900" }} className="tabular-nums">
+                            {parsedPsych?.totalScore ?? 0}/80đ
+                          </strong>
+                          <span style={{ marginLeft: "6px", backgroundColor: "#ecfdf5", color: "#065f46", border: "1px solid #a7f3d0", padding: "1px 6px", borderRadius: "9999px", fontSize: "9px", fontWeight: "bold" }}>
+                            {parsedPsych?.evaluation?.level || "Bình thường"}
+                          </span>
+                        </td>
+                      </tr>
+                    </tbody>
+                  </table>
+
+                  <table className="print-table" style={{ width: "100%", borderCollapse: "collapse", border: "1px solid #99f6e4", fontSize: "9px", textAlign: "center" }}>
+                    <thead className="bg-[#003B3A] text-white border-b border-[#003B3A]">
+                      <tr style={{ backgroundColor: "#f0fdfa", color: "#003B3A", fontWeight: "bold" }}>
+                        <th className="print-th" style={{ width: "16.66%", padding: "3px 2px", border: "1px solid #ccfbf1" }}>I. Cảm xúc</th>
+                        <th className="print-th" style={{ width: "16.66%", padding: "3px 2px", border: "1px solid #ccfbf1" }}>II. Hành vi</th>
+                        <th className="print-th" style={{ width: "16.66%", padding: "3px 2px", border: "1px solid #ccfbf1" }}>III. Giao tiếp</th>
+                        <th className="print-th" style={{ width: "16.66%", padding: "3px 2px", border: "1px solid #ccfbf1" }}>IV. Chú ý &amp; Học</th>
+                        <th className="print-th" style={{ width: "16.66%", padding: "3px 2px", border: "1px solid #ccfbf1" }}>V. Tư duy</th>
+                        <th className="print-th" style={{ width: "16.66%", padding: "3px 2px", border: "1px solid #ccfbf1" }}>VI. Động lực</th>
+                      </tr>
+                    </thead>
+                    <tbody className="divide-y divide-[#E2E8F0] text-xs bg-white">
+                      <tr style={{ backgroundColor: "#ffffff", fontWeight: "900", color: "#003B3A", fontSize: "10.5px" }}>
+                        <td className="print-td tabular-nums" style={{ padding: "3px 2px", border: "1px solid #ccfbf1" }}>{parsedPsych?.sectionScores?.[0] ?? 0}/16đ</td>
+                        <td className="print-td tabular-nums" style={{ padding: "3px 2px", border: "1px solid #ccfbf1" }}>{parsedPsych?.sectionScores?.[1] ?? 0}/12đ</td>
+                        <td className="print-td tabular-nums" style={{ padding: "3px 2px", border: "1px solid #ccfbf1" }}>{parsedPsych?.sectionScores?.[2] ?? 0}/12đ</td>
+                        <td className="print-td tabular-nums" style={{ padding: "3px 2px", border: "1px solid #ccfbf1" }}>{parsedPsych?.sectionScores?.[3] ?? 0}/16đ</td>
+                        <td className="print-td tabular-nums" style={{ padding: "3px 2px", border: "1px solid #ccfbf1" }}>{parsedPsych?.sectionScores?.[4] ?? 0}/12đ</td>
+                        <td className="print-td tabular-nums" style={{ padding: "3px 2px", border: "1px solid #ccfbf1" }}>{parsedPsych?.sectionScores?.[5] ?? 0}/12đ</td>
+                      </tr>
+                    </tbody>
+                  </table>
+                </div>
+
+                {/* 1.5 MỤC 3: PHẦN A (10 CÂU ĐẦU TIÊN - MỤC I, II, III) */}
+                <div style={{ width: "100%" }}>
+                  <div style={{ fontSize: "10px", fontWeight: "900", textTransform: "uppercase", color: "#003B3A", marginBottom: "3px" }}>
+                    3. KẾT QUẢ ĐÁNH GIÁ CHI TIẾT THEO TỪNG CÂU HỎI KHẢO SÁT (PHẦN 1: MỤC I &bull; II &bull; III)
+                  </div>
+                  <table className="print-table" style={{ width: "100%", borderCollapse: "collapse", border: "1px solid #cbd5e1", fontSize: "9px" }}>
+                    <thead className="bg-[#003B3A] text-white border-b border-[#003B3A]">
+                      <tr style={{ backgroundColor: "#003B3A", color: "#ffffff", fontWeight: "bold", textAlign: "center" }}>
+                        <th className="print-th" style={{ width: "5%", padding: "3px", border: "1px solid #005854" }}>STT</th>
+                        <th className="print-th" style={{ width: "55%", padding: "3px 6px", border: "1px solid #005854", textAlign: "left" }}>Nội dung câu hỏi / Tình huống khảo sát</th>
+                        <th className="print-th" style={{ width: "15%", padding: "3px", border: "1px solid #005854" }}>Mức điểm</th>
+                        <th className="print-th" style={{ width: "25%", padding: "3px 6px", border: "1px solid #005854", textAlign: "left" }}>Ghi chú quan sát thực tế</th>
+                      </tr>
+                    </thead>
+                    <tbody className="divide-y divide-[#E2E8F0] text-xs bg-white">
+                      {(() => {
+                        let qCounter = 0;
+                        const firstHalfSections = psychQuestionsSections.slice(0, 3);
+                        return firstHalfSections.map((sec: any, secIdx: number) => (
+                          <React.Fragment key={secIdx}>
+                            <tr style={{ backgroundColor: "#f1f5f9", fontWeight: "bold", color: "#003B3A" }}>
+                              <td className="print-td" colSpan={4} style={{ padding: "2.5px 6px", border: "1px solid #cbd5e1", fontSize: "8.5px", textTransform: "uppercase" }}>
+                                {sec.title}
+                              </td>
+                            </tr>
+                            {sec.questions.map((q: any, qSubIdx: number) => {
+                              const currentQIdx = qCounter++;
+                              const scoreVal = parsedPsych?.scores?.[currentQIdx];
+                              const noteVal = parsedPsych?.notes?.[currentQIdx] || "";
+                              return (
+                                <tr key={qSubIdx} style={{ borderBottom: "1px solid #e2e8f0" }}>
+                                  <td className="print-td" style={{ padding: "2.5px 3px", border: "1px solid #cbd5e1", textAlign: "center", fontWeight: "bold", fontFamily: "monospace" }}>
+                                    {currentQIdx + 1}
+                                  </td>
+                                  <td className="print-td" style={{ padding: "2.5px 6px", border: "1px solid #cbd5e1", lineHeight: "1.3" }}>
+                                    {q.text}
+                                  </td>
+                                  <td className="print-td" style={{ padding: "2.5px 3px", border: "1px solid #cbd5e1", textAlign: "center", fontWeight: "bold" }}>
+                                    {scoreVal !== undefined && scoreVal >= 0 ? (
+                                      <span style={{ padding: "1px 4px", borderRadius: "3px", backgroundColor: "#ecfdf5", color: "#065f46", border: "1px solid #a7f3d0" }} className="tabular-nums">
+                                        {scoreVal} / 4đ
+                                      </span>
+                                    ) : (
+                                      <span style={{ color: "#94a3b8" }}>—</span>
+                                    )}
+                                  </td>
+                                  <td style={{ padding: "2.5px 6px", border: "1px solid #cbd5e1", color: "#334155", fontStyle: "italic", fontSize: "8.5px" }}>
+                                    {noteVal || "—"}
+                                  </td>
+                                </tr>
+                              );
+                            })}
+                          </React.Fragment>
+                        ));
+                      })()}
+                    </tbody>
+                  </table>
+                </div>
+
+                <div style={{ textAlign: "right", fontSize: "8px", color: "#94a3b8", marginTop: "4px", fontStyle: "italic" }}>
+                  Phiếu Khảo Sát &amp; Đánh Giá Tâm Lý Học Đường Sky-Line &bull; Trang 1/2
                 </div>
               </div>
+
+              {/* NGẮT TRANG IN CHUẨN A4 */}
+              <div className="print-page-break" style={{ pageBreakAfter: "always", breakAfter: "page", height: 0, margin: 0, padding: 0 }} />
+
+              {/* ===== TRANG 2 (PAGE 2): 10 CÂU TIẾP + KẾT LUẬN & KHUYẾN NGHỊ + KÝ TÊN SQMS ===== */}
+              <div className="print-section" style={{ width: "100%", paddingTop: "4px" }}>
+                {/* 2.1 SUB-HEADER TRANG 2 */}
+                <table style={{ width: "100%", borderCollapse: "collapse", borderBottom: "1.5px solid #003B3A", paddingBottom: "3px", marginBottom: "6px" }}>
+                  <tbody className="divide-y divide-[#E2E8F0] text-xs bg-white">
+                    <tr>
+                      <td style={{ width: "65%", verticalAlign: "middle", textAlign: "left" }}>
+                        <span style={{ fontSize: "9.5px", fontWeight: "900", color: "#003B3A", textTransform: "uppercase" }}>
+                          HỆ THỐNG GIÁO DỤC SKY-LINE &bull; PHIẾU KHẢO SÁT TÂM LÝ (TRANG 2/2)
+                        </span>
+                      </td>
+                      <td style={{ width: "35%", verticalAlign: "middle", textAlign: "right", fontSize: "9.5px" }}>
+                        <span style={{ color: "#475569" }}>Học sinh: </span>
+                        <strong style={{ color: "#003B3A" }}>{sData?.fullName}</strong> ({sData?.studentCode})
+                      </td>
+                    </tr>
+                  </tbody>
+                </table>
+
+                {/* 2.2 MỤC 3 TIẾP: PHẦN B (10 CÂU TIẾP THEO - MỤC IV, V, VI) */}
+                <div style={{ width: "100%", marginBottom: "8px" }}>
+                  <div style={{ fontSize: "10px", fontWeight: "900", textTransform: "uppercase", color: "#003B3A", marginBottom: "3px" }}>
+                    3. KẾT QUẢ ĐÁNH GIÁ CHI TIẾT (TIẾP THEO: MỤC IV &bull; V &bull; VI)
+                  </div>
+                  <table style={{ width: "100%", borderCollapse: "collapse", border: "1px solid #cbd5e1", fontSize: "9px" }}>
+                    <thead className="bg-[#003B3A] text-white border-b border-[#003B3A]">
+                      <tr style={{ backgroundColor: "#003B3A", color: "#ffffff", fontWeight: "bold", textAlign: "center" }}>
+                        <th style={{ width: "5%", padding: "3px", border: "1px solid #005854" }}>STT</th>
+                        <th style={{ width: "55%", padding: "3px 6px", border: "1px solid #005854", textAlign: "left" }}>Nội dung câu hỏi / Tình huống khảo sát</th>
+                        <th style={{ width: "15%", padding: "3px", border: "1px solid #005854" }}>Mức điểm</th>
+                        <th style={{ width: "25%", padding: "3px 6px", border: "1px solid #005854", textAlign: "left" }}>Ghi chú quan sát thực tế</th>
+                      </tr>
+                    </thead>
+                    <tbody className="divide-y divide-[#E2E8F0] text-xs bg-white">
+                      {(() => {
+                        let qCounter = 10;
+                        const secondHalfSections = psychQuestionsSections.slice(3);
+                        return secondHalfSections.map((sec: any, secIdx: number) => (
+                          <React.Fragment key={secIdx}>
+                            <tr style={{ backgroundColor: "#f1f5f9", fontWeight: "bold", color: "#003B3A" }}>
+                              <td colSpan={4} style={{ padding: "2.5px 6px", border: "1px solid #cbd5e1", fontSize: "8.5px", textTransform: "uppercase" }}>
+                                {sec.title}
+                              </td>
+                            </tr>
+                            {sec.questions.map((q: any, qSubIdx: number) => {
+                              const currentQIdx = qCounter++;
+                              const scoreVal = parsedPsych?.scores?.[currentQIdx];
+                              const noteVal = parsedPsych?.notes?.[currentQIdx] || "";
+                              return (
+                                <tr key={qSubIdx} style={{ borderBottom: "1px solid #e2e8f0" }}>
+                                  <td style={{ padding: "2.5px 3px", border: "1px solid #cbd5e1", textAlign: "center", fontWeight: "bold", fontFamily: "monospace" }}>
+                                    {currentQIdx + 1}
+                                  </td>
+                                  <td style={{ padding: "2.5px 6px", border: "1px solid #cbd5e1", lineHeight: "1.3" }}>
+                                    {q.text}
+                                  </td>
+                                  <td style={{ padding: "2.5px 3px", border: "1px solid #cbd5e1", textAlign: "center", fontWeight: "bold" }}>
+                                    {scoreVal !== undefined && scoreVal >= 0 ? (
+                                      <span style={{ padding: "1px 4px", borderRadius: "3px", backgroundColor: "#ecfdf5", color: "#065f46", border: "1px solid #a7f3d0" }} className="tabular-nums">
+                                        {scoreVal} / 4đ
+                                      </span>
+                                    ) : (
+                                      <span style={{ color: "#94a3b8" }}>—</span>
+                                    )}
+                                  </td>
+                                  <td style={{ padding: "2.5px 6px", border: "1px solid #cbd5e1", color: "#334155", fontStyle: "italic", fontSize: "8.5px" }}>
+                                    {noteVal || "—"}
+                                  </td>
+                                </tr>
+                              );
+                            })}
+                          </React.Fragment>
+                        ));
+                      })()}
+                    </tbody>
+                  </table>
+                </div>
+
+                {/* 2.3 MỤC 4: KẾT LUẬN SƠ BỘ & KHUYẾN NGHỊ PHỐI HỢP (TABLE 2 CỘT 50-50) */}
+                <div style={{ width: "100%", marginBottom: "10px" }}>
+                  <table style={{ width: "100%", borderCollapse: "collapse", fontSize: "9.5px" }}>
+                    <tbody className="divide-y divide-[#E2E8F0] text-xs bg-white">
+                      <tr>
+                        <td style={{ width: "50%", padding: "6px", backgroundColor: "#fffbeb", border: "1px solid #fde68a", verticalAlign: "top", borderRadius: "6px" }}>
+                          <span style={{ fontWeight: "900", textTransform: "uppercase", color: "#78350f", fontSize: "8.5px", display: "block", marginBottom: "2px" }}>
+                            4.1. KẾT LUẬN SƠ BỘ CỦA GIÁO VIÊN TÂM LÝ:
+                          </span>
+                          <p style={{ margin: 0, color: "#1e293b", lineHeight: "1.4" }}>
+                            {parsedPsych?.conclusion || orientationData?.psychologyReferralReason || "Tất cả tiêu chí đều đạt. Các chỉ số tâm lý phát triển bình thường."}
+                          </p>
+                        </td>
+                        <td style={{ width: "8px" }}></td>
+                        <td style={{ width: "50%", padding: "6px", backgroundColor: "#ecfdf5", border: "1px solid #a7f3d0", verticalAlign: "top", borderRadius: "6px" }}>
+                          <span style={{ fontWeight: "900", textTransform: "uppercase", color: "#065f46", fontSize: "8.5px", display: "block", marginBottom: "2px" }}>
+                            4.2. KHUYẾN NGHỊ HỖ TRỢ DÀNH CHO PHỤ HUYNH &amp; NHÀ TRƯỜNG:
+                          </span>
+                          <p style={{ margin: 0, color: "#1e293b", lineHeight: "1.4" }}>
+                            {parsedPsych?.recommendation || parsedPsych?.evaluation?.suggestion || "Tiếp tục tạo môi trường khuyến khích học sinh giao tiếp tự tin, đồng hành cùng nhà trường trong giai đoạn đầu nhập học."}
+                          </p>
+                        </td>
+                      </tr>
+                    </tbody>
+                  </table>
+                </div>
+
+                {/* 2.4 MỤC 5: CHỨNG NHẬN KÝ ĐIỆN TỬ VÀ XÁC THỰC SQMS (TABLE 3 CỘT) */}
+                <div style={{ width: "100%", paddingTop: "4px", borderTop: "1.5px solid #cbd5e1" }}>
+                  <table style={{ width: "100%", borderCollapse: "collapse", textAlign: "center", fontSize: "9.5px" }}>
+                    <tbody className="divide-y divide-[#E2E8F0] text-xs bg-white">
+                      <tr>
+                        <td style={{ width: "33.33%", verticalAlign: "top" }}>
+                          <span style={{ fontSize: "9px", fontWeight: "900", textTransform: "uppercase", color: "#475569", display: "block", marginBottom: "4px" }}>
+                            GIÁO VIÊN KHẢO SÁT &amp; ĐÁNH GIÁ TÂM LÝ
+                          </span>
+                          <div style={{ padding: "6px", borderRadius: "6px", border: "2px solid #059669", backgroundColor: "#f0fdf4", display: "inline-block", width: "90%", maxWidth: "190px" }}>
+                            <div style={{ fontSize: "7.5px", fontWeight: "900", textTransform: "uppercase", letterSpacing: "0.5px", color: "#065f46", display: "flex", alignItems: "center", justifyContent: "center", gap: "3px" }}>
+                              <ShieldCheck size={11} className="text-emerald-700" />
+                              <span>CHỨNG NHẬN KÝ ĐIỆN TỬ SQMS</span>
+                            </div>
+                            <div style={{ fontSize: "10px", fontWeight: "900", color: "#003B3A", margin: "2px 0" }} className="truncate">
+                              {signerName}
+                            </div>
+                            <div style={{ fontSize: "7.5px", color: "#64748b", fontFamily: "monospace" }}>
+                              Thời gian: {signTime}
+                            </div>
+                            <div style={{ fontSize: "7px", color: "#047857", fontFamily: "monospace" }} className="truncate">
+                              Mã: {signHash}
+                            </div>
+                            <div style={{ fontSize: "6.5px", color: "#065f46", fontWeight: "bold", marginTop: "1px" }}>
+                              ✓ ĐÃ KÝ ĐIỆN TỬ &amp; ĐỒNG BỘ CSDL
+                            </div>
+                          </div>
+                        </td>
+
+                        <td style={{ width: "33.33%", verticalAlign: "top" }}>
+                          <span style={{ fontSize: "9px", fontWeight: "900", textTransform: "uppercase", color: "#475569", display: "block", marginBottom: "25px" }}>
+                            BAN KHẢO THÍ &amp; ĐBCL (QLCM)
+                          </span>
+                          <div>
+                            <strong style={{ color: "#0f172a", fontSize: "10px", display: "block", fontWeight: "bold" }}>
+                              {verificationInfo?.verifiedBy || verificationInfo?.verifierName || "Ban Chuyên môn Cơ sở"}
+                            </strong>
+                            <span style={{ fontSize: "8.5px", color: "#94a3b8", fontStyle: "italic", display: "block" }}>
+                              Ký xác nhận lưu hồ sơ
+                            </span>
+                          </div>
+                        </td>
+
+                        <td style={{ width: "33.33%", verticalAlign: "top" }}>
+                          <span style={{ fontSize: "9px", fontWeight: "900", textTransform: "uppercase", color: "#475569", display: "block", marginBottom: "25px" }}>
+                            GIÁM ĐỐC CƠ SỞ / HỘI ĐỒNG TUYỂN SINH
+                          </span>
+                          <div>
+                            <strong style={{ color: "#0f172a", fontSize: "10px", display: "block", fontWeight: "bold" }}>
+                              {sData?.signatureName || (campusName && campusName !== "Sky-Line" ? `GĐCS ${campusName}` : "Hội đồng Tuyển sinh")}
+                            </strong>
+                            <span style={{ fontSize: "8.5px", color: "#94a3b8", fontStyle: "italic", display: "block" }}>
+                              Phê duyệt kết quả
+                            </span>
+                          </div>
+                        </td>
+                      </tr>
+                    </tbody>
+                  </table>
+
+                  <div style={{ textAlign: "center", fontSize: "8px", color: "#94a3b8", fontStyle: "italic", paddingTop: "6px", marginTop: "6px", borderTop: "1px solid #f1f5f9" }}>
+                    Hệ thống Quản lý Khảo sát &amp; Định hướng Sky-Line (SQMS) &bull; Khảo sát tâm lý đầu vào chuyên sâu &bull; Mã hồ sơ: {sData?.studentCode || student?.studentCode} &bull; Trang 2/2
+                  </div>
+                </div>
+              </div>
+
             </div>
           ) : (
             <div className="space-y-3">
@@ -1254,23 +1656,23 @@ export function StudentOrientationReportModal({
 
                 <div className="border border-teal-200 rounded-lg overflow-hidden bg-white">
                   <table className="w-full text-left border-collapse text-[9.5px]" style={{ tableLayout: "auto", width: "100%" }}>
-                    <thead>
-                      <tr className="bg-teal-100/80 text-[8.5px] font-black uppercase text-teal-950 border-b border-teal-200">
-                        <th className="py-1 px-1.5 border-r border-teal-200/70">1. Mã HS</th>
-                        <th className="py-1 px-1.5 border-r border-teal-200/70">2. Họ và tên</th>
-                        <th className="py-1 px-1.5 border-r border-teal-200/70">3. Ngày sinh / Giới tính</th>
-                        <th className="py-1 px-1.5 border-r border-teal-200/70">4. Khối đăng ký</th>
-                        <th className="py-1 px-1.5 border-r border-teal-200/70">5. Hệ đào tạo</th>
-                        <th className="py-1 px-1.5 border-r border-teal-200/70">6. Cơ sở</th>
-                        <th className="py-1 px-1.5 border-r border-teal-200/70">7. Trường cũ</th>
-                        <th className="py-1 px-1.5 border-r border-teal-200/70 text-center">8. Học tập (HB)</th>
-                        <th className="py-1 px-1.5 border-r border-teal-200/70 text-center">9. Rèn luyện (HB)</th>
-                        <th className="py-1 px-1.5 border-r border-teal-200/70 text-center">10. Toán (HB)</th>
-                        <th className="py-1 px-1.5 border-r border-teal-200/70 text-center">{vnSubjectHeaderLabel}</th>
-                        <th className="py-1 px-1.5 text-center">12. Tiếng Anh (HB)</th>
+                    <thead className="bg-[#003B3A] text-white border-b border-[#003B3A]">
+                      <tr className="text-[8.5px] border-b text-[11px] font-semibold">
+                        <th className="py-1 px-1.5 border-r border-white/15 font-semibold">1. Mã HS</th>
+                        <th className="py-1 px-1.5 border-r border-white/15 font-semibold">2. Họ và tên</th>
+                        <th className="py-1 px-1.5 border-r border-white/15 font-semibold">3. Ngày sinh / Giới tính</th>
+                        <th className="py-1 px-1.5 border-r border-white/15 font-semibold">4. Khối đăng ký</th>
+                        <th className="py-1 px-1.5 border-r border-white/15 font-semibold">5. Hệ đào tạo</th>
+                        <th className="py-1 px-1.5 border-r border-white/15 font-semibold">6. Cơ sở</th>
+                        <th className="py-1 px-1.5 border-r border-white/15 font-semibold">7. Trường cũ</th>
+                        <th className="py-1 px-1.5 border-r border-white/15 text-center font-semibold">8. Học tập (HB)</th>
+                        <th className="py-1 px-1.5 border-r border-white/15 text-center font-semibold">9. Rèn luyện (HB)</th>
+                        <th className="py-1 px-1.5 border-r border-white/15 text-center font-semibold">10. Toán (HB)</th>
+                        <th className="py-1 px-1.5 border-r border-white/15 text-center font-semibold">{vnSubjectHeaderLabel}</th>
+                        <th className="py-1 px-1.5 text-center font-semibold">12. Tiếng Anh (HB)</th>
                       </tr>
                     </thead>
-                    <tbody>
+                    <tbody className="divide-y divide-[#E2E8F0] text-xs bg-white">
                       <tr className="text-slate-900">
                         <td className="py-1.5 px-1.5 border-r border-slate-200/70 font-mono font-bold tabular-nums">
                           {sData?.studentCode || "—"}
@@ -1330,13 +1732,13 @@ export function StudentOrientationReportModal({
 
                 <div className="border border-teal-200 rounded-lg text-xs" style={{ width: "100%", maxWidth: "100%" }}>
                   <table className="w-full text-left border-collapse" style={{ tableLayout: "fixed", width: "100%" }}>
-                    <thead>
-                      <tr className="bg-teal-100/80 text-[9.5px] font-black uppercase text-teal-950 border-b border-teal-200">
-                        <th className="py-1.5 px-1 text-center" style={{ width: "5%" }}>STT</th>
-                        <th className="py-1.5 px-2" style={{ width: "27%" }}>Nhóm nội dung tìm hiểu</th>
-                        <th className="py-1.5 px-2" style={{ width: "27%" }}>Câu trả lời / Chia sẻ của HS</th>
-                        <th className="py-1.5 px-1 text-center" style={{ width: "16%" }}>Mức quan sát</th>
-                        <th className="py-1.5 px-2" style={{ width: "25%" }}>Nhận xét của Giáo viên</th>
+                    <thead className="bg-[#003B3A] text-white border-b border-[#003B3A]">
+                      <tr className="text-[9.5px] border-b text-[11px] font-semibold">
+                        <th className="py-1.5 px-1 text-center font-semibold" style={{ width: "5%" }}>STT</th>
+                        <th className="py-1.5 px-2 font-semibold" style={{ width: "27%" }}>Nhóm nội dung tìm hiểu</th>
+                        <th className="py-1.5 px-2 font-semibold" style={{ width: "27%" }}>Câu trả lời / Chia sẻ của HS</th>
+                        <th className="py-1.5 px-1 text-center font-semibold" style={{ width: "16%" }}>Mức quan sát</th>
+                        <th className="py-1.5 px-2 font-semibold" style={{ width: "25%" }}>Nhận xét của Giáo viên</th>
                       </tr>
                     </thead>
                     <tbody className="divide-y divide-teal-100 text-[10px]">
@@ -1395,12 +1797,12 @@ export function StudentOrientationReportModal({
 
                 <div className="border border-teal-200 rounded-lg text-xs" style={{ width: "100%", maxWidth: "100%" }}>
                   <table className="w-full text-left border-collapse" style={{ tableLayout: "fixed", width: "100%" }}>
-                    <thead>
-                      <tr className="bg-teal-100/80 text-[9.5px] font-black uppercase text-teal-950 border-b border-teal-200">
-                        <th className="py-1.5 px-1 text-center" style={{ width: "5%" }}>STT</th>
-                        <th className="py-1.5 px-2" style={{ width: "28%" }}>Nhóm nội dung trao đổi với PHHS</th>
-                        <th className="py-1.5 px-2" style={{ width: "37%" }}>Nội dung Phụ huynh chia sẻ &amp; Kỳ vọng</th>
-                        <th className="py-1.5 px-2" style={{ width: "30%" }}>Ghi nhận / Quan sát của Giáo viên</th>
+                    <thead className="bg-[#003B3A] text-white border-b border-[#003B3A]">
+                      <tr className="text-[9.5px] border-b text-[11px] font-semibold">
+                        <th className="py-1.5 px-1 text-center font-semibold" style={{ width: "5%" }}>STT</th>
+                        <th className="py-1.5 px-2 font-semibold" style={{ width: "28%" }}>Nhóm nội dung trao đổi với PHHS</th>
+                        <th className="py-1.5 px-2 font-semibold" style={{ width: "37%" }}>Nội dung Phụ huynh chia sẻ &amp; Kỳ vọng</th>
+                        <th className="py-1.5 px-2 font-semibold" style={{ width: "30%" }}>Ghi nhận / Quan sát của Giáo viên</th>
                       </tr>
                     </thead>
                     <tbody className="divide-y divide-teal-100 text-[10px]">
@@ -1585,13 +1987,13 @@ export function StudentOrientationReportModal({
                 {subjectScores.length > 0 ? (
                   <div className="border border-teal-200 rounded-lg text-xs" style={{ width: "100%", maxWidth: "100%" }}>
                     <table className="w-full text-left border-collapse" style={{ tableLayout: "fixed", width: "100%" }}>
-                      <thead>
-                        <tr className="bg-teal-100/80 text-[9.5px] font-black uppercase text-teal-950 border-b border-teal-200">
-                          <th className="py-1.5 px-1 text-center" style={{ width: "5%" }}>STT</th>
-                          <th className="py-1.5 px-2" style={{ width: "22%" }}>Môn khảo sát</th>
-                          <th className="py-1.5 px-2" style={{ width: "20%" }}>Giáo viên chấm</th>
-                          <th className="py-1.5 px-1.5 text-center" style={{ width: "15%" }}>Điểm / Mức đạt</th>
-                          <th className="py-1.5 px-2" style={{ width: "38%" }}>Nhận xét chuyên môn của giáo viên</th>
+                      <thead className="bg-[#003B3A] text-white border-b border-[#003B3A]">
+                        <tr className="text-[9.5px] border-b text-[11px] font-semibold">
+                          <th className="py-1.5 px-1 text-center font-semibold" style={{ width: "5%" }}>STT</th>
+                          <th className="py-1.5 px-2 font-semibold" style={{ width: "22%" }}>Môn khảo sát</th>
+                          <th className="py-1.5 px-2 font-semibold" style={{ width: "20%" }}>Giáo viên chấm</th>
+                          <th className="py-1.5 px-1.5 text-center font-semibold" style={{ width: "15%" }}>Điểm / Mức đạt</th>
+                          <th className="py-1.5 px-2 font-semibold" style={{ width: "38%" }}>Nhận xét chuyên môn của giáo viên</th>
                         </tr>
                       </thead>
                       <tbody className="divide-y divide-teal-100 text-[10px]">
@@ -1605,7 +2007,7 @@ export function StudentOrientationReportModal({
                                 {sc.score}
                               </span>
                             </td>
-                            <td className="py-1.5 px-2 text-slate-800 leading-relaxed align-top">
+                            <td className="py-1.5 px-2 text-slate-800 leading-relaxed align-top break-words">
                               {sc.remark && sc.remark !== "—" ? sc.remark : <span className="text-slate-400 italic">Chưa có nhận xét</span>}
                             </td>
                           </tr>
@@ -1688,6 +2090,115 @@ export function StudentOrientationReportModal({
                         </p>
                       </div>
                     </div>
+                  </div>
+                )
+              })()}
+
+              {/* 3.2 CHI TIẾT BỘ CHUẨN PHÁT TRIỂN TRẺ EM 5–6 TUỔI (TCI) NẾU CÓ */}
+              {(() => {
+                const studentScoresList = (studentInfo || student)?.scores || student?.scores || orientationData?.student?.scores || []
+                if (!Array.isArray(studentScoresList)) return null
+                const tciSc = studentScoresList.find((sc: any) => {
+                  const subCode = String(sc.subject?.code || "").toLowerCase()
+                  const sNameLower = String(sc.subject?.name || sc.subjectName || "").toLowerCase().normalize("NFC")
+                  return subCode.includes("tci") || subCode.includes("cpt") || sNameLower.includes("bộ chuẩn phát triển") || sNameLower.includes("chuẩn phát triển")
+                })
+                if (!tciSc) return null
+
+                let vArr: any[] = []
+                try {
+                  if (tciSc.scores) {
+                    const p = typeof tciSc.scores === "string" ? JSON.parse(tciSc.scores) : tciSc.scores
+                    vArr = Array.isArray(p) ? p : [p]
+                  }
+                } catch {}
+
+                let tciMetaObj: any = null
+                const humanComments: string[] = []
+                try {
+                  if (tciSc.comments) {
+                    const cArr = typeof tciSc.comments === "string" ? JSON.parse(tciSc.comments) : tciSc.comments
+                    const arr = Array.isArray(cArr) ? cArr : [cArr]
+                    for (const item of arr) {
+                      if (typeof item === "string" && item.includes('"_tciMeta"')) {
+                        try {
+                          const m = JSON.parse(item)
+                          if (m?._tciMeta) tciMetaObj = m._tciMeta
+                        } catch {}
+                      } else if (item && typeof item === "string" && item.trim() !== "") {
+                        humanComments.push(item.trim())
+                      }
+                    }
+                  }
+                } catch {}
+
+                const passedCount = tciMetaObj?.countDat ?? vArr.filter((x: any) => ["3", "Đạt", "DAT"].includes(String(x ?? "").trim())).length
+                const failedCount = tciMetaObj?.countKhongDat ?? vArr.filter((x: any) => ["2", "Không đạt", "KHONG_DAT"].includes(String(x ?? "").trim())).length
+                const skippedCount = tciMetaObj?.countKhongLam ?? vArr.filter((x: any) => ["1", "Không làm", "KHONG_LAM"].includes(String(x ?? "").trim())).length
+                const pendingCount = Math.max(0, 16 - (passedCount + failedCount + skippedCount))
+                const isSigned = tciMetaObj?.signatureStatus === "SIGNED"
+                const signedDateStr = tciMetaObj?.signedAt ? new Date(tciMetaObj.signedAt).toLocaleDateString("vi-VN") : ""
+                const targetStudentId = sData?.id || student?.id || orientationData?.studentId
+
+                return (
+                  <div className="print-section p-2.5 bg-teal-50/40 rounded-xl border border-teal-200 text-xs space-y-2">
+                    <div className="flex flex-wrap items-center justify-between gap-2 border-b border-teal-200 pb-1">
+                      <div className="flex items-center gap-1.5">
+                        <span className="w-2 h-2 rounded-full bg-[#003B3A]" />
+                        <h3 className="text-[10.5px] font-black uppercase text-teal-950 tracking-wider">
+                          3.2. Chi Tiết Khảo Sát Bộ Chuẩn Phát Triển Trẻ Em 5–6 Tuổi (TCI)
+                        </h3>
+                      </div>
+                      <div className="flex flex-wrap items-center gap-2 text-[9.5px]">
+                        <span className="font-bold text-teal-900">
+                          GVBM phụ trách: {tciMetaObj?.signerName || tciSc.teacherName || "Giáo viên khảo sát"}
+                        </span>
+                        <span className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-full font-extrabold text-[9px] border ${
+                          isSigned
+                            ? "bg-emerald-100 text-emerald-800 border-emerald-300"
+                            : "bg-amber-100 text-amber-800 border-amber-300"
+                        }`}>
+                          <ShieldCheck size={11} className={isSigned ? "text-emerald-700" : "text-amber-700"} />
+                          <span>{isSigned ? `Đã ký điện tử${signedDateStr ? ` (${signedDateStr})` : ""}` : "Bản nháp (Chưa ký)"}</span>
+                        </span>
+                        {targetStudentId && (
+                          <a
+                            href={`/api/tci/pdf?studentId=${encodeURIComponent(targetStudentId)}&format=pdf`}
+                            target="_blank"
+                            rel="noreferrer"
+                            className="print:hidden px-2 py-0.5 rounded-full bg-[#003B3A] hover:bg-[#005250] text-white font-bold"
+                          >
+                            Mở PDF phiếu TCI
+                          </a>
+                        )}
+                      </div>
+                    </div>
+
+                    <div className="grid grid-cols-4 gap-1.5 text-center tabular-nums">
+                      <div className="p-1.5 bg-white rounded-lg border border-emerald-200">
+                        <span className="text-[8.5px] font-bold text-emerald-700 block">Tiêu chí Đạt</span>
+                        <span className="text-[11px] font-black text-emerald-800">{passedCount}/16</span>
+                      </div>
+                      <div className="p-1.5 bg-white rounded-lg border border-rose-200">
+                        <span className="text-[8.5px] font-bold text-rose-700 block">Không đạt</span>
+                        <span className="text-[11px] font-black text-rose-800">{failedCount}/16</span>
+                      </div>
+                      <div className="p-1.5 bg-white rounded-lg border border-amber-200">
+                        <span className="text-[8.5px] font-bold text-amber-700 block">Không làm</span>
+                        <span className="text-[11px] font-black text-amber-800">{skippedCount}/16</span>
+                      </div>
+                      <div className="p-1.5 bg-white rounded-lg border border-slate-200">
+                        <span className="text-[8.5px] font-bold text-slate-500 block">Chưa đánh giá</span>
+                        <span className="text-[11px] font-black text-slate-700">{pendingCount}/16</span>
+                      </div>
+                    </div>
+
+                    {humanComments.length > 0 && (
+                      <div className="p-2 bg-white rounded-lg border border-teal-200/80 text-[10px]">
+                        <span className="font-black uppercase text-teal-900 text-[9px] block">Nhận xét &amp; Đề xuất từ GVBM:</span>
+                        <p className="text-slate-800 mt-0.5 break-words">{humanComments.join(" | ")}</p>
+                      </div>
+                    )}
                   </div>
                 )
               })()}
@@ -1817,6 +2328,16 @@ export function StudentOrientationReportModal({
           )}
         </div>
 
+        {isPvdhFormOpen && (
+          <PvdhOrientationModal
+            isOpen={isPvdhFormOpen}
+            onClose={() => setIsPvdhFormOpen(false)}
+            student={pvdhState?.student || sData}
+            onSuccess={() => {
+              refreshPvdhState()
+            }}
+          />
+        )}
       </div>
     </div>
   )

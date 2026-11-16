@@ -7,7 +7,7 @@ import { StudentCompetencyPortfolio } from "@/components/competency/StudentCompe
 import { 
   Users, Loader2, User, UserCheck, Award, Trophy, Medal, Sparkles, Compass, 
   FileText, BookOpen, MessageSquare, ClipboardCheck, ArrowLeftRight,
-  Bell, Heart, MessageCircle, Send, Globe, Printer, Download,
+  Bell, Heart, MessageCircle, Send, Printer, Download,
   Search, Calendar, MapPin, CheckCircle, AlertTriangle, GraduationCap,
   Layers, School, Building2, RotateCcw, RefreshCw, Trash2,
   ChevronLeft, ChevronRight, Maximize2, Minimize2,
@@ -18,8 +18,49 @@ import StudentProfileCoverA4 from "@/components/student/StudentProfileCoverA4"
 import StudentProfileSectionConfigModal from "@/components/student/StudentProfileSectionConfigModal"
 import StudentProfileInlineSectionToggles from "@/components/student/StudentProfileInlineSectionToggles"
 import { StudentSpecialSubjectsSection } from "@/components/student/StudentSpecialSubjectsSection"
+import { StudentCtqtGradesSection } from "@/components/student/StudentCtqtGradesSection"
+import { isBilingualOrCtqtSubject } from "@/lib/ctqt/studentProfilePortfolio"
 import StudentInternationalExamsSection from "@/components/student/StudentInternationalExamsSection"
+import { StudentOrientationReportModal } from "@/components/orientation/StudentOrientationReportModal"
+import { GvcnHandoverDrawer } from "@/components/orientation/GvcnHandoverDrawer"
+import { PvdhOrientationModal } from "@/components/orientation/PvdhOrientationModal"
 import { resolveStudentSectionVisibility } from "@/lib/studentProfileSectionConfig"
+import {
+  buildAchievementLabelMaps,
+  normalizeStudentAchievementRow,
+  resolveAchievementCategoryLabel,
+  resolveAchievementLevelLabel,
+  resolveAchievementYearLabel,
+} from "@/lib/achievementFormatters"
+import { deleteStudentAchievementRecordAction } from "@/app/admin/ktdbcl/results/actions"
+
+function buildOrientationStudentPayload(st: any) {
+  if (!st) return null;
+  const es = st?.entranceSurvey?.type === "K12" ? st.entranceSurvey : (st?.entranceSurvey || null);
+  const rawGrade = es?.grade || st?.class?.grade || st?.grade || (() => {
+    const m = String(st?.className || st?.classCode || "").match(/^(1[0-2]|[1-9])(?:\b|[._/A-Za-z])/);
+    return m ? m[1] : "1";
+  })();
+  return {
+    ...(es || {}),
+    id: es?.id || st?.id,
+    studentCode: es?.studentCode || st?.studentCode || "",
+    enrollmentCode: es?.enrollmentCode || st?.studentCode || "",
+    fullName: es?.fullName || st?.studentName || "",
+    dateOfBirth: es?.dateOfBirth || st?.student?.dateOfBirth || null,
+    gender: es?.gender || st?.gender || "",
+    grade: rawGrade,
+    surveyFormType: es?.surveyFormType || es?.surveySystem || st?.class?.educationSystem || "HNS",
+    surveySystem: es?.surveySystem || es?.surveyFormType || st?.class?.educationSystem || "HNS",
+    admissionCampus: es?.admissionCampus || st?.campusName || "",
+    registeredCampus: es?.registeredCampus || st?.campusName || "",
+    scores: es?.rawScores || es?.scores || [],
+    admissionResult: es?.admissionResult || "Đạt chuẩn",
+    directorNote: es?.directorNote || "",
+    signatureName: es?.signatureName || "",
+    orientationRecord: es?.orientationRecord || null,
+  };
+}
 
 function normalizeClassKey(name: string): string {
   if (!name) return "";
@@ -41,49 +82,12 @@ interface StudentProfilesAdminClientProps {
 }
 
 
-const getCategoryLabel = (cat: string) => {
-  if (!cat) return "Lĩnh vực khác";
-  const str = String(cat).toUpperCase();
-  if (str === "OLYMPIC") return "Olympic";
-  if (str === "KHKT") return "Khoa học kỹ thuật";
-  if (str === "THE_THAO") return "Thể dục thể thao";
-  if (str === "VAN_NGHE") return "Văn nghệ - Nghệ thuật";
-  if (str === "HOC_THUAT") return "Học thuật";
-  if (str === "STEM") return "STEM / Robotics";
-  return cat;
-};
+const getCategoryLabel = (cat: string) => resolveAchievementCategoryLabel(cat);
 
-const getLevelLabel = (lvl: string) => {
-  if (!lvl) return "Cấp Trường";
-  const str = String(lvl).toUpperCase();
-  if (str === "VANG" || str === "NHAT") return "Giải Vàng / Hạng Nhất";
-  if (str === "BAC" || str === "NHI") return "Giải Bạc / Hạng Nhì";
-  if (str === "DONG" || str === "BA") return "Giải Đồng / Hạng Ba";
-  if (str === "KHUYEN_KHICH") return "Giải Khuyến Khích";
-  if (str === "CAP_QUOC_TE" || str === "5") return "Cấp Quốc tế";
-  if (str === "CAP_QUOC_GIA" || str === "4") return "Cấp Quốc gia";
-  if (str === "CAP_THANH_PHO" || str === "CAP_TINH" || str === "3") return "Cấp Thành phố / Tỉnh";
-  if (str === "CAP_QUAN" || str === "CAP_HUYEN" || str === "2") return "Cấp Quận / Huyện";
-  if (str === "CAP_TRUONG" || str === "1") return "Cấp Trường";
-  return lvl.startsWith("Cấp") || lvl.startsWith("Giải") ? lvl : `Giải/Cấp: ${lvl}`;
-};
+const getLevelLabel = (lvl: string, cat?: string) => resolveAchievementLevelLabel(lvl, cat);
 
-const getYearLabel = (ach: any) => {
-  if (ach?.academicYear?.name) return ach.academicYear.name;
-  if (ach?.yearName) return ach.yearName;
-  if (ach?.academicYearId) {
-    if (ach.academicYearId === "AY-2026") return "Năm học 2025-2026";
-    if (ach.academicYearId.startsWith("AY-")) {
-      const yearNum = ach.academicYearId.replace("AY-", "");
-      if (yearNum.length === 4) {
-        const startY = parseInt(yearNum) - 1;
-        return `Năm học ${startY}-${yearNum}`;
-      }
-    }
-    return ach.academicYearId;
-  }
-  return "N/A";
-};
+const getYearLabel = (ach: any, yearMap?: Record<string, string>) =>
+  resolveAchievementYearLabel(ach, yearMap);
 
 export function StudentProfilesAdminClient({
   academicYears,
@@ -111,6 +115,48 @@ export function StudentProfilesAdminClient({
       alert("Lỗi reset dữ liệu: " + err.message)
     }
   }
+  const achLabelMaps = useMemo(
+    () => buildAchievementLabelMaps([], [], academicYears),
+    [academicYears]
+  )
+
+  const handleDeleteAchievementRecord = async (row: {
+    achievementId: string
+    studentId: string
+    achievementName: string
+    studentName: string
+    studentCode: string
+  }) => {
+    if (!row.achievementId || !row.studentId) return
+    if (
+      !confirm(
+        `Xóa thành tích "${row.achievementName}" của học sinh ${row.studentName} (${row.studentCode})?`
+      )
+    ) {
+      return
+    }
+    try {
+      await deleteStudentAchievementRecordAction(row.achievementId, row.studentId)
+      const filterAch = (list: any[]) =>
+        (list || []).filter((it: any) => {
+          const id = it?.achievement?.id || it?.achievementId || it?.id
+          return id !== row.achievementId
+        })
+      setStudents((prev) =>
+        prev.map((s) =>
+          s.id === row.studentId ? { ...s, achievements: filterAch(s.achievements) } : s
+        )
+      )
+      setSelectedStudent((prev: any) =>
+        prev && prev.id === row.studentId
+          ? { ...prev, achievements: filterAch(prev.achievements) }
+          : prev
+      )
+    } catch (err: any) {
+      alert(err?.message || "Không thể xóa bản ghi thành tích.")
+    }
+  }
+
   // Filter States
   const [selectedYearId, setSelectedYearId] = useState(activeYearId)
   const [schoolBlock, setSchoolBlock] = useState<"k12" | "preschool">("k12")
@@ -124,6 +170,11 @@ export function StudentProfilesAdminClient({
   const [loadingStudents, setLoadingStudents] = useState(false)
   const [selectedStudentId, setSelectedStudentId] = useState("")
   const [selectedStudent, setSelectedStudent] = useState<any>(null)
+  const [studentAchExamFilter, setStudentAchExamFilter] = useState("")
+
+  useEffect(() => {
+    setStudentAchExamFilter("")
+  }, [selectedStudentId])
   const [isExpandedView, setIsExpandedView] = useState<boolean>(true)
   const [isStudentDropdownOpen, setIsStudentDropdownOpen] = useState(false)
   const [isStudentDrawerOpen, setIsStudentDrawerOpen] = useState(false)
@@ -131,6 +182,8 @@ export function StudentProfilesAdminClient({
 
   // Section Config State
   const [isConfigModalOpen, setIsConfigModalOpen] = useState(false)
+  const [isGvcnHandoverOpen, setIsGvcnHandoverOpen] = useState(false)
+  const [pvdhHandoverStudent, setPvdhHandoverStudent] = useState<any | null>(null)
   const [configMap, setConfigMap] = useState<Record<string, Record<string, boolean>>>({})
 
   const loadConfigs = async () => {
@@ -473,15 +526,26 @@ export function StudentProfilesAdminClient({
     }
   }, [filteredStudentsList]);
 
-  const tabs = [
-    { id: "cv", label: "Xem chi tiết HSHS (A4)", icon: User },
-    { id: "academic", label: "Kết quả Học tập (MOET & Song ngữ)", icon: FileText },
-    { id: "competencies", label: "Đánh giá Năng lực Toàn diện", icon: Sparkles },
-    { id: "achievements", label: "Thành tích & Khen thưởng", icon: Award },
-    { id: "projects", label: "Hoạt động trải nghiệm", icon: BookOpen },
-    { id: "orientation", label: "Hướng nghiệp & Định hướng", icon: Compass },
-    { id: "comments", label: "Nhận xét nổi bật GVCN", icon: MessageSquare }
-  ]
+  const currentStudentSectionVisibility = useMemo(
+    () => resolveStudentSectionVisibility(selectedStudent, configMap),
+    [selectedStudent, configMap]
+  );
+
+  const tabs = useMemo(() => {
+    const baseTabs = [
+      { id: "cv", label: "Xem chi tiết HSHS (A4)", icon: User },
+      ...(currentStudentSectionVisibility.entranceOrientationReport !== false
+        ? [{ id: "entrance_orientation_a4", label: "Báo cáo Phỏng vấn Định hướng Học sinh & Trao đổi PHHS", icon: ClipboardCheck }]
+        : []),
+      { id: "academic", label: "Kết quả Học tập (MOET & Song ngữ)", icon: FileText },
+      { id: "competencies", label: "Đánh giá Năng lực Toàn diện", icon: Sparkles },
+      { id: "achievements", label: "Thành tích & Khen thưởng", icon: Award },
+      { id: "projects", label: "Hoạt động trải nghiệm", icon: BookOpen },
+      { id: "orientation", label: "Hướng nghiệp & Định hướng", icon: Compass },
+      { id: "comments", label: "Nhận xét nổi bật GVCN", icon: MessageSquare }
+    ];
+    return baseTabs;
+  }, [currentStudentSectionVisibility.entranceOrientationReport]);
 
   const toggleLike = (postId: string) => {
     setPostLikes(prev => {
@@ -1183,6 +1247,16 @@ export function StudentProfilesAdminClient({
 
                   {/* Toggle Fullscreen / Expansive View */}
                   <button
+                    type="button"
+                    onClick={() => setIsGvcnHandoverOpen(true)}
+                    className="flex items-center gap-1.5 bg-white border border-[#E2E8F0] hover:border-[#00A19A] text-[#003B3A] hover:bg-[#F0FDFA] px-3 py-1.5 rounded-xl text-xs font-semibold shadow-2xs transition-all cursor-pointer"
+                    title="Xem và xác nhận bàn giao phiếu phỏng vấn định hướng đầu vào cho GVCN"
+                  >
+                    <ClipboardCheck className="w-3.5 h-3.5 text-[#008B85]" />
+                    <span>Bàn giao định hướng (GVCN)</span>
+                  </button>
+
+                  <button
                     onClick={() => setIsExpandedView(!isExpandedView)}
                     className={`flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-bold shadow-2xs border transition-all cursor-pointer ${
                       isExpandedView
@@ -1576,29 +1650,15 @@ export function StudentProfilesAdminClient({
                                 const termScores: any[] = selectedStudent?.termScores || [];
                                 const termSummaries: any[] = selectedStudent?.termSummaries || [];
 
-                                const isBilingualSub = (name: string, code: string) => {
-                                  const s = `${name} ${code}`.toLowerCase();
-                                  return (
-                                    s.includes("esl") ||
-                                    s.includes("english") ||
-                                    s.includes("tiếng anh tăng cường") ||
-                                    s.includes("tav") ||
-                                    s.includes("bilingual") ||
-                                    s.includes("song ngữ") ||
-                                    s.includes("maths") ||
-                                    s.includes("science") ||
-                                    s.includes("robotics")
-                                  );
-                                };
-
                                 // 1. Map Điểm kiểm tra định kỳ (KSĐN, GK1, CK1, GK2, CK2)
-                                const periodicMap = new Map<string, { name: string; code: string; ksdn: any; gk1: any; ck1: any; gk2: any; ck2: any }>();
+                                const periodicMap = new Map<string, { name: string; code: string; category?: string; ksdn: any; gk1: any; ck1: any; gk2: any; ck2: any }>();
                                 gradeEntries.forEach((entry: any) => {
                                   const sName = entry.subject?.subjectName || "Môn học";
                                   const sCode = entry.subject?.subjectCode || "";
+                                  const sCat = entry.subject?.category || "";
                                   const key = (entry.subjectId || sName).trim();
                                   if (!periodicMap.has(key)) {
-                                    periodicMap.set(key, { name: sName, code: sCode, ksdn: null, gk1: null, ck1: null, gk2: null, ck2: null });
+                                    periodicMap.set(key, { name: sName, code: sCode, category: sCat, ksdn: null, gk1: null, ck1: null, gk2: null, ck2: null });
                                   }
                                   const item = periodicMap.get(key)!;
                                   const period = String(entry.evaluationPeriod || "").toUpperCase().trim();
@@ -1611,13 +1671,14 @@ export function StudentProfilesAdminClient({
                                 });
 
                                 // 2. Map Điểm tổng kết học tập (CK1, CK2, CN)
-                                const termMap = new Map<string, { name: string; code: string; hk1: any; hk2: any; cn: any }>();
+                                const termMap = new Map<string, { name: string; code: string; category?: string; hk1: any; hk2: any; cn: any }>();
                                 termScores.forEach((ts: any) => {
                                   const sName = ts.subject?.subjectName || "Môn học";
                                   const sCode = ts.subject?.subjectCode || "";
+                                  const sCat = ts.subject?.category || "";
                                   const key = (ts.subjectId || sName).trim();
                                   if (!termMap.has(key)) {
-                                    termMap.set(key, { name: sName, code: sCode, hk1: null, hk2: null, cn: null });
+                                    termMap.set(key, { name: sName, code: sCode, category: sCat, hk1: null, hk2: null, cn: null });
                                   }
                                   const item = termMap.get(key)!;
                                   const sem = String(ts.semester || "").toUpperCase().trim();
@@ -1627,12 +1688,9 @@ export function StudentProfilesAdminClient({
                                   else if (sem === "CN" || sem.includes("CẢ NĂM")) item.cn = val;
                                 });
 
-                                // Phân chia danh sách
-                                const moetPeriodicRows = Array.from(periodicMap.values()).filter(r => !isBilingualSub(r.name, r.code)).sort((a, b) => a.name.localeCompare(b.name, "vi"));
-                                const bilingualPeriodicRows = Array.from(periodicMap.values()).filter(r => isBilingualSub(r.name, r.code)).sort((a, b) => a.name.localeCompare(b.name, "vi"));
-
-                                const moetTermRows = Array.from(termMap.values()).filter(r => !isBilingualSub(r.name, r.code)).sort((a, b) => a.name.localeCompare(b.name, "vi"));
-                                const bilingualTermRows = Array.from(termMap.values()).filter(r => isBilingualSub(r.name, r.code)).sort((a, b) => a.name.localeCompare(b.name, "vi"));
+                                // Phân chia danh sách MOET
+                                const moetPeriodicRows = Array.from(periodicMap.values()).filter(r => !isBilingualOrCtqtSubject(r.name, r.code, r.category)).sort((a, b) => a.name.localeCompare(b.name, "vi"));
+                                const moetTermRows = Array.from(termMap.values()).filter(r => !isBilingualOrCtqtSubject(r.name, r.code, r.category)).sort((a, b) => a.name.localeCompare(b.name, "vi"));
 
                                 // Xếp loại tổng kết
                                 const sumHK1 = termSummaries.find((s: any) => String(s.semester).toUpperCase().includes("1") || String(s.semester).toUpperCase() === "HK1");
@@ -1774,18 +1832,18 @@ export function StudentProfilesAdminClient({
 
                   <div className="border border-slate-200 rounded-xl overflow-hidden bg-white shadow-2xs">
                     <table className="w-full text-left text-xs border-collapse">
-                      <thead className="bg-slate-100 text-[9px] font-black text-slate-700 uppercase tracking-wider border-b border-slate-200">
-                        <tr>
-                          <th className="py-2 px-2.5 border-r border-slate-200 w-[180px]">Nhóm mục tiêu (Trọng số)</th>
-                          <th className="py-2 px-2.5 border-r border-slate-200 min-w-[220px]">Mục tiêu cụ thể</th>
-                          <th className="py-2 px-2 text-center border-r border-slate-200 w-[115px]">Kết quả theo dõi</th>
-                          <th className="py-2 px-1.5 text-center border-r border-slate-200 w-[90px]">Mức hoàn thành MT (1-5)</th>
-                          <th className="py-2 px-1.5 text-center border-r border-slate-200 w-[90px]">Mức độ chủ động (1-5)</th>
-                          <th className="py-2 px-2 text-center w-[110px]">Thái độ tham gia (1-5)</th>
+                      <thead className="bg-[#003B3A] text-[9px] border-b text-white border-[#003B3A]">
+                        <tr className="text-[11px] font-semibold whitespace-nowrap">
+                          <th className="py-2 px-2.5 border-r border-white/15 w-[180px] font-semibold">Nhóm mục tiêu (Trọng số)</th>
+                          <th className="py-2 px-2.5 border-r border-white/15 min-w-[220px] font-semibold">Mục tiêu cụ thể</th>
+                          <th className="py-2 px-2 text-center border-r border-white/15 w-[115px] font-semibold">Kết quả theo dõi</th>
+                          <th className="py-2 px-1.5 text-center border-r border-white/15 w-[90px] font-semibold">Mức hoàn thành MT (1-5)</th>
+                          <th className="py-2 px-1.5 text-center border-r border-white/15 w-[90px] font-semibold">Mức độ chủ động (1-5)</th>
+                          <th className="py-2 px-2 text-center w-[110px] font-semibold">Thái độ tham gia (1-5)</th>
                           
                         </tr>
                       </thead>
-                      <tbody className="divide-y divide-slate-100 font-medium text-slate-700 text-xs">
+                      <tbody className="divide-y divide-[#E2E8F0] font-medium text-slate-700 text-xs">
                         {advisoryRows.map((r, rIdx) => (
                           <tr key={rIdx} className="hover:bg-slate-50/50">
                             {r.isFirstInCat && (
@@ -1891,18 +1949,18 @@ export function StudentProfilesAdminClient({
                                         ) : (
                                           <div className="border border-slate-200/90 rounded-xl overflow-hidden bg-white shadow-2xs">
                                             <table className="w-full text-left text-xs border-collapse">
-                                              <thead className="bg-slate-50 text-[10px] font-black text-slate-600 uppercase tracking-wider border-b border-slate-200">
-                                                <tr>
-                                                  <th className="py-2 px-3 text-center w-8">STT</th>
-                                                  <th className="py-2 px-3">Môn học</th>
-                                                  <th className="py-2 px-2 text-center bg-teal-50/50 text-[#00A19A]">KSĐN</th>
-                                                  <th className="py-2 px-2 text-center">Giữa kỳ 1</th>
-                                                  <th className="py-2 px-2 text-center">Cuối kỳ 1</th>
-                                                  <th className="py-2 px-2 text-center">Giữa kỳ 2</th>
-                                                  <th className="py-2 px-2 text-center">Cuối kỳ 2</th>
+                                              <thead className="bg-[#003B3A] text-[10px] border-b text-white border-[#003B3A]">
+                                                <tr className="text-[11px] font-semibold whitespace-nowrap">
+                                                  <th className="py-2 px-3 text-center w-8 font-semibold">STT</th>
+                                                  <th className="py-2 px-3 font-semibold">Môn học</th>
+                                                  <th className="py-2 px-2 text-center bg-[#003B3A] text-[#5EEAD4] font-semibold">KSĐN</th>
+                                                  <th className="py-2 px-2 text-center font-semibold">Giữa kỳ 1</th>
+                                                  <th className="py-2 px-2 text-center font-semibold">Cuối kỳ 1</th>
+                                                  <th className="py-2 px-2 text-center font-semibold">Giữa kỳ 2</th>
+                                                  <th className="py-2 px-2 text-center font-semibold">Cuối kỳ 2</th>
                                                 </tr>
                                               </thead>
-                                              <tbody className="divide-y divide-slate-100 font-semibold text-slate-700">
+                                              <tbody className="divide-y divide-[#E2E8F0] font-semibold text-slate-700">
                                                 {moetPeriodicRows.map((r, idx) => (
                                                   <tr key={idx} className="hover:bg-slate-50/80">
                                                     <td className="py-2 px-3 text-center font-mono text-slate-400">{idx + 1}</td>
@@ -1935,16 +1993,16 @@ export function StudentProfilesAdminClient({
                                         ) : (
                                           <div className="border border-slate-200/90 rounded-xl overflow-hidden bg-white shadow-2xs">
                                             <table className="w-full text-left text-xs border-collapse">
-                                              <thead className="bg-slate-50 text-[10px] font-black text-slate-600 uppercase tracking-wider border-b border-slate-200">
-                                                <tr>
-                                                  <th className="py-2 px-3 text-center w-8">STT</th>
-                                                  <th className="py-2 px-3">Môn học</th>
-                                                  <th className="py-2 px-3 text-center">Học kỳ 1 (CK1)</th>
-                                                  <th className="py-2 px-3 text-center">Học kỳ 2 (CK2)</th>
-                                                  <th className="py-2 px-3 text-center bg-teal-50/60 text-[#00A19A]">Cả năm (CN)</th>
+                                              <thead className="bg-[#003B3A] text-[10px] border-b text-white border-[#003B3A]">
+                                                <tr className="text-[11px] font-semibold whitespace-nowrap">
+                                                  <th className="py-2 px-3 text-center w-8 font-semibold">STT</th>
+                                                  <th className="py-2 px-3 font-semibold">Môn học</th>
+                                                  <th className="py-2 px-3 text-center font-semibold">Học kỳ 1 (CK1)</th>
+                                                  <th className="py-2 px-3 text-center font-semibold">Học kỳ 2 (CK2)</th>
+                                                  <th className="py-2 px-3 text-center bg-[#003B3A] text-[#5EEAD4] font-semibold">Cả năm (CN)</th>
                                                 </tr>
                                               </thead>
-                                              <tbody className="divide-y divide-slate-100 font-semibold text-slate-700">
+                                              <tbody className="divide-y divide-[#E2E8F0] font-semibold text-slate-700">
                                                 {moetTermRows.map((r, idx) => (
                                                   <tr key={idx} className="hover:bg-slate-50/80">
                                                     <td className="py-2 px-3 text-center font-mono text-slate-400">{idx + 1}</td>
@@ -2002,61 +2060,7 @@ export function StudentProfilesAdminClient({
 
                                      {/* SECTION IV: KẾT QUẢ HỌC TẬP CHƯƠNG TRÌNH SONG NGỮ */}
                                      {sectionVisibility.bilingualGrades && (
-<div className="space-y-3">
-                                      <h3 className="text-xs font-black text-[#003B3A] uppercase tracking-wider flex items-center justify-between border-b border-slate-100 pb-2">
-                                        <div className="flex items-center gap-2">
-                                          <div className="w-2.5 h-2.5 rounded-full bg-blue-500" />
-                                          <Globe className="w-4 h-4 text-blue-600" />
-                                          <span>IV. KẾT QUẢ HỌC TẬP CHƯƠNG TRÌNH SONG NGỮ</span>
-                                        </div>
-                                        <span className="text-[10px] font-bold text-blue-700 bg-blue-50 px-2.5 py-0.5 rounded-full border border-blue-200">
-                                          Hệ Song ngữ Sky-Line
-                                        </span>
-                                      </h3>
-
-                                      {bilingualTermRows.length === 0 && bilingualPeriodicRows.length === 0 ? (
-                                        <div className="bg-slate-50 border border-slate-200 p-3.5 rounded-xl text-center text-xs text-slate-400 italic">
-                                          Học sinh học chương trình Chất lượng cao / Đang cập nhật môn song ngữ.
-                                        </div>
-                                      ) : (
-                                        <div className="border border-blue-200/90 rounded-xl overflow-hidden bg-white shadow-2xs">
-                                          <table className="w-full text-left text-xs border-collapse">
-                                            <thead className="bg-blue-50/70 text-[10px] font-black text-blue-900 uppercase tracking-wider border-b border-blue-200">
-                                              <tr>
-                                                <th className="py-2.5 px-3 text-center w-8">STT</th>
-                                                <th className="py-2.5 px-3">Môn Song ngữ</th>
-                                                <th className="py-2.5 px-2 text-center">KSĐN / GK</th>
-                                                <th className="py-2.5 px-3 text-center">Học kỳ 1</th>
-                                                <th className="py-2.5 px-3 text-center">Học kỳ 2</th>
-                                                <th className="py-2.5 px-3 text-center bg-blue-100/60 text-blue-900">Cả năm (CN)</th>
-                                                <th className="py-2.5 px-3 text-center">Đánh giá Năng lực</th>
-                                              </tr>
-                                            </thead>
-                                            <tbody className="divide-y divide-blue-50 font-semibold text-slate-700">
-                                              {(bilingualTermRows.length > 0 ? (bilingualTermRows as any[]) : (bilingualPeriodicRows as any[])).map((r: any, idx: number) => {
-                                                const pItem = bilingualPeriodicRows.find(p => p.name === r.name);
-                                                const ksdnVal = pItem ? (pItem.ksdn || pItem.gk1) : "—";
-                                                return (
-                                                  <tr key={idx} className="hover:bg-blue-50/30">
-                                                    <td className="py-2.5 px-3 text-center font-mono text-slate-400">{idx + 1}</td>
-                                                    <td className="py-2.5 px-3 font-bold text-slate-900">{r.name}</td>
-                                                    <td className="py-2.5 px-2 text-center font-black text-blue-700">{ksdnVal || "—"}</td>
-                                                    <td className="py-2.5 px-3 text-center font-black text-slate-800">{r.hk1 || "—"}</td>
-                                                    <td className="py-2.5 px-3 text-center font-black text-slate-800">{r.hk2 || "—"}</td>
-                                                    <td className="py-2.5 px-3 text-center font-black text-blue-900 bg-blue-50/40">{r.cn || "—"}</td>
-                                                    <td className="py-2.5 px-3 text-center">
-                                                      <span className="text-[10px] font-black bg-blue-50 text-blue-800 border border-blue-200 px-2 py-0.5 rounded">
-                                                        Hoàn thành Tốt
-                                                      </span>
-                                                    </td>
-                                                  </tr>
-                                                );
-                                              })}
-                                            </tbody>
-                                          </table>
-                                        </div>
-                                      )}
-                                    </div>
+                                       <StudentCtqtGradesSection student={selectedStudent} />
                                      )}
 
                                      {/* SECTION IV-B: HỘ CHIẾU KHẢO THÍ QUỐC TẾ & CHỨNG CHỈ */}
@@ -2080,31 +2084,70 @@ export function StudentProfilesAdminClient({
                                           Học sinh chưa có ghi nhận giải thưởng hoặc khen thưởng trong năm học.
                                         </div>
                                       ) : (
-                                        <div className="border border-slate-200/80 rounded-2xl overflow-hidden bg-white shadow-2xs">
-                                          <table className="w-full text-left text-xs">
-                                            <thead className="bg-slate-50 text-[10px] font-black text-slate-500 uppercase tracking-wider border-b border-slate-200/80">
-                                              <tr>
-                                                <th className="py-2.5 px-3 text-center w-10">STT</th>
-                                                <th className="py-2.5 px-3">Tên Giải thưởng</th>
-                                                <th className="py-2.5 px-3">Lĩnh vực</th>
-                                                <th className="py-2.5 px-3 text-center">Hạng / Cấp giải</th>
+                                        <div className="bg-white rounded-2xl border border-[#E2E8F0] shadow-xs overflow-hidden overflow-x-auto">
+                                          <table className="w-full text-left border-collapse tabular-nums">
+                                            <thead className="bg-[#003B3A] text-white border-b border-[#003B3A]">
+                                              <tr className="text-[11px] font-semibold whitespace-nowrap">
+                                                <th className="py-2.5 px-2.5 w-10 text-center text-teal-100 font-semibold">STT</th>
+                                                <th className="py-2.5 px-2.5 text-teal-100 font-semibold">Mã HS</th>
+                                                <th className="py-2.5 px-2.5 text-white font-semibold">Học sinh</th>
+                                                <th className="py-2.5 px-2.5 text-teal-100 font-semibold">Lớp &amp; Cơ sở</th>
+                                                <th className="py-2.5 px-2.5 text-teal-100 font-semibold">Kỳ thi / Cuộc thi</th>
+                                                <th className="py-2.5 px-2.5 text-white font-semibold">Thành tích đạt được</th>
+                                                <th className="py-2.5 px-2.5 text-center text-[#5EEAD4] font-semibold">Mức giải</th>
+                                                <th className="py-2.5 px-2.5 text-teal-100 font-semibold">GV bồi dưỡng</th>
+                                                <th className="py-2.5 px-2.5 text-right text-white font-semibold no-print pdf-hide">Thao tác</th>
                                               </tr>
                                             </thead>
-                                            <tbody className="divide-y divide-slate-100 font-semibold">
-                                              {selectedStudent.achievements.slice(0, 4).map((item: any, idx: number) => {
-                                                const ach = item.achievement || item;
-                                                const achName = ach.name || "Giải thưởng";
-                                                const catName = getCategoryLabel(ach.category || ach.examCategoryName);
-                                                const levelName = getLevelLabel(ach.level);
+                                            <tbody className="divide-y divide-[#E2E8F0] text-xs bg-white tabular-nums">
+                                              {selectedStudent.achievements.map((item: any, idx: number) => {
+                                                const row = normalizeStudentAchievementRow(item, selectedStudent, achLabelMaps);
                                                 return (
-                                                  <tr key={idx} className="hover:bg-amber-50/20">
-                                                    <td className="py-2.5 px-3 text-center font-mono text-slate-400 font-bold">{idx + 1}</td>
-                                                    <td className="py-2.5 px-3 font-bold text-slate-800">{achName}</td>
-                                                    <td className="py-2.5 px-3 text-[10px] font-black text-[#00A19A] uppercase">{catName}</td>
-                                                    <td className="py-2.5 px-3 text-center">
-                                                      <span className="text-[10px] font-black bg-amber-50 text-amber-800 border border-amber-200 px-2 py-0.5 rounded-md">
-                                                        {levelName}
+                                                  <tr
+                                                    key={row.linkId || `${row.achievementId}-${idx}`}
+                                                    className="transition-colors align-middle hover:bg-[#F8FAFC]"
+                                                  >
+                                                    <td className="py-2.5 px-2.5 text-center text-slate-400 font-mono">
+                                                      {idx + 1}
+                                                    </td>
+                                                    <td className="py-2.5 px-2.5 font-mono text-slate-600">
+                                                      {row.studentCode}
+                                                    </td>
+                                                    <td className="py-2.5 px-2.5 font-semibold text-slate-900">
+                                                      {row.studentName}
+                                                    </td>
+                                                    <td className="py-2.5 px-2.5">
+                                                      <span className="font-semibold text-[#003B3A]">{row.className}</span>
+                                                      <span className="block text-[11px] text-slate-400">{row.campusName}</span>
+                                                    </td>
+                                                    <td className="py-2.5 px-2.5 text-slate-700">
+                                                      <span className="line-clamp-2">{row.examName}</span>
+                                                    </td>
+                                                    <td className="py-2.5 px-2.5">
+                                                      <span className="font-semibold text-slate-900">{row.achievementName}</span>
+                                                      <span className="block text-[11px] text-slate-400">
+                                                        {row.categoryLabel} · {row.typeLabel}
                                                       </span>
+                                                    </td>
+                                                    <td className="py-2.5 px-2.5 text-center">
+                                                      <span
+                                                        className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-[11px] font-semibold border whitespace-nowrap ${row.badgeClass}`}
+                                                      >
+                                                        {row.levelLabel}
+                                                      </span>
+                                                    </td>
+                                                    <td className="py-2.5 px-2.5 text-slate-600">{row.teacherName}</td>
+                                                    <td className="py-2.5 px-2.5 text-right no-print pdf-hide">
+                                                      {row.achievementId && (
+                                                        <button
+                                                          type="button"
+                                                          onClick={() => handleDeleteAchievementRecord(row)}
+                                                          className="p-1.5 rounded-lg text-slate-400 hover:text-[#E11D48] hover:bg-rose-50 transition-colors cursor-pointer"
+                                                          title="Xóa bản ghi này"
+                                                        >
+                                                          <Trash2 className="w-3.5 h-3.5" />
+                                                        </button>
+                                                      )}
                                                     </td>
                                                   </tr>
                                                 );
@@ -2131,17 +2174,17 @@ export function StudentProfilesAdminClient({
                                       ) : (
                                         <div className="overflow-x-auto rounded-2xl border border-slate-200 bg-white shadow-2xs">
                                           <table className="w-full text-xs text-left border-collapse">
-                                            <thead>
-                                              <tr className="bg-slate-50 text-slate-700 font-bold border-b border-slate-200 text-[11px] uppercase tracking-wider">
-                                                <th className="py-2.5 px-3 text-center w-10">STT</th>
-                                                <th className="py-2.5 px-3 min-w-[180px]">Tên hoạt động</th>
-                                                <th className="py-2.5 px-3 min-w-[130px]">Chủ đề GD</th>
-                                                <th className="py-2.5 px-3 min-w-[200px]">Nội dung giáo dục</th>
-                                                <th className="py-2.5 px-3 text-center min-w-[110px]">Vai trò</th>
-                                                <th className="py-2.5 px-3 text-center min-w-[110px]">Kết quả</th>
+                                            <thead className="bg-[#003B3A] text-white border-b border-[#003B3A]">
+                                              <tr className="border-b text-[11px] font-semibold">
+                                                <th className="py-2.5 px-3 text-center w-10 font-semibold">STT</th>
+                                                <th className="py-2.5 px-3 min-w-[180px] font-semibold">Tên hoạt động</th>
+                                                <th className="py-2.5 px-3 min-w-[130px] font-semibold">Chủ đề GD</th>
+                                                <th className="py-2.5 px-3 min-w-[200px] font-semibold">Nội dung giáo dục</th>
+                                                <th className="py-2.5 px-3 text-center min-w-[110px] font-semibold">Vai trò</th>
+                                                <th className="py-2.5 px-3 text-center min-w-[110px] font-semibold">Kết quả</th>
                                               </tr>
                                             </thead>
-                                            <tbody className="divide-y divide-slate-100 font-medium text-slate-700">
+                                            <tbody className="divide-y divide-[#E2E8F0] font-medium text-slate-700">
                                               {selectedStudent.experientialActivities.map((act: any, idx: number) => (
                                                 <tr key={act.id || idx} className="hover:bg-slate-50/80 transition-colors">
                                                   <td className="py-3 px-3 text-center text-slate-400 font-bold">{idx + 1}</td>
@@ -2277,6 +2320,27 @@ export function StudentProfilesAdminClient({
                                           </div>
                                         </div>
                                       )}
+
+                                      {/* PHỤ LỤC: BÁO CÁO PHỎNG VẤN ĐỊNH HƯỚNG HỌC SINH & TRAO ĐỔI PHHS */}
+                                      {sectionVisibility.entranceOrientationReport !== false && (
+                                        <div className="mt-8 pt-6 border-t-2 border-dashed border-teal-300 space-y-4">
+                                          <div className="flex items-center gap-3 bg-gradient-to-r from-teal-50 to-emerald-50 border border-teal-200 p-4 rounded-2xl no-print">
+                                            <div className="w-3 h-3 rounded-full bg-[#003B3A]" />
+                                            <h3 className="text-xs sm:text-sm font-black text-[#003B3A] uppercase tracking-wider flex items-center gap-2">
+                                              <ClipboardCheck className="w-4 h-4 text-[#008B85]" />
+                                              <span>BÁO CÁO PHỎNG VẤN ĐỊNH HƯỚNG HỌC SINH &amp; TRAO ĐỔI PHHS</span>
+                                            </h3>
+                                          </div>
+
+                                          <StudentOrientationReportModal
+                                            isOpen={true}
+                                            embedded={true}
+                                            hideToolbar={true}
+                                            student={buildOrientationStudentPayload(selectedStudent)}
+                                            orientationData={selectedStudent?.entranceSurvey?.orientationRecord || null}
+                                          />
+                                        </div>
+                                      )}
                                     </div>
                                   </div>
                                 );
@@ -2290,6 +2354,18 @@ export function StudentProfilesAdminClient({
                   </div>
                 );
               })()}
+
+                    {activeTab === "entrance_orientation_a4" && (
+                      <div className="space-y-4 animate-in fade-in duration-300">
+                        <StudentOrientationReportModal
+                          isOpen={true}
+                          embedded={true}
+                          hideToolbar={true}
+                          student={buildOrientationStudentPayload(selectedStudent)}
+                          orientationData={selectedStudent?.entranceSurvey?.orientationRecord || null}
+                        />
+                      </div>
+                    )}
 
                     
                     {activeTab === "competencies" && (
@@ -2405,7 +2481,7 @@ export function StudentProfilesAdminClient({
                           { code: "TNXH", name: "TN-XH / Khoa học" },
                           { code: "TIN", name: "Tin học và Công nghệ" },
                           { code: "AM_NHAC", name: "Âm nhạc" },
-                          { code: "MI_THUAT", name: "Mĩ thuật" },
+                          { code: "MTU", name: "Mĩ thuật" },
                           { code: "GTC", name: "Giáo dục thể chất" },
                           { code: "HDTN", name: "Hoạt động trải nghiệm" }
                         ]
@@ -2789,36 +2865,36 @@ return (
 
                                 <div className="overflow-x-auto rounded-2xl border border-slate-200/90 shadow-2xs bg-white">
                                   <table className="w-full text-xs text-left border-collapse">
-                                    <thead>
+                                    <thead className="bg-[#003B3A] text-white border-b border-[#003B3A]">
                                       {isPrimary ? (
                                         <>
-                                          <tr className="bg-slate-50 text-slate-700 font-black uppercase text-[10px] tracking-wider border-b border-slate-200">
-                                            <th rowSpan={2} className="py-3 px-3 text-center w-12 border-r border-slate-200">STT</th>
-                                            <th rowSpan={2} className="py-3 px-4 border-r border-slate-200">Tên Môn học</th>
-                                            <th colSpan={2} className="py-2 px-3 text-center border-r border-slate-200 text-teal-700 bg-teal-50/50">Học kỳ 1</th>
-                                            <th colSpan={2} className="py-2 px-3 text-center border-r border-slate-200 text-teal-800 bg-teal-50/50">Học kỳ 2</th>
-                                            <th colSpan={2} className="py-2 px-3 text-center text-emerald-800 bg-emerald-50/50">Cả năm</th>
+                                          <tr className="text-[10px] border-b font-semibold">
+                                            <th rowSpan={2} className="py-3 px-3 text-center w-12 border-r border-white/15 font-semibold">STT</th>
+                                            <th rowSpan={2} className="py-3 px-4 border-r border-white/15 font-semibold">Tên Môn học</th>
+                                            <th colSpan={2} className="py-2 px-3 text-center border-r border-white/15 bg-[#003B3A] text-[#5EEAD4] font-semibold">Học kỳ 1</th>
+                                            <th colSpan={2} className="py-2 px-3 text-center border-r border-white/15 bg-[#003B3A] text-[#5EEAD4] font-semibold">Học kỳ 2</th>
+                                            <th colSpan={2} className="py-2 px-3 text-center bg-[#003B3A] text-[#5EEAD4] font-semibold">Cả năm</th>
                                           </tr>
-                                          <tr className="bg-slate-50/80 text-slate-600 font-bold text-[9px] uppercase tracking-wider border-b border-slate-200">
-                                            <th className="py-1.5 px-2 text-center border-r border-slate-200 w-24">Mức đạt</th>
-                                            <th className="py-1.5 px-2 text-center border-r border-slate-200 w-20">Điểm KT</th>
-                                            <th className="py-1.5 px-2 text-center border-r border-slate-200 w-24">Mức đạt</th>
-                                            <th className="py-1.5 px-2 text-center border-r border-slate-200 w-20">Điểm KT</th>
-                                            <th className="py-1.5 px-2 text-center border-r border-slate-200 w-24">Mức đạt</th>
-                                            <th className="py-1.5 px-2 text-center w-20">Điểm KT</th>
+                                          <tr className="text-[9px] border-b text-[11px] font-semibold">
+                                            <th className="py-1.5 px-2 text-center border-r border-white/15 w-24 font-semibold">Mức đạt</th>
+                                            <th className="py-1.5 px-2 text-center border-r border-white/15 w-20 font-semibold">Điểm KT</th>
+                                            <th className="py-1.5 px-2 text-center border-r border-white/15 w-24 font-semibold">Mức đạt</th>
+                                            <th className="py-1.5 px-2 text-center border-r border-white/15 w-20 font-semibold">Điểm KT</th>
+                                            <th className="py-1.5 px-2 text-center border-r border-white/15 w-24 font-semibold">Mức đạt</th>
+                                            <th className="py-1.5 px-2 text-center w-20 font-semibold">Điểm KT</th>
                                           </tr>
                                         </>
                                       ) : (
-                                        <tr className="bg-slate-50 text-slate-700 font-black uppercase text-[10px] tracking-wider border-b border-slate-200">
-                                          <th className="py-3 px-4 text-center w-12">STT</th>
-                                          <th className="py-3 px-4">Tên Môn học</th>
-                                          <th className="py-3 px-4 text-center w-28">Học kỳ 1</th>
-                                          <th className="py-3 px-4 text-center w-28">Học kỳ 2</th>
-                                          <th className="py-3 px-4 text-center w-28">Cả năm</th>
+                                        <tr className="text-[10px] border-b font-semibold">
+                                          <th className="py-3 px-4 text-center w-12 font-semibold">STT</th>
+                                          <th className="py-3 px-4 font-semibold">Tên Môn học</th>
+                                          <th className="py-3 px-4 text-center w-28 font-semibold">Học kỳ 1</th>
+                                          <th className="py-3 px-4 text-center w-28 font-semibold">Học kỳ 2</th>
+                                          <th className="py-3 px-4 text-center w-28 font-semibold">Cả năm</th>
                                         </tr>
                                       )}
                                     </thead>
-                                    <tbody className="divide-y divide-slate-100 font-semibold text-slate-700">
+                                    <tbody className="divide-y divide-[#E2E8F0] font-semibold text-slate-700">
                                       {subjectRows.map((row: any, idx: number) => (
                                         <tr key={row.id} className="hover:bg-slate-50/80 transition-all">
                                           <td className="py-3 px-3 text-center font-bold text-slate-400 border-r border-slate-100">{idx + 1}</td>
@@ -2919,15 +2995,15 @@ return (
                                     </div>
                                     <div className="overflow-x-auto">
                                       <table className="w-full text-xs text-left border-collapse border border-slate-200">
-                                        <thead>
-                                          <tr className="bg-slate-50 text-slate-600 font-bold">
-                                            <th className="p-2 border border-slate-200">Lĩnh vực phát triển</th>
-                                            <th className="p-2 border border-slate-200">Tiêu chí đánh giá</th>
-                                            <th className="p-2 border border-slate-200">Kết quả</th>
-                                            <th className="p-2 border border-slate-200">Ghi chú</th>
+                                        <thead className="bg-[#003B3A] text-white border-b border-[#003B3A]">
+                                          <tr className="text-[11px] font-semibold">
+                                            <th className="p-2 border border-white/15 font-semibold">Lĩnh vực phát triển</th>
+                                            <th className="p-2 border border-white/15 font-semibold">Tiêu chí đánh giá</th>
+                                            <th className="p-2 border border-white/15 font-semibold">Kết quả</th>
+                                            <th className="p-2 border border-white/15 font-semibold">Ghi chú</th>
                                           </tr>
                                         </thead>
-                                        <tbody>
+                                        <tbody className="divide-y divide-[#E2E8F0] text-xs bg-white">
                                           {(selectedStudent.entranceSurvey.scores || []).length > 0 ? (
                                             selectedStudent.entranceSurvey.scores.map((sc: any, idx: number) => (
                                               <tr key={idx} className="font-semibold text-slate-705">
@@ -3226,114 +3302,141 @@ return (
                       </div>
                     )}
 
-                    {activeTab === "achievements" && (
-                      <div className="space-y-5 animate-in fade-in duration-300">
-                        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-slate-100 pb-3">
-                          <div>
-                            <h4 className="text-sm font-black text-slate-805 uppercase tracking-wide">Thành tích &amp; Khen thưởng của Học sinh</h4>
-                            <p className="text-xs text-slate-400 font-semibold mt-0.5">Danh sách các giải thưởng, huy chương &amp; chứng nhận học sinh đã đạt được</p>
-                          </div>
-                          {selectedStudent.achievements && selectedStudent.achievements.length > 0 && (
-                            <span className="text-xs font-black bg-[#00A19A]/10 text-[#00A19A] border border-[#00A19A]/20 px-3 py-1 rounded-full uppercase self-start sm:self-auto">
-                              {selectedStudent.achievements.length} giải thưởng
-                            </span>
-                          )}
-                        </div>
+                    {activeTab === "achievements" && (() => {
+                      const rawAchievements = Array.isArray(selectedStudent.achievements)
+                        ? selectedStudent.achievements
+                        : [];
+                      const normalizedRows = rawAchievements.map((item: any) =>
+                        normalizeStudentAchievementRow(item, selectedStudent, achLabelMaps)
+                      );
+                      const distinctExamNames = Array.from(
+                        new Set(normalizedRows.map((r: any) => r.examName).filter(Boolean))
+                      ) as string[];
+                      const visibleRows = studentAchExamFilter
+                        ? normalizedRows.filter((r: any) => r.examName === studentAchExamFilter)
+                        : normalizedRows;
 
-                        {(!selectedStudent.achievements || selectedStudent.achievements.length === 0) ? (
-                          <div className="bg-slate-50/50 border border-slate-200/80 rounded-2xl py-14 text-center text-slate-400 space-y-2 shadow-2xs">
-                            <Award className="w-12 h-12 mx-auto opacity-20 text-slate-400 mb-1" />
-                            <h5 className="font-extrabold text-slate-600 text-sm">Chưa ghi nhận thành tích nào</h5>
-                            <p className="text-xs text-slate-400 font-medium">Học sinh chưa có giải thưởng hoặc kết quả khen thưởng trong hệ thống.</p>
+                      return (
+                        <div className="space-y-4 animate-in fade-in duration-300">
+                          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-[#E2E8F0] pb-3">
+                            <div>
+                              <h4 className="text-sm font-bold text-[#003B3A]">Thành tích &amp; khen thưởng của học sinh</h4>
+                              <p className="text-xs text-slate-500 mt-0.5">Danh sách các giải thưởng, huy chương &amp; chứng nhận học sinh đã đạt được</p>
+                            </div>
+                            {normalizedRows.length > 0 && (
+                              <div className="flex flex-wrap items-center gap-2 tabular-nums">
+                                <select
+                                  value={studentAchExamFilter}
+                                  onChange={(e) => setStudentAchExamFilter(e.target.value)}
+                                  title={studentAchExamFilter || "Lọc theo kỳ thi"}
+                                  className="max-w-[260px] bg-[#F8FAFC] border border-[#E2E8F0] focus:bg-white focus:border-[#00A19A] rounded-xl px-3 py-1.5 text-xs font-medium text-slate-700 outline-none truncate"
+                                >
+                                  <option value="">Tất cả kỳ thi ({distinctExamNames.length})</option>
+                                  {distinctExamNames.map((exName) => (
+                                    <option key={exName} value={exName}>
+                                      {exName}
+                                    </option>
+                                  ))}
+                                </select>
+                                <span className="text-xs font-semibold bg-[#F0FDFA] text-[#00736E] border border-[#CCFBF1] px-3 py-1.5 rounded-xl tabular-nums">
+                                  {visibleRows.length} giải thưởng
+                                </span>
+                              </div>
+                            )}
                           </div>
-                        ) : (
-                          <div className="border border-slate-200/80 rounded-2xl overflow-hidden bg-white shadow-2xs">
-                            <div className="overflow-x-auto">
-                              <table className="w-full text-left border-collapse">
-                                <thead>
-                                  <tr className="bg-slate-50/80 border-b border-slate-200/80 text-[11px] font-black text-slate-500 uppercase tracking-wider">
-                                    <th className="py-3.5 px-4 text-center w-12">STT</th>
-                                    <th className="py-3.5 px-4">Năm học</th>
-                                    <th className="py-3.5 px-4">Tên Giải thưởng / Thành tích</th>
-                                    <th className="py-3.5 px-4">Kỳ thi / Cuộc thi</th>
-                                    <th className="py-3.5 px-4">Lĩnh vực</th>
-                                    <th className="py-3.5 px-4 text-center">Cấp độ / Hạng giải</th>
-                                    
-                                  </tr>
-                                </thead>
-                                <tbody className="divide-y divide-slate-100 text-xs font-semibold text-slate-700">
-                                  {selectedStudent.achievements.map((item: any, idx: number) => {
-                                    const ach = item.achievement || item;
-                                    const achName = ach.name || "Giải thưởng / Khen thưởng";
-                                    const catName = getCategoryLabel(ach.category || ach.examCategoryName);
-                                    const levelName = getLevelLabel(ach.level);
-                                    const yearName = getYearLabel(ach);
-                                    const examName = ach.exam?.name || ach.examName || "Ngoài hệ thống";
-                                    
-                                    const nameLower = achName.toLowerCase();
-                                    const isGold = nameLower.includes("vàng") || nameLower.includes("nhất");
-                                    const isSilver = nameLower.includes("bạc") || nameLower.includes("nhì");
-                                    const isBronze = nameLower.includes("đồng") || nameLower.includes("ba");
 
-                                    return (
-                                      <tr key={item.id || ach.id || idx} className="hover:bg-teal-50/20 transition-colors">
-                                        <td className="py-3.5 px-4 text-center text-slate-400 font-mono text-[11px] font-bold">
+                          {normalizedRows.length === 0 ? (
+                            <div className="bg-white border border-[#E2E8F0] rounded-2xl py-14 text-center text-slate-500 space-y-1.5 shadow-xs">
+                              <Award className="w-10 h-10 mx-auto text-slate-300 mb-1" />
+                              <h5 className="font-bold text-slate-700 text-sm">Chưa ghi nhận thành tích nào</h5>
+                              <p className="text-xs text-slate-400">Học sinh chưa có giải thưởng hoặc kết quả khen thưởng trong hệ thống.</p>
+                            </div>
+                          ) : visibleRows.length === 0 ? (
+                            <div className="bg-white border border-[#E2E8F0] rounded-2xl py-10 text-center text-slate-500 space-y-1.5 shadow-xs">
+                              <p className="font-bold text-slate-700 text-xs">Không có thành tích nào thuộc kỳ thi đang chọn</p>
+                              <button
+                                type="button"
+                                onClick={() => setStudentAchExamFilter("")}
+                                className="text-xs font-semibold text-[#008B85] hover:underline cursor-pointer"
+                              >
+                                Xóa bộ lọc kỳ thi
+                              </button>
+                            </div>
+                          ) : (
+                            <div className="bg-white rounded-2xl border border-[#E2E8F0] shadow-xs overflow-hidden">
+                              <div className="overflow-x-auto">
+                                <table className="w-full text-left border-collapse tabular-nums">
+                                  <thead className="bg-[#003B3A] text-white border-b border-[#003B3A]">
+                                    <tr className="text-[11px] font-semibold whitespace-nowrap">
+                                      <th className="py-3 px-3 w-12 text-center text-teal-100 font-semibold">STT</th>
+                                      <th className="py-3 px-3 text-teal-100 font-semibold">Mã HS</th>
+                                      <th className="py-3 px-3 text-white font-semibold">Học sinh</th>
+                                      <th className="py-3 px-3 text-teal-100 font-semibold">Lớp &amp; Cơ sở</th>
+                                      <th className="py-3 px-3 text-teal-100 font-semibold">Kỳ thi / Cuộc thi</th>
+                                      <th className="py-3 px-3 text-white font-semibold">Thành tích đạt được</th>
+                                      <th className="py-3 px-3 text-center text-[#5EEAD4] font-semibold">Mức giải</th>
+                                      <th className="py-3 px-3 text-teal-100 font-semibold">GV bồi dưỡng</th>
+                                      <th className="py-3 px-3 text-right text-white font-semibold no-print">Thao tác</th>
+                                    </tr>
+                                  </thead>
+                                  <tbody className="divide-y divide-[#E2E8F0] text-xs bg-white tabular-nums">
+                                    {visibleRows.map((row: any, idx: number) => (
+                                      <tr
+                                        key={row.linkId || `${row.achievementId}-${idx}`}
+                                        className="transition-colors align-middle hover:bg-[#F8FAFC]"
+                                      >
+                                        <td className="py-3 px-3 text-center text-slate-400 font-mono">
                                           {idx + 1}
                                         </td>
-                                        <td className="py-3.5 px-4 font-mono font-bold text-slate-600 whitespace-nowrap">
-                                          <span className="bg-slate-100 px-2.5 py-1 rounded-md border border-slate-200/60 text-[11px]">
-                                            {yearName}
+                                        <td className="py-3 px-3 font-mono text-slate-600">
+                                          {row.studentCode}
+                                        </td>
+                                        <td className="py-3 px-3 font-semibold text-slate-900">
+                                          {row.studentName}
+                                        </td>
+                                        <td className="py-3 px-3">
+                                          <span className="font-semibold text-[#003B3A]">{row.className}</span>
+                                          <span className="block text-[11px] text-slate-400">{row.campusName}</span>
+                                        </td>
+                                        <td className="py-3 px-3 text-slate-700 max-w-[240px]">
+                                          <span className="line-clamp-2">{row.examName}</span>
+                                        </td>
+                                        <td className="py-3 px-3">
+                                          <span className="font-semibold text-slate-900">{row.achievementName}</span>
+                                          <span className="block text-[11px] text-slate-400">
+                                            {row.categoryLabel} · {row.typeLabel}
                                           </span>
                                         </td>
-                                        <td className="py-3.5 px-4 font-black text-slate-800">
-                                          <div className="flex items-center gap-2">
-                                            <span className={`p-1 rounded-md flex-shrink-0 ${
-                                              isGold ? 'bg-amber-100 text-amber-600' :
-                                              isSilver ? 'bg-slate-100 text-slate-600' :
-                                              isBronze ? 'bg-amber-50 text-amber-700' :
-                                              'bg-[#00A19A]/10 text-[#00A19A]'
-                                            }`}>
-                                              {isGold ? <Trophy className="w-3.5 h-3.5" /> : isSilver || isBronze ? <Medal className="w-3.5 h-3.5" /> : <Award className="w-3.5 h-3.5" />}
-                                            </span>
-                                            <span>{achName}</span>
-                                          </div>
+                                        <td className="py-3 px-3 text-center">
+                                          <span
+                                            className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-[11px] font-semibold border whitespace-nowrap ${row.badgeClass}`}
+                                          >
+                                            {row.levelLabel}
+                                          </span>
                                         </td>
-                                        <td className="py-3.5 px-4 text-slate-600 font-medium">
-                                          {examName !== "Ngoài hệ thống" ? (
-                                            <span className="flex items-center gap-1 text-[#009085] font-semibold">
-                                              <Sparkles className="w-3 h-3 text-[#48BFE3] flex-shrink-0" />
-                                              {examName}
-                                            </span>
-                                          ) : (
-                                            <span className="text-slate-400 italic">Ngoài hệ thống</span>
+                                        <td className="py-3 px-3 text-slate-600">{row.teacherName}</td>
+                                        <td className="py-3 px-3 text-right no-print">
+                                          {row.achievementId && (
+                                            <button
+                                              type="button"
+                                              onClick={() => handleDeleteAchievementRecord(row)}
+                                              className="p-1.5 rounded-lg text-slate-400 hover:text-[#E11D48] hover:bg-rose-50 transition-colors cursor-pointer"
+                                              title="Xóa bản ghi này"
+                                            >
+                                              <Trash2 className="w-3.5 h-3.5" />
+                                            </button>
                                           )}
                                         </td>
-                                        <td className="py-3.5 px-4 whitespace-nowrap">
-                                          <span className="text-[10px] font-black uppercase tracking-wider text-[#009085] bg-teal-50 px-2.5 py-1 rounded-md border border-teal-200/80">
-                                            {catName}
-                                          </span>
-                                        </td>
-                                        <td className="py-3.5 px-4 text-center whitespace-nowrap">
-                                          <span className={`text-[10px] font-black px-2.5 py-1 rounded-md border ${
-                                            isGold ? 'bg-amber-50 text-amber-800 border-amber-200' :
-                                            isSilver ? 'bg-slate-100 text-slate-700 border-slate-300' :
-                                            isBronze ? 'bg-amber-50 text-amber-800 border-amber-200' :
-                                            'bg-teal-50 text-teal-800 border-teal-200'
-                                          }`}>
-                                            {levelName}
-                                          </span>
-                                        </td>
-                                        
                                       </tr>
-                                    );
-                                  })}
-                                </tbody>
-                              </table>
+                                    ))}
+                                  </tbody>
+                                </table>
+                              </div>
                             </div>
-                          </div>
-                        )}
-                      </div>
-                    )}
+                          )}
+                        </div>
+                      );
+                    })()}
 
                     {activeTab === "orientation" && (
                       <div className="space-y-4 animate-in fade-in duration-300">
@@ -3443,18 +3546,18 @@ return (
       ) : (
         <div className="overflow-x-auto rounded-2xl border border-slate-200 shadow-xs bg-white">
           <table className="w-full text-xs text-left border-collapse">
-            <thead>
-              <tr className="bg-slate-50 text-slate-700 font-bold border-b border-slate-200 text-[11px] uppercase tracking-wider">
-                <th className="py-3 px-3 text-center w-12">STT</th>
-                <th className="py-3 px-4 min-w-[200px]">Hoạt động &amp; Thời gian</th>
-                <th className="py-3 px-3 min-w-[150px]">Trục chủ đề cốt lõi</th>
-                <th className="py-3 px-3 min-w-[180px]">Môn chủ trì &amp; Tích hợp / Sản phẩm</th>
-                <th className="py-3 px-3 text-center min-w-[100px]">Vai trò</th>
-                <th className="py-3 px-3 text-center min-w-[120px]">Kết quả đánh giá</th>
-                <th className="py-3 px-4 min-w-[220px]">Nhận xét của giáo viên</th>
+            <thead className="bg-[#003B3A] text-white border-b border-[#003B3A]">
+              <tr className="border-b text-[11px] font-semibold">
+                <th className="py-3 px-3 text-center w-12 font-semibold">STT</th>
+                <th className="py-3 px-4 min-w-[200px] font-semibold">Hoạt động &amp; Thời gian</th>
+                <th className="py-3 px-3 min-w-[150px] font-semibold">Trục chủ đề cốt lõi</th>
+                <th className="py-3 px-3 min-w-[180px] font-semibold">Môn chủ trì &amp; Tích hợp / Sản phẩm</th>
+                <th className="py-3 px-3 text-center min-w-[100px] font-semibold">Vai trò</th>
+                <th className="py-3 px-3 text-center min-w-[120px] font-semibold">Kết quả đánh giá</th>
+                <th className="py-3 px-4 min-w-[220px] font-semibold">Nhận xét của giáo viên</th>
               </tr>
             </thead>
-            <tbody className="divide-y divide-slate-100 font-medium text-slate-700">
+            <tbody className="divide-y divide-[#E2E8F0] font-medium text-slate-700">
               {acts.map((act: any, idx: number) => {
                 const axisBadge = (() => {
                   switch (act.themeAxis) {
@@ -3765,6 +3868,25 @@ return (
         onClose={() => setIsConfigModalOpen(false)}
         onSaved={loadConfigs}
       />
+
+      {/* HỘP THƯ BÀN GIAO PHIẾU ĐỊNH HƯỚNG CHO GVCN */}
+      <GvcnHandoverDrawer
+        isOpen={isGvcnHandoverOpen}
+        onClose={() => setIsGvcnHandoverOpen(false)}
+        onOpenStudentModal={(stu) => {
+          setIsGvcnHandoverOpen(false)
+          setPvdhHandoverStudent(stu)
+        }}
+      />
+
+      {pvdhHandoverStudent && (
+        <PvdhOrientationModal
+          isOpen={!!pvdhHandoverStudent}
+          onClose={() => setPvdhHandoverStudent(null)}
+          student={pvdhHandoverStudent}
+          initialSection="PREVIEW"
+        />
+      )}
       </div>
     </div>
   )
