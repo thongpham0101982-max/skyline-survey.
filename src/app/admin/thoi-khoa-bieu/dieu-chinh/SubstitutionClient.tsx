@@ -9,6 +9,11 @@ import {
   createTimetableSubstitutionAction,
   getTimetableAdjustmentsPageAction,
 } from "../actions"
+import {
+  groupTeachersByDepartment,
+  teacherMatchesDepartment,
+  UNASSIGNED_DEPT_VALUE,
+} from "@/lib/timetable/departmentHelper"
 import type {
   ManageableScopeGroup,
   SubstitutionActionType,
@@ -88,6 +93,7 @@ export function SubstitutionClient({ initialData }: { initialData: AdjustmentsDa
   const [session, setSession] = useState<"MORNING" | "AFTERNOON">("MORNING")
   const [periodNumber, setPeriodNumber] = useState<number>(1)
   const [selectedSlotId, setSelectedSlotId] = useState<string>("")
+  const [selectedDeptId, setSelectedDeptId] = useState<string>("ALL")
   const [substituteTeacherId, setSubstituteTeacherId] = useState<string>("")
   const [newSubjectId, setNewSubjectId] = useState<string>("")
   const [newRoomId, setNewRoomId] = useState<string>("")
@@ -471,27 +477,67 @@ export function SubstitutionClient({ initialData }: { initialData: AdjustmentsDa
           </div>
 
           {/* Conditional Fields */}
-          <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 tabular-nums">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 tabular-nums">
             {(actionType === "SUBSTITUTE" ||
               actionType === "SWAP_PERIOD" ||
               actionType === "MAKEUP") && (
-              <div>
-                <label className="block text-[11px] font-semibold text-slate-600 mb-1">
-                  Giáo viên dạy thay / đứng lớp
-                </label>
-                <select
-                  value={substituteTeacherId}
-                  onChange={(e) => setSubstituteTeacherId(e.target.value)}
-                  className="w-full rounded-xl border border-[#E2E8F0] bg-[#F8FAFC] px-3 py-2 text-xs font-medium text-slate-800 focus:border-[#00A19A] focus:outline-none"
-                >
-                  <option value="">— Chọn giáo viên (theo mã GV) —</option>
-                  {teachers.map((t) => (
-                    <option key={t.id} value={t.id}>
-                      [{t.teacherCode}] {t.teacherName}
-                    </option>
-                  ))}
-                </select>
-              </div>
+              <>
+                <div>
+                  <label className="block text-[11px] font-semibold text-slate-600 mb-1">
+                    Tổ chuyên môn (lọc giáo viên)
+                  </label>
+                  <select
+                    value={selectedDeptId}
+                    onChange={(e) => setSelectedDeptId(e.target.value)}
+                    className="w-full rounded-xl border border-[#E2E8F0] bg-[#F8FAFC] px-3 py-2 text-xs font-medium text-[#003B3A] focus:border-[#00A19A] focus:outline-none"
+                  >
+                    <option value="ALL">Tất cả Tổ chuyên môn ({teachers.length})</option>
+                    {(data.departments || []).map((d) => (
+                      <option key={d.id} value={d.id}>
+                        {d.name} ({d.teacherCount})
+                      </option>
+                    ))}
+                    {teachers.some((t) =>
+                      teacherMatchesDepartment(t, UNASSIGNED_DEPT_VALUE)
+                    ) && (
+                      <option value={UNASSIGNED_DEPT_VALUE}>Chưa phân Tổ chuyên môn</option>
+                    )}
+                  </select>
+                </div>
+
+                <div>
+                  <label className="block text-[11px] font-semibold text-slate-600 mb-1">
+                    Giáo viên dạy thay / đứng lớp
+                  </label>
+                  <select
+                    value={substituteTeacherId}
+                    onChange={(e) => setSubstituteTeacherId(e.target.value)}
+                    className="w-full rounded-xl border border-[#E2E8F0] bg-[#F8FAFC] px-3 py-2 text-xs font-medium text-slate-800 focus:border-[#00A19A] focus:outline-none"
+                  >
+                    <option value="">— Chọn giáo viên (theo mã GV) —</option>
+                    {groupTeachersByDepartment(
+                      teachers.filter(
+                        (t) =>
+                          t.id === substituteTeacherId ||
+                          teacherMatchesDepartment(t, selectedDeptId)
+                      ),
+                      newSubjectId || undefined
+                    ).map((group) => (
+                      <optgroup
+                        key={group.key}
+                        label={`${group.label} (${group.teachers.length})`}
+                      >
+                        {group.teachers.map((t) => (
+                          <option key={`${group.key}_${t.id}`} value={t.id}>
+                            [{t.teacherCode}] {t.teacherName}
+                            {t.departmentName ? ` — ${t.departmentName}` : ""}
+                          </option>
+                        ))}
+                      </optgroup>
+                    ))}
+                  </select>
+                </div>
+              </>
             )}
 
             {(actionType === "SWAP_PERIOD" ||

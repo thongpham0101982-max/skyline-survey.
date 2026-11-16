@@ -11,6 +11,7 @@ import {
   DAY_LABELS,
   SHORT_DAY_LABELS,
 } from "@/lib/timetable/scopeResolver"
+import { groupTeachersByDepartment } from "@/lib/timetable/departmentHelper"
 import type {
   BlockRule,
   DayOfWeekCode,
@@ -930,10 +931,14 @@ export function ConfigClient({ initialData }: { initialData: ConfigPageData }) {
                 >
                   <option value="">-- Chọn đối tượng --</option>
                   {busyTargetType === "TEACHER" &&
-                    data.teachers.map((t) => (
-                      <option key={t.id} value={t.id}>
-                        {t.teacherName} ({t.teacherCode})
-                      </option>
+                    groupTeachersByDepartment(data.teachers).map((group) => (
+                      <optgroup key={group.key} label={`${group.label} (${group.teachers.length})`}>
+                        {group.teachers.map((t) => (
+                          <option key={`${group.key}_${t.id}`} value={t.id}>
+                            {t.teacherName} ({t.teacherCode})
+                          </option>
+                        ))}
+                      </optgroup>
                     ))}
                   {busyTargetType === "ROOM" &&
                     data.rooms.map((r) => (

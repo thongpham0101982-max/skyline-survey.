@@ -118,6 +118,7 @@ import {
 } from "@/lib/timetable/rbac"
 import {
   detectHighSchoolTrack,
+  hydrateSlotsFromAssignments,
   reconcileQuotasAndAssignments,
   resolveGradeQuotaValue,
 } from "@/lib/timetable/quotaReconciler"
@@ -129,6 +130,16 @@ import {
   makeSlotCellKey,
   recomputeLiveQuotaItems,
 } from "@/lib/timetable/dragDropHelper"
+import {
+  groupTeachersByDepartment,
+  teacherMatchesDepartment,
+  UNASSIGNED_DEPT_VALUE,
+} from "@/lib/timetable/departmentHelper"
+import {
+  buildAllGradesMatrixStats,
+  buildSingleGradeStats,
+  computeClassSlotSummary,
+} from "@/lib/timetable/gradeStatsHelper"
 import {
   checkProctorTimetableConflict,
   getEffectiveClassWeekSchedule,
@@ -1280,5 +1291,959 @@ describe("SSM Sky-Line Timetable v2 — 8 Acceptance Scenarios", () => {
     ])
     expect(recomputed[0].scheduledWeeklyEquivalent).toBe(1)
     expect(recomputed[0].missingWeeklyPeriods).toBe(3)
+
+    // Dragging unassigned-teacher subject (primaryTeacherId: null) still places slot cleanly
+    const unassignedQuota = {
+      ...baseQuotas[0],
+      subjectId: "sub-eng",
+      subjectCode: "ENG",
+      subjectName: "Academic English",
+      primaryTeacherId: null,
+      primaryTeacherCode: null,
+      primaryTeacherName: null,
+      status: "MISSING_TEACHER" as const,
+    }
+    const evalUnassigned = evaluateCellDropTarget({
+      dragged: { kind: "QUOTA_ACTIVITY", item: unassignedQuota, weekType: "ALL" },
+      targetClass: classes[0],
+      dayOfWeek: "TUESDAY",
+      session: "MORNING",
+      periodNumber: 1,
+      currentSlots,
+      slotByCell,
+      quotaItems: [unassignedQuota],
+      teachersById,
+      campusId: "cs1",
+      config: cfg,
+      busySlots: [],
+      externalActiveSlots: [],
+      travelRules: [],
+      autoLockManual: true,
+    })
+    expect(evalUnassigned.status).toBe("VALID")
+    expect(evalUnassigned.resolvedSlot?.subjectId).toBe("sub-eng")
+    expect(evalUnassigned.resolvedSlot?.teacherId).toBeNull()
+
+    // Dragging TEACHER onto that placed slot assigns primary teacher and detects conflicts if busy
+    const slotsWithUnassigned = [...currentSlots, evalUnassigned.resolvedSlot!]
+    const mapWithUnassigned = new Map(
+      slotsWithUnassigned.map((s) => [
+        makeSlotCellKey(s.classId, s.dayOfWeek, s.session, s.periodNumber),
+        s,
+      ])
+    )
+    const evalTeacherAssign = evaluateCellDropTarget({
+      dragged: {
+        kind: "TEACHER",
+        teacherId: "gv-2",
+        teacherCode: "GV02",
+        teacherName: "Thầy B",
+        roleMode: "PRIMARY",
+      },
+      targetClass: classes[0],
+      dayOfWeek: "TUESDAY",
+      session: "MORNING",
+      periodNumber: 1,
+      currentSlots: slotsWithUnassigned,
+      slotByCell: mapWithUnassigned,
+      quotaItems: [unassignedQuota],
+      teachersById,
+      campusId: "cs1",
+      config: cfg,
+      busySlots: [],
+      externalActiveSlots: [],
+      travelRules: [],
+      autoLockManual: true,
+    })
+    expect(evalTeacherAssign.status).toBe("SWAP_VALID")
+    expect(evalTeacherAssign.resolvedSlot?.teacherId).toBe("gv-2")
+    expect(evalTeacherAssign.resolvedSlot?.subjectId).toBe("sub-eng")
+  })
+
+  // ==========================================================================
+  // SCENARIO 12: Lọc và phân nhóm Giáo viên theo Tổ chuyên môn & Môn chuyên môn
+  // ==========================================================================
+  it("Scenario 12: filters teachers by Tổ chuyên môn (supporting multi-department assignments) and prioritizes mainSubjectId in optgroups", () => {
+    const sampleTeachers = [
+      {
+        id: "gv-eng-1",
+        teacherCode: "GV_ENG_01",
+        teacherName: "Nguyễn Thị Anh",
+        mainSubjectId: "sub-eng",
+        departmentId: "dept-eng",
+        departmentName: "Tổ Tiếng Anh",
+        departmentIds: ["dept-eng", "dept-intl"],
+      },
+      {
+        id: "gv-math-1",
+        teacherCode: "GV_MATH_01",
+        teacherName: "Trần Văn Toán",
+        mainSubjectId: "sub-math",
+        departmentId: "dept-nat",
+        departmentName: "Tổ Khoa học Tự nhiên",
+        departmentIds: ["dept-nat"],
+      },
+      {
+        id: "gv-free",
+        teacherCode: "GV_FREE_01",
+        teacherName: "Lê Minh Tự Do",
+        mainSubjectId: null,
+        departmentId: null,
+        departmentName: null,
+        departmentIds: [],
+      },
+    ]
+
+    // Multi-department teacher matches both primary and secondary departments
+    expect(teacherMatchesDepartment(sampleTeachers[0], "dept-eng")).toBe(true)
+    expect(teacherMatchesDepartment(sampleTeachers[0], "dept-intl")).toBe(true)
+    expect(teacherMatchesDepartment(sampleTeachers[0], "dept-nat")).toBe(false)
+
+    // Unassigned department filter
+    expect(teacherMatchesDepartment(sampleTeachers[2], UNASSIGNED_DEPT_VALUE)).toBe(true)
+    expect(teacherMatchesDepartment(sampleTeachers[1], UNASSIGNED_DEPT_VALUE)).toBe(false)
+
+    // Grouping with prioritySubjectId = "sub-eng" puts English specialist in top group
+    const groups = groupTeachersByDepartment(sampleTeachers, "sub-eng")
+    expect(groups[0]?.key).toBe("__PRIORITY_SUBJECT__")
+    expect(groups[0]?.teachers.map((t) => t.id)).toEqual(["gv-eng-1"])
+
+    const deptLabels = groups.slice(1).map((g) => g.label)
+    expect(deptLabels).toContain("Tổ Khoa học Tự nhiên")
+    expect(deptLabels).toContain("Chưa phân Tổ chuyên môn")
+  })
+
+  // ==========================================================================
+  // SCENARIO 14: Ghép môn luân phiên & gán Giáo viên cho môn luân phiên (Tuần lẻ / chẵn)
+  // ==========================================================================
+  it("Scenario 14: pairs alternating subjects onto half-week locked cells and validates ALT_TEACHER assignment by week parity", () => {
+    const cfg = makeBaseConfig()
+    const classes = [
+      { id: "c-61", className: "6.1_CS1", grade: "6", level: "THCS", homeroomTeacherId: "gv-hr" },
+      { id: "c-62", className: "6.2_CS1", grade: "6", level: "THCS", homeroomTeacherId: null },
+    ]
+    const teachersById = new Map([
+      ["gv-math", { id: "gv-math", teacherCode: "0201000799", teacherName: "Nguyễn Thị Hoa" }],
+      ["gv-gdcd", { id: "gv-gdcd", teacherCode: "0201000888", teacherName: "Trần Thị GDCD" }],
+    ])
+
+    // Class 6.1 has Math on Tuesday Morning P4 (ODD week, locked), and Class 6.2 has gv-gdcd teaching EVEN week at same period
+    const baseSlots = [
+      {
+        classId: "c-61",
+        className: "6.1_CS1",
+        grade: "6",
+        level: "THCS",
+        dayOfWeek: "TUESDAY" as const,
+        session: "MORNING" as const,
+        periodNumber: 4,
+        subjectId: "sub-math",
+        subjectCode: "TOAN",
+        subjectName: "Toán học",
+        teacherId: "gv-math",
+        teacherCode: "0201000799",
+        teacherName: "Nguyễn Thị Hoa",
+        weekType: "ODD" as const,
+        isLocked: true,
+      },
+      {
+        classId: "c-62",
+        className: "6.2_CS1",
+        grade: "6",
+        level: "THCS",
+        dayOfWeek: "TUESDAY" as const,
+        session: "MORNING" as const,
+        periodNumber: 4,
+        subjectId: "sub-gdcd",
+        subjectCode: "GDCD",
+        subjectName: "GDCD",
+        teacherId: "gv-gdcd",
+        teacherCode: "0201000888",
+        teacherName: "Trần Thị GDCD",
+        weekType: "ODD" as const, // Teaching 6.2 on ODD week -> FREE on EVEN week!
+        isLocked: true,
+      },
+    ]
+
+    const slotByCell = new Map(
+      baseSlots.map((s) => [makeSlotCellKey(s.classId, s.dayOfWeek, s.session, s.periodNumber), s])
+    )
+
+    // 1) Dragging a 0.5-period GDCD quota activity onto 6.1's locked ODD slot pairs it as EVEN alternating subject
+    const gdcdQuota = {
+      classId: "c-61",
+      className: "6.1_CS1",
+      grade: "6",
+      level: "THCS",
+      educationSystem: "HNS",
+      studyProgram: "Hệ S",
+      subjectId: "sub-gdcd",
+      subjectCode: "GDCD",
+      subjectName: "GDCD",
+      weeklyQuota: 0.5,
+      cycleQuota: 1,
+      cycleWeeks: 2,
+      scheduledWeeklyEquivalent: 0,
+      missingWeeklyPeriods: 0.5,
+      overScheduledWeeklyPeriods: 0,
+      primaryTeacherId: null,
+      primaryTeacherCode: null,
+      primaryTeacherName: null,
+      coTeacherId: null,
+      coTeacherCode: null,
+      coTeacherName: null,
+      assignmentSource: "MISSING" as const,
+      status: "MISSING_TEACHER" as const,
+    }
+
+    const pairEval = evaluateCellDropTarget({
+      dragged: { kind: "QUOTA_ACTIVITY", item: gdcdQuota, weekType: "EVEN" },
+      targetClass: classes[0],
+      dayOfWeek: "TUESDAY",
+      session: "MORNING",
+      periodNumber: 4,
+      currentSlots: baseSlots,
+      slotByCell,
+      quotaItems: [gdcdQuota],
+      teachersById,
+      campusId: "cs1",
+      config: cfg,
+      busySlots: [],
+      externalActiveSlots: [],
+      travelRules: [],
+      autoLockManual: true,
+    })
+    expect(pairEval.status).toBe("SWAP_VALID")
+    expect(pairEval.resolvedSlot?.subjectId).toBe("sub-math")
+    expect(pairEval.resolvedSlot?.altSubjectId).toBe("sub-gdcd")
+    expect(pairEval.resolvedSlot?.altSubjectName).toBe("GDCD")
+
+    // 2) Dragging gv-gdcd in ALT_TEACHER mode onto 6.1 Tuesday Morning P4 succeeds because gv-gdcd only teaches 6.2 on ODD week (free on EVEN week!)
+    const pairedSlots = [pairEval.resolvedSlot!, baseSlots[1]]
+    const pairedMap = new Map(
+      pairedSlots.map((s) => [makeSlotCellKey(s.classId, s.dayOfWeek, s.session, s.periodNumber), s])
+    )
+    const assignAltOk = evaluateCellDropTarget({
+      dragged: {
+        kind: "TEACHER",
+        teacherId: "gv-gdcd",
+        teacherCode: "0201000888",
+        teacherName: "Trần Thị GDCD",
+        roleMode: "ALT_TEACHER",
+      },
+      targetClass: classes[0],
+      dayOfWeek: "TUESDAY",
+      session: "MORNING",
+      periodNumber: 4,
+      currentSlots: pairedSlots,
+      slotByCell: pairedMap,
+      quotaItems: [gdcdQuota],
+      teachersById,
+      campusId: "cs1",
+      config: cfg,
+      busySlots: [],
+      externalActiveSlots: [],
+      travelRules: [],
+      autoLockManual: true,
+    })
+    expect(assignAltOk.status).toBe("SWAP_VALID")
+    expect(assignAltOk.resolvedSlot?.altTeacherId).toBe("gv-gdcd")
+    expect(assignAltOk.resolvedSlot?.teacherId).toBe("gv-math")
+
+    // 3) If gv-gdcd is ALREADY teaching 6.2 on EVEN week, ALT_TEACHER drop catches the EVEN-week conflict!
+    const conflictSlots = [
+      pairEval.resolvedSlot!,
+      { ...baseSlots[1], weekType: "EVEN" as const },
+    ]
+    const conflictMap = new Map(
+      conflictSlots.map((s) => [makeSlotCellKey(s.classId, s.dayOfWeek, s.session, s.periodNumber), s])
+    )
+    const assignAltConflict = evaluateCellDropTarget({
+      dragged: {
+        kind: "TEACHER",
+        teacherId: "gv-gdcd",
+        teacherCode: "0201000888",
+        teacherName: "Trần Thị GDCD",
+        roleMode: "ALT_TEACHER",
+      },
+      targetClass: classes[0],
+      dayOfWeek: "TUESDAY",
+      session: "MORNING",
+      periodNumber: 4,
+      currentSlots: conflictSlots,
+      slotByCell: conflictMap,
+      quotaItems: [gdcdQuota],
+      teachersById,
+      campusId: "cs1",
+      config: cfg,
+      busySlots: [],
+      externalActiveSlots: [],
+      travelRules: [],
+      autoLockManual: true,
+    })
+    expect(assignAltConflict.status).toBe("CONFLICT")
+    expect(assignAltConflict.reason).toContain("6.2_CS1")
+  })
+
+  // ==========================================================================
+  // SCENARIO 15: Tự động đồng bộ GV môn luân phiên & môn chính từ Phân công giảng dạy
+  // ==========================================================================
+  it("Scenario 15: auto-hydrates unassigned primary and alternating (luân phiên) teachers from TeachingAssignment / SpecialAssignment and pairs 0.5-period activities in auto-scheduler", () => {
+    const classes = [
+      {
+        id: "cls-62",
+        className: "6.2_CS1",
+        grade: "6",
+        level: "THCS",
+        educationSystem: "HNS",
+      },
+      {
+        id: "cls-63",
+        className: "6.3_CS1",
+        grade: "6",
+        level: "THCS",
+        educationSystem: "HNS",
+      },
+    ]
+    const subjects = [
+      { id: "sub-clb", subjectCode: "CLB", subjectName: "CLB" },
+      { id: "sub-cxxh", subjectCode: "GCX", subjectName: "CXXH" },
+      { id: "sub-music", subjectCode: "ANA", subjectName: "Âm nhạc" },
+    ]
+    const teachers = [
+      { id: "gv-clb", teacherCode: "0201000682", teacherName: "Huỳnh Thị Tường Vi" },
+      { id: "gv-cxxh", teacherCode: "0201000086", teacherName: "Nguyễn Thị Hằng" },
+      { id: "gv-music", teacherCode: "0201000092", teacherName: "Nguyễn Thị Trà Mi" },
+      { id: "gv-spec-cxxh", teacherCode: "0201000175", teacherName: "Đinh Thị Phương Thanh" },
+    ]
+
+    const rawSlots = [
+      {
+        classId: "cls-62",
+        className: "6.2_CS1",
+        grade: "6",
+        level: "THCS",
+        dayOfWeek: "TUESDAY" as const,
+        session: "AFTERNOON" as const,
+        periodNumber: 1,
+        subjectId: "sub-clb",
+        subjectCode: "CLB",
+        subjectName: "CLB",
+        teacherId: "gv-clb",
+        teacherCode: "0201000682",
+        teacherName: "Huỳnh Thị Tường Vi",
+        weekType: "ODD" as const,
+        altSubjectId: null,
+        altSubjectName: "CXXH", // Saved with label only and altTeacherId === null!
+        altTeacherId: null,
+        altTeacherCode: null,
+        altTeacherName: null,
+      },
+      {
+        classId: "cls-62",
+        className: "6.2_CS1",
+        grade: "6",
+        level: "THCS",
+        dayOfWeek: "FRIDAY" as const,
+        session: "AFTERNOON" as const,
+        periodNumber: 3,
+        subjectId: "sub-music",
+        subjectCode: "ANA",
+        subjectName: "Âm nhạc",
+        teacherId: null, // Unassigned on slot, but assigned in TeachingAssignment!
+        teacherCode: null,
+        teacherName: null,
+        weekType: "ALL" as const,
+      },
+      {
+        classId: "cls-63",
+        className: "6.3_CS1",
+        grade: "6",
+        level: "THCS",
+        dayOfWeek: "TUESDAY" as const,
+        session: "AFTERNOON" as const,
+        periodNumber: 2,
+        subjectId: "sub-clb",
+        subjectCode: "CLB",
+        subjectName: "CLB",
+        teacherId: "gv-clb",
+        teacherCode: "0201000682",
+        teacherName: "Huỳnh Thị Tường Vi",
+        weekType: "ODD" as const,
+        altSubjectId: "sub-cxxh",
+        altSubjectName: "CXXH",
+        altTeacherId: null, // No TeachingAssignment on 6.3, only SpecialTeachingAssignment!
+      },
+    ]
+
+    const quotaItems = reconcileQuotasAndAssignments({
+      classes,
+      subjects,
+      teachers,
+      subjectQuotas: [
+        {
+          id: "q-clb",
+          subjectId: "sub-clb",
+          academicYearId: "ay-2026",
+          studyProgram: "Hệ S",
+          quota: 0,
+          quotaPrimary: 0,
+          quotaMiddle: 0,
+          quotaHigh: 0,
+          quotaG1: 0,
+          quotaG2: 0,
+          quotaG3: 0,
+          quotaG4: 0,
+          quotaG5: 0,
+          quotaG6: 0.5,
+          quotaG7: 0,
+          quotaG8: 0,
+          quotaG9: 0,
+          quotaG10: 0,
+          quotaG11: 0,
+          quotaG12: 0,
+        },
+        {
+          id: "q-cxxh",
+          subjectId: "sub-cxxh",
+          academicYearId: "ay-2026",
+          studyProgram: "Hệ S",
+          quota: 0,
+          quotaPrimary: 0,
+          quotaMiddle: 0,
+          quotaHigh: 0,
+          quotaG1: 0,
+          quotaG2: 0,
+          quotaG3: 0,
+          quotaG4: 0,
+          quotaG5: 0,
+          quotaG6: 0.5,
+          quotaG7: 0,
+          quotaG8: 0,
+          quotaG9: 0,
+          quotaG10: 0,
+          quotaG11: 0,
+          quotaG12: 0,
+        },
+        {
+          id: "q-music",
+          subjectId: "sub-music",
+          academicYearId: "ay-2026",
+          studyProgram: "Hệ S",
+          quota: 0,
+          quotaPrimary: 0,
+          quotaMiddle: 0,
+          quotaHigh: 0,
+          quotaG1: 0,
+          quotaG2: 0,
+          quotaG3: 0,
+          quotaG4: 0,
+          quotaG5: 0,
+          quotaG6: 1,
+          quotaG7: 0,
+          quotaG8: 0,
+          quotaG9: 0,
+          quotaG10: 0,
+          quotaG11: 0,
+          quotaG12: 0,
+        },
+      ],
+      teachingAssignments: [
+        {
+          id: "ta-1",
+          classId: "cls-62",
+          subjectId: "sub-clb",
+          teacherId: "gv-clb",
+          academicYearId: "ay-2026",
+          semester: 1,
+        },
+        {
+          id: "ta-2",
+          classId: "cls-62",
+          subjectId: "sub-cxxh",
+          teacherId: "gv-cxxh",
+          academicYearId: "ay-2026",
+          semester: 1,
+        },
+        {
+          id: "ta-3",
+          classId: "cls-62",
+          subjectId: "sub-music",
+          teacherId: "gv-music",
+          academicYearId: "ay-2026",
+          semester: 1,
+        },
+      ],
+      specialAssignments: [
+        {
+          classId: "cls-62",
+          teacherId: "gv-spec-cxxh", // TeachingAssignment on cls-62 must win over SpecialAssignment!
+          academicYearId: "ay-2026",
+          semester: 1,
+          specialSubjectCode: "CXXH",
+        },
+        {
+          classId: "cls-63",
+          teacherId: "gv-spec-cxxh", // Fallback when TeachingAssignment is empty on cls-63!
+          academicYearId: "ay-2026",
+          semester: 1,
+          specialSubjectCode: "CXXH",
+        },
+      ],
+      scheduledSlots: rawSlots,
+      cycleWeeks: 2,
+    })
+
+    const hydrated = hydrateSlotsFromAssignments({
+      slots: rawSlots,
+      quotaItems,
+      subjects,
+      mode: "FILL_MISSING",
+    })
+
+    expect(hydrated.filledPrimaryCount).toBe(1)
+    expect(hydrated.filledAltCount).toBe(2)
+
+    // 6.2_CS1: Luân phiên CXXH automatically gets Nguyễn Thị Hằng (TeachingAssignment priority #1)
+    const slot62Alt = hydrated.slots[0]
+    expect(slot62Alt.altSubjectId).toBe("sub-cxxh")
+    expect(slot62Alt.altTeacherId).toBe("gv-cxxh")
+    expect(slot62Alt.altTeacherCode).toBe("0201000086")
+    expect(slot62Alt.altTeacherName).toBe("Nguyễn Thị Hằng")
+
+    // 6.2_CS1: Âm nhạc automatically gets Nguyễn Thị Trà Mi
+    const slot62Music = hydrated.slots[1]
+    expect(slot62Music.teacherId).toBe("gv-music")
+    expect(slot62Music.teacherName).toBe("Nguyễn Thị Trà Mi")
+
+    // 6.3_CS1: Luân phiên CXXH falls back to SpecialTeachingAssignment (Đinh Thị Phương Thanh)
+    const slot63Alt = hydrated.slots[2]
+    expect(slot63Alt.altTeacherId).toBe("gv-spec-cxxh")
+    expect(slot63Alt.altTeacherName).toBe("Đinh Thị Phương Thanh")
+
+    // Auto-scheduler pairs CLB (0.5) + CXXH (0.5) for 6.2_CS1 into a single cell with both teachers!
+    const cfg = makeBaseConfig()
+    const freshQuotas62 = reconcileQuotasAndAssignments({
+      classes: [classes[0]],
+      subjects: [subjects[0], subjects[1]],
+      teachers,
+      subjectQuotas: [
+        {
+          id: "q-clb",
+          subjectId: "sub-clb",
+          academicYearId: "ay-2026",
+          studyProgram: "Hệ S",
+          quota: 0,
+          quotaPrimary: 0,
+          quotaMiddle: 0,
+          quotaHigh: 0,
+          quotaG1: 0,
+          quotaG2: 0,
+          quotaG3: 0,
+          quotaG4: 0,
+          quotaG5: 0,
+          quotaG6: 0.5,
+          quotaG7: 0,
+          quotaG8: 0,
+          quotaG9: 0,
+          quotaG10: 0,
+          quotaG11: 0,
+          quotaG12: 0,
+        },
+        {
+          id: "q-cxxh",
+          subjectId: "sub-cxxh",
+          academicYearId: "ay-2026",
+          studyProgram: "Hệ S",
+          quota: 0,
+          quotaPrimary: 0,
+          quotaMiddle: 0,
+          quotaHigh: 0,
+          quotaG1: 0,
+          quotaG2: 0,
+          quotaG3: 0,
+          quotaG4: 0,
+          quotaG5: 0,
+          quotaG6: 0.5,
+          quotaG7: 0,
+          quotaG8: 0,
+          quotaG9: 0,
+          quotaG10: 0,
+          quotaG11: 0,
+          quotaG12: 0,
+        },
+      ],
+      teachingAssignments: [
+        {
+          id: "ta-1",
+          classId: "cls-62",
+          subjectId: "sub-clb",
+          teacherId: "gv-clb",
+          academicYearId: "ay-2026",
+          semester: 1,
+        },
+        {
+          id: "ta-2",
+          classId: "cls-62",
+          subjectId: "sub-cxxh",
+          teacherId: "gv-cxxh",
+          academicYearId: "ay-2026",
+          semester: 1,
+        },
+      ],
+      scheduledSlots: [],
+      cycleWeeks: 2,
+    })
+
+    const autoRes = runAutoScheduler({
+      campusId: "cs1",
+      academicYearId: "ay-2026",
+      semester: 1,
+      config: cfg,
+      classes: [classes[0]],
+      teachers,
+      quotaItems: freshQuotas62,
+      existingSlots: [],
+    })
+
+    expect(autoRes.outcome).toBe("COMPLETED")
+    expect(autoRes.generatedSlots).toHaveLength(1)
+    expect(autoRes.generatedSlots[0].altSubjectId).toBeDefined()
+    expect(autoRes.generatedSlots[0].altTeacherId).toBeDefined()
+  })
+
+  it("Scenario 14: reconciles, live-tracks, hydrates, and independently auto-schedules ESL GVVN + GVNN period splits (e.g. 3 GVVN + 5 GVNN = 8 periods)", () => {
+    const cfg = makeBaseConfig()
+    const classes = [
+      {
+        id: "cls-61",
+        className: "6.1_CS1",
+        grade: "6",
+        level: "THCS",
+        educationSystem: "Hệ S",
+      },
+      {
+        id: "cls-62",
+        className: "6.2_CS1",
+        grade: "6",
+        level: "THCS",
+        educationSystem: "Hệ S",
+      },
+    ]
+    const subjects = [
+      { id: "sub-esl", subjectCode: "ESL", subjectName: "ESL", category: "BILINGUAL" },
+    ]
+    const teachers = [
+      {
+        id: "gv-vn-1",
+        teacherCode: "GVVN01",
+        teacherName: "Nguyễn Thị Hồng Nhung TA",
+        campusId: "cs1",
+        teacherGroup: "GVVN",
+      },
+      {
+        id: "gv-nn-1",
+        teacherCode: "GVNN01",
+        teacherName: "Howes Richard John",
+        campusId: "cs1",
+        teacherGroup: "GVNN",
+      },
+    ]
+
+    // Grade 6 default split is 4 GVVN + 4 GVNN, while class 6.1_CS1 overrides to 3 GVVN + 5 GVNN
+    const subjectQuotas = [
+      {
+        id: "sq-esl-s",
+        subjectId: "sub-esl",
+        academicYearId: "ay-2026",
+        studyProgram: "Hệ S",
+        quota: 0,
+        quotaPrimary: 0,
+        quotaMiddle: 32,
+        quotaHigh: 0,
+        quotaG1: 0,
+        quotaG2: 0,
+        quotaG3: 0,
+        quotaG4: 0,
+        quotaG5: 0,
+        quotaG6: 8,
+        quotaG7: 8,
+        quotaG8: 8,
+        quotaG9: 8,
+        quotaG10: 0,
+        quotaG11: 0,
+        quotaG12: 0,
+        teacherSplitJson: JSON.stringify({ quotaG6: { gvvn: 4, gvnn: 4 } }),
+      },
+    ]
+
+    const reconciled = reconcileQuotasAndAssignments({
+      classes,
+      subjects,
+      teachers,
+      subjectQuotas,
+      teachingAssignments: [
+        // 6.1_CS1 has explicit 3 GVVN + 5 GVNN
+        {
+          id: "ta-61-vn",
+          classId: "cls-61",
+          subjectId: "sub-esl",
+          teacherId: "gv-vn-1",
+          academicYearId: "ay-2026",
+          semester: 1,
+          weeklyPeriods: 3,
+          teacherRole: "GVVN",
+        },
+        {
+          id: "ta-61-nn",
+          classId: "cls-61",
+          subjectId: "sub-esl",
+          teacherId: "gv-nn-1",
+          academicYearId: "ay-2026",
+          semester: 1,
+          weeklyPeriods: 5,
+          teacherRole: "GVNN",
+        },
+        // 6.2_CS1 only has GVVN assigned so far -> should flag MISSING_TEACHER because quotaGvnnPeriods = 4
+        {
+          id: "ta-62-vn",
+          classId: "cls-62",
+          subjectId: "sub-esl",
+          teacherId: "gv-vn-1",
+          academicYearId: "ay-2026",
+          semester: 1,
+          teacherRole: "GVVN",
+        },
+      ],
+      scheduledSlots: [],
+      cycleWeeks: 2,
+    })
+
+    const item61 = reconciled.find((i) => i.classId === "cls-61")!
+    const item62 = reconciled.find((i) => i.classId === "cls-62")!
+
+    expect(item61.isDualGvvnGvnn).toBe(true)
+    expect(item61.assignedGvvnPeriods).toBe(3)
+    expect(item61.assignedGvnnPeriods).toBe(5)
+    expect(item61.gvvnTeacherId).toBe("gv-vn-1")
+    expect(item61.gvnnTeacherId).toBe("gv-nn-1")
+    expect(item61.status).toBe("UNDER_SCHEDULED")
+
+    // 6.2_CS1 inherits grade split 4 + 4 and detects missing GVNN!
+    expect(item62.quotaGvvnPeriods).toBe(4)
+    expect(item62.quotaGvnnPeriods).toBe(4)
+    expect(item62.assignedGvvnPeriods).toBe(4)
+    expect(item62.assignedGvnnPeriods).toBe(0)
+    expect(item62.gvnnTeacherId).toBeNull()
+    expect(item62.status).toBe("MISSING_TEACHER")
+
+    // Auto-scheduler generates 3 independent GVVN slots + 5 independent GVNN slots = 8 slots for 6.1_CS1
+    const autoRes = runAutoScheduler({
+      campusId: "cs1",
+      academicYearId: "ay-2026",
+      semester: 1,
+      config: cfg,
+      classes: [classes[0]],
+      teachers,
+      quotaItems: [item61],
+      existingSlots: [],
+    })
+
+    expect(autoRes.outcome).toBe("COMPLETED")
+    expect(autoRes.generatedSlots).toHaveLength(8)
+    const vnSlots = autoRes.generatedSlots.filter((s) => s.teacherId === "gv-vn-1")
+    const nnSlots = autoRes.generatedSlots.filter((s) => s.teacherId === "gv-nn-1")
+    expect(vnSlots).toHaveLength(3)
+    expect(nnSlots).toHaveLength(5)
+    expect(autoRes.generatedSlots.every((s) => !s.coTeacherId)).toBe(true)
+
+    // Live recompute tracks scheduledGvvnPeriods = 3 & scheduledGvnnPeriods = 5 -> status OK
+    const liveAfter = recomputeLiveQuotaItems([item61], autoRes.generatedSlots)
+    expect(liveAfter[0].scheduledGvvnPeriods).toBe(3)
+    expect(liveAfter[0].scheduledGvnnPeriods).toBe(5)
+    expect(liveAfter[0].status).toBe("OK")
+
+    // Hydrate in SYNC_ALL_ASSIGNED mode preserves both GVVN (3) and GVNN (5) slots without overwriting!
+    const synced = hydrateSlotsFromAssignments({
+      slots: autoRes.generatedSlots,
+      quotaItems: [item61],
+      subjects,
+      mode: "SYNC_ALL_ASSIGNED",
+    })
+    expect(synced.slots.filter((s) => s.teacherId === "gv-vn-1")).toHaveLength(3)
+    expect(synced.slots.filter((s) => s.teacherId === "gv-nn-1")).toHaveLength(5)
+    expect(synced.slots.every((s) => !s.coTeacherId)).toBe(true)
+  })
+
+  it("Scenario 17: computes grade-level subject breakdown and 40-period weekly totals including paired alternating (Luân phiên) cells", () => {
+    const classes = [
+      { id: "cls-61", className: "6.1_CS1", grade: "6", level: "THCS", educationSystem: "HNS" },
+      { id: "cls-62", className: "6.2_CS1", grade: "6", level: "THCS", educationSystem: "HNS" },
+    ]
+    const subjects = [
+      { id: "sub-math", subjectCode: "TOA", subjectName: "Toán học" },
+      { id: "sub-gdcd", subjectCode: "GDCD", subjectName: "GDCD" },
+      { id: "sub-esl", subjectCode: "ESL", subjectName: "ESL" },
+    ]
+    const quotaItems = [
+      {
+        classId: "cls-61",
+        className: "6.1_CS1",
+        grade: "6",
+        level: "THCS",
+        educationSystem: "HNS",
+        studyProgram: "Hệ S",
+        subjectId: "sub-math",
+        subjectCode: "TOA",
+        subjectName: "Toán học",
+        weeklyQuota: 4.5,
+        cycleQuota: 9,
+        cycleWeeks: 2,
+        scheduledWeeklyEquivalent: 4.5,
+        missingWeeklyPeriods: 0,
+        overScheduledWeeklyPeriods: 0,
+        primaryTeacherId: "gv-1",
+        primaryTeacherCode: "GV01",
+        primaryTeacherName: "GV Toán",
+        coTeacherId: null,
+        coTeacherCode: null,
+        coTeacherName: null,
+        assignmentSource: "TEACHING_ASSIGNMENT" as const,
+        status: "OK" as const,
+      },
+      {
+        classId: "cls-61",
+        className: "6.1_CS1",
+        grade: "6",
+        level: "THCS",
+        educationSystem: "HNS",
+        studyProgram: "Hệ S",
+        subjectId: "sub-gdcd",
+        subjectCode: "GDCD",
+        subjectName: "GDCD",
+        weeklyQuota: 0.5,
+        cycleQuota: 1,
+        cycleWeeks: 2,
+        scheduledWeeklyEquivalent: 0.5,
+        missingWeeklyPeriods: 0,
+        overScheduledWeeklyPeriods: 0,
+        primaryTeacherId: "gv-2",
+        primaryTeacherCode: "GV02",
+        primaryTeacherName: "GV GDCD",
+        coTeacherId: null,
+        coTeacherCode: null,
+        coTeacherName: null,
+        assignmentSource: "TEACHING_ASSIGNMENT" as const,
+        status: "OK" as const,
+      },
+      {
+        classId: "cls-61",
+        className: "6.1_CS1",
+        grade: "6",
+        level: "THCS",
+        educationSystem: "HNS",
+        studyProgram: "Hệ S",
+        subjectId: "sub-esl",
+        subjectCode: "ESL",
+        subjectName: "ESL",
+        weeklyQuota: 35,
+        cycleQuota: 70,
+        cycleWeeks: 2,
+        scheduledWeeklyEquivalent: 35,
+        missingWeeklyPeriods: 0,
+        overScheduledWeeklyPeriods: 0,
+        primaryTeacherId: "gv-3",
+        primaryTeacherCode: "GV03",
+        primaryTeacherName: "GV ESL",
+        coTeacherId: null,
+        coTeacherCode: null,
+        coTeacherName: null,
+        assignmentSource: "TEACHING_ASSIGNMENT" as const,
+        status: "OK" as const,
+      },
+    ]
+
+    // Build 39 full-week slots (4 Math + 35 ESL) + 1 paired ODD/EVEN slot (0.5 Math + 0.5 GDCD) = 40.0 periods/week!
+    const slots: any[] = []
+    for (let i = 0; i < 4; i++) {
+      slots.push({
+        classId: "cls-61",
+        className: "6.1_CS1",
+        grade: "6",
+        level: "THCS",
+        dayOfWeek: "MON",
+        session: "MORNING",
+        periodNumber: i + 1,
+        subjectId: "sub-math",
+        subjectName: "Toán học",
+        weekType: "ALL",
+      })
+    }
+    slots.push({
+      classId: "cls-61",
+      className: "6.1_CS1",
+      grade: "6",
+      level: "THCS",
+      dayOfWeek: "TUE",
+      session: "MORNING",
+      periodNumber: 4,
+      subjectId: "sub-math",
+      subjectName: "Toán học",
+      weekType: "ODD",
+      altSubjectId: "sub-gdcd",
+      altSubjectName: "GDCD",
+    })
+    for (let i = 0; i < 35; i++) {
+      slots.push({
+        classId: "cls-61",
+        className: "6.1_CS1",
+        grade: "6",
+        level: "THCS",
+        dayOfWeek: "WED",
+        session: "AFTERNOON",
+        periodNumber: (i % 4) + 1,
+        subjectId: "sub-esl",
+        subjectName: "ESL",
+        weekType: "ALL",
+      })
+    }
+
+    const summary = computeClassSlotSummary(slots, subjects)
+    expect(summary.scheduledByClass.get("cls-61")).toBe(40)
+    expect(summary.scheduledByClassSubject.get("cls-61::sub-math")).toBe(4.5)
+    expect(summary.scheduledByClassSubject.get("cls-61::sub-gdcd")).toBe(0.5)
+
+    const gradeReport = buildSingleGradeStats({
+      grade: "6",
+      classes,
+      quotaItems: [
+        ...quotaItems,
+        ...quotaItems.map((q) => ({ ...q, classId: "cls-62", className: "6.2_CS1" })),
+      ],
+      slots,
+      subjects,
+      targetWeeklyPeriods: 40,
+    })
+
+    expect(gradeReport.totalGradeQuota).toBe(40)
+    expect(gradeReport.quotaDiffFromStandard).toBe(0)
+    expect(gradeReport.classes[0].scheduledTotal).toBe(40)
+    expect(gradeReport.classes[0].diffFromStandard).toBe(0)
+    expect(gradeReport.classes[1].scheduledTotal).toBe(0)
+    expect(gradeReport.classes[1].diffFromStandard).toBe(-40)
+
+    const matrix = buildAllGradesMatrixStats({
+      classes,
+      quotaItems: [
+        ...quotaItems,
+        ...quotaItems.map((q) => ({ ...q, classId: "cls-62", className: "6.2_CS1" })),
+      ],
+      slots,
+      subjects,
+      targetWeeklyPeriods: 40,
+    })
+    expect(matrix.gradeColumns).toHaveLength(1)
+    expect(matrix.gradeColumns[0].totalQuota).toBe(40)
+    expect(matrix.gradeColumns[0].avgScheduled).toBe(20)
   })
 })

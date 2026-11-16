@@ -156,6 +156,17 @@ export interface SlotRecord {
   colorCode?: string | null
 }
 
+export interface TeacherAllocationDetail {
+  assignmentId?: string | null
+  teacherId: string
+  teacherCode: string
+  teacherName: string
+  teacherGroup: "GVVN" | "GVNN"
+  assignedPeriods: number
+  isExplicitPeriods: boolean
+  scheduledPeriods: number
+}
+
 export interface QuotaReconcileItem {
   classId: string
   className: string
@@ -180,6 +191,20 @@ export interface QuotaReconcileItem {
   coTeacherName: string | null
   assignmentSource: "TEACHING_ASSIGNMENT" | "CTQT_ASSIGNMENT" | "HOMEROOM" | "MISSING"
   status: "OK" | "MISSING_TEACHER" | "UNDER_SCHEDULED" | "OVER_SCHEDULED" | "NO_QUOTA_DEFINED"
+  isDualGvvnGvnn?: boolean
+  quotaGvvnPeriods?: number | null
+  quotaGvnnPeriods?: number | null
+  gvvnTeacherId?: string | null
+  gvvnTeacherCode?: string | null
+  gvvnTeacherName?: string | null
+  gvnnTeacherId?: string | null
+  gvnnTeacherCode?: string | null
+  gvnnTeacherName?: string | null
+  assignedGvvnPeriods?: number
+  assignedGvnnPeriods?: number
+  scheduledGvvnPeriods?: number
+  scheduledGvnnPeriods?: number
+  teacherAllocations?: TeacherAllocationDetail[]
 }
 
 export interface ValidationIssue {

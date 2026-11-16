@@ -26,6 +26,10 @@ const ALTER_TIMETABLE_SLOT_COLUMNS = [
   `ALTER TABLE "TimetableSlot" ADD COLUMN "notes" TEXT`,
   `ALTER TABLE "TimetableSlot" ADD COLUMN "updatedById" TEXT`,
   `ALTER TABLE "Subject" ADD COLUMN "isTimetableSchedulable" INTEGER NOT NULL DEFAULT 1`,
+  `ALTER TABLE "Teacher" ADD COLUMN "teacherGroup" TEXT NOT NULL DEFAULT 'GVVN'`,
+  `ALTER TABLE "SubjectQuota" ADD COLUMN "teacherSplitJson" TEXT NOT NULL DEFAULT ''`,
+  `ALTER TABLE "TeachingAssignment" ADD COLUMN "weeklyPeriods" REAL`,
+  `ALTER TABLE "TeachingAssignment" ADD COLUMN "teacherRole" TEXT`,
 ]
 
 const CREATE_TABLES_AND_INDEXES = [

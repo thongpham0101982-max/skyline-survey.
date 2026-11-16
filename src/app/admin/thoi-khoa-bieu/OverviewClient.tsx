@@ -52,7 +52,7 @@ export function OverviewClient({ initialData }: { initialData: OverviewData }) {
             href={buildPageHref("/admin/thoi-khoa-bieu/xep-lich")}
             className="px-3.5 py-2 rounded-xl bg-[#003B3A] text-white text-xs font-semibold hover:bg-[#005250] transition-colors"
           >
-            Mở trang xếp lịch
+            Mở Xếp TKB (Kéo & Thả)
           </Link>
           <Link
             href={buildPageHref("/admin/thoi-khoa-bieu/ban-hanh")}

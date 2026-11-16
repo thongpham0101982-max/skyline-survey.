@@ -6,6 +6,7 @@ import {
   type ExternalActiveSlot,
   type TravelRuleInput,
 } from "./validator"
+import { detectTeacherGroupFromName } from "./teacherGroupHelper"
 import type {
   DayOfWeekCode,
   QuotaReconcileItem,
@@ -43,6 +44,13 @@ export type DraggedTimetablePayload =
       useHomeroomTeacher: boolean
       weekType: WeekTypeCode
     }
+  | {
+      kind: "TEACHER"
+      teacherId: string
+      teacherCode: string
+      teacherName: string
+      roleMode: "PRIMARY" | "CO_TEACHER" | "ALT_TEACHER"
+    }
 
 export type DropEvaluationStatus =
   | "VALID"
@@ -67,6 +75,36 @@ export function recomputeLiveQuotaItems(
   currentSlots: SlotRecord[]
 ): QuotaReconcileItem[] {
   const scheduledMap = new Map<string, number>()
+  const scheduledByTeacher = new Map<string, number>()
+  const scheduledByGroup = new Map<string, number>()
+
+  // Build quick teacherId -> group lookup from baseQuotaItems
+  const knownTeacherGroup = new Map<string, "GVVN" | "GVNN">()
+  for (const item of baseQuotaItems) {
+    for (const alloc of item.teacherAllocations || []) {
+      knownTeacherGroup.set(alloc.teacherId, alloc.teacherGroup)
+    }
+  }
+
+  const recordTeacherSched = (
+    classId: string,
+    subId: string,
+    tId?: string | null,
+    tName?: string | null,
+    add: number = 1
+  ) => {
+    if (tId) {
+      const tk = `${classId}::${subId}::${tId}`
+      scheduledByTeacher.set(tk, (scheduledByTeacher.get(tk) || 0) + add)
+    }
+    if (tId || tName) {
+      const grp =
+        (tId ? knownTeacherGroup.get(tId) : undefined) ||
+        detectTeacherGroupFromName(tName)
+      const gk = `${classId}::${subId}::${grp}`
+      scheduledByGroup.set(gk, (scheduledByGroup.get(gk) || 0) + add)
+    }
+  }
 
   for (const s of currentSlots) {
     const wt = String(s.weekType || "ALL").toUpperCase()
@@ -74,24 +112,43 @@ export function recomputeLiveQuotaItems(
       const k = `${s.classId}::${s.subjectId}`
       const add = wt === "ALL" ? 1 : 0.5
       scheduledMap.set(k, (scheduledMap.get(k) || 0) + add)
+      recordTeacherSched(s.classId, s.subjectId, s.teacherId, s.teacherName, add)
     }
     if (wt !== "ALL" && s.altSubjectId) {
       const altK = `${s.classId}::${s.altSubjectId}`
       scheduledMap.set(altK, (scheduledMap.get(altK) || 0) + 0.5)
+      recordTeacherSched(s.classId, s.altSubjectId, s.altTeacherId, s.altTeacherName, 0.5)
     }
   }
 
   return baseQuotaItems.map((item) => {
     const scheduledWeeklyEquivalent =
       Math.round((scheduledMap.get(`${item.classId}::${item.subjectId}`) || 0) * 100) / 100
+    const scheduledGvvnPeriods =
+      Math.round((scheduledByGroup.get(`${item.classId}::${item.subjectId}::GVVN`) || 0) * 100) / 100
+    const scheduledGvnnPeriods =
+      Math.round((scheduledByGroup.get(`${item.classId}::${item.subjectId}::GVNN`) || 0) * 100) / 100
+    const nextAllocations = item.teacherAllocations?.map((alloc) => ({
+      ...alloc,
+      scheduledPeriods:
+        Math.round(
+          (scheduledByTeacher.get(`${item.classId}::${item.subjectId}::${alloc.teacherId}`) || 0) *
+            100
+        ) / 100,
+    }))
+
     const diff = Math.round((item.weeklyQuota - scheduledWeeklyEquivalent) * 100) / 100
     const missingWeeklyPeriods = diff > 0 ? diff : 0
     const overScheduledWeeklyPeriods = diff < 0 ? Math.abs(diff) : 0
 
+    const missingSplitSide =
+      (item.quotaGvvnPeriods && item.quotaGvvnPeriods > 0 && !item.gvvnTeacherId) ||
+      (item.quotaGvnnPeriods && item.quotaGvnnPeriods > 0 && !item.gvnnTeacherId)
+
     let status: QuotaReconcileItem["status"] = "OK"
     if (item.weeklyQuota <= 0) {
       status = "NO_QUOTA_DEFINED"
-    } else if (!item.primaryTeacherId) {
+    } else if (!item.primaryTeacherId || missingSplitSide) {
       status = "MISSING_TEACHER"
     } else if (missingWeeklyPeriods > 0) {
       status = "UNDER_SCHEDULED"
@@ -102,6 +159,9 @@ export function recomputeLiveQuotaItems(
     return {
       ...item,
       scheduledWeeklyEquivalent,
+      scheduledGvvnPeriods,
+      scheduledGvnnPeriods,
+      teacherAllocations: nextAllocations,
       missingWeeklyPeriods,
       overScheduledWeeklyPeriods,
       status,
@@ -416,6 +476,124 @@ export function evaluateCellDropTarget(params: {
     }
   }
 
+  if (dragged.kind === "TEACHER") {
+    if (dragged.roleMode === "ALT_TEACHER") {
+      if (
+        !existingTargetSlot ||
+        (!existingTargetSlot.altSubjectId && !existingTargetSlot.altSubjectName)
+      ) {
+        return {
+          status: "OUT_OF_COLUMN",
+          reason: "Ô tiết này chưa có môn luân phiên",
+          resolvedSlot: null,
+          swappedBackSlot: null,
+        }
+      }
+
+      const normalizedBaseWt =
+        existingTargetSlot.weekType && existingTargetSlot.weekType !== "ALL"
+          ? existingTargetSlot.weekType
+          : "ODD"
+
+      const candidate: SlotRecord = {
+        ...existingTargetSlot,
+        weekType: normalizedBaseWt,
+        altTeacherId: dragged.teacherId,
+        altTeacherCode: dragged.teacherCode || null,
+        altTeacherName: dragged.teacherName,
+      }
+
+      const otherSlots = currentSlots.filter(
+        (s) => makeSlotCellKey(s.classId, s.dayOfWeek, s.session, s.periodNumber) !== targetKey
+      )
+
+      const conflict = checkSinglePlacementConflict({
+        candidate,
+        campusId,
+        config,
+        otherSlots,
+        teachersById,
+        busySlots,
+        externalActiveSlots,
+        travelRules,
+      })
+
+      if (conflict) {
+        return {
+          status: "CONFLICT",
+          reason: conflict,
+          resolvedSlot: candidate,
+          swappedBackSlot: null,
+        }
+      }
+
+      return {
+        status: "SWAP_VALID",
+        reason: `Gán GV luân phiên (${existingTargetSlot.altSubjectName || "tuần còn lại"}): ${dragged.teacherName}`,
+        resolvedSlot: candidate,
+        swappedBackSlot: null,
+      }
+    }
+
+    if (!existingTargetSlot || (!existingTargetSlot.subjectId && !existingTargetSlot.subjectName)) {
+      return {
+        status: "OUT_OF_COLUMN",
+        reason: "Ô tiết chưa có môn học — hãy kéo môn học vào trước",
+        resolvedSlot: null,
+        swappedBackSlot: null,
+      }
+    }
+
+    const candidate: SlotRecord =
+      dragged.roleMode === "CO_TEACHER"
+        ? {
+            ...existingTargetSlot,
+            coTeacherId: dragged.teacherId,
+            coTeacherCode: dragged.teacherCode || null,
+            coTeacherName: dragged.teacherName,
+          }
+        : {
+            ...existingTargetSlot,
+            teacherId: dragged.teacherId,
+            teacherCode: dragged.teacherCode || null,
+            teacherName: dragged.teacherName,
+          }
+
+    const otherSlots = currentSlots.filter(
+      (s) => makeSlotCellKey(s.classId, s.dayOfWeek, s.session, s.periodNumber) !== targetKey
+    )
+
+    const conflict = checkSinglePlacementConflict({
+      candidate,
+      campusId,
+      config,
+      otherSlots,
+      teachersById,
+      busySlots,
+      externalActiveSlots,
+      travelRules,
+    })
+
+    if (conflict) {
+      return {
+        status: "CONFLICT",
+        reason: conflict,
+        resolvedSlot: candidate,
+        swappedBackSlot: null,
+      }
+    }
+
+    return {
+      status: "SWAP_VALID",
+      reason:
+        dragged.roleMode === "CO_TEACHER"
+          ? `Gán đồng giảng: ${dragged.teacherName}`
+          : `Gán GV: ${dragged.teacherName}`,
+      resolvedSlot: candidate,
+      swappedBackSlot: null,
+    }
+  }
+
   if (dragged.kind === "QUOTA_ACTIVITY") {
     if (dragged.item.classId !== targetClass.id) {
       return {
@@ -425,6 +603,103 @@ export function evaluateCellDropTarget(params: {
         swappedBackSlot: null,
       }
     }
+
+    const q = dragged.item
+    const isIndependentDual =
+      Boolean(q.isDualGvvnGvnn) ||
+      ((q.teacherAllocations?.length || 0) > 1 && q.assignmentSource !== "CTQT_ASSIGNMENT")
+
+    let teacherId: string | null = q.primaryTeacherId
+    let teacherCode: string | null = q.primaryTeacherCode
+    let teacherName: string | null = q.primaryTeacherName
+
+    if (isIndependentDual) {
+      const vnNeedsMore =
+        Boolean(q.gvvnTeacherId) &&
+        (q.scheduledGvvnPeriods ?? 0) + 0.001 < (q.assignedGvvnPeriods ?? 0)
+      const nnNeedsMore =
+        Boolean(q.gvnnTeacherId) &&
+        (q.scheduledGvnnPeriods ?? 0) + 0.001 < (q.assignedGvnnPeriods ?? 0)
+      if (!vnNeedsMore && nnNeedsMore && q.gvnnTeacherId) {
+        teacherId = q.gvnnTeacherId
+        teacherCode = q.gvnnTeacherCode || null
+        teacherName = q.gvnnTeacherName || null
+      } else if (vnNeedsMore && q.gvvnTeacherId) {
+        teacherId = q.gvvnTeacherId
+        teacherCode = q.gvvnTeacherCode || null
+        teacherName = q.gvvnTeacherName || null
+      }
+    }
+
+    if (!teacherId && /chào cờ|sinh hoạt|shl|hđtn|gdcđ/i.test(q.subjectName)) {
+      const hrId = String(targetClass.homeroomTeacherId || "")
+        .split(",")[0]
+        ?.trim()
+      const hrRef = hrId ? teachersById.get(hrId) : undefined
+      if (hrRef) {
+        teacherId = hrRef.id
+        teacherCode = hrRef.teacherCode || null
+        teacherName = hrRef.teacherName
+      }
+    }
+
+    // Smart Pairing: if target slot is half-week (ODD/EVEN) without an alternating subject yet,
+    // and the dragged activity is half-week / complementary, pair it into altSubject + altTeacher!
+    const existingWt = String(existingTargetSlot?.weekType || "ALL").toUpperCase()
+    const canPairAsAlternating =
+      existingTargetSlot &&
+      (existingWt === "ODD" || existingWt === "EVEN") &&
+      !existingTargetSlot.altSubjectId &&
+      !existingTargetSlot.altSubjectName &&
+      existingTargetSlot.subjectId !== q.subjectId &&
+      ((existingWt === "ODD" && dragged.weekType === "EVEN") ||
+        (existingWt === "EVEN" && dragged.weekType === "ODD") ||
+        q.missingWeeklyPeriods === 0.5 ||
+        dragged.weekType === existingWt)
+
+    if (canPairAsAlternating && existingTargetSlot) {
+      const pairedCandidate: SlotRecord = {
+        ...existingTargetSlot,
+        altSubjectId: q.subjectId,
+        altSubjectName: q.subjectName,
+        altTeacherId: teacherId,
+        altTeacherCode: teacherCode,
+        altTeacherName: teacherName,
+      }
+
+      const otherSlots = currentSlots.filter(
+        (s) => makeSlotCellKey(s.classId, s.dayOfWeek, s.session, s.periodNumber) !== targetKey
+      )
+
+      const conflict = checkSinglePlacementConflict({
+        candidate: pairedCandidate,
+        campusId,
+        config,
+        otherSlots,
+        teachersById,
+        busySlots,
+        externalActiveSlots,
+        travelRules,
+      })
+
+      if (conflict) {
+        return {
+          status: "CONFLICT",
+          reason: conflict,
+          resolvedSlot: pairedCandidate,
+          swappedBackSlot: null,
+        }
+      }
+
+      const remainingWeekLabel = existingWt === "ODD" ? "Tuần chẵn" : "Tuần lẻ"
+      return {
+        status: "SWAP_VALID",
+        reason: `Ghép môn luân phiên (${remainingWeekLabel}): ${q.subjectName}`,
+        resolvedSlot: pairedCandidate,
+        swappedBackSlot: null,
+      }
+    }
+
     if (existingTargetSlot?.isLocked) {
       return {
         status: "BLOCKED",
@@ -434,7 +709,6 @@ export function evaluateCellDropTarget(params: {
       }
     }
 
-    const q = dragged.item
     const candidate: SlotRecord = {
       classId: targetClass.id,
       className: targetClass.className,
@@ -446,12 +720,12 @@ export function evaluateCellDropTarget(params: {
       subjectId: q.subjectId,
       subjectCode: q.subjectCode,
       subjectName: q.subjectName,
-      teacherId: q.primaryTeacherId,
-      teacherCode: q.primaryTeacherCode,
-      teacherName: q.primaryTeacherName,
-      coTeacherId: q.coTeacherId,
-      coTeacherCode: q.coTeacherCode,
-      coTeacherName: q.coTeacherName,
+      teacherId,
+      teacherCode,
+      teacherName,
+      coTeacherId: isIndependentDual ? null : q.coTeacherId,
+      coTeacherCode: isIndependentDual ? null : q.coTeacherCode,
+      coTeacherName: isIndependentDual ? null : q.coTeacherName,
       weekType: dragged.weekType,
       isLocked: autoLockManual,
     }
@@ -482,22 +756,17 @@ export function evaluateCellDropTarget(params: {
 
     return {
       status: existingTargetSlot ? "SWAP_VALID" : "VALID",
-      reason: existingTargetSlot ? `Thay thế ${existingTargetSlot.subjectName}` : null,
+      reason: !teacherId
+        ? "Chưa gán GV — kéo GV vào ô sau khi thả"
+        : existingTargetSlot
+        ? `Thay thế ${existingTargetSlot.subjectName}`
+        : null,
       resolvedSlot: candidate,
       swappedBackSlot: null,
     }
   }
 
   // kind === "SCOPE_SUBJECT"
-  if (existingTargetSlot?.isLocked) {
-    return {
-      status: "BLOCKED",
-      reason: "Ô tiết đang khóa cố định",
-      resolvedSlot: null,
-      swappedBackSlot: null,
-    }
-  }
-
   const matchedQuota = quotaItems.find(
     (q) => q.classId === targetClass.id && q.subjectId === dragged.subjectId
   )
@@ -521,6 +790,67 @@ export function evaluateCellDropTarget(params: {
       coTeacherId = null
       coTeacherCode = null
       coTeacherName = null
+    }
+  }
+
+  const scopeExistingWt = String(existingTargetSlot?.weekType || "ALL").toUpperCase()
+  const canPairScopeAsAlternating =
+    existingTargetSlot &&
+    (scopeExistingWt === "ODD" || scopeExistingWt === "EVEN") &&
+    !existingTargetSlot.altSubjectId &&
+    !existingTargetSlot.altSubjectName &&
+    existingTargetSlot.subjectId !== dragged.subjectId &&
+    (dragged.weekType !== "ALL" || matchedQuota?.missingWeeklyPeriods === 0.5)
+
+  if (canPairScopeAsAlternating && existingTargetSlot) {
+    const pairedCandidate: SlotRecord = {
+      ...existingTargetSlot,
+      altSubjectId: dragged.subjectId,
+      altSubjectName: dragged.subjectName,
+      altTeacherId: teacherId,
+      altTeacherCode: teacherCode,
+      altTeacherName: teacherName,
+    }
+
+    const otherSlots = currentSlots.filter(
+      (s) => makeSlotCellKey(s.classId, s.dayOfWeek, s.session, s.periodNumber) !== targetKey
+    )
+
+    const conflict = checkSinglePlacementConflict({
+      candidate: pairedCandidate,
+      campusId,
+      config,
+      otherSlots,
+      teachersById,
+      busySlots,
+      externalActiveSlots,
+      travelRules,
+    })
+
+    if (conflict) {
+      return {
+        status: "CONFLICT",
+        reason: conflict,
+        resolvedSlot: pairedCandidate,
+        swappedBackSlot: null,
+      }
+    }
+
+    const remainingWeekLabel = scopeExistingWt === "ODD" ? "Tuần chẵn" : "Tuần lẻ"
+    return {
+      status: "SWAP_VALID",
+      reason: `Ghép môn luân phiên (${remainingWeekLabel}): ${dragged.subjectName}`,
+      resolvedSlot: pairedCandidate,
+      swappedBackSlot: null,
+    }
+  }
+
+  if (existingTargetSlot?.isLocked) {
+    return {
+      status: "BLOCKED",
+      reason: "Ô tiết đang khóa cố định",
+      resolvedSlot: null,
+      swappedBackSlot: null,
     }
   }
 

@@ -26,7 +26,19 @@ import {
   SHORT_DAY_LABELS,
   timeStringToMinutes,
 } from "@/lib/timetable/scopeResolver"
-import { reconcileQuotasAndAssignments } from "@/lib/timetable/quotaReconciler"
+import {
+  buildSubjectLookupMaps,
+  detectHighSchoolTrack,
+  hydrateSlotsFromAssignments,
+  reconcileQuotasAndAssignments,
+  type SpecialAssignmentRow,
+} from "@/lib/timetable/quotaReconciler"
+import {
+  parseTeacherSplitJson,
+  resolveTeacherGroup,
+  serializeTeacherSplitJson,
+  type TeacherGroupCode,
+} from "@/lib/timetable/teacherGroupHelper"
 import { validateTimetable } from "@/lib/timetable/validator"
 import { runAutoScheduler } from "@/lib/timetable/autoScheduler"
 import {
@@ -159,6 +171,42 @@ function revalidateTimetablePaths() {
   revalidatePath("/hocsinh/portal/thoi-khoa-bieu")
 }
 
+async function fetchSpecialAssignmentsForScope(
+  academicYearId: string,
+  semester: number,
+  classIds: string[]
+): Promise<SpecialAssignmentRow[]> {
+  if (!classIds.length) return []
+  const specialRepo = (prisma as any).specialTeachingAssignment
+  if (!specialRepo || typeof specialRepo.findMany !== "function") return []
+  try {
+    const rows = await specialRepo.findMany({
+      where: {
+        academicYearId,
+        semester,
+        classId: { in: classIds },
+        status: "ACTIVE",
+      },
+      include: {
+        subject: {
+          select: { id: true, code: true, name: true, legacySubjectId: true },
+        },
+      },
+    })
+    return (rows || []).map((r: any) => ({
+      classId: r.classId,
+      teacherId: r.teacherId,
+      academicYearId: r.academicYearId,
+      semester: r.semester,
+      legacySubjectId: r.subject?.legacySubjectId || null,
+      specialSubjectCode: r.subject?.code || null,
+      specialSubjectName: r.subject?.name || null,
+    }))
+  } catch {
+    return []
+  }
+}
+
 // ============================================================================
 // 1. TỔNG QUAN (/admin/thoi-khoa-bieu)
 // ============================================================================
@@ -186,6 +234,7 @@ export async function getTimetableOverviewAction(filters: TimetableFilterParams 
       versionSlotsRaw,
       legacyAudit,
       recentSubstitutions,
+      overviewSpecialAssignments,
     ] = await Promise.all([
       prisma.timetableVersion.findMany({
         where: {
@@ -246,9 +295,10 @@ export async function getTimetableOverviewAction(filters: TimetableFilterParams 
             take: 15,
           })
         : Promise.resolve([]),
+      fetchSpecialAssignmentsForScope(ws.selectedYearId, ws.semester, inScopeClassIds),
     ])
 
-    const mappedSlots = versionSlotsRaw.map((s) =>
+    const rawMappedSlots = versionSlotsRaw.map((s) =>
       mapDbSlotToRecord(s, ws.teacherCodeById, ws.subjectCodeById)
     )
 
@@ -256,12 +306,20 @@ export async function getTimetableOverviewAction(filters: TimetableFilterParams 
       classes: ws.inScopeClasses,
       subjects: ws.subjects,
       teachers: ws.teachers,
-      subjectQuotas,
-      teachingAssignments,
+      subjectQuotas: ws.enrichQuotas(subjectQuotas),
+      teachingAssignments: ws.enrichAssignments(teachingAssignments),
       ctqtAssignments,
-      scheduledSlots: mappedSlots,
+      specialAssignments: overviewSpecialAssignments,
+      scheduledSlots: rawMappedSlots,
       cycleWeeks: ws.config.cycleWeeks,
     })
+
+    const mappedSlots = hydrateSlotsFromAssignments({
+      slots: rawMappedSlots,
+      quotaItems,
+      subjects: ws.subjects,
+      mode: "FILL_MISSING",
+    }).slots
 
     const teachersById = new Map(ws.teachers.map((t) => [t.id, t]))
     const validationReport = validateTimetable({
@@ -369,11 +427,17 @@ export async function getTimetableConfigPageAction(filters: TimetableFilterParam
         subjectCode: s.subjectCode || "",
         subjectName: s.subjectName,
       })),
+      departments: ws.departments,
       teachers: ws.teachers.map((t) => ({
         id: t.id,
         teacherCode: t.teacherCode,
         teacherName: t.teacherName,
         campusId: t.campusId || "",
+        departmentId: t.departmentId || "",
+        departmentName: t.departmentName || "",
+        departmentIds: t.departmentIds || [],
+        allDepartmentNames: t.allDepartmentNames || "",
+        mainSubjectId: t.mainSubjectId || "",
       })),
       rooms: ws.rawRooms.map((r) => ({
         id: r.id,
@@ -783,41 +847,43 @@ export async function getTimetableQuotaPageAction(filters: TimetableFilterParams
 
     const classIds = targetClasses.map((c) => c.id)
 
-    const [subjectQuotas, teachingAssignments, ctqtAssignments, versionSlots] = await Promise.all([
-      prisma.subjectQuota.findMany({
-        where: { academicYearId: ws.selectedYearId },
-      }),
-      classIds.length > 0
-        ? prisma.teachingAssignment.findMany({
-            where: {
-              academicYearId: ws.selectedYearId,
-              semester: ws.semester,
-              classId: { in: classIds },
-            },
-          })
-        : Promise.resolve([]),
-      classIds.length > 0
-        ? prisma.ctqtTeachingAssignment
-            .findMany({
+    const [subjectQuotas, teachingAssignments, ctqtAssignments, versionSlots, specialAssignments] =
+      await Promise.all([
+        prisma.subjectQuota.findMany({
+          where: { academicYearId: ws.selectedYearId },
+        }),
+        classIds.length > 0
+          ? prisma.teachingAssignment.findMany({
               where: {
                 academicYearId: ws.selectedYearId,
                 semester: ws.semester,
                 classId: { in: classIds },
+              },
+            })
+          : Promise.resolve([]),
+        classIds.length > 0
+          ? prisma.ctqtTeachingAssignment
+              .findMany({
+                where: {
+                  academicYearId: ws.selectedYearId,
+                  semester: ws.semester,
+                  classId: { in: classIds },
+                  status: "ACTIVE",
+                },
+              })
+              .catch(() => [])
+          : Promise.resolve([]),
+        ws.selectedVersion && classIds.length > 0
+          ? prisma.timetableSlot.findMany({
+              where: {
+                versionId: ws.selectedVersion.id,
+                classId: { in: classIds },
                 status: "ACTIVE",
               },
             })
-            .catch(() => [])
-        : Promise.resolve([]),
-      ws.selectedVersion && classIds.length > 0
-        ? prisma.timetableSlot.findMany({
-            where: {
-              versionId: ws.selectedVersion.id,
-              classId: { in: classIds },
-              status: "ACTIVE",
-            },
-          })
-        : Promise.resolve([]),
-    ])
+          : Promise.resolve([]),
+        fetchSpecialAssignmentsForScope(ws.selectedYearId, ws.semester, classIds),
+      ])
 
     const mappedSlots = versionSlots.map((s) =>
       mapDbSlotToRecord(s, ws.teacherCodeById, ws.subjectCodeById)
@@ -827,9 +893,10 @@ export async function getTimetableQuotaPageAction(filters: TimetableFilterParams
       classes: targetClasses,
       subjects: ws.subjects,
       teachers: ws.teachers,
-      subjectQuotas,
-      teachingAssignments,
+      subjectQuotas: ws.enrichQuotas(subjectQuotas),
+      teachingAssignments: ws.enrichAssignments(teachingAssignments),
       ctqtAssignments,
+      specialAssignments,
       scheduledSlots: mappedSlots,
       cycleWeeks: ws.config.cycleWeeks,
     })
@@ -839,16 +906,31 @@ export async function getTimetableQuotaPageAction(filters: TimetableFilterParams
       filterContext: serializeFilterContext(ws),
       cycleWeeks: ws.config.cycleWeeks,
       items,
+      slots: mappedSlots,
+      scopedClasses: targetClasses.map((c) => ({
+        id: c.id,
+        className: c.className,
+        grade: c.grade,
+        level: c.level,
+        educationSystem: c.educationSystem || null,
+      })),
       subjects: ws.subjects.map((s) => ({
         id: s.id,
         subjectCode: s.subjectCode || "",
         subjectName: s.subjectName,
       })),
+      departments: ws.departments,
       teachers: ws.teachers.map((t) => ({
         id: t.id,
         teacherCode: t.teacherCode,
         teacherName: t.teacherName,
-        departmentName: t.departmentRel?.name || "",
+        campusId: t.campusId || "",
+        departmentId: t.departmentId || "",
+        departmentName: t.departmentName || "",
+        departmentIds: t.departmentIds || [],
+        allDepartmentNames: t.allDepartmentNames || "",
+        mainSubjectId: t.mainSubjectId || "",
+        teacherGroup: t.teacherGroup || "GVVN",
       })),
     }
   } catch (err) {
@@ -904,6 +986,257 @@ export async function updateSubjectGradeQuotaAction(payload: {
 
     revalidateTimetablePaths()
     revalidatePath("/admin/subjects")
+    return { success: true as const }
+  } catch (err) {
+    return formatActionError(err)
+  }
+}
+
+/**
+ * Saves grade-level GVVN / GVNN curriculum period split (`SubjectQuota.teacherSplitJson`)
+ * and synchronizes total grade quota (`quotaG{n}` / `quotaG{n}TN` / `quotaG{n}XH`).
+ */
+export async function updateSubjectGradeTeacherSplitAction(payload: {
+  academicYearId: string
+  campusId: string
+  subjectId: string
+  studyProgram: string
+  grade: string
+  className?: string | null
+  gvvnPeriods: number
+  gvnnPeriods: number
+}) {
+  try {
+    await requireTimetablePermission("canUpdate", {
+      subModuleCode: "TIMETABLE_QUOTA",
+      campusIds: [payload.campusId],
+    })
+    await ensureTimetableSchema()
+
+    const gradeNum = extractGradeNumber(payload.grade)
+    if (!gradeNum || gradeNum < 1 || gradeNum > 12) {
+      return { success: false as const, error: `Mã khối "${payload.grade}" không hợp lệ (K1–K12).` }
+    }
+
+    const gvvn = Math.max(0, Math.round(Number(payload.gvvnPeriods || 0) * 100) / 100)
+    const gvnn = Math.max(0, Math.round(Number(payload.gvnnPeriods || 0) * 100) / 100)
+    const total = Math.round((gvvn + gvnn) * 100) / 100
+    const studyProgram = payload.studyProgram || "DEFAULT"
+    const track =
+      gradeNum >= 10 && gradeNum <= 12 ? detectHighSchoolTrack(payload.className) : null
+    const slotKey = track ? `quotaG${gradeNum}${track}` : `quotaG${gradeNum}`
+    const baseGradeField = `quotaG${gradeNum}`
+
+    const upserted = await prisma.subjectQuota.upsert({
+      where: {
+        subjectId_academicYearId_studyProgram: {
+          subjectId: payload.subjectId,
+          academicYearId: payload.academicYearId,
+          studyProgram,
+        },
+      },
+      update: {
+        ...(track ? { [slotKey]: total } : { [baseGradeField]: total }),
+      },
+      create: {
+        subjectId: payload.subjectId,
+        academicYearId: payload.academicYearId,
+        studyProgram,
+        [baseGradeField]: total,
+        ...(track ? { [slotKey]: total } : {}),
+      },
+    })
+
+    if (typeof (prisma as any).$queryRawUnsafe === "function") {
+      const existingSplitRows = (await (prisma as any)
+        .$queryRawUnsafe(
+          `SELECT "teacherSplitJson" FROM "SubjectQuota" WHERE "id" = ? LIMIT 1`,
+          upserted.id
+        )
+        .catch(() => [])) as Array<{ teacherSplitJson?: string | null }>
+
+      const currentMap = parseTeacherSplitJson(existingSplitRows[0]?.teacherSplitJson)
+      if (gvvn > 0 || gvnn > 0) {
+        currentMap[slotKey] = { gvvn, gvnn }
+        if (track && !currentMap[baseGradeField]) {
+          currentMap[baseGradeField] = { gvvn, gvnn }
+        }
+      } else {
+        delete currentMap[slotKey]
+      }
+      const nextSplitJson = serializeTeacherSplitJson(currentMap)
+      await (prisma as any).$executeRawUnsafe(
+        `UPDATE "SubjectQuota" SET "teacherSplitJson" = ? WHERE "id" = ?`,
+        nextSplitJson,
+        upserted.id
+      )
+    }
+
+    revalidateTimetablePaths()
+    revalidatePath("/admin/subjects")
+    return { success: true as const, totalWeeklyQuota: total }
+  } catch (err) {
+    return formatActionError(err)
+  }
+}
+
+/**
+ * Saves dual GVVN + GVNN assignments and per-teacher weekly period allocations (`weeklyPeriods`, `teacherRole`)
+ * for a single `(classId, subjectId, academicYearId, semester)` without overwriting opposite-group teachers.
+ */
+export async function saveClassSubjectDualAssignmentAction(payload: {
+  academicYearId: string
+  semester: number
+  campusId: string
+  scopeGroup: ManageableScopeGroup
+  classId: string
+  subjectId: string
+  gvvnTeacherId: string
+  gvvnPeriods: number | null
+  gvnnTeacherId: string
+  gvnnPeriods: number | null
+}) {
+  try {
+    await requireTimetablePermission("canUpdate", {
+      subModuleCode: "TIMETABLE_QUOTA",
+      campusIds: [payload.campusId],
+      scopeGroup: payload.scopeGroup,
+    })
+    await ensureTimetableSchema()
+
+    await verifyClassesBelongToScope({
+      classIds: [payload.classId],
+      academicYearId: payload.academicYearId,
+      campusId: payload.campusId,
+      scopeGroup: payload.scopeGroup,
+    })
+
+    const semester = payload.semester === 2 ? 2 : 1
+    const gvvnId = (payload.gvvnTeacherId || "").trim()
+    const gvnnId = (payload.gvnnTeacherId || "").trim()
+
+    if (gvvnId && gvnnId && gvvnId === gvnnId) {
+      return {
+        success: false as const,
+        error: "Giáo viên Việt Nam (GVVN) và Giáo viên Nước ngoài (GVNN) không được trùng cùng một nhân sự.",
+      }
+    }
+
+    const normPeriods = (v: number | null | undefined): number | null => {
+      if (v === null || v === undefined || Number.isNaN(Number(v))) return null
+      const num = Math.max(0, Math.round(Number(v) * 100) / 100)
+      return num
+    }
+    const gvvnPeriods = normPeriods(payload.gvvnPeriods)
+    const gvnnPeriods = normPeriods(payload.gvnnPeriods)
+
+    // Load existing rows + their roles + teacher groups
+    const existingRows =
+      typeof (prisma as any).$queryRawUnsafe === "function"
+        ? ((await (prisma as any)
+            .$queryRawUnsafe(
+              `SELECT ta."id", ta."teacherId", ta."weeklyPeriods", ta."teacherRole",
+                      t."teacherName", t."teacherGroup"
+               FROM "TeachingAssignment" ta
+               LEFT JOIN "Teacher" t ON t."id" = ta."teacherId"
+               WHERE ta."classId" = ? AND ta."subjectId" = ? AND ta."academicYearId" = ? AND ta."semester" = ?
+               ORDER BY ta."id" ASC`,
+              payload.classId,
+              payload.subjectId,
+              payload.academicYearId,
+              semester
+            )
+            .catch(() => [])) as Array<{
+            id: string
+            teacherId: string
+            weeklyPeriods?: number | null
+            teacherRole?: string | null
+            teacherName?: string | null
+            teacherGroup?: string | null
+          }>)
+        : (
+            await prisma.teachingAssignment.findMany({
+              where: {
+                classId: payload.classId,
+                subjectId: payload.subjectId,
+                academicYearId: payload.academicYearId,
+                semester,
+              },
+              orderBy: { id: "asc" },
+            })
+          ).map((r) => ({ ...r, teacherName: null, teacherGroup: null, teacherRole: null }))
+
+    const classifyRow = (r: {
+      teacherRole?: string | null
+      teacherGroup?: string | null
+      teacherName?: string | null
+    }): TeacherGroupCode => {
+      const roleUpper = String(r.teacherRole || "").trim().toUpperCase()
+      if (roleUpper === "GVNN") return "GVNN"
+      if (roleUpper === "GVVN") return "GVVN"
+      return resolveTeacherGroup({ teacherGroup: r.teacherGroup, teacherName: r.teacherName })
+    }
+
+    const existingGvvn = existingRows.filter((r) => classifyRow(r) === "GVVN")
+    const existingGvnn = existingRows.filter((r) => classifyRow(r) === "GVNN")
+
+    await prisma.$transaction(async (tx) => {
+      const upsertSide = async (
+        sideRole: TeacherGroupCode,
+        targetTeacherId: string,
+        targetPeriods: number | null,
+        sideRows: typeof existingRows
+      ) => {
+        if (!targetTeacherId) {
+          if (sideRows.length > 0) {
+            await tx.teachingAssignment.deleteMany({
+              where: { id: { in: sideRows.map((r) => r.id) } },
+            })
+          }
+          return
+        }
+
+        let keptId: string
+        if (sideRows.length > 0) {
+          keptId = sideRows[0].id
+          await tx.teachingAssignment.update({
+            where: { id: keptId },
+            data: { teacherId: targetTeacherId },
+          })
+          if (sideRows.length > 1) {
+            await tx.teachingAssignment.deleteMany({
+              where: { id: { in: sideRows.slice(1).map((r) => r.id) } },
+            })
+          }
+        } else {
+          const created = await tx.teachingAssignment.create({
+            data: {
+              classId: payload.classId,
+              subjectId: payload.subjectId,
+              teacherId: targetTeacherId,
+              academicYearId: payload.academicYearId,
+              semester,
+            },
+          })
+          keptId = created.id
+        }
+
+        if (typeof (tx as any).$executeRawUnsafe === "function") {
+          await (tx as any).$executeRawUnsafe(
+            `UPDATE "TeachingAssignment" SET "weeklyPeriods" = ?, "teacherRole" = ? WHERE "id" = ?`,
+            targetPeriods,
+            sideRole,
+            keptId
+          )
+        }
+      }
+
+      await upsertSide("GVVN", gvvnId, gvvnPeriods, existingGvvn)
+      await upsertSide("GVNN", gvnnId, gvnnPeriods, existingGvnn)
+    })
+
+    revalidateTimetablePaths()
+    revalidatePath("/admin/teaching-assignments")
     return { success: true as const }
   } catch (err) {
     return formatActionError(err)
@@ -973,6 +1306,78 @@ export async function assignTeacherToClassSubjectAction(payload: {
           },
         })
       }
+
+      // Synchronize unassigned primary AND alternating (luân phiên) slots on DRAFT versions of this class
+      if (
+        typeof tx.teacher?.findUnique === "function" &&
+        typeof tx.timetableVersion?.findMany === "function" &&
+        typeof tx.timetableSlot?.updateMany === "function"
+      ) {
+        const [teacherRow, subRow, draftVersions] = await Promise.all([
+          tx.teacher.findUnique({
+            where: { id: payload.teacherId },
+            select: { id: true, teacherCode: true, teacherName: true },
+          }),
+          typeof tx.subject?.findUnique === "function"
+            ? tx.subject.findUnique({
+                where: { id: payload.subjectId },
+                select: { id: true, subjectCode: true, subjectName: true },
+              })
+            : Promise.resolve(null),
+          tx.timetableVersion.findMany({
+            where: {
+              academicYearId: payload.academicYearId,
+              semester,
+              campusId: payload.campusId,
+              status: "DRAFT",
+            },
+            select: { id: true },
+          }),
+        ])
+
+        const draftVersionIds = draftVersions.map((v) => v.id)
+        if (teacherRow && draftVersionIds.length > 0) {
+          await tx.timetableSlot.updateMany({
+            where: {
+              versionId: { in: draftVersionIds },
+              classId: payload.classId,
+              subjectId: payload.subjectId,
+              teacherId: null,
+              status: "ACTIVE",
+            },
+            data: {
+              teacherId: teacherRow.id,
+              teacherName: teacherRow.teacherName,
+            },
+          })
+
+          const altOrConditions: Array<Record<string, unknown>> = [
+            { altSubjectId: payload.subjectId },
+          ]
+          if (subRow?.subjectName) {
+            altOrConditions.push({ altSubjectName: subRow.subjectName })
+          }
+          if (subRow?.subjectCode) {
+            altOrConditions.push({ altSubjectName: subRow.subjectCode })
+          }
+
+          await tx.timetableSlot.updateMany({
+            where: {
+              versionId: { in: draftVersionIds },
+              classId: payload.classId,
+              altTeacherId: null,
+              status: "ACTIVE",
+              OR: altOrConditions as any,
+            },
+            data: {
+              altSubjectId: payload.subjectId,
+              altTeacherId: teacherRow.id,
+              altTeacherCode: teacherRow.teacherCode || null,
+              altTeacherName: teacherRow.teacherName,
+            },
+          })
+        }
+      }
     })
 
     revalidateTimetablePaths()
@@ -1004,7 +1409,13 @@ export async function getTimetableSchedulerPageAction(filters: TimetableFilterPa
     const scopeClasses = ws.campusAllScopeClasses
     const classIds = scopeClasses.map((c) => c.id)
 
-    const [subjectQuotas, teachingAssignments, ctqtAssignments, versionSlotsRaw] = await Promise.all([
+    const [
+      subjectQuotas,
+      teachingAssignments,
+      ctqtAssignments,
+      versionSlotsRaw,
+      specialAssignments,
+    ] = await Promise.all([
       prisma.subjectQuota.findMany({ where: { academicYearId: ws.selectedYearId } }),
       classIds.length > 0
         ? prisma.teachingAssignment.findMany({
@@ -1036,9 +1447,10 @@ export async function getTimetableSchedulerPageAction(filters: TimetableFilterPa
             },
           })
         : Promise.resolve([]),
+      fetchSpecialAssignmentsForScope(ws.selectedYearId, ws.semester, classIds),
     ])
 
-    const slots = versionSlotsRaw.map((s) =>
+    const rawSlots = versionSlotsRaw.map((s) =>
       mapDbSlotToRecord(s, ws.teacherCodeById, ws.subjectCodeById)
     )
 
@@ -1046,12 +1458,21 @@ export async function getTimetableSchedulerPageAction(filters: TimetableFilterPa
       classes: scopeClasses,
       subjects: ws.subjects,
       teachers: ws.teachers,
-      subjectQuotas,
-      teachingAssignments,
+      subjectQuotas: ws.enrichQuotas(subjectQuotas),
+      teachingAssignments: ws.enrichAssignments(teachingAssignments),
       ctqtAssignments,
-      scheduledSlots: slots,
+      specialAssignments,
+      scheduledSlots: rawSlots,
       cycleWeeks: ws.config.cycleWeeks,
     })
+
+    const hydrated = hydrateSlotsFromAssignments({
+      slots: rawSlots,
+      quotaItems,
+      subjects: ws.subjects,
+      mode: "FILL_MISSING",
+    })
+    const slots = hydrated.slots
 
     const teachersById = new Map(ws.teachers.map((t) => [t.id, t]))
     const campusName = formatCampusDisplayName(ws.selectedCampusObj)
@@ -1097,6 +1518,8 @@ export async function getTimetableSchedulerPageAction(filters: TimetableFilterPa
           }
         : null,
       slots,
+      autoHydratedCount: hydrated.updatedCount,
+      autoHydratedAltCount: hydrated.filledAltCount,
       quotaItems,
       validationReport,
       subjects: ws.subjects.map((s) => ({
@@ -1104,10 +1527,17 @@ export async function getTimetableSchedulerPageAction(filters: TimetableFilterPa
         subjectCode: s.subjectCode || "",
         subjectName: s.subjectName,
       })),
+      departments: ws.departments,
       teachers: ws.teachers.map((t) => ({
         id: t.id,
         teacherCode: t.teacherCode,
         teacherName: t.teacherName,
+        campusId: t.campusId || "",
+        departmentId: t.departmentId || "",
+        departmentName: t.departmentName || "",
+        departmentIds: t.departmentIds || [],
+        allDepartmentNames: t.allDepartmentNames || "",
+        mainSubjectId: t.mainSubjectId || "",
       })),
       rooms: ws.rooms,
       busySlots: ws.busySlots,
@@ -1572,25 +2002,87 @@ export async function saveDraftSlotsBatchAction(payload: {
       scopeGroup,
     })
 
-    // Prefetch subjects, teachers, rooms once (0 N+1 queries)
-    const [subjects, teachers, rooms] = await Promise.all([
-      prisma.subject.findMany({ select: { id: true, subjectCode: true, subjectName: true } }),
-      prisma.teacher.findMany({ select: { id: true, teacherCode: true, teacherName: true } }),
-      prisma.timetableRoom.findMany({
-        where: { campusId: version.campusId, status: "ACTIVE" },
-        select: { id: true, roomCode: true, roomName: true },
-      }),
-    ])
+    // Prefetch subjects, teachers, rooms, and assignments once (0 N+1 queries)
+    const [subjects, teachers, rooms, subjectQuotas, teachingAssignments, ctqtAssignments, specialAssignments] =
+      await Promise.all([
+        prisma.subject.findMany({ select: { id: true, subjectCode: true, subjectName: true } }),
+        prisma.teacher.findMany({ select: { id: true, teacherCode: true, teacherName: true } }),
+        prisma.timetableRoom.findMany({
+          where: { campusId: version.campusId, status: "ACTIVE" },
+          select: { id: true, roomCode: true, roomName: true },
+        }),
+        typeof prisma.subjectQuota?.findMany === "function"
+          ? prisma.subjectQuota
+              .findMany({ where: { academicYearId: version.academicYearId } })
+              .catch(() => [])
+          : Promise.resolve([]),
+        allTargetClassIds.length > 0 && typeof prisma.teachingAssignment?.findMany === "function"
+          ? prisma.teachingAssignment
+              .findMany({
+                where: {
+                  academicYearId: version.academicYearId,
+                  semester: version.semester,
+                  classId: { in: allTargetClassIds },
+                },
+              })
+              .catch(() => [])
+          : Promise.resolve([]),
+        allTargetClassIds.length > 0 && typeof prisma.ctqtTeachingAssignment?.findMany === "function"
+          ? prisma.ctqtTeachingAssignment
+              .findMany({
+                where: {
+                  academicYearId: version.academicYearId,
+                  semester: version.semester,
+                  classId: { in: allTargetClassIds },
+                  status: "ACTIVE",
+                },
+              })
+              .catch(() => [])
+          : Promise.resolve([]),
+        fetchSpecialAssignmentsForScope(version.academicYearId, version.semester, allTargetClassIds),
+      ])
 
-    const subjectById = new Map(subjects.map((s) => [s.id, s]))
+    const verifiedClassesList = Array.from(verifiedClassesMap.values())
+    const quotaItemsForSave =
+      verifiedClassesList.length > 0
+        ? reconcileQuotasAndAssignments({
+            classes: verifiedClassesList,
+            subjects,
+            teachers,
+            subjectQuotas,
+            teachingAssignments,
+            ctqtAssignments,
+            specialAssignments,
+            scheduledSlots: payload.slots,
+          })
+        : []
+
+    const hydratedInput =
+      quotaItemsForSave.length > 0
+        ? hydrateSlotsFromAssignments({
+            slots: payload.slots,
+            quotaItems: quotaItemsForSave,
+            subjects,
+            mode: "FILL_MISSING",
+          }).slots
+        : payload.slots
+
+    const { subjectById, subjectByCodeOrName } = buildSubjectLookupMaps(subjects)
     const teacherById = new Map(teachers.map((t) => [t.id, t]))
     const roomById = new Map(rooms.map((r) => [r.id, r]))
 
-    const normalizedRows = payload.slots
+    const normalizedRows = hydratedInput
       .filter((s) => s.classId && (s.subjectId || s.subjectName || s.teacherId))
       .map((s) => {
         const cls = verifiedClassesMap.get(s.classId)!
-        const sub = s.subjectId ? subjectById.get(s.subjectId) : undefined
+        const sub =
+          (s.subjectId ? subjectById.get(s.subjectId) : undefined) ||
+          (s.subjectName ? subjectByCodeOrName.get(s.subjectName.trim().toUpperCase()) : undefined)
+        const altSub =
+          (s.altSubjectId ? subjectById.get(s.altSubjectId) : undefined) ||
+          (s.altSubjectName
+            ? subjectByCodeOrName.get(s.altSubjectName.trim().toUpperCase())
+            : undefined)
         const tPrimary = s.teacherId ? teacherById.get(s.teacherId) : undefined
         const tCo = s.coTeacherId ? teacherById.get(s.coTeacherId) : undefined
         const tAss = s.assistantTeacherId ? teacherById.get(s.assistantTeacherId) : undefined
@@ -1623,8 +2115,8 @@ export async function saveDraftSlotsBatchAction(payload: {
           assistantTeacherCode: tAss?.teacherCode || s.assistantTeacherCode || null,
           assistantTeacherName: tAss?.teacherName || s.assistantTeacherName || null,
           weekType: s.weekType || "ALL",
-          altSubjectId: s.altSubjectId || null,
-          altSubjectName: s.altSubjectName || null,
+          altSubjectId: altSub?.id || s.altSubjectId || null,
+          altSubjectName: altSub?.subjectName || s.altSubjectName || null,
           altTeacherId: tAlt?.id || s.altTeacherId || null,
           altTeacherCode: tAlt?.teacherCode || s.altTeacherCode || null,
           altTeacherName: tAlt?.teacherName || s.altTeacherName || null,
@@ -1692,6 +2184,305 @@ export async function saveDraftSlotsBatchAction(payload: {
       success: true as const,
       savedCount: normalizedRows.length,
       newRevision: txResult.newRevision,
+    }
+  } catch (err) {
+    return formatActionError(err)
+  }
+}
+
+/**
+ * Explicitly synchronizes primary (`teacherId`) and alternating (`altTeacherId` on `Luân phiên`)
+ * teachers across all slots of a DRAFT version from `Phân công giảng dạy` (`TeachingAssignment` / `CTQT` / `Môn đặc thù`).
+ */
+export async function syncDraftTeachersFromAssignmentsAction(payload: {
+  versionId: string
+  expectedRevision: number
+  mode?: "FILL_MISSING" | "SYNC_ALL_ASSIGNED"
+}) {
+  try {
+    const authCtx = await requireTimetablePermission("canUpdate", {
+      subModuleCode: "TIMETABLE_SCHEDULE",
+    })
+    await ensureTimetableSchema()
+
+    const version = await verifyEditableVersion(authCtx, payload.versionId, payload.expectedRevision)
+    const ws = await loadScopedWorkspaceContext(
+      {
+        academicYearId: version.academicYearId,
+        semester: version.semester,
+        scopeGroup: version.scopeGroup as ManageableScopeGroup,
+        campusId: version.campusId,
+        versionId: version.id,
+      },
+      authCtx
+    )
+
+    const scopeClasses = ws.campusAllScopeClasses
+    const classIds = scopeClasses.map((c) => c.id)
+
+    const [subjectQuotas, teachingAssignments, ctqtAssignments, currentSlotsRaw, specialAssignments] =
+      await Promise.all([
+        prisma.subjectQuota.findMany({ where: { academicYearId: version.academicYearId } }),
+        classIds.length > 0
+          ? prisma.teachingAssignment.findMany({
+              where: {
+                academicYearId: version.academicYearId,
+                semester: version.semester,
+                classId: { in: classIds },
+              },
+            })
+          : Promise.resolve([]),
+        classIds.length > 0
+          ? prisma.ctqtTeachingAssignment
+              .findMany({
+                where: {
+                  academicYearId: version.academicYearId,
+                  semester: version.semester,
+                  classId: { in: classIds },
+                  status: "ACTIVE",
+                },
+              })
+              .catch(() => [])
+          : Promise.resolve([]),
+        classIds.length > 0
+          ? prisma.timetableSlot.findMany({
+              where: {
+                versionId: version.id,
+                classId: { in: classIds },
+                status: "ACTIVE",
+              },
+            })
+          : Promise.resolve([]),
+        fetchSpecialAssignmentsForScope(version.academicYearId, version.semester, classIds),
+      ])
+
+    const currentSlots = currentSlotsRaw.map((s) =>
+      mapDbSlotToRecord(s, ws.teacherCodeById, ws.subjectCodeById)
+    )
+
+    const quotaItems = reconcileQuotasAndAssignments({
+      classes: scopeClasses,
+      subjects: ws.subjects,
+      teachers: ws.teachers,
+      subjectQuotas: ws.enrichQuotas(subjectQuotas),
+      teachingAssignments: ws.enrichAssignments(teachingAssignments),
+      ctqtAssignments,
+      specialAssignments,
+      scheduledSlots: currentSlots,
+      cycleWeeks: ws.config.cycleWeeks,
+    })
+
+    const syncMode = payload.mode || "FILL_MISSING"
+    const hydrated = hydrateSlotsFromAssignments({
+      slots: currentSlots,
+      quotaItems,
+      subjects: ws.subjects,
+      mode: syncMode,
+    })
+
+    const saveRes = await saveDraftSlotsBatchAction({
+      versionId: version.id,
+      expectedRevision: payload.expectedRevision,
+      scopedClassIds: classIds,
+      slots: hydrated.slots,
+    })
+
+    if (!saveRes.success) return saveRes
+
+    await appendAuditLog({
+      versionId: version.id,
+      campusId: version.campusId,
+      actorId: authCtx.actorId,
+      actorName: authCtx.actorName,
+      actorRole: authCtx.actorRole,
+      action: "SYNC_TEACHERS_FROM_ASSIGNMENTS",
+      summary: `Đồng bộ GV từ Phân công giảng dạy (${hydrated.filledPrimaryCount} tiết chính, ${hydrated.filledAltCount} tiết luân phiên)`,
+    })
+
+    return {
+      success: true as const,
+      newRevision: saveRes.newRevision,
+      updatedCount: hydrated.updatedCount,
+      filledPrimaryCount: hydrated.filledPrimaryCount,
+      filledAltCount: hydrated.filledAltCount,
+      slots: hydrated.slots,
+    }
+  } catch (err) {
+    return formatActionError(err)
+  }
+}
+
+/**
+ * Synchronizes all DRAFT timetable versions in the selected scope `(academicYearId, semester, campusId, scopeGroup)`
+ * from `Phân công giảng dạy` (`TeachingAssignment` + `CtqtTeachingAssignment` + `SpecialTeachingAssignment` + `GVCN`).
+ */
+export async function syncScopeDraftsFromAssignmentsAction(payload: {
+  academicYearId: string
+  semester: number
+  campusId: string
+  scopeGroup: ManageableScopeGroup
+}) {
+  try {
+    const authCtx = await requireTimetablePermission("canUpdate", {
+      subModuleCode: "TIMETABLE_QUOTA",
+      campusIds: [payload.campusId],
+      scopeGroup: payload.scopeGroup,
+    })
+    await ensureTimetableSchema()
+
+    const ws = await loadScopedWorkspaceContext(
+      {
+        academicYearId: payload.academicYearId,
+        semester: payload.semester,
+        campusId: payload.campusId,
+        scopeGroup: payload.scopeGroup,
+      },
+      authCtx
+    )
+
+    const draftVersions = await prisma.timetableVersion.findMany({
+      where: {
+        academicYearId: ws.selectedYearId,
+        semester: ws.semester,
+        campusId: ws.selectedCampusId,
+        scopeGroup: ws.selectedScopeGroup,
+        status: "DRAFT",
+      },
+      select: { id: true, code: true, revision: true },
+    })
+
+    const scopeClasses = ws.campusAllScopeClasses
+    const classIds = scopeClasses.map((c) => c.id)
+
+    if (draftVersions.length === 0 || classIds.length === 0) {
+      revalidateTimetablePaths()
+      return {
+        success: true as const,
+        versionCount: draftVersions.length,
+        updatedCount: 0,
+        filledPrimaryCount: 0,
+        filledAltCount: 0,
+      }
+    }
+
+    const [subjectQuotas, teachingAssignments, ctqtAssignments, specialAssignments] =
+      await Promise.all([
+        prisma.subjectQuota.findMany({ where: { academicYearId: ws.selectedYearId } }),
+        prisma.teachingAssignment.findMany({
+          where: {
+            academicYearId: ws.selectedYearId,
+            semester: ws.semester,
+            classId: { in: classIds },
+          },
+        }),
+        prisma.ctqtTeachingAssignment
+          .findMany({
+            where: {
+              academicYearId: ws.selectedYearId,
+              semester: ws.semester,
+              classId: { in: classIds },
+              status: "ACTIVE",
+            },
+          })
+          .catch(() => []),
+        fetchSpecialAssignmentsForScope(ws.selectedYearId, ws.semester, classIds),
+      ])
+
+    let totalUpdated = 0
+    let totalPrimary = 0
+    let totalAlt = 0
+
+    for (const ver of draftVersions) {
+      const currentSlotsRaw = await prisma.timetableSlot.findMany({
+        where: {
+          versionId: ver.id,
+          classId: { in: classIds },
+          status: "ACTIVE",
+        },
+      })
+      if (currentSlotsRaw.length === 0) continue
+
+      const currentSlots = currentSlotsRaw.map((s) =>
+        mapDbSlotToRecord(s, ws.teacherCodeById, ws.subjectCodeById)
+      )
+      const rawById = new Map(currentSlotsRaw.map((s) => [s.id, s]))
+
+      const quotaItems = reconcileQuotasAndAssignments({
+        classes: scopeClasses,
+        subjects: ws.subjects,
+        teachers: ws.teachers,
+        subjectQuotas,
+        teachingAssignments,
+        ctqtAssignments,
+        specialAssignments,
+        scheduledSlots: currentSlots,
+        cycleWeeks: ws.config.cycleWeeks,
+      })
+
+      const hydrated = hydrateSlotsFromAssignments({
+        slots: currentSlots,
+        quotaItems,
+        subjects: ws.subjects,
+        mode: "FILL_MISSING",
+      })
+
+      if (hydrated.updatedCount === 0) continue
+
+      await prisma.$transaction(async (tx) => {
+        for (const s of hydrated.slots) {
+          if (!s.id) continue
+          const orig = rawById.get(s.id)
+          if (!orig) continue
+          const diff =
+            orig.subjectId !== (s.subjectId || null) ||
+            orig.teacherId !== (s.teacherId || null) ||
+            orig.teacherName !== (s.teacherName || null) ||
+            orig.coTeacherId !== (s.coTeacherId || null) ||
+            orig.altSubjectId !== (s.altSubjectId || null) ||
+            orig.altTeacherId !== (s.altTeacherId || null) ||
+            orig.altTeacherName !== (s.altTeacherName || null)
+          if (!diff) continue
+
+          await tx.timetableSlot.update({
+            where: { id: s.id },
+            data: {
+              subjectId: s.subjectId || orig.subjectId,
+              teacherId: s.teacherId || null,
+              teacherName: s.teacherName || null,
+              coTeacherId: s.coTeacherId || null,
+              coTeacherCode: s.coTeacherCode || null,
+              coTeacherName: s.coTeacherName || null,
+              altSubjectId: s.altSubjectId || null,
+              altSubjectName: s.altSubjectName || null,
+              altTeacherId: s.altTeacherId || null,
+              altTeacherCode: s.altTeacherCode || null,
+              altTeacherName: s.altTeacherName || null,
+              updatedById: authCtx.actorId,
+            },
+          })
+        }
+
+        await tx.timetableVersion.update({
+          where: { id: ver.id },
+          data: {
+            revision: { increment: 1 },
+            updatedAt: new Date(),
+          },
+        })
+      })
+
+      totalUpdated += hydrated.updatedCount
+      totalPrimary += hydrated.filledPrimaryCount
+      totalAlt += hydrated.filledAltCount
+    }
+
+    revalidateTimetablePaths()
+    return {
+      success: true as const,
+      versionCount: draftVersions.length,
+      updatedCount: totalUpdated,
+      filledPrimaryCount: totalPrimary,
+      filledAltCount: totalAlt,
     }
   } catch (err) {
     return formatActionError(err)
@@ -1809,46 +2600,56 @@ export async function runAutoScheduleDraftAction(payload: {
     )
 
     const classIds = ws.inScopeClasses.map((c) => c.id)
-    const [subjectQuotas, teachingAssignments, ctqtAssignments, currentSlotsRaw] = await Promise.all([
-      prisma.subjectQuota.findMany({ where: { academicYearId: version.academicYearId } }),
-      prisma.teachingAssignment.findMany({
-        where: {
-          academicYearId: version.academicYearId,
-          semester: version.semester,
-          classId: { in: classIds },
-        },
-      }),
-      prisma.ctqtTeachingAssignment
-        .findMany({
+    const [subjectQuotas, teachingAssignments, ctqtAssignments, currentSlotsRaw, specialAssignments] =
+      await Promise.all([
+        prisma.subjectQuota.findMany({ where: { academicYearId: version.academicYearId } }),
+        prisma.teachingAssignment.findMany({
           where: {
             academicYearId: version.academicYearId,
             semester: version.semester,
             classId: { in: classIds },
-            status: "ACTIVE",
           },
-        })
-        .catch(() => []),
-      prisma.timetableSlot.findMany({
-        where: { versionId: version.id, status: "ACTIVE" },
-      }),
-    ])
+        }),
+        prisma.ctqtTeachingAssignment
+          .findMany({
+            where: {
+              academicYearId: version.academicYearId,
+              semester: version.semester,
+              classId: { in: classIds },
+              status: "ACTIVE",
+            },
+          })
+          .catch(() => []),
+        prisma.timetableSlot.findMany({
+          where: { versionId: version.id, status: "ACTIVE" },
+        }),
+        fetchSpecialAssignmentsForScope(version.academicYearId, version.semester, classIds),
+      ])
 
-    const existingSlots = currentSlotsRaw.map((s) =>
+    const rawExistingSlots = currentSlotsRaw.map((s) =>
       mapDbSlotToRecord(s, ws.teacherCodeById, ws.subjectCodeById)
     )
 
     // Reconcile quotas without unlocked slots so auto-scheduler fills exact required quotas
-    const lockedOnly = existingSlots.filter((s) => s.isLocked)
+    const rawLockedOnly = rawExistingSlots.filter((s) => s.isLocked)
     const quotaItems = reconcileQuotasAndAssignments({
       classes: ws.inScopeClasses,
       subjects: ws.subjects,
       teachers: ws.teachers,
-      subjectQuotas,
-      teachingAssignments,
+      subjectQuotas: ws.enrichQuotas(subjectQuotas),
+      teachingAssignments: ws.enrichAssignments(teachingAssignments),
       ctqtAssignments,
-      scheduledSlots: lockedOnly,
+      specialAssignments,
+      scheduledSlots: rawLockedOnly,
       cycleWeeks: ws.config.cycleWeeks,
     })
+
+    const existingSlots = hydrateSlotsFromAssignments({
+      slots: rawExistingSlots,
+      quotaItems,
+      subjects: ws.subjects,
+      mode: "FILL_MISSING",
+    }).slots
 
     const result = runAutoScheduler({
       campusId: version.campusId,
@@ -1956,7 +2757,7 @@ export async function previewTimetableExcelImportAction(payload: {
       ws.rooms.map((r) => [r.roomCode.trim().toUpperCase(), r])
     )
 
-    const parsed = parseAndReconcileTimetableExcel({
+    const parsedRaw = parseAndReconcileTimetableExcel({
       base64Content: payload.base64Content,
       campusId: version.campusId,
       academicYearId: version.academicYearId,
@@ -1970,6 +2771,57 @@ export async function previewTimetableExcelImportAction(payload: {
       },
     })
 
+    const excelClassIds = ws.inScopeClasses.map((c) => c.id)
+    const [excelQuotas, excelTas, excelCtqts, excelSpecials] = await Promise.all([
+      prisma.subjectQuota.findMany({ where: { academicYearId: version.academicYearId } }),
+      excelClassIds.length > 0
+        ? prisma.teachingAssignment.findMany({
+            where: {
+              academicYearId: version.academicYearId,
+              semester: version.semester,
+              classId: { in: excelClassIds },
+            },
+          })
+        : Promise.resolve([]),
+      excelClassIds.length > 0
+        ? prisma.ctqtTeachingAssignment
+            .findMany({
+              where: {
+                academicYearId: version.academicYearId,
+                semester: version.semester,
+                classId: { in: excelClassIds },
+                status: "ACTIVE",
+              },
+            })
+            .catch(() => [])
+        : Promise.resolve([]),
+      fetchSpecialAssignmentsForScope(version.academicYearId, version.semester, excelClassIds),
+    ])
+
+    const excelQuotaItems = reconcileQuotasAndAssignments({
+      classes: ws.inScopeClasses,
+      subjects: ws.subjects,
+      teachers: ws.teachers,
+      subjectQuotas: ws.enrichQuotas(excelQuotas),
+      teachingAssignments: ws.enrichAssignments(excelTas),
+      ctqtAssignments: excelCtqts,
+      specialAssignments: excelSpecials,
+      scheduledSlots: parsedRaw.matchedSlots,
+      cycleWeeks: ws.config.cycleWeeks,
+    })
+
+    const hydratedExcelSlots = hydrateSlotsFromAssignments({
+      slots: parsedRaw.matchedSlots,
+      quotaItems: excelQuotaItems,
+      subjects: ws.subjects,
+      mode: "FILL_MISSING",
+    }).slots
+
+    const parsed = {
+      ...parsedRaw,
+      matchedSlots: hydratedExcelSlots,
+    }
+
     const teachersById = new Map(ws.teachers.map((t) => [t.id, t]))
     const validationReport = validateTimetable({
       slots: parsed.matchedSlots,
@@ -1978,6 +2830,7 @@ export async function previewTimetableExcelImportAction(payload: {
       campusName: formatCampusDisplayName(ws.selectedCampusObj),
       classes: ws.inScopeClasses,
       teachersById,
+      quotaItems: excelQuotaItems,
       rooms: ws.rooms,
       busySlots: ws.busySlots,
       travelRules: ws.travelRules,
@@ -2152,36 +3005,83 @@ export async function getTimetableLookupAction(
       targetVersionIds = [ws.selectedVersion.id]
     }
 
-    const slotsRaw =
+    const [slotsRaw, lookupQuotas, lookupTas, lookupCtqts, lookupSpecials] =
       targetVersionIds.length > 0 && classIds.length > 0
-        ? await prisma.timetableSlot.findMany({
-            where: {
-              versionId: { in: targetVersionIds },
-              classId: { in: classIds },
-              status: "ACTIVE",
-              ...(filters.classId && filters.classId !== "ALL"
-                ? { classId: filters.classId }
-                : {}),
-              ...(filters.teacherId && filters.teacherId !== "ALL"
-                ? {
-                    OR: [
-                      { teacherId: filters.teacherId },
-                      { coTeacherId: filters.teacherId },
-                      { assistantTeacherId: filters.teacherId },
-                      { altTeacherId: filters.teacherId },
-                    ],
-                  }
-                : {}),
-              ...(filters.roomId && filters.roomId !== "ALL"
-                ? { roomId: filters.roomId }
-                : {}),
-            },
+        ? await Promise.all([
+            prisma.timetableSlot.findMany({
+              where: {
+                versionId: { in: targetVersionIds },
+                classId: { in: classIds },
+                status: "ACTIVE",
+                ...(filters.classId && filters.classId !== "ALL"
+                  ? { classId: filters.classId }
+                  : {}),
+                ...(filters.roomId && filters.roomId !== "ALL"
+                  ? { roomId: filters.roomId }
+                  : {}),
+              },
+            }),
+            prisma.subjectQuota.findMany({ where: { academicYearId: ws.selectedYearId } }),
+            prisma.teachingAssignment.findMany({
+              where: {
+                academicYearId: ws.selectedYearId,
+                semester: ws.semester,
+                classId: { in: classIds },
+              },
+            }),
+            prisma.ctqtTeachingAssignment
+              .findMany({
+                where: {
+                  academicYearId: ws.selectedYearId,
+                  semester: ws.semester,
+                  classId: { in: classIds },
+                  status: "ACTIVE",
+                },
+              })
+              .catch(() => []),
+            fetchSpecialAssignmentsForScope(ws.selectedYearId, ws.semester, classIds),
+          ])
+        : [[], [], [], [], []]
+
+    const rawLookupSlots = slotsRaw.map((s) =>
+      mapDbSlotToRecord(s, ws.teacherCodeById, ws.subjectCodeById)
+    )
+
+    const lookupQuotaItems =
+      rawLookupSlots.length > 0
+        ? reconcileQuotasAndAssignments({
+            classes: ws.inScopeClasses,
+            subjects: ws.subjects,
+            teachers: ws.teachers,
+            subjectQuotas: ws.enrichQuotas(lookupQuotas),
+            teachingAssignments: ws.enrichAssignments(lookupTas),
+            ctqtAssignments: lookupCtqts,
+            specialAssignments: lookupSpecials,
+            scheduledSlots: rawLookupSlots,
+            cycleWeeks: ws.config.cycleWeeks,
           })
         : []
 
-    const slots = slotsRaw.map((s) =>
-      mapDbSlotToRecord(s, ws.teacherCodeById, ws.subjectCodeById)
-    )
+    const hydratedLookupSlots =
+      lookupQuotaItems.length > 0
+        ? hydrateSlotsFromAssignments({
+            slots: rawLookupSlots,
+            quotaItems: lookupQuotaItems,
+            subjects: ws.subjects,
+            mode: "FILL_MISSING",
+          }).slots
+        : rawLookupSlots
+
+    const slots =
+      filters.teacherId && filters.teacherId !== "ALL"
+        ? hydratedLookupSlots.filter(
+            (s) =>
+              s.teacherId === filters.teacherId ||
+              s.coTeacherId === filters.teacherId ||
+              s.assistantTeacherId === filters.teacherId ||
+              s.altTeacherId === filters.teacherId
+          )
+        : hydratedLookupSlots
 
     // If looking up a specific teacher, also fetch their cross-campus effective schedule
     let crossCampusTeacherSchedule: Awaited<ReturnType<typeof getEffectiveTeacherWeekSchedule>> | null =
@@ -2203,10 +3103,17 @@ export async function getTimetableLookupAction(
       weekParity: parity,
       slots,
       crossCampusTeacherSchedule,
+      departments: ws.departments,
       teachers: ws.teachers.map((t) => ({
         id: t.id,
         teacherCode: t.teacherCode,
         teacherName: t.teacherName,
+        campusId: t.campusId || "",
+        departmentId: t.departmentId || "",
+        departmentName: t.departmentName || "",
+        departmentIds: t.departmentIds || [],
+        allDepartmentNames: t.allDepartmentNames || "",
+        mainSubjectId: t.mainSubjectId || "",
       })),
       rooms: ws.rooms,
     }
@@ -2335,10 +3242,17 @@ export async function getTimetableAdjustmentsPageAction(
         createdByName: sub.createdByName,
         createdAt: sub.createdAt.toISOString(),
       })),
+      departments: ws.departments,
       teachers: ws.teachers.map((t) => ({
         id: t.id,
         teacherCode: t.teacherCode,
         teacherName: t.teacherName,
+        campusId: t.campusId || "",
+        departmentId: t.departmentId || "",
+        departmentName: t.departmentName || "",
+        departmentIds: t.departmentIds || [],
+        allDepartmentNames: t.allDepartmentNames || "",
+        mainSubjectId: t.mainSubjectId || "",
       })),
       subjects: ws.subjects.map((s) => ({
         id: s.id,
@@ -2627,8 +3541,8 @@ export async function getTimetablePublishPageAction(filters: TimetableFilterPara
       classes: ws.inScopeClasses,
       subjects: ws.subjects,
       teachers: ws.teachers,
-      subjectQuotas,
-      teachingAssignments,
+      subjectQuotas: ws.enrichQuotas(subjectQuotas),
+      teachingAssignments: ws.enrichAssignments(teachingAssignments),
       ctqtAssignments,
       scheduledSlots: slots,
       cycleWeeks: ws.config.cycleWeeks,
@@ -2808,8 +3722,8 @@ export async function transitionTimetableVersionStatusAction(payload: {
         classes: ws.inScopeClasses,
         subjects: ws.subjects,
         teachers: ws.teachers,
-        subjectQuotas,
-        teachingAssignments,
+        subjectQuotas: ws.enrichQuotas(subjectQuotas),
+        teachingAssignments: ws.enrichAssignments(teachingAssignments),
         ctqtAssignments,
         scheduledSlots: slots,
         cycleWeeks: ws.config.cycleWeeks,

@@ -3,24 +3,41 @@
 import React, { useCallback, useEffect, useMemo, useRef, useState } from "react"
 import toast from "react-hot-toast"
 import {
+  BarChart3,
   BookmarkCheck,
   CheckCircle2,
+  ChevronLeft,
+  ChevronRight,
   CopyCheck,
   GripVertical,
+  LayoutGrid,
   Lock,
   PanelLeftClose,
   PanelLeftOpen,
+  RefreshCw,
   Search,
+  Table2,
   Trash2,
   Unlock,
+  Users,
   X,
 } from "lucide-react"
 import { TimetableShell, VERSION_STATUS_BADGE } from "@/components/timetable/TimetableShell"
 import { TimetableFilterBar } from "@/components/timetable/TimetableFilterBar"
 import { ValidationSummaryPanel } from "@/components/timetable/ValidationSummaryPanel"
+import { GradeWeeklyStatsTable } from "@/components/timetable/GradeWeeklyStatsTable"
 import { useTimetableFilterNavigation } from "@/components/timetable/useTimetableFilterNavigation"
 import { DAY_LABELS, SHORT_DAY_LABELS } from "@/lib/timetable/scopeResolver"
+import {
+  computeClassSlotSummary,
+  WEEKLY_STANDARD_PERIODS,
+} from "@/lib/timetable/gradeStatsHelper"
 import { validateTimetable } from "@/lib/timetable/validator"
+import {
+  groupTeachersByDepartment,
+  teacherMatchesDepartment,
+  UNASSIGNED_DEPT_VALUE,
+} from "@/lib/timetable/departmentHelper"
 import {
   buildBulkScopePlacement,
   evaluateCellDropTarget,
@@ -33,6 +50,7 @@ import type {
   DayOfWeekCode,
   FixedSlotRule,
   ManageableScopeGroup,
+  QuotaReconcileItem,
   SessionCode,
   SlotDiffItem,
   SlotRecord,
@@ -41,6 +59,7 @@ import type {
   WeekTypeCode,
 } from "@/lib/timetable/types"
 import {
+  assignTeacherToClassSubjectAction,
   clearDraftVersionSlotsAction,
   compareVersionWithBaselineAction,
   createTimetableVersionAction,
@@ -51,6 +70,8 @@ import {
   runAutoScheduleDraftAction,
   saveDraftSlotsBatchAction,
   saveScopeFixedSlotRuleAction,
+  syncDraftTeachersFromAssignmentsAction,
+  updateSubjectGradeQuotaAction,
 } from "../actions"
 
 type SchedulerPageData = Extract<
@@ -58,14 +79,16 @@ type SchedulerPageData = Extract<
   { success: true }
 >
 
-type PaletteTabCode = "UNSCHEDULED" | "BY_CLASS" | "SCOPE_SUBJECTS"
+type PaletteTabCode = "UNSCHEDULED" | "BY_CLASS" | "SCOPE_SUBJECTS" | "TEACHERS"
+type SchedulerViewMode = "SINGLE_CLASS" | "MATRIX"
 type AutoSaveStatus = "IDLE" | "PENDING" | "SAVING" | "SAVED" | "ERROR"
 
-const SCOPE_WORKSPACE_PREFS_KEY = "ssm_tkb_scheduler_prefs_v1"
+const SCOPE_WORKSPACE_PREFS_KEY = "ssm_tkb_scheduler_prefs_v2"
 
 interface ScopeWorkspacePrefs {
   paletteOpen: boolean
   paletteTab: PaletteTabCode
+  viewMode: SchedulerViewMode
   autoLockManual: boolean
   focusedClassId: string
 }
@@ -73,7 +96,8 @@ interface ScopeWorkspacePrefs {
 function readScopeWorkspacePrefs(scopeGroup: string): ScopeWorkspacePrefs {
   const fallback: ScopeWorkspacePrefs = {
     paletteOpen: true,
-    paletteTab: "UNSCHEDULED",
+    paletteTab: "BY_CLASS",
+    viewMode: "SINGLE_CLASS",
     autoLockManual: true,
     focusedClassId: "",
   }
@@ -107,6 +131,7 @@ export function SchedulerClient({ initialData }: { initialData: SchedulerPageDat
   const activeScopeCode = data.filterContext.selectedScopeGroup
 
   const [slots, setSlots] = useState<SlotRecord[]>(data.slots)
+  const [baseQuotaItems, setBaseQuotaItems] = useState<QuotaReconcileItem[]>(data.quotaItems)
   const [fixedSlotsConfig, setFixedSlotsConfig] = useState<FixedSlotRule[]>(
     data.config.fixedSlots || []
   )
@@ -118,12 +143,19 @@ export function SchedulerClient({ initialData }: { initialData: SchedulerPageDat
 
   // Per-Bộ TKB workspace preferences
   const [paletteOpen, setPaletteOpen] = useState(true)
-  const [paletteTab, setPaletteTab] = useState<PaletteTabCode>("UNSCHEDULED")
+  const [paletteTab, setPaletteTab] = useState<PaletteTabCode>("BY_CLASS")
+  const [viewMode, setViewMode] = useState<SchedulerViewMode>("SINGLE_CLASS")
   const [autoLockManual, setAutoLockManual] = useState(true)
   const [focusedClassId, setFocusedClassId] = useState<string>("")
   const [paletteSearch, setPaletteSearch] = useState("")
   const [paletteWeekType, setPaletteWeekType] = useState<WeekTypeCode>("ALL")
   const [scopeUseHomeroom, setScopeUseHomeroom] = useState(false)
+  const [teacherRoleMode, setTeacherRoleMode] = useState<
+    "PRIMARY" | "ALT_TEACHER" | "CO_TEACHER"
+  >("PRIMARY")
+  const [paletteDepartmentId, setPaletteDepartmentId] = useState<string>("ALL")
+  const [syncTeacherToAssignment, setSyncTeacherToAssignment] = useState(true)
+  const [unscheduledOnlyFocusedClass, setUnscheduledOnlyFocusedClass] = useState(false)
 
   // Drag & Drop live state
   const [activeDrag, setActiveDrag] = useState<DraggedTimetablePayload | null>(null)
@@ -170,6 +202,15 @@ export function SchedulerClient({ initialData }: { initialData: SchedulerPageDat
 
   const [unscheduledList, setUnscheduledList] = useState<UnscheduledActivity[]>([])
   const [showUnscheduledPanel, setShowUnscheduledPanel] = useState(false)
+  const [showGradeStatsPanel, setShowGradeStatsPanel] = useState<boolean>(
+    () => initialData.filterContext.selectedGrade !== "ALL"
+  )
+
+  useEffect(() => {
+    if (data.filterContext.selectedGrade !== "ALL") {
+      setShowGradeStatsPanel(true)
+    }
+  }, [data.filterContext.selectedGrade])
 
   const [diffResult, setDiffResult] = useState<{
     baselineName: string | null
@@ -194,6 +235,7 @@ export function SchedulerClient({ initialData }: { initialData: SchedulerPageDat
     const prefs = readScopeWorkspacePrefs(activeScopeCode)
     setPaletteOpen(prefs.paletteOpen)
     setPaletteTab(prefs.paletteTab)
+    setViewMode(prefs.viewMode || "SINGLE_CLASS")
     setAutoLockManual(prefs.autoLockManual)
     const validFocus = data.allScopeClasses.some((c) => c.id === prefs.focusedClassId)
       ? prefs.focusedClassId
@@ -205,10 +247,11 @@ export function SchedulerClient({ initialData }: { initialData: SchedulerPageDat
     writeScopeWorkspacePrefs(activeScopeCode, {
       paletteOpen,
       paletteTab,
+      viewMode,
       autoLockManual,
       focusedClassId,
     })
-  }, [activeScopeCode, paletteOpen, paletteTab, autoLockManual, focusedClassId])
+  }, [activeScopeCode, paletteOpen, paletteTab, viewMode, autoLockManual, focusedClassId])
 
   // Sync local working state whenever server dataset changes (filter/version switch)
   useEffect(() => {
@@ -219,6 +262,7 @@ export function SchedulerClient({ initialData }: { initialData: SchedulerPageDat
     pendingAfterFlightRef.current = false
     setSlots(data.slots)
     latestSlotsRef.current = data.slots
+    setBaseQuotaItems(data.quotaItems)
     setFixedSlotsConfig(data.config.fixedSlots || [])
     const nextRev = data.selectedVersion?.revision || 1
     setRevision(nextRev)
@@ -336,8 +380,13 @@ export function SchedulerClient({ initialData }: { initialData: SchedulerPageDat
 
   // Real-time Quota Reconciliation across the entire Bộ thời khóa biểu
   const liveQuotaItems = useMemo(
-    () => recomputeLiveQuotaItems(data.quotaItems, slots),
-    [data.quotaItems, slots]
+    () => recomputeLiveQuotaItems(baseQuotaItems, slots),
+    [baseQuotaItems, slots]
+  )
+
+  const liveSlotSummary = useMemo(
+    () => computeClassSlotSummary(slots, data.subjects),
+    [slots, data.subjects]
   )
 
   // Real-time 10-rule Validation Report on Client (0 server roundtrip lag)
@@ -474,17 +523,44 @@ export function SchedulerClient({ initialData }: { initialData: SchedulerPageDat
     autoLockManual,
   ])
 
+  const activeSingleClass = useMemo(() => {
+    return (
+      displayedClasses.find((c) => c.id === focusedClassId) ||
+      displayedClasses[0] ||
+      data.allScopeClasses[0] ||
+      null
+    )
+  }, [displayedClasses, focusedClassId, data.allScopeClasses])
+
+  const workingDays = useMemo<DayOfWeekCode[]>(
+    () => effectiveConfig.workingDays || ["MONDAY", "TUESDAY", "WEDNESDAY", "THURSDAY", "FRIDAY"],
+    [effectiveConfig.workingDays]
+  )
+
+  const sessionPeriods = useMemo(() => {
+    const list: Array<{ session: SessionCode; periodNumber: number }> = []
+    for (let p = 1; p <= (effectiveConfig.morningPeriods || 4); p++) {
+      list.push({ session: "MORNING", periodNumber: p })
+    }
+    for (let p = 1; p <= (effectiveConfig.afternoonPeriods ?? 4); p++) {
+      list.push({ session: "AFTERNOON", periodNumber: p })
+    }
+    return list
+  }, [effectiveConfig.morningPeriods, effectiveConfig.afternoonPeriods])
+
   const pendingQuotaActivities = useMemo(() => {
     return liveQuotaItems.filter(
-      (q) =>
-        displayedClassIdsSet.has(q.classId) &&
-        (q.missingWeeklyPeriods > 0 || q.status === "MISSING_TEACHER")
+      (q) => displayedClassIdsSet.has(q.classId) && q.missingWeeklyPeriods > 0
     )
   }, [liveQuotaItems, displayedClassIdsSet])
 
   const filteredPaletteUnscheduled = useMemo(() => {
     const kw = paletteSearch.trim().toLowerCase()
+    const targetClsId = activeSingleClass?.id || ""
     return pendingQuotaActivities.filter((q) => {
+      if (viewMode === "SINGLE_CLASS" && unscheduledOnlyFocusedClass && targetClsId) {
+        if (q.classId !== targetClsId) return false
+      }
       if (!kw) return true
       return (
         q.subjectName.toLowerCase().includes(kw) ||
@@ -493,10 +569,16 @@ export function SchedulerClient({ initialData }: { initialData: SchedulerPageDat
         (q.primaryTeacherCode || "").toLowerCase().includes(kw)
       )
     })
-  }, [pendingQuotaActivities, paletteSearch])
+  }, [
+    pendingQuotaActivities,
+    paletteSearch,
+    viewMode,
+    unscheduledOnlyFocusedClass,
+    activeSingleClass,
+  ])
 
   const byClassQuotaItems = useMemo(() => {
-    const targetId = focusedClassId || displayedClasses[0]?.id || ""
+    const targetId = activeSingleClass?.id || focusedClassId || displayedClasses[0]?.id || ""
     const kw = paletteSearch.trim().toLowerCase()
     return liveQuotaItems
       .filter((q) => q.classId === targetId && q.weeklyQuota > 0)
@@ -507,7 +589,7 @@ export function SchedulerClient({ initialData }: { initialData: SchedulerPageDat
           (q.primaryTeacherName || "").toLowerCase().includes(kw)
         )
       })
-  }, [liveQuotaItems, focusedClassId, displayedClasses, paletteSearch])
+  }, [liveQuotaItems, activeSingleClass, focusedClassId, displayedClasses, paletteSearch])
 
   const filteredScopeSubjects = useMemo(() => {
     const kw = paletteSearch.trim().toLowerCase()
@@ -520,6 +602,28 @@ export function SchedulerClient({ initialData }: { initialData: SchedulerPageDat
     })
   }, [data.subjects, paletteSearch])
 
+  const filteredTeachers = useMemo(() => {
+    const kw = paletteSearch.trim().toLowerCase()
+    const campusId = data.filterContext.selectedCampusId
+    return [...data.teachers]
+      .filter((t) => teacherMatchesDepartment(t as any, paletteDepartmentId))
+      .sort((a, b) => {
+        const aSame = (a as any).campusId === campusId ? 0 : 1
+        const bSame = (b as any).campusId === campusId ? 0 : 1
+        if (aSame !== bSame) return aSame - bSame
+        return a.teacherName.localeCompare(b.teacherName, "vi")
+      })
+      .filter((t) => {
+        if (!kw) return true
+        return (
+          t.teacherName.toLowerCase().includes(kw) ||
+          (t.teacherCode || "").toLowerCase().includes(kw) ||
+          ((t as any).departmentName || "").toLowerCase().includes(kw) ||
+          ((t as any).allDepartmentNames || "").toLowerCase().includes(kw)
+        )
+      })
+  }, [data.teachers, data.filterContext.selectedCampusId, paletteDepartmentId, paletteSearch])
+
   const handleDropOnCell = (
     cls: SchedulerPageData["allScopeClasses"][number],
     dayOfWeek: DayOfWeekCode,
@@ -527,11 +631,12 @@ export function SchedulerClient({ initialData }: { initialData: SchedulerPageDat
     periodNumber: number
   ) => {
     if (!isEditableDraft || !activeDrag) return
+    const draggedSnapshot = activeDrag
     const targetKey = makeSlotCellKey(cls.id, dayOfWeek, session, periodNumber)
     const evalRes =
       dropEvalByCell.get(targetKey) ||
       evaluateCellDropTarget({
-        dragged: activeDrag,
+        dragged: draggedSnapshot,
         targetClass: cls,
         dayOfWeek,
         session,
@@ -562,10 +667,10 @@ export function SchedulerClient({ initialData }: { initialData: SchedulerPageDat
     }
 
     let nextSlots: SlotRecord[]
-    if (activeDrag.kind === "CELL_SLOT") {
+    if (draggedSnapshot.kind === "CELL_SLOT") {
       const remaining = slots.filter((s) => {
         const k = makeSlotCellKey(s.classId, s.dayOfWeek, s.session, s.periodNumber)
-        return k !== activeDrag.sourceCellKey && k !== targetKey
+        return k !== draggedSnapshot.sourceCellKey && k !== targetKey
       })
       nextSlots = evalRes.swappedBackSlot
         ? [...remaining, evalRes.resolvedSlot, evalRes.swappedBackSlot]
@@ -575,6 +680,159 @@ export function SchedulerClient({ initialData }: { initialData: SchedulerPageDat
         (s) => makeSlotCellKey(s.classId, s.dayOfWeek, s.session, s.periodNumber) !== targetKey
       )
       nextSlots = [...remaining, evalRes.resolvedSlot]
+    }
+
+    // When dragging a TEACHER with "Ghi nhớ vào Phân công giảng dạy" checked (PRIMARY or ALT_TEACHER role),
+    // automatically populate unassigned primary & alternating slots of the same subject in this class & persist TeachingAssignment
+    if (
+      draggedSnapshot.kind === "TEACHER" &&
+      syncTeacherToAssignment &&
+      (draggedSnapshot.roleMode === "PRIMARY" || draggedSnapshot.roleMode === "ALT_TEACHER")
+    ) {
+      if (draggedSnapshot.roleMode === "PRIMARY" && evalRes.resolvedSlot.subjectId) {
+        const targetSubjectId = evalRes.resolvedSlot.subjectId
+        const targetSubNameNorm = (evalRes.resolvedSlot.subjectName || "").trim().toUpperCase()
+        nextSlots = nextSlots.map((s) => {
+          if (s.classId !== cls.id) return s
+          let patched = s
+          if (s.subjectId === targetSubjectId && !s.teacherId) {
+            patched = {
+              ...patched,
+              teacherId: draggedSnapshot.teacherId,
+              teacherCode: draggedSnapshot.teacherCode || null,
+              teacherName: draggedSnapshot.teacherName,
+            }
+          }
+          if (
+            !s.altTeacherId &&
+            (s.altSubjectId === targetSubjectId ||
+              (targetSubNameNorm &&
+                (s.altSubjectName || "").trim().toUpperCase() === targetSubNameNorm))
+          ) {
+            patched = {
+              ...patched,
+              altSubjectId: s.altSubjectId || targetSubjectId,
+              altTeacherId: draggedSnapshot.teacherId,
+              altTeacherCode: draggedSnapshot.teacherCode || null,
+              altTeacherName: draggedSnapshot.teacherName,
+            }
+          }
+          return patched
+        })
+
+        setBaseQuotaItems((prev) =>
+          prev.map((q) =>
+            q.classId === cls.id && q.subjectId === targetSubjectId
+              ? {
+                  ...q,
+                  primaryTeacherId: draggedSnapshot.teacherId,
+                  primaryTeacherCode: draggedSnapshot.teacherCode || null,
+                  primaryTeacherName: draggedSnapshot.teacherName,
+                }
+              : q
+          )
+        )
+
+        if (activeScopeCode !== "LIEN_CAP") {
+          void assignTeacherToClassSubjectAction({
+            academicYearId: data.filterContext.selectedYearId,
+            semester: data.filterContext.semester,
+            campusId: data.filterContext.selectedCampusId,
+            scopeGroup: activeScopeCode as ManageableScopeGroup,
+            classId: cls.id,
+            subjectId: targetSubjectId,
+            teacherId: draggedSnapshot.teacherId,
+          }).then((res) => {
+            if (res.success) {
+              toast.success(
+                `Đã gán GV ${draggedSnapshot.teacherName} & ghi nhớ phân công môn ${evalRes.resolvedSlot?.subjectName} (${cls.className}).`
+              )
+            }
+          })
+        }
+      } else if (
+        draggedSnapshot.roleMode === "ALT_TEACHER" &&
+        (evalRes.resolvedSlot.altSubjectId || evalRes.resolvedSlot.altSubjectName)
+      ) {
+        const rawAltName = (evalRes.resolvedSlot.altSubjectName || "").trim()
+        const rawAltUpper = rawAltName.toUpperCase()
+        const matchedCatalogSubject =
+          (evalRes.resolvedSlot.altSubjectId
+            ? data.subjects.find((sub) => sub.id === evalRes.resolvedSlot?.altSubjectId)
+            : undefined) ||
+          data.subjects.find(
+            (sub) =>
+              sub.subjectName.trim().toUpperCase() === rawAltUpper ||
+              (sub.subjectCode || "").trim().toUpperCase() === rawAltUpper
+          )
+        const resolvedAltSubId =
+          evalRes.resolvedSlot.altSubjectId || matchedCatalogSubject?.id || null
+
+        nextSlots = nextSlots.map((s) => {
+          if (s.classId !== cls.id) return s
+          let patched = s
+          const sameAltSubject =
+            (resolvedAltSubId && s.altSubjectId === resolvedAltSubId) ||
+            (rawAltUpper && (s.altSubjectName || "").trim().toUpperCase() === rawAltUpper)
+          if (sameAltSubject && !s.altTeacherId) {
+            patched = {
+              ...patched,
+              altSubjectId: s.altSubjectId || resolvedAltSubId,
+              altTeacherId: draggedSnapshot.teacherId,
+              altTeacherCode: draggedSnapshot.teacherCode || null,
+              altTeacherName: draggedSnapshot.teacherName,
+            }
+          }
+          if (resolvedAltSubId && s.subjectId === resolvedAltSubId && !s.teacherId) {
+            patched = {
+              ...patched,
+              teacherId: draggedSnapshot.teacherId,
+              teacherCode: draggedSnapshot.teacherCode || null,
+              teacherName: draggedSnapshot.teacherName,
+            }
+          }
+          return patched
+        })
+
+        if (resolvedAltSubId) {
+          setBaseQuotaItems((prev) =>
+            prev.map((q) =>
+              q.classId === cls.id && q.subjectId === resolvedAltSubId
+                ? {
+                    ...q,
+                    primaryTeacherId: draggedSnapshot.teacherId,
+                    primaryTeacherCode: draggedSnapshot.teacherCode || null,
+                    primaryTeacherName: draggedSnapshot.teacherName,
+                  }
+                : q
+            )
+          )
+
+          if (activeScopeCode !== "LIEN_CAP") {
+            void assignTeacherToClassSubjectAction({
+              academicYearId: data.filterContext.selectedYearId,
+              semester: data.filterContext.semester,
+              campusId: data.filterContext.selectedCampusId,
+              scopeGroup: activeScopeCode as ManageableScopeGroup,
+              classId: cls.id,
+              subjectId: resolvedAltSubId,
+              teacherId: draggedSnapshot.teacherId,
+            }).then((res) => {
+              if (res.success) {
+                toast.success(
+                  `Đã gán GV luân phiên ${draggedSnapshot.teacherName} cho môn ${
+                    matchedCatalogSubject?.subjectName || rawAltName
+                  } (${cls.className}) & đồng bộ Phân công.`
+                )
+              }
+            })
+          }
+        } else {
+          toast.success(
+            `Đã gán GV luân phiên ${draggedSnapshot.teacherName} cho các ô "${rawAltName}" của Lớp ${cls.className}.`
+          )
+        }
+      }
     }
 
     applySlotsAndAutoSave(nextSlots)
@@ -801,6 +1059,43 @@ export function SchedulerClient({ initialData }: { initialData: SchedulerPageDat
     await reloadWithPatch({ versionId: data.selectedVersion.id })
   }
 
+  const [syncingTeachers, setSyncingTeachers] = useState(false)
+
+  const handleSyncFromAssignments = async () => {
+    if (!data.selectedVersion || !isEditableDraft) {
+      toast.error("Chỉ có thể đồng bộ giáo viên trên phiên bản Nháp (DRAFT).")
+      return
+    }
+    if (debounceTimerRef.current) {
+      clearTimeout(debounceTimerRef.current)
+      debounceTimerRef.current = null
+    }
+    if (dirty || inFlightSavePromiseRef.current) {
+      const flushed = await flushAutoSave()
+      if (!flushed) return
+    }
+
+    setSyncingTeachers(true)
+    const res = await syncDraftTeachersFromAssignmentsAction({
+      versionId: data.selectedVersion.id,
+      expectedRevision: revisionRef.current,
+      mode: "FILL_MISSING",
+    })
+    setSyncingTeachers(false)
+
+    if (!res.success) {
+      toast.error(res.error)
+      return
+    }
+
+    toast.success(
+      res.updatedCount > 0
+        ? `Đã đồng bộ GV từ Phân công: cập nhật ${res.filledPrimaryCount} tiết chính và ${res.filledAltCount} tiết luân phiên.`
+        : "Tất cả tiết chính và tiết luân phiên đều đã khớp với Phân công giảng dạy."
+    )
+    await reloadWithPatch({ versionId: data.selectedVersion.id })
+  }
+
   const handleDownloadExcelTemplate = async () => {
     const res = await downloadTimetableExcelTemplateAction({
       academicYearId: data.filterContext.selectedYearId,
@@ -861,8 +1156,8 @@ export function SchedulerClient({ initialData }: { initialData: SchedulerPageDat
 
   return (
     <TimetableShell
-      title="Xếp thời khóa biểu"
-      subtitle="Kéo thả trực quan theo Bộ thời khóa biểu, báo trùng tức thì, áp dụng nhanh cả khối - tự động lưu và ghi nhớ cách thiết lập"
+      title="Xếp thời khóa biểu (Kéo & Thả)"
+      subtitle="Kéo thả môn học & giáo viên theo từng lớp hoặc toàn Bộ TKB, kiểm tra trùng tức thì, tự động lưu nháp và ghi nhớ cách thiết lập"
       activeTabCode="SCHEDULE"
       hasUnsavedChanges={dirty}
       headerActions={
@@ -925,6 +1220,17 @@ export function SchedulerClient({ initialData }: { initialData: SchedulerPageDat
 
               <button
                 type="button"
+                onClick={handleSyncFromAssignments}
+                disabled={syncingTeachers}
+                title="Cập nhật toàn bộ giáo viên chính và giáo viên môn luân phiên theo bảng Phân công giảng dạy hiện hành"
+                className="inline-flex items-center gap-1.5 px-3 py-2 rounded-xl bg-[#F0FDFA] border border-teal-200 text-[#003B3A] text-xs font-semibold hover:bg-teal-100/70 disabled:opacity-50 cursor-pointer tabular-nums"
+              >
+                <RefreshCw className={`w-3.5 h-3.5 text-[#008B85] ${syncingTeachers ? "animate-spin" : ""}`} />
+                <span>{syncingTeachers ? "Đang đồng bộ..." : "Đồng bộ GV từ Phân công"}</span>
+              </button>
+
+              <button
+                type="button"
                 onClick={handleAutoSchedule}
                 disabled={autoRunning}
                 className="px-3.5 py-2 rounded-xl bg-[#00A19A] text-white text-xs font-semibold hover:bg-[#008B85] disabled:opacity-50 cursor-pointer"
@@ -973,13 +1279,41 @@ export function SchedulerClient({ initialData }: { initialData: SchedulerPageDat
         loading={loading}
         extraSlot={
           <div className="flex flex-wrap items-center gap-2">
+            {/* View Mode Segmented Control */}
+            <div className="inline-flex items-center rounded-xl bg-[#F8FAFC] border border-[#E2E8F0] p-0.5">
+              <button
+                type="button"
+                onClick={() => setViewMode("SINGLE_CLASS")}
+                className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-xs font-semibold transition-colors cursor-pointer ${
+                  viewMode === "SINGLE_CLASS"
+                    ? "bg-[#003B3A] text-white shadow-xs"
+                    : "text-slate-600 hover:text-[#003B3A]"
+                }`}
+              >
+                <LayoutGrid className="w-3.5 h-3.5" />
+                <span>Kéo thả từng lớp</span>
+              </button>
+              <button
+                type="button"
+                onClick={() => setViewMode("MATRIX")}
+                className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-xs font-semibold transition-colors tabular-nums cursor-pointer ${
+                  viewMode === "MATRIX"
+                    ? "bg-[#003B3A] text-white shadow-xs"
+                    : "text-slate-600 hover:text-[#003B3A]"
+                }`}
+              >
+                <Table2 className="w-3.5 h-3.5" />
+                <span>Ma trận Bộ TKB ({displayedClasses.length})</span>
+              </button>
+            </div>
+
             {isEditableDraft && (
               <button
                 type="button"
                 onClick={() => setPaletteOpen((v) => !v)}
                 className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl border text-xs font-semibold transition-colors cursor-pointer ${
                   paletteOpen
-                    ? "bg-[#003B3A] border-[#003B3A] text-white"
+                    ? "bg-[#00736E] border-[#00736E] text-white"
                     : "bg-[#F8FAFC] border-[#E2E8F0] text-slate-700 hover:border-[#00A19A]"
                 }`}
               >
@@ -1006,6 +1340,21 @@ export function SchedulerClient({ initialData }: { initialData: SchedulerPageDat
                 <span>Tự khóa tiết kéo thả</span>
               </label>
             )}
+
+            <button
+              type="button"
+              onClick={() => setShowGradeStatsPanel((v) => !v)}
+              className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl border text-xs font-semibold tabular-nums transition-colors cursor-pointer ${
+                showGradeStatsPanel
+                  ? "bg-[#003B3A] border-[#003B3A] text-white"
+                  : "bg-[#F0FDFA] border-teal-200 text-[#003B3A] hover:bg-teal-100/70"
+              }`}
+            >
+              <BarChart3 className="w-3.5 h-3.5" />
+              <span>
+                Thống kê môn theo khối ({WEEKLY_STANDARD_PERIODS} tiết)
+              </span>
+            </button>
 
             <button
               type="button"
@@ -1076,6 +1425,82 @@ export function SchedulerClient({ initialData }: { initialData: SchedulerPageDat
 
           {/* Live 10-Rule Validation Summary */}
           <ValidationSummaryPanel report={liveValidationReport} />
+
+          {isEditableDraft && Number((data as any).autoHydratedCount || 0) > 0 && (
+            <div className="bg-[#F0FDFA] border border-teal-200 text-[#003B3A] rounded-2xl px-4 py-2.5 flex flex-wrap items-center justify-between gap-2 text-xs tabular-nums">
+              <span>
+                Hệ thống đã tự động hiển thị giáo viên từ <strong>Phân công giảng dạy</strong> cho{" "}
+                <strong>{(data as any).autoHydratedCount}</strong> tiết chưa lưu GV
+                {Number((data as any).autoHydratedAltCount || 0) > 0
+                  ? ` (trong đó có ${(data as any).autoHydratedAltCount} tiết môn luân phiên)`
+                  : ""}
+                . Bấm nút bên phải để ghi nhận cố định vào bản nháp.
+              </span>
+              <button
+                type="button"
+                onClick={handleSyncFromAssignments}
+                disabled={syncingTeachers}
+                className="px-3 py-1.5 rounded-xl bg-[#003B3A] text-white text-xs font-semibold hover:bg-[#004d4b] disabled:opacity-50 cursor-pointer"
+              >
+                {syncingTeachers ? "Đang lưu..." : "Lưu đồng bộ GV vào bản nháp"}
+              </button>
+            </div>
+          )}
+
+          {/* Grade-level Subject & 40-Period Weekly Reconciliation Table */}
+          {showGradeStatsPanel && (
+            <GradeWeeklyStatsTable
+              classes={data.allScopeClasses}
+              quotaItems={liveQuotaItems}
+              slots={slots}
+              subjects={data.subjects}
+              defaultGrade={data.filterContext.selectedGrade}
+              cycleWeeks={effectiveConfig.cycleWeeks}
+              targetWeeklyPeriods={WEEKLY_STANDARD_PERIODS}
+              onClose={() => setShowGradeStatsPanel(false)}
+              onSelectClass={(classId) => {
+                setFocusedClassId(classId)
+                setViewMode("SINGLE_CLASS")
+              }}
+              onUpdateQuota={
+                isEditableDraft
+                  ? async ({ subjectId, studyProgram, grade, weeklyQuota }) => {
+                      const res = await updateSubjectGradeQuotaAction({
+                        academicYearId: data.filterContext.selectedYearId,
+                        campusId: data.filterContext.selectedCampusId,
+                        subjectId,
+                        studyProgram,
+                        grade,
+                        weeklyQuota,
+                      })
+                      if (!res.success) {
+                        toast.error(res.error)
+                        return
+                      }
+                      setBaseQuotaItems((prev) =>
+                        prev.map((q) =>
+                          String(q.grade).trim() === String(grade).trim() &&
+                          q.studyProgram === studyProgram &&
+                          q.subjectId === subjectId
+                            ? {
+                                ...q,
+                                weeklyQuota,
+                                cycleQuota:
+                                  Math.round(
+                                    weeklyQuota * effectiveConfig.cycleWeeks * 100
+                                  ) / 100,
+                              }
+                            : q
+                        )
+                      )
+                      toast.success(
+                        `Đã cập nhật định mức khối ${grade} (${studyProgram}): ${weeklyQuota} tiết/tuần.`
+                      )
+                    }
+                  : undefined
+              }
+            />
+          )}
 
           {/* Unscheduled Activities Detail Table */}
           {showUnscheduledPanel && (
@@ -1285,18 +1710,18 @@ export function SchedulerClient({ initialData }: { initialData: SchedulerPageDat
             </div>
           )}
 
-          {/* MAIN WORKSPACE: DOCKABLE DRAG-DROP PALETTE + STICKY MATRIX */}
+          {/* MAIN WORKSPACE: DOCKABLE DRAG-DROP PALETTE + SINGLE-CLASS / MATRIX GRID */}
           <div className="flex flex-col lg:flex-row items-start gap-3">
             {/* LEFT DRAG & DROP DOCK PER BỘ THỜI KHÓA BIỂU */}
             {isEditableDraft && paletteOpen && (
-              <aside className="w-full lg:w-[310px] shrink-0 bg-white rounded-2xl border border-[#E2E8F0] shadow-xs overflow-hidden lg:sticky lg:top-4">
+              <aside className="w-full lg:w-[325px] shrink-0 bg-white rounded-2xl border border-[#E2E8F0] shadow-xs overflow-hidden lg:sticky lg:top-4">
                 <div className="bg-[#003B3A] px-3.5 py-2.5 flex items-center justify-between gap-2">
                   <div>
                     <div className="text-xs font-semibold text-white">
                       Khay kéo thả • Bộ {activeScopeLabel}
                     </div>
                     <div className="text-[11px] text-teal-100">
-                      Kéo thẻ thả vào ô tiết (tự động lưu & báo trùng)
+                      Kéo môn hoặc giáo viên thả vào ô tiết (tự lưu)
                     </div>
                   </div>
                   <button
@@ -1309,23 +1734,12 @@ export function SchedulerClient({ initialData }: { initialData: SchedulerPageDat
                   </button>
                 </div>
 
-                {/* 3 Segmented Tabs */}
-                <div className="p-2 bg-[#F8FAFC] border-b border-[#E2E8F0] grid grid-cols-3 gap-1">
-                  <button
-                    type="button"
-                    onClick={() => setPaletteTab("UNSCHEDULED")}
-                    className={`py-1.5 px-2 rounded-lg text-[11px] font-semibold transition-colors tabular-nums cursor-pointer ${
-                      paletteTab === "UNSCHEDULED"
-                        ? "bg-[#003B3A] text-white"
-                        : "text-slate-600 hover:bg-white"
-                    }`}
-                  >
-                    Chưa xếp ({pendingQuotaActivities.length})
-                  </button>
+                {/* 4 Segmented Tabs */}
+                <div className="p-1.5 bg-[#F8FAFC] border-b border-[#E2E8F0] grid grid-cols-4 gap-1">
                   <button
                     type="button"
                     onClick={() => setPaletteTab("BY_CLASS")}
-                    className={`py-1.5 px-2 rounded-lg text-[11px] font-semibold transition-colors cursor-pointer ${
+                    className={`py-1.5 px-1.5 rounded-lg text-[11px] font-semibold transition-colors cursor-pointer ${
                       paletteTab === "BY_CLASS"
                         ? "bg-[#003B3A] text-white"
                         : "text-slate-600 hover:bg-white"
@@ -1335,14 +1749,36 @@ export function SchedulerClient({ initialData }: { initialData: SchedulerPageDat
                   </button>
                   <button
                     type="button"
+                    onClick={() => setPaletteTab("UNSCHEDULED")}
+                    className={`py-1.5 px-1.5 rounded-lg text-[11px] font-semibold transition-colors tabular-nums cursor-pointer ${
+                      paletteTab === "UNSCHEDULED"
+                        ? "bg-[#003B3A] text-white"
+                        : "text-slate-600 hover:bg-white"
+                    }`}
+                  >
+                    Thiếu ({pendingQuotaActivities.length})
+                  </button>
+                  <button
+                    type="button"
                     onClick={() => setPaletteTab("SCOPE_SUBJECTS")}
-                    className={`py-1.5 px-2 rounded-lg text-[11px] font-semibold transition-colors cursor-pointer ${
+                    className={`py-1.5 px-1.5 rounded-lg text-[11px] font-semibold transition-colors cursor-pointer ${
                       paletteTab === "SCOPE_SUBJECTS"
                         ? "bg-[#003B3A] text-white"
                         : "text-slate-600 hover:bg-white"
                     }`}
                   >
-                    Môn Bộ TKB
+                    Môn TKB
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setPaletteTab("TEACHERS")}
+                    className={`py-1.5 px-1.5 rounded-lg text-[11px] font-semibold transition-colors cursor-pointer ${
+                      paletteTab === "TEACHERS"
+                        ? "bg-[#003B3A] text-white"
+                        : "text-slate-600 hover:bg-white"
+                    }`}
+                  >
+                    Giáo viên
                   </button>
                 </div>
 
@@ -1350,7 +1786,7 @@ export function SchedulerClient({ initialData }: { initialData: SchedulerPageDat
                 <div className="p-2.5 border-b border-[#F1F5F9] space-y-2 text-xs">
                   {paletteTab === "BY_CLASS" && (
                     <select
-                      value={focusedClassId}
+                      value={activeSingleClass?.id || focusedClassId}
                       onChange={(e) => setFocusedClassId(e.target.value)}
                       className="w-full rounded-xl border border-[#E2E8F0] bg-[#F8FAFC] px-2.5 py-1.5 text-xs font-semibold text-[#003B3A] focus:border-[#00A19A] focus:outline-none tabular-nums"
                     >
@@ -1360,6 +1796,18 @@ export function SchedulerClient({ initialData }: { initialData: SchedulerPageDat
                         </option>
                       ))}
                     </select>
+                  )}
+
+                  {paletteTab === "UNSCHEDULED" && viewMode === "SINGLE_CLASS" && activeSingleClass && (
+                    <label className="flex items-center gap-2 px-2.5 py-1.5 rounded-xl bg-[#F8FAFC] border border-[#E2E8F0] text-[11px] font-medium text-slate-700 cursor-pointer">
+                      <input
+                        type="checkbox"
+                        checked={unscheduledOnlyFocusedClass}
+                        onChange={(e) => setUnscheduledOnlyFocusedClass(e.target.checked)}
+                        className="accent-[#003B3A]"
+                      />
+                      <span>Chỉ hiện môn thiếu của Lớp {activeSingleClass.className}</span>
+                    </label>
                   )}
 
                   {paletteTab === "SCOPE_SUBJECTS" && (
@@ -1374,6 +1822,85 @@ export function SchedulerClient({ initialData }: { initialData: SchedulerPageDat
                     </label>
                   )}
 
+                  {paletteTab === "TEACHERS" && (
+                    <div className="space-y-1.5">
+                      <select
+                        value={paletteDepartmentId}
+                        onChange={(e) => setPaletteDepartmentId(e.target.value)}
+                        title="Lọc danh sách giáo viên theo Tổ chuyên môn"
+                        className="w-full rounded-xl border border-[#E2E8F0] bg-[#F8FAFC] px-2.5 py-1.5 text-xs font-semibold text-[#003B3A] focus:border-[#00A19A] focus:outline-none tabular-nums"
+                      >
+                        <option value="ALL">
+                          Tất cả Tổ chuyên môn ({data.teachers.length})
+                        </option>
+                        {(data.departments || []).map((dept) => (
+                          <option key={dept.id} value={dept.id}>
+                            {dept.name} ({dept.teacherCount})
+                          </option>
+                        ))}
+                        {data.teachers.some(
+                          (t) => !(t as any).departmentId && !(t as any).departmentName
+                        ) && (
+                          <option value={UNASSIGNED_DEPT_VALUE}>
+                            Chưa phân Tổ chuyên môn
+                          </option>
+                        )}
+                      </select>
+
+                      <div className="grid grid-cols-3 gap-1 rounded-xl bg-[#F8FAFC] border border-[#E2E8F0] p-0.5">
+                        <button
+                          type="button"
+                          onClick={() => setTeacherRoleMode("PRIMARY")}
+                          className={`py-1 px-1 rounded-lg text-[10.5px] font-semibold cursor-pointer ${
+                            teacherRoleMode === "PRIMARY"
+                              ? "bg-[#003B3A] text-white"
+                              : "text-slate-600 hover:text-[#003B3A]"
+                          }`}
+                        >
+                          GV chính
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => setTeacherRoleMode("ALT_TEACHER")}
+                          title="Kéo thả giáo viên vào các ô tiết có môn luân phiên (tuần chẵn / tuần lẻ)"
+                          className={`py-1 px-1 rounded-lg text-[10.5px] font-semibold cursor-pointer ${
+                            teacherRoleMode === "ALT_TEACHER"
+                              ? "bg-[#00A19A] text-white"
+                              : "text-[#00736E] hover:bg-teal-50"
+                          }`}
+                        >
+                          GV luân phiên
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => setTeacherRoleMode("CO_TEACHER")}
+                          className={`py-1 px-1 rounded-lg text-[10.5px] font-semibold cursor-pointer ${
+                            teacherRoleMode === "CO_TEACHER"
+                              ? "bg-[#003B3A] text-white"
+                              : "text-slate-600 hover:text-[#003B3A]"
+                          }`}
+                        >
+                          Đồng giảng
+                        </button>
+                      </div>
+                      {(teacherRoleMode === "PRIMARY" || teacherRoleMode === "ALT_TEACHER") && (
+                        <label className="flex items-center gap-2 px-2.5 py-1.5 rounded-xl bg-[#F0FDFA] border border-teal-200 text-[11px] font-medium text-[#003B3A] cursor-pointer">
+                          <input
+                            type="checkbox"
+                            checked={syncTeacherToAssignment}
+                            onChange={(e) => setSyncTeacherToAssignment(e.target.checked)}
+                            className="accent-[#003B3A]"
+                          />
+                          <span>
+                            {teacherRoleMode === "ALT_TEACHER"
+                              ? "Đồng bộ các ô cùng môn luân phiên & Phân công"
+                              : "Ghi nhớ vào Phân công giảng dạy"}
+                          </span>
+                        </label>
+                      )}
+                    </div>
+                  )}
+
                   <div className="flex items-center gap-1.5">
                     <div className="relative flex-1">
                       <Search className="w-3.5 h-3.5 text-slate-400 absolute left-2.5 top-2" />
@@ -1384,26 +1911,30 @@ export function SchedulerClient({ initialData }: { initialData: SchedulerPageDat
                         placeholder={
                           paletteTab === "SCOPE_SUBJECTS"
                             ? "Tìm môn học..."
+                            : paletteTab === "TEACHERS"
+                            ? "Tìm tên, mã GV, tổ..."
                             : "Tìm lớp, môn, GV..."
                         }
                         className="w-full pl-8 pr-2.5 py-1.5 rounded-xl border border-[#E2E8F0] text-xs focus:border-[#00A19A] focus:outline-none"
                       />
                     </div>
-                    <select
-                      value={paletteWeekType}
-                      onChange={(e) => setPaletteWeekType(e.target.value as WeekTypeCode)}
-                      title="Chu kỳ tuần áp dụng khi kéo thả"
-                      className="rounded-xl border border-[#E2E8F0] bg-[#F8FAFC] px-2 py-1.5 text-[11px] font-semibold text-slate-700 focus:border-[#00A19A] focus:outline-none"
-                    >
-                      <option value="ALL">Cả tuần</option>
-                      <option value="ODD">Tuần lẻ</option>
-                      <option value="EVEN">Tuần chẵn</option>
-                    </select>
+                    {paletteTab !== "TEACHERS" && (
+                      <select
+                        value={paletteWeekType}
+                        onChange={(e) => setPaletteWeekType(e.target.value as WeekTypeCode)}
+                        title="Chu kỳ tuần áp dụng khi kéo thả"
+                        className="rounded-xl border border-[#E2E8F0] bg-[#F8FAFC] px-2 py-1.5 text-[11px] font-semibold text-slate-700 focus:border-[#00A19A] focus:outline-none"
+                      >
+                        <option value="ALL">Cả tuần</option>
+                        <option value="ODD">Tuần lẻ</option>
+                        <option value="EVEN">Tuần chẵn</option>
+                      </select>
+                    )}
                   </div>
                 </div>
 
                 {/* Draggable Card List */}
-                <div className="max-h-[56vh] overflow-y-auto p-2.5 space-y-2">
+                <div className="max-h-[58vh] overflow-y-auto p-2.5 space-y-2">
                   {paletteTab === "UNSCHEDULED" && (
                     <>
                       {filteredPaletteUnscheduled.length === 0 ? (
@@ -1426,7 +1957,7 @@ export function SchedulerClient({ initialData }: { initialData: SchedulerPageDat
                           return (
                             <div
                               key={`${q.classId}::${q.subjectId}`}
-                              draggable={!missingTeacher}
+                              draggable
                               onClick={() => setFocusedClassId(q.classId)}
                               onDragStart={(e) => {
                                 e.dataTransfer.effectAllowed = "copyMove"
@@ -1441,11 +1972,7 @@ export function SchedulerClient({ initialData }: { initialData: SchedulerPageDat
                                 setActiveDrag(null)
                                 setHoveredCellKey(null)
                               }}
-                              className={`p-2.5 rounded-xl border transition-colors tabular-nums ${
-                                missingTeacher
-                                  ? "bg-rose-50/40 border-rose-200 cursor-not-allowed"
-                                  : "bg-white border-[#E2E8F0] hover:border-[#00A19A] hover:bg-[#F0FDFA]/40 cursor-grab active:cursor-grabbing"
-                              }`}
+                              className="p-2.5 rounded-xl border bg-white border-[#E2E8F0] hover:border-[#00A19A] hover:bg-[#F0FDFA]/40 transition-colors tabular-nums cursor-grab active:cursor-grabbing"
                             >
                               <div className="flex items-start justify-between gap-1.5">
                                 <div className="flex items-center gap-1.5 min-w-0">
@@ -1463,7 +1990,7 @@ export function SchedulerClient({ initialData }: { initialData: SchedulerPageDat
                                 <span
                                   className={`truncate ${
                                     missingTeacher
-                                      ? "text-[#E11D48] font-medium"
+                                      ? "text-[#D97706] font-medium"
                                       : "text-slate-600"
                                   }`}
                                 >
@@ -1471,7 +1998,7 @@ export function SchedulerClient({ initialData }: { initialData: SchedulerPageDat
                                     ? `${q.primaryTeacherName}${
                                         q.primaryTeacherCode ? ` (${q.primaryTeacherCode})` : ""
                                       }`
-                                    : "Chưa phân công GV"}
+                                    : "Chưa gán GV (vẫn kéo thả được)"}
                                 </span>
                                 <span className="px-1.5 py-0.5 rounded bg-amber-50 text-[#D97706] border border-amber-200 text-[10px] font-semibold shrink-0">
                                   Thiếu {q.missingWeeklyPeriods}/{q.weeklyQuota}
@@ -1488,7 +2015,8 @@ export function SchedulerClient({ initialData }: { initialData: SchedulerPageDat
                     <>
                       {byClassQuotaItems.length === 0 ? (
                         <div className="py-6 px-3 text-center text-xs text-slate-500">
-                          Chưa có định mức môn học cho lớp đang chọn.
+                          Chưa có định mức môn học cho lớp đang chọn. Bạn vẫn có thể kéo môn từ tab{" "}
+                          <strong>Môn TKB</strong>.
                         </div>
                       ) : (
                         byClassQuotaItems.map((q) => {
@@ -1504,7 +2032,7 @@ export function SchedulerClient({ initialData }: { initialData: SchedulerPageDat
                           return (
                             <div
                               key={`${q.classId}::${q.subjectId}`}
-                              draggable={Boolean(q.primaryTeacherId)}
+                              draggable
                               onDragStart={(e) => {
                                 e.dataTransfer.effectAllowed = "copyMove"
                                 setActiveDrag({
@@ -1517,37 +2045,117 @@ export function SchedulerClient({ initialData }: { initialData: SchedulerPageDat
                                 setActiveDrag(null)
                                 setHoveredCellKey(null)
                               }}
-                              className={`p-2.5 rounded-xl border transition-colors tabular-nums ${
-                                !q.primaryTeacherId
-                                  ? "bg-rose-50/40 border-rose-200 cursor-not-allowed"
+                              className={`p-2.5 rounded-xl border transition-colors tabular-nums cursor-grab active:cursor-grabbing ${
+                                q.overScheduledWeeklyPeriods > 0
+                                  ? "bg-rose-50/70 border-rose-300 border-l-4 border-l-[#E11D48] hover:bg-rose-100/60"
                                   : isComplete
-                                  ? "bg-[#F8FAFC] border-[#E2E8F0] hover:border-[#00A19A] cursor-grab"
-                                  : "bg-white border-[#E2E8F0] hover:border-[#00A19A] hover:bg-[#F0FDFA]/40 cursor-grab active:cursor-grabbing"
+                                  ? "bg-[#F8FAFC] border-[#E2E8F0] hover:border-[#00A19A]"
+                                  : "bg-white border-[#E2E8F0] hover:border-[#00A19A] hover:bg-[#F0FDFA]/40"
                               }`}
                             >
                               <div className="flex items-center justify-between gap-1.5">
-                                <span className="text-xs font-semibold text-slate-900 truncate">
-                                  {q.subjectName}
-                                </span>
+                                <div className="flex items-center gap-1.5 min-w-0">
+                                  <GripVertical className="w-3.5 h-3.5 text-slate-400 shrink-0" />
+                                  <span
+                                    className={`text-xs truncate ${
+                                      q.overScheduledWeeklyPeriods > 0
+                                        ? "font-bold text-[#E11D48]"
+                                        : "font-semibold text-slate-900"
+                                    }`}
+                                  >
+                                    {q.subjectName}
+                                  </span>
+                                </div>
                                 <span
                                   className={`px-1.5 py-0.5 rounded text-[10px] font-semibold shrink-0 ${
                                     isComplete
                                       ? "bg-emerald-50 text-[#059669] border border-emerald-200"
                                       : q.overScheduledWeeklyPeriods > 0
-                                      ? "bg-rose-50 text-[#E11D48] border border-rose-200"
+                                      ? "bg-[#E11D48] text-white border border-[#E11D48]"
                                       : "bg-amber-50 text-[#D97706] border border-amber-200"
                                   }`}
                                 >
-                                  {q.scheduledWeeklyEquivalent}/{q.weeklyQuota} tiết
+                                  {q.overScheduledWeeklyPeriods > 0
+                                    ? `Vượt +${q.overScheduledWeeklyPeriods} (${q.scheduledWeeklyEquivalent}/${q.weeklyQuota})`
+                                    : `${q.scheduledWeeklyEquivalent}/${q.weeklyQuota} tiết`}
                                 </span>
                               </div>
-                              <div className="mt-1 text-[11px] text-slate-600 truncate">
-                                {q.primaryTeacherName
-                                  ? `${q.primaryTeacherName}${
-                                      q.primaryTeacherCode ? ` (${q.primaryTeacherCode})` : ""
-                                    }`
-                                  : "Chưa phân công GV"}
-                              </div>
+                              {q.isDualGvvnGvnn ? (
+                                <div className="mt-1.5 space-y-1 text-[11px]">
+                                  <div
+                                    draggable={Boolean(q.gvvnTeacherId)}
+                                    onDragStart={(e) => {
+                                      e.stopPropagation()
+                                      e.dataTransfer.effectAllowed = "copyMove"
+                                      setActiveDrag({
+                                        kind: "QUOTA_ACTIVITY",
+                                        item: {
+                                          ...q,
+                                          isDualGvvnGvnn: false,
+                                          primaryTeacherId: q.gvvnTeacherId || null,
+                                          primaryTeacherCode: q.gvvnTeacherCode || null,
+                                          primaryTeacherName: q.gvvnTeacherName || null,
+                                          coTeacherId: null,
+                                          coTeacherCode: null,
+                                          coTeacherName: null,
+                                        },
+                                        weekType: effectiveWt,
+                                      })
+                                    }}
+                                    title="Kéo riêng tiết của Giáo viên Việt Nam (GVVN) vào ô TKB"
+                                    className="flex items-center justify-between gap-1.5 px-2 py-1 rounded-lg bg-[#F0FDFA] border border-teal-200 text-[#003B3A]"
+                                  >
+                                    <span className="truncate font-medium">
+                                      <strong>GVVN:</strong> {q.gvvnTeacherName || "Chưa gán"}
+                                    </span>
+                                    <span className="font-semibold shrink-0">
+                                      {q.scheduledGvvnPeriods ?? 0}/{q.assignedGvvnPeriods ?? 0} tiết
+                                    </span>
+                                  </div>
+                                  <div
+                                    draggable={Boolean(q.gvnnTeacherId)}
+                                    onDragStart={(e) => {
+                                      e.stopPropagation()
+                                      e.dataTransfer.effectAllowed = "copyMove"
+                                      setActiveDrag({
+                                        kind: "QUOTA_ACTIVITY",
+                                        item: {
+                                          ...q,
+                                          isDualGvvnGvnn: false,
+                                          primaryTeacherId: q.gvnnTeacherId || null,
+                                          primaryTeacherCode: q.gvnnTeacherCode || null,
+                                          primaryTeacherName: q.gvnnTeacherName || null,
+                                          coTeacherId: null,
+                                          coTeacherCode: null,
+                                          coTeacherName: null,
+                                        },
+                                        weekType: effectiveWt,
+                                      })
+                                    }}
+                                    title="Kéo riêng tiết của Giáo viên Nước ngoài (GVNN) vào ô TKB"
+                                    className="flex items-center justify-between gap-1.5 px-2 py-1 rounded-lg bg-emerald-50 border border-emerald-200 text-[#059669]"
+                                  >
+                                    <span className="truncate font-medium">
+                                      <strong>GVNN:</strong> {q.gvnnTeacherName || "Chưa gán"}
+                                    </span>
+                                    <span className="font-semibold shrink-0">
+                                      {q.scheduledGvnnPeriods ?? 0}/{q.assignedGvnnPeriods ?? 0} tiết
+                                    </span>
+                                  </div>
+                                </div>
+                              ) : (
+                                <div
+                                  className={`mt-1 text-[11px] truncate ${
+                                    q.primaryTeacherName ? "text-slate-600" : "text-[#D97706]"
+                                  }`}
+                                >
+                                  {q.primaryTeacherName
+                                    ? `${q.primaryTeacherName}${
+                                        q.primaryTeacherCode ? ` (${q.primaryTeacherCode})` : ""
+                                      }`
+                                    : "Chưa gán GV — kéo thả môn rồi kéo GV vào ô"}
+                                </div>
+                              )}
                             </div>
                           )
                         })
@@ -1558,8 +2166,8 @@ export function SchedulerClient({ initialData }: { initialData: SchedulerPageDat
                   {paletteTab === "SCOPE_SUBJECTS" && (
                     <>
                       <div className="px-2 py-1.5 rounded-xl bg-[#F8FAFC] border border-[#E2E8F0] text-[11px] text-slate-600 leading-relaxed">
-                        Kéo môn thả vào <strong>1 ô lớp</strong> hoặc thả thẳng vào cột{" "}
-                        <strong>Thứ / Buổi / Tiết</strong> để xếp đồng loạt cả Khối / Bộ TKB và ghi nhớ quy tắc cố định.
+                        Kéo môn thả vào <strong>ô tiết bất kỳ</strong> hoặc bấm <strong>Cả bộ</strong>{" "}
+                        để xếp đồng loạt cả Khối / Bộ TKB và ghi nhớ quy tắc cố định.
                       </div>
 
                       {filteredScopeSubjects.map((sub) => {
@@ -1588,12 +2196,15 @@ export function SchedulerClient({ initialData }: { initialData: SchedulerPageDat
                             }}
                             className="p-2.5 rounded-xl bg-white border border-[#E2E8F0] hover:border-[#00A19A] hover:bg-[#F0FDFA]/40 transition-colors cursor-grab active:cursor-grabbing flex items-center justify-between gap-2"
                           >
-                            <div className="min-w-0">
-                              <div className="text-xs font-semibold text-slate-900 truncate">
-                                {sub.subjectName}
-                              </div>
-                              <div className="text-[10px] text-slate-500">
-                                {autoHr ? "Gán GV chủ nhiệm từng lớp" : "Gán GV phân công từng lớp"}
+                            <div className="min-w-0 flex items-center gap-1.5">
+                              <GripVertical className="w-3.5 h-3.5 text-slate-400 shrink-0" />
+                              <div className="min-w-0">
+                                <div className="text-xs font-semibold text-slate-900 truncate">
+                                  {sub.subjectName}
+                                </div>
+                                <div className="text-[10px] text-slate-500">
+                                  {autoHr ? "Gán GV chủ nhiệm từng lớp" : "Gán GV phân công từng lớp"}
+                                </div>
                               </div>
                             </div>
 
@@ -1658,12 +2269,469 @@ export function SchedulerClient({ initialData }: { initialData: SchedulerPageDat
                       )}
                     </>
                   )}
+
+                  {paletteTab === "TEACHERS" && (
+                    <>
+                      <div className="px-2 py-1.5 rounded-xl bg-[#F8FAFC] border border-[#E2E8F0] text-[11px] text-slate-600 leading-relaxed">
+                        {teacherRoleMode === "ALT_TEACHER" ? (
+                          <>
+                            Đang chọn <strong>GV luân phiên</strong>: kéo Giáo viên thả vào các ô có{" "}
+                            <strong className="text-[#00736E]">Môn luân phiên</strong> (tự kiểm tra trùng theo tuần chẵn/lẻ).
+                          </>
+                        ) : (
+                          <>
+                            Kéo <strong>Giáo viên</strong> thả trực tiếp vào ô đã có môn học để gán{" "}
+                            {teacherRoleMode === "PRIMARY" ? "GV chính" : "GV đồng giảng"} (tự báo trùng liên cấp & liên cơ sở).
+                          </>
+                        )}
+                      </div>
+
+                      {filteredTeachers.slice(0, 120).map((t) => (
+                        <div
+                          key={t.id}
+                          draggable
+                          onDragStart={(e) => {
+                            e.dataTransfer.effectAllowed = "copy"
+                            setActiveDrag({
+                              kind: "TEACHER",
+                              teacherId: t.id,
+                              teacherCode: t.teacherCode || "",
+                              teacherName: t.teacherName,
+                              roleMode: teacherRoleMode,
+                            })
+                          }}
+                          onDragEnd={() => {
+                            setActiveDrag(null)
+                            setHoveredCellKey(null)
+                          }}
+                          className="p-2.5 rounded-xl bg-white border border-[#E2E8F0] hover:border-[#00A19A] hover:bg-[#F0FDFA]/40 transition-colors cursor-grab active:cursor-grabbing flex items-center justify-between gap-2 tabular-nums"
+                        >
+                          <div className="flex items-center gap-1.5 min-w-0">
+                            <Users className="w-3.5 h-3.5 text-[#00736E] shrink-0" />
+                            <div className="min-w-0">
+                              <div className="text-xs font-semibold text-slate-900 truncate">
+                                {t.teacherName}
+                              </div>
+                              <div className="text-[10px] text-slate-500 truncate">
+                                {t.teacherCode || "Chưa có mã"}
+                                {(t as any).departmentName ? ` • ${(t as any).departmentName}` : ""}
+                              </div>
+                            </div>
+                          </div>
+                        </div>
+                      ))}
+                    </>
+                  )}
                 </div>
               </aside>
             )}
 
-            {/* FULL-SPACE STICKY SCHEDULING MATRIX */}
-            <div className="flex-1 min-w-0 w-full bg-white rounded-2xl border border-[#E2E8F0] shadow-xs overflow-hidden">
+            {/* VIEW 1: CLASSIC SINGLE-CLASS DRAG & DROP TIMETABLE GRID (THỨ 2 -> THỨ 7) */}
+            {viewMode === "SINGLE_CLASS" && activeSingleClass ? (
+              <div className="flex-1 min-w-0 w-full bg-white rounded-2xl border border-[#E2E8F0] shadow-xs overflow-hidden">
+                {/* Single-Class Navigator Strip */}
+                <div className="px-4 py-3 bg-[#F8FAFC] border-b border-[#E2E8F0] flex flex-wrap items-center justify-between gap-3 tabular-nums">
+                  <div className="flex items-center gap-2">
+                    <button
+                      type="button"
+                      onClick={() => {
+                        const idx = displayedClasses.findIndex((c) => c.id === activeSingleClass.id)
+                        if (idx > 0) setFocusedClassId(displayedClasses[idx - 1].id)
+                      }}
+                      disabled={
+                        displayedClasses.findIndex((c) => c.id === activeSingleClass.id) <= 0
+                      }
+                      title="Lớp trước"
+                      className="p-1.5 rounded-xl bg-white border border-[#E2E8F0] text-slate-700 hover:border-[#00A19A] disabled:opacity-40 cursor-pointer"
+                    >
+                      <ChevronLeft className="w-4 h-4" />
+                    </button>
+
+                    <select
+                      value={activeSingleClass.id}
+                      onChange={(e) => setFocusedClassId(e.target.value)}
+                      className="rounded-xl border border-[#E2E8F0] bg-white px-3 py-1.5 text-xs font-bold text-[#003B3A] focus:border-[#00A19A] focus:outline-none"
+                    >
+                      {displayedClasses.map((c) => (
+                        <option key={c.id} value={c.id}>
+                          Lớp {c.className} • Khối {c.grade} ({c.educationSystem || "Chuẩn"})
+                        </option>
+                      ))}
+                    </select>
+
+                    <button
+                      type="button"
+                      onClick={() => {
+                        const idx = displayedClasses.findIndex((c) => c.id === activeSingleClass.id)
+                        if (idx >= 0 && idx < displayedClasses.length - 1) {
+                          setFocusedClassId(displayedClasses[idx + 1].id)
+                        }
+                      }}
+                      disabled={
+                        displayedClasses.findIndex((c) => c.id === activeSingleClass.id) >=
+                        displayedClasses.length - 1
+                      }
+                      title="Lớp tiếp theo"
+                      className="p-1.5 rounded-xl bg-white border border-[#E2E8F0] text-slate-700 hover:border-[#00A19A] disabled:opacity-40 cursor-pointer"
+                    >
+                      <ChevronRight className="w-4 h-4" />
+                    </button>
+                  </div>
+
+                  <div className="flex flex-wrap items-center gap-2 text-xs">
+                    {(() => {
+                      const clsQuotas = liveQuotaItems.filter(
+                        (q) => q.classId === activeSingleClass.id && q.weeklyQuota > 0
+                      )
+                      const reqSum =
+                        Math.round(clsQuotas.reduce((s, q) => s + q.weeklyQuota, 0) * 100) / 100
+                      const schSum =
+                        liveSlotSummary.scheduledByClass.get(activeSingleClass.id) || 0
+                      const isMatch40 = Math.abs(schSum - WEEKLY_STANDARD_PERIODS) < 0.001
+                      const isOver40 = schSum > WEEKLY_STANDARD_PERIODS + 0.001
+                      return (
+                        <>
+                          <span
+                            className={`px-2.5 py-1 rounded-lg border font-semibold ${
+                              isMatch40
+                                ? "bg-emerald-50 border-emerald-200 text-[#059669]"
+                                : isOver40
+                                ? "bg-rose-50 border-rose-200 text-[#E11D48]"
+                                : "bg-white border-[#E2E8F0] text-[#003B3A]"
+                            }`}
+                          >
+                            Tuần {WEEKLY_STANDARD_PERIODS} tiết: {schSum}/{WEEKLY_STANDARD_PERIODS} tiết
+                          </span>
+                          <span className="px-2.5 py-1 rounded-lg bg-white border border-[#E2E8F0] text-slate-600 font-medium">
+                            Định mức môn: {reqSum} tiết
+                          </span>
+                        </>
+                      )
+                    })()}
+                    <span className="text-slate-500 hidden sm:inline">
+                      Kéo thả môn / giáo viên hoặc kéo đổi chỗ trực tiếp giữa các tiết trong tuần
+                    </span>
+                  </div>
+                </div>
+
+                <div className="overflow-x-auto">
+                  <table className="w-full text-left border-collapse tabular-nums">
+                    <thead>
+                      <tr className="bg-[#003B3A] border-b border-[#003B3A]">
+                        <th className="py-2.5 px-3 text-[11px] font-semibold text-white whitespace-nowrap border-r border-white/10 w-[118px]">
+                          Buổi / Tiết
+                        </th>
+                        {workingDays.map((d) => (
+                          <th
+                            key={d}
+                            className="py-2.5 px-3 text-[11px] font-semibold text-white whitespace-nowrap border-r border-white/10 min-w-[165px]"
+                          >
+                            {DAY_LABELS[d]}
+                          </th>
+                        ))}
+                      </tr>
+                    </thead>
+                    <tbody className="divide-y divide-[#E2E8F0] text-xs bg-white">
+                      {sessionPeriods.map((sp) => {
+                        const isAfternoonFirst =
+                          sp.session === "AFTERNOON" && sp.periodNumber === 1
+                        const pt = effectiveConfig.periodTimes?.find(
+                          (x) =>
+                            x.session === sp.session &&
+                            Number(x.periodNumber) === Number(sp.periodNumber)
+                        )
+                        return (
+                          <tr
+                            key={`${sp.session}_${sp.periodNumber}`}
+                            className={isAfternoonFirst ? "border-t-2 border-t-[#003B3A]/25" : ""}
+                          >
+                            <td className="py-2.5 px-3 align-middle bg-[#F8FAFC] border-r border-[#E2E8F0] whitespace-nowrap">
+                              <div className="font-bold text-[#003B3A] text-[11px]">
+                                {sp.session === "MORNING" ? "Sáng" : "Chiều"} • Tiết{" "}
+                                {sp.periodNumber}
+                              </div>
+                              {pt && (
+                                <div className="text-[10px] text-slate-500">
+                                  {pt.startTime} – {pt.endTime}
+                                </div>
+                              )}
+                            </td>
+
+                            {workingDays.map((day) => {
+                              const cKey = makeSlotCellKey(
+                                activeSingleClass.id,
+                                day,
+                                sp.session,
+                                sp.periodNumber
+                              )
+                              const slot = slotByCell.get(cKey) || null
+                              const cellIssues = cellIssuesMap.get(cKey) || []
+                              const dropEval = dropEvalByCell.get(cKey) || null
+                              const isHovered = hoveredCellKey === cKey
+
+                              let dragHighlightClass = ""
+                              if (activeDrag && dropEval) {
+                                if (
+                                  dropEval.status === "VALID" ||
+                                  dropEval.status === "SWAP_VALID"
+                                ) {
+                                  dragHighlightClass = isHovered
+                                    ? "bg-[#CCFBF1]/70 ring-2 ring-inset ring-[#00A19A]"
+                                    : "bg-[#F0FDFA]/55 ring-1 ring-inset ring-[#00A19A]/40"
+                                } else if (
+                                  dropEval.status === "CONFLICT" ||
+                                  dropEval.status === "BLOCKED"
+                                ) {
+                                  dragHighlightClass = isHovered
+                                    ? "bg-rose-100/80 ring-2 ring-inset ring-[#E11D48]"
+                                    : "bg-rose-50/60 ring-1 ring-inset ring-rose-200"
+                                }
+                              }
+
+                              return (
+                                <td
+                                  key={cKey}
+                                  draggable={Boolean(isEditableDraft && slot && !slot.isLocked)}
+                                  onDragStart={(e) => {
+                                    if (!slot || slot.isLocked) return
+                                    e.dataTransfer.effectAllowed = "move"
+                                    setActiveDrag({
+                                      kind: "CELL_SLOT",
+                                      sourceCellKey: cKey,
+                                      slot,
+                                    })
+                                  }}
+                                  onDragEnd={() => {
+                                    setActiveDrag(null)
+                                    setHoveredCellKey(null)
+                                  }}
+                                  onDragOver={(e) => {
+                                    if (!isEditableDraft || !activeDrag) return
+                                    if (dropEval?.status === "OUT_OF_COLUMN") return
+                                    e.preventDefault()
+                                    if (hoveredCellKey !== cKey) setHoveredCellKey(cKey)
+                                  }}
+                                  onDragLeave={() => {
+                                    if (hoveredCellKey === cKey) setHoveredCellKey(null)
+                                  }}
+                                  onDrop={(e) => {
+                                    e.preventDefault()
+                                    handleDropOnCell(
+                                      activeSingleClass,
+                                      day,
+                                      sp.session,
+                                      sp.periodNumber
+                                    )
+                                  }}
+                                  onClick={() => {
+                                    if (!isEditableDraft) return
+                                    setEditingCell({
+                                      classId: activeSingleClass.id,
+                                      className: activeSingleClass.className,
+                                      grade: activeSingleClass.grade,
+                                      level: activeSingleClass.level,
+                                      dayOfWeek: day,
+                                      session: sp.session,
+                                      periodNumber: sp.periodNumber,
+                                      slot,
+                                    })
+                                  }}
+                                  title={
+                                    cellIssues.length > 0
+                                      ? cellIssues.map((i) => i.message).join("\n")
+                                      : dropEval?.reason || undefined
+                                  }
+                                  className={`group py-2.5 px-3 align-top border-r border-[#F1F5F9] transition-colors ${
+                                    isEditableDraft ? "cursor-pointer hover:bg-[#F0FDFA]/60" : ""
+                                  } ${slot?.isLocked && !dragHighlightClass ? "bg-slate-50/90" : ""} ${
+                                    cellIssues.length > 0 && !dragHighlightClass
+                                      ? "bg-rose-50/45 border-l-2 border-l-[#E11D48]"
+                                      : ""
+                                  } ${dragHighlightClass}`}
+                                >
+                                  {slot && (slot.subjectName || slot.subjectId) ? (
+                                    <div className="space-y-1">
+                                      <div className="flex items-start justify-between gap-1">
+                                        <span className="font-semibold text-slate-900 leading-tight">
+                                          {slot.subjectName}
+                                        </span>
+
+                                        {isEditableDraft && (
+                                          <div className="flex items-center gap-0.5 shrink-0">
+                                            {slot.subjectId && (
+                                              <button
+                                                type="button"
+                                                onClick={(e) => {
+                                                  e.stopPropagation()
+                                                  openBulkApplyFromSlotOrSubject({
+                                                    subjectId: slot.subjectId!,
+                                                    subjectCode: slot.subjectCode || "",
+                                                    subjectName: slot.subjectName || "",
+                                                    dayOfWeek: day,
+                                                    session: sp.session,
+                                                    periodNumber: sp.periodNumber,
+                                                    weekType:
+                                                      (slot.weekType as WeekTypeCode) || "ALL",
+                                                    defaultGrade: activeSingleClass.grade,
+                                                  })
+                                                }}
+                                                title="Áp dụng tiết này cho cả Khối / Bộ TKB & ghi nhớ"
+                                                className="opacity-0 group-hover:opacity-100 text-slate-400 hover:text-[#00A19A] p-0.5 transition-opacity cursor-pointer"
+                                              >
+                                                <CopyCheck className="w-3.5 h-3.5" />
+                                              </button>
+                                            )}
+
+                                            <button
+                                              type="button"
+                                              onClick={(e) => handleToggleLock(cKey, e)}
+                                              title={
+                                                slot.isLocked
+                                                  ? "Mở khóa tiết"
+                                                  : "Khóa cố định tiết"
+                                              }
+                                              className="text-slate-400 hover:text-[#003B3A] p-0.5 cursor-pointer"
+                                            >
+                                              {slot.isLocked ? (
+                                                <Lock className="w-3.5 h-3.5 text-[#003B3A]" />
+                                              ) : (
+                                                <Unlock className="w-3.5 h-3.5 opacity-35 group-hover:opacity-100" />
+                                              )}
+                                            </button>
+
+                                            {!slot.isLocked && (
+                                              <button
+                                                type="button"
+                                                onClick={(e) => handleQuickClearCell(cKey, e)}
+                                                title="Làm trống nhanh ô tiết"
+                                                className="opacity-0 group-hover:opacity-100 text-slate-400 hover:text-[#E11D48] p-0.5 transition-opacity cursor-pointer"
+                                              >
+                                                <X className="w-3.5 h-3.5" />
+                                              </button>
+                                            )}
+                                          </div>
+                                        )}
+                                      </div>
+
+                                      <div
+                                        className={`text-[11px] truncate ${
+                                          slot.teacherName
+                                            ? "text-slate-600"
+                                            : "text-[#D97706] font-medium"
+                                        }`}
+                                      >
+                                        {slot.teacherName
+                                          ? `${slot.teacherName}${
+                                              slot.teacherCode ? ` (${slot.teacherCode})` : ""
+                                            }`
+                                          : "Chưa gán GV — thả GV vào đây"}
+                                      </div>
+
+                                      {(slot.coTeacherName || slot.assistantTeacherName) && (
+                                        <div className="text-[10px] text-[#00736E] truncate">
+                                          + {slot.coTeacherName || slot.assistantTeacherName}
+                                        </div>
+                                      )}
+
+                                      <div className="flex flex-wrap items-center gap-1 pt-0.5">
+                                        {slot.roomName && (
+                                          <span className="px-1.5 py-0.2 rounded bg-slate-100 text-slate-600 text-[10px]">
+                                            {slot.roomCode || slot.roomName}
+                                          </span>
+                                        )}
+                                        {slot.weekType && slot.weekType !== "ALL" && (
+                                          <span className="px-1.5 py-0.2 rounded bg-teal-50 text-[#00736E] border border-teal-200 text-[10px] font-semibold">
+                                            {slot.weekType === "ODD" ? "Tuần lẻ" : "Tuần chẵn"}
+                                          </span>
+                                        )}
+                                        {cellIssues.length > 0 && (
+                                          <span className="px-1.5 py-0.2 rounded bg-rose-100 text-[#E11D48] text-[10px] font-semibold">
+                                            Trùng lịch
+                                          </span>
+                                        )}
+                                      </div>
+
+                                      {slot.altSubjectName && (
+                                        <div className="pt-1 mt-1 border-t border-dashed border-slate-200 space-y-0.5">
+                                          <div className="flex items-center justify-between gap-1 text-[10px]">
+                                            <span className="text-slate-800 font-semibold truncate">
+                                              Luân phiên: {slot.altSubjectName}
+                                            </span>
+                                            <span className="px-1 py-0.2 rounded bg-amber-50 text-[#D97706] border border-amber-200 text-[9.5px] font-semibold shrink-0">
+                                              {slot.weekType === "ODD" ? "Tuần chẵn" : "Tuần lẻ"}
+                                            </span>
+                                          </div>
+                                          <div
+                                            className={`text-[10.5px] truncate ${
+                                              slot.altTeacherName
+                                                ? "text-slate-600"
+                                                : "text-[#D97706] font-medium"
+                                            }`}
+                                          >
+                                            {slot.altTeacherName
+                                              ? `${slot.altTeacherName}${
+                                                  slot.altTeacherCode
+                                                    ? ` (${slot.altTeacherCode})`
+                                                    : ""
+                                                }`
+                                              : isEditableDraft
+                                              ? "Chưa gán GV luân phiên — bấm hoặc thả GV"
+                                              : "Chưa gán GV luân phiên"}
+                                          </div>
+                                        </div>
+                                      )}
+
+                                      {activeDrag && dropEval?.reason && (
+                                        <div
+                                          className={`mt-1 text-[10px] font-semibold leading-tight ${
+                                            dropEval.status === "CONFLICT" ||
+                                            dropEval.status === "BLOCKED"
+                                              ? "text-[#E11D48]"
+                                              : "text-[#00736E]"
+                                          }`}
+                                        >
+                                          {dropEval.reason}
+                                        </div>
+                                      )}
+                                    </div>
+                                  ) : (
+                                    <div className="min-h-[48px] flex flex-col items-center justify-center text-center">
+                                      {activeDrag &&
+                                      dropEval &&
+                                      dropEval.status !== "OUT_OF_COLUMN" ? (
+                                        <span
+                                          className={`text-[10px] font-semibold leading-tight px-1 ${
+                                            dropEval.status === "VALID"
+                                              ? "text-[#059669]"
+                                              : "text-[#E11D48]"
+                                          }`}
+                                        >
+                                          {dropEval.status === "VALID"
+                                            ? isHovered
+                                              ? "Thả để xếp tiết"
+                                              : "Ô hợp lệ"
+                                            : dropEval.reason || "Không hợp lệ"}
+                                        </span>
+                                      ) : (
+                                        <span className="text-[11px] text-slate-300">
+                                          Thả môn vào đây
+                                        </span>
+                                      )}
+                                    </div>
+                                  )}
+                                </td>
+                              )
+                            })}
+                          </tr>
+                        )
+                      })}
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+            ) : (
+              /* VIEW 2: FULL-SPACE STICKY SCHEDULING MATRIX ACROSS ALL CLASSES IN BỘ TKB */
+              <div className="flex-1 min-w-0 w-full bg-white rounded-2xl border border-[#E2E8F0] shadow-xs overflow-hidden">
               <div className="overflow-auto max-h-[74vh]">
                 <table className="w-full text-left border-collapse tabular-nums">
                   <thead className="sticky top-0 z-20">
@@ -1701,8 +2769,30 @@ export function SchedulerClient({ initialData }: { initialData: SchedulerPageDat
                                 </span>
                               )}
                             </div>
-                            <div className="text-[10px] font-normal text-teal-100">
-                              Khối {cls.grade} • {cls.educationSystem || "Chuẩn"}
+                            <div className="flex items-center justify-between gap-1 mt-0.5 text-[10px] font-normal text-teal-100">
+                              <span>
+                                Khối {cls.grade} • {cls.educationSystem || "Chuẩn"}
+                              </span>
+                              {(() => {
+                                const clsSch =
+                                  liveSlotSummary.scheduledByClass.get(cls.id) || 0
+                                const is40 =
+                                  Math.abs(clsSch - WEEKLY_STANDARD_PERIODS) < 0.001
+                                const over40 = clsSch > WEEKLY_STANDARD_PERIODS + 0.001
+                                return (
+                                  <span
+                                    className={`px-1.5 py-0.2 rounded font-semibold ${
+                                      is40
+                                        ? "bg-[#5EEAD4]/20 text-[#5EEAD4]"
+                                        : over40
+                                        ? "bg-rose-500/30 text-rose-200"
+                                        : "bg-white/15 text-teal-50"
+                                    }`}
+                                  >
+                                    {clsSch}/{WEEKLY_STANDARD_PERIODS} tiết
+                                  </span>
+                                )
+                              })()}
                             </div>
                           </th>
                         )
@@ -1970,8 +3060,25 @@ export function SchedulerClient({ initialData }: { initialData: SchedulerPageDat
                                     </div>
 
                                     {slot.altSubjectName && (
-                                      <div className="pt-1 mt-1 border-t border-dashed border-slate-200 text-[10px] text-slate-600">
-                                        Luân phiên: <strong>{slot.altSubjectName}</strong>
+                                      <div className="pt-1 mt-1 border-t border-dashed border-slate-200 space-y-0.5">
+                                        <div className="text-[10px] text-slate-800 font-semibold truncate">
+                                          Luân phiên: {slot.altSubjectName}
+                                        </div>
+                                        <div
+                                          className={`text-[10px] truncate ${
+                                            slot.altTeacherName
+                                              ? "text-slate-600"
+                                              : "text-[#D97706] font-medium"
+                                          }`}
+                                        >
+                                          {slot.altTeacherName
+                                            ? `${slot.altTeacherName}${
+                                                slot.altTeacherCode
+                                                  ? ` (${slot.altTeacherCode})`
+                                                  : ""
+                                              }`
+                                            : "Chưa gán GV luân phiên"}
+                                        </div>
                                       </div>
                                     )}
 
@@ -2019,6 +3126,7 @@ export function SchedulerClient({ initialData }: { initialData: SchedulerPageDat
                 </table>
               </div>
             </div>
+            )}
           </div>
         </>
       )}
@@ -2224,11 +3332,12 @@ export function SchedulerClient({ initialData }: { initialData: SchedulerPageDat
           cell={editingCell}
           subjects={data.subjects}
           teachers={data.teachers}
+          departments={data.departments || []}
           rooms={data.rooms}
           classQuotas={liveQuotaItems.filter((q) => q.classId === editingCell.classId)}
           autoLockDefault={autoLockManual}
           onClose={() => setEditingCell(null)}
-          onSave={(updated) => {
+          onSave={(updated, options) => {
             const cKey = makeSlotCellKey(
               editingCell.classId,
               editingCell.dayOfWeek,
@@ -2239,7 +3348,161 @@ export function SchedulerClient({ initialData }: { initialData: SchedulerPageDat
               (s) =>
                 makeSlotCellKey(s.classId, s.dayOfWeek, s.session, s.periodNumber) !== cKey
             )
-            const nextSlots = updated ? [...filtered, updated] : filtered
+            let nextSlots = updated ? [...filtered, updated] : filtered
+
+            if (
+              options?.syncAssignment &&
+              updated?.subjectId &&
+              updated?.teacherId &&
+              activeScopeCode !== "LIEN_CAP"
+            ) {
+              const targetSubId = updated.subjectId
+              const targetSubNameUpper = (updated.subjectName || "").trim().toUpperCase()
+              const targetTeacherId = updated.teacherId
+              const targetTeacherCode = updated.teacherCode || null
+              const targetTeacherName = updated.teacherName || ""
+
+              nextSlots = nextSlots.map((s) => {
+                if (s.classId !== editingCell.classId) return s
+                let patched = s
+                if (s.subjectId === targetSubId && !s.teacherId) {
+                  patched = {
+                    ...patched,
+                    teacherId: targetTeacherId,
+                    teacherCode: targetTeacherCode,
+                    teacherName: targetTeacherName,
+                  }
+                }
+                if (
+                  !s.altTeacherId &&
+                  (s.altSubjectId === targetSubId ||
+                    (targetSubNameUpper &&
+                      (s.altSubjectName || "").trim().toUpperCase() === targetSubNameUpper))
+                ) {
+                  patched = {
+                    ...patched,
+                    altSubjectId: s.altSubjectId || targetSubId,
+                    altTeacherId: targetTeacherId,
+                    altTeacherCode: targetTeacherCode,
+                    altTeacherName: targetTeacherName,
+                  }
+                }
+                return patched
+              })
+
+              setBaseQuotaItems((prev) =>
+                prev.map((q) =>
+                  q.classId === editingCell.classId && q.subjectId === targetSubId
+                    ? {
+                        ...q,
+                        primaryTeacherId: targetTeacherId,
+                        primaryTeacherCode: targetTeacherCode,
+                        primaryTeacherName: targetTeacherName,
+                      }
+                    : q
+                )
+              )
+
+              void assignTeacherToClassSubjectAction({
+                academicYearId: data.filterContext.selectedYearId,
+                semester: data.filterContext.semester,
+                campusId: data.filterContext.selectedCampusId,
+                scopeGroup: activeScopeCode as ManageableScopeGroup,
+                classId: editingCell.classId,
+                subjectId: targetSubId,
+                teacherId: targetTeacherId,
+              }).then((res) => {
+                if (res.success) {
+                  toast.success(
+                    `Đã ghi nhớ GV ${targetTeacherName} cho môn ${updated.subjectName || ""} (${editingCell.className}).`
+                  )
+                }
+              })
+            }
+
+            if (
+              options?.syncAltAssignment &&
+              (updated?.altSubjectId || updated?.altSubjectName) &&
+              updated?.altTeacherId
+            ) {
+              const rawAltName = (updated.altSubjectName || "").trim()
+              const rawAltUpper = rawAltName.toUpperCase()
+              const matchedCatalogSub =
+                (updated.altSubjectId
+                  ? data.subjects.find((sub) => sub.id === updated.altSubjectId)
+                  : undefined) ||
+                data.subjects.find(
+                  (sub) =>
+                    sub.subjectName.trim().toUpperCase() === rawAltUpper ||
+                    (sub.subjectCode || "").trim().toUpperCase() === rawAltUpper
+                )
+              const resolvedAltSubId = updated.altSubjectId || matchedCatalogSub?.id || null
+              const altTeacherIdVal = updated.altTeacherId
+              const altTeacherCodeVal = updated.altTeacherCode || null
+              const altTeacherNameVal = updated.altTeacherName || ""
+
+              nextSlots = nextSlots.map((s) => {
+                if (s.classId !== editingCell.classId) return s
+                let patched = s
+                const isSameAlt =
+                  (resolvedAltSubId && s.altSubjectId === resolvedAltSubId) ||
+                  (rawAltUpper && (s.altSubjectName || "").trim().toUpperCase() === rawAltUpper)
+                if (isSameAlt && !s.altTeacherId) {
+                  patched = {
+                    ...patched,
+                    altSubjectId: s.altSubjectId || resolvedAltSubId,
+                    altTeacherId: altTeacherIdVal,
+                    altTeacherCode: altTeacherCodeVal,
+                    altTeacherName: altTeacherNameVal,
+                  }
+                }
+                if (resolvedAltSubId && s.subjectId === resolvedAltSubId && !s.teacherId) {
+                  patched = {
+                    ...patched,
+                    teacherId: altTeacherIdVal,
+                    teacherCode: altTeacherCodeVal,
+                    teacherName: altTeacherNameVal,
+                  }
+                }
+                return patched
+              })
+
+              if (resolvedAltSubId) {
+                setBaseQuotaItems((prev) =>
+                  prev.map((q) =>
+                    q.classId === editingCell.classId && q.subjectId === resolvedAltSubId
+                      ? {
+                          ...q,
+                          primaryTeacherId: altTeacherIdVal,
+                          primaryTeacherCode: altTeacherCodeVal,
+                          primaryTeacherName: altTeacherNameVal,
+                        }
+                      : q
+                  )
+                )
+
+                if (activeScopeCode !== "LIEN_CAP") {
+                  void assignTeacherToClassSubjectAction({
+                    academicYearId: data.filterContext.selectedYearId,
+                    semester: data.filterContext.semester,
+                    campusId: data.filterContext.selectedCampusId,
+                    scopeGroup: activeScopeCode as ManageableScopeGroup,
+                    classId: editingCell.classId,
+                    subjectId: resolvedAltSubId,
+                    teacherId: altTeacherIdVal,
+                  }).then((res) => {
+                    if (res.success) {
+                      toast.success(
+                        `Đã ghi nhớ GV luân phiên ${altTeacherNameVal} cho môn ${
+                          matchedCatalogSub?.subjectName || rawAltName
+                        } (${editingCell.className}).`
+                      )
+                    }
+                  })
+                }
+              }
+            }
+
             applySlotsAndAutoSave(nextSlots)
             setEditingCell(null)
           }}
@@ -2403,6 +3666,7 @@ function CellEditorModal({
   cell,
   subjects,
   teachers,
+  departments,
   rooms,
   classQuotas,
   autoLockDefault,
@@ -2421,24 +3685,117 @@ function CellEditorModal({
   }
   subjects: SchedulerPageData["subjects"]
   teachers: SchedulerPageData["teachers"]
+  departments: SchedulerPageData["departments"]
   rooms: SchedulerPageData["rooms"]
   classQuotas: SchedulerPageData["quotaItems"]
   autoLockDefault: boolean
   onClose: () => void
-  onSave: (slot: SlotRecord | null) => void
+  onSave: (
+    slot: SlotRecord | null,
+    options?: { syncAssignment?: boolean; syncAltAssignment?: boolean }
+  ) => void
 }) {
+  const CUSTOM_ALT_TOKEN = "__CUSTOM_ALT__"
+
+  const initialMatchedAltSub = useMemo(() => {
+    if (cell.slot?.altSubjectId) {
+      return subjects.find((s) => s.id === cell.slot?.altSubjectId)
+    }
+    const rawName = (cell.slot?.altSubjectName || "").trim().toUpperCase()
+    if (!rawName) return undefined
+    return subjects.find(
+      (s) =>
+        s.subjectName.trim().toUpperCase() === rawName ||
+        (s.subjectCode || "").trim().toUpperCase() === rawName
+    )
+  }, [cell.slot?.altSubjectId, cell.slot?.altSubjectName, subjects])
+
   const [subjectId, setSubjectId] = useState(cell.slot?.subjectId || "")
-  const [teacherId, setTeacherId] = useState(cell.slot?.teacherId || "")
+  const [selectedDeptId, setSelectedDeptId] = useState<string>("ALL")
+  const [teacherId, setTeacherId] = useState(() => {
+    if (cell.slot?.teacherId) return cell.slot.teacherId
+    if (cell.slot?.subjectId) {
+      const assigned = classQuotas.find((q) => q.subjectId === cell.slot?.subjectId)
+      if (assigned?.primaryTeacherId) return assigned.primaryTeacherId
+    }
+    return ""
+  })
   const [coTeacherId, setCoTeacherId] = useState(cell.slot?.coTeacherId || "")
   const [assistantTeacherId, setAssistantTeacherId] = useState(
     cell.slot?.assistantTeacherId || ""
   )
   const [roomId, setRoomId] = useState(cell.slot?.roomId || "")
-  const [weekType, setWeekType] = useState(cell.slot?.weekType || "ALL")
-  const [altSubjectId, setAltSubjectId] = useState(cell.slot?.altSubjectId || "")
-  const [altTeacherId, setAltTeacherId] = useState(cell.slot?.altTeacherId || "")
+  const [weekType, setWeekType] = useState(
+    cell.slot?.altSubjectName && (!cell.slot?.weekType || cell.slot?.weekType === "ALL")
+      ? "ODD"
+      : cell.slot?.weekType || "ALL"
+  )
+  const [altSubjectId, setAltSubjectId] = useState<string>(
+    initialMatchedAltSub?.id ||
+      (cell.slot?.altSubjectName ? CUSTOM_ALT_TOKEN : "")
+  )
+  const [altTeacherId, setAltTeacherId] = useState<string>(() => {
+    if (cell.slot?.altTeacherId) return cell.slot.altTeacherId
+    if (initialMatchedAltSub?.id) {
+      const assignedAlt = classQuotas.find((q) => q.subjectId === initialMatchedAltSub.id)
+      if (assignedAlt?.primaryTeacherId) return assignedAlt.primaryTeacherId
+    }
+    return ""
+  })
   const [isLocked, setIsLocked] = useState(
     cell.slot ? Boolean(cell.slot.isLocked) : autoLockDefault
+  )
+
+  const currentAssignedQuota = useMemo(
+    () => classQuotas.find((q) => q.subjectId === subjectId),
+    [classQuotas, subjectId]
+  )
+  const effectiveAltCatalogId =
+    altSubjectId && altSubjectId !== CUSTOM_ALT_TOKEN ? altSubjectId : ""
+  const currentAltAssignedQuota = useMemo(
+    () =>
+      effectiveAltCatalogId
+        ? classQuotas.find((q) => q.subjectId === effectiveAltCatalogId)
+        : undefined,
+    [classQuotas, effectiveAltCatalogId]
+  )
+
+  const [syncAssignment, setSyncAssignment] = useState<boolean>(
+    () => !classQuotas.find((q) => q.subjectId === (cell.slot?.subjectId || ""))?.primaryTeacherId
+  )
+  const [syncAltAssignment, setSyncAltAssignment] = useState<boolean>(true)
+
+  const unassignedDeptCount = useMemo(
+    () => teachers.filter((t) => teacherMatchesDepartment(t, UNASSIGNED_DEPT_VALUE)).length,
+    [teachers]
+  )
+
+  const buildTeacherGroups = (currentValue: string, prioritySubId?: string) => {
+    const list = teachers.filter(
+      (t) => t.id === currentValue || teacherMatchesDepartment(t, selectedDeptId)
+    )
+    return groupTeachersByDepartment(list, prioritySubId)
+  }
+
+  const primaryTeacherGroups = useMemo(
+    () => buildTeacherGroups(teacherId, subjectId || undefined),
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [teachers, selectedDeptId, teacherId, subjectId]
+  )
+  const coTeacherGroups = useMemo(
+    () => buildTeacherGroups(coTeacherId),
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [teachers, selectedDeptId, coTeacherId]
+  )
+  const assistantTeacherGroups = useMemo(
+    () => buildTeacherGroups(assistantTeacherId),
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [teachers, selectedDeptId, assistantTeacherId]
+  )
+  const altTeacherGroups = useMemo(
+    () => buildTeacherGroups(altTeacherId, effectiveAltCatalogId || undefined),
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [teachers, selectedDeptId, altTeacherId, effectiveAltCatalogId]
   )
 
   const handleSubjectChange = (nextSubId: string) => {
@@ -2447,12 +3804,32 @@ function CellEditorModal({
     if (assigned?.primaryTeacherId) {
       setTeacherId(assigned.primaryTeacherId)
       setCoTeacherId(assigned.coTeacherId || "")
+      setSyncAssignment(false)
+    } else {
+      setSyncAssignment(true)
+    }
+  }
+
+  const handleAltSubjectChange = (nextAltSubId: string) => {
+    setAltSubjectId(nextAltSubId)
+    if (!nextAltSubId) {
+      setAltTeacherId("")
+      return
+    }
+    if (nextAltSubId !== CUSTOM_ALT_TOKEN) {
+      const assignedAlt = classQuotas.find((q) => q.subjectId === nextAltSubId)
+      if (assignedAlt?.primaryTeacherId) {
+        setAltTeacherId(assignedAlt.primaryTeacherId)
+        setSyncAltAssignment(false)
+      } else {
+        setSyncAltAssignment(true)
+      }
     }
   }
 
   return (
     <div className="fixed inset-0 z-50 bg-black/40 flex items-center justify-center p-4">
-      <div className="bg-white rounded-2xl border border-[#E2E8F0] max-w-lg w-full p-5 space-y-4 shadow-lg text-xs">
+      <div className="bg-white rounded-2xl border border-[#E2E8F0] max-w-xl w-full p-5 space-y-4 shadow-lg text-xs max-h-[92vh] overflow-y-auto">
         <div className="flex items-center justify-between border-b border-[#E2E8F0] pb-3">
           <div>
             <h3 className="text-sm font-bold text-[#003B3A]">
@@ -2466,13 +3843,13 @@ function CellEditorModal({
           </div>
         </div>
 
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 tabular-nums">
           <div>
             <label className="block font-semibold text-slate-700 mb-1">Môn học chính</label>
             <select
               value={subjectId}
               onChange={(e) => handleSubjectChange(e.target.value)}
-              className="w-full rounded-xl border border-[#E2E8F0] px-3 py-2"
+              className="w-full rounded-xl border border-[#E2E8F0] px-3 py-2 focus:border-[#00A19A] focus:outline-none"
             >
               <option value="">-- Trống --</option>
               {subjects.map((s) => {
@@ -2491,18 +3868,46 @@ function CellEditorModal({
 
           <div>
             <label className="block font-semibold text-slate-700 mb-1">
-              Giáo viên chính (tự lấy theo phân công)
+              Tổ chuyên môn (lọc giáo viên)
+            </label>
+            <select
+              value={selectedDeptId}
+              onChange={(e) => setSelectedDeptId(e.target.value)}
+              className="w-full rounded-xl border border-[#E2E8F0] bg-[#F8FAFC] px-3 py-2 font-medium text-[#003B3A] focus:border-[#00A19A] focus:outline-none"
+            >
+              <option value="ALL">Tất cả Tổ chuyên môn ({teachers.length})</option>
+              {departments.map((d) => (
+                <option key={d.id} value={d.id}>
+                  {d.name} ({d.teacherCount})
+                </option>
+              ))}
+              {unassignedDeptCount > 0 && (
+                <option value={UNASSIGNED_DEPT_VALUE}>
+                  Chưa phân Tổ chuyên môn ({unassignedDeptCount})
+                </option>
+              )}
+            </select>
+          </div>
+
+          <div className="sm:col-span-2">
+            <label className="block font-semibold text-slate-700 mb-1">
+              Giáo viên chính (tự lấy theo phân công hoặc chọn theo Tổ chuyên môn)
             </label>
             <select
               value={teacherId}
               onChange={(e) => setTeacherId(e.target.value)}
-              className="w-full rounded-xl border border-[#E2E8F0] px-3 py-2"
+              className="w-full rounded-xl border border-[#E2E8F0] px-3 py-2 focus:border-[#00A19A] focus:outline-none"
             >
               <option value="">-- Chưa chọn --</option>
-              {teachers.map((t) => (
-                <option key={t.id} value={t.id}>
-                  {t.teacherName} ({t.teacherCode})
-                </option>
+              {primaryTeacherGroups.map((group) => (
+                <optgroup key={group.key} label={`${group.label} (${group.teachers.length})`}>
+                  {group.teachers.map((t) => (
+                    <option key={`${group.key}_${t.id}`} value={t.id}>
+                      {t.teacherName} ({t.teacherCode})
+                      {t.departmentName ? ` — ${t.departmentName}` : ""}
+                    </option>
+                  ))}
+                </optgroup>
               ))}
             </select>
           </div>
@@ -2514,13 +3919,17 @@ function CellEditorModal({
             <select
               value={coTeacherId}
               onChange={(e) => setCoTeacherId(e.target.value)}
-              className="w-full rounded-xl border border-[#E2E8F0] px-3 py-2"
+              className="w-full rounded-xl border border-[#E2E8F0] px-3 py-2 focus:border-[#00A19A] focus:outline-none"
             >
               <option value="">-- Không --</option>
-              {teachers.map((t) => (
-                <option key={t.id} value={t.id}>
-                  {t.teacherName} ({t.teacherCode})
-                </option>
+              {coTeacherGroups.map((group) => (
+                <optgroup key={group.key} label={`${group.label} (${group.teachers.length})`}>
+                  {group.teachers.map((t) => (
+                    <option key={`${group.key}_${t.id}`} value={t.id}>
+                      {t.teacherName} ({t.teacherCode})
+                    </option>
+                  ))}
+                </optgroup>
               ))}
             </select>
           </div>
@@ -2532,13 +3941,17 @@ function CellEditorModal({
             <select
               value={assistantTeacherId}
               onChange={(e) => setAssistantTeacherId(e.target.value)}
-              className="w-full rounded-xl border border-[#E2E8F0] px-3 py-2"
+              className="w-full rounded-xl border border-[#E2E8F0] px-3 py-2 focus:border-[#00A19A] focus:outline-none"
             >
               <option value="">-- Không --</option>
-              {teachers.map((t) => (
-                <option key={t.id} value={t.id}>
-                  {t.teacherName} ({t.teacherCode})
-                </option>
+              {assistantTeacherGroups.map((group) => (
+                <optgroup key={group.key} label={`${group.label} (${group.teachers.length})`}>
+                  {group.teachers.map((t) => (
+                    <option key={`${group.key}_${t.id}`} value={t.id}>
+                      {t.teacherName} ({t.teacherCode})
+                    </option>
+                  ))}
+                </optgroup>
               ))}
             </select>
           </div>
@@ -2550,7 +3963,7 @@ function CellEditorModal({
             <select
               value={roomId}
               onChange={(e) => setRoomId(e.target.value)}
-              className="w-full rounded-xl border border-[#E2E8F0] px-3 py-2"
+              className="w-full rounded-xl border border-[#E2E8F0] px-3 py-2 focus:border-[#00A19A] focus:outline-none"
             >
               <option value="">-- Phòng lớp mặc định --</option>
               {rooms.map((r) => (
@@ -2566,7 +3979,7 @@ function CellEditorModal({
             <select
               value={weekType}
               onChange={(e) => setWeekType(e.target.value)}
-              className="w-full rounded-xl border border-[#E2E8F0] px-3 py-2"
+              className="w-full rounded-xl border border-[#E2E8F0] px-3 py-2 focus:border-[#00A19A] focus:outline-none"
             >
               <option value="ALL">Hàng tuần</option>
               <option value="ODD">Tuần lẻ (0.5 tiết/tuần)</option>
@@ -2575,51 +3988,131 @@ function CellEditorModal({
           </div>
 
           {weekType !== "ALL" && (
-            <>
+            <div className="sm:col-span-2 rounded-xl bg-[#F8FAFC] border border-[#E2E8F0] p-3 grid grid-cols-1 sm:grid-cols-2 gap-3">
               <div>
-                <label className="block font-semibold text-slate-700 mb-1">
-                  Môn luân phiên tuần còn lại
+                <label className="block font-semibold text-[#003B3A] mb-1">
+                  Môn luân phiên ({weekType === "ODD" ? "Tuần chẵn" : "Tuần lẻ"})
                 </label>
                 <select
                   value={altSubjectId}
-                  onChange={(e) => setAltSubjectId(e.target.value)}
-                  className="w-full rounded-xl border border-[#E2E8F0] px-3 py-2"
+                  onChange={(e) => handleAltSubjectChange(e.target.value)}
+                  className="w-full rounded-xl border border-[#E2E8F0] bg-white px-3 py-2 focus:border-[#00A19A] focus:outline-none"
                 >
                   <option value="">-- Trống --</option>
-                  {subjects.map((s) => (
-                    <option key={s.id} value={s.id}>
-                      {s.subjectName}
+                  {cell.slot?.altSubjectName && !initialMatchedAltSub && (
+                    <option value={CUSTOM_ALT_TOKEN}>
+                      {cell.slot.altSubjectName} (nhãn luân phiên hiện có)
                     </option>
-                  ))}
+                  )}
+                  {subjects.map((s) => {
+                    const q = classQuotas.find((item) => item.subjectId === s.id)
+                    return (
+                      <option key={s.id} value={s.id}>
+                        {s.subjectName}
+                        {q && q.weeklyQuota > 0
+                          ? ` (${q.scheduledWeeklyEquivalent}/${q.weeklyQuota} tiết)`
+                          : ""}
+                      </option>
+                    )
+                  })}
                 </select>
               </div>
               <div>
-                <label className="block font-semibold text-slate-700 mb-1">GV luân phiên</label>
+                <div className="flex items-center justify-between gap-1 mb-1">
+                  <label className="block font-semibold text-[#003B3A]">
+                    GV luân phiên (tự lấy theo phân công)
+                  </label>
+                  {currentAltAssignedQuota?.primaryTeacherId &&
+                    altTeacherId !== currentAltAssignedQuota.primaryTeacherId && (
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setAltTeacherId(currentAltAssignedQuota.primaryTeacherId || "")
+                          setSyncAltAssignment(false)
+                        }}
+                        className="text-[10.5px] font-semibold text-[#008B85] hover:underline cursor-pointer"
+                      >
+                        Lấy theo phân công
+                      </button>
+                    )}
+                </div>
                 <select
                   value={altTeacherId}
                   onChange={(e) => setAltTeacherId(e.target.value)}
-                  className="w-full rounded-xl border border-[#E2E8F0] px-3 py-2"
+                  className="w-full rounded-xl border border-[#E2E8F0] bg-white px-3 py-2 focus:border-[#00A19A] focus:outline-none"
                 >
-                  <option value="">-- Không --</option>
-                  {teachers.map((t) => (
-                    <option key={t.id} value={t.id}>
-                      {t.teacherName} ({t.teacherCode})
-                    </option>
+                  <option value="">-- Chưa chọn GV luân phiên --</option>
+                  {altTeacherGroups.map((group) => (
+                    <optgroup key={group.key} label={`${group.label} (${group.teachers.length})`}>
+                      {group.teachers.map((t) => (
+                        <option key={`${group.key}_${t.id}`} value={t.id}>
+                          {t.teacherName} ({t.teacherCode})
+                          {t.departmentName ? ` — ${t.departmentName}` : ""}
+                        </option>
+                      ))}
+                    </optgroup>
                   ))}
                 </select>
+                {effectiveAltCatalogId && (
+                  <p className="mt-1 text-[10.5px] text-slate-500">
+                    {currentAltAssignedQuota?.primaryTeacherName
+                      ? `Phân công hiện tại: ${currentAltAssignedQuota.primaryTeacherName}${
+                          currentAltAssignedQuota.primaryTeacherCode
+                            ? ` (${currentAltAssignedQuota.primaryTeacherCode})`
+                            : ""
+                        }`
+                      : "Môn luân phiên này chưa có giáo viên trong Phân công giảng dạy của lớp"}
+                  </p>
+                )}
               </div>
-            </>
+            </div>
           )}
         </div>
 
-        <label className="flex items-center gap-2 text-slate-700">
-          <input
-            type="checkbox"
-            checked={isLocked}
-            onChange={(e) => setIsLocked(e.target.checked)}
-          />
-          <span>Khóa cố định ô tiết này khi chạy chia lịch tự động</span>
-        </label>
+        <div className="space-y-2">
+          {subjectId &&
+            teacherId &&
+            currentAssignedQuota?.primaryTeacherId !== teacherId && (
+              <label className="flex items-center gap-2 px-3 py-2 rounded-xl bg-[#F0FDFA] border border-teal-200 text-[#003B3A] font-medium cursor-pointer">
+                <input
+                  type="checkbox"
+                  checked={syncAssignment}
+                  onChange={(e) => setSyncAssignment(e.target.checked)}
+                  className="accent-[#003B3A]"
+                />
+                <span>
+                  Ghi nhớ giáo viên chính này vào Phân công giảng dạy của Lớp {cell.className} (tự điền các tiết chưa gán GV)
+                </span>
+              </label>
+            )}
+
+          {weekType !== "ALL" &&
+            altSubjectId &&
+            altTeacherId &&
+            currentAltAssignedQuota?.primaryTeacherId !== altTeacherId && (
+              <label className="flex items-center gap-2 px-3 py-2 rounded-xl bg-[#F0FDFA] border border-teal-200 text-[#003B3A] font-medium cursor-pointer">
+                <input
+                  type="checkbox"
+                  checked={syncAltAssignment}
+                  onChange={(e) => setSyncAltAssignment(e.target.checked)}
+                  className="accent-[#003B3A]"
+                />
+                <span>
+                  Đồng bộ GV luân phiên này cho các ô cùng môn của Lớp {cell.className} & lưu Phân công giảng dạy
+                </span>
+              </label>
+            )}
+
+          <label className="flex items-center gap-2 text-slate-700 cursor-pointer">
+            <input
+              type="checkbox"
+              checked={isLocked}
+              onChange={(e) => setIsLocked(e.target.checked)}
+              className="accent-[#003B3A]"
+            />
+            <span>Khóa cố định ô tiết này khi chạy chia lịch tự động</span>
+          </label>
+        </div>
 
         <div className="flex items-center justify-between pt-2 border-t border-[#E2E8F0]">
           <button
@@ -2650,40 +4143,66 @@ function CellEditorModal({
                 const tCo = teachers.find((t) => t.id === coTeacherId)
                 const tAss = teachers.find((t) => t.id === assistantTeacherId)
                 const rm = rooms.find((r) => r.id === roomId)
-                const altSub = subjects.find((s) => s.id === altSubjectId)
-                const altT = teachers.find((t) => t.id === altTeacherId)
+                const isCustomAlt = altSubjectId === CUSTOM_ALT_TOKEN
+                const altSub =
+                  !isCustomAlt && altSubjectId
+                    ? subjects.find((s) => s.id === altSubjectId)
+                    : undefined
+                const resolvedAltName =
+                  weekType !== "ALL"
+                    ? isCustomAlt
+                      ? cell.slot?.altSubjectName || null
+                      : altSub?.subjectName || null
+                    : null
+                const altT =
+                  weekType !== "ALL" && resolvedAltName
+                    ? teachers.find((t) => t.id === altTeacherId)
+                    : undefined
 
-                onSave({
-                  classId: cell.classId,
-                  className: cell.className,
-                  grade: cell.grade,
-                  level: cell.level,
-                  dayOfWeek: cell.dayOfWeek,
-                  session: cell.session,
-                  periodNumber: cell.periodNumber,
-                  subjectId: sub?.id || null,
-                  subjectCode: sub?.subjectCode || null,
-                  subjectName: sub?.subjectName || null,
-                  teacherId: tMain?.id || null,
-                  teacherCode: tMain?.teacherCode || null,
-                  teacherName: tMain?.teacherName || null,
-                  coTeacherId: tCo?.id || null,
-                  coTeacherCode: tCo?.teacherCode || null,
-                  coTeacherName: tCo?.teacherName || null,
-                  assistantTeacherId: tAss?.id || null,
-                  assistantTeacherCode: tAss?.teacherCode || null,
-                  assistantTeacherName: tAss?.teacherName || null,
-                  roomId: rm?.id || null,
-                  roomCode: rm?.roomCode || null,
-                  roomName: rm?.roomName || null,
-                  weekType,
-                  altSubjectId: altSub?.id || null,
-                  altSubjectName: altSub?.subjectName || null,
-                  altTeacherId: altT?.id || null,
-                  altTeacherCode: altT?.teacherCode || null,
-                  altTeacherName: altT?.teacherName || null,
-                  isLocked,
-                })
+                onSave(
+                  {
+                    classId: cell.classId,
+                    className: cell.className,
+                    grade: cell.grade,
+                    level: cell.level,
+                    dayOfWeek: cell.dayOfWeek,
+                    session: cell.session,
+                    periodNumber: cell.periodNumber,
+                    subjectId: sub?.id || null,
+                    subjectCode: sub?.subjectCode || null,
+                    subjectName: sub?.subjectName || null,
+                    teacherId: tMain?.id || null,
+                    teacherCode: tMain?.teacherCode || null,
+                    teacherName: tMain?.teacherName || null,
+                    coTeacherId: tCo?.id || null,
+                    coTeacherCode: tCo?.teacherCode || null,
+                    coTeacherName: tCo?.teacherName || null,
+                    assistantTeacherId: tAss?.id || null,
+                    assistantTeacherCode: tAss?.teacherCode || null,
+                    assistantTeacherName: tAss?.teacherName || null,
+                    roomId: rm?.id || null,
+                    roomCode: rm?.roomCode || null,
+                    roomName: rm?.roomName || null,
+                    weekType,
+                    altSubjectId: weekType !== "ALL" ? altSub?.id || null : null,
+                    altSubjectName: resolvedAltName,
+                    altTeacherId: altT?.id || null,
+                    altTeacherCode: altT?.teacherCode || null,
+                    altTeacherName: altT?.teacherName || null,
+                    isLocked,
+                  },
+                  {
+                    syncAssignment:
+                      Boolean(subjectId && teacherId) &&
+                      currentAssignedQuota?.primaryTeacherId !== teacherId &&
+                      syncAssignment,
+                    syncAltAssignment:
+                      weekType !== "ALL" &&
+                      Boolean(resolvedAltName && altTeacherId) &&
+                      currentAltAssignedQuota?.primaryTeacherId !== altTeacherId &&
+                      syncAltAssignment,
+                  }
+                )
               }}
               className="px-4 py-2 rounded-xl bg-[#003B3A] text-white font-semibold cursor-pointer"
             >

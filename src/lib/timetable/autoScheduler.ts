@@ -177,13 +177,29 @@ export function runAutoScheduler(input: AutoScheduleInput): AutoScheduleResult {
     }
   }
 
-  // 2. Calculate already-placed weekly weight per (classId, subjectId)
+  // 2. Calculate already-placed weekly weight per (classId, subjectId) and per (classId, subjectId, teacherId)
   const placedWeight = new Map<string, number>()
+  const placedByTeacher = new Map<string, number>()
   for (const s of placedSlots) {
-    if (!s.subjectId) continue
-    const key = `${s.classId}::${s.subjectId}`
-    const w = String(s.weekType || "ALL").toUpperCase() === "ALL" ? 1 : 0.5
-    placedWeight.set(key, (placedWeight.get(key) || 0) + w)
+    const wt = String(s.weekType || "ALL").toUpperCase()
+    const isHalf = wt === "EVEN" || wt === "ODD"
+    const w = isHalf ? 0.5 : 1
+    if (s.subjectId) {
+      const key = `${s.classId}::${s.subjectId}`
+      placedWeight.set(key, (placedWeight.get(key) || 0) + w)
+      if (s.teacherId) {
+        const tk = `${s.classId}::${s.subjectId}::${s.teacherId}`
+        placedByTeacher.set(tk, (placedByTeacher.get(tk) || 0) + w)
+      }
+    }
+    if (isHalf && s.altSubjectId) {
+      const altKey = `${s.classId}::${s.altSubjectId}`
+      placedWeight.set(altKey, (placedWeight.get(altKey) || 0) + 0.5)
+      if (s.altTeacherId) {
+        const atk = `${s.classId}::${s.altSubjectId}::${s.altTeacherId}`
+        placedByTeacher.set(atk, (placedByTeacher.get(atk) || 0) + 0.5)
+      }
+    }
   }
 
   const unscheduledActivities: UnscheduledActivity[] = []
@@ -197,17 +213,157 @@ export function runAutoScheduler(input: AutoScheduleInput): AutoScheduleResult {
     }
   }
 
+  const pushTeacherUnits = (
+    cls: { id: string; className: string; grade: string; level: string },
+    q: QuotaReconcileItem,
+    teacherId: string,
+    teacherCode: string,
+    teacherName: string,
+    coTeacherId: string | null,
+    coTeacherCode: string | null,
+    coTeacherName: string | null,
+    periodsToPlace: number,
+    unitSuffix: string
+  ) => {
+    let rem = Math.round(periodsToPlace * 100) / 100
+    if (rem <= 0) return
+    const blockRule = blockRuleBySubId.get(q.subjectId)
+    if (blockRule && rem >= 2) {
+      unitsToPlace.push({
+        unitId: `${q.classId}::${q.subjectId}::${unitSuffix}::BLOCK`,
+        classId: q.classId,
+        className: q.className,
+        grade: cls.grade,
+        level: cls.level,
+        subjectId: q.subjectId,
+        subjectCode: q.subjectCode,
+        subjectName: q.subjectName,
+        teacherId,
+        teacherCode,
+        teacherName,
+        coTeacherId,
+        coTeacherCode,
+        coTeacherName,
+        weekType: "ALL",
+        blockSize: 2,
+      })
+      requiredUnitCount += 2
+      rem = Math.round((rem - 2) * 100) / 100
+    }
+
+    while (rem >= 1) {
+      unitsToPlace.push({
+        unitId: `${q.classId}::${q.subjectId}::${unitSuffix}::W_${rem}`,
+        classId: q.classId,
+        className: q.className,
+        grade: cls.grade,
+        level: cls.level,
+        subjectId: q.subjectId,
+        subjectCode: q.subjectCode,
+        subjectName: q.subjectName,
+        teacherId,
+        teacherCode,
+        teacherName,
+        coTeacherId,
+        coTeacherCode,
+        coTeacherName,
+        weekType: "ALL",
+        blockSize: 1,
+      })
+      requiredUnitCount += 1
+      rem = Math.round((rem - 1) * 100) / 100
+    }
+
+    if (rem >= 0.5) {
+      unitsToPlace.push({
+        unitId: `${q.classId}::${q.subjectId}::${unitSuffix}::HALF`,
+        classId: q.classId,
+        className: q.className,
+        grade: cls.grade,
+        level: cls.level,
+        subjectId: q.subjectId,
+        subjectCode: q.subjectCode,
+        subjectName: q.subjectName,
+        teacherId,
+        teacherCode,
+        teacherName,
+        coTeacherId,
+        coTeacherCode,
+        coTeacherName,
+        weekType: "ODD",
+        blockSize: 1,
+      })
+      requiredUnitCount += 1
+    }
+  }
+
   for (const q of input.quotaItems) {
     if (q.weeklyQuota <= 0) continue
     const cls = classById.get(q.classId)
     if (!cls) continue
 
     const already = placedWeight.get(`${q.classId}::${q.subjectId}`) || 0
-    let remaining = Math.round((q.weeklyQuota - already) * 100) / 100
-    if (remaining <= 0) continue
+    const remainingTotal = Math.round((q.weeklyQuota - already) * 100) / 100
+    if (remainingTotal <= 0) continue
+
+    const allocs = (q.teacherAllocations || []).filter((a) => a.assignedPeriods > 0)
+    const hasSplitMode =
+      allocs.length > 1 || (q.quotaGvvnPeriods != null && q.quotaGvnnPeriods != null)
+
+    if (hasSplitMode && allocs.length > 0) {
+      let scheduledBudgetLeft = remainingTotal
+      for (const alloc of allocs) {
+        if (scheduledBudgetLeft <= 0) break
+        const alreadyForT =
+          placedByTeacher.get(`${q.classId}::${q.subjectId}::${alloc.teacherId}`) || 0
+        const remForT = Math.min(
+          scheduledBudgetLeft,
+          Math.max(0, Math.round((alloc.assignedPeriods - alreadyForT) * 100) / 100)
+        )
+        if (remForT > 0) {
+          pushTeacherUnits(
+            cls,
+            q,
+            alloc.teacherId,
+            alloc.teacherCode || alloc.teacherId,
+            alloc.teacherName,
+            null,
+            null,
+            null,
+            remForT,
+            `T_${alloc.teacherId}`
+          )
+          scheduledBudgetLeft = Math.max(0, Math.round((scheduledBudgetLeft - remForT) * 100) / 100)
+        }
+      }
+
+      if (scheduledBudgetLeft > 0) {
+        const missingSide =
+          q.quotaGvnnPeriods && q.quotaGvnnPeriods > 0 && !q.gvnnTeacherId
+            ? "GVNN (Giáo viên Nước ngoài)"
+            : q.quotaGvvnPeriods && q.quotaGvvnPeriods > 0 && !q.gvvnTeacherId
+            ? "GVVN (Giáo viên Việt Nam)"
+            : "giáo viên phụ trách phần tiết còn lại"
+        requiredUnitCount += Math.ceil(scheduledBudgetLeft)
+        unscheduledActivities.push({
+          classId: q.classId,
+          className: q.className,
+          subjectId: q.subjectId,
+          subjectName: q.subjectName,
+          teacherId: null,
+          teacherCode: null,
+          teacherName: null,
+          weekType: scheduledBudgetLeft % 1 !== 0 ? "ODD" : "ALL",
+          missingPeriods: scheduledBudgetLeft,
+          reasonCode: "MISSING_TEACHER_ASSIGNMENT",
+          reasonDetail: `Môn ${q.subjectName} còn ${scheduledBudgetLeft} tiết/tuần chưa được phân công ${missingSide}.`,
+        })
+      }
+      continue
+    }
 
     if (!q.primaryTeacherId) {
-      const missingCount = Math.ceil(remaining)
+      const missingCount = Math.ceil(remainingTotal)
       requiredUnitCount += missingCount
       unscheduledActivities.push({
         classId: q.classId,
@@ -217,82 +373,26 @@ export function runAutoScheduler(input: AutoScheduleInput): AutoScheduleResult {
         teacherId: null,
         teacherCode: null,
         teacherName: null,
-        weekType: remaining % 1 !== 0 ? "ODD" : "ALL",
-        missingPeriods: remaining,
+        weekType: remainingTotal % 1 !== 0 ? "ODD" : "ALL",
+        missingPeriods: remainingTotal,
         reasonCode: "MISSING_TEACHER_ASSIGNMENT",
         reasonDetail: `Môn ${q.subjectName} (định mức ${q.weeklyQuota} tiết/tuần) chưa được phân công giáo viên giảng dạy.`,
       })
       continue
     }
 
-    const blockRule = blockRuleBySubId.get(q.subjectId)
-    if (blockRule && remaining >= 2) {
-      unitsToPlace.push({
-        unitId: `${q.classId}::${q.subjectId}::BLOCK`,
-        classId: q.classId,
-        className: q.className,
-        grade: cls.grade,
-        level: cls.level,
-        subjectId: q.subjectId,
-        subjectCode: q.subjectCode,
-        subjectName: q.subjectName,
-        teacherId: q.primaryTeacherId,
-        teacherCode: q.primaryTeacherCode || q.primaryTeacherId,
-        teacherName: q.primaryTeacherName || q.primaryTeacherId,
-        coTeacherId: q.coTeacherId,
-        coTeacherCode: q.coTeacherCode,
-        coTeacherName: q.coTeacherName,
-        weekType: "ALL",
-        blockSize: 2,
-      })
-      requiredUnitCount += 2
-      remaining = Math.round((remaining - 2) * 100) / 100
-    }
-
-    while (remaining >= 1) {
-      unitsToPlace.push({
-        unitId: `${q.classId}::${q.subjectId}::W_${remaining}`,
-        classId: q.classId,
-        className: q.className,
-        grade: cls.grade,
-        level: cls.level,
-        subjectId: q.subjectId,
-        subjectCode: q.subjectCode,
-        subjectName: q.subjectName,
-        teacherId: q.primaryTeacherId,
-        teacherCode: q.primaryTeacherCode || q.primaryTeacherId,
-        teacherName: q.primaryTeacherName || q.primaryTeacherId,
-        coTeacherId: q.coTeacherId,
-        coTeacherCode: q.coTeacherCode,
-        coTeacherName: q.coTeacherName,
-        weekType: "ALL",
-        blockSize: 1,
-      })
-      requiredUnitCount += 1
-      remaining = Math.round((remaining - 1) * 100) / 100
-    }
-
-    if (remaining >= 0.5) {
-      unitsToPlace.push({
-        unitId: `${q.classId}::${q.subjectId}::HALF`,
-        classId: q.classId,
-        className: q.className,
-        grade: cls.grade,
-        level: cls.level,
-        subjectId: q.subjectId,
-        subjectCode: q.subjectCode,
-        subjectName: q.subjectName,
-        teacherId: q.primaryTeacherId,
-        teacherCode: q.primaryTeacherCode || q.primaryTeacherId,
-        teacherName: q.primaryTeacherName || q.primaryTeacherId,
-        coTeacherId: q.coTeacherId,
-        coTeacherCode: q.coTeacherCode,
-        coTeacherName: q.coTeacherName,
-        weekType: "ODD",
-        blockSize: 1,
-      })
-      requiredUnitCount += 1
-    }
+    pushTeacherUnits(
+      cls,
+      q,
+      q.primaryTeacherId,
+      q.primaryTeacherCode || q.primaryTeacherId,
+      q.primaryTeacherName || q.primaryTeacherId,
+      q.coTeacherId,
+      q.coTeacherCode,
+      q.coTeacherName,
+      remainingTotal,
+      "MAIN"
+    )
   }
 
   // Helper to check if a single period placement is valid against current state
@@ -373,13 +473,14 @@ export function runAutoScheduler(input: AutoScheduleInput): AutoScheduleResult {
       // Check local currentSlots
       for (const s of currentSlots) {
         if (s.dayOfWeek !== dayOfWeek) continue
-        if (!doWeekTypesOverlap(s.weekType, unit.weekType)) continue
-        const sInvolved =
-          s.teacherId === tid ||
-          s.coTeacherId === tid ||
-          s.assistantTeacherId === tid ||
-          s.altTeacherId === tid
-        if (!sInvolved) continue
+        const sWt = String(s.weekType || "ALL").toUpperCase()
+        const sAltWt: WeekTypeCode = sWt === "ODD" ? "EVEN" : sWt === "EVEN" ? "ODD" : "ALL"
+        const mainOverlap =
+          (s.teacherId === tid || s.coTeacherId === tid || s.assistantTeacherId === tid) &&
+          doWeekTypesOverlap(s.weekType, unit.weekType)
+        const altOverlap =
+          s.altTeacherId === tid && doWeekTypesOverlap(sAltWt, unit.weekType)
+        if (!mainOverlap && !altOverlap) continue
 
         const sWin = resolvePeriodWindow(periodTimes, s.session, s.periodNumber)
         if (candidateWin.startMinutes < sWin.endMinutes && sWin.startMinutes < candidateWin.endMinutes) {
@@ -390,13 +491,16 @@ export function runAutoScheduler(input: AutoScheduleInput): AutoScheduleResult {
       // Check external system-wide slots (cross-level & cross-campus)
       for (const ext of input.externalActiveSlots || []) {
         if (ext.slot.dayOfWeek !== dayOfWeek) continue
-        if (!doWeekTypesOverlap(ext.slot.weekType, unit.weekType)) continue
-        const extInvolved =
-          ext.slot.teacherId === tid ||
-          ext.slot.coTeacherId === tid ||
-          ext.slot.assistantTeacherId === tid ||
-          ext.slot.altTeacherId === tid
-        if (!extInvolved) continue
+        const extWt = String(ext.slot.weekType || "ALL").toUpperCase()
+        const extAltWt: WeekTypeCode = extWt === "ODD" ? "EVEN" : extWt === "EVEN" ? "ODD" : "ALL"
+        const extMainOverlap =
+          (ext.slot.teacherId === tid ||
+            ext.slot.coTeacherId === tid ||
+            ext.slot.assistantTeacherId === tid) &&
+          doWeekTypesOverlap(ext.slot.weekType, unit.weekType)
+        const extAltOverlap =
+          ext.slot.altTeacherId === tid && doWeekTypesOverlap(extAltWt, unit.weekType)
+        if (!extMainOverlap && !extAltOverlap) continue
 
         if (
           candidateWin.startMinutes < ext.endMinutes &&
@@ -587,6 +691,44 @@ export function runAutoScheduler(input: AutoScheduleInput): AutoScheduleResult {
     }
 
     const [unit] = remainingUnits.splice(bestIdx, 1)
+
+    // Smart half-week pairing: if `unit` is a 0.5 period/week activity, try pairing it as `altSubject` + `altTeacher`
+    // onto an existing single half-week (`ODD` / `EVEN`) slot of the same class before consuming a brand-new cell.
+    if (unit.blockSize === 1 && unit.weekType !== "ALL") {
+      const pairableSlot = placedSlots.find((s) => {
+        if (s.classId !== unit.classId) return false
+        const sWt = String(s.weekType || "ALL").toUpperCase()
+        if (sWt !== "ODD" && sWt !== "EVEN") return false
+        if (s.altSubjectId || s.altSubjectName) return false
+        if (s.subjectId === unit.subjectId) return false
+        return true
+      })
+      if (pairableSlot) {
+        const oppositeWt: WeekTypeCode =
+          String(pairableSlot.weekType).toUpperCase() === "ODD" ? "EVEN" : "ODD"
+        const pairFeasible = checkSingleCellFeasibility(
+          { ...unit, weekType: oppositeWt },
+          pairableSlot.dayOfWeek as DayOfWeekCode,
+          pairableSlot.session as SessionCode,
+          Number(pairableSlot.periodNumber),
+          placedSlots,
+          false
+        )
+        if (pairFeasible.ok) {
+          pairableSlot.altSubjectId = unit.subjectId
+          pairableSlot.altSubjectName = unit.subjectName
+          pairableSlot.altTeacherId = unit.teacherId
+          pairableSlot.altTeacherCode = unit.teacherCode
+          pairableSlot.altTeacherName = unit.teacherName
+          if (pairFeasible.room && !pairableSlot.altRoomId) {
+            pairableSlot.altRoomId = pairFeasible.room.id
+            pairableSlot.altRoomName = pairFeasible.room.roomName
+          }
+          placedUnitPeriods += 1
+          continue
+        }
+      }
+    }
 
     if (bestEval.candidates.length > 0) {
       const chosen = bestEval.candidates[0]

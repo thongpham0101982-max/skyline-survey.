@@ -10,6 +10,11 @@ import {
   exportTimetableLookupExcelAction,
   getTimetableLookupAction,
 } from "../actions"
+import {
+  groupTeachersByDepartment,
+  teacherMatchesDepartment,
+  UNASSIGNED_DEPT_VALUE,
+} from "@/lib/timetable/departmentHelper"
 import type { DayOfWeekCode, TimetableFilterParams } from "@/lib/timetable/types"
 
 type LookupData = Extract<
@@ -86,6 +91,7 @@ export function LookupClient({
   initialRoomId?: string
 }) {
   const [lookupTab, setLookupTab] = useState<LookupTab>(initialTab)
+  const [selectedDeptId, setSelectedDeptId] = useState<string>("ALL")
   const [selectedTeacherId, setSelectedTeacherId] = useState<string>(initialTeacherId)
   const [selectedRoomId, setSelectedRoomId] = useState<string>(initialRoomId)
   const [exporting, setExporting] = useState(false)
@@ -274,28 +280,67 @@ export function LookupClient({
           extraSlot={
             <div className="flex flex-wrap items-end gap-3">
               {lookupTab === "BY_TEACHER" && (
-                <div className="min-w-[240px]">
-                  <label className="block text-[11px] font-semibold text-slate-600 mb-1">
-                    Giáo viên tra cứu
-                  </label>
-                  <select
-                    value={selectedTeacherId}
-                    disabled={loading}
-                    onChange={(e) => {
-                      const nextId = e.target.value
-                      setSelectedTeacherId(nextId)
-                      reloadWithPatch({ teacherId: nextId } as any)
-                    }}
-                    className="w-full rounded-xl border border-[#E2E8F0] bg-[#F8FAFC] px-3 py-2 text-xs font-medium text-slate-800 focus:border-[#00A19A] focus:outline-none tabular-nums"
-                  >
-                    <option value="ALL">Tất cả giáo viên trong phạm vi</option>
-                    {teachers.map((t) => (
-                      <option key={t.id} value={t.id}>
-                        [{t.teacherCode}] {t.teacherName}
-                      </option>
-                    ))}
-                  </select>
-                </div>
+                <>
+                  <div className="min-w-[210px]">
+                    <label className="block text-[11px] font-semibold text-slate-600 mb-1">
+                      Tổ chuyên môn
+                    </label>
+                    <select
+                      value={selectedDeptId}
+                      disabled={loading}
+                      onChange={(e) => setSelectedDeptId(e.target.value)}
+                      className="w-full rounded-xl border border-[#E2E8F0] bg-[#F8FAFC] px-3 py-2 text-xs font-medium text-[#003B3A] focus:border-[#00A19A] focus:outline-none tabular-nums"
+                    >
+                      <option value="ALL">Tất cả Tổ chuyên môn ({teachers.length})</option>
+                      {(data.departments || []).map((d) => (
+                        <option key={d.id} value={d.id}>
+                          {d.name} ({d.teacherCount})
+                        </option>
+                      ))}
+                      {teachers.some((t) =>
+                        teacherMatchesDepartment(t, UNASSIGNED_DEPT_VALUE)
+                      ) && (
+                        <option value={UNASSIGNED_DEPT_VALUE}>Chưa phân Tổ chuyên môn</option>
+                      )}
+                    </select>
+                  </div>
+
+                  <div className="min-w-[260px]">
+                    <label className="block text-[11px] font-semibold text-slate-600 mb-1">
+                      Giáo viên tra cứu
+                    </label>
+                    <select
+                      value={selectedTeacherId}
+                      disabled={loading}
+                      onChange={(e) => {
+                        const nextId = e.target.value
+                        setSelectedTeacherId(nextId)
+                        reloadWithPatch({ teacherId: nextId } as any)
+                      }}
+                      className="w-full rounded-xl border border-[#E2E8F0] bg-[#F8FAFC] px-3 py-2 text-xs font-medium text-slate-800 focus:border-[#00A19A] focus:outline-none tabular-nums"
+                    >
+                      <option value="ALL">Tất cả giáo viên trong phạm vi</option>
+                      {groupTeachersByDepartment(
+                        teachers.filter(
+                          (t) =>
+                            t.id === selectedTeacherId ||
+                            teacherMatchesDepartment(t, selectedDeptId)
+                        )
+                      ).map((group) => (
+                        <optgroup
+                          key={group.key}
+                          label={`${group.label} (${group.teachers.length})`}
+                        >
+                          {group.teachers.map((t) => (
+                            <option key={`${group.key}_${t.id}`} value={t.id}>
+                              [{t.teacherCode}] {t.teacherName}
+                            </option>
+                          ))}
+                        </optgroup>
+                      ))}
+                    </select>
+                  </div>
+                </>
               )}
 
               {lookupTab === "BY_ROOM" && (

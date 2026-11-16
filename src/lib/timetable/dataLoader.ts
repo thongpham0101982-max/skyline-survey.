@@ -10,6 +10,7 @@ import {
   WORKING_DAYS_DEFAULT,
 } from "./scopeResolver"
 import { resolvePeriodWindow, type ExternalActiveSlot, type RoomInput, type TravelRuleInput, type BusySlotInput } from "./validator"
+import { resolveTeacherGroup } from "./teacherGroupHelper"
 import type { TimetableAuthContext } from "./rbac"
 import type {
   BlockRule,
@@ -144,7 +145,15 @@ export async function loadScopedWorkspaceContext(
 ) {
   await ensureTimetableSchema()
 
-  const [allCampuses, academicYears, allSubjects, teachers, rawSchedulableFlags] = await Promise.all([
+  const [
+    allCampuses,
+    academicYears,
+    allSubjects,
+    rawTeachers,
+    rawDepartments,
+    rawSchedulableFlags,
+    rawTeacherGroups,
+  ] = await Promise.all([
     prisma.campus.findMany({ orderBy: { campusCode: "asc" } }),
     prisma.academicYear.findMany({ orderBy: [{ startDate: "desc" }, { name: "desc" }] }),
     prisma.subject.findMany({ orderBy: { subjectName: "asc" } }),
@@ -155,17 +164,128 @@ export async function loadScopedWorkspaceContext(
         teacherCode: true,
         teacherName: true,
         campusId: true,
+        mainSubjectId: true,
         departmentId: true,
-        departmentRel: { select: { name: true, blockCM: true } },
+        departmentRel: { select: { id: true, code: true, name: true, blockCM: true } },
+        departmentAssignments: {
+          select: {
+            departmentId: true,
+            isPrimary: true,
+            department: { select: { id: true, code: true, name: true, blockCM: true } },
+          },
+        },
       },
       orderBy: { teacherName: "asc" },
     }),
+    typeof (prisma as any)?.department?.findMany === "function"
+      ? (prisma as any).department
+          .findMany({
+            where: { status: "ACTIVE" },
+            select: { id: true, code: true, name: true, blockCM: true },
+            orderBy: { name: "asc" },
+          })
+          .catch(() => [] as any[])
+      : Promise.resolve([] as any[]),
     typeof (prisma as any)?.$queryRawUnsafe === "function"
       ? (prisma as any)
           .$queryRawUnsafe(`SELECT "id", "isTimetableSchedulable" FROM "Subject"`)
           .catch(() => [] as any[])
       : Promise.resolve([] as any[]),
+    typeof (prisma as any)?.$queryRawUnsafe === "function"
+      ? (prisma as any)
+          .$queryRawUnsafe(`SELECT "id", "teacherGroup" FROM "Teacher"`)
+          .catch(() => [] as any[])
+      : Promise.resolve([] as any[]),
   ])
+
+  const teacherGroupById = new Map<string, string>()
+  if (Array.isArray(rawTeacherGroups)) {
+    for (const row of rawTeacherGroups) {
+      if (row?.id && row?.teacherGroup) {
+        teacherGroupById.set(String(row.id), String(row.teacherGroup))
+      }
+    }
+  }
+
+  const deptMetaMap = new Map<
+    string,
+    { id: string; code: string; name: string; blockCM: string; teacherCount: number }
+  >()
+  if (Array.isArray(rawDepartments)) {
+    for (const d of rawDepartments) {
+      if (d?.id && d?.name) {
+        deptMetaMap.set(d.id, {
+          id: d.id,
+          code: d.code || "",
+          name: d.name,
+          blockCM: d.blockCM || "",
+          teacherCount: 0,
+        })
+      }
+    }
+  }
+
+  const teachers = rawTeachers.map((t: any) => {
+    const deptEntries: Array<{ id: string; code: string; name: string; blockCM: string }> = []
+    const seenDeptIds = new Set<string>()
+
+    const addDept = (d?: { id?: string | null; code?: string | null; name?: string | null; blockCM?: string | null } | null, fallbackId?: string | null) => {
+      const id = String(d?.id || fallbackId || "").trim()
+      const name = String(d?.name || deptMetaMap.get(id)?.name || "").trim()
+      if (!id || !name || seenDeptIds.has(id)) return
+      seenDeptIds.add(id)
+      const entry = {
+        id,
+        code: String(d?.code || deptMetaMap.get(id)?.code || ""),
+        name,
+        blockCM: String(d?.blockCM || deptMetaMap.get(id)?.blockCM || ""),
+      }
+      deptEntries.push(entry)
+      if (!deptMetaMap.has(id)) {
+        deptMetaMap.set(id, { ...entry, teacherCount: 0 })
+      }
+    }
+
+    const sortedAssignments = Array.isArray(t.departmentAssignments)
+      ? [...t.departmentAssignments].sort((a, b) => Number(Boolean(b?.isPrimary)) - Number(Boolean(a?.isPrimary)))
+      : []
+
+    // Primary assignment or direct departmentRel first
+    const primaryAssign = sortedAssignments.find((a) => a?.isPrimary)
+    if (primaryAssign) {
+      addDept(primaryAssign.department, primaryAssign.departmentId)
+    }
+    if (t.departmentRel || t.departmentId) {
+      addDept(t.departmentRel, t.departmentId)
+    }
+    for (const a of sortedAssignments) {
+      addDept(a?.department, a?.departmentId)
+    }
+
+    for (const dId of seenDeptIds) {
+      const meta = deptMetaMap.get(dId)
+      if (meta) meta.teacherCount += 1
+    }
+
+    const primaryDept = deptEntries[0] || null
+    const resolvedGroup = resolveTeacherGroup({
+      teacherGroup: (t as any).teacherGroup || teacherGroupById.get(t.id) || null,
+      teacherName: t.teacherName,
+    })
+    return {
+      ...t,
+      teacherGroup: resolvedGroup,
+      mainSubjectId: t.mainSubjectId || "",
+      departmentId: primaryDept?.id || t.departmentId || "",
+      departmentName: primaryDept?.name || t.departmentRel?.name || "",
+      departmentIds: Array.from(seenDeptIds),
+      allDepartmentNames: deptEntries.map((e) => e.name).join(", "),
+    }
+  })
+
+  const departments = Array.from(deptMetaMap.values()).sort((a, b) =>
+    a.name.localeCompare(b.name, "vi")
+  )
 
   const schedulableById = new Map<string, boolean>()
   if (Array.isArray(rawSchedulableFlags)) {
@@ -204,6 +324,73 @@ export async function loadScopedWorkspaceContext(
 
   const selectedYearId = activeYear?.id || ""
   const semester = filters.semester === 2 ? 2 : 1
+
+  const [rawQuotaSplits, rawAssignmentSplits] = selectedYearId
+    ? await Promise.all([
+        typeof (prisma as any)?.$queryRawUnsafe === "function"
+          ? (prisma as any)
+              .$queryRawUnsafe(
+                `SELECT "id", "teacherSplitJson" FROM "SubjectQuota" WHERE "academicYearId" = ?`,
+                selectedYearId
+              )
+              .catch(() => [] as any[])
+          : Promise.resolve([] as any[]),
+        typeof (prisma as any)?.$queryRawUnsafe === "function"
+          ? (prisma as any)
+              .$queryRawUnsafe(
+                `SELECT "id", "weeklyPeriods", "teacherRole" FROM "TeachingAssignment" WHERE "academicYearId" = ? AND "semester" = ?`,
+                selectedYearId,
+                semester
+              )
+              .catch(() => [] as any[])
+          : Promise.resolve([] as any[]),
+      ])
+    : [[], []]
+
+  const quotaSplitById = new Map<string, string>()
+  if (Array.isArray(rawQuotaSplits)) {
+    for (const row of rawQuotaSplits) {
+      if (row?.id && typeof row.teacherSplitJson === "string" && row.teacherSplitJson) {
+        quotaSplitById.set(String(row.id), row.teacherSplitJson)
+      }
+    }
+  }
+
+  const assignmentMetaById = new Map<
+    string,
+    { weeklyPeriods: number | null; teacherRole: string | null }
+  >()
+  if (Array.isArray(rawAssignmentSplits)) {
+    for (const row of rawAssignmentSplits) {
+      if (row?.id) {
+        assignmentMetaById.set(String(row.id), {
+          weeklyPeriods:
+            row.weeklyPeriods !== null && row.weeklyPeriods !== undefined
+              ? Number(row.weeklyPeriods)
+              : null,
+          teacherRole: row.teacherRole ? String(row.teacherRole) : null,
+        })
+      }
+    }
+  }
+
+  const enrichQuotas = <T extends { id: string }>(rows: T[]) =>
+    rows.map((r) => ({
+      ...r,
+      teacherSplitJson: (r as any).teacherSplitJson ?? quotaSplitById.get(r.id) ?? "",
+    }))
+
+  const enrichAssignments = <T extends { id: string }>(rows: T[]) =>
+    rows.map((r) => {
+      const meta = assignmentMetaById.get(r.id)
+      return {
+        ...r,
+        weeklyPeriods:
+          (r as any).weeklyPeriods !== undefined ? (r as any).weeklyPeriods : meta?.weeklyPeriods ?? null,
+        teacherRole:
+          (r as any).teacherRole !== undefined ? (r as any).teacherRole : meta?.teacherRole ?? null,
+      }
+    })
 
   const allYearClasses = selectedYearId
     ? await prisma.class.findMany({
@@ -455,8 +642,11 @@ export async function loadScopedWorkspaceContext(
     semester,
     subjects,
     teachers,
+    departments,
     teacherCodeById,
     subjectCodeById,
+    enrichQuotas,
+    enrichAssignments,
     catalog,
     selectedScopeGroup,
     manageableScope,

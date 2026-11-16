@@ -189,7 +189,9 @@ export async function getEffectiveClassWeekSchedule(params: {
   })
 
   const teachersIds = Array.from(
-    new Set(rawSlots.map((s) => s.teacherId).filter(Boolean) as string[])
+    new Set(
+      rawSlots.flatMap((s) => [s.teacherId, s.altTeacherId]).filter(Boolean) as string[]
+    )
   )
   const teacherCodeMap = new Map<string, string>()
   if (teachersIds.length > 0) {
@@ -229,7 +231,9 @@ export async function getEffectiveClassWeekSchedule(params: {
         effSubId = s.altSubjectId
         effSubName = s.altSubjectName
         effTeacherId = s.altTeacherId
-        effTeacherCode = s.altTeacherCode
+        effTeacherCode =
+          s.altTeacherCode ||
+          (s.altTeacherId ? teacherCodeMap.get(s.altTeacherId) || null : null)
         effTeacherName = s.altTeacherName
         effRoomId = s.altRoomId
         effRoomName = s.altRoomName
@@ -241,7 +245,9 @@ export async function getEffectiveClassWeekSchedule(params: {
         effSubId = s.altSubjectId
         effSubName = s.altSubjectName
         effTeacherId = s.altTeacherId
-        effTeacherCode = s.altTeacherCode
+        effTeacherCode =
+          s.altTeacherCode ||
+          (s.altTeacherId ? teacherCodeMap.get(s.altTeacherId) || null : null)
         effTeacherName = s.altTeacherName
         effRoomId = s.altRoomId
         effRoomName = s.altRoomName

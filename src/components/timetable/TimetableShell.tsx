@@ -15,7 +15,7 @@ export const TIMETABLE_NAV_TABS: TimetableNavTab[] = [
   { code: "OVERVIEW", label: "Tổng quan", href: "/admin/thoi-khoa-bieu" },
   { code: "CONFIG", label: "Cấu hình", href: "/admin/thoi-khoa-bieu/cau-hinh" },
   { code: "QUOTA", label: "Định mức & Phân công", href: "/admin/thoi-khoa-bieu/phan-cong" },
-  { code: "SCHEDULE", label: "Xếp thời khóa biểu", href: "/admin/thoi-khoa-bieu/xep-lich" },
+  { code: "SCHEDULE", label: "Xếp TKB (Kéo & Thả)", href: "/admin/thoi-khoa-bieu/xep-lich" },
   { code: "LOOKUP", label: "Tra cứu", href: "/admin/thoi-khoa-bieu/tra-cuu" },
   { code: "ADJUST", label: "Điều chỉnh & Dạy thay", href: "/admin/thoi-khoa-bieu/dieu-chinh" },
   { code: "PUBLISH", label: "Duyệt & Ban hành", href: "/admin/thoi-khoa-bieu/ban-hanh" },
