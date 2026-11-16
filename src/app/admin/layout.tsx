@@ -14,7 +14,7 @@ import { UserMenu } from "@/components/UserMenu"
 import { AcademicYearSelector } from "@/components/AcademicYearSelector"
 import { LanguageSwitcher } from "@/components/LanguageSwitcher"
 import { prisma } from "@/lib/db"
-import { APP_CATEGORIES } from "@/config/modules"
+import { APP_CATEGORIES, WORKHUB_MODULE_CODES } from "@/config/modules"
 import { getRoleReadableModules } from "@/lib/permissions"
 import { isUserAuthorizedForKtdbclWeeklyReports } from "@/lib/qa-workspace/weeklyReportSchema"
 
@@ -44,8 +44,13 @@ export default async function AdminLayout({ children }: { children: React.ReactN
     isKtdbclWeeklyAllowed = await isUserAuthorizedForKtdbclWeeklyReports(session?.user?.id, roleCode).catch(() => false)
     if (isKtdbclWeeklyAllowed) {
       if (!readableModules.includes("WEEKLY_REPORTS")) readableModules.push("WEEKLY_REPORTS")
+      WORKHUB_MODULE_CODES.forEach((code) => {
+        if (!readableModules.includes(code)) readableModules.push(code)
+      })
     } else {
-      readableModules = readableModules.filter(m => m !== "WEEKLY_REPORTS")
+      readableModules = readableModules.filter(
+        (m) => m !== "WEEKLY_REPORTS" && !m.startsWith("WORKHUB_")
+      )
     }
     if (pAny && pAny.workTask) {
       const currentUserId = (session?.user as any)?.id || ""
@@ -80,8 +85,9 @@ export default async function AdminLayout({ children }: { children: React.ReactN
     const currentPath = reqHeaders?.get("x-pathname") || ""
     const isSharedTaskRoute =
       currentPath.startsWith("/admin/tasks") ||
-      (isKtdbclWeeklyAllowed && currentPath.startsWith("/admin/weekly-reports")) ||
-      currentPath.startsWith("/admin/workhub")
+      (isKtdbclWeeklyAllowed &&
+        (currentPath.startsWith("/admin/weekly-reports") ||
+          currentPath.startsWith("/admin/workhub")))
     const adminOnlyModules = readableModules.filter(m => !["TASKS", "WEEKLY_REPORTS"].includes(m) && !m.startsWith("WORKHUB_"))
     if (adminOnlyModules.length === 0 && !isSharedTaskRoute) {
       redirect("/teacher")

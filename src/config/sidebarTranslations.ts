@@ -22,7 +22,7 @@ export const SIDEBAR_TRANSLATIONS: SidebarTranslations = {
     ASSESSMENT: { vi: "Khảo sát đầu vào", en: "Entrance Assessment" },
     SURVEY: { vi: "Khảo sát", en: "Surveys & Feedback" },
     OBSERVATION: { vi: "Dự giờ & Phát triển chuyên môn", en: "Observation & Growth" },
-    WORKHUB: { vi: "WorkHub • Công việc & KPI", en: "WorkHub • Tasks & KPIs" },
+    WORKHUB: { vi: "WorkHub • Quản lý công việc & KPI", en: "WorkHub • Task & KPI Management" },
     OTHER: { vi: "QA WORKSPACE KT&ĐBCL", en: "QA WORKSPACE KT&ĐBCL" },
   },
   modules: {

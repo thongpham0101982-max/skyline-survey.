@@ -38,6 +38,13 @@ vi.mock("@/lib/db", () => ({
     taskCategory: {
       findMany: (...args: any[]) => mockTaskCategoryFindMany(...args),
     },
+    permission: {
+      findMany: async () => [
+        // Simulate stale DB rows granting WORKHUB_OVERVIEW to GDCS / TEACHER -> must still be stripped!
+        { roleCode: "GDCS", module: "WORKHUB_OVERVIEW", canRead: true },
+        { roleCode: "TEACHER", module: "WORKHUB_MY_TASKS", canRead: true },
+      ],
+    },
     $executeRawUnsafe: (...args: any[]) => mockExecuteRawUnsafe(...args),
     $queryRawUnsafe: (...args: any[]) => mockQueryRawUnsafe(...args),
   },
@@ -48,8 +55,10 @@ import {
   getVietnamDateParts,
   isKtdbclRoleCode,
   isUserAuthorizedForKtdbclWeeklyReports,
+  isUserAuthorizedForKtdbclWorkHub,
   resolveCurrentWeekInMonth,
 } from "../weeklyReportSchema"
+import { getRoleReadableModules } from "@/lib/permissions"
 import {
   computeEfficiencyAndQualityMetrics,
   isReportItemPastDue,
@@ -422,5 +431,51 @@ describe("Ban KT&ĐBCL Weekly Reports & Quality Governance Suite", () => {
     await expect(
       isUserAuthorizedForKtdbclWeeklyReports("u_english_teacher", "TEACHER")
     ).resolves.toBe(false)
+  })
+
+  it("restricts WorkHub • Quản lý công việc & KPI strictly to Ban KT&ĐBCL roles and hides it from all other roles", async () => {
+    // Vietnamese role codes in DB ('ĐBCL', 'KHẢO THÍ', 'KHAO_THI', 'KT_DBCL', 'ADMIN') -> ALLOWED
+    for (const ktRole of ["KHAO_THI", "KHẢO THÍ", "ĐBCL", "DBCL", "KT_DBCL", "ADMIN"]) {
+      expect(isKtdbclRoleCode(ktRole)).toBe(true)
+      const mods = await getRoleReadableModules(ktRole)
+      expect(mods.some((m) => m.startsWith("WORKHUB_"))).toBe(true)
+      expect(mods).toContain("WORKHUB_OVERVIEW")
+      expect(mods).toContain("WORKHUB_KPIS")
+    }
+
+    // All non-KT&ĐBCL roles -> NEVER contain any WORKHUB_* module even if stale DB permissions exist
+    const nonKtdbclRoles = [
+      "TB_DHCM",
+      "GDCS",
+      "TBP",
+      "TTCM",
+      "BGH_MN",
+      "GIAO_VU",
+      "CTHS",
+      "TVAN",
+      "NS",
+      "TEACHER",
+      "GV_MN",
+      "GVNN",
+      "PARENT",
+      "STUDENT",
+    ]
+    for (const otherRole of nonKtdbclRoles) {
+      expect(isKtdbclRoleCode(otherRole)).toBe(false)
+      const mods = await getRoleReadableModules(otherRole)
+      expect(mods.filter((m) => m.startsWith("WORKHUB_"))).toEqual([])
+      expect(mods).not.toContain("WEEKLY_REPORTS")
+    }
+
+    mockDepartmentFindMany.mockResolvedValue([
+      { id: "dept_kt", code: "KT-ĐBCL", name: "KT&ĐBCL", divisionCode: "BAN_KT_DBCL" },
+    ])
+    mockTaskGroupFindMany.mockResolvedValue([])
+    mockUserFindMany.mockResolvedValue([])
+
+    await expect(isUserAuthorizedForKtdbclWorkHub("u_gdcs", "GDCS")).resolves.toBe(false)
+    await expect(isUserAuthorizedForKtdbclWorkHub("u_tbdhcm", "TB_DHCM")).resolves.toBe(false)
+    await expect(isUserAuthorizedForKtdbclWorkHub("u_khao_thi", "KHAO_THI")).resolves.toBe(true)
+    await expect(isUserAuthorizedForKtdbclWorkHub("u_dbcl", "ĐBCL")).resolves.toBe(true)
   })
 })

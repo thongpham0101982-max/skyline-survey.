@@ -1,6 +1,7 @@
 // @ts-nocheck
 import { prisma } from "@/lib/db"
-import { APP_CATEGORIES, ALL_APP_MODULES } from "@/config/modules"
+import { APP_CATEGORIES, ALL_APP_MODULES, WORKHUB_MODULE_CODES } from "@/config/modules"
+import { isKtdbclRoleCode } from "@/lib/qa-workspace/weeklyReportSchema"
 import {
   isKtdbclEntranceRole,
   isGdcsOrBghEntranceRole,
@@ -253,44 +254,14 @@ export async function getRoleReadableModules(roleCode: string): Promise<string[]
     readableModules.add("KTDBCL_KTS_NOTIFICATIONS")
   }
 
-  // Phân quyền mặc định cho phân hệ WorkHub theo vai trò thực tế (ẩn mục quản lý đơn vị & cấu hình đối với cá nhân)
-  if (upper && upper !== "PARENT") {
-    readableModules.add("WORKHUB_OVERVIEW")
-    readableModules.add("WORKHUB_MY_TASKS")
-    readableModules.add("WORKHUB_PLANS")
-    readableModules.add("WORKHUB_REPORTS")
-    readableModules.add("WORKHUB_KPIS")
-
-    const isWorkHubAssignerOrLeader =
-      isKtdbclEntranceRole(upper) ||
-      isGdcsOrBghEntranceRole(upper) ||
-      isGiaoVuEntranceRole(upper) ||
-      ["TTCM", "TPCM", "TBP", "BAN_DHCM", "TB_DHCM", "BAN_GD", "BGD", "QLCM"].some((r) =>
-        upper.includes(r)
-      )
-    if (isWorkHubAssignerOrLeader) {
-      readableModules.add("WORKHUB_ASSIGNED_TASKS")
-    }
-
-    const isWorkHubOrgLeader =
-      isGdcsOrBghEntranceRole(upper) ||
-      ["TTCM", "TPCM", "TBP", "BAN_DHCM", "TB_DHCM", "BAN_GD", "BGD", "QLCM", "KT_DBCL", "KTDBCL"].some(
-        (r) => upper.includes(r)
-      )
-    if (isWorkHubOrgLeader) {
-      readableModules.add("WORKHUB_ORG_TRACKING")
-    }
-
-    if (["BAN_DHCM", "TB_DHCM", "BAN_GD", "BGD"].some((r) => upper.includes(r))) {
-      readableModules.add("WORKHUB_SETTINGS")
-    }
-  }
-
-  // Báo cáo Tuần Giáo viên & Nhân sự (WEEKLY_REPORTS) CHỈ áp dụng cho BP/Tổ chuyên môn Ban KT&ĐBCL, KHÔNG áp dụng cho các Tổ khác
-  const isStrictKtdbclRole = ["KT_DBCL", "KTDBCL", "KHAO_THI", "DBCL", "KT&ĐBCL", "KT-ĐBCL", "BAN_KT_DBCL"].includes(upper)
+  // Cả WorkHub • Quản lý công việc & KPI (WORKHUB_*) và Báo cáo Tuần (WEEKLY_REPORTS)
+  // CHỈ dành riêng cho các tài khoản thuộc nhóm quyền Ban KT&ĐBCL, tuyệt đối không xuất hiện trên tài khoản khác.
+  const isStrictKtdbclRole = isKtdbclRoleCode(upper)
   if (isStrictKtdbclRole) {
+    WORKHUB_MODULE_CODES.forEach((code) => readableModules.add(code))
     readableModules.add("WEEKLY_REPORTS")
   } else {
+    WORKHUB_MODULE_CODES.forEach((code) => readableModules.delete(code))
     readableModules.delete("WEEKLY_REPORTS")
   }
 

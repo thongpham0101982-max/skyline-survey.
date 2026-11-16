@@ -282,8 +282,7 @@ export function RolesClient({ initialRoles }: any) {
         PHAN_CONG_KHAO_SAT: { r: true, c: true, u: true },
         XET_DUYET_KET_QUA: { r: true, c: true, u: true },
         MANAGE_SURVEYS: { r: true },
-        TASKS: { r: true, c: true, u: true, d: true },
-        WEEKLY_REPORTS: { r: true, c: true, u: true, d: true }
+        TASKS: { r: true, c: true, u: true, d: true }
       },
       TBP: {
         TEACHERS: { r: true },
@@ -316,8 +315,7 @@ export function RolesClient({ initialRoles }: any) {
         STUDENT_INFO: { r: true, c: true, u: true },
         PHAN_CONG_KHAO_SAT: { r: true, c: true, u: true },
         XET_DUYET_KET_QUA: { r: true, c: true, u: true },
-        TASKS: { r: true, c: true, u: true },
-        WEEKLY_REPORTS: { r: true, c: true, u: true }
+        TASKS: { r: true, c: true, u: true }
       },
       TTCM: {
         TEACHERS: { r: true },
@@ -349,8 +347,7 @@ export function RolesClient({ initialRoles }: any) {
         STUDENT_INFO: { r: true, c: true, u: true },
         PHAN_CONG_KHAO_SAT: { r: true },
         XET_DUYET_KET_QUA: { r: true },
-        TASKS: { r: true, c: true, u: true },
-        WEEKLY_REPORTS: { r: true, c: true, u: true }
+        TASKS: { r: true, c: true, u: true }
       },
       GDCS: {
         PARENTS: { r: true },
@@ -376,8 +373,7 @@ export function RolesClient({ initialRoles }: any) {
         PHAN_CONG_KHAO_SAT: { r: true, c: true, u: true },
         XET_DUYET_KET_QUA: { r: true, c: true, u: true },
         MANAGE_SURVEYS: { r: true },
-        TASKS: { r: true, c: true, u: true, d: true },
-        WEEKLY_REPORTS: { r: true, c: true, u: true, d: true }
+        TASKS: { r: true, c: true, u: true, d: true }
       },
       GIAO_VU: {
         PARENTS: { r: true },
@@ -397,10 +393,17 @@ export function RolesClient({ initialRoles }: any) {
         PHAN_CONG_KHAO_SAT: { r: true },
         XET_DUYET_KET_QUA: { r: true },
         MANAGE_SURVEYS: { r: true },
-        TASKS: { r: true, c: true, u: true },
-        WEEKLY_REPORTS: { r: true, c: true, u: true }
+        TASKS: { r: true, c: true, u: true }
       },
       KTDBCL: {
+        WORKHUB_OVERVIEW: { r: true, c: true, u: true, d: true },
+        WORKHUB_MY_TASKS: { r: true, c: true, u: true, d: true },
+        WORKHUB_ASSIGNED_TASKS: { r: true, c: true, u: true, d: true },
+        WORKHUB_PLANS: { r: true, c: true, u: true, d: true },
+        WORKHUB_REPORTS: { r: true, c: true, u: true, d: true },
+        WORKHUB_KPIS: { r: true, c: true, u: true, d: true },
+        WORKHUB_ORG_TRACKING: { r: true, c: true, u: true, d: true },
+        WORKHUB_SETTINGS: { r: true, c: true, u: true, d: true },
         KTDBCL_EXAMS: { r: true, c: true, u: true, d: true },
         KTDBCL_GRADE_REMARKS: { r: true, c: true, u: true, d: true },
         KTDBCL_SUPPORT: { r: true, c: true, u: true, d: true },

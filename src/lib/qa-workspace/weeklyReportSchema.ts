@@ -94,18 +94,41 @@ export const KTDBCL_DEFAULT_GROUPS = [
 ] as const
 
 const KTDBCL_DEPT_CODES = ["KT-ĐBCL", "KT&ĐBCL", "KT_DBCL", "KTDBCL", "BAN_KT_DBCL"]
-const KTDBCL_ROLE_CODES = ["KT_DBCL", "KTDBCL", "KHAO_THI", "DBCL", "KT&ĐBCL", "KT-ĐBCL", "BAN_KT_DBCL"]
+const KTDBCL_ROLE_CODES = [
+  "KT_DBCL",
+  "KTDBCL",
+  "KHAO_THI",
+  "KHẢO THÍ",
+  "KHAO THI",
+  "ĐBCL",
+  "DBCL",
+  "KT&ĐBCL",
+  "KT-ĐBCL",
+  "BAN_KT_DBCL",
+]
+
+function normalizeRoleToken(val?: string | null): string {
+  return String(val || "")
+    .trim()
+    .toUpperCase()
+    .replace(/Đ/g, "D")
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .replace(/\s+/g, "_")
+}
 
 export function isKtdbclRoleCode(roleCode?: string | null): boolean {
   const upper = String(roleCode || "").toUpperCase().trim()
   if (!upper) return false
   if (["ADMIN", "ADMINISTRATOR", "SUPER_ADMIN", "SUPERADMIN"].includes(upper)) return true
-  return KTDBCL_ROLE_CODES.some((c) => upper === c.toUpperCase())
+  if (KTDBCL_ROLE_CODES.some((c) => upper === c.toUpperCase())) return true
+  const norm = normalizeRoleToken(upper)
+  return ["KT_DBCL", "KTDBCL", "KHAO_THI", "DBCL", "KT&DBCL", "KT-DBCL", "BAN_KT_DBCL"].includes(norm)
 }
 
 /**
- * Kiểm tra chặt chẽ ở Backend xem người dùng có thuộc BP/Tổ chuyên môn Ban KT&ĐBCL (hoặc Quản trị hệ thống) hay không.
- * Báo cáo Tuần Giáo viên & Nhân sự (/admin/weekly-reports) CHỈ áp dụng cho Ban KT&ĐBCL, KHÔNG áp dụng cho các Tổ chuyên môn khác.
+ * Kiểm tra chặt chẽ ở Backend xem người dùng có thuộc nhóm quyền / BP Ban KT&ĐBCL (hoặc Quản trị hệ thống) hay không.
+ * Cả Báo cáo Tuần (/admin/weekly-reports) và WorkHub (/admin/workhub) CHỈ áp dụng riêng cho Ban KT&ĐBCL, KHÔNG hiển thị/áp dụng cho tài khoản khác.
  */
 export async function isUserAuthorizedForKtdbclWeeklyReports(
   userId?: string | null,
@@ -122,6 +145,8 @@ export async function isUserAuthorizedForKtdbclWeeklyReports(
     return false
   }
 }
+
+export const isUserAuthorizedForKtdbclWorkHub = isUserAuthorizedForKtdbclWeeklyReports
 
 let weeklySchemaInitPromise: Promise<void> | null = null
 

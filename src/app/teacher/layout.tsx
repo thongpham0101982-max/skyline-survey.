@@ -10,7 +10,7 @@ import { UserMenu } from "@/components/UserMenu"
 import { AcademicYearSelector } from "@/components/AcademicYearSelector"
 import { LanguageSwitcher } from "@/components/LanguageSwitcher"
 import { prisma } from "@/lib/db"
-import { APP_CATEGORIES } from "@/config/modules"
+import { APP_CATEGORIES, WORKHUB_MODULE_CODES } from "@/config/modules"
 import { isUserAuthorizedForKtdbclWeeklyReports } from "@/lib/qa-workspace/weeklyReportSchema"
 import { redirect } from "next/navigation"
 
@@ -53,8 +53,13 @@ export default async function TeacherLayout({ children }: { children: React.Reac
       const isKtdbclAllowed = await isUserAuthorizedForKtdbclWeeklyReports(session?.user?.id, roleCode).catch(() => false)
       if (isKtdbclAllowed) {
         if (!readableModules.includes("WEEKLY_REPORTS")) readableModules.push("WEEKLY_REPORTS")
+        WORKHUB_MODULE_CODES.forEach((code) => {
+          if (!readableModules.includes(code)) readableModules.push(code)
+        })
       } else {
-        readableModules = readableModules.filter((m: string) => m !== "WEEKLY_REPORTS")
+        readableModules = readableModules.filter(
+          (m: string) => m !== "WEEKLY_REPORTS" && !m.startsWith("WORKHUB_")
+        )
       }
 
       const categories = APP_CATEGORIES

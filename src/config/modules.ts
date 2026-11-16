@@ -63,10 +63,21 @@ export interface AppCategoryItem {
   modules: AppModuleItem[]
 }
 
+export const WORKHUB_MODULE_CODES = [
+  "WORKHUB_OVERVIEW",
+  "WORKHUB_MY_TASKS",
+  "WORKHUB_ASSIGNED_TASKS",
+  "WORKHUB_PLANS",
+  "WORKHUB_REPORTS",
+  "WORKHUB_KPIS",
+  "WORKHUB_ORG_TRACKING",
+  "WORKHUB_SETTINGS",
+] as const
+
 export const APP_CATEGORIES: AppCategoryItem[] = [
   {
     id: "WORKHUB",
-    name: "WorkHub • Công việc & KPI",
+    name: "WorkHub • Quản lý công việc & KPI",
     color: "teal",
     icon: Briefcase,
     modules: [

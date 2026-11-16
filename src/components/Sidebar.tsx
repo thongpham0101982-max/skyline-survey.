@@ -196,8 +196,9 @@ function SidebarContent({ role, permissionModules, actualRole, taskCount = 0, is
         permissionModules?.includes("INPUT_ASSESSMENTS") ||
         false
     }
-    if (module === "WORKHUB_ASSIGNED_TASKS" || module === "WORKHUB_ORG_TRACKING") {
-      hasParent = hasParent || isTTCM || isGDCS || isKtdbcl || false
+    // WorkHub • Quản lý công việc & KPI chỉ hiển thị riêng cho tài khoản được cấp quyền thuộc Ban KT&ĐBCL
+    if (module.startsWith("WORKHUB_")) {
+      return Boolean(permissionModules?.includes(module))
     }
     if (hasParent) return true
     if (subModules && subModules.length > 0) {
@@ -689,29 +690,31 @@ function SidebarContent({ role, permissionModules, actualRole, taskCount = 0, is
                     )}
                   </Link>
 
-                  {/* 2b. WorkHub • Công việc, Báo cáo & KPI */}
-                  <Link
-                    href="/admin/workhub"
-                    onClick={() => setIsOpen(false)}
-                    className={`group relative flex items-center ${isCollapsed ? "justify-center px-2" : "px-3"} py-2 rounded-xl transition-all duration-300 text-xs font-medium ${
-                      pathname.startsWith("/admin/workhub")
-                        ? "bg-gradient-to-r from-teal-500/30 to-emerald-500/20 border border-teal-500/40 text-white shadow-md shadow-black/10"
-                        : "text-white/80 hover:text-white hover:bg-white/10 hover:translate-x-1"
-                    }`}
-                  >
-                    <div className={`w-7 h-7 shrink-0 rounded-lg flex items-center justify-center transition-all ${isCollapsed ? "mx-auto" : "mr-2.5"} ${
-                      pathname.startsWith("/admin/workhub")
-                        ? "bg-teal-500/30 border border-teal-400/50 text-teal-300"
-                        : "bg-white/10 border border-white/15 text-slate-300 group-hover:text-teal-300"
-                    }`}>
-                      <BarChart3 className="w-4 h-4" />
-                    </div>
-                    {!isCollapsed && (
-                      <span className="break-words leading-tight py-0.5">
-                        {lang === "en" ? "WorkHub (Tasks • Reports • KPI)" : "WorkHub (Công việc • Báo cáo • KPI)"}
-                      </span>
-                    )}
-                  </Link>
+                  {/* 2b. WorkHub • Quản lý công việc & KPI (Chỉ hiển thị cho tài khoản thuộc nhóm quyền Ban KT&ĐBCL) */}
+                  {permissionModules?.some((m) => m.startsWith("WORKHUB_")) && (
+                    <Link
+                      href="/admin/workhub"
+                      onClick={() => setIsOpen(false)}
+                      className={`group relative flex items-center ${isCollapsed ? "justify-center px-2" : "px-3"} py-2 rounded-xl transition-all duration-300 text-xs font-medium ${
+                        pathname.startsWith("/admin/workhub")
+                          ? "bg-gradient-to-r from-teal-500/30 to-emerald-500/20 border border-teal-500/40 text-white shadow-md shadow-black/10"
+                          : "text-white/80 hover:text-white hover:bg-white/10 hover:translate-x-1"
+                      }`}
+                    >
+                      <div className={`w-7 h-7 shrink-0 rounded-lg flex items-center justify-center transition-all ${isCollapsed ? "mx-auto" : "mr-2.5"} ${
+                        pathname.startsWith("/admin/workhub")
+                          ? "bg-teal-500/30 border border-teal-400/50 text-teal-300"
+                          : "bg-white/10 border border-white/15 text-slate-300 group-hover:text-teal-300"
+                      }`}>
+                        <BarChart3 className="w-4 h-4" />
+                      </div>
+                      {!isCollapsed && (
+                        <span className="break-words leading-tight py-0.5">
+                          {lang === "en" ? "WorkHub • Task & KPI Management" : "WorkHub • Quản lý công việc & KPI"}
+                        </span>
+                      )}
+                    </Link>
+                  )}
 
                   {/* 3. Phân công giảng dạy */}
                   <Link

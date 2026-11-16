@@ -2,6 +2,7 @@ import { auth } from "@/lib/auth"
 import { prisma } from "@/lib/db"
 import { getOperationalScope } from "@/lib/session"
 import { hasModulePermission } from "@/lib/permissions"
+import { isUserAuthorizedForKtdbclWorkHub } from "@/lib/qa-workspace/weeklyReportSchema"
 import type { WorkHubActorScope, WorkHubRoleTier } from "./types"
 
 export class WorkHubForbiddenError extends Error {
@@ -30,6 +31,13 @@ export async function resolveWorkHubActorScope(): Promise<WorkHubActorScope | nu
   const userId = String(session.user.id)
   const rawRole = String((session.user as any).role || "STAFF")
   const upperRole = rawRole.toUpperCase().trim()
+
+  // Chốt chặn quyền truy cập: WorkHub • Quản lý công việc & KPI CHỈ dành riêng cho các tài khoản thuộc nhóm quyền Ban KT&ĐBCL
+  const isKtdbclAllowed = await isUserAuthorizedForKtdbclWorkHub(userId, rawRole)
+  if (!isKtdbclAllowed) {
+    return null
+  }
+
   const opScope = await getOperationalScope()
 
   const userRecord = await prisma.user.findUnique({

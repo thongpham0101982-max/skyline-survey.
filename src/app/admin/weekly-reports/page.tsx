@@ -44,23 +44,13 @@ export default async function WeeklyReportsPage({
             </div>
           </div>
 
-          <div className="rounded-xl bg-[#F0FDFA] border border-teal-200 p-3.5 text-xs text-slate-700">
-            Đối với công tác kế hoạch, giao việc, báo cáo định kỳ và KPI chung của các phòng ban / tổ chuyên môn khác, vui lòng sử dụng phân hệ <strong>WorkHub</strong>.
-          </div>
-
           <div className="flex flex-wrap items-center justify-end gap-2 pt-1">
             <Link
               href="/teacher"
-              className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-xl text-xs font-semibold bg-white text-slate-700 border border-[#E2E8F0] hover:bg-[#F8FAFC]"
-            >
-              <ArrowLeft className="w-3.5 h-3.5" />
-              Không gian Giáo viên
-            </Link>
-            <Link
-              href="/admin/workhub"
               className="inline-flex items-center gap-1.5 px-4 py-2 rounded-xl text-xs font-semibold bg-[#003B3A] text-white hover:bg-[#005250]"
             >
-              Mở phân hệ WorkHub
+              <ArrowLeft className="w-3.5 h-3.5" />
+              Quay về Không gian Giáo viên
             </Link>
           </div>
         </div>
