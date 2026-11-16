@@ -17,6 +17,13 @@ const mockPrisma = vi.hoisted(() => ({
   notification: {
     create: vi.fn(),
   },
+  exam: { findMany: vi.fn().mockResolvedValue([]) },
+  inputAssessmentPeriod: { findMany: vi.fn().mockResolvedValue([]) },
+  importBatch: { findMany: vi.fn().mockResolvedValue([]) },
+  observationSlot: { findMany: vi.fn().mockResolvedValue([]) },
+  surveyPeriod: { findMany: vi.fn().mockResolvedValue([]) },
+  qualityImprovementAction: { findMany: vi.fn().mockResolvedValue([]) },
+  $executeRawUnsafe: vi.fn().mockResolvedValue(0),
 }))
 
 const mockSendEmail = vi.hoisted(() =>
@@ -62,6 +69,7 @@ import {
   sendQaTaskConfirmationFeedbackEmail,
   sendQaWorkflowTransitionEmails,
 } from "../emailService"
+import { inspectConnectedSourceModules } from "../sourceSyncService"
 import {
   createQaWorkspaceTask,
   confirmAndAcceptQaTask,
@@ -379,5 +387,31 @@ describe("QA Workspace | KT&ĐBCL — Email Notification & Task Confirmation Wor
     expect(mockSendEmail.mock.calls[0][0].to).toBe("chauntm@skylineschool.edu.vn")
     expect(mockSendEmail.mock.calls[0][0].subject).toContain("[Đã hoàn thành công việc]")
     expect(mockSendEmail.mock.calls[0][0].html).toContain("Số liệu đầy đủ")
+  })
+
+  it("5. inspectConnectedSourceModules luôn trả về đầy đủ routeUrl và moduleUrl hợp lệ cho Next.js <Link>", async () => {
+    mockPrisma.exam.findMany.mockResolvedValueOnce([
+      { id: "exam-01", name: "Kiểm tra Giữa HK1", examDate: new Date("2026-11-20") },
+    ])
+    const modules = await inspectConnectedSourceModules({
+      existingSyncKeys: new Set(["SYNC:KHAO_THI:exam-01"]),
+    })
+
+    expect(modules).toHaveLength(6)
+    for (const mod of modules) {
+      expect(typeof mod.routeUrl).toBe("string")
+      expect(mod.routeUrl.startsWith("/admin/")).toBe(true)
+      expect(mod.moduleUrl).toBe(mod.routeUrl)
+      expect(mod.moduleCode).toBe(mod.code)
+      expect(mod.moduleName).toBe(mod.name)
+      expect(Array.isArray(mod.recentItems)).toBe(true)
+    }
+
+    const khaoThi = modules.find((m) => m.code === "KHAO_THI")!
+    expect(khaoThi.totalRecords).toBe(1)
+    expect(khaoThi.syncedTaskCount).toBe(1)
+    expect(khaoThi.recentItems[0].id).toBe("exam-01")
+    expect(khaoThi.recentItems[0].url).toBe("/admin/ktdbcl/khao-thi-so")
+    expect(khaoThi.recentItems[0].alreadySynced).toBe(true)
   })
 })

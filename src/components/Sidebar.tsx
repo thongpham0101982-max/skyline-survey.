@@ -499,7 +499,7 @@ function SidebarContent({ role, permissionModules, actualRole, taskCount = 0, is
                       <div key={m.code} className="space-y-1 mb-1.5">
                         <div className="flex items-center">
                           <Link 
-                            href={effectiveHref}
+                            href={effectiveHref || "/admin"}
                             onClick={() => {
                               if (!hasSubModules) setIsOpen(false);
                             }}

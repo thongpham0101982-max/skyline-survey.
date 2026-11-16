@@ -334,7 +334,7 @@ export function WorkspaceCardsView({
                       </div>
                       <div className="flex flex-wrap gap-1.5">
                         {card.quickLinks.map((ql, idx) =>
-                          ql.href.startsWith("?") ? (
+                          (ql.href || "").startsWith("?") ? (
                             <button
                               key={idx}
                               type="button"
@@ -353,7 +353,7 @@ export function WorkspaceCardsView({
                           ) : (
                             <Link
                               key={idx}
-                              href={ql.href}
+                              href={ql.href || "/admin/tasks"}
                               className="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg text-xs font-semibold bg-slate-100 hover:bg-teal-50 text-slate-700 hover:text-teal-800 transition-colors"
                             >
                               <span>{ql.label}</span>
@@ -577,12 +577,19 @@ export function WorkspaceCardsView({
           </div>
 
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-            {sourceModules.map((mod: any) => {
-              const isSelected = selectedSourceModule === mod.moduleCode
+            {sourceModules.map((mod: any, modIdx: number) => {
+              const modCode = mod.code || mod.moduleCode || `MOD_${modIdx}`
+              const modName = mod.name || mod.moduleName || modCode
+              const modHref = mod.moduleUrl || mod.routeUrl || "/admin/tasks"
+              const totalRecords = mod.recordCount ?? mod.totalRecords ?? 0
+              const items = mod.candidateItems || mod.recentItems || []
+              const noteText = mod.limitationNote || mod.description || mod.statusLabel || ""
+              const isSelected = selectedSourceModule === modCode
+
               return (
                 <div
-                  key={mod.moduleCode}
-                  className={`rounded-xl border p-3.5 transition-all ${
+                  key={modCode}
+                  className={`rounded-xl border p-3.5 transition-all tabular-nums ${
                     isSelected
                       ? "border-teal-200 bg-teal-50/30"
                       : "border-slate-200 bg-slate-50/40 hover:border-slate-300"
@@ -590,81 +597,99 @@ export function WorkspaceCardsView({
                 >
                   <div className="flex items-start justify-between gap-2">
                     <div>
-                      <div className="flex items-center gap-1.5">
+                      <div className="flex items-center gap-1.5 flex-wrap">
                         <span className="text-xs font-extrabold text-slate-900">
-                          {mod.moduleName}
+                          {modName}
                         </span>
                         <span
                           className={`px-1.5 py-0.5 rounded text-[10px] font-bold ${
                             mod.status === "CONNECTED"
                               ? "bg-emerald-50 text-emerald-700 border border-emerald-200"
+                              : mod.status === "READ_ONLY_LINK"
+                              ? "bg-teal-50 text-[#00736E] border border-teal-200"
                               : "bg-amber-50 text-amber-700 border border-amber-200"
                           }`}
                         >
-                          {mod.status === "CONNECTED" ? "Đã kết nối CSDL" : "Giới hạn API"}
+                          {mod.status === "CONNECTED"
+                            ? "Đã kết nối CSDL"
+                            : mod.status === "READ_ONLY_LINK"
+                            ? "Liên kết đọc"
+                            : "Giới hạn API"}
                         </span>
                       </div>
                       <p className="text-[11px] text-slate-500 mt-1 line-clamp-2">
-                        {mod.limitationNote}
+                        {noteText}
                       </p>
                     </div>
                     <span className="text-sm font-black text-teal-800 shrink-0">
-                      {mod.totalRecords}
+                      {totalRecords}
                     </span>
                   </div>
 
                   <div className="mt-2.5 pt-2 border-t border-slate-200/60 flex items-center justify-between text-xs">
                     <Link
-                      href={mod.routeUrl}
+                      href={modHref}
                       className="text-teal-700 hover:underline font-semibold inline-flex items-center gap-1"
                     >
                       Mở phân hệ nguồn <ExternalLink className="w-3 h-3" />
                     </Link>
-                    {mod.recentItems?.length > 0 && (
+                    {items.length > 0 && (
                       <button
                         type="button"
                         onClick={() =>
                           setSelectedSourceModule(
-                            isSelected ? null : mod.moduleCode
+                            isSelected ? null : modCode
                           )
                         }
                         className="text-teal-800 font-bold hover:underline cursor-pointer"
                       >
-                        {isSelected ? "Thu gọn" : `Xem ${mod.recentItems.length} hồ sơ`}
+                        {isSelected ? "Thu gọn" : `Xem ${items.length} hồ sơ`}
                       </button>
                     )}
                   </div>
 
-                  {isSelected && mod.recentItems?.length > 0 && (
+                  {isSelected && items.length > 0 && (
                     <div className="mt-2.5 space-y-1.5 pt-2 border-t border-teal-200/60">
-                      {mod.recentItems.map((item: any) => (
-                        <div
-                          key={item.id}
-                          className="flex items-center justify-between gap-2 bg-white p-2 rounded-lg border border-slate-200 text-xs"
-                        >
-                          <div className="min-w-0">
-                            <div className="font-semibold text-slate-800 truncate">
-                              {item.title}
-                            </div>
-                            <div className="text-[10px] text-slate-500">
-                              {item.subtitle}
-                            </div>
-                          </div>
-                          <button
-                            type="button"
-                            disabled={syncingRecordId === item.id}
-                            onClick={() => onSyncSourceRecord(mod.moduleCode, item)}
-                            className="px-2.5 py-1 rounded-md text-[11px] font-bold bg-teal-500 hover:bg-teal-500 disabled:opacity-50 text-white shrink-0 inline-flex items-center gap-1 cursor-pointer"
+                      {items.map((item: any, itemIdx: number) => {
+                        const itemId = item.sourceRecordId || item.id || String(itemIdx)
+                        const itemSubtitle =
+                          item.subtitle ||
+                          [item.category, item.dueDate ? `Hạn: ${item.dueDate}` : null]
+                            .filter(Boolean)
+                            .join(" • ")
+                        return (
+                          <div
+                            key={itemId}
+                            className="flex items-center justify-between gap-2 bg-white p-2 rounded-lg border border-slate-200 text-xs"
                           >
-                            <RefreshCw
-                              className={`w-3 h-3 ${
-                                syncingRecordId === item.id ? "animate-spin" : ""
+                            <div className="min-w-0">
+                              <div className="font-semibold text-slate-800 truncate">
+                                {item.title}
+                              </div>
+                              <div className="text-[10px] text-slate-500">
+                                {itemSubtitle}
+                              </div>
+                            </div>
+                            <button
+                              type="button"
+                              disabled={syncingRecordId === itemId || Boolean(item.alreadySynced)}
+                              onClick={() => onSyncSourceRecord(modCode, item)}
+                              className={`px-2.5 py-1 rounded-md text-[11px] font-bold shrink-0 inline-flex items-center gap-1 ${
+                                item.alreadySynced
+                                  ? "bg-emerald-50 text-emerald-700 border border-emerald-200 cursor-default"
+                                  : "bg-[#003B3A] hover:bg-[#005250] disabled:opacity-50 text-white cursor-pointer"
                               }`}
-                            />
-                            Tạo/Đồng bộ việc
-                          </button>
-                        </div>
-                      ))}
+                            >
+                              <RefreshCw
+                                className={`w-3 h-3 ${
+                                  syncingRecordId === itemId ? "animate-spin" : ""
+                                }`}
+                              />
+                              {item.alreadySynced ? "Đã đồng bộ" : "Tạo/Đồng bộ việc"}
+                            </button>
+                          </div>
+                        )
+                      })}
                     </div>
                   )}
                 </div>

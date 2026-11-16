@@ -250,6 +250,24 @@ export default async function TasksPage() {
 
   // Hydrate QA Workspace extended governance metadata & step-aware deadline statuses
   const metaMap = await getQaMetadataMapForTasks(rawTasks)
+  const existingSyncKeys = new Set<string>()
+  for (const m of metaMap.values()) {
+    if (m.externalSyncKey) existingSyncKeys.add(m.externalSyncKey)
+  }
+  const hydratedSourceModules = (sourceModules || []).map((mod: any) => {
+    const items = (mod.candidateItems || mod.recentItems || []).map((item: any) => ({
+      ...item,
+      alreadySynced: Boolean(item.alreadySynced || existingSyncKeys.has(item.externalSyncKey)),
+    }))
+    return {
+      ...mod,
+      routeUrl: mod.routeUrl || mod.moduleUrl || "/admin/tasks",
+      moduleUrl: mod.moduleUrl || mod.routeUrl || "/admin/tasks",
+      candidateItems: items,
+      recentItems: items,
+      syncedTaskCount: items.filter((c: any) => c.alreadySynced).length,
+    }
+  })
   const userLookup = new Map(allStaffUsers.map(u => [u.id, u]))
 
   const enrichedTasks = rawTasks.map(t => {
@@ -305,7 +323,7 @@ export default async function TasksPage() {
         initialDepartmentSettings={deptSettings}
         campuses={JSON.parse(JSON.stringify(campuses))}
         initialImprovementActions={JSON.parse(JSON.stringify(improvementActions))}
-        initialSourceModules={JSON.parse(JSON.stringify(sourceModules))}
+        initialSourceModules={JSON.parse(JSON.stringify(hydratedSourceModules))}
         initialRecentReminders={JSON.parse(JSON.stringify(recentReminders))}
       />
     </Suspense>

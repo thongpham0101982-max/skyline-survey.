@@ -342,28 +342,34 @@ export function TasksClient({
   }
 
   const handleSyncSourceRecord = async (moduleCode: string, item: any) => {
-    setSyncingRecordId(item.id)
+    const recordId = item.sourceRecordId || item.id
+    const recordUrl = item.sourceUrl || item.url || null
+    setSyncingRecordId(recordId)
     try {
-      const externalSyncKey = `SYNC:${moduleCode}:${item.id}`
+      const externalSyncKey = item.externalSyncKey || `SYNC:${moduleCode}:${recordId}`
       const res = await createQaWorkspaceTask({
-        title: `[Liên thông ${moduleCode}] ${item.title}`,
-        description: `Đồng bộ từ hồ sơ nguồn: ${item.title} (${item.subtitle || ""})`,
+        title: item.title?.startsWith("[") ? item.title : `[Liên thông ${moduleCode}] ${item.title}`,
+        description: `Đồng bộ từ hồ sơ nguồn: ${item.title} (${item.subtitle || item.category || ""})`,
         category:
-          moduleCode === "KHAO_THI"
+          item.category ||
+          (moduleCode === "KHAO_THI"
             ? "Khảo thí"
             : moduleCode === "KHAO_SAT_DAU_VAO"
             ? "Khảo sát đầu vào"
-            : "Đảm bảo chất lượng",
+            : "Đảm bảo chất lượng"),
         taskGroupId: taskGroupsList[0]?.id || null,
         assignmentMode: "INDIVIDUAL",
         assignedToUserId:
-          taskGroupsList[0]?.leaderUserId || currentUserId || allStaffUsers[0]?.id,
+          item.suggestedAssigneeId ||
+          taskGroupsList[0]?.leaderUserId ||
+          currentUserId ||
+          allStaffUsers[0]?.id,
         startDate: new Date().toISOString().slice(0, 10),
-        endDate: new Date(Date.now() + 5 * 86400000).toISOString().slice(0, 10),
+        endDate: item.dueDate || new Date(Date.now() + 5 * 86400000).toISOString().slice(0, 10),
         priority: "HIGH",
         sourceModule: moduleCode as any,
-        sourceRecordId: item.id,
-        sourceUrl: item.url,
+        sourceRecordId: recordId,
+        sourceUrl: recordUrl,
         externalSyncKey,
         academicYearId: getDefaultAcademicYearClient(years)?.id || null,
       })
