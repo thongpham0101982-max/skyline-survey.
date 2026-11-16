@@ -65,32 +65,11 @@ export interface AppCategoryItem {
 
 export const WORKHUB_MODULE_CODES = [
   "WORKHUB_OVERVIEW",
-  "WORKHUB_MY_TASKS",
-  "WORKHUB_ASSIGNED_TASKS",
   "WORKHUB_PLANS",
-  "WORKHUB_REPORTS",
   "WORKHUB_KPIS",
-  "WORKHUB_ORG_TRACKING",
-  "WORKHUB_SETTINGS",
 ] as const
 
 export const APP_CATEGORIES: AppCategoryItem[] = [
-  {
-    id: "WORKHUB",
-    name: "WorkHub • Quản lý công việc & KPI",
-    color: "teal",
-    icon: Briefcase,
-    modules: [
-      { code: "WORKHUB_OVERVIEW", name: "Tổng quan", icon: LayoutDashboard, href: "/admin/workhub" },
-      { code: "WORKHUB_MY_TASKS", name: "Công việc của tôi", icon: ClipboardList, href: "/admin/workhub/my-tasks" },
-      { code: "WORKHUB_ASSIGNED_TASKS", name: "Công việc đã giao", icon: UserCheck, href: "/admin/workhub/assigned-tasks" },
-      { code: "WORKHUB_PLANS", name: "Kế hoạch công tác", icon: Calendar, href: "/admin/workhub/plans" },
-      { code: "WORKHUB_REPORTS", name: "Báo cáo tuần/tháng", icon: FileText, href: "/admin/workhub/reports" },
-      { code: "WORKHUB_KPIS", name: "Chỉ tiêu và KPI", icon: BarChart3, href: "/admin/workhub/kpis" },
-      { code: "WORKHUB_ORG_TRACKING", name: "Theo dõi phòng ban/cơ sở", icon: Building2, href: "/admin/workhub/org-tracking" },
-      { code: "WORKHUB_SETTINGS", name: "Cấu hình", icon: Settings, href: "/admin/workhub/settings" },
-    ],
-  },
   {
     id: "SYSTEM_KPIS",
     name: "KPIs Hệ thống",
@@ -519,12 +498,15 @@ export const APP_CATEGORIES: AppCategoryItem[] = [
   },
   {
     id: "OTHER",
-    name: "QA WORKSPACE KT&ĐBCL",
-    color: "slate",
+    name: "QA Workspace • KT&ĐBCL",
+    color: "teal",
     icon: Briefcase,
     modules: [
-      { code: "TASKS", name: "Điều hành Công việc", icon: ClipboardList, href: "/admin/tasks" },
-      { code: "WEEKLY_REPORTS", name: "Báo cáo Tuần KT&ĐBCL", icon: FileSpreadsheet, href: "/admin/weekly-reports" },
+      { code: "WORKHUB_OVERVIEW", name: "Tổng quan tiến độ & KPI", icon: LayoutDashboard, href: "/admin/workhub" },
+      { code: "TASKS", name: "Điều hành & giao việc", icon: ClipboardList, href: "/admin/tasks" },
+      { code: "WORKHUB_PLANS", name: "Kế hoạch công tác", icon: Calendar, href: "/admin/workhub/plans" },
+      { code: "WEEKLY_REPORTS", name: "Báo cáo tuần & tháng", icon: FileSpreadsheet, href: "/admin/weekly-reports" },
+      { code: "WORKHUB_KPIS", name: "Chỉ tiêu & đánh giá KPI", icon: BarChart3, href: "/admin/workhub/kpis" },
     ]
   }
 ];

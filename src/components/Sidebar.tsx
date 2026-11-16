@@ -86,7 +86,7 @@ function SidebarContent({ role, permissionModules, actualRole, taskCount = 0, is
   const [generalStudentCount, setGeneralStudentCount] = useState(0)
   const [specialSubjectCodes, setSpecialSubjectCodes] = useState<string[]>(assignedSpecialSubjects || [])
   const [loadingAssignments, setLoadingAssignments] = useState(true)
-  const [expandedCategories, setExpandedCategories] = useState<Record<string, boolean>>({ SYSTEM_KPIS: true, SPECIAL_SUBJECTS: true, STUDENT_LOOKUP: true, KTDBCL: true, COMPETENCY_ASSESSMENT: true, ASSESSMENT: true, TRAINING: true, SYSTEM: true })
+  const [expandedCategories, setExpandedCategories] = useState<Record<string, boolean>>({ SYSTEM_KPIS: true, SPECIAL_SUBJECTS: true, STUDENT_LOOKUP: true, KTDBCL: true, COMPETENCY_ASSESSMENT: true, ASSESSMENT: true, TRAINING: true, SYSTEM: true, OTHER: true })
   const [pendingSignatureCount, setPendingSignatureCount] = useState<number>(0)
   const [expandedTeacherGroups, setExpandedTeacherGroups] = useState<Record<string, boolean>>({
     GROUP_01: true,
@@ -710,7 +710,7 @@ function SidebarContent({ role, permissionModules, actualRole, taskCount = 0, is
                       </div>
                       {!isCollapsed && (
                         <span className="break-words leading-tight py-0.5">
-                          {lang === "en" ? "WorkHub • Task & KPI Management" : "WorkHub • Quản lý công việc & KPI"}
+                          {lang === "en" ? "QA Workspace • Tasks & KPIs" : "QA Workspace • Công việc & KPI"}
                         </span>
                       )}
                     </Link>

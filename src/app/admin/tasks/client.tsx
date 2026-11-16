@@ -209,7 +209,9 @@ export function TasksClient({
   )
 
   // Quick Context & Team Filters (dùng chung cho mọi chế độ xem)
-  const [selectedTeamFilter, setSelectedTeamFilter] = useState("ALL")
+  const [selectedTeamFilter, setSelectedTeamFilter] = useState(() =>
+    searchParams?.get("scope") === "mine" ? "MY_TASKS" : "ALL"
+  )
   const [filterPriority, setFilterPriority] = useState("ALL")
   const [searchQuery, setSearchQuery] = useState("")
   const [filterProgress, setFilterProgress] = useState("ALL")
@@ -1019,14 +1021,31 @@ export function TasksClient({
             QA Assistant
           </button>
 
+          {/* Liên thông nhanh sang Tổng quan tiến độ & KPI trong cùng QA Workspace */}
+          <Link
+            href="/admin/workhub"
+            className="inline-flex items-center gap-1.5 px-3 py-2 rounded-2xl bg-white hover:bg-teal-50 text-[#003B3A] border border-slate-200 hover:border-teal-300 font-bold text-xs cursor-pointer transition-colors"
+          >
+            <BarChart3 className="w-4 h-4 text-[#00A19A]" />
+            Tổng quan &amp; KPI
+          </Link>
+
+          <Link
+            href="/admin/weekly-reports"
+            className="inline-flex items-center gap-1.5 px-3 py-2 rounded-2xl bg-white hover:bg-teal-50 text-[#003B3A] border border-slate-200 hover:border-teal-300 font-bold text-xs cursor-pointer transition-colors"
+          >
+            <FileSpreadsheet className="w-4 h-4 text-[#008B85]" />
+            Báo cáo tuần
+          </Link>
+
           {/* Nút Báo cáo & dữ liệu đa chiều (Mục IX) */}
           <button
             type="button"
             onClick={() => setShowAnalyticsModal(true)}
             className="inline-flex items-center gap-1.5 px-3 py-2 rounded-2xl bg-white hover:bg-slate-50 text-slate-700 border border-slate-200 font-bold text-xs cursor-pointer"
           >
-            <BarChart3 className="w-4 h-4 text-teal-600" />
-            Báo cáo
+            <Layers className="w-4 h-4 text-teal-600" />
+            Phân tích tác vụ
           </button>
 
           {/* Nút Hướng dẫn Vận hành QA Workspace */}

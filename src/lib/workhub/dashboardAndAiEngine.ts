@@ -3,7 +3,14 @@ import { prisma } from "@/lib/db"
 import { sendEmail } from "@/lib/mail"
 import { renderSkylineEmail } from "@/lib/email-templates"
 import { sanitizeUntrustedReferenceData } from "@/lib/qa-workspace/nlpDraftParser"
-import { ensureWorkHubSchema, makeWorkHubId } from "./schemaInit"
+import {
+  computeWeeksOfMonthSync,
+  getWeeklyItemMetaMap,
+  KTDBCL_DEFAULT_GROUPS,
+  resolveCurrentWeekInMonth,
+  resolveKtdbclRoster,
+} from "@/lib/qa-workspace/weeklyReportSchema"
+import { ensureWorkHubSchema, makeWorkHubId, safeJsonParse } from "./schemaInit"
 import { recordWorkHubSystemAudit, WorkHubForbiddenError } from "./permissions"
 import { listScopedWorkHubTasks, selectCanonicalStatisticalTasks } from "./taskEngine"
 import { listScopedWorkHubPlans } from "./planEngine"
@@ -43,66 +50,148 @@ export async function buildWorkHubDashboardData(
     weekNumber?: number | null
     campusId?: string
     departmentId?: string
+    groupId?: string
     userId?: string
     status?: string
   }
 ) {
   await ensureWorkHubSchema()
   const now = new Date()
-  const year = Number(filters?.year) || now.getFullYear()
-  const month = Number(filters?.month) || now.getMonth() + 1
+  const currentVnPeriod = resolveCurrentWeekInMonth(now)
+  const year = Number(filters?.year) || currentVnPeriod.year
+  const month = Number(filters?.month) || currentVnPeriod.month
   const periodType: WorkHubReportPeriodType = filters?.periodType || "MONTHLY"
-  const weekNumber = periodType === "WEEKLY" ? Number(filters?.weekNumber || 1) : null
-  const periodWin = resolveReportPeriodWindow({ periodType, year, month, weekNumber })
+  const allWeeksInMonth = computeWeeksOfMonthSync(month, year)
+  const defaultWeekNum =
+    year === currentVnPeriod.year && month === currentVnPeriod.month
+      ? currentVnPeriod.weekNumber
+      : allWeeksInMonth[0]?.weekNum || 1
+  const weekNumber =
+    periodType === "WEEKLY"
+      ? Number(filters?.weekNumber || defaultWeekNum)
+      : defaultWeekNum
+  const periodWin = resolveReportPeriodWindow({
+    periodType,
+    year,
+    month,
+    weekNumber: periodType === "WEEKLY" ? weekNumber : null,
+  })
 
   const reminderConfig = await getWorkHubReminderSettings()
 
-  const [scopedTasks, scopedPlans, scopedReports, departments, campuses, scopedUsers] =
-    await Promise.all([
-      listScopedWorkHubTasks(actor, {
-        academicYearId: filters?.academicYearId,
-        campusId: filters?.campusId,
-        departmentId: filters?.departmentId,
-        userId: filters?.userId,
-        status: filters?.status,
-        dueSoonHours: reminderConfig.dueSoonHours,
-        referenceNow: now,
-      }),
-      listScopedWorkHubPlans(actor, {
-        academicYearId: filters?.academicYearId,
-        campusId: filters?.campusId,
-        departmentId: filters?.departmentId,
-      }),
-      listScopedWorkHubReports(actor, {
-        year,
-        month,
-        campusId: filters?.campusId,
-        departmentId: filters?.departmentId,
-      }),
-      prisma.department.findMany({
-        where: { status: "ACTIVE" },
-        select: { id: true, code: true, name: true, divisionCode: true },
+  const [
+    scopedTasks,
+    scopedPlans,
+    scopedReports,
+    departments,
+    campuses,
+    scopedUsers,
+    ktdbclRoster,
+    rawTaskGroups,
+  ] = await Promise.all([
+    listScopedWorkHubTasks(actor, {
+      academicYearId: filters?.academicYearId,
+      campusId: filters?.campusId,
+      departmentId: filters?.departmentId,
+      groupId: filters?.groupId,
+      userId: filters?.userId,
+      status: filters?.status === "MISSING_REPORT" ? undefined : filters?.status,
+      dueSoonHours: reminderConfig.dueSoonHours,
+      referenceNow: now,
+    }),
+    listScopedWorkHubPlans(actor, {
+      academicYearId: filters?.academicYearId,
+      campusId: filters?.campusId,
+      departmentId: filters?.departmentId,
+    }),
+    listScopedWorkHubReports(actor, {
+      year,
+      month,
+      campusId: filters?.campusId,
+      departmentId: filters?.departmentId,
+    }),
+    prisma.department.findMany({
+      where: { status: "ACTIVE" },
+      select: { id: true, code: true, name: true, divisionCode: true },
+      orderBy: { name: "asc" },
+    }),
+    prisma.campus.findMany({
+      select: { id: true, campusCode: true, campusName: true },
+      orderBy: { campusName: "asc" },
+    }),
+    prisma.user.findMany({
+      where: {
+        status: "ACTIVE",
+        role: { not: "PARENT" },
+        ...(actor.scopedUserIds !== null ? { id: { in: actor.scopedUserIds } } : {}),
+      },
+      select: {
+        id: true,
+        fullName: true,
+        role: true,
+        teacher: { select: { departmentId: true, campusId: true, position: true } },
+      },
+      orderBy: { fullName: "asc" },
+    }),
+    resolveKtdbclRoster().catch(() => null),
+    prisma.taskGroup
+      ?.findMany?.({
         orderBy: { name: "asc" },
-      }),
-      prisma.campus.findMany({
-        select: { id: true, campusCode: true, campusName: true },
-        orderBy: { campusName: "asc" },
-      }),
-      prisma.user.findMany({
-        where: {
-          status: "ACTIVE",
-          role: { not: "PARENT" },
-          ...(actor.scopedUserIds !== null ? { id: { in: actor.scopedUserIds } } : {}),
-        },
-        select: {
-          id: true,
-          fullName: true,
-          role: true,
-          teacher: { select: { departmentId: true, campusId: true, position: true } },
-        },
-        orderBy: { fullName: "asc" },
-      }),
-    ])
+      })
+      ?.catch?.(() => []) ?? Promise.resolve([]),
+  ])
+
+  // Danh sách nhân sự thực tế thuộc Ban KT&ĐBCL (fallback sang scopedUsers nếu chạy môi trường test cô lập)
+  const ktdbclMembers =
+    ktdbclRoster && ktdbclRoster.members.length > 0
+      ? ktdbclRoster.members
+      : scopedUsers.map((u) => ({
+          id: u.id,
+          fullName: u.fullName,
+          email: null,
+          role: u.role,
+          position: u.teacher?.position || u.role,
+          isDirector: actor.isExecutive && u.id === actor.userId,
+          isManager: false,
+          departmentId: u.teacher?.departmentId || null,
+          departmentName: "KT&ĐBCL",
+          campusName: "",
+          specialistGroups: [] as string[],
+          teacherId: null,
+        }))
+
+  const ktdbclMemberIds = ktdbclMembers.map((m) => m.id)
+
+  // Liên thông trực tiếp dữ liệu Báo cáo Tuần KT&ĐBCL (WeeklyReport + WeeklyReportItem + qa_weekly_report_item_meta)
+  const monthWeeklyReports: any[] =
+    typeof (prisma as any).weeklyReport?.findMany === "function" && ktdbclMemberIds.length > 0
+      ? await prisma.weeklyReport
+          .findMany({
+            where: {
+              month,
+              year,
+              userId: { in: ktdbclMemberIds },
+            },
+            include: {
+              items: true,
+            },
+            orderBy: [{ weekNumber: "asc" }, { updatedAt: "desc" }],
+          })
+          .catch(() => [])
+      : []
+
+  const allReportItemIds = monthWeeklyReports.flatMap((r: any) =>
+    (r.items || []).map((it: any) => String(it.id))
+  )
+  const weeklyItemMetaMap =
+    allReportItemIds.length > 0
+      ? await getWeeklyItemMetaMap(allReportItemIds).catch(() => new Map())
+      : new Map()
+
+  const activePeriodReports =
+    periodType === "WEEKLY"
+      ? monthWeeklyReports.filter((r: any) => Number(r.weekNumber) === weekNumber)
+      : monthWeeklyReports
 
   // Canonical statistical tasks (deduplicated & parent-child safe)
   const canonicalTasks = selectCanonicalStatisticalTasks(scopedTasks)
@@ -184,30 +273,44 @@ export async function buildWorkHubDashboardData(
     {
       key: "MY_REPORT_STATUS",
       label: `Báo cáo ${periodWin.periodLabel}`,
-      displayValue: myCurrentPeriodReport
-        ? myCurrentPeriodReport.status === "APPROVED"
-          ? "Đã duyệt"
-          : myCurrentPeriodReport.status === "SUBMITTED"
-          ? "Đã gửi"
-          : myCurrentPeriodReport.status === "NEEDS_REVISION"
-          ? "Cần bổ sung"
-          : "Bản nháp"
-        : "Chưa lập",
-      subtext: myCurrentPeriodReport ? myCurrentPeriodReport.reportCode : "Nhấn để mở báo cáo kỳ này",
+      displayValue: (() => {
+        const myWkReports = activePeriodReports.filter((r: any) => r.userId === actor.userId)
+        if (myWkReports.length > 0) {
+          const itemCount = myWkReports.reduce((s: number, r: any) => s + (r.items?.length || 0), 0)
+          return `Đã nộp (${itemCount} mục)`
+        }
+        if (myCurrentPeriodReport) {
+          return myCurrentPeriodReport.status === "APPROVED"
+            ? "Đã duyệt"
+            : myCurrentPeriodReport.status === "SUBMITTED"
+            ? "Đã gửi"
+            : myCurrentPeriodReport.status === "NEEDS_REVISION"
+            ? "Cần bổ sung"
+            : "Bản nháp"
+        }
+        return "Chưa nộp"
+      })(),
+      subtext:
+        activePeriodReports.some((r: any) => r.userId === actor.userId)
+          ? "Đồng bộ trực tiếp từ Báo cáo Tuần KT&ĐBCL"
+          : myCurrentPeriodReport
+          ? myCurrentPeriodReport.reportCode
+          : "Mở Báo cáo tuần & tháng để cập nhật",
       tone:
+        activePeriodReports.some((r: any) => r.userId === actor.userId) ||
         myCurrentPeriodReport?.status === "APPROVED"
           ? "emerald"
           : myCurrentPeriodReport?.status === "SUBMITTED"
           ? "teal"
           : "amber",
       formulaDescription:
-        "Trạng thái báo cáo công việc cá nhân của bạn trong kỳ đang chọn (Nháp → Đã gửi → Đã duyệt).",
+        "Trạng thái nộp báo cáo công việc cá nhân của bạn trong kỳ đang chọn (đồng bộ trực tiếp từ dữ liệu Báo cáo Tuần & Tháng Ban KT&ĐBCL).",
       sourceType: "REPORTS",
       sourceIds: myCurrentPeriodReport ? [myCurrentPeriodReport.id] : [],
     },
   ]
 
-  // Department Head & Executive Metrics
+  // Department Head & Executive Metrics (gói gọn trong Ban KT&ĐBCL: 5 Nhóm chuyên môn & Cá nhân)
   const completedTasks = canonicalTasks.filter((t) => t.workStatus === "COMPLETED")
   const onTimeCompleted = completedTasks.filter((t) => t.completedOnTime === true)
   const openOverdueTasks = canonicalTasks.filter(
@@ -222,29 +325,48 @@ export async function buildWorkHubDashboardData(
       : `${Number(((onTimeCompleted.length / canonicalTasks.length) * 100).toFixed(1))}%`
 
   const reportsPendingApproval = scopedReports.filter((r) => r.status === "SUBMITTED")
-  const submittedOwnerIdsForPeriod = new Set(
-    scopedReports
+  const submittedOwnerIdsForPeriod = new Set<string>([
+    ...scopedReports
       .filter(
         (r) =>
           r.reportScope === "INDIVIDUAL" &&
           r.periodKey === periodWin.periodKey &&
           r.status !== "DRAFT"
       )
-      .map((r) => r.ownerUserId)
+      .map((r) => r.ownerUserId),
+    ...activePeriodReports
+      .filter((r: any) => (r.items?.length || 0) > 0)
+      .map((r: any) => String(r.userId)),
+  ])
+  const unsubmittedStaff = ktdbclMembers.filter((u) => !submittedOwnerIdsForPeriod.has(u.id))
+
+  // Đếm tổng số mục việc trong Báo cáo tuần chờ xác nhận hoặc chờ giải trình
+  const activeReportItems = activePeriodReports.flatMap((r: any) =>
+    (r.items || []).map((it: any) => ({
+      ...it,
+      userId: String(r.userId),
+      weekNumber: Number(r.weekNumber),
+      meta: weeklyItemMetaMap.get(String(it.id)) || null,
+    }))
   )
-  const unsubmittedStaff = scopedUsers.filter((u) => !submittedOwnerIdsForPeriod.has(u.id))
+  const pendingConfirmItemsCount = activeReportItems.filter(
+    (it: any) => !it.meta || it.meta.confirmStatus === "PENDING"
+  ).length
+  const explanationRequiredItems = activeReportItems.filter(
+    (it: any) => it.meta?.confirmStatus === "OVERDUE_EXPLANATION_REQUIRED"
+  )
 
   const managerCards: DashboardMetricCard[] = [
     {
       key: "SCOPE_PROGRESS",
-      label: "Hoàn thành trong phạm vi",
+      label: "Hoàn thành đầu việc giao",
       displayValue:
         canonicalTasks.length === 0
           ? "Chưa đủ dữ liệu"
           : `${completedTasks.length}/${canonicalTasks.length}`,
       subtext:
         canonicalTasks.length === 0
-          ? "Chưa phát sinh đầu việc lá"
+          ? "Chưa phát sinh đầu việc lá trong phạm vi lọc"
           : `Đạt ${Math.round((completedTasks.length / canonicalTasks.length) * 100)}% tổng đầu việc`,
       tone: "teal",
       formulaDescription:
@@ -270,12 +392,17 @@ export async function buildWorkHubDashboardData(
     },
     {
       key: "SCOPE_OVERDUE_BLOCKERS",
-      label: "Quá hạn & Vướng mắc tồn đọng",
-      displayValue: `${openOverdueTasks.length}`,
-      subtext: `${tasksWithBlockers.length} việc có báo cáo vướng mắc`,
-      tone: openOverdueTasks.length > 0 || tasksWithBlockers.length > 0 ? "rose" : "emerald",
+      label: "Quá hạn & Giải trình tồn đọng",
+      displayValue: `${openOverdueTasks.length + explanationRequiredItems.length}`,
+      subtext: `${openOverdueTasks.length} việc giao quá hạn • ${explanationRequiredItems.length} mục chờ giải trình`,
+      tone:
+        openOverdueTasks.length > 0 ||
+        tasksWithBlockers.length > 0 ||
+        explanationRequiredItems.length > 0
+          ? "rose"
+          : "emerald",
       formulaDescription:
-        "Đếm các công việc lá chưa hoàn thành đã quá hạn chót (now > endDate) và các công việc có bình luận vướng mắc chưa xử lý.",
+        "Tổng hợp công việc giao quá hạn chưa hoàn thành, công việc có vướng mắc và các đầu việc trong Báo cáo Tuần đang bị yêu cầu giải trình trễ hạn.",
       sourceType: "TASKS",
       sourceIds: Array.from(
         new Set([...openOverdueTasks.map((t) => t.id), ...tasksWithBlockers.map((t) => t.id)])
@@ -283,12 +410,12 @@ export async function buildWorkHubDashboardData(
     },
     {
       key: "SCOPE_REPORTS_QUEUE",
-      label: "Báo cáo chờ duyệt / Chưa gửi",
-      displayValue: `${reportsPendingApproval.length} chờ duyệt`,
-      subtext: `${unsubmittedStaff.length}/${scopedUsers.length} nhân sự chưa gửi kỳ ${periodWin.periodLabel}`,
-      tone: reportsPendingApproval.length > 0 ? "amber" : "default",
+      label: "Tiến độ nộp Báo cáo kỳ",
+      displayValue: `${ktdbclMembers.length - unsubmittedStaff.length}/${ktdbclMembers.length} đã nộp`,
+      subtext: `${unsubmittedStaff.length} chưa nộp • ${pendingConfirmItemsCount} mục chờ xác nhận QL/GĐB`,
+      tone: unsubmittedStaff.length > 0 ? "amber" : "emerald",
       formulaDescription:
-        "Số báo cáo ở trạng thái Đã gửi chờ cấp quản lý duyệt, kèm thống kê số nhân sự trong phạm vi chưa gửi báo cáo kỳ này (không quy người chưa gửi về kết quả 0%).",
+        "Số thành viên Ban KT&ĐBCL đã nộp Báo cáo công việc trong kỳ đang chọn trên tổng nhân sự của Ban (không quy người chưa nộp về kết quả 0%), kèm số đầu việc báo cáo chờ Quản lý/Giám đốc Ban xác nhận.",
       sourceType: "REPORTS",
       sourceIds: reportsPendingApproval.map((r) => r.id),
     },
@@ -307,18 +434,246 @@ export async function buildWorkHubDashboardData(
       } đã duyệt)`,
       tone: "teal",
       formulaDescription:
-        "Trung bình tiến độ thực thi của các Kế hoạch công tác trong phạm vi, tính từ tiến độ các công việc thực hiện liên kết.",
+        "Trung bình tiến độ thực thi của các Kế hoạch công tác Ban KT&ĐBCL trong phạm vi, tính từ tiến độ các công việc thực hiện liên kết.",
       sourceType: "PLANS",
       sourceIds: scopedPlans.map((p) => p.id),
     },
   ]
 
-  // Breakdown by Department & Campus (for Department Heads / Campus Heads / Executive)
+  // =========================================================================
+  // MA TRẬN 1: THEO DÕI TIẾN ĐỘ CÔNG VIỆC & BÁO CÁO THEO NHÓM CHUYÊN MÔN BAN KT&ĐBCL
+  // =========================================================================
+  const memberNameLookup = new Map(ktdbclMembers.map((m) => [m.id, m.fullName]))
+  const normalizedGroupsMap = new Map<
+    string,
+    {
+      groupId: string
+      groupName: string
+      leaderUserId: string | null
+      leaderName: string
+      memberIds: Set<string>
+    }
+  >()
+
+  for (const tg of rawTaskGroups as any[]) {
+    const parsedMems = tg.memberUserIds ? safeJsonParse<string[]>(tg.memberUserIds, []) : []
+    const memSet = new Set<string>(parsedMems.filter((uid) => memberNameLookup.has(uid)))
+    if (tg.leaderUserId && memberNameLookup.has(tg.leaderUserId)) {
+      memSet.add(tg.leaderUserId)
+    }
+    for (const m of ktdbclMembers) {
+      if (m.specialistGroups?.includes(tg.name)) {
+        memSet.add(m.id)
+      }
+    }
+    normalizedGroupsMap.set(tg.name, {
+      groupId: tg.id,
+      groupName: tg.name,
+      leaderUserId: tg.leaderUserId || null,
+      leaderName: tg.leaderUserId ? memberNameLookup.get(tg.leaderUserId) || "Trưởng nhóm" : "Điều phối Ban",
+      memberIds: memSet,
+    })
+  }
+
+  for (const defGroupName of KTDBCL_DEFAULT_GROUPS) {
+    if (!normalizedGroupsMap.has(defGroupName)) {
+      const memSet = new Set<string>(
+        ktdbclMembers
+          .filter((m) => m.specialistGroups?.includes(defGroupName))
+          .map((m) => m.id)
+      )
+      normalizedGroupsMap.set(defGroupName, {
+        groupId: defGroupName,
+        groupName: defGroupName,
+        leaderUserId: null,
+        leaderName: "Điều phối Ban",
+        memberIds: memSet,
+      })
+    }
+  }
+
+  const groupProgressMatrix = Array.from(normalizedGroupsMap.values())
+    .filter((g) => {
+      if (!filters?.groupId || filters.groupId === "ALL") return true
+      return g.groupId === filters.groupId || g.groupName === filters.groupId
+    })
+    .map((g) => {
+      const gMemberIds = Array.from(g.memberIds)
+      // Tasks explicitly assigned to this TaskGroup OR assigned to members when matching group name
+      const gTasks = canonicalTasks.filter((t) => {
+        if (t.taskGroupId && (t.taskGroupId === g.groupId || t.taskGroupName === g.groupName)) {
+          return true
+        }
+        if (!t.taskGroupId && t.assignedToUserId && g.memberIds.has(t.assignedToUserId)) {
+          return true
+        }
+        return false
+      })
+      const gDone = gTasks.filter((t) => t.workStatus === "COMPLETED")
+      const gInProgress = gTasks.filter(
+        (t) => t.workStatus === "ASSIGNED" || t.workStatus === "IN_PROGRESS"
+      )
+      const gPendingReview = gTasks.filter((t) => t.workStatus === "PENDING_REVIEW")
+      const gOnTime = gDone.filter((t) => t.completedOnTime === true)
+      const gOverdue = gTasks.filter((t) => t.isOverdue && t.workStatus !== "COMPLETED")
+
+      // Report items tagged with this group OR submitted by members of this group
+      const gReportItems = activeReportItems.filter((it: any) => {
+        if (it.taskGroup && it.taskGroup === g.groupName) return true
+        if (!it.taskGroup && g.memberIds.has(it.userId)) return true
+        return false
+      })
+      const gCompletedItems = gReportItems.filter((it: any) => {
+        const p = String(it.progress || "").toLowerCase()
+        return p.includes("hoàn thành") || p === "completed" || p.includes("100%")
+      })
+      const gConfirmedItems = gReportItems.filter(
+        (it: any) =>
+          it.meta?.confirmStatus === "MANAGER_CONFIRMED" ||
+          it.meta?.confirmStatus === "DIRECTOR_CONFIRMED"
+      )
+      const gExplainItems = gReportItems.filter(
+        (it: any) => it.meta?.confirmStatus === "OVERDUE_EXPLANATION_REQUIRED"
+      )
+
+      const gSubmittedMembers = gMemberIds.filter((uid) => submittedOwnerIdsForPeriod.has(uid))
+
+      return {
+        groupId: g.groupId,
+        groupName: g.groupName,
+        leaderName: g.leaderName,
+        memberCount: gMemberIds.length,
+        totalTasks: gTasks.length,
+        inProgressTasks: gInProgress.length,
+        pendingReviewTasks: gPendingReview.length,
+        completedTasks: gDone.length,
+        taskCompletionPercent:
+          gTasks.length === 0 ? 0 : Math.round((gDone.length / gTasks.length) * 100),
+        onTimeRateDisplay:
+          gTasks.length === 0
+            ? "Chưa đủ dữ liệu"
+            : `${Math.round((gOnTime.length / gTasks.length) * 100)}%`,
+        overdueTasks: gOverdue.length,
+        submittedMembersCount: gSubmittedMembers.length,
+        missingMembersCount: Math.max(0, gMemberIds.length - gSubmittedMembers.length),
+        reportItemsCount: gReportItems.length,
+        completedReportItemsCount: gCompletedItems.length,
+        confirmedItemsCount: gConfirmedItems.length,
+        explanationRequiredCount: gExplainItems.length,
+        taskIds: gTasks.map((t) => t.id),
+      }
+    })
+
+  // =========================================================================
+  // MA TRẬN 2: THEO DÕI TIẾN ĐỘ CÔNG VIỆC & BÁO CÁO CỦA TỪNG CÁ NHÂN BAN KT&ĐBCL
+  // (Sắp xếp chữ cái A-Z khách quan — không xếp hạng nhân sự mặc định)
+  // =========================================================================
+  const elapsedWeeksCount = Math.max(
+    1,
+    allWeeksInMonth.filter(
+      (w) => new Date(`${w.startYmd}T00:00:00+07:00`).getTime() <= now.getTime()
+    ).length
+  )
+
+  const memberProgressMatrix = ktdbclMembers
+    .filter((m) => {
+      if (filters?.userId && filters.userId !== "ALL" && m.id !== filters.userId) return false
+      if (filters?.groupId && filters.groupId !== "ALL") {
+        const matchedGroup = Array.from(normalizedGroupsMap.values()).find(
+          (g) => g.groupId === filters.groupId || g.groupName === filters.groupId
+        )
+        if (matchedGroup && !matchedGroup.memberIds.has(m.id)) return false
+      }
+      if (filters?.status === "MISSING_REPORT" && submittedOwnerIdsForPeriod.has(m.id)) {
+        return false
+      }
+      return true
+    })
+    .map((m) => {
+      const mTasks = canonicalTasks.filter(
+        (t) => t.assignedToUserId === m.id || t.collaboratorIds.includes(m.id)
+      )
+      const mPrimaryTasks = canonicalTasks.filter((t) => t.assignedToUserId === m.id)
+      const mDone = mTasks.filter((t) => t.workStatus === "COMPLETED")
+      const mInProgress = mTasks.filter(
+        (t) => t.workStatus === "ASSIGNED" || t.workStatus === "IN_PROGRESS"
+      )
+      const mPendingReview = mTasks.filter((t) => t.workStatus === "PENDING_REVIEW")
+      const mOnTime = mDone.filter((t) => t.completedOnTime === true)
+      const mOverdue = mTasks.filter((t) => t.isOverdue && t.workStatus !== "COMPLETED")
+
+      const mPeriodReports = activePeriodReports.filter((r: any) => String(r.userId) === m.id)
+      const mAllMonthReports = monthWeeklyReports.filter((r: any) => String(r.userId) === m.id)
+      const mSubmittedWeekSet = new Set(
+        mAllMonthReports
+          .filter((r: any) => (r.items?.length || 0) > 0)
+          .map((r: any) => Number(r.weekNumber))
+      )
+      const mReportItems = activeReportItems.filter((it: any) => it.userId === m.id)
+      const mCompletedReportItems = mReportItems.filter((it: any) => {
+        const p = String(it.progress || "").toLowerCase()
+        return p.includes("hoàn thành") || p === "completed" || p.includes("100%")
+      })
+      const mConfirmedItems = mReportItems.filter(
+        (it: any) =>
+          it.meta?.confirmStatus === "MANAGER_CONFIRMED" ||
+          it.meta?.confirmStatus === "DIRECTOR_CONFIRMED"
+      )
+      const mExplainRequired = mReportItems.filter(
+        (it: any) => it.meta?.confirmStatus === "OVERDUE_EXPLANATION_REQUIRED"
+      )
+
+      const hasSubmittedReport =
+        submittedOwnerIdsForPeriod.has(m.id) || mPeriodReports.some((r: any) => (r.items?.length || 0) > 0)
+      const latestReport = mPeriodReports[mPeriodReports.length - 1] || null
+
+      // Resolve groups for display
+      const memberGroupNames = Array.from(normalizedGroupsMap.values())
+        .filter((g) => g.memberIds.has(m.id))
+        .map((g) => g.groupName)
+
+      return {
+        userId: m.id,
+        fullName: m.fullName,
+        position: m.position,
+        role: m.role,
+        isDirector: m.isDirector,
+        isManager: m.isManager,
+        specialistGroups:
+          memberGroupNames.length > 0 ? memberGroupNames : m.specialistGroups || [],
+        totalTasks: mTasks.length,
+        primaryTasksCount: mPrimaryTasks.length,
+        inProgressTasks: mInProgress.length,
+        pendingReviewTasks: mPendingReview.length,
+        completedTasks: mDone.length,
+        onTimeTasks: mOnTime.length,
+        overdueTasks: mOverdue.length,
+        onTimeRateDisplay:
+          mTasks.length === 0
+            ? "Chưa đủ dữ liệu"
+            : `${Math.round((mOnTime.length / mTasks.length) * 100)}%`,
+        hasSubmittedReport,
+        submittedWeeksCount: mSubmittedWeekSet.size,
+        expectedWeeksCount: elapsedWeeksCount,
+        reportItemsCount: mReportItems.length,
+        completedReportItemsCount: mCompletedReportItems.length,
+        confirmedItemsCount: mConfirmedItems.length,
+        explanationRequiredCount: mExplainRequired.length,
+        latestReportUpdatedAt: latestReport?.updatedAt
+          ? new Date(latestReport.updatedAt).toISOString()
+          : null,
+        taskIds: mTasks.map((t) => t.id),
+      }
+    })
+    .sort((a, b) => a.fullName.localeCompare(b.fullName, "vi"))
+
+  // Backward-compatible departmentBreakdown & campusBreakdown
   const visibleDepartments = departments.filter(
     (d) =>
-      actor.isExecutive ||
-      d.id === actor.primaryDepartmentId ||
-      actor.managedDepartmentIds?.includes(d.id)
+      d.code === "KT-ĐBCL" ||
+      d.name === "KT&ĐBCL" ||
+      d.divisionCode === "BAN_KT_DBCL" ||
+      d.id === actor.primaryDepartmentId
   )
   const visibleCampuses = campuses.filter(
     (c) =>
@@ -333,9 +688,6 @@ export async function buildWorkHubDashboardData(
     const dOnTime = dDone.filter((t) => t.completedOnTime === true)
     const dOverdue = dTasks.filter((t) => t.isOverdue && t.workStatus !== "COMPLETED")
     const dAdhoc = dTasks.filter((t) => t.isAdhoc)
-    const dStaff = scopedUsers.filter((u) => u.teacher?.departmentId === dept.id)
-    const dSubmitted = dStaff.filter((u) => submittedOwnerIdsForPeriod.has(u.id))
-
     return {
       departmentId: dept.id,
       departmentCode: dept.code,
@@ -346,9 +698,9 @@ export async function buildWorkHubDashboardData(
         dTasks.length === 0 ? "Chưa đủ dữ liệu" : `${Math.round((dOnTime.length / dTasks.length) * 100)}%`,
       overdueTasks: dOverdue.length,
       adhocTasks: dAdhoc.length,
-      staffCount: dStaff.length,
-      submittedReportsCount: dSubmitted.length,
-      missingReportsCount: Math.max(0, dStaff.length - dSubmitted.length),
+      staffCount: ktdbclMembers.length,
+      submittedReportsCount: ktdbclMembers.length - unsubmittedStaff.length,
+      missingReportsCount: unsubmittedStaff.length,
       taskIds: dTasks.map((t) => t.id),
     }
   })
@@ -358,9 +710,6 @@ export async function buildWorkHubDashboardData(
     const cDone = cTasks.filter((t) => t.workStatus === "COMPLETED")
     const cOnTime = cDone.filter((t) => t.completedOnTime === true)
     const cOverdue = cTasks.filter((t) => t.isOverdue && t.workStatus !== "COMPLETED")
-    const cStaff = scopedUsers.filter((u) => u.teacher?.campusId === camp.id)
-    const cSubmitted = cStaff.filter((u) => submittedOwnerIdsForPeriod.has(u.id))
-
     return {
       campusId: camp.id,
       campusCode: camp.campusCode,
@@ -370,32 +719,41 @@ export async function buildWorkHubDashboardData(
       onTimeRateDisplay:
         cTasks.length === 0 ? "Chưa đủ dữ liệu" : `${Math.round((cOnTime.length / cTasks.length) * 100)}%`,
       overdueTasks: cOverdue.length,
-      staffCount: cStaff.length,
-      submittedReportsCount: cSubmitted.length,
-      missingReportsCount: Math.max(0, cStaff.length - cSubmitted.length),
+      staffCount: 0,
+      submittedReportsCount: 0,
+      missingReportsCount: 0,
       taskIds: cTasks.map((t) => t.id),
     }
   })
 
-  // Issues requiring leadership decision (reports with supportRequests, tasks with blockers, plans adjusted/draft)
+  // Issues requiring leadership decision (tasks pending review, overdue explanations, report support requests)
   const decisionItems = [
-    ...scopedReports
-      .filter((r) => r.supportRequests && r.supportRequests.trim().length > 0)
-      .slice(0, 8)
-      .map((r) => ({
-        type: "SUPPORT_REQUEST" as const,
-        code: r.reportCode,
-        title: `Kiến nghị hỗ trợ từ báo cáo ${r.ownerName} (${r.periodLabel})`,
-        detail: r.supportRequests,
-        linkHref: `/admin/workhub/reports?reportId=${r.id}`,
-      })),
+    ...explanationRequiredItems.slice(0, 6).map((it: any) => ({
+      type: "EXPLANATION_REQUIRED" as const,
+      code: `Tuần ${it.weekNumber}`,
+      title: `Chờ giải trình trễ hạn: ${it.mainTask || it.workContent?.slice(0, 60) || "Đầu việc"}`,
+      detail: `Nhân sự: ${memberNameLookup.get(it.userId) || "Thành viên"} • ${
+        it.meta?.explanationRequestNote || "Yêu cầu cập nhật nguyên nhân & mốc khắc phục"
+      }`,
+      linkHref: `/admin/weekly-reports?tab=review&week=${it.weekNumber}&month=${month}&year=${year}`,
+    })),
     ...pendingReviewAll.slice(0, 8).map((t) => ({
       type: "PENDING_REVIEW" as const,
       code: t.taskCode,
-      title: `Chờ nghiệm thu: ${t.title}`,
+      title: `Chờ nghiệm thu công việc: ${t.title}`,
       detail: `Người thực hiện: ${t.assignedToName || "—"} • Hạn: ${new Date(t.endDate).toLocaleDateString("vi-VN")}`,
-      linkHref: `/admin/workhub/assigned-tasks?taskId=${t.id}`,
+      linkHref: "/admin/tasks",
     })),
+    ...scopedReports
+      .filter((r) => r.supportRequests && r.supportRequests.trim().length > 0)
+      .slice(0, 5)
+      .map((r) => ({
+        type: "SUPPORT_REQUEST" as const,
+        code: r.reportCode,
+        title: `Kiến nghị hỗ trợ từ ${r.ownerName} (${r.periodLabel})`,
+        detail: r.supportRequests,
+        linkHref: "/admin/weekly-reports",
+      })),
   ]
 
   return {
@@ -405,6 +763,7 @@ export async function buildWorkHubDashboardData(
       year,
       month,
       weekNumber,
+      allWeeks: allWeeksInMonth,
       periodKey: periodWin.periodKey,
       periodLabel: periodWin.periodLabel,
     },
@@ -414,20 +773,25 @@ export async function buildWorkHubDashboardData(
     myPriorityTasks: [...myTodo]
       .sort((a, b) => new Date(a.endDate).getTime() - new Date(b.endDate).getTime())
       .slice(0, 10),
+    groupProgressMatrix,
+    memberProgressMatrix,
     departmentBreakdown,
     campusBreakdown,
     unsubmittedStaff: unsubmittedStaff.slice(0, 50).map((u) => ({
       userId: u.id,
       fullName: u.fullName,
-      position: u.teacher?.position || u.role,
+      position: u.position || u.role,
     })),
     decisionItems,
     filterOptions: {
+      groups: Array.from(normalizedGroupsMap.values()).map((g) => ({
+        id: g.groupId,
+        name: g.groupName,
+      })),
       departments: visibleDepartments,
       campuses: visibleCampuses,
-      users: scopedUsers.map((u) => ({ id: u.id, fullName: u.fullName })),
+      users: ktdbclMembers.map((u) => ({ id: u.id, fullName: u.fullName })),
     },
-    // Map of source items for immediate drill-down without extra queries
     drilldownCatalog: {
       tasks: canonicalTasks,
       reports: scopedReports,

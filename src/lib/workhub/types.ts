@@ -74,6 +74,8 @@ export interface WorkHubTaskRecord {
   isAdhoc: boolean
   departmentId: string | null
   departmentName: string | null
+  taskGroupId?: string | null
+  taskGroupName?: string | null
   campusId: string | null
   campusName: string | null
   academicYearId: string | null
@@ -158,6 +160,8 @@ export interface WorkHubPlanRecord {
   academicYearId: string | null
   departmentId: string | null
   departmentName: string | null
+  taskGroupId?: string | null
+  taskGroupName?: string | null
   campusId: string | null
   campusName: string | null
   ownerUserId: string
@@ -256,6 +260,8 @@ export interface WorkHubReportRecord {
   ownerName: string
   departmentId: string | null
   departmentName: string | null
+  taskGroupId?: string | null
+  taskGroupName?: string | null
   campusId: string | null
   campusName: string | null
   status: WorkHubReportStatus

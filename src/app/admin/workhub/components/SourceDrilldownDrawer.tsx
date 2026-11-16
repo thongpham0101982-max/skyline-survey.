@@ -110,7 +110,7 @@ export function SourceDrilldownDrawer({
                           <tr key={t.id} className="hover:bg-[#F8FAFC] align-middle">
                             <td className="py-2.5 px-3 font-semibold text-[#003B3A] whitespace-nowrap">
                               <Link
-                                href={`/admin/workhub/my-tasks?taskId=${t.id}`}
+                                href="/admin/tasks"
                                 className="inline-flex items-center gap-1 hover:text-[#008B85]"
                               >
                                 {t.taskCode}
@@ -164,7 +164,7 @@ export function SourceDrilldownDrawer({
                         </div>
                       </div>
                       <Link
-                        href={`/admin/workhub/reports?reportId=${r.id}`}
+                        href="/admin/weekly-reports"
                         className="px-3 py-1.5 rounded-lg bg-[#F0FDFA] text-[#00736E] border border-teal-200 font-semibold"
                       >
                         Mở báo cáo

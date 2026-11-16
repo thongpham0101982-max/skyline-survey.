@@ -397,13 +397,8 @@ export function RolesClient({ initialRoles }: any) {
       },
       KTDBCL: {
         WORKHUB_OVERVIEW: { r: true, c: true, u: true, d: true },
-        WORKHUB_MY_TASKS: { r: true, c: true, u: true, d: true },
-        WORKHUB_ASSIGNED_TASKS: { r: true, c: true, u: true, d: true },
         WORKHUB_PLANS: { r: true, c: true, u: true, d: true },
-        WORKHUB_REPORTS: { r: true, c: true, u: true, d: true },
         WORKHUB_KPIS: { r: true, c: true, u: true, d: true },
-        WORKHUB_ORG_TRACKING: { r: true, c: true, u: true, d: true },
-        WORKHUB_SETTINGS: { r: true, c: true, u: true, d: true },
         KTDBCL_EXAMS: { r: true, c: true, u: true, d: true },
         KTDBCL_GRADE_REMARKS: { r: true, c: true, u: true, d: true },
         KTDBCL_SUPPORT: { r: true, c: true, u: true, d: true },

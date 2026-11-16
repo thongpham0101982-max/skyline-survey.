@@ -1,4 +1,5 @@
 import { prisma } from "@/lib/db"
+import { computeWeeksOfMonthSync, resolveKtdbclRoster } from "@/lib/qa-workspace/weeklyReportSchema"
 import { ensureWorkHubSchema, makeWorkHubId, safeJsonParse } from "./schemaInit"
 import {
   canActorAccessTargetScope,
@@ -771,7 +772,17 @@ export async function evaluateTargetWorkHubKpis(
       where: { id: params.targetEntityId },
       select: { name: true },
     })
-    if (d?.name) targetEntityName = d.name
+    if (d?.name) {
+      targetEntityName = d.name
+    } else {
+      const tg = await prisma.taskGroup
+        .findUnique({
+          where: { id: params.targetEntityId },
+          select: { name: true },
+        })
+        .catch(() => null)
+      if (tg?.name) targetEntityName = `Nhóm ${tg.name}`
+    }
   } else if (params.targetScope === "CAMPUS") {
     const c = await prisma.campus.findUnique({
       where: { id: params.targetEntityId },
@@ -809,6 +820,89 @@ export async function evaluateTargetWorkHubKpis(
   const canonicalTasks = selectCanonicalStatisticalTasks(scopedTasks)
   const pStart = new Date(params.periodStart)
   const pEnd = new Date(params.periodEnd)
+
+  // Liên thông trực tiếp với bảng WeeklyReport của Ban KT&ĐBCL nếu chưa có bản ghi trong workhub_reports
+  let effectiveReportRows: any[] = reportRows || []
+  let expectedReportPeriodsCount = effectiveReportRows.length
+  if (effectiveReportRows.length === 0 && typeof (prisma as any).weeklyReport?.findMany === "function") {
+    try {
+      const targetYear = pStart.getUTCFullYear()
+      const targetMonth = pStart.getUTCMonth() + 1
+      const weeks = computeWeeksOfMonthSync(targetMonth, targetYear)
+      const nowMs = Date.now()
+      const elapsedWeeks = weeks.filter(
+        (w) => new Date(`${w.startYmd}T00:00:00+07:00`).getTime() <= nowMs
+      )
+
+      if (params.targetScope === "INDIVIDUAL") {
+        const wkReports = await prisma.weeklyReport.findMany({
+          where: {
+            userId: params.targetEntityId,
+            year: targetYear,
+            month: targetMonth,
+          },
+          select: { id: true, weekNumber: true, updatedAt: true },
+        })
+        expectedReportPeriodsCount = Math.max(elapsedWeeks.length, wkReports.length)
+        effectiveReportRows = wkReports.map((wr) => {
+          const wkDef = weeks.find((w) => w.weekNum === wr.weekNumber)
+          const periodEndIso = wkDef
+            ? `${wkDef.endYmd}T23:59:59+07:00`
+            : pEnd.toISOString()
+          return {
+            id: wr.id,
+            status: "SUBMITTED",
+            submittedSnapshotAt: wr.updatedAt ? new Date(wr.updatedAt).toISOString() : pStart.toISOString(),
+            periodEnd: periodEndIso,
+          }
+        })
+      } else if (params.targetScope === "DEPARTMENT") {
+        const roster = await resolveKtdbclRoster().catch(() => null)
+        const targetGroup = await prisma.taskGroup
+          .findUnique({ where: { id: params.targetEntityId }, select: { name: true, memberUserIds: true, leaderUserId: true } })
+          .catch(() => null)
+        let memberIds = roster?.members.map((m) => m.id) || []
+        if (targetGroup) {
+          const parsedIds: string[] = targetGroup.memberUserIds
+            ? safeJsonParse<string[]>(targetGroup.memberUserIds, [])
+            : []
+          if (targetGroup.leaderUserId) parsedIds.push(targetGroup.leaderUserId)
+          const matchedFromRoster = (roster?.members || [])
+            .filter((m) => m.specialistGroups.includes(targetGroup.name))
+            .map((m) => m.id)
+          memberIds = Array.from(new Set([...parsedIds, ...matchedFromRoster]))
+        }
+        if (memberIds.length > 0) {
+          const wkReports = await prisma.weeklyReport.findMany({
+            where: {
+              userId: { in: memberIds },
+              year: targetYear,
+              month: targetMonth,
+            },
+            select: { id: true, weekNumber: true, updatedAt: true },
+          })
+          expectedReportPeriodsCount = Math.max(
+            elapsedWeeks.length * memberIds.length,
+            wkReports.length
+          )
+          effectiveReportRows = wkReports.map((wr) => {
+            const wkDef = weeks.find((w) => w.weekNum === wr.weekNumber)
+            const periodEndIso = wkDef
+              ? `${wkDef.endYmd}T23:59:59+07:00`
+              : pEnd.toISOString()
+            return {
+              id: wr.id,
+              status: "SUBMITTED",
+              submittedSnapshotAt: wr.updatedAt ? new Date(wr.updatedAt).toISOString() : pStart.toISOString(),
+              periodEnd: periodEndIso,
+            }
+          })
+        }
+      }
+    } catch {
+      // Fallback silently if WeeklyReport is mocked/unavailable in isolated tests
+    }
+  }
 
   const evaluations: WorkHubKpiEvaluationResult[] = []
 
@@ -886,8 +980,8 @@ export async function evaluateTargetWorkHubKpis(
       canonicalTasks,
       periodStart: pStart,
       periodEnd: pEnd,
-      reportsForRate: reportRows,
-      expectedReportPeriodsCount: reportRows.length > 0 ? reportRows.length : 0,
+      reportsForRate: effectiveReportRows,
+      expectedReportPeriodsCount,
       manualValue: manualVal,
     })
 

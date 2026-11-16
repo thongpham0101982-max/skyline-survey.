@@ -22,8 +22,8 @@ export const SIDEBAR_TRANSLATIONS: SidebarTranslations = {
     ASSESSMENT: { vi: "Khảo sát đầu vào", en: "Entrance Assessment" },
     SURVEY: { vi: "Khảo sát", en: "Surveys & Feedback" },
     OBSERVATION: { vi: "Dự giờ & Phát triển chuyên môn", en: "Observation & Growth" },
-    WORKHUB: { vi: "WorkHub • Quản lý công việc & KPI", en: "WorkHub • Task & KPI Management" },
-    OTHER: { vi: "QA WORKSPACE KT&ĐBCL", en: "QA WORKSPACE KT&ĐBCL" },
+    WORKHUB: { vi: "QA Workspace • KT&ĐBCL", en: "QA Workspace • Tasks & KPIs" },
+    OTHER: { vi: "QA Workspace • KT&ĐBCL", en: "QA Workspace • KT&ĐBCL" },
   },
   modules: {
     // SYSTEM_KPIS
@@ -183,19 +183,12 @@ export const SIDEBAR_TRANSLATIONS: SidebarTranslations = {
     MA_TRAN_DU_GIO_TTCM: { vi: "Ma trận dự giờ TTCM", en: "HOD Observation Matrix" },
     XET_DUYET_DANH_GIA_LAI: { vi: "Xét duyệt đánh giá lại", en: "Re-evaluation Approval" },
 
-    // OTHER
-    TASKS: { vi: "Điều hành Công việc", en: "Task Operations" },
-    WEEKLY_REPORTS: { vi: "Báo cáo Tuần KT&ĐBCL", en: "QA Weekly Reports" },
-
-    // WORKHUB
-    WORKHUB_OVERVIEW: { vi: "Tổng quan", en: "Overview" },
-    WORKHUB_MY_TASKS: { vi: "Công việc của tôi", en: "My Tasks" },
-    WORKHUB_ASSIGNED_TASKS: { vi: "Công việc đã giao", en: "Assigned Tasks" },
+    // QA WORKSPACE KT&ĐBCL (Hợp nhất quản lý công việc, kế hoạch, báo cáo & KPI)
+    WORKHUB_OVERVIEW: { vi: "Tổng quan tiến độ & KPI", en: "Progress & KPI Overview" },
+    TASKS: { vi: "Điều hành & giao việc", en: "Task Operations & Assignment" },
     WORKHUB_PLANS: { vi: "Kế hoạch công tác", en: "Work Plans" },
-    WORKHUB_REPORTS: { vi: "Báo cáo tuần/tháng", en: "Weekly & Monthly Reports" },
-    WORKHUB_KPIS: { vi: "Chỉ tiêu và KPI", en: "Targets & KPIs" },
-    WORKHUB_ORG_TRACKING: { vi: "Theo dõi phòng ban/cơ sở", en: "Department & Campus Tracking" },
-    WORKHUB_SETTINGS: { vi: "Cấu hình", en: "Settings" },
+    WEEKLY_REPORTS: { vi: "Báo cáo tuần & tháng", en: "Weekly & Monthly Reports" },
+    WORKHUB_KPIS: { vi: "Chỉ tiêu & đánh giá KPI", en: "KPI Targets & Evaluation" },
   },
   teacherNav: {
     overview: { vi: "Tổng quan", en: "Overview" },

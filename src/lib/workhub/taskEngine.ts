@@ -227,6 +227,7 @@ export async function listScopedWorkHubTasks(
     academicYearId?: string
     campusId?: string
     departmentId?: string
+    groupId?: string
     userId?: string
     planId?: string
     status?: string
@@ -266,6 +267,7 @@ export async function listScopedWorkHubTasks(
       include: {
         assignedBy: { select: { id: true, fullName: true } },
         assignedToUser: { select: { id: true, fullName: true } },
+        taskGroup: { select: { id: true, name: true } },
         attachments: { select: { id: true } },
         comments: { select: { id: true, commentType: true, actionStatus: true } },
       },
@@ -427,7 +429,16 @@ export async function listScopedWorkHubTasks(
       continue
     }
     if (filters?.departmentId && filters.departmentId !== "ALL" && resolvedDeptId !== filters.departmentId) {
-      continue
+      // Allow matching TaskGroup ID as well when departmentId is a specialist group ID
+      if ((t as any).taskGroupId !== filters.departmentId) {
+        continue
+      }
+    }
+    if (filters?.groupId && filters.groupId !== "ALL") {
+      const tgName = (t as any).taskGroup?.name || ""
+      if ((t as any).taskGroupId !== filters.groupId && tgName !== filters.groupId) {
+        continue
+      }
     }
     if (filters?.userId && filters.userId !== "ALL") {
       if (t.assignedToUserId !== filters.userId && !collabIds.includes(filters.userId)) continue
@@ -498,6 +509,8 @@ export async function listScopedWorkHubTasks(
       isAdhoc,
       departmentId: resolvedDeptId,
       departmentName: resolvedDeptId ? deptLookup.get(resolvedDeptId) || t.department || null : t.department || null,
+      taskGroupId: (t as any).taskGroupId || null,
+      taskGroupName: (t as any).taskGroup?.name || null,
       campusId: resolvedCampusId,
       campusName: resolvedCampusId ? campusLookup.get(resolvedCampusId) || null : null,
       academicYearId: t.academicYearId || null,

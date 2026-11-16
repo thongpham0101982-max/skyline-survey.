@@ -257,11 +257,15 @@ export async function getRoleReadableModules(roleCode: string): Promise<string[]
   // Cả WorkHub • Quản lý công việc & KPI (WORKHUB_*) và Báo cáo Tuần (WEEKLY_REPORTS)
   // CHỈ dành riêng cho các tài khoản thuộc nhóm quyền Ban KT&ĐBCL, tuyệt đối không xuất hiện trên tài khoản khác.
   const isStrictKtdbclRole = isKtdbclRoleCode(upper)
+  for (const existingMod of Array.from(readableModules)) {
+    if (existingMod.startsWith("WORKHUB_")) {
+      readableModules.delete(existingMod)
+    }
+  }
   if (isStrictKtdbclRole) {
     WORKHUB_MODULE_CODES.forEach((code) => readableModules.add(code))
     readableModules.add("WEEKLY_REPORTS")
   } else {
-    WORKHUB_MODULE_CODES.forEach((code) => readableModules.delete(code))
     readableModules.delete("WEEKLY_REPORTS")
   }
 

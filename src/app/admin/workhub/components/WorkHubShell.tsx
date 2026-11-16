@@ -5,14 +5,11 @@ import Link from "next/link"
 import { usePathname } from "next/navigation"
 import {
   BarChart3,
-  Building2,
   Calendar,
   ClipboardList,
-  FileText,
+  FileSpreadsheet,
   LayoutDashboard,
-  Settings,
   ShieldCheck,
-  UserCheck,
 } from "lucide-react"
 import type { WorkHubActorScope } from "@/lib/workhub/types"
 
@@ -22,66 +19,44 @@ interface WorkHubShellProps {
 }
 
 const ROLE_TIER_LABELS: Record<WorkHubActorScope["roleTier"], string> = {
-  INDIVIDUAL: "Cá nhân thực hiện",
-  DEPARTMENT_HEAD: "Trưởng bộ phận / Tổ chuyên môn",
-  CAMPUS_HEAD: "Ban Giám hiệu / Giám đốc Cơ sở",
-  EXECUTIVE: "Ban điều hành / Quản trị hệ thống",
+  INDIVIDUAL: "Chuyên viên Ban KT&ĐBCL",
+  DEPARTMENT_HEAD: "Quản lý Nhóm / Tổ KT&ĐBCL",
+  CAMPUS_HEAD: "Lãnh đạo phụ trách",
+  EXECUTIVE: "Giám đốc Ban / Quản trị hệ thống",
 }
 
 export function WorkHubShell({ actor, children }: WorkHubShellProps) {
   const pathname = usePathname() || ""
 
+  // 5 trụ cột nghiệp vụ hợp nhất trong QA Workspace • KT&ĐBCL (đã loại bỏ hoàn toàn các màn hình chồng chéo)
   const navItems = [
     {
       href: "/admin/workhub",
-      label: "Tổng quan",
+      label: "Tổng quan tiến độ & KPI",
       icon: LayoutDashboard,
-      visible: true,
       exact: true,
     },
     {
-      href: "/admin/workhub/my-tasks",
-      label: "Công việc của tôi",
+      href: "/admin/tasks",
+      label: "Điều hành & giao việc",
       icon: ClipboardList,
-      visible: true,
-    },
-    {
-      href: "/admin/workhub/assigned-tasks",
-      label: "Công việc đã giao",
-      icon: UserCheck,
-      visible: actor.canAssignTasks,
     },
     {
       href: "/admin/workhub/plans",
       label: "Kế hoạch công tác",
       icon: Calendar,
-      visible: true,
     },
     {
-      href: "/admin/workhub/reports",
-      label: "Báo cáo tuần/tháng",
-      icon: FileText,
-      visible: true,
+      href: "/admin/weekly-reports",
+      label: "Báo cáo tuần & tháng",
+      icon: FileSpreadsheet,
     },
     {
       href: "/admin/workhub/kpis",
-      label: "Chỉ tiêu và KPI",
+      label: "Chỉ tiêu & đánh giá KPI",
       icon: BarChart3,
-      visible: true,
     },
-    {
-      href: "/admin/workhub/org-tracking",
-      label: "Theo dõi phòng ban/cơ sở",
-      icon: Building2,
-      visible: actor.canViewOrgTracking,
-    },
-    {
-      href: "/admin/workhub/settings",
-      label: "Cấu hình",
-      icon: Settings,
-      visible: actor.canManageSettings || actor.canManageKpiDefinitions,
-    },
-  ].filter((item) => item.visible)
+  ]
 
   return (
     <div className="min-h-screen bg-[#F8FAFC] p-3 sm:p-5 space-y-4">
@@ -90,7 +65,7 @@ export function WorkHubShell({ actor, children }: WorkHubShellProps) {
           <div className="border-l-4 border-[#003B3A] pl-3.5">
             <div className="flex flex-wrap items-center gap-2">
               <h1 className="text-base sm:text-lg font-bold text-[#003B3A]">
-                WorkHub • Quản lý công việc, báo cáo & KPI
+                QA Workspace • KT&amp;ĐBCL — Quản lý công việc, báo cáo &amp; KPI
               </h1>
               <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-lg text-xs font-semibold bg-[#F0FDFA] text-[#00736E] border border-teal-200">
                 <ShieldCheck className="w-3.5 h-3.5" />
@@ -98,9 +73,7 @@ export function WorkHubShell({ actor, children }: WorkHubShellProps) {
               </span>
             </div>
             <p className="text-xs text-slate-500 mt-0.5">
-              {actor.userName}
-              {actor.primaryDepartmentName ? ` • ${actor.primaryDepartmentName}` : ""}
-              {actor.primaryCampusName ? ` • ${actor.primaryCampusName}` : ""}
+              {actor.userName} • Không gian điều hành công việc, kế hoạch, báo cáo tiến độ nhóm/cá nhân &amp; KPI chuyên biệt Ban KT&amp;ĐBCL
             </p>
           </div>
         </div>
@@ -115,7 +88,7 @@ export function WorkHubShell({ actor, children }: WorkHubShellProps) {
               <Link
                 key={item.href}
                 href={item.href}
-                className={`inline-flex items-center gap-1.5 px-3 py-2 rounded-xl text-xs font-semibold whitespace-nowrap transition-colors ${
+                className={`inline-flex items-center gap-1.5 px-3.5 py-2 rounded-xl text-xs font-semibold whitespace-nowrap transition-colors ${
                   isActive
                     ? "bg-[#003B3A] text-white shadow-xs"
                     : "bg-[#F8FAFC] text-slate-700 border border-[#E2E8F0] hover:border-[#00A19A] hover:text-[#003B3A]"

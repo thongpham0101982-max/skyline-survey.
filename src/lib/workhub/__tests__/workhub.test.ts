@@ -184,9 +184,11 @@ import {
   saveWorkHubKpiDefinition,
 } from "../kpiEngine"
 import {
+  buildWorkHubDashboardData,
   dispatchWorkHubDigestReminders,
   generateWorkHubAiReportAssist,
 } from "../dashboardAndAiEngine"
+import { APP_CATEGORIES } from "@/config/modules"
 import {
   buildWorkHubReportDocumentHtml,
   buildWorkHubReportWorkbook,
@@ -893,5 +895,42 @@ describe("WorkHub End-to-End Verification Suite (All 8 Required Flows)", () => {
     const wb = buildWorkHubReportWorkbook(sampleReport)
     expect(wb.SheetNames).toContain("Tong_Hop_Bao_Cao")
     expect(wb.SheetNames).toContain("Cong_Viec_Nguon")
+  })
+
+  it("6. Consolidates WorkHub into QA Workspace • KT&ĐBCL without overlapping menus and tracks group + individual task/report progress", async () => {
+    expect(APP_CATEGORIES.some((c) => c.id === "WORKHUB")).toBe(false)
+    const qaCat = APP_CATEGORIES.find((c) => c.id === "OTHER")!
+    expect(qaCat).toBeDefined()
+    expect(qaCat.modules.map((m) => m.code)).toEqual([
+      "WORKHUB_OVERVIEW",
+      "TASKS",
+      "WORKHUB_PLANS",
+      "WEEKLY_REPORTS",
+      "WORKHUB_KPIS",
+    ])
+
+    await createWorkHubTask(deptHeadA, {
+      title: "Thẩm định ma trận đề HK1",
+      assignedToUserId: "u_staff_a1",
+      startDate: "2026-11-10",
+      endDate: "2026-11-25",
+    })
+
+    const dash = await buildWorkHubDashboardData(deptHeadA, {
+      periodType: "WEEKLY",
+      year: 2026,
+      month: 11,
+      weekNumber: 2,
+    })
+
+    expect(Array.isArray(dash.groupProgressMatrix)).toBe(true)
+    expect(dash.groupProgressMatrix.length).toBeGreaterThanOrEqual(5)
+    expect(Array.isArray(dash.memberProgressMatrix)).toBe(true)
+
+    const staffRow = dash.memberProgressMatrix.find((m: any) => m.userId === "u_staff_a1")
+    expect(staffRow).toBeDefined()
+    expect(staffRow!.totalTasks).toBe(1)
+    expect(staffRow!.inProgressTasks).toBe(1)
+    expect(staffRow!.hasSubmittedReport).toBe(false)
   })
 })

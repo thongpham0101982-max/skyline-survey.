@@ -457,10 +457,18 @@ export function WeeklyReportClient({
             </button>
 
             <Link
+              href="/admin/workhub"
+              className="inline-flex items-center gap-1 px-3 py-2 rounded-xl text-xs font-semibold bg-[#F8FAFC] text-[#003B3A] border border-[#E2E8F0] hover:border-[#00A19A] transition-colors"
+            >
+              Tổng quan &amp; KPI
+              <ArrowUpRight className="w-3.5 h-3.5 text-[#008B85]" />
+            </Link>
+
+            <Link
               href="/admin/tasks"
               className="inline-flex items-center gap-1 px-3 py-2 rounded-xl text-xs font-semibold bg-[#F0FDFA] text-[#00736E] border border-teal-200 hover:bg-teal-100 transition-colors"
             >
-              QA Workspace
+              Điều hành &amp; giao việc
               <ArrowUpRight className="w-3.5 h-3.5" />
             </Link>
           </div>

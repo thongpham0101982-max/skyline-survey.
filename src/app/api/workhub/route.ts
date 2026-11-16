@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server"
 import { prisma } from "@/lib/db"
+import { resolveKtdbclRoster } from "@/lib/qa-workspace/weeklyReportSchema"
 import {
   canActorViewTask,
   requireWorkHubActor,
@@ -57,6 +58,29 @@ function handleWorkHubApiError(err: any) {
   )
 }
 
+async function loadKtdbclUsersAndUnits() {
+  const [roster, ktDepts, taskGroups] = await Promise.all([
+    resolveKtdbclRoster().catch(() => null),
+    prisma.department.findMany({
+      where: {
+        status: "ACTIVE",
+        OR: [{ code: "KT-ĐBCL" }, { name: "KT&ĐBCL" }, { divisionCode: "BAN_KT_DBCL" }],
+      },
+      select: { id: true, name: true },
+    }),
+    prisma.taskGroup.findMany({
+      select: { id: true, name: true },
+      orderBy: { name: "asc" },
+    }).catch(() => []),
+  ])
+  const users = (roster?.members || []).map((m) => ({ id: m.id, fullName: m.fullName }))
+  const departments = [
+    ...ktDepts.map((d) => ({ id: d.id, name: `Toàn Ban ${d.name}` })),
+    ...taskGroups.map((g) => ({ id: g.id, name: `Nhóm: ${g.name}` })),
+  ]
+  return { users, departments }
+}
+
 export async function GET(req: NextRequest) {
   try {
     const actor = await requireWorkHubActor()
@@ -81,6 +105,7 @@ export async function GET(req: NextRequest) {
         weekNumber: sp.get("weekNumber") ? Number(sp.get("weekNumber")) : undefined,
         campusId: sp.get("campusId") || undefined,
         departmentId: sp.get("departmentId") || undefined,
+        groupId: sp.get("groupId") || undefined,
         userId: sp.get("userId") || undefined,
         status: sp.get("status") || undefined,
       })
@@ -178,7 +203,7 @@ export async function GET(req: NextRequest) {
     }
 
     if (resource === "plans") {
-      const [plans, users, departments, campuses, academicYears] = await Promise.all([
+      const [plans, ktUnits, campuses, academicYears] = await Promise.all([
         listScopedWorkHubPlans(actor, {
           academicYearId: sp.get("academicYearId") || undefined,
           periodType: sp.get("periodType") || undefined,
@@ -186,20 +211,7 @@ export async function GET(req: NextRequest) {
           campusId: sp.get("campusId") || undefined,
           status: sp.get("status") || undefined,
         }),
-        prisma.user.findMany({
-          where: {
-            status: "ACTIVE",
-            role: { not: "PARENT" },
-            ...(actor.scopedUserIds !== null ? { id: { in: actor.scopedUserIds } } : {}),
-          },
-          select: { id: true, fullName: true },
-          orderBy: { fullName: "asc" },
-        }),
-        prisma.department.findMany({
-          where: { status: "ACTIVE" },
-          select: { id: true, name: true },
-          orderBy: { name: "asc" },
-        }),
+        loadKtdbclUsersAndUnits(),
         prisma.campus.findMany({
           select: { id: true, campusName: true },
           orderBy: { campusName: "asc" },
@@ -213,8 +225,8 @@ export async function GET(req: NextRequest) {
         success: true,
         actor,
         plans,
-        users,
-        departments,
+        users: ktUnits.users,
+        departments: ktUnits.departments,
         campuses,
         academicYears,
       })
@@ -304,32 +316,24 @@ export async function GET(req: NextRequest) {
       const periodStart = new Date(Date.UTC(year, month - 1, 1, 0, 0, 0)).toISOString()
       const periodEnd = new Date(Date.UTC(year, month, 0, 23, 59, 59)).toISOString()
 
-      const [definitions, users, departments, campuses] = await Promise.all([
+      const [definitions, ktUnits, campuses] = await Promise.all([
         listWorkHubKpiDefinitions(actor),
-        prisma.user.findMany({
-          where: {
-            status: "ACTIVE",
-            role: { not: "PARENT" },
-            ...(actor.scopedUserIds !== null ? { id: { in: actor.scopedUserIds } } : {}),
-          },
-          select: { id: true, fullName: true },
-          orderBy: { fullName: "asc" },
-        }),
-        prisma.department.findMany({
-          where: { status: "ACTIVE" },
-          select: { id: true, name: true },
-          orderBy: { name: "asc" },
-        }),
+        loadKtdbclUsersAndUnits(),
         prisma.campus.findMany({
           select: { id: true, campusName: true },
           orderBy: { campusName: "asc" },
         }),
       ])
+      const users = ktUnits.users
+      const departments = ktUnits.departments
+      const resolvedTargetId =
+        targetEntityId ||
+        (targetScope === "DEPARTMENT" ? departments[0]?.id || "" : targetEntityId)
 
-      const evalData = targetEntityId
+      const evalData = resolvedTargetId
         ? await evaluateTargetWorkHubKpis(actor, {
             targetScope,
-            targetEntityId,
+            targetEntityId: resolvedTargetId,
             periodKey,
             periodLabel,
             periodStart,
